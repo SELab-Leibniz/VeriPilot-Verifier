@@ -431,3 +431,26 @@ test("shadow arm records identical detection but never delivers, and closures at
   const attribution = attributeClosures([closed]);
   assert.equal(attribution.get(closed.familyId), "SELF", "a shadow-arm closure must never credit the critic");
 });
+
+test("the default checklist pattern is content-based and collects every matching section", () => {
+  const english = [
+    "## Dependencies",
+    "",
+    "| feature | Kit | file |",
+    "| --- | --- | --- |",
+    "| scanning | scan-kit | Scan.ets |",
+    "",
+    "## Unrelated",
+    "",
+    "| a | not a kit name | c |",
+    "",
+    "## 依赖清单",
+    "",
+    "| 地图 | map-kit | Map.ets |",
+  ].join("\n");
+  assert.deepEqual(parseKitManifest(english).kits, ["scan-kit", "map-kit"]);
+  assert.equal(parseKitManifest(english).sectionTitle, "Dependencies");
+  // Legacy numbering still matches without any keyword in the heading.
+  const numbered = "### 10.1 必备能力\n| 功能 | 能力 | 文件 |\n| --- | --- | --- |\n| 扫码 | scan-kit | Scan.ets |";
+  assert.deepEqual(parseKitManifest(numbered).kits, ["scan-kit"]);
+});

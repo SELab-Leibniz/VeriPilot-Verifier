@@ -17,7 +17,10 @@ import {
   IMPL_REVIEW_SCHEMA,
 } from "../lib/runtime-v2/impl-review.mjs";
 import {
+  capabilityVoteKey,
+  catalogCapabilityName,
   crossCheckCapabilityOperations,
+  deterministicCapabilityOperations,
   materialManifest,
   mergePanelOperations,
   panelClaimKey,
@@ -684,4 +687,128 @@ test("onboarded capability claims gate the stop: hard entries block, inferred-on
   assert.ok(second.stop.review.findings.some((finding) => (
     finding.deviationKey === "impl:kit:map-kit" && finding.severity === "warning"
   )), "the inferred-only entry surfaces as a warning finding");
+});
+
+test("capabilityVoteKey aligns casing, separators, and module prefixes onto one vote", () => {
+  for (const variant of ["NetworkKit", "@kit.NetworkKit", "Network Kit", "network_kit", "network-kit"]) {
+    assert.equal(capabilityVoteKey(variant), "networkkit", variant);
+  }
+  const vote = (name) => panelClaimKey({ category: "capabilityChecklist", capability: { name }, text: `use ${name}` });
+  assert.equal(vote("NetworkKit"), vote("network-kit"));
+  const { majority, disputed, votes } = mergePanelOperations([
+    [{ ...SCAN_CAPABILITY_OP, capability: { name: "ScanKit" } }],
+    [SCAN_CAPABILITY_OP],
+  ]);
+  assert.equal(majority.length, 1, "differently-cased kit names still reach majority");
+  assert.deepEqual(disputed, []);
+  assert.equal(votes.get(panelClaimKey(SCAN_CAPABILITY_OP)), 2);
+});
+
+test("catalogCapabilityName prefers adapter special cases and hyphenates camelCase", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  assert.equal(catalogCapabilityName("ArkUI", adapter), "arkui", "special-cased simple form wins");
+  assert.equal(catalogCapabilityName("NetworkKit", adapter), "network-kit");
+  assert.equal(catalogCapabilityName("@kit.ScanKit", adapter), "scan-kit");
+  assert.equal(catalogCapabilityName("Network Kit", adapter), "network-kit");
+  assert.equal(catalogCapabilityName("network-kit", adapter), "network-kit");
+});
+
+test("crossCheckCapabilityOperations canonicalizes non-catalog capability names before module resolution", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const { operations, catalogUnmatched } = crossCheckCapabilityOperations([
+    { ...SCAN_CAPABILITY_OP, capability: { name: "@kit.ScanKit" } },
+  ], adapter);
+  assert.equal(catalogUnmatched, 0);
+  assert.equal(operations[0].capability.name, "scan-kit");
+  assert.equal(operations[0].capability.module, "@kit.ScanKit");
+});
+
+const KIT_TABLE_MD = [
+  "# 需求",
+  "",
+  "### 10.1 Kit使用清单",
+  "",
+  "| 功能 | 使用Kit | 代码文件 |",
+  "| --- | --- | --- |",
+  "| 商品服务 | network-kit | services/CommodityService.ets |",
+  "| 扫码 | scan-kit | pages/ScanPage.ets |",
+  "",
+  "### 10.2 其他",
+].join("\n");
+
+test("deterministicCapabilityOperations parses material kit tables into HARD claims", async (t) => {
+  const root = await workspace(t);
+  await write(root, "materials/app-requirements.md", KIT_TABLE_MD);
+  const materials = await materialManifest([path.join(root, "materials")]);
+  const operations = await deterministicCapabilityOperations(materials, {});
+  assert.deepEqual(operations.map((op) => op.capability.name), ["network-kit", "scan-kit"]);
+  for (const op of operations) {
+    assert.equal(op.operation, "ADD");
+    assert.equal(op.category, "capabilityChecklist");
+    assert.equal(op.authority, "MATERIAL_DERIVED");
+    assert.equal(op.severity, "HARD");
+    assert.match(op.capability.sourceHint, /app-requirements\.md#/u);
+  }
+});
+
+test("onboarding unions the deterministic table parse with the panel result", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", KIT_TABLE_MD);
+  const plan = onboardingPlan(root);
+  // The panel proposes only one table kit (in sloppy casing) plus an inferred
+  // SOFT capability the table does not carry.
+  const factory = onboardingFakeFactory({
+    passOperations: () => [
+      REQUIREMENT_OP,
+      { ...SCAN_CAPABILITY_OP, authority: "AGENT_INFERRED", severity: "SOFT", capability: { name: "ScanKit" } },
+      MAP_CAPABILITY_OP,
+    ],
+    stopAssessment: passingStopAssessment,
+  });
+  await stopEvent(root, plan, factory, "stop-onboard-table");
+  const { state, groundTruth, journal } = await readTaskArtifacts(root);
+  assert.equal(state.onboarding.status, "COMPLETED");
+  const capabilities = groundTruth.claims.filter((claim) => claim.category === "capabilityChecklist");
+  assert.deepEqual(
+    capabilities.map((claim) => claim.capability.name).sort(),
+    ["map-kit", "network-kit", "scan-kit"],
+    "table kits the panel missed are appended",
+  );
+  const scan = capabilities.find((claim) => claim.capability.name === "scan-kit");
+  assert.equal(scan.authority, "MATERIAL_DERIVED", "table evidence upgrades the panel claim");
+  assert.equal(scan.severity, "HARD");
+  assert.equal(scan.panelConfirmed, true);
+  assert.match(scan.text, /scan-kit|ScanKit/u, "the panel's own wording survives the upgrade");
+  const network = capabilities.find((claim) => claim.capability.name === "network-kit");
+  assert.equal(network.severity, "HARD");
+  assert.equal(network.panelConfirmed, true);
+  assert.equal(network.capability.module, "@kit.NetworkKit");
+  const map = capabilities.find((claim) => claim.capability.name === "map-kit");
+  assert.equal(map.severity, "SOFT", "non-table capabilities keep the panel's judgement");
+  const completed = JSON.parse(journal.split("\n").filter(Boolean)
+    .map((line) => line)
+    .find((line) => line.includes("ONBOARDING_COMPLETED")));
+  assert.equal(completed.deterministicKits, 2);
+  assert.equal(completed.capabilityClaims, 3);
+});
+
+test("the adjudicator request annotates operations with panel vote counts", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  let passCount = 0;
+  const factory = onboardingFakeFactory({
+    passOperations: () => (passCount += 1) === 1
+      ? [REQUIREMENT_OP, SCAN_CAPABILITY_OP]
+      : [SCAN_CAPABILITY_OP],
+    stopAssessment: passingStopAssessment,
+  });
+  await stopEvent(root, plan, factory, "stop-onboard-votes");
+  const adjudication = factory.calls.find((call) => call.role === "onboarding-adjudicator");
+  const majorityVotes = adjudication.request.majorityOperations.map((op) => op.panelVotes);
+  assert.deepEqual(majorityVotes, [2], "the shared capability claim reports both votes");
+  const disputedVotes = adjudication.request.disputedOperations.map((op) => op.panelVotes);
+  assert.deepEqual(disputedVotes, [1], "the single-pass requirement reports one vote");
 });
