@@ -422,7 +422,17 @@ test("onboarding fails soft to incremental extraction and journals ONBOARDING_DE
   });
   const outcome = await stopEvent(root, plan, factory, "stop-degraded-1");
   assert.equal(outcome.decision, "allow");
-  const { state, groundTruth, journal } = await readTaskArtifacts(root);
+  let artifacts = await readTaskArtifacts(root);
+  // Early panel failures DEFER (the parent session may not be resumable on
+  // the first events) and retry on later hook events before degrading.
+  assert.equal(artifacts.state.onboarding.status, "DEFERRED");
+  assert.equal(artifacts.state.onboarding.reason, "PANEL_FAILED");
+  await write(root, "transcript.jsonl", transcriptEntries(2));
+  await stopEvent(root, plan, factory, "stop-degraded-2");
+  await write(root, "transcript.jsonl", transcriptEntries(3));
+  await stopEvent(root, plan, factory, "stop-degraded-3");
+  artifacts = await readTaskArtifacts(root);
+  const { state, groundTruth, journal } = artifacts;
   assert.equal(state.onboarding.status, "DEGRADED");
   assert.equal(state.onboarding.reason, "PANEL_FAILED");
   assert.ok(journal.includes("ONBOARDING_DEGRADED"));
@@ -430,9 +440,9 @@ test("onboarding fails soft to incremental extraction and journals ONBOARDING_DE
   assert.equal(groundTruth.version, 1);
   assert.equal(groundTruth.frozenAtVersion ?? null, null, "a degraded onboarding never freezes");
   // The degraded outcome is terminal: no retry on the next event.
-  await write(root, "transcript.jsonl", transcriptEntries(2));
-  await stopEvent(root, plan, factory, "stop-degraded-2");
-  assert.equal((await readTaskArtifacts(root)).state.onboarding.reason, "PANEL_FAILED");
+  await write(root, "transcript.jsonl", transcriptEntries(4));
+  await stopEvent(root, plan, factory, "stop-degraded-4");
+  assert.equal((await readTaskArtifacts(root)).state.onboarding.status, "DEGRADED");
 });
 
 
