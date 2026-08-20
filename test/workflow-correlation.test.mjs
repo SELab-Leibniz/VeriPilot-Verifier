@@ -326,8 +326,8 @@ test("workflow skill and README state the instance decision boundary", async () 
     ),
     "utf8",
   );
-  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
-  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.zh-CN.md"), "utf8");
+  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.en.md"), "utf8");
+  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
 
   assert.match(skill, /continue an existing change/);
   assert.match(skill, /create a new change/);

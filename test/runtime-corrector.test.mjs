@@ -2740,8 +2740,8 @@ test("Claude command and control skill expose one guarded stage control model", 
 
 
 test("README is a detailed standalone guide while contracts live under docs", async () => {
-  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
-  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.zh-CN.md"), "utf8");
+  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.en.md"), "utf8");
+  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
   const docs = await Promise.all([
     "README.md",
     "how-it-works.md",
@@ -2772,8 +2772,9 @@ test("README is a detailed standalone guide while contracts live under docs", as
     assert.match(document, /docs\/six-stage-workflow-from-zero\.md/);
   }
   assert.ok(readme.split(/\r?\n/).length > 150, "root README is a detailed guide");
-  assert.match(readme, /README\.zh-CN\.md/);
-  assert.match(readmeZh, /README\.md/);
+  // zh is the default README; the English alternative links back to it and vice versa.
+  assert.match(readme, /README\.md/);
+  assert.match(readmeZh, /README\.en\.md/);
   assert.match(docs[1], /`UserPromptSubmit` Hook/);
   assert.match(docs[1], /Skill 看护/);
   assert.match(docs[1], /compact_boundary/);
