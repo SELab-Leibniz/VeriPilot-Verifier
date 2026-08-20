@@ -1,0 +1,27 @@
+{
+  "name": "harmonyos",
+  "description": "Platform adapter for HarmonyOS projects: @kit module naming, irregular module casings, and the production source tree scanned by the deterministic kit-integration check.",
+  "kitCheck": {
+    "modulePrefix": "@kit.",
+    "moduleSpecialCases": {
+      "arkdata": "ArkData",
+      "arkts": "ArkTS",
+      "arkui": "ArkUI",
+      "arkweb": "ArkWeb",
+      "arkgraphics-2d": "ArkGraphics2D",
+      "arkgraphics-3d": "ArkGraphics3D",
+      "ar-engine": "AREngine",
+      "avcodec-kit": "AVCodecKit",
+      "avsession-kit": "AVSessionKit",
+      "iap-kit": "IAPKit",
+      "ime-kit": "IMEKit",
+      "ipc-kit": "IPCKit"
+    },
+    "sourceRoots": [
+      "entry/src/main"
+    ],
+    "sourceExtensions": [
+      ".ets"
+    ]
+  }
+}

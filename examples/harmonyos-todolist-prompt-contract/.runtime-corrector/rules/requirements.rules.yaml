@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: TODOLIST-REQ-SCOPE
+    type: require-heading
+    heading: 目标与范围
+    severity: error
+  - id: TODOLIST-REQ-SYSTEM
+    type: require-heading
+    heading: 系统需求
+    severity: error
+  - id: TODOLIST-REQ-UNCERTAINTY
+    type: require-heading
+    heading: 事实、假设与待确认
+    severity: error

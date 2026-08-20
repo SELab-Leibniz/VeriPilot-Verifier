@@ -1,0 +1,67 @@
+version: 1
+
+# 规则按真实执行顺序排列。所有字段结构和跨文件约束都在项目内可见，
+# Agent 不应读取插件 JavaScript 来猜测 Planning 文件格式。
+rules:
+  - id: PLANNING-REQUIRED-ARTIFACTS
+    type: require-artifacts
+    artifacts:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: PLANNING-RELATIONS-SCHEMA
+    type: json-schema
+    artifact: relations.json
+    schema: schemas/relations.schema.json
+    severity: error
+    suggestion: 按项目内 schemas/relations.schema.json 修正字段。
+
+  - id: PLANNING-GRANULARITY-SCHEMA
+    type: json-schema
+    artifact: granularity-choice.json
+    schema: schemas/granularity-choice.schema.json
+    severity: error
+    suggestion: 按项目内 schemas/granularity-choice.schema.json 修正字段，groups 使用 sr_ids。
+
+  - id: PLANNING-RELATION-GRAPH
+    type: graph-invariants
+    artifact: relations.json
+    caseSensitiveIds: false
+    nodes:
+      pointer: /nodes
+      idField: id
+      typeField: type
+      typeRules:
+        - id: RELATION-NODE-TYPE
+          idPattern: "^SR-"
+          expectedType: sr
+        - id: RELATION-NODE-TYPE
+          idPattern: "^M"
+          expectedType: milestone
+    edges:
+      pointer: /edges
+      fromField: from
+      toField: to
+      typeField: type
+      endpointRules:
+        - id: CONTAINS-DIRECTION
+          edgeType: contains
+          fromType: milestone
+          toType: sr
+          message: "contains 必须是 milestone -> sr，当前为 {from} -> {to}。"
+        - id: REQUIRES-DIRECTION
+          edgeType: requires
+          fromType: sr
+          toType: sr
+          allowSelf: false
+          message: "requires 必须是不同的 sr -> sr，当前为 {from} -> {to}。"
+      acyclic:
+        - id: REQUIRES-CYCLE
+          types:
+            - requires
+          message: SR requires 关系存在循环依赖。
+    severity: error

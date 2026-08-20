@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://runtime-corrector.local/schemas/correction-result.v1.schema.json",
+  "title": "Runtime Corrector machine-readable result v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "status",
+    "classification",
+    "assessments",
+    "findings",
+    "suggestedActions",
+    "checkerDiagnostics",
+    "resultDigest",
+    "diagnostics",
+    "diffs",
+    "metadata"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "runtime-corrector.result.v1" },
+    "status": { "type": "string", "enum": ["passed", "warning", "pending", "failed"] },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "PASSED",
+        "DEVIATION",
+        "UNVERIFIED",
+        "GROUND_TRUTH_UNRESOLVED",
+        "EXTERNAL_UNAVAILABLE",
+        "CHECKER_FAILURE"
+      ]
+    },
+    "assessments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "assessmentId",
+          "fingerprint",
+          "classification",
+          "suggestedAction",
+          "ruleId",
+          "severity",
+          "path",
+          "message"
+        ],
+        "properties": {
+          "assessmentId": { "type": "string", "minLength": 1 },
+          "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "DEVIATION",
+              "UNVERIFIED",
+              "GROUND_TRUTH_UNRESOLVED",
+              "EXTERNAL_UNAVAILABLE",
+              "CHECKER_FAILURE"
+            ]
+          },
+          "suggestedAction": { "type": "string", "minLength": 1 },
+          "ruleId": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["error", "warning", "info", "pending"] },
+          "path": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "suggestion": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": { "type": "array" },
+    "suggestedActions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "checkerDiagnostics": { "type": "array" },
+    "resultDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "diagnostics": { "type": "array" },
+    "diffs": { "type": "array" },
+    "metadata": {
+      "type": "object",
+      "required": ["stage", "artifactType", "triggerFile", "inputDigest", "policyDigest"],
+      "properties": {
+        "stage": { "type": "string", "minLength": 1 },
+        "artifactType": { "type": "string", "minLength": 1 },
+        "triggerFile": { "type": "string", "minLength": 1 },
+        "inputDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "policyDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

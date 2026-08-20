@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: TODOLIST-CHECKPOINT-SCHEMA
+    type: json-schema
+    artifact: checkpoint.json
+    schema: schemas/checkpoint.schema.json
+    severity: error

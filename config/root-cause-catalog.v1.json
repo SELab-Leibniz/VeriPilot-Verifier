@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "runtime-corrector.root-cause-catalog.v1",
+  "source": "curated root-cause taxonomy (frozen with this plugin release)",
+  "status": "FROZEN",
+  "rootCauses": [
+    { "id": "REQUIREMENT_OMITTED", "description": "An approved requirement was not decomposed, implemented, or verified." },
+    { "id": "MILESTONE_EVIDENCE_GATE_BYPASSED", "description": "Work advanced without the evidence required by a milestone gate." },
+    { "id": "IMPLEMENTATION_BEHAVIOR_MISMATCH", "description": "Current implementation behavior conflicts with an atomic Ground Truth assertion." },
+    { "id": "TEST_NOT_EXECUTED", "description": "An applicable test exists but has no current execution result." },
+    { "id": "STALE_OR_UNBOUND_EVIDENCE", "description": "Evidence is stale or cannot be bound to the current source or deliverable." },
+    { "id": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT", "description": "A reported conclusion contradicts its cited primary evidence." },
+    { "id": "CHECKER_FAILURE", "description": "The checker failed or could not reliably classify an object." },
+    { "id": "EXTERNAL_ENVIRONMENT_BLOCK", "description": "An external environment prevented required verification." },
+    { "id": "SKILL_REQUIRED_STEP_OMITTED", "description": "A mandatory Skill step or prerequisite was omitted." },
+    { "id": "SKILL_ORDER_VIOLATION", "description": "Skill steps were executed in a prohibited order." },
+    { "id": "SKILL_CONDITION_VIOLATION", "description": "A conditional Skill constraint was violated after its condition became active." },
+    { "id": "SKILL_INPUT_OUTPUT_MISMATCH", "description": "A Skill used invalid inputs or did not produce a required output." },
+    { "id": "SKILL_PROHIBITED_BEHAVIOR", "description": "The Skill execution performed an explicitly prohibited action." },
+    { "id": "UNSUPPORTED_SCOPE_EXPANSION", "description": "The output added behavior without an authoritative basis." },
+    { "id": "WORKFLOW_CONSTRAINT_VIOLATION", "description": "A required workflow step, edge, or traceability relation is incomplete." },
+    { "id": "OTHER", "description": "The deviation does not yet map to a more specific frozen cause." }
+  ]
+}

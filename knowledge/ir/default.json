@@ -1,0 +1,157 @@
+{
+  "id": "ir/harmony-requirements-v2",
+  "description": "Format-flexible correction criteria for actionable HarmonyOS application requirements.",
+  "requiredSections": [
+    {
+      "id": "IR-CORE-OVERVIEW",
+      "emptyRuleId": "IR-STRUCT-EMPTY",
+      "heading": "目标与范围",
+      "aliases": ["产品概述", "项目概述", "应用概述", "概述", "背景与目标", "产品目标"],
+      "level": 2,
+      "severity": "error",
+      "message": "IR 缺少应用目标与需求范围。",
+      "suggestion": "增加一个 H2 章节，说明应用解决的问题、本期范围和明确不做的内容。",
+      "template": ["- 应用目标：", "- 本期范围：", "- 范围外："]
+    },
+    {
+      "id": "IR-CORE-FUNCTIONS",
+      "emptyRuleId": "IR-STRUCT-EMPTY",
+      "heading": "功能需求",
+      "aliases": ["核心功能", "用户旅程与功能需求", "用户旅程", "功能说明", "需求清单"],
+      "level": 2,
+      "severity": "error",
+      "message": "IR 缺少可实现的功能需求。",
+      "suggestion": "增加一个 H2 章节，按用户动作、系统响应、异常路径描述本期功能。",
+      "template": ["- 用户动作：", "- 系统响应：", "- 异常与边界："]
+    },
+    {
+      "id": "IR-CORE-ACCEPTANCE",
+      "emptyRuleId": "IR-STRUCT-EMPTY",
+      "heading": "验收标准",
+      "aliases": ["验收条件", "完成定义", "测试要点", "可验收结果"],
+      "levels": [2, 3],
+      "allowMultiple": true,
+      "severity": "error",
+      "message": "IR 缺少可验证的验收标准。",
+      "suggestion": "增加一个 H2 章节，把核心功能改写成可观察、可勾选的通过条件。",
+      "template": ["- [ ] 核心流程可以按预期完成", "- [ ] 无效输入和失败场景有明确结果"]
+    }
+  ],
+  "sectionOrder": [],
+  "requiredPatterns": [
+    {
+      "id": "IR-DOC-TITLE",
+      "pattern": "^#(?!#)\\s+\\S",
+      "flags": "m",
+      "severity": "error",
+      "message": "IR 缺少 H1 文档标题。",
+      "suggestion": "在文档开头增加能识别应用和文档用途的 H1 标题。"
+    },
+    {
+      "id": "IR-HARMONY-PLATFORM",
+      "pattern": "(?:HarmonyOS|OpenHarmony|鸿蒙|ArkTS|ArkUI)",
+      "flags": "i",
+      "severity": "error",
+      "message": "IR 没有说明这是鸿蒙应用需求。",
+      "suggestion": "写明目标平台，并根据已知信息说明 HarmonyOS/OpenHarmony、ArkTS 或 ArkUI 约束。"
+    },
+    {
+      "id": "IR-CORE-ACCEPTANCE-FORM",
+      "section": "验收标准",
+      "pattern": "^-\\s+\\[[ xX]\\]\\s+\\S",
+      "flags": "m",
+      "minMatches": 1,
+      "severity": "error",
+      "message": "验收标准缺少可勾选的验证项。",
+      "suggestion": "至少增加一条“- [ ]”验收项，并写清输入、操作和可观察结果。"
+    },
+    {
+      "id": "IR-CORE-USER-CONTEXT",
+      "pattern": "(?:目标用户|用户角色|适用人群|用户场景|用户故事|作为.{0,20}(?:用户|角色))",
+      "flags": "i",
+      "severity": "warning",
+      "message": "IR 没有交代目标用户或使用场景。",
+      "suggestion": "说明谁在什么场景下使用该应用；无需固定采用用户故事格式。"
+    },
+    {
+      "id": "IR-CORE-SCOPE-BOUNDARY",
+      "pattern": "(?:范围外|非目标|不(?:包含|包括|支持)|本期不|暂不|需求边界)",
+      "flags": "i",
+      "severity": "warning",
+      "message": "IR 没有明确本期需求边界。",
+      "suggestion": "列出至少一项范围外能力，避免开发者自行扩张需求。"
+    },
+    {
+      "id": "IR-HARMONY-COMPATIBILITY",
+      "pattern": "(?:(?:HarmonyOS|OpenHarmony|鸿蒙).{0,60}(?:API\\s*\\d+|版本|设备|手机|平板|穿戴|车机)|(?:API\\s*\\d+).{0,60}(?:HarmonyOS|OpenHarmony|鸿蒙))",
+      "flags": "is",
+      "severity": "warning",
+      "message": "IR 没有说明鸿蒙版本或目标设备范围。",
+      "suggestion": "在信息已知时写明 API 基线和目标设备形态；未知时明确记录待决策原因。"
+    }
+  ],
+  "conditionalRequirements": [
+    {
+      "id": "IR-HARMONY-PERMISSION-CONTEXT",
+      "whenAnyOfPatterns": [
+        "定位|地理位置|当前位置|附近地点",
+        "相机|拍照|扫码",
+        "麦克风|录音|语音输入",
+        "相册|图片选择|媒体选择",
+        "通讯录|联系人|日历|通知|蓝牙|健康数据|传感器"
+      ],
+      "requireAnyOfPatterns": ["权限|授权|隐私|拒绝|无需申请"],
+      "flags": "i",
+      "severity": "error",
+      "message": "IR 使用了可能涉及系统授权的能力，但没有说明权限、授权时机或拒绝后的行为。",
+      "suggestion": "说明所需权限、触发授权的用户动作、最小化原则，以及拒绝授权时的降级路径。"
+    },
+    {
+      "id": "IR-HARMONY-NETWORK-FAILURE",
+      "whenAnyOfPatterns": ["网络|HTTP|REST|服务端|远程接口|云服务|账号登录|在线支付|地图服务"],
+      "requireAnyOfPatterns": ["失败|异常|超时|重试|离线|降级|缓存|未配置|不可用"],
+      "flags": "i",
+      "severity": "warning",
+      "message": "IR 包含联网或远程服务能力，但没有说明失败路径。",
+      "suggestion": "补充超时、断网、服务不可用或配置缺失时的用户可见行为。"
+    },
+    {
+      "id": "IR-HARMONY-DATA-LIFECYCLE",
+      "whenAnyOfPatterns": ["持久化|本地保存|本地存储|数据库|Preferences|ArkData|RDB|KV\\s*存储"],
+      "requireAnyOfPatterns": ["字段|数据结构|数据模型|实体|键|Key|约束|清理|生命周期"],
+      "flags": "i",
+      "severity": "warning",
+      "message": "IR 要求保存数据，但没有说明最小数据模型或生命周期。",
+      "suggestion": "说明关键字段、唯一性/有效性约束，以及创建、更新、删除或清理规则。"
+    },
+    {
+      "id": "IR-HARMONY-EXTERNAL-CONFIG",
+      "whenAnyOfPatterns": ["\\bKit\\b|\\bSDK\\b|AGC|API\\s*Key|Client\\s*ID|证书|应用签名|第三方服务"],
+      "requireAnyOfPatterns": ["依赖|配置|前置|未配置|版本|可用条件"],
+      "flags": "i",
+      "severity": "warning",
+      "message": "IR 提到了外部能力或开发服务，但没有说明可用前提。",
+      "suggestion": "写明必要依赖、控制台或签名配置，以及条件不满足时受影响的功能。"
+    }
+  ],
+  "forbiddenPatterns": [
+    {
+      "id": "IR-CONTENT-PLACEHOLDER",
+      "pattern": "\\b(?:TODO|TBD)\\b|待补充|稍后补充",
+      "flags": "m",
+      "severity": "error",
+      "message": "IR 中仍包含没有解释原因的占位内容。",
+      "suggestion": "补全内容；确实未知时，记录未知原因、负责人或决策触发条件。"
+    }
+  ],
+  "idDeclarationPatterns": [
+    {
+      "id": "IR-ID-DUPLICATE",
+      "pattern": "(?:^|\\s)(?:ID|需求ID)\\s*[:：]\\s*([A-Za-z][A-Za-z0-9_-]*-\\d+)",
+      "flags": "gim",
+      "captureGroup": 1,
+      "severity": "error",
+      "message": "多个 IR 文件声明了重复的需求 ID。"
+    }
+  ]
+}

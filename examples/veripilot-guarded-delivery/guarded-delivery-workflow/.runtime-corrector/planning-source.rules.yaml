@@ -1,0 +1,75 @@
+version: 1
+
+rules:
+  - id: PLANNING-SOURCE-GOAL
+    type: require-heading
+    heading: 文档目标
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-INDEX
+    type: require-heading
+    heading: 来源索引
+    level: 2
+    severity: error
+    suggestion: 逐份记录六阶段文件路径、SHA-256 和权威类型。
+
+  - id: PLANNING-SOURCE-INTENT
+    type: require-heading
+    heading: 功能意图与范围
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-CONSTRAINTS
+    type: require-heading
+    heading: 约束与非目标
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-ACCEPTANCE
+    type: require-heading
+    heading: 验收与证据
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-CODE
+    type: require-heading
+    heading: 代码事实
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-MILESTONE-PROJECTION
+    type: require-heading
+    heading: 里程碑投影约束
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-RISKS
+    type: require-heading
+    heading: 风险与开放问题
+    level: 2
+    severity: error
+
+  - id: PLANNING-SOURCE-SNAPSHOTS
+    type: require-heading
+    heading: 原文快照
+    level: 2
+    severity: error
+    suggestion: 按来源索引顺序嵌入六份完整原文，不得只给摘要或路径。
+
+  - id: PLANNING-SOURCE-SNAPSHOT-ENCODING
+    type: require-text
+    text: snapshot-encoding=indent4-v1
+    severity: error
+    suggestion: 使用可逆的四空格行前缀编码，并记录换行格式、末尾换行状态、字节数和 SHA-256。
+
+  - id: PLANNING-SOURCE-NO-PLACEHOLDERS
+    type: forbid-text
+    values:
+      - "{{"
+      - "}}"
+      - TODO
+      - TBD
+      - 待补充
+    caseSensitive: false
+    severity: error

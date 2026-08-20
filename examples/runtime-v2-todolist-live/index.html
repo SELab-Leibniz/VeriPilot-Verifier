@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TodoList</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>待办清单</h1>
+
+      <!-- R01 / R07: labelled input, keyboard-operable (Enter submits) -->
+      <form id="new-todo-form" class="new-todo" autocomplete="off">
+        <label for="new-todo" class="sr-only">新增待办标题</label>
+        <input
+          id="new-todo"
+          name="new-todo"
+          type="text"
+          placeholder="输入待办标题，按回车新增"
+          aria-label="待办标题"
+        />
+        <button type="submit" aria-label="新增待办">新增</button>
+      </form>
+
+      <!-- R06 / R07: filter group -->
+      <nav class="filters" aria-label="视图筛选">
+        <button type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" data-filter="active" aria-pressed="false">进行中</button>
+        <button type="button" data-filter="completed" aria-pressed="false">已完成</button>
+      </nav>
+
+      <!-- R06: counts consistent with data -->
+      <p class="counts" id="counts" aria-live="polite" aria-atomic="true"></p>
+
+      <!-- R07: list; completion state expressed via text + checkbox, not color alone -->
+      <ul id="todo-list" class="todo-list" aria-label="待办列表"></ul>
+
+      <p id="empty-hint" class="empty-hint" hidden>当前视图没有待办。</p>
+    </main>
+
+    <template id="todo-item-template">
+      <li class="todo-item">
+        <input type="checkbox" class="todo-toggle" />
+        <span class="todo-title" tabindex="0"></span>
+        <span class="todo-state" aria-hidden="true"></span>
+        <button type="button" class="todo-edit">编辑</button>
+        <button type="button" class="todo-delete">删除</button>
+      </li>
+    </template>
+
+    <script type="module" src="src/app.mjs"></script>
+  </body>
+</html>

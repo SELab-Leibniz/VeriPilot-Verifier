@@ -1,0 +1,1554 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Runtime Corrector 客户指南：理解写后纠偏、证据链、安全候选 Diff、多变更隔离与项目配置。">
+  <title>Runtime Corrector：让产物在生成过程中持续对齐</title>
+  <style>
+    :root {
+      --ink: #14212b;
+      --muted: #5c6b73;
+      --paper: #f5f1e9;
+      --paper-2: #ebe4d8;
+      --surface: rgba(255, 255, 255, .76);
+      --surface-solid: #fffdf8;
+      --navy: #102a36;
+      --navy-2: #183f4e;
+      --cyan: #1fa7a5;
+      --cyan-soft: #dff3ef;
+      --orange: #eb6a3a;
+      --orange-soft: #fde8dc;
+      --amber: #c58b1b;
+      --amber-soft: #fbf0cf;
+      --red: #c74444;
+      --red-soft: #f8dfdc;
+      --green: #287d5c;
+      --green-soft: #dff0e5;
+      --line: rgba(20, 33, 43, .13);
+      --shadow: 0 24px 70px rgba(16, 42, 54, .12);
+      --radius: 22px;
+      --content: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(31, 167, 165, .10), transparent 28rem),
+        radial-gradient(circle at 92% 18%, rgba(235, 106, 58, .09), transparent 28rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    ::selection { color: white; background: var(--orange); }
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 8px;
+      left: 8px;
+      padding: .65rem 1rem;
+      color: white;
+      background: var(--navy);
+      border-radius: 10px;
+      transform: translateY(-150%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .reading-progress {
+      position: fixed;
+      z-index: 90;
+      inset: 0 0 auto;
+      height: 4px;
+      background: rgba(255, 255, 255, .18);
+    }
+    .reading-progress > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--orange));
+      transition: width .1s linear;
+    }
+
+    .topbar {
+      position: sticky;
+      z-index: 80;
+      top: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(16, 42, 54, .93);
+      backdrop-filter: blur(16px);
+    }
+    .topbar-inner {
+      max-width: var(--content);
+      min-height: 68px;
+      margin: auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: white;
+      font-weight: 780;
+      letter-spacing: -.02em;
+      text-decoration: none;
+    }
+    .brand-mark {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255, 255, 255, .35);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(31, 167, 165, .34), rgba(235, 106, 58, .36));
+      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .08);
+    }
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+    }
+    .brand-mark::before { width: 7px; height: 7px; top: 8px; left: 8px; }
+    .brand-mark::after { width: 9px; height: 9px; right: 7px; bottom: 7px; }
+    .top-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255, 255, 255, .7);
+      font-size: .82rem;
+    }
+    .top-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--orange); }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      color: white;
+      background:
+        linear-gradient(112deg, rgba(16, 42, 54, .99), rgba(16, 42, 54, .92)),
+        var(--navy);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 620px;
+      height: 620px;
+      right: -260px;
+      top: -340px;
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 74px rgba(31, 167, 165, .045),
+        0 0 0 148px rgba(235, 106, 58, .035);
+    }
+    .hero-grid {
+      position: relative;
+      max-width: var(--content);
+      margin: auto;
+      padding: 88px 24px 84px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(340px, .88fr);
+      gap: 72px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 18px;
+      color: #8fe1d5;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 34px; height: 2px; background: currentColor; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 760px;
+      margin-bottom: 24px;
+      font-family: Georgia, "Noto Serif SC", "Songti SC", serif;
+      font-size: clamp(2.65rem, 5.3vw, 5rem);
+      line-height: 1.04;
+      letter-spacing: -.05em;
+      font-weight: 700;
+    }
+    h1 em { color: #ff9b6a; font-style: normal; }
+    .hero-lead {
+      max-width: 690px;
+      margin-bottom: 30px;
+      color: rgba(255, 255, 255, .76);
+      font-size: clamp(1.04rem, 1.8vw, 1.24rem);
+      line-height: 1.8;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: .75rem 1.15rem;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 760;
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button.primary {
+      color: white;
+      background: var(--orange);
+      box-shadow: 0 12px 30px rgba(235, 106, 58, .28);
+    }
+    .button.ghost {
+      color: white;
+      border-color: rgba(255, 255, 255, .28);
+      background: rgba(255, 255, 255, .06);
+    }
+    .button.small { min-height: 38px; padding: .48rem .8rem; font-size: .85rem; }
+
+    .signal-card {
+      position: relative;
+      min-height: 440px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .07);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .22);
+      backdrop-filter: blur(14px);
+    }
+    .signal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      color: rgba(255, 255, 255, .62);
+      font-size: .75rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .signal-lights { display: flex; gap: 6px; }
+    .signal-lights i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .22); }
+    .signal-lights i:first-child { background: var(--orange); }
+    .signal-stage {
+      position: relative;
+      min-height: 350px;
+      padding: 24px;
+      overflow: hidden;
+      border-radius: 20px;
+      color: var(--ink);
+      background: var(--surface-solid);
+    }
+    .mini-file {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 8px 24px rgba(16, 42, 54, .08);
+    }
+    .mini-file + .mini-file { margin-top: 14px; }
+    .mini-file strong { display: block; margin-bottom: 5px; font-size: .82rem; }
+    .mini-file p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.55; }
+    .mini-file.source { width: 83%; border-left: 4px solid var(--cyan); }
+    .mini-file.target { width: 89%; margin-left: auto; border-left: 4px solid var(--orange); }
+    .signal-arrow {
+      height: 38px;
+      margin: 4px 0 -4px 43%;
+      border-left: 2px dashed rgba(20, 33, 43, .25);
+    }
+    .signal-diagnosis {
+      margin-top: 20px;
+      padding: 15px 16px;
+      border: 1px solid rgba(199, 68, 68, .25);
+      border-radius: 14px;
+      background: var(--red-soft);
+      animation: breathe 2.8s ease-in-out infinite;
+    }
+    .signal-diagnosis span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--red);
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .signal-diagnosis p { margin: 5px 0 0; font-size: .8rem; line-height: 1.55; }
+    @keyframes breathe { 50% { box-shadow: 0 0 0 7px rgba(199, 68, 68, .06); } }
+
+    .trust-strip {
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, .78);
+      backdrop-filter: blur(10px);
+    }
+    .trust-grid {
+      max-width: var(--content);
+      margin: auto;
+      padding: 28px 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      border-inline: 1px solid var(--line);
+      background: var(--line);
+    }
+    .trust-item { min-height: 92px; padding: 18px 22px; background: var(--surface-solid); }
+    .trust-item b { display: block; margin-bottom: 4px; color: var(--navy); font-size: .95rem; }
+    .trust-item span { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+
+    .page-shell {
+      max-width: var(--content);
+      margin: 0 auto;
+      padding: 66px 24px 120px;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 54px;
+      align-items: start;
+    }
+    .side-nav {
+      position: sticky;
+      top: 98px;
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 253, 248, .72);
+      backdrop-filter: blur(12px);
+    }
+    .side-nav-title {
+      padding: 9px 10px 12px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .side-nav a {
+      display: grid;
+      grid-template-columns: 25px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 9px 10px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: .79rem;
+      line-height: 1.4;
+      text-decoration: none;
+      transition: background .18s ease, color .18s ease;
+    }
+    .side-nav a span { color: var(--orange); font-variant-numeric: tabular-nums; font-weight: 800; }
+    .side-nav a:hover,
+    .side-nav a.active { color: var(--navy); background: var(--orange-soft); }
+    .content { min-width: 0; }
+
+    .promise {
+      margin-bottom: 74px;
+      padding: clamp(28px, 5vw, 52px);
+      border: 1px solid rgba(31, 167, 165, .24);
+      border-radius: 28px;
+      background:
+        linear-gradient(135deg, rgba(223, 243, 239, .92), rgba(255, 253, 248, .92));
+      box-shadow: var(--shadow);
+    }
+    .promise-label {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: .3rem .62rem;
+      border-radius: 99px;
+      color: var(--green);
+      background: rgba(255, 255, 255, .78);
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .1em;
+    }
+    .promise blockquote {
+      margin: 0;
+      max-width: 820px;
+      color: var(--navy);
+      font-family: Georgia, "Noto Serif SC", "Songti SC", serif;
+      font-size: clamp(1.45rem, 3vw, 2.35rem);
+      line-height: 1.45;
+      letter-spacing: -.025em;
+    }
+    .promise p { max-width: 760px; margin: 22px 0 0; color: var(--muted); }
+
+    .part {
+      margin: 0 0 110px;
+    }
+    .part-header {
+      position: relative;
+      margin-bottom: 28px;
+      padding: 0 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .part-number {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--orange);
+      font-size: .75rem;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .part h2 {
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Noto Serif SC", "Songti SC", serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.18;
+      letter-spacing: -.035em;
+    }
+    .part-intro { max-width: 760px; margin: 15px 0 0; color: var(--muted); font-size: 1.03rem; }
+    .section-card {
+      position: relative;
+      margin: 18px 0;
+      padding: 28px 30px 28px 82px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 9px 32px rgba(16, 42, 54, .045);
+      scroll-margin-top: 90px;
+    }
+    .section-card:hover { border-color: rgba(31, 167, 165, .36); }
+    .section-index {
+      position: absolute;
+      left: 24px;
+      top: 27px;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(235, 106, 58, .22);
+      border-radius: 12px;
+      color: var(--orange);
+      background: var(--orange-soft);
+      font-size: .78rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+    .section-card h3 {
+      margin-bottom: 11px;
+      color: var(--navy);
+      font-size: 1.18rem;
+      line-height: 1.45;
+      letter-spacing: -.012em;
+    }
+    .section-card p { margin-bottom: 10px; color: #46565f; }
+    .section-card p:last-child { margin-bottom: 0; }
+    .customer-answer {
+      margin-top: 13px;
+      padding: 12px 15px;
+      border-left: 3px solid var(--cyan);
+      border-radius: 0 12px 12px 0;
+      color: var(--navy) !important;
+      background: var(--cyan-soft);
+      font-size: .9rem;
+    }
+    .micro-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 15px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .micro-list li {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .62);
+      font-size: .84rem;
+      line-height: 1.55;
+    }
+    .micro-list strong { color: var(--navy); }
+    code, .code-pill {
+      padding: .12em .38em;
+      border: 1px solid rgba(16, 42, 54, .1);
+      border-radius: 6px;
+      color: #174c5a;
+      background: #edf3f1;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: .88em;
+    }
+    pre {
+      margin: 18px 0 0;
+      padding: 18px 20px;
+      overflow: auto;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 16px;
+      color: #d8f4ee;
+      background: var(--navy);
+      line-height: 1.6;
+    }
+    pre code { padding: 0; border: 0; color: inherit; background: none; font-size: .78rem; }
+    .callout {
+      margin: 22px 0;
+      padding: 20px 22px;
+      border-radius: 16px;
+      color: var(--navy);
+      background: var(--amber-soft);
+    }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .status-card {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .7);
+    }
+    .status-card b { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 6px; color: var(--navy); }
+    .status-card b::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status-card p { margin: 0; font-size: .78rem; line-height: 1.5; }
+    .status-card.passed b { color: var(--green); }
+    .status-card.warning b { color: var(--amber); }
+    .status-card.pending b { color: #53749d; }
+    .status-card.failed b { color: var(--red); }
+    .evidence-anatomy {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid rgba(199, 68, 68, .2);
+      border-radius: 16px;
+      background: var(--red-soft);
+    }
+    .evidence-anatomy p { margin: 0; color: var(--ink); font-family: "SFMono-Regular", Consolas, monospace; font-size: .79rem; }
+    .severity-badge {
+      align-self: start;
+      padding: .25rem .55rem;
+      border-radius: 99px;
+      color: white;
+      background: var(--red);
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .08em;
+    }
+    .code-map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+    .code-link {
+      position: relative;
+      min-height: 150px;
+      padding: 20px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      color: inherit;
+      background: rgba(255, 255, 255, .78);
+      text-decoration: none;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .code-link::after {
+      content: "↗";
+      position: absolute;
+      right: 18px;
+      top: 15px;
+      color: var(--orange);
+      font-size: 1.1rem;
+    }
+    .code-link:hover {
+      transform: translateY(-3px);
+      border-color: rgba(31, 167, 165, .45);
+      box-shadow: 0 14px 28px rgba(16, 42, 54, .09);
+    }
+    .code-link span {
+      display: block;
+      margin-bottom: 8px;
+      padding-right: 24px;
+      color: var(--orange);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .72rem;
+      font-weight: 750;
+    }
+    .code-link strong { display: block; margin-bottom: 6px; color: var(--navy); }
+    .code-link small { display: block; color: var(--muted); line-height: 1.55; }
+    .implementation-note {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px dashed rgba(31, 167, 165, .5);
+      border-radius: 14px;
+      color: var(--muted);
+      background: var(--cyan-soft);
+      font-size: .84rem;
+    }
+    .demo {
+      margin-top: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(16, 42, 54, .16);
+      border-radius: 24px;
+      background: var(--navy);
+      box-shadow: var(--shadow);
+    }
+    .demo-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 18px;
+      overflow-x: auto;
+      border-bottom: 1px solid rgba(255, 255, 255, .1);
+    }
+    .demo-step {
+      flex: 0 0 auto;
+      min-width: 104px;
+      padding: .58rem .74rem;
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 11px;
+      color: rgba(255, 255, 255, .62);
+      background: rgba(255, 255, 255, .05);
+      cursor: pointer;
+      text-align: left;
+      font-size: .75rem;
+      line-height: 1.35;
+    }
+    .demo-step b { display: block; margin-bottom: 3px; color: rgba(255, 255, 255, .88); }
+    .demo-step.active {
+      color: white;
+      border-color: rgba(255, 155, 106, .7);
+      background: rgba(235, 106, 58, .22);
+    }
+    .demo-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1px;
+      background: rgba(255, 255, 255, .09);
+    }
+    .demo-pane {
+      min-height: 310px;
+      padding: 24px;
+      color: rgba(255, 255, 255, .76);
+      background: var(--navy);
+    }
+    .demo-pane h4 {
+      margin: 0 0 14px;
+      color: white;
+      font-size: .82rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .demo-document {
+      min-height: 205px;
+      padding: 18px;
+      border-radius: 14px;
+      color: var(--ink);
+      background: #fffdf8;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .77rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .demo-document .line-add { display: inline; color: var(--green); background: var(--green-soft); }
+    .demo-result {
+      min-height: 205px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .055);
+      font-size: .8rem;
+      line-height: 1.7;
+    }
+    .demo-result .demo-status { display: inline-flex; margin-bottom: 10px; padding: .24rem .55rem; border-radius: 99px; color: white; background: var(--orange); font-weight: 850; }
+    .demo-result p { margin-bottom: 9px; color: inherit; }
+    .demo-result code { color: #9ce3d9; background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .1); }
+    .demo-caption {
+      padding: 16px 20px;
+      color: rgba(255, 255, 255, .6);
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      font-size: .78rem;
+    }
+
+    .footer {
+      color: rgba(255, 255, 255, .8);
+      background: var(--navy);
+    }
+    .footer-inner {
+      max-width: var(--content);
+      margin: auto;
+      padding: 60px 24px;
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 48px;
+    }
+    .footer h2 { margin-bottom: 12px; color: white; font-family: Georgia, serif; font-size: 2rem; }
+    .footer p { max-width: 650px; color: rgba(255, 255, 255, .65); }
+    .footer-links { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .footer-links a { color: #94ded5; text-underline-offset: 4px; }
+
+    .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 940px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 44px; }
+      .signal-card { max-width: 620px; }
+      .trust-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-shell { grid-template-columns: 1fr; }
+      .side-nav { position: static; max-height: none; display: grid; grid-template-columns: repeat(2, 1fr); }
+      .side-nav-title { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .top-meta { display: none; }
+      .hero-grid { padding-top: 60px; padding-bottom: 58px; }
+      .signal-card { min-height: 390px; padding: 14px; }
+      .signal-stage { min-height: 314px; padding: 18px; }
+      .trust-grid, .micro-list, .footer-inner, .status-grid, .code-map, .demo-stage { grid-template-columns: 1fr; }
+      .page-shell { padding-inline: 16px; }
+      .side-nav { grid-template-columns: 1fr; }
+      .section-card { padding: 74px 20px 24px; }
+      .section-index { left: 20px; top: 20px; }
+    }
+    @media print {
+      .topbar, .reading-progress, .side-nav, .hero-actions { display: none; }
+      body { background: white; }
+      .hero { color: var(--ink); background: white; }
+      .hero-grid, .page-shell { display: block; padding: 20px; }
+      .signal-card { break-inside: avoid; }
+      .section-card { break-inside: avoid; background: white; box-shadow: none; }
+      .reveal { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <div class="reading-progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="返回顶部">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Runtime Corrector</span>
+      </a>
+      <div class="top-meta" aria-label="文档概览">
+        <span>客户理解指南</span><span class="dot"></span><span>6 部分</span><span class="dot"></span><span>50 Sections</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Post-write alignment loop</p>
+          <h1>让产物在生成过程中<em>持续对齐</em></h1>
+          <p class="hero-lead">Runtime Corrector 不承诺“自动把所有内容改对”。它在写入之后，用当前磁盘快照独立检查偏差、给出可核验证据，并把安全的候选修改交还给真正负责决策的主 Agent。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#demo">观看一次纠偏闭环 <span aria-hidden="true">↓</span></a>
+            <a class="button ghost" href="#implementation">查看代码证据 <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="signal-card" aria-label="Runtime Corrector 发现上下游偏差示意">
+          <div class="signal-head">
+            <span>Current snapshot</span>
+            <span class="signal-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <div class="signal-stage">
+            <div class="mini-file source">
+              <strong>上游 · requirements.md</strong>
+              <p>“核心流程必须支持完全离线运行。”</p>
+            </div>
+            <div class="signal-arrow" aria-hidden="true"></div>
+            <div class="mini-file target">
+              <strong>当前写入 · solution.md</strong>
+              <p>描述了在线同步流程，但没有说明离线行为。</p>
+            </div>
+            <div class="signal-diagnosis">
+              <span>● deviation found</span>
+              <p>下游遗漏了上游的“离线运行”约束。证据已定位；候选 Diff 等待主 Agent 决定。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="四项信任边界">
+      <div class="trust-grid">
+        <div class="trust-item"><b>写后检查</b><span>不在用户输入阶段持续注入指令</span></div>
+        <div class="trust-item"><b>项目自定义</b><span>Stage、规则和 Reviewer 均由项目声明</span></div>
+        <div class="trust-item"><b>证据优先</b><span>诊断包含规则、文件、位置与偏差事实</span></div>
+        <div class="trust-item"><b>建议不越权</b><span>候选补丁经过校验，但永不自动应用</span></div>
+      </div>
+    </section>
+
+    <div class="page-shell">
+      <nav class="side-nav" aria-label="六部分目录">
+        <div class="side-nav-title">阅读路径</div>
+        <a href="#part-1"><span>01</span>偏移为何发生</a>
+        <a href="#part-2"><span>02</span>理解工作对象</a>
+        <a href="#part-3"><span>03</span>自动纠偏如何运行</a>
+        <a href="#part-4"><span>04</span>多流程如何防串线</a>
+        <a href="#part-5"><span>05</span>凭什么信任结果</a>
+        <a href="#part-6"><span>06</span>如何配置与使用</a>
+      </nav>
+
+      <article class="content" id="main">
+        <section class="promise reveal" aria-labelledby="promise-title">
+          <span class="promise-label" id="promise-title">一句话理解</span>
+          <blockquote>它不是替你做决定的“自动修理工”，而是每次写入后的独立质检回路。</blockquote>
+          <p>客户真正需要的不是一个声称永不犯错的 Agent，而是一套能及时发现偏移、解释为什么、保留检查记录，并把修改权留在正确角色手中的机制。</p>
+        </section>
+
+        <!-- CHECKPOINT: PART_1 COMPLETE -->
+        <section class="part" id="part-1" aria-labelledby="part-1-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 01 · Why drift happens</span>
+            <h2 id="part-1-title">为什么运行过程中仍然需要纠偏</h2>
+            <p class="part-intro">生成不是一次性动作，而是一串不断改变上下文的写入。越长的链路，越需要在每个关键落点重新确认“我们写下的，仍然是最初答应交付的吗？”</p>
+          </header>
+
+          <section class="section-card reveal" id="section-01">
+            <span class="section-index">01</span>
+            <h3>产物为什么会在生成过程中逐步偏离</h3>
+            <p>目标在任务开始时通常很清楚，但每一次补充、重写和跨文件传递都会引入新的局部上下文。Agent 可能为了完成当前段落而弱化早先约束，也可能把一个合理推断逐渐写成“已确认事实”。这种偏移通常不是突然发生，而是像航线误差一样逐轮累积。</p>
+            <p>常见表现包括：遗漏必须保留的能力、把“可选”写成“必需”、新增没有上游依据的范围，或修改一个文件后忘记同步另一个交付物。单看当前段落往往都说得通，放回完整链路才会显出问题。</p>
+            <p class="customer-answer"><strong>客户关心的答案：</strong>Runtime Corrector 关注的不是 Agent 有没有完成动作，而是关键约束在连续生成中有没有被保真地传下去。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-02">
+            <span class="section-index">02</span>
+            <h3>“已经生成成功”为什么不等于“内容正确”</h3>
+            <p>文件写入成功，只能证明路径存在、写入动作完成；Markdown 能渲染、JSON 能解析，也只能证明形式合法。业务正确性还包括：必需信息是否齐全、范围有没有被改变、上下游决策是否一致、关键标识是否可追溯。</p>
+            <ul class="micro-list">
+              <li><strong>写入成功</strong><br>文件落盘，没有 I/O 错误。</li>
+              <li><strong>结构正确</strong><br>格式、字段与 Schema 合法。</li>
+              <li><strong>语义正确</strong><br>内容满足本阶段业务标准。</li>
+              <li><strong>链路正确</strong><br>没有遗漏或扭曲上游事实。</li>
+            </ul>
+            <p class="customer-answer">Runtime Corrector 把“成功”的判断从一个写入事件，提升为可配置的内容与关系检查。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-03">
+            <span class="section-index">03</span>
+            <h3>为什么不能只依赖生成者自我检查</h3>
+            <p>生成者自检当然有价值，但它仍然带着刚才做决定时的同一组假设。若原推理已经误解了“离线运行”，自检很可能继续沿用这个误解；若会话中的文件副本已经过期，自检甚至可能审查一个已经不在磁盘上的版本。</p>
+            <p>Runtime Corrector 在写入完成后，重新从磁盘读取当前文件，并在需要语义判断时使用隔离会话。它不是假设隔离审查一定正确，而是通过“独立上下文 + 具体证据”降低原有推理自我强化的风险。</p>
+            <p class="customer-answer"><strong>信任来源：</strong>不是换一个更自信的结论，而是换一个检查视角，并要求结论可以被用户复核。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-04">
+            <span class="section-index">04</span>
+            <h3>Runtime Corrector 是什么</h3>
+            <p>它是一个面向产物的写后诊断与反馈插件。Claude Code 的 <code>Write</code> 或 <code>Edit</code> 命中项目已启用的受保护产物后，插件编译项目策略、读取当前快照、执行确定性规则，并在条件允许时发起隔离语义审查。</p>
+            <p>最终返回的是状态、诊断、证据和可选候选 Diff。插件不负责替业务方选择方案，不擅自补充尚未决定的语义值，也不会自动把补丁应用到文件。</p>
+            <p class="customer-answer"><strong>最准确的角色定义：</strong>它是“独立质检与纠偏建议回路”，不是第二个拥有最终编辑权的主 Agent。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-05">
+            <span class="section-index">05</span>
+            <h3>Runtime Corrector 适合哪些场景</h3>
+            <p>它最适合有明确产物边界、可描述质量标准，并且需要经过多次写入或多阶段交付的工作。产物可以是 Markdown、JSON 或纯文本，也可以是同一阶段内必须共同成立的一组文件。</p>
+            <ul class="micro-list">
+              <li><strong>多阶段文档</strong><br>需求、设计、测试逐级传递约束。</li>
+              <li><strong>结构化交付</strong><br>字段、编号、引用和 Schema 必须稳定。</li>
+              <li><strong>上下游链路</strong><br>下游不得遗漏、矛盾或扩张上游。</li>
+              <li><strong>并行变更</strong><br>项目同时保留多个 change，需要严格隔离。</li>
+            </ul>
+            <p>它不适合“项目里的所有文件都自动判断好坏”这种无边界期待。保护范围与检查标准必须先由项目清楚声明。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-06">
+            <span class="section-index">06</span>
+            <h3>什么才算一次纠偏成功</h3>
+            <p>成功不等于插件自动改完文件。一次可信的纠偏应当满足四件事：偏差被准确描述；结论附有足以复核的文件与内容证据；建议修改只触及必要范围；主 Agent 修订后，新一轮检查不再报告已经解决的问题。</p>
+            <p>如果问题涉及新业务决策，例如“离线时究竟缓存多久”，安全结果可能是诊断明确、候选 Diff 为空，并提示转交用户决定。这不是失败，而是插件守住了权限边界。</p>
+            <p class="customer-answer"><strong>成功标准：</strong>发现得准、解释得清、建议得克制、复查能闭环。</p>
+          </section>
+        </section>
+
+        <!-- CHECKPOINT: PART_2 COMPLETE -->
+        <section class="part" id="part-2" aria-labelledby="part-2-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 02 · The review model</span>
+            <h2 id="part-2-title">先理解 Runtime Corrector 的工作对象</h2>
+            <p class="part-intro">插件不预设你的业务流程。项目通过几个简单但边界清楚的概念，告诉它“检查谁、和谁比较、哪些文件属于同一次变更”。</p>
+          </header>
+
+          <section class="section-card reveal" id="section-07">
+            <span class="section-index">07</span>
+            <h3>什么是受保护产物</h3>
+            <p>受保护产物是项目在 <code>.runtime-corrector/config.yaml</code> 中显式声明的 artifact，并且其路径命中已启用 Stage 的 <code>patterns</code> 或 <code>pathTemplates</code>。它不是“仓库里碰巧存在的文件”，也不是安装插件后自动扩张到全项目的隐形范围。</p>
+            <p>每个 artifact 还可以声明格式、规则文件、Reviewer、相关文件、是否允许成为候选 Diff 的目标，以及持久化结果时使用的输出标识。</p>
+            <p class="customer-answer"><strong>可控性：</strong>文件是否受保护，能够从项目配置和实际路径得到确定答案。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-08">
+            <span class="section-index">08</span>
+            <h3>什么是 Stage</h3>
+            <p>Stage 是一个具有特定产物、格式、规则和审查标准的业务阶段，例如“需求报告”或“测试设计”。这些名称来自项目自己的 artifact 定义；核心插件的 Stage 目录为空，不内置 IR、Planning、PRD 等业务假设。</p>
+            <p>同一个通用运行时因此可以服务完全不同的流程。新增 Stage 的主要工作是补充项目 YAML、规则、Reviewer 和可选 Schema，而不是在核心代码里复制一套分支。</p>
+            <p class="customer-answer"><strong>客户拥有标准：</strong>Stage 是项目语言，不是插件强加的产品术语。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-09">
+            <span class="section-index">09</span>
+            <h3>什么是节点检查</h3>
+            <p>节点检查聚焦当前 Stage 自身：文件是否完整、结构是否合法、内容是否符合该阶段标准。确定性规则可以检查必填章节、字段类型、编号和 Schema；节点 Reviewer 则判断清晰度、可执行性、是否存在内部矛盾等语义问题。</p>
+            <p>节点检查不要求一定存在上下游。一个独立设计文档也可以仅凭自己的规则接受保护。</p>
+            <p class="customer-answer"><strong>要回答的问题：</strong>“只看这个阶段现在的产物，它本身能不能作为可信交付？”</p>
+          </section>
+
+          <section class="section-card reveal" id="section-10">
+            <span class="section-index">10</span>
+            <h3>什么是上下游边检查</h3>
+            <p>Workflow 中一条 <code>from → to</code> 的有向边，表示目标节点需要以来源节点为事实依据。边检查默认关注五类风险：违背、遗漏、无依据扩张、决策失真和追溯标识断裂；项目还可以为这条边增加自己的 Reviewer 标准。</p>
+            <p>例如，需求说明“必须离线运行”，方案文档没有提及离线行为。两个文件单独看都可能结构完整，但边检查会把这种跨文档丢失识别出来。</p>
+            <p class="customer-answer"><strong>要回答的问题：</strong>“这个下游交付，是否忠实承接了它有责任承接的上游事实？”</p>
+          </section>
+
+          <section class="section-card reveal" id="section-11">
+            <span class="section-index">11</span>
+            <h3>什么是 Bundle</h3>
+            <p>Bundle 是一个节点在当前实例中需要作为整体读取的一组文件。比如“测试设计”可能由用例正文和机器可读清单共同组成；修改任意成员，都可能改变整组产物是否完整、引用是否一致。</p>
+            <p>因此，触发文件只是本轮检查的入口，不一定是唯一被检查的内容。插件会重新收集该节点的匹配文件；缺少预期成员时，与缺失成员相关的判断保持 <code>pending</code>，已有内容仍执行可完成的检查。</p>
+            <p class="customer-answer"><strong>为什么重要：</strong>质量属于交付整体，而不只属于最后一次被编辑的那一个文件。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-12">
+            <span class="section-index">12</span>
+            <h3>什么是 Workflow</h3>
+            <p>Workflow 是项目定义的有向无环图：artifact 是节点，审查关系是边。配置编译时会拒绝未知节点、重复边、自连接和环，避免运行时在含混的流程关系中猜测。</p>
+            <p>检查当前节点时，只收集它配置的直接入边来源，而不是把整个仓库或整条历史链路都塞给 Reviewer。这样既减少无关信息，也让“这条诊断依据哪一段关系”更容易解释。</p>
+            <p class="customer-answer"><strong>边界清楚：</strong>Workflow 告诉插件应当比较什么，也同时限制它不应当比较什么。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-13">
+            <span class="section-index">13</span>
+            <h3>什么是 Change 实例</h3>
+            <p>Change 实例是同一项目中某一次需求或变更的稳定身份。例如路径 <code>spec/2026-07-29-模块设计报告-flower-eshop.md</code> 可以通过 Path Template 提取 <code>changeName=flower-eshop</code>。不同 Stage 复用同一 key，插件才能把它们归入同一条链路。</p>
+            <p>Change 实例解决的不是文件命名美观，而是并行工作时的事实隔离。没有稳定实例标识，“最新的需求文档”很可能属于另一个任务。</p>
+            <p class="customer-answer"><strong>隔离原则：</strong>关系来自显式、稳定的业务标识，不来自修改时间、目录顺序或文件名猜测。</p>
+          </section>
+        </section>
+        <!-- CHECKPOINT: PART_3 COMPLETE -->
+        <section class="part" id="part-3" aria-labelledby="part-3-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 03 · The correction loop</span>
+            <h2 id="part-3-title">一次自动纠偏是如何运行的</h2>
+            <p class="part-intro">从写入到反馈，Runtime Corrector 把一次检查拆成可解释的阶段。任何一层无法安全完成时，都有明确状态，而不是静默跳过或假装已经验证。</p>
+          </header>
+
+          <section class="section-card reveal" id="section-14">
+            <span class="section-index">14</span>
+            <h3>纠偏在什么时候被触发</h3>
+            <p>插件注册的是 Claude Code <code>PostToolUse</code> Hook，匹配 <code>Write|Edit</code>。也就是说，文件写入或编辑已经结束后，Runtime Corrector 才接到触发信息并开始工作。</p>
+            <p>它不会在用户每次输入时持续添加工作流提示，也不会在文件尚未落盘时审查一份想象中的结果。失败反馈中只有在需要进一步恢复信息时，才会按条件补充 <code>spec</code> 和 <code>help</code> 的命令导航。</p>
+            <p class="customer-answer"><strong>体验边界：</strong>正常生成上下文保持干净；质量回路发生在实际写入之后。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-15">
+            <span class="section-index">15</span>
+            <h3>系统如何判断一个文件是否需要检查</h3>
+            <p>运行时先加载项目配置并编译统一的 RuntimePlan，再把写入路径与当前已启用 Stage 的 artifact matcher 比较。artifact 必须选择 <code>patterns</code> 或 <code>pathTemplates</code> 之一；没有命中的路径返回 <code>unmatched-artifact</code>，检查到此结束。</p>
+            <p>Stage 开关先过滤保护策略，路径匹配再确认具体文件。这意味着“仓库中定义过”不等于“当前启用”，“扩展名相同”也不等于“自动受保护”。</p>
+            <p class="customer-answer"><strong>可预测性：</strong>客户可以通过 <code>stages</code>、<code>explain</code> 和路径模板，在写入前知道检查是否会发生。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-16">
+            <span class="section-index">16</span>
+            <h3>系统检查的是哪一个版本</h3>
+            <p>Hook 只提供触发路径，检查器随后从项目目录重新收集并读取文件。诊断、哈希、候选 Diff 和持久化记录都建立在这次写入完成后的磁盘内容上，而不是会话早先读过的文本副本。</p>
+            <p>候选补丁还记录基线内容的 SHA-256；即使检查后文件再次变化，后续应用前的基线与 <code>git apply --check</code> 校验会阻止把旧建议生硬套到新内容上。</p>
+            <p class="customer-answer"><strong>事实基线：</strong>当前磁盘快照是内容依据；会话记忆不是。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-17">
+            <span class="section-index">17</span>
+            <h3>系统如何收集相关上下游文件</h3>
+            <p>检查器根据当前 artifact、Bundle 路径、Workflow 的直接入边与项目声明的 <code>relatedPatterns</code> 建立路径计划。启用 correlation 时，候选文件还必须与触发文件提取出的 Change key 相同；不属于本实例的文件会被排除。</p>
+            <p>收集数量受 <code>limits.maxRelatedFiles</code> 等限制约束，配置目录与结果目录也会被保护性排除。最后形成的 artifact 列表写入本轮 metadata，便于用户知道审查实际看了哪些文件。</p>
+            <p class="customer-answer"><strong>审查范围可解释：</strong>不是“把仓库全喂进去”，而是按节点、边和实例构造本轮快照。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-18">
+            <span class="section-index">18</span>
+            <h3>第一层检查：确定性硬规则</h3>
+            <p>确定性检查用于回答能够机械判定的问题：必填章节是否存在、字段是否符合 JSON Schema、编号是否唯一、引用能否解析、标题层级是否跳跃，以及项目规则文件声明的其他结构约束。</p>
+            <p>同一输入应当得到同一结果，因此它适合成为稳定门槛。错误会带上规则 ID、严重级别、文件、可用时的行号、证据和建议，而不是一句笼统的“格式不对”。</p>
+            <p class="customer-answer"><strong>价值：</strong>把可复现的问题交给规则引擎，减少语义模型在简单事实上的漂移。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-19">
+            <span class="section-index">19</span>
+            <h3>第二层检查：隔离语义审查</h3>
+            <p>当节点或入边显式设置 <code>review.enabled: true</code>，自动写后检查会基于原会话创建一次性 fork。隔离会话只允许读取与检索，不具备写入目标文件的工具；它接收本轮请求、规则结果、Reviewer、规范和 Workflow 快照，并返回受 JSON Schema 约束的 findings 与 edits。</p>
+            <p>fork 使用独立执行环境并设置递归保护，结束后不持久化会话。若 Hook 输入没有可用的 <code>session_id</code>、无法 fork 或超时，结果会明确记录语义审查失败，而不会把“没审”包装成“通过”。</p>
+            <p class="customer-answer"><strong>独立性不是口号：</strong>审查上下文、可用工具、返回格式和生命周期都受代码限制。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-20">
+            <span class="section-index">20</span>
+            <h3>语义审查会检查什么</h3>
+            <p>节点 Reviewer 关注当前产物是否清晰、完整、可执行、内部一致；边 Reviewer 则比较来源与目标，寻找遗漏、矛盾、无依据扩张、范围变化、决策失真和追溯断裂。项目可以把领域特有标准写入对应的 <code>*.reviewer.md</code>。</p>
+            <p>每条 finding 必须引用当前目标产物中的合法路径和具体 evidence。上游可以作为证据来源，但诊断落点与修改目标受当前节点的可编辑列表约束。</p>
+            <p class="customer-answer"><strong>它审的是“当前产物应该承担的责任”：</strong>不是泛泛评价文笔，也不是重新替用户设计业务。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-21">
+            <span class="section-index">21</span>
+            <h3>为什么硬规则和语义审查必须分开</h3>
+            <p>若把“是否有必填字段”交给语义模型，结果可能不稳定；若把“是否忠实承接离线要求”硬编码成字符串搜索，又会错过同义表达和上下文。两层检查分别承担自己擅长的判断，最后再合并成同一轮结果。</p>
+            <ul class="micro-list">
+              <li><strong>硬规则</strong><br>稳定、快速、可复现，适合结构事实。</li>
+              <li><strong>语义审查</strong><br>理解语境与关系，适合内容责任。</li>
+              <li><strong>统一诊断</strong><br>同一状态模型，同一证据表达。</li>
+              <li><strong>统一落盘</strong><br>诊断与候选 Diff 保持同轮身份。</li>
+            </ul>
+          </section>
+
+          <section class="section-card reveal" id="section-22">
+            <span class="section-index">22</span>
+            <h3>上游文件不完整时如何处理</h3>
+            <p>如果当前节点有一条已启用入边，但同一 Change 实例中尚未找到来源文件，插件会加入 <code>WORKFLOW-EDGE-SOURCE-MISSING</code> 的 <code>pending</code> 诊断。它不会因为流程自然尚未完成就判定业务错误。</p>
+            <p>与此同时，当前节点自己的硬规则、节点语义审查，以及其他已经就绪的入边仍然可以执行。只有依赖缺失来源的判断保持待完成；当上游补齐后，后续写入会自动升级为完整跨文件检查。</p>
+            <p class="customer-answer"><strong>区别很重要：</strong><code>pending</code> 表示证据尚未齐备，不等于违规，也不等于已通过。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-23">
+            <span class="section-index">23</span>
+            <h3>系统如何形成候选修改</h3>
+            <p>确定性规则若能给出安全修复，或语义 Reviewer 能把问题表达为最小、明确的行级操作，结果处理器才会尝试生成候选 Diff。语义 edit 必须指出目标文件、行号、期望原文和替换内容，且每轮操作数量受上限约束。</p>
+            <p>如果修复需要编造尚未决定的值、存在多种业务方案，或无法精确命中当前原文，正确输出就是诊断存在而 Diff 为空。插件明确把“没有安全补丁”与“没有问题”区分开。</p>
+            <p class="customer-answer"><strong>候选的含义：</strong>它是可供主 Agent 审核的最小机械改写，不是自动生效的业务答案。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-24">
+            <span class="section-index">24</span>
+            <h3>候选 Diff 如何保证基本安全</h3>
+            <p>生成前，行级操作会检查行号有效且 <code>expect</code> 与当前原文完全匹配；目标路径必须在项目内，并且在 Workflow 场景下必须属于当前节点的 <code>editableArtifactFiles</code> 白名单。</p>
+            <p>生成后，补丁头部与声明路径要一致，代码会解析真实目标并运行 <code>git apply --check</code>。候选记录还包含基线与建议内容的哈希。任一验证失败都会阻止这份 Diff 成为可交付建议。</p>
+            <p class="customer-answer"><strong>安全是多道门：</strong>原文命中、目标白名单、补丁目标解析、可应用性检查，缺一不可。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-25">
+            <span class="section-index">25</span>
+            <h3>为什么插件不会自动应用补丁</h3>
+            <p>即使补丁在技术上可应用，也不代表它在业务上应该应用。主 Agent 掌握用户最新要求、正在进行的其他修改和更完整的任务意图；Runtime Corrector 只掌握为审查构造的受限快照。</p>
+            <p>自动应用还可能掩盖真正需要用户选择的问题。因此代码与反馈都把候选补丁标记为 diagnostic only，并明确要求应用前再次确认基线和 <code>git apply --check</code>。</p>
+            <p class="customer-answer"><strong>权限边界：</strong>发现问题与作出业务修改决定，是两个不同角色的责任。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-26">
+            <span class="section-index">26</span>
+            <h3>诊断结果如何返回原 Agent</h3>
+            <p>最终反馈回到产生写入的会话，包括整体状态、触发文件、配置来源、规则 ID、具体诊断、建议、候选 Patch 数量，以及持久化开启时的 Round 与 Latest 文件路径。</p>
+            <p>如果隔离语义审查已完成，反馈会说明其状态并合并语义 findings；主 Agent 不需要自己再次加载同一 Reviewer。若审查失败或仅被请求，也会明确显示，避免用户误认检查覆盖范围。</p>
+            <p class="customer-answer"><strong>反馈目标：</strong>让主 Agent 能直接围绕真实偏差做最小修订，而不是收到一个无法行动的质量分数。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-27">
+            <span class="section-index">27</span>
+            <h3>修订后如何形成反馈闭环</h3>
+            <p>主 Agent 审阅诊断与候选 Diff，决定修改、忽略、转人工或停止当前阶段。只要它再次通过 <code>Write</code> 或 <code>Edit</code> 写入命中产物，就会以新磁盘快照启动新一轮检查。</p>
+            <p>每轮诊断重新计算，不把上一轮 finding 当作本轮事实。已修好的问题自然消失，新产生的问题单独出现；若开启持久化，历史 Round 仍保留，Latest 则更新为当前结果。</p>
+            <p class="customer-answer"><strong>闭环不是“循环报错”：</strong>每轮都从新快照重建证据，直到当前状态真实通过或由责任人明确处置。</p>
+          </section>
+        </section>
+        <!-- CHECKPOINT: PART_4 COMPLETE -->
+        <section class="part" id="part-4" aria-labelledby="part-4-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 04 · Change isolation</span>
+            <h2 id="part-4-title">多阶段、多变更情况下如何避免串线</h2>
+            <p class="part-intro">当仓库同时保留 feature-a、feature-b 和历史交付时，最危险的错误不是“找不到文件”，而是悄悄找到了一个看似合理、实际属于别的任务的文件。</p>
+          </header>
+
+          <section class="section-card reveal" id="section-28">
+            <span class="section-index">28</span>
+            <h3>为什么不能自动选择“最新文件”</h3>
+            <p>修改时间只说明文件最后何时被写入，不能说明它属于哪个业务意图。一个昨天继续维护的旧 Change，可能比今天新建 Change 的上游文件更新；按目录排序取第一个也同样没有业务依据。</p>
+            <p>Runtime Corrector 不保存一个会被暗中切换的“当前 active key”，也不通过时间、目录顺序或近似名称推断实例。没有可证明的关联，就不会把历史产物提升为正式上游。</p>
+            <p class="customer-answer"><strong>可信选择的最低条件：</strong>来源文件必须与当前路径提取出的显式实例标识一致。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-29">
+            <span class="section-index">29</span>
+            <h3>Path Template 如何识别同一条变更</h3>
+            <p>Path Template 把稳定的路径结构写成带占位符的声明，例如 <code>spec/{YYYY-MM-DD}-模块设计报告-{changeName}.md</code>。编译器把占位符转换为路径匹配器，写入命中后提取 <code>YYYY-MM-DD</code> 与 <code>changeName</code> 等值。</p>
+            <p>模板不允许混用 glob 的 <code>*</code> 或 <code>?</code>，占位符必须合法且不能重复。这样，一个路径究竟能提取出什么实例信息，在配置加载时就可以被验证。</p>
+            <pre><code>pathTemplates:
+  - "spec/{YYYY-MM-DD}-模块设计报告-{changeName}.md"
+
+# 命中后：
+# { "YYYY-MM-DD": "2026-07-29", "changeName": "flower-eshop" }</code></pre>
+          </section>
+
+          <section class="section-card reveal" id="section-30">
+            <span class="section-index">30</span>
+            <h3>Correlation 如何保持上下游一致</h3>
+            <p><code>workflow.correlation.keys</code> 指定哪些占位符共同定义 Change 身份，例如只使用 <code>changeName</code>。所有参与 Workflow 的 artifact 模板都必须覆盖这些 key，否则配置编译直接失败。</p>
+            <p>收集文件时，插件对 key 做规范化比较；只有值相同的节点产物才会进入同一快照。日期可以存在于路径但不参与 correlation，从而允许同一 Change 的不同阶段在不同日期生成。</p>
+            <p class="customer-answer"><strong>强约束：</strong>不是 Reviewer “尽量分清”，而是在审查前就把不同实例从文件集合中隔离。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-31">
+            <span class="section-index">31</span>
+            <h3>新变更与继续旧变更如何区分</h3>
+            <p>继续现有变更时，各阶段路径必须复用原 correlation key；新建变更则使用新的 key。插件可以验证 key 是否一致，却不能从一句含糊的任务描述判断用户想“继续旧的”还是“开始新的”。</p>
+            <p>因此，意图不明确时应由主 Agent 在写入前询问用户。Runtime Corrector 的职责从文件落盘后开始，它不会重命名 key、迁移历史产物或替用户决定业务身份。</p>
+            <p class="customer-answer"><strong>把不确定性留在正确位置：</strong>实例选择是用户意图问题，不应该被文件时间戳替代。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-32">
+            <span class="section-index">32</span>
+            <h3>历史产物如何安全地作为参考</h3>
+            <p>新 Change 可以由主 Agent 显式读取历史文件，复用写作结构、领域知识或经验教训。但“被读取作为参考”与“成为当前 Workflow 的事实来源”是两件事。</p>
+            <p>除非历史文件的实例 key 与当前 Change 一致并匹配正式入边，它不会自动进入当前上游快照。这样既允许经验复用，也避免把旧项目结论不经确认地继承到新需求。</p>
+            <p class="customer-answer"><strong>安全复用原则：</strong>历史可以启发新内容，不能静默替代新变更的正式依据。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-33">
+            <span class="section-index">33</span>
+            <h3>为什么语义审查不能反向修改上游</h3>
+            <p>检查下游时，上游承担的是证据角色。如果 Reviewer 发现冲突后直接修改上游，就等于让下游的解释反向覆盖事实来源，破坏责任顺序，也可能同时影响依赖该上游的其他节点。</p>
+            <p>代码因此把当前目标节点文件列为 <code>editableArtifactFiles</code>。语义 finding 必须落在目标列表，候选 Diff 也只能指向该白名单；若 artifact 设置 <code>editable: false</code>，本轮可编辑列表为空。</p>
+            <p class="customer-answer"><strong>单向责任：</strong>上游可用于举证，不因一次下游纠偏而被越权改写。</p>
+          </section>
+        </section>
+        <!-- CHECKPOINT: PART_5 COMPLETE -->
+        <section class="part" id="part-5" aria-labelledby="part-5-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 05 · Evidence & trust</span>
+            <h2 id="part-5-title">用户凭什么信任纠偏结果</h2>
+            <p class="part-intro">信任不是来自“AI 说它检查过了”，而来自可区分的状态、可复核的证据、不可变的轮次记录、同轮补丁，以及能直接打开查看的实现与配置。</p>
+          </header>
+
+          <section class="section-card reveal" id="section-34">
+            <span class="section-index">34</span>
+            <h3>检查状态分别代表什么</h3>
+            <p>整体状态由当前诊断的最高优先级推导：出现 error 即 <code>failed</code>；没有 error 但有待完成依赖则 <code>pending</code>；再其次是 <code>warning</code>；没有这些诊断才是 <code>passed</code>。</p>
+            <div class="status-grid" aria-label="四种检查状态">
+              <div class="status-card passed"><b>passed</b><p>当前已执行的规则与审查没有发现偏差。</p></div>
+              <div class="status-card warning"><b>warning</b><p>存在提醒，是否阻断由主流程与责任人决定。</p></div>
+              <div class="status-card pending"><b>pending</b><p>依赖尚未齐备；已具备条件的检查仍然执行。</p></div>
+              <div class="status-card failed"><b>failed</b><p>发现 error 级偏差，需要明确处置后再继续。</p></div>
+            </div>
+            <p class="customer-answer"><strong>不要误读：</strong><code>passed</code> 只覆盖当前已加载并完成的标准；<code>pending</code> 不是失败；<code>warning</code> 也不会被伪装成成功。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-35">
+            <span class="section-index">35</span>
+            <h3>每条问题为什么必须附带证据</h3>
+            <p>没有证据的结论无法被独立判断，也无法指导最小修订。Runtime Corrector 的诊断结构要求规则 ID、严重级别、目标路径、信息；可用时还包含行号、evidence 和 suggestion。语义审查的返回 Schema 对 finding 路径和 evidence 列表也有约束。</p>
+            <div class="evidence-anatomy" aria-label="诊断证据示例">
+              <p><strong>AGENT-UPSTREAM-CONSTRAINT-OMITTED</strong><br>
+                <code>docs/solution.md:18</code><br>
+                目标文档描述在线同步，但没有承接上游“必须支持完全离线运行”的约束。<br>
+                Evidence: <code>requirements.md:12</code> ↔ <code>solution.md:18–25</code></p>
+              <span class="severity-badge">ERROR</span>
+            </div>
+            <p class="customer-answer"><strong>证据的用途：</strong>用户能验证结论，主 Agent 能定位修改，团队也能在事后解释为什么当时判定失败。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-36">
+            <span class="section-index">36</span>
+            <h3>为什么每轮检查都保留独立记录</h3>
+            <p>开启 <code>output.persist: true</code> 后，每次快照检查获得独立 Round ID，并写入 <code>runs/&lt;stage&gt;/&lt;artifact-key&gt;/&lt;run-id&gt;/</code>。后续检查不会覆盖这一轮。</p>
+            <p><code>latest/&lt;stage&gt;/&lt;artifact-key&gt;/</code> 则提供稳定入口，始终指向当前最新结果。历史 Round 回答“纠偏是怎样演变的”，Latest 回答“现在是什么状态”，两种需求互不牺牲。</p>
+            <pre><code>.runtime-correction/
+├─ runs/solution/design-flower/20260729T101112Z-a1b2c3d4/
+│  ├─ diagnostic.md
+│  ├─ patch.diff
+│  └─ spec.md          # 仅 failed 且有规范时
+└─ latest/solution/design-flower/
+   ├─ diagnostic.md
+   └─ patch.diff</code></pre>
+          </section>
+
+          <section class="section-card reveal" id="section-37">
+            <span class="section-index">37</span>
+            <h3>诊断和候选 Diff 为什么必须属于同一轮</h3>
+            <p>诊断与补丁描述的是同一个磁盘快照。若把旧诊断与新补丁混用，补丁可能修复已经变化的行，甚至对应另一个 Change。Runtime Corrector 在结果合并、Diff 校验完成后，统一持久化同一 Round 的 <code>diagnostic.md</code> 与 <code>patch.diff</code>。</p>
+            <p>Round metadata 包含时间、Stage、artifact、触发文件和文件集合；Diff 还带基线哈希。Latest 更新时也是成对写入，不允许用户只看到一个来源不明的“最新补丁”。</p>
+            <p class="customer-answer"><strong>配对原则：</strong>建议永远随它所依据的证据一起交付。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-38">
+            <span class="section-index">38</span>
+            <h3>检查失败时如何获得完整规范</h3>
+            <p>当状态为 <code>failed</code> 且该 Stage 有规范包时，持久化结果会额外保存 <code>spec.md</code>。它聚合全局格式契约、当前 artifact 映射、硬规则、引用的 JSON Schema、Reviewer 与恢复说明，避免修复过程中只看到一条错误却不知道完整边界。</p>
+            <p>用户也可以运行 <code>/runtime-corrector:spec &lt;stage&gt;</code> 主动查看同一类权威规范。这个命令适合首次作者、复杂失败恢复或怀疑规则之间存在矛盾时使用。</p>
+            <p class="customer-answer"><strong>恢复不是猜测：</strong>失败现场与完整规范都能落盘，主 Agent 可在下一次编辑前读取原始依据。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-39">
+            <span class="section-index">39</span>
+            <h3>如何知道当前真正执行了哪些规则</h3>
+            <p><code>/runtime-corrector:explain &lt;stage&gt;</code> 展示该项目实际加载的 artifact 策略、规则文件、Schema、Reviewer 和执行顺序。它回答的是“现在运行的是什么”，而不是一份可能已经过期的产品宣传。</p>
+            <p><code>explain</code> 适合快速核对日常运行；需要精确语法、全部 Schema、完整 Reviewer 或失败恢复图时，再使用 <code>spec</code>。两者都以项目自有配置为主要事实来源。</p>
+            <p class="customer-answer"><strong>透明性：</strong>团队能够把一次运行结果追溯到当前有效的具体配置文件，而不是隐藏规则。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-40">
+            <span class="section-index">40</span>
+            <h3>项目如何拥有自己的质量标准</h3>
+            <p>项目在 <code>.runtime-corrector/</code> 中维护 <code>config.yaml</code>、<code>*.rules.yaml</code>、<code>*.reviewer.md</code> 和可选 <code>schemas/*.json</code>。Stage 开关、路径、Workflow、correlation、输出与限制同样显式存在于项目配置。</p>
+            <p>这些文件可以像其他工程资产一样评审、版本控制和演进。规则或 Reviewer 修改后，下一轮加载即生效；核心插件只提供通用编译、执行、隔离与安全机制。</p>
+            <p class="customer-answer"><strong>治理归属：</strong>业务标准由项目团队拥有，Runtime Corrector 负责忠实执行和公开结果。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-41">
+            <span class="section-index">41</span>
+            <h3 id="implementation">理念分别落实在哪些代码和产物中</h3>
+            <p>下面的连接以当前 HTML 文件为起点，直接打开仓库中的真实配置或实现。每张卡片先说明客户可见的承诺，再给出承担该承诺的代码位置；这样既能从理念追到实现，也能从运行结果反查责任模块。</p>
+            <div class="code-map" aria-label="理念到代码的映射">
+              <a class="code-link" href="../../hooks/hooks.json">
+                <span>hooks/hooks.json</span>
+                <strong>写后才触发</strong>
+                <small>声明 PostToolUse、Write|Edit 匹配、执行入口和最长 Hook 时间。</small>
+              </a>
+              <a class="code-link" href="../../lib/hook-handler.mjs">
+                <span>lib/hook-handler.mjs</span>
+                <strong>触发边界与项目发现</strong>
+                <small>拒绝不支持的工具，解析触发路径，并从产物位置发现项目策略根。</small>
+              </a>
+              <a class="code-link" href="../../lib/runtime-plan.mjs">
+                <span>lib/runtime-plan.mjs</span>
+                <strong>策略只编译一次</strong>
+                <small>合并默认值与项目来源，生成统一 RuntimePlan 供后续阶段使用。</small>
+              </a>
+              <a class="code-link" href="../../lib/policy/compiler.mjs">
+                <span>lib/policy/compiler.mjs</span>
+                <strong>项目拥有 Stage</strong>
+                <small>编译 artifact、Stage 开关、规则、Reviewer、Workflow 与限制。</small>
+              </a>
+              <a class="code-link" href="../../lib/artifact-pipeline.mjs">
+                <span>lib/artifact-pipeline.mjs</span>
+                <strong>只收集相关快照</strong>
+                <small>匹配写入文件，构建节点与入边路径计划，从磁盘读取当前内容。</small>
+              </a>
+              <a class="code-link" href="../../lib/path-template.mjs">
+                <span>lib/path-template.mjs</span>
+                <strong>Change 不串线</strong>
+                <small>编译 Path Template、提取 correlation key，并比较实例身份。</small>
+              </a>
+              <a class="code-link" href="../../lib/artifact-checker.mjs">
+                <span>lib/artifact-checker.mjs</span>
+                <strong>节点、Bundle 与边检查</strong>
+                <small>组织硬规则结果、pending 入边、可编辑白名单、Reviewer 与规范上下文。</small>
+              </a>
+              <a class="code-link" href="../../lib/semantic-review.mjs">
+                <span>lib/semantic-review.mjs</span>
+                <strong>隔离语义审查</strong>
+                <small>限制只读工具、fork 一次性会话、约束 JSON 返回并阻止递归审查。</small>
+              </a>
+              <a class="code-link" href="../../lib/review-graph.mjs">
+                <span>lib/review-graph.mjs</span>
+                <strong>上下游关系可验证</strong>
+                <small>校验有向无环图，并定义防遗漏、矛盾和无依据扩张的边审查基线。</small>
+              </a>
+              <a class="code-link" href="../../lib/candidate-diff.mjs">
+                <span>lib/candidate-diff.mjs</span>
+                <strong>最小编辑先匹配原文</strong>
+                <small>验证目标、行号与 expect 原文，再把安全操作转换为候选内容。</small>
+              </a>
+              <a class="code-link" href="../../lib/unified-diff.mjs">
+                <span>lib/unified-diff.mjs</span>
+                <strong>补丁可应用且不越界</strong>
+                <small>校验声明目标、真实目标和白名单，并运行 git apply --check。</small>
+              </a>
+              <a class="code-link" href="../../lib/result-store.mjs">
+                <span>lib/result-store.mjs</span>
+                <strong>Runs 不可变，Latest 可发现</strong>
+                <small>把诊断、同轮补丁和失败规范同时写入历史 Round 与 Latest。</small>
+              </a>
+              <a class="code-link" href="../../lib/feedback.mjs">
+                <span>lib/feedback.mjs</span>
+                <strong>反馈回原 Agent</strong>
+                <small>格式化状态、证据、文件路径与安全边界，明确补丁不会自动应用。</small>
+              </a>
+              <a class="code-link" href="../../config/schemas/project-config.schema.json">
+                <span>config/schemas/project-config.schema.json</span>
+                <strong>配置格式公开</strong>
+                <small>定义项目配置可接受的字段、类型、Stage、路径和显式开关。</small>
+              </a>
+            </div>
+            <p class="implementation-note">本页还将“客户看到的结果产物”连接到了产生它们的模块：<code>diagnostic.md</code>、<code>patch.diff</code>、失败时的 <code>spec.md</code> 由 <code>result-store.mjs</code> 同轮持久化；会话里的文字反馈由 <code>feedback.mjs</code> 生成。以上链接为相对路径，页面离线打开时仍可访问同一仓库中的源码。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-42">
+            <span class="section-index">42</span>
+            <h3 id="demo">一个偏移与纠偏过程的可视化演示</h3>
+            <p>下面用“上游要求离线运行、下游方案遗漏离线能力”演示完整闭环。依次点击六个步骤，观察左侧磁盘产物和右侧 Runtime Corrector 结果如何变化。</p>
+            <div class="demo" aria-label="离线能力遗漏的互动纠偏演示">
+              <div class="demo-toolbar" role="tablist" aria-label="纠偏步骤">
+                <button class="demo-step active" role="tab" aria-selected="true" aria-controls="demoPanel" tabindex="0" data-demo-step="0"><b>01 写入</b>下游落盘</button>
+                <button class="demo-step" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo-step="1"><b>02 收集</b>锁定同一 Change</button>
+                <button class="demo-step" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo-step="2"><b>03 审查</b>发现约束遗漏</button>
+                <button class="demo-step" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo-step="3"><b>04 建议</b>生成候选 Diff</button>
+                <button class="demo-step" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo-step="4"><b>05 修订</b>主 Agent 决定</button>
+                <button class="demo-step" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo-step="5"><b>06 复查</b>新快照通过</button>
+              </div>
+              <div class="demo-stage" id="demoPanel" role="tabpanel" aria-live="polite">
+                <div class="demo-pane">
+                  <h4 id="demoDocTitle">磁盘快照 · solution.md</h4>
+                  <div class="demo-document" id="demoDocument"></div>
+                </div>
+                <div class="demo-pane">
+                  <h4>Runtime Corrector · 本轮结果</h4>
+                  <div class="demo-result" id="demoResult"></div>
+                </div>
+              </div>
+              <div class="demo-caption" id="demoCaption">这是一个解释机制的缩小演示；真实结果会带 Round ID、文件路径、证据、哈希和持久化位置。</div>
+            </div>
+            <p class="customer-answer"><strong>真正的闭环：</strong>插件发现并举证 → 主 Agent 作决定并写入 → 插件基于新快照重新检查。任何候选 Diff 都没有绕过主 Agent。</p>
+          </section>
+        </section>
+        <!-- CHECKPOINT: PART_6 COMPLETE -->
+        <section class="part" id="part-6" aria-labelledby="part-6-title">
+          <header class="part-header reveal">
+            <span class="part-number">Part 06 · Configure & operate</span>
+            <h2 id="part-6-title">如何配置和使用 Runtime Corrector</h2>
+            <p class="part-intro">安全启用的顺序是：先建立项目模板，再定义真实标准，核对实际加载结果，最后逐个启用 Stage。插件不会因为“已经安装”就自动接管全部产物。</p>
+          </header>
+
+          <section class="section-card reveal" id="section-43">
+            <span class="section-index">43</span>
+            <h3>如何安全初始化项目</h3>
+            <p>在 Claude Code 中运行 <code>/runtime-corrector:init</code>，会创建项目自有的 <code>.runtime-corrector/</code>，其中包含带中文注释的 <code>config.yaml</code>、示例规则、示例 Reviewer 和 README。若目录已经存在，初始化会拒绝覆盖。</p>
+            <p>模板的 <code>enabledStages: []</code> 是刻意设计的安全默认值：初始化完成后，没有任何业务文件立即被看护。团队可以先评审模板、改成真实业务定义，再显式启用。</p>
+            <pre><code>/runtime-corrector:init
+/runtime-corrector:help
+
+# 初始化 ≠ 启用
+# 先确认 .runtime-corrector/config.yaml，再打开真实 Stage</code></pre>
+            <p class="customer-answer"><strong>零惊喜启动：</strong>不覆盖、不默认开启、不把示例 Stage 当成你的正式流程。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-44">
+            <span class="section-index">44</span>
+            <h3>启用前需要定义什么</h3>
+            <p>每个真实 Stage 至少需要确认 artifact 名称、路径识别方式、格式、硬规则是否启用、语义审查是否启用及其标准。多阶段流程还要确认节点边、边 Reviewer 和 Change correlation。</p>
+            <ul class="micro-list">
+              <li><strong>保护谁</strong><br>artifact、Stage、format、patterns/pathTemplates。</li>
+              <li><strong>如何检查</strong><br>rules 文件、Reviewer、可选 JSON Schema。</li>
+              <li><strong>与谁对齐</strong><br>Workflow 入边与边审查标准。</li>
+              <li><strong>属于哪次变更</strong><br>稳定 Path Template 与 correlation keys。</li>
+            </ul>
+            <p>最后再决定输出是否持久化、目录位置、相关文件数量、Reviewer 长度、反馈长度和语义审查超时。建议先在少量代表性产物上运行，再逐步扩大 Stage 范围。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-45">
+            <span class="section-index">45</span>
+            <h3>如何查看和控制 Stage</h3>
+            <p><code>/runtime-corrector:stages</code> 显示项目已安装的全部 Stage 及 on/off 状态；追加 <code>&lt;stage&gt; on</code> 或 <code>off</code> 可以切换单个 Stage。Stage 名只来自项目的 <code>artifacts[]</code>，没有隐藏目录。</p>
+            <p>关闭 Stage 只是把它从当前 RuntimePlan 的受保护 artifact 集合中移除，不会删除规则、Reviewer 或业务产物。重新启用后，原项目标准仍在。</p>
+            <pre><code>/runtime-corrector:stages
+/runtime-corrector:stages solution-design on
+/runtime-corrector:stages solution-design off</code></pre>
+            <p class="customer-answer"><strong>可逆控制：</strong>开关影响执行，不破坏项目已经定义的质量资产。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-46">
+            <span class="section-index">46</span>
+            <h3>自动检查与手动检查有什么区别</h3>
+            <p>自动检查来自 <code>Write/Edit → PostToolUse</code>，拥有原会话的 <code>session_id</code>，因此在 Reviewer 开启时可以创建隔离 fork，最终合并硬规则与已完成的语义结果。</p>
+            <p><code>/runtime-corrector:check &lt;artifact&gt;</code> 或终端 CLI 主要执行确定性检查。它会把已配置 Reviewer 作为 <code>agentReview: requested</code> 返回，但不会自己创建隔离会话。需要完整“硬规则 + 隔离语义审查”时，应以自动写后结果为准。</p>
+            <ul class="micro-list">
+              <li><strong>自动写后</strong><br>硬规则 + 可用时的隔离语义审查。</li>
+              <li><strong>手动 check</strong><br>硬规则 + 待完成 Reviewer 任务。</li>
+            </ul>
+          </section>
+
+          <section class="section-card reveal" id="section-47">
+            <span class="section-index">47</span>
+            <h3>如何查看规则和完整规范</h3>
+            <p>日常核对使用 <code>explain</code>：它简洁展示命中的 artifact、项目规则、Schema、Reviewer 和执行顺序。首次编写复杂产物，或失败后需要理解精确格式与恢复路径时，使用 <code>spec</code> 获取完整原子规范包。</p>
+            <pre><code>/runtime-corrector:explain solution-design
+/runtime-corrector:spec solution-design</code></pre>
+            <p>推荐顺序是：先看当前诊断做最小修改；只有当诊断不足以确定正确格式，或多次失败怀疑规范矛盾时，再展开完整 <code>spec</code>。这能兼顾上下文效率与恢复完整性。</p>
+            <p class="customer-answer"><strong>两个入口，两种深度：</strong><code>explain</code> 回答“正在执行什么”，<code>spec</code> 回答“完整地应该怎样做”。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-48">
+            <span class="section-index">48</span>
+            <h3>使用前提与运行限制</h3>
+            <p>运行需要 Claude Code、Node.js 18+ 和项目配置。语义审查依赖可从当前会话创建隔离 fork；主会话若使用阻止会话持久化的启动方式，或 Hook 输入缺少 session 信息，语义审查会明确失败或保持 requested。</p>
+            <p>项目可以限制相关文件数、反馈长度、Reviewer 长度和语义审查超时。默认语义超时为 240 秒，可配置范围为 1 秒至 20 分钟；Hook 外层上限为 1260 秒，用于容纳最长审查和结果落盘。过长或过多内容应通过更精确的 artifact 和 Workflow 边界治理，而不是盲目提高上限。</p>
+            <div class="callout">
+              <strong>实施提示</strong>
+              先用代表性 Change 试运行，观察一次真实快照包含哪些文件、耗时多久、哪些 Reviewer 最有价值，再决定团队级默认限制。
+            </div>
+          </section>
+
+          <section class="section-card reveal" id="section-49">
+            <span class="section-index">49</span>
+            <h3>哪些文件不会受到保护</h3>
+            <p>未命中当前已启用 Stage 的 <code>patterns</code> 或 <code>pathTemplates</code> 的文件不会检查；已定义但关闭的 Stage 不执行；项目未初始化时，插件默认没有业务 artifact，也不会主动看护文件。</p>
+            <p>此外，不符合 correlation 的历史或其他 Change 文件不会被纳入当前 Workflow 快照；结果目录与策略目录也有保护边界，避免一次诊断触发新的递归检查。</p>
+            <p class="customer-answer"><strong>安装不等于全仓保护：</strong>只有“配置存在 + Stage 已启用 + 路径命中 + 实例关系成立”的产物，才进入相应检查。</p>
+          </section>
+
+          <section class="section-card reveal" id="section-50">
+            <span class="section-index">50</span>
+            <h3>用户最终应当如何理解 Runtime Corrector</h3>
+            <p>Runtime Corrector 是一个可配置、可追溯且不越权的写后反馈回路。它把项目标准编译为可执行计划，对当前磁盘快照做确定性与隔离语义检查，为偏差保留证据，并把经过安全验证的候选修改交还给主 Agent。</p>
+            <p>它不替代业务流程、不替用户选择 Change、不声称检查之外的内容已经正确，也不自动应用补丁。它真正提升的是错误被发现和被纠正的概率，以及团队解释每次决策的能力。</p>
+            <div class="callout">
+              <strong>最终承诺</strong>
+              Runtime Corrector 不承诺“自动把所有内容改对”，而是让偏差能够在写入后被独立检查、具体说明、留下证据，并以受控方式反馈给真正负责修改的 Agent。
+            </div>
+          </section>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <h2>独立检查，受控反馈，持续对齐。</h2>
+        <p>本文以当前仓库实现与项目配置为依据。Runtime Corrector 的可靠性来自边界清楚、证据可查、规则可改和每一轮结果都能追溯。</p>
+      </div>
+      <div class="footer-links">
+        <a href="../../README.md">打开项目 README</a>
+        <a href="../how-it-works.md">打开完整运作机理</a>
+        <a href="../configuration.md">打开配置参考</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    "use strict";
+    const progressBar = document.getElementById("progressBar");
+    const updateProgress = () => {
+      const root = document.documentElement;
+      const range = root.scrollHeight - root.clientHeight;
+      progressBar.style.width = `${range > 0 ? (root.scrollTop / range) * 100 : 0}%`;
+    };
+    addEventListener("scroll", updateProgress, { passive: true });
+    updateProgress();
+
+    const revealObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) entry.target.classList.add("visible");
+          });
+        }, { threshold: .08 })
+      : null;
+    document.querySelectorAll(".reveal").forEach((element) => {
+      if (revealObserver) revealObserver.observe(element);
+      else element.classList.add("visible");
+    });
+
+    const partLinks = [...document.querySelectorAll(".side-nav a")];
+    const partObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          partLinks.forEach((link) => {
+            link.classList.toggle("active", link.hash === `#${visible.target.id}`);
+          });
+        }, { rootMargin: "-20% 0px -62% 0px", threshold: [0, .1, .3] })
+      : null;
+    if (partObserver) {
+      document.querySelectorAll(".part").forEach((part) => partObserver.observe(part));
+    }
+
+    const demoStates = [
+      {
+        title: "磁盘快照 · solution.md",
+        document: "# 模块方案\n\n## 运行方式\n客户端连接服务端后同步任务。\n网络中断时提示用户稍后重试。",
+        status: "WRITTEN",
+        result: "<p>Claude Code 已完成 <code>Edit</code>，文件现在真实存在于磁盘。</p><p>PostToolUse Hook 收到触发路径；此时还没有任何文件被插件改写。</p>",
+        caption: "第 1 步：写入成功只证明文件已经落盘，不证明下游承接了全部业务约束。"
+      },
+      {
+        title: "同一 Change 的当前快照",
+        document: "requirements.md\n“核心流程必须支持完全离线运行。”\n\n────────  changeName=flower-eshop  ────────\n\nsolution.md\n“网络中断时提示用户稍后重试。”",
+        status: "SNAPSHOT",
+        result: "<p>命中 Stage：<code>solution-design</code></p><p>实例：<code>changeName=flower-eshop</code></p><p>入边：<code>requirements → solution</code> 已就绪。</p>",
+        caption: "第 2 步：Path Template 与 correlation 先完成实例隔离，再把同一 Change 的上下游交给检查器。"
+      },
+      {
+        title: "磁盘快照 · solution.md",
+        document: "# 模块方案\n\n## 运行方式\n客户端连接服务端后同步任务。\n网络中断时提示用户稍后重试。",
+        status: "FAILED",
+        result: "<p><strong>AGENT-UPSTREAM-CONSTRAINT-OMITTED</strong></p><p>下游未承接“必须支持完全离线运行”。</p><p>证据：<code>requirements.md:12</code> 与 <code>solution.md:4–5</code>。</p>",
+        caption: "第 3 步：文件结构可以完全合法，但边语义审查仍能发现约束在传递中丢失。"
+      },
+      {
+        title: "候选 patch.diff（尚未应用）",
+        document: "@@ 运行方式 @@\n 客户端连接服务端后同步任务。\n+无网络时，核心流程在本地完成；恢复连接后再同步。\n 网络中断时提示用户稍后重试。",
+        status: "CANDIDATE",
+        result: "<p>目标在当前节点白名单；原文 <code>expect</code> 匹配；补丁通过 <code>git apply --check</code>。</p><p>候选数：<strong>1</strong>。Runtime Corrector 仍未修改目标文件。</p>",
+        caption: "第 4 步：只有可机械表达、无需新增用户决策的最小修改，才会成为候选 Diff。"
+      },
+      {
+        title: "主 Agent 修订 · solution.md",
+        document: "# 模块方案\n\n## 运行方式\n客户端连接服务端后同步任务。\n<span class=\"line-add\">无网络时，核心流程在本地完成；恢复连接后再同步。</span>\n网络中断时提示用户稍后重试。",
+        status: "REVISED",
+        result: "<p>主 Agent 审核证据与候选内容后，决定接受这项最小修订并执行 <code>Edit</code>。</p><p>编辑权始终属于主 Agent；这次写入将触发新一轮检查。</p>",
+        caption: "第 5 步：候选只是输入。负责完整任务上下文的主 Agent 作出最终修改决定。"
+      },
+      {
+        title: "新磁盘快照 · solution.md",
+        document: "# 模块方案\n\n## 运行方式\n客户端连接服务端后同步任务。\n<span class=\"line-add\">无网络时，核心流程在本地完成；恢复连接后再同步。</span>\n网络中断时提示用户稍后重试。",
+        status: "PASSED",
+        result: "<p>新 Round 已完成：硬规则通过，边语义审查没有再次发现离线约束遗漏。</p><p>上一轮保留在 <code>runs/</code>，<code>latest/</code> 更新为当前通过结果。</p>",
+        caption: "第 6 步：复查从新磁盘快照重新计算；旧问题不会被机械复制到新一轮。"
+      }
+    ];
+    const demoButtons = [...document.querySelectorAll("[data-demo-step]")];
+    const demoDocument = document.getElementById("demoDocument");
+    const demoResult = document.getElementById("demoResult");
+    const demoDocTitle = document.getElementById("demoDocTitle");
+    const demoCaption = document.getElementById("demoCaption");
+    const renderDemo = (index) => {
+      const state = demoStates[index];
+      demoButtons.forEach((button, buttonIndex) => {
+        const active = buttonIndex === index;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+        button.tabIndex = active ? 0 : -1;
+      });
+      demoDocTitle.textContent = state.title;
+      demoDocument.innerHTML = state.document;
+      demoResult.innerHTML = `<span class="demo-status">${state.status}</span>${state.result}`;
+      demoCaption.textContent = state.caption;
+    };
+    demoButtons.forEach((button) => {
+      button.addEventListener("click", () => renderDemo(Number(button.dataset.demoStep)));
+      button.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const current = Number(button.dataset.demoStep);
+        const next = event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? demoButtons.length - 1
+            : (current + (event.key === "ArrowRight" ? 1 : -1) + demoButtons.length)
+              % demoButtons.length;
+        renderDemo(next);
+        demoButtons[next].focus();
+      });
+    });
+    renderDemo(0);
+  </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+version: 1
+
+rules:
+  - id: PLANNING-PROJECTION-REQUIRED
+    type: require-artifacts
+    artifacts:
+      - SR.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+    pendingUntilComplete: true
+    severity: error
+  - id: PLANNING-PROJECTION-RELATIONS-SCHEMA
+    type: json-schema
+    artifact: relations.json
+    schema: schemas/relations.schema.json
+    severity: error
+
+  - id: PLANNING-PROJECTION-GRANULARITY-SCHEMA
+    type: json-schema
+    artifact: granularity-choice.json
+    schema: schemas/granularity-choice.schema.json
+    severity: error
+
+  - id: PLANNING-PROJECTION-GRAPH
+    type: graph-invariants
+    artifact: relations.json
+    caseSensitiveIds: false
+    nodes:
+      pointer: /nodes
+      idField: id
+      typeField: type
+      typeRules:
+        - id: RELATION-NODE-TYPE
+          idPattern: "^SR-"
+          expectedType: sr
+        - id: RELATION-NODE-TYPE
+          idPattern: "^M"
+          expectedType: milestone
+    edges:
+      pointer: /edges
+      fromField: from
+      toField: to
+      typeField: type
+      endpointRules:
+        - id: CONTAINS-DIRECTION
+          edgeType: contains
+          fromType: milestone
+          toType: sr
+          message: "contains 必须是 milestone -> sr，当前为 {from} -> {to}。"
+        - id: REQUIRES-DIRECTION
+          edgeType: requires
+          fromType: sr
+          toType: sr
+          allowSelf: false
+          message: "requires 必须是不同的 sr -> sr，当前为 {from} -> {to}。"
+      acyclic:
+        - id: REQUIRES-CYCLE
+          types:
+            - requires
+          message: SR requires 关系存在循环依赖。
+    severity: error

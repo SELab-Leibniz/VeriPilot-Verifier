@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "revision": "stage-e-verified-20260811",
+  "status": "PASS",
+  "testCommand": "npm test",
+  "testEvidence": "evidence/test-output.txt",
+  "requirements": [
+    {
+      "id": "R01",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs:createTodo (blank/whitespace rejected, non-empty created)",
+        "test/todo-model.test.mjs: R01 blank/whitespace + non-empty title",
+        "evidence/test-output.txt (R01 tests passed)"
+      ]
+    },
+    {
+      "id": "R02",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs: createIdGenerator + createTodo/toggleTodo/editTodo preserve id",
+        "test/todo-model.test.mjs: R02 unique ids + id stable across edit/toggle",
+        "evidence/test-output.txt (R02 tests passed)"
+      ]
+    },
+    {
+      "id": "R03",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs:toggleTodo (bidirectional, target-only)",
+        "test/todo-model.test.mjs: R03 toggle flips both ways, only target affected",
+        "evidence/test-output.txt (R03 test passed)"
+      ]
+    },
+    {
+      "id": "R04",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs:editTodo (blank edit returns store unchanged, id/completion preserved)",
+        "test/todo-model.test.mjs: R04 blank-protects + non-empty updates",
+        "evidence/test-output.txt (R04 tests passed)"
+      ]
+    },
+    {
+      "id": "R05",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs:deleteTodo (filters out only target id)",
+        "test/todo-model.test.mjs: R05 delete removes only target, others intact",
+        "evidence/test-output.txt (R05 test passed)"
+      ]
+    },
+    {
+      "id": "R06",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs:setFilter/filterTodos/counts (all|active|completed + consistent counts)",
+        "test/todo-model.test.mjs: R06 filters+counts consistent; invalid filter ignored",
+        "src/app.mjs: render() drives counts + aria-pressed for filter buttons",
+        "evidence/test-output.txt (R06 tests passed)"
+      ]
+    },
+    {
+      "id": "R07",
+      "status": "PASS",
+      "evidence": [
+        "index.html: labelled #new-todo input, Enter submits form, filter buttons, todo-item template",
+        "src/app.mjs: aria-label per control, aria-pressed on filter buttons, completion shown as text ('（已完成）/（进行中）') + checkbox, not color alone",
+        "styles.css: responsive layout, visible focus, strikethrough secondary to text marker",
+        "Verification: structural (human-confirmed, no automated assertion)"
+      ]
+    },
+    {
+      "id": "R08",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs: pure ES module, no DOM/network imports",
+        "test/todo-model.test.mjs imports only todo-model.mjs and runs under node --test",
+        "test/todo-model.test.mjs: R08 model usable under node with no DOM",
+        "evidence/test-output.txt (R08 test passed)"
+      ]
+    },
+    {
+      "id": "R09",
+      "status": "PASS",
+      "evidence": [
+        "src/todo-model.mjs: createTodo->toggleTodo->setFilter->filterTodos->editTodo->deleteTodo",
+        "test/todo-model.test.mjs: 'R09 critical journey: add x2 -> complete -> filter completed -> edit -> delete'",
+        "evidence/test-output.txt (R09 journey test passed)"
+      ]
+    }
+  ],
+  "criticalJourney": {
+    "id": "R09",
+    "status": "PASS",
+    "evidence": [
+      "test/todo-model.test.mjs: 'R09 critical journey: add x2 -> complete -> filter completed -> edit -> delete' — asserts add two, complete one, filter completed (1 item), blank edit rejected then non-empty edit applied with stable id, precise delete of target leaves the other item intact",
+      "evidence/test-output.txt (pass 12, fail 0)"
+    ]
+  }
+}

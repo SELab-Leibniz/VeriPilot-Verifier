@@ -1,0 +1,162 @@
+version: 2
+
+enabledStages:
+  - requirements
+  - design
+  - coding
+  - final-checkpoint
+
+dynamicGroundTruth:
+  enabled: true
+  evidenceCapture: minimal
+  materialRoots:
+    - workflow-prompt.md
+    - coding-stop-probe.md
+
+skillCorrection:
+  enabled: true
+  selection:
+    mode: include
+    include: [todolist-delivery, todolist-release-audit]
+    exclude: []
+  skillRoots:
+    - .claude/skills
+  completionCheckIntervalTurns: 10
+  maxWatchTurns: 30
+  maxFeedbacksPerSkill: 1
+
+artifactCorrection:
+  groundTruthReviewEnabled: true
+  stageMetricsEnabled: true
+
+stopCorrection:
+  enabled: true
+  maxCorrectionsPerEpoch: 2
+
+reviewers:
+  defaults:
+    effort: low
+    timeoutMs: 180000
+    maxBudgetUsd: 1
+  stopReviewer:
+    effort: low
+    timeoutMs: 420000
+    maxBudgetUsd: 3
+
+artifacts:
+  - name: requirements
+    stage: requirements
+    format: markdown
+    patterns:
+      - spec/requirements.md
+    rules:
+      enabled: true
+      file: rules/requirements.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: design
+    stage: design
+    format: markdown
+    patterns:
+      - spec/design.md
+    rules:
+      enabled: true
+      file: rules/design.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: final-checkpoint
+    stage: final-checkpoint
+    format: json
+    patterns:
+      - evidence/final-checkpoint.json
+    relatedRoot: project
+    relatedPatterns:
+      - index.html
+      - styles.css
+      - package.json
+      - src/*.mjs
+      - test/*.mjs
+      - evidence/test-output.txt
+    metricCheckpoint: true
+    metrics: [M01, M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14, M15]
+    rules:
+      enabled: true
+      file: rules/checkpoint.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/checkpoint.md
+
+  - name: coding-checkpoint
+    stage: coding
+    format: json
+    patterns:
+      - evidence/coding-checkpoint.json
+    relatedRoot: project
+    relatedPatterns:
+      - index.html
+      - styles.css
+      - package.json
+      - src/*.mjs
+      - test/*.mjs
+      - evidence/browser-*.png
+      - evidence/test-output.txt
+    metricCheckpoint: true
+    metrics: [M09, M11, M12, M13, M15]
+    rules:
+      enabled: true
+      file: rules/coding.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/coding.md
+
+workflow:
+  edges:
+    - from: requirements
+      to: design
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: requirements
+      to: final-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+    - from: design
+      to: final-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+    - from: requirements
+      to: coding-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/coding-traceability.md
+    - from: design
+      to: coding-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/coding-traceability.md
+    - from: coding-checkpoint
+      to: final-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+
+ignorePatterns:
+  - "**/.runtime-correction/**"
+  - "**/node_modules/**"
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 30
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000
+  semanticReviewTimeoutMs: 180000

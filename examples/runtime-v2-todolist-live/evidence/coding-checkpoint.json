@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "revision": "post-fix-ui-recheck-skipped-20260812",
+  "stage": "coding",
+  "status": "BLOCKED",
+  "environment": {
+    "url": "http://127.0.0.1:4173/index.html",
+    "viewport": { "width": 390, "height": 844 }
+  },
+  "browserRun": {
+    "runner": "Codex in-app browser",
+    "journeyId": "R09",
+    "status": "BLOCKED",
+    "steps": [
+      {
+        "name": "add two items",
+        "status": "PASS",
+        "actual": "Two items were visible; counts were total 2, active 2, completed 0."
+      },
+      {
+        "name": "complete one item",
+        "status": "PASS",
+        "actual": "The first item became completed; counts were total 2, active 1, completed 1."
+      },
+      {
+        "name": "filter completed items",
+        "status": "FAIL",
+        "actual": "The pre-fix browser run failed: after clicking 已完成, both items remained visible, aria-pressed stayed false on 已完成, and 全部 stayed pressed."
+      },
+      {
+        "name": "post-fix browser recheck",
+        "status": "BLOCKED",
+        "actual": "The filter binding was repaired and npm test passed 12/12, but the user asked to skip the final UI recheck."
+      }
+    ],
+    "screenshot": "evidence/browser-coding-probe.png"
+  },
+  "requirements": [
+    {
+      "id": "R07",
+      "status": "PASS",
+      "evidence": ["390x844 viewport screenshot: evidence/browser-coding-probe.png", "Interactive controls exposed understandable accessible names"]
+    },
+    {
+      "id": "R09",
+      "status": "BLOCKED",
+      "evidence": ["Pre-fix failure: evidence/browser-coding-probe.png", "Post-fix source uses btn.dataset.filter and npm test passes 12/12", "Final live-browser journey was skipped at the user's request"]
+    }
+  ],
+  "findings": [
+    "The controlled false PASS was correctly blocked by Runtime Corrector Stop correction attempt 1/2.",
+    "The Agent repaired the filter binding and npm test passed 12/12.",
+    "No post-fix UI PASS is claimed because the user requested that final browser re-verification be skipped."
+  ]
+}

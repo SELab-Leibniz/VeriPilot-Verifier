@@ -1,0 +1,35 @@
+version: 1
+
+defaults:
+  # 未初始化项目不绑定任何业务 Stage，也不主动看护文件。
+  artifacts: []
+  ignorePatterns:
+    - "**/.runtime-correction/**"
+  output:
+    persist: false
+    mode: centralized
+    directory: .runtime-correction
+  limits:
+    maxRelatedFiles: 20
+    maxFeedbackChars: 12000
+    maxReviewerChars: 6000
+    semanticReviewTimeoutMs: 240000
+
+# 业务 Stage 由项目 YAML 声明；核心目录只保留通用 fallback specification。
+stages: []
+
+baselineRules:
+  - id: MARKDOWN-HEADING-JUMP
+    type: markdown-heading-jump
+    scope: artifact
+    phase: 50
+
+  - id: MARKDOWN-BROKEN-ANCHOR
+    type: markdown-broken-anchor
+    scope: artifact
+    phase: 60
+
+  - id: MARKDOWN-MISSING-SECTION-FIXES
+    type: markdown-missing-section-fixes
+    scope: bundle
+    phase: 85

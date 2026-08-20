@@ -1,0 +1,13 @@
+{
+  "name": "runtime-v2-todolist-live",
+  "version": "1.0.0",
+  "description": "Dependency-free TodoList web app (Runtime Corrector v2 delivery).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

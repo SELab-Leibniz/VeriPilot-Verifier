@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "changeName": "todolist",
+  "milestone": "M2-persistence",
+  "revision": "example-rev-001",
+  "status": "ready",
+  "evidence": {
+    "tests": [
+      "evidence/todolist/dt-example-rev-001.log"
+    ],
+    "build": [
+      "evidence/todolist/build-example-rev-001.log"
+    ],
+    "device": [
+      "evidence/todolist/restart-example-rev-001.json"
+    ]
+  }
+}

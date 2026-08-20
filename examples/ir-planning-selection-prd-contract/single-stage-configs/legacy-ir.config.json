@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../config/schemas/project-config.schema.json",
+  "version": 1,
+  "artifacts": [
+    {
+      "stage": "ir",
+      "type": "ir",
+      "format": "markdown",
+      "patterns": [
+        "**/ir.md",
+        "**/*.ir.md",
+        "**/ir/*.md"
+      ],
+      "relatedPatterns": [
+        "*.ir.md"
+      ],
+      "knowledge": [
+        "ir/default"
+      ]
+    }
+  ],
+  "ignorePatterns": [
+    "**/.runtime-correction/**"
+  ],
+  "extensions": {
+    "matcherModule": null,
+    "collectorModule": null
+  },
+  "output": {
+    "persist": false,
+    "mode": "centralized",
+    "directory": ".runtime-correction"
+  },
+  "limits": {
+    "maxRelatedFiles": 20,
+    "maxFeedbackChars": 12000,
+    "maxReviewerChars": 6000
+  }
+}

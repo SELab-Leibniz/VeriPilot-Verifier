@@ -1,0 +1,15 @@
+version: 1
+
+rules:
+  - id: PLANNING-PUBLICATION-REQUIRED
+    type: require-artifacts
+    artifacts:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: PLANNING-PUBLICATION-SCHEMA
+    type: json-schema
+    artifact: manifest.json
+    schema: schemas/planning-projection-manifest.schema.json
+    severity: error

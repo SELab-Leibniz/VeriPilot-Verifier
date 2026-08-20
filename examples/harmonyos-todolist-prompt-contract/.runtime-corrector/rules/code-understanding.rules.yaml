@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: TODOLIST-CODE-CURRENT
+    type: require-heading
+    heading: 工程现状
+    severity: error
+  - id: TODOLIST-CODE-IMPACT
+    type: require-heading
+    heading: 影响范围
+    severity: error

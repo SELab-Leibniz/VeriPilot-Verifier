@@ -1,0 +1,6 @@
+interface:
+  display_name: "Runtime Corrector Workflow"
+  short_description: "Choose and reuse correlated workflow instance keys"
+  default_prompt: "Use $runtime-corrector-workflow to choose the correct workflow instance before writing stage artifacts."
+policy:
+  allow_implicit_invocation: true

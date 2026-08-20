@@ -1,0 +1,51 @@
+version: 1
+
+rules:
+  - id: CODE-SCOPE
+    type: require-heading
+    heading: 分析范围
+    severity: error
+
+  - id: CODE-STRUCTURE
+    type: require-heading
+    heading: 现状结构
+    severity: error
+
+  - id: CODE-CALL-CHAIN
+    type: require-heading
+    heading: 关键调用链
+    severity: error
+
+  - id: CODE-DATA-STATE
+    type: require-heading
+    heading: 数据与状态
+    severity: error
+
+  - id: CODE-IMPACT
+    type: require-heading
+    heading: 变更影响
+    severity: error
+
+  - id: CODE-RISK
+    type: require-heading
+    heading: 风险与约束
+    severity: error
+
+  - id: CODE-TRACE
+    type: require-heading
+    heading: 来源追溯
+    severity: error
+
+  - id: CODE-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+
+  - id: CODE-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error

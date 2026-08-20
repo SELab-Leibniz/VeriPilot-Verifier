@@ -1,0 +1,19 @@
+{
+  "name": "runtime-corrector-local",
+  "description": "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
+  "owner": {
+    "name": "Runtime Corrector contributors"
+  },
+  "plugins": [
+    {
+      "name": "runtime-corrector",
+      "source": "./",
+      "description": "Explainable, project-configured runtime correction for artifact workflows.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Runtime Corrector contributors"
+      }
+    }
+  ],
+  "version": null
+}

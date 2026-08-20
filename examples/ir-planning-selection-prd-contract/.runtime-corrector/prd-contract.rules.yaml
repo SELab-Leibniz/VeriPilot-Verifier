@@ -1,0 +1,74 @@
+version: 1
+
+rules:
+  - id: PRD-REQUIRED-ARTIFACTS
+    type: require-artifacts
+    artifacts:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+      - PRD.md
+    pendingUntilComplete: true
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-OVERVIEW
+    type: require-heading
+    heading: Overview
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-SOURCE-TRACE
+    type: require-heading
+    heading: Input Source Trace
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-KIT-MAPPING
+    type: require-heading
+    heading: Feature Kit Mapping Table
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-DATA-STRUCTURES
+    type: require-heading
+    heading: Data Structures And Keys
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-PERMISSIONS
+    type: require-heading
+    heading: Permission Matrix
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-ROUTES
+    type: require-heading
+    heading: Routes And Module Placement
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-ACCEPTANCE
+    type: require-heading
+    heading: Acceptance Checklist
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-ASSUMPTIONS
+    type: require-heading
+    heading: Assumptions And Open Questions
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-GUARDRAILS
+    type: require-heading
+    heading: Implementation Guardrails
+    level: 2
+    severity: error
+
+  - id: PRD-CONTRACT-SECTION-EXTERNAL-CONFIG
+    type: require-heading
+    heading: External Configuration Placeholders
+    level: 2
+    severity: error

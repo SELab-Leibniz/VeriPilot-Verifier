@@ -1,0 +1,6 @@
+interface:
+  display_name: "Runtime Corrector Init"
+  short_description: "Initialize a generic project correction template"
+  default_prompt: "Use $runtime-corrector-init to create an inactive Runtime Corrector template in the current project."
+policy:
+  allow_implicit_invocation: true

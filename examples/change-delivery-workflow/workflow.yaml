@@ -1,0 +1,108 @@
+version: 1
+kind: change-delivery-workflow
+
+prompt:
+  role: "你是一个变更交付文档编排器。请严格按照本文件定义的 stage、依赖关系和输出位置生成文档。"
+  instructions:
+    - "将 input.date 替换所有 {YYYY-MM-DD}，将 input.changeName 替换所有 {changeName}。"
+    - "先完成需求分析，再完成需求拆分；两者写入同一份需求分析报告，需求拆分必须丰富原文而不是创建第二份文件。"
+    - "当 input.uxRequired 为 true 时生成 UX 设计稿；为 false 时跳过 UX 设计稿，后续 stage 仍须正常执行。"
+    - "代码理解必须在需求拆分完成后进行；若 UX 设计稿存在，还必须读取并保持语义一致。"
+    - "每个后续 stage 必须读取其上游文档，保持需求编号、范围、模块、风险和测试覆盖关系一致。"
+    - "只生成 stages 中声明的文档，不修改产品代码。"
+    - "每个文档只写一次完整版本，避免用多次零散编辑规避运行时看护。"
+    - "完成后列出实际生成的文件以及被跳过的可选 stage。"
+
+input:
+  date: "2026-07-27"
+  changeName: "dry-run"
+  changeRequest: "为示例命令行工具增加 --dry-run 参数：完整解析并读取输入，展示原本将写入的输出摘要，但不创建或修改输出文件。"
+  uxRequired: true
+  sourceFiles:
+    - "./src/cli.mjs"
+
+stages:
+  - id: requirements-analysis
+    name: "需求分析"
+    description: "分析变更背景、用户目标、范围边界、约束、风险和可验证的验收标准；为需求建立稳定的 REQ- 编号，供所有后续文档追溯。"
+    optional: false
+    nextStageIds:
+      - requirements-breakdown
+      - ux-design
+    output:
+      path: "./spec/{YYYY-MM-DD}-需求分析报告-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-需求分析报告-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: requirements-report
+
+  - id: requirements-breakdown
+    name: "需求拆分"
+    description: "在需求分析报告中细化需求项、依赖、优先级、验收标准和边界条件；保留并丰富既有分析，不改变已确认的目标和范围。"
+    optional: false
+    nextStageIds:
+      - code-understanding
+    output:
+      path: "./spec/{YYYY-MM-DD}-需求分析报告-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-需求分析报告-{changeName}.md"
+      mode: enrich
+      runtimeCorrectorArtifactId: requirements-report
+
+  - id: ux-design
+    name: "UX设计稿"
+    description: "当变更具有用户交互影响时，描述信息架构、页面或命令交互、正常状态、空态、异常状态和需求追溯；不虚构未确认的产品范围。"
+    optional: true
+    enabledWhen: "input.uxRequired == true"
+    nextStageIds:
+      - code-understanding
+    output:
+      path: "./spec/{YYYY-MM-DD}-UX设计稿-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-UX设计稿-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: ux-design
+
+  - id: code-understanding
+    name: "代码理解"
+    description: "基于实际源码说明现状结构、关键调用链、数据和状态流、潜在变更点、影响范围、约束与风险；结论必须能够追溯到需求，存在 UX 文档时还须与其一致。"
+    optional: false
+    nextStageIds:
+      - solution-design
+    output:
+      path: "./spec/{YYYY-MM-DD}-代码理解报告-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-代码理解报告-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: code-understanding
+
+  - id: solution-design
+    name: "方案设计"
+    description: "设计满足需求的最小实现方案，说明模块边界、关键流程、接口和数据变化、兼容性、迁移策略、失败处理、风险与回滚，并明确需求追溯。"
+    optional: false
+    nextStageIds:
+      - manual-test-design
+    output:
+      path: "./spec/{YYYY-MM-DD}-模块设计报告-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-模块设计报告-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: solution-design
+
+  - id: manual-test-design
+    name: "人工测试用例设计"
+    description: "从用户视角设计可执行的正常、异常和边界测试，写明前置条件、步骤、预期结果及对应 REQ- 编号，覆盖方案中的关键风险。"
+    optional: false
+    nextStageIds:
+      - dt-test-design
+    output:
+      path: "./spec/{YYYY-MM-DD}-人工测试用例-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-人工测试用例-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: manual-test-cases
+
+  - id: dt-test-design
+    name: "DT测试用例设计"
+    description: "设计开发者可自动化实现的测试用例，说明测试层级、隔离边界、Mock 和测试数据、断言、异常分支及需求覆盖矩阵。"
+    optional: false
+    nextStageIds: []
+    output:
+      path: "./spec/{YYYY-MM-DD}-DT测试用例-{changeName}.md"
+      fileName: "{YYYY-MM-DD}-DT测试用例-{changeName}.md"
+      mode: create
+      runtimeCorrectorArtifactId: dt-test-cases

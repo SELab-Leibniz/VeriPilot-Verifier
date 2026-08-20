@@ -1,0 +1,47 @@
+version: 1
+
+rules:
+  - id: DT-SCOPE
+    type: require-heading
+    heading: 测试范围
+    severity: error
+
+  - id: DT-STRATEGY
+    type: require-heading
+    heading: 测试策略
+    severity: error
+
+  - id: DT-CASES
+    type: require-checklist
+    under: DT测试用例
+    minimum: 2
+    severity: error
+
+  - id: DT-MOCK-DATA
+    type: require-heading
+    heading: Mock与测试数据
+    severity: error
+
+  - id: DT-COVERAGE
+    type: require-heading
+    heading: 覆盖矩阵
+    severity: error
+
+  - id: DT-TRACE
+    type: require-heading
+    heading: 需求追溯
+    severity: error
+
+  - id: DT-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+
+  - id: DT-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error

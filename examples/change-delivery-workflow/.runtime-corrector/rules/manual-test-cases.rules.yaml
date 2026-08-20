@@ -1,0 +1,42 @@
+version: 1
+
+rules:
+  - id: MANUAL-SCOPE
+    type: require-heading
+    heading: 测试范围
+    severity: error
+
+  - id: MANUAL-PRECONDITIONS
+    type: require-heading
+    heading: 前置条件
+    severity: error
+
+  - id: MANUAL-CASES
+    type: require-checklist
+    under: 测试用例
+    minimum: 2
+    severity: error
+
+  - id: MANUAL-BOUNDARIES
+    type: require-heading
+    heading: 异常与边界
+    severity: error
+
+  - id: MANUAL-TRACE
+    type: require-heading
+    heading: 需求追溯
+    severity: error
+
+  - id: MANUAL-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+
+  - id: MANUAL-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error

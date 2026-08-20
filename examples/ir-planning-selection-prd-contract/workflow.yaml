@@ -1,0 +1,121 @@
+# IR -> Planning -> Selection -> PRD Contract 工作流 Prompt
+#
+# 用法：
+# 1. 把本示例的 .runtime-corrector/ 复制到待验证项目；
+# 2. 以 project scope 启用 Runtime Corrector；
+# 3. 把本文件完整内容作为 prompt 交给 Agent；
+# 4. Agent 必须按 stages 顺序生成文件，保存后处理插件返回的纠偏反馈。
+#
+# 这里的 workflow.yaml 描述“Agent 应该如何创作”；.runtime-corrector/config.yaml
+# 描述“插件应该如何看护”。两者通过 Stage id 和输出文件名对应。
+
+# Prompt 结构版本。它是示例约定，不是 Runtime Corrector 配置版本。
+version: 1
+
+# 工作流的人类可读名称。
+name: ir-planning-selection-prd-contract
+
+# 执行器提示；当前示例预期由 Claude Code 顺序执行。
+executor: claude-code
+
+execution:
+  # 可选值由调用 Agent 解释；本示例要求 sequential，避免下游早于上游生成。
+  mode: sequential
+
+  # 每次只允许修改当前 Stage 的输出。上游产物只能作为事实证据。
+  editScope: current-stage-output
+
+  # 收到反馈后应做最小修改并重新保存，不扩大原始需求范围。
+  correctionPolicy: minimal-fix-and-recheck
+
+# Stage 列表按声明顺序执行。
+# - id：稳定机器标识，同时对应 .runtime-corrector/config.yaml 的 stage；
+# - name：展示名称；
+# - description：该 Stage 的职责和边界列表；
+# - nextStageId：直接下游 id；最后一个 Stage 使用 null；
+# - outputs：本 Stage 必须生成的文件，path 相对于项目根目录；
+# - inputs：只读上游文件，不得为了让下游通过而回写。
+stages:
+  - id: ir
+    name: Intent Requirements
+    description:
+      - 把用户原始需求整理为目标、范围、功能需求、验收标准和来源追溯。
+      - 只记录需求事实、必要推断和待确认项，不提前虚构技术方案或实现承诺。
+    nextStageId: planning
+    inputs: []
+    outputs:
+      - path: ir.md
+        format: markdown
+        description: 需求意图与可执行验收标准。
+
+  - id: planning
+    name: Planning
+    description:
+      - 把 IR 拆分成可实施、可验证的里程碑与 SR。
+      - 用关系图和粒度选择文件保持同一 SR 集合、分组和依赖语义，不得新增 IR 未支持的能力。
+    nextStageId: selection
+    inputs:
+      - path: ir.md
+        fromStageId: ir
+    outputs:
+      - path: PilotPlan.md
+        format: markdown
+        description: 里程碑、SR 分组、风险与评审重点。
+      - path: relations.json
+        format: json
+        description: 里程碑与 SR 的 contains/requires 关系。
+      - path: granularity-choice.json
+        format: json
+        description: 粒度推荐、最终选择、理由与分组快照。
+
+  - id: selection
+    name: Kit Selection
+    description:
+      - 根据 IR 和 Planning 为每个 SR 选择合适的 Kit。
+      - 记录依据、候选排除、组合顺序、置信度和开放问题；所有选择必须可追溯到上游事实。
+    nextStageId: prd-contract
+    inputs:
+      - path: ir.md
+        fromStageId: ir
+      - path: PilotPlan.md
+        fromStageId: planning
+      - path: relations.json
+        fromStageId: planning
+      - path: granularity-choice.json
+        fromStageId: planning
+    outputs:
+      - path: kit-map.md
+        format: markdown
+        description: 每个 SR 的 Kit 映射、理由和不确定性。
+
+  - id: prd-contract
+    name: PRD Contract
+    description:
+      - 把 IR、Planning 和 Selection 收敛成实现契约。
+      - 明确输入追溯、Kit 映射、数据结构、权限、模块路径、验收项、假设和实现护栏。
+      - 只整合上游，不补造未确认需求。
+    nextStageId: null
+    inputs:
+      - path: ir.md
+        fromStageId: ir
+      - path: PilotPlan.md
+        fromStageId: planning
+      - path: relations.json
+        fromStageId: planning
+      - path: granularity-choice.json
+        fromStageId: planning
+      - path: kit-map.md
+        fromStageId: selection
+    outputs:
+      - path: PRD.md
+        format: markdown
+        description: 可直接交付实现与验收的最终产品需求契约。
+
+# Agent 执行要求。
+instructions:
+  - 开始前读取 .runtime-corrector/config.yaml 和当前 Stage 对应的 reviewer/rules。
+  - 严格复用 Stage id 和固定输出路径，不自行重命名或增加新的业务 Stage。
+  - 每完成一个 Stage 就保存其输出，等待并处理 Runtime Corrector 反馈。
+  - 硬规则违规时做确定性的最小修正；复杂语义问题以 reviewer 的证据为准。
+  - 下游缺少上游时停止并报告，不使用其他文件伪装缺失输入。
+  - 全流程不得自动应用不可信 Patch，不得修改当前 Stage 输出之外的文件。

@@ -1,0 +1,1786 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Runtime Corrector 自定义 Stage 教程</title>
+  <style>
+    :root {
+      --ink: #182033;
+      --muted: #617087;
+      --paper: #f5f2ea;
+      --card: #fffdf8;
+      --line: #d8d4c9;
+      --brand: #4257d6;
+      --brand-deep: #27358f;
+      --accent: #e86f4a;
+      --good: #17845d;
+      --warn: #b96319;
+      --bad: #bd3c4b;
+      --code: #182135;
+      --code-ink: #e9eefc;
+      --shadow: 0 18px 55px rgba(32, 39, 69, .10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 2%, rgba(66, 87, 214, .11), transparent 28rem),
+        radial-gradient(circle at 92% 18%, rgba(232, 111, 74, .09), transparent 24rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    button, input { font: inherit; }
+    a { color: var(--brand-deep); }
+    code { font-family: "Cascadia Code", Consolas, monospace; }
+    :focus-visible { outline: 3px solid rgba(66, 87, 214, .28); outline-offset: 3px; }
+
+    .topbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 10px clamp(18px, 4vw, 56px);
+      border-bottom: 1px solid rgba(216, 212, 201, .82);
+      background: rgba(245, 242, 234, .88);
+      backdrop-filter: blur(14px);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: -.02em; }
+    .brand-mark {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border-radius: 9px;
+      color: white;
+      background: var(--brand);
+      box-shadow: 0 7px 18px rgba(66, 87, 214, .28);
+    }
+    .top-state { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
+    .local-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 4px rgba(23, 132, 93, .12); }
+
+    .hero {
+      width: min(1180px, calc(100% - 36px));
+      margin: 62px auto 36px;
+      padding: clamp(30px, 6vw, 74px);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(66, 87, 214, .16);
+      border-radius: 34px;
+      background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(246,246,255,.88));
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "stage → design.md";
+      position: absolute;
+      right: -28px;
+      bottom: 28px;
+      transform: rotate(-7deg);
+      color: rgba(66, 87, 214, .065);
+      font: 900 clamp(38px, 7vw, 88px)/1 "Cascadia Code", monospace;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .eyebrow { display: inline-flex; gap: 8px; align-items: center; color: var(--brand-deep); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 28px; height: 3px; border-radius: 4px; background: var(--accent); }
+    h1 { max-width: 850px; margin: 18px 0 20px; font-size: clamp(40px, 7vw, 82px); line-height: 1.04; letter-spacing: -.055em; }
+    .hero p { max-width: 780px; margin: 0; color: var(--muted); font-size: clamp(17px, 2vw, 21px); }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 17px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      background: var(--brand);
+      font-weight: 750;
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 9px 22px rgba(66, 87, 214, .22); }
+    .button.secondary { color: var(--ink); border-color: var(--line); background: white; }
+    .button.small { min-height: 34px; padding: 5px 11px; border-radius: 9px; font-size: 13px; }
+    .button.ghost { color: var(--brand-deep); border-color: rgba(66,87,214,.2); background: rgba(66,87,214,.06); }
+
+    .outcomes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: min(1180px, calc(100% - 36px)); margin: 0 auto 54px; }
+    .outcome { padding: 19px 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,248,.72); }
+    .outcome strong { display: block; margin-bottom: 4px; }
+    .outcome span { color: var(--muted); font-size: 14px; }
+
+    .layout { display: grid; grid-template-columns: 245px minmax(0, 860px); gap: 34px; width: min(1180px, calc(100% - 36px)); margin: 0 auto 90px; align-items: start; }
+    .rail { position: sticky; top: 86px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,253,248,.82); box-shadow: 0 12px 40px rgba(32,39,69,.06); }
+    .rail-label { padding: 5px 9px 10px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .rail button { width: 100%; padding: 9px 10px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; text-align: left; }
+    .rail button:hover, .rail button.active { color: var(--brand-deep); background: rgba(66,87,214,.09); font-weight: 760; }
+    .rail .num { display: inline-grid; width: 24px; height: 24px; margin-right: 7px; place-items: center; border: 1px solid var(--line); border-radius: 7px; font-size: 12px; }
+
+    main { min-width: 0; }
+    .chapter { scroll-margin-top: 82px; margin-bottom: 52px; }
+    .chapter-head { display: grid; grid-template-columns: 48px 1fr; gap: 15px; align-items: start; margin-bottom: 20px; }
+    .chapter-index { display: grid; width: 48px; height: 48px; place-items: center; color: white; border-radius: 15px; background: var(--ink); font-weight: 850; }
+    h2 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.035em; line-height: 1.15; }
+    .chapter-head p { margin: 0; color: var(--muted); }
+    h3 { margin: 28px 0 9px; font-size: 20px; letter-spacing: -.015em; }
+    p { margin: 10px 0; }
+    .card { margin: 15px 0; padding: clamp(18px, 3vw, 27px); border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: 0 10px 32px rgba(32,39,69,.05); }
+    .card.compact { padding: 18px; }
+    .callout { display: grid; grid-template-columns: 32px 1fr; gap: 11px; padding: 16px 18px; border: 1px solid rgba(66,87,214,.18); border-radius: 15px; background: rgba(66,87,214,.06); }
+    .callout.warn { border-color: rgba(185,99,25,.22); background: rgba(185,99,25,.07); }
+    .callout strong { display: block; margin-bottom: 2px; }
+    .callout p { margin: 0; color: var(--muted); font-size: 14px; }
+    .callout-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: white; background: var(--brand); font-weight: 900; }
+    .callout.warn .callout-icon { background: var(--warn); }
+
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; margin: 18px 0; }
+    .flow-item { position: relative; min-height: 95px; padding: 15px 12px; border: 1px solid var(--line); border-radius: 14px; background: white; text-align: center; }
+    .flow-item:not(:last-child)::after { content: "→"; position: absolute; z-index: 2; top: 34px; right: -14px; color: var(--accent); font-weight: 900; }
+    .flow-item b { display: block; color: var(--brand-deep); font-size: 13px; }
+    .flow-item span { color: var(--muted); font-size: 12px; }
+
+    .code-card { margin: 14px 0 20px; overflow: hidden; border-radius: 17px; background: var(--code); box-shadow: 0 15px 38px rgba(24,33,53,.16); }
+    .code-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 17px; color: #9eabc2; border-bottom: 1px solid rgba(255,255,255,.09); font-size: 13px; }
+    .code-head .file { color: white; font-weight: 750; }
+    .copy { padding: 5px 9px; border: 1px solid rgba(255,255,255,.16); border-radius: 7px; color: #d8e0f0; background: rgba(255,255,255,.06); cursor: pointer; }
+    .copy:hover { background: rgba(255,255,255,.12); }
+    pre { margin: 0; padding: 19px; overflow: auto; color: var(--code-ink); font: 13px/1.7 "Cascadia Code", Consolas, monospace; tab-size: 2; }
+    .yaml-key { color: #8fc6ff; }
+    .comment { color: #8794aa; }
+
+    .field-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    .field-table th, .field-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .field-table th { color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    .field-table td:first-child { width: 25%; color: var(--brand-deep); font-family: "Cascadia Code", monospace; font-weight: 700; }
+    .field-table td:nth-child(2) { width: 22%; }
+    .config-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .config-map-item { position: relative; padding: 16px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .config-map-item::after { content: "↓"; position: absolute; right: 13px; top: 11px; color: var(--accent); font-weight: 900; }
+    .config-map-item code { display: block; margin-bottom: 9px; color: var(--brand-deep); font-weight: 800; }
+    .config-map-item b { display: block; font-size: 13px; }
+    .config-map-item span { color: var(--muted); font-size: 12px; }
+
+    .checklist { list-style: none; padding: 0; margin: 12px 0; }
+    .checklist li { position: relative; padding: 9px 0 9px 34px; border-bottom: 1px dashed rgba(216,212,201,.9); }
+    .checklist li::before { content: "✓"; position: absolute; left: 0; top: 9px; display: grid; width: 22px; height: 22px; place-items: center; color: var(--good); border: 1px solid rgba(23,132,93,.25); border-radius: 7px; background: rgba(23,132,93,.07); font-weight: 900; }
+
+    .lab { overflow: hidden; border: 1px solid rgba(66,87,214,.25); border-radius: 25px; background: #fff; box-shadow: var(--shadow); }
+    .lab-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 19px; color: white; background: var(--ink); }
+    .lab-title { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .pulse { width: 10px; height: 10px; border-radius: 50%; background: #50d89b; box-shadow: 0 0 0 5px rgba(80,216,155,.14); }
+    .switch-wrap { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+    .switch { position: relative; width: 42px; height: 24px; border: 0; border-radius: 30px; background: #5c6577; cursor: pointer; }
+    .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform .2s ease; }
+    .switch.on { background: var(--good); }
+    .switch.on::after { transform: translateX(18px); }
+    .lab-controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: #faf9f5; }
+    .path-input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: white; }
+    .scenario-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 16px; border-bottom: 1px solid var(--line); background: #faf9f5; }
+    .scenario { padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: white; cursor: pointer; }
+    .scenario.active { color: var(--brand-deep); border-color: rgba(66,87,214,.38); background: rgba(66,87,214,.08); font-weight: 750; }
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; padding: 18px; background: white; }
+    .pipe { min-height: 74px; padding: 10px 7px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: #fbfaf7; text-align: center; transition: .2s ease; }
+    .pipe .pnum { display: grid; width: 24px; height: 24px; margin: 0 auto 5px; place-items: center; border-radius: 50%; color: var(--muted); background: #e9e7e0; font-size: 11px; font-weight: 850; }
+    .pipe span { font-size: 12px; }
+    .pipe.active { color: var(--brand-deep); border-color: rgba(66,87,214,.45); background: rgba(66,87,214,.07); transform: translateY(-2px); }
+    .pipe.active .pnum { color: white; background: var(--brand); }
+    .pipe.done { color: var(--good); border-color: rgba(23,132,93,.25); background: rgba(23,132,93,.06); }
+    .pipe.done .pnum { color: white; background: var(--good); }
+    .lab-body { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(310px, .92fr); min-height: 540px; border-top: 1px solid var(--line); }
+    .lab-pane { min-width: 0; padding: 18px; }
+    .lab-pane + .lab-pane { border-left: 1px solid var(--line); background: #f5f6fa; }
+    .pane-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 10px; font-size: 13px; font-weight: 800; }
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 11px; }
+    .badge.wait { color: var(--muted); background: #ebe9e2; }
+    .badge.bad { color: var(--bad); background: rgba(189,60,75,.10); }
+    .badge.good { color: var(--good); background: rgba(23,132,93,.10); }
+    .document-shell { overflow: hidden; border: 1px solid #d9dde8; border-radius: 15px; background: #fff; box-shadow: 0 12px 34px rgba(31,43,82,.08); }
+    .document-chrome { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; color: #7a8498; border-bottom: 1px solid #e3e6ee; background: #f5f6f9; font-size: 11px; }
+    .document-chrome b { color: #34405a; }
+    .document-paper { min-height: 420px; max-height: 550px; padding: 17px 14px 24px; overflow: auto; color: #273148; background: linear-gradient(90deg, #f2f4f8 0 38px, #fff 38px); font: 12px/1.55 "Cascadia Code", Consolas, monospace; }
+    .doc-block { position: relative; margin: 0 0 4px 28px; padding: 7px 10px; border: 1px solid transparent; border-radius: 9px; white-space: pre-wrap; transition: .18s ease; cursor: pointer; }
+    .doc-block::before { content: attr(data-line); position: absolute; right: calc(100% + 10px); top: 8px; width: 22px; color: #a0a9b9; text-align: right; font-size: 10px; }
+    .doc-block:hover { background: #f5f7fc; }
+    .doc-block.focused { border-color: rgba(66,87,214,.42); background: rgba(66,87,214,.08); box-shadow: 0 0 0 3px rgba(66,87,214,.08); }
+    .doc-block.issue { border-left: 3px solid var(--bad); background: rgba(189,60,75,.055); }
+    .doc-block.pass { border-left: 3px solid var(--good); }
+    .doc-block.gap { color: #9f3443; border: 1px dashed rgba(189,60,75,.45); background: rgba(189,60,75,.05); }
+    .doc-token-heading { color: #263b9c; font-weight: 800; }
+    .doc-token-todo { padding: 1px 4px; color: white; border-radius: 4px; background: var(--bad); font-weight: 850; }
+    .doc-token-evidence { padding: 1px 4px; color: #0f6949; border-radius: 4px; background: rgba(23,132,93,.11); }
+    .inspector-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; padding: 4px; border-radius: 12px; background: #e7e9f0; }
+    .inspector-tab { padding: 8px 10px; border: 0; border-radius: 9px; color: #68738a; background: transparent; cursor: pointer; font-size: 12px; font-weight: 800; }
+    .inspector-tab.active { color: var(--brand-deep); background: white; box-shadow: 0 3px 11px rgba(28,39,71,.09); }
+    .criteria-panel { display: none; }
+    .criteria-panel.active { display: block; }
+    .criterion { width: 100%; margin-bottom: 8px; padding: 11px 12px; border: 1px solid #dfe2eb; border-radius: 12px; color: #3d4860; background: white; cursor: pointer; text-align: left; transition: .16s ease; }
+    .criterion:hover, .criterion.active { border-color: rgba(66,87,214,.42); transform: translateX(-2px); box-shadow: 0 6px 18px rgba(39,53,143,.08); }
+    .criterion-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .criterion-id { color: var(--brand-deep); font: 750 11px/1.3 "Cascadia Code", monospace; }
+    .criterion-type { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .criterion-copy { margin-top: 7px; color: #303b52; font-size: 12px; line-height: 1.45; }
+    .criterion-state { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; color: var(--muted); background: #eceef3; font-size: 10px; font-weight: 850; }
+    .criterion-state.error { color: var(--bad); background: rgba(189,60,75,.10); }
+    .criterion-state.warning { color: var(--warn); background: rgba(185,99,25,.11); }
+    .criterion-state.pass { color: var(--good); background: rgba(23,132,93,.10); }
+    .focus-explanation { margin-top: 12px; padding: 13px 14px; border: 1px solid rgba(66,87,214,.17); border-radius: 12px; background: rgba(66,87,214,.055); }
+    .focus-explanation small { display: block; margin-bottom: 4px; color: var(--brand-deep); font-weight: 850; letter-spacing: .05em; }
+    .focus-explanation p { margin: 0; color: var(--muted); font-size: 12px; }
+    .diagnostic-drawer { padding: 14px 18px 8px; border-top: 1px solid var(--line); background: #f9fafc; }
+    .diagnostic-drawer .pane-head { margin-bottom: 8px; }
+    .diagnostics { margin: 0; padding: 0; list-style: none; }
+    .diagnostics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .diagnostics li { margin: 0; padding: 9px 10px; border-left: 3px solid var(--line); border-radius: 8px; color: var(--muted); background: white; font-size: 11px; }
+    .diagnostics li.error { color: #7e2330; border-color: var(--bad); background: rgba(189,60,75,.06); }
+    .diagnostics li.pass { color: #126745; border-color: var(--good); background: rgba(23,132,93,.06); }
+    .lab-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--line); background: #faf9f5; }
+    .status-copy strong { display: block; font-size: 14px; }
+    .status-copy span { color: var(--muted); font-size: 12px; }
+
+    .bundle-lab { overflow: hidden; margin-top: 18px; border: 1px solid rgba(232,111,74,.28); border-radius: 24px; background: white; box-shadow: var(--shadow); }
+    .bundle-lab .lab-top { background: linear-gradient(120deg, #182033, #293454); }
+    .bundle-controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 15px 18px; border-bottom: 1px solid var(--line); background: #faf9f5; }
+    .bundle-step { padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: white; cursor: pointer; text-align: left; }
+    .bundle-step b { display: block; color: var(--ink); font-size: 12px; }
+    .bundle-step span { display: block; font-size: 11px; }
+    .bundle-step.active { color: var(--brand-deep); border-color: rgba(66,87,214,.42); background: rgba(66,87,214,.08); box-shadow: 0 6px 18px rgba(39,53,143,.08); }
+    .bundle-files { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 18px; background: #f6f7fb; }
+    .bundle-file { min-width: 0; overflow: hidden; border: 1px solid #d9dde8; border-radius: 15px; background: white; box-shadow: 0 9px 25px rgba(31,43,82,.07); }
+    .bundle-file-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; color: #677188; border-bottom: 1px solid #e3e6ee; background: #f5f6f9; font-size: 11px; }
+    .bundle-file-head b { color: #34405a; font-family: "Cascadia Code", monospace; }
+    .bundle-file pre { min-height: 330px; max-height: 440px; padding: 15px; color: #273148; background: white; font-size: 11px; white-space: pre-wrap; }
+    .bundle-file.missing pre { display: grid; place-items: center; color: var(--muted); background: repeating-linear-gradient(-45deg, #fff, #fff 12px, #f7f6f2 12px, #f7f6f2 24px); text-align: center; }
+    .bundle-rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 18px 18px; background: #f6f7fb; }
+    .bundle-rule { padding: 11px; border: 1px solid var(--line); border-radius: 11px; background: white; }
+    .bundle-rule b { display: block; color: var(--brand-deep); font: 750 11px/1.4 "Cascadia Code", monospace; }
+    .bundle-rule span { color: var(--muted); font-size: 11px; }
+    .bundle-rule.pass { border-color: rgba(23,132,93,.28); background: rgba(23,132,93,.05); }
+    .bundle-rule.fail { border-color: rgba(189,60,75,.3); background: rgba(189,60,75,.055); }
+    .bundle-rule.wait { border-style: dashed; }
+    .bundle-result { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 15px 18px; border-top: 1px solid var(--line); }
+    .bundle-result strong { display: block; }
+    .bundle-result p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+
+    .workflow-demo { overflow: hidden; border: 1px solid rgba(66,87,214,.24); border-radius: 24px; background: white; box-shadow: var(--shadow); }
+    .workflow-demo-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; color: white; background: linear-gradient(120deg, #182033, #293454); }
+    .workflow-demo-head strong { display: block; }
+    .workflow-demo-head span { color: #bdc7dc; font-size: 12px; }
+    .workflow-scenarios { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line); background: #faf9f5; }
+    .workflow-scenario { padding: 7px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: white; cursor: pointer; }
+    .workflow-scenario.active { color: var(--brand-deep); border-color: rgba(66,87,214,.42); background: rgba(66,87,214,.08); font-weight: 750; }
+    .workflow-canvas { position: relative; min-height: 430px; overflow: hidden; background: radial-gradient(circle at 50% 45%, rgba(66,87,214,.06), transparent 240px), #f7f8fb; }
+    .workflow-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .workflow-edge-path { fill: none; stroke: #b9bfcc; stroke-width: 2; opacity: .42; transition: stroke .18s ease, opacity .18s ease, stroke-width .18s ease; }
+    .workflow-edge-path.active { stroke: var(--brand); stroke-width: 3; opacity: 1; }
+    .workflow-edge-path.selected { stroke: var(--accent); stroke-width: 5; opacity: 1; }
+    .workflow-edge-path.dimmed { opacity: .12; }
+    .workflow-node { position: absolute; width: 164px; min-height: 72px; transform: translate(-50%, -50%); padding: 11px 12px; border: 1px solid #d8dce7; border-radius: 14px; color: var(--ink); background: white; box-shadow: 0 8px 22px rgba(31,43,82,.08); cursor: pointer; text-align: left; transition: .18s ease; }
+    .workflow-node:hover, .workflow-node.active { border-color: rgba(66,87,214,.55); box-shadow: 0 10px 28px rgba(39,53,143,.16); transform: translate(-50%, -52%); }
+    .workflow-node.source { border-color: rgba(23,132,93,.5); background: rgba(23,132,93,.06); }
+    .workflow-node.dimmed { opacity: .38; }
+    .workflow-node b { display: block; color: var(--brand-deep); font-size: 13px; }
+    .workflow-node span { display: block; margin-top: 3px; color: var(--muted); font: 11px/1.4 "Cascadia Code", monospace; }
+    .workflow-node.ra { left: 13%; top: 21%; }
+    .workflow-node.cu { left: 13%; top: 77%; }
+    .workflow-node.rd { left: 50%; top: 21%; }
+    .workflow-node.sd { left: 50%; top: 77%; }
+    .workflow-node.mt { left: 87%; top: 21%; }
+    .workflow-node.dt { left: 87%; top: 77%; }
+    .workflow-detail { display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); gap: 0; border-top: 1px solid var(--line); }
+    .workflow-node-detail, .workflow-edge-detail { padding: 17px 18px; min-width: 0; }
+    .workflow-edge-detail { border-left: 1px solid var(--line); background: #f6f7fb; }
+    .workflow-detail-label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .workflow-detail h3 { margin: 5px 0 4px; font-size: 17px; }
+    .workflow-detail p { margin: 4px 0; color: var(--muted); font-size: 12px; }
+    .workflow-policy { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .workflow-policy span { padding: 3px 7px; border-radius: 999px; color: var(--good); background: rgba(23,132,93,.09); font-size: 10px; font-weight: 800; }
+    .incoming-edge-list { display: grid; gap: 6px; margin-top: 10px; }
+    .incoming-edge { padding: 8px 9px; border: 1px solid #dfe2eb; border-radius: 9px; color: var(--muted); background: white; cursor: pointer; text-align: left; font-size: 11px; }
+    .incoming-edge.active { color: var(--brand-deep); border-color: rgba(66,87,214,.42); background: rgba(66,87,214,.07); font-weight: 750; }
+    .workflow-empty { color: var(--muted); font-size: 12px; }
+
+    .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .trust-card { padding: 18px; border-radius: 16px; border: 1px solid var(--line); background: white; }
+    .trust-card.yes { border-top: 4px solid var(--good); }
+    .trust-card.no { border-top: 4px solid var(--bad); }
+    .trust-card h3 { margin: 0 0 8px; }
+    .trust-card ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+    footer { padding: 42px 18px 70px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; }
+    footer strong { color: var(--ink); }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .rail { position: static; display: flex; gap: 5px; overflow: auto; }
+      .rail-label { display: none; }
+      .rail button { flex: 0 0 auto; width: auto; white-space: nowrap; }
+      .outcomes { grid-template-columns: 1fr; }
+      .config-map { grid-template-columns: 1fr; }
+      .flow, .pipeline { grid-template-columns: 1fr; }
+      .flow-item { min-height: auto; text-align: left; }
+      .flow-item:not(:last-child)::after { content: "↓"; top: auto; right: 16px; bottom: -17px; }
+      .pipe { min-height: auto; display: flex; align-items: center; gap: 9px; text-align: left; }
+      .pipe .pnum { margin: 0; }
+      .lab-body { grid-template-columns: 1fr; }
+      .lab-pane + .lab-pane { border-left: 0; border-top: 1px solid var(--line); }
+      .document-paper { max-height: 480px; }
+      .bundle-files, .bundle-rule-grid { grid-template-columns: 1fr; }
+      .workflow-detail { grid-template-columns: 1fr; }
+      .workflow-edge-detail { border-left: 0; border-top: 1px solid var(--line); }
+    }
+    @media (max-width: 620px) {
+      .top-state { display: none; }
+      .hero { margin-top: 28px; padding: 28px 22px; }
+      h1 { font-size: 42px; }
+      .chapter-head { grid-template-columns: 40px 1fr; }
+      .chapter-index { width: 40px; height: 40px; }
+      .lab-controls { grid-template-columns: 1fr; }
+      .lab-status { align-items: stretch; flex-direction: column; }
+      .diagnostics { grid-template-columns: 1fr; }
+      .trust-grid { grid-template-columns: 1fr; }
+      .field-table { display: block; overflow-x: auto; }
+      .workflow-canvas { min-height: 720px; }
+      .workflow-lines { display: none; }
+      .workflow-node { left: 50% !important; width: min(260px, calc(100% - 40px)); }
+      .workflow-node.ra { top: 10%; }
+      .workflow-node.rd { top: 26%; }
+      .workflow-node.cu { top: 42%; }
+      .workflow-node.sd { top: 58%; }
+      .workflow-node.mt { top: 74%; }
+      .workflow-node.dt { top: 90%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">R</span> Runtime Corrector Workshop</div>
+    <div class="top-state"><span class="local-dot"></span> 单文件 + 混合 Bundle · 本地运行 · 零外部依赖</div>
+  </header>
+
+  <section class="hero">
+    <span class="eyebrow">Custom stage tutorial</span>
+    <h1>让 <code>design.md</code><br>拥有透明的纠偏护栏</h1>
+    <p>先从零创建一个纠偏 <strong>design.md</strong> 的 <strong>app-design</strong> stage，再用精简版 <strong>mini-planning</strong> 看懂一个 Stage 如何同时检查 Markdown 与 JSON。每一步都能追溯到项目自己的配置、规则、Schema 和 reviewer。</p>
+    <div class="hero-actions">
+      <a class="button" href="#mental-model">开始配置</a>
+      <a class="button secondary" href="#lab">先体验演示</a>
+      <a class="button secondary" href="#workflow-graph">看 Workflow 约束图</a>
+      <a class="button secondary" href="#mixed-bundle">看 Markdown + JSON</a>
+    </div>
+  </section>
+
+  <section class="outcomes" aria-label="教程成果">
+    <div class="outcome"><strong>第一例会创建 3 个策略文件</strong><span>config.yaml、app-design.rules.yaml、app-design.reviewer.md</span></div>
+    <div class="outcome"><strong>你会掌握 4 个控制命令</strong><span>stages、stage、explain、spec</span></div>
+    <div class="outcome"><strong>你会看懂三种产物拓扑</strong><span>单节点、六阶段 Workflow DAG，以及 Markdown + JSON 混合 Bundle</span></div>
+  </section>
+
+  <div class="layout">
+    <nav class="rail" aria-label="教程步骤">
+      <div class="rail-label">学习路径</div>
+      <button class="active" data-target="mental-model"><span class="num">0</span>先懂模型</button>
+      <button data-target="prepare"><span class="num">1</span>准备目录</button>
+      <button data-target="register"><span class="num">2</span>注册 stage</button>
+      <button data-target="rules"><span class="num">3</span>编写硬规则</button>
+      <button data-target="reviewer"><span class="num">4</span>定义审阅</button>
+      <button data-target="enable"><span class="num">5</span>启用与核对</button>
+      <button data-target="lab"><span class="num">6</span>运行演示</button>
+      <button data-target="workflow-graph"><span class="num">7</span>Workflow 约束图</button>
+      <button data-target="mixed-bundle"><span class="num">8</span>Markdown + JSON</button>
+      <button data-target="acceptance"><span class="num">9</span>验收与回滚</button>
+    </nav>
+
+    <main>
+      <section class="chapter" id="mental-model">
+        <div class="chapter-head">
+          <div class="chapter-index">0</div>
+          <div><h2>先建立正确心智模型</h2><p>Stage 不是一段隐藏代码，而是一组项目自己拥有、随时可审计的策略。</p></div>
+        </div>
+        <div class="card">
+          <div class="flow" aria-label="纠偏流程">
+            <div class="flow-item"><b>注册</b><span>artifacts[] 声明 stage 与文件</span></div>
+            <div class="flow-item"><b>启用</b><span>enabledStages 决定是否工作</span></div>
+            <div class="flow-item"><b>检查</b><span>rules 执行确定性判断</span></div>
+            <div class="flow-item"><b>审阅</b><span>reviewer 处理语义与取舍</span></div>
+            <div class="flow-item"><b>纠偏</b><span>主 Agent 最小修改并复检</span></div>
+          </div>
+          <div class="callout">
+            <div class="callout-icon">i</div>
+            <div><strong>注册 ≠ 启用</strong><p>把 <code>app-design</code> 写进 <code>artifacts[]</code> 只是安装；只有它同时出现在 <code>enabledStages</code>，写入 <code>design.md</code> 才会触发纠偏。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" id="prepare">
+        <div class="chapter-head">
+          <div class="chapter-index">1</div>
+          <div><h2>准备项目策略目录</h2><p>在需要生成 App 设计文档的目标项目中操作，不要改插件源码。</p></div>
+        </div>
+        <div class="card">
+          <h3>已有 Runtime Corrector 项目</h3>
+          <p>直接进入项目内的 <code>.runtime-corrector/</code>。保留现有配置和规则，接下来只追加 <code>app-design</code>。</p>
+          <h3>全新项目</h3>
+          <p>先加载插件并初始化通用模板，再用下一节的完整配置替换占位 artifact，并创建本教程的两个 criteria 文件。初始化后的 <code>enabledStages</code> 为空，不会提前看护任何业务文件。</p>
+          <div class="code-card">
+            <div class="code-head"><span class="file">PowerShell</span><button class="copy" data-copy="prepare-code">复制</button></div>
+            <pre id="prepare-code">cd C:\path\to\your-app-project
+claude --plugin-dir C:\path\to\runtime-corrector
+
+# 进入 Claude 后执行
+/runtime-corrector:init</pre>
+          </div>
+          <div class="callout warn">
+            <div class="callout-icon">!</div>
+            <div><strong>初始化有覆盖保护</strong><p>如果 <code>.runtime-corrector/</code> 已存在，<code>init</code> 会停止。请合并配置，不要删除团队已有规则后重来。</p></div>
+          </div>
+          <div class="callout">
+            <div class="callout-icon">i</div>
+            <div><strong>主会话需要可恢复</strong><p>启用语义审阅时，不要用 <code>--no-session-persistence</code> 启动主会话。该参数只用于插件完成后释放的一次性 reviewer 子会话。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" id="register">
+        <div class="chapter-head">
+          <div class="chapter-index">2</div>
+          <div><h2>在 config.yaml 注册 app-design</h2><p>下面是一个可直接运行的“仅自定义 stage”完整配置；已有项目只需合并 artifact 项。</p></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/config.yaml</span><button class="copy" data-copy="config-code">复制</button></div>
+          <pre id="config-code">version: 1
+
+# 先保持关闭，完成核对后再用命令开启
+enabledStages: []
+
+artifacts:
+  - name: app-design-document
+    stage: app-design
+    type: app-design
+    format: markdown
+    patterns:
+      - design.md
+      - docs/design.md
+      - "**/design.md"
+    relatedPatterns:
+      - requirements.md
+      - "**/requirements.md"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: app-design.rules.yaml
+    review:
+      enabled: true
+      criteria: app-design.reviewer.md
+
+ignorePatterns:
+  - "**/.runtime-correction/**"
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 20
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000</pre>
+        </div>
+
+        <div class="card">
+          <h3>逐项理解配置</h3>
+          <table class="field-table">
+            <thead><tr><th>配置项</th><th>本例值</th><th>它控制什么</th></tr></thead>
+            <tbody>
+              <tr><td>version</td><td>1</td><td>策略文件格式版本。当前必须为 <code>1</code>。</td></tr>
+              <tr><td>enabledStages</td><td>[]</td><td>当前启用列表。空列表表示 stage 已注册但不触发，便于上线前检查。</td></tr>
+              <tr><td>name</td><td>app-design-document</td><td>artifact 的可读标识；建议稳定、明确。</td></tr>
+              <tr><td>stage</td><td>app-design</td><td>控制命令使用的 stage 名。必须小写字母开头，只含小写字母、数字、连字符，最多 64 字符。</td></tr>
+              <tr><td>type</td><td>app-design</td><td>诊断结果中的 artifact 类型标签，帮助编排器区分产物。</td></tr>
+              <tr><td>format</td><td>markdown</td><td>产物格式；可选 <code>markdown</code>、<code>json</code>、<code>text</code>、<code>auto</code>。</td></tr>
+              <tr><td>patterns</td><td>**/design.md</td><td>哪些写入会触发。<code>*</code> 不跨目录，<code>**</code> 可跨目录。</td></tr>
+              <tr><td>relatedPatterns</td><td>**/requirements.md</td><td>检查时一并读取的上下游证据。本例让 reviewer 能对照需求。</td></tr>
+              <tr><td>relatedRoot</td><td>project</td><td>相关文件从项目根查找；若设为 <code>artifact-directory</code>，只从 design.md 所在目录查找。</td></tr>
+              <tr><td>rules.enabled / file</td><td>true / app-design.rules.yaml</td><td>显式控制节点硬规则；关闭只需改为 <code>false</code>。</td></tr>
+              <tr><td>review.enabled / criteria</td><td>true / app-design.reviewer.md</td><td>显式控制节点语义审查；criteria 是附加标准，不再兼任开关。</td></tr>
+              <tr><td>ignorePatterns</td><td>.runtime-correction</td><td>永不触发的路径，避免诊断产物反过来触发自己。</td></tr>
+              <tr><td>output.persist</td><td>true</td><td>每次当前快照检查后是否写诊断留痕。</td></tr>
+              <tr><td>output.mode</td><td>centralized</td><td>诊断集中写入一个目录；<code>adjacent</code> 则写在产物旁边。</td></tr>
+              <tr><td>diagnostic + diff</td><td>always paired</td><td>每次匹配写入先执行已启用检查；存在 <code>review.enabled: true</code> 时才创建隔离 fork。随后成对创建 <code>diagnostic.md</code> 与 <code>patch.diff</code>。</td></tr>
+              <tr><td>limits</td><td>20 / 24000 / 12000</td><td>分别限制相关文件数、反馈字符数、reviewer 字符数，防止范围失控。</td></tr>
+            </tbody>
+          </table>
+          <div class="config-map" aria-label="配置到运行效果的映射">
+            <div class="config-map-item"><code>patterns</code><b>决定左侧检查谁</b><span>只有命中 **/design.md 的写入才进入工作台。</span></div>
+            <div class="config-map-item"><code>rules</code><b>形成右侧硬规则</b><span>结构、数量与禁用文本都能确定复现。</span></div>
+            <div class="config-map-item"><code>reviewer</code><b>形成右侧 Agent 标准</b><span>语义问题必须引用左侧文档和上游证据。</span></div>
+          </div>
+          <div class="callout">
+            <div class="callout-icon">+</div>
+            <div><strong>合并到已有配置时</strong><p>在现有 <code>artifacts:</code> 列表末尾追加本 artifact；不要新建第二个 <code>artifacts:</code>。暂时不要把 <code>app-design</code> 加进 <code>enabledStages</code>，先完成后面的核对。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" id="rules">
+        <div class="chapter-head">
+          <div class="chapter-index">3</div>
+          <div><h2>编写可解释的硬规则</h2><p>只写机器能够确定判断的结构与文本，不让规则“猜”架构好坏。</p></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/app-design.rules.yaml</span><button class="copy" data-copy="rules-code">复制</button></div>
+          <pre id="rules-code">version: 1
+
+rules:
+  - id: DESIGN-GOALS
+    type: require-heading
+    heading: 设计目标
+    severity: error
+    suggestion: 增加设计目标，并说明它对应哪些需求。
+
+  - id: DESIGN-ARCHITECTURE
+    type: require-heading
+    heading: 架构与模块
+    severity: error
+    suggestion: 列出模块职责、边界与依赖方向。
+
+  - id: DESIGN-INTERACTIONS
+    type: require-heading
+    heading: 关键交互
+    severity: error
+    suggestion: 描述关键流程、状态变化与失败路径。
+
+  - id: DESIGN-ACCEPTANCE
+    type: require-checklist
+    under: 验收检查
+    minimum: 3
+    severity: error
+    suggestion: 至少增加 3 条可观察、可勾选的设计验收项。
+
+  - id: DESIGN-PLATFORM
+    type: require-text
+    values:
+      - HarmonyOS
+      - Android
+      - iOS
+      - Web
+    severity: warning
+    suggestion: 明确目标平台及平台约束。
+
+  - id: DESIGN-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+    severity: error
+    suggestion: 补全占位内容，或删除不在本期范围内的段落。</pre>
+        </div>
+        <div class="card compact">
+          <h3>本例使用的 4 种规则类型</h3>
+          <table class="field-table">
+            <tbody>
+              <tr><td>require-heading</td><td>标题存在</td><td>适合规定设计文档骨架；可通过 <code>aliases</code> 接受同义标题。</td></tr>
+              <tr><td>require-checklist</td><td>清单数量</td><td>目标章节内必须有 <code>- [ ]</code> 或 <code>- [x]</code> 项。</td></tr>
+              <tr><td>require-text</td><td>至少一项</td><td>本例要求出现至少一个目标平台；warning 不会变成 failed，但最终状态为 <code>warning</code>。</td></tr>
+              <tr><td>forbid-text</td><td>禁止文本</td><td>拦截未完成占位符。默认区分大小写，可设 <code>caseSensitive: false</code>。</td></tr>
+            </tbody>
+          </table>
+          <p><strong>severity</strong> 可选 <code>error</code>、<code>warning</code>、<code>info</code>；单条规则可用 <code>enabled: false</code> 暂停，保留 ID 方便审计。</p>
+        </div>
+      </section>
+
+      <section class="chapter" id="reviewer">
+        <div class="chapter-head">
+          <div class="chapter-index">4</div>
+          <div><h2>把语义判断交给 reviewer</h2><p>Reviewer 解决“是否忠实、是否合理”，硬规则解决“是否存在、是否符合格式”。</p></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/app-design.reviewer.md</span><button class="copy" data-copy="reviewer-code">复制</button></div>
+          <pre id="reviewer-code"># App Design Agent 审阅标准
+
+## 必须检查
+1. 每个设计目标是否能追溯到 requirements.md 中的明确需求。
+2. 模块职责是否单一，边界和依赖方向是否明确。
+3. 关键交互是否覆盖输入、状态变化、可观察结果和失败路径。
+4. 技术取舍是否给出原因，并区分事实、假设和待确认项。
+5. 验收检查是否能够通过测试、日志或界面行为观察。
+
+## 不要检查
+1. 不建议 requirements.md 范围外的新功能。
+2. 不因个人偏好要求更换框架、架构风格或命名。
+3. 不把上游缺失信息伪造成确定事实。
+
+## 输出约束
+- 每个问题引用 design.md 的具体章节和 requirements.md 的对应证据。
+- 给出最小修正建议，不重写已经有效的章节。
+- 无法从证据确认时标记“待人工确认”。</pre>
+        </div>
+        <div class="trust-grid">
+          <div class="trust-card yes"><h3>适合 reviewer</h3><ul><li>需求忠实度</li><li>模块边界合理性</li><li>取舍是否有证据</li><li>失败路径是否完整</li></ul></div>
+          <div class="trust-card no"><h3>适合硬规则</h3><ul><li>必需标题是否存在</li><li>清单是否达到数量</li><li>占位符是否残留</li><li>JSON 是否符合 Schema</li></ul></div>
+        </div>
+      </section>
+
+      <section class="chapter" id="enable">
+        <div class="chapter-head">
+          <div class="chapter-index">5</div>
+          <div><h2>先核对，再启用</h2><p>四个命令构成透明控制面：看状态、看执行源、看完整规范、切换开关。</p></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head"><span class="file">在项目目录执行</span><button class="copy" data-copy="enable-code">复制</button></div>
+          <pre id="enable-code"># 1. 确认 app-design 已注册且当前为 off
+node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" stages --cwd "$PWD"
+
+# 2. 查看实际命中、rules、reviewer 和检查项
+node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" explain app-design --cwd "$PWD"
+
+# 3. 展开完整规范包；即使 stage 关闭也能查看
+node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" spec app-design --cwd "$PWD"
+
+# 4. 确认无误后启用
+node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" stage app-design on --cwd "$PWD"</pre>
+        </div>
+        <p>在 Claude 对话中可使用更短的入口：</p>
+        <div class="code-card">
+          <div class="code-head"><span class="file">Claude Code</span><button class="copy" data-copy="slash-code">复制</button></div>
+          <pre id="slash-code">/runtime-corrector:stages
+/runtime-corrector:explain app-design
+/runtime-corrector:spec app-design
+/runtime-corrector:stages app-design on</pre>
+        </div>
+        <ul class="checklist">
+          <li><code>stages</code> 显示 <code>[on] app-design</code>。</li>
+          <li><code>explain</code> 显示 <code>**/design.md</code>、rules 和 reviewer 的项目内路径。</li>
+          <li><code>spec</code> 完整展开自定义 stage 契约、硬规则与 reviewer，不依赖插件源码。</li>
+        </ul>
+      </section>
+
+      <section class="chapter" id="lab">
+        <div class="chapter-head">
+          <div class="chapter-index">6</div>
+          <div><h2>亲手播放一次纠偏</h2><p>修改路径、关闭开关或切换样例，观察每一步为什么发生。</p></div>
+        </div>
+        <div class="lab" aria-label="Runtime Corrector 交互演示">
+          <div class="lab-top">
+            <div class="lab-title"><span class="pulse"></span>app-design 穿刺实验台</div>
+            <div class="switch-wrap"><span id="switch-label">stage 已启用</span><button class="switch on" id="stage-switch" role="switch" aria-checked="true" aria-label="启用或关闭 app-design stage"></button></div>
+          </div>
+          <div class="lab-controls">
+            <input class="path-input" id="path-input" value="docs/design.md" aria-label="模拟写入路径">
+            <button class="button small" id="start-demo">开始检查</button>
+          </div>
+          <div class="scenario-row" aria-label="演示样例">
+            <button class="scenario active" data-scenario="bad">失败样例：缺章节 + TODO</button>
+            <button class="scenario" data-scenario="good">通过样例：完整 design.md</button>
+            <button class="scenario" data-scenario="unmatched">未命中样例：notes.md</button>
+          </div>
+          <div class="pipeline" id="pipeline">
+            <div class="pipe" data-pipe="0"><span class="pnum">1</span><span>路径命中</span></div>
+            <div class="pipe" data-pipe="1"><span class="pnum">2</span><span>读取证据</span></div>
+            <div class="pipe" data-pipe="2"><span class="pnum">3</span><span>硬规则</span></div>
+            <div class="pipe" data-pipe="3"><span class="pnum">4</span><span>Agent 审阅</span></div>
+            <div class="pipe" data-pipe="4"><span class="pnum">5</span><span>最小纠偏</span></div>
+          </div>
+          <div class="lab-body">
+            <div class="lab-pane">
+              <div class="pane-head"><span>左侧 · 被检查的文档</span><span class="badge wait" id="doc-badge">等待检查</span></div>
+              <div class="document-shell">
+                <div class="document-chrome"><b>docs/design.md</b><span>点击段落，查看谁负责检查</span></div>
+                <div class="document-paper" id="demo-doc" aria-label="design.md 文档内容"></div>
+              </div>
+            </div>
+            <div class="lab-pane inspector-pane">
+              <div class="pane-head"><span>右侧 · 当前检查标准</span><span class="badge wait" id="criteria-badge">6 + 3</span></div>
+              <div class="inspector-tabs" role="tablist" aria-label="检查标准类型">
+                <button class="inspector-tab active" data-panel="hard" role="tab" aria-selected="true">硬规则 · 6</button>
+                <button class="inspector-tab" data-panel="agent" role="tab" aria-selected="false">Agent 标准 · 3</button>
+              </div>
+              <div class="criteria-panel active" id="hard-panel" role="tabpanel">
+                <button class="criterion" data-target-section="goals" data-explain="require-heading 精确检查 Markdown 中是否存在“## 设计目标”。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-GOALS</span><span class="criterion-state" data-rule="goals">待检查</span></span>
+                  <span class="criterion-type">require-heading · error</span><span class="criterion-copy">必须包含“设计目标”章节。</span>
+                </button>
+                <button class="criterion" data-target-section="architecture" data-explain="缺失时可确定地指出章节不存在，但不会替用户编造模块设计。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-ARCHITECTURE</span><span class="criterion-state" data-rule="architecture">待检查</span></span>
+                  <span class="criterion-type">require-heading · error</span><span class="criterion-copy">必须包含“架构与模块”章节。</span>
+                </button>
+                <button class="criterion" data-target-section="interactions" data-explain="只检查章节骨架是否存在；交互内容是否合理交给 Agent reviewer。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-INTERACTIONS</span><span class="criterion-state" data-rule="interactions">待检查</span></span>
+                  <span class="criterion-type">require-heading · error</span><span class="criterion-copy">必须包含“关键交互”章节。</span>
+                </button>
+                <button class="criterion" data-target-section="acceptance" data-explain="在“验收检查”章节内计数 - [ ] / - [x] 项，至少需要 3 条。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-ACCEPTANCE</span><span class="criterion-state" data-rule="acceptance">待检查</span></span>
+                  <span class="criterion-type">require-checklist · error</span><span class="criterion-copy">至少 3 条可观察验收项。</span>
+                </button>
+                <button class="criterion" data-target-section="goals" data-explain="全文至少出现 HarmonyOS、Android、iOS、Web 之一；它只提示平台上下文，不决定选哪个平台。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-PLATFORM</span><span class="criterion-state" data-rule="platform">待检查</span></span>
+                  <span class="criterion-type">require-text · warning</span><span class="criterion-copy">至少明确一个目标平台。</span>
+                </button>
+                <button class="criterion" data-target-section="interactions" data-explain="全文禁止残留 TODO / TBD；插件要求补全或删除，但不会自动生成业务答案。">
+                  <span class="criterion-top"><span class="criterion-id">DESIGN-NO-PLACEHOLDER</span><span class="criterion-state" data-rule="placeholder">待检查</span></span>
+                  <span class="criterion-type">forbid-text · error</span><span class="criterion-copy">禁止 TODO、TBD 占位内容。</span>
+                </button>
+              </div>
+              <div class="criteria-panel" id="agent-panel" role="tabpanel">
+                <button class="criterion" data-target-section="goals" data-explain="Agent 对照 requirements.md，判断目标是否真的来自需求；这不是正则表达式可以可靠完成的。">
+                  <span class="criterion-top"><span class="criterion-id">需求忠实度</span><span class="criterion-state" data-agent="traceability">待审阅</span></span>
+                  <span class="criterion-type">semantic review · evidence required</span><span class="criterion-copy">每个设计目标都能追溯到明确需求吗？</span>
+                </button>
+                <button class="criterion" data-target-section="architecture" data-explain="Agent 评估职责是否单一、边界是否清楚、依赖是否合理；必须引用具体模块文本。">
+                  <span class="criterion-top"><span class="criterion-id">模块边界</span><span class="criterion-state" data-agent="boundaries">待审阅</span></span>
+                  <span class="criterion-type">semantic review · no preference</span><span class="criterion-copy">模块职责和依赖方向是否有证据？</span>
+                </button>
+                <button class="criterion" data-target-section="interactions" data-explain="Agent 检查输入、状态变化、可观察结果与失败路径是否完整，不扩张需求范围。">
+                  <span class="criterion-top"><span class="criterion-id">交互闭环</span><span class="criterion-state" data-agent="flow">待审阅</span></span>
+                  <span class="criterion-type">semantic review · minimal correction</span><span class="criterion-copy">关键流程是否形成可验证闭环？</span>
+                </button>
+              </div>
+              <div class="focus-explanation" aria-live="polite"><small id="focus-label">如何阅读这个工作台</small><p id="focus-copy">点击右侧任一标准，左侧会高亮它实际检查的文档区域；再点击左侧段落，可以反向查看相关标准。</p></div>
+            </div>
+          </div>
+          <div class="diagnostic-drawer">
+            <div class="pane-head"><span>本轮输出 · 可追溯诊断</span><span class="badge wait" id="diag-badge">0 条</span></div>
+            <ul class="diagnostics" id="diagnostics"><li>点击“开始检查”，然后用“下一步”逐层观察。</li></ul>
+          </div>
+          <div class="lab-status">
+            <div class="status-copy"><strong id="status-title">准备就绪</strong><span id="status-detail">写入命中路径后，PostToolUse Hook 会自动执行同样的链路。</span></div>
+            <button class="button small ghost" id="next-demo" disabled>下一步</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>真实运行时会发生什么</h3>
+          <ol>
+            <li>主 Agent 用 Claude 的 <code>Write</code> 或 <code>Edit</code> 写入 <code>docs/design.md</code>。</li>
+            <li>PostToolUse Hook 把文件路径交给 Runtime Corrector；stage 关闭或路径不匹配时安静退出。</li>
+            <li>路径命中后，插件读取 <code>design.md</code> 与 <code>requirements.md</code>，执行当前项目的 rules。</li>
+            <li>路径命中后，节点或入边存在 <code>review.enabled: true</code> 时才创建一次性只读 fork；全部关闭时只执行已启用硬规则。</li>
+            <li>hook 校验 fork 返回的诊断与编辑计划，统一生成候选 Diff；主 Agent 只修正命中的偏差，再次写入会重新触发检查。</li>
+            <li>本轮组合结果写入 <code>.runtime-correction/</code>；fork 随后释放，插件不会自动修改或应用 Patch。</li>
+          </ol>
+          <div class="callout">
+            <div class="callout-icon">T</div>
+            <div><strong>透明性来自可追溯来源</strong><p><code>explain app-design</code> 告诉你当前实际读了哪些文件；<code>spec app-design</code> 展开完整规则；失败诊断会保存同一份 specification，避免 Agent 反复猜格式。</p></div>
+          </div>
+          <div class="callout warn">
+            <div class="callout-icon">Δ</div>
+            <div><strong>按显式开关审查</strong><p>节点或入边存在 <code>review.enabled: true</code> 时，bundle 成员写入才从当前 session 自动 fork；全部关闭时只执行硬规则。fork 不会修改或应用 <code>design.md</code>。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" id="workflow-graph">
+        <div class="chapter-head">
+          <div class="chapter-index">7</div>
+          <div><h2>六阶段 Workflow 图约束演示</h2><p>节点纠偏负责产物自身，边纠偏负责当前产物与任意前序产物的语义一致性。</p></div>
+        </div>
+
+        <div class="workflow-demo">
+          <div class="workflow-demo-head">
+            <div><strong>需求到测试设计的守护图</strong><span>点击节点或切换场景，观察当前节点实际读取哪些前序产物</span></div>
+            <code>DAG · direct incoming edges</code>
+          </div>
+          <div class="workflow-scenarios" aria-label="Workflow 审查场景">
+            <button class="workflow-scenario active" data-workflow-focus="sd">方案设计 · 三路汇聚</button>
+            <button class="workflow-scenario" data-workflow-focus="mt">人工用例 · 跨级对齐</button>
+            <button class="workflow-scenario" data-workflow-focus="dt">DT 设计 · 可执行性</button>
+          </div>
+          <div class="workflow-canvas" aria-label="需求分析、需求拆分、代码理解、方案设计、人工测试用例设计和 DT 设计组成的有向无环图">
+            <svg class="workflow-lines" viewBox="0 0 900 430" role="img" aria-labelledby="workflow-svg-title workflow-svg-desc">
+              <title id="workflow-svg-title">六阶段 Workflow 约束图</title>
+              <desc id="workflow-svg-desc">需求分析流向需求拆分和方案设计；代码理解流向方案设计和 DT 设计；方案设计、需求拆分等共同约束人工测试用例与 DT 设计。</desc>
+              <defs>
+                <marker id="workflow-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#4257d6"></path>
+                </marker>
+              </defs>
+              <path class="workflow-edge-path" data-edge-path="ra-rd" d="M200 90 L360 90" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="ra-sd" d="M190 115 C285 150 315 275 365 302" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="cu-sd" d="M200 332 L360 332" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="rd-sd" d="M450 128 L450 292" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="ra-mt" d="M190 66 C340 5 600 5 710 66" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="rd-mt" d="M540 90 L700 90" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="sd-mt" d="M535 305 C625 270 650 145 710 112" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="rd-dt" d="M535 112 C625 150 650 275 710 305" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="cu-dt" d="M190 356 C340 420 600 420 710 356" marker-end="url(#workflow-arrow)"></path>
+              <path class="workflow-edge-path" data-edge-path="sd-dt" d="M540 332 L700 332" marker-end="url(#workflow-arrow)"></path>
+            </svg>
+            <button class="workflow-node ra" data-workflow-node="ra"><b>需求分析</b><span>requirement-analysis.md</span></button>
+            <button class="workflow-node rd" data-workflow-node="rd"><b>需求拆分</b><span>requirement-breakdown.md</span></button>
+            <button class="workflow-node cu" data-workflow-node="cu"><b>代码理解</b><span>code-understanding.md</span></button>
+            <button class="workflow-node sd active" data-workflow-node="sd"><b>方案设计</b><span>solution-design.md</span></button>
+            <button class="workflow-node mt" data-workflow-node="mt"><b>人工测试用例设计</b><span>manual-test-cases.md</span></button>
+            <button class="workflow-node dt" data-workflow-node="dt"><b>DT 设计</b><span>dt-design.md</span></button>
+          </div>
+          <div class="workflow-detail">
+            <div class="workflow-node-detail">
+              <div class="workflow-detail-label">当前节点</div>
+              <h3 id="workflow-node-title">方案设计</h3>
+              <p id="workflow-node-file">产物：solution-design.md</p>
+              <p id="workflow-node-rule">自身审查：架构决策完整、SR 映射清楚、修改边界明确。</p>
+              <div class="workflow-policy"><span>rules.enabled: true</span><span>review.enabled: true</span></div>
+            </div>
+            <div class="workflow-edge-detail">
+              <div class="workflow-detail-label">直接入边约束</div>
+              <h3 id="workflow-edge-title">需求拆分 → 方案设计</h3>
+              <p id="workflow-edge-copy">每个 SR 必须映射到方案组件或关键决策；不得遗漏、合并或无依据扩张。</p>
+              <div class="incoming-edge-list" id="workflow-incoming-edges"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>这张图表达的运行规则</h3>
+          <ol>
+            <li>写入当前节点时，只执行它自己的节点纠偏和显式配置的直接入边纠偏。</li>
+            <li><code>需求分析 → 人工测试用例设计</code> 是跨层直连，证明可以连接任意前序节点，不需要自动级联全部祖先。</li>
+            <li>上游文件只读；Finding、编辑计划和候选 Diff 只能指向当前节点产物。</li>
+            <li>某条边的 source 尚未生成时，该边保持 <code>pending</code>，其他节点规则和可用入边继续执行。</li>
+            <li>节点 review 和边 review 分别使用显式 <code>enabled</code>；全部关闭时不创建隔离审查 session。</li>
+          </ol>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/config.yaml · Workflow 边片段</span><button class="copy" data-copy="workflow-edges-code">复制</button></div>
+          <pre id="workflow-edges-code">workflow:
+  edges:
+    - from: requirement-analysis
+      to: requirement-breakdown
+      review:
+        enabled: true
+        criteria: ra-to-rd.md
+    - from: requirement-analysis
+      to: solution-design
+      review:
+        enabled: true
+        criteria: ra-to-sd.md
+    - from: code-understanding
+      to: solution-design
+      review:
+        enabled: true
+        criteria: code-to-sd.md
+    - from: requirement-breakdown
+      to: solution-design
+      review:
+        enabled: true
+        criteria: rd-to-sd.md
+    - from: requirement-analysis
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: ra-to-manual.md
+    - from: requirement-breakdown
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: rd-to-manual.md
+    - from: solution-design
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: sd-to-manual.md
+    - from: requirement-breakdown
+      to: dt-design
+      review:
+        enabled: true
+        criteria: rd-to-dt.md
+    - from: code-understanding
+      to: dt-design
+      review:
+        enabled: true
+        criteria: code-to-dt.md
+    - from: solution-design
+      to: dt-design
+      review:
+        enabled: true
+        criteria: sd-to-dt.md</pre>
+        </div>
+      </section>
+
+      <section class="chapter" id="mixed-bundle">
+        <div class="chapter-head">
+          <div class="chapter-index">8</div>
+          <div><h2>第二个例子：Markdown + JSON 一起纠偏</h2><p>用一个精简的 mini-planning Stage 看懂 Bundle、Schema、局部检查和跨文件语义审阅。</p></div>
+        </div>
+
+        <div class="card">
+          <h3>先看目标拓扑</h3>
+          <div class="flow" aria-label="mini-planning 混合产物流程">
+            <div class="flow-item"><b>PilotPlan.md</b><span>人类可读的里程碑与 SR 分组</span></div>
+            <div class="flow-item"><b>relations.json</b><span>机器可读的节点和依赖边</span></div>
+            <div class="flow-item"><b>同一 Bundle</b><span>任一文件写入都会收集另一份</span></div>
+            <div class="flow-item"><b>rules + Schema</b><span>分别做结构和图关系检查</span></div>
+            <div class="flow-item"><b>reviewer</b><span>核对两份文件是否表达同一计划</span></div>
+          </div>
+          <div class="callout">
+            <div class="callout-icon">2</div>
+            <div><strong>一个 artifact 声明可以覆盖两种文件</strong><p>把两个文件都放入同一个 <code>patterns</code> 和 <code>relatedPatterns</code>，并使用 <code>format: auto</code>。这样写入 Markdown 或 JSON 都会触发同一套 mini-planning criteria。</p></div>
+          </div>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/config.yaml · 合并片段</span><button class="copy" data-copy="mini-config-code">复制</button></div>
+          <pre id="mini-config-code"># 暂时保持 enabledStages 不变，让新 stage 先处于 off。
+# 在已有 artifacts: 列表末尾追加整个 list item：
+  - name: mini-planning-bundle
+    stage: mini-planning
+    type: mini-planning-bundle
+    format: auto
+    patterns:
+      - PilotPlan.md
+      - relations.json
+    relatedPatterns:
+      - PilotPlan.md
+      - relations.json
+    relatedRoot: artifact-directory
+    rules:
+      enabled: true
+      file: mini-planning.rules.yaml
+    review:
+      enabled: true
+      criteria: mini-planning.reviewer.md</pre>
+        </div>
+        <div class="callout warn">
+          <div class="callout-icon">Y</div>
+          <div><strong>只追加 artifact，不创建第二份顶层配置</strong><p>项目里只能保留一组 <code>enabledStages:</code> 和 <code>artifacts:</code>。把完整 list item 加入现有 artifacts 列表，先让 mini-planning 保持 off；完成 <code>explain</code> 和 <code>spec</code> 核对后，再用后面的命令启用。</p></div>
+        </div>
+
+        <div class="card compact">
+          <h3>这几个配置项为什么这样写</h3>
+          <table class="field-table">
+            <thead><tr><th>配置项</th><th>本例值</th><th>实际效果</th></tr></thead>
+            <tbody>
+              <tr><td>stage</td><td>mini-planning</td><td>两个文件共用一个开关和一份规范地图；诊断仍按触发文件分别保留 Latest。</td></tr>
+              <tr><td>format</td><td>auto</td><td>清楚表达 artifact 接受混合格式；当前实现实际按文件扩展名读取内容，不会根据本字段转换文件。</td></tr>
+              <tr><td>patterns</td><td>两个文件名</td><td>写入任意一个都会触发；不需要声明两个互相竞争的 artifact。</td></tr>
+              <tr><td>relatedPatterns</td><td>同样两个文件名</td><td>触发后把另一份产物一起收进当前检查上下文。</td></tr>
+              <tr><td>relatedRoot</td><td>artifact-directory</td><td>只在触发文件所在目录收集另一份文件，避免不同目录中的同名计划串进一个 Bundle。</td></tr>
+              <tr><td>rules</td><td>一个规则文件</td><td>JSON Schema 与图规则通过 <code>artifact</code> 字段精确指向 JSON；Markdown 语义由 reviewer 核对。</td></tr>
+            </tbody>
+          </table>
+          <div class="callout warn">
+            <div class="callout-icon">!</div>
+            <div><strong>不要把无 artifact 定向能力的规则直接套在混合 Bundle 上</strong><p><code>require-heading</code>、<code>require-checklist</code> 和 <code>require-text</code> 检查本次触发文件；<code>forbid-text</code> 会扫描已收集文件。JSON 触发时，前一组不适合执行 Markdown 规则，后一组也可能误伤 JSON 字符串。本例只对 JSON 使用带 <code>artifact</code> 参数的 <code>json-schema</code> 和 <code>graph-invariants</code>，Markdown 结构与跨文件语义交给公开 reviewer。</p></div>
+          </div>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/mini-planning.rules.yaml</span><button class="copy" data-copy="mini-rules-code">复制</button></div>
+          <pre id="mini-rules-code">version: 1
+
+rules:
+  - id: MINI-PLANNING-REQUIRED
+    type: require-artifacts
+    artifacts:
+      - PilotPlan.md
+      - relations.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: MINI-PLANNING-RELATIONS-SCHEMA
+    type: json-schema
+    artifact: relations.json
+    schema: schemas/mini-relations.schema.json
+    severity: error
+
+  - id: MINI-PLANNING-RELATION-GRAPH
+    type: graph-invariants
+    artifact: relations.json
+    caseSensitiveIds: false
+    nodes:
+      pointer: /nodes
+      idField: id
+      typeField: type
+      typeRules:
+        - id: RELATION-NODE-TYPE
+          idPattern: "^SR-"
+          expectedType: sr
+        - id: RELATION-NODE-TYPE
+          idPattern: "^M"
+          expectedType: milestone
+    edges:
+      pointer: /edges
+      fromField: from
+      toField: to
+      typeField: type
+      endpointRules:
+        - id: CONTAINS-DIRECTION
+          edgeType: contains
+          fromType: milestone
+          toType: sr
+        - id: REQUIRES-DIRECTION
+          edgeType: requires
+          fromType: sr
+          toType: sr
+          allowSelf: false
+      acyclic:
+        - id: REQUIRES-CYCLE
+          types: [requires]
+    severity: error</pre>
+        </div>
+
+        <div class="config-map" aria-label="混合 Bundle 的规则分工">
+          <div class="config-map-item"><code>require-artifacts</code><b>控制 Bundle 完整度</b><span>缺一份时返回 pending，不把写入顺序误判为最终失败。</span></div>
+          <div class="config-map-item"><code>json-schema + graph-invariants</code><b>只检查 JSON</b><span>先检查字段，再按 YAML 检查节点、边方向、引用和 requires 环。</span></div>
+          <div class="config-map-item"><code>reviewer</code><b>检查 Markdown 与跨文件语义</b><span>核对里程碑、SR、标题和边是否表达同一计划。</span></div>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/schemas/mini-relations.schema.json</span><button class="copy" data-copy="mini-schema-code">复制</button></div>
+          <pre id="mini-schema-code">{
+  "type": "object",
+  "required": ["schema_version", "nodes", "edges"],
+  "properties": {
+    "schema_version": { "const": "planning.relations.v1" },
+    "nodes": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "title"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(M[1-9][0-9]*|SR-[1-9][0-9]*)$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["milestone", "sr"]
+          },
+          "title": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "type"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["contains", "requires"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}</pre>
+        </div>
+
+        <div class="card compact">
+          <h3>Schema 能做什么，不能做什么</h3>
+          <p>这个例子只使用插件当前明确支持的 JSON Schema 子集：<code>type</code>、<code>required</code>、<code>properties</code>、<code>items</code>、<code>const</code>、<code>enum</code>、<code>pattern</code>、<code>minLength</code>、<code>minItems</code> 和 <code>additionalProperties</code>。不支持的关键字会在加载策略时明确报错，不会静默略过。</p>
+          <p>Schema 负责“字段长什么样”，<code>graph-invariants</code> 只按 YAML 负责“边是否引用存在的节点、方向是否正确、是否成环”。核心规则不认识 Planning、milestone 或 SR。</p>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><span class="file">.runtime-corrector/mini-planning.reviewer.md</span><button class="copy" data-copy="mini-reviewer-code">复制</button></div>
+          <pre id="mini-reviewer-code"># Mini Planning Agent 审阅标准
+
+## 必须检查
+1. PilotPlan.md 与 relations.json 是否表达同一组里程碑和 SR。
+2. 每条 contains 边是否能在 PilotPlan.md 的 Contains SR 中找到证据。
+3. milestone node.title 是否与 PilotPlan.md 对应 M 章节标题一致。
+4. 是否有只出现在一份文件中的 SR、里程碑或依赖。
+
+## 不要检查
+1. 不因为个人偏好要求拆分更多里程碑。
+2. 不把 Schema 通过误当成产品语义已经正确。
+3. 不自动修改任何文件，也不自动应用 Patch。
+4. 本例没有收集上游需求，因此不判断需求忠实度；如需该能力，先把上游文件加入 relatedPatterns。
+
+## 输出约束
+- 每个问题同时引用 Markdown 行和 JSON Pointer/边。
+- 只建议最小同步修正；无法判断哪一侧权威时转人工。</pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">T</div>
+          <div><strong>这里刻意公开一个能力边界</strong><p>当前通用规则没有“两文件任意字段 Join 表达式”。本例的确定性规则验证 JSON，Markdown 结构和两份文件是否表达同一计划由公开 reviewer 核对；完整内置 Planning 也遵循相同边界。教程不会把 reviewer 的判断伪装成 Schema 能力。</p></div>
+        </div>
+
+        <div class="bundle-lab" aria-label="Markdown 与 JSON Bundle 交互演示">
+          <div class="lab-top">
+            <div class="lab-title"><span class="pulse"></span>mini-planning Bundle 穿刺实验台</div>
+            <span class="badge wait" id="bundle-badge">等待写入</span>
+          </div>
+          <div class="bundle-controls">
+            <button class="bundle-step active" data-bundle-step="plan"><b>1 · 写入 PilotPlan.md</b><span>观察 pending 与局部检查</span></button>
+            <button class="bundle-step" data-bundle-step="invalid-json"><b>2 · 写入错误 relations.json</b><span>观察 Schema + 图关系失败</span></button>
+            <button class="bundle-step" data-bundle-step="corrected-json"><b>3 · 最小修正 JSON</b><span>观察 Bundle 复检通过</span></button>
+          </div>
+          <div class="bundle-files">
+            <div class="bundle-file">
+              <div class="bundle-file-head"><b>PilotPlan.md</b><span id="plan-file-state">已写入 · 等待 Bundle</span></div>
+              <pre id="bundle-plan"></pre>
+            </div>
+            <div class="bundle-file missing" id="relations-file">
+              <div class="bundle-file-head"><b>relations.json</b><span id="relations-file-state">尚未生成</span></div>
+              <pre id="bundle-relations"></pre>
+            </div>
+          </div>
+          <div class="bundle-rule-grid">
+            <div class="bundle-rule wait" id="bundle-rule-required"><b>MINI-PLANNING-REQUIRED</b><span>等待两份产物齐备</span></div>
+            <div class="bundle-rule wait" id="bundle-rule-schema"><b>MINI-PLANNING-RELATIONS-SCHEMA</b><span>等待 JSON</span></div>
+            <div class="bundle-rule wait" id="bundle-rule-graph"><b>MINI-PLANNING-RELATION-GRAPH</b><span>等待 JSON</span></div>
+            <div class="bundle-rule pass" id="bundle-rule-review"><b>Agent reviewer</b><span>审阅当前已有成员</span></div>
+            <div class="bundle-rule pass" id="bundle-rule-output"><b>持久化输出</b><span>写入快照诊断与 Diff</span></div>
+          </div>
+          <div class="diagnostic-drawer">
+            <div class="pane-head"><span>本轮诊断</span><span class="badge wait" id="bundle-diag-badge">1 条</span></div>
+            <ul class="diagnostics" id="bundle-diagnostics"></ul>
+          </div>
+          <div class="bundle-result">
+            <div><strong id="bundle-result-title">状态 pending：这不是失败</strong><p id="bundle-result-copy">PilotPlan.md 已进入当前快照的隔离语义审阅；插件等待 relations.json，依赖它的硬规则保持 pending，本轮诊断与 Diff 仍会留痕。</p></div>
+            <code id="bundle-trigger">trigger: PilotPlan.md</code>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>真实运行顺序</h3>
+          <ol>
+            <li>写入 <code>PilotPlan.md</code>：路径命中，收集不到 <code>relations.json</code>；返回 <code>pending</code>，但仍审阅当前快照并持久化本轮结果。</li>
+            <li>写入 <code>relations.json</code>：两份文件齐备；先执行 Schema 和图关系规则，再由一次性隔离 fork 按 reviewer 审阅完整 Bundle。</li>
+            <li>错误 JSON 中空标题会得到 JSON Pointer；反向的 <code>contains</code> 边会得到稳定 ruleId 和边证据。</li>
+            <li>主 Agent 只修正空标题和边方向，再次写入 JSON 会重跑整个 Bundle；通过后状态变为 <code>passed</code>。</li>
+            <li>这些规则通常不能安全推导业务值，因此隔离语义审查后的候选 Patch 仍可能为 0；插件只生成候选 Diff，不自动应用。</li>
+            <li>两个触发文件属于同一 stage、读取同一 Bundle，但当前自定义 type 会分别使用 <code>pilotplan-&lt;hash&gt;</code> 和 <code>relations-&lt;hash&gt;</code> artifact key 保存 Latest；这避免一次触发覆盖另一触发的审计记录。</li>
+          </ol>
+          <div class="code-card">
+            <div class="code-head"><span class="file">启用、检查与解释</span><button class="copy" data-copy="mini-commands-code">复制</button></div>
+            <pre id="mini-commands-code">/runtime-corrector:stages
+/runtime-corrector:explain mini-planning
+/runtime-corrector:spec mini-planning
+/runtime-corrector:stages mini-planning on
+/runtime-corrector:check PilotPlan.md
+/runtime-corrector:check relations.json</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" id="acceptance">
+        <div class="chapter-head">
+          <div class="chapter-index">9</div>
+          <div><h2>验收、调整与安全回滚</h2><p>用可观察证据确认 stage 真正在工作；不满意时可一条命令停用。</p></div>
+        </div>
+        <div class="card">
+          <h3>建议做一次真实穿刺</h3>
+          <ol class="checklist">
+            <li>创建含 <code>TODO</code>、缺少“架构与模块”的 <code>docs/design.md</code>。</li>
+            <li>让 Claude 用 <code>Write</code> 或 <code>Edit</code> 写入该文件，等待 PostToolUse 自动检查和隔离语义审阅完成。</li>
+            <li>确认诊断包含 <code>DESIGN-ARCHITECTURE</code> 与 <code>DESIGN-NO-PLACEHOLDER</code>。</li>
+            <li>确认反馈包含完整 app-design 规范、已完成的语义审阅和明确的“不会自动修改”。</li>
+            <li>做最小修正并复检，确认状态为 <code>passed</code> 或仅有预期 warning。</li>
+            <li>检查 <code>.runtime-correction/runs/&lt;stage&gt;/&lt;artifact&gt;/&lt;run-id&gt;/</code> 中不可变的 <code>diagnostic.md</code>、<code>spec.md</code> 与 <code>patch.diff</code>，以及对应的 <code>latest/</code> 结果；无候选补丁时 diff 为 0 字节。</li>
+            <li>再执行一次 <code>/runtime-corrector:check docs/design.md</code>，确认它只做确定性复检并把 reviewer 标记为 <code>requested</code>，不会另建隔离 session。</li>
+            <li>若自动检查生成非空 Patch，确认它已通过 <code>git apply --check</code>；最终仍由主 Agent 决定是否应用。</li>
+          </ol>
+          <h3>再穿刺一次混合 Bundle</h3>
+          <ol class="checklist">
+            <li>只创建示例 <code>PilotPlan.md</code>，确认结果为 <code>pending</code>，但 reviewer 已审阅当前快照并生成诊断与 Diff。</li>
+            <li>创建空 M1 title、反向 contains 边的 <code>relations.json</code>，确认出现 Schema、node 和方向三个 error。</li>
+            <li>确认失败反馈完整展开 mini-planning 的 rules、Schema 和 reviewer，没有要求读取插件源码。</li>
+            <li>只补 M1 title 并把边改为 <code>M1 → SR-1</code>，再次检查 JSON。</li>
+            <li>确认 PostToolUse 组合结果为 <code>passed</code> 且 <code>agentReview = completed</code>；另行手动 <code>check</code> 时则应为 <code>requested</code>。</li>
+            <li>分别检查 PilotPlan 与 relations 的 Latest artifact key，确认两条审计记录都保留。</li>
+          </ol>
+          <h3>随时停用，不丢策略</h3>
+          <div class="code-card">
+            <div class="code-head"><span class="file">停用与恢复</span><button class="copy" data-copy="rollback-code">复制</button></div>
+            <pre id="rollback-code"># 暂停触发；rules、reviewer 和历史诊断都会保留
+/runtime-corrector:stages app-design off
+/runtime-corrector:stages mini-planning off
+
+# 重新启用时继续使用同一套策略
+/runtime-corrector:stages app-design on
+/runtime-corrector:stages mini-planning on</pre>
+          </div>
+        </div>
+        <div class="trust-grid">
+          <div class="trust-card yes"><h3>插件会做</h3><ul><li>按项目配置命中文件</li><li>执行公开硬规则</li><li>隔离执行公开 reviewer</li><li>输出诊断、规范与候选 Patch</li></ul></div>
+          <div class="trust-card no"><h3>插件不会做</h3><ul><li>自动重写 design.md</li><li>自动应用 Git Patch</li><li>编造缺失的业务事实</li><li>关闭 stage 时删除 criteria</li></ul></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer><strong>Runtime Corrector 自定义 Stage 教程</strong><br>直接双击本文件即可运行；所有演示都在浏览器内完成，不发送数据。</footer>
+
+  <script>
+    const badDoc = `# Todo App Design
+
+## 设计目标
+支持用户快速创建和完成待办。
+
+## 关键交互
+TODO：补充失败路径。
+
+## 验收检查
+- [ ] 可以新增待办`;
+
+    const goodDoc = `# Todo App Design
+
+## 设计目标
+对应 REQ-1：在 HarmonyOS 上创建和完成待办。
+
+## 架构与模块
+- TodoPage：渲染界面并转发用户意图。
+- TodoStore：维护待办状态，不负责持久化。
+
+## 关键交互
+输入非空文本 → TodoStore 新增项目 → 列表刷新；失败时保留输入并显示原因。
+
+## 验收检查
+- [ ] 新增后列表显示唯一项目
+- [ ] 空输入不会创建项目
+- [ ] 失败时输入内容仍保留`;
+
+    const correctedDoc = `# Todo App Design
+
+## 设计目标
+对应 REQ-1：在 HarmonyOS 上创建和完成待办。
+
+## 架构与模块
+- TodoPage：渲染界面并转发用户意图。
+- TodoStore：维护待办状态，不负责持久化。
+
+## 关键交互
+输入非空文本 → TodoStore 新增项目 → 列表刷新；失败时保留输入并显示原因。
+
+## 验收检查
+- [ ] 新增后列表显示唯一项目
+- [ ] 空输入不会创建项目
+- [ ] 失败时输入内容仍保留`;
+
+    const railButtons = [...document.querySelectorAll('.rail button')];
+    const sections = railButtons.map(button => document.getElementById(button.dataset.target));
+    railButtons.forEach(button => button.addEventListener('click', () => {
+      document.getElementById(button.dataset.target).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      railButtons.forEach(button => button.classList.toggle('active', button.dataset.target === visible.target.id));
+    }, { rootMargin: '-18% 0px -65% 0px', threshold: [0, .2, .6] });
+    sections.forEach(section => observer.observe(section));
+
+    document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+      const text = document.getElementById(button.dataset.copy).innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      const original = button.textContent;
+      button.textContent = '已复制';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    }));
+
+    const stageSwitch = document.getElementById('stage-switch');
+    const switchLabel = document.getElementById('switch-label');
+    const pathInput = document.getElementById('path-input');
+    const demoDoc = document.getElementById('demo-doc');
+    const diagnostics = document.getElementById('diagnostics');
+    const docBadge = document.getElementById('doc-badge');
+    const diagBadge = document.getElementById('diag-badge');
+    const statusTitle = document.getElementById('status-title');
+    const statusDetail = document.getElementById('status-detail');
+    const startButton = document.getElementById('start-demo');
+    const nextButton = document.getElementById('next-demo');
+    const pipes = [...document.querySelectorAll('.pipe')];
+    const scenarioButtons = [...document.querySelectorAll('.scenario')];
+    const inspectorTabs = [...document.querySelectorAll('.inspector-tab')];
+    const criteriaPanels = [...document.querySelectorAll('.criteria-panel')];
+    const criterionButtons = [...document.querySelectorAll('.criterion')];
+    const criteriaBadge = document.getElementById('criteria-badge');
+    const focusLabel = document.getElementById('focus-label');
+    const focusCopy = document.getElementById('focus-copy');
+    let enabled = true;
+    let scenario = 'bad';
+    let step = -1;
+    let states = [];
+    let documentCorrected = false;
+
+    const documentVersions = {
+      bad: [
+        { key: 'title', line: '1', text: '# Todo App Design', state: 'pass' },
+        { key: 'goals', line: '3', text: '## 设计目标\n支持用户快速创建和完成待办。', state: 'issue' },
+        { key: 'architecture', line: '6', text: '＋ 此处缺少「## 架构与模块」', state: 'gap issue' },
+        { key: 'interactions', line: '6', text: '## 关键交互\nTODO：补充失败路径。', state: 'issue' },
+        { key: 'acceptance', line: '9', text: '## 验收检查\n- [ ] 可以新增待办', state: 'issue' },
+      ],
+      good: [
+        { key: 'title', line: '1', text: '# Todo App Design', state: 'pass' },
+        { key: 'goals', line: '3', text: '## 设计目标\n对应 REQ-1：在 HarmonyOS 上创建和完成待办。', state: 'pass' },
+        { key: 'architecture', line: '6', text: '## 架构与模块\n- TodoPage：渲染界面并转发用户意图。\n- TodoStore：维护待办状态，不负责持久化。', state: 'pass' },
+        { key: 'interactions', line: '10', text: '## 关键交互\n输入非空文本 → TodoStore 新增项目 → 列表刷新；失败时保留输入并显示原因。', state: 'pass' },
+        { key: 'acceptance', line: '13', text: '## 验收检查\n- [ ] 新增后列表显示唯一项目\n- [ ] 空输入不会创建项目\n- [ ] 失败时输入内容仍保留', state: 'pass' },
+      ],
+    };
+
+    function escapeHtml(value) {
+      return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    function decorateDocumentText(value) {
+      return escapeHtml(value)
+        .replace(/^(#{1,3} .+)$/gm, '<span class="doc-token-heading">$1</span>')
+        .replace(/\b(TODO|TBD)\b/g, '<span class="doc-token-todo">$1</span>')
+        .replace(/\b(REQ-\d+|HarmonyOS)\b/g, '<span class="doc-token-evidence">$1</span>');
+    }
+
+    function renderDocument() {
+      const version = documentCorrected || scenario === 'good' ? 'good' : 'bad';
+      demoDoc.innerHTML = documentVersions[version].map(block => (
+        `<div class="doc-block ${block.state}" data-section="${block.key}" data-line="${block.line}" tabindex="0">${decorateDocumentText(block.text)}</div>`
+      )).join('');
+      [...demoDoc.querySelectorAll('.doc-block')].forEach(block => {
+        const inspect = () => inspectDocumentSection(block.dataset.section);
+        block.addEventListener('click', inspect);
+        block.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            inspect();
+          }
+        });
+      });
+    }
+
+    function activateInspector(panelName) {
+      inspectorTabs.forEach(tab => {
+        const active = tab.dataset.panel === panelName;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', String(active));
+      });
+      criteriaPanels.forEach(panel => panel.classList.toggle('active', panel.id === `${panelName}-panel`));
+      criteriaBadge.textContent = panelName === 'hard' ? '6 条硬规则' : '3 项语义标准';
+    }
+
+    function highlightDocumentSection(section, label, explanation) {
+      [...demoDoc.querySelectorAll('.doc-block')].forEach(block => block.classList.toggle('focused', block.dataset.section === section));
+      if (label) focusLabel.textContent = label;
+      if (explanation) focusCopy.textContent = explanation;
+    }
+
+    function inspectDocumentSection(section) {
+      criterionButtons.forEach(button => button.classList.remove('active'));
+      const related = criterionButtons.filter(button => button.dataset.targetSection === section);
+      const hardCount = related.filter(button => button.closest('#hard-panel')).length;
+      const agentCount = related.filter(button => button.closest('#agent-panel')).length;
+      const sectionNames = { title: '文档标题', goals: '设计目标', architecture: '架构与模块', interactions: '关键交互', acceptance: '验收检查' };
+      highlightDocumentSection(
+        section,
+        `${sectionNames[section] || section} · ${hardCount} 条硬规则 + ${agentCount} 项 Agent 标准`,
+        hardCount + agentCount > 0 ? '右侧标准分别负责“格式可确定性”和“语义证据”。点击任一标准可查看它的精确边界。' : '这是文档上下文，不由单独 criteria 直接判定。',
+      );
+    }
+
+    function setCriterionState(selector, text, kind = '') {
+      document.querySelectorAll(selector).forEach(element => {
+        element.textContent = text;
+        element.className = `criterion-state${kind ? ` ${kind}` : ''}`;
+      });
+    }
+
+    function updateCriterionStates() {
+      const checkedHard = step >= 2;
+      const checkedAgent = step >= 3;
+      const passing = scenario === 'good' || documentCorrected;
+      ['goals', 'architecture', 'interactions', 'acceptance', 'platform', 'placeholder'].forEach(rule => {
+        setCriterionState(`[data-rule="${rule}"]`, checkedHard ? '通过' : '待检查', checkedHard ? 'pass' : '');
+      });
+      if (checkedHard && !passing) {
+        setCriterionState('[data-rule="architecture"]', '缺失', 'error');
+        setCriterionState('[data-rule="acceptance"]', '仅 1 条', 'error');
+        setCriterionState('[data-rule="platform"]', '未明确', 'warning');
+        setCriterionState('[data-rule="placeholder"]', '发现 TODO', 'error');
+      }
+      ['traceability', 'boundaries', 'flow'].forEach(rule => {
+        setCriterionState(`[data-agent="${rule}"]`, checkedAgent ? '审阅通过' : '待隔离审阅', checkedAgent ? 'pass' : '');
+      });
+      if (checkedAgent && !passing) {
+        setCriterionState('[data-agent="traceability"]', '缺证据', 'error');
+        setCriterionState('[data-agent="boundaries"]', '无法确认', 'warning');
+        setCriterionState('[data-agent="flow"]', '缺失败路径', 'error');
+      }
+    }
+
+    inspectorTabs.forEach(tab => tab.addEventListener('click', () => activateInspector(tab.dataset.panel)));
+    criterionButtons.forEach(button => button.addEventListener('click', () => {
+      criterionButtons.forEach(item => item.classList.toggle('active', item === button));
+      const id = button.querySelector('.criterion-id')?.textContent || '检查标准';
+      highlightDocumentSection(button.dataset.targetSection, id, button.dataset.explain);
+    }));
+
+    function setBadge(element, text, kind) {
+      element.textContent = text;
+      element.className = `badge ${kind}`;
+    }
+
+    function resetPipeline() {
+      pipes.forEach(pipe => pipe.className = 'pipe');
+      step = -1;
+      nextButton.disabled = true;
+    }
+
+    function renderScenario() {
+      documentCorrected = false;
+      renderDocument();
+      diagnostics.innerHTML = '<li>点击“开始检查”，然后用“下一步”逐层观察。</li>';
+      setBadge(docBadge, '等待检查', 'wait');
+      setBadge(diagBadge, '0 条', 'wait');
+      statusTitle.textContent = '准备就绪';
+      statusDetail.textContent = '写入命中路径后，PostToolUse Hook 会自动执行同样的链路。';
+      activateInspector('hard');
+      criterionButtons.forEach(button => button.classList.remove('active'));
+      highlightDocumentSection('goals', '左右对照阅读', '点击右侧任一标准，左侧会高亮它实际检查的区域；点击左侧段落，则会汇总覆盖它的规则与 Agent 标准。');
+      resetPipeline();
+      updateCriterionStates();
+    }
+
+    stageSwitch.addEventListener('click', () => {
+      enabled = !enabled;
+      stageSwitch.classList.toggle('on', enabled);
+      stageSwitch.setAttribute('aria-checked', String(enabled));
+      switchLabel.textContent = enabled ? 'stage 已启用' : 'stage 已关闭';
+      renderScenario();
+    });
+
+    scenarioButtons.forEach(button => button.addEventListener('click', () => {
+      scenario = button.dataset.scenario;
+      scenarioButtons.forEach(item => item.classList.toggle('active', item === button));
+      pathInput.value = scenario === 'unmatched' ? 'docs/notes.md' : 'docs/design.md';
+      renderScenario();
+    }));
+
+    function buildStates() {
+      const path = pathInput.value.trim().replaceAll('\\', '/');
+      const matched = /(^|\/)design\.md$/i.test(path);
+      if (!enabled) return [{ title: '未触发：stage 已关闭', detail: 'app-design 不在 enabledStages 中；策略文件与历史诊断仍保留。', diagnostics: ['[SKIP] stage-disabled'], kind: 'wait', stop: true }];
+      if (!matched) return [{ title: '未触发：路径未命中', detail: `${path || '(空路径)'} 不符合 design.md、docs/design.md 或 **/design.md。`, diagnostics: ['[SKIP] unmatched-artifact'], kind: 'wait', stop: true }];
+      if (scenario === 'good') return [
+        { title: '路径已命中', detail: `${path} → app-design / app-design`, diagnostics: ['[MATCH] **/design.md'], kind: 'good', panel: 'hard', focus: 'title' },
+        { title: '上游证据已收集', detail: '读取 requirements.md 与 design.md；未读取配置范围外文件。', diagnostics: ['[READ] requirements.md', '[READ] ' + path], kind: 'good', panel: 'agent', focus: 'goals' },
+        { title: '硬规则全部通过', detail: '标题、清单、平台与占位符检查均满足。', diagnostics: ['[PASS] 6 deterministic rules'], kind: 'good', panel: 'hard', focus: 'acceptance' },
+        { title: '隔离语义审阅已完成', detail: '一次性只读 fork 按公开 reviewer 对照 requirements.md，未发现范围扩张或无证据取舍；结果已合并回本轮诊断。', diagnostics: ['[SEMANTIC REVIEW COMPLETED] app-design.reviewer.md', '[PASS] evidence review'], kind: 'good', panel: 'agent', focus: 'interactions' },
+        { title: '复检通过', detail: '状态 passed；没有自动修改，本轮 round 与 latest diff 都为空。', diagnostics: ['[PASSED] app-design', '候选 Git Patch：0', '[TRACE] round history + latest aliases'], kind: 'good', panel: 'hard', focus: 'goals' },
+      ];
+      return [
+        { title: '路径已命中', detail: `${path} → app-design / app-design`, diagnostics: ['[MATCH] **/design.md'], kind: 'good', panel: 'hard', focus: 'title' },
+        { title: '上游证据已收集', detail: '读取 requirements.md 与 design.md，准备做忠实度检查。', diagnostics: ['[READ] requirements.md', '[READ] ' + path], kind: 'good', panel: 'agent', focus: 'goals' },
+        { title: '发现 4 个确定性偏差', detail: '插件给出 ruleId、证据与建议，不猜测缺失的业务值。', diagnostics: ['[ERROR] DESIGN-ARCHITECTURE 缺少“架构与模块”', '[ERROR] DESIGN-ACCEPTANCE 验收项少于 3 条', '[ERROR] DESIGN-NO-PLACEHOLDER 发现 TODO', '[WARN] DESIGN-PLATFORM 未明确目标平台'], kind: 'bad', panel: 'hard', focus: 'architecture' },
+        { title: '隔离语义审阅发现证据缺口', detail: '一次性只读 fork 按 reviewer 对照后发现“设计目标”未引用 requirements.md，且交互缺少失败路径；主 Agent 收到合并后的诊断与候选 Diff。', diagnostics: ['[SEMANTIC REVIEW COMPLETED] app-design.reviewer.md', '[ERROR] 目标缺少 REQ 引用', '[ERROR] 失败路径不完整', '候选 Git Patch：1（仅可确定的章节骨架）'], kind: 'bad', panel: 'agent', focus: 'goals' },
+        { title: '最小纠偏后复检通过', detail: '只补缺失章节、证据与验收项；原本有效的设计目标被保留。', diagnostics: ['[PASSED] app-design', '[TRACE] round history + latest aliases 已留痕', '插件未自动应用修改'], kind: 'good', corrected: true, panel: 'hard', focus: 'architecture' },
+      ];
+    }
+
+    function renderStep() {
+      const current = states[step];
+      pipes.forEach((pipe, index) => {
+        pipe.className = 'pipe' + (index < step ? ' done' : index === step ? ' active' : '');
+      });
+      statusTitle.textContent = current.title;
+      statusDetail.textContent = current.detail;
+      diagnostics.innerHTML = current.diagnostics.map(item => `<li class="${current.kind === 'bad' ? 'error' : current.kind === 'good' ? 'pass' : ''}">${item.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</li>`).join('');
+      setBadge(diagBadge, `${current.diagnostics.length} 条`, current.kind);
+      setBadge(docBadge, current.corrected ? '已纠偏' : current.kind === 'bad' ? '需修正' : current.stop ? '未检查' : '已读取', current.kind);
+      if (current.corrected) {
+        documentCorrected = true;
+        renderDocument();
+      }
+      activateInspector(current.panel || 'hard');
+      highlightDocumentSection(current.focus || 'title', current.title, current.detail);
+      updateCriterionStates();
+      nextButton.disabled = current.stop || step >= states.length - 1;
+      nextButton.textContent = step >= states.length - 1 ? '演示完成' : '下一步';
+    }
+
+    startButton.addEventListener('click', () => {
+      states = buildStates();
+      step = 0;
+      pipes.forEach(pipe => pipe.className = 'pipe');
+      renderStep();
+      nextButton.disabled = Boolean(states[0].stop);
+    });
+
+    nextButton.addEventListener('click', () => {
+      if (step < states.length - 1) {
+        step += 1;
+        renderStep();
+      }
+    });
+
+    renderScenario();
+
+    const workflowNodes = {
+      ra: {
+        label: '需求分析',
+        file: 'requirement-analysis.md',
+        rule: '澄清业务意图、范围、约束和验收标识，并保留需求证据。',
+      },
+      rd: {
+        label: '需求拆分',
+        file: 'requirement-breakdown.md',
+        rule: '每个 SR 都可追溯到需求，拆分完整且不扩张范围。',
+      },
+      cu: {
+        label: '代码理解',
+        file: 'code-understanding.md',
+        rule: '所有结论引用真实代码路径、符号和调用关系，不臆测未实现行为。',
+      },
+      sd: {
+        label: '方案设计',
+        file: 'solution-design.md',
+        rule: '架构决策完整、SR 映射清楚、修改边界明确。',
+      },
+      mt: {
+        label: '人工测试用例设计',
+        file: 'manual-test-cases.md',
+        rule: '用例覆盖 SR/AC、正向、异常和边界场景，并给出可观察预期。',
+      },
+      dt: {
+        label: 'DT 设计',
+        file: 'dt-design.md',
+        rule: '自动化用例映射 SR 与设计决策，使用真实接口、测试缝和稳定断言。',
+      },
+    };
+
+    const workflowEdges = [
+      { id: 'ra-rd', from: 'ra', to: 'rd', copy: '保持需求意图、范围、约束和追踪标识；不得遗漏或擅自合并。' },
+      { id: 'ra-sd', from: 'ra', to: 'sd', copy: '方案不得引入无需求依据的产品决策或范围扩张。' },
+      { id: 'cu-sd', from: 'cu', to: 'sd', copy: '方案使用的模块、接口和依赖必须与当前代码事实一致。' },
+      { id: 'rd-sd', from: 'rd', to: 'sd', copy: '每个 SR 必须映射到方案组件或关键决策；不得遗漏、合并或无依据扩张。' },
+      { id: 'ra-mt', from: 'ra', to: 'mt', copy: '人工用例直接对齐原始业务意图，防止拆分过程中语义漂移。这是一条跨级直接边。' },
+      { id: 'rd-mt', from: 'rd', to: 'mt', copy: '每个 SR/AC 都有人工用例覆盖，且不存在孤立用例。' },
+      { id: 'sd-mt', from: 'sd', to: 'mt', copy: '用例步骤与预期覆盖方案中的主流程、失败路径和状态变化。' },
+      { id: 'rd-dt', from: 'rd', to: 'dt', copy: '每个自动化场景可追溯到 SR/AC，覆盖范围与需求拆分一致。' },
+      { id: 'cu-dt', from: 'cu', to: 'dt', copy: '自动化调用的路径、接口、测试缝和可观察点必须真实存在。' },
+      { id: 'sd-dt', from: 'sd', to: 'dt', copy: 'DT 的驱动方式、断言和数据准备与方案模块、API 和数据流一致。' },
+    ];
+
+    const workflowNodeButtons = [...document.querySelectorAll('[data-workflow-node]')];
+    const workflowScenarioButtons = [...document.querySelectorAll('[data-workflow-focus]')];
+    const workflowEdgePaths = [...document.querySelectorAll('[data-edge-path]')];
+    const workflowNodeTitle = document.getElementById('workflow-node-title');
+    const workflowNodeFile = document.getElementById('workflow-node-file');
+    const workflowNodeRule = document.getElementById('workflow-node-rule');
+    const workflowEdgeTitle = document.getElementById('workflow-edge-title');
+    const workflowEdgeCopy = document.getElementById('workflow-edge-copy');
+    const workflowIncomingEdges = document.getElementById('workflow-incoming-edges');
+    let selectedWorkflowNode = 'sd';
+    let selectedWorkflowEdge = 'rd-sd';
+
+    function selectWorkflowEdge(edgeId) {
+      const edge = workflowEdges.find(item => item.id === edgeId);
+      if (!edge) return;
+      selectedWorkflowEdge = edgeId;
+      workflowEdgeTitle.textContent = `${workflowNodes[edge.from].label} → ${workflowNodes[edge.to].label}`;
+      workflowEdgeCopy.textContent = edge.copy;
+      workflowEdgePaths.forEach(path => path.classList.toggle('selected', path.dataset.edgePath === edgeId));
+      workflowIncomingEdges.querySelectorAll('[data-incoming-edge]').forEach(button => {
+        button.classList.toggle('active', button.dataset.incomingEdge === edgeId);
+      });
+    }
+
+    function renderWorkflowNode(nodeId, preferredEdgeId = '') {
+      const node = workflowNodes[nodeId];
+      if (!node) return;
+      selectedWorkflowNode = nodeId;
+      const incoming = workflowEdges.filter(edge => edge.to === nodeId);
+      const sourceIds = new Set(incoming.map(edge => edge.from));
+
+      workflowNodeTitle.textContent = node.label;
+      workflowNodeFile.textContent = `产物：${node.file}`;
+      workflowNodeRule.textContent = `自身审查：${node.rule}`;
+      workflowNodeButtons.forEach(button => {
+        const buttonId = button.dataset.workflowNode;
+        button.classList.toggle('active', buttonId === nodeId);
+        button.classList.toggle('source', sourceIds.has(buttonId));
+        button.classList.toggle('dimmed', buttonId !== nodeId && !sourceIds.has(buttonId));
+      });
+      workflowScenarioButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.workflowFocus === nodeId);
+      });
+      workflowEdgePaths.forEach(path => {
+        const isIncoming = incoming.some(edge => edge.id === path.dataset.edgePath);
+        path.classList.toggle('active', isIncoming);
+        path.classList.toggle('dimmed', !isIncoming);
+        path.classList.remove('selected');
+      });
+
+      if (incoming.length === 0) {
+        selectedWorkflowEdge = '';
+        workflowEdgeTitle.textContent = '没有直接入边';
+        workflowEdgeCopy.textContent = '该节点只执行自身 review；不会自动读取任何其他节点产物。';
+        workflowIncomingEdges.innerHTML = '<span class="workflow-empty">该节点没有入边，仅执行自身 review。</span>';
+        return;
+      }
+
+      workflowIncomingEdges.innerHTML = incoming.map(edge => (
+        `<button class="incoming-edge" data-incoming-edge="${edge.id}">${workflowNodes[edge.from].label} → ${node.label}</button>`
+      )).join('');
+      workflowIncomingEdges.querySelectorAll('[data-incoming-edge]').forEach(button => {
+        button.addEventListener('click', () => selectWorkflowEdge(button.dataset.incomingEdge));
+      });
+      const defaultEdge = incoming.some(edge => edge.id === preferredEdgeId) ? preferredEdgeId : incoming[0].id;
+      selectWorkflowEdge(defaultEdge);
+    }
+
+    workflowNodeButtons.forEach(button => {
+      button.addEventListener('click', () => renderWorkflowNode(button.dataset.workflowNode));
+    });
+    workflowScenarioButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const defaults = { sd: 'rd-sd', mt: 'ra-mt', dt: 'cu-dt' };
+        renderWorkflowNode(button.dataset.workflowFocus, defaults[button.dataset.workflowFocus]);
+      });
+    });
+    renderWorkflowNode(selectedWorkflowNode, selectedWorkflowEdge);
+
+    const bundlePlanText = `# Mini Pilot Plan
+
+- Recommended: fine
+- Selected: fine
+- Milestone count: 1
+- Confirmation: auto
+- Reason: 单一 Todo 闭环可以在一个里程碑内评审。
+
+## M1: Todo vertical slice
+- Contains SR: SR-1
+- Goal: 用户可以新增 Todo。
+- Review focus: 新增后立即可见。
+- Risks: none`;
+
+    const invalidRelationsText = `{
+  "schema_version": "planning.relations.v1",
+  "nodes": [
+    { "id": "M1", "type": "milestone", "title": "" },
+    { "id": "SR-1", "type": "sr", "title": "Add Todo" }
+  ],
+  "edges": [
+    { "from": "SR-1", "to": "M1", "type": "contains" }
+  ]
+}`;
+
+    const correctedRelationsText = `{
+  "schema_version": "planning.relations.v1",
+  "nodes": [
+    { "id": "M1", "type": "milestone", "title": "Todo vertical slice" },
+    { "id": "SR-1", "type": "sr", "title": "Add Todo" }
+  ],
+  "edges": [
+    { "from": "M1", "to": "SR-1", "type": "contains" }
+  ]
+}`;
+
+    const bundleStepButtons = [...document.querySelectorAll('[data-bundle-step]')];
+    const bundlePlan = document.getElementById('bundle-plan');
+    const bundleRelations = document.getElementById('bundle-relations');
+    const relationsFile = document.getElementById('relations-file');
+    const relationsFileState = document.getElementById('relations-file-state');
+    const bundleDiagnostics = document.getElementById('bundle-diagnostics');
+    const bundleBadge = document.getElementById('bundle-badge');
+    const bundleDiagBadge = document.getElementById('bundle-diag-badge');
+    const bundleResultTitle = document.getElementById('bundle-result-title');
+    const bundleResultCopy = document.getElementById('bundle-result-copy');
+    const bundleTrigger = document.getElementById('bundle-trigger');
+
+    function setBundleRule(id, kind, text) {
+      const rule = document.getElementById(id);
+      rule.className = `bundle-rule ${kind}`;
+      rule.querySelector('span').textContent = text;
+    }
+
+    function renderBundleStep(name) {
+      bundleStepButtons.forEach(button => button.classList.toggle('active', button.dataset.bundleStep === name));
+      bundlePlan.textContent = bundlePlanText;
+      if (name === 'plan') {
+        relationsFile.classList.add('missing');
+        bundleRelations.textContent = '尚未生成 relations.json\n\n写入顺序不是错误：\nrequire-artifacts 会返回 pending。';
+        relationsFileState.textContent = '尚未生成';
+        setBadge(bundleBadge, 'pending', 'wait');
+        setBadge(bundleDiagBadge, '1 条 pending', 'wait');
+        bundleDiagnostics.innerHTML = '<li>[PENDING] MINI-PLANNING-REQUIRED — 等待 relations.json</li>';
+        setBundleRule('bundle-rule-required', 'wait', '等待 relations.json；Bundle 尚未齐备');
+        setBundleRule('bundle-rule-schema', 'wait', '等待 JSON');
+        setBundleRule('bundle-rule-graph', 'wait', '等待 JSON');
+        setBundleRule('bundle-rule-review', 'pass', '已隔离审阅当前 PilotPlan.md 快照');
+        setBundleRule('bundle-rule-output', 'pass', '已写入 pending Round/Latest 与空或候选 Diff');
+        bundleResultTitle.textContent = '状态 pending：这不是失败';
+        bundleResultCopy.textContent = 'PilotPlan.md 已进入当前快照的隔离语义审阅；插件等待 relations.json，依赖它的硬规则保持 pending，本轮诊断与 Diff 仍会留痕。';
+        bundleTrigger.textContent = 'trigger: PilotPlan.md';
+        return;
+      }
+
+      relationsFile.classList.remove('missing');
+      if (name === 'invalid-json') {
+        bundleRelations.textContent = invalidRelationsText;
+        relationsFileState.textContent = '已写入 · 2 个确定性偏差';
+        setBadge(bundleBadge, 'failed', 'bad');
+        setBadge(bundleDiagBadge, '2 条 error', 'bad');
+        bundleDiagnostics.innerHTML = [
+          '<li class="error">[ERROR] MINI-PLANNING-RELATIONS-SCHEMA · /nodes/0/title minLength</li>',
+          '<li class="error">[ERROR] MINI-PLANNING-RELATION-GRAPH-CONTAINS-DIRECTION · SR-1 → M1</li>',
+        ].join('');
+        setBundleRule('bundle-rule-required', 'pass', '两份产物齐备');
+        setBundleRule('bundle-rule-schema', 'fail', '空 title 违反 minLength');
+        setBundleRule('bundle-rule-graph', 'fail', 'contains 方向反了');
+        setBundleRule('bundle-rule-review', 'pass', '隔离 fork 已按 reviewer 审阅完整 Bundle');
+        setBundleRule('bundle-rule-output', 'fail', 'failed：写入 diagnostic.md、spec.md、patch.diff');
+        bundleResultTitle.textContent = '状态 failed：错误来自 JSON，不需要重写 Markdown';
+        bundleResultCopy.textContent = '主 Agent 收到 JSON Pointer、空节点证据、错误边和隔离语义审阅结果；最小修正只补 M1 标题并反转 contains 方向。';
+        bundleTrigger.textContent = 'trigger: relations.json';
+        return;
+      }
+
+      bundleRelations.textContent = correctedRelationsText;
+      relationsFileState.textContent = '已修正 · 确定性规则通过';
+      setBadge(bundleBadge, 'passed', 'good');
+      setBadge(bundleDiagBadge, '0 条确定性偏差', 'good');
+      bundleDiagnostics.innerHTML = [
+        '<li class="pass">[PASS] JSON Schema + relation graph</li>',
+        '<li class="pass">[SEMANTIC REVIEW COMPLETED] Markdown 与 JSON 表达同一计划</li>',
+      ].join('');
+      setBundleRule('bundle-rule-required', 'pass', '两份产物齐备');
+      setBundleRule('bundle-rule-schema', 'pass', 'JSON 字段与取值通过');
+      setBundleRule('bundle-rule-graph', 'pass', '节点、引用、方向和环通过');
+      setBundleRule('bundle-rule-review', 'pass', 'agentReview = completed；语义审阅已合并');
+      setBundleRule('bundle-rule-output', 'pass', '记录本轮 passed；候选 Patch 为 0');
+      bundleResultTitle.textContent = '组合状态 passed：硬规则与隔离语义审阅均通过';
+      bundleResultCopy.textContent = 'Runtime Corrector 使用当前 session 的一次性只读 fork 按公开 reviewer 核对两份证据；结果已合并回主 Agent，fork 不会修改文件或自动应用 Patch。';
+      bundleTrigger.textContent = 'trigger: relations.json (recheck)';
+    }
+
+    bundleStepButtons.forEach(button => button.addEventListener('click', () => renderBundleStep(button.dataset.bundleStep)));
+    renderBundleStep('plan');
+  </script>
+</body>
+</html>

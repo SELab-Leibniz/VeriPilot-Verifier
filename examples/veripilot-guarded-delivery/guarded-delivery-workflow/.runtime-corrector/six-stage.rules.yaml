@@ -1,0 +1,49 @@
+version: 1
+
+rules:
+  - id: SIX-STAGE-DOCUMENT-GOAL
+    type: require-heading
+    heading: 文档目标
+    level: 2
+    severity: error
+    suggestion: 说明当前 Stage 要解决的问题、范围和明确不处理的内容。
+
+  - id: SIX-STAGE-INPUT-EVIDENCE
+    type: require-heading
+    heading: 输入依据
+    level: 2
+    severity: error
+    suggestion: 列出前序产物、稳定标识、代码路径或其他事实证据。
+
+  - id: SIX-STAGE-CORE-CONCLUSIONS
+    type: require-heading
+    heading: 核心结论
+    level: 2
+    severity: error
+    suggestion: 给出当前 Stage 的主要分析、拆分、设计或测试结论。
+
+  - id: SIX-STAGE-TRACEABILITY
+    type: require-heading
+    heading: 追溯关系
+    level: 2
+    severity: error
+    suggestion: 说明当前结论如何追溯到输入标识、代码证据或设计决策。
+
+  - id: SIX-STAGE-RISKS
+    type: require-heading
+    heading: 风险与开放问题
+    level: 2
+    severity: error
+    suggestion: 明确风险、未知项、假设及需要人工确认的事项；没有时写明无。
+
+  - id: SIX-STAGE-NO-PLACEHOLDERS
+    type: forbid-text
+    values:
+      - "{{"
+      - "}}"
+      - TODO
+      - TBD
+      - 待补充
+    caseSensitive: false
+    severity: error
+    suggestion: 完成当前文档或把真实未知项写入“风险与开放问题”，不要保留占位符。

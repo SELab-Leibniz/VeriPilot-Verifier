@@ -1,0 +1,265 @@
+# Runtime Corrector 项目配置模板
+#
+# 作用：
+# - 声明“哪些文件属于哪个 Stage”；
+# - 为命中文件选择确定性硬规则与 Agent 语义审阅；
+# - 可选声明 Stage 之间的直接依赖和多实例关联方式；
+# - 控制诊断结果保存位置与单次检查上限。
+#
+# 安全默认值：
+# - enabledStages 为空，因此刚执行 /runtime-corrector:init 后不会看护任何文件；
+# - 先把下面的 example-document 改成项目真实 Stage 和路径，再把 Stage id 加入
+#   enabledStages；
+# - 插件只诊断并返回候选修正，不自动修改项目文件，也不自动应用 Patch。
+
+# 配置结构版本。可用值：1（本模板）或 2（动态 Ground Truth、自动任务
+# onboarding、Stop 纠偏等；键与默认值见 docs/runtime-corrector-v2-design.md，
+# 文末附 version 2 onboarding 注释示例）。
+version: 1
+
+# 可选：高可见性反馈文案的语言。可选值：zh（默认）、en。
+# locale: zh
+
+# 可选：证据唯一性守卫（evidence-distinctness guard）监视的目录（相对项目根）。
+# 未配置或为空时该守卫不生效。
+# evidenceRoots:
+#   - evidence
+
+# Stage 总开关。
+# - 值是 Stage id 列表；Stage id 必须与 artifacts[].stage 一致。
+# - [] 表示全部关闭，是模板的安全默认值。
+# - 省略此字段表示启用 artifacts 中声明的全部 Stage。
+# - 同一 Stage 可以拥有多个 artifact；关闭 Stage 会一起关闭它们。
+enabledStages: []
+
+# 可选：声明命名、版本化、只读的 Ground Truth。Artifact 通过 groundTruth 列表
+# 显式引用；缺少 required 来源时，本轮结果是依据未决，而不是业务偏离。
+# groundTruth:
+#   - id: user-request
+#     type: user-confirmed-requirement
+#     version: request-001
+#     authority: user
+#     required: true
+#     patterns:
+#       - prompt/user-request.md
+
+# 受保护产物列表。文件同时命中多个 artifact 时，按声明顺序取第一个。
+artifacts:
+  # artifact 的稳定名称，用于诊断和持久化目录；建议使用小写英文与连字符。
+  - name: example-document
+
+    # Stage id，用于 enabledStages、explain、spec 和 stage 开关命令。
+    # 可按项目需要自定义，不存在内置业务 Stage 白名单。
+    stage: example-document
+
+    # 产物类型标签。通常与 name 或 stage 相同；bundle 可用它标识一组同类输出。
+    type: example-document
+
+    # 内容格式。可选值：markdown、json、text、auto。
+    # auto 根据文件扩展名识别；无法识别时按文本处理。
+    format: markdown
+
+    # reviewer 允许提出修改的文件范围。
+    # true：当前触发 artifact 可编辑；false：只能作为只读证据。
+    editable: true
+
+    # 可选输出键。一个 artifact 由多个文件组成时，可用它稳定标识输出 bundle。
+    # 单文件产物通常无需填写。
+    # outputKey: bundle
+
+    # 文件选择方式：patterns 与 pathTemplates 必须且只能填写一个。
+    #
+    # patterns 使用 glob：
+    # - * 匹配一个目录层级内的任意文本；
+    # - ** 匹配任意目录深度；
+    # - ? 匹配一个字符。
+    patterns:
+      - docs/example-document.md
+
+    # pathTemplates 用于从路径提取实例字段，适合并行 change / feature：
+    # - 占位符写成 {key}，只能匹配非空且不含路径分隔符的文本；
+    # - 占位符名以字母开头，可包含字母、数字、下划线和连字符；
+    # - 模板中不能混用 *、**、?；
+    # - 若启用 workflow.correlation，参与 Workflow 边的所有 artifact 模板都必须
+    #   包含全部 correlation key。
+    #
+    # 使用模板时，请删除上面的 patterns，再取消下面两行注释：
+    # pathTemplates:
+    #   - "spec/{YYYY-MM-DD}-example-{changeName}.md"
+
+    # 同一次检查要附带给硬规则和 reviewer 的只读相关文件。
+    # artifact-owned 文件在 correlation 模式下只收集同实例；源码等不属于任何
+    # artifact 的文件仍可作为项目级证据。
+    relatedPatterns: []
+
+    # relatedPatterns 的扫描起点。可选值：
+    # - artifact-directory：从触发文件所在目录开始；
+    # - project：从项目根目录开始。
+    relatedRoot: project
+
+    # 可选：引用顶层 groundTruth[].id。来源会加入只读审阅输入，不能成为 Patch 目标。
+    # groundTruth: [user-request]
+
+    # 确定性硬规则：适合标题、必填文本、禁用词、JSON Schema 等机械判断。
+    # enabled 为 true 时 file 必填；false 时规则文件不会执行。
+    rules:
+      enabled: false
+      file: example.rules.yaml
+
+    # Agent 语义审阅：适合事实正确性、完整性、上下游一致性等复杂判断。
+    # enabled 为 true 时 criteria 可省略，省略表示只用插件通用基线；
+    # 若填写 criteria，则文件必须存在且非空。
+    review:
+      enabled: false
+      criteria: example.reviewer.md
+
+# Workflow 是可选项，用于声明 artifact node 之间的直接依赖。
+# from/to 引用 artifact 的 name；只检查目标节点的直接入边，不自动扩展全图。
+#
+# workflow:
+#   # correlation 也是可选项，用于隔离并行 workflow 实例。
+#   # keys 是从 pathTemplates 提取并比较的字段名；值大小写不敏感。
+#   # 不配置 correlation 时，所有匹配文件属于同一个 legacy bundle。
+#   correlation:
+#     keys:
+#       - changeName
+#   edges:
+#     - from: upstream-document
+#       to: example-document
+#       review:
+#         enabled: true
+#         criteria: upstream-to-example.reviewer.md
+
+# 永远不参与 artifact 匹配和相关文件收集的路径。
+ignorePatterns:
+  - "**/.runtime-correction/**"
+  - "**/.git/**"
+
+# 诊断与候选 Diff 的持久化方式。
+output:
+  # true 保存到磁盘；false 只返回本次结果。
+  persist: true
+
+  # 可选值：
+  # - centralized：统一写入 directory；
+  # - adjacent：写到产物旁边的 .runtime-correction 目录。
+  mode: centralized
+
+  # mode 为 centralized 时使用；相对于项目根目录。
+  directory: .runtime-correction
+
+# 单次检查资源上限。超出时会截断或明确报错，避免把整个项目送入 reviewer。
+limits:
+  # relatedPatterns 最多收集的文件数量。
+  maxRelatedFiles: 20
+
+  # 返回给主 Agent 的纠偏反馈最大字符数。
+  maxFeedbackChars: 12000
+
+  # 单个 reviewer criteria 文件最大字符数。
+  maxReviewerChars: 6000
+
+  # 隔离语义审阅的实际超时（毫秒），范围 1000～1200000。
+  # 20 分钟示例：1200000。插件专属 PostToolUse Hook 的外层上限为 1260 秒。
+  semanticReviewTimeoutMs: 240000
+
+# ------------------------------------------------------------------
+# version: 2 追加能力示例（详见 docs/runtime-corrector-v2-design.md）。
+#
+# 自动任务 onboarding（0.16.0）：新任务的第一个 Hook 事件上，panel.size 个
+# 独立抽取 pass 一次性把全部任务材料分解为原子 Ground Truth 声明；仲裁
+# reviewer（panel.adjudicator）合并各 pass 的结果——多数一致的声明被确认
+# （panelConfirmed），分歧与开放问题按怀疑原则裁决（取更窄的声明；无法消解
+# 的歧义保留为 openQuestions，并必须携带可供纠偏审阅的默认安全解读）；随后
+# 账本冻结（frozenAtVersion）：冻结后仅 USER_EXPLICIT 权威（新的真实用户
+# 消息）可以变更，Agent 推断不能。整个流程无需用户确认。
+# 任何 reviewer 故障都会记录 ONBOARDING_DEGRADED 并完全退回增量单抽取行为；
+# panel.size: 0 或 dynamicGroundTruth.enabled: false 同样退回。
+#
+# onboarding 同时从任务材料中挖掘能力/依赖清单（capabilityChecklist 声明，
+# 含 capability.name / module / sourceHint）：显式表格 → MATERIAL_DERIVED/
+# HARD；由需求语义推断 → AGENT_INFERRED/SOFT。声明会与平台适配器目录
+# （config/platforms/<name>.json）交叉校验；无法解析到平台模块的条目保留并
+# 标记 catalogUnmatched（仅供审阅，永不阻断 Stop）。确定性 Kit 检查优先消费
+# 冻结后的 capabilityChecklist 声明（结论引用 claim id；HARD 或多数确认的
+# 条目缺失为 error 并阻断，仅推断的条目为 warning）；onboarding 未产出清单
+# 时退回 10.1 表格解析。
+#
+# version: 2
+# dynamicGroundTruth:
+#   enabled: true
+#   materialRoots: [docs]
+#   panel:
+#     size: 2           # 0 关闭自动任务 onboarding
+#     adjudicator: true
+# stopCorrection:
+#   enabled: true
+# reviewers:
+#   groundTruthExtractor:
+#     effort: low        # panel 抽取 pass 复用该角色的 timeoutMs/预算配置
+#   onboardingAdjudicator:
+#     effort: low
+#
+# 每角色 reviewer 会话与 provider（1.0.0）：
+# session: fork（默认）在父会话的 --fork-session 中审阅；session: independent
+# 则针对配置的 provider 启动全新会话（不 --resume 父会话），并以请求文件为
+# 完整任务输入。apiKeyEnv 是环境变量的“名字”——配置文件中绝不出现 API key、
+# token 或其他机密；若运行时该变量未设置或为空，会记录
+# REVIEWER_PROVIDER_DEGRADED 并自动退回 fork。
+#
+# reviewers:
+#   onboardingAdjudicator:
+#     session: independent
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model
+#   stopReviewer:
+#     session: independent
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model
+#
+# 与上面两角色写法等价的预设简写（critical-gates 恰好覆盖
+# onboardingAdjudicator 与 stopReviewer；all 覆盖全部角色；显式角色配置优先）：
+# reviewers:
+#   modelPolicy:
+#     preset: critical-gates
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model
+#
+# 推荐的异构评审配置（显式逐角色写法，这是规范形式，文档与示例一律以此
+# 为准）：两个自我一致性风险最高的门——onboardingAdjudicator（仲裁并冻结
+# Ground Truth）与 stopReviewer（决定任务能否结束）——改用 session:
+# independent + 独立供应商模型，其余角色继续 fork 主 session。
+# provider.apiKeyEnv 填环境变量的“名字”；绝不能把密钥、令牌写进本文件。
+# 运行时该变量缺失或为空时，记录 REVIEWER_PROVIDER_DEGRADED 事件并仅对该
+# 角色退回 fork 行为。
+# reviewers:
+#   onboardingAdjudicator:
+#     session: independent
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model
+#   stopReviewer:
+#     session: independent
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model
+#
+# 等价简写：reviewers.modelPolicy preset（推荐值 critical-gates，即上面
+# 两个角色；all 覆盖全部角色；off 为默认，不改变任何角色）。preset 只是
+# 速记——任何要写入磁盘的配置都应展开成上面的显式逐角色形式，不要落下裸
+# preset 关键字；显式的 reviewers.<role>.session/provider 永远优先于 preset。
+# reviewers:
+#   modelPolicy:
+#     preset: critical-gates
+#     provider:
+#       baseUrl: https://api.example-provider.com
+#       apiKeyEnv: REVIEWER_API_KEY
+#       model: example-reviewer-model

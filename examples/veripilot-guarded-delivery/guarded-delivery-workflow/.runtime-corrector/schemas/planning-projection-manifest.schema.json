@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema_revision",
+    "request_id",
+    "workspace_id",
+    "scope",
+    "status",
+    "producer",
+    "source_outputs",
+    "artifacts",
+    "producer_capabilities",
+    "required_capabilities",
+    "published_at",
+    "manifest_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "veripilot.delivery_manifest.v2"
+    },
+    "schema_revision": {
+      "const": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "const": "planning-projection"
+    },
+    "status": {
+      "const": "verified"
+    },
+    "producer": {
+      "type": "object",
+      "required": [
+        "kind",
+        "component_id",
+        "version"
+      ],
+      "properties": {
+        "kind": {
+          "const": "orchestrator"
+        },
+        "component_id": {
+          "const": "guarded-delivery"
+        },
+        "version": {
+          "pattern": "^3\\.1\\.[0-9]+(?:[-+].*)?$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_outputs": {
+      "type": "array"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "path",
+          "schema_version",
+          "sha256"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "sr",
+              "pilot-plan",
+              "relations",
+              "granularity-choice"
+            ]
+          },
+          "path": {
+            "pattern": "^delivery/planning-projection/(SR\\.md|PilotPlan\\.md|relations\\.json|granularity-choice\\.json)$"
+          },
+          "schema_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "producer_capabilities": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_capabilities": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string"
+      }
+    },
+    "published_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manifest_hash": {
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

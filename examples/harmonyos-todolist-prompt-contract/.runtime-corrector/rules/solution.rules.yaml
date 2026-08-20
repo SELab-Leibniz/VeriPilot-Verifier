@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: TODOLIST-SOLUTION-ARCH
+    type: require-heading
+    heading: 架构设计
+    severity: error
+  - id: TODOLIST-SOLUTION-PERSISTENCE
+    type: require-heading
+    heading: 持久化设计
+    severity: error
+  - id: TODOLIST-SOLUTION-FAILURE
+    type: require-heading
+    heading: 失败与恢复
+    severity: error

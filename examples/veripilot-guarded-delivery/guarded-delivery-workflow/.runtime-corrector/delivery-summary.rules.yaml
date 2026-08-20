@@ -1,0 +1,92 @@
+version: 1
+
+rules:
+  - id: DELIVERY-SUMMARY-REQUIRED-BUNDLE
+    type: require-artifacts
+    artifacts:
+      - 85-planning-fidelity-gate.md
+      - 95-prd-deliverables-gate.md
+      - 100-build-qa-handoff-gate.md
+      - 115-build-qa-post-audit.md
+      - 0-workflow-preflight.completion.json
+      - 10-requirement-analysis.completion.json
+      - 20-requirement-breakdown.completion.json
+      - 30-code-understanding.completion.json
+      - 40-solution-design.completion.json
+      - 50-manual-test-cases.completion.json
+      - 60-dt-design.completion.json
+      - 65-planning-source.completion.json
+      - 70-workspace-bootstrap.completion.json
+      - 80-planning-projection.completion.json
+      - 85-planning-fidelity-gate.completion.json
+      - 87-planning-publication.completion.json
+      - 90-prd-contract-auto.completion.json
+      - 95-prd-deliverables-gate.completion.json
+      - 100-build-qa-handoff-gate.completion.json
+      - 110-build-qa-loop-auto.completion.json
+      - 115-build-qa-post-audit.completion.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: DELIVERY-SUMMARY-SUBJECT
+    type: require-heading
+    heading: 审查对象
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-EVIDENCE
+    type: require-heading
+    heading: 输入与哈希证据
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-COVERAGE
+    type: require-heading
+    heading: 覆盖与一致性
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-CORRECTOR
+    type: require-heading
+    heading: Corrector 结果
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-DIAGNOSTICS
+    type: require-heading
+    heading: 诊断与兼容例外
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-BOUNDARY
+    type: require-heading
+    heading: Bundle 边界声明
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-BOUND-CONFIG
+    type: require-text
+    text: max_related_files=120
+    severity: error
+
+  - id: DELIVERY-SUMMARY-BOUND-SCAN
+    type: require-text
+    text: collector_candidate_cap=480
+    severity: error
+
+  - id: DELIVERY-SUMMARY-BOUND-TRUNCATION
+    type: require-text
+    text: collector_truncated=false
+    severity: error
+
+  - id: DELIVERY-SUMMARY-DECISION
+    type: require-heading
+    heading: 门禁结论
+    level: 2
+    severity: error
+
+  - id: DELIVERY-SUMMARY-NEXT
+    type: require-heading
+    heading: 下一动作
+    level: 2
+    severity: error

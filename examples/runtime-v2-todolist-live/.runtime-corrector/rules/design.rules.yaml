@@ -1,0 +1,32 @@
+version: 1
+
+rules:
+  - id: TODOLIST-DESIGN-STATE
+    type: require-heading
+    heading: 状态模型
+    level: 2
+    severity: error
+  - id: TODOLIST-DESIGN-FILES
+    type: require-heading
+    heading: 模块与文件
+    level: 2
+    severity: error
+  - id: TODOLIST-DESIGN-A11Y
+    type: require-heading
+    heading: 交互与可访问性
+    level: 2
+    severity: error
+  - id: TODOLIST-DESIGN-TESTS
+    type: require-heading
+    heading: 测试契约
+    level: 2
+    severity: error
+  - id: TODOLIST-DESIGN-TRACE
+    type: require-heading
+    heading: 追踪矩阵
+    level: 2
+    severity: error
+  - id: TODOLIST-DESIGN-IDS
+    type: require-text
+    values: [R01, R02, R03, R04, R05, R06, R07, R08, R09]
+    severity: error

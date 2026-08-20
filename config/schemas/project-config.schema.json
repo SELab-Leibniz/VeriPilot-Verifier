@@ -1,0 +1,517 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://runtime-corrector.local/schemas/project-config.schema.json",
+  "title": "Runtime Corrector project configuration",
+  "type": "object",
+  "required": [
+    "version",
+    "artifacts"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "enabledStages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stage": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "type": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "markdown",
+              "json",
+              "text",
+              "auto"
+            ]
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "outputKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metricCheckpoint": {
+            "type": "boolean"
+          },
+          "metrics": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^M(?:0[1-9]|1[0-5])$"
+            }
+          },
+          "groundTruth": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "patterns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "pathTemplates": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "relatedPatterns": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "relatedRoot": {
+            "type": "string",
+            "enum": [
+              "artifact-directory",
+              "project"
+            ]
+          },
+          "rules": {
+            "type": "object",
+            "required": [
+              "enabled"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "file": {}
+            },
+            "additionalProperties": false
+          },
+          "review": {
+            "type": "object",
+            "required": [
+              "enabled"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "criteria": {}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "groundTruth": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "patterns"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": [
+              "string",
+              "number",
+              "integer"
+            ]
+          },
+          "authority": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "patterns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dynamicGroundTruth": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "evidenceCapture": {
+          "type": "string",
+          "enum": [
+            "minimal",
+            "full",
+            "references-only"
+          ]
+        },
+        "materialRoots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "panel": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of independent onboarding extractor passes over the task materials on the first hook event of a new task. 0 disables automated task onboarding (decompose → panel → freeze) and keeps the incremental single-extractor behavior. Default: 2."
+            },
+            "adjudicator": {
+              "type": "boolean",
+              "description": "Spawn one adjudicator reviewer that merges the panel claim sets: majority-agreed claims are confirmed; disagreements and open questions are decided skeptically (narrower claim preferred; unresolvable ambiguity stays an openQuestions claim with a default-safe reading). false uses the deterministic majority merge with disputed claims downgraded to inferred-only. Default: true."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Automated task onboarding panel. Runs once per task before normal processing, applies the merged claims (including mined capabilityChecklist entries), and freezes the Ground Truth ledger; post-freeze mutations are restricted to USER_EXPLICIT authority. Fails soft to the incremental extractor on any reviewer fault (journals ONBOARDING_DEGRADED)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "skillCorrection": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "selection": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "include",
+                "all"
+              ]
+            },
+            "include": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "skillRoots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "completionCheckIntervalTurns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxWatchTurns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxFeedbacksPerSkill": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifactCorrection": {
+      "type": "object",
+      "properties": {
+        "groundTruthReviewEnabled": {
+          "type": "boolean"
+        },
+        "stageMetricsEnabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "stopCorrection": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "maxCorrectionsPerEpoch": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "reviewers": {
+      "type": "object",
+      "properties": {
+        "defaults": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "groundTruthExtractor": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "onboardingAdjudicator": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "skillReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "artifactReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "stopReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "implementationReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "modelPolicy": {
+          "type": "object",
+          "required": [
+            "preset"
+          ],
+          "properties": {
+            "preset": {
+              "type": "string",
+              "enum": [
+                "off",
+                "critical-gates",
+                "all"
+              ]
+            },
+            "provider": {
+              "$ref": "#/$defs/provider"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Preset shorthand expanded to explicit per-role session/provider blocks at compile time. critical-gates covers onboardingAdjudicator and stopReviewer (the two self-consistency-critical gates); all covers every reviewer role; off (default) touches nothing. Roles that explicitly declare session or provider always win over the preset. Materialized configuration must be written in the expanded explicit form."
+        }
+      },
+      "additionalProperties": false
+    },
+    "workflow": {},
+    "ignorePatterns": {},
+    "output": {},
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxRelatedFiles": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxFeedbackChars": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReviewerChars": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "semanticReviewTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000
+        }
+      },
+      "additionalProperties": false
+    },
+    "shadowMode": {
+      "type": "boolean",
+      "description": "Observe-only mode: the corrector observes, classifies and journals exactly as normal but delivers no decision or feedback to the developer. The key name is kept for compatibility; must survive config loading (see lib/policy/project-policy.mjs)."
+    },
+    "implementationCorrection": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "deviceBudgetMs": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "checklistPaths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Markdown files containing the kit checklist for the deterministic kit-integration check. Unset falls back to scanning dynamicGroundTruth.materialRoots for markdown files."
+        },
+        "checklistSection": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Regular expression (JavaScript syntax) matching the heading line that opens the kit-checklist section."
+        },
+        "kitColumnIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of the kit-name column in the checklist table rows (cells split on |)."
+        },
+        "platform": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Platform adapter for the deterministic kit-integration check (config/platforms/<name>.json). Default: harmonyos. null or an unknown platform skips the kit check."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Implementation/verification review of the built app against the frozen population, run at Stop checkpoints. See docs/implementation-reviewer-design.md."
+    },
+    "locale": {
+      "type": "string",
+      "enum": [
+        "zh",
+        "en"
+      ],
+      "description": "Locale for the highest-visibility developer-facing messages (see lib/messages.mjs). Default: zh."
+    },
+    "evidenceRoots": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Directories (relative to the project root) whose files are treated as named evidence by the evidence-distinctness guard. Unset or empty leaves the guard inactive."
+    }
+  },
+  "$defs": {
+    "reviewer": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "maxBudgetUsd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "session": {
+          "type": "string",
+          "enum": [
+            "fork",
+            "independent"
+          ],
+          "description": "fork (default) reviews inside a --fork-session of the parent conversation; independent spawns a fresh session against provider. A missing provider or an unset/empty API-key environment variable degrades independent back to fork at runtime (journal event REVIEWER_PROVIDER_DEGRADED)."
+        },
+        "provider": {
+          "$ref": "#/$defs/provider"
+        }
+      },
+      "additionalProperties": false
+    },
+    "provider": {
+      "type": "object",
+      "required": [
+        "baseUrl",
+        "apiKeyEnv"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "apiKeyEnv": {
+          "type": "string",
+          "minLength": 1,
+          "description": "NAME of the environment variable holding the API key. Never put a key or token literal in configuration."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false,
+      "description": "Independent-session reviewer provider, used only when session: independent. Stores endpoint and env-var NAME only — no secrets."
+    }
+  }
+}

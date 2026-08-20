@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "revision", "stage", "status", "environment", "browserRun", "requirements", "findings"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "revision": { "type": "string", "minLength": 1 },
+    "stage": { "const": "coding" },
+    "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "viewport"],
+      "properties": {
+        "url": { "type": "string", "minLength": 1 },
+        "viewport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "browserRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runner", "journeyId", "status", "steps", "screenshot"],
+      "properties": {
+        "runner": { "type": "string", "minLength": 1 },
+        "journeyId": { "const": "R09" },
+        "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "status", "actual"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+              "actual": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "screenshot": { "type": "string", "minLength": 1 }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^R0[1-9]$" },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "BLOCKED"] },
+          "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+version: 1
+
+rules:
+  - id: SELECTION-REQUIRED-ARTIFACTS
+    type: require-artifacts
+    artifacts:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+    pendingUntilComplete: true
+    severity: error
+
+  - id: SELECTION-KIT-MAP
+    type: markdown-records
+    artifact: kit-map.md
+    recordLabel: Kit 选择
+    caseSensitiveIds: false
+    placeholderPattern: '\{\{|\}\}|\bTBD\b|(?:^|\n)\s*(?:[-*]\s*)?TODO(?:\s*[:：]|\s*$)|needs-input|待补充|待填写'
+    bareFields:
+      - id: INPUT-STATUS
+        labels:
+          - Input status
+      - id: INPUT-CONFIDENCE
+        labels:
+          - Input confidence
+    records:
+      headingPattern: '^#{2,6}\s+(SR[-_\s]*\d+)\b'
+      idPattern: '^SR[-_\s]*(\d+)$'
+      idReplacement: 'SR-$1'
+      emptyId: SR-SECTIONS
+      missingId: SR-MISSING
+      unexpectedId: UNPLANNED-SR
+      expected:
+        - artifact: relations.json
+          pointer: /nodes
+          idField: id
+          where:
+            field: type
+            equals: sr
+        - artifact: PilotPlan.md
+          pattern: '\b(SR[-_\s]*\d+)\b'
+      fields:
+        - id: SELECTED-KITS
+          labels:
+            - Selected kits
+            - 选定 Kits
+            - 选择 Kits
+            - 选定
+            - 选择
+          forbiddenPattern: '^(?:none|无|不需要)$'
+          invalidId: SELECTED-KITS-EMPTY
+        - id: RATIONALE
+          labels:
+            - Rationale
+            - 理由
+            - 用途
+        - id: REFERENCES
+          labels:
+            - References
+            - 参考
+            - 引用
+        - id: REJECTED-CANDIDATES
+          labels:
+            - Rejected candidates
+            - Rejected
+            - 弃选候选
+            - 弃选
+        - id: RECIPE
+          labels:
+            - Recipe
+            - 组合
+            - 配方
+        - id: CONFIDENCE
+          labels:
+            - Confidence
+            - 置信度
+          requiredPattern: 'auto-pass|ask-human|provisional|confirmed|needs_confirmation|recall=|auto_selected'
+          invalidId: CONFIDENCE-VALUE
+        - id: OPEN-QUESTIONS
+          labels:
+            - Open questions
+            - 开放问题
+            - 待确认
+    severity: error
+    suggestion: 按 Planning 中的每个 SR 补齐最小 Kit 集、理由、参考、弃选候选、组合依据、置信度和开放问题。

@@ -1,0 +1,51 @@
+version: 1
+
+rules:
+  - id: SOLUTION-GOAL
+    type: require-heading
+    heading: 设计目标
+    severity: error
+
+  - id: SOLUTION-BOUNDARY
+    type: require-heading
+    heading: 模块边界
+    severity: error
+
+  - id: SOLUTION-FLOW
+    type: require-heading
+    heading: 关键流程
+    severity: error
+
+  - id: SOLUTION-INTERFACE
+    type: require-heading
+    heading: 接口与数据
+    severity: error
+
+  - id: SOLUTION-COMPATIBILITY
+    type: require-heading
+    heading: 兼容性与迁移
+    severity: error
+
+  - id: SOLUTION-RISK
+    type: require-heading
+    heading: 风险与回滚
+    severity: error
+
+  - id: SOLUTION-TRACE
+    type: require-heading
+    heading: 需求追溯
+    severity: error
+
+  - id: SOLUTION-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+
+  - id: SOLUTION-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error

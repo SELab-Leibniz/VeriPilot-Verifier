@@ -1,0 +1,49 @@
+version: 1
+
+rules:
+  - id: REQUIREMENTS-BACKGROUND
+    type: require-heading
+    heading: 变更背景
+    severity: error
+
+  - id: REQUIREMENTS-SCOPE
+    type: require-heading
+    heading: 目标与范围
+    severity: error
+
+  - id: REQUIREMENTS-ANALYSIS
+    type: require-heading
+    heading: 需求分析
+    severity: error
+
+  - id: REQUIREMENTS-BREAKDOWN
+    type: require-heading
+    heading: 需求拆分
+    severity: error
+
+  - id: REQUIREMENTS-ACCEPTANCE
+    type: require-checklist
+    under: 验收标准
+    minimum: 2
+    severity: error
+
+  - id: REQUIREMENTS-RISK
+    type: require-heading
+    heading: 风险与待确认
+    severity: error
+
+  - id: REQUIREMENTS-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+    message: "需求报告必须使用 REQ- 编号，供后续设计和测试追溯。"
+
+  - id: REQUIREMENTS-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error
+    suggestion: "补全内容；确实未知时说明未知原因、责任人或决策条件。"

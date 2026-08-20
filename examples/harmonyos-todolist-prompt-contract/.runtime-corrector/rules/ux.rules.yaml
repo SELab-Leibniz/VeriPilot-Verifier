@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: TODOLIST-UX-JOURNEY
+    type: require-heading
+    heading: 用户旅程
+    severity: error
+  - id: TODOLIST-UX-STATES
+    type: require-heading
+    heading: 页面状态
+    severity: error

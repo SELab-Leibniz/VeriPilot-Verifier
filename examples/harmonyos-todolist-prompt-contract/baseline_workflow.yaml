@@ -1,0 +1,34 @@
+version: 1
+kind: workflow-baseline
+displayName: HarmonyOS TodoList SDD
+instructions:
+  - 需求分析必须先于需求拆分，二者共同维护同一 requirements.md，不得丢失已确认范围。
+  - uxRequired 为 true 时生成 UX；为 false 时允许跳过，但必须保留跳过依据。
+  - 代码理解启用时必须位于需求拆分之后，并读取已有 UX。
+  - 手工测试先于 DT 设计；实现 checkpoint 必须引用本轮测试、构建和设备证据。
+stages:
+  - id: requirements-analysis
+    nextSteps: [ux-design, requirements-breakdown]
+    output: spec/{changeName}/requirements.md
+  - id: requirements-breakdown
+    nextSteps: [code-understanding]
+    output: spec/{changeName}/requirements.md
+  - id: ux-design
+    optional: true
+    nextSteps: [code-understanding]
+    output: spec/{changeName}/ux.md
+  - id: code-understanding
+    nextSteps: [solution-design]
+    output: spec/{changeName}/code-understanding.md
+  - id: solution-design
+    nextSteps: [manual-test-cases]
+    output: spec/{changeName}/solution.md
+  - id: manual-test-cases
+    nextSteps: [dt-test-cases]
+    output: spec/{changeName}/manual-tests.md
+  - id: dt-test-cases
+    nextSteps: [implementation]
+    output: spec/{changeName}/dt-tests.md
+  - id: implementation
+    nextSteps: []
+    output: evidence/{changeName}/checkpoint.json

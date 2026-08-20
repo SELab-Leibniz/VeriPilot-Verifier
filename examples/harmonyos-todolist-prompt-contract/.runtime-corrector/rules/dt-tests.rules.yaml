@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: TODOLIST-DT-SCOPE
+    type: require-heading
+    heading: DT 范围
+    severity: error
+  - id: TODOLIST-DT-CASES
+    type: require-heading
+    heading: DT 用例
+    severity: error

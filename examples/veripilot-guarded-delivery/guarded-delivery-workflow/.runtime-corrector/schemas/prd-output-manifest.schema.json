@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "guarded-delivery/prd/output-manifest.schema.json",
+  "title": "Verified PRD component output manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema_revision",
+    "request_id",
+    "workspace_id",
+    "stage_id",
+    "component_id",
+    "component_version",
+    "artifacts",
+    "handoff",
+    "lineage",
+    "status",
+    "output_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "veripilot.component_output.v2" },
+    "schema_revision": { "const": 1 },
+    "request_id": { "type": "string", "minLength": 1 },
+    "workspace_id": { "type": "string", "minLength": 1 },
+    "stage_id": { "const": "40-prd-contract" },
+    "component_id": { "const": "prd-contract" },
+    "component_version": { "type": "string", "minLength": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["role", "path", "sha256"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-fA-F0-9]{64}$"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "const": "stages/40-prd-contract/output/handoff.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        }
+      },
+      "additionalProperties": true
+    },
+    "lineage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage_id", "output_hash"],
+        "properties": {
+          "stage_id": { "type": "string", "minLength": 1 },
+          "output_hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-fA-F0-9]{64}$"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "status": { "const": "verified" },
+    "output_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9]{64}$"
+    }
+  },
+  "additionalProperties": true
+}

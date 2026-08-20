@@ -1,0 +1,32 @@
+version: 1
+
+rules:
+  - id: TODOLIST-REQ-GOAL-SCOPE
+    type: require-heading
+    heading: 目标与范围
+    level: 2
+    severity: error
+  - id: TODOLIST-REQ-ATOMIC
+    type: require-heading
+    heading: 原子需求
+    level: 2
+    severity: error
+  - id: TODOLIST-REQ-ACCEPTANCE
+    type: require-heading
+    heading: 验收标准
+    level: 2
+    severity: error
+  - id: TODOLIST-REQ-JOURNEY
+    type: require-heading
+    heading: 里程碑与关键旅程
+    level: 2
+    severity: error
+  - id: TODOLIST-REQ-FACTS
+    type: require-heading
+    heading: 事实、假设与待确认
+    level: 2
+    severity: error
+  - id: TODOLIST-REQ-IDS
+    type: require-text
+    values: [R01, R02, R03, R04, R05, R06, R07, R08, R09]
+    severity: error

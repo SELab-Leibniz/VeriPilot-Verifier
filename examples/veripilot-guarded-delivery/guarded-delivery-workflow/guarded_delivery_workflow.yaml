@@ -1,0 +1,649 @@
+# Guarded Delivery Workflow
+# =========================
+# This YAML is an executable prompt contract for an Agent. It extends the
+# Runtime Corrector six-stage workflow into PRD Contract and Build QA.
+#
+# Important boundary:
+# - The Agent, not the Planning plugin, writes SR.md, PilotPlan.md,
+#   relations.json, and granularity-choice.json.
+# - The IR and Planning plugins MUST NOT be invoked.
+# - PRD Contract and Build QA MUST use their public `workflow auto` entrypoints.
+# - Runtime Corrector performs exactly two product-semantic comparisons:
+#     A. six stage documents -> Planning four-file projection
+#     B. Planning four-file projection -> PRD.md + acceptance-contract.json
+# - Manifests, handoffs, traceability, and Build QA evidence are protocol or
+#   execution evidence only; they never enlarge A or B.
+
+name: guarded-delivery
+version: 2.0.0
+description: 六阶段经 Agent Planning 投影进入 PRD Contract 与 Build QA 的受控交付流程
+
+agentPrompt:
+  - 从头到尾读取本 YAML；它是执行顺序、边界、停止条件和报告契约的唯一权威。
+  - 不调用 IR 或 Planning 插件；由当前 Agent 直接生成 Planning 四件套。
+  - PRD Contract 和 Build QA 只通过声明的 namespaced workflow auto 调用。
+  - 每个 Stage 尝试后立即写 completion report；失败时也写，并把后续 Stage 标为 not_run。
+  - 不手改 PRD/Build QA 生成物、manifest、handoff、hash 或组件私有 runtime 文件。
+  - 不把 auto、reviewed、auto_ready 或 verified 表述为用户人工批准。
+
+run:
+  projectRoot: "<absolute-business-project>"
+  runtimeCorrectorPluginRoot: "<absolute-runtime-corrector-plugin-root>"
+  workspaceName: guarded-current
+  workspaceRoot: "{{run.projectRoot}}/VeriPilotWorkspace/{{run.workspaceName}}"
+  targetProject: "{{run.projectRoot}}"
+  sourceRoot: "delivery/planning-projection"
+
+components:
+  runtimeCorrector:
+    version: 0.9.0
+    role: semantic-and-deterministic-gates
+  veripilotV2:
+    version: 3.1.2
+    role: unified-workspace-bootstrap-only
+  prdContract:
+    version: 3.1.1
+    mode: auto
+    role: prd-and-acceptance-publication
+  buildQaLoop:
+    version: 3.6.0
+    mode: auto
+    scope: all
+    role: implementation-build-and-qa
+
+forbiddenComponents:
+  - ir
+  - planning
+
+execution:
+  stageOrderStrict: true
+  stopOnGateFailure: true
+  correctionMaxRounds: 2
+  generatedProtocolFilesEditable: false
+  autoApplyCorrectorDiffs: false
+  noPromptFallback: true
+  noSourceArtifactFallback: true
+  createNotRunReportsAfterStop: true
+  alwaysCreateDeliverySummary: true
+
+# These are the only business-semantic evidence sets used downstream.
+correctorScope:
+  planningAgainstSixStages:
+    baseline:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+      - ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+      - ".workflow/current/stages/60-dt-design/dt-design.md"
+    subjects:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+  prdAgainstPlanning:
+    baseline:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+    subjects:
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json"
+  excludedFromProductSemanticReview:
+    - "**/IR.md"
+    - "**/traceability.json"
+    - "**/manifest.json"
+    - "**/handoff.json"
+    - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/**"
+
+# The Agent publishes the four files as a standard delivery envelope. This is
+# not a synthetic Planning component output: its producer is guarded-delivery,
+# and PRD Contract consumes it through the documented generic source-manifest
+# protocol.
+planningProjectionPublication:
+  manifest: "delivery/planning-projection/manifest.json"
+  schemaVersion: veripilot.delivery_manifest.v2
+  schemaRevision: 1
+  producer:
+    kind: orchestrator
+    componentId: guarded-delivery
+    version: 3.1.0
+  requiredCapabilities:
+    - protocol-v2-conformance-r1
+    - semantic-input-v1
+  publishCommand: "node \"{{run.runtimeCorrectorPluginRoot}}/examples/veripilot-guarded-delivery/guarded-delivery-workflow/scripts/publish-planning-projection.mjs\" --workspace-root \"{{run.workspaceRoot}}\" --source-root \"{{run.sourceRoot}}\""
+  checkCommand: "node \"{{run.runtimeCorrectorPluginRoot}}/examples/veripilot-guarded-delivery/guarded-delivery-workflow/scripts/publish-planning-projection.mjs\" --workspace-root \"{{run.workspaceRoot}}\" --source-root \"{{run.sourceRoot}}\" --check"
+
+reportContract:
+  schema: .runtime-corrector/schemas/stage-completion.schema.json
+  statuses:
+    - completed
+    - needs_human
+    - blocked
+    - not_run
+  requiredFacts:
+    - stage
+    - status
+    - attempt
+    - started_at
+    - finished_at
+    - inputs
+    - outputs
+    - corrector_result
+    - component_result
+    - diagnostics
+    - blockers
+    - next_stage
+    - human_approval_recorded
+  hashFormat: "sha256:<64 lowercase hex>"
+  writeAfterEveryAttempt: true
+  neverInferHumanApproval: true
+
+gateMarkdownContract:
+  requiredHeadings:
+    - 审查对象
+    - 输入与哈希证据
+    - 覆盖与一致性
+    - Corrector 结果
+    - 诊断与兼容例外
+    - Bundle 边界声明
+    - 门禁结论
+    - 下一动作
+  boundaryFacts:
+    - max_related_files=120
+    - collector_candidate_cap=480
+    - collector_truncated=false
+  passRequiresCompleteCollection: true
+
+stages:
+  - name: workflow-preflight
+    title: 工作流预检
+    order: 0
+    purpose:
+      - 确认当前会话目录就是目标业务项目，并核对插件版本、策略和工具环境。
+      - 明确记录 IR/Planning 插件不会被调用，PRD/Build QA 将使用 auto。
+      - Stage 0 只确认 Build QA 组件及其公开 workflow 可用；Harmony 工具链发现和环境准入由 Stage 110 的 Build QA 3.6.0 黑盒独占。
+    inputs: []
+    outputs: []
+    action:
+      kind: preflight
+      requireExplicitBusinessProject: true
+      requireSessionCwdEqualsProjectRoot: true
+      requireExactComponentVersions: true
+      installPolicyIfMissing: true
+      overwriteExistingPolicy: false
+      harmonyEnvironmentAdmissionOwner: build-qa-loop
+      # 不得因为业务项目没有 hvigorw、local.properties 未写 SDK，或调用
+      # 会话没有 SDK 环境变量，就提前判定 Harmony 环境缺失。Build QA 会
+      # 发现 DevEco Studio/Command Line Tools 的完整一致工具链并执行准入。
+      doNotInferHarmonyUnavailableFrom:
+        - project-local-hvigorw-absence
+        - empty-local-properties
+        - unset-sdk-environment-variables
+      forbiddenInvocations:
+        - "/ir:"
+        - "/planning:"
+    gate:
+      requireProjectExists: true
+      requireCorrectorPolicyComplete: true
+      requireVeriPilotWorkspaceCapability: true
+      requirePrdAndBuildQaAvailable: true
+    report: ".workflow/current/reports/0-workflow-preflight.completion.json"
+
+  - name: requirement-analysis
+    title: 需求分析
+    order: 10
+    purpose:
+      - 整理业务目标、角色、范围、非目标、约束和稳定验收标识。
+      - 不提前虚构技术方案、模块、接口或实现完成态。
+    inputs: []
+    outputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+    action:
+      kind: author
+      outputFile: requirement-analysis.md
+    correctorGate:
+      trigger: ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/10-requirement-analysis.completion.json"
+
+  - name: requirement-breakdown
+    title: 需求拆分
+    order: 20
+    purpose:
+      - 将需求拆成可独立验证且合起来完整覆盖原需求的条目。
+      - 保留稳定需求标识、验收点、约束、非目标和开放问题。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+    outputs:
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+    action:
+      kind: author
+      outputFile: requirement-breakdown.md
+    correctorGate:
+      trigger: ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/20-requirement-breakdown.completion.json"
+
+  - name: code-understanding
+    title: 代码理解
+    order: 30
+    purpose:
+      - 用真实路径、符号和调用关系说明与需求相关的现有代码事实。
+      - 区分已实现能力、候选修改点和仍需确认的未知项。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+    outputs:
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+    action:
+      kind: author
+      outputFile: code-understanding.md
+    correctorGate:
+      trigger: ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/30-code-understanding.completion.json"
+
+  - name: solution-design
+    title: 方案设计
+    order: 40
+    purpose:
+      - 把需求拆分映射到符合真实代码边界的组件、接口、数据流和决策。
+      - 覆盖主流程、失败路径、状态变化、兼容性和修改边界。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+    outputs:
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+    action:
+      kind: author
+      outputFile: solution-design.md
+    correctorGate:
+      trigger: ".workflow/current/stages/40-solution-design/solution-design.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/40-solution-design.completion.json"
+
+  - name: manual-test-cases
+    title: 人工测试用例
+    order: 50
+    purpose:
+      - 为需求和方案建立正向、异常、边界、状态变化及回归用例。
+      - 每个用例给出前置条件、步骤、数据、可观察预期和追溯标识。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+    outputs:
+      - ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+    action:
+      kind: author
+      outputFile: manual-test-cases.md
+    correctorGate:
+      trigger: ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/50-manual-test-cases.completion.json"
+
+  - name: dt-design
+    title: DT 设计
+    order: 60
+    purpose:
+      - 将适合自动化的场景映射到真实驱动路径、接口、测试缝和观察点。
+      - 明确测试层级、数据准备、隔离、清理、断言和稳定性风险。
+    inputs:
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+    outputs:
+      - ".workflow/current/stages/60-dt-design/dt-design.md"
+    action:
+      kind: author
+      outputFile: dt-design.md
+    correctorGate:
+      trigger: ".workflow/current/stages/60-dt-design/dt-design.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/60-dt-design.completion.json"
+
+  - name: planning-source
+    title: 六阶段无损来源载体
+    order: 65
+    purpose:
+      - 记录六份来源的路径、字节 SHA-256、稳定标识映射和完整可逆原文快照。
+      - 只作为 workspace bootstrap 附件，不成为 Planning 或 PRD 的新增语义权威。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+      - ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+      - ".workflow/current/stages/60-dt-design/dt-design.md"
+    outputs:
+      - ".workflow/current/stages/65-planning-source/planning-source.md"
+    action:
+      kind: author-lossless-carrier
+      snapshotEncoding: indent4-v1
+      hashOriginalBytes: true
+      forbidSemanticSummarizationLoss: true
+    correctorGate:
+      trigger: ".workflow/current/stages/65-planning-source/planning-source.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+    report: ".workflow/current/reports/65-planning-source.completion.json"
+
+  - name: workspace-bootstrap
+    title: 统一工作区初始化
+    order: 70
+    purpose:
+      - 以无损来源载体为请求附件创建唯一的完整 VeriPilot v2 workspace。
+      - 收到 workspace_created 后立即停止，不调用 advance 或任何 IR/Planning workflow。
+    inputs:
+      - ".workflow/current/stages/65-planning-source/planning-source.md"
+    outputs:
+      - "VeriPilotWorkspace/guarded-current/workspace.json"
+      - "VeriPilotWorkspace/guarded-current/input/manifest.json"
+    action:
+      kind: bounded-component-command
+      invoke: "/veripilot-v2:veripilot new \"{{run.projectRoot}}/.workflow/current/stages/65-planning-source/planning-source.md\" --project-root \"{{run.projectRoot}}\" --workspace-name \"{{run.workspaceName}}\" --mode auto"
+      stopCode: workspace_created
+      forbiddenNextAction: advance
+      resumeIfExists: true
+      forbiddenInvocations:
+        - "/ir:workflow"
+        - "/planning:workflow"
+    gate:
+      requireProfile: veripilot-v2
+      requireWorkspaceIdentityMatch: true
+      requireRequestAttachmentHashMatch: true
+    report: ".workflow/current/reports/70-workspace-bootstrap.completion.json"
+
+  - name: planning-projection
+    title: Agent 生成 Planning 四件套
+    order: 80
+    purpose:
+      - 当前 Agent 直接从六阶段六份原始输出生成 SR、PilotPlan、relations 和粒度选择。
+      - 不调用 Planning/IR 插件，不写 stages/20-planning，也不生成伪造的组件 manifest。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+      - ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+      - ".workflow/current/stages/60-dt-design/dt-design.md"
+    outputs:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+    action:
+      kind: agent-author-bundle
+      author: current-agent
+      outputRoot: "{{run.workspaceRoot}}/delivery/planning-projection"
+      requireStableSrIds: true
+      requireOneMilestonePerSr: true
+      requireAcyclicHardDependencies: true
+      forbiddenInvocations:
+        - "/planning:"
+        - "/ir:"
+    correctorGate:
+      trigger: "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+      requireBundleComplete: true
+    report: ".workflow/current/reports/80-planning-projection.completion.json"
+
+  - name: planning-fidelity-gate
+    title: 六阶段到 Planning 四件套一致性门禁
+    order: 85
+    purpose:
+      - 只比较六阶段六份 baseline 与 Planning 四件套 subjects，检查遗漏、冲突和扩张。
+      - 发现问题时只修正 Agent 所有的四件套并重跑门禁，不调用 Planning 插件。
+    inputs:
+      - ".workflow/current/stages/10-requirement-analysis/requirement-analysis.md"
+      - ".workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md"
+      - ".workflow/current/stages/30-code-understanding/code-understanding.md"
+      - ".workflow/current/stages/40-solution-design/solution-design.md"
+      - ".workflow/current/stages/50-manual-test-cases/manual-test-cases.md"
+      - ".workflow/current/stages/60-dt-design/dt-design.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+    outputs:
+      - ".workflow/current/gates/85-planning-fidelity-gate.md"
+    action:
+      kind: corrector-gate
+      reviewMode: product-semantic
+      semanticBaseline: "{{correctorScope.planningAgainstSixStages.baseline}}"
+      semanticSubjects: "{{correctorScope.planningAgainstSixStages.subjects}}"
+      forbidSemanticExpansionBeyondDeclaredFiles: true
+      correctionOwner: current-agent-planning-projection
+    correctorGate:
+      deterministicCheck: "/runtime-corrector:check .workflow/current/gates/85-planning-fidelity-gate.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+      requireNoFindings: true
+    report: ".workflow/current/reports/85-planning-fidelity-gate.completion.json"
+
+  - name: planning-publication
+    title: Planning 投影协议发布
+    order: 87
+    purpose:
+      - 在 Stage 85 通过后为四件套生成标准 veripilot.delivery_manifest.v2 hash 封装。
+      - manifest 明确标记 guarded-delivery 为 producer，不冒充 Planning 插件产物。
+    inputs:
+      - ".workflow/current/gates/85-planning-fidelity-gate.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+    outputs:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json"
+    action:
+      kind: deterministic-publication
+      invoke: "{{planningProjectionPublication.publishCommand}}"
+      resumeValidationCommand: "{{planningProjectionPublication.checkCommand}}"
+    gate:
+      requireStatus: verified
+      requireManifestHashValid: true
+      requireExactlyFourArtifacts: true
+      requireProducerComponentId: guarded-delivery
+    report: ".workflow/current/reports/87-planning-publication.completion.json"
+
+  - name: prd-contract-auto
+    title: PRD Contract 自动生成
+    order: 90
+    purpose:
+      - 将外层 Planning projection delivery manifest 作为正式上游输入运行 PRD auto。
+      - PRD Contract 自己完成输入初始化、PRD/验收生成、机器审阅、auto policy 和发布。
+    inputs:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json"
+    outputs:
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/traceability.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json"
+    action:
+      kind: component-workflow
+      invoke: "/prd-contract:workflow auto --workspace-root \"{{run.workspaceRoot}}\" --stage-id 40-prd-contract --source-manifest \"delivery/planning-projection/manifest.json\" --mode auto"
+      forbiddenFallbacks:
+        - prompt-only
+        - source-artifact
+        - planning-plugin
+    componentGate:
+      requireStatus: verified
+      requireManifest: stages/40-prd-contract/output/manifest.json
+      requireValidHashClosure: true
+      requirePlanningProjectionLineage: true
+    report: ".workflow/current/reports/90-prd-contract-auto.completion.json"
+
+  - name: prd-deliverables-gate
+    title: Planning 四件套到 PRD 两件套一致性门禁
+    order: 95
+    purpose:
+      - 只比较 Planning 四件套 baseline 与 PRD.md、acceptance-contract.json subjects。
+      - traceability、manifest 和 handoff 保持协议角色，不参与产品语义判断。
+    inputs:
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json"
+    outputs:
+      - ".workflow/current/gates/95-prd-deliverables-gate.md"
+    action:
+      kind: corrector-gate
+      reviewMode: product-semantic
+      semanticBaseline: "{{correctorScope.prdAgainstPlanning.baseline}}"
+      semanticSubjects: "{{correctorScope.prdAgainstPlanning.subjects}}"
+      forbidSemanticExpansionBeyondDeclaredFiles: true
+      correctionOwner: prd-contract
+      correctionMethod: public-feedback-and-auto-rerun
+    correctorGate:
+      deterministicCheck: "/runtime-corrector:check .workflow/current/gates/95-prd-deliverables-gate.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+      requireNoFindings: true
+    report: ".workflow/current/reports/95-prd-deliverables-gate.completion.json"
+
+  - name: build-qa-handoff-gate
+    title: Build QA 输入协议门禁
+    order: 100
+    purpose:
+      - 确认两个产品语义门禁已通过，并校验 Planning lineage 与 PRD 协议 hash 闭包。
+      - 不重读产品文件做第三次语义审查；Build QA 的唯一 source manifest 是 PRD output。
+    inputs:
+      - ".workflow/current/gates/85-planning-fidelity-gate.md"
+      - ".workflow/current/gates/95-prd-deliverables-gate.md"
+      - "VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json"
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json"
+    outputs:
+      - ".workflow/current/gates/100-build-qa-handoff-gate.md"
+    action:
+      kind: corrector-gate
+      reviewMode: structure-identity-hash-and-importability-only
+      productSemanticReview: false
+      correctionOwner: prd-contract-or-guarded-delivery-publication
+    correctorGate:
+      deterministicCheck: "/runtime-corrector:check .workflow/current/gates/100-build-qa-handoff-gate.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+      requireNoFindings: true
+      requireMilestoneCountAtMost: 7
+      requireEvidenceFileEstimateAtMost: 120
+    report: ".workflow/current/reports/100-build-qa-handoff-gate.completion.json"
+
+  - name: build-qa-loop-auto
+    title: Build QA 全里程碑自动执行
+    order: 110
+    purpose:
+      - 通过 Build QA 的公开 workflow auto 按 PRD handoff 完成实现、构建与 QA。
+      - 使用 scope all 且只传 PRD output manifest，不拆解或替代其内部 input reviewer。
+    inputs:
+      - "VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json"
+    outputs:
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/output/manifest.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/milestones/*/manifest.json"
+    action:
+      kind: component-workflow
+      invoke: "/build-qa-loop:workflow auto --workspace-root \"{{run.workspaceRoot}}\" --stage-id 50-build-qa-loop --target-project \"{{run.targetProject}}\" --source-manifest \"stages/40-prd-contract/output/manifest.json\" --scope all --mode auto"
+      forbidMilestoneDirWithScopeAll: true
+    componentGate:
+      requireStatus: verified
+      requireAllMilestones: true
+      requireOrderedManifestHashes: true
+      propagateNeedsHuman: true
+      propagateBlocked: true
+    report: ".workflow/current/reports/110-build-qa-loop-auto.completion.json"
+
+  - name: build-qa-post-audit
+    title: Build QA 完成后执行证据审计
+    order: 115
+    purpose:
+      - 对明确列名的 execution contract、result、evidence、changed-files 和 manifests 做闭包检查。
+      - 这是黑盒完成后的执行审计，不重新解释 Planning/PRD 产品语义。
+    inputs:
+      - ".workflow/current/gates/100-build-qa-handoff-gate.md"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/input/execution-contract.json"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/milestone-result.json"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/evidence-chain.json"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/changed-files.json"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/output/manifest.json"
+      - "VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/output/handoff.json"
+      - "VeriPilotWorkspace/guarded-current/delivery/milestones/*/manifest.json"
+    outputs:
+      - ".workflow/current/gates/115-build-qa-post-audit.md"
+    action:
+      kind: corrector-gate
+      reviewMode: execution-and-evidence-closure-only
+      productSemanticReview: false
+      correctionOwner: build-qa-loop
+    correctorGate:
+      deterministicCheck: "/runtime-corrector:check .workflow/current/gates/115-build-qa-post-audit.md"
+      requireDeterministic: passed
+      requireAgentReview: completed
+      requireNoFindings: true
+      requireAllMilestonesVerified: true
+      requireNoEvidenceTruncation: true
+    report: ".workflow/current/reports/115-build-qa-post-audit.completion.json"
+
+  - name: delivery-summary
+    title: 受控交付总结
+    order: 120
+    purpose:
+      - 汇总全部前序 completion reports、两个语义门禁、协议门禁和 Build QA 结果。
+      - 即使中途停止也生成 incomplete 总结，并保留唯一合法恢复动作。
+    inputs:
+      - ".workflow/current/reports/0-workflow-preflight.completion.json"
+      - ".workflow/current/reports/10-requirement-analysis.completion.json"
+      - ".workflow/current/reports/20-requirement-breakdown.completion.json"
+      - ".workflow/current/reports/30-code-understanding.completion.json"
+      - ".workflow/current/reports/40-solution-design.completion.json"
+      - ".workflow/current/reports/50-manual-test-cases.completion.json"
+      - ".workflow/current/reports/60-dt-design.completion.json"
+      - ".workflow/current/reports/65-planning-source.completion.json"
+      - ".workflow/current/reports/70-workspace-bootstrap.completion.json"
+      - ".workflow/current/reports/80-planning-projection.completion.json"
+      - ".workflow/current/reports/85-planning-fidelity-gate.completion.json"
+      - ".workflow/current/reports/87-planning-publication.completion.json"
+      - ".workflow/current/reports/90-prd-contract-auto.completion.json"
+      - ".workflow/current/reports/95-prd-deliverables-gate.completion.json"
+      - ".workflow/current/reports/100-build-qa-handoff-gate.completion.json"
+      - ".workflow/current/reports/110-build-qa-loop-auto.completion.json"
+      - ".workflow/current/reports/115-build-qa-post-audit.completion.json"
+    outputs:
+      - ".workflow/current/gates/120-delivery-summary.md"
+    action:
+      kind: final-summary
+      includeAllPredecessorReports: true
+      includeNotRunStages: true
+      distinguishAutoFromHumanApproval: true
+      writeSelfReportAfterGate: true
+    gate:
+      completeOnlyIfAllRequiredStagesCompleted: true
+      partialDeliveryLabel: incomplete
+    report: ".workflow/current/reports/120-delivery-summary.completion.json"
+
+finalization:
+  success:
+    requiredStage: delivery-summary
+    requireAllPreviousReportsCompleted: true
+    result: verified
+  stopped:
+    writeNotRunReports: true
+    writeDeliverySummary: true
+    result: incomplete
+  neverClaim:
+    - planning-plugin-was-run
+    - ir-was-required
+    - human-approval-without-explicit-user-action
+    - product-semantic-review-beyond-the-declared-six-files
+    - build-qa-was-paused-inside-its-black-box

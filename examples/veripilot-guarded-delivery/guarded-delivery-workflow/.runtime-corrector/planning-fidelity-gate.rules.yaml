@@ -1,0 +1,81 @@
+version: 1
+
+rules:
+  - id: PLANNING-GATE-REQUIRED-BUNDLE
+    type: require-artifacts
+    artifacts:
+      - requirement-analysis.md
+      - requirement-breakdown.md
+      - code-understanding.md
+      - solution-design.md
+      - manual-test-cases.md
+      - dt-design.md
+      - SR.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: PLANNING-GATE-SUBJECT
+    type: require-heading
+    heading: 审查对象
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-EVIDENCE
+    type: require-heading
+    heading: 输入与哈希证据
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-COVERAGE
+    type: require-heading
+    heading: 覆盖与一致性
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-CORRECTOR
+    type: require-heading
+    heading: Corrector 结果
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-DIAGNOSTICS
+    type: require-heading
+    heading: 诊断与兼容例外
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-BOUNDARY
+    type: require-heading
+    heading: Bundle 边界声明
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-BOUND-CONFIG
+    type: require-text
+    text: max_related_files=120
+    severity: error
+
+  - id: PLANNING-GATE-BOUND-SCAN
+    type: require-text
+    text: collector_candidate_cap=480
+    severity: error
+
+  - id: PLANNING-GATE-BOUND-TRUNCATION
+    type: require-text
+    text: collector_truncated=false
+    severity: error
+
+  - id: PLANNING-GATE-DECISION
+    type: require-heading
+    heading: 门禁结论
+    level: 2
+    severity: error
+
+  - id: PLANNING-GATE-NEXT
+    type: require-heading
+    heading: 下一动作
+    level: 2
+    severity: error

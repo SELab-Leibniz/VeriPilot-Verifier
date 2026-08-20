@@ -1,0 +1,45 @@
+version: 1
+
+rules:
+  - id: REQUIRE-OVERVIEW
+    type: require-heading
+    heading: 目标与范围
+    aliases:
+      - 产品概述
+      - 背景与目标
+    severity: error
+
+  - id: REQUIRE-FUNCTIONS
+    type: require-heading
+    heading: 功能需求
+    aliases:
+      - 核心功能
+      - 需求清单
+    severity: error
+
+  - id: REQUIRE-ACCEPTANCE
+    type: require-checklist
+    under: 验收标准
+    aliases:
+      - 完成定义
+      - 验收条件
+    minimum: 1
+    severity: error
+
+  - id: REQUIRE-PLATFORM
+    type: require-text
+    values:
+      - HarmonyOS
+      - OpenHarmony
+      - 鸿蒙
+    severity: warning
+    message: 文档没有说明目标鸿蒙平台。
+
+  - id: FORBID-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error
+    suggestion: 补全内容；确实未知时说明原因和决策条件。

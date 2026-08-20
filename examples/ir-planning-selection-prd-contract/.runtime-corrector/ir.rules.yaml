@@ -1,0 +1,110 @@
+version: 1
+
+rules:
+  - id: IR-REQUIRE-SCOPE
+    type: require-heading
+    emptyRuleId: IR-STRUCT-EMPTY
+    heading: 目标与范围
+    aliases:
+      - 产品概述
+      - 项目概述
+      - 应用概述
+      - 背景与目标
+      - 产品目标
+      - 目标
+    severity: error
+    suggestion: 说明应用目标、本期明确范围和范围外内容。
+    template:
+      - 应用目标：
+      - 本期范围：
+      - 范围外：
+
+  - id: IR-REQUIRE-FUNCTIONS
+    type: require-heading
+    emptyRuleId: IR-STRUCT-EMPTY
+    heading: 功能需求
+    aliases:
+      - 核心功能
+      - 用户旅程与功能需求
+      - 用户旅程
+      - 功能说明
+      - 需求清单
+      - 需求
+    severity: error
+    suggestion: 按用户动作、系统响应和关键异常描述功能，不要扩张原始需求。
+    template:
+      - 用户动作：
+      - 系统响应：
+      - 异常与边界：
+
+  - id: IR-REQUIRE-ACCEPTANCE
+    type: require-checklist
+    emptyRuleId: IR-STRUCT-EMPTY
+    under: 验收标准
+    aliases:
+      - 验收条件
+      - 完成定义
+      - 测试要点
+      - 可验收结果
+    minimum: 2
+    severity: error
+    suggestion: 至少为核心功能各写一条可执行、可观察的“- [ ]”验收项。
+    template:
+      - - [ ] 核心功能一：输入、操作和可观察结果
+      - - [ ] 核心功能二：输入、操作和可观察结果
+
+  - id: IR-REQUIRE-TRACEABILITY
+    type: require-heading
+    emptyRuleId: IR-STRUCT-EMPTY
+    heading: 来源追溯
+    aliases:
+      - 需求来源
+      - 来源与假设
+      - 事实与假设
+      - 原始需求与推断
+    severity: error
+    suggestion: 区分用户明确要求、必要推断、建议项和待确认项。
+    template:
+      - 用户明确要求：
+      - 必要推断：
+      - 建议项：
+      - 待确认：
+
+  - id: IR-REQUIRE-PLATFORM
+    type: require-text
+    values:
+      - HarmonyOS
+      - OpenHarmony
+      - 鸿蒙
+    severity: error
+    message: IR 没有明确目标鸿蒙平台。
+
+  - id: IR-REQUIRE-USER-CONTEXT
+    type: require-text
+    values:
+      - 目标用户
+      - 用户角色
+      - 用户场景
+      - 用户故事
+    severity: warning
+    message: IR 没有交代目标用户或使用场景。
+
+  - id: IR-REQUIRE-SCOPE-BOUNDARY
+    type: require-text
+    values:
+      - 范围外
+      - 非目标
+      - 本期不
+      - 暂不
+    severity: warning
+    message: IR 没有明确本期范围边界。
+
+  - id: IR-FORBID-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+      - 稍后补充
+    severity: error
+    suggestion: 补全内容；确实未知时记录未知原因和决策条件，不要保留占位符。

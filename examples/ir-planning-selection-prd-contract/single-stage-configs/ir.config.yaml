@@ -1,0 +1,29 @@
+version: 1
+
+enabledStages:
+  - ir
+
+artifacts:
+  - name: ir
+    stage: ir
+    type: ir
+    patterns:
+      - ir.md
+      - docs/ir.md
+      - docs/*.ir.md
+      - docs/ir/*.md
+    rules:
+      enabled: true
+      file: ir.rules.yaml
+    review:
+      enabled: true
+      criteria: ir.reviewer.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxFeedbackChars: 16000
+  maxReviewerChars: 8000

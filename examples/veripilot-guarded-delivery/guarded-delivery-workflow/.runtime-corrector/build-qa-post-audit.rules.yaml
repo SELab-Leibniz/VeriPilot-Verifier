@@ -1,0 +1,78 @@
+version: 1
+
+rules:
+  - id: BUILD-POST-GATE-REQUIRED-BUNDLE
+    type: require-artifacts
+    artifacts:
+      - 100-build-qa-handoff-gate.md
+      - handoff.json
+      - execution-contract.json
+      - milestone-result.json
+      - changed-files.json
+      - evidence-chain.json
+      - manifest.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: BUILD-POST-GATE-SUBJECT
+    type: require-heading
+    heading: 审查对象
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-EVIDENCE
+    type: require-heading
+    heading: 输入与哈希证据
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-COVERAGE
+    type: require-heading
+    heading: 覆盖与一致性
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-CORRECTOR
+    type: require-heading
+    heading: Corrector 结果
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-DIAGNOSTICS
+    type: require-heading
+    heading: 诊断与兼容例外
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-BOUNDARY
+    type: require-heading
+    heading: Bundle 边界声明
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-BOUND-CONFIG
+    type: require-text
+    text: max_related_files=120
+    severity: error
+
+  - id: BUILD-POST-GATE-BOUND-SCAN
+    type: require-text
+    text: collector_candidate_cap=480
+    severity: error
+
+  - id: BUILD-POST-GATE-BOUND-TRUNCATION
+    type: require-text
+    text: collector_truncated=false
+    severity: error
+
+  - id: BUILD-POST-GATE-DECISION
+    type: require-heading
+    heading: 门禁结论
+    level: 2
+    severity: error
+
+  - id: BUILD-POST-GATE-NEXT
+    type: require-heading
+    heading: 下一动作
+    level: 2
+    severity: error

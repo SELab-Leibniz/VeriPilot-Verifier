@@ -1,0 +1,157 @@
+version: 1
+
+enabledStages:
+  - requirements-report
+  - ux-design
+  - code-understanding
+  - solution-design
+  - manual-test-cases
+  - dt-test-cases
+
+artifacts:
+  - name: requirements-report
+    stage: requirements-report
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-需求分析报告-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+    rules:
+      enabled: true
+      file: rules/requirements-report.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/requirements-report.md
+
+  - name: ux-design
+    stage: ux-design
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-UX设计稿-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+      - "spec/????-??-??-需求分析报告-*.md"
+    rules:
+      enabled: true
+      file: rules/ux-design.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/ux-design.md
+
+  - name: code-understanding
+    stage: code-understanding
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-代码理解报告-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+      - "src/**/*"
+      - "spec/????-??-??-需求分析报告-*.md"
+      - "spec/????-??-??-UX设计稿-*.md"
+    rules:
+      enabled: true
+      file: rules/code-understanding.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/code-understanding.md
+
+  - name: solution-design
+    stage: solution-design
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-模块设计报告-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+      - "src/**/*"
+      - "spec/????-??-??-需求分析报告-*.md"
+      - "spec/????-??-??-UX设计稿-*.md"
+      - "spec/????-??-??-代码理解报告-*.md"
+    rules:
+      enabled: true
+      file: rules/solution-design.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/solution-design.md
+
+  - name: manual-test-cases
+    stage: manual-test-cases
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-人工测试用例-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+      - "spec/????-??-??-需求分析报告-*.md"
+      - "spec/????-??-??-代码理解报告-*.md"
+      - "spec/????-??-??-模块设计报告-*.md"
+    rules:
+      enabled: true
+      file: rules/manual-test-cases.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/manual-test-cases.md
+
+  - name: dt-test-cases
+    stage: dt-test-cases
+    format: markdown
+    pathTemplates:
+      - "spec/{YYYY-MM-DD}-DT测试用例-{changeName}.md"
+    relatedRoot: project
+    relatedPatterns:
+      - "workflow.yaml"
+      - "src/**/*"
+      - "spec/????-??-??-需求分析报告-*.md"
+      - "spec/????-??-??-代码理解报告-*.md"
+      - "spec/????-??-??-模块设计报告-*.md"
+      - "spec/????-??-??-人工测试用例-*.md"
+    rules:
+      enabled: true
+      file: rules/dt-test-cases.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/nodes/dt-test-cases.md
+
+workflow:
+  correlation:
+    keys:
+      - changeName
+  edges:
+    - from: requirements-report
+      to: ux-design
+      review:
+        enabled: true
+        criteria: reviewers/edges/requirements-to-ux.md
+    - from: requirements-report
+      to: code-understanding
+      review:
+        enabled: true
+        criteria: reviewers/edges/requirements-to-code.md
+    - from: code-understanding
+      to: solution-design
+      review:
+        enabled: true
+        criteria: reviewers/edges/code-to-solution.md
+    - from: solution-design
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: reviewers/edges/solution-to-manual-tests.md
+    - from: manual-test-cases
+      to: dt-test-cases
+      review:
+        enabled: true
+        criteria: reviewers/edges/manual-to-dt-tests.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Guarded Delivery"
+  short_description: "Project six stages into PRD and Build QA"
+  default_prompt: "Use $run-guarded-delivery to turn the existing six-stage documents into the Agent-owned Planning four-file projection, then run PRD Contract and Build QA in auto mode without invoking Planning or IR."

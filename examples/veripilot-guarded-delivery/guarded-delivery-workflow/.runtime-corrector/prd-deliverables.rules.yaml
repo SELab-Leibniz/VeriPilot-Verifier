@@ -1,0 +1,16 @@
+version: 1
+
+rules:
+  - id: GUARDED-PRD-REQUIRED
+    type: require-artifacts
+    artifacts:
+      - PRD.md
+      - acceptance-contract.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: GUARDED-PRD-ACCEPTANCE-SCHEMA
+    type: json-schema
+    artifact: acceptance-contract.json
+    schema: schemas/acceptance-contract.schema.json
+    severity: error

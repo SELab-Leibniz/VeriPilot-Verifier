@@ -1,0 +1,17 @@
+{
+  "name": "runtime-corrector",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Explainable, project-configured runtime correction for artifact workflows.",
+  "bin": {
+    "runtime-corrector": "./scripts/cli.mjs"
+  },
+  "scripts": {
+    "check": "node ./scripts/cli.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

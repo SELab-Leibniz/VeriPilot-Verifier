@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "changeName", "milestone", "revision", "status", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "changeName": { "type": "string", "minLength": 1 },
+    "milestone": { "type": "string", "minLength": 1 },
+    "revision": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["ready", "blocked"] },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tests", "build", "device"],
+      "properties": {
+        "tests": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "build": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "device": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+version: 1
+
+rules:
+  - id: PRD-PUBLICATION-REQUIRED
+    type: require-artifacts
+    artifacts:
+      - manifest.json
+      - handoff.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: PRD-PUBLICATION-MANIFEST
+    type: json-schema
+    artifact: manifest.json
+    schema: schemas/prd-output-manifest.schema.json
+    severity: error
+
+  - id: PRD-PUBLICATION-HANDOFF
+    type: json-schema
+    artifact: handoff.json
+    schema: schemas/prd-universal-handoff.schema.json
+    severity: error

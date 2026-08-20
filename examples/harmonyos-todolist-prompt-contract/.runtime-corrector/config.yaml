@@ -1,0 +1,173 @@
+version: 1
+
+enabledStages:
+  - requirements
+  - ux-design
+  - code-understanding
+  - solution-design
+  - manual-test-cases
+  - dt-test-cases
+  - implementation-checkpoint
+
+groundTruth:
+  - id: user-request
+    type: user-confirmed-requirement
+    version: request-001
+    authority: user
+    required: true
+    patterns:
+      - prompt/user-request.md
+  - id: workflow-baseline
+    type: prompt-contract
+    version: 1
+    authority: project
+    required: true
+    patterns:
+      - baseline_workflow.yaml
+
+artifacts:
+  - name: requirements
+    stage: requirements
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/requirements.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/requirements.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: ux-design
+    stage: ux-design
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/ux.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/ux.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: code-understanding
+    stage: code-understanding
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/code-understanding.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/code-understanding.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: solution-design
+    stage: solution-design
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/solution.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/solution.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: manual-test-cases
+    stage: manual-test-cases
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/manual-tests.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/manual-tests.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: dt-test-cases
+    stage: dt-test-cases
+    format: markdown
+    pathTemplates:
+      - spec/{changeName}/dt-tests.md
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/dt-tests.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/node.md
+
+  - name: implementation-checkpoint
+    stage: implementation-checkpoint
+    format: json
+    pathTemplates:
+      - evidence/{changeName}/checkpoint.json
+    groundTruth: [user-request, workflow-baseline]
+    rules:
+      enabled: true
+      file: rules/checkpoint.rules.yaml
+    review:
+      enabled: true
+      criteria: reviewers/checkpoint.md
+
+workflow:
+  correlation:
+    keys: [changeName]
+  edges:
+    - from: requirements
+      to: ux-design
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: requirements
+      to: code-understanding
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: code-understanding
+      to: solution-design
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: solution-design
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: manual-test-cases
+      to: dt-test-cases
+      review:
+        enabled: true
+        criteria: reviewers/traceability.md
+    - from: solution-design
+      to: implementation-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+    - from: manual-test-cases
+      to: implementation-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+    - from: dt-test-cases
+      to: implementation-checkpoint
+      review:
+        enabled: true
+        criteria: reviewers/checkpoint-traceability.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000

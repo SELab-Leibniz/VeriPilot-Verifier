@@ -1,0 +1,22 @@
+version: 1
+
+artifacts:
+  - name: requirements
+    stage: requirements
+    type: requirements
+    patterns:
+      - docs/requirements.md
+      - docs/*.requirements.md
+    rules:
+      enabled: true
+      file: rules.yaml
+    review:
+      enabled: true
+      criteria: reviewer.md
+
+output:
+  persist: false
+
+limits:
+  maxFeedbackChars: 12000
+  maxReviewerChars: 6000

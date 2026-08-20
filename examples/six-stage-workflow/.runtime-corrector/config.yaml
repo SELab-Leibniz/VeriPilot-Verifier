@@ -1,0 +1,158 @@
+version: 1
+
+enabledStages:
+  - requirement-analysis
+  - requirement-breakdown
+  - code-understanding
+  - solution-design
+  - manual-test-cases
+  - dt-design
+
+artifacts:
+  - name: requirement-analysis
+    stage: requirement-analysis
+    format: markdown
+    patterns:
+      - .workflow/current/stages/10-requirement-analysis/requirement-analysis.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: requirement-breakdown
+    stage: requirement-breakdown
+    format: markdown
+    patterns:
+      - .workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: code-understanding
+    stage: code-understanding
+    format: markdown
+    patterns:
+      - .workflow/current/stages/30-code-understanding/code-understanding.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: solution-design
+    stage: solution-design
+    format: markdown
+    patterns:
+      - .workflow/current/stages/40-solution-design/solution-design.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: manual-test-cases
+    stage: manual-test-cases
+    format: markdown
+    patterns:
+      - .workflow/current/stages/50-manual-test-cases/manual-test-cases.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: dt-design
+    stage: dt-design
+    format: markdown
+    patterns:
+      - .workflow/current/stages/60-dt-design/dt-design.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+workflow:
+  edges:
+    - from: requirement-analysis
+      to: requirement-breakdown
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: requirement-analysis
+      to: solution-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: requirement-breakdown
+      to: solution-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: code-understanding
+      to: solution-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: requirement-analysis
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: requirement-breakdown
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: solution-design
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: requirement-breakdown
+      to: dt-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: code-understanding
+      to: dt-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+    - from: solution-design
+      to: dt-design
+      review:
+        enabled: true
+        criteria: workflow-edge.reviewer.md
+
+ignorePatterns:
+  - "**/.runtime-correction/**"
+  - .workflow/archive/**
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000

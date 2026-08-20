@@ -1,0 +1,138 @@
+{
+  "description": "Run project-configured artifact, Skill, Ground Truth, and terminal correction.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 30,
+            "statusMessage": "Runtime Corrector is validating and recovering local state..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 1260,
+            "statusMessage": "Runtime Corrector is extracting the Skill execution contract..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"
+            ],
+            "timeout": 1260,
+            "statusMessage": "Runtime Corrector is reviewing the artifact in isolation and generating diagnostics..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/evidence-distinctness-guard.mjs"
+            ],
+            "timeout": 30,
+            "statusMessage": "Runtime Corrector is checking that named evidence files are distinct..."
+          }
+        ]
+      }
+    ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 1260,
+            "statusMessage": "Runtime Corrector is reconciling active Skill watchers..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 3000,
+            "statusMessage": "Runtime Corrector is evaluating the completed stage or task..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
+            ],
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

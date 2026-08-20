@@ -1,0 +1,46 @@
+version: 1
+
+rules:
+  - id: UX-GOAL
+    type: require-heading
+    heading: 设计目标
+    severity: error
+
+  - id: UX-INFORMATION
+    type: require-heading
+    heading: 信息架构
+    severity: error
+
+  - id: UX-STATES
+    type: require-heading
+    heading: 页面与状态
+    severity: error
+
+  - id: UX-FLOW
+    type: require-heading
+    heading: 交互流程
+    severity: error
+
+  - id: UX-EXCEPTION
+    type: require-heading
+    heading: 异常与空态
+    severity: error
+
+  - id: UX-TRACE
+    type: require-heading
+    heading: 需求追溯
+    severity: error
+
+  - id: UX-TRACE-ID
+    type: require-text
+    values:
+      - "REQ-"
+    severity: error
+
+  - id: UX-NO-PLACEHOLDER
+    type: forbid-text
+    values:
+      - TODO
+      - TBD
+      - 待补充
+    severity: error

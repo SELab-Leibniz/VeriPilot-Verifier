@@ -1,0 +1,555 @@
+version: 1
+
+# This policy extends the six-stage example without invoking the Planning or IR
+# plugins. The outer agent owns the Planning projection; PRD Contract and Build
+# QA remain black-box components and run only through their public auto flows.
+enabledStages:
+  - requirement-analysis
+  - requirement-breakdown
+  - code-understanding
+  - solution-design
+  - manual-test-cases
+  - dt-design
+  - planning-source
+  - planning-projection
+  - planning-publication
+  - planning-fidelity-gate
+  - prd-deliverables
+  - prd-publication
+  - prd-deliverables-gate
+  - build-qa-handoff-gate
+  - build-qa-post-audit
+  - delivery-summary
+
+artifacts:
+  - name: requirement-analysis
+    stage: requirement-analysis
+    format: markdown
+    patterns:
+      - .workflow/current/stages/10-requirement-analysis/requirement-analysis.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: requirement-breakdown
+    stage: requirement-breakdown
+    format: markdown
+    patterns:
+      - .workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: code-understanding
+    stage: code-understanding
+    format: markdown
+    patterns:
+      - .workflow/current/stages/30-code-understanding/code-understanding.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: solution-design
+    stage: solution-design
+    format: markdown
+    patterns:
+      - .workflow/current/stages/40-solution-design/solution-design.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: manual-test-cases
+    stage: manual-test-cases
+    format: markdown
+    patterns:
+      - .workflow/current/stages/50-manual-test-cases/manual-test-cases.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  - name: dt-design
+    stage: dt-design
+    format: markdown
+    patterns:
+      - .workflow/current/stages/60-dt-design/dt-design.md
+    rules:
+      enabled: true
+      file: six-stage.rules.yaml
+    review:
+      enabled: true
+      criteria: six-stage.reviewer.md
+
+  # A reversible carrier used only to bootstrap the unified workspace. It is
+  # not a Planning artifact and never replaces the six source documents.
+  - name: planning-source
+    stage: planning-source
+    format: markdown
+    patterns:
+      - .workflow/current/stages/65-planning-source/planning-source.md
+    relatedPatterns:
+      - .workflow/current/stages/10-requirement-analysis/requirement-analysis.md
+      - .workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md
+      - .workflow/current/stages/30-code-understanding/code-understanding.md
+      - .workflow/current/stages/40-solution-design/solution-design.md
+      - .workflow/current/stages/50-manual-test-cases/manual-test-cases.md
+      - .workflow/current/stages/60-dt-design/dt-design.md
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning-source.rules.yaml
+    review:
+      enabled: true
+      criteria: planning-source.reviewer.md
+
+  # These are the only Planning product-semantic files. They are agent-owned
+  # and intentionally live under delivery/planning-projection rather than a
+  # component-owned stages/20-planning directory.
+  - name: planning-projection
+    stage: planning-projection
+    type: planning-bundle
+    format: auto
+    patterns:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json
+    relatedPatterns:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning-projection.rules.yaml
+    review:
+      enabled: true
+      criteria: planning-projection.reviewer.md
+
+  # This manifest is transport only. PRD Contract consumes it as a standard
+  # veripilot.delivery_manifest.v2 source; no Planning plugin is impersonated.
+  - name: planning-publication
+    stage: planning-publication
+    type: planning-publication
+    format: json
+    editable: false
+    patterns:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json
+    relatedPatterns:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning-publication.rules.yaml
+    review:
+      enabled: false
+
+  - name: planning-fidelity-gate
+    stage: planning-fidelity-gate
+    format: markdown
+    patterns:
+      - .workflow/current/gates/85-planning-fidelity-gate.md
+    relatedPatterns:
+      - .workflow/current/stages/10-requirement-analysis/requirement-analysis.md
+      - .workflow/current/stages/20-requirement-breakdown/requirement-breakdown.md
+      - .workflow/current/stages/30-code-understanding/code-understanding.md
+      - .workflow/current/stages/40-solution-design/solution-design.md
+      - .workflow/current/stages/50-manual-test-cases/manual-test-cases.md
+      - .workflow/current/stages/60-dt-design/dt-design.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning-fidelity-gate.rules.yaml
+    review:
+      enabled: true
+      criteria: delivery-gates.reviewer.md
+
+  # PRD Contract owns these files, so Corrector may report findings but cannot
+  # propose or apply edits. Product semantics are exactly PRD + acceptance.
+  - name: prd-deliverables
+    stage: prd-deliverables
+    type: prd-contract
+    format: auto
+    editable: false
+    patterns:
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json
+    relatedPatterns:
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: prd-deliverables.rules.yaml
+    review:
+      enabled: true
+      criteria: prd-deliverables.reviewer.md
+
+  - name: prd-publication
+    stage: prd-publication
+    type: prd-publication-bundle
+    format: json
+    editable: false
+    patterns:
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json
+    relatedPatterns:
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: prd-publication.rules.yaml
+    review:
+      enabled: false
+
+  - name: prd-deliverables-gate
+    stage: prd-deliverables-gate
+    format: markdown
+    patterns:
+      - .workflow/current/gates/95-prd-deliverables-gate.md
+    relatedPatterns:
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/SR.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/PilotPlan.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/relations.json
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/granularity-choice.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/PRD.md
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/deliverables/acceptance-contract.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: prd-deliverables-gate.rules.yaml
+    review:
+      enabled: true
+      criteria: delivery-gates.reviewer.md
+
+  - name: build-qa-handoff-gate
+    stage: build-qa-handoff-gate
+    format: markdown
+    patterns:
+      - .workflow/current/gates/100-build-qa-handoff-gate.md
+    relatedPatterns:
+      - .workflow/current/gates/85-planning-fidelity-gate.md
+      - .workflow/current/gates/95-prd-deliverables-gate.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: build-qa-handoff-gate.rules.yaml
+    review:
+      enabled: true
+      criteria: delivery-gates.reviewer.md
+
+  - name: build-qa-post-audit
+    stage: build-qa-post-audit
+    format: markdown
+    patterns:
+      - .workflow/current/gates/115-build-qa-post-audit.md
+    relatedPatterns:
+      - .workflow/current/gates/100-build-qa-handoff-gate.md
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/input/execution-contract.json
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/milestone-result.json
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/evidence-chain.json
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/deliverables/changed-files.json
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/output/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/50-build-qa-loop/milestones/*/output/handoff.json
+      - VeriPilotWorkspace/guarded-current/delivery/milestones/*/manifest.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: build-qa-post-audit.rules.yaml
+    review:
+      enabled: true
+      criteria: delivery-gates.reviewer.md
+
+  - name: delivery-summary
+    stage: delivery-summary
+    format: markdown
+    patterns:
+      - .workflow/current/gates/120-delivery-summary.md
+    relatedPatterns:
+      - .workflow/current/gates/85-planning-fidelity-gate.md
+      - .workflow/current/gates/95-prd-deliverables-gate.md
+      - .workflow/current/gates/100-build-qa-handoff-gate.md
+      - .workflow/current/gates/115-build-qa-post-audit.md
+      - .workflow/current/reports/0-workflow-preflight.completion.json
+      - .workflow/current/reports/10-requirement-analysis.completion.json
+      - .workflow/current/reports/20-requirement-breakdown.completion.json
+      - .workflow/current/reports/30-code-understanding.completion.json
+      - .workflow/current/reports/40-solution-design.completion.json
+      - .workflow/current/reports/50-manual-test-cases.completion.json
+      - .workflow/current/reports/60-dt-design.completion.json
+      - .workflow/current/reports/65-planning-source.completion.json
+      - .workflow/current/reports/70-workspace-bootstrap.completion.json
+      - .workflow/current/reports/80-planning-projection.completion.json
+      - .workflow/current/reports/85-planning-fidelity-gate.completion.json
+      - .workflow/current/reports/87-planning-publication.completion.json
+      - .workflow/current/reports/90-prd-contract-auto.completion.json
+      - .workflow/current/reports/95-prd-deliverables-gate.completion.json
+      - .workflow/current/reports/100-build-qa-handoff-gate.completion.json
+      - .workflow/current/reports/110-build-qa-loop-auto.completion.json
+      - .workflow/current/reports/115-build-qa-post-audit.completion.json
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: delivery-summary.rules.yaml
+    review:
+      enabled: true
+      criteria: delivery-gates.reviewer.md
+
+workflow:
+  edges:
+    # Original six-stage DAG.
+    - from: requirement-analysis
+      to: requirement-breakdown
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-analysis
+      to: solution-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: solution-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: code-understanding
+      to: solution-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-analysis
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: solution-design
+      to: manual-test-cases
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: dt-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: code-understanding
+      to: dt-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: solution-design
+      to: dt-design
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    # The lossless bootstrap carrier sees all six authorities directly.
+    - from: requirement-analysis
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: code-understanding
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: solution-design
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: manual-test-cases
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: dt-design
+      to: planning-source
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    # Exact semantic proof A: six source documents -> Planning four-file bundle.
+    - from: requirement-analysis
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: code-understanding
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: solution-design
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: manual-test-cases
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: dt-design
+      to: planning-projection
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    - from: requirement-analysis
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: requirement-breakdown
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: code-understanding
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: solution-design
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: manual-test-cases
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: dt-design
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: planning-projection
+      to: planning-fidelity-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    # Exact semantic proof B: Planning four-file bundle -> PRD two-file bundle.
+    - from: planning-projection
+      to: prd-deliverables
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: planning-projection
+      to: prd-deliverables-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: prd-deliverables
+      to: prd-deliverables-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    # Protocol receipts are isolated from the two product-semantic comparisons.
+    - from: planning-fidelity-gate
+      to: build-qa-handoff-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: planning-publication
+      to: build-qa-handoff-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: prd-publication
+      to: build-qa-handoff-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: prd-deliverables-gate
+      to: build-qa-handoff-gate
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: build-qa-handoff-gate
+      to: build-qa-post-audit
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+    - from: planning-fidelity-gate
+      to: delivery-summary
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: prd-deliverables-gate
+      to: delivery-summary
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: build-qa-handoff-gate
+      to: delivery-summary
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+    - from: build-qa-post-audit
+      to: delivery-summary
+      review:
+        enabled: true
+        criteria: upstream-fidelity.reviewer.md
+
+ignorePatterns:
+  - "**/.runtime-correction/**"
+  - "**/.runtime/**"
+  - "**/.objects/**"
+  - .workflow/archive/**
+  - .workflow/current/reports/**
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 120
+  maxFeedbackChars: 40000
+  maxReviewerChars: 20000

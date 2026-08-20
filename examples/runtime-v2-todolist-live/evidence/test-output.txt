@@ -1,0 +1,29 @@
+$ npm test
+
+> runtime-v2-todolist-live@1.0.0 test
+> node --test
+
+✔ R01: blank and whitespace-only input does not create a todo (1.4254ms)
+✔ R01: non-empty title creates a todo (0.132ms)
+✔ R02: ids are unique within a session (0.1186ms)
+✔ R02: editing title and toggling completion do not change the id (0.1558ms)
+✔ R03: toggle flips completion both ways and only for the target (0.1313ms)
+✔ R04: blank edit does not destroy the existing title (0.5958ms)
+✔ R04: non-empty edit updates the title, id and completion preserved (0.1733ms)
+✔ R05: delete by id removes only the target todo (0.595ms)
+✔ R06: filters and counts stay consistent with current data (0.2988ms)
+✔ R06: invalid filter value is ignored (0.2249ms)
+✔ R08: model is usable under node with no DOM (structural) (0.1377ms)
+✔ R09 critical journey: add x2 -> complete -> filter completed -> edit -> delete (0.1745ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 111.6088
+
+Node: v24.16.0
+Command: npm test (resolves to `node --test`)
+Result: all 12 tests passed, 0 failed.

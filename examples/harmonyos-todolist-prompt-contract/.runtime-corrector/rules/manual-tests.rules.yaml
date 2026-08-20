@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: TODOLIST-MANUAL-ENV
+    type: require-heading
+    heading: 测试环境
+    severity: error
+  - id: TODOLIST-MANUAL-CASES
+    type: require-heading
+    heading: 手工测试用例
+    severity: error
+  - id: TODOLIST-MANUAL-RESTART
+    type: require-text
+    values: [终止进程, 重新启动]
+    severity: error

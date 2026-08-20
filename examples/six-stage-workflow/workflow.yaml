@@ -1,0 +1,116 @@
+version: 1
+name: six-stage-delivery
+executor: claude-code
+
+run:
+  id: current
+
+templates:
+  outputPath: ".workflow/{{run.id}}/stages/{{stage.order}}-{{stage.name}}/{{stage.outputFile}}"
+  inputPath: ".workflow/{{run.id}}/stages/{{input.order}}-{{input.name}}/{{input.outputFile}}"
+
+execution:
+  mode: sequential
+  correctionMaxRounds: 2
+  correctionEditScope: current-stage-output
+
+stages:
+  - name: requirement-analysis
+    title: 需求分析
+    order: 10
+    purpose:
+      - 把用户原始表达整理成具有稳定标识的业务目标、范围、约束和验收点。
+      - 只确认需求事实与开放问题，不提前虚构技术方案、代码结构或实现承诺。
+    outputFile: requirement-analysis.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs: []
+
+  - name: requirement-breakdown
+    title: 需求拆分
+    order: 20
+    purpose:
+      - 把已确认需求拆分成边界清楚、可独立实现和验证的需求项与验收项。
+      - 每个拆分项必须追溯到需求分析中的稳定标识，不得遗漏约束或扩张范围。
+    outputFile: requirement-breakdown.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs:
+      - from: requirement-analysis
+        order: 10
+        outputFile: requirement-analysis.md
+        pathTemplate: "{{templates.inputPath}}"
+
+  - name: code-understanding
+    title: 代码理解
+    order: 30
+    purpose:
+      - 围绕当前需求定位真实代码入口、模块、符号、调用关系、数据流和可用测试缝。
+      - 所有结论必须引用仓库证据，并明确区分已实现事实、修改点候选和未知项。
+    outputFile: code-understanding.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs: []
+
+  - name: solution-design
+    title: 方案设计
+    order: 40
+    purpose:
+      - 把需求拆分项和代码事实转化为可实施的组件、接口、数据流、状态变化与关键决策。
+      - 方案必须覆盖全部上游标识并服从真实代码边界，不得引入没有需求依据的新能力。
+    outputFile: solution-design.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs:
+      - from: requirement-analysis
+        order: 10
+        outputFile: requirement-analysis.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: requirement-breakdown
+        order: 20
+        outputFile: requirement-breakdown.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: code-understanding
+        order: 30
+        outputFile: code-understanding.md
+        pathTemplate: "{{templates.inputPath}}"
+
+  - name: manual-test-cases
+    title: 人工测试用例设计
+    order: 50
+    purpose:
+      - 把需求、验收点和方案流程转化为可由人工执行并观察结果的测试用例。
+      - 用例必须覆盖正向、异常、边界和状态变化场景，且每条用例都能追溯到上游依据。
+    outputFile: manual-test-cases.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs:
+      - from: requirement-analysis
+        order: 10
+        outputFile: requirement-analysis.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: requirement-breakdown
+        order: 20
+        outputFile: requirement-breakdown.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: solution-design
+        order: 40
+        outputFile: solution-design.md
+        pathTemplate: "{{templates.inputPath}}"
+
+  - name: dt-design
+    title: DT 设计
+    order: 60
+    purpose:
+      - 把需求和方案转化为可自动执行的开发者测试场景、驱动方式、数据准备与稳定断言。
+      - DT 必须使用真实接口、测试缝和可观察点，并说明隔离、清理、稳定性及暂不自动化项。
+    outputFile: dt-design.md
+    outputPathTemplate: "{{templates.outputPath}}"
+    inputs:
+      - from: requirement-breakdown
+        order: 20
+        outputFile: requirement-breakdown.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: code-understanding
+        order: 30
+        outputFile: code-understanding.md
+        pathTemplate: "{{templates.inputPath}}"
+      - from: solution-design
+        order: 40
+        outputFile: solution-design.md
+        pathTemplate: "{{templates.inputPath}}"

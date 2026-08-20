@@ -1,0 +1,76 @@
+version: 1
+
+rules:
+  - id: BUILD-HANDOFF-GATE-REQUIRED-BUNDLE
+    type: require-artifacts
+    artifacts:
+      - .workflow/current/gates/85-planning-fidelity-gate.md
+      - .workflow/current/gates/95-prd-deliverables-gate.md
+      - VeriPilotWorkspace/guarded-current/delivery/planning-projection/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/manifest.json
+      - VeriPilotWorkspace/guarded-current/stages/40-prd-contract/output/handoff.json
+    pendingUntilComplete: true
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-SUBJECT
+    type: require-heading
+    heading: 审查对象
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-EVIDENCE
+    type: require-heading
+    heading: 输入与哈希证据
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-COVERAGE
+    type: require-heading
+    heading: 覆盖与一致性
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-CORRECTOR
+    type: require-heading
+    heading: Corrector 结果
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-DIAGNOSTICS
+    type: require-heading
+    heading: 诊断与兼容例外
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-BOUNDARY
+    type: require-heading
+    heading: Bundle 边界声明
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-BOUND-CONFIG
+    type: require-text
+    text: max_related_files=120
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-BOUND-SCAN
+    type: require-text
+    text: collector_candidate_cap=480
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-BOUND-TRUNCATION
+    type: require-text
+    text: collector_truncated=false
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-DECISION
+    type: require-heading
+    heading: 门禁结论
+    level: 2
+    severity: error
+
+  - id: BUILD-HANDOFF-GATE-NEXT
+    type: require-heading
+    heading: 下一动作
+    level: 2
+    severity: error
