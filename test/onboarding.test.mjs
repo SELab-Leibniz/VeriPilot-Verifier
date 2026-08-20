@@ -555,7 +555,9 @@ test("capabilityChecklistFromClaims maps claims to checker entries with blocking
   }, adapter);
   assert.deepEqual(entries.map((entry) => [entry.kit, entry.module, entry.blocking, entry.catalogUnmatched]), [
     ["scan-kit", "@kit.ScanKit", true, false],
-    ["arkdata", "@kit.ArkData", true, false],
+    // Panel consensus on an inferred (SOFT) kit is common-mode error, not
+    // independent confirmation: it never escalates to blocking.
+    ["arkdata", "@kit.ArkData", false, false],
     ["map-kit", "@kit.MapKit", false, false],
     ["no-such-catalog-shape!", null, true, true],
   ]);
@@ -811,4 +813,26 @@ test("the adjudicator request annotates operations with panel vote counts", asyn
   assert.deepEqual(majorityVotes, [2], "the shared capability claim reports both votes");
   const disputedVotes = adjudication.request.disputedOperations.map((op) => op.panelVotes);
   assert.deepEqual(disputedVotes, [1], "the single-pass requirement reports one vote");
+});
+
+test("openQuestions claims are severity-capped to SOFT whatever their authority", async (t) => {
+  const root = await workspace(t);
+  const task = await ensureTask({ projectRoot: root, sessionId: "session-oq" });
+  const applied = await applyGroundTruthDelta({
+    projectRoot: root,
+    taskId: task.taskId,
+    delta: {
+      operations: [{
+        operation: "ADD",
+        category: "openQuestions",
+        text: "Scanning: scan-kit or camera-kit? Default-safe reading: either satisfies the requirement.",
+        authority: "MATERIAL_DERIVED",
+        severity: "HARD",
+      }],
+    },
+    evidenceCapture: "references-only",
+    hookEventId: "hook-oq",
+  });
+  const question = applied.current.claims.find((claim) => claim.category === "openQuestions");
+  assert.equal(question.severity, "SOFT", "an admitted ambiguity can never be a hard obligation");
 });
