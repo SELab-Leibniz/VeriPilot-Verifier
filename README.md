@@ -142,7 +142,7 @@ implementationCorrection:
 
 ```yaml
 version: 2                      # 2 启用运行时纠偏能力
-locale: zh                      # 反馈语言
+locale: zh                      # 反馈语言；不写则按环境变量（LC_ALL/LANG）自动推导
 
 dynamicGroundTruth:
   enabled: true

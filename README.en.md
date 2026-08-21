@@ -144,7 +144,7 @@ implementationCorrection:
 
 ```yaml
 version: 2                      # 2 enables the runtime-correction capabilities
-locale: zh                      # feedback language
+locale: zh                      # feedback language; unset => derived from LC_ALL/LANG
 
 dynamicGroundTruth:
   enabled: true

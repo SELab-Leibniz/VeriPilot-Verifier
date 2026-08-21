@@ -88,7 +88,7 @@ test("compile precedence: plugin defaults < derived < explicit config", async (t
   const root = await workspace(t);
   await write(root, "README.md");
   await write(root, "oh-package.json5", "{}\n");
-  const derived = await deriveConfigDefaults(root);
+  const derived = await deriveConfigDefaults(root, { env: { LANG: "en_US.UTF-8" } });
 
   // Derived fills unset keys.
   const derivedCompile = compileRuntimeV2Config({
@@ -105,7 +105,10 @@ test("compile precedence: plugin defaults < derived < explicit config", async (t
     platformDerived: true,
     platform: "harmonyos",
     platformMarker: "oh-package.json5",
+    localeDerived: true,
+    locale: "en",
   });
+  assert.equal(derivedCompile.locale, "en");
 
   // Explicit config wins over derived.
   const explicitCompile = compileRuntimeV2Config({
@@ -194,4 +197,22 @@ test("materialized config renders valid, loadable version 2 YAML", async (t) => 
   assert.equal(validateProjectConfig(bareDocument, "config.yaml"), bareDocument);
   assert.equal(bareDocument.implementationCorrection.platform, null);
   assert.equal(bareDocument.dynamicGroundTruth.materialRoots, undefined);
+});
+
+test("locale derives from the environment with POSIX precedence and explicit config wins", async (t) => {
+  const { deriveLocale } = await import("../lib/runtime-v2/derive.mjs");
+  assert.equal(deriveLocale({ LANG: "en_US.UTF-8" }), "en");
+  assert.equal(deriveLocale({ LANG: "zh_CN.UTF-8" }), "zh");
+  assert.equal(deriveLocale({ LANG: "de_DE.UTF-8" }), "en", "non-Chinese locales get the English catalog");
+  assert.equal(deriveLocale({ LC_ALL: "zh_TW.UTF-8", LANG: "en_US.UTF-8" }), "zh", "LC_ALL outranks LANG");
+  assert.equal(deriveLocale({}), null, "nothing set derives nothing");
+  assert.equal(deriveLocale({ LANG: "C" }), null, "C/POSIX locales derive nothing");
+
+  const { compileRuntimeV2Config } = await import("../lib/runtime-v2/config.mjs");
+  const derivedOnly = compileRuntimeV2Config({ version: 2 }, { derived: { locale: "en" } });
+  assert.equal(derivedOnly.locale, "en");
+  assert.equal(derivedOnly.derivation.localeDerived, true);
+  const explicitWins = compileRuntimeV2Config({ version: 2, locale: "zh" }, { derived: { locale: "en" } });
+  assert.equal(explicitWins.locale, "zh");
+  assert.equal(explicitWins.derivation.localeDerived, false);
 });
