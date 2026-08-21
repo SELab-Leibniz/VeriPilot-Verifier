@@ -50,10 +50,12 @@ test("BLOCKED_EXTERNAL Stop still receives HarmonyOS environment-awareness corre
     }),
   };
   const commandCalls = [];
+  let targetProbeCount = 0;
   const harmonyEnvironmentExecFn = async (_command, args) => {
     commandCalls.push(args.join(" "));
     if (args.join(" ") === "list targets") {
-      return { ok: true, exitCode: 0, stdout: "[Empty]", stderr: "", error: null };
+      targetProbeCount += 1;
+      return { ok: true, exitCode: 0, stdout: targetProbeCount === 1 ? "[Empty]" : "device-42", stderr: "", error: null };
     }
     return { ok: true, exitCode: 0, stdout: "6.24.2", stderr: "", error: null };
   };
@@ -114,9 +116,11 @@ test("BLOCKED_EXTERNAL Stop still receives HarmonyOS environment-awareness corre
     }),
   });
 
-  assert.equal(commandCalls.length, 3, "the Stop reused the SessionStart environment snapshot");
+  assert.equal(commandCalls.length, 4, "the Stop reused static facts and refreshed only the volatile target");
+  assert.equal(commandCalls.at(-1), "list targets");
   assert.equal(outcome.decision, "block");
   assert.equal(outcome.stop.review.harmonyEnvironmentAssessment.status, "MISCONCEPTION");
+  assert.equal(outcome.stop.review.harmonyEnvironmentAssessment.environment.capabilities.target.state, "CONNECTED");
   assert.match(outcome.feedback, /HarmonyOS environment awareness correction/u);
   assert.match(outcome.feedback, /M13:/u);
   assert.match(outcome.feedback, /developer\.huawei\.com/u);

@@ -6,11 +6,12 @@ import test from "node:test";
 
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { deviceVerification } from "../lib/runtime-v2/device-verify.mjs";
+import { deviceVerification, probeDeviceEnvironmentFromSnapshot } from "../lib/runtime-v2/device-verify.mjs";
 import {
   ensureHarmonyEnvironmentSnapshot,
   loadHarmonyEnvironmentKnowledge,
   probeHarmonyEnvironment,
+  refreshHarmonyTarget,
 } from "../lib/runtime-v2/harmony-environment.mjs";
 import { ensureTask, taskStatePath } from "../lib/runtime-v2/task-store.mjs";
 import { loadPlatformAdapter } from "../lib/runtime-v2/platform-adapter.mjs";
@@ -41,6 +42,7 @@ async function fakeDevEco(root) {
 
 test("HarmonyOS environment knowledge preserves Windows tools, Mac extension point and official links", async () => {
   const knowledge = await loadHarmonyEnvironmentKnowledge();
+  const adapter = await loadPlatformAdapter("harmonyos");
   assert.deepEqual(
     knowledge.operatingSystems.win32.debuggingTools.map((tool) => tool.environmentVariable),
     ["DEVECO_STUDIO", "COMMAND_LINE_TOOL_PATH"],
@@ -50,6 +52,8 @@ test("HarmonyOS environment knowledge preserves Windows tools, Mac extension poi
   assert.ok(knowledge.knowledge.officialDocumentation.every((document) => (
     new URL(document.url).hostname === "developer.huawei.com"
   )));
+  assert.deepEqual(adapter.deviceCheck.probes.device.args, ["list", "targets"]);
+  assert.ok(adapter.environmentCheck.tools.hvigor.projectPaths.includes("hvigorw.bat"));
 });
 
 
@@ -107,7 +111,7 @@ test("unsupported Mac knowledge remains an explicit extension point", async (t) 
 });
 
 
-test("device verification consumes the cached environment instead of re-running Harmony probes", async (t) => {
+test("device verification reuses static environment facts but refreshes the volatile target", async (t) => {
   const root = await workspace(t);
   const calls = [];
   const outcome = await deviceVerification({
@@ -120,16 +124,101 @@ test("device verification consumes the cached environment instead of re-running 
         target: { state: "ABSENT_AT_PROBE" },
       },
     },
-    commandOverrides: { "./hvigorw": "C:/tools/hvigorw.bat" },
+    commandOverrides: { "./hvigorw": "C:/tools/hvigorw.bat", hdc: "C:/tools/hdc.exe" },
     execFn: async (command, args) => {
       calls.push({ command, args });
-      return { ok: true, exitCode: 0, stdout: "build ok", stderr: "", error: null };
+      return {
+        ok: true,
+        exitCode: 0,
+        stdout: args.join(" ") === "list targets" ? "[Empty]" : "build ok",
+        stderr: "",
+        error: null,
+      };
     },
   });
   assert.equal(outcome.assurance.level, "build");
   assert.equal(outcome.probe.cached, true);
+  assert.equal(outcome.probe.targetRefreshed, true);
   assert.equal(outcome.build.status, "passed");
-  assert.deepEqual(calls.map((call) => call.command), ["C:/tools/hvigorw.bat"]);
+  assert.deepEqual(calls.map((call) => call.command), ["C:/tools/hdc.exe", "C:/tools/hvigorw.bat"]);
+});
+
+
+test("Stop target refresh overlays the cached facts and the device ladder reuses it", async (t) => {
+  const root = await workspace(t);
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const cached = {
+    platform: "harmonyos",
+    status: "AVAILABLE",
+    capabilities: {
+      build: { state: "READY" },
+      deviceControl: { state: "READY" },
+      emulator: { state: "INSTALLED_NOT_STARTED" },
+      target: { state: "ABSENT_AT_PROBE", count: 0 },
+      uiTestReadiness: "STARTABLE",
+    },
+    resolvedCommands: { hdc: "C:/tools/hdc.exe" },
+  };
+  let calls = 0;
+  const refreshed = await refreshHarmonyTarget(cached, {
+    projectRoot: root,
+    adapter,
+    execFn: async (command, args) => {
+      calls += 1;
+      assert.equal(command, "C:/tools/hdc.exe");
+      assert.deepEqual(args, ["list", "targets"]);
+      return { ok: true, exitCode: 0, stdout: "device-42", stderr: "", error: null };
+    },
+  });
+  assert.equal(refreshed.capabilities.target.state, "CONNECTED");
+  assert.equal(refreshed.capabilities.uiTestReadiness, "READY");
+  assert.equal(refreshed.targetRefresh.initialState, "ABSENT_AT_PROBE");
+
+  const probe = await probeDeviceEnvironmentFromSnapshot(refreshed, adapter, {
+    projectRoot: root,
+    execFn: async () => {
+      throw new Error("the Stop refresh must be reused");
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(probe.device.available, true);
+  assert.equal(probe.targetRefreshReused, true);
+  assert.equal(probe.initialTargetState, "ABSENT_AT_PROBE");
+});
+
+
+test("a target connected after the task snapshot upgrades Stop verification to device", async (t) => {
+  const root = await workspace(t);
+  await touch(root, "entry/build/default/outputs/default/entry-default-signed.hap");
+  const calls = [];
+  const outcome = await deviceVerification({
+    projectRoot: root,
+    adapter: await loadPlatformAdapter("harmonyos"),
+    outputDir: path.join(root, "evidence"),
+    environmentSnapshot: {
+      status: "AVAILABLE",
+      capabilities: {
+        build: { state: "READY" },
+        target: { state: "ABSENT_AT_PROBE" },
+      },
+    },
+    commandOverrides: { "./hvigorw": "C:/tools/hvigorw.bat", hdc: "C:/tools/hdc.exe" },
+    execFn: async (command, args) => {
+      calls.push({ command, args });
+      return {
+        ok: true,
+        exitCode: 0,
+        stdout: args.join(" ") === "list targets" ? "emulator-5554" : "ok",
+        stderr: "",
+        error: null,
+      };
+    },
+  });
+  assert.equal(outcome.assurance.level, "device");
+  assert.equal(outcome.probe.initialTargetState, "ABSENT_AT_PROBE");
+  assert.equal(outcome.smoke.status, "passed");
+  assert.equal(calls[0].command, "C:/tools/hdc.exe");
+  assert.deepEqual(calls[0].args, ["list", "targets"]);
 });
 
 
