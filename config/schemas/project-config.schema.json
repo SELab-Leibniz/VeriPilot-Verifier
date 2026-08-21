@@ -401,6 +401,31 @@
           "type": "integer",
           "minimum": 1000
         },
+        "device": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "required",
+                "off"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "Device assurance policy. auto degrades through device/build/static, required requires a connected target, and off pins static review."
+        },
+        "harmonyEnvironmentAwareness": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Probe HarmonyOS host capabilities once per task and correct false environment-unavailable claims at Stop. Defaults to enabled when implementationCorrection is enabled."
+        },
         "checklistPaths": {
           "type": "array",
           "uniqueItems": true,

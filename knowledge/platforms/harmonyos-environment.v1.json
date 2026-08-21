@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "runtime-corrector.environment-knowledge.v1",
+  "platform": "harmonyos",
+  "operatingSystems": {
+    "win32": {
+      "debuggingTools": [
+        {
+          "id": "deveco-studio",
+          "name": "DevEco Studio",
+          "environmentVariable": "DEVECO_STUDIO",
+          "installPaths": [
+            "C:\\Program Files\\Huawei\\DevEco Studio"
+          ],
+          "usage": "通过环境变量定位 DevEco Studio、SDK 和预览工具等能力；环境变量不存在或路径无效时应如实记录阻塞，不得伪造执行结果。"
+        },
+        {
+          "id": "harmonyos-command-line-tools",
+          "name": "HarmonyOS Command Line Tools",
+          "environmentVariable": "COMMAND_LINE_TOOL_PATH",
+          "installPaths": [
+            "C:\\Program Files\\Huawei\\command-line-tools"
+          ],
+          "usage": "通过环境变量定位 hvigorw、ohpm、hdc、codelinter、hstack 和 Emulator 等工具，并优先保留原始命令输出。"
+        }
+      ]
+    },
+    "darwin": {
+      "debuggingTools": []
+    }
+  },
+  "knowledge": {
+    "officialDocumentation": [
+      {
+        "id": "debugging-commands",
+        "topics": ["device", "debugging"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/debugging-commands"
+      },
+      {
+        "id": "codelinter",
+        "topics": ["build", "quality"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/ide-command-line-codelinter"
+      },
+      {
+        "id": "hstack",
+        "topics": ["debugging", "performance"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/ide-command-line-hstack"
+      },
+      {
+        "id": "emulator",
+        "topics": ["emulator", "device", "ui"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/ide-commandline-emulator"
+      },
+      {
+        "id": "hvigor",
+        "topics": ["build", "hvigor"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/ide-hvigor-commandline"
+      },
+      {
+        "id": "building-app",
+        "topics": ["build", "app"],
+        "url": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/ide-command-line-building-app"
+      }
+    ]
+  }
+}
