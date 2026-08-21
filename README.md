@@ -233,7 +233,9 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 
 ## 6. 降级与排障
 
-插件**失败即放行（fail-open）**：它自身的故障绝不阻塞开发。查看
+插件的普通检查**失败即放行（fail-open）**，但 active 模式的最终 `Stop` 门是唯一例外：最终审查
+未能完成时会 fail-closed，阻止 Agent 把 `UNVERIFIED` 结果报告为“全部完成”。如需接受这一风险并
+继续结束任务，开发者必须显式关闭 `stopCorrection` 或启用 `shadowMode`。查看
 `.runtime-correction/tasks/<taskId>/journal/events.jsonl`：
 
 | Journal 事件 | 含义 | 处置 |
@@ -241,11 +243,12 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 | `DERIVED_CONFIG` | 信息性：本任务自动派生了哪些材料/平台 | 无需处理；想覆盖就 `/runtime-corrector:init` 物化 |
 | `ONBOARDING_DEGRADED` | panel/仲裁/应用失败；退回增量抽取，账本未冻结 | 多为瞬时；检查 reviewer 超时/预算，新任务会重试 |
 | `REVIEWER_PROVIDER_DEGRADED` | 独立会话 provider 不可用（环境变量未设置/为空或未配置）；该次审阅退回 fork | 导出 `apiKeyEnv` 指名的环境变量，核对 `provider.baseUrl` |
-| `STOP_ASSESSMENT_FAILED` | Stop 审阅自身出错；本次 Stop 放行（fail-open）并留档 | 查看记录的错误；下一次 Stop 会重试 |
+| `STOP_ASSESSMENT_FAILED` | Stop 审阅自身出错；本次 Stop 阻断（fail-closed）并留档 | 查看记录的错误；下一次 Stop 会重试 |
 | `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | 某次隔离审阅崩溃；watcher 标记 `UNVERIFIED` | 瞬时故障；反复出现再排查 |
 
-Hook 自身崩溃时会输出有限次的 `[runtime-corrector] v2 features failed open` 提示（observe-only
-模式下保持完全静默），会话继续。
+Hook 自身崩溃时，active `Stop` 会返回阻断；其他事件输出有限次的
+`[runtime-corrector] v2 features failed open` 提示。observe-only 模式和配置尚未成功加载、因而无法
+确定模式的故障仍保持完全静默。
 
 ### 6.1 设备级验证阶梯（device / build / static）
 

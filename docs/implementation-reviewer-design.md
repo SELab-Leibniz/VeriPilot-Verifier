@@ -186,7 +186,7 @@ markMetricPassesFixed({ passedObjectIds: passedMetricSourceIds(report) })       
 | **Reviewer self‑fabrication** (byte‑identical captures across distinct states) | A capture "proves" two states | Executor applies the SHA‑256 distinctness check to its **own** captures (the PostToolUse guard `evidence-distinctness-guard.mjs` only scans developer roots, not `.runtime-correction/`); collision → re‑capture, else `UNVERIFIED`. |
 | **Semantic node not found** | Journey can't proceed | Executor resolves from a fresh dump; on genuine absence, one K‑capped LLM "propose next step," else real `IMPLEMENTATION_BEHAVIOR_MISMATCH`/`TEST_NOT_EXECUTED` localized to the step. |
 | **Contamination via Bash** | Ground‑truth leak into developer workspace | Never grant Bash to the LLM; executor is non‑LLM with a fixed allow‑list writing only to `<evi>`. |
-| **Executor crash inside `assessStop`** | Run taken down | Wrap in `assessStop`'s existing try/catch → `STOP_REVIEW_FAILED`, fail‑open `decision:"allow"` (device faults never crash the run). |
+| **Executor crash inside `assessStop`** | Final completion becomes unverified | Wrap in `assessStop`'s existing try/catch → `STOP_REVIEW_FAILED`, fail‑closed `decision:"block"`; the task remains active until a valid terminal assessment succeeds. |
 
 ---
 

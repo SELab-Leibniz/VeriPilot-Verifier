@@ -6,6 +6,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { loadConfig } from "../lib/runtime-corrector.mjs";
+
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function runHookScript(script, { cwd, input }) {
@@ -86,6 +88,43 @@ test("runtime-event emits nothing when the arm cannot be determined (config load
   });
   assert.equal(stdout.trim(), "", "an undetermined arm must stay silent — silence cannot contaminate a control");
 });
+
+test("runtime-event fails closed when an active Stop crashes after config load", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "stopCorrection:",
+    "  enabled: true",
+    "",
+  ]);
+  const plan = await loadConfig({ cwd: root, pluginRoot });
+  assert.equal(plan.runtimeV2.shadowMode, false);
+  assert.equal(plan.runtimeV2.stopCorrection.enabled, true);
+  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: "active-stop-crash",
+      hook_event_name: "Stop",
+      hook_event_id: "stop-active-crash",
+      // Reading a directory as a transcript fails after the active config and
+      // arm have been loaded, exercising the lifecycle hook's outer catch.
+      transcript_path: root,
+      last_assistant_message: "Everything is complete and fully verified.",
+    },
+  });
+
+  assert.equal(code, 0);
+  assert.ok(stdout.trim(), `active Stop emitted no fail-closed output; stderr: ${stderr}`);
+  const output = JSON.parse(stdout.trim());
+  assert.equal(output.decision, "block");
+  assert.match(output.reason, /Final Stop review is UNVERIFIED/u);
+});
+
 
 test("post-tool-use emits nothing under a shadow config even when processing fails", async (t) => {
   const root = await shadowProject(t, [

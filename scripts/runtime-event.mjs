@@ -52,9 +52,9 @@ function eventOutput(input, outcome) {
 
 
 let input = null;
-// Loaded OUTSIDE the main try: the fail-open catch below must know the mode.
+// Loaded OUTSIDE the main try: the failure-policy catch below must know the mode.
 // An observe-only run must stay silent even when the corrector itself
-// crashes — a fail-open warning is model-visible text like any other.
+// crashes, while an active Stop must fail closed.
 let shadowKnown = false;
 let shadowMode = false;
 try {
@@ -76,20 +76,33 @@ try {
   if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
 } catch (error) {
   const inputEvent = input?.hook_event_name ?? "SessionStart";
-  const warning = await recordFailOpenWarning({
-    projectRoot: path.resolve(input?.cwd ?? process.cwd()),
-    category: "LIFECYCLE_HOOK_FAILED",
-    message: error.message,
-  });
-  // Fail SAFE: emit nothing in observe-only mode, and emit nothing when the
-  // mode could not be determined (a config-load failure is exactly the case
-  // where the mode is unknown — silence is the only output that cannot break
-  // the no-feedback guarantee).
+  let warning = { shouldNotify: true };
+  try {
+    warning = await recordFailOpenWarning({
+      projectRoot: path.resolve(input?.cwd ?? process.cwd()),
+      category: "LIFECYCLE_HOOK_FAILED",
+      message: error.message,
+    });
+  } catch {
+    // Recording a warning is best-effort. In particular, an active Stop must
+    // still emit its fail-closed decision when local persistence is broken.
+  }
+  // Observe-only runs emit nothing. When config load fails the arm is unknown,
+  // so silence is the only output that cannot contaminate a shadow run.
   if (shadowMode || !shadowKnown) process.exit(0);
-  if (!warning.shouldNotify) process.exit(0);
-  const output = contextOutput(
-    inputEvent,
-    `[runtime-corrector] v2 features failed open. Configuration or runtime error: ${error.message}`,
-  );
-  if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
+  if (inputEvent === "Stop") {
+    const reason = [
+      "[runtime-corrector] Final Stop review is UNVERIFIED; this completion is blocked.",
+      `Runtime Corrector failed before it could produce a terminal decision: ${error.message}`,
+      "Retry after the runtime recovers. Do not report the task as fully verified or fully complete.",
+    ].join("\n");
+    process.stdout.write(`${JSON.stringify({ decision: "block", reason })}\n`);
+  } else {
+    if (!warning.shouldNotify) process.exit(0);
+    const output = contextOutput(
+      inputEvent,
+      `[runtime-corrector] v2 features failed open. Configuration or runtime error: ${error.message}`,
+    );
+    if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
+  }
 }

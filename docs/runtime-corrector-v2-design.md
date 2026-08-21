@@ -103,7 +103,7 @@ An internal run carries an `internalRunId`, role, and depth, backed by a live le
 
 Internal reviewers are read-only and cannot use Skill, Agent, MCP, network, Write, or Edit. A malformed structured result receives one repair attempt in the same reviewer session; a second failure becomes `CHECKER_ERROR` or `UNVERIFIED` and consumes no correction budget. Ground Truth output is constrained to the ledger's canonical category enum; a schema-valid delta that fails claim-reference or authority validation receives one domain-repair follow-up in the same fork before the atomic ledger update.
 
-On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` and `SessionEnd` remove only stale files matching Runtime Corrector's own hidden atomic-temporary naming convention. Lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally.
+On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` and `SessionEnd` remove only stale files matching Runtime Corrector's own hidden atomic-temporary naming convention. Lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally. An active `Stop` is the exception: if Ground Truth refresh, the Stop reviewer, or the lifecycle hook fails before a valid terminal assessment exists, the completion is `UNVERIFIED` and the hook fails closed. Observe-only mode remains silent, and a configuration-load failure remains silent because the arm is not yet known.
 
 ## Configuration
 

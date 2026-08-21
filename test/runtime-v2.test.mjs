@@ -585,6 +585,126 @@ test("Stop checks an active Skill watcher even before its first interval", async
 });
 
 
+test("Stop reviewer failure blocks an unverified completion without consuming correction budget", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, {
+    dynamicGroundTruth: { enabled: false },
+    skillCorrection: { enabled: false },
+  });
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-stop-reviewer-timeout",
+      transcript_path: transcript,
+      hook_event_name: "Stop",
+      hook_event_id: "stop-reviewer-timeout",
+      last_assistant_message: "Everything is complete and fully verified.",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: async () => {
+      throw new Error("Internal reviewer timed out after 5ms.");
+    },
+  });
+
+  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.stop.status, "UNVERIFIED");
+  assert.match(outcome.feedback, /Final Stop review is UNVERIFIED/u);
+  assert.match(outcome.feedback, /Do not report the task as fully verified or fully complete/u);
+  const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
+  assert.equal(state.status, "ACTIVE");
+  assert.equal(state.stop.correctionAttempts, 0, "reviewer infrastructure failures use no deviation budget");
+  const journal = await fs.readFile(path.join(
+    root,
+    ".runtime-correction",
+    "tasks",
+    outcome.taskId,
+    "journal",
+    "events.jsonl",
+  ), "utf8");
+  assert.match(journal, /"type":"STOP_REVIEW_FAILED"/u);
+  assert.match(journal, /"reason":"STOP_REVIEW_EXCEPTION"/u);
+});
+
+
+test("Ground Truth refresh failure blocks Stop as unverified", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, {
+    dynamicGroundTruth: { enabled: true, panel: { size: 0 } },
+    skillCorrection: { enabled: false },
+  });
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-stop-ground-truth-failure",
+      transcript_path: transcript,
+      hook_event_name: "Stop",
+      hook_event_id: "stop-ground-truth-failure",
+      last_assistant_message: "Everything is complete and fully verified.",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: async () => {
+      throw new Error("Ground Truth reviewer unavailable.");
+    },
+  });
+
+  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.stop.status, "UNVERIFIED");
+  assert.match(outcome.feedback, /Ground Truth refresh failed/u);
+  const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
+  assert.equal(state.status, "ACTIVE");
+  assert.equal(state.stop.correctionAttempts, 0);
+});
+
+
+test("reviewer close failure cannot override a fail-closed Stop decision", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, {
+    dynamicGroundTruth: { enabled: false },
+    skillCorrection: { enabled: false },
+  });
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-stop-close-failure",
+      transcript_path: transcript,
+      hook_event_name: "Stop",
+      hook_event_id: "stop-close-failure",
+      last_assistant_message: "Everything is complete and fully verified.",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: async ({ projectRoot }) => {
+      const requestDirectory = path.join(projectRoot, ".runtime-correction", "close-failure-review");
+      await fs.mkdir(requestDirectory, { recursive: true });
+      return {
+        result: { stopClassification: "TASK_COMPLETE", findings: null },
+        requestDirectory,
+        async close() {
+          throw new Error("reviewer close failed");
+        },
+      };
+    },
+  });
+
+  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.stop.status, "UNVERIFIED");
+  const journal = await fs.readFile(path.join(
+    root,
+    ".runtime-correction",
+    "tasks",
+    outcome.taskId,
+    "journal",
+    "events.jsonl",
+  ), "utf8");
+  assert.match(journal, /"type":"STOP_REVIEWER_CLOSE_FAILED"/u);
+});
+
+
 test("Stop blocks three terminal deviations, then records and allows the fourth", async (t) => {
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
