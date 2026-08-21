@@ -200,14 +200,17 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 
 ## 7. 出问题时
 
-插件**失败即放行**：自身故障绝不阻塞开发。排障看 `.runtime-correction/tasks/<taskId>/journal/events.jsonl`：
+插件的普通检查**失败即放行**：自身故障绝不阻塞开发。**终止门是唯一例外**：当最终验收本身无法完成
+（基线刷新失败、评审超时或崩溃）时，它不会假装验收通过，而是先阻断并要求重试——但这种基础设施
+故障有独立的重试上限，用尽后放行并明确声明"本次完成未经验证"，因此绝不会困死会话。排障看
+`.runtime-correction/tasks/<taskId>/journal/events.jsonl`：
 
 | Journal 事件 | 含义 | 处置 |
 |---|---|---|
 | `DERIVED_CONFIG` | 信息性：自动派生了哪些材料/平台 | 无需处理；想覆盖就 `/runtime-corrector:init` |
 | `ONBOARDING_DEGRADED` | 基线建立失败；退回增量抽取，账本未冻结 | 多为瞬时；检查评审超时/预算，会自动重试 |
 | `REVIEWER_PROVIDER_DEGRADED` | 独立 provider 不可用；该次评审退回 fork | 导出 `apiKeyEnv` 指名的环境变量 |
-| `STOP_ASSESSMENT_FAILED` | 终止评审出错；本次放行（fail-open）并留档 | 查看记录的错误；下次 Stop 重试 |
+| `STOP_ASSESSMENT_FAILED` | 终止评审自身出错；先阻断并要求重试，重试上限用尽后放行并声明未经验证 | 查看记录的错误；反复出现说明评审环境有问题（如 API key、网络） |
 | `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | 某次隔离评审崩溃；标记 `UNVERIFIED` | 瞬时故障；反复出现再排查 |
 | `DEVICE_VERIFICATION_UNAVAILABLE` | 无设备/工具链；验证降档并声明 | 按需连接设备；CI 用 `device.mode: required` |
 
