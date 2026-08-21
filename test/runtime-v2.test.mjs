@@ -8,7 +8,7 @@ import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { runSemanticReview } from "../lib/semantic-review.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { recordFailOpenWarning } from "../lib/runtime-v2/fail-open.mjs";
-import { recordDeviationFindings } from "../lib/runtime-v2/deviations.mjs";
+import { recordDeviationFindings, ROOT_CAUSE_IDS } from "../lib/runtime-v2/deviations.mjs";
 import {
   applyGroundTruthDelta,
   loadCurrentGroundTruth,
@@ -52,6 +52,22 @@ async function write(root, relative, contents) {
   await fs.writeFile(filePath, contents, "utf8");
   return filePath;
 }
+
+
+test("frozen Root Cause catalog is the ordered runtime source of truth", async () => {
+  const catalog = JSON.parse(await fs.readFile(
+    new URL("../config/root-cause-catalog.v1.json", import.meta.url),
+    "utf8",
+  ));
+  assert.equal(catalog.schemaVersion, "runtime-corrector.root-cause-catalog.v1");
+  assert.equal(catalog.status, "FROZEN");
+  assert.ok(Array.isArray(catalog.rootCauses));
+  const ids = catalog.rootCauses.map((rootCause) => rootCause.id);
+  assert.ok(ids.every((id) => typeof id === "string" && id.trim().length > 0));
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.includes("OTHER"));
+  assert.deepEqual([...ROOT_CAUSE_IDS], ids);
+});
 
 
 function v2Plan(projectRoot, overrides = {}) {

@@ -10,7 +10,7 @@
             "args": [
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
-            "timeout": 30,
+            "timeout": 900,
             "statusMessage": "Runtime Corrector is validating and recovering local state..."
           }
         ]
@@ -25,7 +25,7 @@
             "args": [
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
-            "timeout": 30
+            "timeout": 900
           }
         ]
       }
