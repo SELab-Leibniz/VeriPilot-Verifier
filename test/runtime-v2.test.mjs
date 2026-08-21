@@ -896,3 +896,57 @@ test("v2 artifact review uses its configured role reviewer even when Ground Trut
   assert.equal(roleCall.role, "artifact-reviewer");
   assert.equal(roleCall.reviewer.model, "configured-model");
 });
+
+test("Stop-gate infrastructure failures block, then release with an unverified disclosure", async (t) => {
+  const root = await workspace(t);
+  await fs.writeFile(
+    path.join(root, "transcript.jsonl"),
+    [
+      JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "build it" } }),
+      JSON.stringify({ type: "assistant", uuid: "a1", message: { id: "am1", content: "done" } }),
+    ].join("\n"),
+  );
+  const plan = { runtimeV2: compileRuntimeV2Config({
+    version: 2,
+    dynamicGroundTruth: { enabled: true, materialRoots: [] },
+    skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
+    artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
+    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
+  }, { policyRoot: path.join(root, ".runtime-corrector") }) };
+  // A reviewer that never recovers (missing credentials, provider outage).
+  const brokenFactory = async () => { throw new Error("reviewer unavailable"); };
+  const stop = (id) => handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-infra",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      hook_event_name: "Stop",
+      hook_event_id: id,
+      last_assistant_message: "Task complete.",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: brokenFactory,
+  });
+
+  const first = await stop("stop-infra-1");
+  assert.equal(first.decision, "block", "an unverifiable completion is not laundered into a verified one");
+  assert.match(first.feedback, /UNVERIFIED/u);
+  assert.match(first.feedback, /attempt 1\/2/u);
+  assert.equal((await stop("stop-infra-2")).decision, "block", "transient faults get a second chance");
+
+  const released = await stop("stop-infra-3");
+  assert.equal(released.decision, "allow", "the plugin's own outage must never trap a session");
+  assert.match(released.feedback, /STOP_VERIFICATION_UNAVAILABLE/u);
+  assert.match(released.feedback, /COMPLETED BUT UNVERIFIED/u);
+  assert.equal((await stop("stop-infra-4")).decision, "allow", "release is sticky while the outage lasts");
+
+  const tasksRoot = path.join(root, ".runtime-correction", "tasks");
+  const [taskId] = await fs.readdir(tasksRoot);
+  const state = JSON.parse(await fs.readFile(path.join(tasksRoot, taskId, "task.json"), "utf8"));
+  assert.equal(state.stop.correctionAttempts, 0, "an outage never spends the deviation budget");
+  assert.equal(state.stop.infrastructureFailures, 4);
+  const journal = await fs.readFile(path.join(tasksRoot, taskId, "journal", "events.jsonl"), "utf8");
+  assert.match(journal, /STOP_ASSESSMENT_RETRY/u);
+  assert.match(journal, /STOP_VERIFICATION_UNAVAILABLE/u);
+});
