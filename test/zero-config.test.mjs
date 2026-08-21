@@ -46,7 +46,8 @@ test("a project with only a README and oh-package.json5 compiles a working v2 pl
   assert.equal(runtimeV2.skillCorrection.enabled, false);
   assert.equal(runtimeV2.artifactCorrection.groundTruthReviewEnabled, false);
   // The derivation record drives the once-per-task DERIVED_CONFIG journal.
-  assert.deepEqual(runtimeV2.derivation, {
+  const { locale, localeDerived, ...stableDerivation } = runtimeV2.derivation;
+  assert.deepEqual(stableDerivation, {
     zeroConfig: true,
     materialRootsDerived: true,
     materialRoots: ["README.md"],
@@ -54,6 +55,9 @@ test("a project with only a README and oh-package.json5 compiles a working v2 pl
     platform: "harmonyos",
     platformMarker: "oh-package.json5",
   });
+  // Locale derives from the live environment here, so only its shape is pinned.
+  assert.ok(locale === null || ["zh", "en"].includes(locale));
+  assert.equal(localeDerived, locale !== null);
 });
 
 

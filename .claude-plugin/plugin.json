@@ -1,7 +1,7 @@
 {
   "name": "runtime-corrector",
   "description": "Explainable, project-configured runtime correction for artifact workflows.",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "author": {
     "name": "Runtime Corrector contributors"
   },

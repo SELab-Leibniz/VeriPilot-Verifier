@@ -25,7 +25,8 @@
             "args": [
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
-            "timeout": 900
+            "timeout": 900,
+            "statusMessage": "Runtime Corrector is reviewing this prompt — the first event of a new task builds the task baseline and can take a few minutes (新任务首次会建立任务基线，约需数分钟)..."
           }
         ]
       }

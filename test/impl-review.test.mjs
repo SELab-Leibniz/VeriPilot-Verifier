@@ -245,12 +245,13 @@ test("loadPlatformAdapter returns null for null or unknown platforms", async () 
 });
 
 test("parseKitManifest reads only the configured section table and skips header/divider rows", () => {
-  assert.deepEqual(parseKitManifest(KIT_MANIFEST_MARKDOWN), {
-    kits: ["scan-kit", "arkdata", "map-kit"],
-    sectionTitle: "10.1 Kit使用清单",
-  });
-  assert.deepEqual(parseKitManifest("## other\n| a | b-kit | c |"), { kits: [], sectionTitle: null });
-  assert.deepEqual(parseKitManifest(null), { kits: [], sectionTitle: null });
+  const parsed = parseKitManifest(KIT_MANIFEST_MARKDOWN);
+  assert.deepEqual(parsed.kits, ["scan-kit", "map-kit"], "arkdata needs the adapter vocabulary");
+  assert.deepEqual(parsed.hedgedKits, []);
+  assert.equal(parsed.sectionTitle, "10.1 Kit使用清单");
+  assert.deepEqual(parseKitManifest("## other\n| a | b-kit | c |").kits, []);
+  assert.deepEqual(parseKitManifest(null).kits, []);
+  assert.equal(parseKitManifest(null).sectionTitle, null);
   // A custom section pattern selects a different table.
   assert.deepEqual(
     parseKitManifest(KIT_MANIFEST_MARKDOWN, { sectionPattern: "^#{1,4}\\s*10\\.2\\b" }).kits,
@@ -453,4 +454,71 @@ test("the default checklist pattern is content-based and collects every matching
   // Legacy numbering still matches without any keyword in the heading.
   const numbered = "### 10.1 必备能力\n| 功能 | 能力 | 文件 |\n| --- | --- | --- |\n| 扫码 | scan-kit | Scan.ets |";
   assert.deepEqual(parseKitManifest(numbered).kits, ["scan-kit"]);
+});
+
+test("the checklist parser reads real-world cell shapes: annotated, glued, display-cased, multi-kit", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const markdown = [
+    "### 10.1 Kit使用清单",
+    "",
+    "| 功能 | 使用Kit | 代码文件 |",
+    "|------|---------|---------|",
+    "| 路由；跨设备接续 | ability-kit + distributed-service-kit（P2门禁） | EntryAbility.ets |",
+    "| 语音合成 | core-speech-kit短文本合成 | Voice.ets |",
+    "| 打印 | basic-services-kit Native文件打印 + PRINT权限 | Print.ets |",
+    "| 网络与后台 | Network Kit、Background Tasks Kit | Sync.ets |",
+    "| 存储 | ArkData | Store.ets |",
+    "| 视觉 | core-vision-kit候选/经POC验证 | Vision.ets |",
+  ].join("\n");
+  const { kits, hedgedKits } = parseKitManifest(markdown, { adapter });
+  assert.deepEqual(kits, [
+    "ability-kit",
+    "distributed-service-kit",
+    "core-speech-kit",
+    "basic-services-kit",
+    "network-kit",
+    "background-tasks-kit",
+    "arkdata",
+  ]);
+  assert.deepEqual(hedgedKits, ["core-vision-kit"], "a cell that says 候选/POC does not commit");
+});
+
+test("the kit column is located by header, and candidacy tables never yield obligations", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  // Kit names sit in column 1 here, not the positional default (2).
+  const shifted = [
+    "### Dependencies",
+    "",
+    "| 使用Kit | 功能 | 文件 |",
+    "|---------|------|------|",
+    "| scan-kit | 扫码 | Scan.ets |",
+  ].join("\n");
+  assert.deepEqual(parseKitManifest(shifted, { adapter }).kits, ["scan-kit"]);
+
+  // A feasibility/candidate matrix commits to nothing, whatever it lists.
+  const matrix = [
+    "### 10.2 Kit与平台能力可行性矩阵",
+    "",
+    "| 能力 | 候选Kit/方案 | 状态 |",
+    "|------|-------------|------|",
+    "| 网络 | Network Kit、Background Tasks Kit | A/B |",
+  ].join("\n");
+  const parsedMatrix = parseKitManifest(matrix, { adapter });
+  assert.deepEqual(parsedMatrix.kits, [], "candidacy tables produce no obligations");
+  assert.deepEqual(parsedMatrix.hedgedKits, ["network-kit", "background-tasks-kit"]);
+});
+
+test("prose tokens are not mistaken for capabilities", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const markdown = [
+    "### 依赖",
+    "",
+    "| 能力 | 使用Kit | 备注 |",
+    "|------|---------|------|",
+    "| SSO | 企业IdP OIDC/SAML + 服务端 | D |",
+    "| 存储 | Preferences | 应用层 |",
+  ].join("\n");
+  const { kits, hedgedKits } = parseKitManifest(markdown, { adapter });
+  assert.deepEqual(kits, [], "OIDC/SAML/Preferences are not platform capabilities");
+  assert.deepEqual(hedgedKits, []);
 });

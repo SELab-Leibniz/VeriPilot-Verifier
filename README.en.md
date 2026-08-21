@@ -1,320 +1,237 @@
 # Runtime Corrector
 
-> 中文版（默认）: [README.md](README.md)
+> 中文版（默认）: [README.md](README.md) · [Documentation index](docs/README.md)
 
-A runtime critic for coding agents, packaged as a Claude Code plugin. It watches a development
-session through lifecycle hooks, builds its own ground truth of what the task requires, reviews the
-agent's work in isolated read-only sessions, and intervenes with rationed, evidence-backed
-corrections — including a termination gate that blocks a premature "done".
+**What it is:** a Claude Code plugin that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
 
-[中文说明 / Chinese README](README.md) · [Documentation index](docs/README.md)
+**What it never does:** it never modifies your project files, never auto-applies patches, and never blocks development because of its own faults (fail-open). The main agent — and you — always keep the final say.
 
-## 1. What it is
-
-Runtime Corrector is built on four mechanisms:
-
-1. **Event-driven intervention on self-built runtime ground truth.** On the first hook event of a
-   task, an onboarding panel decomposes all task materials (README, requirement/spec documents,
-   the user's actual request) into atomic Ground Truth claims; an adjudicator merges the panel's
-   proposals skeptically and the ledger **freezes**. After the freeze only explicit user messages
-   can change the baseline — the agent's own inferences cannot.
-2. **Isolated review.** Every reviewer (extractor, adjudicator, skill reviewer, artifact reviewer,
-   stop reviewer, implementation reviewer) runs in a separate read-only Claude session (`Read` and
-   `Grep` only, structured JSON output enforced by schema). Reviewers can optionally run on an
-   independent provider/model for heterogeneous cross-checking.
-3. **Rationed feedback with strictly attributed closure.** Delivered diagnostics are capped (top-3
-   inline for artifact checks, bounded per-skill feedback budgets, bounded Stop corrections per
-   epoch); everything else is persisted on disk. Every finding becomes a deviation family whose
-   closure is attributed — a fix only counts as critic-driven if it landed after the finding was
-   actually delivered.
-4. **Termination gate.** When the agent tries to stop, a stop reviewer judges the frozen metric
-   population and open findings. Unfinished work blocks the stop with a concrete to-do list, up to
-   a configured correction budget; after the budget is exhausted the stop is allowed and the
-   unresolved findings are recorded.
+## The cooperation loop in 30 seconds
 
 ```text
-             Claude Code development session
-   SessionStart · UserPromptSubmit · PreToolUse · PostToolUse · Stop
-                            |
-                            v  (plugin hooks)
- +---------------------- Runtime Corrector ------------------------+
- |                                                                 |
- |  zero-config derivation ──> config compile (defaults<derived<explicit)
- |                            |                                    |
- |  task onboarding: materials ─> extractor panel ─> adjudicator   |
- |                                  └──> Ground Truth ledger (FROZEN)
- |                            |                                    |
- |  isolated read-only reviewers (fork or independent provider)    |
- |    · artifact review   · skill watcher   · implementation review|
- |    · deterministic checks (hard rules, kit-integration)         |
- |                            |                                    |
- |  deviation families ──> rationed feedback ──> Stop gate         |
- |  journal + evaluations persisted under .runtime-correction/     |
- +-----------------------------------------------------------------+
-                            |
-                            v
-      diagnostics / candidate patches / block-or-allow decision
+you send a request ────► the corrector records it in the task baseline (Ground Truth)
+agent writes code ─────► the corrector reviews the change ──► top-3 problems + candidate patches go back to the agent
+agent fixes, or rejects with evidence ──► … (loop)
+agent says "done" ─────► the termination gate:
+    hard problems + budget left ──► BLOCK + concrete to-dos ──► agent continues
+    budget exhausted ───────────► ALLOW + "unresolved findings recorded" disclosure
+    acceptance passes ──────────► ALLOW
 ```
 
-The plugin **never edits project files and never applies patches** — it diagnoses, persists
-evidence, and feeds the main agent decisions it can act on.
+Three things to keep in mind:
 
-## 2. Installation
+1. **The agent does not need to know the corrector exists.** Zero coupling — the corrector sits on Claude Code lifecycle hooks and works the same whatever model drives the coding agent.
+2. **Feedback is rationed.** At most 3 top problems go back inline; the full record is written to disk (the agent can read more on demand). It never floods the agent's context.
+3. **Only deterministically-proven hard problems can block completion.** Inferred concerns advise but never block, and blocking has a budget (default 3 per epoch, `maxCorrectionsPerEpoch`) — a session can never be trapped forever.
 
-Requirements: **Claude Code** with plugin, hooks, and Skill support (a current release), and
-**Node.js >= 18**. The plugin has **zero npm dependencies**.
+## 1. Install
 
-**a) As a marketplace plugin**
+Requirements: a recent **Claude Code** (plugins, hooks, skills) and **Node.js >= 18**. The plugin has **zero npm dependencies**.
 
 ```bash
+# option a: as a marketplace plugin
 claude
-> /plugin marketplace add /path/to/runtime-corrector   # or a git URL hosting this directory
+> /plugin marketplace add /path/to/runtime-corrector
 > /plugin install runtime-corrector@runtime-corrector-local
-```
 
-**b) Directly from a directory**
-
-```bash
+# option b: point at the plugin directory
 claude --plugin-dir /path/to/runtime-corrector
-```
 
-**c) From a fresh clone**
-
-```bash
+# option c: from a clone
 git clone <repository-url> runtime-corrector
 claude --plugin-dir ./runtime-corrector
 ```
 
-## 3. Quickstart (zero-config)
+## 2. Quick start (zero config)
 
-Install the plugin, open **any** project, and start working. No `.runtime-corrector/` directory is
-required. On the first hook event of a new task:
+Install the plugin, open **any** project, and just work — no configuration needed. On a new task's first event, three things happen automatically:
 
-1. **Auto-derivation** runs: task materials are discovered (`README*`, `docs/**/*.md`,
-   `*requirement*`/`*spec*` markdown, capped and deterministic) and the platform is fingerprinted
-   (`oh-package.json5` → `harmonyos`; a plain `package.json` project has no adapter yet → the
-   deterministic kit check stays off). What was derived is journaled once per task as a
-   `DERIVED_CONFIG` event.
-2. **Task onboarding** runs: two independent extractor passes decompose the materials and the user
-   request into atomic claims, an adjudicator merges them, and the Ground Truth ledger freezes
-   (`ONBOARDING_COMPLETED` in the journal).
-3. From then on the corrector reviews the session against the frozen baseline. A first
-   intervention typically looks like:
+1. **Material discovery**: it finds `README*`, `docs/**/*.md`, and markdown named like `requirement`/`spec`, and fingerprints the platform (`oh-package.json5` → harmonyos). The result is journaled once per task (`DERIVED_CONFIG`).
+2. **Baseline building**: two independent extractors decompose the materials and your request into atomic requirements, a skeptical adjudicator merges them, and the baseline **freezes** — from then on only your real messages can change it; the agent's own inferences never can.
+3. **Review begins**: every change and every completion attempt is checked against the frozen baseline.
+
+A first intervention typically looks like:
 
 ```text
 [runtime-corrector] Terminal correction 1/3
-The task is not complete: the delete flow required by README.md is not implemented.
-- CR-003: swipe-to-delete is required by the material but no delete path exists
+Task incomplete: the delete flow required by the README is not implemented.
+- CR-003: the material requires swipe-to-delete, but no delete path exists
 - M14: milestone "list interactions" has no verification evidence
-Continue the task, correct these deviations, or respond with an evidence-based rejection.
+Continue the task and correct these deviations, or reject with evidence.
 ```
 
-To make the derived choices visible and editable, run `/runtime-corrector:init` — it materializes
-the same derivation into a commented `.runtime-corrector/config.yaml`.
+To see and edit what was derived, run `/runtime-corrector:init` — it materializes the same derivation into an annotated `.runtime-corrector/config.yaml`.
 
-## 4. Configuration reference
+## 3. How it cooperates with your coding agent
 
-Configuration lives in `.runtime-corrector/config.yaml`. Precedence is always
-**plugin defaults < derived values < explicit config**. A walkthrough of the important keys:
+### When it triggers
+
+The corrector sits on Claude Code lifecycle hooks; the agent is **synchronously paused** at each trigger, so feedback arrives before the next action:
+
+| Moment | What the corrector does |
+|---|---|
+| Session starts | validates/recovers local state; on a new task, builds the baseline (above) |
+| You send a message | mines it for new/changed requirements — the only authority that can amend a frozen baseline |
+| Before a skill runs | gates the invocation against that skill's frozen contract |
+| After the agent writes a file | reviews the artifact: deterministic checks + an isolated semantic review |
+| Agent declares completion | the termination gate: acceptance review + implementation checks (kit integration, build/device verification) → allow or block |
+
+### How signals go back
+
+| Channel | Nature | Content |
+|---|---|---|
+| Context injection | advisory | top-3 diagnostics + top-2 candidate patches inline; disk paths for the full record. Patches are **never auto-applied** — fixing or rejecting with evidence is the agent's decision |
+| Stop block | coercive, budgeted | `decision: block` + the to-do list. Only hard problems can block; after `maxCorrectionsPerEpoch` attempts the gate opens with a `CORRECTION_BUDGET_EXHAUSTED` disclosure |
+| Disk record | pull-based | full diagnostics, the baseline ledger, and the journal under `.runtime-correction/` — readable by the agent and by humans at any time |
+
+```text
+.runtime-correction/
+├── latest/<stage>/<artifact>/diagnostic.md   # latest full diagnostics
+├── latest/<stage>/<artifact>/patch.diff      # candidate Git patch (never auto-applied)
+├── latest/<stage>/<artifact>/result.json     # machine-readable result
+├── runs/<stage>/<artifact>/<roundId>/        # per-round archive
+└── tasks/<taskId>/
+    ├── ground-truth/current.md               # frozen baseline (human-readable)
+    ├── evaluations/*.json                    # review reports
+    └── journal/events.jsonl                  # append-only event journal
+```
+
+### Where reviewers run
+
+Every reviewer (extraction, adjudication, skill, artifact, stop, implementation) is an **isolated read-only sub-session**: `Read`/`Grep` only, output constrained by a JSON schema, released when done. Review reasoning never leaks into the agent's context — except through the rationed feedback above.
+
+## 4. Six terms
+
+| Term | Meaning |
+|---|---|
+| Ground Truth (baseline) | the ledger of atomic requirements decomposed from materials + your messages; frozen once built |
+| Freeze | after freezing, only your explicit messages can add/remove baseline entries — agent inference never can |
+| Finding | a concrete deviation from one review, always citing a baseline entry or objective evidence |
+| Correction budget | how many times the gate may block (default 3); once spent it opens and records what's unresolved — sessions are never trapped |
+| Assurance level | how deep this acceptance actually verified: static / build / device — see §6 |
+| Open question | ambiguity in the materials enters the baseline as a question + a default-safe reading, never an invented directive; one message from you resolves it |
+
+## 5. Configuration
+
+**Most projects need none.** When you do, create `.runtime-corrector/config.yaml`; precedence is always: plugin defaults < derived < explicit.
+
+### Three common recipes
 
 ```yaml
-version: 2                      # 2 enables the runtime-critic features below
+# ① Observe-only: record everything, intervene never (for controlled evaluation)
+shadowMode: true
 
-locale: en                      # zh (default) | en — language of delivered diagnostics
+# ② Cross-check the critical gates with an independent model (recommended):
+#    baseline adjudication + the termination gate
+reviewers:
+  modelPolicy:
+    preset: critical-gates      # critical-gates = those two roles; all = every role
+    provider:
+      baseUrl: https://api.example-provider.com
+      apiKeyEnv: REVIEWER_API_KEY   # the NAME of an env var — no secrets in config
+      model: example-reviewer-model
+
+# ③ CI hard-requires device-level verification: no device counts as an
+#    infrastructure failure and blocks
+implementationCorrection:
+  device:
+    mode: required
+```
+
+> **No secrets anywhere.** `apiKeyEnv` stores the *name* of an environment variable; the key value exists only in the reviewer subprocess environment and is never written to disk, journal, or logs. If the variable is unset, the reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
+
+### Full key reference
+
+```yaml
+version: 2                      # 2 enables the runtime-correction capabilities
+locale: zh                      # feedback language; unset => derived from LC_ALL/LANG
 
 dynamicGroundTruth:
   enabled: true
-  materialRoots:                # task materials; unset => auto-discovered
-    - README.md
-    - docs/requirements.md
+  materialRoots: [docs/]        # unset => auto-discovered
   panel:
-    size: 2                     # onboarding extractor passes; 0 disables onboarding
-    adjudicator: true           # skeptical merge of panel proposals
+    size: 2                     # baseline extraction passes; 0 disables onboarding
+    adjudicator: true           # skeptical merge
 
 stopCorrection:
   enabled: true
-  maxCorrectionsPerEpoch: 3     # Stop-gate budget; exhausted => stop allowed, findings recorded
+  maxCorrectionsPerEpoch: 3     # termination-gate budget
 
 implementationCorrection:
   enabled: true
   platform: harmonyos           # platform adapter; unset => fingerprinted; null => kit check off
   checklistPaths: [docs/kits.md] # optional explicit kit checklist documents
-  checklistSection: "10\\.1"    # regex matching the checklist section heading
+  checklistSection: "10\\.1"    # checklist heading regex (default: content-based match)
   kitColumnIndex: 0             # kit-name column in the checklist table
   device:
-    mode: auto                  # auto = degrade with the environment / required = CI hard-requires device level / off = static only
-  deviceBudgetMs: 600000        # wall-clock ceiling for deterministic build/device verification
+    mode: auto                  # auto = degrade with the environment / required = CI / off = static only
+  deviceBudgetMs: 600000        # wall-clock ceiling for build/device verification
 
-evidenceRoots: [evidence]       # dirs guarded for evidence-file distinctness (off when unset)
+evidenceRoots: [evidence]       # evidence-distinctness guard (off when unset)
 
 output:
-  directory: .runtime-correction # where diagnostics/state are written
+  directory: .runtime-correction
 ```
 
-**Reviewer roles.** All reviewers accept `model`, `effort` (`low`…`max`), `timeoutMs`,
-`maxBudgetUsd`, `session`, `provider`; `defaults` applies to every role:
+**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session` (`fork`/`independent`), `provider`; `defaults` covers all roles (effort `low`, 240s timeout, session `fork`). Roles: `groundTruthExtractor` (materials → baseline), `onboardingAdjudicator` (merge & freeze), `skillReviewer`, `artifactReviewer`, `stopReviewer` (termination gate), `implementationReviewer`. Explicit per-role config always beats the `modelPolicy` preset.
 
-| Role | Judges | Defaults |
-|---|---|---|
-| `defaults` | fallback for all roles | effort `low`, timeout 240 s, session `fork` |
-| `groundTruthExtractor` | material/transcript → atomic claims (also panel passes) | inherits |
-| `onboardingAdjudicator` | skeptical merge of panel proposals (freeze gate) | inherits |
-| `skillReviewer` | Skill execution vs. its frozen contract | inherits |
-| `artifactReviewer` | written artifacts vs. frozen Ground Truth / stage metrics | inherits |
-| `stopReviewer` | may the session stop? (termination gate) | inherits |
-| `implementationReviewer` | the built app vs. the frozen population | inherits |
+Version-1 artifact/stage correction (per-file hard rules, semantic review, workflow edges) is documented in [docs/configuration.md](docs/configuration.md); `/runtime-corrector:init` keeps the full reference as `config.reference.yaml`.
 
-**Heterogeneous review (recommended).** The two self-consistency-critical gates — the onboarding
-adjudicator (freezes the baseline) and the stop reviewer (decides whether work may end) — can run
-in a **fresh, independent session on a different provider/model** instead of a fork of the parent
-session:
+### Commands
 
-```yaml
-reviewers:
-  onboardingAdjudicator:
-    session: independent        # fresh session, no --resume of the parent
-    provider:
-      baseUrl: https://api.example-provider.com
-      apiKeyEnv: REVIEWER_API_KEY   # NAME of an env var — never a key literal
-      model: example-reviewer-model
-  stopReviewer:
-    session: independent
-    provider:
-      baseUrl: https://api.example-provider.com
-      apiKeyEnv: REVIEWER_API_KEY
-      model: example-reviewer-model
-```
-
-Equivalent preset shorthand (`critical-gates` covers exactly those two roles; `all` covers every
-role; explicit per-role keys always win):
-
-```yaml
-reviewers:
-  modelPolicy:
-    preset: critical-gates
-    provider:
-      baseUrl: https://api.example-provider.com
-      apiKeyEnv: REVIEWER_API_KEY
-      model: example-reviewer-model
-```
-
-> **No secrets in config.** `apiKeyEnv` is the *name* of an environment variable. The key value is
-> read at spawn time, exists only in the reviewer subprocess environment, and is never written to
-> disk, journal, or logs. If the variable is unset or empty, the reviewer degrades to the default
-> fork session and journals `REVIEWER_PROVIDER_DEGRADED`.
-
-Version 1 artifact/stage correction (per-file hard rules, semantic review, workflow edges) is
-documented in [docs/configuration.md](docs/configuration.md); `/runtime-corrector:init` leaves a
-commented reference as `config.reference.yaml`.
-
-## 5. Usage — what you see in a session
-
-**Delivered diagnostics are rationed.** Artifact checks show at most the top-3 most severe findings
-inline (plus candidate-patch counts); Skill feedback is budgeted per skill; Stop corrections are
-budgeted per epoch. Full detail always lands on disk:
-
-```text
-.runtime-correction/
-├── latest/<stage>/<artifact>/diagnostic.md   # newest full diagnostics
-├── latest/<stage>/<artifact>/patch.diff      # candidate Git patch (never auto-applied)
-├── latest/<stage>/<artifact>/result.json     # machine-readable result
-├── runs/<stage>/<artifact>/<roundId>/        # archived earlier rounds
-└── tasks/<taskId>/
-    ├── ground-truth/current.json             # the frozen ledger
-    ├── evaluations/*.json                    # stop/artifact/impl review reports
-    └── journal/events.jsonl                  # append-only event journal
-```
-
-**Acting on corrections.** The main agent (or you) can fix the deviation, or reply with an
-evidence-based rejection; both paths are recorded, and closures are attributed honestly.
-
-**Resolving `OPEN_QUESTION` items.** Ambiguities in the task materials are frozen as open
-questions with a default-safe reading, never as invented directives. A plain user message in the
-session resolves them: after the freeze, only `USER_EXPLICIT` authority can supersede baseline
-claims — just say what you actually want.
-
-**The Stop gate.** When the agent declares completion prematurely, the Stop is blocked with a
-`Terminal correction n/N` message listing the blocking objects. After `maxCorrectionsPerEpoch`
-attempts the gate opens (`CORRECTION_BUDGET_EXHAUSTED`) and the unresolved findings stay recorded.
-
-**Commands.**
-
-| Command | Effect |
+| Command | Purpose |
 |---|---|
-| `/runtime-corrector:init` | materialize the derived config into an editable `config.yaml` |
-| `/runtime-corrector:help` | project-aware help and stage state |
+| `/runtime-corrector:init` | materialize the derived config as an editable `config.yaml` |
+| `/runtime-corrector:help` | project-aware help and stage status |
 | `/runtime-corrector:validate` | validate the project policy |
 | `/runtime-corrector:stages` | list/toggle v1 artifact stages |
 | `/runtime-corrector:explain <stage>` / `:spec <stage>` | explain the active policy / full stage spec |
-| `/runtime-corrector:check <artifact>` | check one artifact on demand |
+| `/runtime-corrector:check <artifact>` | check one artifact manually |
 
-## 6. Degradation & troubleshooting
+## 6. Verification depth: device / build / static
 
-The plugin **fails open**: its own faults never block development. Look in
-`.runtime-correction/tasks/<taskId>/journal/events.jsonl`:
-
-| Journal event | Meaning | Action |
-|---|---|---|
-| `DERIVED_CONFIG` | informational: which materials/platform were auto-derived for this task | none; materialize with `/runtime-corrector:init` to override |
-| `ONBOARDING_DEGRADED` | panel/adjudication/apply failed; fell back to incremental extraction, ledger unfrozen | usually transient; check reviewer timeouts/budget, re-trigger with a new task |
-| `REVIEWER_PROVIDER_DEGRADED` | independent-session provider unusable (env var unset/empty or provider not configured); reviewer ran as a fork instead | export the env var named by `apiKeyEnv`, verify `provider.baseUrl` |
-| `STOP_ASSESSMENT_FAILED` | the stop review itself errored; the Stop was allowed (fail-open) with the failure journaled | inspect the recorded error; a later Stop retries |
-| `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | one isolated review crashed; watcher marked `UNVERIFIED` | transient reviewer fault; no action unless recurring |
-
-If hooks themselves crash, a bounded `[runtime-corrector] v2 features failed open` notice is
-emitted (never in observe-only mode) and the session continues.
-
-### 6.1 The device-verification ladder (device / build / static)
-
-On top of static checks, the implementation review runs a deterministic verification
-ladder that **degrades honestly with the environment**. Every concrete command is
-declared by the platform adapter's `deviceCheck` section (probes, build gate, smoke
-steps) — the core framework contains no platform commands, and a platform without a
-`deviceCheck` simply caps at the static level:
+Implementation acceptance picks its verification depth from the environment. Every concrete command is declared by the platform adapter — the core contains no platform commands:
 
 | Level | Condition | What runs |
 |---|---|---|
-| `device` | a connected device/emulator is probed AND the toolchain exists | build gate + adapter-declared smoke steps (install/launch/screenshot) |
-| `build` | toolchain only (e.g. a project `hvigorw`) | build gate (cached on the source-manifest digest — identical sources never rebuild) |
-| `static` | neither / platform declares nothing / `device.mode: off` | static verification only (all of 1.0.x behavior) |
+| `device` | a device/emulator is detected + the toolchain exists | build gate + install/launch/screenshot smoke |
+| `build` | toolchain only | build gate (cached per source digest — identical sources never rebuild) |
+| `static` | neither / platform declares nothing / `mode: off` | static verification |
 
-Three disciplines: **a missing device lowers the assurance level, never flips a
-judgement** — checks the environment cannot run are skipped with a recorded reason
-(never PASS, and never a deviation charged to the developer); only checks that DID
-run and objectively failed (a build break, a crash on launch) become blocking
-findings (`impl:build:*` / `impl:device:*`); and every Stop feedback carries an
-assurance disclosure line (e.g. `Assurance: static-level verification only …`), so a
-static-only green is never mistaken for a device-verified one. In CI, set
-`device.mode: required` to turn "no device connected" itself into a blocking
-infrastructure finding.
+Three disciplines: **a missing device lowers the assurance level, never flips a judgement** — checks the environment cannot run are skipped with a recorded reason (never marked PASS, never charged to the agent); only checks that ran and objectively failed (a build break, a launch crash) become blocking findings; and every acceptance feedback carries an assurance disclosure line, so a static-only green never masquerades as a device-verified one.
 
-## 7. Design guarantees
+## 7. When things go wrong
 
-- **Read-only reviewers.** Every reviewer subprocess is restricted to `Read`/`Grep`, with
-  Write/Edit/Skill/Agent/MCP disabled; role prompts treat all content as evidence, not
-  instructions.
-- **Never edits your work.** The plugin never modifies project files and never applies candidate
-  patches; every change decision stays with the main agent.
-- **No secrets anywhere.** No API endpoint or key literals in code; configuration stores env-var
-  *names* only; provider credentials live only in the reviewer subprocess environment.
-- **Platform adapters.** Platform conventions (module naming, source roots) are data under
-  `config/platforms/*.json`; unknown or `null` platforms simply skip the kit check.
-- **Deterministic checks independent of the LLM.** Hard rules, the kit-integration check, evidence
-  distinctness, and closure attribution are plain code — reproducible regardless of any model.
-- **Never guesses workflow instances.** The plugin does not decide whether you are continuing an
-  existing change or creating a new one, and never selects the "latest" document by modification
-  time; with `patterns` and no correlation, matched files form one legacy bundle by design.
-- **Observe-only mode.** `shadowMode: true` records identical detection with zero intervention,
-  for evaluating the critic on an untouched run.
+The plugin **fails open**: its own faults never block development. For troubleshooting, read `.runtime-correction/tasks/<taskId>/journal/events.jsonl`:
+
+| Journal event | Meaning | Action |
+|---|---|---|
+| `DERIVED_CONFIG` | informational: what materials/platform were derived | none; run `/runtime-corrector:init` to override |
+| `ONBOARDING_DEGRADED` | baseline building failed; falls back to incremental extraction, ledger unfrozen | usually transient; check reviewer timeouts/budgets — it retries automatically |
+| `REVIEWER_PROVIDER_DEGRADED` | independent provider unavailable; that review fell back to fork | export the env var named by `apiKeyEnv` |
+| `STOP_ASSESSMENT_FAILED` | the stop review itself failed; this Stop opened (fail-open) and was recorded | inspect the recorded error; the next Stop retries |
+| `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | one isolated review crashed; marked `UNVERIFIED` | transient; investigate only if recurring |
+| `DEVICE_VERIFICATION_UNAVAILABLE` | no device/toolchain; verification degraded with disclosure | connect a device if wanted; use `device.mode: required` in CI |
+
+If the hooks themselves crash, a bounded `[runtime-corrector] v2 features failed open` notice appears (fully silent in observe-only mode) and the session continues.
+
+## 8. Design guarantees
+
+- **Read-only reviewers.** Reviewer subprocesses have only `Read`/`Grep`; everything they read is treated as evidence, never as instructions.
+- **Never edits for you.** No project file changes, no auto-applied patches; change decisions belong to the main agent.
+- **No secrets anywhere.** No endpoint/key literals in code; config stores env-var names only.
+- **Platform as data.** Platform conventions (module naming, source roots, device commands) are `config/platforms/*.json` data; an unknown or `null` platform just skips the corresponding checks.
+- **Deterministic checks are model-independent.** Hard rules, kit integration, the build gate, evidence distinctness, and closure attribution are plain code — reproducible with any model.
+- **No instance decisions.** The plugin never decides whether the user is continuing an existing change or creating a new one, and never selects the "latest" document by modification time; with only `patterns` configured and no correlation, all matched files belong to one legacy bundle by design.
+- **Observe-only mode.** `shadowMode: true` records identical detections with zero intervention.
 
 ## More documentation
 
-See [docs/README.md](docs/README.md) for the full documentation index:
+Full index at [docs/README.md](docs/README.md):
 
-- v2 design and configuration: [docs/runtime-corrector-v2-design.md](docs/runtime-corrector-v2-design.md)
-- v1 artifact/stage configuration and rules: [docs/configuration.md](docs/configuration.md)
+- v2 design & configuration: [docs/runtime-corrector-v2-design.md](docs/runtime-corrector-v2-design.md)
+- v1 artifact/stage configuration & rules: [docs/configuration.md](docs/configuration.md)
 - End-to-end mechanics of one correction round: [docs/how-it-works.md](docs/how-it-works.md)
 - Commands, CLI, hook JSON, custom matchers: [docs/interfaces.md](docs/interfaces.md)
-- Tutorials: [docs/tutorial.md](docs/tutorial.md),
-  [docs/six-stage-workflow-from-zero.md](docs/six-stage-workflow-from-zero.md)
-- Copyable business workflows under `examples/`
+- Tutorials: [docs/tutorial.md](docs/tutorial.md), [docs/six-stage-workflow-from-zero.md](docs/six-stage-workflow-from-zero.md)
+- Copy-ready business examples under `examples/`
