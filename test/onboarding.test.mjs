@@ -836,3 +836,67 @@ test("openQuestions claims are severity-capped to SOFT whatever their authority"
   const question = applied.current.claims.find((claim) => claim.category === "openQuestions");
   assert.equal(question.severity, "SOFT", "an admitted ambiguity can never be a hard obligation");
 });
+
+test("onboarding floors reviewer timeouts for the bulk decompose and runs panel passes in parallel", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  const factory = onboardingFakeFactory({
+    passOperations: () => [REQUIREMENT_OP],
+    stopAssessment: passingStopAssessment,
+  });
+  const spawns = [];
+  const wrapped = async (args) => {
+    spawns.push({ role: args.role, timeoutMs: args.reviewer?.timeoutMs });
+    return factory(args);
+  };
+  wrapped.calls = factory.calls;
+  await stopEvent(root, plan, wrapped, "stop-onboard-floor");
+  const extractors = spawns.filter((spawn) => spawn.role === "onboarding-extractor");
+  assert.equal(extractors.length, 2);
+  assert.ok(extractors.every((spawn) => spawn.timeoutMs >= 480000),
+    "bulk-decompose extractor timeout is floored above the incremental default");
+  const adjudicator = spawns.find((spawn) => spawn.role === "onboarding-adjudicator");
+  assert.ok(adjudicator.timeoutMs >= 360000, "adjudicator timeout floored");
+  // Incremental (non-onboarding) reviewer spawns keep their configured default.
+  const stopSpawns = spawns.filter((spawn) => !spawn.role.startsWith("onboarding-"));
+  assert.ok(stopSpawns.every((spawn) => spawn.timeoutMs === 240000),
+    "non-onboarding roles keep the configured/default timeout");
+});
+
+test("resume-transient panel failures defer without consuming the real-failure attempt budget", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  let mode = "transient";
+  const factory = onboardingFakeFactory({
+    passOperations: () => [REQUIREMENT_OP, SCAN_CAPABILITY_OP],
+    stopAssessment: passingStopAssessment,
+  });
+  const inner = factory;
+  const wrapped = async (args) => {
+    if (mode === "transient" && args.role === "onboarding-extractor") {
+      throw new Error("Internal reviewer exited with code 1: No conversation found with session ID: abc");
+    }
+    return inner(args);
+  };
+  wrapped.calls = inner.calls;
+
+  // Four transient failures in a row: attempts must stay 0, status DEFERRED.
+  for (let round = 1; round <= 4; round += 1) {
+    await stopEvent(root, plan, wrapped, `stop-transient-${round}`);
+    const { state } = await readTaskArtifacts(root);
+    assert.equal(state.onboarding.status, "DEFERRED", `round ${round} defers`);
+    assert.equal(state.onboarding.attempts ?? 0, 0, `round ${round} spends no real attempt`);
+    assert.equal(state.onboarding.transientAttempts, round);
+  }
+
+  // The panel becoming healthy afterwards still completes and freezes.
+  mode = "healthy";
+  await stopEvent(root, plan, wrapped, "stop-transient-recovery");
+  const { state, groundTruth } = await readTaskArtifacts(root);
+  assert.equal(state.onboarding.status, "COMPLETED");
+  assert.equal(groundTruth.frozenAtVersion, 1);
+});
