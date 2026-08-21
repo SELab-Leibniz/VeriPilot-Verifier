@@ -449,20 +449,24 @@ test("onboarding fails soft to incremental extraction and journals ONBOARDING_DE
 });
 
 
-test("an adjudicator fault degrades without applying panel claims", async (t) => {
+test("an adjudicator fault with nothing usable from the panel still degrades unfrozen", async (t) => {
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = onboardingPlan(root);
   const factory = onboardingFakeFactory({
+    passOperations: () => [],
     failAdjudicator: true,
     stopAssessment: passingStopAssessment,
     incrementalOperations: () => [],
   });
   await stopEvent(root, plan, factory, "stop-adjfail-1");
   const { state, groundTruth } = await readTaskArtifacts(root);
+  // The deterministic-merge recovery cannot invent claims: with an empty
+  // panel there is nothing to apply, and freezing an empty ledger would lock
+  // out every later claim.
   assert.equal(state.onboarding.status, "DEGRADED");
-  assert.equal(state.onboarding.reason, "ADJUDICATION_FAILED");
-  assert.equal(groundTruth.version, 0, "panel output is not applied without adjudication");
+  assert.equal(state.onboarding.reason, "EMPTY_RESULT");
+  assert.equal(groundTruth.version, 0);
   assert.equal(groundTruth.frozenAtVersion ?? null, null);
 });
 
@@ -899,4 +903,38 @@ test("resume-transient panel failures defer without consuming the real-failure a
   const { state, groundTruth } = await readTaskArtifacts(root);
   assert.equal(state.onboarding.status, "COMPLETED");
   assert.equal(groundTruth.frozenAtVersion, 1);
+});
+
+test("an adjudicator fault falls back to the deterministic merge instead of losing the panel's work", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  let pass = 0;
+  const factory = onboardingFakeFactory({
+    // Pass 1 proposes both claims; pass 2 only the capability -> the
+    // requirement is disputed and must survive as inferred-only.
+    passOperations: () => (pass += 1) === 1 ? [REQUIREMENT_OP, SCAN_CAPABILITY_OP] : [SCAN_CAPABILITY_OP],
+    failAdjudicator: true,
+    stopAssessment: passingStopAssessment,
+  });
+  await stopEvent(root, plan, factory, "stop-adjudicator-fallback");
+
+  const { state, groundTruth, journal } = await readTaskArtifacts(root);
+  assert.equal(state.onboarding.status, "COMPLETED", "onboarding still completes");
+  assert.equal(groundTruth.frozenAtVersion, 1, "the ledger is still frozen");
+  const capability = groundTruth.claims.find((claim) => claim.category === "capabilityChecklist");
+  assert.equal(capability.severity, "HARD", "panel-majority material claims stand");
+  assert.equal(capability.panelConfirmed, true);
+  const requirement = groundTruth.claims.find((claim) => claim.category === "requirements");
+  assert.equal(requirement.authority, "AGENT_INFERRED", "disputed claims downgrade, not vanish");
+  assert.equal(requirement.severity, "SOFT");
+
+  const events = journal.split("\n").filter(Boolean).map((line) => JSON.parse(line));
+  const degraded = events.find((event) => event.type === "ONBOARDING_DEGRADED");
+  assert.equal(degraded.reason, "ADJUDICATION_FAILED");
+  assert.equal(degraded.recovery, "DETERMINISTIC_MERGE", "the recovery path is journaled");
+  const completed = events.find((event) => event.type === "ONBOARDING_COMPLETED");
+  assert.equal(completed.adjudicated, false);
+  assert.equal(completed.mergeMode, "DETERMINISTIC");
 });
