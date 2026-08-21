@@ -141,6 +141,9 @@ implementationCorrection:
   checklistPaths: [docs/kits.md] # optional explicit kit checklist documents
   checklistSection: "10\\.1"    # regex matching the checklist section heading
   kitColumnIndex: 0             # kit-name column in the checklist table
+  device:
+    mode: auto                  # auto = degrade with the environment / required = CI hard-requires device level / off = static only
+  deviceBudgetMs: 600000        # wall-clock ceiling for deterministic build/device verification
 
 evidenceRoots: [evidence]       # dirs guarded for evidence-file distinctness (off when unset)
 
@@ -260,6 +263,30 @@ The plugin **fails open**: its own faults never block development. Look in
 
 If hooks themselves crash, a bounded `[runtime-corrector] v2 features failed open` notice is
 emitted (never in observe-only mode) and the session continues.
+
+### 6.1 The device-verification ladder (device / build / static)
+
+On top of static checks, the implementation review runs a deterministic verification
+ladder that **degrades honestly with the environment**. Every concrete command is
+declared by the platform adapter's `deviceCheck` section (probes, build gate, smoke
+steps) — the core framework contains no platform commands, and a platform without a
+`deviceCheck` simply caps at the static level:
+
+| Level | Condition | What runs |
+|---|---|---|
+| `device` | a connected device/emulator is probed AND the toolchain exists | build gate + adapter-declared smoke steps (install/launch/screenshot) |
+| `build` | toolchain only (e.g. a project `hvigorw`) | build gate (cached on the source-manifest digest — identical sources never rebuild) |
+| `static` | neither / platform declares nothing / `device.mode: off` | static verification only (all of 1.0.x behavior) |
+
+Three disciplines: **a missing device lowers the assurance level, never flips a
+judgement** — checks the environment cannot run are skipped with a recorded reason
+(never PASS, and never a deviation charged to the developer); only checks that DID
+run and objectively failed (a build break, a crash on launch) become blocking
+findings (`impl:build:*` / `impl:device:*`); and every Stop feedback carries an
+assurance disclosure line (e.g. `Assurance: static-level verification only …`), so a
+static-only green is never mistaken for a device-verified one. In CI, set
+`device.mode: required` to turn "no device connected" itself into a blocking
+infrastructure finding.
 
 ## 7. Design guarantees
 

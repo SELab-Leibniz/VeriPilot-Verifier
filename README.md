@@ -130,6 +130,9 @@ implementationCorrection:
   checklistPaths: [docs/kits.md] # 可选：显式 Kit 清单文档
   checklistSection: "10\\.1"    # 匹配清单章节标题的正则
   kitColumnIndex: 0             # 清单表格中 Kit 名所在列
+  device:
+    mode: auto                  # auto=按环境降级 / required=CI 强制设备级 / off=只做静态
+  deviceBudgetMs: 600000        # 构建/设备类确定性验证的墙钟上限
 
 evidenceRoots: [evidence]       # 证据唯一性守卫监视目录（不写则关闭）
 
@@ -243,6 +246,25 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 
 Hook 自身崩溃时会输出有限次的 `[runtime-corrector] v2 features failed open` 提示（observe-only
 模式下保持完全静默），会话继续。
+
+### 6.1 设备级验证阶梯（device / build / static）
+
+实现审查在静态检查之上叠加一个**按环境自动降级**的确定性验证阶梯，全部命令由平台
+适配器的 `deviceCheck` 段声明（探测、构建门、冒烟步骤）——核心框架不含任何平台命令，
+没有 `deviceCheck` 的平台自然封顶在 static 档：
+
+| 档位 | 触发条件 | 实际执行 |
+|---|---|---|
+| `device` | 探测到已连接设备/模拟器 且 工具链存在 | 构建门 + 适配器声明的冒烟步骤（安装/启动/截图） |
+| `build` | 仅工具链存在（如项目内 `hvigorw`） | 构建门（按源码清单摘要缓存，同源不重复构建） |
+| `static` | 两者皆无 / 平台未声明 / `device.mode: off` | 仅静态核验（1.0.x 的全部行为） |
+
+三条纪律：**缺设备只降低保证等级，不改变任何判定方向**——环境跑不了的检查一律
+跳过并记录原因（绝不判 PASS，也绝不算开发者的偏差）；真正跑了且客观失败的
+（构建报错、启动崩溃）才是阻断性发现（`impl:build:*` / `impl:device:*`）；每次 Stop
+反馈都带一行保证级别声明（如 `Assurance: static-level verification only …`），
+静态绿灯永远不会被误认为设备级绿灯。CI 环境用 `device.mode: required` 把
+"没有设备"本身变成阻断性基础设施发现。
 
 ## 7. 设计保证
 

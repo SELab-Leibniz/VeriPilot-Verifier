@@ -23,5 +23,87 @@
     "sourceExtensions": [
       ".ets"
     ]
+  },
+  "deviceCheck": {
+    "probes": {
+      "device": {
+        "command": "hdc",
+        "args": [
+          "list",
+          "targets"
+        ],
+        "successPattern": "^(?!\\s*\\[Empty\\])\\S+"
+      },
+      "toolchain": {
+        "fileExists": "hvigorw"
+      }
+    },
+    "build": {
+      "command": "./hvigorw",
+      "args": [
+        "assembleHap",
+        "--mode",
+        "module",
+        "-p",
+        "product=default",
+        "--no-daemon"
+      ]
+    },
+    "smoke": {
+      "bundleNameFile": "AppScope/app.json5",
+      "bundleNamePattern": "\"bundleName\"\\s*:\\s*\"([^\"]+)\"",
+      "artifacts": {
+        "roots": [
+          "entry/build"
+        ],
+        "extension": ".hap"
+      },
+      "steps": [
+        {
+          "name": "install",
+          "command": "hdc",
+          "args": [
+            "install",
+            "-r",
+            "{artifact}"
+          ],
+          "timeoutMs": 120000
+        },
+        {
+          "name": "launch",
+          "command": "hdc",
+          "args": [
+            "shell",
+            "aa",
+            "start",
+            "-b",
+            "{bundleName}",
+            "-a",
+            "EntryAbility"
+          ]
+        },
+        {
+          "name": "screencap",
+          "command": "hdc",
+          "args": [
+            "shell",
+            "uitest",
+            "screenCap",
+            "-p",
+            "/data/local/tmp/runtime-corrector-smoke.png"
+          ]
+        },
+        {
+          "name": "collect",
+          "command": "hdc",
+          "args": [
+            "file",
+            "recv",
+            "/data/local/tmp/runtime-corrector-smoke.png",
+            "{outputDir}/device-smoke.png"
+          ]
+        }
+      ]
+    }
   }
 }
