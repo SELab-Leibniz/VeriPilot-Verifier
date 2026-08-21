@@ -24,6 +24,68 @@
       ".ets"
     ]
   },
+  "environmentCheck": {
+    "tools": {
+      "hvigor": {
+        "projectPaths": [
+          "hvigorw.bat",
+          "hvigorw.cmd",
+          "hvigorw"
+        ],
+        "installationPaths": [
+          "bin/hvigorw.bat",
+          "bin/hvigorw.cmd",
+          "tools/hvigor/bin/hvigorw.bat"
+        ],
+        "pathNames": [
+          "hvigorw.bat",
+          "hvigorw.cmd",
+          "hvigorw"
+        ]
+      },
+      "hdc": {
+        "installationPaths": [
+          "sdk/default/openharmony/toolchains/hdc.exe",
+          "sdk/default/hms/toolchains/hdc.exe",
+          "bin/hdc.exe"
+        ],
+        "pathNames": [
+          "hdc.exe",
+          "hdc"
+        ]
+      },
+      "previewer": {
+        "installationPaths": [
+          "sdk/default/openharmony/previewer/common/bin/Previewer.exe",
+          "sdk/default/hms/previewer/common/bin/Previewer.exe"
+        ]
+      },
+      "emulator": {
+        "installationPaths": [
+          "emulator/Emulator.exe",
+          "tools/emulator/Emulator.exe",
+          "tools/emulator/bin/Emulator.exe"
+        ]
+      },
+      "sdk": {
+        "installationPaths": [
+          "sdk/default/openharmony",
+          "sdk/default/hms",
+          "sdk"
+        ]
+      }
+    },
+    "probes": {
+      "build": {
+        "tool": "hvigor",
+        "args": ["--version"]
+      },
+      "deviceControl": {
+        "tool": "hdc",
+        "args": ["--version"]
+      }
+    }
+  },
   "deviceCheck": {
     "probes": {
       "device": {

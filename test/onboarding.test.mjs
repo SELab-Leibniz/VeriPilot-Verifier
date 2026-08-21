@@ -16,6 +16,7 @@ import {
   checkKitIntegration,
   IMPL_REVIEW_SCHEMA,
 } from "../lib/runtime-v2/impl-review.mjs";
+import { harmonyUiObligations } from "../lib/runtime-v2/harmony-stop-guard.mjs";
 import {
   capabilityVoteKey,
   catalogCapabilityName,
@@ -75,6 +76,22 @@ const REQUIREMENT_OP = Object.freeze({
   text: "The home page must render the product list.",
   authority: "USER_EXPLICIT",
   severity: "HARD",
+  source: { ref: "transcript:user-1" },
+});
+
+const UI_ACCEPTANCE_OP = Object.freeze({
+  operation: "ADD",
+  category: "acceptanceCriteria",
+  text: "点击收藏按钮后页面必须显示已收藏状态。",
+  authority: "USER_EXPLICIT",
+  severity: "HARD",
+  verification: {
+    platform: "harmonyos",
+    runtimeRequired: true,
+    realDeviceOnly: false,
+    modalities: ["device", "ui"],
+    evidenceKinds: ["build", "install", "launch", "ui-action", "ui-assertion", "screenshot"],
+  },
   source: { ref: "transcript:user-1" },
 });
 
@@ -158,6 +175,7 @@ function onboardingFakeFactory({
             path.join(requestDirectory, "assessment-request.json"),
             "utf8",
           ));
+          calls.push({ role: "stop-reviewer", request: assessment, schema: nextSchema });
           return stopAssessment(assessment);
         }
         throw new Error("Unexpected fake follow-up schema.");
@@ -411,6 +429,31 @@ test("onboarding runs the panel once, adjudicates, freezes the ledger, and journ
   await write(root, "transcript.jsonl", transcriptEntries(2));
   await stopEvent(root, plan, factory, "stop-onboard-2");
   assert.equal(factory.calls.filter((call) => call.role === "onboarding-extractor").length, 2);
+});
+
+
+test("onboarding preserves HarmonyOS verification metadata into the Stop population without a manual ledger delta", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# UI\n点击收藏按钮后页面必须显示已收藏状态。\n");
+  const plan = onboardingPlan(root);
+  const factory = onboardingFakeFactory({
+    passOperations: () => [UI_ACCEPTANCE_OP],
+    stopAssessment: passingStopAssessment,
+  });
+
+  const outcome = await stopEvent(root, plan, factory, "stop-onboard-ui-verification");
+  assert.equal(outcome.decision, "allow");
+  const onboardingCall = factory.calls.find((call) => call.role === "onboarding-extractor");
+  assert.match(onboardingCall.request.instructions.join("\n"), /verification metadata/u);
+  const { groundTruth } = await readTaskArtifacts(root);
+  const claim = groundTruth.claims.find((item) => item.category === "acceptanceCriteria");
+  assert.deepEqual(claim.verification, UI_ACCEPTANCE_OP.verification);
+
+  const stopCall = factory.calls.find((call) => call.role === "stop-reviewer");
+  const stopObject = stopCall.request.population.metrics.M13.find((item) => item.sourceId === claim.claimId);
+  assert.deepEqual(stopObject.verification, UI_ACCEPTANCE_OP.verification);
+  assert.deepEqual(harmonyUiObligations(stopCall.request.population).map((item) => item.objectId), [stopObject.objectId]);
 });
 
 
