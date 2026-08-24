@@ -1052,3 +1052,39 @@ test("the capability module is adapter-derived, never taken from the extractor",
   assert.ok(operations.every((operation) => !/\.ets$/u.test(operation.capability.module)),
     "a source file name can never be a module specifier");
 });
+
+test("invented capability names cannot become blocking obligations", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  // All observed in a real run: the panel coined composites and non-kit
+  // concepts that pass the lowercase-hyphenated shape test.
+  const invented = ["pdf-kit-pen-kit", "camera-audio-media-avsession", "enterprise-idp-and-directory", "agc-app-registration"];
+  const { operations, catalogUnmatched } = crossCheckCapabilityOperations([
+    ...invented.map((name) => ({ ...SCAN_CAPABILITY_OP, capability: { name } })),
+    { ...SCAN_CAPABILITY_OP, capability: { name: "scan-kit" } },
+  ], adapter);
+  assert.equal(catalogUnmatched, invented.length, "every invented name is flagged");
+  for (const operation of operations.slice(0, invented.length)) {
+    assert.equal(operation.capability.catalogUnmatched, true);
+  }
+  assert.equal(operations.at(-1).capability.catalogUnmatched, false, "a real kit still resolves");
+
+  // catalogUnmatched entries are skipped by the checker, so they can never block.
+  const entries = capabilityChecklistFromClaims({
+    claims: operations.map((operation, index) => ({
+      claimId: `c${index}`, category: "capabilityChecklist", status: "ACTIVE",
+      severity: "HARD", capability: operation.capability,
+    })),
+  }, adapter).filter((entry) => !entry.catalogUnmatched && entry.module);
+  assert.deepEqual(entries.map((entry) => entry.kit), ["scan-kit"]);
+});
+
+test("a platform with no published catalog still validates by shape", async () => {
+  // Absent vocabulary must mean "cannot validate", never "everything passes"
+  // — but it also must not reject every name and disable the check.
+  const adapter = { name: "generic", kitCheck: { modulePrefix: "@kit.", moduleSpecialCases: new Map(), catalog: new Set(), sourceRoots: [], sourceExtensions: [] } };
+  const { operations, catalogUnmatched } = crossCheckCapabilityOperations([
+    { ...SCAN_CAPABILITY_OP, capability: { name: "scan-kit" } },
+  ], adapter);
+  assert.equal(catalogUnmatched, 0);
+  assert.equal(operations[0].capability.module, "@kit.ScanKit");
+});
