@@ -1034,3 +1034,21 @@ test("inlined material is capped so a huge document cannot blow the request", as
   assert.ok(entry.text.length <= 200000);
   assert.ok(entry.bytes > entry.text.length, "the manifest still records the true size");
 });
+
+test("the capability module is adapter-derived, never taken from the extractor", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  // A panel pass that mapped the checklist table's code-file column into
+  // capability.module — observed in a real run, and it made the kit checker
+  // search for "BackgroundRefreshService.ets" as an import specifier.
+  const { operations } = crossCheckCapabilityOperations([
+    {
+      ...SCAN_CAPABILITY_OP,
+      capability: { name: "background-tasks-kit", module: "BackgroundRefreshService.ets" },
+    },
+    { ...SCAN_CAPABILITY_OP, capability: { name: "arkdata", module: "CommodityStore.ets" } },
+  ], adapter);
+  assert.equal(operations[0].capability.module, "@kit.BackgroundTasksKit");
+  assert.equal(operations[1].capability.module, "@kit.ArkData", "adapter special cases still apply");
+  assert.ok(operations.every((operation) => !/\.ets$/u.test(operation.capability.module)),
+    "a source file name can never be a module specifier");
+});
