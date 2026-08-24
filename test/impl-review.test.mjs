@@ -563,3 +563,38 @@ test("a malformed vocabulary override fails soft onto the shipped default", asyn
   const parsed = parseKitManifest(markdown, { adapter, kitHeaderPattern: "([unclosed", hedgeMarkers: "(" });
   assert.deepEqual(parsed.kits, ["scan-kit"], "a broken project override never breaks the parse");
 });
+
+test("a realistic-scale checklist extracts completely and separates commitments from candidates", async () => {
+  // Regression coverage for the defect class that only appeared on real
+  // documents: annotated cells, kit names glued to prose, display casing with
+  // ideographic separators, and a candidacy matrix. Hand-written cases missed
+  // all of it — the shipped parser once read 29 of 45 kits, and 0 from a
+  // feasibility matrix.
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const markdown = await fs.readFile(
+    new URL("./fixtures/large-checklist.md", import.meta.url),
+    "utf8",
+  );
+  const { kits, hedgedKits } = parseKitManifest(markdown, { adapter });
+
+  assert.equal(kits.length + hedgedKits.length, 48, "every capability in the document is accounted for");
+  assert.equal(kits.length, 42, "committed entries");
+
+  // Shapes that each caused a real miss.
+  assert.ok(kits.includes("distributed-service-kit"), "second kit in an annotated multi-kit cell");
+  assert.ok(kits.includes("core-speech-kit"), "kit name glued to Chinese prose");
+  assert.ok(kits.includes("basic-services-kit"), "kit followed by prose and a permission");
+  assert.ok(kits.includes("background-tasks-kit"), "display-cased and hyphenated forms unify");
+  assert.ok(kits.includes("arkdata"), "adapter special cases without a -kit suffix");
+
+  // The material's own hedging outranks its table membership.
+  for (const hedged of ["core-vision-kit", "multimodal-awareness-kit", "weather-service-kit", "nearlink-kit"]) {
+    assert.ok(hedgedKits.includes(hedged), `${hedged} is hedged in its own cell`);
+    assert.ok(!kits.includes(hedged), `${hedged} must never become an obligation`);
+  }
+  // Everything under a candidacy matrix is advisory, whatever it lists.
+  assert.ok(hedgedKits.includes("mdm-kit"));
+  assert.ok(hedgedKits.includes("enterprise-data-guard-kit"));
+  // Prose that merely mentions standards is not a capability.
+  assert.ok(!kits.concat(hedgedKits).some((kit) => /oidc|saml|idp/u.test(kit)));
+});
