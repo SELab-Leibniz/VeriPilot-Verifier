@@ -140,6 +140,12 @@ implementationCorrection:
 
 > **配置中没有机密。** `apiKeyEnv` 存的是环境变量*名字*；key 的值只在评审子进程环境中存在，绝不写入磁盘、journal 或日志。变量未设置时评审退回默认会话并记录 `REVIEWER_PROVIDER_DEGRADED`。
 
+> **provider 必须能跑通 Claude Code 本身，而不只是 API。** 评审员是以 `claude` 子进程方式启动的，
+> 因此第三方网关光能响应 `POST /v1/messages`（curl 测得通）还不够。上线前请直接验证：
+> `ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> claude --print --model <模型> "say OK"`。
+> 若返回 `API returned an empty or malformed response (HTTP 200)`，说明该网关拦截或改写了 CLI 的请求——
+> 此时 curl 全部通过也没有用，该 provider 不能用于评审员。
+
 ### 完整键参考
 
 ```yaml

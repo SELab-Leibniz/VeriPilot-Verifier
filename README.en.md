@@ -142,6 +142,13 @@ implementationCorrection:
 
 > **No secrets anywhere.** `apiKeyEnv` stores the *name* of an environment variable; the key value exists only in the reviewer subprocess environment and is never written to disk, journal, or logs. If the variable is unset, the reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
 
+> **A provider must work with Claude Code itself, not just with the API.** Reviewers are spawned as
+> `claude` subprocesses, so a third-party gateway answering `POST /v1/messages` under curl is not
+> sufficient. Verify directly before relying on it:
+> `ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> claude --print --model <model> "say OK"`.
+> An `API returned an empty or malformed response (HTTP 200)` means the gateway intercepts or rewrites
+> the CLI's traffic — passing curl tests does not help; that provider cannot back reviewers.
+
 ### Full key reference
 
 ```yaml
