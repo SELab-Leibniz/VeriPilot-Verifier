@@ -950,3 +950,100 @@ test("Stop-gate infrastructure failures block, then release with an unverified d
   assert.match(journal, /STOP_ASSESSMENT_RETRY/u);
   assert.match(journal, /STOP_VERIFICATION_UNAVAILABLE/u);
 });
+
+test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failures ever seen", async (t) => {
+  const root = await workspace(t);
+  await fs.writeFile(
+    path.join(root, "transcript.jsonl"),
+    [
+      JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "build it" } }),
+      JSON.stringify({ type: "assistant", uuid: "a1", message: { id: "am1", content: "done" } }),
+    ].join("\n"),
+  );
+  const plan = { runtimeV2: compileRuntimeV2Config({
+    version: 2,
+    dynamicGroundTruth: { enabled: true, materialRoots: [], panel: { size: 0 } },
+    skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
+    artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
+    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
+  }, { policyRoot: path.join(root, ".runtime-corrector") }) };
+
+  let healthy = false;
+  const requestDirectory = path.join(root, ".runtime-correction", "fake-review");
+  // A clean terminal assessment: every population object passes.
+  const assess = (request) => ({
+    summary: "Verified.",
+    stopClassification: "TASK_COMPLETE",
+    stage: "implementation",
+    findings: [],
+    metricObjectJudgements: Object.values(request?.population?.metrics ?? {}).flat().map((object) => ({
+      objectId: object.objectId,
+      judgement: "PASS",
+      reason: "Satisfied.",
+      evidence: ["session evidence"],
+    })),
+  });
+  const factory = async ({ schema }) => {
+    if (!healthy) throw new Error("reviewer unavailable");
+    await fs.mkdir(requestDirectory, { recursive: true });
+    // The stop reviewer is a two-phase fork: refresh, then assess.
+    const handle = {
+      requestDirectory,
+      async followUp() {
+        const request = JSON.parse(await fs.readFile(
+          path.join(requestDirectory, "assessment-request.json"),
+          "utf8",
+        ));
+        return assess(request);
+      },
+      async close() {},
+    };
+    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+      return {
+        ...handle,
+        result: {
+          summary: "Baseline.",
+          taskClassification: "CONTINUATION",
+          // A non-empty ledger is required for the stop gate to actually
+          // assess (and therefore to persist and reset the counter).
+          operations: [{
+            operation: "ADD",
+            category: "requirements",
+            text: "Ship the workout list page.",
+            authority: "USER_EXPLICIT",
+            severity: "HARD",
+            source: { ref: "transcript:u1" },
+          }],
+          skillGroundTruth: null,
+        },
+      };
+    }
+    return { ...handle, result: assess(null) };
+  };
+  const stop = (id) => handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-reset",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      hook_event_name: "Stop",
+      hook_event_id: id,
+      last_assistant_message: "Task complete.",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: factory,
+  });
+
+  // Two early blips consume both retries.
+  assert.equal((await stop("reset-1")).decision, "block");
+  assert.equal((await stop("reset-2")).decision, "block");
+  // The reviewer recovers and produces a real assessment.
+  healthy = true;
+  assert.equal((await stop("reset-3")).decision, "allow");
+  // A later, unrelated blip must get its retries back rather than releasing
+  // immediately — otherwise the gate silently reverts to permanent fail-open.
+  healthy = false;
+  const laterBlip = await stop("reset-4");
+  assert.equal(laterBlip.decision, "block", "recovery resets the consecutive-failure count");
+  assert.match(laterBlip.feedback, /attempt 1\/2/u);
+});
