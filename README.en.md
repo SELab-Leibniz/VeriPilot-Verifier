@@ -202,14 +202,26 @@ Three disciplines: **a missing device lowers the assurance level, never flips a 
 
 ## 7. When things go wrong
 
-The plugin **fails open**: its own faults never block development. For troubleshooting, read `.runtime-correction/tasks/<taskId>/journal/events.jsonl`:
+The plugin's ordinary checks **fail open**: its own faults never block development. **The termination gate is the one exception**: when the final acceptance cannot run, it does not pretend the check passed — it blocks and asks for a retry. That blocking is strictly bounded, so a session can never be trapped:
+
+| Situation | Behavior |
+|---|---|
+| Review failure (baseline refresh failed, reviewer timed out or crashed) | blocks, at most 2 attempts, then releases disclosing "completed but unverified" |
+| The plugin runtime itself crashes (unreadable transcript, corrupt state file, …) | same 2-attempt ceiling, then releases — a bug in the plugin must never trap a session |
+| Even the retry counter cannot be written (local state is what is broken) | **releases immediately**: the failure mode must degrade toward fail-open, never away from it |
+| `stopCorrection.enabled: false` or `shadowMode: true` | the gate is not armed at all and never blocks, crash or not |
+
+Both the block and the release name that off switch, and follow `locale` (Chinese or English). A release carries the `STOP_VERIFICATION_UNAVAILABLE` marker, which stays locale-independent so scripts can match it. The correction budget and this infrastructure ceiling **never spend each other**: an outage does not consume the developer's correction attempts, and vice versa.
+
+For troubleshooting, read `.runtime-correction/tasks/<taskId>/journal/events.jsonl`:
 
 | Journal event | Meaning | Action |
 |---|---|---|
 | `DERIVED_CONFIG` | informational: what materials/platform were derived | none; run `/runtime-corrector:init` to override |
 | `ONBOARDING_DEGRADED` | baseline building failed; falls back to incremental extraction, ledger unfrozen | usually transient; check reviewer timeouts/budgets — it retries automatically |
 | `REVIEWER_PROVIDER_DEGRADED` | independent provider unavailable; that review fell back to fork | export the env var named by `apiKeyEnv` |
-| `STOP_ASSESSMENT_FAILED` | the stop review itself failed; this Stop opened (fail-open) and was recorded | inspect the recorded error; the next Stop retries |
+| `STOP_ASSESSMENT_FAILED` / `STOP_ASSESSMENT_RETRY` | the stop review itself failed; the gate blocks and asks for a retry | inspect the recorded error; repeated failures mean a broken review environment (API key, network) |
+| `STOP_VERIFICATION_UNAVAILABLE` | the retry ceiling was spent; the Stop was released but this completion was never verified | do not treat it as verified; fix the review environment and re-run the final acceptance |
 | `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | one isolated review crashed; marked `UNVERIFIED` | transient; investigate only if recurring |
 | `DEVICE_VERIFICATION_UNAVAILABLE` | no device/toolchain; verification degraded with disclosure | connect a device if wanted; use `device.mode: required` in CI |
 

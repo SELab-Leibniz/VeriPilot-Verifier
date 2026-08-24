@@ -3,6 +3,7 @@
 import path from "node:path";
 
 import { loadConfig } from "../lib/runtime-corrector.mjs";
+import { DEFAULT_LOCALE, formatMessage } from "../lib/messages.mjs";
 import { inspectInternalRun } from "../lib/runtime-v2/internal-run.mjs";
 import {
   clearOuterStopFailures,
@@ -72,6 +73,10 @@ let shadowMode = false;
 // disabled stopCorrection must not be blocked by a crash in a gate it turned
 // off (that is the documented escape hatch, so it has to work).
 let stopGateArmed = false;
+// Locale for the fail-closed Stop texts below: they are the highest-visibility
+// messages the plugin emits, so they must not fall back to English once the
+// project locale is known.
+let locale = DEFAULT_LOCALE;
 try {
   input = await readStdin();
   const internal = await inspectInternalRun(process.env);
@@ -82,6 +87,7 @@ try {
   shadowMode = plan?.runtimeV2?.shadowMode === true;
   shadowKnown = true;
   stopGateArmed = plan?.runtimeV2?.stopCorrection?.enabled === true;
+  locale = plan?.runtimeV2?.locale ?? DEFAULT_LOCALE;
   const outcome = await handleRuntimeV2Event({
     input,
     projectRoot,
@@ -122,19 +128,20 @@ try {
       process.stdout.write(`${JSON.stringify({
         continue: true,
         systemMessage: [
-          "[runtime-corrector] STOP_VERIFICATION_UNAVAILABLE: the final review could not run"
-            + `${consecutiveFailures === null ? " and local state is unwritable" : ` after ${MAX_OUTER_STOP_FAILURES} attempts`}.`,
-          `Last error: ${error.message}`,
-          "This completion is ALLOWED but was never verified — report it as completed but unverified.",
-          "To stop the gate from blocking at all, set stopCorrection.enabled: false (or shadowMode: true) in .runtime-corrector/config.yaml.",
+          consecutiveFailures === null
+            ? formatMessage(locale, "stop.outerReleasedUnwritable")
+            : formatMessage(locale, "stop.outerReleasedAttempts", { maximum: MAX_OUTER_STOP_FAILURES }),
+          formatMessage(locale, "stop.outerLastError", { error: error.message }),
+          formatMessage(locale, "stop.outerReleasedNote"),
+          formatMessage(locale, "stop.disarmHint"),
         ].join("\n"),
       })}\n`);
     } else {
       const reason = [
-        `[runtime-corrector] Final Stop review is UNVERIFIED (runtime attempt ${consecutiveFailures}/${MAX_OUTER_STOP_FAILURES}); this completion is blocked.`,
-        `Runtime Corrector failed before it could produce a terminal decision: ${error.message}`,
-        "Retry after the runtime recovers. Do not report the task as fully verified or fully complete.",
-        "If this keeps failing, set stopCorrection.enabled: false (or shadowMode: true) in .runtime-corrector/config.yaml to disarm the gate.",
+        formatMessage(locale, "stop.outerBlocked", { attempt: consecutiveFailures, maximum: MAX_OUTER_STOP_FAILURES }),
+        formatMessage(locale, "stop.outerError", { error: error.message }),
+        formatMessage(locale, "stop.unverifiedRetry"),
+        formatMessage(locale, "stop.disarmHint"),
       ].join("\n");
       process.stdout.write(`${JSON.stringify({ decision: "block", reason })}\n`);
     }

@@ -589,6 +589,8 @@ test("Stop reviewer failure blocks an unverified completion without consuming co
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = v2Plan(root, {
+    // This test asserts the English wording of the fail-closed Stop message.
+    locale: "en",
     dynamicGroundTruth: { enabled: false },
     skillCorrection: { enabled: false },
   });
@@ -908,6 +910,7 @@ test("Stop-gate infrastructure failures block, then release with an unverified d
   );
   const plan = { runtimeV2: compileRuntimeV2Config({
     version: 2,
+    locale: "en",
     dynamicGroundTruth: { enabled: true, materialRoots: [] },
     skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
     artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
@@ -962,6 +965,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
   );
   const plan = { runtimeV2: compileRuntimeV2Config({
     version: 2,
+    locale: "en",
     dynamicGroundTruth: { enabled: true, materialRoots: [], panel: { size: 0 } },
     skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
     artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },

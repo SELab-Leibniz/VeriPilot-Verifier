@@ -101,3 +101,23 @@ test("observe-only mode stays silent through an outer crash", async (t) => {
   const result = await runHook(root, stopInput(root, "shadow-1"));
   assert.equal(result.output, null, "an observe-only run emits nothing at all");
 });
+
+test("the fail-closed Stop messages follow the project locale in both directions", async (t) => {
+  for (const [locale, blockedPattern, releasedPattern] of [
+    ["zh", /最终验收未能完成/u, /最终验收连续/u],
+    ["en", /Final Stop review is UNVERIFIED/u, /could not run after/u],
+  ]) {
+    const root = await brokenProject(t);
+    await fs.appendFile(path.join(root, ".runtime-corrector", "config.yaml"), `locale: ${locale}\n`);
+    const blocked = await runHook(root, stopInput(root, `locale-${locale}-1`));
+    assert.match(blocked.output.reason, blockedPattern, `${locale} block text`);
+    // The remedy must be discoverable in every locale.
+    assert.match(blocked.output.reason, /stopCorrection\.enabled: false/u);
+
+    await runHook(root, stopInput(root, `locale-${locale}-2`));
+    const released = await runHook(root, stopInput(root, `locale-${locale}-3`));
+    assert.match(released.output.systemMessage, releasedPattern, `${locale} release text`);
+    assert.match(released.output.systemMessage, /STOP_VERIFICATION_UNAVAILABLE/u,
+      "the machine-readable marker stays locale-independent");
+  }
+});
