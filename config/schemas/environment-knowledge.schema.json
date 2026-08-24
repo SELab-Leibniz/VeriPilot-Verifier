@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "platform", "operatingSystems", "knowledge"],
+  "properties": {
+    "schemaVersion": { "const": "runtime-corrector.environment-knowledge.v1" },
+    "platform": { "const": "harmonyos" },
+    "operatingSystems": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["win32", "darwin"],
+      "properties": {
+        "win32": { "$ref": "#/$defs/osKnowledge" },
+        "darwin": { "$ref": "#/$defs/osKnowledge" }
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["officialDocumentation"],
+      "properties": {
+        "officialDocumentation": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "topics", "url"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "topics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "url": { "type": "string", "pattern": "^https://developer\\.huawei\\.com/" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "osKnowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["debuggingTools"],
+      "properties": {
+        "debuggingTools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "environmentVariable", "installPaths", "usage"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "name": { "type": "string", "minLength": 1 },
+              "environmentVariable": { "type": "string", "minLength": 1 },
+              "installPaths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "usage": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

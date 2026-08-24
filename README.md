@@ -163,6 +163,8 @@ implementationCorrection:
   kitColumnIndex: 0             # 清单表中 Kit 名所在列
   device:
     mode: auto                  # auto=按环境降级 / required=CI 强制 / off=只静态
+  harmonyEnvironmentAwareness:
+    enabled: true               # HarmonyOS 任务首次探测一次环境，Stop 复用并纠正错误环境认知
   deviceBudgetMs: 600000        # 构建/设备类验证的墙钟上限
 
 evidenceRoots: [evidence]       # 证据唯一性守卫（不写则关闭）
@@ -197,6 +199,31 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 | `static` | 皆无 / 平台未声明 / `mode: off` | 静态核验 |
 
 三条纪律：**缺设备只降低保证等级，绝不改变判定方向**——跑不了的检查一律跳过并记录原因（绝不判通过，也绝不算 agent 的偏差）；真正跑了且客观失败的（构建报错、启动崩溃）才是拦截性问题；每次验收反馈都带一行保证等级声明，静态绿灯永远不会冒充设备级绿灯。
+
+### 6.1 HarmonyOS 环境认知与 UI 证据门
+
+HarmonyOS 项目在任务的第一个 Hook 通过任务锁执行一次只读静态环境探测，后续 Stop 复用
+`.runtime-correction/tasks/<taskId>/environment/harmonyos.json`，不重复发现或运行版本命令。Windows
+按项目 wrapper、`COMMAND_LINE_TOOL_PATH`、`DEVECO_STUDIO`、默认安装目录和 PATH 依次发现
+Hvigor/HDC/Previewer/Emulator；探测只运行版本命令和 `hdc list targets`，不会启动 GUI、构建、
+安装或修改环境。macOS 配置目前保留为空扩展口，返回 `UNSUPPORTED_OS`，不会误报环境不存在。
+
+快照明确区分“工具已安装”“可启动模拟器”和“探测当时已有连接 target”。例如 Emulator 已安装但
+`hdc list targets` 返回 `[Empty]` 时记录为 `STARTABLE / ABSENT_AT_PROBE`，绝不写成“已有设备”。
+target 是易变状态；实现验收选择 device/build/static 档位时只通过平台适配器刷新 target，静态工具
+事实仍读取同一快照。
+当且仅当以下条件同时成立时，Stop 才输出专用认知纠偏：存在 HARD HarmonyOS UI/runtime 验收；
+环境快照与 agent 的“环境/模拟器不可用”声明冲突；agent 明确以此为由跳过测试；transcript 中
+又没有真实的 Harmony 工具尝试和当前 UI 证据链。该检查位于 `BLOCKED_EXTERNAL` 等提前返回
+之前，因此错误的“外部阻塞”不能绕过它。
+
+对 HARD UI 验收，单张截图或 install/launch smoke 不能证明业务通过。缺少当前、有序且绑定到
+对应验收对象的 build → install → launch → UI action → assertion 链时，M12/M13/M15 对象保持
+`UNVERIFIED`；验收要求截图时，capture 必须发生在 assertion 之后。未执行不伪装成测试失败。
+同一任务有多个 UI 验收时，action/assertion/capture 的命令或原始输出需引用反馈列出的 `objectId`
+或 `sourceId`；只有唯一一个 UI 验收时才允许隐式绑定。
+只有与 Agent 声称的阻塞项匹配、保留原始失败输出的真实尝试才会豁免认知纠偏。环境知识和华为官方文档链接维护在
+`knowledge/platforms/harmonyos-environment.v1.json`。
 
 ## 7. 出问题时
 
