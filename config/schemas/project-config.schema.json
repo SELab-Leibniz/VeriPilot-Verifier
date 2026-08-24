@@ -479,9 +479,10 @@
           "type": "string",
           "enum": [
             "fork",
-            "independent"
+            "independent",
+            "detached"
           ],
-          "description": "fork (default) reviews inside a --fork-session of the parent conversation; independent spawns a fresh session against provider. A missing provider or an unset/empty API-key environment variable degrades independent back to fork at runtime (journal event REVIEWER_PROVIDER_DEGRADED)."
+          "description": "fork (default) reviews inside a --fork-session of the parent conversation; detached starts a FRESH session with ambient credentials (no parent fork, no provider needed) for roles that work from the request payload alone; independent spawns a fresh session against a configured provider. A missing provider or an unset/empty API-key environment variable degrades independent back to fork at runtime (journal event REVIEWER_PROVIDER_DEGRADED)."
         },
         "provider": {
           "$ref": "#/$defs/provider"

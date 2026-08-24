@@ -178,7 +178,7 @@ output:
   directory: .runtime-correction
 ```
 
-**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session` (`fork`/`independent`), `provider`; `defaults` covers all roles (effort `low`, 240s timeout, session `fork`). Roles: `groundTruthExtractor` (materials → baseline), `onboardingAdjudicator` (merge & freeze), `skillReviewer`, `artifactReviewer`, `stopReviewer` (termination gate), `implementationReviewer`. Explicit per-role config always beats the `modelPolicy` preset.
+**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session` (`fork` default / `detached` = fresh session, no provider needed / `independent` = fresh session against a configured provider), `provider`; `defaults` covers all roles (effort `low`, 240s timeout, session `fork`). Roles: `groundTruthExtractor` (materials → baseline), `onboardingAdjudicator` (merge & freeze), `skillReviewer`, `artifactReviewer`, `stopReviewer` (termination gate), `implementationReviewer`. Explicit per-role config always beats the `modelPolicy` preset.
 
 Version-1 artifact/stage correction (per-file hard rules, semantic review, workflow edges) is documented in [docs/configuration.md](docs/configuration.md); `/runtime-corrector:init` keeps the full reference as `config.reference.yaml`.
 

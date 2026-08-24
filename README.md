@@ -175,7 +175,7 @@ output:
   directory: .runtime-correction
 ```
 
-**评审角色。** 所有角色接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`（`fork`/`independent`）、`provider`；`defaults` 兜底全部角色（effort `low`、超时 240 秒、session `fork`）。角色一览：`groundTruthExtractor`（材料→基线）、`onboardingAdjudicator`（合并冻结）、`skillReviewer`、`artifactReviewer`、`stopReviewer`（终止门）、`implementationReviewer`。显式角色配置始终优先于 `modelPolicy` 预设。
+**评审角色。** 所有角色接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`（`fork` 默认 / `detached` 全新会话、免 provider / `independent` 全新会话 + 指定 provider）、`provider`；`defaults` 兜底全部角色（effort `low`、超时 240 秒、session `fork`）。角色一览：`groundTruthExtractor`（材料→基线）、`onboardingAdjudicator`（合并冻结）、`skillReviewer`、`artifactReviewer`、`stopReviewer`（终止门）、`implementationReviewer`。显式角色配置始终优先于 `modelPolicy` 预设。
 
 version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 边）见 [docs/configuration.md](docs/configuration.md)；`/runtime-corrector:init` 会把完整参考保留为 `config.reference.yaml`。
 

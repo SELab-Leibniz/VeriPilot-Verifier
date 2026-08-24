@@ -42,9 +42,15 @@ test("schema accepts per-role session/provider and the modelPolicy preset", () =
       },
     },
   }, "config.yaml"));
-  assert.throws(() => validateProjectConfig({
+  // detached is a supported mode: a fresh session with ambient credentials,
+  // for roles that work from the request payload and need no parent fork.
+  assert.doesNotThrow(() => validateProjectConfig({
     ...document,
     reviewers: { stopReviewer: { session: "detached" } },
+  }, "config.yaml"));
+  assert.throws(() => validateProjectConfig({
+    ...document,
+    reviewers: { stopReviewer: { session: "sidecar" } },
   }, "config.yaml"));
   assert.throws(() => validateProjectConfig({
     ...document,
@@ -171,4 +177,18 @@ test("independent reviewer environment strips every parent credential", () => {
   assert.equal(spawnEnv.ANTHROPIC_API_KEY, undefined, "the parent API key never travels");
   assert.equal(spawnEnv.CLAUDE_CODE_OAUTH_TOKEN, undefined, "the parent OAuth token never travels");
   assert.ok(!JSON.stringify(spawnEnv).includes("parent-"), "no parent credential survives");
+});
+
+test("detached sessions start fresh without a provider, and explicit config still wins", () => {
+  // The whole point: freshness without provider credentials. A role that only
+  // needs its request payload must not pay to fork a large parent session.
+  assert.deepEqual(resolveReviewerSession({ reviewer: { session: "detached" }, env: {} }), {
+    session: "detached",
+    envOverrides: null,
+    degraded: null,
+  });
+  // independent still requires a provider and degrades to fork without one.
+  assert.equal(resolveReviewerSession({ reviewer: { session: "independent" }, env: {} }).session, "fork");
+  // Unset stays fork: forking remains the default for parent-context roles.
+  assert.equal(resolveReviewerSession({ reviewer: {}, env: {} }).session, "fork");
 });
