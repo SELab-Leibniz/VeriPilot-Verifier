@@ -100,6 +100,8 @@ The corrector sits on Claude Code lifecycle hooks; the agent is **synchronously 
 
 Every reviewer (extraction, adjudication, skill, artifact, stop, implementation) is an **isolated read-only sub-session**: `Read`/`Grep` only, output constrained by a JSON schema, released when done. Review reasoning never leaks into the agent's context — except through the rationed feedback above.
 
+Sessions start three ways. Roles that need the development conversation use `fork` (the default, branching the parent session). **Baseline building defaults to `detached`** — it works from the materials carried in its request, so forking an ever-growing parent buys nothing and costs real time (the material text is inlined into the request, so the reviewer never re-reads the files). `independent` is a fresh session against a configured provider, for heterogeneous cross-checking.
+
 ## 4. Six terms
 
 | Term | Meaning |
