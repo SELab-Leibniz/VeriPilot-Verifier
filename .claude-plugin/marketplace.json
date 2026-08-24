@@ -9,11 +9,11 @@
       "name": "runtime-corrector",
       "source": "./",
       "description": "Explainable, project-configured runtime correction for artifact workflows.",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "author": {
         "name": "Runtime Corrector contributors"
       }
     }
   ],
-  "version": "1.5.0"
+  "version": "1.5.1"
 }

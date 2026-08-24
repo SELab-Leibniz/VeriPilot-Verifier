@@ -969,3 +969,44 @@ test("material hedging caps a panel-committed kit at SOFT", async (t) => {
   assert.equal(byKit["core-vision-kit"].severity, "SOFT",
     "the material hedges this kit, so panel commitment cannot make it an obligation");
 });
+
+test("onboarding reviewers detach by default but never override an explicit session", async () => {
+  const { compileRuntimeV2Config } = await import("../lib/runtime-v2/config.mjs");
+  const defaulted = compileRuntimeV2Config({ version: 2 }).reviewers.groundTruthExtractor;
+  assert.equal(defaulted.session, "fork", "the compiled default is still fork");
+  assert.equal(defaulted.sessionExplicit, false, "but it was defaulted, not chosen");
+
+  const chosen = compileRuntimeV2Config({
+    version: 2,
+    reviewers: { groundTruthExtractor: { session: "fork" } },
+  }).reviewers.groundTruthExtractor;
+  assert.equal(chosen.sessionExplicit, true, "an explicit fork is recorded as chosen");
+
+  const viaDefaults = compileRuntimeV2Config({
+    version: 2,
+    reviewers: { defaults: { session: "fork" } },
+  }).reviewers.groundTruthExtractor;
+  assert.equal(viaDefaults.sessionExplicit, true, "reviewers.defaults counts as explicit too");
+});
+
+test("onboarding spawns detached extractors so it never forks a growing parent", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  const spawns = [];
+  const inner = onboardingFakeFactory({
+    passOperations: () => [REQUIREMENT_OP],
+    stopAssessment: passingStopAssessment,
+  });
+  const factory = async (args) => {
+    spawns.push({ role: args.role, session: args.reviewer?.session });
+    return inner(args);
+  };
+  factory.calls = inner.calls;
+  await stopEvent(root, plan, factory, "stop-detached");
+  const onboarding = spawns.filter((spawn) => spawn.role.startsWith("onboarding-"));
+  assert.ok(onboarding.length >= 2);
+  assert.ok(onboarding.every((spawn) => spawn.session === "detached"),
+    "onboarding roles must not fork the parent conversation");
+});
