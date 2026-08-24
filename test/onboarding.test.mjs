@@ -1010,3 +1010,27 @@ test("onboarding spawns detached extractors so it never forks a growing parent",
   assert.ok(onboarding.every((spawn) => spawn.session === "detached"),
     "onboarding roles must not fork the parent conversation");
 });
+
+test("onboarding inlines material text but keeps the digest identity-only", async (t) => {
+  const root = await workspace(t);
+  await write(root, "materials/app-requirements.md", "# Requirements\n\nThe app must do X.\n");
+  const roots = [path.join(root, "materials")];
+  const identity = await materialManifest(roots);
+  const withText = await materialManifest(roots, { includeContent: true });
+
+  assert.equal(identity.entries[0].text, undefined, "the incremental path stays identity-only");
+  assert.match(withText.entries[0].text, /The app must do X/u, "onboarding gets the text itself");
+  assert.equal(withText.digest, identity.digest,
+    "inlining must not change task identity, or every task would look new");
+});
+
+test("inlined material is capped so a huge document cannot blow the request", async (t) => {
+  const root = await workspace(t);
+  // Larger than the per-file inline allowance.
+  await write(root, "materials/huge.md", `# Big\n${"x".repeat(260000)}`);
+  const { entries } = await materialManifest([path.join(root, "materials")], { includeContent: true });
+  const entry = entries[0];
+  assert.equal(entry.contentTruncated, true, "oversized material is flagged, not silently cut");
+  assert.ok(entry.text.length <= 200000);
+  assert.ok(entry.bytes > entry.text.length, "the manifest still records the true size");
+});
