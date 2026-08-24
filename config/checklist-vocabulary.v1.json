@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "runtime-corrector.checklist-vocabulary.v1",
+  "description": "Document vocabulary for locating and interpreting capability/dependency checklist tables. This is DATA, not logic: the parser in lib/runtime-v2/impl-review.mjs contains no domain or language literals of its own. Override any field per project under implementationCorrector keys (checklistSection, kitHeaderPattern, candidacyMarkers, hedgeMarkers) to support other document conventions or languages.",
+  "sectionPattern": "^#{1,4}\\s*(?:10\\.1\\b|[^#]*(?:[Kk]it|[Dd]ependenc|依赖|清单))",
+  "kitHeaderPattern": "kit|依赖|dependenc",
+  "candidacyMarkers": "候选|可行性|备选|feasib|candidate|option",
+  "hedgeMarkers": "候选|备选|待定|待.{0,4}评审|未来|暂不|不在|poc|tbd|candidate|tentative"
+}

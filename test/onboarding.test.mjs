@@ -938,3 +938,34 @@ test("an adjudicator fault falls back to the deterministic merge instead of losi
   assert.equal(completed.adjudicated, false);
   assert.equal(completed.mergeMode, "DETERMINISTIC");
 });
+
+test("material hedging caps a panel-committed kit at SOFT", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", [
+    "### 10.1 Kit使用清单",
+    "",
+    "| 功能 | 使用Kit | 代码文件 |",
+    "|------|---------|---------|",
+    "| 扫码 | scan-kit | Scan.ets |",
+    "| 视觉 | core-vision-kit候选/经POC验证 | Vision.ets |",
+  ].join("\n"));
+  const plan = onboardingPlan(root);
+  // The panel commits to BOTH kits as hard material obligations.
+  const factory = onboardingFakeFactory({
+    passOperations: () => [
+      SCAN_CAPABILITY_OP,
+      { ...SCAN_CAPABILITY_OP, text: "Vision via core-vision-kit.", capability: { name: "core-vision-kit" } },
+    ],
+    stopAssessment: passingStopAssessment,
+  });
+  await stopEvent(root, plan, factory, "stop-hedge-cap");
+
+  const { groundTruth } = await readTaskArtifacts(root);
+  const byKit = Object.fromEntries(groundTruth.claims
+    .filter((claim) => claim.category === "capabilityChecklist")
+    .map((claim) => [claim.capability.name, claim]));
+  assert.equal(byKit["scan-kit"].severity, "HARD", "a committed table entry still blocks");
+  assert.equal(byKit["core-vision-kit"].severity, "SOFT",
+    "the material hedges this kit, so panel commitment cannot make it an obligation");
+});

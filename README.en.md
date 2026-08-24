@@ -162,7 +162,12 @@ implementationCorrection:
   platform: harmonyos           # platform adapter; unset => fingerprinted; null => kit check off
   checklistPaths: [docs/kits.md] # optional explicit kit checklist documents
   checklistSection: "10\\.1"    # checklist heading regex (default: content-based match)
-  kitColumnIndex: 0             # kit-name column in the checklist table
+  kitColumnIndex: 0             # kit-name column (auto-located from the header when possible)
+  # Checklist document vocabulary (defaults ship as data in
+  # config/checklist-vocabulary.v1.json; override for other languages/conventions)
+  kitHeaderPattern: "kit|依赖"   # which column holds capabilities (matched against the header)
+  candidacyMarkers: "候选|feasib" # the whole table lists candidates -> advisory, never blocking
+  hedgeMarkers: "候选|POC|future" # a cell hedges its own entry -> that entry is advisory
   device:
     mode: auto                  # auto = degrade with the environment / required = CI / off = static only
   deviceBudgetMs: 600000        # wall-clock ceiling for build/device verification

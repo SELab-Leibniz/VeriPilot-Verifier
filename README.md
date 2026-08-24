@@ -160,7 +160,11 @@ implementationCorrection:
   platform: harmonyos           # 平台适配器；不写自动识别；null 关闭 Kit 检查
   checklistPaths: [docs/kits.md] # 可选：显式 Kit 清单文档
   checklistSection: "10\\.1"    # 清单章节标题正则（默认按内容特征匹配）
-  kitColumnIndex: 0             # 清单表中 Kit 名所在列
+  kitColumnIndex: 0             # 清单表中 Kit 名所在列（表头能识别时自动定位）
+  # 清单文档词汇（默认见 config/checklist-vocabulary.v1.json，可按语言/文档习惯覆盖）
+  kitHeaderPattern: "kit|依赖"   # 哪一列是能力列（匹配表头）
+  candidacyMarkers: "候选|可行性" # 整张表属于"候选/可行性"性质 → 只提示不阻断
+  hedgeMarkers: "候选|POC|未来"  # 单元格自身的保留措辞 → 该条只提示不阻断
   device:
     mode: auto                  # auto=按环境降级 / required=CI 强制 / off=只静态
   deviceBudgetMs: 600000        # 构建/设备类验证的墙钟上限

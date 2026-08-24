@@ -105,5 +105,34 @@
         }
       ]
     }
+  },
+  "sourceManifest": {
+    "roots": [
+      "entry/src/main",
+      "AppScope"
+    ],
+    "files": [
+      "oh-package.json5",
+      "build-profile.json5",
+      "entry/build-profile.json5",
+      "entry/oh-package.json5"
+    ],
+    "extensions": [
+      ".ets",
+      ".ts",
+      ".js",
+      ".json",
+      ".json5",
+      ".yaml",
+      ".yml",
+      ".ts5"
+    ],
+    "excludedDirectories": [
+      ".hvigor",
+      ".preview",
+      "build",
+      "oh_modules",
+      "ohosTest"
+    ]
   }
 }

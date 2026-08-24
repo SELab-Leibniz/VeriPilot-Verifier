@@ -208,7 +208,8 @@ test("collectSourceManifest hashes production source and skips excluded trees", 
   await write(root, "entry/src/main/ets/mock/Fake.ets", "mock");
   await write(root, "entry/src/test/Unit.test.ets", "test");
   await write(root, "oh-package.json5", "{}");
-  const manifest = await collectSourceManifest(root);
+  // Source layout is platform data now: the adapter supplies the roots.
+  const manifest = await collectSourceManifest(root, await loadPlatformAdapter("harmonyos"));
   const paths = manifest.map((item) => item.path);
   assert.ok(paths.includes("entry/src/main/ets/pages/Index.ets"));
   assert.ok(paths.includes("entry/src/main/module.json5"));
@@ -521,4 +522,44 @@ test("prose tokens are not mistaken for capabilities", async () => {
   const { kits, hedgedKits } = parseKitManifest(markdown, { adapter });
   assert.deepEqual(kits, [], "OIDC/SAML/Preferences are not platform capabilities");
   assert.deepEqual(hedgedKits, []);
+});
+
+test("checklist vocabulary is data, and projects can override it for other conventions", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  // Nothing about the shipped vocabulary is baked into the parser: a project
+  // using entirely different words (here: Spanish headings and markers) works
+  // with configuration alone.
+  const markdown = [
+    "## Componentes de plataforma",
+    "",
+    "| Función | Componente | Archivo |",
+    "|---------|-----------|---------|",
+    "| Escaneo | scan-kit | Scan.ets |",
+    "| Mapa | map-kit (propuesto) | Map.ets |",
+  ].join("\n");
+  const defaults = parseKitManifest(markdown, { adapter });
+  assert.deepEqual(defaults.kits, [], "the shipped vocabulary does not match this document");
+
+  const overridden = parseKitManifest(markdown, {
+    adapter,
+    sectionPattern: "^#{1,4}\\s*Componentes",
+    kitHeaderPattern: "componente",
+    hedgeMarkers: "propuesto|candidato",
+    candidacyMarkers: "viabilidad",
+  });
+  assert.deepEqual(overridden.kits, ["scan-kit"]);
+  assert.deepEqual(overridden.hedgedKits, ["map-kit"], "the project's own hedge word is honored");
+});
+
+test("a malformed vocabulary override fails soft onto the shipped default", async () => {
+  const adapter = await loadPlatformAdapter("harmonyos");
+  const markdown = [
+    "### 10.1 Kit使用清单",
+    "",
+    "| 功能 | 使用Kit | 文件 |",
+    "|------|---------|------|",
+    "| 扫码 | scan-kit | Scan.ets |",
+  ].join("\n");
+  const parsed = parseKitManifest(markdown, { adapter, kitHeaderPattern: "([unclosed", hedgeMarkers: "(" });
+  assert.deepEqual(parsed.kits, ["scan-kit"], "a broken project override never breaks the parse");
 });
