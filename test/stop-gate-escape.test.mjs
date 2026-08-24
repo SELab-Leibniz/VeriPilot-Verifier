@@ -69,7 +69,8 @@ test("a persistent runtime crash blocks, then releases with a Stop-consumable di
   const first = await runHook(root, stopInput(root, "escape-1"));
   assert.equal(first.output?.decision, "block", "an unverifiable completion is not laundered");
   assert.match(first.output.reason, /attempt 1\/2/u);
-  assert.match(first.output.reason, /stopCorrection\.enabled: false/u, "the remedy is discoverable from the block itself");
+  assert.doesNotMatch(first.output.reason, /stopCorrection\.enabled: false/u,
+    "a block must never tell the policed agent how to disarm the gate");
 
   const second = await runHook(root, stopInput(root, "escape-2"));
   assert.equal(second.output?.decision, "block");
@@ -79,6 +80,8 @@ test("a persistent runtime crash blocks, then releases with a Stop-consumable di
   assert.equal(released.output?.continue, true);
   assert.match(released.output.systemMessage, /STOP_VERIFICATION_UNAVAILABLE/u);
   assert.match(released.output.systemMessage, /completed but unverified/iu);
+  assert.match(released.output.systemMessage, /stopCorrection\.enabled: false/u,
+    "the remedy belongs on the human-facing release channel");
   assert.equal(released.output.hookSpecificOutput, undefined,
     "the Stop contract has no additionalContext — the disclosure must not ride an ignored field");
 
@@ -111,13 +114,77 @@ test("the fail-closed Stop messages follow the project locale in both directions
     await fs.appendFile(path.join(root, ".runtime-corrector", "config.yaml"), `locale: ${locale}\n`);
     const blocked = await runHook(root, stopInput(root, `locale-${locale}-1`));
     assert.match(blocked.output.reason, blockedPattern, `${locale} block text`);
-    // The remedy must be discoverable in every locale.
-    assert.match(blocked.output.reason, /stopCorrection\.enabled: false/u);
+    assert.doesNotMatch(blocked.output.reason, /stopCorrection\.enabled: false/u,
+      "the disarm remedy never appears in agent-facing block text");
 
     await runHook(root, stopInput(root, `locale-${locale}-2`));
     const released = await runHook(root, stopInput(root, `locale-${locale}-3`));
     assert.match(released.output.systemMessage, releasedPattern, `${locale} release text`);
     assert.match(released.output.systemMessage, /STOP_VERIFICATION_UNAVAILABLE/u,
       "the machine-readable marker stays locale-independent");
+    assert.match(released.output.systemMessage, /stopCorrection\.enabled: false/u,
+      "the remedy is still discoverable to the human in every locale");
   }
+});
+
+test("an agent cannot disarm the Stop gate by editing the config mid-task", async (t) => {
+  const root = await workspace(t);
+  await fs.mkdir(path.join(root, ".runtime-corrector"), { recursive: true });
+  const configPath = path.join(root, ".runtime-corrector", "config.yaml");
+  const config = (stopEnabled) => [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "stopCorrection:",
+    `  enabled: ${stopEnabled}`,
+    "",
+  ].join("\n");
+  await fs.writeFile(configPath, config(true));
+  // A transcript with ordinary development turns — no user ever asks to
+  // disable the corrector.
+  await fs.writeFile(path.join(root, "transcript.jsonl"), [
+    JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "Build the app." } }),
+    JSON.stringify({ type: "assistant", uuid: "a1", message: { id: "am1", content: "Working." } }),
+  ].join("\n"));
+
+  const armed = await runHook(root, stopInput(root, "disarm-1"));
+  assert.equal(armed.output?.decision, "block", "the gate is armed while the reviewer is unavailable");
+
+  // The agent now edits the plugin's own config to switch the gate off.
+  await fs.writeFile(configPath, config(false));
+  const afterEdit = await runHook(root, stopInput(root, "disarm-2"));
+  assert.equal(afterEdit.output?.decision, "block",
+    "a mid-task disarm the user never asked for must not take effect");
+
+  const tasksRoot = path.join(root, ".runtime-correction", "tasks");
+  const [taskId] = await fs.readdir(tasksRoot);
+  const journal = await fs.readFile(path.join(tasksRoot, taskId, "journal", "events.jsonl"), "utf8");
+  assert.match(journal, /STOP_GATE_DISARM_IGNORED/u, "the attempt is recorded, not silently dropped");
+});
+
+test("a user who asks for the gate off gets it off", async (t) => {
+  const root = await workspace(t);
+  await fs.mkdir(path.join(root, ".runtime-corrector"), { recursive: true });
+  const configPath = path.join(root, ".runtime-corrector", "config.yaml");
+  const config = (stopEnabled) => [
+    "version: 2", "artifacts: []", "dynamicGroundTruth:", "  enabled: true",
+    "  panel:", "    size: 0", "stopCorrection:", `  enabled: ${stopEnabled}`, "",
+  ].join("\n");
+  await fs.writeFile(configPath, config(true));
+  await fs.writeFile(path.join(root, "transcript.jsonl"), [
+    JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "Build the app." } }),
+  ].join("\n"));
+  assert.equal((await runHook(root, stopInput(root, "user-off-1"))).output?.decision, "block");
+
+  // The user asks, then the config changes.
+  await fs.writeFile(path.join(root, "transcript.jsonl"), [
+    JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "Build the app." } }),
+    JSON.stringify({ type: "user", uuid: "u2", message: { id: "um2", content: "Please disable stopCorrection for now." } }),
+  ].join("\n"));
+  await fs.writeFile(configPath, config(false));
+  const afterUser = await runHook(root, stopInput(root, "user-off-2"));
+  assert.notEqual(afterUser.output?.decision, "block", "the user's own instruction is honoured");
 });

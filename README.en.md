@@ -238,6 +238,7 @@ For troubleshooting, read `.runtime-correction/tasks/<taskId>/journal/events.jso
 | `STOP_VERIFICATION_UNAVAILABLE` | the retry ceiling was spent; the Stop was released but this completion was never verified | do not treat it as verified; fix the review environment and re-run the final acceptance |
 | `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | one isolated review crashed; marked `UNVERIFIED` | transient; investigate only if recurring |
 | `DEVICE_VERIFICATION_UNAVAILABLE` | no device/toolchain; verification degraded with disclosure | connect a device if wanted; use `device.mode: required` in CI |
+| `STOP_GATE_DISARM_IGNORED` | `stopCorrection` was switched off mid-task with no user asking — the gate stays armed | if it was your intent, just say "disable stopCorrection"; otherwise the reviewed party tried to bypass the gate |
 
 If the hooks themselves crash, a bounded `[runtime-corrector] v2 features failed open` notice appears (fully silent in observe-only mode) and the session continues.
 

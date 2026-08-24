@@ -141,7 +141,6 @@ try {
         formatMessage(locale, "stop.outerBlocked", { attempt: consecutiveFailures, maximum: MAX_OUTER_STOP_FAILURES }),
         formatMessage(locale, "stop.outerError", { error: error.message }),
         formatMessage(locale, "stop.unverifiedRetry"),
-        formatMessage(locale, "stop.disarmHint"),
       ].join("\n");
       process.stdout.write(`${JSON.stringify({ decision: "block", reason })}\n`);
     }

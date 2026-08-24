@@ -237,6 +237,7 @@ version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 
 | `STOP_VERIFICATION_UNAVAILABLE` | 重试上限用尽，已放行但本次完成未经验证 | 该完成不可当作已验证；修好评审环境后重跑一次终止验收 |
 | `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | 某次隔离评审崩溃；标记 `UNVERIFIED` | 瞬时故障；反复出现再排查 |
 | `DEVICE_VERIFICATION_UNAVAILABLE` | 无设备/工具链；验证降档并声明 | 按需连接设备；CI 用 `device.mode: required` |
+| `STOP_GATE_DISARM_IGNORED` | 任务进行中有人把 `stopCorrection` 关掉，但没有用户提出过——门禁继续生效 | 若确属你本人意图，直接说一句「关闭 stopCorrection」即可；否则说明被评审方试图绕过门禁 |
 
 Hook 自身崩溃时输出有限次的 `[runtime-corrector] v2 features failed open` 提示（观察模式下完全静默），会话继续。
 

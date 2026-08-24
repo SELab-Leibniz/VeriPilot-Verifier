@@ -1,6 +1,6 @@
 {
   "name": "runtime-corrector",
-  "version": "1.5.6",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
   "description": "Explainable, project-configured runtime correction for artifact workflows.",
