@@ -681,8 +681,10 @@ test("plugin registers the v2 lifecycle hooks without a separate prompt script",
   }
   assert.equal(hooks.hooks.PreToolUse[0].matcher, "Skill");
   assert.ok(hooks.hooks.PostToolUse);
-  assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 900);
-  assert.equal(hooks.hooks.UserPromptSubmit[0].hooks[0].timeout, 900);
+  // These two events can host task onboarding, whose bulk decompose of a
+  // large requirements document is measured in minutes, not seconds.
+  assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 1800);
+  assert.equal(hooks.hooks.UserPromptSubmit[0].hooks[0].timeout, 1800);
   assert.equal(hooks.hooks.PostToolUse[0].hooks[0].timeout, 1260);
   await assert.rejects(fs.access(path.join(PLUGIN_ROOT, "scripts", "user-prompt-submit.mjs")));
 });

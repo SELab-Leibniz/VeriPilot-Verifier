@@ -53,6 +53,10 @@ test("runtime-event emits nothing under a shadow config even when processing fai
     "      - spec/requirements.md",
     "dynamicGroundTruth:",
     "  enabled: true",
+    // Onboarding is not under test here; disabling the panel keeps these
+    // hook-contract fixtures from spawning real reviewer subprocesses.
+    "  panel:",
+    "    size: 0",
     "stopCorrection:",
     "  enabled: true",
     "",
@@ -95,6 +99,8 @@ test("runtime-event fails closed when an active Stop crashes after config load",
     "artifacts: []",
     "dynamicGroundTruth:",
     "  enabled: true",
+    // Onboarding is not under test here; disabling the panel keeps these
+    // hook-contract fixtures from spawning real reviewer subprocesses.
     "  panel:",
     "    size: 0",
     "stopCorrection:",
