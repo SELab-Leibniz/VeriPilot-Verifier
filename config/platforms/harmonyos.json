@@ -138,11 +138,15 @@
         "successPattern": "^(?!\\s*\\[Empty\\])\\S+"
       },
       "toolchain": {
-        "fileExists": "hvigorw"
+        "command": "hvigorw",
+        "args": [
+          "--version"
+        ],
+        "successPattern": "\\d+\\.\\d+"
       }
     },
     "build": {
-      "command": "./hvigorw",
+      "command": "hvigorw",
       "args": [
         "assembleHap",
         "--mode",
@@ -150,7 +154,9 @@
         "-p",
         "product=default",
         "--no-daemon"
-      ]
+      ],
+      "environmentFailurePattern": "PackageHap|SignHap|00308018|signingConfig|certificate|profile file",
+      "environmentFailureNote": "Failures at packaging/signing stages are ENVIRONMENT limitations (no signing certificate on this machine), not code defects: the compile stages already ran. They degrade the assurance level and are disclosed, never charged to the developer as a finding."
     },
     "smoke": {
       "bundleNameFile": "AppScope/app.json5",
@@ -207,7 +213,8 @@
           ]
         }
       ]
-    }
+    },
+    "probesNote": "Platform tooling is probed as COMMANDS on PATH (hdc ships with DevEco Studio under Contents/sdk/default/openharmony/toolchains; add it to PATH). A project-local wrapper also satisfies the toolchain probe because the command resolves through the shell either way."
   },
   "sourceManifest": {
     "roots": [

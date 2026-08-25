@@ -201,6 +201,7 @@ function passingImplAssessment(request) {
 
 async function stopEvent(root, plan, factory, id) {
   return handleRuntimeV2Event({
+      deviceVerifier: staticVerifier,
     input: {
       cwd: root,
       session_id: "session-onboarding",
@@ -224,6 +225,14 @@ async function readTaskArtifacts(root) {
   return { taskId, state, groundTruth, journal };
 }
 
+
+
+/** The ladder has its own tests; these must not touch real device tooling. */
+const staticVerifier = async () => ({
+  assurance: { level: "static", reason: "TEST_STUB", mode: "auto", declared: false },
+  probe: { declared: false, device: { available: false }, toolchain: { available: false } },
+  build: { status: "skipped" }, smoke: { status: "skipped" }, findings: [],
+});
 
 test("panel config defaults to size 2 with an adjudicator, and size 0 disables onboarding", () => {
   // The schema accepts the new panel and onboardingAdjudicator keys.

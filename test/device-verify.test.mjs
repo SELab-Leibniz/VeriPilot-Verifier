@@ -186,3 +186,35 @@ test("deviceVerification composes the ladder: findings only for checks that ran 
   assert.equal(green.build.status, "passed");
   assert.equal(green.smoke.status, "passed");
 });
+
+test("a packaging/signing failure degrades assurance instead of blaming the code", async (t) => {
+  const root = await workspace(t);
+  await fs.writeFile(path.join(root, "buildw"), "#!/bin/sh\n");
+  const adapter = {
+    ...ADAPTER,
+    deviceCheck: {
+      ...ADAPTER.deviceCheck,
+      build: { ...ADAPTER.deviceCheck.build, environmentFailurePattern: "PackageHap|signingConfig" },
+    },
+  };
+  // Compile stages succeed; the run dies packaging because no certificate exists.
+  const exec = fakeExec({
+    "fdc list": { stdout: "[Empty]" },
+    "./buildw assemble": { ok: false, exitCode: 255, stderr: "Finished :entry:default@CompileArkTS\nERROR: Failed :entry:default@PackageHap" },
+  });
+  const result = await deviceVerification({ projectRoot: root, adapter, execFn: exec });
+  assert.equal(result.build.status, "environment-blocked");
+  assert.deepEqual(result.findings, [], "an environment limitation is never a developer finding");
+
+  // A genuine compile error still blocks.
+  const compileFail = await deviceVerification({
+    projectRoot: root,
+    adapter,
+    execFn: fakeExec({
+      "fdc list": { stdout: "[Empty]" },
+      "./buildw assemble": { ok: false, exitCode: 1, stderr: "ERROR: Failed :entry:default@CompileArkTS\nTS2304: Cannot find name 'foo'" },
+    }),
+  });
+  assert.equal(compileFail.build.status, "failed");
+  assert.deepEqual(compileFail.findings.map((f) => f.deviationKey), ["impl:build:gate"]);
+});

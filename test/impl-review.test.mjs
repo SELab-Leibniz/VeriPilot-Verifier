@@ -154,6 +154,7 @@ function implFakeFactory(state) {
 
 async function runStop(root, plan, factory, id) {
   return handleRuntimeV2Event({
+      deviceVerifier: staticVerifier,
     input: {
       cwd: root,
       session_id: "session-impl",
@@ -178,6 +179,14 @@ async function taskFamilies(root) {
   }
   return families;
 }
+
+
+/** The ladder has its own tests; impl-review tests must not touch real tooling. */
+const staticVerifier = async () => ({
+  assurance: { level: "static", reason: "TEST_STUB", mode: "auto", declared: false },
+  probe: { declared: false, device: { available: false }, toolchain: { available: false } },
+  build: { status: "skipped" }, smoke: { status: "skipped" }, findings: [],
+});
 
 test("normalizeImplFinding strips metric prefixes so closure can key on bare claim ids", () => {
   const finding = normalizeImplFinding({ violatedGroundTruthIds: ["M12:claim-1", "claim-2", "M09:claim-3"] });
@@ -337,7 +346,7 @@ test("deterministic kit findings survive an implementation reviewer fault", asyn
     groundTruthPath: "unused",
     rootCauseIds: [],
   };
-  const review = await runImplementationReview(args);
+  const review = await runImplementationReview({ ...args, deviceVerifier: staticVerifier });
   assert.deepEqual(
     review.findings.map((finding) => finding.deviationKey).sort(),
     ["impl:kit:arkdata", "impl:kit:map-kit", "impl:kit:scan-kit"],
@@ -346,7 +355,7 @@ test("deterministic kit findings survive an implementation reviewer fault", asyn
   assert.equal(review.reviewerError, "reviewer subprocess boom");
   // No deterministic findings -> the reviewer fault still fails open upstream.
   await fs.rm(path.join(root, ".runtime-corrector"), { recursive: true, force: true });
-  await assert.rejects(() => runImplementationReview(args), /reviewer subprocess boom/u);
+  await assert.rejects(() => runImplementationReview({ ...args, deviceVerifier: staticVerifier }), /reviewer subprocess boom/u);
 });
 
 test("kit findings block the stop gate and stamp observation.turnIndex", async (t) => {
