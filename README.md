@@ -158,13 +158,21 @@ implementationCorrection:
     mode: required
 ```
 
-> **配置中没有机密。** `apiKeyEnv` 存的是环境变量*名字*；key 的值只在评审子进程环境中存在，绝不写入磁盘、journal 或日志。变量未设置时评审退回默认会话并记录 `REVIEWER_PROVIDER_DEGRADED`。
+#### 用自己的模型 provider
 
-> **provider 必须能跑通 Claude Code 本身，而不只是 API。** 评审员是以 `claude` 子进程方式启动的，
-> 因此第三方网关光能响应 `POST /v1/messages`（curl 测得通）还不够。上线前请直接验证：
-> `ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> claude --print --model <模型> "say OK"`。
-> 若返回 `API returned an empty or malformed response (HTTP 200)`，说明该网关拦截或改写了 CLI 的请求——
-> 此时 curl 全部通过也没有用，该 provider 不能用于评审员。
+**机密不进配置。** `apiKeyEnv` 存的是环境变量的*名字*，值只存在于评审子进程环境里。变量未设置时评审退回默认会话并记 `REVIEWER_PROVIDER_DEGRADED`。
+
+**用 Claude Code 测网关，不要只用 curl。** 评审员是 `claude` 子进程，所以网关能响应 `POST /v1/messages` 并不够：
+
+```bash
+ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \
+  claude --print --model <模型> "say OK"
+```
+
+| 结果 | 含义 |
+|---|---|
+| 返回 `OK` | 可用于评审员 |
+| `API returned an empty or malformed response (HTTP 200)` | 网关改写了 CLI 流量——不可用，curl 全过也没用 |
 
 ### 完整键参考
 
@@ -221,7 +229,18 @@ output:
 | 终止门豁免 | 它是门不是唠叨，另由 `maxCorrectionsPerEpoch` 约束，否则可能带着未闭合的阻断项退出 |
 | `FIXED` 的不停发 | 回归时可以重新发声 |
 
-**评审角色。** 所有角色接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`（`fork` 默认 / `detached` 全新会话、免 provider / `independent` 全新会话 + 指定 provider）、`provider`；`defaults` 兜底全部角色（effort `low`、超时 240 秒、session `fork`）。角色一览：`groundTruthExtractor`（材料→基线）、`onboardingAdjudicator`（合并冻结）、`skillReviewer`、`artifactReviewer`、`stopReviewer`（终止门）、`implementationReviewer`。显式角色配置始终优先于 `modelPolicy` 预设。
+**评审角色。** 每个角色都接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`、`provider`；`defaults` 兜底全部角色（effort `low`、240 秒、session `fork`）。显式角色配置始终优先于 `modelPolicy` 预设。
+
+| 角色 | 何时运行 |
+|---|---|
+| `groundTruthExtractor` | 材料 → 任务基线 |
+| `onboardingAdjudicator` | 合并并冻结基线 |
+| `skillReviewer` | 用到某个 skill/工作流步骤时 |
+| `artifactReviewer` | 写出阶段产物时 |
+| `stopReviewer` | agent 宣布"完成"时（终止门） |
+| `implementationReviewer` | 拿生产代码对照基线核查时 |
+
+`session` 决定评审员在哪儿跑：`fork`（默认，从父会话分叉）· `detached`（全新会话，用环境凭据，免 provider）· `independent`（全新会话 + 指定 provider）。
 
 version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 边）见 [docs/configuration.md](docs/configuration.md)；`/runtime-corrector:init` 会把完整参考保留为 `config.reference.yaml`。
 
