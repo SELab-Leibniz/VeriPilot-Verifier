@@ -160,14 +160,21 @@ implementationCorrection:
     mode: required
 ```
 
-> **No secrets anywhere.** `apiKeyEnv` stores the *name* of an environment variable; the key value exists only in the reviewer subprocess environment and is never written to disk, journal, or logs. If the variable is unset, the reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
+#### Using your own model provider
 
-> **A provider must work with Claude Code itself, not just with the API.** Reviewers are spawned as
-> `claude` subprocesses, so a third-party gateway answering `POST /v1/messages` under curl is not
-> sufficient. Verify directly before relying on it:
-> `ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> claude --print --model <model> "say OK"`.
-> An `API returned an empty or malformed response (HTTP 200)` means the gateway intercepts or rewrites
-> the CLI's traffic — passing curl tests does not help; that provider cannot back reviewers.
+**Secrets never touch config.** `apiKeyEnv` holds the *name* of an env var. The value lives only in the reviewer subprocess. Unset variable → reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
+
+**Test the gateway with Claude Code, not curl.** Reviewers run as `claude` subprocesses, so answering `POST /v1/messages` is not enough:
+
+```bash
+ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> \
+  claude --print --model <model> "say OK"
+```
+
+| Result | Meaning |
+|---|---|
+| `OK` | Usable for reviewers |
+| `API returned an empty or malformed response (HTTP 200)` | Gateway rewrites CLI traffic — unusable, no matter what curl says |
 
 ### Full key reference
 
@@ -225,7 +232,18 @@ Three things to know:
 | The termination gate is exempt | It's a gate, not a nag — bounded separately by `maxCorrectionsPerEpoch`, or an agent could exit with an unresolved blocker |
 | `FIXED` findings are never parked | A genuine regression can speak again |
 
-**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session` (`fork` default / `detached` = fresh session, no provider needed / `independent` = fresh session against a configured provider), `provider`; `defaults` covers all roles (effort `low`, 240s timeout, session `fork`). Roles: `groundTruthExtractor` (materials → baseline), `onboardingAdjudicator` (merge & freeze), `skillReviewer`, `artifactReviewer`, `stopReviewer` (termination gate), `implementationReviewer`. Explicit per-role config always beats the `modelPolicy` preset.
+**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session`, `provider`. `defaults` covers all roles (effort `low`, 240s, session `fork`). Explicit per-role config always beats the `modelPolicy` preset.
+
+| Role | Runs when |
+|---|---|
+| `groundTruthExtractor` | Materials → task baseline |
+| `onboardingAdjudicator` | Merging and freezing that baseline |
+| `skillReviewer` | A skill/workflow step is used |
+| `artifactReviewer` | A stage artifact is written |
+| `stopReviewer` | The agent declares "done" (termination gate) |
+| `implementationReviewer` | Production code is checked against the baseline |
+
+`session` picks where a reviewer runs: `fork` (default, forks the parent session) · `detached` (fresh session, ambient credentials, no provider needed) · `independent` (fresh session against a configured provider).
 
 Version-1 artifact/stage correction (per-file hard rules, semantic review, workflow edges) is documented in [docs/configuration.md](docs/configuration.md); `/runtime-corrector:init` keeps the full reference as `config.reference.yaml`.
 
