@@ -96,6 +96,7 @@ try {
     const shadowMode = plan?.runtimeV2?.shadowMode === true;
     const metricOutcome = runtimeV2.artifactReviewContext
       ? await finalizeArtifactRuntimeV2({
+          runtimeV2: plan?.runtimeV2 ?? null,
           projectRoot: prepared.projectRoot,
           taskId: runtimeV2.taskId,
           artifactReviewContext: runtimeV2.artifactReviewContext,
