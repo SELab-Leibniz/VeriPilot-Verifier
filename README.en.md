@@ -26,21 +26,30 @@ Three things to keep in mind:
 
 ## 1. Install
 
-Requirements: a recent **Claude Code** (plugins, hooks, skills) and **Node.js >= 18**. The plugin has **zero npm dependencies**.
+Requires a recent **Claude Code** (plugins, hooks, skills) and **Node.js >= 18**. The plugin has **zero npm dependencies**.
 
 ```bash
-# option a: as a marketplace plugin
-claude
-> /plugin marketplace add /path/to/runtime-corrector
-> /plugin install runtime-corrector@runtime-corrector-local
-
-# option b: point at the plugin directory
-claude --plugin-dir /path/to/runtime-corrector
-
-# option c: from a clone
 git clone <repository-url> runtime-corrector
 claude --plugin-dir ./runtime-corrector
 ```
+
+Check it loaded:
+
+```text
+> /runtime-corrector:help
+```
+
+If you get help text and stage status, you're set.
+
+<details><summary>Other ways to install</summary>
+
+```bash
+# install once as a marketplace plugin (no --plugin-dir every time)
+claude
+> /plugin marketplace add /path/to/runtime-corrector
+> /plugin install runtime-corrector@runtime-corrector-local
+```
+</details>
 
 ## 2. Quick start (zero config)
 
@@ -117,6 +126,17 @@ Sessions start three ways. Roles that need the development conversation use `for
 
 **Most projects need none.** When you do, create `.runtime-corrector/config.yaml`; precedence is always: plugin defaults < derived < explicit.
 
+Jump to what you want to change:
+
+| You want | Key |
+|---|---|
+| Observe only, never intervene (control arm) | `shadowMode: true` |
+| Cross-check the critical gates with another model | `reviewers.modelPolicy.preset` |
+| Require real-device verification in CI | `implementationCorrection.device.mode: required` |
+| Block more / fewer times at the termination gate | `stopCorrection.maxCorrectionsPerEpoch` |
+| Stop repeating the same finding | `deviationLoop.maxDeliveriesPerFamily` |
+| Turn the kit check off | `implementationCorrection.platform: null` |
+
 ### Three common recipes
 
 ```yaml
@@ -166,6 +186,9 @@ stopCorrection:
   enabled: true
   maxCorrectionsPerEpoch: 3     # termination-gate budget
 
+deviationLoop:
+  maxDeliveriesPerFamily: 5     # max repeat feedbacks per deviation family; 0/null disables
+
 implementationCorrection:
   enabled: true
   platform: harmonyos           # platform adapter; unset => fingerprinted; null => kit check off
@@ -186,6 +209,21 @@ evidenceRoots: [evidence]       # evidence-distinctness guard (off when unset)
 output:
   directory: .runtime-correction
 ```
+
+**Feedback loop bound.** The corrector re-reviews after every edit, so a finding the agent can't satisfy loops forever: flag → deliver → edit → flag again.
+
+`maxDeliveriesPerFamily` (default 5) caps how many times one finding is **delivered**. Past the cap it is *parked*:
+
+- still reviewed, still journaled, still `OPEN`, still counted in the metrics
+- just no longer re-injected into the agent's context; the observation records `suppressedBy: "LOOP_BOUND"`
+
+Three things to know:
+
+| | |
+|---|---|
+| Only delivered ones count | Observe-only mode never parks anything, so a control arm is unaffected |
+| The termination gate is exempt | It's a gate, not a nag — bounded separately by `maxCorrectionsPerEpoch`, or an agent could exit with an unresolved blocker |
+| `FIXED` findings are never parked | A genuine regression can speak again |
 
 **Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session` (`fork` default / `detached` = fresh session, no provider needed / `independent` = fresh session against a configured provider), `provider`; `defaults` covers all roles (effort `low`, 240s timeout, session `fork`). Roles: `groundTruthExtractor` (materials → baseline), `onboardingAdjudicator` (merge & freeze), `skillReviewer`, `artifactReviewer`, `stopReviewer` (termination gate), `implementationReviewer`. Explicit per-role config always beats the `modelPolicy` preset.
 

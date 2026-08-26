@@ -26,21 +26,30 @@ agent 说"完成" ────► 终止门验收：
 
 ## 1. 安装
 
-要求：较新版本的 **Claude Code**（支持插件、Hook、Skill），**Node.js >= 18**。插件**零 npm 依赖**。
+要求：较新版本的 **Claude Code**（支持插件、Hook、Skill）、**Node.js >= 18**。插件**零 npm 依赖**。
 
 ```bash
-# 方式 a：marketplace 插件
-claude
-> /plugin marketplace add /path/to/runtime-corrector
-> /plugin install runtime-corrector@runtime-corrector-local
-
-# 方式 b：直接指定插件目录
-claude --plugin-dir /path/to/runtime-corrector
-
-# 方式 c：从 clone 开始
 git clone <repository-url> runtime-corrector
 claude --plugin-dir ./runtime-corrector
 ```
+
+验证装上了：
+
+```text
+> /runtime-corrector:help
+```
+
+能看到帮助和阶段状态就成功了。
+
+<details><summary>其他安装方式</summary>
+
+```bash
+# 作为 marketplace 插件常驻（不必每次带 --plugin-dir）
+claude
+> /plugin marketplace add /path/to/runtime-corrector
+> /plugin install runtime-corrector@runtime-corrector-local
+```
+</details>
 
 ## 2. 快速开始（零配置）
 
@@ -117,6 +126,17 @@ claude --plugin-dir ./runtime-corrector
 
 **多数项目不需要任何配置。** 需要时建 `.runtime-corrector/config.yaml`，优先级恒为：插件默认 < 自动派生 < 显式配置。
 
+想改什么，看这里：
+
+| 你想 | 改哪个键 |
+|---|---|
+| 只观察不介入（做对照实验） | `shadowMode: true` |
+| 关键环节换个模型交叉校验 | `reviewers.modelPolicy.preset` |
+| CI 里必须真机验证才算过 | `implementationCorrection.device.mode: required` |
+| 终止门少拦/多拦几次 | `stopCorrection.maxCorrectionsPerEpoch` |
+| 同一条问题别反复提醒 | `deviationLoop.maxDeliveriesPerFamily` |
+| 关掉 Kit 检查 | `implementationCorrection.platform: null` |
+
 ### 三个常用配方
 
 ```yaml
@@ -163,6 +183,9 @@ stopCorrection:
   enabled: true
   maxCorrectionsPerEpoch: 3     # 终止门预算
 
+deviationLoop:
+  maxDeliveriesPerFamily: 5     # 同一偏差族最多重复反馈几次；0/null 关闭
+
 implementationCorrection:
   enabled: true
   platform: harmonyos           # 平台适配器；不写自动识别；null 关闭 Kit 检查
@@ -182,6 +205,21 @@ evidenceRoots: [evidence]       # 证据唯一性守卫（不写则关闭）
 output:
   directory: .runtime-correction
 ```
+
+**反馈循环上限。** 纠偏器每次改动后都会重新评审，所以一条 agent 满足不了的发现会无限循环：发现 → 反馈 → 改动 → 再发现。
+
+`maxDeliveriesPerFamily`（默认 5）限制同一条发现最多**送达**几次。超过后该发现被"停发"：
+
+- 仍然评审、仍然记账、状态仍是 `OPEN`、仍计入指标
+- 只是不再重复注入 agent 上下文，观测记录标 `suppressedBy: "LOOP_BOUND"`
+
+三点注意：
+
+| | |
+|---|---|
+| 只算已送达的 | 观察模式从不触发上限，对照臂行为不变 |
+| 终止门豁免 | 它是门不是唠叨，另由 `maxCorrectionsPerEpoch` 约束，否则可能带着未闭合的阻断项退出 |
+| `FIXED` 的不停发 | 回归时可以重新发声 |
 
 **评审角色。** 所有角色接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`（`fork` 默认 / `detached` 全新会话、免 provider / `independent` 全新会话 + 指定 provider）、`provider`；`defaults` 兜底全部角色（effort `low`、超时 240 秒、session `fork`）。角色一览：`groundTruthExtractor`（材料→基线）、`onboardingAdjudicator`（合并冻结）、`skillReviewer`、`artifactReviewer`、`stopReviewer`（终止门）、`implementationReviewer`。显式角色配置始终优先于 `modelPolicy` 预设。
 
