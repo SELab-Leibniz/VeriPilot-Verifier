@@ -28,12 +28,12 @@ Ground Truth is an append-only ledger. Updates use `ADD`, `SUPERSEDE`, `RETRACT`
 
 ## Automated task onboarding
 
-On the first hook event of a new task — before any normal processing — the orchestrator runs a one-shot onboarding pass over `dynamicGroundTruth.materialRoots` (`lib/runtime-v2/onboarding.mjs`). There is no user confirmation anywhere in this flow.
+On the first correction-relevant action of a new task — before `Skill`, `Bash`, `PowerShell`, `Write`, `Edit`, `NotebookEdit`, or `Monitor` is released — the orchestrator crosses a lazy correction barrier and runs the onboarding pass over `dynamicGroundTruth.materialRoots` (`lib/runtime-v2/onboarding.mjs`). Session startup, plugin reload, ordinary greetings, compaction, and teardown do not run onboarding. A terminal completion claim at `Stop` also crosses the barrier when no tool did. There is no user confirmation anywhere in this flow.
 
 1. **Panel decomposition.** `dynamicGroundTruth.panel.size` (default 2) independent `onboarding-extractor` passes decompose ALL task materials into atomic claims in a single dedicated pass per reviewer. Passes run in PARALLEL (onboarding must fit one hook event) and DETACHED by default — a fresh session rather than a fork, because the extractor works from the materials in its request and forking a large, actively growing parent conversation is pure cost. The manifest inlines each material's text (capped, truncation flagged) so a detached extractor never re-reads the files. Passes reuse the `groundTruthExtractor` configuration but raise its timeout floor: a bulk decompose of a full requirements document is not an incremental refresh. An explicit per-role `session` always wins.
 2. **Adjudication.** With `panel.adjudicator: true` (default), one `onboarding-adjudicator` reviewer (config role `onboardingAdjudicator`) receives the panel claim sets plus a deterministic majority/disputed partition and merges them: majority-agreed claims are confirmed (stamped `panelConfirmed` on the ledger); disagreements and open questions are decided with a skeptic instruction — prefer the narrower claim; unresolvable ambiguity stays an `openQuestions` claim that must carry a default-safe reading the corrector can review against. With `adjudicator: false` the deterministic merge applies: the majority stands and disputed claims are downgraded to `AGENT_INFERRED`/`SOFT`.
 3. **Freeze.** The merged delta is applied as one ledger version and the ledger freezes (`frozenAtVersion`). Reviews thereafter run against the frozen baseline plus any user-explicit deltas. An empty merge result never freezes.
-4. **Fail-soft.** A fully failed panel, a failed adjudication, or a rejected delta journals `ONBOARDING_DEGRADED` and falls back to the incremental single-extractor behavior — as does `panel.size: 0` or `dynamicGroundTruth.enabled: false`. The outcome is recorded once per task (`task.json` `onboarding`); onboarding never reruns for the same task.
+4. **Fail-soft.** A fully failed panel, a failed adjudication, or a rejected delta journals `ONBOARDING_DEGRADED` and falls back to the incremental single-extractor behavior — as does `panel.size: 0` or `dynamicGroundTruth.enabled: false`. Completed and permanent outcomes are reused from `task.json`; bounded deferred failures retry only at a later correction barrier, never during `SessionEnd`.
 
 ### Self-extracted capability checklist
 
@@ -66,16 +66,16 @@ JSON is authoritative. Markdown is a read-only rendering. The directory remains 
 
 | Event | Responsibility |
 |---|---|
-| `SessionStart` | validate configuration and recover state |
-| `UserPromptSubmit` | reconcile a real user turn and invalidate source cursors |
-| `PreToolUse(Skill)` | pause, resolve the invoked Skill, generate Skill Ground Truth, start or join a watcher |
+| `SessionStart` | validate configuration and recover state; never create a task or reviewer |
+| `UserPromptSubmit` | non-creating lookup; reconcile an existing task, reset the turn barrier, and retain due watcher checks |
+| `PreToolUse(Skill\|Bash\|PowerShell\|Write\|Edit\|NotebookEdit\|Monitor)` | synchronously cross the lazy barrier; Skill additionally resolves its source, generates Skill Ground Truth, and starts or joins a watcher |
 | `PostToolUse(Write|Edit)` | retain node/edge review, refresh Ground Truth, run checkpoint metrics when configured |
 | `PostToolBatch` | reconcile assistant turns and run due Skill completion checks |
 | `Stop` | reconcile turns, expire due Skill watchers, classify the stopping context, run stage/task assessment |
-| `PreCompact` | persist the transcript cursor and state before compaction |
-| `SessionEnd` | release leases while preserving resumable task state |
+| `PreCompact` | persist the transcript cursor for an existing task only |
+| `SessionEnd` | before configuration loading, release stale leases/temp files and optionally append a lightweight event to an existing task |
 
-Hooks first perform a cheap invalidation check. A model fork is created only for new evidence, a newly activated evaluation scope, or a changed dependency hash.
+Hooks first perform a cheap, non-creating task lookup. A model fork is created only after the lazy barrier for new evidence, a newly activated evaluation scope, or a changed dependency hash. Parallel first-tool hooks share a session task-creation lock and a long-lived onboarding single-flight lock; a dead owner is reclaimed immediately after Ctrl+C, while a live long-running onboarding is not mistaken for a stale 30-second lock.
 
 ## Skill watcher
 
@@ -103,7 +103,7 @@ An internal run carries an `internalRunId`, role, and depth, backed by a live le
 
 Internal reviewers are read-only and cannot use Skill, Agent, MCP, network, Write, or Edit. A malformed structured result receives one repair attempt in the same reviewer session; a second failure becomes `CHECKER_ERROR` or `UNVERIFIED` and consumes no correction budget. Ground Truth output is constrained to the ledger's canonical category enum; a schema-valid delta that fails claim-reference or authority validation receives one domain-repair follow-up in the same fork before the atomic ledger update.
 
-On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` and `SessionEnd` remove only stale files matching Runtime Corrector's own hidden atomic-temporary naming convention. Lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally. An active `Stop` is the exception: if Ground Truth refresh, the Stop reviewer, or the lifecycle hook fails before a valid terminal assessment exists, the completion is `UNVERIFIED` and the hook fails closed. Observe-only mode remains silent, and a configuration-load failure remains silent because the arm is not yet known.
+On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` and `SessionEnd` remove only stale files matching Runtime Corrector's own hidden atomic-temporary naming convention. `SessionEnd` is routed before configuration loading and is unconditionally silent/fail-open, so Ctrl+C cannot re-enter onboarding or suppress Claude Code's native resume-session footer. Other lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally. An active `Stop` is the exception: if Ground Truth refresh, the Stop reviewer, or the lifecycle hook fails before a valid terminal assessment exists, the completion is `UNVERIFIED` and the hook fails closed. Observe-only mode remains silent, and a configuration-load failure remains silent because the arm is not yet known.
 
 ## Configuration
 

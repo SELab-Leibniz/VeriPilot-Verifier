@@ -39,7 +39,7 @@ test("a mid-turn NEW_TASK reclassification is suppressed instead of aborting the
   const plan = {
     runtimeV2: compileRuntimeV2Config({
       version: 2,
-      dynamicGroundTruth: { enabled: true },
+      dynamicGroundTruth: { enabled: true, panel: { size: 0 } },
       skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
       artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
       stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
@@ -96,7 +96,21 @@ test("a mid-turn NEW_TASK reclassification is suppressed instead of aborting the
     last_assistant_message: "progress",
   });
 
-  // Stop 1 freezes version 1 under the original task.
+  // The lazy barrier creates the original task before the first project-
+  // changing action. Stop 1 then extracts version 1 for that task.
+  await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-switch",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      hook_event_name: "PreToolUse",
+      hook_event_id: "pre-write",
+      tool_name: "Write",
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: factory,
+  });
   await handleRuntimeV2Event({ input: stopInput("stop-1"), projectRoot: root, plan, reviewerFactory: factory });
   const tasksRoot = path.join(root, ".runtime-correction", "tasks");
   const tasksBefore = await fs.readdir(tasksRoot);

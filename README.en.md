@@ -53,7 +53,7 @@ claude
 
 ## 2. Quick start (zero config)
 
-Install the plugin, open **any** project, and just work — no configuration needed. On a new task's first event, three things happen automatically:
+Install the plugin, open **any** project, and just work — no configuration needed. Before a new task's first correction-relevant action (`Skill`, `Bash`, `PowerShell`, `Write`, `Edit`, `NotebookEdit`, or `Monitor`), a lazy correction barrier synchronously performs three things:
 
 1. **Material discovery**: it finds `README*`, `docs/**/*.md`, and markdown named like `requirement`/`spec`, and fingerprints the platform (`oh-package.json5` → harmonyos). The result is journaled once per task (`DERIVED_CONFIG`).
 2. **Baseline building**: two independent extractors decompose the materials and your request into atomic requirements, a skeptical adjudicator merges them, and the baseline **freezes** — from then on only your real messages can change it; the agent's own inferences never can.
@@ -79,11 +79,12 @@ The corrector sits on Claude Code lifecycle hooks; the agent is **synchronously 
 
 | Moment | What the corrector does |
 |---|---|
-| Session starts | validates/recovers local state; on a new task, builds the baseline (above) |
-| You send a message | mines it for new/changed requirements — the only authority that can amend a frozen baseline |
-| Before a skill runs | gates the invocation against that skill's frozen contract |
+| Session starts | validates configuration and recovers local state only; no task or reviewer is created |
+| You send a message | an existing task records the new turn and resets the turn barrier; ordinary greetings remain reviewer-free |
+| Before a relevant tool runs | the first action crosses the lazy barrier and freezes the baseline; a Skill also starts its contract watcher |
 | After the agent writes a file | reviews the artifact: deterministic checks + an isolated semantic review |
-| Agent declares completion | the termination gate: acceptance review + implementation checks (kit integration, build/device verification) → allow or block |
+| Agent declares completion | even without a tool call, crosses the barrier first, then runs acceptance + implementation checks → allow or block |
+| Session exits | performs lightweight cleanup and optional existing-task journaling only; no config load, transcript read, or onboarding retry |
 
 ### How signals go back
 
