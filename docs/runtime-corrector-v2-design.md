@@ -69,8 +69,8 @@ JSON is authoritative. Markdown is a read-only rendering. The directory remains 
 | `SessionStart` | validate configuration and recover state; never create a task or reviewer |
 | `UserPromptSubmit` | non-creating lookup; reconcile an existing task, reset the turn barrier, and retain due watcher checks |
 | `PreToolUse(Skill\|Bash\|PowerShell\|Write\|Edit\|NotebookEdit\|Monitor)` | synchronously cross the lazy barrier; Skill additionally resolves its source, generates Skill Ground Truth, and starts or joins a watcher |
-| `PostToolUse(Write|Edit)` | retain node/edge review, refresh Ground Truth, run checkpoint metrics when configured |
-| `PostToolBatch` | reconcile assistant turns and run due Skill completion checks |
+| `PostToolUse(any tool)` | reconcile assistant turns and run due Skill completion checks; parallel events serialize one watcher evaluation per due turn |
+| `PostToolUse(Write|Edit)` when an artifact matches | additionally retain node/edge review, refresh Ground Truth, and run checkpoint metrics when configured |
 | `Stop` | reconcile turns, expire due Skill watchers, classify the stopping context, run stage/task assessment |
 | `PreCompact` | persist the transcript cursor for an existing task only |
 | `SessionEnd` | before configuration loading, release stale leases/temp files and optionally append a lightweight event to an existing task |

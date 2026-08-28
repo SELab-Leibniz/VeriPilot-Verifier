@@ -60,7 +60,7 @@ RuntimePlan，再由 CLI、Hook、`explain` 和 `spec` 使用。内部模块导�
 把 PRD reviewer 的范围扩张判定改严格一些。
 ```
 
-版本 2 注册 `UserPromptSubmit`、`PreToolUse(Skill)`、`PostToolBatch` 与 `Stop` 等生命周期 Hook；版本 1 的产物写后行为保持不变。`UserPromptSubmit` 不预加载插件说明，只计算真实回合并触发到期的 Skill 检查。完整 v2 事件、状态和配置契约见 [Runtime Corrector v2 design](runtime-corrector-v2-design.md)。
+版本 2 注册 `UserPromptSubmit`、`PreToolUse(Skill)`、全工具 `PostToolUse` 与 `Stop` 等生命周期 Hook。全工具 `PostToolUse` 使用较早版本 Claude Code 已支持的事件完成真实回合对账和到期 Skill 检查；仅当 `Write/Edit` 命中产物时，才继续执行版本 1 的产物写后链路。`UserPromptSubmit` 不预加载插件说明，只计算真实回合并触发到期的 Skill 检查。完整 v2 事件、状态和配置契约见 [Runtime Corrector v2 design](runtime-corrector-v2-design.md)。
 
 ### `runtime-corrector-workflow`
 
@@ -312,14 +312,13 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
 
 ## Claude Code Hooks
 
-插件只声明写后检查 Hook：
+插件声明一个全工具写后 Hook。普通工具只进行版本 2 的回合对账和到期 Skill 检查；`Write/Edit` 命中已启用产物时，继续执行版本 1 的确定性检查、隔离语义审阅和候选 Patch 链路：
 
 ```json
 {
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",

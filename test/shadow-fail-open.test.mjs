@@ -7,6 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { loadConfig } from "../lib/runtime-corrector.mjs";
+import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -137,6 +138,82 @@ test("runtime-event keeps SessionStart and a greeting turn taskless", async (t) 
     assert.equal(stdout.trim(), "");
   }
   await assert.rejects(fs.access(path.join(root, ".runtime-correction", "tasks")));
+});
+
+
+test("a taskless PostToolUse observation does not cross the correction barrier", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "stopCorrection:",
+    "  enabled: true",
+    "",
+  ]);
+  const transcriptPath = path.join(root, "transcript.jsonl");
+  await fs.writeFile(transcriptPath, "", "utf8");
+  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: "taskless-post-tool",
+      hook_event_name: "PostToolUse",
+      hook_event_id: "taskless-post-tool-read",
+      tool_name: "Read",
+      transcript_path: transcriptPath,
+    },
+  });
+
+  assert.equal(code, 0, stderr);
+  assert.equal(stdout.trim(), "");
+  await assert.rejects(fs.access(path.join(root, ".runtime-correction", "tasks")));
+});
+
+
+test("post-tool-use reconciles an existing task for a non-artifact tool", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "skillCorrection:",
+    "  enabled: true",
+    "  selection:",
+    "    mode: all",
+    "stopCorrection:",
+    "  enabled: false",
+    "",
+  ]);
+  const sessionId = "generic-post-tool-session";
+  const task = await ensureTask({ projectRoot: root, sessionId });
+  const transcriptPath = path.join(root, "transcript.jsonl");
+  await fs.writeFile(transcriptPath, "", "utf8");
+
+  const { code, stdout, stderr } = await runHookScript("post-tool-use.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: sessionId,
+      hook_event_name: "PostToolUse",
+      hook_event_id: "generic-post-tool-read",
+      tool_name: "Read",
+      transcript_path: transcriptPath,
+    },
+  });
+
+  assert.equal(code, 0, stderr);
+  assert.equal(stdout.trim(), "");
+  const journal = await fs.readFile(
+    path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
+    "utf8",
+  );
+  assert.match(journal, /"hookEventName":"PostToolUse"/u);
+  assert.match(journal, /"toolName":"Read"/u);
 });
 
 

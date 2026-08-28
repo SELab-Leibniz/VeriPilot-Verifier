@@ -665,14 +665,13 @@ test("a rejected semantic edit still preserves X1 findings in the diagnostic", a
 });
 
 
-test("plugin registers the v2 lifecycle hooks without a separate prompt script", async () => {
+test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch", async () => {
   const hooks = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, "hooks", "hooks.json"), "utf8"));
   for (const eventName of [
     "SessionStart",
     "UserPromptSubmit",
     "PreToolUse",
     "PostToolUse",
-    "PostToolBatch",
     "Stop",
     "PreCompact",
     "SessionEnd",
@@ -683,7 +682,10 @@ test("plugin registers the v2 lifecycle hooks without a separate prompt script",
     hooks.hooks.PreToolUse[0].matcher,
     "Skill|Bash|PowerShell|Write|Edit|NotebookEdit|Monitor",
   );
+  assert.equal(hooks.hooks.PostToolBatch, undefined);
   assert.ok(hooks.hooks.PostToolUse);
+  assert.equal(hooks.hooks.PostToolUse[0].matcher, undefined);
+  assert.match(hooks.hooks.PostToolUse[0].hooks[0].args[0], /post-tool-use\.mjs$/u);
   // SessionStart is lifecycle-only; the first correction-relevant tool owns
   // the long onboarding budget instead.
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 30);

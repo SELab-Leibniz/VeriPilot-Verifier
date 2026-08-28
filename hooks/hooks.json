@@ -49,7 +49,6 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -73,21 +72,6 @@
             ],
             "timeout": 30,
             "statusMessage": "Runtime Corrector is checking that named evidence files are distinct..."
-          }
-        ]
-      }
-    ],
-    "PostToolBatch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
-            "timeout": 1260,
-            "statusMessage": "Runtime Corrector is reconciling active Skill watchers..."
           }
         ]
       }

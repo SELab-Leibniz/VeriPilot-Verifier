@@ -30,7 +30,6 @@ function contextOutput(eventName, feedback) {
   if (!new Set([
     "UserPromptSubmit",
     "PostToolUse",
-    "PostToolBatch",
     "Stop",
     "SubagentStop",
   ]).has(eventName)) return null;

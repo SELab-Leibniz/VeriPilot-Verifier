@@ -482,7 +482,7 @@ test("deviation ledger ignores informational resolution notes and dismisses lega
 });
 
 
-test("Skill watcher refreshes Ground Truth at the due turn and emits one correction per epoch", async (t) => {
+test("PostToolUse refreshes a Skill watcher at the due turn and emits one correction per epoch", async (t) => {
   const root = await workspace(t);
   await write(root, ".claude/skills/demo/SKILL.md", "# Demo\n\nVerify the result before completion.\n");
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
@@ -504,7 +504,12 @@ test("Skill watcher refreshes Ground Truth at the due turn and emits one correct
   assert.equal(started.watcher.status, "ACTIVE");
   await fs.writeFile(transcript, transcriptEntries(6), "utf8");
   const checked = await handleRuntimeV2Event({
-    input: { ...base, hook_event_name: "PostToolBatch", hook_event_id: "batch-1" },
+    input: {
+      ...base,
+      hook_event_name: "PostToolUse",
+      hook_event_id: "post-tool-1",
+      tool_name: "Read",
+    },
     projectRoot: root,
     plan,
     reviewerFactory,
@@ -526,6 +531,55 @@ test("Skill watcher refreshes Ground Truth at the due turn and emits one correct
   const state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
   assert.equal(Object.values(state.deviations).length, 1);
   assert.ok(reviewerFactory.calls.filter((call) => call.role === "ground-truth-extractor").length >= 2);
+});
+
+
+test("parallel PostToolUse events evaluate one due Skill watcher exactly once", async (t) => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\n\nVerify the result before completion.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root);
+  const reviewerFactory = fakeReviewerFactory();
+  const base = { cwd: root, session_id: "session-parallel-skill", transcript_path: transcript };
+  await handleRuntimeV2Event({
+    input: {
+      ...base,
+      hook_event_name: "PreToolUse",
+      tool_name: "Skill",
+      tool_use_id: "parallel-skill-call",
+      tool_input: { skill: "demo" },
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+  await fs.writeFile(transcript, transcriptEntries(6), "utf8");
+
+  const outcomes = await Promise.all(["parallel-post-1", "parallel-post-2"].map((hookEventId) => (
+    handleRuntimeV2Event({
+      input: {
+        ...base,
+        hook_event_name: "PostToolUse",
+        hook_event_id: hookEventId,
+        tool_name: "Read",
+      },
+      projectRoot: root,
+      plan,
+      reviewerFactory,
+    })
+  )));
+
+  assert.equal(outcomes.filter((outcome) => outcome.feedback).length, 1);
+  const evaluations = await fs.readdir(path.join(
+    root,
+    ".runtime-correction",
+    "tasks",
+    outcomes[0].taskId,
+    "skills",
+    "demo",
+    "evaluations",
+  ));
+  assert.equal(evaluations.length, 1);
 });
 
 
