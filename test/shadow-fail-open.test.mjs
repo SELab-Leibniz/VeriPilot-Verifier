@@ -155,7 +155,7 @@ test("a taskless PostToolUse observation does not cross the correction barrier",
   ]);
   const transcriptPath = path.join(root, "transcript.jsonl");
   await fs.writeFile(transcriptPath, "", "utf8");
-  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+  const { code, stdout, stderr } = await runHookScript("post-tool-use.mjs", {
     cwd: root,
     input: {
       cwd: root,
@@ -214,6 +214,50 @@ test("post-tool-use reconciles an existing task for a non-artifact tool", async 
   );
   assert.match(journal, /"hookEventName":"PostToolUse"/u);
   assert.match(journal, /"toolName":"Read"/u);
+});
+
+
+test("post-tool-use still reconciles when artifact preparation fails", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts:",
+    "  - name: requirements",
+    "    stage: requirements",
+    "    format: markdown",
+    "    patterns:",
+    "      - spec/*.md",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "",
+  ]);
+  const sessionId = "artifact-preparation-failure-session";
+  const task = await ensureTask({ projectRoot: root, sessionId });
+  const transcriptPath = path.join(root, "transcript.jsonl");
+  const brokenArtifact = path.join(root, "spec", "broken.md");
+  await fs.writeFile(transcriptPath, "", "utf8");
+  await fs.mkdir(brokenArtifact, { recursive: true });
+
+  const { code, stderr } = await runHookScript("post-tool-use.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: sessionId,
+      hook_event_name: "PostToolUse",
+      hook_event_id: "artifact-preparation-failed",
+      tool_name: "Write",
+      tool_input: { file_path: brokenArtifact },
+      transcript_path: transcriptPath,
+    },
+  });
+
+  assert.equal(code, 0, stderr);
+  const journal = await fs.readFile(
+    path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
+    "utf8",
+  );
+  assert.match(journal, /"hookEventId":"artifact-preparation-failed"/u);
 });
 
 

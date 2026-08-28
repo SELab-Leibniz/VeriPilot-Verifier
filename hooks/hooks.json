@@ -57,7 +57,7 @@
               "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"
             ],
             "timeout": 1260,
-            "statusMessage": "Runtime Corrector is reviewing the artifact in isolation and generating diagnostics..."
+            "statusMessage": "Runtime Corrector is reconciling task state and reviewing matching artifacts..."
           }
         ]
       },

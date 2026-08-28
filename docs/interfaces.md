@@ -325,7 +325,7 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"],
             "timeout": 1260,
-            "statusMessage": "Runtime Corrector 正在隔离检查并生成诊断与候选 Diff…"
+            "statusMessage": "Runtime Corrector 正在对账任务状态并检查命中的产物…"
           }
         ]
       }
@@ -371,7 +371,7 @@ PostToolUse 超时。所有 Write/Edit 会先进入快速匹配；只有命中�
 }
 ```
 
-未匹配时不输出。`passed`、`warning` 和 `pending` 不补充命令导航；`failed` 只报告当前违规，并在活动上下文缺少导航时追加 `/runtime-corrector:spec <stage>` 与 `/runtime-corrector:help`。完整规范不展开到反馈中，仍可通过公开命令或持久化的 `spec.md` 获取。写入文件位于当前项目之外且没有自己的 Runtime Corrector policy 时也静默忽略，避免 Claude memory 等全局文件制造无关错误。诊断异常会作为 `additionalContext` 返回，并明确说明原文件未被插件修改。
+未匹配产物时不输出产物诊断；若存在到期 Skill watcher 或运行时故障，仍可能输出对应的 watcher 反馈或 fail-open 警告。`passed`、`warning` 和 `pending` 不补充命令导航；`failed` 只报告当前违规，并在活动上下文缺少导航时追加 `/runtime-corrector:spec <stage>` 与 `/runtime-corrector:help`。完整规范不展开到反馈中，仍可通过公开命令或持久化的 `spec.md` 获取。写入文件位于当前项目之外且没有自己的 Runtime Corrector policy 时也静默忽略产物诊断，避免 Claude memory 等全局文件制造无关错误。诊断异常会作为 `additionalContext` 返回，并明确说明原文件未被插件修改。
 
 ## 自定义 Matcher
 
