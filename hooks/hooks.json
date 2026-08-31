@@ -6,10 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 30,
             "statusMessage": "Runtime Corrector is validating and recovering local state..."
           }
@@ -21,10 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 1800,
             "statusMessage": "Runtime Corrector is reconciling the current task state..."
           }
@@ -37,10 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 1260,
             "statusMessage": "Runtime Corrector is establishing the task baseline before the first correction-relevant action..."
           }
@@ -52,10 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs\"",
             "timeout": 1260,
             "statusMessage": "Runtime Corrector is reconciling task state and reviewing matching artifacts..."
           }
@@ -66,10 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/evidence-distinctness-guard.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/evidence-distinctness-guard.mjs\"",
             "timeout": 30,
             "statusMessage": "Runtime Corrector is checking that named evidence files are distinct..."
           }
@@ -81,10 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 3000,
             "statusMessage": "Runtime Corrector is evaluating the completed stage or task..."
           }
@@ -96,10 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 30
           }
         ]
@@ -110,10 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [
-              "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
-            ],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
             "timeout": 30
           }
         ]

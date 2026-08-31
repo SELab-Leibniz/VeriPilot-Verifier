@@ -1,6 +1,5 @@
 {
   "name": "runtime-corrector-local",
-  "description": "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
   "owner": {
     "name": "Runtime Corrector contributors"
   },
@@ -15,5 +14,8 @@
       }
     }
   ],
-  "version": "1.9.1"
+  "metadata": {
+    "description": "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
+    "version": "1.9.1"
+  }
 }

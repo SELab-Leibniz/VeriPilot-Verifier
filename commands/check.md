@@ -1,6 +1,6 @@
 ---
 description: Check a stage artifact with the current project's Runtime Corrector policy
-argument-hint: [artifact-path]
+argument-hint: "[artifact-path]"
 allowed-tools: Bash
 ---
 

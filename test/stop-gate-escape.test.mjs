@@ -38,6 +38,7 @@ function stopInput(root, id) {
     transcript_path: path.join(root, "transcript.jsonl"),
     hook_event_name: "Stop",
     hook_event_id: id,
+    stop_hook_active: false,
     last_assistant_message: "Task complete.",
   };
 }

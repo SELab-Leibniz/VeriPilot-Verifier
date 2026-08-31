@@ -46,12 +46,13 @@ async function writeFile(root, relativePath, content) {
 function hookInput(cwd, filePath, toolName = "Write", transcriptPath = null) {
   return {
     session_id: "08cd90cb-e5df-4302-8e0e-ef217eff090a",
+    transcript_path: transcriptPath ?? path.join(cwd, "transcript.jsonl"),
     cwd,
     hook_event_name: "PostToolUse",
     tool_name: toolName,
     tool_input: { file_path: filePath },
     tool_response: { success: true },
-    ...(transcriptPath ? { transcript_path: transcriptPath } : {}),
+    tool_use_id: "toolu-runtime-corrector-test",
   };
 }
 
@@ -685,7 +686,11 @@ test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch",
   assert.equal(hooks.hooks.PostToolBatch, undefined);
   assert.ok(hooks.hooks.PostToolUse);
   assert.equal(hooks.hooks.PostToolUse[0].matcher, undefined);
-  assert.match(hooks.hooks.PostToolUse[0].hooks[0].args[0], /post-tool-use\.mjs$/u);
+  assert.equal(
+    hooks.hooks.PostToolUse[0].hooks[0].command,
+    'node "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"',
+  );
+  assert.equal(Object.hasOwn(hooks.hooks.PostToolUse[0].hooks[0], "args"), false);
   // SessionStart is lifecycle-only; the first correction-relevant tool owns
   // the long onboarding budget instead.
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 30);
@@ -697,7 +702,7 @@ test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch",
   const marketplace = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "marketplace.json"), "utf8"));
   assert.equal(packageManifest.version, "1.9.1");
   assert.equal(pluginManifest.version, "1.9.1");
-  assert.equal(marketplace.version, "1.9.1");
+  assert.equal(marketplace.metadata.version, "1.9.1");
   assert.equal(marketplace.plugins[0].version, "1.9.1");
   await assert.rejects(fs.access(path.join(PLUGIN_ROOT, "scripts", "user-prompt-submit.mjs")));
 });

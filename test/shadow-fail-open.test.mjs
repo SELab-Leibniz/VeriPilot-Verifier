@@ -72,6 +72,7 @@ test("runtime-event emits nothing under a shadow config even when processing fai
       hook_event_name: "Stop",
       hook_event_id: "stop-smoke",
       transcript_path: path.join(root, "does-not-exist.jsonl"),
+      stop_hook_active: false,
       last_assistant_message: "done",
     },
   });
@@ -88,6 +89,7 @@ test("runtime-event emits nothing when the arm cannot be determined (config load
       hook_event_name: "Stop",
       hook_event_id: "stop-unknown",
       transcript_path: path.join(root, "missing.jsonl"),
+      stop_hook_active: false,
       last_assistant_message: "done",
     },
   });
@@ -115,6 +117,7 @@ test("runtime-event keeps SessionStart and a greeting turn taskless", async (t) 
       hook_event_name: "SessionStart",
       hook_event_id: "taskless-start",
       transcript_path: transcriptPath,
+      source: "startup",
     },
     {
       cwd: root,
@@ -129,6 +132,7 @@ test("runtime-event keeps SessionStart and a greeting turn taskless", async (t) 
       session_id: "taskless-greeting",
       hook_event_name: "Stop",
       hook_event_id: "taskless-stop",
+      stop_hook_active: false,
       last_assistant_message: "Hi! I'm ready to help with your project. What would you like to do?",
       transcript_path: transcriptPath,
     },
@@ -163,6 +167,9 @@ test("a taskless PostToolUse observation does not cross the correction barrier",
       hook_event_name: "PostToolUse",
       hook_event_id: "taskless-post-tool-read",
       tool_name: "Read",
+      tool_input: { file_path: path.join(root, "README.md") },
+      tool_response: { content: "not found" },
+      tool_use_id: "toolu-taskless-post-tool-read",
       transcript_path: transcriptPath,
     },
   });
@@ -202,6 +209,9 @@ test("post-tool-use reconciles an existing task for a non-artifact tool", async 
       hook_event_name: "PostToolUse",
       hook_event_id: "generic-post-tool-read",
       tool_name: "Read",
+      tool_input: { file_path: path.join(root, "README.md") },
+      tool_response: { content: "not found" },
+      tool_use_id: "toolu-generic-post-tool-read",
       transcript_path: transcriptPath,
     },
   });
@@ -248,6 +258,8 @@ test("post-tool-use still reconciles when artifact preparation fails", async (t)
       hook_event_id: "artifact-preparation-failed",
       tool_name: "Write",
       tool_input: { file_path: brokenArtifact },
+      tool_response: { filePath: brokenArtifact, success: true },
+      tool_use_id: "toolu-artifact-preparation-failed",
       transcript_path: transcriptPath,
     },
   });
@@ -271,6 +283,7 @@ test("SessionEnd bypasses config loading and does not mint failure state", async
       hook_event_name: "SessionEnd",
       hook_event_id: "session-end-fast-path",
       transcript_path: path.join(root, "missing.jsonl"),
+      reason: "other",
     },
   });
   assert.equal(code, 0, stderr);
@@ -303,6 +316,7 @@ test("runtime-event fails closed when an active Stop crashes after config load",
       session_id: "active-stop-crash",
       hook_event_name: "Stop",
       hook_event_id: "stop-active-crash",
+      stop_hook_active: false,
       // Reading a directory as a transcript fails after the active config and
       // arm have been loaded, exercising the lifecycle hook's outer catch.
       transcript_path: root,
@@ -340,6 +354,8 @@ test("post-tool-use emits nothing under a shadow config even when processing fai
       hook_event_name: "PostToolUse",
       tool_name: "Write",
       tool_input: { file_path: path.join(root, "spec", "requirements.md") },
+      tool_response: { filePath: path.join(root, "spec", "requirements.md"), success: true },
+      tool_use_id: "toolu-shadow-smoke-ptu",
       transcript_path: path.join(root, "missing.jsonl"),
     },
   });

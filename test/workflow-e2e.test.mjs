@@ -106,11 +106,13 @@ function runCli(cwd, ...args) {
 function hookInput(cwd, filePath) {
   return {
     session_id: "e2e-parent-session",
+    transcript_path: path.join(cwd, "transcript.jsonl"),
     cwd,
     hook_event_name: "PostToolUse",
     tool_name: "Write",
     tool_input: { file_path: filePath },
     tool_response: { success: true },
+    tool_use_id: "toolu-workflow-e2e",
   };
 }
 
@@ -559,7 +561,7 @@ test("PostToolUse without a session fails visibly without attempting a fork", as
   const shimPath = await createFakeClaudeShim(cwd);
   const capturePath = path.join(cwd, "should-not-fork.jsonl");
   const input = hookInput(cwd, targetPath);
-  delete input.session_id;
+  input.session_id = "";
 
   const completed = spawnSync(
     process.execPath,

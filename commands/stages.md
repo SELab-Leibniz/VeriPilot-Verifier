@@ -1,6 +1,6 @@
 ---
 description: Show or change which Runtime Corrector stages are enabled
-argument-hint: [<stage> <on|off>]
+argument-hint: "[<stage> <on|off>]"
 allowed-tools: Bash
 ---
 

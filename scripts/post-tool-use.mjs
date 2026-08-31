@@ -4,6 +4,10 @@ import path from "node:path";
 
 import { findPolicyRootForFile, resolveInputFile } from "../lib/artifact-pipeline.mjs";
 import {
+  decodeHookInput,
+  encodeHookOutput,
+} from "../lib/protocol/claude-core-hooks.mjs";
+import {
   finalizeArtifactCheck,
   handleHook,
   loadConfig,
@@ -27,13 +31,9 @@ async function readStdin() {
 }
 
 
-function hookOutput(additionalContext) {
-  return {
-    hookSpecificOutput: {
-      hookEventName: "PostToolUse",
-      additionalContext,
-    },
-  };
+function writeHookOutput(input, feedback) {
+  const output = encodeHookOutput(input.hook_event_name, input, { feedback });
+  if (output) process.stdout.write(`${JSON.stringify(output)}\n`);
 }
 
 
@@ -67,7 +67,7 @@ let armShadowKnown = false;
 let armShadowMode = false;
 try {
   const rawInput = await readStdin();
-  input = JSON.parse(rawInput.replace(/^\uFEFF/, ""));
+  input = decodeHookInput(rawInput);
   const internal = await inspectInternalRun(process.env);
   if (internal.internal) process.exit(0);
   let preparationError = null;
@@ -126,12 +126,12 @@ try {
       : [runtimeV2.feedback, warning.shouldNotify ? hookFailureMessage(preparationError) : null]
         .filter(Boolean)
         .join("\n\n");
-    if (feedback) process.stdout.write(`${JSON.stringify(hookOutput(feedback))}\n`);
+    if (feedback) writeHookOutput(input, feedback);
     process.exit(0);
   }
   if (!prepared.matched) {
     if (!armShadowMode && runtimeV2.feedback) {
-      process.stdout.write(`${JSON.stringify(hookOutput(runtimeV2.feedback))}\n`);
+      writeHookOutput(input, runtimeV2.feedback);
     }
     process.exit(0);
   }
@@ -176,7 +176,7 @@ try {
     : [outcome.feedback, runtimeV2.feedback, metricOutcome.feedback]
       .filter(Boolean)
       .join("\n\n");
-  process.stdout.write(`${JSON.stringify(hookOutput(feedback))}\n`);
+  writeHookOutput(input, feedback);
 } catch (error) {
   const warning = await recordFailOpenWarning({
     projectRoot: path.resolve(input?.cwd ?? process.cwd()),
@@ -188,5 +188,5 @@ try {
   if (armShadowMode || !armShadowKnown) process.exit(0);
   if (!warning.shouldNotify) process.exit(0);
   const message = hookFailureMessage(error);
-  process.stdout.write(`${JSON.stringify(hookOutput(message))}\n`);
+  writeHookOutput(input, message);
 }

@@ -135,11 +135,13 @@ function runCli(cwd, ...args) {
 function hookInput(cwd, filePath) {
   return {
     session_id: "document-e2e-parent",
+    transcript_path: path.join(cwd, "transcript.jsonl"),
     cwd,
     hook_event_name: "PostToolUse",
     tool_name: "Write",
     tool_input: { file_path: filePath },
     tool_response: { success: true },
+    tool_use_id: "toolu-document-e2e",
   };
 }
 
