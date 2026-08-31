@@ -224,6 +224,8 @@ test("post-tool-use reconciles an existing task for a non-artifact tool", async 
   );
   assert.match(journal, /"hookEventName":"PostToolUse"/u);
   assert.match(journal, /"toolName":"Read"/u);
+  assert.match(journal, /"hookEventId":"toolu-generic-post-tool-read"/u);
+  assert.doesNotMatch(journal, /"hookEventId":"generic-post-tool-read"/u);
 });
 
 
@@ -269,7 +271,7 @@ test("post-tool-use still reconciles when artifact preparation fails", async (t)
     path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
     "utf8",
   );
-  assert.match(journal, /"hookEventId":"artifact-preparation-failed"/u);
+  assert.match(journal, /"hookEventId":"toolu-artifact-preparation-failed"/u);
 });
 
 
