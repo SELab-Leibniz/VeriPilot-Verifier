@@ -610,6 +610,40 @@ test("an explicit completion claim crosses the barrier even without a tool call"
 });
 
 
+test("completed-subtask and direct-negated prose do not declare task completion", async (t) => {
+  const messages = [
+    "The implementation fixed the parser bug; tests are pending.",
+    "并非所有要求均已满足。",
+  ];
+
+  for (const [index, lastAssistantMessage] of messages.entries()) {
+    await t.test(lastAssistantMessage, async (t) => {
+      const root = await workspace(t);
+      const sessionId = `session-residual-negative-completion-${index}`;
+      const transcript = await writeTranscript(root, sessionId);
+      const factory = reviewerFactory();
+      const outcome = await handleRuntimeV2Event({
+        input: {
+          cwd: root,
+          session_id: sessionId,
+          hook_event_name: "Stop",
+          hook_event_id: `stop-residual-negative-completion-${index}`,
+          last_assistant_message: lastAssistantMessage,
+          transcript_path: transcript,
+        },
+        projectRoot: root,
+        plan: plan(root),
+        reviewerFactory: factory,
+      });
+
+      assert.equal(outcome.reason, "STOP_BARRIER_NOT_REQUIRED");
+      assert.deepEqual(await taskDirectories(root), []);
+      assert.equal(factory.calls.length, 0);
+    });
+  }
+});
+
+
 test("negated or incomplete completion language does not cross the taskless Stop barrier", async (t) => {
   const messages = [
     "The feature is not implemented yet; work remains.",
