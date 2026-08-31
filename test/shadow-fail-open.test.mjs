@@ -145,6 +145,38 @@ test("runtime-event keeps SessionStart and a greeting turn taskless", async (t) 
 });
 
 
+test("a lifecycle event keeps hook_event_id authoritative over an extraneous tool_use_id", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts: []",
+    "",
+  ]);
+  const sessionId = "lifecycle-identity-session";
+  const task = await ensureTask({ projectRoot: root, sessionId });
+  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: sessionId,
+      hook_event_name: "SessionEnd",
+      hook_event_id: "session-end-hook-id",
+      tool_use_id: "extraneous-tool-use-id",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      reason: "other",
+    },
+  });
+
+  assert.equal(code, 0, stderr);
+  assert.equal(stdout.trim(), "");
+  const journal = await fs.readFile(
+    path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
+    "utf8",
+  );
+  assert.match(journal, /"hookEventId":"session-end-hook-id"/u);
+  assert.doesNotMatch(journal, /"hookEventId":"extraneous-tool-use-id"/u);
+});
+
+
 test("a taskless PostToolUse observation does not cross the correction barrier", async (t) => {
   const root = await shadowProject(t, [
     "version: 2",
