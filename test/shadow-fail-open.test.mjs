@@ -153,7 +153,7 @@ test("a lifecycle event keeps hook_event_id authoritative over an extraneous too
   ]);
   const sessionId = "lifecycle-identity-session";
   const task = await ensureTask({ projectRoot: root, sessionId });
-  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+  const { code, stdout, stderr } = await runHookScript("session-end.mjs", {
     cwd: root,
     input: {
       cwd: root,
@@ -309,7 +309,7 @@ test("post-tool-use still reconciles when artifact preparation fails", async (t)
 
 test("SessionEnd bypasses config loading and does not mint failure state", async (t) => {
   const root = await shadowProject(t, ["version: [broken yaml", ""]);
-  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+  const { code, stdout, stderr } = await runHookScript("session-end.mjs", {
     cwd: root,
     input: {
       cwd: root,

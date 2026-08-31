@@ -7,6 +7,7 @@ import test from "node:test";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { loadCurrentGroundTruth } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import { handleRuntimeV2SessionEnd } from "../lib/runtime-v2/session-end.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
   STOP_REVIEW_SCHEMA,
@@ -164,7 +165,7 @@ test("SessionStart and taskless SessionEnd stay lifecycle-only", async (t) => {
   const root = await workspace(t);
   const factory = reviewerFactory();
   for (const hookEventName of ["SessionStart", "SessionEnd"]) {
-    const outcome = await handleRuntimeV2Event({
+    const options = {
       input: {
         cwd: root,
         session_id: `lifecycle-${hookEventName}`,
@@ -175,7 +176,10 @@ test("SessionStart and taskless SessionEnd stay lifecycle-only", async (t) => {
       projectRoot: root,
       plan: plan(root),
       reviewerFactory: factory,
-    });
+    };
+    const outcome = hookEventName === "SessionEnd"
+      ? await handleRuntimeV2SessionEnd(options)
+      : await handleRuntimeV2Event(options);
     assert.equal(outcome.handled, true);
   }
   assert.deepEqual(await taskDirectories(root), []);
@@ -405,7 +409,7 @@ test("SessionEnd never retries an interrupted onboarding", async (t) => {
     reviewerFactory: factory,
   });
   const callsBeforeEnd = factory.calls.length;
-  await handleRuntimeV2Event({
+  await handleRuntimeV2SessionEnd({
     input: {
       cwd: root,
       session_id: "session-cancelled",
@@ -414,8 +418,6 @@ test("SessionEnd never retries an interrupted onboarding", async (t) => {
       transcript_path: transcript,
     },
     projectRoot: root,
-    plan: plan(root),
-    reviewerFactory: factory,
   });
   assert.equal(factory.calls.length, callsBeforeEnd);
 
