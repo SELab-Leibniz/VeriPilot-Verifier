@@ -93,6 +93,71 @@ test("runtime-event emits nothing when the arm cannot be determined (config load
   assert.equal(stdout.trim(), "", "an undetermined arm must stay silent — silence cannot contaminate a control");
 });
 
+
+test("runtime-event keeps SessionStart and a greeting turn taskless", async (t) => {
+  const root = await shadowProject(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 2",
+    "stopCorrection:",
+    "  enabled: true",
+    "",
+  ]);
+  const transcriptPath = path.join(root, "missing-transcript.jsonl");
+  for (const input of [
+    {
+      cwd: root,
+      session_id: "taskless-greeting",
+      hook_event_name: "SessionStart",
+      hook_event_id: "taskless-start",
+      transcript_path: transcriptPath,
+    },
+    {
+      cwd: root,
+      session_id: "taskless-greeting",
+      hook_event_name: "UserPromptSubmit",
+      hook_event_id: "taskless-prompt",
+      prompt: "hi",
+      transcript_path: transcriptPath,
+    },
+    {
+      cwd: root,
+      session_id: "taskless-greeting",
+      hook_event_name: "Stop",
+      hook_event_id: "taskless-stop",
+      last_assistant_message: "Hi! I'm ready to help with your project. What would you like to do?",
+      transcript_path: transcriptPath,
+    },
+  ]) {
+    const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", { cwd: root, input });
+    assert.equal(code, 0, stderr);
+    assert.equal(stdout.trim(), "");
+  }
+  await assert.rejects(fs.access(path.join(root, ".runtime-correction", "tasks")));
+});
+
+
+test("SessionEnd bypasses config loading and does not mint failure state", async (t) => {
+  const root = await shadowProject(t, ["version: [broken yaml", ""]);
+  const { code, stdout, stderr } = await runHookScript("runtime-event.mjs", {
+    cwd: root,
+    input: {
+      cwd: root,
+      session_id: "fast-session-end",
+      hook_event_name: "SessionEnd",
+      hook_event_id: "session-end-fast-path",
+      transcript_path: path.join(root, "missing.jsonl"),
+    },
+  });
+  assert.equal(code, 0, stderr);
+  assert.equal(stdout.trim(), "");
+  await assert.rejects(fs.access(path.join(root, ".runtime-correction", "runtime-v2-warnings")));
+  await assert.rejects(fs.access(path.join(root, ".runtime-correction", "tasks")));
+});
+
 test("runtime-event fails closed when an active Stop crashes after config load", async (t) => {
   const root = await shadowProject(t, [
     "version: 2",

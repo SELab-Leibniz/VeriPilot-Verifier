@@ -150,13 +150,15 @@ test("DERIVED_CONFIG is journaled exactly once per task", async (t) => {
       transcript_path: path.join(root, "transcript.jsonl"),
       hook_event_name: name,
       hook_event_id: id,
+      ...(name === "PreToolUse" ? { tool_name: "Write" } : {}),
     },
     projectRoot: root,
     plan,
   });
 
   await event("event-1", "SessionStart");
-  await event("event-2", "UserPromptSubmit");
+  await event("event-2", "PreToolUse");
+  await event("event-3", "UserPromptSubmit");
 
   const tasksRoot = path.join(root, ".runtime-correction", "tasks");
   const [taskId] = await fs.readdir(tasksRoot);

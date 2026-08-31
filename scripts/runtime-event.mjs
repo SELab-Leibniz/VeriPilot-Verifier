@@ -11,7 +11,10 @@ import {
   MAX_OUTER_STOP_FAILURES,
   recordFailOpenWarning,
 } from "../lib/runtime-v2/fail-open.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {
+  handleRuntimeV2Event,
+  handleRuntimeV2SessionEnd,
+} from "../lib/runtime-v2/orchestrator.mjs";
 
 
 async function readStdin() {
@@ -79,9 +82,13 @@ let stopGateArmed = false;
 let locale = DEFAULT_LOCALE;
 try {
   input = await readStdin();
+  const projectRoot = path.resolve(input.cwd ?? process.cwd());
+  if (input.hook_event_name === "SessionEnd") {
+    await handleRuntimeV2SessionEnd({ input, projectRoot });
+    process.exit(0);
+  }
   const internal = await inspectInternalRun(process.env);
   if (internal.internal) process.exit(0);
-  const projectRoot = path.resolve(input.cwd ?? process.cwd());
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
   const plan = await loadConfig({ cwd: projectRoot, pluginRoot });
   shadowMode = plan?.runtimeV2?.shadowMode === true;

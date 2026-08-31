@@ -10,7 +10,7 @@
             "args": [
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
-            "timeout": 1800,
+            "timeout": 30,
             "statusMessage": "Runtime Corrector is validating and recovering local state..."
           }
         ]
@@ -26,14 +26,14 @@
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
             "timeout": 1800,
-            "statusMessage": "Runtime Corrector is reviewing this prompt — the first event of a new task builds the task baseline and can take a few minutes (新任务首次会建立任务基线，约需数分钟)..."
+            "statusMessage": "Runtime Corrector is reconciling the current task state..."
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Skill",
+        "matcher": "Skill|Bash|PowerShell|Write|Edit|NotebookEdit|Monitor",
         "hooks": [
           {
             "type": "command",
@@ -42,7 +42,7 @@
               "${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs"
             ],
             "timeout": 1260,
-            "statusMessage": "Runtime Corrector is extracting the Skill execution contract..."
+            "statusMessage": "Runtime Corrector is establishing the task baseline before the first correction-relevant action..."
           }
         ]
       }

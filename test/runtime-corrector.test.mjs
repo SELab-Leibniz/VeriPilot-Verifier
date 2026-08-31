@@ -679,13 +679,24 @@ test("plugin registers the v2 lifecycle hooks without a separate prompt script",
   ]) {
     assert.ok(hooks.hooks[eventName], eventName);
   }
-  assert.equal(hooks.hooks.PreToolUse[0].matcher, "Skill");
+  assert.equal(
+    hooks.hooks.PreToolUse[0].matcher,
+    "Skill|Bash|PowerShell|Write|Edit|NotebookEdit|Monitor",
+  );
   assert.ok(hooks.hooks.PostToolUse);
-  // These two events can host task onboarding, whose bulk decompose of a
-  // large requirements document is measured in minutes, not seconds.
-  assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 1800);
+  // SessionStart is lifecycle-only; the first correction-relevant tool owns
+  // the long onboarding budget instead.
+  assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 30);
   assert.equal(hooks.hooks.UserPromptSubmit[0].hooks[0].timeout, 1800);
+  assert.equal(hooks.hooks.PreToolUse[0].hooks[0].timeout, 1260);
   assert.equal(hooks.hooks.PostToolUse[0].hooks[0].timeout, 1260);
+  const packageManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, "package.json"), "utf8"));
+  const pluginManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json"), "utf8"));
+  const marketplace = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "marketplace.json"), "utf8"));
+  assert.equal(packageManifest.version, "1.9.1");
+  assert.equal(pluginManifest.version, "1.9.1");
+  assert.equal(marketplace.version, "1.9.1");
+  assert.equal(marketplace.plugins[0].version, "1.9.1");
   await assert.rejects(fs.access(path.join(PLUGIN_ROOT, "scripts", "user-prompt-submit.mjs")));
 });
 
