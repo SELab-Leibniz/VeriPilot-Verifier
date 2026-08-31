@@ -108,6 +108,13 @@ test("decodeHookInput rejects malformed payloads and missing common fields", () 
     ...BASELINE_INPUTS.UserPromptSubmit,
     hook_event_name: "FutureEvent",
   })), Error);
+
+  for (const eventName of ["toString", "constructor", "__proto__"]) {
+    assert.throws(() => decodeHookInput(JSON.stringify({
+      ...BASELINE_INPUTS.UserPromptSubmit,
+      hook_event_name: eventName,
+    })), Error, eventName);
+  }
 });
 
 
@@ -118,7 +125,6 @@ test("decodeHookInput rejects wrong event-required field types", () => {
     { ...BASELINE_INPUTS.PreToolUse, tool_name: false },
     { ...BASELINE_INPUTS.PreToolUse, tool_input: [] },
     { ...BASELINE_INPUTS.PreToolUse, tool_use_id: 1 },
-    { ...BASELINE_INPUTS.PostToolUse, tool_response: null },
     { ...BASELINE_INPUTS.Stop, stop_hook_active: "false" },
     { ...BASELINE_INPUTS.PreCompact, trigger: false },
     { ...BASELINE_INPUTS.PreCompact, custom_instructions: false },
@@ -146,6 +152,25 @@ test("decodeHookInput rejects missing event-required fields", () => {
     const input = { ...BASELINE_INPUTS[eventName] };
     delete input[field];
     assert.throws(() => decodeHookInput(JSON.stringify(input)), Error, `${eventName}.${field}`);
+  }
+});
+
+
+test("decodeHookInput accepts every JSON tool_response value", () => {
+  for (const toolResponse of [
+    "wrote the file",
+    7,
+    ["one", "two"],
+    null,
+    { filePath: "/workspace/notes.md", success: true },
+  ]) {
+    assert.deepEqual(decodeHookInput(JSON.stringify({
+      ...BASELINE_INPUTS.PostToolUse,
+      tool_response: toolResponse,
+    })), {
+      ...BASELINE_INPUTS.PostToolUse,
+      tool_response: toolResponse,
+    });
   }
 });
 
@@ -222,6 +247,17 @@ test("encodeHookOutput emits the Stop block and verification-unavailable release
       systemMessage: "Verification infrastructure is unavailable.",
     },
   );
+
+  assert.deepEqual(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, {
+      verificationUnavailable: true,
+      feedback: "The outer hook failed before verification.",
+    }),
+    {
+      continue: true,
+      systemMessage: "The outer hook failed before verification.",
+    },
+  );
 });
 
 
@@ -241,4 +277,46 @@ test("encodeHookOutput is silent for non-emitting outcomes and lifecycle events"
       eventName,
     );
   }
+});
+
+
+test("encodeHookOutput suppresses invalid feedback instead of emitting invalid unions", () => {
+  for (const eventName of ["UserPromptSubmit", "PostToolUse"]) {
+    const input = BASELINE_INPUTS[eventName];
+    assert.equal(encodeHookOutput(eventName, input, {}), null, `${eventName} missing feedback`);
+    assert.equal(encodeHookOutput(eventName, input, { feedback: 1 }), null, `${eventName} non-string feedback`);
+  }
+
+  assert.deepEqual(
+    encodeHookOutput("PreToolUse", BASELINE_INPUTS.PreToolUse, { feedback: 1 }),
+    {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "allow",
+      },
+    },
+  );
+
+  assert.equal(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, { decision: "block" }),
+    null,
+  );
+  assert.equal(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, {
+      decision: "block",
+      feedback: 1,
+    }),
+    null,
+  );
+  assert.equal(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, { verificationUnavailable: true }),
+    null,
+  );
+  assert.equal(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, {
+      verificationUnavailable: true,
+      feedback: 1,
+    }),
+    null,
+  );
 });
