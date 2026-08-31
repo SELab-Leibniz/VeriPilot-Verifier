@@ -2,6 +2,12 @@
 
 Runtime Corrector 支持四类稳定的客户入口：Claude 命令、Claude Skill/自然语言、CLI、Claude Code Hook。高级兼容模式还支持自定义 Matcher 和 Collector。
 
+## Claude 插件能力基线
+
+插件兼容性由版本无关的 `claude-plugin-core-hooks-json-stdio` 能力契约定义，而不是由 Claude Code、Claude 插件或任何包的运行时版本定义。运行时不检测版本，也不按版本选择配置、命令或 Hook 处理路径。
+
+该基线要求：Hook 从 stdin 接收一个 JSON 对象（可带 UTF-8 BOM），stdout 只会为空或输出一个以换行结束的 JSON 对象；使用 `SessionStart`、`UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`Stop`、`PreCompact` 和 `SessionEnd`；工具事件使用 `tool_use_id`，不要求 `hook_event_id`。`PowerShell` 与 `Monitor` 是可选工具：若宿主没有它们，插件的安装、其他 Hook 和其余工具处理仍保持正确。
+
 ## Claude 命令
 
 所有入口都在当前 Claude Code 工作目录执行。`help`、`init`、`validate`、`stages`、`explain`、`spec` 和 `check` 通过 `${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs` 调用插件自带 CLI，不依赖系统 PATH。PostToolUse hook 内部使用一次性 `semantic-review` 技能，主 Agent 无需调用它。
@@ -322,8 +328,7 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"],
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs\"",
             "timeout": 1260,
             "statusMessage": "Runtime Corrector 正在对账任务状态并检查命中的产物…"
           }

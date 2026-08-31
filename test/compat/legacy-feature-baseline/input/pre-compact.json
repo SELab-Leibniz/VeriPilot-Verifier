@@ -1,0 +1,8 @@
+{
+  "session_id": "legacy-session",
+  "transcript_path": "/workspace/transcripts/legacy-session.jsonl",
+  "cwd": "/workspace",
+  "hook_event_name": "PreCompact",
+  "trigger": "manual",
+  "custom_instructions": null
+}

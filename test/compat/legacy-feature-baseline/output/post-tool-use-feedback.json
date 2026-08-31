@@ -1,0 +1,14 @@
+{
+  "form": "feedback-context",
+  "eventName": "PostToolUse",
+  "input": "input/post-tool-use.json",
+  "outcome": {
+    "feedback": "Review the changed specification against the project policy."
+  },
+  "expected": {
+    "hookSpecificOutput": {
+      "hookEventName": "PostToolUse",
+      "additionalContext": "Review the changed specification against the project policy."
+    }
+  }
+}

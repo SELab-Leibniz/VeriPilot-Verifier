@@ -1,0 +1,13 @@
+{
+  "form": "stop-block",
+  "eventName": "Stop",
+  "input": "input/stop.json",
+  "outcome": {
+    "decision": "block",
+    "feedback": "Validation remains incomplete."
+  },
+  "expected": {
+    "decision": "block",
+    "reason": "Validation remains incomplete."
+  }
+}

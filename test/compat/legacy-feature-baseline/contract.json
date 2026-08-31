@@ -1,0 +1,37 @@
+{
+  "identifier": "claude-plugin-core-hooks-json-stdio",
+  "events": [
+    { "name": "SessionStart", "input": "input/session-start.json" },
+    { "name": "UserPromptSubmit", "input": "input/user-prompt-submit.json" },
+    { "name": "PreToolUse", "input": "input/pre-tool-use.json" },
+    { "name": "PostToolUse", "input": "input/post-tool-use.json" },
+    { "name": "Stop", "input": "input/stop.json" },
+    { "name": "PreCompact", "input": "input/pre-compact.json" },
+    { "name": "SessionEnd", "input": "input/session-end.json" }
+  ],
+  "commands": ["check", "explain", "help", "init", "spec", "stages", "validate"],
+  "skills": [
+    "runtime-corrector-control",
+    "runtime-corrector-init",
+    "runtime-corrector-workflow",
+    "semantic-review"
+  ],
+  "optionalTools": ["PowerShell", "Monitor"],
+  "outputForms": [
+    "empty-stdout",
+    "feedback-context",
+    "skill-permission-allow",
+    "stop-block",
+    "stop-release"
+  ],
+  "outputs": [
+    { "fixture": "output/session-start-empty.json", "form": "empty-stdout" },
+    { "fixture": "output/user-prompt-submit-feedback.json", "form": "feedback-context" },
+    { "fixture": "output/pre-tool-use-skill-permission.json", "form": "skill-permission-allow" },
+    { "fixture": "output/post-tool-use-feedback.json", "form": "feedback-context" },
+    { "fixture": "output/stop-block.json", "form": "stop-block" },
+    { "fixture": "output/stop-release.json", "form": "stop-release" },
+    { "fixture": "output/pre-compact-empty.json", "form": "empty-stdout" },
+    { "fixture": "output/session-end-empty.json", "form": "empty-stdout" }
+  ]
+}

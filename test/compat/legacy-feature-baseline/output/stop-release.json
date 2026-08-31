@@ -1,0 +1,15 @@
+{
+  "form": "stop-release",
+  "eventName": "Stop",
+  "input": "input/stop.json",
+  "outcome": {
+    "stop": {
+      "verificationUnavailable": true
+    },
+    "feedback": "Verification infrastructure is unavailable."
+  },
+  "expected": {
+    "continue": true,
+    "systemMessage": "Verification infrastructure is unavailable."
+  }
+}

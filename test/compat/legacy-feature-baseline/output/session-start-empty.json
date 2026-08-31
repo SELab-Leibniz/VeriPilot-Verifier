@@ -1,0 +1,9 @@
+{
+  "form": "empty-stdout",
+  "eventName": "SessionStart",
+  "input": "input/session-start.json",
+  "outcome": {
+    "feedback": "ignored lifecycle feedback"
+  },
+  "expected": null
+}

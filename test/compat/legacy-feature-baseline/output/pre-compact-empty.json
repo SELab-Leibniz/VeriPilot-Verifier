@@ -1,0 +1,9 @@
+{
+  "form": "empty-stdout",
+  "eventName": "PreCompact",
+  "input": "input/pre-compact.json",
+  "outcome": {
+    "feedback": "ignored lifecycle feedback"
+  },
+  "expected": null
+}

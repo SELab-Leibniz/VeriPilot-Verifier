@@ -7,13 +7,57 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
+import {
+  decodeHookInput,
+  encodeHookOutput,
+} from "../lib/protocol/claude-core-hooks.mjs";
 
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const COMPAT_FIXTURE_ROOT = path.join(PLUGIN_ROOT, "test", "compat", "legacy-feature-baseline");
 
 
 async function readJson(relativePath) {
   return JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8"));
+}
+
+
+async function readCompatJson(relativePath) {
+  return JSON.parse(await fs.readFile(path.join(COMPAT_FIXTURE_ROOT, relativePath), "utf8"));
+}
+
+
+async function discoverCompatJson(directory) {
+  const entries = await fs.readdir(path.join(COMPAT_FIXTURE_ROOT, directory), { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => path.posix.join(directory, entry.name))
+    .sort();
+}
+
+
+async function discoverCommandNames() {
+  const entries = await fs.readdir(path.join(PLUGIN_ROOT, "commands"), { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+    .map((entry) => path.basename(entry.name, ".md"))
+    .sort();
+}
+
+
+async function discoverSkillNames() {
+  const entries = await fs.readdir(path.join(PLUGIN_ROOT, "skills"), { withFileTypes: true });
+  const names = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      await fs.access(path.join(PLUGIN_ROOT, "skills", entry.name, "SKILL.md"));
+      names.push(entry.name);
+    } catch {
+      // Only directories that expose a Claude skill declaration are discoverable skills.
+    }
+  }
+  return names.sort();
 }
 
 
@@ -59,11 +103,17 @@ function runDeclaredCommand(command, { cwd, input, bom = false }) {
 
 
 function parseProtocolStdout(stdout, label) {
-  const trimmed = stdout.trim();
-  if (!trimmed) return null;
-  assert.equal(trimmed.split(/\r?\n/u).length, 1, `${label} emitted more than one stdout line`);
-  assert.notEqual(trimmed, "null", `${label} serialized a null adapter output`);
-  return JSON.parse(trimmed);
+  if (stdout === "") return null;
+  const match = stdout.match(/^([^\r\n]+)\r?\n$/u);
+  assert.ok(match, `${label} must emit exactly one JSON line with a terminal newline`);
+  const [line] = match.slice(1);
+  assert.equal(line, line.trim(), `${label} emitted surrounding whitespace`);
+  const output = JSON.parse(line);
+  assert.ok(
+    output !== null && typeof output === "object" && !Array.isArray(output),
+    `${label} must emit a JSON object`,
+  );
+  return output;
 }
 
 
@@ -72,6 +122,78 @@ function frontmatter(document, source) {
   assert.ok(match, `${source} must have YAML frontmatter`);
   return parseSimpleYaml(match[1], { source });
 }
+
+
+test("repository-owned capability fixture defines the discoverable compatibility floor", async () => {
+  const contract = await readCompatJson("contract.json");
+  assert.equal(contract.identifier, "claude-plugin-core-hooks-json-stdio");
+  assert.doesNotMatch(contract.identifier, /claude(?:-code)?@?\d/u);
+
+  const declaredInputs = contract.events.map((event) => event.input).sort();
+  const inputFixtures = await discoverCompatJson("input");
+  assert.deepEqual(inputFixtures, declaredInputs);
+
+  for (const event of contract.events) {
+    const input = await readCompatJson(event.input);
+    assert.equal(input.hook_event_name, event.name, event.input);
+    assert.equal(Object.hasOwn(input, "hook_event_id"), false, event.input);
+    assert.deepEqual(decodeHookInput(JSON.stringify(input)), input, event.input);
+  }
+
+  const outputFixtures = await discoverCompatJson("output");
+  const declaredOutputs = contract.outputs.map((output) => output.fixture).sort();
+  assert.deepEqual(outputFixtures, declaredOutputs);
+  const outputEventNames = [];
+  const outputForms = [];
+  for (const outputFixturePath of outputFixtures) {
+    const fixture = await readCompatJson(outputFixturePath);
+    const declaration = contract.outputs.find((output) => output.fixture === outputFixturePath);
+    assert.ok(declaration, outputFixturePath);
+    assert.equal(fixture.form, declaration.form, outputFixturePath);
+    assert.ok(contract.events.some((event) => event.name === fixture.eventName), outputFixturePath);
+    outputEventNames.push(fixture.eventName);
+    outputForms.push(fixture.form);
+    const input = await readCompatJson(fixture.input);
+    assert.deepEqual(
+      encodeHookOutput(fixture.eventName, input, fixture.outcome),
+      fixture.expected,
+      outputFixturePath,
+    );
+  }
+  assert.deepEqual([...new Set(outputEventNames)].sort(), contract.events.map((event) => event.name).sort());
+  assert.deepEqual([...new Set(outputForms)].sort(), [...contract.outputForms].sort());
+
+  assert.deepEqual(await discoverCommandNames(), [...contract.commands].sort());
+  assert.deepEqual(await discoverSkillNames(), [...contract.skills].sort());
+  assert.deepEqual([...contract.optionalTools].sort(), ["Monitor", "PowerShell"]);
+  assert.deepEqual([...contract.outputForms].sort(), [
+    "empty-stdout",
+    "feedback-context",
+    "skill-permission-allow",
+    "stop-block",
+    "stop-release",
+  ]);
+});
+
+
+test("parseProtocolStdout accepts only empty stdout or one terminally-newline-delimited JSON object", () => {
+  assert.equal(parseProtocolStdout("", "empty"), null);
+  assert.deepEqual(parseProtocolStdout('{"result":true}\n', "json"), { result: true });
+  assert.deepEqual(parseProtocolStdout('{"result":true}\r\n', "windows json"), { result: true });
+
+  for (const stdout of [
+    '{"result":true}',
+    '{"result":true}\n\n',
+    ' {"result":true}\n',
+    '{"result":true} \n',
+    '\n{"result":true}\n',
+    '\n',
+    'null\n',
+    '[]\n',
+  ]) {
+    assert.throws(() => parseProtocolStdout(stdout, "invalid protocol stdout"), Error, stdout);
+  }
+});
 
 
 test("plugin hooks expose complete shell commands within the supported capability floor", async () => {

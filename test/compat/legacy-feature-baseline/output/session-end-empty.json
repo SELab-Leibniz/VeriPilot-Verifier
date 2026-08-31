@@ -1,0 +1,9 @@
+{
+  "form": "empty-stdout",
+  "eventName": "SessionEnd",
+  "input": "input/session-end.json",
+  "outcome": {
+    "feedback": "ignored lifecycle feedback"
+  },
+  "expected": null
+}

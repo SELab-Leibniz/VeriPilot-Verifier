@@ -160,6 +160,8 @@ test("decodeHookInput accepts every JSON tool_response value", () => {
   for (const toolResponse of [
     "wrote the file",
     7,
+    true,
+    false,
     ["one", "two"],
     null,
     { filePath: "/workspace/notes.md", success: true },

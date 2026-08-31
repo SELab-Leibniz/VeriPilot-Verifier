@@ -41,6 +41,12 @@ claude --plugin-dir ./runtime-corrector
 
 能看到帮助和阶段状态就成功了。
 
+### Claude 插件兼容性
+
+兼容性按能力而不是版本判断：插件使用核心 JSON stdin/stdout Hook、完整 shell `command`、七个生命周期事件，以及已发现的命令和 Skill。运行时不检测 Claude Code、Claude 插件或任何包的版本，也不按版本选择不同实现。
+
+`PowerShell` 与 `Monitor` 会保留在相关工具 Matcher 中；它们是可选工具。运行环境没有其中任一工具时，安装、生命周期处理和其余工具的纠偏行为不受影响。
+
 <details><summary>其他安装方式</summary>
 
 ```bash

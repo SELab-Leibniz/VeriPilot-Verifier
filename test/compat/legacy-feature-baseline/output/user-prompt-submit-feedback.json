@@ -1,0 +1,14 @@
+{
+  "form": "feedback-context",
+  "eventName": "UserPromptSubmit",
+  "input": "input/user-prompt-submit.json",
+  "outcome": {
+    "feedback": "Use the configured project policy."
+  },
+  "expected": {
+    "hookSpecificOutput": {
+      "hookEventName": "UserPromptSubmit",
+      "additionalContext": "Use the configured project policy."
+    }
+  }
+}

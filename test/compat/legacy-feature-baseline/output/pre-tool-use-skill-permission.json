@@ -1,0 +1,15 @@
+{
+  "form": "skill-permission-allow",
+  "eventName": "PreToolUse",
+  "input": "input/pre-tool-use.json",
+  "outcome": {
+    "feedback": "Continue with the declared workflow skill."
+  },
+  "expected": {
+    "hookSpecificOutput": {
+      "hookEventName": "PreToolUse",
+      "permissionDecision": "allow",
+      "additionalContext": "Continue with the declared workflow skill."
+    }
+  }
+}
