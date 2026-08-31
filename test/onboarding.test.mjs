@@ -423,6 +423,49 @@ test("onboarding runs the panel once, adjudicates, freezes the ledger, and journ
 });
 
 
+test("tool-triggered onboarding correlates every request and Ground Truth event with tool_use_id", async (t) => {
+  const root = await workspace(t);
+  const transcriptPath = await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
+  const plan = onboardingPlan(root);
+  const factory = onboardingFakeFactory({
+    passOperations: () => [REQUIREMENT_OP],
+    stopAssessment: passingStopAssessment,
+  });
+  const toolUseId = "toolu-onboarding-write";
+
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-tool-onboarding",
+      transcript_path: transcriptPath,
+      hook_event_name: "PreToolUse",
+      hook_event_id: "legacy-hook-event-id",
+      tool_name: "Write",
+      tool_input: { file_path: path.join(root, "src", "app.js") },
+      tool_use_id: toolUseId,
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory: factory,
+  });
+
+  assert.equal(outcome.handled, true);
+  const onboardingCalls = factory.calls.filter((call) => call.role.startsWith("onboarding-"));
+  assert.equal(onboardingCalls.length, 3);
+  assert.ok(onboardingCalls.every((call) => call.request.hookEventId === toolUseId));
+
+  const { taskId } = await readTaskArtifacts(root);
+  const history = (await fs.readFile(
+    path.join(root, ".runtime-correction", "tasks", taskId, "ground-truth", "history.jsonl"),
+    "utf8",
+  )).trim().split("\n").map((line) => JSON.parse(line));
+  assert.deepEqual(history.map((event) => event.operation), ["ADD", "FREEZE"]);
+  assert.ok(history.every((event) => event.hookEventId === toolUseId));
+  assert.ok(history.every((event) => event.hookEventId !== "legacy-hook-event-id"));
+});
+
+
 test("onboarding fails soft to incremental extraction and journals ONBOARDING_DEGRADED", async (t) => {
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));

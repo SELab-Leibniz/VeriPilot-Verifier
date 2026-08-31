@@ -19,6 +19,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, resolve } from 'node:path';
 
+import { decodeHookInput, encodeHookOutput } from '../lib/protocol/claude-core-hooks.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { outputTreeDirectory } from '../lib/runtime-v2/paths.mjs';
 
@@ -34,11 +35,7 @@ async function readStdin() {
   let raw = '';
   process.stdin.setEncoding('utf8');
   for await (const chunk of process.stdin) raw += chunk;
-  try {
-    return JSON.parse(raw.replace(/^﻿/, ''));
-  } catch {
-    return {};
-  }
+  return raw;
 }
 
 function walk(directory, accumulator = []) {
@@ -56,8 +53,13 @@ function allow() {
 }
 
 async function main() {
-  const input = await readStdin();
-  if (input.hook_event_name && input.hook_event_name !== 'PostToolUse') allow();
+  let input;
+  try {
+    input = decodeHookInput(await readStdin());
+  } catch {
+    allow();
+  }
+  if (input.hook_event_name !== 'PostToolUse') allow();
 
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   let plan = null;
@@ -137,13 +139,8 @@ async function main() {
     '在每个具名证据文件彼此内容不同之前，不要推进交付验证或据此声明该状态通过——任何依赖重复证据的 PASS 都会在后续校验中被拒绝。'
   ].join('\n');
 
-  // Emit both the PostToolUse block decision and additionalContext so the
-  // message reaches the developer whichever form this CLI version honors.
-  process.stdout.write(JSON.stringify({
-    decision: 'block',
-    reason,
-    hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: reason }
-  }));
+  const output = encodeHookOutput('PostToolUse', input, { feedback: reason });
+  process.stdout.write(`${JSON.stringify(output)}\n`);
   process.exit(0);
 }
 

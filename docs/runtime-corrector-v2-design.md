@@ -66,14 +66,14 @@ JSON is authoritative. Markdown is a read-only rendering. The directory remains 
 
 | Event | Responsibility |
 |---|---|
-| `SessionStart` | validate configuration and recover state; never create a task or reviewer |
+| `SessionStart` | validate configuration and clean up stale internal-run leases and Runtime Corrector atomic temp files; never create a task or reviewer |
 | `UserPromptSubmit` | non-creating lookup; reconcile an existing task, reset the turn barrier, and retain due watcher checks |
 | `PreToolUse(Skill\|Bash\|PowerShell\|Write\|Edit\|NotebookEdit\|Monitor)` | synchronously cross the lazy barrier; Skill additionally resolves its source, generates Skill Ground Truth, and starts or joins a watcher |
 | `PostToolUse(any tool)` | reconcile assistant turns and run due Skill completion checks; parallel events serialize one watcher evaluation per due turn |
 | `PostToolUse(Write|Edit)` when an artifact matches | additionally retain node/edge review, refresh Ground Truth, and run checkpoint metrics when configured |
 | `Stop` | reconcile turns, expire due Skill watchers, classify the stopping context, run stage/task assessment |
 | `PreCompact` | persist the transcript cursor for an existing task only |
-| `SessionEnd` | before configuration loading, release stale leases/temp files and optionally append a lightweight event to an existing task |
+| `SessionEnd` | before configuration loading, perform an O(1) task lookup and best-effort lifecycle journaling for an existing task; never run cleanup |
 
 Hooks first perform a cheap, non-creating task lookup. A model fork is created only after the lazy barrier for new evidence, a newly activated evaluation scope, or a changed dependency hash. Parallel first-tool hooks share a session task-creation lock and a long-lived onboarding single-flight lock; a dead owner is reclaimed immediately after Ctrl+C, while a live long-running onboarding is not mistaken for a stale 30-second lock.
 
@@ -103,7 +103,7 @@ An internal run carries an `internalRunId`, role, and depth, backed by a live le
 
 Internal reviewers are read-only and cannot use Skill, Agent, MCP, network, Write, or Edit. A malformed structured result receives one repair attempt in the same reviewer session; a second failure becomes `CHECKER_ERROR` or `UNVERIFIED` and consumes no correction budget. Ground Truth output is constrained to the ledger's canonical category enum; a schema-valid delta that fails claim-reference or authority validation receives one domain-repair follow-up in the same fork before the atomic ledger update.
 
-On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` and `SessionEnd` remove only stale files matching Runtime Corrector's own hidden atomic-temporary naming convention. `SessionEnd` is routed before configuration loading and is unconditionally silent/fail-open, so Ctrl+C cannot re-enter onboarding or suppress Claude Code's native resume-session footer. Other lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally. An active `Stop` is the exception: if Ground Truth refresh, the Stop reviewer, or the lifecycle hook fails before a valid terminal assessment exists, the completion is `UNVERIFIED` and the hook fails closed. Observe-only mode remains silent, and a configuration-load failure remains silent because the arm is not yet known.
+On Windows, task-state atomic renames retry transient `EPERM`, `EACCES`, and `EBUSY` failures. `SessionStart` removes stale internal-run leases and files matching Runtime Corrector's own hidden atomic-temporary naming convention. `SessionEnd` is routed before configuration loading, records only best-effort lifecycle state for an already indexed task, and is unconditionally silent/fail-open, so Ctrl+C cannot re-enter onboarding or suppress Claude Code's native resume-session footer. Other lifecycle events whose hook schema has no `additionalContext` field fail open silently after recording the warning locally. An active `Stop` is the exception: if Ground Truth refresh, the Stop reviewer, or the lifecycle hook fails before a valid terminal assessment exists, the completion is `UNVERIFIED` and the hook fails closed. Observe-only mode remains silent, and a configuration-load failure remains silent because the arm is not yet known.
 
 ## Configuration
 

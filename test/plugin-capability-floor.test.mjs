@@ -83,7 +83,7 @@ function primaryCommand(hooks, eventName) {
 }
 
 
-function runDeclaredCommand(command, { cwd, input, bom = false }) {
+function runDeclaredCommand(command, { cwd, input, bom = false, rawInput = null }) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
       cwd,
@@ -97,7 +97,7 @@ function runDeclaredCommand(command, { cwd, input, bom = false }) {
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.once("error", reject);
     child.once("close", (code) => resolve({ code, stdout, stderr }));
-    child.stdin.end(`${bom ? "\uFEFF" : ""}${JSON.stringify(input)}`);
+    child.stdin.end(rawInput ?? `${bom ? "\uFEFF" : ""}${JSON.stringify(input)}`);
   });
 }
 
@@ -376,6 +376,76 @@ test("effective PostToolUse command accepts BOM input and labels its output with
   const output = parseProtocolStdout(result.stdout, "PostToolUse BOM");
   assert.equal(output.hookSpecificOutput.hookEventName, input.hook_event_name);
   assert.match(output.hookSpecificOutput.additionalContext, /runtime-corrector/u);
+});
+
+
+test("every declared PostToolUse command obeys the protocol and invalid guard input stays silent", async (t) => {
+  const root = await workspace(t, [
+    "version: 2",
+    "artifacts: []",
+    "evidenceRoots:",
+    "  - evidence",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "skillCorrection:",
+    "  enabled: false",
+    "stopCorrection:",
+    "  enabled: false",
+  ]);
+  const transcriptPath = path.join(root, "transcript.jsonl");
+  const evidenceRoot = path.join(root, "evidence");
+  await fs.writeFile(transcriptPath, "", "utf8");
+  await fs.mkdir(evidenceRoot, { recursive: true });
+  await fs.writeFile(path.join(evidenceRoot, "before.txt"), "same capture", "utf8");
+  await fs.writeFile(path.join(evidenceRoot, "after.txt"), "same capture", "utf8");
+
+  const hooks = await readJson("hooks/hooks.json");
+  const registrations = hooks.hooks.PostToolUse;
+  const input = {
+    session_id: "all-post-tool-registrations",
+    transcript_path: transcriptPath,
+    cwd: root,
+    hook_event_name: "PostToolUse",
+    tool_name: "Bash",
+    tool_input: { command: "capture evidence" },
+    tool_response: { success: true },
+    tool_use_id: "toolu-all-post-registrations",
+  };
+
+  for (const [registrationIndex, registration] of registrations.entries()) {
+    assert.equal(registration.hooks.length, 1, `PostToolUse registration ${registrationIndex}`);
+    const result = await runDeclaredCommand(registration.hooks[0].command, { cwd: root, input });
+    assert.equal(result.code, 0, result.stderr);
+    const output = parseProtocolStdout(result.stdout, `PostToolUse registration ${registrationIndex}`);
+    if (registration.hooks[0].command.includes("evidence-distinctness-guard")) {
+      assert.equal(output.hookSpecificOutput.hookEventName, "PostToolUse");
+      assert.match(output.hookSpecificOutput.additionalContext, /evidence distinctness/u);
+      assert.equal(output.decision, undefined);
+      assert.equal(output.reason, undefined);
+    }
+  }
+
+  const guard = registrations
+    .flatMap((registration) => registration.hooks)
+    .find((hook) => hook.command.includes("evidence-distinctness-guard"));
+  assert.ok(guard, "evidence distinctness guard registration");
+
+  const malformed = await runDeclaredCommand(guard.command, { cwd: root, rawInput: "{" });
+  assert.equal(malformed.code, 0, malformed.stderr);
+  assert.equal(malformed.stdout, "");
+
+  const wrongEvent = await runDeclaredCommand(guard.command, {
+    cwd: root,
+    input: {
+      ...input,
+      hook_event_name: "PreToolUse",
+      tool_response: undefined,
+    },
+  });
+  assert.equal(wrongEvent.code, 0, wrongEvent.stderr);
+  assert.equal(wrongEvent.stdout, "");
 });
 
 

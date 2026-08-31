@@ -90,6 +90,32 @@ test("a persistent runtime crash blocks, then releases with a Stop-consumable di
   assert.equal(again.output?.continue, true, "release is sticky while the fault lasts");
 });
 
+
+test("an interleaved no-op Stop does not reset consecutive outer failures", async (t) => {
+  const root = await brokenProject(t);
+  const counterPath = path.join(
+    root,
+    ".runtime-correction",
+    "runtime-v2-warnings",
+    "outer-stop-failures.json",
+  );
+  const first = await runHook(root, stopInput(root, "interleaved-failure-1"));
+  assert.equal(first.output?.decision, "block");
+  assert.match(first.output.reason, /attempt 1\/2/u);
+  assert.equal(JSON.parse(await fs.readFile(counterPath, "utf8")).consecutiveFailures, 1);
+
+  const noOp = await runHook(root, {
+    ...stopInput(root, "interleaved-no-op"),
+    last_assistant_message: "Work remains; this is not complete.",
+  });
+  assert.equal(noOp.output, null);
+  assert.equal(JSON.parse(await fs.readFile(counterPath, "utf8")).consecutiveFailures, 1);
+
+  const second = await runHook(root, stopInput(root, "interleaved-failure-2"));
+  assert.equal(second.output?.decision, "block");
+  assert.match(second.output.reason, /attempt 2\/2/u);
+});
+
 test("disabling stopCorrection disarms the gate even when the runtime crashes", async (t) => {
   const root = await brokenProject(t, { stopEnabled: false });
   for (const id of ["disarmed-1", "disarmed-2", "disarmed-3"]) {

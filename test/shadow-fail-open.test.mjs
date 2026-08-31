@@ -393,11 +393,5 @@ test("post-tool-use emits nothing under a shadow config even when processing fai
       transcript_path: path.join(root, "missing.jsonl"),
     },
   });
-  // Either fully silent, or a hookOutput whose additionalContext is EMPTY —
-  // no corrector text may reach a shadow developer.
-  if (stdout.trim()) {
-    const parsed = JSON.parse(stdout.trim());
-    const context = parsed?.hookSpecificOutput?.additionalContext ?? "";
-    assert.equal(context, "", `shadow arm leaked context: ${context.slice(0, 120)}`);
-  }
+  assert.equal(stdout, "", "a matched artifact in shadow mode must emit exactly empty stdout");
 });

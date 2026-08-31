@@ -72,7 +72,8 @@ try {
   });
   // A Stop that reached a real decision clears the outer-crash ceiling: the
   // ceiling counts CONSECUTIVE failures, not failures ever seen.
-  if (input.hook_event_name === "Stop") {
+  const stopDecision = outcome?.decision ?? outcome?.suppressedDecision;
+  if (input.hook_event_name === "Stop" && new Set(["allow", "block"]).has(stopDecision)) {
     await clearOuterStopFailures(path.resolve(input.cwd ?? process.cwd()));
   }
   writeHookOutput(input.hook_event_name, input, outcome);

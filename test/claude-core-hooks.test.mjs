@@ -286,6 +286,7 @@ test("encodeHookOutput suppresses invalid feedback instead of emitting invalid u
   for (const eventName of ["UserPromptSubmit", "PostToolUse"]) {
     const input = BASELINE_INPUTS[eventName];
     assert.equal(encodeHookOutput(eventName, input, {}), null, `${eventName} missing feedback`);
+    assert.equal(encodeHookOutput(eventName, input, { feedback: "" }), null, `${eventName} empty feedback`);
     assert.equal(encodeHookOutput(eventName, input, { feedback: 1 }), null, `${eventName} non-string feedback`);
   }
 

@@ -25,15 +25,19 @@ async function workspace(t) {
 }
 
 
-async function declaredSessionEndCommand() {
+async function declaredSessionEndHook() {
   const declarations = JSON.parse(await fs.readFile(path.join(pluginRoot, "hooks", "hooks.json"), "utf8"));
-  const commands = declarations.hooks.SessionEnd
+  const hooks = declarations.hooks.SessionEnd
     .flatMap((registration) => registration.hooks)
-    .filter((hook) => hook.type === "command")
-    .map((hook) => hook.command);
-  assert.equal(commands.length, 1, "SessionEnd must declare exactly one command");
-  assert.match(commands[0], /\/scripts\/session-end\.mjs"$/u);
-  return commands[0];
+    .filter((hook) => hook.type === "command");
+  assert.equal(hooks.length, 1, "SessionEnd must declare exactly one command");
+  assert.match(hooks[0].command, /\/scripts\/session-end\.mjs"$/u);
+  return hooks[0];
+}
+
+
+async function declaredSessionEndCommand() {
+  return (await declaredSessionEndHook()).command;
 }
 
 
@@ -54,7 +58,7 @@ function cleanProcessEnvironment(overrides = {}) {
 }
 
 
-async function runDeclaredSessionEnd({ cwd, input, env = {} }) {
+async function runDeclaredSessionEnd({ cwd, input, env = {}, keepStdinOpen = false }) {
   const command = await declaredSessionEndCommand();
   const startedAt = performance.now();
   return new Promise((resolve, reject) => {
@@ -90,7 +94,8 @@ async function runDeclaredSessionEnd({ cwd, input, env = {} }) {
         elapsedMs: performance.now() - startedAt,
       });
     });
-    child.stdin.end(JSON.stringify(input));
+    if (keepStdinOpen) child.stdin.write(JSON.stringify(input));
+    else child.stdin.end(JSON.stringify(input));
   });
 }
 
@@ -146,6 +151,26 @@ test("declared taskless SessionEnd stays silent and leaves recovery work for Ses
   await fs.access(stale.expiredLease);
   await assert.rejects(fs.access(path.join(root, ".runtime-correction", "runtime-v2-warnings")));
   await assert.rejects(fs.access(path.join(root, ".runtime-correction", "tasks")));
+});
+
+
+test("declared SessionEnd watchdog releases a process stalled before stdin EOF", async (t) => {
+  const root = await workspace(t);
+  const declaration = await declaredSessionEndHook();
+  const result = await runDeclaredSessionEnd({
+    cwd: root,
+    keepStdinOpen: true,
+    input: {
+      cwd: root,
+      session_id: "stalled-session-end",
+      hook_event_name: "SessionEnd",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      reason: "other",
+    },
+  });
+
+  await assertFastSuccessfulSilence(result);
+  assert.equal(declaration.timeout, 1, "host declaration must match the sub-1200ms capability budget");
 });
 
 

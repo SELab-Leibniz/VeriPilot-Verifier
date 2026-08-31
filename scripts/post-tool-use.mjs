@@ -2,7 +2,6 @@
 
 import path from "node:path";
 
-import { findPolicyRootForFile, resolveInputFile } from "../lib/artifact-pipeline.mjs";
 import {
   decodeHookInput,
   encodeHookOutput,
@@ -37,19 +36,6 @@ function writeHookOutput(input, feedback) {
 }
 
 
-async function projectRootFromInput(input) {
-  const hookCwd = path.resolve(input.cwd ?? process.cwd());
-  if (!new Set(["Write", "Edit"]).has(input.tool_name)) return hookCwd;
-  const triggerFile = resolveInputFile(input, hookCwd);
-  if (!triggerFile) return hookCwd;
-  try {
-    return await findPolicyRootForFile(triggerFile) ?? hookCwd;
-  } catch {
-    return hookCwd;
-  }
-}
-
-
 function hookFailureMessage(error) {
   return [
     "[runtime-corrector] 纠偏诊断未能完成。",
@@ -68,6 +54,7 @@ let armShadowMode = false;
 try {
   const rawInput = await readStdin();
   input = decodeHookInput(rawInput);
+  const runtimeProjectRoot = path.resolve(input.cwd ?? process.cwd());
   const internal = await inspectInternalRun(process.env);
   if (internal.internal) process.exit(0);
   let preparationError = null;
@@ -77,11 +64,8 @@ try {
   } catch (error) {
     preparationError = error;
   }
-  const projectRoot = prepared.matched
-    ? prepared.projectRoot
-    : await projectRootFromInput(input);
   const plan = await loadConfig({
-    cwd: projectRoot,
+    cwd: runtimeProjectRoot,
     pluginRoot: process.env.CLAUDE_PLUGIN_ROOT,
   });
   armShadowMode = plan?.runtimeV2?.shadowMode === true;
@@ -96,14 +80,14 @@ try {
   try {
     runtimeV2 = await handleRuntimeV2Event({
       input,
-      projectRoot,
+      projectRoot: runtimeProjectRoot,
       pluginRoot: process.env.CLAUDE_PLUGIN_ROOT,
       plan,
       artifact: prepared.matched ? prepared.reviewContext.artifact : null,
     });
   } catch (error) {
     const warning = await recordFailOpenWarning({
-      projectRoot,
+      projectRoot: runtimeProjectRoot,
       category: prepared.matched ? "ARTIFACT_V2_FAILED" : "POST_TOOL_RUNTIME_V2_FAILED",
       message: error.message,
     });
@@ -117,7 +101,7 @@ try {
   }
   if (preparationError) {
     const warning = await recordFailOpenWarning({
-      projectRoot,
+      projectRoot: runtimeProjectRoot,
       category: "POST_TOOL_USE_FAILED",
       message: preparationError.message,
     });
@@ -135,6 +119,9 @@ try {
     }
     process.exit(0);
   }
+  prepared.reviewContext.enabled = prepared.reviewContext.nodeReviewEnabled
+    || (prepared.reviewContext.workflow?.incomingEdges?.length ?? 0) > 0
+    || Boolean(runtimeV2.artifactReviewContext);
   prepared.reviewContext.runtimeV2 = runtimeV2.artifactReviewContext ?? null;
   const review = prepared.reviewContext.enabled
     ? await runSemanticReview({
@@ -150,7 +137,7 @@ try {
   const metricOutcome = runtimeV2.artifactReviewContext
     ? await finalizeArtifactRuntimeV2({
         runtimeV2: plan?.runtimeV2 ?? null,
-        projectRoot: prepared.projectRoot,
+        projectRoot: runtimeProjectRoot,
         taskId: runtimeV2.taskId,
         artifactReviewContext: runtimeV2.artifactReviewContext,
         semanticReview: review,

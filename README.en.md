@@ -79,12 +79,12 @@ The corrector sits on Claude Code lifecycle hooks; the agent is **synchronously 
 
 | Moment | What the corrector does |
 |---|---|
-| Session starts | validates configuration and recovers local state only; no task or reviewer is created |
+| Session starts | validates configuration and cleans up stale internal-run leases and Runtime Corrector atomic temp files; no task or reviewer is created |
 | You send a message | an existing task records the new turn and resets the turn barrier; ordinary greetings remain reviewer-free |
 | Before a relevant tool runs | the first action crosses the lazy barrier and freezes the baseline; a Skill also starts its contract watcher |
 | After the agent writes a file | reviews the artifact: deterministic checks + an isolated semantic review |
 | Agent declares completion | even without a tool call, crosses the barrier first, then runs acceptance + implementation checks → allow or block |
-| Session exits | performs lightweight cleanup and optional existing-task journaling only; no config load, transcript read, or onboarding retry |
+| Session exits | records best-effort lifecycle state for an already indexed task only; no cleanup, config load, transcript read, or onboarding retry |
 
 ### How signals go back
 

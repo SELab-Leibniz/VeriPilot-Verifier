@@ -6,6 +6,9 @@ import { decodeHookInput } from "../lib/protocol/claude-core-hooks.mjs";
 import { handleRuntimeV2SessionEnd } from "../lib/runtime-v2/session-end.mjs";
 
 
+const HARD_DEADLINE_MS = 800;
+
+
 async function readStdin() {
   let raw = "";
   process.stdin.setEncoding("utf8");
@@ -14,6 +17,7 @@ async function readStdin() {
 }
 
 
+const watchdog = setTimeout(() => process.exit(0), HARD_DEADLINE_MS);
 try {
   const input = await readStdin();
   if (input.hook_event_name !== "SessionEnd") {
@@ -26,4 +30,6 @@ try {
   });
 } catch {
   // Session teardown is always silent and fail-open.
+} finally {
+  clearTimeout(watchdog);
 }
