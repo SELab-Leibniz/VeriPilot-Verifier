@@ -128,6 +128,30 @@ test("repository-owned capability fixture defines the discoverable compatibility
   const contract = await readCompatJson("contract.json");
   assert.equal(contract.identifier, "claude-plugin-core-hooks-json-stdio");
   assert.doesNotMatch(contract.identifier, /claude(?:-code)?@?\d/u);
+  assert.deepEqual(contract.events, [
+    { name: "SessionStart", input: "input/session-start.json" },
+    { name: "UserPromptSubmit", input: "input/user-prompt-submit.json" },
+    { name: "PreToolUse", input: "input/pre-tool-use.json" },
+    { name: "PostToolUse", input: "input/post-tool-use.json" },
+    { name: "Stop", input: "input/stop.json" },
+    { name: "PreCompact", input: "input/pre-compact.json" },
+    { name: "SessionEnd", input: "input/session-end.json" },
+  ]);
+  assert.deepEqual(contract.commands, [
+    "check",
+    "explain",
+    "help",
+    "init",
+    "spec",
+    "stages",
+    "validate",
+  ]);
+  assert.deepEqual(contract.skills, [
+    "runtime-corrector-control",
+    "runtime-corrector-init",
+    "runtime-corrector-workflow",
+    "semantic-review",
+  ]);
 
   const declaredInputs = contract.events.map((event) => event.input).sort();
   const inputFixtures = await discoverCompatJson("input");
