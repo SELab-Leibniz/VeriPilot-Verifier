@@ -260,6 +260,21 @@ test("encodeHookOutput emits the Stop block and verification-unavailable release
       systemMessage: "The outer hook failed before verification.",
     },
   );
+
+  assert.deepEqual(
+    encodeHookOutput("Stop", BASELINE_INPUTS.Stop, {
+      decision: "block",
+      feedback: "A verified Skill deviation still requires correction.",
+      stop: {
+        verificationUnavailable: true,
+        feedback: "To stop the gate, disable it in config.",
+      },
+    }),
+    {
+      decision: "block",
+      reason: "A verified Skill deviation still requires correction.",
+    },
+  );
 });
 
 

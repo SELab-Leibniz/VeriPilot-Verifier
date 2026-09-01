@@ -32,7 +32,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/runtime-event.mjs\"",
-            "timeout": 1260,
+            "timeout": 1800,
             "statusMessage": "Runtime Corrector is establishing the task baseline before the first correction-relevant action..."
           }
         ]
@@ -44,7 +44,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs\"",
-            "timeout": 1260,
+            "timeout": 1800,
             "statusMessage": "Runtime Corrector is reconciling task state and reviewing matching artifacts..."
           }
         ]

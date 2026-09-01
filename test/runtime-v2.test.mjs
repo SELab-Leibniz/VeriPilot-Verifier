@@ -25,6 +25,7 @@ import {
   finalizeArtifactRuntimeV2,
   handleRuntimeV2Event,
 } from "../lib/runtime-v2/orchestrator.mjs";
+import { encodeHookOutput } from "../lib/protocol/claude-core-hooks.mjs";
 import {
   atomicWrite,
   cleanupStaleAtomicWrites,
@@ -111,6 +112,39 @@ function transcriptEntries(turns) {
 }
 
 
+function parallelToolTranscript({ includeFirstResult = false, includeSecondResult = false } = {}) {
+  const entries = [
+    {
+      type: "user",
+      uuid: "parallel-user",
+      message: { id: "parallel-user-message", content: "Run both checks." },
+    },
+    {
+      type: "assistant",
+      uuid: "parallel-assistant",
+      message: {
+        id: "parallel-assistant-message",
+        content: [
+          { type: "tool_use", id: "parallel-tool-a", name: "Read", input: { file_path: "a.txt" } },
+          { type: "tool_use", id: "parallel-tool-b", name: "Read", input: { file_path: "b.txt" } },
+        ],
+      },
+    },
+  ];
+  const results = [];
+  if (includeFirstResult) results.push({ type: "tool_result", tool_use_id: "parallel-tool-a", content: "a" });
+  if (includeSecondResult) results.push({ type: "tool_result", tool_use_id: "parallel-tool-b", content: "b" });
+  if (results.length > 0) {
+    entries.push({
+      type: "user",
+      uuid: "parallel-results",
+      message: { id: "parallel-result-message", content: results },
+    });
+  }
+  return entries.map((entry) => JSON.stringify(entry)).join("\n");
+}
+
+
 function skillReview() {
   return {
     summary: "The Skill completed but skipped a required verification step.",
@@ -188,6 +222,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
+        calls.push({ role: "reviewer-follow-up", request: null, schema: nextSchema });
         if (nextSchema === SKILL_REVIEW_SCHEMA) return skillReview();
         if (nextSchema === STOP_REVIEW_SCHEMA) {
           const assessment = JSON.parse(await fs.readFile(
@@ -441,6 +476,59 @@ test("metric aggregation quarantines reviewer objects outside the frozen populat
 });
 
 
+test("Stop feedback names checker issues outside the frozen population", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const task = await ensureTask({ projectRoot: root, sessionId: "session-checker-feedback" });
+  await withTaskState({ projectRoot: root, taskId: task.taskId }, (state) => {
+    state.correctionBarrier.turnActivated = true;
+    state.stop.armedAtStart = true;
+  });
+  const reviewerFactory = fakeReviewerFactory({
+    stopAssessment(request) {
+      const objects = Object.values(request.population.metrics).flat();
+      return {
+        summary: "The supplied metric judgement set is malformed.",
+        stopClassification: "TASK_COMPLETE",
+        stage: "implementation",
+        findings: [],
+        metricObjectJudgements: [
+          ...objects.map((object) => ({
+            objectId: object.objectId,
+            judgement: "PASS",
+            reason: "Satisfied.",
+            evidence: ["fixture"],
+          })),
+          {
+            objectId: "M03:invented-object",
+            judgement: "PASS",
+            reason: "Invented by the reviewer.",
+            evidence: [],
+          },
+        ],
+      };
+    },
+  });
+
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-checker-feedback",
+      hook_event_name: "Stop",
+      stop_hook_active: false,
+      last_assistant_message: "Task complete.",
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan: v2Plan(root),
+    reviewerFactory,
+  });
+
+  assert.equal(outcome.decision, "block");
+  assert.match(outcome.feedback, /M03:invented-object/u);
+});
+
+
 test("deviation ledger ignores informational resolution notes and dismisses legacy info-only families", async (t) => {
   const root = await workspace(t);
   const task = await ensureTask({ projectRoot: root, sessionId: "session-info-ledger" });
@@ -580,6 +668,72 @@ test("parallel PostToolUse events evaluate one due Skill watcher exactly once", 
     "evaluations",
   ));
   assert.equal(evaluations.length, 1);
+});
+
+
+test("PostToolUse waits for every sibling result before finalizing a Skill watcher", async (t) => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\n\nVerify the result before completion.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root);
+  const reviewerFactory = fakeReviewerFactory();
+  const base = { cwd: root, session_id: "session-evolving-parallel", transcript_path: transcript };
+  const started = await handleRuntimeV2Event({
+    input: {
+      ...base,
+      hook_event_name: "PreToolUse",
+      tool_name: "Skill",
+      tool_use_id: "parallel-skill-start",
+      tool_input: { skill: "demo" },
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+  await withTaskState({ projectRoot: root, taskId: started.taskId }, (state) => {
+    Object.values(state.watchers)[0].nextCheckTurn = 0;
+  });
+
+  await fs.writeFile(transcript, parallelToolTranscript({ includeFirstResult: true }), "utf8");
+  const partial = await handleRuntimeV2Event({
+    input: {
+      ...base,
+      hook_event_name: "PostToolUse",
+      tool_name: "Read",
+      tool_use_id: "parallel-tool-a",
+      tool_input: { file_path: "a.txt" },
+      tool_response: { content: "a" },
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+  assert.equal(partial.feedback, null);
+  assert.equal(reviewerFactory.calls.filter((call) => call.schema === SKILL_REVIEW_SCHEMA).length, 0);
+  let state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
+  assert.equal(Object.values(state.watchers)[0].status, "ACTIVE");
+
+  await fs.writeFile(transcript, parallelToolTranscript({
+    includeFirstResult: true,
+    includeSecondResult: true,
+  }), "utf8");
+  const complete = await handleRuntimeV2Event({
+    input: {
+      ...base,
+      hook_event_name: "PostToolUse",
+      tool_name: "Read",
+      tool_use_id: "parallel-tool-b",
+      tool_input: { file_path: "b.txt" },
+      tool_response: { content: "b" },
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+  assert.match(complete.feedback, /Skill execution correction: demo/u);
+  assert.equal(reviewerFactory.calls.filter((call) => call.schema === SKILL_REVIEW_SCHEMA).length, 1);
+  state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
+  assert.equal(Object.values(state.watchers)[0].status, "DEVIATION");
 });
 
 
@@ -1006,6 +1160,72 @@ test("Stop-gate infrastructure failures block, then release with an unverified d
   const journal = await fs.readFile(path.join(tasksRoot, taskId, "journal", "events.jsonl"), "utf8");
   assert.match(journal, /STOP_ASSESSMENT_RETRY/u);
   assert.match(journal, /STOP_VERIFICATION_UNAVAILABLE/u);
+});
+
+
+test("a verified Skill deviation keeps Stop blocked without exposing release-only guidance", async (t) => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\n\nVerify the result before completion.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const task = await ensureTask({ projectRoot: root, sessionId: "session-combined-stop" });
+  await withTaskState({ projectRoot: root, taskId: task.taskId }, (state) => {
+    state.correctionBarrier.turnActivated = true;
+    state.stop.armedAtStart = true;
+  });
+  const reviewerFactory = fakeReviewerFactory({
+    stopAssessment() {
+      throw new Error("stop reviewer unavailable");
+    },
+  });
+  const plan = v2Plan(root);
+  const stopInput = {
+    cwd: root,
+    session_id: "session-combined-stop",
+    hook_event_name: "Stop",
+    stop_hook_active: false,
+    last_assistant_message: "Task complete.",
+    transcript_path: transcript,
+  };
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const blocked = await handleRuntimeV2Event({
+      input: stopInput,
+      projectRoot: root,
+      plan,
+      reviewerFactory,
+    });
+    assert.equal(blocked.decision, "block");
+  }
+
+  await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-combined-stop",
+      hook_event_name: "PreToolUse",
+      tool_name: "Skill",
+      tool_use_id: "skill-combined-stop",
+      tool_input: { skill: "demo" },
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+
+  const combined = await handleRuntimeV2Event({
+    input: stopInput,
+    projectRoot: root,
+    plan,
+    reviewerFactory,
+  });
+  assert.equal(combined.decision, "block");
+  assert.equal(combined.stop.verificationUnavailable, true);
+  assert.match(combined.feedback, /Skill execution correction: demo/u);
+  assert.doesNotMatch(combined.feedback, /stopCorrection|turn off|关闭|停用/iu);
+  assert.deepEqual(encodeHookOutput("Stop", stopInput, combined), {
+    decision: "block",
+    reason: combined.feedback,
+  });
 });
 
 test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failures ever seen", async (t) => {

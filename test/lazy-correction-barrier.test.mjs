@@ -134,12 +134,12 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
-        calls.push({ role: "reviewer-follow-up", request: null, schema: nextSchema });
         if (nextSchema !== STOP_REVIEW_SCHEMA) throw new Error("Unexpected reviewer follow-up.");
         const assessment = JSON.parse(await fs.readFile(
           path.join(requestDirectory, "assessment-request.json"),
           "utf8",
         ));
+        calls.push({ role: "reviewer-follow-up", request: assessment, schema: nextSchema });
         const objects = Object.values(assessment.population.metrics).flat();
         return {
           summary: "Task complete.",
@@ -171,6 +171,15 @@ async function writeTranscript(root, sessionId = "session-lazy") {
     message: { id: "user-message-1", content: "Build the requested feature." },
   })}\n`, "utf8");
   return transcript;
+}
+
+
+async function appendAssistantMessage(transcript, text, id = "assistant-message-1") {
+  await fs.appendFile(transcript, `${JSON.stringify({
+    type: "assistant",
+    uuid: id,
+    message: { id, content: [{ type: "text", text }] },
+  })}\n`, "utf8");
 }
 
 
@@ -329,6 +338,150 @@ test("the first project-changing tool completes onboarding before it is released
     reviewerFactory: factory,
   });
   assert.equal(factory.calls.length, 3, "resuming an onboarded task must reuse the frozen baseline");
+});
+
+
+test("every declared correction-barrier tool activates from the capability floor", async (t) => {
+  const cases = [
+    ["Skill", { skill: "runtime-corrector-workflow" }],
+    ["Bash", { command: "true" }],
+    ["PowerShell", { command: "Write-Output ok" }],
+    ["Write", { file_path: "Index.ets", content: "" }],
+    ["Edit", { file_path: "Index.ets", old_string: "a", new_string: "b" }],
+    ["NotebookEdit", { notebook_path: "notes.ipynb", cell_id: "cell-1" }],
+    ["Monitor", { operation: "status" }],
+  ];
+  for (const [toolName, toolInput] of cases) {
+    await t.test(toolName, async (subtest) => {
+      const root = await workspace(subtest);
+      const transcript = await writeTranscript(root, `session-barrier-${toolName.toLowerCase()}`);
+      const factory = reviewerFactory();
+      const outcome = await handleRuntimeV2Event({
+        input: {
+          cwd: root,
+          session_id: `session-barrier-${toolName.toLowerCase()}`,
+          hook_event_name: "PreToolUse",
+          hook_event_id: `pre-${toolName.toLowerCase()}`,
+          tool_name: toolName,
+          tool_input: toolInput,
+          tool_use_id: `toolu-${toolName.toLowerCase()}`,
+          transcript_path: transcript,
+        },
+        projectRoot: root,
+        plan: plan(root),
+        reviewerFactory: factory,
+      });
+      const state = JSON.parse(await fs.readFile(
+        path.join(root, ".runtime-correction", "tasks", outcome.taskId, "task.json"),
+        "utf8",
+      ));
+      assert.equal(state.correctionBarrier.turnActivated, true);
+      assert.equal(state.onboarding.status, "COMPLETED");
+      assert.equal(factory.calls.filter((call) => call.role === "onboarding-extractor").length, 2);
+    });
+  }
+});
+
+
+test("the correction barrier stays inactive until onboarding returns", async (t) => {
+  const root = await workspace(t);
+  const transcript = await writeTranscript(root, "session-barrier-in-progress");
+  let releaseExtractors;
+  let markExtractorStarted;
+  const extractorGate = new Promise((resolve) => { releaseExtractors = resolve; });
+  const extractorStarted = new Promise((resolve) => { markExtractorStarted = resolve; });
+  const factory = reviewerFactory();
+  const gatedFactory = async (options) => {
+    if (options.role === "onboarding-extractor") {
+      markExtractorStarted();
+      await extractorGate;
+    }
+    return factory(options);
+  };
+  gatedFactory.calls = factory.calls;
+
+  const pending = handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-barrier-in-progress",
+      hook_event_name: "PreToolUse",
+      tool_name: "Write",
+      tool_input: { file_path: path.join(root, "Index.ets") },
+      tool_use_id: "barrier-in-progress",
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan: plan(root),
+    reviewerFactory: gatedFactory,
+  });
+
+  await extractorStarted;
+  const [taskId] = await taskDirectories(root);
+  assert.ok(taskId, "the lazy task must be persisted before onboarding finishes");
+  const inProgress = JSON.parse(await fs.readFile(
+    path.join(root, ".runtime-correction", "tasks", taskId, "task.json"),
+    "utf8",
+  ));
+  assert.equal(inProgress.correctionBarrier.turnActivated, false);
+
+  releaseExtractors();
+  await pending;
+  const ready = JSON.parse(await fs.readFile(
+    path.join(root, ".runtime-correction", "tasks", taskId, "task.json"),
+    "utf8",
+  ));
+  assert.equal(ready.correctionBarrier.turnActivated, true);
+});
+
+
+test("a legacy task without correctionBarrier recovers on correction PostToolUse", async (t) => {
+  const root = await workspace(t);
+  const transcript = await writeTranscript(root, "session-legacy-barrier");
+  const factory = reviewerFactory();
+  const initial = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-legacy-barrier",
+      hook_event_name: "PreToolUse",
+      tool_name: "Write",
+      tool_input: { file_path: path.join(root, "first.ets") },
+      tool_use_id: "legacy-first",
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan: plan(root),
+    reviewerFactory: factory,
+  });
+  await withTaskState({ projectRoot: root, taskId: initial.taskId }, (state) => {
+    delete state.correctionBarrier;
+    delete state.onboarding;
+    state.groundTruth.version = 0;
+    state.groundTruth.digest = null;
+  });
+
+  await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-legacy-barrier",
+      hook_event_name: "PostToolUse",
+      tool_name: "Edit",
+      tool_input: { file_path: path.join(root, "first.ets") },
+      tool_response: { success: true },
+      tool_use_id: "legacy-post",
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan: plan(root),
+    reviewerFactory: factory,
+  });
+
+  const recovered = JSON.parse(await fs.readFile(
+    path.join(root, ".runtime-correction", "tasks", initial.taskId, "task.json"),
+    "utf8",
+  ));
+  assert.equal(recovered.schemaVersion, "runtime-corrector.task.v2");
+  assert.equal(recovered.correctionBarrier.turnActivated, true);
+  assert.equal(recovered.onboarding.status, "COMPLETED");
 });
 
 
@@ -610,9 +763,36 @@ test("an explicit completion claim crosses the barrier even without a tool call"
 });
 
 
+test("the baseline Stop payload derives its completion claim from the transcript", async (t) => {
+  const root = await workspace(t);
+  const transcript = await writeTranscript(root, "session-baseline-stop-claim");
+  await appendAssistantMessage(transcript, "I have completed the requested changes.");
+  const factory = reviewerFactory();
+  const outcome = await handleRuntimeV2Event({
+    input: {
+      cwd: root,
+      session_id: "session-baseline-stop-claim",
+      hook_event_name: "Stop",
+      stop_hook_active: false,
+      transcript_path: transcript,
+    },
+    projectRoot: root,
+    plan: plan(root),
+    reviewerFactory: factory,
+  });
+
+  assert.equal(outcome.decision, "allow");
+  assert.equal((await taskDirectories(root)).length, 1);
+  const stopCall = factory.calls.find((call) => call.schema === STOP_REVIEW_SCHEMA && call.request);
+  assert.equal(stopCall.request.hook.lastAssistantMessage, "I have completed the requested changes.");
+});
+
+
 test("completed-subtask and direct-negated prose do not declare task completion", async (t) => {
   const messages = [
     "The implementation fixed the parser bug; tests are pending.",
+    "I fixed the parser bug; tests are pending.",
+    "I have completed the parser, but verification remains.",
     "并非所有要求均已满足。",
   ];
 
@@ -684,6 +864,8 @@ test("ordinary affirmative completion and no-change language crosses the taskles
   const messages = [
     "All requirements are satisfied.",
     "No changes are required.",
+    "I have completed the requested changes.",
+    "The feature is complete.",
     "所有要求均已满足。",
     "无需再做改动。",
   ];

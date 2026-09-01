@@ -83,12 +83,18 @@ function primaryCommand(hooks, eventName) {
 }
 
 
+function declaredNodeScript(command, root = PLUGIN_ROOT) {
+  const match = command.match(/^node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"\r\n]+\.mjs)"$/u);
+  assert.ok(match, `unsupported declared command shape: ${command}`);
+  return path.join(root, ...match[1].split("/"));
+}
+
+
 function runDeclaredCommand(command, { cwd, input, bom = false, rawInput = null }) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, {
+    const child = spawn(process.execPath, [declaredNodeScript(command)], {
       cwd,
       env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
-      shell: true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -99,6 +105,42 @@ function runDeclaredCommand(command, { cwd, input, bom = false, rawInput = null 
     child.once("close", (code) => resolve({ code, stdout, stderr }));
     child.stdin.end(rawInput ?? `${bom ? "\uFEFF" : ""}${JSON.stringify(input)}`);
   });
+}
+
+
+function assertExactEventOutput(eventName, input, output) {
+  if (["SessionStart", "PreCompact", "SessionEnd"].includes(eventName)) {
+    assert.equal(output, null, `${eventName} must stay empty-stdout`);
+    return;
+  }
+  if (eventName === "PreToolUse") {
+    if (input.tool_name !== "Skill") assert.equal(output, null);
+    else assert.deepEqual(output, {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "allow",
+      },
+    });
+    return;
+  }
+  if (["UserPromptSubmit", "PostToolUse"].includes(eventName)) {
+    if (output === null) return;
+    assert.deepEqual(Object.keys(output), ["hookSpecificOutput"]);
+    assert.deepEqual(Object.keys(output.hookSpecificOutput).sort(), ["additionalContext", "hookEventName"]);
+    assert.equal(output.hookSpecificOutput.hookEventName, eventName);
+    assert.equal(typeof output.hookSpecificOutput.additionalContext, "string");
+    return;
+  }
+  assert.equal(eventName, "Stop");
+  if (output === null) return;
+  if (output.decision === "block") {
+    assert.deepEqual(Object.keys(output).sort(), ["decision", "reason"]);
+    assert.equal(typeof output.reason, "string");
+    return;
+  }
+  assert.deepEqual(Object.keys(output).sort(), ["continue", "systemMessage"]);
+  assert.equal(output.continue, true);
+  assert.equal(typeof output.systemMessage, "string");
 }
 
 
@@ -257,8 +299,12 @@ test("plugin hooks expose complete shell commands within the supported capabilit
 });
 
 
-test("marketplace and command frontmatter parse into the host-supported scalar schema", async () => {
+test("manifest, marketplace, contract, command and Skill declarations agree on the compatibility surface", async () => {
+  const manifest = await readJson(".claude-plugin/plugin.json");
+  const packageManifest = await readJson("package.json");
+  const contract = await readCompatJson("contract.json");
   const marketplace = await readJson(".claude-plugin/marketplace.json");
+  const marketplacePlugin = marketplace.plugins[0];
   assert.equal(marketplace.name, "runtime-corrector-local");
   assert.deepEqual(marketplace.metadata, {
     description: "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
@@ -266,17 +312,39 @@ test("marketplace and command frontmatter parse into the host-supported scalar s
   });
   assert.equal(Object.hasOwn(marketplace, "description"), false);
   assert.equal(Object.hasOwn(marketplace, "version"), false);
-  assert.equal(marketplace.plugins[0].name, "runtime-corrector");
-  assert.equal(marketplace.plugins[0].source, "./");
+  assert.equal(marketplacePlugin.source, "./");
+  for (const key of ["name", "version", "description"]) {
+    assert.equal(marketplacePlugin[key], manifest[key], `marketplace plugin ${key}`);
+    assert.equal(packageManifest[key], manifest[key], `package ${key}`);
+  }
+  assert.equal(packageManifest.scripts["benchmark:session-end"], "node ./scripts/benchmark-session-end.mjs");
+  assert.deepEqual(await discoverCommandNames(), [...contract.commands].sort());
+  assert.deepEqual(await discoverSkillNames(), [...contract.skills].sort());
 
-  const check = frontmatter(await fs.readFile(path.join(PLUGIN_ROOT, "commands", "check.md"), "utf8"), "commands/check.md");
-  const stages = frontmatter(await fs.readFile(path.join(PLUGIN_ROOT, "commands", "stages.md"), "utf8"), "commands/stages.md");
-  assert.equal(check["argument-hint"], "[artifact-path]");
-  assert.equal(stages["argument-hint"], "[<stage> <on|off>]");
+  for (const commandName of contract.commands) {
+    const relativePath = `commands/${commandName}.md`;
+    const metadata = frontmatter(await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8"), relativePath);
+    assert.equal(typeof metadata.description, "string", `${relativePath} description scalar`);
+    assert.equal(typeof metadata["allowed-tools"], "string", `${relativePath} allowed-tools scalar`);
+    if (Object.hasOwn(metadata, "argument-hint")) {
+      assert.equal(typeof metadata["argument-hint"], "string", `${relativePath} argument-hint scalar`);
+    }
+  }
+  for (const skillName of contract.skills) {
+    const relativePath = `skills/${skillName}/SKILL.md`;
+    const metadata = frontmatter(await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8"), relativePath);
+    assert.equal(metadata.name, skillName, `${relativePath} name must match its directory`);
+    assert.equal(typeof metadata.description, "string", `${relativePath} description scalar`);
+    for (const optionalScalar of ["allowed-tools", "argument-hint"]) {
+      if (Object.hasOwn(metadata, optionalScalar)) {
+        assert.equal(typeof metadata[optionalScalar], "string", `${relativePath} ${optionalScalar} scalar`);
+      }
+    }
+  }
 });
 
 
-test("effective primary hook commands accept complete baseline inputs without hook_event_id", async (t) => {
+test("canonical capability inputs drive all seven declared hook processes with exact event unions", async (t) => {
   const root = await workspace(t, [
     "version: 2",
     "artifacts: []",
@@ -291,48 +359,21 @@ test("effective primary hook commands accept complete baseline inputs without ho
   ]);
   const transcriptPath = path.join(root, "transcript.jsonl");
   await fs.writeFile(transcriptPath, "", "utf8");
-  const common = {
-    session_id: "baseline-session",
-    transcript_path: transcriptPath,
-    cwd: root,
-  };
-  const inputs = {
-    SessionStart: { ...common, hook_event_name: "SessionStart", source: "startup" },
-    UserPromptSubmit: { ...common, hook_event_name: "UserPromptSubmit", prompt: "hi" },
-    PreToolUse: {
-      ...common,
-      hook_event_name: "PreToolUse",
-      tool_name: "Skill",
-      tool_input: { skill: "runtime-corrector-workflow" },
-      tool_use_id: "toolu-pre-baseline",
-    },
-    PostToolUse: {
-      ...common,
-      hook_event_name: "PostToolUse",
-      tool_name: "Read",
-      tool_input: { file_path: path.join(root, "README.md") },
-      tool_response: { content: "not found" },
-      tool_use_id: "toolu-post-baseline",
-    },
-    Stop: { ...common, hook_event_name: "Stop", stop_hook_active: false },
-    PreCompact: {
-      ...common,
-      hook_event_name: "PreCompact",
-      trigger: "manual",
-      custom_instructions: null,
-    },
-    SessionEnd: { ...common, hook_event_name: "SessionEnd", reason: "other" },
-  };
+  const contract = await readCompatJson("contract.json");
   const hooks = await readJson("hooks/hooks.json");
 
-  for (const [eventName, input] of Object.entries(inputs)) {
+  for (const event of contract.events) {
+    const eventName = event.name;
+    const canonical = await readCompatJson(event.input);
+    const input = JSON.parse(JSON.stringify(canonical).replaceAll("/workspace", root));
+    input.cwd = root;
+    input.transcript_path = transcriptPath;
+    input.session_id = `canonical-${eventName.toLowerCase()}`;
     assert.equal(Object.hasOwn(input, "hook_event_id"), false, eventName);
     const result = await runDeclaredCommand(primaryCommand(hooks, eventName), { cwd: root, input });
     assert.equal(result.code, 0, `${eventName}: ${result.stderr}`);
     const output = parseProtocolStdout(result.stdout, eventName);
-    if (output?.hookSpecificOutput) {
-      assert.equal(output.hookSpecificOutput.hookEventName, eventName);
-    }
+    assertExactEventOutput(eventName, input, output);
   }
 });
 

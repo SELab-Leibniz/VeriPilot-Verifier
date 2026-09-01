@@ -9,7 +9,8 @@
   },
   "scripts": {
     "check": "node ./scripts/cli.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "benchmark:session-end": "node ./scripts/benchmark-session-end.mjs"
   },
   "engines": {
     "node": ">=18"

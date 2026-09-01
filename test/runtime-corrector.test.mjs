@@ -695,8 +695,8 @@ test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch",
   // the long onboarding budget instead.
   assert.equal(hooks.hooks.SessionStart[0].hooks[0].timeout, 30);
   assert.equal(hooks.hooks.UserPromptSubmit[0].hooks[0].timeout, 1800);
-  assert.equal(hooks.hooks.PreToolUse[0].hooks[0].timeout, 1260);
-  assert.equal(hooks.hooks.PostToolUse[0].hooks[0].timeout, 1260);
+  assert.equal(hooks.hooks.PreToolUse[0].hooks[0].timeout, 1800);
+  assert.equal(hooks.hooks.PostToolUse[0].hooks[0].timeout, 1800);
   const packageManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, "package.json"), "utf8"));
   const pluginManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json"), "utf8"));
   const marketplace = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "marketplace.json"), "utf8"));

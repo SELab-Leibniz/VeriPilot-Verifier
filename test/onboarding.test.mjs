@@ -904,21 +904,30 @@ test("onboarding floors reviewer timeouts for the bulk decompose and runs panel 
   });
   const spawns = [];
   const wrapped = async (args) => {
-    spawns.push({ role: args.role, timeoutMs: args.reviewer?.timeoutMs });
+    spawns.push({ role: args.role, timeoutMs: args.reviewer?.timeoutMs, deadlineAt: args.deadlineAt });
     return factory(args);
   };
   wrapped.calls = factory.calls;
   await stopEvent(root, plan, wrapped, "stop-onboard-floor");
   const extractors = spawns.filter((spawn) => spawn.role === "onboarding-extractor");
   assert.equal(extractors.length, 2);
-  assert.ok(extractors.every((spawn) => spawn.timeoutMs >= 480000),
-    "bulk-decompose extractor timeout is floored above the incremental default");
+  assert.ok(extractors.every((spawn) => spawn.timeoutMs === 900000),
+    "bulk-decompose extractor timeout keeps the measured floor");
+  assert.ok(extractors.every((spawn) => Number.isFinite(spawn.deadlineAt)),
+    "every extractor receives an absolute phase deadline");
+  assert.equal(new Set(extractors.map((spawn) => spawn.deadlineAt)).size, 1,
+    "parallel extractors share one phase deadline");
   const adjudicator = spawns.find((spawn) => spawn.role === "onboarding-adjudicator");
-  assert.ok(adjudicator.timeoutMs >= 360000, "adjudicator timeout floored");
+  assert.equal(adjudicator.timeoutMs, 600000, "adjudicator keeps the measured floor");
+  assert.ok(Number.isFinite(adjudicator.deadlineAt), "the adjudicator receives the overall deadline");
+  assert.ok(adjudicator.deadlineAt > extractors[0].deadlineAt,
+    "the adjudicator may use only the reserved tail of the onboarding budget");
   // Incremental (non-onboarding) reviewer spawns keep their configured default.
   const stopSpawns = spawns.filter((spawn) => !spawn.role.startsWith("onboarding-"));
   assert.ok(stopSpawns.every((spawn) => spawn.timeoutMs === 240000),
     "non-onboarding roles keep the configured/default timeout");
+  assert.ok(stopSpawns.every((spawn) => spawn.deadlineAt === undefined),
+    "non-onboarding roles are not silently coupled to the onboarding deadline");
 });
 
 test("resume-transient panel failures defer without consuming the real-failure attempt budget", async (t) => {

@@ -36,8 +36,11 @@ async function declaredSessionEndHook() {
 }
 
 
-async function declaredSessionEndCommand() {
-  return (await declaredSessionEndHook()).command;
+async function declaredSessionEndScript(root = pluginRoot) {
+  const command = (await declaredSessionEndHook()).command;
+  const match = command.match(/^node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"\r\n]+)"$/u);
+  assert.ok(match, "SessionEnd must declare one fixed plugin-root Node script path");
+  return path.join(root, ...match[1].split("/"));
 }
 
 
@@ -58,14 +61,20 @@ function cleanProcessEnvironment(overrides = {}) {
 }
 
 
-async function runDeclaredSessionEnd({ cwd, input, env = {}, keepStdinOpen = false }) {
-  const command = await declaredSessionEndCommand();
+async function runDeclaredSessionEnd({
+  cwd,
+  input,
+  env = {},
+  keepStdinOpen = false,
+  rawInput = null,
+  declaredPluginRoot = pluginRoot,
+}) {
+  const script = await declaredSessionEndScript(declaredPluginRoot);
   const startedAt = performance.now();
   return new Promise((resolve, reject) => {
-    const child = spawn(command, {
+    const child = spawn(process.execPath, [script], {
       cwd,
-      env: cleanProcessEnvironment(env),
-      shell: true,
+      env: { ...cleanProcessEnvironment(env), CLAUDE_PLUGIN_ROOT: declaredPluginRoot },
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -94,8 +103,9 @@ async function runDeclaredSessionEnd({ cwd, input, env = {}, keepStdinOpen = fal
         elapsedMs: performance.now() - startedAt,
       });
     });
-    if (keepStdinOpen) child.stdin.write(JSON.stringify(input));
-    else child.stdin.end(JSON.stringify(input));
+    const serialized = rawInput ?? JSON.stringify(input);
+    if (keepStdinOpen) child.stdin.write(serialized);
+    else child.stdin.end(serialized);
   });
 }
 
@@ -204,16 +214,58 @@ test("declared SessionEnd appends one lifecycle event to the indexed task", asyn
       hookEventId: lines[0].hookEventId,
       hookEventName: lines[0].hookEventName,
       toolName: lines[0].toolName,
-      lifecycleOnly: lines[0].lifecycleOnly,
     },
     {
       type: "HOOK_EVENT",
       hookEventId: "active-session-end-event",
       hookEventName: "SessionEnd",
       toolName: null,
-      lifecycleOnly: true,
     },
   );
+  assert.equal(Object.hasOwn(lines[0], "lifecycleOnly"), false);
+});
+
+
+test("declared SessionEnd rejects stdin above 256 KiB without journaling", async (t) => {
+  const root = await workspace(t);
+  const sessionId = "oversized-session-end";
+  const task = await ensureTask({ projectRoot: root, sessionId });
+  const rawInput = JSON.stringify({
+    cwd: root,
+    session_id: sessionId,
+    hook_event_name: "SessionEnd",
+    hook_event_id: "oversized-session-end-event",
+    transcript_path: path.join(root, "transcript.jsonl"),
+    reason: "other",
+    padding: "界".repeat(90_000),
+  });
+  assert.ok(Buffer.byteLength(rawInput, "utf8") > 256 * 1024);
+
+  const result = await runDeclaredSessionEnd({ cwd: root, input: null, rawInput });
+
+  await assertFastSuccessfulSilence(result);
+  await assert.rejects(fs.access(
+    path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
+  ));
+});
+
+
+test("declared Node launch preserves a plugin root containing spaces", async (t) => {
+  const root = await workspace(t);
+  const spacedRoot = path.join(root, "plugin root with spaces");
+  await fs.symlink(pluginRoot, spacedRoot, "dir");
+  const result = await runDeclaredSessionEnd({
+    cwd: root,
+    declaredPluginRoot: spacedRoot,
+    input: {
+      cwd: root,
+      session_id: "spaced-root-session-end",
+      hook_event_name: "SessionEnd",
+      transcript_path: path.join(root, "transcript.jsonl"),
+      reason: "other",
+    },
+  });
+  await assertFastSuccessfulSilence(result);
 });
 
 
