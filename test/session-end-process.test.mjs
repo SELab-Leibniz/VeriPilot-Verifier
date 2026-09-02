@@ -31,21 +31,27 @@ async function declaredSessionEndHook() {
     .flatMap((registration) => registration.hooks)
     .filter((hook) => hook.type === "command");
   assert.equal(hooks.length, 1, "SessionEnd must declare exactly one command");
-  assert.match(hooks[0].command, /\/scripts\/session-end\.mjs"$/u);
+  assert.match(hooks[0].command, /"scripts\/session-end\.mjs"$/u);
   return hooks[0];
 }
 
 
-async function declaredSessionEndScript(root = pluginRoot) {
-  const command = (await declaredSessionEndHook()).command;
-  const match = command.match(/^node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"\r\n]+)"$/u);
-  assert.ok(match, "SessionEnd must declare one fixed plugin-root Node script path");
-  return path.join(root, ...match[1].split("/"));
+function shellInvocation(command) {
+  if (process.platform === "win32") {
+    return {
+      executable: process.env.ComSpec || "cmd.exe",
+      args: ["/d", "/s", "/c", command],
+    };
+  }
+  return { executable: "/bin/sh", args: ["-c", command] };
 }
 
 
 function cleanProcessEnvironment(overrides = {}) {
-  const env = { ...process.env, CLAUDE_PLUGIN_ROOT: pluginRoot };
+  const env = { ...process.env };
+  delete env.CLAUDE_PLUGIN_ROOT;
+  delete env.CODEAGENT3_PLUGIN_ROOT;
+  env.CLAUDE_PLUGIN_ROOT = pluginRoot;
   for (const key of [
     "RUNTIME_CORRECTOR_TASK_ID",
     "RUNTIME_CORRECTOR_SEMANTIC_REVIEW_ACTIVE",
@@ -69,12 +75,14 @@ async function runDeclaredSessionEnd({
   rawInput = null,
   declaredPluginRoot = pluginRoot,
 }) {
-  const script = await declaredSessionEndScript(declaredPluginRoot);
+  const command = (await declaredSessionEndHook()).command;
+  const invocation = shellInvocation(command);
   const startedAt = performance.now();
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [script], {
+    const child = spawn(invocation.executable, invocation.args, {
       cwd,
       env: { ...cleanProcessEnvironment(env), CLAUDE_PLUGIN_ROOT: declaredPluginRoot },
+      windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";

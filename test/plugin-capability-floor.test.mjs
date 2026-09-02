@@ -83,18 +83,41 @@ function primaryCommand(hooks, eventName) {
 }
 
 
-function declaredNodeScript(command, root = PLUGIN_ROOT) {
-  const match = command.match(/^node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"\r\n]+\.mjs)"$/u);
+function declaredNodeCommand(command) {
+  const match = command.match(/^node -e "([^"\r\n]+)" "(scripts\/[a-z0-9-]+\.mjs)"$/u);
   assert.ok(match, `unsupported declared command shape: ${command}`);
-  return path.join(root, ...match[1].split("/"));
+  return { bootstrap: match[1], entry: match[2] };
 }
 
 
-function runDeclaredCommand(command, { cwd, input, bom = false, rawInput = null }) {
+function shellInvocation(command) {
+  if (process.platform === "win32") {
+    return {
+      executable: process.env.ComSpec || "cmd.exe",
+      args: ["/d", "/s", "/c", command],
+    };
+  }
+  return { executable: "/bin/sh", args: ["-c", command] };
+}
+
+
+function runDeclaredCommand(command, {
+  cwd,
+  input,
+  bom = false,
+  rawInput = null,
+  env: overrides = {},
+}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [declaredNodeScript(command)], {
+    const env = { ...process.env };
+    delete env.CLAUDE_PLUGIN_ROOT;
+    delete env.CODEAGENT3_PLUGIN_ROOT;
+    Object.assign(env, { CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT }, overrides);
+    const invocation = shellInvocation(command);
+    const child = spawn(invocation.executable, invocation.args, {
       cwd,
-      env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
+      env,
+      windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -281,11 +304,12 @@ test("plugin hooks expose complete shell commands within the supported capabilit
       for (const hook of registration.hooks) {
         assert.equal(hook.type, "command", `${eventName} hook type`);
         assert.equal(Object.hasOwn(hook, "args"), false, `${eventName} uses unsupported args`);
-        assert.match(
-          hook.command,
-          /^node "\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/[a-z0-9-]+\.mjs"$/u,
-          `${eventName} command must quote the plugin-root script path`,
-        );
+        const declared = declaredNodeCommand(hook.command);
+        assert.match(declared.bootstrap, /CLAUDE_PLUGIN_ROOT/u, `${eventName} Claude root`);
+        assert.match(declared.bootstrap, /CODEAGENT3_PLUGIN_ROOT/u, `${eventName} CodeAgent3 root`);
+        assert.match(declared.bootstrap, /realpathSync/u, `${eventName} canonical root`);
+        assert.match(declared.bootstrap, /pathToFileURL/u, `${eventName} file URL import`);
+        assert.doesNotMatch(hook.command, /\$\{|\$env:|%[A-Z0-9_]+%/u, `${eventName} shell root expansion`);
       }
     }
   }
