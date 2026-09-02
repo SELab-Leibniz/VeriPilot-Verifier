@@ -26,6 +26,14 @@ import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 
+function pluginProcessEnvironment(overrides = {}) {
+  const env = { ...process.env };
+  delete env.CLAUDE_PLUGIN_ROOT;
+  delete env.CODEAGENT3_PLUGIN_ROOT;
+  return { ...env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT, ...overrides };
+}
+
+
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-corrector-test-"));
   t.after(async () => {
@@ -686,9 +694,9 @@ test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch",
   assert.equal(hooks.hooks.PostToolBatch, undefined);
   assert.ok(hooks.hooks.PostToolUse);
   assert.equal(hooks.hooks.PostToolUse[0].matcher, undefined);
-  assert.equal(
+  assert.match(
     hooks.hooks.PostToolUse[0].hooks[0].command,
-    'node "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs"',
+    /^node -e "[^"\r\n]+" "scripts\/post-tool-use\.mjs"$/u,
   );
   assert.equal(Object.hasOwn(hooks.hooks.PostToolUse[0].hooks[0], "args"), false);
   // SessionStart is lifecycle-only; the first correction-relevant tool owns
@@ -1173,7 +1181,7 @@ test("CLI hook emits PostToolUse additionalContext JSON", async (t) => {
   const stdout = execFileSync(
     process.execPath,
     [path.join(PLUGIN_ROOT, "scripts", "post-tool-use.mjs")],
-    { cwd, input, encoding: "utf8" },
+    { cwd, input, encoding: "utf8", env: pluginProcessEnvironment() },
   );
   const payload = JSON.parse(stdout);
 
@@ -1191,7 +1199,7 @@ test("CLI hook accepts UTF-8 BOM input from Windows orchestrators", async (t) =>
   const stdout = execFileSync(
     process.execPath,
     [path.join(PLUGIN_ROOT, "scripts", "post-tool-use.mjs")],
-    { cwd, input, encoding: "utf8" },
+    { cwd, input, encoding: "utf8", env: pluginProcessEnvironment() },
   );
   const payload = JSON.parse(stdout);
 

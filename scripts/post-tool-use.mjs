@@ -6,6 +6,7 @@ import {
   decodeHookInput,
   encodeHookOutput,
 } from "../lib/protocol/claude-core-hooks.mjs";
+import { resolvePluginRoot } from "../lib/plugin-root.mjs";
 import {
   finalizeArtifactCheck,
   handleHook,
@@ -57,16 +58,20 @@ try {
   const runtimeProjectRoot = path.resolve(input.cwd ?? process.cwd());
   const internal = await inspectInternalRun(process.env);
   if (internal.internal) process.exit(0);
+  const { root: pluginRoot } = await resolvePluginRoot({
+    env: process.env,
+    executingModuleUrl: import.meta.url,
+  });
   let preparationError = null;
   let prepared = { matched: false, reason: "artifact-preparation-failed" };
   try {
-    prepared = await handleHook(input, { deferPersistence: true });
+    prepared = await handleHook(input, { deferPersistence: true, pluginRoot });
   } catch (error) {
     preparationError = error;
   }
   const plan = await loadConfig({
     cwd: runtimeProjectRoot,
-    pluginRoot: process.env.CLAUDE_PLUGIN_ROOT,
+    pluginRoot,
   });
   armShadowMode = plan?.runtimeV2?.shadowMode === true;
   armShadowKnown = true;
@@ -81,7 +86,7 @@ try {
     runtimeV2 = await handleRuntimeV2Event({
       input,
       projectRoot: runtimeProjectRoot,
-      pluginRoot: process.env.CLAUDE_PLUGIN_ROOT,
+      pluginRoot,
       plan,
       artifact: prepared.matched ? prepared.reviewContext.artifact : null,
     });
@@ -127,7 +132,7 @@ try {
     ? await runSemanticReview({
         input,
         prepared,
-        pluginRoot: process.env.CLAUDE_PLUGIN_ROOT,
+        pluginRoot,
         runtimeV2Handle: runtimeV2.reviewerHandle ?? null,
         runtimeV2Context: runtimeV2.artifactReviewContext ?? null,
       })

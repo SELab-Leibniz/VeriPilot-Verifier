@@ -6,6 +6,7 @@ import {
   decodeHookInput,
   encodeHookOutput,
 } from "../lib/protocol/claude-core-hooks.mjs";
+import { resolvePluginRoot } from "../lib/plugin-root.mjs";
 import { loadConfig } from "../lib/runtime-corrector.mjs";
 import { DEFAULT_LOCALE, formatMessage } from "../lib/messages.mjs";
 import { inspectInternalRun } from "../lib/runtime-v2/internal-run.mjs";
@@ -58,7 +59,10 @@ try {
   }
   const internal = await inspectInternalRun(process.env);
   if (internal.internal) process.exit(0);
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const { root: pluginRoot } = await resolvePluginRoot({
+    env: process.env,
+    executingModuleUrl: import.meta.url,
+  });
   const plan = await loadConfig({ cwd: projectRoot, pluginRoot });
   shadowMode = plan?.runtimeV2?.shadowMode === true;
   shadowKnown = true;

@@ -20,6 +20,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { basename, extname, isAbsolute, join, resolve } from 'node:path';
 
 import { decodeHookInput, encodeHookOutput } from '../lib/protocol/claude-core-hooks.mjs';
+import { resolvePluginRoot } from '../lib/plugin-root.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { outputTreeDirectory } from '../lib/runtime-v2/paths.mjs';
 
@@ -64,7 +65,11 @@ async function main() {
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   let plan = null;
   try {
-    plan = await loadConfig({ cwd: projectRoot, pluginRoot: process.env.CLAUDE_PLUGIN_ROOT });
+    const { root: pluginRoot } = await resolvePluginRoot({
+      env: process.env,
+      executingModuleUrl: import.meta.url,
+    });
+    plan = await loadConfig({ cwd: projectRoot, pluginRoot });
   } catch {
     plan = null; // An unreadable config must never block the run.
   }
