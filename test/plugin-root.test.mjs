@@ -170,3 +170,17 @@ test("resolves an entry inside the root and rejects path escape", async () => {
     entry: "../outside.mjs",
   }), "PLUGIN_ROOT_ENTRY_ESCAPE");
 });
+
+
+test("entry containment accepts an in-root name that begins with two dots", async (t) => {
+  const root = await makePluginCopy(t);
+  const unusualDirectory = path.join(root, "..metadata");
+  const entry = path.join(unusualDirectory, "entry.mjs");
+  await fs.mkdir(unusualDirectory);
+  await fs.writeFile(entry, "export {};\n", "utf8");
+
+  assert.equal(
+    await resolvePluginEntry({ root, entry: "..metadata/entry.mjs" }),
+    await fs.realpath(entry),
+  );
+});

@@ -58,10 +58,10 @@ function shellInvocation(command) {
 }
 
 
-async function runCodeAgent3Only(command, cwd, input) {
+async function runCodeAgent3Only(command, cwd, input, envOverrides = {}) {
   const invocation = shellInvocation(command);
   return new Promise((resolve, reject) => {
-    const env = { ...process.env, CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT };
+    const env = { ...process.env, CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT, ...envOverrides };
     delete env.CLAUDE_PLUGIN_ROOT;
     const child = spawn(invocation.executable, invocation.args, {
       cwd,
@@ -106,6 +106,24 @@ async function onlyTaskState(root) {
 
 test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the canonical root", async (t) => {
   const root = await workspace(t);
+  const reviewerCapture = path.join(root, "reviewer-argv.json");
+  const reviewerPreload = path.join(root, "fake-reviewer-preload.cjs");
+  await fs.writeFile(reviewerPreload, String.raw`
+const fs = require("node:fs");
+if (process.argv.includes("--json-schema")) {
+  fs.writeFileSync(process.env.FAKE_REVIEWER_CAPTURE, JSON.stringify(process.argv.slice(1)), "utf8");
+  process.stdout.write(JSON.stringify({
+    session_id: "codeagent3-reviewer",
+    structured_output: {
+      summary: "No new Ground Truth operations.",
+      taskClassification: "CONTINUATION",
+      operations: [],
+      skillGroundTruth: { constraints: [], taskOverlays: [] },
+    },
+  }));
+  process.exit(0);
+}
+`, "utf8");
   const completed = await runCodeAgent3Only(await preToolUseCommand(), root, {
     session_id: "codeagent3-plugin-skill",
     transcript_path: path.join(root, "transcript.jsonl"),
@@ -114,6 +132,10 @@ test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the ca
     tool_name: "Skill",
     tool_input: { skill: "runtime-corrector-control" },
     tool_use_id: "toolu-codeagent3-plugin-skill",
+  }, {
+    RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
+    NODE_OPTIONS: `--require=${reviewerPreload}`,
+    FAKE_REVIEWER_CAPTURE: reviewerCapture,
   });
 
   assert.equal(completed.code, 0, completed.stderr);
@@ -122,4 +144,8 @@ test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the ca
   assert.equal(watchers.length, 1);
   assert.equal(watchers[0].skillId, "runtime-corrector-control");
   assert.equal(watchers[0].status, "ACTIVE");
+  const reviewerArgs = JSON.parse(await fs.readFile(reviewerCapture, "utf8"));
+  const pluginDirIndex = reviewerArgs.indexOf("--plugin-dir");
+  assert.notEqual(pluginDirIndex, -1, reviewerArgs.join(" "));
+  assert.equal(reviewerArgs[pluginDirIndex + 1], await fs.realpath(PLUGIN_ROOT));
 });

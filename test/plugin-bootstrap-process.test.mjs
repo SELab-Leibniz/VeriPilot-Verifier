@@ -37,8 +37,7 @@ function shellInvocation(command) {
 }
 
 
-async function runCommand(command, { cwd, env, input }) {
-  const invocation = shellInvocation(command);
+async function runCommand(command, { cwd, env, input, invocation = shellInvocation(command) }) {
   return new Promise((resolve, reject) => {
     const processEnv = { ...process.env };
     for (const key of ROOT_KEYS) delete processEnv[key];
@@ -66,6 +65,56 @@ async function runCommand(command, { cwd, env, input }) {
 }
 
 
+async function supportedShellInvocations(command) {
+  if (process.platform !== "win32") {
+    const candidates = [
+      { name: "posix-sh", executable: "/bin/sh", args: ["-c", command] },
+      { name: "bash", executable: "/bin/bash", args: ["-c", command] },
+    ];
+    const available = [];
+    for (const candidate of candidates) {
+      try {
+        await fs.access(candidate.executable);
+        available.push(candidate);
+      } catch {
+        // A shell absent from this operating system is covered by another CI matrix member.
+      }
+    }
+    return available;
+  }
+
+  const windowsRoot = process.env.SystemRoot || "C:\\Windows";
+  const programFiles = process.env.ProgramFiles || "C:\\Program Files";
+  const candidates = [
+    {
+      name: "cmd",
+      executable: process.env.ComSpec || path.join(windowsRoot, "System32", "cmd.exe"),
+      args: ["/d", "/s", "/c", command],
+    },
+    {
+      name: "powershell",
+      executable: path.join(windowsRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+      args: ["-NoProfile", "-NonInteractive", "-Command", command],
+    },
+    {
+      name: "git-bash",
+      executable: path.join(programFiles, "Git", "bin", "bash.exe"),
+      args: ["-lc", command],
+    },
+  ];
+  const available = [];
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate.executable);
+      available.push(candidate);
+    } catch {
+      // Optional shell installation; the native cmd candidate is always expected on Windows.
+    }
+  }
+  return available;
+}
+
+
 function sessionStartInput(cwd, suffix) {
   return {
     session_id: `bootstrap-${suffix}`,
@@ -88,6 +137,26 @@ test("the raw declared command runs with only CODEAGENT3_PLUGIN_ROOT", async (t)
   assert.equal(completed.code, 0, completed.stderr);
   assert.equal(completed.stdout, "");
   assert.equal(completed.stderr, "");
+});
+
+
+test("the fixed bootstrap runs through every supported shell installed on this OS", async (t) => {
+  const cwd = await temporaryDirectory(t);
+  const command = await sessionStartCommand();
+  const invocations = await supportedShellInvocations(command);
+  assert.ok(invocations.length >= 1, "the operating system must expose at least one supported shell");
+
+  for (const invocation of invocations) {
+    const completed = await runCommand(command, {
+      cwd,
+      env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+      input: sessionStartInput(cwd, `shell-${invocation.name}`),
+      invocation,
+    });
+    assert.equal(completed.code, 0, `${invocation.name}: ${completed.stderr}`);
+    assert.equal(completed.stdout, "", invocation.name);
+    assert.equal(completed.stderr, "", invocation.name);
+  }
 });
 
 
@@ -159,4 +228,74 @@ test("the raw declared command keeps a CodeAgent3 root with spaces and shell cha
   assert.equal(completed.code, 0, completed.stderr);
   assert.equal(completed.stdout, "");
   assert.equal(completed.stderr, "");
+});
+
+
+test("the raw declared command rejects a wrong-identity root before executing its entry", async (t) => {
+  const cwd = await temporaryDirectory(t);
+  const fakeRoot = await temporaryDirectory(t);
+  const marker = path.join(cwd, "wrong-identity-executed.txt");
+  await fs.mkdir(path.join(fakeRoot, ".claude-plugin"), { recursive: true });
+  await fs.mkdir(path.join(fakeRoot, "scripts"), { recursive: true });
+  await fs.writeFile(
+    path.join(fakeRoot, ".claude-plugin", "plugin.json"),
+    `${JSON.stringify({ name: "another-plugin" })}\n`,
+    "utf8",
+  );
+  await fs.writeFile(
+    path.join(fakeRoot, "scripts", "runtime-event.mjs"),
+    `import { writeFile } from "node:fs/promises"; await writeFile(${JSON.stringify(marker)}, "executed");\n`,
+    "utf8",
+  );
+
+  const completed = await runCommand(await sessionStartCommand(), {
+    cwd,
+    env: { CODEAGENT3_PLUGIN_ROOT: fakeRoot },
+    input: sessionStartInput(cwd, "wrong-identity"),
+  });
+
+  assert.notEqual(completed.code, 0);
+  assert.equal(completed.stdout, "");
+  assert.match(completed.stderr, /PLUGIN_ROOT_IDENTITY_MISMATCH/u);
+  await assert.rejects(fs.access(marker));
+});
+
+
+test("the raw declared command rejects an entry symlink that escapes the canonical root", async (t) => {
+  const cwd = await temporaryDirectory(t);
+  const fakeRoot = await temporaryDirectory(t);
+  const external = path.join(cwd, "external-entry.mjs");
+  const marker = path.join(cwd, "escaped-entry-executed.txt");
+  await fs.mkdir(path.join(fakeRoot, ".claude-plugin"), { recursive: true });
+  await fs.mkdir(path.join(fakeRoot, "scripts"), { recursive: true });
+  await fs.writeFile(
+    path.join(fakeRoot, ".claude-plugin", "plugin.json"),
+    `${JSON.stringify({ name: "runtime-corrector" })}\n`,
+    "utf8",
+  );
+  await fs.writeFile(
+    external,
+    `import { writeFile } from "node:fs/promises"; await writeFile(${JSON.stringify(marker)}, "executed");\n`,
+    "utf8",
+  );
+  try {
+    await fs.symlink(external, path.join(fakeRoot, "scripts", "runtime-event.mjs"), "file");
+  } catch (error) {
+    if (process.platform === "win32" && ["EPERM", "EACCES"].includes(error.code)) {
+      t.skip(`file symlinks are unavailable: ${error.code}`);
+      return;
+    }
+    throw error;
+  }
+
+  const completed = await runCommand(await sessionStartCommand(), {
+    cwd,
+    env: { CLAUDE_PLUGIN_ROOT: fakeRoot },
+    input: sessionStartInput(cwd, "entry-escape"),
+  });
+
+  assert.notEqual(completed.code, 0);
+  assert.equal(completed.stdout, "");
+  assert.match(completed.stderr, /PLUGIN_ROOT_ENTRY_ESCAPE/u);
+  await assert.rejects(fs.access(marker));
 });

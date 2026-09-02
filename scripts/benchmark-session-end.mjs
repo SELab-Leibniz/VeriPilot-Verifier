@@ -15,11 +15,17 @@ const WARMUP_COUNT = 3;
 const TASKLESS_P95_LIMIT_MS = 150;
 const ACTIVE_TASK_P95_LIMIT_MS = 300;
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sessionEndScript = path.join(pluginRoot, "scripts", "session-end.mjs");
+const hookDeclarations = JSON.parse(
+  await fs.readFile(path.join(pluginRoot, "hooks", "hooks.json"), "utf8"),
+);
+const sessionEndCommand = hookDeclarations.hooks.SessionEnd[0].hooks[0].command;
 
 
 function cleanEnvironment() {
-  const env = { ...process.env, CLAUDE_PLUGIN_ROOT: pluginRoot };
+  const env = { ...process.env };
+  delete env.CLAUDE_PLUGIN_ROOT;
+  delete env.CODEAGENT3_PLUGIN_ROOT;
+  env.CLAUDE_PLUGIN_ROOT = pluginRoot;
   for (const key of [
     "RUNTIME_CORRECTOR_TASK_ID",
     "RUNTIME_CORRECTOR_SEMANTIC_REVIEW_ACTIVE",
@@ -33,10 +39,22 @@ function cleanEnvironment() {
 }
 
 
+function shellInvocation(command) {
+  if (process.platform === "win32") {
+    return {
+      executable: process.env.ComSpec || "cmd.exe",
+      args: ["/d", "/s", "/c", command],
+    };
+  }
+  return { executable: "/bin/sh", args: ["-c", command] };
+}
+
+
 function runSessionEnd(cwd, input) {
   const startedAt = performance.now();
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [sessionEndScript], {
+    const invocation = shellInvocation(sessionEndCommand);
+    const child = spawn(invocation.executable, invocation.args, {
       cwd,
       env: cleanEnvironment(),
       stdio: ["pipe", "pipe", "pipe"],

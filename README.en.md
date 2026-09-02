@@ -2,7 +2,7 @@
 
 > 中文版（默认）: [README.md](README.md) · [Documentation index](docs/README.md)
 
-**What it is:** a Claude Code plugin that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
+**What it is:** a plugin for Claude Code and compatible agent hosts that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
 
 **What it never does:** it never modifies your project files, never auto-applies patches, and never blocks development because of its own faults (fail-open). The main agent — and you — always keep the final say.
 
@@ -26,7 +26,7 @@ Three things to keep in mind:
 
 ## 1. Install
 
-Requires a recent **Claude Code** (plugins, hooks, skills) and **Node.js >= 18**. The plugin has **zero npm dependencies**.
+Requires a host that supports the core plugin capabilities below and **Node.js >= 18**. The plugin has **zero npm dependencies** and supports Windows, Linux, and macOS.
 
 ```bash
 git clone <repository-url> runtime-corrector
@@ -40,6 +40,14 @@ Check it loaded:
 ```
 
 If you get help text and stage status, you're set.
+
+### Plugin compatibility
+
+Compatibility is capability-based, not version-based. The unchanged foundation is `claude-plugin-core-hooks-json-stdio`: JSON stdin/stdout command hooks, the seven declared lifecycle events, and discoverable commands and Skills. Runtime Corrector does not inspect a Claude Code, plugin, package, or host version and does not select implementations by version.
+
+The `dual-host-plugin-root` extension accepts either `CLAUDE_PLUGIN_ROOT` or `CODEAGENT3_PLUGIN_ROOT`. Each declaration must be an absolute directory and is canonicalized with its real path before the entry is loaded. If both variables are present, their canonical paths must be equal; otherwise the command fails with `PLUGIN_ROOT_CONFLICT` instead of choosing one installation silently. The fixed Node launcher does not use Bash, PowerShell, or cmd variable expansion, so the same declaration works with Windows cmd/PowerShell and Linux/macOS POSIX shells.
+
+CodeAgent3 and other compatible hosts must still expose the same Hook events, synchronous command execution, JSON stdin/stdout, and timeout semantics. A host with a different manifest shape should provide a thin declaration view; Runtime Corrector does not switch protocols by product version.
 
 <details><summary>Other ways to install</summary>
 

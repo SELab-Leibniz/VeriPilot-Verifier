@@ -7,6 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
+import { PLUGIN_BOOTSTRAP_SOURCE } from "../lib/plugin-bootstrap.mjs";
 import {
   decodeHookInput,
   encodeHookOutput,
@@ -379,6 +380,7 @@ test("plugin hooks expose complete shell commands within the supported capabilit
   assert.equal(config.hooks.PostToolUse[0].matcher, undefined);
   assert.match(primaryCommand(config, "PostToolUse"), /post-tool-use\.mjs"$/u);
   assert.equal(bootstraps.size, 1, "all Hook entries must share the reviewed bootstrap");
+  assert.deepEqual([...bootstraps], [PLUGIN_BOOTSTRAP_SOURCE]);
 });
 
 
@@ -484,14 +486,19 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
 
 test("published compatibility docs describe the dual-host extension without a Claude-only command", async () => {
   const read = async (relativePath) => fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
-  const [readme, interfaces, proposal, tutorial] = await Promise.all([
+  const [readme, readmeEnglish, interfaces, proposal, tutorial] = await Promise.all([
     read("README.md"),
+    read("README.en.md"),
     read("docs/interfaces.md"),
     read("docs/PROPOSAL.md"),
     read("tutorial.html"),
   ]);
 
-  for (const [source, document] of [["README.md", readme], ["docs/interfaces.md", interfaces]]) {
+  for (const [source, document] of [
+    ["README.md", readme],
+    ["README.en.md", readmeEnglish],
+    ["docs/interfaces.md", interfaces],
+  ]) {
     assert.match(document, /dual-host-plugin-root/u, `${source} extension identifier`);
     assert.match(document, /CLAUDE_PLUGIN_ROOT/u, `${source} Claude root`);
     assert.match(document, /CODEAGENT3_PLUGIN_ROOT/u, `${source} CodeAgent3 root`);
@@ -525,6 +532,20 @@ test("production plugin-root routing has no version probe or newer Hook mechanis
     combined,
     /(?:CLAUDE|CODEAGENT3)(?:_CODE)?_VERSION|claude(?:-code)?@\d/iu,
   );
+});
+
+
+test("release CI exercises the compatibility suite on Windows, Linux, and macOS", async () => {
+  const workflow = await fs.readFile(
+    path.join(PLUGIN_ROOT, ".github", "workflows", "plugin-compatibility.yml"),
+    "utf8",
+  );
+  assert.match(workflow, /ubuntu-latest/u);
+  assert.match(workflow, /windows-latest/u);
+  assert.match(workflow, /macos-latest/u);
+  assert.match(workflow, /npm test/u);
+  assert.match(workflow, /npm run benchmark:session-end/u);
+  assert.match(workflow, /test\/plugin-bootstrap-process\.test\.mjs/u);
 });
 
 

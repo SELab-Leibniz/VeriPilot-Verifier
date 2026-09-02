@@ -119,6 +119,8 @@ node scripts/cli.mjs <command>
 npm run check -- <command>
 ```
 
+这是显式的 standalone CLI 模式：入口由正在执行的 `scripts/cli.mjs` 自身确定插件目录，因此不要求宿主根变量。通过插件命令或 Skill 调用时仍必须由固定启动器解析 `CLAUDE_PLUGIN_ROOT` / `CODEAGENT3_PLUGIN_ROOT`；standalone 例外不会改变 Hook 的声明校验边界。
+
 可选安装全局命令：
 
 ```powershell

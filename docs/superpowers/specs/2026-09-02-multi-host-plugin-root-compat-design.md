@@ -78,8 +78,9 @@ Rules:
 - two different roots fail with `PLUGIN_ROOT_CONFLICT` before business code;
 - a declaration different from the loaded module root fails with
   `PLUGIN_ROOT_EXECUTION_MISMATCH`;
-- no declaration is accepted only for explicit library/test injection; hook and
-  CLI entrypoints require a host declaration;
+- host-declared Hook, command, and Skill entrypoints require a declaration;
+  direct `node scripts/cli.mjs` / installed-bin use remains module-relative so
+  the existing standalone CLI contract is preserved outside a plugin host;
 - entry paths must remain inside the canonical plugin root;
 - the installed artifact identity is checked using the shipped plugin manifest.
 

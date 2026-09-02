@@ -1,0 +1,38 @@
+name: Plugin compatibility
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    name: Node 18 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Run cross-host compatibility tests
+        run: >-
+          node --test
+          test/plugin-root.test.mjs
+          test/plugin-bootstrap-process.test.mjs
+          test/plugin-root-propagation.test.mjs
+          test/plugin-capability-floor.test.mjs
+          test/reviewer-deadline.test.mjs
+          test/session-end-process.test.mjs
+      - name: Run full suite
+        run: npm test
+      - name: Benchmark the declared SessionEnd hook
+        run: npm run benchmark:session-end
