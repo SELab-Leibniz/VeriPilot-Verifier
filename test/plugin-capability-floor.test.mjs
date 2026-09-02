@@ -189,6 +189,38 @@ function frontmatter(document, source) {
 }
 
 
+function executableNodeLines(document) {
+  return document.split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("node "));
+}
+
+
+function runShellCommand(command, { cwd, env: overrides = {} }) {
+  return new Promise((resolve, reject) => {
+    const env = { ...process.env };
+    delete env.CLAUDE_PLUGIN_ROOT;
+    delete env.CODEAGENT3_PLUGIN_ROOT;
+    Object.assign(env, overrides);
+    const invocation = shellInvocation(command);
+    const child = spawn(invocation.executable, invocation.args, {
+      cwd,
+      env,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.once("error", reject);
+    child.once("close", (code, signal) => resolve({ code, signal, stdout, stderr }));
+  });
+}
+
+
 test("repository-owned capability fixture defines the discoverable compatibility floor", async () => {
   const contract = await readCompatJson("contract.json");
   assert.equal(contract.identifier, "claude-plugin-core-hooks-json-stdio");
@@ -309,6 +341,11 @@ test("plugin hooks expose complete shell commands within the supported capabilit
         assert.match(declared.bootstrap, /CODEAGENT3_PLUGIN_ROOT/u, `${eventName} CodeAgent3 root`);
         assert.match(declared.bootstrap, /realpathSync/u, `${eventName} canonical root`);
         assert.match(declared.bootstrap, /pathToFileURL/u, `${eventName} file URL import`);
+        assert.doesNotMatch(
+          declared.bootstrap,
+          /["`$%\r\n]/u,
+          `${eventName} inline bootstrap must stay inert inside a double-quoted shell argument`,
+        );
         assert.doesNotMatch(hook.command, /\$\{|\$env:|%[A-Z0-9_]+%/u, `${eventName} shell root expansion`);
       }
     }
@@ -365,6 +402,58 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
       }
     }
   }
+});
+
+
+test("root-dependent commands and Skills expose one Bash and PowerShell compatible CLI invocation", async (t) => {
+  const contract = await readCompatJson("contract.json");
+  const rootDependentSkills = ["runtime-corrector-control", "runtime-corrector-init"];
+
+  for (const commandName of contract.commands) {
+    const relativePath = `commands/${commandName}.md`;
+    const document = await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
+    const metadata = frontmatter(document, relativePath);
+    const tools = metadata["allowed-tools"].split(",").map((tool) => tool.trim());
+    assert.deepEqual(tools, ["Bash", "PowerShell"], `${relativePath} cross-platform tools`);
+    const invocations = executableNodeLines(document);
+    assert.ok(invocations.length >= 1, `${relativePath} bundled CLI invocation`);
+    for (const invocation of invocations) {
+      const match = invocation.match(/^node -e "([^"\r\n]+)" "scripts\/cli\.mjs"(?: |$)/u);
+      assert.ok(match, `${relativePath} unsupported CLI invocation shape`);
+      assert.doesNotMatch(
+        match[1],
+        /["`$%\r\n]/u,
+        `${relativePath} inline bootstrap must stay inert in Bash and PowerShell`,
+      );
+      assert.doesNotMatch(invocation, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u, relativePath);
+    }
+  }
+
+  for (const skillName of rootDependentSkills) {
+    const relativePath = `skills/${skillName}/SKILL.md`;
+    const document = await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
+    const metadata = frontmatter(document, relativePath);
+    assert.equal(metadata["allowed-tools"], "Bash, PowerShell", `${relativePath} cross-platform tools`);
+    assert.doesNotMatch(document, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u, relativePath);
+    assert.ok(executableNodeLines(document).length >= 1, `${relativePath} bundled CLI invocation`);
+  }
+
+  const root = await workspace(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+  ]);
+  const helpDocument = await fs.readFile(path.join(PLUGIN_ROOT, "commands", "help.md"), "utf8");
+  const [helpCommand] = executableNodeLines(helpDocument);
+  const completed = await runShellCommand(helpCommand, {
+    cwd: root,
+    env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+  });
+  assert.equal(completed.code, 0, completed.stderr);
+  assert.match(completed.stdout, /\[runtime-corrector\]/u);
 });
 
 

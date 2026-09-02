@@ -1,6 +1,7 @@
 ---
 name: runtime-corrector-init
 description: Materialize the auto-derived Runtime Corrector configuration into an editable project config.yaml, together with a v1 artifact reference template, an example deterministic rule file, and example Agent review criteria. Use when a user asks to initialize, set up, install, or create Runtime Corrector project rules; mentions runtime-corrector init; or reports that .runtime-corrector is missing.
+allowed-tools: Bash, PowerShell
 ---
 
 # Runtime Corrector Init
@@ -14,13 +15,13 @@ a globally installed `runtime-corrector` command.
 1. Treat the current working directory as the target project unless the user explicitly names another project directory.
 2. Check whether `<target>/.runtime-corrector` already exists.
 3. If it exists, stop without changing it. Report that Runtime Corrector will not overwrite user-owned rules and identify the existing files.
-4. If it does not exist, run the plugin-bundled CLI with Bash:
+4. If it does not exist, run the plugin-bundled CLI with the available Bash or PowerShell tool:
 
-   ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" init --cwd "$PWD"
+   ```text
+   node -e "const fs=require('node:fs'),path=require('node:path'),{pathToFileURL}=require('node:url');const fail=(code,message)=>{throw Object.assign(new Error(code+': '+message),{code})};const declared=['CLAUDE_PLUGIN_ROOT','CODEAGENT3_PLUGIN_ROOT'].map(key=>[key,(process.env[key]||'').trim()]).filter(([,value])=>value);if(!declared.length)fail('PLUGIN_ROOT_MISSING','no supported plugin root is set');const roots=declared.map(([key,value])=>{if(!path.isAbsolute(value))fail('PLUGIN_ROOT_NOT_ABSOLUTE',key);try{const root=fs.realpathSync(value);if(!fs.statSync(root).isDirectory())fail('PLUGIN_ROOT_NOT_DIRECTORY',key);return[key,root]}catch(error){if(error.code&&error.code.startsWith('PLUGIN_ROOT_'))throw error;fail('PLUGIN_ROOT_NOT_DIRECTORY',key)}});if(new Set(roots.map(([,root])=>root)).size!==1)fail('PLUGIN_ROOT_CONFLICT',roots.map(([key,root])=>key+'='+root).join(','));const root=roots[0][1],entry=path.resolve(root,process.argv[1]),relative=path.relative(root,entry);if(relative.startsWith('..')||path.isAbsolute(relative))fail('PLUGIN_ROOT_ENTRY_ESCAPE',process.argv[1]);process.argv[1]=entry;import(pathToFileURL(entry).href).catch(error=>{console.error(error);process.exitCode=1})" "scripts/cli.mjs" init
    ```
 
-   When the user explicitly names another target, pass its absolute path to `--cwd` instead of `$PWD`.
+   When the user explicitly names another target, append `--cwd "<absolute-target>"`.
 5. Verify that these files now exist:
 
    ```text

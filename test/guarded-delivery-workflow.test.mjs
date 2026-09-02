@@ -577,5 +577,7 @@ test("documentation and Skill state the no-Planning/no-IR boundary", async () =>
   assert.match(skill, /Do not write anything under `stages\/20-planning`/);
   assert.match(skill, /Run PRD Contract in auto mode/);
   assert.match(skill, /run Build QA in auto mode/);
+  assert.doesNotMatch(skill, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}/u);
+  assert.match(skill, /active plugin root/u);
   assert.match(openai, /\$run-guarded-delivery/);
 });

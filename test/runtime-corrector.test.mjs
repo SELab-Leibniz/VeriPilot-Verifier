@@ -2285,6 +2285,14 @@ test("CLI spec returns the complete contract even when a stage is disabled", asy
   assert.match(specification.criteria[0].rules.content, /type: markdown-records/);
   assert.match(specification.criteria[0].reviewer.content, /最小 HarmonyOS Kit 集/);
   assert.equal(specification.recovery.slashCommand, "/runtime-corrector:spec selection");
+  assert.match(
+    specification.recovery.cliCommand,
+    /^node -e "[^"\r\n]+" "scripts\/cli\.mjs" spec selection$/u,
+  );
+  assert.doesNotMatch(
+    specification.recovery.cliCommand,
+    /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u,
+  );
 });
 
 
@@ -2755,12 +2763,14 @@ test("Claude command and control skill expose one guarded stage control model", 
     "utf8",
   );
 
-  assert.match(helpCommand, /cli\.mjs" help --cwd/);
+  assert.match(helpCommand, /cli\.mjs" help/);
+  assert.match(helpCommand, /^allowed-tools: Bash, PowerShell$/m);
   assert.match(specCommand, /cli\.mjs" spec/);
   assert.match(specCommand, /complete packet/i);
   assert.match(stagesCommand, /runtime-corrector-control/);
   assert.match(controlSkill, /^name: runtime-corrector-control$/m);
-  assert.match(controlSkill, /stages --cwd "\$PWD" --format json/);
+  assert.match(controlSkill, /^allowed-tools: Bash, PowerShell$/m);
+  assert.match(controlSkill, /stages --format json/);
   assert.match(controlSkill, /stage <stage> <on\|off>/);
   assert.match(controlSkill, /spec <stage>/);
   assert.match(controlSkill, /only enable/);

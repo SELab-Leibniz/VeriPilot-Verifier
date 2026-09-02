@@ -5,10 +5,12 @@ description: Run guarded_delivery_workflow.yaml from an existing Runtime Correct
 
 # Run Guarded Delivery
 
-Treat
-`${CLAUDE_PLUGIN_ROOT}/examples/veripilot-guarded-delivery/guarded-delivery-workflow/guarded_delivery_workflow.yaml`
-as the execution authority. Read it completely before writing or invoking a
-component.
+Resolve the active plugin root from the host-provided `CLAUDE_PLUGIN_ROOT` or
+`CODEAGENT3_PLUGIN_ROOT` environment declaration. If both are present, require
+their real paths to be equal. Treat
+`examples/veripilot-guarded-delivery/guarded-delivery-workflow/guarded_delivery_workflow.yaml`
+beneath that active plugin root as the execution authority. Read it completely
+before writing or invoking a component.
 
 ## Enforce the architecture
 
