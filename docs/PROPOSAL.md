@@ -263,6 +263,8 @@ Latest 指针：
 claude --plugin-dir C:\absolute\path\to\runtime-corrector
 ```
 
+同一运行时也接受兼容宿主提供的 `CODEAGENT3_PLUGIN_ROOT`。`dual-host-plugin-root` 扩展只负责把 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT` 规范化成唯一插件根；若两者同时存在但不等价则立即报 `PLUGIN_ROOT_CONFLICT`。它不改变下述 `claude-plugin-core-hooks-json-stdio` 事件、输入、输出或判定逻辑，也不按宿主版本选择实现。固定 Node 启动器可在 Windows cmd/PowerShell、Linux 和 macOS POSIX shell 中使用，要求 Node.js >= 18。兼容宿主若使用不同清单外形，应提供薄声明映射并保留相同 Hook 语义。
+
 Claude Code 使用 `Write` 或 `Edit` 写入匹配文件后，插件自动运行，并通过 `PostToolUse.additionalContext` 把反馈交还当前 Agent。
 
 启用语义审阅时，父会话必须可恢复，不能以 `--no-session-persistence` 启动。一次性 reviewer
@@ -280,8 +282,8 @@ Hook 不依赖 Agent 当前 shell 的临时工作目录：它从被写入文件�
 ```
 
 也可以直接表达“请初始化 Runtime Corrector”或“创建 `.runtime-corrector`”。插件内置的
-`runtime-corrector-init` Skill 会调用 `${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs`，因此不依赖
-全局 PATH。Skill 创建并核验默认关闭的通用 `config.yaml`、`example.rules.yaml`、
+`runtime-corrector-init` Skill 会通过固定 Node 启动器解析当前宿主的插件根并调用自带
+`scripts/cli.mjs`，因此不依赖全局 PATH 或 shell 变量展开。Skill 创建并核验默认关闭的通用 `config.yaml`、`example.rules.yaml`、
 `example.reviewer.md` 和说明文件；已有 `.runtime-corrector` 时停止且不覆盖。
 
 `--plugin-dir` 只负责加载 Claude Code 插件，不负责安装终端 CLI。如果客户的外部 SDD 编排器需要直接调用命令，可在插件目录可选执行一次：

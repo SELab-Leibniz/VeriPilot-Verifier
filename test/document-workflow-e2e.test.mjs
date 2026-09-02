@@ -188,6 +188,8 @@ async function runHook(cwd, filePath, review, captureName) {
       windowsHide: true,
       env: {
         ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        CODEAGENT3_PLUGIN_ROOT: "",
         RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
         NODE_OPTIONS: `--require=${shimPath.replaceAll("\\", "/")}`,
         FAKE_CLAUDE_CAPTURE: capturePath,

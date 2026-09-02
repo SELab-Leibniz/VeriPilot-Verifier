@@ -312,4 +312,3 @@ git commit -m "docs: define dual-host plugin-root capability"
   not an unfinished code step.
 - Type consistency: every consumer uses `resolvePluginRoot()` and a canonical
   string named `pluginRoot`; no task introduces a competing root abstraction.
-

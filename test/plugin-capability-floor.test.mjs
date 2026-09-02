@@ -15,6 +15,7 @@ import {
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const COMPAT_FIXTURE_ROOT = path.join(PLUGIN_ROOT, "test", "compat", "legacy-feature-baseline");
+const PLUGIN_ROOT_EXTENSION = path.join(PLUGIN_ROOT, "test", "compat", "dual-host-plugin-root", "contract.json");
 
 
 async function readJson(relativePath) {
@@ -297,6 +298,24 @@ test("repository-owned capability fixture defines the discoverable compatibility
 });
 
 
+test("dual-host plugin roots are a version-independent extension over the unchanged protocol floor", async () => {
+  const baseline = await readCompatJson("contract.json");
+  const extension = JSON.parse(await fs.readFile(PLUGIN_ROOT_EXTENSION, "utf8"));
+
+  assert.equal(baseline.identifier, "claude-plugin-core-hooks-json-stdio");
+  assert.deepEqual(extension, {
+    identifier: "dual-host-plugin-root",
+    extends: "claude-plugin-core-hooks-json-stdio",
+    environment: ["CLAUDE_PLUGIN_ROOT", "CODEAGENT3_PLUGIN_ROOT"],
+    conflictPolicy: "canonical-roots-must-match",
+    minimumNodeMajor: 18,
+    operatingSystems: ["windows", "linux", "macos"],
+    commandShells: ["cmd", "powershell", "posix-sh"],
+  });
+  assert.doesNotMatch(JSON.stringify(extension), /claude(?:-code)?@\d/u);
+});
+
+
 test("parseProtocolStdout accepts only empty stdout or one terminally-newline-delimited JSON object", () => {
   assert.equal(parseProtocolStdout("", "empty"), null);
   assert.deepEqual(parseProtocolStdout('{"result":true}\n', "json"), { result: true });
@@ -319,6 +338,7 @@ test("parseProtocolStdout accepts only empty stdout or one terminally-newline-de
 
 test("plugin hooks expose complete shell commands within the supported capability floor", async () => {
   const config = await readJson("hooks/hooks.json");
+  const bootstraps = new Set();
   const eventNames = [
     "SessionStart",
     "UserPromptSubmit",
@@ -337,6 +357,7 @@ test("plugin hooks expose complete shell commands within the supported capabilit
         assert.equal(hook.type, "command", `${eventName} hook type`);
         assert.equal(Object.hasOwn(hook, "args"), false, `${eventName} uses unsupported args`);
         const declared = declaredNodeCommand(hook.command);
+        bootstraps.add(declared.bootstrap);
         assert.match(declared.bootstrap, /CLAUDE_PLUGIN_ROOT/u, `${eventName} Claude root`);
         assert.match(declared.bootstrap, /CODEAGENT3_PLUGIN_ROOT/u, `${eventName} CodeAgent3 root`);
         assert.match(declared.bootstrap, /realpathSync/u, `${eventName} canonical root`);
@@ -357,6 +378,7 @@ test("plugin hooks expose complete shell commands within the supported capabilit
   );
   assert.equal(config.hooks.PostToolUse[0].matcher, undefined);
   assert.match(primaryCommand(config, "PostToolUse"), /post-tool-use\.mjs"$/u);
+  assert.equal(bootstraps.size, 1, "all Hook entries must share the reviewed bootstrap");
 });
 
 
@@ -408,6 +430,8 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
 test("root-dependent commands and Skills expose one Bash and PowerShell compatible CLI invocation", async (t) => {
   const contract = await readCompatJson("contract.json");
   const rootDependentSkills = ["runtime-corrector-control", "runtime-corrector-init"];
+  const hooks = await readJson("hooks/hooks.json");
+  const canonicalBootstrap = declaredNodeCommand(primaryCommand(hooks, "SessionStart")).bootstrap;
 
   for (const commandName of contract.commands) {
     const relativePath = `commands/${commandName}.md`;
@@ -425,6 +449,7 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
         /["`$%\r\n]/u,
         `${relativePath} inline bootstrap must stay inert in Bash and PowerShell`,
       );
+      assert.equal(match[1], canonicalBootstrap, `${relativePath} bootstrap drift`);
       assert.doesNotMatch(invocation, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u, relativePath);
     }
   }
@@ -454,6 +479,52 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
   });
   assert.equal(completed.code, 0, completed.stderr);
   assert.match(completed.stdout, /\[runtime-corrector\]/u);
+});
+
+
+test("published compatibility docs describe the dual-host extension without a Claude-only command", async () => {
+  const read = async (relativePath) => fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
+  const [readme, interfaces, proposal, tutorial] = await Promise.all([
+    read("README.md"),
+    read("docs/interfaces.md"),
+    read("docs/PROPOSAL.md"),
+    read("tutorial.html"),
+  ]);
+
+  for (const [source, document] of [["README.md", readme], ["docs/interfaces.md", interfaces]]) {
+    assert.match(document, /dual-host-plugin-root/u, `${source} extension identifier`);
+    assert.match(document, /CLAUDE_PLUGIN_ROOT/u, `${source} Claude root`);
+    assert.match(document, /CODEAGENT3_PLUGIN_ROOT/u, `${source} CodeAgent3 root`);
+    assert.match(document, /Windows/u, `${source} Windows support`);
+    assert.match(document, /Linux/u, `${source} Linux support`);
+    assert.match(document, /macOS/u, `${source} macOS support`);
+    assert.match(document, /Node\.js\s*(?:>=|≥)\s*18/u, `${source} Node floor`);
+  }
+  assert.match(readme, /canonical|规范化/u);
+  assert.match(interfaces, /canonical|规范化/u);
+  assert.doesNotMatch(interfaces, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
+  assert.doesNotMatch(proposal, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
+  assert.doesNotMatch(tutorial, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
+});
+
+
+test("production plugin-root routing has no version probe or newer Hook mechanism", async () => {
+  const sources = [
+    "hooks/hooks.json",
+    "lib/plugin-root.mjs",
+    "scripts/runtime-event.mjs",
+    "scripts/post-tool-use.mjs",
+    "scripts/evidence-distinctness-guard.mjs",
+  ];
+  const combined = (await Promise.all(sources.map(async (source) => (
+    `${source}\n${await fs.readFile(path.join(PLUGIN_ROOT, source), "utf8")}`
+  )))).join("\n");
+
+  assert.doesNotMatch(combined, /PostToolBatch|"args"\s*:/u);
+  assert.doesNotMatch(
+    combined,
+    /(?:CLAUDE|CODEAGENT3)(?:_CODE)?_VERSION|claude(?:-code)?@\d/iu,
+  );
 });
 
 

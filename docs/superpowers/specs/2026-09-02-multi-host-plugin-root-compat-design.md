@@ -153,4 +153,3 @@ directly spawning their target files. Coverage includes:
 - canonical root propagation into v1, runtime-v2, Skill loading, and reviewer
   `--plugin-dir`;
 - the full test suite and existing SessionEnd release benchmark.
-

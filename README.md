@@ -2,7 +2,7 @@
 
 > English version: [README.en.md](README.en.md) · [文档导航](docs/README.md)
 
-**它是什么：** 一个 Claude Code 插件，在你的 coding agent 干活时对它做实时评审。agent 写代码，它对照任务要求检查并把问题反馈回去；agent 说"做完了"，它做验收——没做完就拦下来，附上具体待办，直到做完或用完纠偏预算。
+**它是什么：** 一个可用于 Claude Code 和兼容 agent 框架的插件，在你的 coding agent 干活时对它做实时评审。agent 写代码，它对照任务要求检查并把问题反馈回去；agent 说"做完了"，它做验收——没做完就拦下来，附上具体待办，直到做完或用完纠偏预算。
 
 **它不做什么：** 从不修改你的项目文件，从不自动应用补丁，从不因为自身故障阻塞开发（fail-open）。所有决定权始终在主 agent 和你手里。
 
@@ -26,7 +26,7 @@ agent 说"完成" ────► 终止门验收：
 
 ## 1. 安装
 
-要求：较新版本的 **Claude Code**（支持插件、Hook、Skill）、**Node.js >= 18**。插件**零 npm 依赖**。
+要求：宿主支持下述核心插件能力、**Node.js >= 18**。插件**零 npm 依赖**，支持 Windows、Linux 和 macOS。
 
 ```bash
 git clone <repository-url> runtime-corrector
@@ -41,9 +41,13 @@ claude --plugin-dir ./runtime-corrector
 
 能看到帮助和阶段状态就成功了。
 
-### Claude 插件兼容性
+### 插件兼容性
 
-兼容性按能力而不是版本判断：插件使用核心 JSON stdin/stdout Hook、完整 shell `command`、七个生命周期事件，以及已发现的命令和 Skill。运行时不检测 Claude Code、Claude 插件或任何包的版本，也不按版本选择不同实现。
+兼容性按能力而不是版本判断：基础契约仍是 `claude-plugin-core-hooks-json-stdio`，插件使用核心 JSON stdin/stdout Hook、完整 shell `command`、七个生命周期事件，以及已发现的命令和 Skill。运行时不检测 Claude Code、Claude 插件或任何包的版本，也不按版本选择不同实现。
+
+在此基础上，`dual-host-plugin-root` 扩展接受宿主设置的 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT`。根目录必须是绝对路径，启动时会规范化为真实路径；若两个变量同时存在，只有它们指向同一目录才会继续，否则以 `PLUGIN_ROOT_CONFLICT` 终止该次插件命令，避免从错误安装位置加载代码。固定 Node 启动器不使用 Bash、PowerShell 或 cmd 的变量展开，因此同一声明可用于 Windows cmd/PowerShell 与 Linux/macOS POSIX shell。
+
+CodeAgent3 或其他兼容宿主还必须提供同一组 Hook 事件、JSON stdin/stdout 语义和命令执行能力；若其清单文件格式不同，应由宿主提供一个薄声明视图，Runtime Corrector 不会据版本切换协议。
 
 `PowerShell` 与 `Monitor` 会保留在相关工具 Matcher 中；它们是可选工具。运行环境没有其中任一工具时，安装、生命周期处理和其余工具的纠偏行为不受影响。
 

@@ -23,7 +23,14 @@ async function workspace(t) {
 /** Run the hook exactly as Claude Code does: JSON on stdin, JSON on stdout. */
 function runHook(root, input) {
   return new Promise((resolve) => {
-    const child = execFile(process.execPath, [HOOK], { cwd: root }, (error, stdout) => {
+    const child = execFile(process.execPath, [HOOK], {
+      cwd: root,
+      env: {
+        ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        CODEAGENT3_PLUGIN_ROOT: "",
+      },
+    }, (error, stdout) => {
       const trimmed = String(stdout ?? "").trim();
       resolve({ exitCode: error?.code ?? 0, output: trimmed ? JSON.parse(trimmed) : null });
     });

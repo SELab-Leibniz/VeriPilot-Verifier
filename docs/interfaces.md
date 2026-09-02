@@ -1,6 +1,6 @@
 # 外部接口参考
 
-Runtime Corrector 支持四类稳定的客户入口：Claude 命令、Claude Skill/自然语言、CLI、Claude Code Hook。高级兼容模式还支持自定义 Matcher 和 Collector。
+Runtime Corrector 支持四类稳定的客户入口：插件命令、Skill/自然语言、CLI、JSON-stdio Hook。高级兼容模式还支持自定义 Matcher 和 Collector。
 
 ## Claude 插件能力基线
 
@@ -8,9 +8,13 @@ Runtime Corrector 支持四类稳定的客户入口：Claude 命令、Claude Ski
 
 该基线要求：Hook 从 stdin 接收一个 JSON 对象（可带 UTF-8 BOM），stdout 只会为空或输出一个以换行结束的 JSON 对象；使用 `SessionStart`、`UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`Stop`、`PreCompact` 和 `SessionEnd`；工具事件使用 `tool_use_id`，不要求 `hook_event_id`。`PowerShell` 与 `Monitor` 是可选工具：若宿主没有它们，插件的安装、其他 Hook 和其余工具处理仍保持正确。
 
+`dual-host-plugin-root` 是该基线之上的版本无关扩展。宿主必须设置绝对路径形式的 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT`；插件将其规范化为真实目录，并校验安装清单身份。两个变量同时存在时必须指向同一规范路径，否则启动器返回 `PLUGIN_ROOT_CONFLICT`，不会选择其中一个继续运行。固定 Node 启动器不依赖 shell 变量展开，支持 Windows 的 cmd/PowerShell、Linux 与 macOS 的 POSIX shell，最低运行时为 **Node.js >= 18**。
+
+CodeAgent3 或其他宿主只有在提供相同事件、同步命令执行、JSON stdin/stdout 和超时语义时才能直接复用 `hooks/hooks.json`。若宿主的清单位置或声明外形不同，应提供只负责映射声明的薄适配层；运行时代码不检测宿主或产品版本，也不启用 `PostToolBatch`、Hook `args` 等较新机制。
+
 ## Claude 命令
 
-所有入口都在当前 Claude Code 工作目录执行。`help`、`init`、`validate`、`stages`、`explain`、`spec` 和 `check` 通过 `${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs` 调用插件自带 CLI，不依赖系统 PATH。PostToolUse hook 内部使用一次性 `semantic-review` 技能，主 Agent 无需调用它。
+所有入口都在当前宿主工作目录执行。`help`、`init`、`validate`、`stages`、`explain`、`spec` 和 `check` 通过同一固定 Node 启动器解析活动插件根，再调用插件自带 `scripts/cli.mjs`，不依赖系统 PATH，也不直接拼接任一宿主变量。PostToolUse hook 内部使用一次性 `semantic-review` 技能，主 Agent 无需调用它。
 
 | 命令 | 参数 | 是否写配置 | 作用 |
 |---|---|---:|---|
@@ -101,7 +105,7 @@ Claude Code 可执行文件按以下顺序解析：
 
 前两个环境变量适合 Claude Code 不在 Hook PATH 中时显式指定原生可执行文件。隔离审阅默认
 最多运行 240 秒，可通过项目配置 `limits.semanticReviewTimeoutMs` 调整为 `1000`～`1200000`
-毫秒。Runtime Corrector 自己的 PostToolUse Hook 外层上限为 1260 秒；它只约束本插件命令，
+毫秒。Runtime Corrector 自己的主 PostToolUse Hook 外层上限为 1800 秒；它只约束本插件命令，
 不会改变其他 PostToolUse Hook 的超时。
 
 ## CLI
@@ -122,7 +126,7 @@ npm link
 runtime-corrector --help
 ```
 
-`--plugin-dir` 只加载 Claude 插件，不会自动把 `runtime-corrector` 安装到系统 PATH。
+`--plugin-dir` 只加载宿主插件，不会自动把 `runtime-corrector` 安装到系统 PATH。
 
 ### 命令签名
 
@@ -316,7 +320,7 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
 - `result.json`：`runtime-corrector.result.v1` 机器结果，包含兼容 `status`、逐项 `assessments`、聚合 `classification`、Finding 指纹、建议动作、输入摘要和策略摘要。
 - `diffs` 表示非空且已经校验的候选 Patch；`diffs: []` 时两组输出路径中仍返回 0 字节 `patch.diff`。
 
-## Claude Code Hooks
+## JSON-stdio Hooks
 
 插件声明一个全工具写后 Hook。普通工具只进行版本 2 的回合对账和到期 Skill 检查；`Write/Edit` 命中已启用产物时，继续执行版本 1 的确定性检查、隔离语义审阅和候选 Patch 链路：
 
@@ -328,8 +332,8 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.mjs\"",
-            "timeout": 1260,
+            "command": "node -e \"<fixed dual-root bootstrap>\" \"scripts/post-tool-use.mjs\"",
+            "timeout": 1800,
             "statusMessage": "Runtime Corrector 正在对账任务状态并检查命中的产物…"
           }
         ]
@@ -361,7 +365,7 @@ JSON 输出是检查 `result`，不是 CLI wrapper：
 
 `session_id` 是隔离语义审阅的必需输入。缺失时确定性诊断仍会保留，但本轮最终状态变为 `failed`，并增加 `AGENT-SEMANTIC-REVIEW-FAILED`。`transcript_path` 用于判断活动上下文中是否已经存在公开命令导航；检测范围从最后一个 `compact_boundary` 开始。路径缺失或不可读时按“上下文缺少导航”安全降级。
 
-`1260` 秒是 Runtime Corrector 这个 Hook 命令自己的外层安全上限，不是 Claude Code 的全局
+`1800` 秒是 Runtime Corrector 这个 Hook 命令自己的外层安全上限，不是宿主的全局
 PostToolUse 超时。所有 Write/Edit 会先进入快速匹配；只有命中启用的 artifact 且需要隔离语义
 审阅时，才可能实际等待 `limits.semanticReviewTimeoutMs` 配置的时长。
 

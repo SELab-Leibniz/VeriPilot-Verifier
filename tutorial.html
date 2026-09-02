@@ -640,18 +640,18 @@ rules:
           <div><h2>先核对，再启用</h2><p>四个命令构成透明控制面：看状态、看执行源、看完整规范、切换开关。</p></div>
         </div>
         <div class="code-card">
-          <div class="code-head"><span class="file">在项目目录执行</span><button class="copy" data-copy="enable-code">复制</button></div>
+          <div class="code-head"><span class="file">在插件目录执行；替换目标项目路径</span><button class="copy" data-copy="enable-code">复制</button></div>
           <pre id="enable-code"># 1. 确认 app-design 已注册且当前为 off
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" stages --cwd "$PWD"
+node scripts/cli.mjs stages --cwd "&lt;project-directory&gt;"
 
 # 2. 查看实际命中、rules、reviewer 和检查项
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" explain app-design --cwd "$PWD"
+node scripts/cli.mjs explain app-design --cwd "&lt;project-directory&gt;"
 
 # 3. 展开完整规范包；即使 stage 关闭也能查看
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" spec app-design --cwd "$PWD"
+node scripts/cli.mjs spec app-design --cwd "&lt;project-directory&gt;"
 
 # 4. 确认无误后启用
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cli.mjs" stage app-design on --cwd "$PWD"</pre>
+node scripts/cli.mjs stage app-design on --cwd "&lt;project-directory&gt;"</pre>
         </div>
         <p>在 Claude 对话中可使用更短的入口：</p>
         <div class="code-card">

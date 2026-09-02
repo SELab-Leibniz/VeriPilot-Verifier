@@ -1,0 +1,20 @@
+{
+  "identifier": "dual-host-plugin-root",
+  "extends": "claude-plugin-core-hooks-json-stdio",
+  "environment": [
+    "CLAUDE_PLUGIN_ROOT",
+    "CODEAGENT3_PLUGIN_ROOT"
+  ],
+  "conflictPolicy": "canonical-roots-must-match",
+  "minimumNodeMajor": 18,
+  "operatingSystems": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "commandShells": [
+    "cmd",
+    "powershell",
+    "posix-sh"
+  ]
+}

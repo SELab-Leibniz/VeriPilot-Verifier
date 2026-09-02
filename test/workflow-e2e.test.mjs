@@ -161,6 +161,8 @@ async function runHookWithFakeClaude(cwd, filePath, review) {
       windowsHide: true,
       env: {
         ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        CODEAGENT3_PLUGIN_ROOT: "",
         RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
         NODE_OPTIONS: `--require=${nodeOptionsPath}`,
         FAKE_CLAUDE_CAPTURE: capturePath,
@@ -512,6 +514,8 @@ test("disabled targets stay unmatched and cyclic workflow configs fail at the CL
       windowsHide: true,
       env: {
         ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        CODEAGENT3_PLUGIN_ROOT: "",
         RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
         NODE_OPTIONS: `--require=${shimPath.replaceAll("\\", "/")}`,
         FAKE_CLAUDE_CAPTURE: capturePath,
@@ -573,6 +577,8 @@ test("PostToolUse without a session fails visibly without attempting a fork", as
       windowsHide: true,
       env: {
         ...process.env,
+        CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+        CODEAGENT3_PLUGIN_ROOT: "",
         RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
         NODE_OPTIONS: `--require=${shimPath.replaceAll("\\", "/")}`,
         FAKE_CLAUDE_CAPTURE: capturePath,
