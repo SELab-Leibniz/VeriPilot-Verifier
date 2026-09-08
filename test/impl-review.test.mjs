@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
 
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import {
@@ -87,7 +88,7 @@ function implFakeFactory(state) {
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String((state.serial += 1)));
     await fs.mkdir(requestDirectory, { recursive: true });
     let result;
-    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "Ground Truth refreshed.",
         taskClassification: "CONTINUATION",
@@ -101,9 +102,9 @@ function implFakeFactory(state) {
         }] : [],
         skillGroundTruth: null,
       };
-    } else if (schema === STOP_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       result = stopAssessment(request);
-    } else if (schema === IMPL_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
       state.implCalls += 1;
       const m12 = (request.population.metrics.M12 ?? []);
       assert.ok(m12.length > 0, "impl request must carry the M12 slice");
@@ -138,7 +139,7 @@ function implFakeFactory(state) {
       // assessment-request.json into the request directory and calls followUp
       // with the STOP schema. Mirror the real fakeReviewerFactory behavior.
       async followUp({ nextSchema }) {
-        if (nextSchema === STOP_REVIEW_SCHEMA) {
+        if (isDeepStrictEqual(nextSchema, STOP_REVIEW_SCHEMA)) {
           const assessment = JSON.parse(await fs.readFile(
             path.join(requestDirectory, "assessment-request.json"),
             "utf8",

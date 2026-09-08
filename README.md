@@ -173,7 +173,7 @@ implementationCorrection:
 
 **机密不进配置。** `apiKeyEnv` 存的是环境变量的*名字*，值只存在于评审子进程环境里。变量未设置时评审退回默认会话并记 `REVIEWER_PROVIDER_DEGRADED`。
 
-**用 Claude Code 测网关，不要只用 curl。** 评审员是 `claude` 子进程，所以网关能响应 `POST /v1/messages` 并不够：
+**用实际配置的 reviewer CLI 测网关。** 评审员默认是 `claude` 子进程，也可通过项目级 `reviewerRuntime` 选择兼容 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与待实测边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)：
 
 ```bash
 ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \

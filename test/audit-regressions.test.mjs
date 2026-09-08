@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
 
 import { encodeHookOutput } from "../lib/protocol/claude-core-hooks.mjs";
 import { mergeSemanticReview } from "../lib/result-processing.mjs";
@@ -51,16 +52,16 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
       objectId: object.objectId, judgement: stopJudgement(object), reason: "Observed task evidence.", evidence: ["transcript:u1"],
     })),
   });
-  const reviewerFactory = async ({ request, schema, role }) => {
+  const reviewerFactory = async ({ request, schema, role, resolvedSessionPlan }) => {
     calls.roles.push(role);
     const requestDirectory = path.join(root, `fake-${++serial}`);
     await fs.mkdir(requestDirectory);
     let result;
-    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) result = {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) result = {
       summary: "Frozen task obligations.", taskClassification: "CONTINUATION",
       operations: request.currentGroundTruth.version === 0 ? claims : [],
     };
-    else if (schema === STOP_REVIEW_SCHEMA) result = assessment(request);
+    else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) result = assessment(request);
     else {
       calls.implementation.push(request);
       result = implResult ? await implResult(request) : {
@@ -69,13 +70,14 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
         })),
       };
     }
-    return { result, requestDirectory, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) };
+    return { result, requestDirectory, providerDegradation: resolvedSessionPlan?.degraded ?? null, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) };
   };
   return {
     root, calls,
     state: async (taskId) => JSON.parse(await fs.readFile(taskStatePath(root, taskId), "utf8")),
     stop: () => handleRuntimeV2Event({
       projectRoot: root, plan: { runtimeV2 }, reviewerFactory,
+      env: { ...process.env, TEST_KEY: undefined },
       deviceVerifier: async () => {
         calls.device += 1;
         return { assurance: { level: "static", reason: "TEST" }, findings: [], build: { status: "skipped" }, smoke: { status: "skipped" } };
@@ -115,6 +117,9 @@ test("independent Stop provider gets its own handle rather than inheriting extra
   const outcome = await h.stop();
   assert.equal(outcome.decision, "allow");
   assert.ok(h.calls.roles.includes("stop-reviewer"));
+  assert.deepEqual(outcome.stop.review.providerDegradation, {
+    reason: "PROVIDER_API_KEY_UNSET", apiKeyEnv: "TEST_KEY",
+  });
 });
 
 test("per-invocation UUID checks reject reuse and refuse to infer shell variables", () => {

@@ -31,6 +31,12 @@ jobs:
           test/plugin-root-propagation.test.mjs
           test/plugin-capability-floor.test.mjs
           test/reviewer-deadline.test.mjs
+          test/reviewer-launcher.test.mjs
+          test/reviewer-runtime-config.test.mjs
+          test/reviewer-runtime-process.test.mjs
+          test/reviewer-handoff.test.mjs
+          test/reviewer-evidence.test.mjs
+          test/reviewer-artifact-handoff.test.mjs
           test/reviewer-runtime-hook.test.mjs
           test/session-end-process.test.mjs
       - name: Run full suite

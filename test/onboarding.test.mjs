@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
 
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
@@ -135,16 +136,16 @@ function onboardingFakeFactory({
         taskClassification: "CONTINUATION",
         operations: adjudicate(request),
       };
-    } else if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "Incremental refresh.",
         taskClassification: "CONTINUATION",
         operations: incrementalOperations(request),
         skillGroundTruth: null,
       };
-    } else if (schema === STOP_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       result = stopAssessment(request);
-    } else if (schema === IMPL_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
       result = implAssessment(request);
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
@@ -153,7 +154,7 @@ function onboardingFakeFactory({
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
-        if (nextSchema === STOP_REVIEW_SCHEMA) {
+        if (isDeepStrictEqual(nextSchema, STOP_REVIEW_SCHEMA)) {
           const assessment = JSON.parse(await fs.readFile(
             path.join(requestDirectory, "assessment-request.json"),
             "utf8",
@@ -927,7 +928,7 @@ test("onboarding floors reviewer timeouts for the bulk decompose and runs panel 
   const stopSpawns = spawns.filter((spawn) => !spawn.role.startsWith("onboarding-"));
   assert.ok(stopSpawns.every((spawn) => spawn.timeoutMs === 240000),
     "non-onboarding roles keep the configured/default timeout");
-  assert.ok(stopSpawns.every((spawn) => spawn.deadlineAt === undefined),
+  assert.ok(stopSpawns.every((spawn) => spawn.deadlineAt == null),
     "non-onboarding roles are not silently coupled to the onboarding deadline");
 });
 

@@ -173,7 +173,7 @@ implementationCorrection:
 
 **Secrets never touch config.** `apiKeyEnv` holds the *name* of an env var. The value lives only in the reviewer subprocess. Unset variable → reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
 
-**Test the gateway with Claude Code, not curl.** Reviewers run as `claude` subprocesses, so answering `POST /v1/messages` is not enough:
+**Test the gateway with the configured reviewer CLI.** Reviewers default to `claude` subprocesses; project-level `reviewerRuntime` can select a compatible CLI. Answering `POST /v1/messages` is not enough. See [Reviewer CLI compatibility](docs/reviewer-cli-compatibility.md) for configuration, role handoff, and live-verification boundaries:
 
 ```bash
 ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> \

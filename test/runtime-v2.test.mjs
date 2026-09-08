@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -189,7 +190,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
     await fs.mkdir(requestDirectory, { recursive: true });
     calls.push({ role, request, schema });
     let result;
-    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "Ground Truth refreshed.",
         taskClassification: "CONTINUATION",
@@ -211,9 +212,9 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
           taskOverlays: [],
         } : null,
       };
-    } else if (schema === SKILL_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, SKILL_REVIEW_SCHEMA)) {
       result = skillReview();
-    } else if (schema === STOP_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       result = await stopAssessment(request, { projectRoot });
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
@@ -709,7 +710,7 @@ test("PostToolUse waits for every sibling result before finalizing a Skill watch
     reviewerFactory,
   });
   assert.equal(partial.feedback, null);
-  assert.equal(reviewerFactory.calls.filter((call) => call.schema === SKILL_REVIEW_SCHEMA).length, 0);
+  assert.equal(reviewerFactory.calls.filter((call) => isDeepStrictEqual(call.schema, SKILL_REVIEW_SCHEMA)).length, 0);
   let state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
   assert.equal(Object.values(state.watchers)[0].status, "ACTIVE");
 
@@ -731,7 +732,7 @@ test("PostToolUse waits for every sibling result before finalizing a Skill watch
     reviewerFactory,
   });
   assert.match(complete.feedback, /Skill execution correction: demo/u);
-  assert.equal(reviewerFactory.calls.filter((call) => call.schema === SKILL_REVIEW_SCHEMA).length, 1);
+  assert.equal(reviewerFactory.calls.filter((call) => isDeepStrictEqual(call.schema, SKILL_REVIEW_SCHEMA)).length, 1);
   state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
   assert.equal(Object.values(state.watchers)[0].status, "DEVIATION");
 });
@@ -946,6 +947,31 @@ test("Stop blocks three terminal deviations, then records and allows the fourth"
 });
 
 
+test("GT to Stop creates a target role with complete already-read evidence without another extraction", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { skillCorrection: { enabled: false } });
+  const factory = fakeReviewerFactory();
+  const calls = [];
+  const ambientEnv = { ...process.env, REVIEWER_ROUTE_MARKER: "original" };
+  await handleRuntimeV2Event({
+    input: { cwd: root, session_id: "handoff-stop", transcript_path: transcript, hook_event_name: "Stop", last_assistant_message: "Implementation is complete." },
+    projectRoot: root, plan, env: ambientEnv,
+    reviewerFactory: async (options) => {
+      calls.push(options);
+      ambientEnv.REVIEWER_ROUTE_MARKER = "changed after event began";
+      return factory(options);
+    },
+  });
+  assert.equal(calls.filter((call) => call.role === "ground-truth-extractor").length, 1);
+  const target = calls.find((call) => call.role === "stop-reviewer");
+  assert.ok(target, "Stop must receive its own logical role handle");
+  assert.equal(target.env.REVIEWER_ROUTE_MARKER, "original");
+  assert.ok(target.evidence.snapshot.entries.length > 0);
+  assert.ok(target.evidence.groundTruth.claims.length > 0);
+  assert.deepEqual(target.evidence.population, target.request.population);
+});
+
 test("Stop blocks hard findings even when the reviewer classifies the attempted completion as intermediate", async (t) => {
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
@@ -1058,6 +1084,25 @@ test("artifact checkpoints persist metric deviations in the shared deviation led
   assert.equal(lastObservation.deliveredAt, null);
 });
 
+
+test("artifact metric preparation failure releases its source handle before handoff", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { skillCorrection: { enabled: false }, dynamicGroundTruth: { enabled: true, materialRoots: [], panel: { size: 0 } } });
+  const factory = fakeReviewerFactory();
+  let closes = 0;
+  await assert.rejects(handleRuntimeV2Event({
+    input: { cwd: root, session_id: "artifact-prepare-failure", transcript_path: transcript, hook_event_name: "PostToolUse", tool_name: "Write", tool_input: { file_path: path.join(root, "artifact.md") } },
+    projectRoot: root, plan, artifact: { nodeId: "artifact", metricCheckpoint: true },
+    reviewerFactory: async (options) => {
+      const handle = await factory(options);
+      await fs.writeFile(path.join(root, ".runtime-correction", "tasks", options.taskId, "skills"), "not a directory");
+      return { ...handle, close: async () => { closes += 1; await fs.rm(handle.requestDirectory, { recursive: true, force: true }); } };
+    },
+  }), { code: "ENOTDIR" });
+  assert.equal(closes, 1);
+  assert.deepEqual(await fs.readdir(path.join(root, ".runtime-correction", "fake-review")), []);
+});
 
 test("v2 artifact review uses its configured role reviewer even when Ground Truth is unchanged", async (t) => {
   const root = await workspace(t);
@@ -1262,10 +1307,10 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
       evidence: ["session evidence"],
     })),
   });
-  const factory = async ({ schema }) => {
+  const factory = async ({ schema, request }) => {
     if (!healthy) throw new Error("reviewer unavailable");
     await fs.mkdir(requestDirectory, { recursive: true });
-    // The stop reviewer is a two-phase fork: refresh, then assess.
+    // GT and assessment receive distinct role requests, even if the CLI session is reusable.
     const handle = {
       requestDirectory,
       async followUp() {
@@ -1277,7 +1322,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
       },
       async close() {},
     };
-    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       return {
         ...handle,
         result: {
@@ -1297,7 +1342,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
         },
       };
     }
-    return { ...handle, result: assess(null) };
+    return { ...handle, result: assess(request) };
   };
   const stop = (id) => handleRuntimeV2Event({
     input: {

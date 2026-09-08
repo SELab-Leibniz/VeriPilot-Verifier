@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
 
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
@@ -50,7 +51,7 @@ test("a mid-turn NEW_TASK reclassification is suppressed instead of aborting the
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String(Math.random()).slice(2));
     await fs.mkdir(requestDirectory, { recursive: true });
     let result;
-    if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "gt",
         taskClassification: classification,
@@ -71,7 +72,7 @@ test("a mid-turn NEW_TASK reclassification is suppressed instead of aborting the
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
-        if (nextSchema === STOP_REVIEW_SCHEMA) {
+        if (isDeepStrictEqual(nextSchema, STOP_REVIEW_SCHEMA)) {
           const assessment = JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"));
           const objects = Object.values(assessment.population.metrics).flat();
           return {

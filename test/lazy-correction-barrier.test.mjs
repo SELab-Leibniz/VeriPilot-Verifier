@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { loadCurrentGroundTruth } from "../lib/runtime-v2/ground-truth-ledger.mjs";
@@ -104,14 +105,14 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
         taskClassification: "CONTINUATION",
         operations: request.majorityOperations,
       };
-    } else if (schema === GROUND_TRUTH_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "No new Ground Truth.",
         taskClassification: "CONTINUATION",
         operations: [],
         skillGroundTruth: null,
       };
-    } else if (schema === STOP_REVIEW_SCHEMA) {
+    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       const objects = Object.values(request.population.metrics).flat();
       result = {
         summary: "Task complete.",
@@ -139,7 +140,7 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
-        if (nextSchema !== STOP_REVIEW_SCHEMA) throw new Error("Unexpected reviewer follow-up.");
+        if (!isDeepStrictEqual(nextSchema, STOP_REVIEW_SCHEMA)) throw new Error("Unexpected reviewer follow-up.");
         const assessment = JSON.parse(await fs.readFile(
           path.join(requestDirectory, "assessment-request.json"),
           "utf8",
@@ -764,7 +765,7 @@ test("an explicit completion claim crosses the barrier even without a tool call"
   ));
   assert.equal(outcome.decision, "allow");
   assert.equal(state.correctionBarrier.turnActivated, true);
-  assert.ok(factory.calls.some((call) => call.schema === STOP_REVIEW_SCHEMA));
+  assert.ok(factory.calls.some((call) => isDeepStrictEqual(call.schema, STOP_REVIEW_SCHEMA)));
 });
 
 
@@ -788,7 +789,7 @@ test("the baseline Stop payload derives its completion claim from the transcript
 
   assert.equal(outcome.decision, "allow");
   assert.equal((await taskDirectories(root)).length, 1);
-  const stopCall = factory.calls.find((call) => call.schema === STOP_REVIEW_SCHEMA && call.request);
+  const stopCall = factory.calls.find((call) => isDeepStrictEqual(call.schema, STOP_REVIEW_SCHEMA) && call.request);
   assert.equal(stopCall.request.hook.lastAssistantMessage, "I have completed the requested changes.");
 });
 
@@ -896,7 +897,7 @@ test("ordinary affirmative completion and no-change language crosses the taskles
 
     assert.equal(outcome.decision, "allow", lastAssistantMessage);
     assert.equal((await taskDirectories(root)).length, 1, lastAssistantMessage);
-    assert.ok(factory.calls.some((call) => call.schema === STOP_REVIEW_SCHEMA), lastAssistantMessage);
+    assert.ok(factory.calls.some((call) => isDeepStrictEqual(call.schema, STOP_REVIEW_SCHEMA)), lastAssistantMessage);
   }
 });
 
