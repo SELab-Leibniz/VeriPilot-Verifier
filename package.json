@@ -9,7 +9,7 @@
   },
   "scripts": {
     "check": "node ./scripts/cli.mjs",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=4",
     "benchmark:session-end": "node ./scripts/benchmark-session-end.mjs"
   },
   "engines": {

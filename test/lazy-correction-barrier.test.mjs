@@ -25,7 +25,12 @@ const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lazy-correction-barrier-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  t.after(() => fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  }));
   return root;
 }
 

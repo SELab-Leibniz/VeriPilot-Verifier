@@ -31,6 +31,7 @@ function shellInvocation(command) {
     return {
       executable: process.env.ComSpec || "cmd.exe",
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     };
   }
   return { executable: "/bin/sh", args: ["-c", command] };
@@ -46,6 +47,7 @@ async function runCommand(command, { cwd, env, input, invocation = shellInvocati
       cwd,
       env: processEnv,
       windowsHide: true,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -90,6 +92,7 @@ async function supportedShellInvocations(command) {
       name: "cmd",
       executable: process.env.ComSpec || path.join(windowsRoot, "System32", "cmd.exe"),
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     },
     {
       name: "powershell",

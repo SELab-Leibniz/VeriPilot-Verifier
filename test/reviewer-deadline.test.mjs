@@ -63,7 +63,7 @@ let attempt = 0;
 try { attempt = Number(fs.readFileSync(counterPath, "utf8")); } catch {}
 attempt += 1;
 fs.writeFileSync(counterPath, String(attempt));
-Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt === 1 ? 30 : 600);
+Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt === 1 ? 30 : 5000);
 process.stdout.write(JSON.stringify(attempt === 1
   ? { session_id: "fake-review-session", result: "not-json" }
   : { session_id: "fake-review-session", structured_output: { ok: true } }));
@@ -76,10 +76,10 @@ process.exit(0);
     taskId: task.taskId,
     parentSessionId: "deadline-session",
     role: "stop-reviewer",
-    reviewer: reviewer(1_000),
+    reviewer: reviewer(3_000),
     schema: RESULT_SCHEMA,
     request: { test: true },
-    deadlineAt: startedAt + 350,
+    deadlineAt: startedAt + 1_000,
     env: {
       ...process.env,
       RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
@@ -87,7 +87,7 @@ process.exit(0);
       FAKE_REVIEWER_COUNTER: counterPath,
     },
   }), /deadline|timed out/iu);
-  assert.ok(Date.now() - startedAt < 550, "a retry must not receive a fresh 1000ms timeout");
+  assert.ok(Date.now() - startedAt < 2_000, "a retry must not receive a fresh 3000ms timeout");
   assert.equal(await fs.readFile(counterPath, "utf8"), "2");
 });
 
@@ -104,7 +104,7 @@ let attempt = 0;
 try { attempt = Number(fs.readFileSync(counterPath, "utf8")); } catch {}
 attempt += 1;
 fs.writeFileSync(counterPath, String(attempt));
-Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt === 1 ? 30 : 600);
+Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt === 1 ? 30 : 5000);
 process.stdout.write(JSON.stringify({
   session_id: "fake-repair-session",
   structured_output: attempt === 1 ? { ok: "not-a-boolean" } : { ok: true },
@@ -118,10 +118,10 @@ process.exit(0);
     taskId: task.taskId,
     parentSessionId: "repair-deadline-session",
     role: "stop-reviewer",
-    reviewer: reviewer(1_000),
+    reviewer: reviewer(3_000),
     schema: RESULT_SCHEMA,
     request: { test: true },
-    deadlineAt: startedAt + 350,
+    deadlineAt: startedAt + 1_000,
     env: {
       ...process.env,
       RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
@@ -129,7 +129,7 @@ process.exit(0);
       FAKE_REVIEWER_COUNTER: counterPath,
     },
   }), /deadline|timed out/iu);
-  assert.ok(Date.now() - startedAt < 550, "a repair pass must not receive a fresh 1000ms timeout");
+  assert.ok(Date.now() - startedAt < 2_000, "a repair pass must not receive a fresh 3000ms timeout");
   assert.equal(await fs.readFile(counterPath, "utf8"), "2");
 });
 

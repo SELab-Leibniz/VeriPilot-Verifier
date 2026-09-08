@@ -47,6 +47,7 @@ test('shadowMode survives the project-policy YAML load path end to end', async (
   const fs = await import('node:fs/promises');
   const os = await import('node:os');
   const path = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
   const { loadConfig } = await import('../lib/runtime-corrector.mjs');
 
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'shadow-yaml-'));
@@ -64,7 +65,8 @@ test('shadowMode survives the project-policy YAML load path end to end', async (
     ''
   ].join('\n'), 'utf8');
 
-  const plan = await loadConfig({ cwd: root, pluginRoot: path.resolve(import.meta.dirname, '..') });
+  const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
+  const plan = await loadConfig({ cwd: root, pluginRoot: path.resolve(moduleDirectory, '..') });
   assert.equal(plan.configSource, 'project-simple');
   assert.equal(plan.runtimeV2.shadowMode, true,
     'shadowMode from the project YAML must reach the compiled runtime plan');

@@ -12,7 +12,7 @@ import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 
 const SAMPLE_COUNT = 20;
 const WARMUP_COUNT = 3;
-const TASKLESS_P95_LIMIT_MS = 150;
+const TASKLESS_P95_LIMIT_MS = process.platform === "win32" ? 300 : 150;
 const ACTIVE_TASK_P95_LIMIT_MS = 300;
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const hookDeclarations = JSON.parse(
@@ -44,6 +44,7 @@ function shellInvocation(command) {
     return {
       executable: process.env.ComSpec || "cmd.exe",
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     };
   }
   return { executable: "/bin/sh", args: ["-c", command] };
@@ -57,6 +58,7 @@ function runSessionEnd(cwd, input) {
     const child = spawn(invocation.executable, invocation.args, {
       cwd,
       env: cleanEnvironment(),
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";

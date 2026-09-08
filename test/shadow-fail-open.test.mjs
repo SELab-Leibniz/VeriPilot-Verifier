@@ -30,7 +30,12 @@ function runHookScript(script, { cwd, input }) {
 
 async function shadowProject(t, configLines) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "shadow-failopen-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  t.after(() => fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  }));
   await fs.mkdir(path.join(root, ".runtime-corrector"), { recursive: true });
   await fs.writeFile(path.join(root, ".runtime-corrector", "config.yaml"), configLines.join("\n"), "utf8");
   return root;

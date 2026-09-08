@@ -97,6 +97,7 @@ function shellInvocation(command) {
     return {
       executable: process.env.ComSpec || "cmd.exe",
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     };
   }
   return { executable: "/bin/sh", args: ["-c", command] };
@@ -120,6 +121,7 @@ function runDeclaredCommand(command, {
       cwd,
       env,
       windowsHide: true,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -184,6 +186,23 @@ function parseProtocolStdout(stdout, label) {
 }
 
 
+function replaceWorkspacePaths(value, workspaceRoot) {
+  if (typeof value === "string") return value.replaceAll("/workspace", workspaceRoot);
+  if (Array.isArray(value)) {
+    return value.map((entry) => replaceWorkspacePaths(entry, workspaceRoot));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        replaceWorkspacePaths(entry, workspaceRoot),
+      ]),
+    );
+  }
+  return value;
+}
+
+
 function frontmatter(document, source) {
   const match = document.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u);
   assert.ok(match, `${source} must have YAML frontmatter`);
@@ -209,6 +228,7 @@ function runShellCommand(command, { cwd, env: overrides = {} }) {
       cwd,
       env,
       windowsHide: true,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
@@ -570,7 +590,7 @@ test("canonical capability inputs drive all seven declared hook processes with e
   for (const event of contract.events) {
     const eventName = event.name;
     const canonical = await readCompatJson(event.input);
-    const input = JSON.parse(JSON.stringify(canonical).replaceAll("/workspace", root));
+    const input = replaceWorkspacePaths(canonical, root);
     input.cwd = root;
     input.transcript_path = transcriptPath;
     input.session_id = `canonical-${eventName.toLowerCase()}`;

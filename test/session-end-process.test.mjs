@@ -41,6 +41,7 @@ function shellInvocation(command) {
     return {
       executable: process.env.ComSpec || "cmd.exe",
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     };
   }
   return { executable: "/bin/sh", args: ["-c", command] };
@@ -83,6 +84,7 @@ async function runDeclaredSessionEnd({
       cwd,
       env: { ...cleanProcessEnvironment(env), CLAUDE_PLUGIN_ROOT: declaredPluginRoot },
       windowsHide: true,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";

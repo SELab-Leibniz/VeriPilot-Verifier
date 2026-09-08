@@ -52,6 +52,7 @@ function shellInvocation(command) {
     return {
       executable: process.env.ComSpec || "cmd.exe",
       args: ["/d", "/s", "/c", command],
+      windowsVerbatimArguments: true,
     };
   }
   return { executable: "/bin/sh", args: ["-c", command] };
@@ -67,6 +68,7 @@ async function runCodeAgent3Only(command, cwd, input, envOverrides = {}) {
       cwd,
       env,
       windowsHide: true,
+      windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";

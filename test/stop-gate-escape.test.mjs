@@ -16,7 +16,12 @@ const HOOK = path.join(PLUGIN_ROOT, "scripts", "runtime-event.mjs");
 
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "stop-escape-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  t.after(() => fs.rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  }));
   return root;
 }
 
