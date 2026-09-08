@@ -311,6 +311,28 @@
       },
       "additionalProperties": false
     },
+    "reviewerRuntime": {
+      "type": "object",
+      "required": ["executable"],
+      "properties": {
+        "executable": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?=[^\\u0000]*$)[\\s\\S]*\\S",
+          "description": "PATH command, absolute executable, or executable path relative to the owning project root. Never a shell command line."
+        },
+        "argsPrefix": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\u0000]*$"
+          },
+          "description": "Literal arguments placed before the reviewer CLI arguments; defaults to []. Use an absolute path for a Node entry script."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Shared reviewer executable and argument prefix for version 1 and version 2. This object replaces the launch pair as a whole; role model/session/provider settings remain in reviewers."
+    },
     "reviewers": {
       "type": "object",
       "properties": {

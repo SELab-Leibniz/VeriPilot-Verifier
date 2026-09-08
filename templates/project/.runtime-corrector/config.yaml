@@ -17,6 +17,12 @@
 # 文末附 version 2 onboarding 注释示例）。
 version: 1
 
+# 可选：v1/v2 共用的 reviewer 程序；未配置时保持原有 Claude 查找。
+# argsPrefix 是字面 argv，省略时为 []；Node 脚本入口使用绝对路径。
+# reviewerRuntime:
+#   executable: codeagent
+#   argsPrefix: []
+
 # 可选：高可见性反馈文案的语言。可选值：zh（默认）、en。
 # locale: zh
 

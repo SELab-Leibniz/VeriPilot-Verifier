@@ -135,6 +135,7 @@ try {
         pluginRoot,
         runtimeV2Handle: runtimeV2.reviewerHandle ?? null,
         runtimeV2Context: runtimeV2.artifactReviewContext ?? null,
+        runtimeV2ExecutionContext: runtimeV2.reviewerExecutionContext ?? null,
       })
     : null;
   const outcome = await finalizeArtifactCheck(prepared, review);
