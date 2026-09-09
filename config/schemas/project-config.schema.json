@@ -328,10 +328,16 @@
             "pattern": "^[^\\u0000]*$"
           },
           "description": "Literal arguments placed before the reviewer CLI arguments; defaults to []. Use an absolute path for a Node entry script."
+        },
+        "sessionDialect": {
+          "type": "string",
+          "enum": ["claude", "codeagent"],
+          "default": "claude",
+          "description": "Session-argument dialect used by the reviewer CLI. Defaults to claude."
         }
       },
       "additionalProperties": false,
-      "description": "Shared reviewer executable and argument prefix for version 1 and version 2. This object replaces the launch pair as a whole; role model/session/provider settings remain in reviewers."
+      "description": "Shared reviewer executable, argument prefix, and session dialect for version 1 and version 2. This object replaces the launch plan as a whole; role model/session/provider settings remain in reviewers."
     },
     "reviewers": {
       "type": "object",

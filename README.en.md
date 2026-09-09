@@ -175,6 +175,8 @@ implementationCorrection:
 
 **Test the gateway with the configured reviewer CLI.** Reviewers default to `claude` subprocesses; project-level `reviewerRuntime` can select a compatible CLI. Answering `POST /v1/messages` is not enough. See [Reviewer CLI compatibility](docs/reviewer-cli-compatibility.md) for configuration, role handoff, and live-verification boundaries:
 
+CodeAgent requires an explicit `reviewerRuntime.sessionDialect: codeagent`. The plugin manages reviewer sessions with `--session-id` / `--sessions` and never sends Claude's `--resume` or implicit `--continue` on that path. For low-throughput gateways, configure a project-specific 900-second reviewer timeout; Claude's default remains 240 seconds.
+
 ```bash
 ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> \
   claude --print --model <model> "say OK"

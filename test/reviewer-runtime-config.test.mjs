@@ -19,9 +19,13 @@ async function workspace(t) {
 test("v1 and v2 project schemas validate reviewerRuntime without requiring v2 roles", () => {
   for (const version of [1, 2]) {
     const config = { version, artifacts: [{ name: "document", patterns: ["item.md"] }] };
-    assert.doesNotThrow(() => validateProjectConfig({ ...config, reviewerRuntime: { executable: "codeagent" } }, "config.yaml"));
+    assert.doesNotThrow(() => validateProjectConfig({
+      ...config,
+      reviewerRuntime: { executable: "codeagent", sessionDialect: "codeagent" },
+    }, "config.yaml"));
     for (const reviewerRuntime of [null, {}, { executable: " " }, { executable: "agent", argsPrefix: [1] },
-      { executable: "agent", argsPrefix: null }, { executable: "agent", argsPrefix: ["bad\u0000argument"] }, { executable: "agent", shell: true }]) {
+      { executable: "agent", argsPrefix: null }, { executable: "agent", argsPrefix: ["bad\u0000argument"] },
+      { executable: "agent", sessionDialect: "future" }, { executable: "agent", shell: true }]) {
       assert.throws(() => validateProjectConfig({ ...config, reviewerRuntime }, "config.yaml"), /reviewerRuntime/);
     }
   }
@@ -33,10 +37,12 @@ test("YAML preserves and normalizes the owning project's runtime in v1 and v2", 
   const policyRoot = path.join(cwd, ".runtime-corrector");
   await fs.mkdir(policyRoot);
   for (const version of [1, 2]) {
-    await fs.writeFile(path.join(policyRoot, "config.yaml"), `version: ${version}\nreviewerRuntime:\n  executable: ./tools/codeagent\n  argsPrefix:\n    - /opt/agent/entry.mjs\nartifacts:\n  - name: document\n    patterns: [item.md]\n`);
+    await fs.writeFile(path.join(policyRoot, "config.yaml"), `version: ${version}\nreviewerRuntime:\n  executable: ./tools/codeagent\n  argsPrefix:\n    - /opt/agent/entry.mjs\n  sessionDialect: codeagent\nartifacts:\n  - name: document\n    patterns: [item.md]\n`);
     const plan = await loadRuntimePlan({ cwd });
     assert.deepEqual(plan.reviewerRuntime, {
-      executable: path.join(cwd, "tools", "codeagent"), argsPrefix: ["/opt/agent/entry.mjs"],
+      executable: path.join(cwd, "tools", "codeagent"),
+      argsPrefix: ["/opt/agent/entry.mjs"],
+      sessionDialect: "codeagent",
     });
     assert.ok(Object.isFrozen(plan.reviewerRuntime));
   }
@@ -54,9 +60,14 @@ test("provided and legacy configurations apply the same new-field validation and
       return loadRuntimePlan({ cwd });
     };
     const plan = await load({ executable: "./tools/codeagent" });
-    assert.deepEqual(plan.reviewerRuntime, { executable: path.join(cwd, "tools", "codeagent"), argsPrefix: [] });
+    assert.deepEqual(plan.reviewerRuntime, {
+      executable: path.join(cwd, "tools", "codeagent"),
+      argsPrefix: [],
+      sessionDialect: "claude",
+    });
     assert.deepEqual(plan.legacyUnrelatedExtension, { enabled: true });
-    for (const invalid of [null, {}, { executable: "agent", argsPrefix: "entry.js" }, { executable: "agent", extra: true }]) {
+    for (const invalid of [null, {}, { executable: "agent", argsPrefix: "entry.js" },
+      { executable: "agent", sessionDialect: "future" }, { executable: "agent", extra: true }]) {
       await assert.rejects(load(invalid), /reviewerRuntime/);
     }
   }

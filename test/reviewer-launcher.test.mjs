@@ -4,11 +4,14 @@ import test from "node:test";
 import { resolveClaudeExecutable } from "../lib/claude-executable.mjs";
 import * as launcher from "../lib/reviewer-launcher.mjs";
 
-const { resolveReviewerLaunchPlan } = launcher;
+const {
+  buildReviewerSessionArguments,
+  resolveReviewerLaunchPlan,
+} = launcher;
 
 test("reviewer launcher keeps legacy defaults when unconfigured", async () => {
   assert.deepEqual(await resolveReviewerLaunchPlan({ env: {}, platform: "linux" }), {
-    executable: "claude", argsPrefix: [],
+    executable: "claude", argsPrefix: [], sessionDialect: "claude",
   });
 });
 
@@ -21,12 +24,12 @@ test("unconfigured launchers preserve the old executable precedence and API", as
   assert.equal(await resolveClaudeExecutable(env, "linux"), "legacy-override");
   delete env.RUNTIME_CORRECTOR_AGENT_EXECUTABLE;
   assert.deepEqual(await resolveReviewerLaunchPlan({ env, platform: "linux" }), {
-    executable: "legacy-override", argsPrefix: [],
+    executable: "legacy-override", argsPrefix: [], sessionDialect: "claude",
   });
   delete env.RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE;
   assert.equal((await resolveReviewerLaunchPlan({ env, platform: "linux" })).executable, "parent-claude");
   assert.deepEqual(await resolveReviewerLaunchPlan({ env: {}, platform: "win32" }), {
-    executable: "claude.exe", argsPrefix: [],
+    executable: "claude.exe", argsPrefix: [], sessionDialect: "claude",
   });
 });
 
@@ -35,7 +38,7 @@ test("runtime configuration is selected as one pair ahead of legacy overrides", 
     reviewerRuntime: { executable: "node", argsPrefix: ["/opt/agent/entry.mjs"] },
     env: { RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: "claude-from-parent" },
     platform: "linux",
-  }), { executable: "node", argsPrefix: ["/opt/agent/entry.mjs"] });
+  }), { executable: "node", argsPrefix: ["/opt/agent/entry.mjs"], sessionDialect: "claude" });
 });
 
 test("neutral executable override discards configured wrapper arguments", async () => {
@@ -43,7 +46,76 @@ test("neutral executable override discards configured wrapper arguments", async 
     reviewerRuntime: { executable: "node", argsPrefix: ["/opt/agent/entry.mjs"] },
     env: { RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "codeagent" },
     platform: "linux",
-  }), { executable: "codeagent", argsPrefix: [] });
+  }), { executable: "codeagent", argsPrefix: [], sessionDialect: "claude" });
+});
+
+
+test("CodeAgent dialect is explicit for both configured and environment launchers", async () => {
+  assert.deepEqual(await resolveReviewerLaunchPlan({
+    reviewerRuntime: {
+      executable: "codeagentcli",
+      argsPrefix: ["--wrapper"],
+      sessionDialect: "codeagent",
+    },
+    env: {},
+    platform: "linux",
+  }), {
+    executable: "codeagentcli",
+    argsPrefix: ["--wrapper"],
+    sessionDialect: "codeagent",
+  });
+  assert.deepEqual(await resolveReviewerLaunchPlan({
+    reviewerRuntime: {
+      executable: "configured-agent",
+      argsPrefix: ["--configured"],
+      sessionDialect: "claude",
+    },
+    env: {
+      RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "codeagentcli",
+      RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "codeagent",
+    },
+    platform: "linux",
+  }), {
+    executable: "codeagentcli",
+    argsPrefix: [],
+    sessionDialect: "codeagent",
+  });
+  await assert.rejects(resolveReviewerLaunchPlan({
+    env: { RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "codeagent" },
+    platform: "linux",
+  }), /requires RUNTIME_CORRECTOR_AGENT_EXECUTABLE/u);
+  await assert.rejects(resolveReviewerLaunchPlan({
+    env: {
+      RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "codeagentcli",
+      RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "future",
+    },
+    platform: "linux",
+  }), /must be claude or codeagent/u);
+});
+
+
+test("session argument builder maps Claude and CodeAgent identities exactly", () => {
+  assert.deepEqual(buildReviewerSessionArguments({ sessionDialect: "claude" }), []);
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "claude", sessionId: "parent", fork: true,
+  }), ["--resume", "parent", "--fork-session"]);
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "claude", sessionId: "reviewer", noSessionPersistence: true,
+  }), ["--resume", "reviewer", "--no-session-persistence"]);
+
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "codeagent", newSessionId: "new-reviewer",
+  }), ["--session-id", "new-reviewer"]);
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "codeagent", sessionId: "reviewer",
+  }), ["--sessions", "reviewer"]);
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "codeagent", sessionId: "parent", fork: true,
+  }), ["--sessions", "parent", "--fork-session"]);
+  assert.deepEqual(buildReviewerSessionArguments({
+    sessionDialect: "codeagent", sessionId: "reviewer", noSessionPersistence: true,
+  }), ["--sessions", "reviewer", "--no-session-persistence"]);
+  assert.throws(() => buildReviewerSessionArguments({ sessionDialect: "codeagent" }), /new session ID/u);
 });
 
 test("normalization resolves executable paths once and captures an immutable argv prefix", async () => {
@@ -51,12 +123,20 @@ test("normalization resolves executable paths once and captures an immutable arg
   const plan = await resolveReviewerLaunchPlan({ reviewerRuntime: input, env: {}, platform: "linux", projectRoot: "/workspace/owner" });
   input.executable = "claude";
   input.argsPrefix[0] = "different.mjs";
-  assert.deepEqual(plan, { executable: "/workspace/owner/tools/codeagent", argsPrefix: ["/opt/entry file.mjs", "", "--flag=a,b"] });
+  assert.deepEqual(plan, {
+    executable: "/workspace/owner/tools/codeagent",
+    argsPrefix: ["/opt/entry file.mjs", "", "--flag=a,b"],
+    sessionDialect: "claude",
+  });
   assert.ok(Object.isFrozen(plan));
   assert.ok(Object.isFrozen(plan.argsPrefix));
   assert.deepEqual(await resolveReviewerLaunchPlan({
     reviewerRuntime: { executable: "tools\\codeagent.exe" }, env: {}, platform: "win32", projectRoot: "C:\\workspace\\owner",
-  }), { executable: "C:\\workspace\\owner\\tools\\codeagent.exe", argsPrefix: [] });
+  }), {
+    executable: "C:\\workspace\\owner\\tools\\codeagent.exe",
+    argsPrefix: [],
+    sessionDialect: "claude",
+  });
 });
 
 test("only undefined runtime is absent; invalid declared configuration cannot hide behind env", async () => {
@@ -66,7 +146,7 @@ test("only undefined runtime is absent; invalid declared configuration cannot hi
     { executable: 1 }, { executable: "agent\u0000" }, { executable: "agent", argsPrefix: null },
     { executable: "agent", argsPrefix: "entry.mjs" }, { executable: "agent", argsPrefix: [4] },
     { executable: "agent", argsPrefix: ["arg\u0000"] }, { executable: "agent", argsPrefix: Array(1) },
-    { executable: "agent", shell: true }];
+    { executable: "agent", sessionDialect: "future" }, { executable: "agent", shell: true }];
   for (const reviewerRuntime of invalid) {
     await assert.rejects(resolveReviewerLaunchPlan({
       reviewerRuntime, env: { RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "codeagent" }, platform: "linux",
@@ -90,7 +170,11 @@ test("Windows accepts native and Node entry points but diagnoses explicit shell 
   assert.deepEqual(await resolveReviewerLaunchPlan({
     reviewerRuntime: { executable: "C:\\Program Files\\nodejs\\node.exe", argsPrefix: ["C:\\Agent Files\\entry.js"] },
     env: {}, platform: "win32",
-  }), { executable: "C:\\Program Files\\nodejs\\node.exe", argsPrefix: ["C:\\Agent Files\\entry.js"] });
+  }), {
+    executable: "C:\\Program Files\\nodejs\\node.exe",
+    argsPrefix: ["C:\\Agent Files\\entry.js"],
+    sessionDialect: "claude",
+  });
   for (const executable of ["codeagent.cmd", "C:\\agent\\entry.BAT", "entry.ps1"]) {
     await assert.rejects(resolveReviewerLaunchPlan({ reviewerRuntime: { executable }, env: {}, platform: "win32" }), /shell.*native|native.*shell/i);
   }
@@ -113,6 +197,21 @@ test("invocation keeps wrapper and CLI arguments literal without mutating either
   invocation.args.push("another");
   assert.equal(cliArgs.length, 4);
   assert.equal(plan.argsPrefix.length, 3);
+});
+
+
+test("CodeAgent launch plans defensively reject Claude and implicit continuation flags", () => {
+  const plan = {
+    executable: "codeagentcli",
+    argsPrefix: [],
+    sessionDialect: "codeagent",
+  };
+  for (const forbidden of ["--resume", "--resume=session", "--continue", "--continue=true"]) {
+    assert.throws(
+      () => launcher.buildReviewerInvocation(plan, ["prompt", forbidden, "session"]),
+      /cannot contain --resume or --continue/u,
+    );
+  }
 });
 
 test("Windows launch errors retain their original code with actionable no-shell guidance", () => {

@@ -7,8 +7,21 @@ reviewers. See [configuration](configuration.md) for validation and precedence.
 
 ```yaml
 reviewerRuntime:
-  executable: codeagent
+  executable: 'C:/Program Files/CodeAgentCLI/bin/codeagentcli.exe'
   argsPrefix: []
+  sessionDialect: codeagent
+
+limits:
+  semanticReviewTimeoutMs: 900000
+
+reviewers:
+  defaults:
+    session: independent
+    timeoutMs: 900000
+    provider:
+      baseUrl: https://your-gateway.example
+      apiKeyEnv: CODEAGENT_REVIEWER_API_KEY
+      model: glm-5.3
 ```
 
 Omit this block to retain the existing Claude executable resolution. Each v2
@@ -16,6 +29,22 @@ role keeps its existing `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session
 and `provider` configuration. Provider URLs and named key variables configure
 the selected child CLI; they do not turn the plugin into an HTTP client. The
 legacy v1 semantic path keeps its original flags and ambient-provider behavior.
+The global Claude defaults remain 240 seconds. The 900-second values above are
+an explicit project choice for low-throughput gateways and large fork/ground-
+truth reviews; selecting the CodeAgent dialect does not silently change timeouts.
+
+`sessionDialect` is explicit and is never inferred from the executable name.
+It defaults to `claude`. The environment form must set the executable and
+dialect together:
+
+```text
+RUNTIME_CORRECTOR_AGENT_EXECUTABLE=C:/Program Files/CodeAgentCLI/bin/codeagentcli.exe
+RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT=codeagent
+```
+
+When present, that environment pair replaces the complete configured launcher:
+the configured `argsPrefix` and `sessionDialect` are not inherited. A dialect
+environment variable without `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` is invalid.
 
 For Windows shell-shim installations, configure a native executable or a known
 absolute JavaScript entry using Node, rather than a `.cmd`, `.bat`, or `.ps1`:
@@ -43,7 +72,7 @@ extra GT extraction or apply the GT delta again.
 | Compatible ambient `fork` | Resume the source reviewer session, without `--fork-session` |
 | Other `fork` | Fork from the original host parent session |
 
-Ambient reuse requires the same executable/prefix, project and task owner,
+Ambient reuse requires the same executable/prefix/session dialect, project and task owner,
 session cwd, original parent session, and plugin root. The source must itself
 derive from an ambient parent fork and have a session ID. A missing independent
 provider/key retains the existing recorded downgrade to effective `fork`; it
@@ -82,7 +111,27 @@ files parsed successfully. SessionEnd's warmed 20-sample groups measured p95
 56.16ms taskless (150ms limit) and 56.46ms active-task (300ms limit). These are
 local measurements, not Windows/Linux or live CodeAgent results.
 
-### Real CodeAgent acceptance (not replaced by the Node fixture)
+## Session dialects
+
+Both launchers retain the common reviewer argument surface: `--print`,
+`--output-format json`, `--json-schema`, `--effort`, `--permission-mode`,
+`--tools`, `--allowedTools`, `--disallowedTools`, `--strict-mcp-config`,
+`--plugin-dir`, and optional `--model`, `--max-budget-usd`, `--fork-session`,
+and `--no-session-persistence`.
+
+| Operation | `claude` | `codeagent` |
+| --- | --- | --- |
+| Fresh session | no session flag | `--session-id <generated-reviewer-uuid>` |
+| Resume | `--resume <id>` | `--sessions <id>` |
+| Resume and fork | `--resume <id> --fork-session` | `--sessions <id> --fork-session` |
+| One-shot resume | append `--no-session-persistence` | append `--no-session-persistence` |
+
+The CodeAgent path rejects an argv containing `--resume` or `--continue` before
+spawn. A fresh CodeAgent reviewer has a plugin-generated UUID. If the response
+omits its session ID, the known UUID is retained; a different returned ID is a
+protocol error. A fork must return its newly created session ID.
+
+## Real CodeAgent acceptance (not replaced by the Node fixture)
 
 The implementation environment did not have `codeagent` on PATH. The user's
 successful base command establishes basic CLI operation only. Parent fork,
@@ -90,7 +139,7 @@ follow-up, read-only tool enforcement, provider routing, and recursion
 suppression still need to pass using CodeAgent's own sessions and installed
 plugin, before claiming full runtime support.
 
-In a disposable project configured with `reviewerRuntime.executable: codeagent`:
+In a disposable project configured with `sessionDialect: codeagent`:
 
 1. Install/load this plugin using CodeAgent's supported plugin mechanism. Start
    a CodeAgent session in that project, trigger a configured artifact write and
@@ -111,7 +160,7 @@ POSIX shell example (replace paths and IDs; these requests may incur model costs
 
 ```sh
 codeagent 'Return the structured object {"ok":true}.' \
-  --resume CODEAGENT_PARENT_SESSION_ID --fork-session \
+  --sessions CODEAGENT_PARENT_SESSION_ID --fork-session \
   --print --output-format json \
   --json-schema '{"type":"object","required":["ok"],"properties":{"ok":{"type":"boolean"}}}' \
   --effort low --permission-mode dontAsk \
@@ -120,8 +169,8 @@ codeagent 'Return the structured object {"ok":true}.' \
   --disallowedTools 'Write,Edit,Skill,Agent,mcp__*'
 ```
 
-For follow-up, replace `--resume CODEAGENT_PARENT_SESSION_ID --fork-session`
-with `--resume RETURNED_REVIEWER_SESSION_ID --no-session-persistence` while
+For follow-up, replace `--sessions CODEAGENT_PARENT_SESSION_ID --fork-session`
+with `--sessions RETURNED_REVIEWER_SESSION_ID --no-session-persistence` while
 keeping the other flags. A valid response is a single JSON envelope containing
 `session_id` and `structured_output: {"ok":true}`. Role-specific schemas and
 optional `--model`/`--max-budget-usd` must also work in the actual Hook run.

@@ -175,6 +175,8 @@ implementationCorrection:
 
 **用实际配置的 reviewer CLI 测网关。** 评审员默认是 `claude` 子进程，也可通过项目级 `reviewerRuntime` 选择兼容 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与待实测边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)：
 
+CodeAgent 需显式配置 `reviewerRuntime.sessionDialect: codeagent`；插件会用 `--session-id` / `--sessions` 管理 reviewer 会话，绝不向该路径发送 Claude 的 `--resume` 或隐式 `--continue`。低吞吐网关建议为项目显式设置 900 秒 reviewer 超时，Claude 默认仍为 240 秒。
+
 ```bash
 ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \
   claude --print --model <模型> "say OK"

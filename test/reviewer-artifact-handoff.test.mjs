@@ -29,7 +29,7 @@ const result = role === "artifact-reviewer" ? firstArtifact ? { summary: "needs 
 process.stdout.write(JSON.stringify({ session_id: process.env.RUNTIME_CORRECTOR_INTERNAL_RUN_ID, structured_output: result }));
 `);
   const runtime = { executable: process.execPath, argsPrefix: [entry] };
-  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, CAPTURE: capture, KEY_A: "secret-source-A", KEY_B: "secret-target-B" };
+  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: undefined, CAPTURE: capture, KEY_A: "secret-source-A", KEY_B: "secret-target-B" };
   const reviewer = (key) => ({ effort: "low", timeoutMs: 2000, session: "independent", provider: { baseUrl: `https://${key}.invalid`, apiKeyEnv: key } });
   const owner = { projectRoot: root, sessionCwd: root, taskId: task.taskId, parentSessionId: "parent", pluginRoot: root, reviewerRuntime: runtime, env };
   const prepared = { projectRoot: root, result: { status: "passed", diagnostics: [], metadata: { roundId: "artifact-round", artifactFiles: [] } }, reviewContext: {} };

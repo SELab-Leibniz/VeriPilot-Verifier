@@ -17,6 +17,7 @@ async function fixture(t) {
   await fs.writeFile(entry, `
 const fs = require("node:fs");
 const args = process.argv.slice(2);
+const valueAfter = (flag) => { const index = args.indexOf(flag); return index < 0 ? null : args[index + 1]; };
 const requestPath = args[0].match(/Read the request at (.*)\\.\\n/)?.[1];
 const request = requestPath ? JSON.parse(fs.readFileSync(requestPath, "utf8")) : {};
 const frozen = {};
@@ -27,10 +28,13 @@ const count = fs.readFileSync(process.env.CAPTURE, "utf8").trim().split("\\n").l
 if (request.fail) process.stdout.write("invalid output");
 else if (count > 1 && process.env.REVIEW_FAILURE === "repair") process.stdout.write(JSON.stringify({ session_id: "review-session", structured_output: { ok: "invalid" } }));
 else if (count > 1 && process.env.REVIEW_FAILURE === "reminder") process.stdout.write(JSON.stringify({ session_id: "review-session", result: "not-json" }));
-else process.stdout.write(JSON.stringify({ session_id: process.env.RUNTIME_CORRECTOR_INTERNAL_RUN_ID, structured_output: { ok: true } }));
+else process.stdout.write(JSON.stringify({
+  session_id: valueAfter("--session-id") ?? (valueAfter("--sessions") && !args.includes("--fork-session") ? valueAfter("--sessions") : process.env.RUNTIME_CORRECTOR_INTERNAL_RUN_ID),
+  structured_output: { ok: true },
+}));
 `);
   const task = await ensureTask({ projectRoot: root, sessionId: "parent" });
-  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: "missing-cli", CAPTURE: capture, KEY_A: "test-secret-A", KEY_B: "test-secret-B", ANTHROPIC_BASE_URL: "https://ambient.invalid", ANTHROPIC_AUTH_TOKEN: "ambient-token" };
+  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: undefined, RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: "missing-cli", CAPTURE: capture, KEY_A: "test-secret-A", KEY_B: "test-secret-B", ANTHROPIC_BASE_URL: "https://ambient.invalid", ANTHROPIC_AUTH_TOKEN: "ambient-token" };
   const options = { projectRoot: root, sessionCwd: root, taskId: task.taskId, parentSessionId: "parent", pluginRoot: root, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] }, env, schema, request: {}, reviewer: baseReviewer };
   return { root, options, capture, calls: async () => (await fs.readFile(capture, "utf8")).trim().split("\n").map(JSON.parse) };
 }
@@ -84,6 +88,59 @@ test("compatible ambient fork resumes source session without re-forking, with ta
   assert.ok(call.request.groundTruthPath.startsWith(target.requestDirectory));
   await origin.close(); await origin.close();
   assert.equal(JSON.parse(await fs.readFile(call.request.groundTruthPath, "utf8")).version, 7);
+});
+
+test("CodeAgent handoff resumes compatible roles with --sessions and starts independent roles with fresh UUIDs", async (t) => {
+  const compatible = await fixture(t);
+  compatible.options.reviewerRuntime = {
+    ...compatible.options.reviewerRuntime,
+    sessionDialect: "codeagent",
+  };
+  const origin = await reviewers.startRoleReviewer({
+    ...compatible.options,
+    role: "ground-truth-extractor",
+  });
+  const target = await reviewers.handoffRoleReviewer({
+    ...compatible.options,
+    originHandle: origin,
+    role: "skill-reviewer",
+  });
+  t.after(() => target.close());
+  const compatibleCalls = await compatible.calls();
+  assert.equal(compatibleCalls[0].args[compatibleCalls[0].args.indexOf("--sessions") + 1], "parent");
+  assert.ok(compatibleCalls[0].args.includes("--fork-session"));
+  assert.equal(compatibleCalls[1].args[compatibleCalls[1].args.indexOf("--sessions") + 1], origin.sessionId);
+  assert.ok(compatibleCalls[1].args.includes("--no-session-persistence"));
+  assert.ok(!compatibleCalls[1].args.includes("--fork-session"));
+
+  const fresh = await fixture(t);
+  fresh.options.reviewerRuntime = {
+    ...fresh.options.reviewerRuntime,
+    sessionDialect: "codeagent",
+  };
+  const independentOrigin = await reviewers.startRoleReviewer({
+    ...fresh.options,
+    role: "ground-truth-extractor",
+    reviewer: independent("KEY_A"),
+  });
+  const independentTarget = await reviewers.handoffRoleReviewer({
+    ...fresh.options,
+    originHandle: independentOrigin,
+    role: "stop-reviewer",
+    reviewer: independent("KEY_B"),
+  });
+  t.after(() => independentTarget.close());
+  const freshCalls = await fresh.calls();
+  const originId = freshCalls[0].args[freshCalls[0].args.indexOf("--session-id") + 1];
+  const targetId = freshCalls[1].args[freshCalls[1].args.indexOf("--session-id") + 1];
+  assert.equal(originId, independentOrigin.sessionId);
+  assert.equal(targetId, independentTarget.sessionId);
+  assert.notEqual(targetId, originId);
+  assert.equal(freshCalls[1].provider, "https://KEY_B.invalid");
+  for (const call of [...compatibleCalls, ...freshCalls]) {
+    assert.ok(!call.args.includes("--resume"));
+    assert.ok(!call.args.includes("--continue"));
+  }
 });
 
 test("non-ambient source and missing target key fork original parent using original ambient environment", async (t) => {
@@ -151,7 +208,7 @@ test("handoff retains the source absolute deadline and passes resolved plans to 
   });
   assert.equal(captured.deadlineAt, deadlineAt);
   assert.equal(captured.continuationSessionId, origin.sessionId);
-  assert.deepEqual(captured.resolvedLaunchPlan, f.options.reviewerRuntime);
+  assert.deepEqual(captured.resolvedLaunchPlan, { ...f.options.reviewerRuntime, sessionDialect: "claude" });
   assert.equal(captured.resolvedSessionPlan.session, "fork");
   await assert.rejects(fs.access(origin.requestDirectory), { code: "ENOENT" });
 });
