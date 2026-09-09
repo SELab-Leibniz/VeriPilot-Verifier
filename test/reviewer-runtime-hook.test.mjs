@@ -172,6 +172,7 @@ async function runPostToolUse(f, targetPath, eventId, { hookEventName = "PostToo
       cwd: f.root,
       env,
       windowsHide: true,
+      windowsVerbatimArguments: process.platform === "win32",
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";
@@ -225,7 +226,11 @@ async function assertTargetEvidence(f, call) {
   assert.deepEqual(call.semanticRequest.runtimeV2.transcript, call.request.transcript);
   assert.equal(call.semanticRequest.runtimeV2.groundTruthPath, call.request.groundTruthPath);
   for (const file of [call.request.transcript.path, call.request.groundTruthPath, call.request.semanticReviewRequestPath]) {
-    assert.equal(path.dirname(file), requestDirectory, "evidence belongs to the target request directory");
+    assert.equal(
+      path.normalize(path.dirname(file)),
+      path.normalize(requestDirectory),
+      "evidence belongs to the target request directory",
+    );
     await assert.rejects(fs.access(file), { code: "ENOENT" });
   }
   assert.equal(call.frozen.groundTruth.taskId, call.semanticRequest.runtimeV2.taskId);
@@ -405,7 +410,10 @@ test("declared Skill hooks hand off refreshed Ground Truth to a new configured S
   assert.equal(target.request.transcript.cursor, "hook-skill-follow-up");
   assert.equal(target.frozen.skill.constraints[0].statement, "Read the task before reviewing.");
   for (const evidencePath of [target.request.transcript.path, target.request.groundTruthPath, target.request.skillGroundTruthPath]) {
-    assert.equal(path.dirname(evidencePath), path.dirname(target.requestPath));
+    assert.equal(
+      path.normalize(path.dirname(evidencePath)),
+      path.normalize(path.dirname(target.requestPath)),
+    );
     await assert.rejects(fs.access(evidencePath), { code: "ENOENT" });
   }
   const serialized = JSON.stringify({ request: target.request, frozen: target.frozen });

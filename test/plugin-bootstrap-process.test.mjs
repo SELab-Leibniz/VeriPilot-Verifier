@@ -52,7 +52,7 @@ async function runCommand(command, { cwd, env, input, invocation = shellInvocati
     });
     let stdout = "";
     let stderr = "";
-    const timer = setTimeout(() => child.kill("SIGKILL"), 5_000);
+    const timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk) => { stdout += chunk; });

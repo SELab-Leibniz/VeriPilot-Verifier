@@ -15,6 +15,13 @@ const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const RUNTIME_ENTRY_URL = pathToFileURL(path.join(PLUGIN_ROOT, "scripts", "runtime-event.mjs"));
 
 
+function posixDrivePath(nativePath) {
+  const match = nativePath.match(/^([a-zA-Z]):[\\/](.*)$/u);
+  assert.ok(match, `expected a Windows drive path, received ${nativePath}`);
+  return `/${match[1].toLowerCase()}/${match[2].replaceAll("\\", "/")}`;
+}
+
+
 async function temporaryDirectory(t) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-corrector-plugin-root-"));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
@@ -69,6 +76,38 @@ test("resolves a CodeAgent3-only declaration without synthesizing a Claude alias
     CLAUDE_PLUGIN_ROOT: null,
     CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT,
   });
+});
+
+
+test("win32 resolves a CodeAgent3 POSIX drive declaration to the executing plugin realpath", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const codeAgentRoot = posixDrivePath(PLUGIN_ROOT);
+  const resolved = await resolvePluginRoot({
+    env: { CODEAGENT3_PLUGIN_ROOT: codeAgentRoot },
+    executingModuleUrl: RUNTIME_ENTRY_URL,
+  });
+
+  assert.equal(resolved.root, await fs.realpath(PLUGIN_ROOT));
+  assert.deepEqual(resolved.declarations, {
+    CLAUDE_PLUGIN_ROOT: null,
+    CODEAGENT3_PLUGIN_ROOT: codeAgentRoot,
+  });
+});
+
+
+test("win32 treats native and POSIX drive declarations as the same canonical root", {
+  skip: process.platform !== "win32",
+}, async () => {
+  const resolved = await resolvePluginRoot({
+    env: {
+      CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+      CODEAGENT3_PLUGIN_ROOT: posixDrivePath(PLUGIN_ROOT),
+    },
+    executingModuleUrl: RUNTIME_ENTRY_URL,
+  });
+
+  assert.equal(resolved.root, await fs.realpath(PLUGIN_ROOT));
 });
 
 

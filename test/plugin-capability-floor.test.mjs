@@ -104,19 +104,30 @@ function shellInvocation(command) {
 }
 
 
+function gitBashInvocation(command) {
+  const programFiles = process.env.ProgramFiles || "C:\\Program Files";
+  return {
+    executable: path.join(programFiles, "Git", "bin", "bash.exe"),
+    args: ["-lc", command],
+  };
+}
+
+
 function runDeclaredCommand(command, {
   cwd,
   input,
   bom = false,
   rawInput = null,
   env: overrides = {},
+  invocation = shellInvocation(command),
+  includeDefaultRoot = true,
 }) {
   return new Promise((resolve, reject) => {
     const env = { ...process.env };
     delete env.CLAUDE_PLUGIN_ROOT;
     delete env.CODEAGENT3_PLUGIN_ROOT;
-    Object.assign(env, { CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT }, overrides);
-    const invocation = shellInvocation(command);
+    if (includeDefaultRoot) env.CLAUDE_PLUGIN_ROOT = PLUGIN_ROOT;
+    Object.assign(env, overrides);
     const child = spawn(invocation.executable, invocation.args, {
       cwd,
       env,
@@ -200,6 +211,13 @@ function replaceWorkspacePaths(value, workspaceRoot) {
     );
   }
   return value;
+}
+
+
+function posixDrivePath(nativePath) {
+  const match = nativePath.match(/^([a-zA-Z]):[\\/](.*)$/u);
+  assert.ok(match, `expected a Windows drive path, received ${nativePath}`);
+  return `/${match[1].toLowerCase()}/${match[2].replaceAll("\\", "/")}`;
 }
 
 
@@ -597,6 +615,54 @@ test("canonical capability inputs drive all seven declared hook processes with e
     assert.equal(Object.hasOwn(input, "hook_event_id"), false, eventName);
     const result = await runDeclaredCommand(primaryCommand(hooks, eventName), { cwd: root, input });
     assert.equal(result.code, 0, `${eventName}: ${result.stderr}`);
+    const output = parseProtocolStdout(result.stdout, eventName);
+    assertExactEventOutput(eventName, input, output);
+  }
+});
+
+
+test("win32 CodeAgent3 POSIX drive root drives all seven hooks without a root conflict", {
+  skip: process.platform !== "win32",
+}, async (t) => {
+  const root = await workspace(t, [
+    "version: 2",
+    "artifacts: []",
+    "dynamicGroundTruth:",
+    "  enabled: true",
+    "  panel:",
+    "    size: 0",
+    "skillCorrection:",
+    "  enabled: false",
+    "stopCorrection:",
+    "  enabled: false",
+  ]);
+  const transcriptPath = path.join(root, "transcript.jsonl");
+  await fs.writeFile(transcriptPath, "", "utf8");
+  const contract = await readCompatJson("contract.json");
+  const hooks = await readJson("hooks/hooks.json");
+  const codeAgentRoot = posixDrivePath(PLUGIN_ROOT);
+  await fs.access(gitBashInvocation("").executable);
+
+  for (const event of contract.events) {
+    const eventName = event.name;
+    const canonical = await readCompatJson(event.input);
+    const input = replaceWorkspacePaths(canonical, root);
+    input.cwd = root;
+    input.transcript_path = transcriptPath;
+    input.session_id = `codeagent-posix-${eventName.toLowerCase()}`;
+    const command = primaryCommand(hooks, eventName);
+    const result = await runDeclaredCommand(command, {
+      cwd: root,
+      input,
+      env: {
+        CODEAGENT3_PLUGIN_ROOT: codeAgentRoot,
+      },
+      invocation: gitBashInvocation(command),
+      includeDefaultRoot: false,
+    });
+
+    assert.equal(result.code, 0, `${eventName}: ${result.stderr}`);
+    assert.doesNotMatch(result.stderr, /PLUGIN_ROOT_CONFLICT/u, eventName);
     const output = parseProtocolStdout(result.stdout, eventName);
     assertExactEventOutput(eventName, input, output);
   }
