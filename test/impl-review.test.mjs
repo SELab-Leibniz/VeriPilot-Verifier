@@ -202,12 +202,12 @@ test("mergeJudgementsByObjectId dedupes with the implementation judgement winnin
   assert.equal(merged.find((item) => item.objectId === "M12:c1").judgement, "DEVIATION");
 });
 
-test("filterOwnedJudgements keeps only the M09/M11/M12 partition", () => {
+test("filterOwnedJudgements keeps source metrics but never M11 process history", () => {
   const owned = filterOwnedJudgements([
     { objectId: "M12:c1" }, { objectId: "M09:c2" }, { objectId: "M11:c3" },
     { objectId: "M13:c4" }, { objectId: "M01:c5" },
   ]);
-  assert.deepEqual(owned.map((item) => item.objectId), ["M12:c1", "M09:c2", "M11:c3"]);
+  assert.deepEqual(owned.map((item) => item.objectId), ["M12:c1", "M09:c2"]);
 });
 
 test("collectSourceManifest hashes production source and skips excluded trees", async (t) => {
@@ -342,7 +342,7 @@ test("deterministic kit findings survive an implementation reviewer fault", asyn
       },
     },
     reviewerFactory: async () => { throw new Error("reviewer subprocess boom"); },
-    population: { metrics: { M09: [], M11: [], M12: [] } },
+    population: { metrics: { M09: [], M11: [], M12: [{ objectId: "M12:requirement" }] } },
     groundTruthPath: "unused",
     rootCauseIds: [],
   };
@@ -351,11 +351,13 @@ test("deterministic kit findings survive an implementation reviewer fault", asyn
     review.findings.map((finding) => finding.deviationKey).sort(),
     ["impl:kit:arkdata", "impl:kit:map-kit", "impl:kit:scan-kit"],
   );
-  assert.deepEqual(review.metricObjectJudgements, []);
+  assert.equal(review.metricObjectJudgements[0].judgement, "CHECKER_ERROR");
   assert.equal(review.reviewerError, "reviewer subprocess boom");
-  // No deterministic findings -> the reviewer fault still fails open upstream.
+  // No deterministic findings -> the required review still fails explicitly.
   await fs.rm(path.join(root, ".runtime-corrector"), { recursive: true, force: true });
-  await assert.rejects(() => runImplementationReview({ ...args, deviceVerifier: staticVerifier }), /reviewer subprocess boom/u);
+  const failed = await runImplementationReview({ ...args, deviceVerifier: staticVerifier });
+  assert.equal(failed.status, "FAILED");
+  assert.equal(failed.metricObjectJudgements[0].judgement, "CHECKER_ERROR");
 });
 
 test("kit findings block the stop gate and stamp observation.turnIndex", async (t) => {

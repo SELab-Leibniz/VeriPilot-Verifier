@@ -3,6 +3,9 @@
 Status: implemented contract
 Metric catalog: `vp-m01-m15-v1`
 
+Current evidence ownership, provenance, failure and completion semantics:
+[2026-09-09 runtime audit fixes](runtime-audit-fixes.md).
+
 ## Goals
 
 Runtime Corrector v2 keeps the existing artifact node/edge correction model and adds three opt-in correction loops:

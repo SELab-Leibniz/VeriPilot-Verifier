@@ -940,7 +940,8 @@ test("Stop blocks three terminal deviations, then records and allows the fourth"
     decisions.push(outcome.decision);
   }
   assert.deepEqual(decisions, ["block", "block", "block", "allow"]);
-  assert.equal(outcomes.at(-1).feedback, null);
+  assert.match(outcomes.at(-1).feedback, /CORRECTION_BUDGET_EXHAUSTED/u);
+  assert.equal(outcomes.at(-1).stop.verificationIncomplete, true);
   assert.equal(outcomes.at(-1).stop.correctionBudgetExhausted, true);
 });
 

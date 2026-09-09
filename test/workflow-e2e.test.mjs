@@ -457,13 +457,13 @@ test("PostToolUse rejects an upstream semantic edit and persists no patch", asyn
   assert.equal(completed.status, 0, completed.stderr);
   assert.equal(captures.length, 1);
   const hook = JSON.parse(completed.stdout);
-  assert.match(hook.hookSpecificOutput.additionalContext, /隔离语义审阅失败/);
+  assert.match(hook.hookSpecificOutput.additionalContext, /语义审阅已完成，但候选编辑未通过补丁校验/);
   const diagnostics = await findNamedFiles(
     path.join(cwd, ".runtime-correction", "latest"),
     "diagnostic.md",
   );
   const diagnostic = await fs.readFile(diagnostics[0], "utf8");
-  assert.match(diagnostic, /AGENT-SEMANTIC-REVIEW-FAILED/);
+  assert.match(diagnostic, /RUNTIME-PATCH-VALIDATION-FAILED/);
   assert.match(diagnostic, /edit\.target 不在本轮可编辑产物列表中/);
   const patches = await findNamedFiles(
     path.join(cwd, ".runtime-correction", "latest"),

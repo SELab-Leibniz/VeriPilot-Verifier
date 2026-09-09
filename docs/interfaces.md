@@ -96,6 +96,11 @@ Planning bundle 未齐备时仍创建 X1；X1 检查已有成员，必须依赖�
 
 隔离审阅最多返回 100 条 finding、20 个编辑目标，每个目标最多 50 个单行操作。操作类型固定为 `remove-line`、`replace-line`、`insert-before` 和 `insert-after`；每个操作必须携带原始行号与精确 `expect` 内容。任一目标越界、原文不匹配或最终 `git apply --check` 失败时，候选 Patch 会被拒绝并留下明确诊断。
 
+若语义结果已校验成功、仅候选编辑生成失败，总体仍为 `failed`，但语义状态为
+`completed`、补丁状态为 `failed`；保留 findings，使用
+`RUNTIME-PATCH-VALIDATION-FAILED`，不再误报 `AGENT-SEMANTIC-REVIEW-FAILED`。
+完整的 v2 状态与来源约定见 [运行轨迹修复说明](runtime-audit-fixes.md)。
+
 Claude Code 可执行文件按以下顺序解析：
 
 1. `RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE`；

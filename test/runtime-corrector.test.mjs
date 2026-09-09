@@ -666,11 +666,14 @@ test("a rejected semantic edit still preserves X1 findings in the diagnostic", a
   });
   assert.equal(review.status, "failed");
   assert.equal(review.findings[0].ruleId, "AGENT-EDIT-REJECTED");
+  assert.equal(review.semanticStatus, "completed");
+  assert.equal(review.patchStatus, "failed");
   const outcome = await finalizeArtifactCheck(prepared, review);
   assert.ok(outcome.result.diagnostics.some((item) => item.ruleId === "AGENT-EDIT-REJECTED"));
   assert.ok(outcome.result.diagnostics.some(
-    (item) => item.ruleId === "AGENT-SEMANTIC-REVIEW-FAILED",
+    (item) => item.ruleId === "RUNTIME-PATCH-VALIDATION-FAILED",
   ));
+  assert.equal(outcome.result.agentReview.status, "completed");
 });
 
 

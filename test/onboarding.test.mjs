@@ -697,6 +697,7 @@ test("the kit checker consumes frozen capability claims as primary source and ci
 
 test("onboarded capability claims gate the stop: hard entries block, inferred-only entries warn", async (t) => {
   const root = await workspace(t);
+  await write(root, ".runtime-corrector/materials/app-requirements.md", "The app must integrate scan-kit for barcode scanning.\n");
   await write(root, "transcript.jsonl", transcriptEntries(1));
   await write(root, "entry/src/main/ets/pages/Index.ets", "@Entry struct Index {}");
   const plan = onboardingPlan(root, { implementationCorrection: { enabled: true } });
