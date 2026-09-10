@@ -30,8 +30,20 @@ agent 说"完成" ────► 终止门验收：
 
 ```bash
 git clone <repository-url> runtime-corrector
-claude --plugin-dir ./runtime-corrector
+cd runtime-corrector
+
+# plugin-target.json 默认是 CodeAgent；生成 dist/runtime-corrector-codeagent
+npm run build:plugin
+
+# 发布/兼容验证时同时生成两个互斥产物
+npm run build:plugins
+
+# Claude 只安装 Claude 产物
+claude --plugin-dir ./dist/runtime-corrector-claude
 ```
+
+CodeAgent 请用其正常插件安装流程选择 `dist/runtime-corrector-codeagent/`。源码仓库根目录
+不再是可安装插件：它没有自动发现 manifest，必须先构建对应宿主产物。
 
 验证装上了：
 
@@ -43,11 +55,9 @@ claude --plugin-dir ./runtime-corrector
 
 ### 插件兼容性
 
-兼容性按能力而不是版本判断：基础契约仍是 `claude-plugin-core-hooks-json-stdio`，插件使用核心 JSON stdin/stdout Hook、完整 shell `command`、七个生命周期事件，以及已发现的命令和 Skill。运行时不检测 Claude Code、Claude 插件或任何包的版本，也不按版本选择不同实现。
+兼容性按能力而不是版本判断。单一源码在构建期选择宿主，运行时不根据 executable、环境变量或目录猜测宿主。Claude 产物只包含 `.claude-plugin/plugin.json` 并读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物只包含 `.cac-plugin/plugin.json` 并读取 `CODEAGENT3_PLUGIN_ROOT`。CodeAgent 在 Windows + Git Bash 下传入的 `/d/...` 会先规范化为原生盘符路径，再做 absolute path、realpath、manifest identity 和入口 containment 校验。
 
-在此基础上，`dual-host-plugin-root` 扩展接受宿主设置的 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT`。根目录必须是绝对路径，启动时会规范化为真实路径；若两个变量同时存在，只有它们指向同一目录才会继续，否则以 `PLUGIN_ROOT_CONFLICT` 终止该次插件命令，避免从错误安装位置加载代码。固定 Node 启动器不使用 Bash、PowerShell 或 cmd 的变量展开，因此同一声明可用于 Windows cmd/PowerShell 与 Linux/macOS POSIX shell。
-
-CodeAgent3 或其他兼容宿主还必须提供同一组 Hook 事件、JSON stdin/stdout 语义和命令执行能力；若其清单文件格式不同，应由宿主提供一个薄声明视图，Runtime Corrector 不会据版本切换协议。
+两个产物都提供七个生命周期事件及相同的 JSON stdin/stdout 语义。若只有错误宿主的 root 环境变量，启动器报告 `PLUGIN_HOST_MISMATCH`；若当前宿主变量存在，另一宿主变量不会参与冲突判断。固定 Node 启动器不使用 Bash、PowerShell 或 cmd 的变量展开，支持 Windows、Linux 与 macOS。
 
 `PowerShell` 与 `Monitor` 会保留在相关工具 Matcher 中；它们是可选工具。运行环境没有其中任一工具时，安装、生命周期处理和其余工具的纠偏行为不受影响。
 
@@ -56,7 +66,7 @@ CodeAgent3 或其他兼容宿主还必须提供同一组 Hook 事件、JSON stdi
 ```bash
 # 作为 marketplace 插件常驻（不必每次带 --plugin-dir）
 claude
-> /plugin marketplace add /path/to/runtime-corrector
+> /plugin marketplace add /path/to/runtime-corrector/dist/runtime-corrector-claude
 > /plugin install runtime-corrector@runtime-corrector-local
 ```
 </details>
@@ -173,9 +183,9 @@ implementationCorrection:
 
 **机密不进配置。** `apiKeyEnv` 存的是环境变量的*名字*，值只存在于评审子进程环境里。变量未设置时评审退回默认会话并记 `REVIEWER_PROVIDER_DEGRADED`。
 
-**用实际配置的 reviewer CLI 测网关。** 评审员默认是 `claude` 子进程，也可通过项目级 `reviewerRuntime` 选择兼容 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与待实测边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)：
+**用实际配置的 reviewer CLI 测网关。** Reviewer 默认跟随已构建产物的宿主，也可通过项目级 `reviewerRuntime.executable` 或 `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` 指向同协议的原生 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)。
 
-CodeAgent 需显式配置 `reviewerRuntime.sessionDialect: codeagent`；插件会用 `--session-id` / `--sessions` 管理 reviewer 会话，绝不向该路径发送 Claude 的 `--resume` 或隐式 `--continue`。低吞吐网关建议为项目显式设置 900 秒 reviewer 超时，Claude 默认仍为 240 秒。
+CodeAgent fresh reviewer 不传会话参数，由宿主创建持久会话并从 JSON 返回 `session_id`；恢复使用 `--sessions <id>`，fork 使用 `--sessions <id> --fork-session`。CodeAgent 产物会拒绝 `--session-id`、`--resume` 和 `--continue`。宿主默认超时为 CodeAgent 900 秒、Claude 240 秒，项目显式 timeout 仍可覆盖。
 
 ```bash
 ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \

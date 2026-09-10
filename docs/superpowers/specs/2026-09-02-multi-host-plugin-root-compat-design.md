@@ -1,5 +1,9 @@
 # Multi-Host Plugin Root Compatibility Design
 
+> **Superseded:** current releases use build-time, mutually exclusive Claude and CodeAgent artifacts. This file is retained as a historical design.
+
+> **Superseded:** current releases use build-time, mutually exclusive Claude and CodeAgent artifacts. This file is retained as a historical design record.
+
 ## Status
 
 Approved on 2026-09-02 for implementation on `codex/multi-host-plugin-root-compat`.

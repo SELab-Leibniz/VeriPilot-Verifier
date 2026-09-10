@@ -23,23 +23,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Run cross-host compatibility tests
-        run: >-
-          node --test
-          test/plugin-root.test.mjs
-          test/plugin-bootstrap-process.test.mjs
-          test/plugin-root-propagation.test.mjs
-          test/plugin-capability-floor.test.mjs
-          test/reviewer-deadline.test.mjs
-          test/reviewer-launcher.test.mjs
-          test/reviewer-runtime-config.test.mjs
-          test/reviewer-runtime-process.test.mjs
-          test/reviewer-handoff.test.mjs
-          test/reviewer-evidence.test.mjs
-          test/reviewer-artifact-handoff.test.mjs
-          test/reviewer-runtime-hook.test.mjs
-          test/session-end-process.test.mjs
+      - name: Build both host artifacts
+        run: npm run build:plugins
+      - name: Verify generated artifacts
+        run: npm run test:artifacts
       - name: Run full suite
         run: npm test
       - name: Benchmark the declared SessionEnd hook
         run: npm run benchmark:session-end
+
+  release:
+    name: Publish host-specific plugin archives
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: compatibility
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm run build:plugins
+      - name: Create host-specific archives
+        working-directory: dist
+        run: |
+          zip -qr runtime-corrector-claude.zip runtime-corrector-claude
+          zip -qr runtime-corrector-codeagent.zip runtime-corrector-codeagent
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/runtime-corrector-claude.zip
+            dist/runtime-corrector-codeagent.zip

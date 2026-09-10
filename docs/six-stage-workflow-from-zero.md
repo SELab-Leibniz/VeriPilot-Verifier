@@ -79,13 +79,16 @@ YAML，可以省略 `criteria` 使用内置通用基线，但这不会包含下�
 
 ```powershell
 cd C:\workspace\my-project
-claude --plugin-dir C:\tools\runtime-corrector
+cd C:\tools\runtime-corrector
+npm run build:plugin -- --host claude
+cd C:\workspace\my-project
+claude --plugin-dir C:\tools\runtime-corrector\dist\runtime-corrector-claude
 ```
 
 本地开发版插件通过 `--plugin-dir` 加载。新建或恢复 Claude Code 会话时都要带上这个参数：
 
 ```powershell
-claude --plugin-dir C:\tools\runtime-corrector --resume <session-id>
+claude --plugin-dir C:\tools\runtime-corrector\dist\runtime-corrector-claude --resume <session-id>
 ```
 
 不要用 `--no-session-persistence` 启动主会话。六阶段节点和边 reviewer 需要从可恢复的父

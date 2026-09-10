@@ -2,17 +2,17 @@
 
 Runtime Corrector 支持四类稳定的客户入口：插件命令、Skill/自然语言、CLI、JSON-stdio Hook。高级兼容模式还支持自定义 Matcher 和 Collector。
 
-## Claude 插件能力基线
+## 宿主插件能力基线
 
 插件兼容性由版本无关的 `claude-plugin-core-hooks-json-stdio` 能力契约定义，而不是由 Claude Code、Claude 插件或任何包的运行时版本定义。运行时不检测版本，也不按版本选择配置、命令或 Hook 处理路径。
 
 该基线要求：Hook 从 stdin 接收一个 JSON 对象（可带 UTF-8 BOM），stdout 只会为空或输出一个以换行结束的 JSON 对象；使用 `SessionStart`、`UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`Stop`、`PreCompact` 和 `SessionEnd`；工具事件使用 `tool_use_id`，不要求 `hook_event_id`。`PowerShell` 与 `Monitor` 是可选工具：若宿主没有它们，插件的安装、其他 Hook 和其余工具处理仍保持正确。
 
-`dual-host-plugin-root` 是该基线之上的版本无关扩展。宿主必须设置绝对路径形式的 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT`；插件将其规范化为真实目录，并校验安装清单身份。两个变量同时存在时必须指向同一规范路径，否则启动器返回 `PLUGIN_ROOT_CONFLICT`，不会选择其中一个继续运行。固定 Node 启动器不依赖 shell 变量展开，支持 Windows 的 cmd/PowerShell、Linux 与 macOS 的 POSIX shell，最低运行时为 **Node.js >= 18**。
+构建期 host adapter 生成互斥安装产物：Claude 只读取 `CLAUDE_PLUGIN_ROOT` 与 `.claude-plugin/plugin.json`；CodeAgent 只读取 `CODEAGENT3_PLUGIN_ROOT` 与 `.cac-plugin/plugin.json`。当前宿主根会先规范化为 realpath；Windows Git Bash 的 `/d/...` 会先转换成原生盘符路径。只有错误宿主变量时返回 `PLUGIN_HOST_MISMATCH`；当前宿主变量存在时，另一宿主变量不参与冲突判断。固定 Node 启动器支持 Windows cmd/PowerShell、Linux 与 macOS POSIX shell，最低运行时为 **Node.js >= 18**。
 
-CodeAgent3 或其他宿主只有在提供相同事件、同步命令执行、JSON stdin/stdout 和超时语义时才能直接复用 `hooks/hooks.json`。若宿主的清单位置或声明外形不同，应提供只负责映射声明的薄适配层；运行时代码不检测宿主或产品版本，也不启用 `PostToolBatch`、Hook `args` 等较新机制。
+CodeAgent 必须提供相同七事件、同步命令执行、JSON stdin/stdout 和超时语义。运行时代码不检测产品版本或 executable 名称；协议由已安装产物固定。
 
-## Claude 命令
+## 插件命令
 
 所有入口都在当前宿主工作目录执行。`help`、`init`、`validate`、`stages`、`explain`、`spec` 和 `check` 通过同一固定 Node 启动器解析活动插件根，再调用插件自带 `scripts/cli.mjs`，不依赖系统 PATH，也不直接拼接任一宿主变量。PostToolUse hook 内部使用一次性 `semantic-review` 技能，主 Agent 无需调用它。
 
@@ -35,7 +35,7 @@ CodeAgent3 或其他宿主只有在提供相同事件、同步命令执行、JSO
 RuntimePlan，再由 CLI、Hook、`explain` 和 `spec` 使用。内部模块导出不是公共配置接口，
 调用方不应绕过 RuntimePlan 直接依赖未编译的项目策略对象。
 
-## Claude Skills 与自然语言
+## Skills 与自然语言
 
 ### `runtime-corrector-init`
 
@@ -101,16 +101,21 @@ Planning bundle 未齐备时仍创建 X1；X1 检查已有成员，必须依赖�
 `RUNTIME-PATCH-VALIDATION-FAILED`，不再误报 `AGENT-SEMANTIC-REVIEW-FAILED`。
 完整的 v2 状态与来源约定见 [运行轨迹修复说明](runtime-audit-fixes.md)。
 
-Claude Code 可执行文件按以下顺序解析：
+Reviewer 可执行文件按以下顺序解析：
 
-1. `RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE`；
-2. `CLAUDE_CODE_EXECUTABLE`；
-3. Windows 已知的原生安装路径，或系统中的 `claude.exe`；
-4. 非 Windows 系统中的 `claude`。
+1. `RUNTIME_CORRECTOR_AGENT_EXECUTABLE`；
+2. 项目 `reviewerRuntime`；
+3. 当前宿主专用环境变量；
+4. 当前宿主已知原生安装路径；
+5. 当前宿主 PATH 命令。
 
-前两个环境变量适合 Claude Code 不在 Hook PATH 中时显式指定原生可执行文件。隔离审阅默认
-最多运行 240 秒，可通过项目配置 `limits.semanticReviewTimeoutMs` 调整为 `1000`～`1200000`
-毫秒。Runtime Corrector 自己的主 PostToolUse Hook 外层上限为 1800 秒；它只约束本插件命令，
+Claude 专用覆盖为 `RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE` 和
+`CLAUDE_CODE_EXECUTABLE`；CodeAgent 专用覆盖为
+`RUNTIME_CORRECTOR_CODEAGENT_EXECUTABLE`。
+
+会话协议不由 executable 名称推断。Claude 隔离审阅默认 240 秒，CodeAgent 默认 900 秒；
+可通过项目配置 `limits.semanticReviewTimeoutMs` 调整为 `1000`～`1200000` 毫秒。完整行为见
+[Reviewer CLI 兼容性](reviewer-cli-compatibility.md)。Runtime Corrector 自己的主 PostToolUse Hook 外层上限为 1800 秒；它只约束本插件命令，
 不会改变其他 PostToolUse Hook 的超时。
 
 ## CLI

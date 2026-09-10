@@ -52,39 +52,39 @@ RuntimePlan。项目 YAML 加载层只负责读取和受控 YAML 解析；随后
 
 ### Reviewer 可执行程序（v1 / v2 共用）
 
-在项目配置顶层选择兼容 reviewer CLI 协议的程序：
+Reviewer 会话协议由安装产物决定，不由配置或 executable 名称决定。仓库默认
+`plugin-target.json` 为 `codeagent`；`npm run build:plugins` 会生成两个互斥安装产物。
+源码根目录没有自动发现 manifest，不能直接安装。项目配置只覆盖可执行程序：
 
 ```yaml
 reviewerRuntime:
   executable: 'C:/Program Files/CodeAgentCLI/bin/codeagentcli.exe'
   argsPrefix: []
-  sessionDialect: codeagent
 ```
 
-`executable` 必填；`argsPrefix` 可省略，默认 `[]`；`sessionDialect` 可选
-`claude | codeagent`，默认 `claude`，不会根据 executable 名称推断。这个对象同时用于 v1 语义审阅和
-v2 角色审阅。v2 各角色的 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`
-与 `provider` 继续放在 `reviewers` 中，不放进 `reviewerRuntime`。
+`executable` 必填，`argsPrefix` 默认 `[]`。该对象同时用于 v1 和 v2。旧版 reviewer
+会话方言字段和环境覆盖变量已删除，出现时会明确报迁移错误。launch plan 固定为冻结的
+`{ executable, argsPrefix }`。
 
-启动程序的优先级如下，每次都选择完整的 executable、prefix 与 session dialect：
+启动程序优先级：
 
-| 优先级 | 来源 | 参数前缀 | 会话方言 |
-|---|---|---|---|
-| 1 | `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` | `[]`，不会继承配置里的 wrapper 参数 | 配套 `RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT`，省略时为 `claude` |
-| 2 | 显式 `reviewerRuntime` 对象 | 自身的 `argsPrefix`，省略时为 `[]` | 自身的 `sessionDialect`，省略时为 `claude` |
-| 3 | `RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE` | `[]` | `claude` |
-| 4 | `CLAUDE_CODE_EXECUTABLE` | `[]` | `claude` |
-| 5 | 原有 Claude 平台默认查找 | `[]` | `claude` |
+| 优先级 | 来源 | 参数前缀 |
+|---|---|---|
+| 1 | `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` | `[]`，不继承配置 wrapper |
+| 2 | 显式 `reviewerRuntime` | 自身的 `argsPrefix` |
+| 3 | 当前宿主专用环境变量 | `[]` |
+| 4 | 当前宿主已知原生安装路径 | `[]` |
+| 5 | 当前宿主 PATH 命令 | `[]` |
 
 没有 `reviewerRuntime` 和新环境变量时，旧配置行为不变。已声明的对象必须通过校验，
 不能用环境覆盖掩盖 `null`、缺少 executable、空白字符串、错误类型、未知字段或 NUL
 字符。新环境变量设置为空也会报错；取消覆盖请删除该变量。选中的程序无法启动时会
 报告错误，不会再尝试更低优先级的程序。
 
-`RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT` 只允许与
-`RUNTIME_CORRECTOR_AGENT_EXECUTABLE` 同时设置；孤立方言变量会报错。环境变量组合覆盖整套
-launcher，不继承配置里的 `argsPrefix` 或方言。解析结果固定为冻结的
-`{ executable, argsPrefix, sessionDialect }`。
+Claude 专用变量为 `RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE`、`CLAUDE_CODE_EXECUTABLE`；
+CodeAgent 专用变量为 `RUNTIME_CORRECTOR_CODEAGENT_EXECUTABLE`。Windows 已知原生路径
+分别包括 npm Claude Code 的 `bin/claude.exe` 和
+`%ProgramFiles%/CodeAgentCLI/bin/codeagentcli.exe`，最后回退到各自 PATH 命令。
 
 不含路径分隔符的 executable 按 PATH 查找；绝对路径直接使用；配置中的相对路径
 （例如 `./tools/codeagent`）在加载时固定到该配置所属的项目根，随后不受 reviewer
@@ -99,27 +99,27 @@ reviewerRuntime:
   executable: 'C:/Program Files/nodejs/node.exe'
   argsPrefix:
     - 'C:/Tools/CodeAgent/entry.js'
-  sessionDialect: codeagent
 ```
 
 入口路径须替换为实际安装路径。Windows 支持原生可执行文件和这种显式 Node 入口；
 `.cmd`、`.bat`、`.ps1` shell shim 会给出诊断，不会自动启用 shell。启动配置在创建
 reviewer handle 时固定，首次请求、修复和后续请求都沿用同一组启动参数。
 
-两种会话方言的映射如下：Claude 新会话不传会话参数，恢复使用 `--resume <id>`；
-CodeAgent 新会话使用插件生成的 UUID 和 `--session-id <uuid>`，恢复使用
-`--sessions <id>`。恢复并 fork 时分别追加 `--fork-session`，一次性恢复追加
-`--no-session-persistence`。CodeAgent 路径在启动前拒绝任何 `--resume` 或 `--continue`。
-公共审阅参数保持不变，包括可选的准确拼写 `--max-budget-usd`。
+两种产物 fresh 都不传会话参数。Claude 恢复使用 `--resume <id>`；CodeAgent 恢复使用
+`--sessions <id>`。恢复并 fork 时追加 `--fork-session`，一次性恢复追加
+`--no-session-persistence`。CodeAgent fresh 由宿主创建可持久化会话并从 JSON envelope
+取得 `session_id`；缺失 ID、resume 返回不同 ID，或 fork 未返回新 ID均为协议失败。
+CodeAgent 启动前拒绝 `--session-id`、`--resume`、`--continue`。公共参数保持不变，
+包括准确拼写的 `--max-budget-usd`。
 
-CodeAgent 通过低吞吐网关执行大体量 fork 或 ground-truth 审阅时，建议在项目中显式放宽
-超时；这不会改变 Claude 的全局 240 秒默认值：
+Claude 的 semantic/v2 reviewer 默认超时均为 240 秒；CodeAgent 均为 900 秒。项目显式
+timeout 继续覆盖宿主默认值。CodeAgent independent reviewer 可使用 Anthropic 环境变量
+形态连接兼容网关：
 
 ```yaml
 reviewerRuntime:
   executable: 'C:/Program Files/CodeAgentCLI/bin/codeagentcli.exe'
   argsPrefix: []
-  sessionDialect: codeagent
 
 limits:
   semanticReviewTimeoutMs: 900000

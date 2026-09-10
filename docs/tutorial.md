@@ -24,13 +24,15 @@ cd C:\path\to\todo-project
 ## 2. 加载本地插件
 
 ```powershell
-claude --plugin-dir C:\path\to\runtime-corrector
+cd C:\path\to\runtime-corrector
+npm run build:plugin -- --host claude
+claude --plugin-dir C:\path\to\runtime-corrector\dist\runtime-corrector-claude
 ```
 
 本地开发版每次新建或恢复 Claude 会话时都应带上 `--plugin-dir`：
 
 ```powershell
-claude --plugin-dir C:\path\to\runtime-corrector --resume <session-id>
+claude --plugin-dir C:\path\to\runtime-corrector\dist\runtime-corrector-claude --resume <session-id>
 ```
 
 不要为主会话增加 `--no-session-persistence`。语义 reviewer 需要恢复这个父 session
@@ -278,7 +280,7 @@ runtime-corrector init --cwd C:\path\to\another-project
 确认本次会话通过以下方式启动：
 
 ```powershell
-claude --plugin-dir C:\absolute\path\to\runtime-corrector
+claude --plugin-dir C:\absolute\path\to\runtime-corrector\dist\runtime-corrector-claude
 ```
 
 并运行：

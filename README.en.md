@@ -30,8 +30,19 @@ Requires a host that supports the core plugin capabilities below and **Node.js >
 
 ```bash
 git clone <repository-url> runtime-corrector
-claude --plugin-dir ./runtime-corrector
+cd runtime-corrector
+
+# plugin-target.json defaults to CodeAgent
+npm run build:plugin
+
+# CI and releases build both mutually exclusive artifacts
+npm run build:plugins
+
+# Claude installs only its generated artifact
+claude --plugin-dir ./dist/runtime-corrector-claude
 ```
+
+For CodeAgent, select `dist/runtime-corrector-codeagent/` through its normal plugin installation workflow. The repository root is source, not an installable plugin: it has no auto-discovered manifest and must be built first.
 
 Check it loaded:
 
@@ -45,16 +56,16 @@ If you get help text and stage status, you're set.
 
 Compatibility is capability-based, not version-based. The unchanged foundation is `claude-plugin-core-hooks-json-stdio`: JSON stdin/stdout command hooks, the seven declared lifecycle events, and discoverable commands and Skills. Runtime Corrector does not inspect a Claude Code, plugin, package, or host version and does not select implementations by version.
 
-The `dual-host-plugin-root` extension accepts either `CLAUDE_PLUGIN_ROOT` or `CODEAGENT3_PLUGIN_ROOT`. Each declaration must be an absolute directory and is canonicalized with its real path before the entry is loaded. If both variables are present, their canonical paths must be equal; otherwise the command fails with `PLUGIN_ROOT_CONFLICT` instead of choosing one installation silently. The fixed Node launcher does not use Bash, PowerShell, or cmd variable expansion, so the same declaration works with Windows cmd/PowerShell and Linux/macOS POSIX shells.
+Build-time host adapters produce mutually exclusive artifacts. The Claude artifact reads only `CLAUDE_PLUGIN_ROOT` and `.claude-plugin/plugin.json`; the CodeAgent artifact reads only `CODEAGENT3_PLUGIN_ROOT` and `.cac-plugin/plugin.json`. The selected root is canonicalized before loading; on Windows, Git Bash drive paths such as `/d/project` are normalized to native paths. A foreign-host root is ignored when the selected root is present, and produces `PLUGIN_HOST_MISMATCH` when it is the only declaration.
 
-CodeAgent3 and other compatible hosts must still expose the same Hook events, synchronous command execution, JSON stdin/stdout, and timeout semantics. A host with a different manifest shape should provide a thin declaration view; Runtime Corrector does not switch protocols by product version.
+CodeAgent must still expose the same seven Hook events, synchronous command execution, JSON stdin/stdout, and timeout semantics. Runtime Corrector selects no protocol from a product version or executable name; the installed artifact fixes the protocol.
 
 <details><summary>Other ways to install</summary>
 
 ```bash
 # install once as a marketplace plugin (no --plugin-dir every time)
 claude
-> /plugin marketplace add /path/to/runtime-corrector
+> /plugin marketplace add /path/to/runtime-corrector/dist/runtime-corrector-claude
 > /plugin install runtime-corrector@runtime-corrector-local
 ```
 </details>
@@ -173,9 +184,9 @@ implementationCorrection:
 
 **Secrets never touch config.** `apiKeyEnv` holds the *name* of an env var. The value lives only in the reviewer subprocess. Unset variable → reviewer falls back to the default session and records `REVIEWER_PROVIDER_DEGRADED`.
 
-**Test the gateway with the configured reviewer CLI.** Reviewers default to `claude` subprocesses; project-level `reviewerRuntime` can select a compatible CLI. Answering `POST /v1/messages` is not enough. See [Reviewer CLI compatibility](docs/reviewer-cli-compatibility.md) for configuration, role handoff, and live-verification boundaries:
+**Test the gateway with the configured reviewer CLI.** Reviewers follow the host of the generated artifact. A project-level `reviewerRuntime.executable` or `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` can point to another native CLI implementing that same host protocol. Answering `POST /v1/messages` is not enough; see [Reviewer CLI compatibility](docs/reviewer-cli-compatibility.md).
 
-CodeAgent requires an explicit `reviewerRuntime.sessionDialect: codeagent`. The plugin manages reviewer sessions with `--session-id` / `--sessions` and never sends Claude's `--resume` or implicit `--continue` on that path. For low-throughput gateways, configure a project-specific 900-second reviewer timeout; Claude's default remains 240 seconds.
+A fresh CodeAgent reviewer sends no session flag: CodeAgent creates a persistent session and returns `session_id` in its JSON envelope. Resume uses `--sessions <id>` and fork uses `--sessions <id> --fork-session`. The CodeAgent artifact rejects `--session-id`, `--resume`, and `--continue`. Host defaults are 900 seconds for CodeAgent and 240 seconds for Claude; explicit project timeouts still win.
 
 ```bash
 ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> \

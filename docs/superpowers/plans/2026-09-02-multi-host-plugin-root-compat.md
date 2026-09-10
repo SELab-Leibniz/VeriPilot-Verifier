@@ -1,5 +1,9 @@
 # Multi-Host Plugin Root Compatibility Implementation Plan
 
+> **Superseded:** current releases use build-time, mutually exclusive Claude and CodeAgent artifacts. This file is retained as a historical plan.
+
+> **Superseded:** current releases use build-time, mutually exclusive Claude and CodeAgent artifacts. This file is retained as a historical plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make one Runtime Corrector artifact resolve either Claude or CodeAgent3 plugin roots across Windows, Linux, and macOS without changing runtime business semantics.

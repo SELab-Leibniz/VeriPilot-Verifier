@@ -255,15 +255,16 @@ Latest 指针：
 
 ## 6. 接入方式
 
-### 6.1 Claude Code Hook
+### 6.1 宿主 Hook
 
-插件继续提供现有 Hook：
+源码先构建为互斥宿主产物，再安装对应目录：
 
 ```powershell
-claude --plugin-dir C:\absolute\path\to\runtime-corrector
+npm run build:plugins
+claude --plugin-dir C:\absolute\path\to\runtime-corrector\dist\runtime-corrector-claude
 ```
 
-同一运行时也接受兼容宿主提供的 `CODEAGENT3_PLUGIN_ROOT`。`dual-host-plugin-root` 扩展只负责把 `CLAUDE_PLUGIN_ROOT` 或 `CODEAGENT3_PLUGIN_ROOT` 规范化成唯一插件根；若两者同时存在但不等价则立即报 `PLUGIN_ROOT_CONFLICT`。它不改变下述 `claude-plugin-core-hooks-json-stdio` 事件、输入、输出或判定逻辑，也不按宿主版本选择实现。固定 Node 启动器可在 Windows cmd/PowerShell、Linux 和 macOS POSIX shell 中使用，要求 Node.js >= 18。兼容宿主若使用不同清单外形，应提供薄声明映射并保留相同 Hook 语义。
+Claude 产物只接受 `CLAUDE_PLUGIN_ROOT` 与 `.claude-plugin/plugin.json`；CodeAgent 产物只接受 `CODEAGENT3_PLUGIN_ROOT` 与 `.cac-plugin/plugin.json`。宿主协议由构建产物固定，运行时不从 executable、目录或两个 root 变量推断。Windows Git Bash 的 `/d/...` 根路径会先归一化为原生路径。固定 Node 启动器可在 Windows cmd/PowerShell、Linux 和 macOS POSIX shell 中使用，要求 Node.js >= 18。
 
 Claude Code 使用 `Write` 或 `Edit` 写入匹配文件后，插件自动运行，并通过 `PostToolUse.additionalContext` 把反馈交还当前 Agent。
 
@@ -296,7 +297,7 @@ runtime-corrector --help
 恢复会话时仍需显式加载插件：
 
 ```powershell
-claude --plugin-dir C:\absolute\path\to\runtime-corrector --resume <session-id>
+claude --plugin-dir C:\absolute\path\to\runtime-corrector\dist\runtime-corrector-claude --resume <session-id>
 ```
 
 在 Claude Code 输入框中直接输入 `runtime-corrector init` 会被视为自然语言，并可触发
