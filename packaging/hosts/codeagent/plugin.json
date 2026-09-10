@@ -1,0 +1,8 @@
+{
+  "name": "runtime-corrector",
+  "description": "Explainable, project-configured runtime correction for artifact workflows.",
+  "version": "1.9.1",
+  "author": { "name": "Runtime Corrector contributors" },
+  "license": "MIT",
+  "keywords": ["runtime-correction", "workflow", "artifacts", "correlation", "diagnostics", "hooks", "codeagent"]
+}

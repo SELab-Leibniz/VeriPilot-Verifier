@@ -3,13 +3,27 @@ import { spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 
-const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const CLI = path.join(PLUGIN_ROOT, "scripts", "cli.mjs");
-const POST_TOOL_USE = path.join(PLUGIN_ROOT, "scripts", "post-tool-use.mjs");
+const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let PLUGIN_ROOT;
+let CLI;
+let POST_TOOL_USE;
+let ARTIFACT_OUTPUT;
+
+before(async () => {
+  ARTIFACT_OUTPUT = await fs.mkdtemp(path.join(os.tmpdir(), "document-workflow-plugin-"));
+  PLUGIN_ROOT = await buildPlugin({ host: "claude", sourceRoot: SOURCE_ROOT, outputRoot: ARTIFACT_OUTPUT });
+  CLI = path.join(PLUGIN_ROOT, "scripts", "cli.mjs");
+  POST_TOOL_USE = path.join(PLUGIN_ROOT, "scripts", "post-tool-use.mjs");
+});
+
+after(async () => {
+  if (ARTIFACT_OUTPUT) await fs.rm(ARTIFACT_OUTPUT, { recursive: true, force: true });
+});
 
 const STAGES = [
   {

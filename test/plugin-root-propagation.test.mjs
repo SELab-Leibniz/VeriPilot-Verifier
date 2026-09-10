@@ -6,6 +6,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
+
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -39,9 +41,9 @@ async function workspace(t) {
 }
 
 
-async function preToolUseCommand() {
+async function preToolUseCommand(pluginRoot) {
   const declaration = JSON.parse(
-    await fs.readFile(path.join(PLUGIN_ROOT, "hooks", "hooks.json"), "utf8"),
+    await fs.readFile(path.join(pluginRoot, "hooks", "hooks.json"), "utf8"),
   );
   return declaration.hooks.PreToolUse[0].hooks[0].command;
 }
@@ -59,10 +61,10 @@ function shellInvocation(command) {
 }
 
 
-async function runCodeAgent3Only(command, cwd, input, envOverrides = {}) {
+async function runCodeAgent3Only(command, pluginRoot, cwd, input, envOverrides = {}) {
   const invocation = shellInvocation(command);
   return new Promise((resolve, reject) => {
-    const env = { ...process.env, CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT, ...envOverrides };
+    const env = { ...process.env, CODEAGENT3_PLUGIN_ROOT: pluginRoot, ...envOverrides };
     delete env.CLAUDE_PLUGIN_ROOT;
     const child = spawn(invocation.executable, invocation.args, {
       cwd,
@@ -108,6 +110,9 @@ async function onlyTaskState(root) {
 
 test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the canonical root", async (t) => {
   const root = await workspace(t);
+  const outputRoot = await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-artifact-"));
+  t.after(() => fs.rm(outputRoot, { recursive: true, force: true }));
+  const pluginRoot = await buildPlugin({ host: "codeagent", sourceRoot: PLUGIN_ROOT, outputRoot });
   const reviewerCapture = path.join(root, "reviewer-argv.json");
   const reviewerPreload = path.join(root, "fake-reviewer-preload.cjs");
   await fs.writeFile(reviewerPreload, String.raw`
@@ -126,7 +131,7 @@ if (process.argv.includes("--json-schema")) {
   process.exit(0);
 }
 `, "utf8");
-  const completed = await runCodeAgent3Only(await preToolUseCommand(), root, {
+  const completed = await runCodeAgent3Only(await preToolUseCommand(pluginRoot), pluginRoot, root, {
     session_id: "codeagent3-plugin-skill",
     transcript_path: path.join(root, "transcript.jsonl"),
     cwd: root,
@@ -135,7 +140,7 @@ if (process.argv.includes("--json-schema")) {
     tool_input: { skill: "runtime-corrector-control" },
     tool_use_id: "toolu-codeagent3-plugin-skill",
   }, {
-    RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: process.execPath,
+    RUNTIME_CORRECTOR_CODEAGENT_EXECUTABLE: process.execPath,
     NODE_OPTIONS: `--require=${reviewerPreload}`,
     FAKE_REVIEWER_CAPTURE: reviewerCapture,
   });
@@ -149,5 +154,5 @@ if (process.argv.includes("--json-schema")) {
   const reviewerArgs = JSON.parse(await fs.readFile(reviewerCapture, "utf8"));
   const pluginDirIndex = reviewerArgs.indexOf("--plugin-dir");
   assert.notEqual(pluginDirIndex, -1, reviewerArgs.join(" "));
-  assert.equal(reviewerArgs[pluginDirIndex + 1], await fs.realpath(PLUGIN_ROOT));
+  assert.equal(reviewerArgs[pluginDirIndex + 1], await fs.realpath(pluginRoot));
 });

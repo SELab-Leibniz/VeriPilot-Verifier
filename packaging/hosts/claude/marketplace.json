@@ -1,17 +1,13 @@
 {
   "name": "runtime-corrector-local",
-  "owner": {
-    "name": "Runtime Corrector contributors"
-  },
+  "owner": { "name": "Runtime Corrector contributors" },
   "plugins": [
     {
       "name": "runtime-corrector",
       "source": "./",
       "description": "Explainable, project-configured runtime correction for artifact workflows.",
       "version": "1.9.1",
-      "author": {
-        "name": "Runtime Corrector contributors"
-      }
+      "author": { "name": "Runtime Corrector contributors" }
     }
   ],
   "metadata": {

@@ -8,11 +8,25 @@ import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const PLUGIN_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const HOOK = path.join(PLUGIN_ROOT, "scripts", "runtime-event.mjs");
+import { buildPlugin } from "../lib/plugin-builder.mjs";
+
+const SOURCE_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+let PLUGIN_ROOT;
+let HOOK;
+let ARTIFACT_OUTPUT;
+
+before(async () => {
+  ARTIFACT_OUTPUT = await fs.mkdtemp(path.join(os.tmpdir(), "stop-gate-plugin-"));
+  PLUGIN_ROOT = await buildPlugin({ host: "claude", sourceRoot: SOURCE_ROOT, outputRoot: ARTIFACT_OUTPUT });
+  HOOK = path.join(PLUGIN_ROOT, "scripts", "runtime-event.mjs");
+});
+
+after(async () => {
+  if (ARTIFACT_OUTPUT) await fs.rm(ARTIFACT_OUTPUT, { recursive: true, force: true });
+});
 
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "stop-escape-"));

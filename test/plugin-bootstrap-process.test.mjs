@@ -3,12 +3,25 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 
-const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let PLUGIN_ROOT;
+let ARTIFACT_OUTPUT;
 const ROOT_KEYS = ["CLAUDE_PLUGIN_ROOT", "CODEAGENT3_PLUGIN_ROOT"];
+
+before(async () => {
+  ARTIFACT_OUTPUT = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-corrector-bootstrap-artifact-"));
+  PLUGIN_ROOT = await buildPlugin({ host: "claude", sourceRoot: SOURCE_ROOT, outputRoot: ARTIFACT_OUTPUT });
+});
+
+after(async () => {
+  if (ARTIFACT_OUTPUT) await fs.rm(ARTIFACT_OUTPUT, { recursive: true, force: true });
+});
 
 
 async function temporaryDirectory(t) {
@@ -129,17 +142,31 @@ function sessionStartInput(cwd, suffix) {
 }
 
 
-test("the raw declared command runs with only CODEAGENT3_PLUGIN_ROOT", async (t) => {
+test("the raw Claude command runs with its selected plugin root", async (t) => {
   const cwd = await temporaryDirectory(t);
   const completed = await runCommand(await sessionStartCommand(), {
     cwd,
-    env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+    env: { CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
     input: sessionStartInput(cwd, "codeagent3"),
   });
 
   assert.equal(completed.code, 0, completed.stderr);
   assert.equal(completed.stdout, "");
   assert.equal(completed.stderr, "");
+});
+
+
+test("a foreign-only root reports the artifact host mismatch", async (t) => {
+  const cwd = await temporaryDirectory(t);
+  const completed = await runCommand(await sessionStartCommand(), {
+    cwd,
+    env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+    input: sessionStartInput(cwd, "foreign-only"),
+  });
+
+  assert.notEqual(completed.code, 0);
+  assert.equal(completed.stdout, "");
+  assert.match(completed.stderr, /PLUGIN_HOST_MISMATCH/u);
 });
 
 
@@ -152,7 +179,7 @@ test("the fixed bootstrap runs through every supported shell installed on this O
   for (const invocation of invocations) {
     const completed = await runCommand(command, {
       cwd,
-      env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+      env: { CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
       input: sessionStartInput(cwd, `shell-${invocation.name}`),
       invocation,
     });
@@ -183,7 +210,7 @@ test("the raw declared command accepts canonical-equivalent dual roots", async (
 });
 
 
-test("the raw declared command rejects conflicting dual roots before loading an entry", async (t) => {
+test("the raw declared command ignores a different foreign-host root", async (t) => {
   const cwd = await temporaryDirectory(t);
   const otherRoot = await temporaryDirectory(t);
 
@@ -196,10 +223,9 @@ test("the raw declared command rejects conflicting dual roots before loading an 
     input: sessionStartInput(cwd, "conflict"),
   });
 
-  assert.notEqual(completed.code, 0);
+  assert.equal(completed.code, 0, completed.stderr);
   assert.equal(completed.stdout, "");
-  assert.match(completed.stderr, /PLUGIN_ROOT_CONFLICT/u);
-  await assert.rejects(fs.access(path.join(cwd, ".runtime-correction")));
+  assert.doesNotMatch(completed.stderr, /PLUGIN_ROOT_CONFLICT/u);
 });
 
 
@@ -217,14 +243,14 @@ test("the raw declared command rejects a missing root without stdout", async (t)
 });
 
 
-test("the raw declared command keeps a CodeAgent3 root with spaces and shell characters as data", async (t) => {
+test("the raw declared command keeps its selected root with spaces and shell characters as data", async (t) => {
   const cwd = await temporaryDirectory(t);
   const linkedRoot = path.join(cwd, "插件 root & (safe)");
   await fs.symlink(PLUGIN_ROOT, linkedRoot, process.platform === "win32" ? "junction" : "dir");
 
   const completed = await runCommand(await sessionStartCommand(), {
     cwd,
-    env: { CODEAGENT3_PLUGIN_ROOT: linkedRoot },
+    env: { CLAUDE_PLUGIN_ROOT: linkedRoot },
     input: sessionStartInput(cwd, "special-path"),
   });
 
@@ -253,7 +279,7 @@ test("the raw declared command rejects a wrong-identity root before executing it
 
   const completed = await runCommand(await sessionStartCommand(), {
     cwd,
-    env: { CODEAGENT3_PLUGIN_ROOT: fakeRoot },
+    env: { CLAUDE_PLUGIN_ROOT: fakeRoot },
     input: sessionStartInput(cwd, "wrong-identity"),
   });
 

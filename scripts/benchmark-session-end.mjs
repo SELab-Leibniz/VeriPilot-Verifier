@@ -14,7 +14,16 @@ const SAMPLE_COUNT = 20;
 const WARMUP_COUNT = 3;
 const TASKLESS_P95_LIMIT_MS = process.platform === "win32" ? 300 : 150;
 const ACTIVE_TASK_P95_LIMIT_MS = 300;
-const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let pluginRoot = sourceRoot;
+let pluginArtifactOutput = null;
+try {
+  await fs.access(path.join(pluginRoot, ".claude-plugin", "plugin.json"));
+} catch {
+  pluginArtifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "session-end-plugin-artifact-"));
+  const { buildPlugin } = await import("../lib/plugin-builder.mjs");
+  pluginRoot = await buildPlugin({ host: "claude", sourceRoot: sourceRoot, outputRoot: pluginArtifactOutput });
+}
 const hookDeclarations = JSON.parse(
   await fs.readFile(path.join(pluginRoot, "hooks", "hooks.json"), "utf8"),
 );
@@ -133,4 +142,7 @@ try {
   process.stdout.write(`${JSON.stringify({ taskless, activeTask })}\n`);
 } finally {
   await fs.rm(root, { recursive: true, force: true });
+  if (pluginArtifactOutput) {
+    await fs.rm(pluginArtifactOutput, { recursive: true, force: true });
+  }
 }

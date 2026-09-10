@@ -3,10 +3,11 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { loadCurrentGroundTruth } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
@@ -21,7 +22,18 @@ import {
 } from "../lib/runtime-v2/task-store.mjs";
 
 
-const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let pluginRoot;
+let artifactOutput;
+
+before(async () => {
+  artifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "lazy-barrier-plugin-"));
+  pluginRoot = await buildPlugin({ host: "claude", sourceRoot, outputRoot: artifactOutput });
+});
+
+after(async () => {
+  if (artifactOutput) await fs.rm(artifactOutput, { recursive: true, force: true });
+});
 
 
 async function workspace(t) {

@@ -3,13 +3,25 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { loadConfig } from "../lib/runtime-corrector.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 
-const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let pluginRoot;
+let artifactOutput;
+
+before(async () => {
+  artifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "shadow-fail-open-plugin-"));
+  pluginRoot = await buildPlugin({ host: "claude", sourceRoot, outputRoot: artifactOutput });
+});
+
+after(async () => {
+  if (artifactOutput) await fs.rm(artifactOutput, { recursive: true, force: true });
+});
 
 function runHookScript(script, { cwd, input }) {
   return new Promise((resolve, reject) => {

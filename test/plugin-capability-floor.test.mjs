@@ -3,20 +3,32 @@ import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
 import { PLUGIN_BOOTSTRAP_SOURCE } from "../lib/plugin-bootstrap.mjs";
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 import {
   decodeHookInput,
   encodeHookOutput,
-} from "../lib/protocol/claude-core-hooks.mjs";
+} from "../lib/protocol/core-hooks.mjs";
 
 
-const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const COMPAT_FIXTURE_ROOT = path.join(PLUGIN_ROOT, "test", "compat", "legacy-feature-baseline");
-const PLUGIN_ROOT_EXTENSION = path.join(PLUGIN_ROOT, "test", "compat", "dual-host-plugin-root", "contract.json");
+const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const COMPAT_FIXTURE_ROOT = path.join(SOURCE_ROOT, "test", "compat", "legacy-feature-baseline");
+const PLUGIN_ROOT_EXTENSION = path.join(SOURCE_ROOT, "test", "compat", "dual-host-plugin-root", "contract.json");
+let PLUGIN_ROOT;
+let ARTIFACT_OUTPUT;
+
+before(async () => {
+  ARTIFACT_OUTPUT = await fs.mkdtemp(path.join(os.tmpdir(), "plugin-capability-claude-artifact-"));
+  PLUGIN_ROOT = await buildPlugin({ host: "claude", sourceRoot: SOURCE_ROOT, outputRoot: ARTIFACT_OUTPUT });
+});
+
+after(async () => {
+  if (ARTIFACT_OUTPUT) await fs.rm(ARTIFACT_OUTPUT, { recursive: true, force: true });
+});
 
 
 async function readJson(relativePath) {
@@ -398,7 +410,7 @@ test("plugin hooks expose complete shell commands within the supported capabilit
         const declared = declaredNodeCommand(hook.command);
         bootstraps.add(declared.bootstrap);
         assert.match(declared.bootstrap, /CLAUDE_PLUGIN_ROOT/u, `${eventName} Claude root`);
-        assert.match(declared.bootstrap, /CODEAGENT3_PLUGIN_ROOT/u, `${eventName} CodeAgent3 root`);
+        assert.match(declared.bootstrap, /PLUGIN_HOST_MISMATCH/u, `${eventName} foreign-host diagnostic`);
         assert.match(declared.bootstrap, /realpathSync/u, `${eventName} canonical root`);
         assert.match(declared.bootstrap, /pathToFileURL/u, `${eventName} file URL import`);
         assert.doesNotMatch(
@@ -515,14 +527,14 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
   const [helpCommand] = executableNodeLines(helpDocument);
   const completed = await runShellCommand(helpCommand, {
     cwd: root,
-    env: { CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT },
+    env: { CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },
   });
   assert.equal(completed.code, 0, completed.stderr);
   assert.match(completed.stdout, /\[runtime-corrector\]/u);
 });
 
 
-test("published compatibility docs describe the dual-host extension without a Claude-only command", async () => {
+test("published compatibility docs describe build-time host artifacts", async () => {
   const read = async (relativePath) => fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
   const [readme, readmeEnglish, interfaces, proposal, tutorial] = await Promise.all([
     read("README.md"),
@@ -537,9 +549,11 @@ test("published compatibility docs describe the dual-host extension without a Cl
     ["README.en.md", readmeEnglish],
     ["docs/interfaces.md", interfaces],
   ]) {
-    assert.match(document, /dual-host-plugin-root/u, `${source} extension identifier`);
+    assert.match(document, /build|构建/u, `${source} build step`);
     assert.match(document, /CLAUDE_PLUGIN_ROOT/u, `${source} Claude root`);
     assert.match(document, /CODEAGENT3_PLUGIN_ROOT/u, `${source} CodeAgent3 root`);
+    assert.match(document, /\.claude-plugin/u, `${source} Claude manifest`);
+    assert.match(document, /\.cac-plugin/u, `${source} CodeAgent manifest`);
     assert.match(document, /Windows/u, `${source} Windows support`);
     assert.match(document, /Linux/u, `${source} Linux support`);
     assert.match(document, /macOS/u, `${source} macOS support`);
@@ -575,13 +589,15 @@ test("production plugin-root routing has no version probe or newer Hook mechanis
 
 test("release CI exercises the compatibility suite on Windows, Linux, and macOS", async () => {
   const workflow = await fs.readFile(
-    path.join(PLUGIN_ROOT, ".github", "workflows", "plugin-compatibility.yml"),
+    path.join(SOURCE_ROOT, ".github", "workflows", "plugin-compatibility.yml"),
     "utf8",
   );
   assert.match(workflow, /ubuntu-latest/u);
   assert.match(workflow, /windows-latest/u);
   assert.match(workflow, /macos-latest/u);
   assert.match(workflow, /npm test/u);
+  assert.match(workflow, /npm run build:plugins/u);
+  assert.match(workflow, /npm run test:artifacts/u);
   assert.match(workflow, /npm run benchmark:session-end/u);
   assert.match(workflow, /test\/plugin-bootstrap-process\.test\.mjs/u);
 });
@@ -639,8 +655,11 @@ test("win32 CodeAgent3 POSIX drive root drives all seven hooks without a root co
   const transcriptPath = path.join(root, "transcript.jsonl");
   await fs.writeFile(transcriptPath, "", "utf8");
   const contract = await readCompatJson("contract.json");
-  const hooks = await readJson("hooks/hooks.json");
-  const codeAgentRoot = posixDrivePath(PLUGIN_ROOT);
+  const outputRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codeagent-capability-artifact-"));
+  t.after(() => fs.rm(outputRoot, { recursive: true, force: true }));
+  const artifactRoot = await buildPlugin({ host: "codeagent", sourceRoot: SOURCE_ROOT, outputRoot });
+  const hooks = JSON.parse(await fs.readFile(path.join(artifactRoot, "hooks", "hooks.json"), "utf8"));
+  const codeAgentRoot = posixDrivePath(artifactRoot);
   await fs.access(gitBashInvocation("").executable);
 
   for (const event of contract.events) {

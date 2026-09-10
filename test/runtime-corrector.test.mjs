@@ -4,8 +4,10 @@ import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
+
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 
 import { generateCandidateDiffs } from "../lib/candidate-diff.mjs";
 import {
@@ -23,7 +25,18 @@ import { loadSimpleProjectConfig } from "../lib/simple-mode.mjs";
 import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
 
 
-const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let PLUGIN_ROOT;
+let ARTIFACT_OUTPUT;
+
+before(async () => {
+  ARTIFACT_OUTPUT = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-corrector-plugin-"));
+  PLUGIN_ROOT = await buildPlugin({ host: "claude", sourceRoot: SOURCE_ROOT, outputRoot: ARTIFACT_OUTPUT });
+});
+
+after(async () => {
+  if (ARTIFACT_OUTPUT) await fs.rm(ARTIFACT_OUTPUT, { recursive: true, force: true });
+});
 
 
 function pluginProcessEnvironment(overrides = {}) {
