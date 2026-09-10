@@ -57,7 +57,7 @@ CodeAgent 请用其正常插件安装流程选择 `dist/runtime-corrector-codeag
 
 兼容性按能力而不是版本判断。单一源码在构建期选择宿主，运行时不根据 executable、环境变量或目录猜测宿主。Claude 产物只包含 `.claude-plugin/plugin.json` 并读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物只包含 `.cac-plugin/plugin.json` 并读取 `CODEAGENT3_PLUGIN_ROOT`。CodeAgent 在 Windows + Git Bash 下传入的 `/d/...` 会先规范化为原生盘符路径，再做 absolute path、realpath、manifest identity 和入口 containment 校验。
 
-两个产物都提供七个生命周期事件及相同的 JSON stdin/stdout 语义。若只有错误宿主的 root 环境变量，启动器报告 `PLUGIN_HOST_MISMATCH`；若当前宿主变量存在，另一宿主变量不会参与冲突判断。固定 Node 启动器不使用 Bash、PowerShell 或 cmd 的变量展开，支持 Windows、Linux 与 macOS。
+两个产物都提供七个生命周期事件及相同的 JSON stdin/stdout 语义。若只有错误宿主的 root 环境变量，启动器报告 `PLUGIN_HOST_MISMATCH`；若当前宿主变量存在，另一宿主变量不会参与冲突判断。Hook 从宿主环境读取根路径；slash command 和 Skill 则把宿主的插件根占位符作为一个带引号的独立参数传给固定 Node 启动器，并保留环境变量回退，因此普通 Bash/PowerShell 工具没有导出 root 变量时也能定位插件。
 
 `PowerShell` 与 `Monitor` 会保留在相关工具 Matcher 中；它们是可选工具。运行环境没有其中任一工具时，安装、生命周期处理和其余工具的纠偏行为不受影响。
 

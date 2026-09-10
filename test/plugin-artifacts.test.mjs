@@ -47,8 +47,10 @@ function invocation(command) {
 
 function commandInvocations(markdown) {
   return [...markdown.matchAll(
-    /^node -e "([^"]*)" "(scripts\/[a-z0-9-]+\.mjs)"(?: (.*))?$/gmu,
-  )].map((match) => ({ source: match[1], entry: match[2], tail: match[3] ?? "" }));
+    /^node -e "([^"]*)" "(\$\{[A-Z0-9_]+\})" "(scripts\/[a-z0-9-]+\.mjs)"(?: (.*))?$/gmu,
+  )].map((match) => ({
+    source: match[1], rootReference: match[2], entry: match[3], tail: match[4] ?? "",
+  }));
 }
 
 function commandArguments(value) {
@@ -123,7 +125,7 @@ for (const host of ["claude", "codeagent"]) {
 }
 
 for (const host of ["claude", "codeagent"]) {
-  test(`${host} artifact executes every declared slash-command bootstrap`, async (t) => {
+  test(`${host} slash commands locate the artifact without an exported root environment`, async (t) => {
     const built = await artifacts(t);
     const root = built[host];
     const commandFiles = (await fs.readdir(path.join(root, "commands")))
@@ -145,6 +147,7 @@ for (const host of ["claude", "codeagent"]) {
       for (const [index, declaration] of declarations.entries()) {
         invocationCount += 1;
         assert.equal(declaration.entry, "scripts/cli.mjs");
+        assert.equal(declaration.rootReference, `\${${rootKey}}`);
         assert.match(declaration.source, new RegExp(rootKey, "u"));
         const caseRoot = path.join(built.projectRoot, host, `${commandFile}-${index}`);
         await fs.mkdir(path.dirname(caseRoot), { recursive: true });
@@ -158,15 +161,18 @@ for (const host of ["claude", "codeagent"]) {
         const env = { ...process.env };
         delete env[rootKey];
         delete env[foreignKey];
-        env[rootKey] = host === "codeagent" && process.platform === "win32"
+        const inlineRoot = host === "codeagent" && process.platform === "win32"
           ? posixDrivePath(root)
           : root;
         const result = spawnSync(process.execPath, [
-          "-e", declaration.source, declaration.entry, ...commandArguments(tail),
+          "-e", declaration.source, inlineRoot, declaration.entry, ...commandArguments(tail),
         ], { cwd: caseRoot, env, encoding: "utf8", timeout: 20000 });
         assert.equal(result.status, 0, `${commandFile} #${index}: ${result.stderr}`);
         assert.notEqual(result.stdout.trim(), "", `${commandFile} #${index}`);
         assert.doesNotMatch(result.stderr, /PLUGIN_ROOT_(?:CONFLICT|MISSING|HOST_MISMATCH)/u);
+        if (commandFile === "init.md") {
+          await fs.access(path.join(caseRoot, ".runtime-corrector", "config.yaml"));
+        }
       }
     }
     assert.equal(invocationCount, 8);

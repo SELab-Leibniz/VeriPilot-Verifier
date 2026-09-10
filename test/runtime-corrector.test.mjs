@@ -2303,12 +2303,9 @@ test("CLI spec returns the complete contract even when a stage is disabled", asy
   assert.equal(specification.recovery.slashCommand, "/runtime-corrector:spec selection");
   assert.match(
     specification.recovery.cliCommand,
-    /^node -e "[^"\r\n]+" "scripts\/cli\.mjs" spec selection$/u,
+    /^node -e "[^"\r\n]+" "\$\{CLAUDE_PLUGIN_ROOT\}" "scripts\/cli\.mjs" spec selection$/u,
   );
-  assert.doesNotMatch(
-    specification.recovery.cliCommand,
-    /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u,
-  );
+  assert.doesNotMatch(specification.recovery.cliCommand, /\$\{CODEAGENT3_PLUGIN_ROOT\}|\$PWD/u);
 });
 
 

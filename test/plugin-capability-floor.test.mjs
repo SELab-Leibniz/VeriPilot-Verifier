@@ -7,7 +7,7 @@ import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
-import { PLUGIN_BOOTSTRAP_SOURCE } from "../lib/plugin-bootstrap.mjs";
+import { PLUGIN_BOOTSTRAP_SOURCE, pluginBootstrapSource } from "../lib/plugin-bootstrap.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import {
   decodeHookInput,
@@ -483,7 +483,8 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
   const contract = await readCompatJson("contract.json");
   const rootDependentSkills = ["runtime-corrector-control", "runtime-corrector-init"];
   const hooks = await readJson("hooks/hooks.json");
-  const canonicalBootstrap = declaredNodeCommand(primaryCommand(hooks, "SessionStart")).bootstrap;
+  const hookBootstrap = declaredNodeCommand(primaryCommand(hooks, "SessionStart")).bootstrap;
+  const commandBootstrap = pluginBootstrapSource(undefined, { rootArgument: true });
 
   for (const commandName of contract.commands) {
     const relativePath = `commands/${commandName}.md`;
@@ -494,15 +495,18 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
     const invocations = executableNodeLines(document);
     assert.ok(invocations.length >= 1, `${relativePath} bundled CLI invocation`);
     for (const invocation of invocations) {
-      const match = invocation.match(/^node -e "([^"\r\n]+)" "scripts\/cli\.mjs"(?: |$)/u);
+      const match = invocation.match(
+        /^node -e "([^"\r\n]+)" "\$\{CLAUDE_PLUGIN_ROOT\}" "scripts\/cli\.mjs"(?: |$)/u,
+      );
       assert.ok(match, `${relativePath} unsupported CLI invocation shape`);
       assert.doesNotMatch(
         match[1],
         /["`$%\r\n]/u,
         `${relativePath} inline bootstrap must stay inert in Bash and PowerShell`,
       );
-      assert.equal(match[1], canonicalBootstrap, `${relativePath} bootstrap drift`);
-      assert.doesNotMatch(invocation, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u, relativePath);
+      assert.equal(match[1], commandBootstrap, `${relativePath} bootstrap drift`);
+      assert.notEqual(match[1], hookBootstrap, `${relativePath} must accept the inlined root argument`);
+      assert.doesNotMatch(invocation, /\$\{CODEAGENT3_PLUGIN_ROOT\}|\$PWD/u, relativePath);
     }
   }
 
@@ -511,7 +515,8 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
     const document = await fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
     const metadata = frontmatter(document, relativePath);
     assert.equal(metadata["allowed-tools"], "Bash, PowerShell", `${relativePath} cross-platform tools`);
-    assert.doesNotMatch(document, /\$\{(?:CLAUDE|CODEAGENT3)_PLUGIN_ROOT\}|\$PWD/u, relativePath);
+    assert.match(document, /\$\{CLAUDE_PLUGIN_ROOT\}/u, relativePath);
+    assert.doesNotMatch(document, /\$\{CODEAGENT3_PLUGIN_ROOT\}|\$PWD/u, relativePath);
     assert.ok(executableNodeLines(document).length >= 1, `${relativePath} bundled CLI invocation`);
   }
 

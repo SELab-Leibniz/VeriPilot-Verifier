@@ -58,6 +58,8 @@ Compatibility is capability-based, not version-based. The unchanged foundation i
 
 Build-time host adapters produce mutually exclusive artifacts. The Claude artifact reads only `CLAUDE_PLUGIN_ROOT` and `.claude-plugin/plugin.json`; the CodeAgent artifact reads only `CODEAGENT3_PLUGIN_ROOT` and `.cac-plugin/plugin.json`. The selected root is canonicalized before loading; on Windows, Git Bash drive paths such as `/d/project` are normalized to native paths. A foreign-host root is ignored when the selected root is present, and produces `PLUGIN_HOST_MISMATCH` when it is the only declaration.
 
+Hooks read the selected root from the host environment. Slash commands and Skills pass the host plugin-root placeholder as one quoted bootstrap argument, with the exported environment retained as a fallback. They therefore keep locating the installed artifact even when an ordinary Bash or PowerShell tool process does not export the root variable.
+
 CodeAgent must still expose the same seven Hook events, synchronous command execution, JSON stdin/stdout, and timeout semantics. Runtime Corrector selects no protocol from a product version or executable name; the installed artifact fixes the protocol.
 
 <details><summary>Other ways to install</summary>
