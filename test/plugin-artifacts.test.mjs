@@ -45,6 +45,18 @@ function invocation(command) {
   return ["-e", match[1], match[2]];
 }
 
+function commandInvocations(markdown) {
+  return [...markdown.matchAll(
+    /^node -e "([^"]*)" "(scripts\/[a-z0-9-]+\.mjs)"(?: (.*))?$/gmu,
+  )].map((match) => ({ source: match[1], entry: match[2], tail: match[3] ?? "" }));
+}
+
+function commandArguments(value) {
+  const args = [];
+  for (const match of value.matchAll(/"([^"]*)"|(\S+)/gu)) args.push(match[1] ?? match[2]);
+  return args;
+}
+
 test("plugin-target defaults to CodeAgent and rejects unknown hosts", async () => {
   const target = JSON.parse(await fs.readFile(path.join(SOURCE_ROOT, "plugin-target.json"), "utf8"));
   assert.equal(target.host, "codeagent");
@@ -107,6 +119,57 @@ for (const host of ["claude", "codeagent"]) {
       assert.doesNotMatch(result.stderr, /PLUGIN_ROOT_CONFLICT/u);
       if (result.stdout.trim()) assert.doesNotThrow(() => JSON.parse(result.stdout));
     }
+  });
+}
+
+for (const host of ["claude", "codeagent"]) {
+  test(`${host} artifact executes every declared slash-command bootstrap`, async (t) => {
+    const built = await artifacts(t);
+    const root = built[host];
+    const commandFiles = (await fs.readdir(path.join(root, "commands")))
+      .filter((name) => name.endsWith(".md"))
+      .sort();
+    assert.deepEqual(commandFiles, [
+      "check.md", "explain.md", "help.md", "init.md", "spec.md", "stages.md", "validate.md",
+    ]);
+    const rootKey = host === "claude" ? "CLAUDE_PLUGIN_ROOT" : "CODEAGENT3_PLUGIN_ROOT";
+    const foreignKey = host === "claude" ? "CODEAGENT3_PLUGIN_ROOT" : "CLAUDE_PLUGIN_ROOT";
+    let invocationCount = 0;
+    for (const commandFile of commandFiles) {
+      const markdown = await fs.readFile(path.join(root, "commands", commandFile), "utf8");
+      const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? "";
+      assert.match(frontmatter, /^description: .+$/mu);
+      assert.match(frontmatter, /^allowed-tools: Bash, PowerShell$/mu);
+      const declarations = commandInvocations(markdown);
+      assert.ok(declarations.length > 0, commandFile);
+      for (const [index, declaration] of declarations.entries()) {
+        invocationCount += 1;
+        assert.equal(declaration.entry, "scripts/cli.mjs");
+        assert.match(declaration.source, new RegExp(rootKey, "u"));
+        const caseRoot = path.join(built.projectRoot, host, `${commandFile}-${index}`);
+        await fs.mkdir(path.dirname(caseRoot), { recursive: true });
+        await fs.cp(path.join(SOURCE_ROOT, "examples", "simple-project"), caseRoot, { recursive: true });
+        const tail = declaration.tail
+          .replaceAll("$ARGUMENTS", commandFile === "stages.md" ? "requirements off" : "requirements")
+          .replaceAll("<artifact-path>", "docs/requirements.md");
+        if (commandFile === "init.md") {
+          await fs.rm(path.join(caseRoot, ".runtime-corrector"), { recursive: true, force: true });
+        }
+        const env = { ...process.env };
+        delete env[rootKey];
+        delete env[foreignKey];
+        env[rootKey] = host === "codeagent" && process.platform === "win32"
+          ? posixDrivePath(root)
+          : root;
+        const result = spawnSync(process.execPath, [
+          "-e", declaration.source, declaration.entry, ...commandArguments(tail),
+        ], { cwd: caseRoot, env, encoding: "utf8", timeout: 20000 });
+        assert.equal(result.status, 0, `${commandFile} #${index}: ${result.stderr}`);
+        assert.notEqual(result.stdout.trim(), "", `${commandFile} #${index}`);
+        assert.doesNotMatch(result.stderr, /PLUGIN_ROOT_(?:CONFLICT|MISSING|HOST_MISMATCH)/u);
+      }
+    }
+    assert.equal(invocationCount, 8);
   });
 }
 
