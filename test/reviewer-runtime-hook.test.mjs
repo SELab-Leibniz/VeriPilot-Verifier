@@ -7,6 +7,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { buildPlugin } from "../lib/plugin-builder.mjs";
+
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LITERAL_PREFIX = 'literal 空 格 "quotes" \\windows\\path $HOME ; &';
@@ -24,7 +26,12 @@ async function write(root, relativePath, contents) {
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "reviewer hook 空 格-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const artifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "reviewer-hook-plugin-"));
+  t.after(() => Promise.all([
+    fs.rm(root, { recursive: true, force: true }),
+    fs.rm(artifactOutput, { recursive: true, force: true }),
+  ]));
+  const pluginRoot = await buildPlugin({ host: "claude", sourceRoot: PLUGIN_ROOT, outputRoot: artifactOutput });
   const entry = await write(root, "fake agent/entry.cjs", String.raw`
 const fs = require("node:fs");
 const path = require("node:path");
@@ -86,6 +93,7 @@ process.stdout.write(JSON.stringify({ session_id: runId ?? "hook-reviewer-sessio
   const transcriptText = `${transcriptEntries.map((item) => JSON.stringify(item)).join("\n")}\n`;
   return {
     root,
+    pluginRoot,
     artifactRoot: path.join(root, "nested artifact"),
     entry,
     capture: path.join(root, "reviewer-capture.jsonl"),
@@ -136,18 +144,18 @@ async function artifactPolicy(f, marker, { reviewEnabled = true } = {}) {
 
 
 async function runPostToolUse(f, targetPath, eventId, { hookEventName = "PostToolUse", toolName = "Write", toolInput = { file_path: targetPath } } = {}) {
-  const hooks = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, "hooks/hooks.json"), "utf8"));
+  const hooks = JSON.parse(await fs.readFile(path.join(f.pluginRoot, "hooks/hooks.json"), "utf8"));
   const command = hooks.hooks[hookEventName][0].hooks[0].command;
   const shell = process.platform === "win32" ? process.env.ComSpec || "cmd.exe" : "/bin/sh";
   const args = process.platform === "win32" ? ["/d", "/s", "/c", command] : ["-c", command];
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
-    if (key.startsWith("RUNTIME_CORRECTOR_") || key === "NODE_OPTIONS" || key === "CLAUDE_PLUGIN_ROOT") {
+    if (key.startsWith("RUNTIME_CORRECTOR_") || key === "NODE_OPTIONS" || key === "CLAUDE_PLUGIN_ROOT" || key === "CODEAGENT3_PLUGIN_ROOT") {
       delete env[key];
     }
   }
   Object.assign(env, {
-    CODEAGENT3_PLUGIN_ROOT: PLUGIN_ROOT,
+    CLAUDE_PLUGIN_ROOT: f.pluginRoot,
     // A dropped YAML launcher must fail locally, never launch the real CLI.
     RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: path.join(f.root, "unselected-legacy-agent"),
     CLAUDE_CODE_EXECUTABLE: path.join(f.root, "unselected-legacy-agent"),
@@ -207,7 +215,7 @@ async function assertInvocation(f, invocation, marker) {
   assert.equal(invocation.argv.filter((arg) => arg === marker).length, 1);
   assert.equal(invocation.argv.filter((arg) => arg === LITERAL_PREFIX).length, 1);
   assert.equal(await fs.realpath(invocation.cwd), await fs.realpath(f.root));
-  assert.equal(invocation.argv[invocation.argv.indexOf("--plugin-dir") + 1], await fs.realpath(PLUGIN_ROOT));
+  assert.equal(invocation.argv[invocation.argv.indexOf("--plugin-dir") + 1], await fs.realpath(f.pluginRoot));
   assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "Read,Grep");
   const requestData = JSON.stringify({ request: invocation.request, semantic: invocation.semanticRequest, frozen: invocation.frozen });
   for (const secret of [AMBIENT_TOKEN, TARGET_TOKEN, "hook-test-parent-api-key"]) {

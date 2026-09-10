@@ -26,7 +26,7 @@ import {
   finalizeArtifactRuntimeV2,
   handleRuntimeV2Event,
 } from "../lib/runtime-v2/orchestrator.mjs";
-import { encodeHookOutput } from "../lib/protocol/claude-core-hooks.mjs";
+import { encodeHookOutput } from "../lib/protocol/core-hooks.mjs";
 import {
   atomicWrite,
   cleanupStaleAtomicWrites,

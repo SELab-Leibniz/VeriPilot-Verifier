@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import * as codeAgentHost from "../lib/hosts/codeagent.mjs";
 import * as reviewers from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 
@@ -90,12 +91,9 @@ test("compatible ambient fork resumes source session without re-forking, with ta
   assert.equal(JSON.parse(await fs.readFile(call.request.groundTruthPath, "utf8")).version, 7);
 });
 
-test("CodeAgent handoff resumes compatible roles with --sessions and starts independent roles with fresh UUIDs", async (t) => {
+test("CodeAgent handoff resumes compatible roles and lets the host allocate independent sessions", async (t) => {
   const compatible = await fixture(t);
-  compatible.options.reviewerRuntime = {
-    ...compatible.options.reviewerRuntime,
-    sessionDialect: "codeagent",
-  };
+  compatible.options.hostAdapter = codeAgentHost;
   const origin = await reviewers.startRoleReviewer({
     ...compatible.options,
     role: "ground-truth-extractor",
@@ -114,10 +112,7 @@ test("CodeAgent handoff resumes compatible roles with --sessions and starts inde
   assert.ok(!compatibleCalls[1].args.includes("--fork-session"));
 
   const fresh = await fixture(t);
-  fresh.options.reviewerRuntime = {
-    ...fresh.options.reviewerRuntime,
-    sessionDialect: "codeagent",
-  };
+  fresh.options.hostAdapter = codeAgentHost;
   const independentOrigin = await reviewers.startRoleReviewer({
     ...fresh.options,
     role: "ground-truth-extractor",
@@ -131,11 +126,8 @@ test("CodeAgent handoff resumes compatible roles with --sessions and starts inde
   });
   t.after(() => independentTarget.close());
   const freshCalls = await fresh.calls();
-  const originId = freshCalls[0].args[freshCalls[0].args.indexOf("--session-id") + 1];
-  const targetId = freshCalls[1].args[freshCalls[1].args.indexOf("--session-id") + 1];
-  assert.equal(originId, independentOrigin.sessionId);
-  assert.equal(targetId, independentTarget.sessionId);
-  assert.notEqual(targetId, originId);
+  assert.ok(freshCalls.every((call) => !call.args.includes("--session-id")));
+  assert.notEqual(independentTarget.sessionId, independentOrigin.sessionId);
   assert.equal(freshCalls[1].provider, "https://KEY_B.invalid");
   for (const call of [...compatibleCalls, ...freshCalls]) {
     assert.ok(!call.args.includes("--resume"));
@@ -208,7 +200,7 @@ test("handoff retains the source absolute deadline and passes resolved plans to 
   });
   assert.equal(captured.deadlineAt, deadlineAt);
   assert.equal(captured.continuationSessionId, origin.sessionId);
-  assert.deepEqual(captured.resolvedLaunchPlan, { ...f.options.reviewerRuntime, sessionDialect: "claude" });
+  assert.deepEqual(captured.resolvedLaunchPlan, f.options.reviewerRuntime);
   assert.equal(captured.resolvedSessionPlan.session, "fork");
   await assert.rejects(fs.access(origin.requestDirectory), { code: "ENOENT" });
 });

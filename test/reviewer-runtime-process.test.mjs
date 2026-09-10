@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import * as codeAgentHost from "../lib/hosts/codeagent.mjs";
 import { startRoleReviewer } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 import { invokeSemanticReviewFork, runSemanticReview } from "../lib/semantic-review.mjs";
@@ -23,9 +24,9 @@ const args = process.argv.slice(2);
 let count = 0;
 try { count = fs.readFileSync(file, "utf8").trim().split("\\n").length; } catch {}
 const valueAfter = (flag) => { const index = args.indexOf(flag); return index < 0 ? null : args[index + 1]; };
-const createdSession = valueAfter("--session-id");
 const resumedSession = valueAfter("--sessions");
-const sessionId = createdSession ?? (resumedSession && !args.includes("--fork-session") ? resumedSession : "own-session");
+const allocatedSession = "session-" + (process.env.RUNTIME_CORRECTOR_INTERNAL_RUN_ID || process.pid);
+const sessionId = resumedSession && !args.includes("--fork-session") ? resumedSession : allocatedSession;
 fs.appendFileSync(file, JSON.stringify({
   args,
   marker: process.env.MARKER,
@@ -36,12 +37,17 @@ fs.appendFileSync(file, JSON.stringify({
   parentOauth: process.env.CLAUDE_CODE_OAUTH_TOKEN ?? null,
 }) + "\\n");
 const envelope = { session_id: sessionId };
+if (process.env.MODE === "unparseable") {
+  process.stdout.write("not-json");
+  process.exit(0);
+}
 if (process.env.MODE === "v1") envelope.structured_output = { summary: "ok", findings: [], edits: [] };
 else if (process.env.MODE === "valid") envelope.structured_output = { ok: true };
 else if (count % 3 === 0) envelope.result = "please remind me";
 else envelope.structured_output = { ok: count % 3 === 1 ? "invalid" : true };
 if (process.env.SESSION_ECHO === "omit") delete envelope.session_id;
 else if (process.env.SESSION_ECHO === "mismatch") envelope.session_id = "different-session";
+else if (process.env.SESSION_ECHO === "parent") envelope.session_id = resumedSession;
 process.stdout.write(JSON.stringify(envelope));
 `);
   return { root, entry, capture, env: { ...process.env, CAPTURE: capture, MARKER: "original", RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: undefined, RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: path.join(root, "not-the-selected-cli") } };
@@ -85,14 +91,11 @@ test("CodeAgent v1 uses plural sessions for a parent fork and preserves public a
     sessionId: "codeagent-parent",
     prompt: "review",
     env: { ...f.env, MODE: "v1" },
-    reviewerRuntime: {
-      executable: process.execPath,
-      argsPrefix: [f.entry, literal],
-      sessionDialect: "codeagent",
-    },
+    reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry, literal] },
+    hostAdapter: codeAgentHost,
   });
   assert.equal(result.review.summary, "ok");
-  assert.equal(result.sessionId, "own-session");
+  assert.match(result.sessionId, /^session-/u);
   const call = JSON.parse((await fs.readFile(f.capture, "utf8")).trim());
   assert.deepEqual(call.args.slice(0, 2), [literal, "review"]);
   assert.equal(call.args[call.args.indexOf("--sessions") + 1], "codeagent-parent");
@@ -103,14 +106,13 @@ test("CodeAgent v1 uses plural sessions for a parent fork and preserves public a
   assert.ok(!call.args.includes("--continue"));
 });
 
-test("CodeAgent independent v2 keeps one explicit UUID through GT retries, repair, and follow-up", async (t) => {
+test("CodeAgent independent v2 resumes the returned fresh session through retries, repair, and follow-up", async (t) => {
   const f = await fixture(t);
   const task = await ensureTask({ projectRoot: f.root, sessionId: "parent" });
   const gatewayToken = "gateway-token-secret";
   const runtime = {
     executable: process.execPath,
     argsPrefix: [f.entry],
-    sessionDialect: "codeagent",
   };
   const independentReviewer = {
     effort: "high",
@@ -141,14 +143,15 @@ test("CodeAgent independent v2 keeps one explicit UUID through GT retries, repai
     request: { publicValue: "safe" },
     reviewerRuntime: runtime,
     env,
+    hostAdapter: codeAgentHost,
   });
   t.after(() => handle.close());
-  assert.match(handle.sessionId, /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu);
+  assert.match(handle.sessionId, /^session-internal-/u);
   assert.deepEqual(await handle.followUp({ prompt: "repair the ground-truth delta" }), { ok: true });
 
   const calls = (await fs.readFile(f.capture, "utf8")).trim().split("\n").map(JSON.parse);
   assert.equal(calls.length, 6, "initial reminder/repair and follow-up reminder/repair should all run");
-  assert.equal(calls[0].args[calls[0].args.indexOf("--session-id") + 1], handle.sessionId);
+  assert.ok(!calls[0].args.includes("--session-id"));
   assert.ok(!calls[0].args.includes("--sessions"));
   for (const call of calls) {
     assert.ok(!call.args.includes("--resume"));
@@ -170,7 +173,7 @@ test("CodeAgent independent v2 keeps one explicit UUID through GT retries, repai
   assert.ok(!journal.includes(gatewayToken));
 });
 
-test("CodeAgent fresh-session fallback accepts a missing echo but rejects mismatches and missing fork IDs", async (t) => {
+test("CodeAgent requires fresh/fork IDs and rejects a mismatched resumed session", async (t) => {
   const makeOptions = async (f, role, selectedReviewer, extraEnv) => {
     const task = await ensureTask({ projectRoot: f.root, sessionId: "parent" });
     return {
@@ -182,41 +185,58 @@ test("CodeAgent fresh-session fallback accepts a missing echo but rejects mismat
       reviewer: selectedReviewer,
       schema,
       request: {},
-      reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry], sessionDialect: "codeagent" },
+      reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry] },
       env: { ...f.env, MODE: "valid", ...extraEnv },
+      hostAdapter: codeAgentHost,
     };
   };
 
   const missingEcho = await fixture(t);
-  const accepted = await startRoleReviewer(await makeOptions(
-    missingEcho,
-    "stop-reviewer",
-    reviewer,
-    { SESSION_ECHO: "omit" },
-  ));
-  t.after(() => accepted.close());
-  assert.match(accepted.sessionId, /^[0-9a-f-]{36}$/iu);
-  const acceptedCall = JSON.parse((await fs.readFile(missingEcho.capture, "utf8")).trim());
-  assert.equal(acceptedCall.args[acceptedCall.args.indexOf("--session-id") + 1], accepted.sessionId);
+  await assert.rejects(startRoleReviewer(await makeOptions(
+    missingEcho, "stop-reviewer", reviewer, { SESSION_ECHO: "omit" },
+  )), (error) => error.code === "REVIEWER_SESSION_ID_MISSING");
 
   const mismatch = await fixture(t);
   await assert.rejects(
-    startRoleReviewer(await makeOptions(mismatch, "stop-reviewer", reviewer, { SESSION_ECHO: "mismatch" })),
+    startRoleReviewer({
+      ...await makeOptions(mismatch, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "mismatch" }),
+      continuationSessionId: "known-session",
+    }),
     /returned session ID different-session, expected/u,
   );
 
   const missingFork = await fixture(t);
   await assert.rejects(
     startRoleReviewer(await makeOptions(missingFork, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "omit" })),
-    /forked reviewer did not return a session ID/u,
+    (error) => error.code === "REVIEWER_SESSION_ID_MISSING",
   );
+
+  const parentFork = await fixture(t);
+  await assert.rejects(
+    startRoleReviewer(await makeOptions(parentFork, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "parent" })),
+    /returned its parent session ID/u,
+  );
+
+  const omittedResume = await fixture(t);
+  const resumed = await startRoleReviewer({
+    ...await makeOptions(omittedResume, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "omit" }),
+    continuationSessionId: "known-session",
+  });
+  t.after(() => resumed.close());
+  assert.equal(resumed.sessionId, "known-session");
+
+  const unparseable = await fixture(t);
+  await assert.rejects(startRoleReviewer(await makeOptions(
+    unparseable, "stop-reviewer", reviewer, { MODE: "unparseable" },
+  )), /raw output head: not-json/u);
+  assert.equal((await fs.readFile(unparseable.capture, "utf8")).trim().split("\n").length, 1);
 });
 
 function baseForkReviewer() {
   return { effort: "low", session: "fork", timeoutMs: 2000 };
 }
 
-test("parallel CodeAgent fresh reviewers receive distinct generated session IDs", async (t) => {
+test("parallel CodeAgent fresh reviewers receive distinct host-allocated session IDs", async (t) => {
   const f = await fixture(t);
   const task = await ensureTask({ projectRoot: f.root, sessionId: "parent" });
   const options = {
@@ -227,8 +247,9 @@ test("parallel CodeAgent fresh reviewers receive distinct generated session IDs"
     reviewer: { ...reviewer, timeoutMs: 900000 },
     schema,
     request: {},
-    reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry], sessionDialect: "codeagent" },
+    reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry] },
     env: { ...f.env, MODE: "valid" },
+    hostAdapter: codeAgentHost,
   };
   const [first, second] = await Promise.all([
     startRoleReviewer({ ...options, role: "stop-reviewer" }),
@@ -237,10 +258,7 @@ test("parallel CodeAgent fresh reviewers receive distinct generated session IDs"
   t.after(() => Promise.allSettled([first.close(), second.close()]));
   assert.notEqual(first.sessionId, second.sessionId);
   const calls = (await fs.readFile(f.capture, "utf8")).trim().split("\n").map(JSON.parse);
-  const createdIds = calls
-    .filter((call) => call.args.includes("--session-id"))
-    .map((call) => call.args[call.args.indexOf("--session-id") + 1]);
-  assert.equal(new Set(createdIds).size, 2);
+  assert.ok(calls.every((call) => !call.args.includes("--session-id")));
   for (const call of calls) {
     assert.ok(!call.args.includes("--resume"));
     assert.ok(!call.args.includes("--continue"));

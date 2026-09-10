@@ -19,7 +19,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, isAbsolute, join, resolve } from 'node:path';
 
-import { decodeHookInput, encodeHookOutput } from '../lib/protocol/claude-core-hooks.mjs';
+import { decodeHookInput, encodeHookOutput } from '../lib/protocol/core-hooks.mjs';
 import { resolvePluginRoot } from '../lib/plugin-root.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { outputTreeDirectory } from '../lib/runtime-v2/paths.mjs';

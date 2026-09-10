@@ -5,7 +5,7 @@ import path from "node:path";
 import {
   decodeHookInput,
   encodeHookOutput,
-} from "../lib/protocol/claude-core-hooks.mjs";
+} from "../lib/protocol/core-hooks.mjs";
 import { resolvePluginRoot } from "../lib/plugin-root.mjs";
 import { loadConfig } from "../lib/runtime-corrector.mjs";
 import { DEFAULT_LOCALE, formatMessage } from "../lib/messages.mjs";

@@ -2,7 +2,7 @@
 
 import path from "node:path";
 
-import { decodeHookInput } from "../lib/protocol/claude-core-hooks.mjs";
+import { decodeHookInput } from "../lib/protocol/core-hooks.mjs";
 import { handleRuntimeV2SessionEnd } from "../lib/runtime-v2/session-end.mjs";
 
 

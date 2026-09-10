@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   decodeHookInput,
   encodeHookOutput,
-} from "../lib/protocol/claude-core-hooks.mjs";
+} from "../lib/protocol/core-hooks.mjs";
 
 
 const BASELINE_INPUTS = Object.freeze({

@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { isDeepStrictEqual } from "node:util";
 
-import { encodeHookOutput } from "../lib/protocol/claude-core-hooks.mjs";
+import { encodeHookOutput } from "../lib/protocol/core-hooks.mjs";
 import { mergeSemanticReview } from "../lib/result-processing.mjs";
 import { validateProjectPolicy } from "../lib/policy/validator.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
