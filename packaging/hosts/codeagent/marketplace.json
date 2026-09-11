@@ -1,0 +1,17 @@
+{
+  "name": "runtime-corrector-local",
+  "owner": { "name": "Runtime Corrector contributors" },
+  "plugins": [
+    {
+      "name": "runtime-corrector",
+      "source": "./",
+      "description": "Explainable, project-configured runtime correction for artifact workflows.",
+      "version": "1.9.1",
+      "author": { "name": "Runtime Corrector contributors" }
+    }
+  ],
+  "metadata": {
+    "description": "Marketplace for the standalone Runtime Corrector CodeAgent plugin.",
+    "version": "1.9.1"
+  }
+}

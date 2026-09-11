@@ -8,7 +8,7 @@ Runtime Corrector 支持四类稳定的客户入口：插件命令、Skill/自�
 
 该基线要求：Hook 从 stdin 接收一个 JSON 对象（可带 UTF-8 BOM），stdout 只会为空或输出一个以换行结束的 JSON 对象；使用 `SessionStart`、`UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`Stop`、`PreCompact` 和 `SessionEnd`；工具事件使用 `tool_use_id`，不要求 `hook_event_id`。`PowerShell` 与 `Monitor` 是可选工具：若宿主没有它们，插件的安装、其他 Hook 和其余工具处理仍保持正确。
 
-构建期 host adapter 生成互斥安装产物：Claude 只读取 `CLAUDE_PLUGIN_ROOT` 与 `.claude-plugin/plugin.json`；CodeAgent 只读取 `CODEAGENT3_PLUGIN_ROOT` 与 `.cac-plugin/plugin.json`。当前宿主根会先规范化为 realpath；Windows Git Bash 的 `/d/...` 会先转换成原生盘符路径。只有错误宿主变量时返回 `PLUGIN_HOST_MISMATCH`；当前宿主变量存在时，另一宿主变量不参与冲突判断。Hook 从环境读取根路径；command/Skill 内容把宿主插件根占位符作为独立启动参数，环境变量只作为回退。固定 Node 启动器支持 Windows cmd/PowerShell、Linux 与 macOS POSIX shell，最低运行时为 **Node.js >= 18**。
+构建期 host adapter 生成互斥安装产物：Claude 在 `.claude-plugin/` 中生成 `plugin.json` 与 `marketplace.json`，只读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 在 `.cac-plugin/` 中生成这两个文件，只读取 `CODEAGENT3_PLUGIN_ROOT`。当前宿主根会先规范化为 realpath；Windows Git Bash 的 `/d/...` 会先转换成原生盘符路径。只有错误宿主变量时返回 `PLUGIN_HOST_MISMATCH`；当前宿主变量存在时，另一宿主变量不参与冲突判断。Hook 从环境读取根路径；command/Skill 内容把宿主插件根占位符作为独立启动参数，环境变量只作为回退。固定 Node 启动器支持 Windows cmd/PowerShell、Linux 与 macOS POSIX shell，最低运行时为 **Node.js >= 18**。
 
 CodeAgent 必须提供相同七事件、同步命令执行、JSON stdin/stdout 和超时语义。运行时代码不检测产品版本或 executable 名称；协议由已安装产物固定。
 

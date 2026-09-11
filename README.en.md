@@ -42,7 +42,7 @@ npm run build:plugins
 claude --plugin-dir ./dist/runtime-corrector-claude
 ```
 
-For CodeAgent, select `dist/runtime-corrector-codeagent/` through its normal plugin installation workflow. The repository root is source, not an installable plugin: it has no auto-discovered manifest and must be built first.
+For CodeAgent, select `dist/runtime-corrector-codeagent/` through its normal plugin installation workflow. CodeAgent can discover and install it through `.cac-plugin/marketplace.json`. The repository root is source, not an installable plugin: it has no auto-discovered manifest and must be built first.
 
 Check it loaded:
 
@@ -56,7 +56,7 @@ If you get help text and stage status, you're set.
 
 Compatibility is capability-based, not version-based. The unchanged foundation is `claude-plugin-core-hooks-json-stdio`: JSON stdin/stdout command hooks, the seven declared lifecycle events, and discoverable commands and Skills. Runtime Corrector does not inspect a Claude Code, plugin, package, or host version and does not select implementations by version.
 
-Build-time host adapters produce mutually exclusive artifacts. The Claude artifact reads only `CLAUDE_PLUGIN_ROOT` and `.claude-plugin/plugin.json`; the CodeAgent artifact reads only `CODEAGENT3_PLUGIN_ROOT` and `.cac-plugin/plugin.json`. The selected root is canonicalized before loading; on Windows, Git Bash drive paths such as `/d/project` are normalized to native paths. A foreign-host root is ignored when the selected root is present, and produces `PLUGIN_HOST_MISMATCH` when it is the only declaration.
+Build-time host adapters produce mutually exclusive artifacts. The Claude artifact contains `plugin.json` and `marketplace.json` under `.claude-plugin/` and reads only `CLAUDE_PLUGIN_ROOT`; the CodeAgent artifact contains both files under `.cac-plugin/` and reads only `CODEAGENT3_PLUGIN_ROOT`. The selected root is canonicalized before loading; on Windows, Git Bash drive paths such as `/d/project` are normalized to native paths. A foreign-host root is ignored when the selected root is present, and produces `PLUGIN_HOST_MISMATCH` when it is the only declaration.
 
 Hooks read the selected root from the host environment. Slash commands and Skills pass the host plugin-root placeholder as one quoted bootstrap argument, with the exported environment retained as a fallback. They therefore keep locating the installed artifact even when an ordinary Bash or PowerShell tool process does not export the root variable.
 

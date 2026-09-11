@@ -71,8 +71,18 @@ test("builds mutually exclusive Claude and CodeAgent artifacts", async (t) => {
   const built = await artifacts(t);
   await assert.rejects(fs.access(path.join(SOURCE_ROOT, ".claude-plugin", "plugin.json")), { code: "ENOENT" });
   await assert.rejects(fs.access(path.join(SOURCE_ROOT, ".cac-plugin", "plugin.json")), { code: "ENOENT" });
-  assert.equal(JSON.parse(await fs.readFile(path.join(built.claude, ".claude-plugin", "plugin.json"), "utf8")).name, "runtime-corrector");
-  assert.equal(JSON.parse(await fs.readFile(path.join(built.codeagent, ".cac-plugin", "plugin.json"), "utf8")).name, "runtime-corrector");
+  for (const [host, manifestDirectory] of [["claude", ".claude-plugin"], ["codeagent", ".cac-plugin"]]) {
+    const manifest = JSON.parse(await fs.readFile(path.join(built[host], manifestDirectory, "plugin.json"), "utf8"));
+    const marketplace = JSON.parse(await fs.readFile(path.join(built[host], manifestDirectory, "marketplace.json"), "utf8"));
+    assert.equal(manifest.name, "runtime-corrector");
+    assert.equal(marketplace.name, "runtime-corrector-local");
+    assert.equal(marketplace.plugins.length, 1);
+    assert.equal(marketplace.plugins[0].source, "./");
+    for (const key of ["name", "version", "description"]) {
+      assert.equal(marketplace.plugins[0][key], manifest[key], `${host} marketplace plugin ${key}`);
+    }
+    assert.equal(marketplace.metadata.version, manifest.version, `${host} marketplace metadata version`);
+  }
   await assert.rejects(fs.access(path.join(built.claude, ".cac-plugin")), { code: "ENOENT" });
   await assert.rejects(fs.access(path.join(built.codeagent, ".claude-plugin")), { code: "ENOENT" });
   await assert.rejects(fs.access(path.join(built.claude, "lib", "hosts", "codeagent.mjs")), { code: "ENOENT" });

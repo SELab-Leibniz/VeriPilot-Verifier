@@ -264,7 +264,7 @@ npm run build:plugins
 claude --plugin-dir C:\absolute\path\to\runtime-corrector\dist\runtime-corrector-claude
 ```
 
-Claude 产物只接受 `CLAUDE_PLUGIN_ROOT` 与 `.claude-plugin/plugin.json`；CodeAgent 产物只接受 `CODEAGENT3_PLUGIN_ROOT` 与 `.cac-plugin/plugin.json`。宿主协议由构建产物固定，运行时不从 executable、目录或两个 root 变量推断。Windows Git Bash 的 `/d/...` 根路径会先归一化为原生路径。固定 Node 启动器可在 Windows cmd/PowerShell、Linux 和 macOS POSIX shell 中使用，要求 Node.js >= 18。
+Claude 产物在 `.claude-plugin/` 中提供 `plugin.json` 与 `marketplace.json`，只接受 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物在 `.cac-plugin/` 中提供这两个文件，只接受 `CODEAGENT3_PLUGIN_ROOT`。宿主协议由构建产物固定，运行时不从 executable、目录或两个 root 变量推断。Windows Git Bash 的 `/d/...` 根路径会先归一化为原生路径。固定 Node 启动器可在 Windows cmd/PowerShell、Linux 和 macOS POSIX shell 中使用，要求 Node.js >= 18。
 
 Claude Code 使用 `Write` 或 `Edit` 写入匹配文件后，插件自动运行，并通过 `PostToolUse.additionalContext` 把反馈交还当前 Agent。
 
