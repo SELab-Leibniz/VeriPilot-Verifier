@@ -54,7 +54,7 @@ test("neutral executable override discards configured wrapper arguments", async 
 });
 
 
-test("host protocol comes from the adapter and the removed environment override fails", async () => {
+test("host protocol comes from the adapter and the removed environment override is ignored", async () => {
   assert.deepEqual(await resolveReviewerLaunchPlan({
     reviewerRuntime: {
       executable: "codeagentcli",
@@ -67,13 +67,32 @@ test("host protocol comes from the adapter and the removed environment override 
     executable: "codeagentcli",
     argsPrefix: ["--wrapper"],
   });
-  await assert.rejects(resolveReviewerLaunchPlan({
-    env: { RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "codeagent" },
-    platform: "linux",
-  }), /has been removed/u);
+  for (const value of ["claude", "codeagent", "", "future"]) {
+    assert.deepEqual(await resolveReviewerLaunchPlan({
+      env: { RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: value },
+      platform: "linux",
+      hostAdapter: codeAgentHost,
+    }), { executable: "codeagentcli", argsPrefix: [] });
+  }
   assert.equal((await resolveReviewerLaunchPlan({
     env: {}, platform: "linux", hostAdapter: codeAgentHost,
   })).executable, "codeagentcli");
+});
+
+test("reviewer environment sanitization removes only the obsolete dialect from a copy", () => {
+  const source = {
+    RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "codeagent",
+    RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "agent",
+    KEEP: "value",
+  };
+  const sanitized = launcher.sanitizeReviewerEnvironment(source);
+  assert.notEqual(sanitized, source);
+  assert.equal(source.RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT, "codeagent");
+  assert.equal(Object.hasOwn(sanitized, "RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT"), false);
+  assert.deepEqual(sanitized, {
+    RUNTIME_CORRECTOR_AGENT_EXECUTABLE: "agent",
+    KEEP: "value",
+  });
 });
 
 test("CodeAgent executable resolution honors override, native install, and PATH fallback", async (t) => {

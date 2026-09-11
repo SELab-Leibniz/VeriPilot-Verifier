@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import * as codeAgentHost from "../lib/hosts/codeagent.mjs";
+import { mergeSemanticReview } from "../lib/result-processing.mjs";
 import { startRoleReviewer } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 import { invokeSemanticReviewFork, runSemanticReview } from "../lib/semantic-review.mjs";
@@ -35,13 +36,19 @@ fs.appendFileSync(file, JSON.stringify({
   token: process.env.ANTHROPIC_AUTH_TOKEN ?? null,
   parentApiKey: process.env.ANTHROPIC_API_KEY ?? null,
   parentOauth: process.env.CLAUDE_CODE_OAUTH_TOKEN ?? null,
+  obsoleteDialect: process.env.RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT ?? null,
 }) + "\\n");
 const envelope = { session_id: sessionId };
 if (process.env.MODE === "unparseable") {
   process.stdout.write("not-json");
   process.exit(0);
 }
-if (process.env.MODE === "v1") envelope.structured_output = { summary: "ok", findings: [], edits: [] };
+if (process.env.MODE === "v1-patch") envelope.structured_output = {
+  summary: "legacy environment ignored",
+  findings: [{ ruleId: "AGENT-LEGACY-ENV", severity: "warning", path: "artifact.md", message: "reviewed", evidence: ["reviewer started"] }],
+  edits: [{ target: "artifact.md", operations: [{ type: "replace-line", line: 1, expect: "before", replacement: "after" }] }],
+};
+else if (process.env.MODE === "v1") envelope.structured_output = { summary: "ok", findings: [], edits: [] };
 else if (process.env.MODE === "valid") envelope.structured_output = { ok: true };
 else if (count % 3 === 0) envelope.result = "please remind me";
 else envelope.structured_output = { ok: count % 3 === 1 ? "invalid" : true };
@@ -50,7 +57,7 @@ else if (process.env.SESSION_ECHO === "mismatch") envelope.session_id = "differe
 else if (process.env.SESSION_ECHO === "parent") envelope.session_id = resumedSession;
 process.stdout.write(JSON.stringify(envelope));
 `);
-  return { root, entry, capture, env: { ...process.env, CAPTURE: capture, MARKER: "original", RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: undefined, RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: path.join(root, "not-the-selected-cli") } };
+  return { root, entry, capture, env: { ...process.env, CAPTURE: capture, MARKER: "original", RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "codeagent", RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: path.join(root, "not-the-selected-cli") } };
 }
 
 test("v2 initial/reminder/repair/follow-up freeze launcher and preserve literal prefix exactly once", async (t) => {
@@ -70,6 +77,7 @@ test("v2 initial/reminder/repair/follow-up freeze launcher and preserve literal 
     assert.equal(call.args[0], literal);
     assert.equal(call.args.filter((arg) => arg === literal).length, 1);
     assert.equal(call.marker, "original");
+    assert.equal(call.obsoleteDialect, null);
     assert.equal(call.args[call.args.indexOf("--tools") + 1], "Read,Grep");
   }
   for (const call of calls.slice(1)) assert.ok(call.args.includes("--no-session-persistence"));
@@ -81,7 +89,101 @@ test("v1 launches Node plus absolute entry with literal prefix and unchanged for
   assert.equal(result.review.summary, "ok");
   const call = JSON.parse((await fs.readFile(f.capture, "utf8")).trim());
   assert.deepEqual(call.args.slice(0, 2), [literal, "review"]);
+  assert.equal(call.obsoleteDialect, null);
   for (const flag of ["--fork-session", "--no-session-persistence", "--print"]) assert.ok(call.args.includes(flag));
+});
+
+test("obsolete session dialect cannot block CodeAgent v1 findings and candidate patches", async (t) => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.root, "artifact.md"), "before\n", "utf8");
+  const reviewerRuntime = { executable: process.execPath, argsPrefix: [f.entry] };
+  const prepared = {
+    projectRoot: f.root,
+    result: {
+      status: "passed",
+      diagnostics: [],
+      diffs: [],
+      metadata: {
+        roundId: "obsolete-dialect-v1",
+        stage: "test",
+        artifactType: "markdown",
+        triggerFile: "artifact.md",
+        artifactFiles: ["artifact.md"],
+        bundleComplete: true,
+      },
+    },
+    reviewContext: {
+      nodeReviewEnabled: true,
+      reviewer: null,
+      specification: null,
+      workflow: null,
+      reviewerRuntime,
+      semanticReviewTimeoutMs: 2000,
+    },
+  };
+  const review = await runSemanticReview({
+    input: { session_id: "codeagent-parent", cwd: f.root },
+    prepared,
+    invokeFork: (options) => invokeSemanticReviewFork({
+      ...options,
+      env: {
+        ...f.env,
+        MODE: "v1-patch",
+        RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "claude",
+      },
+      hostAdapter: codeAgentHost,
+    }),
+  });
+  assert.equal(review.status, "completed");
+  assert.equal(review.findings.length, 1);
+  assert.equal(review.diffs.length, 1);
+  assert.match(review.diffs[0].unifiedDiff, /\+after/u);
+  const call = JSON.parse((await fs.readFile(f.capture, "utf8")).trim());
+  assert.equal(call.obsoleteDialect, null);
+  assert.equal(call.args[call.args.indexOf("--sessions") + 1], "codeagent-parent");
+  assert.ok(!call.args.includes("--resume"));
+});
+
+test("genuine v1 reviewer launch failures still produce the semantic-review failure diagnostic", async (t) => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.root, "artifact.md"), "unchanged\n", "utf8");
+  const prepared = {
+    projectRoot: f.root,
+    result: {
+      status: "passed",
+      diagnostics: [],
+      diffs: [],
+      metadata: {
+        roundId: "genuine-launch-failure",
+        stage: "test",
+        artifactType: "markdown",
+        triggerFile: "artifact.md",
+        artifactFiles: ["artifact.md"],
+        bundleComplete: true,
+      },
+    },
+    reviewContext: {
+      nodeReviewEnabled: true,
+      reviewer: null,
+      specification: null,
+      workflow: null,
+      semanticReviewTimeoutMs: 2000,
+    },
+  };
+  const review = await runSemanticReview({
+    input: { session_id: "parent", cwd: f.root },
+    prepared,
+    invokeFork: async () => {
+      throw Object.assign(new Error("spawn missing-reviewer ENOENT"), { code: "ENOENT" });
+    },
+  });
+  assert.equal(review.status, "failed");
+  assert.deepEqual(review.findings, []);
+  assert.deepEqual(review.diffs, []);
+  const result = mergeSemanticReview(prepared.result, review);
+  assert.equal(result.status, "failed");
+  assert.ok(result.diagnostics.some((item) => item.ruleId === "AGENT-SEMANTIC-REVIEW-FAILED"));
+  assert.match(result.metadata.semanticReview.error, /missing-reviewer ENOENT/u);
 });
 
 test("CodeAgent v1 uses plural sessions for a parent fork and preserves public arguments", async (t) => {
@@ -162,6 +264,7 @@ test("CodeAgent independent v2 resumes the returned fresh session through retrie
     assert.equal(call.token, gatewayToken);
     assert.equal(call.parentApiKey, null);
     assert.equal(call.parentOauth, null);
+    assert.equal(call.obsoleteDialect, null);
   }
   for (const call of calls.slice(1)) {
     assert.equal(call.args[call.args.indexOf("--sessions") + 1], handle.sessionId);

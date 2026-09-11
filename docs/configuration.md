@@ -62,9 +62,10 @@ reviewerRuntime:
   argsPrefix: []
 ```
 
-`executable` 必填，`argsPrefix` 默认 `[]`。该对象同时用于 v1 和 v2。旧版 reviewer
-会话方言字段和环境覆盖变量已删除，出现时会明确报迁移错误。launch plan 固定为冻结的
-`{ executable, argsPrefix }`。
+`executable` 必填，`argsPrefix` 默认 `[]`。该对象同时用于 v1 和 v2。旧版
+`reviewerRuntime.sessionDialect` 字段已删除，出现时会明确报迁移错误。旧环境变量
+`RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT` 已失效：运行时会忽略它并在启动 reviewer
+子进程前将其清除。launch plan 固定为冻结的 `{ executable, argsPrefix }`。
 
 启动程序优先级：
 

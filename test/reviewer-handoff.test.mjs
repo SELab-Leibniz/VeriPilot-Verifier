@@ -23,7 +23,7 @@ const requestPath = args[0].match(/Read the request at (.*)\\.\\n/)?.[1];
 const request = requestPath ? JSON.parse(fs.readFileSync(requestPath, "utf8")) : {};
 const frozen = {};
 for (const [key, file] of Object.entries({ transcript: request.transcript?.path, groundTruth: request.groundTruthPath, skill: request.skillGroundTruthPath })) if (file) frozen[key] = JSON.parse(fs.readFileSync(file, "utf8"));
-const record = { args, request, frozen, cwd: process.cwd(), role: process.env.RUNTIME_CORRECTOR_INTERNAL_ROLE, provider: process.env.ANTHROPIC_BASE_URL, token: process.env.ANTHROPIC_AUTH_TOKEN, originExists: request.originDirectory ? fs.existsSync(request.originDirectory) : null };
+const record = { args, request, frozen, cwd: process.cwd(), role: process.env.RUNTIME_CORRECTOR_INTERNAL_ROLE, provider: process.env.ANTHROPIC_BASE_URL, token: process.env.ANTHROPIC_AUTH_TOKEN, obsoleteDialect: process.env.RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT ?? null, originExists: request.originDirectory ? fs.existsSync(request.originDirectory) : null };
 fs.appendFileSync(process.env.CAPTURE, JSON.stringify(record) + "\\n");
 const count = fs.readFileSync(process.env.CAPTURE, "utf8").trim().split("\\n").length;
 if (request.fail) process.stdout.write("invalid output");
@@ -35,7 +35,7 @@ else process.stdout.write(JSON.stringify({
 }));
 `);
   const task = await ensureTask({ projectRoot: root, sessionId: "parent" });
-  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: undefined, RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: "missing-cli", CAPTURE: capture, KEY_A: "test-secret-A", KEY_B: "test-secret-B", ANTHROPIC_BASE_URL: "https://ambient.invalid", ANTHROPIC_AUTH_TOKEN: "ambient-token" };
+  const env = { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT: "claude", RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE: "missing-cli", CAPTURE: capture, KEY_A: "test-secret-A", KEY_B: "test-secret-B", ANTHROPIC_BASE_URL: "https://ambient.invalid", ANTHROPIC_AUTH_TOKEN: "ambient-token" };
   const options = { projectRoot: root, sessionCwd: root, taskId: task.taskId, parentSessionId: "parent", pluginRoot: root, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] }, env, schema, request: {}, reviewer: baseReviewer };
   return { root, options, capture, calls: async () => (await fs.readFile(capture, "utf8")).trim().split("\n").map(JSON.parse) };
 }
@@ -55,6 +55,7 @@ test("handoff always creates target identity and selects target provider, includ
     assert.notEqual(target.requestDirectory, origin.requestDirectory);
     const calls = await f.calls();
     assert.equal(calls.length, 2, "handoff must not repeat GT extraction");
+    assert.ok(calls.every((call) => call.obsoleteDialect === null));
     assert.equal(calls[1].provider, `https://${key}.invalid`);
     assert.equal(calls[1].token, key === "KEY_A" ? "test-secret-A" : "test-secret-B");
     assert.equal(calls[1].originExists, false);
@@ -130,6 +131,7 @@ test("CodeAgent handoff resumes compatible roles and lets the host allocate inde
   assert.notEqual(independentTarget.sessionId, independentOrigin.sessionId);
   assert.equal(freshCalls[1].provider, "https://KEY_B.invalid");
   for (const call of [...compatibleCalls, ...freshCalls]) {
+    assert.equal(call.obsoleteDialect, null);
     assert.ok(!call.args.includes("--resume"));
     assert.ok(!call.args.includes("--continue"));
   }
