@@ -79,6 +79,10 @@ openclaw plugins inspect runtime-corrector --runtime --json
 评审只开放 `read` 工具，使用单独的会话、请求目录和执行队列；它不会分叉或继续主任务。
 原配置的 `session: fork` 在此版本中表示携带冻结证据的独立会话，并写入适配记录。
 同一评审的后续提问和 JSON 修复保留它自己的会话及绝对截止时间。
+评审执行具有独立的异步身份，禁止再创建评审或递归追问自己；身份在插件重载和
+超时后的派生回调中仍有效，不会关闭其他主任务的正常检查。JSON 格式修复最多一次。
+后续任务级自动续跑必须由唯一控制器安排，修正后的正常复验继续保留；
+具体约束及尚未实现的部分见 [受控任务与防递归设计](openclaw-supervised-tasks.md)。
 
 项目级 `session: independent` 仍支持 Anthropic Messages 兼容接口：
 `provider.baseUrl`、`provider.model`、`provider.apiKeyEnv` 必须完整。

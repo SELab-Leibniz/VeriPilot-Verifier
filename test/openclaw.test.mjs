@@ -204,6 +204,134 @@ test("native reviewer deadlines abort work and release the internal lease", asyn
   assert.equal((await fs.readdir(path.join(project, ".runtime-correction/internal-runs"))).length, 0);
 });
 
+test("native reviews reject nested factories and handoffs across module reloads and cap JSON repair", async (t) => {
+  const project = await workspace(t);
+  const task = await ensureTask({ projectRoot: project, sessionId: "parent" });
+  const input = { projectRoot: project, taskId: task.taskId, role: "stop-reviewer",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } };
+  let calls = 0, closedOrigin = false, nested;
+  const host = api(project, async () => {
+    calls++;
+    assert.ok(calls <= 2, "a reviewer must not recursively launch another native run");
+    await assert.rejects(nested(input), { code: "SKIPPED_INTERNAL" });
+    await assert.rejects(nested.handoff({ ...input,
+      originHandle: { close: async () => { closedOrigin = true; } } }), { code: "SKIPPED_INTERNAL" });
+    return { payloads: [{ text: "invalid JSON" }] };
+  });
+  const options = { provider: "test", model: "test" };
+  const factory = createOpenClawReviewerFactory(host, options);
+  // A freshly loaded copy must share the guard without sharing factory state.
+  const reloaded = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/reviewer.mjs")));
+  nested = reloaded.createOpenClawReviewerFactory(host, options);
+  await assert.rejects(factory(input), /JSON/u);
+  assert.equal(calls, 2, "one initial assessment and at most one schema repair");
+  assert.equal(closedOrigin, false, "reject recursion before touching the source session");
+  assert.deepEqual(await fs.readdir(path.join(project, ".runtime-correction/internal-runs")), []);
+});
+
+test("native review scope suppresses incomplete hook identities without suppressing a concurrent main task", async (t) => {
+  const { project, runtime, ctx, calls, host } = await correctionFixture(t);
+  let releaseReview, startedReview;
+  const reviewGate = new Promise((resolve) => { releaseReview = resolve; });
+  const started = new Promise((resolve) => { startedReview = resolve; });
+  t.after(() => releaseReview());
+  const before = { toolName: "write", toolCallId: "shared-call", params: { path: "draft.txt" } };
+  const nativeHost = api(project, async (params) => {
+    startedReview(params);
+    await reviewGate;
+    const incomplete = { sessionId: params.sessionId, workspaceDir: project, trigger: "user" };
+    assert.equal(await runtime.sessionStart({}, incomplete), undefined);
+    assert.equal(await runtime.prompt({ prompt: "Review the task", messages: [] }, incomplete), undefined);
+    assert.equal(await runtime.beforeTool(before, incomplete), undefined);
+    assert.equal(await runtime.beforeTool({ ...before, toolCallId: "late-internal" }, incomplete), undefined);
+    assert.equal(await runtime.toolResult({ toolName: "write", toolCallId: "shared-call", args: before.params,
+      result: { content: [] } }, { runtime: "openclaw" }), undefined);
+    assert.equal(await runtime.finalize({ lastAssistantMessage: "Review done" }, incomplete), undefined);
+    assert.equal(await runtime.compact({}, incomplete), undefined);
+    assert.equal(await runtime.sessionEnd({}, incomplete), undefined);
+    return { payloads: [{ text: '{"ok":true}' }] };
+  });
+  const factory = createOpenClawReviewerFactory(nativeHost, { provider: "test", model: "test" });
+  const reviewing = factory({ projectRoot: project, taskId: "review-scope-test", role: "stop-reviewer",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } });
+  const params = await started;
+  await runtime.prompt({ prompt: "Create result.txt with the verified content.", messages: [] }, ctx);
+  await runtime.beforeTool(before, ctx);
+  assert.ok(await findTask({ projectRoot: project, sessionId: ctx.sessionId }));
+  const count = calls.length;
+  assert.ok(count > 0, "a concurrent main task must still receive review");
+  releaseReview();
+  const handle = await reviewing;
+  await handle.close();
+  assert.equal(calls.length, count);
+  assert.equal(await findTask({ projectRoot: project, sessionId: params.sessionId }), null);
+  assert.deepEqual(host.warnings, []);
+  // A late native result can arrive outside the async scope, with only a call
+  // binding left. The binding must retain its internal origin after cleanup.
+  assert.equal(await runtime.toolResult({ toolName: "write", toolCallId: "late-internal", args: before.params,
+    result: { content: [] } }, { runtime: "openclaw" }), undefined);
+  assert.equal(calls.length, count);
+  assert.equal(await findTask({ projectRoot: project, sessionId: params.sessionId }), null);
+  const decision = await runtime.finalize({ lastAssistantMessage: "Done" }, ctx);
+  assert.equal(decision?.action, "revise", "main-task final verification remains active");
+});
+
+test("late callbacks remain internal after native reviewer timeout and lease cleanup", async (t) => {
+  const project = await workspace(t);
+  const host = api(project);
+  const sharedState = {};
+  const runtime = createRuntime(host, { pluginRoot, sharedState });
+  const registry = new Set();
+  let releaseLate, finishLate, startedReview;
+  const lateGate = new Promise((resolve) => { releaseLate = resolve; });
+  const lateFinished = new Promise((resolve) => { finishLate = resolve; });
+  const started = new Promise((resolve) => { startedReview = resolve; });
+  t.after(() => releaseLate());
+  host.runtime.agent.runEmbeddedAgent = async (params) => {
+    startedReview(params);
+    await lateGate;
+    try {
+      const incomplete = { sessionId: params.sessionId, workspaceDir: project, trigger: "user" };
+      await runtime.prompt({ prompt: "Late reviewer response", messages: [] }, incomplete);
+      await runtime.finalize({ lastAssistantMessage: "Late assessment" }, incomplete);
+      return { payloads: [{ text: '{"ok":true}' }] };
+    } finally { finishLate(); }
+  };
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry });
+  const reviewing = assert.rejects(factory({ projectRoot: project, taskId: "late-review-test", role: "stop-reviewer",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 100 } }), /deadline/u);
+  const params = await started;
+  await reviewing;
+  assert.equal(params.abortSignal.aborted, true);
+  assert.equal(registry.size, 0);
+  assert.deepEqual(await fs.readdir(path.join(project, ".runtime-correction/internal-runs")), []);
+  releaseLate();
+  await lateFinished;
+  assert.equal(sharedState.states.size, 0, "late hooks must not create developer state after cleanup");
+  assert.deepEqual(host.warnings, []);
+});
+
+test("nested reviewer followups cannot abort their owner and independent later followups still work", async (t) => {
+  const project = await workspace(t);
+  const task = await ensureTask({ projectRoot: project, sessionId: "parent" });
+  let handle, calls = 0;
+  const host = api(project, async (params) => {
+    calls++;
+    if (handle) {
+      await assert.rejects(handle.followUp({ prompt: "Recursively review this review" }), { code: "SKIPPED_INTERNAL" });
+      assert.equal(params.abortSignal.aborted, false);
+    }
+    return { payloads: [{ text: '{"ok":true}' }] };
+  });
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test" });
+  handle = await factory({ projectRoot: project, taskId: task.taskId, role: "stop-reviewer",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } });
+  assert.deepEqual(await handle.followUp({ prompt: "Check the current evidence" }), { ok: true });
+  assert.deepEqual(await handle.followUp({ prompt: "Resolve the remaining question" }), { ok: true });
+  assert.equal(calls, 3);
+  await handle.close();
+});
+
 test("native reviewers repair revision ids instead of silently losing blocking findings", async (t) => {
   const project = await workspace(t);
   const task = await ensureTask({ projectRoot: project, sessionId: "domain" });
