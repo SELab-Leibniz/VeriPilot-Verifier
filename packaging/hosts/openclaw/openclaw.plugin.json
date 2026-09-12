@@ -1,0 +1,22 @@
+{
+  "id": "runtime-corrector",
+  "name": "runtime-corrector",
+  "version": "1.9.1-openclaw.1",
+  "description": "Native runtime correction and completion verification for OpenClaw 2026.7.1-2.",
+  "activation": { "onStartup": true },
+  "contracts": {
+    "tools": ["runtime_corrector"],
+    "agentToolResultMiddleware": ["openclaw", "codex"]
+  },
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean", "default": true },
+      "reviewerModel": { "type": "string", "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model." },
+      "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 600000, "default": 180000 },
+      "hookTimeoutMs": { "type": "integer", "minimum": 2000, "maximum": 600000, "default": 540000 }
+    }
+  }
+}

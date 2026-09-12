@@ -2,6 +2,10 @@
 
 > English version: [README.en.md](README.en.md) · [文档导航](docs/README.md)
 
+本分支 `codex/openclaw-2026.7.1-2` 从 `codex/multi-host-plugin-root-compat` 创建，默认构建 **OpenClaw 2026.7.1-2 原生插件**。安装、模型配置及宿主限制以 [OpenClaw 专用指南](docs/openclaw.md) 为准。纠偏规则、Ground Truth、工作流、度量和预算继续共用原有核心。
+
+**关键限制：原版 OpenClaw 会拒绝写入后的最终自动续跑，强制 Stop 尚未达到原插件的行为等价要求。** 写后纠偏及验收记账已通过联调，具体证据见 [验收记录](docs/openclaw-acceptance.md)。
+
 **它是什么：** 一个可用于 Claude Code 和兼容 agent 框架的插件，在你的 coding agent 干活时对它做实时评审。agent 写代码，它对照任务要求检查并把问题反馈回去；agent 说"做完了"，它做验收——没做完就拦下来，附上具体待办，直到做完或用完纠偏预算。
 
 **它不做什么：** 从不修改你的项目文件，从不自动应用补丁，从不因为自身故障阻塞开发（fail-open）。所有决定权始终在主 agent 和你手里。
@@ -32,10 +36,11 @@ agent 说"完成" ────► 终止门验收：
 git clone <repository-url> runtime-corrector
 cd runtime-corrector
 
-# plugin-target.json 默认是 CodeAgent；生成 dist/runtime-corrector-codeagent
+# 本分支默认生成 dist/runtime-corrector-openclaw
 npm run build:plugin
+openclaw plugins install ./dist/runtime-corrector-openclaw
 
-# 发布/兼容验证时同时生成两个互斥产物
+# 兼容验证时同时生成 OpenClaw、Claude、CodeAgent 三个互斥产物
 npm run build:plugins
 
 # Claude 只安装 Claude 产物
@@ -53,6 +58,8 @@ CodeAgent 请用其正常插件安装流程选择 `dist/runtime-corrector-codeag
 ```
 
 能看到帮助和阶段状态就成功了。
+
+OpenClaw 使用 `runtime_corrector` 工具的 `help` 命令。下文的 slash command 和 CLI 示例保留给原宿主；在 OpenClaw 中用该工具的同名 `command` 操作，具体参数见专用指南。OpenClaw 的 Node 版本要求也以该指南为准。
 
 ### 插件兼容性
 

@@ -59,9 +59,9 @@ function commandArguments(value) {
   return args;
 }
 
-test("plugin-target defaults to CodeAgent and rejects unknown hosts", async () => {
+test("plugin-target defaults to OpenClaw and rejects unknown hosts", async () => {
   const target = JSON.parse(await fs.readFile(path.join(SOURCE_ROOT, "plugin-target.json"), "utf8"));
-  assert.equal(target.host, "codeagent");
+  assert.equal(target.host, "openclaw");
   await assert.rejects(buildPlugin({
     host: "future", sourceRoot: SOURCE_ROOT, outputRoot: path.join(os.tmpdir(), "unused-plugin-output"),
   }), /claude or codeagent/u);

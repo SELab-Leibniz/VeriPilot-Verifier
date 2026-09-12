@@ -2,6 +2,10 @@
 
 > 中文版（默认）: [README.md](README.md) · [Documentation index](docs/README.md)
 
+This branch targets **OpenClaw 2026.7.1-2**. Follow the [OpenClaw installation and compatibility guide](docs/openclaw.md) for native tools, model setup and host limits. The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
+
+**Known gap:** stock OpenClaw refuses finalization retries after potential side effects, including file writes. Post-write correction works, but mandatory Stop continuation is not behaviorally equivalent. See the [acceptance record](docs/openclaw-acceptance.md).
+
 **What it is:** a plugin for Claude Code and compatible agent hosts that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
 
 **What it never does:** it never modifies your project files, never auto-applies patches, and never blocks development because of its own faults (fail-open). The main agent — and you — always keep the final say.
@@ -32,10 +36,11 @@ Requires a host that supports the core plugin capabilities below and **Node.js >
 git clone <repository-url> runtime-corrector
 cd runtime-corrector
 
-# plugin-target.json defaults to CodeAgent
+# This branch defaults to the native OpenClaw artifact
 npm run build:plugin
+openclaw plugins install ./dist/runtime-corrector-openclaw
 
-# CI and releases build both mutually exclusive artifacts
+# Build all three mutually exclusive host artifacts
 npm run build:plugins
 
 # Claude installs only its generated artifact

@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 const explicitIndex = args.indexOf("--host");
 let hosts;
 if (args.includes("--all")) {
-  hosts = ["claude", "codeagent"];
+  hosts = ["claude", "codeagent", "openclaw"];
 } else if (explicitIndex >= 0) {
   hosts = [args[explicitIndex + 1]];
 } else {
