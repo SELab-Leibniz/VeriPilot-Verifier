@@ -4,7 +4,7 @@
 
 本分支 `codex/openclaw-2026.7.1-2` 从 `codex/multi-host-plugin-root-compat` 创建，默认构建 **OpenClaw 2026.7.1-2 原生插件**。安装、模型配置及宿主限制以 [OpenClaw 专用指南](docs/openclaw.md) 为准。纠偏规则、Ground Truth、工作流、度量和预算继续共用原有核心。
 
-**关键限制：原版 OpenClaw 会拒绝写入后的最终自动续跑，强制 Stop 尚未达到原插件的行为等价要求。** 写后纠偏及验收记账已通过联调，具体证据见 [验收记录](docs/openclaw-acceptance.md)。
+**1.9.1-openclaw.3 新增受控执行器**：将模型运行时设为 `runtime-corrector-supervised`，即可在普通聊天中串行执行、验收、修正和复验。配置 `supervisedExecution: false` 可恢复 Hook 模式；该模式仍受宿主写入后拒绝最终续跑的限制。已验证范围与故障记录见 [验收记录](docs/openclaw-acceptance.md)。
 
 **它是什么：** 一个可用于 Claude Code 和兼容 agent 框架的插件，在你的 coding agent 干活时对它做实时评审。agent 写代码，它对照任务要求检查并把问题反馈回去；agent 说"做完了"，它做验收——没做完就拦下来，附上具体待办，直到做完或用完纠偏预算。
 

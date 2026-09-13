@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import test, { before, after } from "node:test";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { normalizeMessages, readOpenClawTranscript, persistTranscript } from "../lib/openclaw/transcript.mjs";
+import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-store.mjs";
 import { changedFiles, selectedSkillRead } from "../lib/openclaw/tools.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { ensureTask, findTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
@@ -33,6 +34,7 @@ function api(projectRoot, runner = async () => ({ payloads: [{ text: '{"ok":true
     on: (name, handler, options) => hooks.set(name, { handler, options }),
     registerAgentToolResultMiddleware: (handler, options) => { value.middleware = { handler, options }; },
     registerTool: (factory) => { value.toolFactory = factory; } };
+  value.registerAgentHarness = (harness) => { value.harness = harness; };
   return value;
 }
 const objectSchema = { type: "object", additionalProperties: false, required: ["ok"], properties: { ok: { type: "boolean" } } };
@@ -352,7 +354,7 @@ test("native reviewers repair revision ids instead of silently losing blocking f
   await handle.close();
 });
 
-async function correctionFixture(t, { shadow = false } = {}) {
+async function correctionFixture(t, { shadow = false, brokenPopulation = false } = {}) {
   const project = await workspace(t);
   await fs.mkdir(path.join(project, ".runtime-corrector"));
   await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"), `version: 2
@@ -393,7 +395,10 @@ evidenceRoots: [evidence]
           : role === "onboarding-adjudicator" ? request.majorityOperations : [] };
     } else if (schema.properties.stopClassification) {
       const groundTruth = JSON.parse(await fs.readFile(request.groundTruthPath, "utf8"));
-      result = { summary: "Result not verified.", stopClassification: "INTERMEDIATE", metricObjectJudgements: [],
+      result = { summary: "Result not verified.", stopClassification: brokenPopulation ? "TASK_COMPLETE" : "INTERMEDIATE",
+        metricObjectJudgements: brokenPopulation ? [] : Object.values(request.population?.metrics ?? {}).flat().map((object) => ({
+          objectId: object.objectId, judgement: "DEVIATION", reason: "Required result.txt is missing.", evidence: ["result.txt does not exist"],
+        })),
         findings: [{ deviationKey: "missing-result", rootCauseId: "OTHER", severity: "blocker",
           reason: "The required result.txt is missing.", actualEvidence: ["result.txt does not exist"],
           expectedConstraint: "Create result.txt", violatedGroundTruthIds: groundTruth.claims.map((claim) => claim.claimId) }] };
@@ -406,6 +411,57 @@ evidenceRoots: [evidence]
   const ctx = { sessionId: "main", agentId: "main", sessionKey: "agent:main:main", runId: "run-1", workspaceDir: project, trigger: "user" };
   return { project, host, runtime, ctx, calls };
 }
+
+test("invalid population judgements use the original bounded infrastructure budget", async (t) => {
+  const { runtime, ctx, project } = await correctionFixture(t, { brokenPopulation: true });
+  const state = await runtime.beginSupervised({ ...ctx, prompt: "Create result.txt with the verified content." }, new AbortController().signal);
+  const worker = runtime.bindWorker("broken-review-worker", state);
+  await runtime.beforeTool({ toolName: "write", toolCallId: "initial-write", params: { path: "result.txt" } }, { ...ctx, sessionId: "broken-review-worker" });
+  for (let i = 0; i < 3; i++) {
+    const decision = await runtime.assessSupervised(state, { text: "Done.", assessmentId: `broken-${i}` });
+    assert.equal(decision.status, "UNVERIFIED", JSON.stringify(decision));
+    assert.equal(decision.decision, i < 2 ? "block" : "allow");
+  }
+  const task = await findTask({ projectRoot: project, sessionId: ctx.sessionId });
+  assert.equal(task.stop.correctionAttempts, 0);
+  assert.equal(task.stop.infrastructureFailures, 3);
+  assert.equal(task.status, "STOPPED_UNVERIFIED");
+  worker.close();
+});
+
+test("a fresh runtime recognizes persisted workers and rejects their late hooks after restart", async (t) => {
+  const { runtime, ctx, project, calls } = await correctionFixture(t);
+  const sessionId = "prior-process-worker";
+  await privateJson(workerIdentityPath(project, sessionId), { workerSessionId: sessionId,
+    parentSessionId: ctx.sessionId, generation: "prior-generation" });
+  assert.equal(runtime.isWorker(sessionId, project), true);
+  assert.equal(runtime.isWorker("unregistered-worker", project), false);
+  const stale = { ...ctx, sessionId, sessionKey: "agent:main:rc-worker:prior", runId: "late-run" };
+  await runtime.beforeTool({ toolName: "write", toolCallId: "late-write", params: { path: "late.txt" } }, stale);
+  await runtime.finalize({ lastAssistantMessage: "Done." }, stale);
+  assert.equal(calls.length, 0);
+  assert.equal(await findTask({ projectRoot: project, sessionId }), null);
+});
+
+test("supervised completion unwraps the original Stop decision and keeps the root task budget", async (t) => {
+  const { runtime, ctx, calls, project } = await correctionFixture(t);
+  const state = await runtime.beginSupervised({ ...ctx, provider: "test", modelId: "test", prompt: "Create result.txt with the verified content." }, new AbortController().signal);
+  const worker = runtime.bindWorker("controlled-worker", state);
+  const childCtx = { ...ctx, sessionId: "controlled-worker", runId: "child-run" };
+  await runtime.beforeTool({ toolName: "write", toolCallId: "controlled-write", params: { path: "result.txt" } }, childCtx);
+  const before = calls.length;
+  assert.equal(await runtime.finalize({ lastAssistantMessage: "完成了。" }, childCtx), undefined);
+  assert.equal(calls.length, before, "native worker finalize must not assess completion");
+  const decision = await runtime.assessSupervised(state, { text: "完成了。", assessmentId: "controlled-assessment", stopHookActive: false });
+  assert.equal(decision.decision, "block");
+  assert.equal(decision.correctionAttempt, 1);
+  assert.equal(decision.review.stopClassification, "INTERMEDIATE");
+  assert.equal((await findTask({ projectRoot: project, sessionId: ctx.sessionId })).stop.correctionAttempts, 1);
+  assert.equal(await findTask({ projectRoot: project, sessionId: childCtx.sessionId }), null);
+  worker.close();
+  await runtime.beforeTool({ toolName: "write", toolCallId: "late-worker", params: {} }, childCtx);
+  assert.equal(await findTask({ projectRoot: project, sessionId: childCtx.sessionId }), null);
+});
 
 test("native lifecycle preserves frozen baseline, terminal budget, deduplication and session isolation", async (t) => {
   const { project, runtime, ctx, calls, host } = await correctionFixture(t);

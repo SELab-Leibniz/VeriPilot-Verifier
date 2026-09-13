@@ -1,7 +1,7 @@
 {
   "id": "runtime-corrector",
   "name": "runtime-corrector",
-  "version": "1.9.1-openclaw.2",
+  "version": "1.9.1-openclaw.3",
   "description": "Native runtime correction and completion verification for OpenClaw 2026.7.1-2.",
   "activation": { "onStartup": true },
   "contracts": {
@@ -14,6 +14,7 @@
     "additionalProperties": false,
     "properties": {
       "enabled": { "type": "boolean", "default": true },
+      "supervisedExecution": { "type": "boolean", "default": true, "description": "Control execute/verify/correct rounds when the model agentRuntime is runtime-corrector-supervised; false restores native Hook behavior." },
       "reviewerModel": { "type": "string", "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model." },
       "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 600000, "default": 180000 },
       "hookTimeoutMs": { "type": "integer", "minimum": 2000, "maximum": 600000, "default": 540000 }

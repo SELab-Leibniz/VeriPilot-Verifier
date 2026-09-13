@@ -1,34 +1,31 @@
-# Runtime Corrector for OpenClaw 2026.7.1-2
+# Runtime Corrector 1.9.1-openclaw.3
 
-这是 OpenClaw **2026.7.1-2 专用原生插件**。插件直接使用 OpenClaw 的隔离评审会话，
-不依赖 Claude Code 或 CodeAgent CLI。其他 OpenClaw 版本会在加载时被拒绝。
+这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。实际验证范围见[验收记录](openclaw-acceptance.md)。
 
-**功能尚非完全等价：目标宿主会拒绝执行过写入等副作用工具之后的最终自动续跑。**
-写后纠偏、独立评审和验收记账可用；完成门仍请求 `revise`，但此时宿主会放行最终回复。
-需要严格保留原插件强制 Stop 行为的使用场景，不能把本适配当作已满足要求。
-
-## 构建与安装
-
-在源码仓库执行：
+## 安装与启用
 
 ```sh
-npm run build:plugin
-openclaw plugins install ./dist/runtime-corrector-openclaw
+openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
+# 已安装旧版时
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
 ```
 
-已经拿到安装目录时，直接 `openclaw plugins install /absolute/path/to/runtime-corrector-openclaw`。
-也可以在该目录执行 `npm pack`，把生成的 `.tgz` 交给 `openclaw plugins install`。
-
-在 OpenClaw 配置的 `plugins.entries` 中启用插件并允许完成验收读取对话：
+将以下内容合并到现有配置；ark 请替换成已配置的 provider。**插件开关与模型运行时都要设置**；默认开启的 supervisedExecution 不会自动改写模型配置。
 
 ```json
 {
+  "models": {
+    "providers": {
+      "ark": { "agentRuntime": { "id": "runtime-corrector-supervised" } }
+    }
+  },
   "plugins": {
     "entries": {
       "runtime-corrector": {
         "enabled": true,
         "hooks": { "allowConversationAccess": true, "allowPromptInjection": true },
         "config": {
+          "supervisedExecution": true,
           "reviewerTimeoutMs": 180000,
           "hookTimeoutMs": 540000
         }
@@ -38,80 +35,56 @@ openclaw plugins install ./dist/runtime-corrector-openclaw
 }
 ```
 
-如果配置了 `plugins.allow`，其中也必须包含 `runtime-corrector`。以上是合并示例，
-不要用它覆盖现有模型、频道等配置。重启 Gateway 后验证：
+若配置了 plugins.allow，也要加入 runtime-corrector。重启并检查：
 
 ```sh
 openclaw gateway restart
 openclaw plugins inspect runtime-corrector --runtime --json
 ```
 
-在对话中要求使用 `runtime_corrector` 的 `help` 命令查看状态。
-手动 CLI 仍可使用：`node /path/to/plugin/scripts/cli.mjs help --cwd /path/to/project`。
+在网页聊天或 `openclaw tui` 正常提交任务。普通问答沿用原核心的任务触发规则，没有额外模型分类器。项目规则在 `.runtime-corrector/`；可通过 runtime_corrector 管理工具初始化，或使用安装目录下的 scripts/cli.mjs。
 
-## 工作方式
+## 工作过程
 
-| 当前动作 | OpenClaw 接入点 | 纠偏动作 |
-| --- | --- | --- |
-| 会话启动 | `session_start` | 恢复本地记账状态 |
-| 用户提交新回合 | `before_prompt_build` | 记录真实用户要求；系统重试不重置基线 |
-| 执行工具前 | `before_tool_call` | 首次相关动作前冻结任务基线；读取已发现 Skill 时建立监督契约 |
-| 执行工具后 | 原生 tool-result middleware | 检查 `write`、`edit`、多文件 `apply_patch`，把反馈交回模型 |
-| 自然完成前 | `before_agent_finalize` | 验收并请求 `revise`；宿主的副作用保护可能拒绝续跑 |
-| 上下文压缩／会话结束 | `before_compaction`／`session_end` | 记录游标及结束事件 |
+1. 内部原生工作会话继承有效聊天上下文、模型、工具限制、工作目录和沙箱策略。
+2. 原工具前后检查继续生效。工作会话结束后，控制器调用原完成评审一次。
+3. 有偏差且原预算允许时，串行修正，再验收；没有后台定时续跑。
+4. 只有核心确认 TASK_COMPLETE、报告 PASS、任务完成且证据未变、未取消时，交付最终结果。
 
-任务基线、诊断、预算和审计账本继续使用项目内 `.runtime-correction/`；
-可编辑规则仍放在 `.runtime-corrector/`。候选补丁不会自动应用。
-`shadowMode: true` 保留评审记录，但不注入反馈、不拦截完成。
+执行进度可见，未通过的候选完成回复不进入父聊天最终历史。父历史保留真实用户输入、必要工具证据与最终结果；自动纠偏提示和评审提示保存在内部记录。等待用户、预算耗尽和未验证均明确说明，不能视为成功。
 
-## 评审模型
+执行中补充要求：等到出现执行进度后，终端直接发送第二条消息；网页可能先显示 Queued，点击该消息的 **Steer** 可投递给当前执行。普通排队表示等待下一回合。插件必须收到宿主的写入确认才记为已接收；投递失败停止续跑。自动反馈不更新需求权威，不重置预算。网页 Stop、终端 Escape 或原生 `/stop`、会话重置、插件关闭均取消当前执行和评审。此版 TUI 的 Ctrl+C 用于退出提示，不等同于取消。
 
-默认使用当前 OpenClaw 模型。可在插件 `config.reviewerModel` 中指定已配置的
-`provider/model`。密钥由 OpenClaw 的 provider 配置或环境管理，不能写进插件代码。
+## 模型与凭据
 
-本次联调使用 `ark-code-latest`，provider 的 `api` 为 `anthropic-messages`，
-`baseUrl` 为 `https://ark.cn-beijing.volces.com/api/coding`，并启用 `authHeader: true`。
-在 OpenClaw 中显式配置 provider 和模型，再将 `reviewerModel` 指向该 `provider/model`；
-不要假定设置三个 `ANTHROPIC_*` 环境变量就会自动完成 OpenClaw 的模型注册。
-较慢模型可提高 `reviewerTimeoutMs`，但项目内每个 reviewer 的 `timeoutMs`、
-一次 Hook 的总预算及主 agent 的整体超时仍同时生效。
+默认评审使用当前模型；config.reviewerModel 可指定已配置的 provider/model。本次联调使用 Ark coding 接口：api 为 anthropic-messages，baseUrl 为 https://ark.cn-beijing.volces.com/api/coding，authHeader 为 true，模型为 ark-code-latest。凭据由 OpenClaw provider 的环境引用管理，例如 `"apiKey": "${ANTHROPIC_AUTH_TOKEN}"`。仅设置环境变量不能替代 provider/model 注册。凭据不进入插件源码、安装包或报告。
 
-评审只开放 `read` 工具，使用单独的会话、请求目录和执行队列；它不会分叉或继续主任务。
-原配置的 `session: fork` 在此版本中表示携带冻结证据的独立会话，并写入适配记录。
-同一评审的后续提问和 JSON 修复保留它自己的会话及绝对截止时间。
-评审执行具有独立的异步身份，禁止再创建评审或递归追问自己；身份在插件重载和
-超时后的派生回调中仍有效，不会关闭其他主任务的正常检查。JSON 格式修复最多一次。
-后续任务级自动续跑必须由唯一控制器安排，修正后的正常复验继续保留；
-具体约束及尚未实现的部分见 [受控任务与防递归设计](openclaw-supervised-tasks.md)。
+评审只开放 read，有独立身份、会话和截止时间，不能创建其他评审或控制器。JSON 修复最多一次。session: fork 在此后端表示携带冻结证据的独立原生评审；正常后续提问保留其会话与截止时间。显式 independent provider 保留原配置规则。原生后端不接受 reviewerRuntime.executable 和每次评审 maxBudgetUsd。
 
-项目级 `session: independent` 仍支持 Anthropic Messages 兼容接口：
-`provider.baseUrl`、`provider.model`、`provider.apiKeyEnv` 必须完整。
-provider 配置只用于该次评审，不修改 Gateway 全局配置，也不继承其他端点的认证头。
-原来的 `reviewerRuntime.executable` 和每次评审 `maxBudgetUsd` 不适用于原生后端，
-显式配置时会报错；请使用模型选择、时间限制和纠偏次数预算。
+主运行总超时、Hook 超时和各评审超时同时生效。检查器故障沿用独立有限重试，不消耗实际纠偏次数；两次重试后仍失败则停止为 UNVERIFIED。
 
-## 兼容边界
+## 关闭与回退
 
-- 需要 Node 22.22.3、24.15.0、25.9.0 或各自受支持的更高版本，以目标 OpenClaw 的 engines 为准。
-- OpenClaw 完成重试最多 3 轮；插件额外预算不能突破宿主上限。用户主动取消不会被插件续跑。
-- 原版宿主在本轮出现潜在副作用（包括文件写入）后，会记录 `requested revision after potential side effects; finalizing` 并拒绝完成续跑。本次真实注入错误测试确认了这个限制，不能通过插件配置消除。
-- 最后一次宿主重试可能跳过完成 Hook，账本会保留尚未验证的状态；有精确 runId 的频道最终回复会附上未通过提示。CLI 本地输出、流式中间块和缺少 runId 的投递不能保证附加提示，应以插件账本为准。
-- Hook 超时配置最高 600000 ms；全流程评审共用该次 Hook 的剩余时间。宿主超时会放行原结果，不能视为验收通过。
-- 评审通过 OpenClaw 内置模型运行时执行。工具结果接口声明支持 `openclaw`、`codex`，其他运行时需单独验证。
-- 面向本机工作区。手动管理工具在容器沙箱会话中不注册，避免绕过宿主文件权限；远程／容器文件路径需要额外适配。
-- Skill 监督基于读取已发现的 `SKILL.md`；没有显式读取、只注入提示词的 Skill 无法获得独立调用边界。
-- `exec` 内部的任意文件变更在完成验收时检查；即时逐文件检查覆盖显式写入、编辑和 `apply_patch`。
-- 此安装包不执行 Claude `hooks/hooks.json`，不包含 Claude／CodeAgent 插件声明。
+仅关闭受控执行：将 plugins.entries.runtime-corrector.config.supervisedExecution 设为 false，重启 Gateway，执行器恢复原生 Hook 行为。运行时关闭该开关会取消当前受控任务。
 
-## 改动范围
+退回 .2：先将 provider 的 agentRuntime.id 改为 openclaw（或移除该运行时覆盖），然后安装旧包：
 
-这是中等规模的宿主适配：新增原生事件层、消息与工具格式转换、隔离评审执行器和安装声明。
-规则引擎、工作流边评审、M01–M15、需求权威判定、基线冻结、偏差归因、预算及候选补丁校验继续调用原实现。
-核心仅增加评审会话交接的后端扩展点，并将默认配置的模块初始化改为同步读取，以兼容 OpenClaw 的插件加载器。
-证据去重从原 Hook 脚本提取为共用函数，算法和计数上限保持一致。
+```sh
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.2.tgz
+openclaw gateway restart
+```
 
-## 验证
+保留 `.runtime-correction/`，保留需求与预算历史。.2 和关闭受控执行后的 Hook 模式仍受宿主限制：发生写入等副作用后，OpenClaw 可能拒绝最终 revise，因此不具备受控闭环的完成保证。
 
-源码仓库中运行 `npm test`、`npm run build:plugins`。
-OpenClaw 专项测试覆盖原生加载声明、事件归一化、会话隔离、只读评审、结构化输出修复、
-工具反馈与终止预算。真实安装和模型联调结果见 [验收记录](openclaw-acceptance.md)。
+## 范围与恢复
+
+- Node 版本以目标宿主 engines 为准：22.22.3、24.15.0、25.9.0 或相应受支持的更高版本。
+- 控制记录在 `.runtime-correction/openclaw/controllers/`，包含父会话、任务、需求版本、代次、轮次、原生运行编号和交付收据。
+- 跨进程锁、原子写入与收据阻止重复派发。重启状态不明时返回未验证，请先核对成果再提交要求。
+- 只读兼容模块锁定目标版本的排队确认和用户来源接口，契约不符明确报错，不修改宿主或静默降级。
+- 面向本机工作区。有效沙箱模式与工具策略有契约测试；远程/容器路径和其他消息渠道不纳入同等保证。
+- 证据包括显式读写路径与评审实际读取的本地文件，交付前校验内容。外部服务的并发状态不属于文件指纹保证。
+- Skill 监督仍依赖显式读取已发现的 SKILL.md；即时文件检查覆盖 write/edit/apply_patch，exec 内修改由原完成验收检查。
+- shadowMode 只观察，受控模式不会将观察结果当成完成认证。
+
+源码检查：`npm test`、`npm run build:plugins`。实现约束见[控制与防递归](openclaw-supervised-tasks.md)。

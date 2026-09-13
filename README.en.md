@@ -4,7 +4,7 @@
 
 This branch targets **OpenClaw 2026.7.1-2**. Follow the [OpenClaw installation and compatibility guide](docs/openclaw.md) for native tools, model setup and host limits. The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
 
-**Known gap:** stock OpenClaw refuses finalization retries after potential side effects, including file writes. Post-write correction works, but mandatory Stop continuation is not behaviorally equivalent. See the [acceptance record](docs/openclaw-acceptance.md).
+**1.9.1-openclaw.3 adds supervised execution.** Select `runtime-corrector-supervised` as the model runtime to execute, assess, correct and reassess ordinary chat tasks. Set `supervisedExecution: false` to restore Hook mode, which retains the host's limitation on finalization retries after side effects. See the [acceptance record](docs/openclaw-acceptance.md) for the verified scope and failures.
 
 **What it is:** a plugin for Claude Code and compatible agent hosts that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
 

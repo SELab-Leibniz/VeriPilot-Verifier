@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "openclaw": "2026.7.1-2",
+  "plugin": "1.9.1-openclaw.3",
+  "scope": [
+    "local web chat",
+    "local TUI"
+  ],
+  "cases": [
+    {
+      "case": "web-final",
+      "parentSessionId": "305b8c7c-1d00-4c77-8da0-e07a23e7f61f",
+      "parentRunId": "33c8fecc-ef10-4777-9f27-57088e380224",
+      "generation": "f5fa57b8-9393-4a2a-b536-da06407950ce",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 291730,
+      "nativeProgressForwarded": 97,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "2edb22d8-d5e7-4459-9f48-72ffbe809fe7",
+          "candidateSha256": "744eb2ceeb7739b716bdb5becc442bab7cc9edea59075b4021cc55969a8c1be6",
+          "privateEventIdentity": true
+        },
+        {
+          "round": 2,
+          "nativeRunId": "3b18c699-c8a1-45d1-a21c-4eeebca0fe41",
+          "candidateSha256": "d55c7b73f2e1d72886db18b0ced1088e639684395bb606f7aab598bb8a257328",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T020557616Z-bff589f7",
+      "requirementVersion": 1,
+      "epoch": 1,
+      "correctionAttempts": 1,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "tui-final",
+      "parentSessionId": "d623bea1-29f0-401d-bda4-2e0df2d4bed7",
+      "parentRunId": "36f45b6e-bf96-40cb-acb0-430822db527a",
+      "generation": "f47f5492-e6e6-4d47-b755-6b23c3d757d0",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 184189,
+      "nativeProgressForwarded": 100,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "0049c6e6-8858-4679-b1d6-37c71b9f8e8d",
+          "candidateSha256": "31b27fdb5c1ccec70d44d216fad7df9b05ea063a0fb7b29ecee4a070e960b778",
+          "privateEventIdentity": true
+        },
+        {
+          "round": 2,
+          "nativeRunId": "21040121-8e07-47f0-aa7b-c222fa75aa3e",
+          "candidateSha256": "ee53467b84a6b58e8e745659bcfb14eaab9a8f668e4bfbb6fedcd94424405632",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T021621539Z-3b87609e",
+      "requirementVersion": 1,
+      "epoch": 1,
+      "correctionAttempts": 1,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "review-infrastructure-retry",
+      "parentSessionId": "8ea68a14-3b9a-4476-aff5-a0ce9f5c6cb4",
+      "parentRunId": "02101622-08f8-413d-b1ac-85178b475e7d",
+      "generation": "89063aac-3722-4733-a2af-f467d2499a41",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 378657,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "5927879a-d03c-4e38-b70d-e3d42d82f3a5",
+          "candidateSha256": "b7927d3b13c12f0a9bff4ab08e37fb5ca4b7d4242b33947811f86550d680bb21",
+          "privateEventIdentity": true
+        },
+        {
+          "round": 2,
+          "nativeRunId": "eb84156f-9c55-4020-b106-ebde1ba28589",
+          "candidateSha256": "9f49dc6d5822968503400f53b75b2b41c83970f2b7e50c82cc2d68cf59dc5276",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T012928548Z-e26bed8b",
+      "requirementVersion": 1,
+      "epoch": 1,
+      "correctionAttempts": 1,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "parallel-web",
+      "parentSessionId": "c26e1f2d-dae8-4941-a036-62b1249c97cd",
+      "parentRunId": "6786bb35-d981-4ded-82b6-2dca1efc7727",
+      "generation": "51fc22fc-20f3-4790-ba5f-8395a750951a",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 303555,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "aaf67807-4877-4d33-b9de-831fca51fe22",
+          "candidateSha256": "a15d547cf9f01c0df7cccbe50a3d6c7232188811c4460bd2b8185bec00d03c84",
+          "privateEventIdentity": true
+        },
+        {
+          "round": 2,
+          "nativeRunId": "20a261ef-4b32-4102-96a5-0164c0bad797",
+          "candidateSha256": "af8aa5d9ae3d9f70dcca24ae117b6145d60708279079ce8b402ab4a4423ab85b",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T010555702Z-f9c2e261",
+      "requirementVersion": 1,
+      "epoch": 1,
+      "correctionAttempts": 1,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "parallel-tui",
+      "parentSessionId": "0a4a8561-0d09-46f8-8151-8d6788b034e5",
+      "parentRunId": "40e20018-8640-43ee-8b32-822ee66990dd",
+      "generation": "5d4838e9-9597-46c2-8d8f-af0c30864aaf",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 228924,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "c9e4b632-8ee4-44ab-a744-88861eddd712",
+          "candidateSha256": "ba6206ff9aa30eff24cf915e58ed08246ea3ad147f8a0daddd9b0e5416280c22",
+          "privateEventIdentity": true
+        },
+        {
+          "round": 2,
+          "nativeRunId": "9ef17fe3-41ac-4583-b63c-298fa4e7fdaf",
+          "candidateSha256": "5b2c479b32c2d90002ab4a46fb419fbd9d885e2534f3fceecd4e0a715f3ff63f",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T010617878Z-b1a7d3b3",
+      "requirementVersion": 1,
+      "epoch": 1,
+      "correctionAttempts": 1,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "web-steering",
+      "parentSessionId": "48b162d1-97d8-4883-9967-442c96963523",
+      "parentRunId": "5c090dc2-7d91-4737-9f49-36bcf7fdc20d",
+      "generation": "02485f8a-8d4f-4b11-aeda-fec37d780043",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 219886,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "VERIFIED",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "d5011420-b45c-4f8f-8447-0e4401e17285",
+          "candidateSha256": "8da117db2e8b37716215514578cf44f11a05bddc8e14c7b5f148bfc4ddcd3e87",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": "task-20260913T013644736Z-1dd98f09",
+      "requirementVersion": 2,
+      "epoch": 2,
+      "correctionAttempts": 0,
+      "taskStatus": "COMPLETED",
+      "verification": "PASS",
+      "stopClassification": "TASK_COMPLETE",
+      "reportStatus": "PASS",
+      "steering": {
+        "id": "ccbf0a70-97b8-4ed6-8302-aff3d63d2c4f",
+        "status": "ACKNOWLEDGED"
+      },
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 2
+    },
+    {
+      "case": "tui-steering",
+      "parentSessionId": "75bb2817-2eb7-4c41-b240-484df6e9c28a",
+      "parentRunId": "1357146e-f8da-4e7b-85cf-fc9a124c8cee",
+      "generation": "07405413-2a0c-44cd-a8f0-c2feb116960b",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 41405,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "CHAT",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "ebf28e9e-9e6e-474b-9694-02ba8decc38f",
+          "candidateSha256": "d0b2ffd788a33b740a78d0e282e765ad515b401215b532036e576effd8270c4c",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": null,
+      "requirementVersion": null,
+      "epoch": null,
+      "correctionAttempts": null,
+      "taskStatus": null,
+      "verification": null,
+      "stopClassification": null,
+      "reportStatus": null,
+      "steering": {
+        "id": "c2b81ed4-b062-4259-9ea6-c27638a3339e",
+        "status": "ACKNOWLEDGED"
+      },
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 2
+    },
+    {
+      "case": "web-cancel",
+      "parentSessionId": "199640e4-29f7-438f-b0a9-70dcf073c4a6",
+      "parentRunId": "02d218e4-f931-4ed9-9f55-5b06aec6550e",
+      "generation": "86324077-fd72-4f39-a1fb-1526573728a2",
+      "controllerPhase": "CANCELLED",
+      "durationMs": 33117,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "CANCELLED",
+      "rounds": [],
+      "taskId": "task-20260913T014425310Z-fff1c69c",
+      "requirementVersion": 0,
+      "epoch": 1,
+      "correctionAttempts": 0,
+      "taskStatus": "STOPPED_UNVERIFIED",
+      "verification": "UNVERIFIED",
+      "stopClassification": null,
+      "reportStatus": null,
+      "steering": null,
+      "finalHistoryEntries": 0,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "tui-cancel",
+      "parentSessionId": "7a2d573e-d458-44c6-8d11-3272fdd49162",
+      "parentRunId": "8ee07e09-bd2e-4a8b-be36-ea17cd412578",
+      "generation": "2e700d2e-01de-4bb3-872a-6d907f4ffa16",
+      "controllerPhase": "CANCELLED",
+      "durationMs": 3080,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "CANCELLED",
+      "rounds": [],
+      "taskId": null,
+      "requirementVersion": null,
+      "epoch": null,
+      "correctionAttempts": null,
+      "taskStatus": null,
+      "verification": null,
+      "stopClassification": null,
+      "reportStatus": null,
+      "steering": null,
+      "finalHistoryEntries": 0,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "final-tui-smoke",
+      "parentSessionId": "13918c14-7985-4863-9a16-59c3be30c830",
+      "parentRunId": "af061e07-34b0-48fb-a91b-7ac2a804c305",
+      "generation": "10a52318-4ee0-4760-b1f9-2c1c588e67c8",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 2328,
+      "nativeProgressForwarded": 0,
+      "resultStatus": "CHAT",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "187b26af-f3db-4bca-b5c1-21628f84a1aa",
+          "candidateSha256": "c2e3ac47f4a325469c1a2d5f117e463ec943c721986d5d9f09ac4540b7d80526",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": null,
+      "requirementVersion": null,
+      "epoch": null,
+      "correctionAttempts": null,
+      "taskStatus": null,
+      "verification": null,
+      "stopClassification": null,
+      "reportStatus": null,
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    },
+    {
+      "case": "final-web-smoke",
+      "parentSessionId": "0ba31112-d50e-4cd3-bf6a-e5626c60ae31",
+      "parentRunId": "fd802311-d3a3-42fb-b13a-e64828af9730",
+      "generation": "f6919583-c9ed-4560-bc26-617f59c0ae32",
+      "controllerPhase": "DELIVERED",
+      "durationMs": 2489,
+      "nativeProgressForwarded": 5,
+      "resultStatus": "CHAT",
+      "rounds": [
+        {
+          "round": 1,
+          "nativeRunId": "d148407f-42d0-4696-b817-b50d03b9b939",
+          "candidateSha256": "c2e3ac47f4a325469c1a2d5f117e463ec943c721986d5d9f09ac4540b7d80526",
+          "privateEventIdentity": true
+        }
+      ],
+      "taskId": null,
+      "requirementVersion": null,
+      "epoch": null,
+      "correctionAttempts": null,
+      "taskStatus": null,
+      "verification": null,
+      "stopClassification": null,
+      "reportStatus": null,
+      "steering": null,
+      "finalHistoryEntries": 1,
+      "genuineUserMessages": 1
+    }
+  ],
+  "cancelledFilesAbsent": true,
+  "finalArtifacts": {
+    "result-web.txt": {
+      "bytes": 8,
+      "sha256": "8766e017df3d4497840e53fa7594a954fd6e68b1b0bf7528045514bc774ea499"
+    },
+    "result-tui.txt": {
+      "bytes": 8,
+      "sha256": "8766e017df3d4497840e53fa7594a954fd6e68b1b0bf7528045514bc774ea499"
+    }
+  }
+}
