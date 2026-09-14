@@ -1,0 +1,146 @@
+{
+  "host": "2026.7.1-2",
+  "version": "1.9.1-openclaw.5",
+  "date": "2026-09-15",
+  "originalFailure": {
+    "parentSessionId": "ca06f29e-6b16-4f69-b71d-23a73322626b",
+    "runId": "b13bd37c-3dd2-4c49-b330-09add5a31ed9",
+    "phase": "CANCELLED",
+    "createdAt": 1789399758155,
+    "updatedAt": 1789401558302,
+    "durationMs": 1800147,
+    "coreStatus": "STOPPED_UNVERIFIED",
+    "verification": {
+      "status": "UNVERIFIED",
+      "reason": "SUPERVISED_CANCELLED",
+      "evaluationId": null,
+      "updatedAt": "2026-09-14T15:59:18.285Z"
+    },
+    "stop": {
+      "epochId": 1,
+      "correctionAttempts": 0,
+      "lastAssessmentId": null,
+      "armedAtStart": true,
+      "infrastructureFailures": 1
+    },
+    "reviewerModel": "review/glm-5.3",
+    "parentTimeoutSeconds": 1800,
+    "roles": [
+      {
+        "at": "2026-09-14T15:33:35.869Z",
+        "role": "onboarding-extractor",
+        "durationMs": 235127
+      },
+      {
+        "at": "2026-09-14T15:34:34.962Z",
+        "role": "onboarding-extractor",
+        "durationMs": 294173
+      },
+      {
+        "at": "2026-09-14T15:36:27.692Z",
+        "role": "onboarding-adjudicator",
+        "durationMs": 112727
+      },
+      {
+        "at": "2026-09-14T15:37:54.469Z",
+        "role": "ground-truth-extractor",
+        "durationMs": 20971
+      },
+      {
+        "at": "2026-09-14T15:40:54.110Z",
+        "role": "artifact-reviewer",
+        "durationMs": 179626
+      },
+      {
+        "at": "2026-09-14T15:45:28.230Z",
+        "role": "artifact-reviewer",
+        "durationMs": 198226
+      },
+      {
+        "at": "2026-09-14T15:45:48.705Z",
+        "role": "artifact-reviewer",
+        "durationMs": 20471
+      },
+      {
+        "at": "2026-09-14T15:46:39.020Z",
+        "role": "ground-truth-extractor",
+        "durationMs": 15530
+      },
+      {
+        "at": "2026-09-14T15:48:24.869Z",
+        "role": "artifact-reviewer",
+        "durationMs": 105835
+      },
+      {
+        "at": "2026-09-14T15:49:12.610Z",
+        "role": "ground-truth-extractor",
+        "durationMs": 19896
+      },
+      {
+        "at": "2026-09-14T15:52:45.634Z",
+        "role": "artifact-reviewer",
+        "durationMs": 213010
+      },
+      {
+        "at": "2026-09-14T15:53:23.254Z",
+        "role": "artifact-reviewer",
+        "durationMs": 37615
+      },
+      {
+        "at": "2026-09-14T15:55:07.553Z",
+        "role": "ground-truth-extractor",
+        "durationMs": 64261
+      }
+    ]
+  },
+  "isolatedTest": {
+    "parentTimeoutSeconds": 60,
+    "reviewerTimeoutMs": 600000,
+    "reviewerModel": "review/glm-5.3",
+    "workModel": "ark-work/ark-code-latest",
+    "projectConfigUnchanged": true
+  },
+  "runs": [
+    {
+      "parentSessionId": "e6066a67-787f-4abb-9d41-f47bd23b9b22",
+      "runId": "df2e9634-7807-463b-b1ae-490cd3c4e0a7",
+      "generation": "5e880305-69b8-4e17-a6e1-228b81ae64d5",
+      "phase": "UNVERIFIED",
+      "failureCode": "RUN_BUDGET_EXHAUSTED",
+      "durationMs": 62087,
+      "status": "UNVERIFIED",
+      "text": "本次成果尚未验证，已停止自动续跑。\n执行与评审累计达到本次任务的总运行时限，最终验收尚未完成。现有文件已保留，不能视为验收通过。总时限由 OpenClaw 的 agents.defaults.timeoutSeconds 控制；单独提高 reviewerTimeoutMs 不会增加总时限。",
+      "finalMessageId": "b0226959-679c-40fb-a11e-28f4dfd15a0f",
+      "parentFinalCount": 1
+    },
+    {
+      "parentSessionId": "ccb101ed-dcca-4f08-b7e1-2a64876f4936",
+      "runId": "a9da5de6-396e-4249-a910-4cc8b5278184",
+      "generation": "e92d11d9-dd8b-45c0-858f-3cedef41e83c",
+      "phase": "UNVERIFIED",
+      "failureCode": "RUN_BUDGET_EXHAUSTED",
+      "durationMs": 62127,
+      "status": "UNVERIFIED",
+      "text": "本次成果尚未验证，已停止自动续跑。\n执行与评审累计达到本次任务的总运行时限，最终验收尚未完成。现有文件已保留，不能视为验收通过。总时限由 OpenClaw 的 agents.defaults.timeoutSeconds 控制；单独提高 reviewerTimeoutMs 不会增加总时限。",
+      "finalMessageId": "28a975f4-d3b8-41b7-b768-bec53688f3a2",
+      "parentFinalCount": 1
+    },
+    {
+      "parentSessionId": "84ac9c2b-d038-4621-91f7-97a52a87592c",
+      "runId": "f451b7bc-81aa-4d45-83fb-9f970eb626dc",
+      "generation": "de5b90f7-0c5e-4029-b5c7-443966fd986c",
+      "phase": "UNVERIFIED",
+      "failureCode": "RUN_BUDGET_EXHAUSTED",
+      "durationMs": 62095,
+      "status": "UNVERIFIED",
+      "text": "本次成果尚未验证，已停止自动续跑。\n执行与评审累计达到本次任务的总运行时限，最终验收尚未完成。现有文件已保留，不能视为验收通过。总时限由 OpenClaw 的 agents.defaults.timeoutSeconds 控制；单独提高 reviewerTimeoutMs 不会增加总时限。",
+      "finalMessageId": "47fe2a0c-464f-4b9a-b4ed-2b23a51aacee",
+      "parentFinalCount": 1
+    }
+  ],
+  "originalArtifactHashes": {
+    "openspec/changes/todo-persistence-guard-test-20260914-2329/tasks.md": "c547aec1c7a64c37d33d775bcd2555368409a2769505f2e5dd842fe970d54b87",
+    "openspec/changes/todo-persistence-guard-test-20260914-2329/design.md": "b95306f8dc2565ea1dab0d21991de0228dafbda058dfbdf1d143bdef35167d74",
+    "openspec/changes/todo-persistence-guard-test-20260914-2329/proposal.md": "5f894b994dc7830abed4f2fbd7c0bdaf9339010e91ad01ecda71b52e2cd7e8fc"
+  }
+}

@@ -89,6 +89,38 @@ test("OpenClaw validates incompatible CLI reviewer settings before starting work
   await assert.rejects(loadConfig({ cwd: project, pluginRoot }), /Remove the entire reviewerRuntime block/u);
 });
 
+test("native artifact review is bounded by the supervised parent's remaining time", async (t) => {
+  const project = await workspace(t);
+  await fs.mkdir(path.join(project, ".runtime-corrector"));
+  await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"),
+    "version: 2\nartifacts:\n  - name: requirements\n    stage: requirements\n    format: markdown\n    patterns: [spec/requirements.md]\n    rules:\n      enabled: false\n    review:\n      enabled: true\n      criteria: reviewer.md\ndynamicGroundTruth:\n  enabled: false\nstopCorrection:\n  enabled: false\nskillCorrection:\n  enabled: false\nartifactCorrection:\n  groundTruthReviewEnabled: false\n  stageMetricsEnabled: false\n");
+  await fs.writeFile(path.join(project, ".runtime-corrector/reviewer.md"), "Require a precise goal.");
+  await fs.mkdir(path.join(project, "spec"));
+  const file = path.join(project, "spec/requirements.md");
+  await fs.writeFile(file, "# Goal\nA precise goal.\n");
+  const calls = [];
+  const host = api(project, async (params) => {
+    calls.push(params);
+    return { payloads: [{ text: JSON.stringify({ summary: "Checked", findings: [], edits: [] }) }], meta: {} };
+  });
+  const runtime = createRuntime(host, { pluginRoot });
+  const ctx = { sessionId: "deadline-parent", runId: "deadline-run", workspaceDir: project,
+    agentId: "main", provider: "test", modelId: "test", prompt: "Write requirements." };
+  const deadlineAt = Date.now() + 1500;
+  const state = await runtime.beginSupervised(ctx, new AbortController().signal, { deadlineAt });
+  const worker = runtime.bindWorker("deadline-worker", state);
+  const childCtx = { ...ctx, sessionId: "deadline-worker", runId: "worker-run" };
+  await runtime.beforeTool({ toolName: "write", toolCallId: "budget-write", params: { path: file } }, childCtx);
+  await runtime.toolResult({ toolName: "write", toolCallId: "budget-write", args: { path: file }, result: { content: [] } }, childCtx);
+  assert.equal(calls.length, 1, host.warnings.join("\n"));
+  assert.ok(calls[0].timeoutMs > 0 && calls[0].timeoutMs <= 1500, "a 10-minute hook must not outlive a 1.5-second parent budget");
+  state.runDeadlineAt = Date.now() - 1;
+  await runtime.beforeTool({ toolName: "write", toolCallId: "expired-write", params: { path: file } }, childCtx);
+  await runtime.toolResult({ toolName: "write", toolCallId: "expired-write", args: { path: file }, result: { content: [] } }, childCtx);
+  assert.equal(calls.length, 1, "expired parent budget must not dispatch another native review");
+  worker.close();
+});
+
 test("transcripts preserve real users, tool pairing and only the active native branch", async (t) => {
   const project = await workspace(t);
   const records = [

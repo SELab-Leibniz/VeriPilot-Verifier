@@ -20,7 +20,7 @@ async function fixture(t, options = {}) {
   const state = {}, workers = new Map(), handles = new Map(), progress = [];
   let rounds = 0, assessments = 0, begins = 0;
   const runtime = { isWorker: (id) => workers.has(id),
-    async beginSupervised(_params, signal) { begins++; state.signal = signal; return state; },
+    async beginSupervised(_params, signal, options) { begins++; state.signal = signal; state.deadlineAt = options?.deadlineAt; return state; },
     bindWorker(id) { workers.set(id, {}); return { close() { workers.get(id).closed = true; } }; },
     async acceptRequirement() {},
     async assessSupervised(_state, request) {
@@ -45,7 +45,11 @@ async function fixture(t, options = {}) {
     workerPolicy: (params, key) => ({ config: params.config, sandboxSessionKey: key }),
     nativeHarness: () => ({ runAttempt: async () => ({ native: true }) }),
     acquireSessionWriteLock: async () => ({ release: async () => {} }),
-    async appendSessionTranscriptMessage({ transcriptPath, message }) {
+    async appendSessionTranscriptMessage({ transcriptPath, message, prepareMessageAfterIdempotencyCheck }) {
+      if (prepareMessageAfterIdempotencyCheck) {
+        message = await prepareMessageAfterIdempotencyCheck(message);
+        if (!message) return;
+      }
       await fs.mkdir(path.dirname(transcriptPath), { recursive: true });
       await fs.appendFile(transcriptPath, JSON.stringify({ type: "message", id: randomUUID(), message }) + "\n");
     },
@@ -148,6 +152,93 @@ test("cancellation during verification prevents candidate delivery and further e
   assert.equal(result.aborted, true);
   assert.equal(f.counts().rounds, 1);
   assert.doesNotMatch(await fs.readFile(f.params.sessionFile, "utf8"), /Task completed/u);
+});
+
+test("the controller time budget stops assessment with a visible unverified receipt, not cancellation", async (t) => {
+  let taskId;
+  const f = await fixture(t, { worker: async ({ child, root, params }) => {
+    taskId = (await ensureTask({ projectRoot: root, sessionId: params.sessionId })).taskId;
+    const messages = [
+      { type: "message", id: "write", message: { role: "assistant", content: [{ type: "text", text: "Private candidate" },
+        { type: "toolCall", id: "write-call", name: "write", arguments: { path: "result.txt", content: "DRAFT" } }] } },
+      { type: "message", id: "written", message: { role: "toolResult", toolCallId: "write-call", content: [{ type: "text", text: "Written; review feedback" }] } },
+    ];
+    await fs.appendFile(child.sessionFile, messages.map(JSON.stringify).join("\n") + "\n");
+    return { payloads: [{ text: "Private candidate" }], meta: { agentMeta: {
+      usage: { input: 5000, output: 1000, cacheRead: 9000, total: 15000 },
+      lastCallUsage: { input: 1000, output: 200, cacheRead: 4000, total: 5200 },
+    } } };
+  }, assess: async ({ state, request }) => {
+    assert.ok(state.deadlineAt > Date.now());
+    await new Promise((_, reject) => request.abortSignal.addEventListener("abort", () => reject(request.abortSignal.reason), { once: true }));
+  } });
+  const params = { ...f.params, timeoutMs: 180 };
+  const result = await f.harness.runAttempt(params);
+  assert.equal(result.aborted, false);
+  assert.equal(result.externalAbort, false);
+  assert.equal(result.lastAssistant.usage.totalTokens, 5200);
+  assert.equal(result.attemptUsage.total, 15000);
+  assert.equal(result.replayMetadata.replaySafe, false);
+  assert.match(result.lastAssistant.content[0].text, /总运行时限/u);
+  const control = JSON.parse(await fs.readFile(path.join(controllerDirectory(f.root, params.sessionId), "control.json")));
+  assert.equal(control.phase, "UNVERIFIED");
+  assert.equal(control.failureCode, "RUN_BUDGET_EXHAUSTED");
+  const task = JSON.parse(await fs.readFile(path.join(f.root, ".runtime-correction/tasks", taskId, "task.json")));
+  assert.equal(task.verification.reason, "SUPERVISED_RUN_BUDGET_EXHAUSTED");
+  assert.equal(task.stop.correctionAttempts, 0);
+  const history = await fs.readFile(params.sessionFile, "utf8");
+  assert.match(history, /Written; review feedback/u);
+  assert.doesNotMatch(history, /Private candidate/u);
+  assert.match(history, /总运行时限/u);
+  assert.equal(f.progress.filter(e => e.data.phase === "final").length, 1);
+  assert.equal(f.progress.at(-1).data.aborted, false);
+  assert.equal(f.handles.size, 0);
+  const replay = await f.harness.runAttempt(params);
+  assert.equal(replay.lastAssistant.content[0].text, result.lastAssistant.content[0].text);
+  assert.equal(f.counts().rounds, 1);
+});
+
+test("cancellation after budget expiry still suppresses the unverified final reply", async (t) => {
+  const parent = new AbortController();
+  const f = await fixture(t, { assess: async ({ request }) => {
+    await new Promise((_, reject) => request.abortSignal.addEventListener("abort", () => reject(request.abortSignal.reason), { once: true }));
+  } });
+  const append = f.sdk.appendSessionTranscriptMessage;
+  f.sdk.appendSessionTranscriptMessage = async (request) => {
+    if (request.message.role === "assistant") parent.abort();
+    return append(request);
+  };
+  const result = await f.harness.runAttempt({ ...f.params, abortSignal: parent.signal, timeoutMs: 180 });
+  assert.equal(result.aborted, true);
+  assert.equal(f.progress.some(e => e.data.phase === "final"), false);
+  assert.doesNotMatch(await fs.readFile(f.params.sessionFile, "utf8"), /总运行时限|Task completed/u);
+});
+
+test("expiry while the native worker is running aborts it without starting a reviewer", async (t) => {
+  const f = await fixture(t, { worker: async ({ child }) => {
+    await new Promise(resolve => child.abortSignal.addEventListener("abort", resolve, { once: true }));
+    return { payloads: [{ text: "Late candidate" }], meta: { aborted: true } };
+  } });
+  const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 180 });
+  assert.equal(result.aborted, false);
+  assert.match(result.lastAssistant.content[0].text, /总运行时限/u);
+  assert.equal(f.counts().assessments, 0);
+  assert.doesNotMatch(await fs.readFile(f.params.sessionFile, "utf8"), /Late candidate/u);
+});
+
+test("a final transcript lock cannot publish candidate success after the work budget expires", async (t) => {
+  const f = await fixture(t, { assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }) });
+  const append = f.sdk.appendSessionTranscriptMessage;
+  f.sdk.appendSessionTranscriptMessage = async (request) => {
+    if (request.message.content?.[0]?.text === "Task completed.") await new Promise(resolve => setTimeout(resolve, 220));
+    return append(request);
+  };
+  const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 180 });
+  assert.equal(result.aborted, false);
+  assert.match(result.lastAssistant.content[0].text, /总运行时限/u);
+  const history = await fs.readFile(f.params.sessionFile, "utf8");
+  assert.doesNotMatch(history, /Task completed/u);
+  assert.match(history, /总运行时限/u);
 });
 
 test("a superseded native result cannot overwrite the current core task with a failure", async (t) => {

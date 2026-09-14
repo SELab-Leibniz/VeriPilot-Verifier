@@ -1,13 +1,13 @@
-# Runtime Corrector 1.9.1-openclaw.4
+# Runtime Corrector 1.9.1-openclaw.5
 
-这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。实际验证范围见[验收记录](openclaw-acceptance-4.md)。
+这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。实际验证范围见[本版验收记录](openclaw-acceptance-5.md)。
 
 ## 安装与启用
 
 ```sh
-openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.4.tgz
+openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.5.tgz
 # 已安装旧版时
-openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.4.tgz
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.5.tgz
 ```
 
 将以下内容合并到现有配置；ark 请替换成已配置的 provider。**插件开关与模型运行时都要设置**；默认开启的 supervisedExecution 不会自动改写模型配置。
@@ -91,6 +91,22 @@ openclaw config set plugins.entries.runtime-corrector.config.hookTimeoutMs 60000
 长评审的实际模型/工具进展同时上报给父会话和正在等待工具 Hook 的工作会话，避免后者被宿主误判卡住。没有定时伪造进度；真正无进展仍受原生恢复和超时限制。私有工作/评审配置中的默认会话锁时限按当前运行时限加 5 秒设置（至少 5 分钟），全局配置与显式 `session.writeLock.maxHoldMs` 不变。宿主主动中止工作会话时，控制器也会取消尚未退出的工具评审，并保留未验证状态。
 
 模型配置会影响时限是否足够。2026-09-14 的真实测试中，GLM-5.3 在上述 Anthropic 接口上曾仅思考就耗尽 8192/16384 输出预算；同一 Stop 评审也有返回有效 JSON 的样本，但不能据此保证完整任务稳定。OpenClaw 的 `effort: low` 需要由实际 provider 协议正确映射，不能将 UI 标签或更大的 timeout 当作生效证据。不要通过关闭 Stop 或改成 shadowMode 来掩盖评审失败。可先选已验证的 `ark-code-latest`；若使用其他 reviewer 模型，请先验证完整 JSON、工具读取、时限和复验闭环。
+
+## 总运行时限与未验证交付（.5）
+
+`agents.defaults.timeoutSeconds` 是整个聊天任务的总时限，包含工作执行、需求基线、工具审阅和最终验收。它与 `reviewerTimeoutMs`（单个角色）和 `hookTimeoutMs`（单个 Hook）分别生效。将后两者设为 600000，不会改变原有 1800 秒（30 分钟）总时限。
+
+`.5` 将内部 reviewer 和 worker 限制在父任务剩余时间内。总时限耗尽时取消内部工作、保留未验证状态，并向聊天交付明确说明；不会再把插件自身的计时器当成用户取消而抑制回复。真正的用户停止、会话重置和关闭插件仍取消交付。已结束工作会话的工具证据与最近模型调用的上下文用量也保留；未经验收的候选完成文字不进入最终历史。
+
+如果需要为较慢的 reviewer 留出更多总时间，可由你调整为 3600 秒（60 分钟）：
+
+```sh
+openclaw config set agents.defaults.timeoutSeconds 3600
+```
+
+这是有限总时限，不增加纠偏次数或评审故障重试次数，也不保证模型一定返回合格评审。当前本机 reviewer 和 1800 秒总时限未被本次升级改写。前台 Gateway 重新启动后配置生效；后台服务用 `openclaw gateway restart`。超过总时限的旧任务仍未通过验收，升级不会将它改成成功。
+
+回退 `.4` 可重新安装保留的 `.4.tgz` 后重载 Gateway；它不包含本节的总超时修复。
 
 ## 关闭与回退
 
