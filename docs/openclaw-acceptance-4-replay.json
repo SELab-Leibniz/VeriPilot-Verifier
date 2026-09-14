@@ -1,0 +1,89 @@
+{
+  "kind": "read-only artifact review replay, not a new chat E2E",
+  "elapsedMs": 120069,
+  "reviewerModel": "review/ark-code-latest",
+  "reviewStatus": "completed",
+  "status": "failed",
+  "findings": [
+    {
+      "ruleId": "AGENT-EDGE-PROPOSAL-TO-TASKS-FORBIDDEN-CAPABILITIES",
+      "severity": "error",
+      "path": "openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md",
+      "line": 7,
+      "message": "实施任务 3、4、5 引入邮箱密码登录、云端账号体系和云端双向同步，直接违反 proposal 第 7 条“不得引入登录、账号体系或云同步能力”及第 3 条“不得依赖外部云存储”，亦属于 proposal 与 design 共同声明的 Out of Scope，构成无依据的范围扩张。",
+      "evidence": [
+        "tasks.md:7-9 \"3. 实现邮箱和密码登录页面。\" \"4. 接入云端账号体系并绑定用户身份。\" \"5. 实现待办事项云端双向同步。\"",
+        "proposal.md Requirements 7: \"系统不得引入登录、账号体系或云同步能力。\"",
+        "proposal.md Requirements 3: \"不得依赖外部云存储。\"",
+        "proposal.md Out of Scope: \"多人协作、权限管理、登录认证和云端同步。\"",
+        "design.md Out of Scope: \"登录、账号体系和云同步。\""
+      ],
+      "suggestion": "删除任务 3、4、5。"
+    },
+    {
+      "ruleId": "AGENT-EDGE-PROPOSAL-TO-TASKS-FORBIDDEN-VERIFICATION",
+      "severity": "error",
+      "path": "openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md",
+      "line": 14,
+      "message": "验证任务 7、8 以被禁止的登录失败提示和云同步冲突处理为验收对象，为上游明确排除的能力提供可验证结果，属于无依据的范围扩张。",
+      "evidence": [
+        "tasks.md:14 \"7. 验证登录失败时显示错误提示。\"",
+        "tasks.md:15 \"8. 验证云同步冲突时以后端数据为准。\"",
+        "proposal.md Requirements 7 与 Out of Scope 均排除登录认证与云端同步。"
+      ],
+      "suggestion": "删除验证任务 7、8。"
+    },
+    {
+      "ruleId": "AGENT-EDGE-PROPOSAL-TO-TASKS-MISSING-REQUIREMENTS",
+      "severity": "error",
+      "path": "openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md",
+      "line": 11,
+      "message": "任务清单遗漏 proposal 硬性需求：本地持久化及重启后数据不丢失（需求 2、3）、编辑标题（需求 4）、删除（需求 5）、标记/取消完成（需求 6），验证章节也缺少重启恢复等对应可验证结果。",
+      "evidence": [
+        "proposal.md Requirements 2: \"持久化保存待办事项，应用重启后已有数据不得丢失。\"",
+        "proposal.md Requirements 3: \"保存在本地持久化存储中……不得依赖外部云存储。\"",
+        "proposal.md Requirements 4-6: 编辑标题、删除、标记完成与取消完成。",
+        "tasks.md 第 5-15 行仅有创建、当前页展示、登录、账号、云同步及当前会话验证，无上述任务。"
+      ],
+      "suggestion": "需人工确认本看护测试变更中任务清单项的形态（Notes 声明不编写应用代码），再补齐与需求 2-6 对应的实施/验证安排，避免臆造措辞。"
+    },
+    {
+      "ruleId": "AGENT-EDGE-DESIGN-TO-TASKS-CONTRADICTION",
+      "severity": "error",
+      "path": "openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md",
+      "line": 8,
+      "message": "任务 3、4、5 及验证 7、8 与 design 直接冲突：design 明确将登录、账号体系和云同步列为 Out of Scope，目标产物不得就源产物排除的能力安排实施与验收。",
+      "evidence": [
+        "design.md Out of Scope: \"登录、账号体系和云同步。\"",
+        "tasks.md:7-9、14-15 安排登录页、云端账号绑定、云双向同步及相应验证。"
+      ],
+      "suggestion": "删除相关任务与验证项。"
+    },
+    {
+      "ruleId": "AGENT-TASKS-IMPLEMENTATION-VS-NOTES",
+      "severity": "warning",
+      "path": "openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md",
+      "line": 5,
+      "message": "任务 1、2 以“创建输入框/按钮”“页面列表展示”等应用界面实现为内容，与文末 Notes“本次看护测试不直接编写应用代码”及 proposal Out of Scope（应用代码、界面实现）相互矛盾；清单究竟是实施安排还是元测试安排需人工澄清。",
+      "evidence": [
+        "tasks.md:5 \"1. 创建待办事项输入框和提交按钮。\"，tasks.md:6 \"2. 在当前页面列表中展示新建的待办事项。\"",
+        "tasks.md:18 \"本次看护测试不直接编写应用代码。\"",
+        "proposal.md Out of Scope: \"应用代码、界面、接口、数据库迁移和测试代码实现。\""
+      ],
+      "suggestion": "请人工确认任务项应采用的表述层级后统一修订，暂不提供替换文本。"
+    }
+  ],
+  "feedback": "[runtime-corrector] tasks 纠偏诊断：failed\n触发文件：openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md\n纠偏知识：无\n配置来源：project-simple\n诊断结果：\n- [ERROR] AGENT-EDGE-PROPOSAL-TO-TASKS-FORBIDDEN-CAPABILITIES openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md:7 — 实施任务 3、4、5 引入邮箱密码登录、云端账号体系和云端双向同步，直接违反 proposal 第 7 条“不得引入登录、账号体系或云同步能力”及第 3 条“不得依赖外部云存储”，亦属于 proposal 与 design 共同声明的 Out of Scope，构成无依据的范围扩张。\n  建议：删除任务 3、4、5。\n- [ERROR] AGENT-EDGE-PROPOSAL-TO-TASKS-FORBIDDEN-VERIFICATION openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md:14 — 验证任务 7、8 以被禁止的登录失败提示和云同步冲突处理为验收对象，为上游明确排除的能力提供可验证结果，属于无依据的范围扩张。\n  建议：删除验证任务 7、8。\n- [ERROR] AGENT-EDGE-PROPOSAL-TO-TASKS-MISSING-REQUIREMENTS openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md:11 — 任务清单遗漏 proposal 硬性需求：本地持久化及重启后数据不丢失（需求 2、3）、编辑标题（需求 4）、删除（需求 5）、标记/取消完成（需求 6），验证章节也缺少重启恢复等对应可验证结果。\n  建议：需人工确认本看护测试变更中任务清单项的形态（Notes 声明不编写应用代码），再补齐与需求 2-6 对应的实施/验证安排，避免臆造措辞。\n- [ERROR] AGENT-EDGE-DESIGN-TO-TASKS-CONTRADICTION openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md:8 — 任务 3、4、5 及验证 7、8 与 design 直接冲突：design 明确将登录、账号体系和云同步列为 Out of Scope，目标产物不得就源产物排除的能力安排实施与验收。\n  建议：删除相关任务与验证项。\n- [WARN] AGENT-TASKS-IMPLEMENTATION-VS-NOTES openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md:5 — 任务 1、2 以“创建输入框/按钮”“页面列表展示”等应用界面实现为内容，与文末 Notes“本次看护测试不直接编写应用代码”及 proposal Out of Scope（应用代码、界面实现）相互矛盾；清单究竟是实施安排还是元测试安排需人工澄清。\n  建议：请人工确认任务项应采用的表述层级后统一修订，暂不提供替换文本。\n候选 Git Patch：1\n候选 Git Patch（openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md，基线 sha256:a0b8f5a037a983455dd095a3cf0413b7a004409398307f3fc7eccc4e058ef215）：\n```diff\ndiff --git a/openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md b/openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md\n--- a/openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md\n+++ b/openspec/changes/todo-persistence-guard-20260914-1747-a91c4d/tasks.md\n@@ -4,15 +4,10 @@\n \n - [ ] 1. 创建待办事项输入框和提交按钮。\n - [ ] 2. 在当前页面列表中展示新建的待办事项。\n-- [ ] 3. 实现邮箱和密码登录页面。\n-- [ ] 4. 接入云端账号体系并绑定用户身份。\n-- [ ] 5. 实现待办事项云端双向同步。\n \n ## Verification Tasks\n \n-- [ ] 6. 验证用户可以在当前会话创建并看到待办事项。\n-- [ ] 7. 验证登录失败时显示错误提示。\n-- [ ] 8. 验证云同步冲突时以后端数据为准。\n+- [ ] 3. 验证用户可以在当前会话创建并看到待办事项。\n \n ## Notes\n \n```\n应用前必须确认目标文件仍匹配基线，并先执行 `git apply --check <patch-file>`；校验通过后仍由主 Agent 决定是否应用。\n❌ 发现 error 级偏差。请主 Agent 根据诊断证据和候选 Git Patch 决定修正、忽略、转人工或终止当前阶段。\n隔离语义审阅已完成（session d9057525-e208-4dd6-b505-991624c0e422，已释放）：tasks.md 存在两类上游偏差：(1) 任务 3/4/5 与验证 7/8 引入 proposal 明确禁止、design 也列为范围外的登录、账号体系与云同步能力；(2) 清单遗漏 proposal 要求的本地持久化/重启恢复、编辑、删除、完成状态切换及其验证。此外实现类任务与 Notes 中“不直接编写应用代码”的声明及 proposal Out of Scope 相矛盾。确定性诊断已通过；以下为语义发现。\n上述诊断与候选 Git Patch 已包含当前快照的语义审阅结果；主 Agent 只需决定是否使用，不需要再次加载 reviewer 或 bundle 快照。\n[runtime-corrector:public-commands]\n需要更多信息时按需使用 Runtime Corrector 的公开命令：\n- `/runtime-corrector:spec tasks`：读取当前 tasks stage 的完整规范、规则、Schema 与 reviewer。\n- `/runtime-corrector:help`：查看项目感知的帮助和其他公开命令。\n先依据本次诊断做最小修正；只有需要精确格式或更多规则时再渐进式查询。\nruntime-corrector 不会自动修改目标文件，也不会自动应用候选 Git Patch。",
+  "everyFindingDelivered": true,
+  "writtenFiles": [],
+  "before": {
+    "artifact": "a0b8f5a037a983455dd095a3cf0413b7a004409398307f3fc7eccc4e058ef215",
+    "config": "e21a73a75ef5b4e6c8d167426d6961a9ed474b33cdcca86b326aa49002b5ce13"
+  },
+  "after": {
+    "artifact": "a0b8f5a037a983455dd095a3cf0413b7a004409398307f3fc7eccc4e058ef215",
+    "config": "e21a73a75ef5b4e6c8d167426d6961a9ed474b33cdcca86b326aa49002b5ce13"
+  },
+  "noNonexistentArchiveReference": true,
+  "harnessNote": "The initial checker used diagnostic.code; corrected to the actual schema field ruleId and checked the saved native result without a second model invocation."
+}

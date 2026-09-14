@@ -76,6 +76,19 @@ test("native entry supports synchronous ESM loading on the target Node runtime",
   assert.equal(loaded.default.id, "runtime-corrector");
 });
 
+test("OpenClaw validates incompatible CLI reviewer settings before starting work", async (t) => {
+  const project = await workspace(t);
+  await fs.mkdir(path.join(project, ".runtime-corrector"));
+  await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"),
+    "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\nstopCorrection:\n  enabled: true\nreviewerRuntime:\n  executable: codeagentcli\n  argsPrefix: []\n");
+  const host = api(project, () => assert.fail("must not launch a native worker"));
+  const runtime = createRuntime(host, { pluginRoot });
+  await assert.rejects(runtime.beginSupervised({ sessionId: "invalid", workspaceDir: project }, new AbortController().signal),
+    { code: "OPENCLAW_REVIEWER_CONFIG" });
+  const { loadConfig } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-corrector.mjs")));
+  await assert.rejects(loadConfig({ cwd: project, pluginRoot }), /Remove the entire reviewerRuntime block/u);
+});
+
 test("transcripts preserve real users, tool pairing and only the active native branch", async (t) => {
   const project = await workspace(t);
   const records = [
@@ -196,7 +209,13 @@ test("native reviewer deadlines abort work and release the internal lease", asyn
   const project = await workspace(t);
   const task = await ensureTask({ projectRoot: project, sessionId: "parent" });
   let signal;
-  const host = api(project, (params) => { signal = params.abortSignal; return new Promise(() => {}); });
+  const host = api(project, async (params) => {
+    signal = params.abortSignal;
+    await new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await fs.access(path.dirname(params.sessionFile));
+    throw signal.reason;
+  });
   const registry = new Set();
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry });
   await assert.rejects(factory({ projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor",
@@ -278,13 +297,14 @@ test("native review scope suppresses incomplete hook identities without suppress
   assert.equal(decision?.action, "revise", "main-task final verification remains active");
 });
 
-test("late callbacks remain internal after native reviewer timeout and lease cleanup", async (t) => {
+test("late callbacks remain internal while timed out native sessions finish cleanup", async (t) => {
   const project = await workspace(t);
   const host = api(project);
   const sharedState = {};
   const runtime = createRuntime(host, { pluginRoot, sharedState });
   const registry = new Set();
   let releaseLate, finishLate, startedReview;
+  const activeReviewRuns = new Set();
   const lateGate = new Promise((resolve) => { releaseLate = resolve; });
   const lateFinished = new Promise((resolve) => { finishLate = resolve; });
   const started = new Promise((resolve) => { startedReview = resolve; });
@@ -299,18 +319,41 @@ test("late callbacks remain internal after native reviewer timeout and lease cle
       return { payloads: [{ text: '{"ok":true}' }] };
     } finally { finishLate(); }
   };
-  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry });
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry,
+    onRunStart: (id) => activeReviewRuns.add(id), onRunEnd: (id) => activeReviewRuns.delete(id) });
   const reviewing = assert.rejects(factory({ projectRoot: project, taskId: "late-review-test", role: "stop-reviewer",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 100 } }), /deadline/u);
   const params = await started;
   await reviewing;
   assert.equal(params.abortSignal.aborted, true);
-  assert.equal(registry.size, 0);
-  assert.deepEqual(await fs.readdir(path.join(project, ".runtime-correction/internal-runs")), []);
+  assert.equal(activeReviewRuns.size, 0, "late cleanup must not renew the current round's liveness");
+  assert.equal(registry.size, 1, "keep the identity until the native run settles");
+  assert.equal((await fs.readdir(path.join(project, ".runtime-correction/internal-runs"))).length, 1);
   releaseLate();
   await lateFinished;
+  for (let i = 0; i < 100 && registry.size; i++) await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(registry.size, 0);
   assert.equal(sharedState.states.size, 0, "late hooks must not create developer state after cleanup");
   assert.deepEqual(host.warnings, []);
+});
+
+test("cross-role handoff renews the role timeout but preserves the enclosing deadline", async (t) => {
+  const project = await workspace(t);
+  const calls = [];
+  const host = api(project, async (params) => {
+    calls.push(params);
+    return { payloads: [{ text: '{"ok":true}' }] };
+  });
+  const deadlineAt = Date.now() + 3000;
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", deadlineAt });
+  const input = { projectRoot: project, taskId: "handoff-budgets", role: "ground-truth-extractor",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 200 } };
+  const first = await factory(input);
+  const second = await factory.handoff({ ...input, originHandle: first, role: "stop-reviewer", reviewer: { timeoutMs: 10000 } });
+  assert.ok(calls[0].timeoutMs <= 200);
+  assert.ok(calls[1].timeoutMs > 1000, "Stop must not inherit the extractor's 200 ms role timeout");
+  assert.ok(calls[1].timeoutMs <= 3000, "the shared hook deadline must still bound the handoff");
+  await second.close();
 });
 
 test("nested reviewer followups cannot abort their owner and independent later followups still work", async (t) => {

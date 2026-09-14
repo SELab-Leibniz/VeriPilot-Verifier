@@ -1,13 +1,13 @@
-# Runtime Corrector 1.9.1-openclaw.3
+# Runtime Corrector 1.9.1-openclaw.4
 
-这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。实际验证范围见[验收记录](openclaw-acceptance.md)。
+这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。实际验证范围见[验收记录](openclaw-acceptance-4.md)。
 
 ## 安装与启用
 
 ```sh
-openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
+openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.4.tgz
 # 已安装旧版时
-openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.4.tgz
 ```
 
 将以下内容合并到现有配置；ark 请替换成已配置的 provider。**插件开关与模型运行时都要设置**；默认开启的 supervisedExecution 不会自动改写模型配置。
@@ -26,8 +26,8 @@ openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1
         "hooks": { "allowConversationAccess": true, "allowPromptInjection": true },
         "config": {
           "supervisedExecution": true,
-          "reviewerTimeoutMs": 180000,
-          "hookTimeoutMs": 540000
+          "reviewerTimeoutMs": 600000,
+          "hookTimeoutMs": 600000
         }
       }
     }
@@ -63,7 +63,43 @@ openclaw plugins inspect runtime-corrector --runtime --json
 
 主运行总超时、Hook 超时和各评审超时同时生效。检查器故障沿用独立有限重试，不消耗实际纠偏次数；两次重试后仍失败则停止为 UNVERIFIED。
 
+## 评审配置与排错
+
+OpenClaw 使用原生评审会话，不设置 `reviewerRuntime`。如果项目从 Claude/CodeAgent 迁移，删除整个 `reviewerRuntime` 段（包含 `executable` 和 `argsPrefix`），不能留下空对象。`.4` 会在项目配置校验及受控工作启动前报告冲突，避免先执行工具再发现评审无法启动。
+
+在 `openclaw.json` 的 `plugins.entries.runtime-corrector.config.reviewerModel` 指定注册过的 `provider/model`。项目 `reviewers.defaults.model` 或各角色的 `model` 可以覆盖该默认值；独立 provider 配置保持原有语义。执行与评审可以使用不同 provider、凭据及模型。
+
+如果执行模型已经注册为 `ark-work/ark-code-latest`，可直接让 reviewer 使用这个已注册模型（仍是独立只读评审会话）：
+
+```sh
+openclaw config set plugins.entries.runtime-corrector.config.reviewerModel ark-work/ark-code-latest
+```
+
+若要不同 provider，在 `models.providers` 中注册其 API 地址、凭据引用和模型，然后将上述值换成对应的 `provider/model`。无需设置 executable。
+
+单个评审的有效时限取项目角色 `timeoutMs`（未设置时继承 `limits.semanticReviewTimeoutMs`）、插件 `reviewerTimeoutMs`、当前 Hook 剩余时限和父运行剩余时限中的最小值。因此只把项目 `limits.semanticReviewTimeoutMs` 增加到 900000，并不能突破插件 180000 的配置上限。需要长评审时，可在 OpenClaw 配置中设置：
+
+```sh
+openclaw config set plugins.entries.runtime-corrector.config.reviewerTimeoutMs 600000
+openclaw config set plugins.entries.runtime-corrector.config.hookTimeoutMs 600000
+```
+
+改后重启 Gateway；前台 `gateway run` 需停止后重新启动。600000 毫秒仍是有限上限，不改变偏差纠正次数和基础设施重试次数。不同角色交接使用各自时限，但共同受当前 Hook/父运行截止时间限制；同一角色 JSON 修复和后续追问不续期。
+
+`.4` 超时/取消时会先等待原生评审退出，再清理其会话文件；迟到回调仍保留内部身份。父聊天分别上报最近模型调用的上下文用量与累计任务用量，避免把累计用量当成当前上下文。
+
+长评审的实际模型/工具进展同时上报给父会话和正在等待工具 Hook 的工作会话，避免后者被宿主误判卡住。没有定时伪造进度；真正无进展仍受原生恢复和超时限制。私有工作/评审配置中的默认会话锁时限按当前运行时限加 5 秒设置（至少 5 分钟），全局配置与显式 `session.writeLock.maxHoldMs` 不变。宿主主动中止工作会话时，控制器也会取消尚未退出的工具评审，并保留未验证状态。
+
+模型配置会影响时限是否足够。2026-09-14 的真实测试中，GLM-5.3 在上述 Anthropic 接口上曾仅思考就耗尽 8192/16384 输出预算；同一 Stop 评审也有返回有效 JSON 的样本，但不能据此保证完整任务稳定。OpenClaw 的 `effort: low` 需要由实际 provider 协议正确映射，不能将 UI 标签或更大的 timeout 当作生效证据。不要通过关闭 Stop 或改成 shadowMode 来掩盖评审失败。可先选已验证的 `ark-code-latest`；若使用其他 reviewer 模型，请先验证完整 JSON、工具读取、时限和复验闭环。
+
 ## 关闭与回退
+
+退回 `.3` 可直接重新安装保留的旧包后重启，配置结构兼容；旧版不包含上述长评审和上下文修复：
+
+```sh
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
+openclaw gateway restart
+```
 
 仅关闭受控执行：将 plugins.entries.runtime-corrector.config.supervisedExecution 设为 false，重启 Gateway，执行器恢复原生 Hook 行为。运行时关闭该开关会取消当前受控任务。
 

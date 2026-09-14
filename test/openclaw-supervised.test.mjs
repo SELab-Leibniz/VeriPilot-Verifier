@@ -105,6 +105,20 @@ test("concurrent duplicate controllers share one execution and internal reviews 
   await assert.rejects(f.harness.runAttempt({ ...f.params, inputProvenance: { kind: "internal_system" } }), /genuine user/u);
 });
 
+test("supervised context usage comes from the last model call, separate from cumulative billing", async (t) => {
+  const lastCallUsage = { input: 1000, output: 200, cacheRead: 4000, cacheWrite: 0,
+    total: 5200, contextUsage: { state: "available", promptTokens: 5000, totalTokens: 5200 } };
+  const f = await fixture(t, { worker: async () => ({ payloads: [{ text: "Answer" }], meta: { agentMeta: {
+    usage: { input: 100000, output: 20000, cacheRead: 300000, total: 420000 }, lastCallUsage } } }),
+    assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }) });
+  const result = await f.harness.runAttempt(f.params);
+  assert.equal(result.attemptUsage.total, 420000);
+  assert.deepEqual(result.promptCache.lastCallUsage, lastCallUsage);
+  assert.equal(result.lastAssistant.usage.totalTokens, 5200);
+  const history = (await fs.readFile(f.params.sessionFile, "utf8")).trim().split("\n").map(JSON.parse);
+  assert.equal(history.at(-1).message.usage.cacheRead, 4000);
+});
+
 test("ambiguous restart stops without dispatch; later stale parent runs reuse their own receipts", async (t) => {
   const f = await fixture(t);
   const file = path.join(controllerDirectory(f.root, f.params.sessionId), "control.json");
@@ -342,4 +356,50 @@ test("only owned native work and review activity renews parent liveness, never s
   const count = reported.length;
   listener({ type: "run.progress", runId: "review-run" });
   assert.equal(reported.length, count);
+});
+
+test("real review activity keeps an awaiting native worker alive without reflecting its own progress", async (t) => {
+  let listener, state, childRunId;
+  const reported = [];
+  const f = await fixture(t, { worker: async ({ child }) => {
+    childRunId = child.runId;
+    state.onReviewRunStart("tool-review");
+    listener({ type: "run.progress", runId: "tool-review" });
+    state.onReviewRunEnd("tool-review");
+    listener({ type: "run.progress", runId: "tool-review" });
+    return { payloads: [{ text: "Done" }], meta: {} };
+  }, assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }) });
+  const begin = f.runtime.beginSupervised;
+  f.runtime.beginSupervised = async (...args) => { state = await begin(...args); return state; };
+  f.sdk.onRunActivity = (handler) => { listener = handler; return () => {}; };
+  f.sdk.reportProgress = (params, reason) => {
+    reported.push({ runId: params.runId, reason });
+    listener({ type: "run.progress", runId: params.runId, reason });
+  };
+  await f.harness.runAttempt(f.params);
+  assert.deepEqual(reported.filter((event) => event.runId === childRunId),
+    [{ runId: childRunId, reason: "runtime-corrector:review:run.progress" }]);
+  assert.equal(reported.filter((event) => event.reason === "runtime-corrector:run.progress").length, 1);
+});
+
+test("a host-ended worker aborts pending review work but remains unverified instead of user-cancelled", async (t) => {
+  let workSignal;
+  const f = await fixture(t, { worker: async ({ child }) => {
+    workSignal = child.abortSignal;
+    throw new Error("native watchdog ended the worker");
+  } });
+  const result = await f.harness.runAttempt(f.params);
+  assert.equal(workSignal.aborted, true);
+  assert.equal(result.aborted, false);
+  assert.match(result.lastAssistant.content[0].text, /尚未验证/u);
+  assert.equal(f.counts().assessments, 0);
+});
+
+test("long native sessions retain a bounded transcript lock and respect explicit operator settings", async () => {
+  const { withNativeSessionLockBudget } = await import("../lib/openclaw/native-config.mjs");
+  const config = { session: { writeLock: { staleMs: 10000 } } };
+  assert.equal(withNativeSessionLockBudget(config, 900000).session.writeLock.maxHoldMs, 905000);
+  assert.equal(config.session.writeLock.maxHoldMs, undefined);
+  const explicit = { session: { writeLock: { maxHoldMs: 120000 } } };
+  assert.equal(withNativeSessionLockBudget(explicit, 900000), explicit);
 });
