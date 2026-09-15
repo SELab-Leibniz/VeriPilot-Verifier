@@ -214,6 +214,46 @@ test("native reviewers own read-only sessions, repair JSON, and transfer frozen 
   assert.equal(calls[0].config.models, undefined);
 });
 
+test("GLM reviewers carry selected effort through native prompts without changing provider config", async (t) => {
+  const project = await workspace(t), calls = [];
+  const host = api(project, async params => { calls.push(params); return { payloads: [{ text: '{"ok":true}' }] }; });
+  host.config = { models: { providers: { review: { api: "anthropic-messages", models: [{ id: "glm-5.3", reasoning: false, maxTokens: 8192 }] } } } };
+  const before = JSON.stringify(host.config);
+  const factory = createOpenClawReviewerFactory(host, { reviewerModel: "review/glm-5.3" });
+  const h = await factory({ projectRoot: project, taskId: "effort-policy", role: "stop-reviewer", request: {}, schema: objectSchema });
+  assert.match(calls[0].extraSystemPrompt, /^Reasoning Effort: Low\n/u);
+  await h.followUp({ prompt: "Verify again", nextReviewer: { effort: "max" } });
+  assert.match(calls[1].extraSystemPrompt, /^Reasoning Effort: Max\n/u);
+  await h.followUp({ prompt: "Verify again", nextReviewer: { effort: "medium" } });
+  assert.match(calls[2].extraSystemPrompt, /^Reasoning Effort: High\n/u);
+  await h.followUp({ prompt: "Verify again", nextReviewer: { model: "another/ark-code-latest", effort: "low" } });
+  assert.doesNotMatch(calls[3].extraSystemPrompt, /Reasoning Effort:/u);
+  assert.equal(calls[3].provider, "another");
+  for (const p of calls) { assert.deepEqual(p.toolsAllow, ["read"]); assert.equal(p.agentHarnessRuntimeOverride, "openclaw"); }
+  assert.equal(JSON.stringify(host.config), before);
+  await h.close();
+});
+
+test("native runtime failures do not spend a JSON repair or accept truncated valid-looking JSON", async (t) => {
+  const project = await workspace(t);
+  const cases = [
+    [{ meta: { error: { kind: "incomplete_turn", message: "Agent couldn't generate a response." } } }, "REVIEWER_RUN_FAILED"],
+    [{ payloads: [{ text: '{"ok":true}' }], meta: { stopReason: "length" } }, "REVIEWER_OUTPUT_LIMIT"],
+    [{ payloads: [{ text: "reasoning", isReasoning: true }] }, "REVIEWER_NO_FINAL_OUTPUT"],
+    [{ payloads: [{ text: '{"ok":true}' }], meta: { aborted: true } }, "REVIEWER_RUN_ABORTED"],
+  ];
+  for (const [response, code] of cases) {
+    let calls = 0;
+    const factory = createOpenClawReviewerFactory(api(project, async () => { calls++; return response; }), { provider: "review", model: "glm-5.3" });
+    await assert.rejects(factory({ projectRoot: project, taskId: code, role: "stop-reviewer", request: {}, schema: objectSchema }), new RegExp(code));
+    assert.equal(calls, 1, "leave infrastructure retry decisions to the original core");
+    const journal = await fs.readFile(path.join(taskDirectory(project, code), "journal/events.jsonl"), "utf8");
+    assert.match(journal, /REVIEWER_RUNTIME_FAILED/u);
+    assert.doesNotMatch(journal, /REVIEWER_OUTPUT_INVALID/u);
+    if (code === "REVIEWER_OUTPUT_LIMIT") assert.match(journal, /"stopReason":"length"/u);
+  }
+});
+
 test("native independent provider is per run and secrets are absent from evidence and journal", async (t) => {
   const project = await workspace(t);
   const task = await ensureTask({ projectRoot: project, sessionId: "parent" });
