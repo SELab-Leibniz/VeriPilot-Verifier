@@ -1,13 +1,13 @@
-# Runtime Corrector 1.9.1-openclaw.6
+# Runtime Corrector 1.9.1-openclaw.7
 
-这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。`.6` 修复 GLM 最终评审链路，验证范围为独立接口和隔离原生 reviewer，见[本版验收记录](openclaw-acceptance-6.md)。本版尚未在真实网页／终端聊天重新验收完整任务。
+这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。`.7` 增加独立状态页、终端控制、仅验收模式、核心提交保护和发送回执。保留 `.6` 的 GLM 修复。实际验证范围、未满足的原生入口能力和逐项证据见[本版验收记录](openclaw-acceptance-7.md)。
 
 ## 安装与启用
 
 ```sh
-openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.6.tgz
+openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.7.tgz
 # 已安装旧版时
-openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.6.tgz
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.7.tgz
 ```
 
 将以下内容合并到现有配置；ark 请替换成已配置的 provider。**插件开关与模型运行时都要设置**；默认开启的 supervisedExecution 不会自动改写模型配置。
@@ -53,7 +53,40 @@ openclaw plugins inspect runtime-corrector --runtime --json
 
 执行进度可见，未通过的候选完成回复不进入父聊天最终历史。父历史保留真实用户输入、必要工具证据与最终结果；自动纠偏提示和评审提示保存在内部记录。等待用户、预算耗尽和未验证均明确说明，不能视为成功。
 
-执行中补充要求：等到出现执行进度后，终端直接发送第二条消息；网页可能先显示 Queued，点击该消息的 **Steer** 可投递给当前执行。普通排队表示等待下一回合。插件必须收到宿主的写入确认才记为已接收；投递失败停止续跑。自动反馈不更新需求权威，不重置预算。网页 Stop、终端 Escape 或原生 `/stop`、会话重置、插件关闭均取消当前执行和评审。此版 TUI 的 Ctrl+C 用于退出提示，不等同于取消。
+执行中补充要求：等到出现执行进度后，终端直接发送第二条消息；网页可能先显示 Queued，点击该消息的 **Steer** 可投递给当前执行。普通排队表示等待下一回合。插件分别记录接收、基线提交和工作会话投递确认；未确认的变更不能被视为执行器已采纳，也不能沿用旧完成资格。自动反馈不更新需求权威，不重置预算。网页 Stop、终端 Escape 或原生 `/stop`、会话重置、插件关闭均取消当前执行和评审。此版 TUI 的 Ctrl+C 用于退出提示，不等同于取消。
+
+## 状态页与独立终端控制（.7）
+
+正常任务仍在原生聊天提交。工作进行期间，打开同一个 Gateway 的 `/plugins/runtime-corrector/`，例如 `http://127.0.0.1:18789/plugins/runtime-corrector/`。填写聊天网址中 `session` 参数解码后的会话键（如 `agent:main:main`），使用现有 Gateway 凭据或已有设备认证连接。页面沿用固定版本原生浏览器客户端的认证和配对，不包含任务数据或预置凭据。
+
+页面每两秒读取状态，等待秒数在本地显示；计时不会续期任务或伪造进展。逐文件区分别显示问题、反馈已送达、发生修改、复验确认解决。展开记录可核对工具调用编号、评审及文件快照。没有可靠旧证据时显示未验证，不补造通过。
+
+原生聊天还可输入 `/runtime-corrector status`、`/runtime-corrector feedback` 或 `/runtime-corrector help`。这些命令只读，不使用模型；该固定版本缺少独立聊天回复的可靠历史回执，忙碌队列仍可能延迟到达。
+
+终端入口与页面共用认证 Gateway 方法：
+
+```sh
+openclaw runtime-corrector status --session agent:main:main
+openclaw runtime-corrector feedback --session agent:main:main
+openclaw runtime-corrector stop --session agent:main:main --command-id stop-001
+openclaw runtime-corrector update-requirements --session agent:main:main --command-id req-001 --text '最终文件必须保留重启后的数据'
+openclaw runtime-corrector reverify --session agent:main:main --command-id verify-001
+openclaw runtime-corrector continue-correction --session agent:main:main --command-id fix-001
+openclaw runtime-corrector receipt --session agent:main:main --command-id verify-001
+```
+
+加 `--json` 查看完整结构化记录；`--action-id` 默认为 `main`，同一原消息的子动作使用不同 actionId。客户端未指定 commandId 时生成并在当前 OpenClaw 状态目录的 `runtime-corrector/cli-commands/` 保存编号。响应丢失后先查回执；同一身份、commandId/actionId 的重复请求复用原记录，同键不同内容返回冲突。浏览器和 CLI 可能具有不同设备身份，指令回执应使用原客户端身份查询。
+
+- 状态／反馈查询不调用模型，不创建任务，不更改需求版本或预算。任务须先经原生聊天建立可信会话绑定；客户端不能指定工作目录。
+- 要求变更区分 RECEIVED、BASELINE_COMMITTED、APPLIED_TO_WORKER；无活动 worker 时明确返回 NO_ACTIVE_WORKER。接收后旧完成证据立即失效。队列确认不等于模型已采纳。
+- 停止保留文件与记录。运行句柄仍未退出时显示 STOPPING／STOP_REQUESTED_UNCONFIRMED，不能当作全部调用已经退出。
+- 仅重验使用新、有限的评审时间窗，不继承旧任务过期时限或取消信号；一次指令只授权一次核心验收，不扣内容修正次数。reviewer 的一次格式修复仍共用该时间窗。活动执行尚未结束时需先停止或等待，避免并行验收。
+- 仅重验发现当前阻断偏差后，才可授权继续修正。派发意图与预算同事务提交，一次授权只扣一次；基础设施故障不能变成修正授权。文件或需求又变了，需先重验。
+- 最终发送有 READY、SEND_COMMITTED、ACKED／UNKNOWN 四种状态。UNKNOWN 不自动重发；可用 `receipt --delivery-id <状态中的 delivery.id>` 核对原生历史。ACKED 只证明宿主历史持久化，不能证明用户已阅读。发送提交之后才取消，不承诺消息绝不会到达。
+
+页面与 CLI 的回复独立于活动聊天回复，不镜像为用户消息，不再送入 reviewer。原生网页普通发送／Queue 和 TUI 忙碌输入受到 `2026.7.1-2` 的入口能力限制；不能保证立即答复状态，也不能以独立入口通过替代它们通过。Steer 仅在宿主确实提供可信 recorder 与确认投递时更新真实要求；纯查询指向独立入口。会话重置后必须重新建立绑定。
+
+故障注入的任务验收、已检测故障覆盖、完整纠偏闭环、逐文件质量分别展示。核心确认注入步骤执行完毕，不表示保留的坏 design/tasks 已合格；旧记录缺乏逐文件评审证据时仍标为未验证。
 
 ## 模型与凭据
 
@@ -108,7 +141,7 @@ reviewers:
 
 运行失败、无最终输出或输出被截断时，明确记录 `REVIEWER_RUNTIME_FAILED` 及失败代码；它们不再触发“JSON 格式修复”。真正的 JSON／schema 格式错误仍最多修复一次，共用原截止时间。原核心负责基础设施有限重试与 UNVERIFIED 停止，失败不计为实际偏差纠正，也不视为验收通过。
 
-本次按阶段要求只生成安装包，没有替换当前插件或重启 Gateway。若以后安装 `.6` 后需要回退，重新安装保留的 `runtime-corrector-openclaw-1.9.1-openclaw.5.tgz` 并重载 Gateway；无需删除 `.runtime-corrector/`。
+`.6` 的历史验证保留在 [acceptance-6](openclaw-acceptance-6.md)。本次仅在临时配置中安装与重启测试 Gateway，未替换用户安装。
 
 ## 总运行时限与未验证交付（.5）
 
@@ -128,12 +161,14 @@ openclaw config set agents.defaults.timeoutSeconds 3600
 
 ## 关闭与回退
 
-退回 `.3` 可直接重新安装保留的旧包后重启，配置结构兼容；旧版不包含上述长评审和上下文修复：
+回退基线为 `.6`。先停止活动任务并核对停止回执，再安装保留的旧包，重启 Gateway：
 
 ```sh
-openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.3.tgz
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.6.tgz
 openclaw gateway restart
 ```
+
+保留 `.runtime-corrector/` 配置和 `.runtime-correction/` 运行记录。旧版不会提供本版状态页、独立控制及新事务保护；回退不是已暂停任务的自动续跑授权。不要在不确定旧运行是否退出时重新执行有副作用的操作。
 
 仅关闭受控执行：将 plugins.entries.runtime-corrector.config.supervisedExecution 设为 false，重启 Gateway，执行器恢复原生 Hook 行为。运行时关闭该开关会取消当前受控任务。
 

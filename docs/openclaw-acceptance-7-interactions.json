@@ -1,0 +1,313 @@
+{
+  "host": "2026.7.1-2",
+  "profile": "isolated temporary Gateway, port 19877",
+  "userGatewayUntouched": true,
+  "modelProvider": "work/ark-code-latest",
+  "reviewProvider": "review/glm-5.3",
+  "projectConfigSha256": "e21a73a75ef5b4e6c8d167426d6961a9ed474b33cdcca86b326aa49002b5ce13",
+  "latency": {
+    "count": 20,
+    "min": 19.11058300000002,
+    "p95": 26.135999999999967,
+    "max": 52.621667,
+    "samples": [
+      {
+        "ms": 52.621667,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 25.155750000000012,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 22.418416999999977,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 26.135999999999967,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 21.580334000000107,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 20.915874999999915,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 21.050042000000076,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.911292000000003,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 20.36866699999996,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 20.048124999999914,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 22.577625000000012,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.59125000000006,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.712709000000018,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.204375000000027,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.854790999999977,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 20.14820899999995,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.84079100000008,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.11058300000002,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 20.189458999999943,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      },
+      {
+        "ms": 19.690458000000035,
+        "version": 2,
+        "epoch": 2,
+        "budget": {
+          "correctionsUsed": 1,
+          "maximum": 3,
+          "infrastructureConsecutiveFailures": 0,
+          "infrastructureTotalFailures": 0
+        },
+        "phase": "COMPLETED"
+      }
+    ]
+  },
+  "authInvalidToken": "rejected 1008 token mismatch",
+  "webNativeCancel": "Interrupted",
+  "tuiNativeCancel": "run aborted; connected | aborted",
+  "webQueue": "query remained Queued until Steer was selected; not instant",
+  "nativeQuery": "read-only report visible; no durable transcript recorder or history ACK available",
+  "uiReconnect": "authenticated; same task and budget restored",
+  "mainControlReceipts": [
+    {
+      "commandId": "366d492f-bc2d-423d-9910-1fddccd740be",
+      "action": "reverify",
+      "status": "UNVERIFIED",
+      "windowId": "6d8f721a-dbab-4e1b-8da1-b624f79cd33f",
+      "receivedAt": 1789542057389,
+      "startedAt": 1789542057407,
+      "deadlineAt": 1789542297407,
+      "reason": "CANCELLED_OR_DEADLINE"
+    },
+    {
+      "commandId": "48231938-085a-4fb4-8d29-2e51fa53c36b",
+      "action": "stop",
+      "status": "STOPPED",
+      "windowId": null,
+      "receivedAt": 1789542075943,
+      "startedAt": null,
+      "deadlineAt": null,
+      "reason": null
+    },
+    {
+      "commandId": "29bf2edc-497e-436b-a772-0745fa9d7c43",
+      "action": "reverify",
+      "status": "ASSESSED",
+      "windowId": "1d6e312c-c6b2-4577-ab48-88a51fee7485",
+      "receivedAt": 1789542128653,
+      "startedAt": 1789542128670,
+      "deadlineAt": 1789542368670,
+      "reason": null
+    }
+  ],
+  "nativePassthrough": {
+    "implementation": "native attempt with official provider auth preparation, per-attempt in-memory stores",
+    "webReplies": [
+      "NATIVE_LIFECYCLE_OK",
+      "FRESH_NATIVE_OK"
+    ],
+    "inputRespondingIndicatorCleared": true,
+    "sessionStatus": "done",
+    "hasActiveRun": false,
+    "sidebarStaleUntilReload": true
+  },
+  "backgroundIsolation": {
+    "trigger": "system event / heartbeat",
+    "lastHeartbeat": "2392b718",
+    "taskBytesUnchanged": true,
+    "requirementVersion": 2,
+    "correctionsUsed": 1,
+    "verification": "PASS"
+  }
+}

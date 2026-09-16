@@ -1371,3 +1371,40 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
   assert.equal(laterBlip.decision, "block", "recovery resets the consecutive-failure count");
   assert.match(laterBlip.feedback, /attempt 1\/2/u);
 });
+
+for (const classification of ["TASK_COMPLETE", "INTERMEDIATE"]) test(`OpenClaw verify_only ${classification} records blockers without debiting and authorizes once`, async (t) => {
+  const { decisionGuard, authorizeCorrection } = await import("../lib/runtime-v2/task-store.mjs");
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { skillCorrection: { enabled: false } });
+  const task = await ensureTask({ projectRoot: root, sessionId: "verify-only" });
+  const reviewerFactory = fakeReviewerFactory({ stopAssessment: async (request) => {
+    if (classification === "TASK_COMPLETE") return stopReview(request);
+    const gt = await loadCurrentGroundTruth(root, task.taskId);
+    return { summary: "A hard requirement remains unmet", stopClassification: "INTERMEDIATE", stage: null,
+      findings: [{ deviationKey: "injected", rootCauseId: "REQUIREMENT_OMITTED", severity: "error", reason: "Required behavior missing",
+        actualEvidence: ["snapshot"], expectedConstraint: gt.claims[0].text, violatedGroundTruthIds: [gt.claims[0].claimId], suggestedNextAction: "Fix it" }], metricObjectJudgements: [] };
+  } });
+  const options = { input: { cwd: root, session_id: "verify-only", transcript_path: transcript, hook_event_name: "Stop", last_assistant_message: "Implementation is complete." },
+    projectRoot: root, plan, reviewerFactory, assessmentContext: { mode: "verify_only", assessmentId: "verify-1",
+      guard: decisionGuard(task), deadlineAt: Date.now() + 30000, maxCorrections: 3 } };
+  const result = await handleRuntimeV2Event(options);
+  assert.equal(result.stale, undefined);
+  assert.equal(result.decision, "block");
+  let current = JSON.parse(await fs.readFile(taskStatePath(root, task.taskId), "utf8"));
+  assert.equal(current.stop.correctionAttempts, 0);
+  assert.equal(current.correctionEpoch.id, 1);
+  assert.equal(current.pendingCorrection.status, "AWAITING_AUTHORIZATION");
+  assert.ok(Object.values(current.deviations).length);
+  assert.ok(Object.values(current.deviations).every((family) => family.observations.every((observation) => !observation.deliveredAt)));
+  const calls = reviewerFactory.calls.length;
+  const repeated = await handleRuntimeV2Event(options);
+  assert.deepEqual(repeated, result);
+  assert.equal(reviewerFactory.calls.length, calls);
+  const authorization = { projectRoot: root, taskId: task.taskId, intentId: "continue-1", context: { guard: decisionGuard(current) } };
+  const intent = await authorizeCorrection(authorization);
+  assert.equal(intent.correctionAttempt, 1);
+  assert.deepEqual(await authorizeCorrection(authorization), intent);
+  current = JSON.parse(await fs.readFile(taskStatePath(root, task.taskId), "utf8"));
+  assert.equal(current.stop.correctionAttempts, 1);
+});

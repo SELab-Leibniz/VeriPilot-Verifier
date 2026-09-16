@@ -34,6 +34,10 @@ function api(projectRoot, runner = async () => ({ payloads: [{ text: '{"ok":true
     on: (name, handler, options) => hooks.set(name, { handler, options }),
     registerAgentToolResultMiddleware: (handler, options) => { value.middleware = { handler, options }; },
     registerTool: (factory) => { value.toolFactory = factory; } };
+  value.registerGatewayMethod = () => {};
+  value.registerCli = () => {};
+  value.registerCommand = () => {};
+  value.registerHttpRoute = () => {};
   value.registerAgentHarness = (harness) => { value.harness = harness; };
   return value;
 }
@@ -48,6 +52,8 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
+  assert.equal(pkg.version, "1.9.1-openclaw.7");
+  assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2");
   assert.equal(pkg.openclaw.compat.pluginApi, "2026.7.1");
   for (const item of ["hooks/hooks.json", ".claude-plugin", ".cac-plugin", "lib/hosts/claude.mjs", "lib/hosts/codeagent.mjs"]) {
@@ -105,7 +111,7 @@ test("native artifact review is bounded by the supervised parent's remaining tim
   });
   const runtime = createRuntime(host, { pluginRoot });
   const ctx = { sessionId: "deadline-parent", runId: "deadline-run", workspaceDir: project,
-    agentId: "main", provider: "test", modelId: "test", prompt: "Write requirements." };
+    agentId: "main", sessionKey: "agent:main:deadline", sessionFile: path.join(project, "native.jsonl"), provider: "test", modelId: "test", prompt: "Write requirements." };
   const deadlineAt = Date.now() + 1500;
   const state = await runtime.beginSupervised(ctx, new AbortController().signal, { deadlineAt });
   const worker = runtime.bindWorker("deadline-worker", state);
@@ -149,11 +155,11 @@ test("native snapshots and restarts preserve source ids, including repeated user
   let state = { projectRoot: project, agentId: "main", sessionId: "s", entries: [] };
   await persistTranscript(state, { messages: [], prompt: "Do it", realUser: true, runId: "one" });
   const firstId = state.entries[0].uuid;
-  const native = [{ id: "native-1", message: { role: "user", content: "Do it", timestamp: 1 } }];
+  const native = [{ id: "native-1", message: { role: "user", content: "Do it", idempotencyKey: "one", timestamp: 1 } }];
   await persistTranscript(state, { messages: native, prompt: "Do it", realUser: true, runId: "two" });
   const secondId = state.entries[1].uuid;
   assert.notEqual(firstId, secondId);
-  native.push({ id: "native-2", message: { role: "user", content: "Do it", timestamp: 2 } });
+  native.push({ id: "native-2", message: { role: "user", content: "Do it", idempotencyKey: "two", timestamp: 2 } });
   state = { projectRoot: project, agentId: "main", sessionId: "s", entries: [] };
   await persistTranscript(state, { messages: native });
   assert.deepEqual(state.entries.map((item) => item.uuid), [firstId, secondId]);
@@ -523,7 +529,7 @@ evidenceRoots: [evidence]
   factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
   const host = api(project);
   const runtime = createRuntime(host, { pluginRoot, reviewerFactory: factory });
-  const ctx = { sessionId: "main", agentId: "main", sessionKey: "agent:main:main", runId: "run-1", workspaceDir: project, trigger: "user" };
+  const ctx = { sessionId: "main", agentId: "main", sessionKey: "agent:main:main", runId: "run-1", sessionFile: path.join(project, "native.jsonl"), workspaceDir: project, trigger: "user" };
   return { project, host, runtime, ctx, calls };
 }
 
@@ -691,4 +697,18 @@ test("native artifact checks retain deterministic rules, semantic review and una
   assert.match(result?.result.content.at(-1).text ?? "", /REQUIRE-GOAL/u);
   assert.match(result?.result.content.at(-1).text ?? "", /AGENT-GOAL/u);
   assert.equal(await fs.readFile(file, "utf8"), "# Draft\n");
+});
+
+test('failed worker Read never makes an exploratory path a required deliverable', async (t) => {
+  const project = await workspace(t), host = api(project), runtime = createRuntime(host, { pluginRoot });
+  const ctx = { workspaceDir: project, sessionId: 'read-parent', sessionKey: 'agent:main:read', sessionFile: path.join(project, 'session.jsonl'), agentId: 'main', runId: 'read-run', modelId: 'test', provider: 'test' };
+  const state = await runtime.beginSupervised(ctx, new AbortController().signal, { deadlineAt: Date.now() + 10000 });
+  const missing = path.join(project, 'workflow.yaml');
+  await runtime.beforeTool({ toolName: 'read', toolCallId: 'read-missing', params: { path: missing } }, ctx);
+  await runtime.toolResult({ toolName: 'read', toolCallId: 'read-missing', args: { path: missing }, isError: true, result: { content: [{ type: 'text', text: 'ENOENT' }] } }, ctx);
+  assert.equal(state.observedPaths.has(missing), false);
+  const existing = path.join(project, 'reference.md'); await fs.writeFile(existing, 'A real reference');
+  await runtime.beforeTool({ toolName: 'read', toolCallId: 'read-valid', params: { path: existing } }, ctx);
+  await runtime.toolResult({ toolName: 'read', toolCallId: 'read-valid', args: { path: existing }, result: { content: [{ type: 'text', text: 'A real reference' }] } }, ctx);
+  assert.equal(state.observedPaths.has(existing), true);
 });

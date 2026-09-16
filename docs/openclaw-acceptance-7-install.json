@@ -1,0 +1,54 @@
+{
+  "host": "2026.7.1-2",
+  "platform": "darwin",
+  "isolatedPort": 19877,
+  "userInstallationReplaced": false,
+  "hostPatched": false,
+  "sequence": [
+    "1.9.1-openclaw.7",
+    "1.9.1-openclaw.6",
+    "1.9.1-openclaw.7"
+  ],
+  "rollback": {
+    "version": "1.9.1-openclaw.6",
+    "status": "loaded",
+    "harness": [
+      "runtime-corrector-supervised"
+    ],
+    "cli": []
+  },
+  "restored": {
+    "version": "1.9.1-openclaw.7",
+    "status": "loaded",
+    "harness": [
+      "runtime-corrector-supervised"
+    ],
+    "cli": [
+      "runtime-corrector"
+    ],
+    "taskId": "task-20260916T053430388Z-715447a0",
+    "requirementVersion": 2,
+    "verification": "PASS",
+    "budget": {
+      "correctionsUsed": 1,
+      "maximum": 3,
+      "infrastructureConsecutiveFailures": 0,
+      "infrastructureTotalFailures": 0
+    }
+  },
+  "sourceTests": {
+    "total": 637,
+    "passed": 635,
+    "failed": 0,
+    "skipped": 2,
+    "skipReason": "Windows-only tests on macOS"
+  },
+  "builds": [
+    "claude",
+    "codeagent",
+    "openclaw"
+  ],
+  "projectConfigSha256": "e21a73a75ef5b4e6c8d167426d6961a9ed474b33cdcca86b326aa49002b5ce13",
+  "packageSecretsScan": "selected provider key and temporary Gateway token absent",
+  "nativeUiCompleteEquivalence": false
+}

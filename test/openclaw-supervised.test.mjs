@@ -15,14 +15,19 @@ async function fixture(t, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "oc-supervised-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const params = { sessionId: randomUUID(), runId: randomUUID(), agentId: "main", workspaceDir: root,
-    sessionFile: path.join(root, ".native", "parent.jsonl"), provider: "test", modelId: "test",
+    sessionFile: path.join(root, ".native", "parent.jsonl"), sessionKey: "agent:main:test", provider: "test", modelId: "test",
     model: { api: "anthropic-messages" }, prompt: "Create result.txt with VERIFIED.", timeoutMs: 10000 };
-  const state = {}, workers = new Map(), handles = new Map(), progress = [];
+  const state = { projectRoot: root, agentId: "main", sessionId: params.sessionId, observedPaths: new Set([path.join(root, "result.txt")]) }, workers = new Map(), handles = new Map(), progress = [];
   let rounds = 0, assessments = 0, begins = 0;
   const runtime = { isWorker: (id) => workers.has(id),
     async beginSupervised(_params, signal, options) { begins++; state.signal = signal; state.deadlineAt = options?.deadlineAt; return state; },
     bindWorker(id) { workers.set(id, {}); return { close() { workers.get(id).closed = true; } }; },
     async acceptRequirement() {},
+    async effectiveReviewTimeout() { return 30000; },
+    async commitRequirement(_state, _text, receipt) {
+      await withTaskState({ projectRoot: root, taskId: receipt.taskId }, (task) => { task.control.pendingRequirement = null; });
+      return { baselineCommitted: true, requirementVersion: 0 };
+    },
     async assessSupervised(_state, request) {
       assessments++;
       if (options.assess) {
@@ -34,7 +39,9 @@ async function fixture(t, options = {}) {
       const passed = content === "VERIFIED";
       await withTaskState({ projectRoot: root, taskId: task.taskId }, (taskState) => {
         taskState.status = passed ? "COMPLETED" : "ACTIVE";
-        taskState.verification = { status: passed ? "PASS" : "DEVIATION" };
+        taskState.verification = { status: passed ? "PASS" : "DEVIATION", evidence: request.assessmentContext?.evidence?.(),
+          requirementVersion: taskState.groundTruth.version, requirementDigest: taskState.groundTruth.digest,
+          rulesDigest: "fixture-rules", assessmentId: request.assessmentId, generation: taskState.control?.generation, cancelEpoch: taskState.control?.cancelEpoch };
         if (!passed) taskState.stop.correctionAttempts++;
       });
       return { decision: passed ? "allow" : "block", report: { status: passed ? "PASS" : "DEVIATION" },
@@ -42,6 +49,7 @@ async function fixture(t, options = {}) {
     } };
   const sdk = {
     onRunActivity: () => () => {}, reportProgress: () => {},
+    prepareNativeAttempt: async params => ({ ...params, agentHarnessRuntimeOverride: 'openclaw' }),
     workerPolicy: (params, key) => ({ config: params.config, sandboxSessionKey: key }),
     nativeHarness: () => ({ runAttempt: async () => ({ native: true }) }),
     acquireSessionWriteLock: async () => ({ release: async () => {} }),
@@ -51,7 +59,9 @@ async function fixture(t, options = {}) {
         if (!message) return;
       }
       await fs.mkdir(path.dirname(transcriptPath), { recursive: true });
-      await fs.appendFile(transcriptPath, JSON.stringify({ type: "message", id: randomUUID(), message }) + "\n");
+      const messageId = randomUUID();
+      await fs.appendFile(transcriptPath, JSON.stringify({ type: "message", id: messageId, message }) + "\n");
+      return { messageId };
     },
     setActiveEmbeddedRun(id, handle) { handles.set(id, handle); }, clearActiveEmbeddedRun(id) { handles.delete(id); },
     abortAgentHarnessRun() {}, emitAgentEvent(event) { progress.push(event); },
@@ -73,6 +83,10 @@ async function fixture(t, options = {}) {
       assert.equal(child.replyOperation, undefined);
       assert.equal(child.deferTerminalLifecycle, false);
       assert.equal(child.deferTerminalLifecycleEnd, false);
+      if (!options.noTask) {
+        const task = await ensureTask({ projectRoot: root, sessionId: params.sessionId });
+        await state.onTaskState?.(task);
+      }
       if (options.worker) return options.worker({ child, rounds, root, handles, params });
       if (rounds > 1) assert.equal(child.inputProvenance.kind, "internal_system");
       await fs.writeFile(path.join(root, "result.txt"), rounds === 1 ? "DRAFT" : "VERIFIED");
@@ -208,7 +222,7 @@ test("cancellation after budget expiry still suppresses the unverified final rep
     if (request.message.role === "assistant") parent.abort();
     return append(request);
   };
-  const result = await f.harness.runAttempt({ ...f.params, abortSignal: parent.signal, timeoutMs: 180 });
+  const result = await f.harness.runAttempt({ ...f.params, abortSignal: parent.signal, timeoutMs: 1000 });
   assert.equal(result.aborted, true);
   assert.equal(f.progress.some(e => e.data.phase === "final"), false);
   assert.doesNotMatch(await fs.readFile(f.params.sessionFile, "utf8"), /总运行时限|Task completed/u);
@@ -230,15 +244,16 @@ test("a final transcript lock cannot publish candidate success after the work bu
   const f = await fixture(t, { assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }) });
   const append = f.sdk.appendSessionTranscriptMessage;
   f.sdk.appendSessionTranscriptMessage = async (request) => {
-    if (request.message.content?.[0]?.text === "Task completed.") await new Promise(resolve => setTimeout(resolve, 220));
+    if (request.message.content?.[0]?.text === "Task completed.") await new Promise(resolve => setTimeout(resolve, 1100));
     return append(request);
   };
-  const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 180 });
+  const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 1000 });
   assert.equal(result.aborted, false);
   assert.match(result.lastAssistant.content[0].text, /总运行时限/u);
   const history = await fs.readFile(f.params.sessionFile, "utf8");
   assert.doesNotMatch(history, /Task completed/u);
-  assert.match(history, /总运行时限/u);
+  const saved = JSON.parse(await fs.readFile(path.join(controllerDirectory(f.root, f.params.sessionId), "control.json")));
+  assert.equal(saved.result.deliveryStatus, "UNKNOWN", "unconfirmed send is never retried");
 });
 
 test("a superseded native result cannot overwrite the current core task with a failure", async (t) => {
@@ -272,7 +287,16 @@ test("artifact changes after assessment cannot be delivered as verified", async 
 test("disabled supervised execution uses the native hook adapter", async (t) => {
   const f = await fixture(t);
   f.api.pluginConfig.supervisedExecution = false;
-  assert.deepEqual(await f.harness.runAttempt(f.params), { native: true });
+  f.api.runtime.agent.runEmbeddedAgent = async () => { throw new Error('Must not nest another public lifecycle'); };
+  f.sdk.nativeHarness = () => ({ runAttempt: async params => {
+    assert.equal(params.model, f.params.model);
+    assert.equal(params.agentHarnessRuntimeOverride, 'openclaw');
+    assert.equal(params.sessionId, f.params.sessionId);
+    assert.equal(params.runId, f.params.runId);
+    assert.equal(params.abortSignal, f.params.abortSignal);
+    return { assistantTexts: ['Native answer'] };
+  } });
+  assert.equal((await f.harness.runAttempt(f.params)).assistantTexts[0], 'Native answer');
   assert.equal(f.counts().rounds, 0);
 });
 
@@ -298,7 +322,7 @@ test("a genuine requirement during assessment cancels that assessment and is dur
   await reviewing;
   let persisted = false;
   await f.handles.get(f.params.sessionId).queueMessage("Keep the filename result.txt.", { userTurnTranscriptRecorder: {
-    resolveMessage: async () => ({ role: "user", content: "Keep the filename result.txt.", provenance: { kind: "external_user" } }),
+    resolveMessage: async () => ({ role: "user", idempotencyKey: "steer-1", content: "Keep the filename result.txt.", provenance: { kind: "external_user" } }),
     persistApproved: async () => { persisted = true; }, hasPersisted: () => persisted,
   } });
   assert.equal(persisted, true);
@@ -338,7 +362,7 @@ test("a stale generation cannot overwrite newer controller state", async (t) => 
 });
 
 test("two sessions retain independent controllers in the same workspace", async (t) => {
-  const f = await fixture(t, { assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }), evidence: async () => "stable",
+  const f = await fixture(t, { noTask: true, assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }), evidence: async () => "stable",
     worker: async () => ({ payloads: [{ text: "Hello" }], meta: {} }) });
   const results = await Promise.all([f.harness.runAttempt(f.params), f.harness.runAttempt({ ...f.params, sessionId: randomUUID(),
     runId: randomUUID(), sessionFile: path.join(f.root, ".native", "second.jsonl") })]);
@@ -380,7 +404,7 @@ test("unfixed work stops at the core budget; a waiting question is delivered wit
   assert.equal(f.counts().rounds, 3);
   assert.match(result.lastAssistant.content[0].text, /次数已用尽/u);
   const waiting = await fixture(t, { assess: async () => ({ decision: "allow", review: { stopClassification: "WAITING_FOR_USER" } }),
-    worker: async () => ({ payloads: [{ text: "Which destination should I use?" }], meta: {} }) });
+    worker: async ({ root }) => { await fs.writeFile(path.join(root, "result.txt"), "pending"); return { payloads: [{ text: "Which destination should I use?" }], meta: {} }; } });
   const question = await waiting.harness.runAttempt(waiting.params);
   assert.match(question.lastAssistant.content[0].text, /自动执行已暂停/u);
   assert.match(question.lastAssistant.content[0].text, /Which destination/u);
@@ -493,4 +517,29 @@ test("long native sessions retain a bounded transcript lock and respect explicit
   assert.equal(config.session.writeLock.maxHoldMs, undefined);
   const explicit = { session: { writeLock: { maxHoldMs: 120000 } } };
   assert.equal(withNativeSessionLockBudget(explicit, 900000), explicit);
+});
+
+test('native heartbeat and cron never own or reset the current correction task', async (t) => {
+  const f = await fixture(t);
+  const task = await ensureTask({ projectRoot: f.root, sessionId: f.params.sessionId });
+  await withTaskState({ projectRoot: f.root, taskId: task.taskId }, state => {
+    state.control = { generation: 'existing', cancelEpoch: 1 };
+    state.pendingCorrection = { status: 'AWAITING_AUTHORIZATION' };
+    state.stop.correctionAttempts = 2;
+  });
+  const before = await fs.readFile(path.join(f.root, '.runtime-correction', 'tasks', task.taskId, 'task.json'), 'utf8');
+  let native = 0;
+  f.api.runtime.agent.runEmbeddedAgent = async () => { throw new Error('Must not nest another public lifecycle'); };
+  f.sdk.nativeHarness = () => ({ runAttempt: async params => {
+    native++;
+    assert.equal(params.agentHarnessRuntimeOverride, 'openclaw');
+    assert.equal(params.model, f.params.model);
+    assert.equal(params.runId, f.params.runId);
+    assert.equal(params.inputProvenance.kind, 'internal_system');
+    await assert.rejects(f.harness.runAttempt({ ...f.params, trigger: 'user' }), /Internal runs/);
+    return { assistantTexts: ['HEARTBEAT_OK'] };
+  } });
+  for (const trigger of ['heartbeat', 'cron']) assert.equal((await f.harness.runAttempt({ ...f.params, trigger })).assistantTexts[0], 'HEARTBEAT_OK');
+  assert.equal(native, 2); assert.equal(f.counts().begins, 0);
+  assert.equal(await fs.readFile(path.join(f.root, '.runtime-correction', 'tasks', task.taskId, 'task.json'), 'utf8'), before);
 });

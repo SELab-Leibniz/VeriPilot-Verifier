@@ -16,9 +16,23 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const script = `
     import assert from 'node:assert/strict';
-    import {loadSupervisedCompatibility} from ${JSON.stringify(new URL("../lib/openclaw/compat-2026.7.1-2.mjs", import.meta.url).href)};
+    import {loadSupervisedCompatibility, loadInteractionCompatibility} from ${JSON.stringify(new URL("../lib/openclaw/compat-2026.7.1-2.mjs", import.meta.url).href)};
     process.argv[1] = ${JSON.stringify(executable)};
     const sdk = await loadSupervisedCompatibility();
+    const interaction = await loadInteractionCompatibility();
+    assert.equal(interaction.version, '2026.7.1-2');
+    assert.equal(interaction.browserClient, 'gateway-CWCQz7bR.js');
+    assert.equal(typeof interaction.callGatewayFromCli, 'function');
+    const fs = await import('node:fs/promises');
+    const store = ${JSON.stringify(path.join(directory, "sessions.json"))};
+    await fs.writeFile(store, JSON.stringify({'agent:main:bound':{sessionId:'original',updatedAt:1}}));
+    assert.equal(interaction.currentSession({session:{store}}, 'main', 'agent:main:bound').sessionId, 'original');
+    await fs.writeFile(store, JSON.stringify({'agent:main:bound':{sessionId:'replaced',updatedAt:2}}));
+    assert.equal(interaction.currentSession({session:{store}}, 'main', 'agent:main:bound').sessionId, 'replaced');
+    const hooks = await fs.readFile(${JSON.stringify(path.join(path.dirname(executable), "dist/hook-types-DQ9eTy2x.d.ts"))}, 'utf8');
+    const reply = hooks.slice(hooks.indexOf('type PluginHookReplyDispatchContext'), hooks.indexOf('type PluginHookReplyDispatchResult'));
+    assert.ok(reply.includes('PluginHookReplyDispatchContext'));
+    assert.ok(!reply.includes('userTurnTranscriptRecorder'));
     const diagnostics = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/plugin-sdk/diagnostic-runtime.js")).href)});
     const activity = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/diagnostic-run-activity-Jf95dtVL.js")).href)});
     sdk.reportProgress({sessionId:'parent-progress',sessionKey:'agent:main:progress',runId:'progress-run'},'native-review-progress');
@@ -29,6 +43,19 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     assert.equal(projector.i({previousText:'正在执行任务。',nextText:'VERIFIED',nextDelta:''}),'VERIFIED',
       'final snapshots must replace progress in the stock web/TUI transport');
     assert.equal(sdk.nativeHarness({provider:'anthropic',modelId:'contract',config:{}}).id,'openclaw');
+    const nativeParams = { provider:'test-native',modelId:'contract',runId:'one-lifecycle',
+      agentDir:${JSON.stringify(directory)},workspaceDir:${JSON.stringify(directory)},
+      config:{models:{providers:{'test-native':{apiKey:'contract-fixture-only',baseUrl:'https://example.invalid',models:[]}}}},
+      model:{id:'contract',provider:'test-native',api:'anthropic-messages',baseUrl:'https://example.invalid'},
+      runtimePlan:{observability:{harnessId:'runtime-corrector-supervised'}} };
+    const prepared = await sdk.prepareNativeAttempt(nativeParams);
+    assert.equal(prepared.runId, nativeParams.runId);
+    assert.equal(prepared.agentHarnessId,'openclaw');
+    assert.equal(prepared.runtimePlan, undefined);
+    assert.ok(prepared.resolvedApiKey);
+    assert.equal(await prepared.authStorage.getApiKey(prepared.model.provider), prepared.resolvedApiKey);
+    assert.notEqual((await sdk.prepareNativeAttempt(nativeParams)).authStorage, prepared.authStorage,
+      'provider credentials must stay in per-attempt stores');
     for (const mode of ['off','non-main','all']) {
       const config={agents:{defaults:{sandbox:{mode}}},tools:{sandbox:{tools:{allow:['read'],deny:['exec']}}}};
       const policy=sdk.workerPolicy({config,sessionKey:'agent:main:main'},'agent:main:rc-worker:test');
@@ -44,6 +71,7 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     assert.equal(recorder.hasPersisted(),true);
     console.log('CONTRACT_PASS');
   `;
-  const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 30000 });
+  const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 30000,
+    env: { ...process.env, OPENCLAW_STATE_DIR: path.join(directory, 'host-state'), OPENCLAW_CONFIG_PATH: path.join(directory, 'host-config.json') } });
   assert.match(output, /CONTRACT_PASS/u);
 });
