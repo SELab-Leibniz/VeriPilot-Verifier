@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { createSupervisedHarness, completionStatus } from "../lib/openclaw/supervised.mjs";
 import { withController, controllerDirectory, privateJson, isPersistedWorker } from "../lib/openclaw/controller-store.mjs";
 import { ensureTask, withTaskState } from "../lib/runtime-v2/task-store.mjs";
-import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
+import { runInternalExecution, runManagedExecution, runBackgroundExecution, isInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createEvidenceLedger } from "../lib/openclaw/evidence.mjs";
 
 async function fixture(t, options = {}) {
@@ -92,7 +92,7 @@ async function fixture(t, options = {}) {
       await fs.writeFile(path.join(root, "result.txt"), rounds === 1 ? "DRAFT" : "VERIFIED");
       return { payloads: [{ text: "Task completed." }], meta: {} };
     } } } };
-  const harness = createSupervisedHarness(api, runtime, { compatibility: async () => sdk, evidence: options.evidence });
+  const harness = createSupervisedHarness(api, runtime, { compatibility: async () => sdk, evidence: options.evidence, waitForRetry: options.waitForRetry });
   return { root, params, harness, api, runtime, handles, progress, sdk,
     counts: () => ({ rounds, assessments, begins }) };
 }
@@ -542,4 +542,111 @@ test('native heartbeat and cron never own or reset the current correction task',
   for (const trigger of ['heartbeat', 'cron']) assert.equal((await f.harness.runAttempt({ ...f.params, trigger })).assistantTexts[0], 'HEARTBEAT_OK');
   assert.equal(native, 2); assert.equal(f.counts().begins, 0);
   assert.equal(await fs.readFile(path.join(f.root, '.runtime-correction', 'tasks', task.taskId, 'task.json'), 'utf8'), before);
+});
+
+test('host-spawned children use one native lifecycle without nesting controllers or changing parent truth', async (t) => {
+  const f = await fixture(t);
+  const task = await ensureTask({ projectRoot: f.root, sessionId: f.params.sessionId });
+  const taskFile = path.join(f.root, '.runtime-correction', 'tasks', task.taskId, 'task.json');
+  const before = await fs.readFile(taskFile, 'utf8');
+  const child = { ...f.params, sessionId: randomUUID(), sessionKey: `agent:main:subagent:${randomUUID()}`,
+    runId: randomUUID(), trigger: 'user', spawnedBy: 'agent:main:rc-worker:parent',
+    onPartialReply: () => assert.fail('private child must not use parent live callbacks') };
+  let native = 0;
+  f.api.runtime.agent.runEmbeddedAgent = async () => assert.fail('must not re-enter the public run lifecycle');
+  f.sdk.nativeHarness = () => ({ runAttempt: async params => {
+    native++;
+    assert.equal(params.runId, child.runId);
+    assert.equal(params.agentHarnessRuntimeOverride, 'openclaw');
+    assert.equal(params.spawnedBy, child.spawnedBy);
+    assert.equal(params.inputProvenance.kind, 'internal_system');
+    assert.equal(params.onPartialReply, undefined);
+    assert.equal(params.suppressLiveStreamOutput, true);
+    assert.equal(isInternalExecution(), true, 'child hooks must not extract new requirements');
+    await assert.rejects(f.harness.runAttempt(f.params), /Internal runs/);
+    return { assistantTexts: ['RESEARCH_READY'] };
+  } });
+  for (const dispatch of [fn => fn(), fn => runManagedExecution('parent-worker', fn), fn => runBackgroundExecution('child-worker', fn)]) {
+    assert.equal((await dispatch(() => f.harness.runAttempt(child))).assistantTexts[0], 'RESEARCH_READY');
+  }
+  assert.equal(native, 3);
+  assert.equal(f.counts().begins, 0);
+  assert.equal(await fs.readFile(taskFile, 'utf8'), before);
+  await runInternalExecution('reviewer', () => assert.rejects(f.harness.runAttempt(child), /Internal runs/));
+  await runManagedExecution('parent-worker', async () => {
+    await assert.rejects(f.harness.runAttempt({ ...child, spawnedBy: undefined }), /Internal runs/);
+    await assert.rejects(f.harness.runAttempt({ ...child, sessionKey: f.params.sessionKey }), /Internal runs/);
+  });
+});
+
+const overloaded = () => Object.assign(new Error('provider secret must not leak'), { name: 'FailoverError', reason: 'overloaded', status: 429 });
+async function appendRejectedRequest(child, { pendingTool = false } = {}) {
+  const rows = [
+    { role: 'assistant', content: [{ type: 'toolCall', id: 'write-once', name: 'write', arguments: { path: 'result.txt' } }] },
+    ...pendingTool ? [] : [{ role: 'toolResult', toolCallId: 'write-once', content: [{ type: 'text', text: 'written' }] }],
+    { role: 'assistant', content: [], stopReason: 'error', errorMessage: 'ServerOverloaded' },
+  ];
+  await fs.appendFile(child.sessionFile, rows.map(message => JSON.stringify({ type: 'message', id: randomUUID(), message })).join('\n') + '\n');
+}
+
+test('transient model rejection resumes the same history without replaying tools or spending a correction round', async (t) => {
+  const calls = [], waits = [];
+  const f = await fixture(t, { waitForRetry: async ms => { waits.push(ms); }, worker: async ({ child, rounds, root }) => {
+    calls.push({ ...child });
+    if (rounds === 1) {
+      await fs.writeFile(path.join(root, 'result.txt'), 'VERIFIED');
+      await appendRejectedRequest(child);
+      throw overloaded();
+    }
+    assert.equal(await fs.readFile(path.join(root, 'result.txt'), 'utf8'), 'VERIFIED');
+    assert.match(await fs.readFile(child.sessionFile, 'utf8'), /write-once/);
+    assert.match(child.prompt, /transport-resume/);
+    assert.equal(child.transcriptPrompt, undefined);
+    assert.equal(child.inputProvenance.kind, 'internal_system');
+    return { payloads: [{ text: 'Task completed.' }], meta: {} };
+  } });
+  const result = await f.harness.runAttempt(f.params);
+  assert.equal(result.lastAssistant.content[0].text, 'Task completed.');
+  assert.equal(calls[0].sessionFile, calls[1].sessionFile);
+  assert.equal(calls[0].sessionId, calls[1].sessionId);
+  assert.notEqual(calls[0].runId, calls[1].runId);
+  assert.deepEqual(waits, [10000]);
+  const c = JSON.parse(await fs.readFile(path.join(controllerDirectory(f.root, f.params.sessionId), 'control.json')));
+  assert.equal(c.round, 1);
+  assert.equal(c.transientRetries, 1);
+  assert.equal(f.counts().assessments, 1);
+});
+
+test('model overload retries are bounded and expose a safe actionable reason', async (t) => {
+  const waits = [];
+  const f = await fixture(t, { waitForRetry: async ms => { waits.push(ms); }, worker: async ({ child }) => {
+    await appendRejectedRequest(child); throw overloaded();
+  } });
+  const result = await f.harness.runAttempt(f.params);
+  assert.deepEqual(waits, [10000, 30000]);
+  assert.equal(f.counts().rounds, 3);
+  assert.equal(f.counts().assessments, 0);
+  assert.match(result.lastAssistant.content[0].text, /模型服务暂时过载/u);
+  assert.doesNotMatch(result.lastAssistant.content[0].text, /provider secret/);
+});
+
+test('unsettled tools and non-rejection failures never trigger automatic model replay', async (t) => {
+  for (const mode of ['pending-tool', 'timeout', 'auth', 'missing-history']) {
+    const f = await fixture(t, { waitForRetry: async () => assert.fail('unsafe retry'), worker: async ({ child }) => {
+      if (mode !== 'missing-history') await appendRejectedRequest(child, { pendingTool: mode === 'pending-tool' });
+      throw Object.assign(overloaded(), { reason: ['timeout', 'auth'].includes(mode) ? mode : 'overloaded' });
+    } });
+    await f.harness.runAttempt(f.params);
+    assert.equal(f.counts().rounds, 1);
+    assert.equal(f.counts().assessments, 0);
+  }
+});
+
+test('cancelling during overload backoff prevents redispatch', async (t) => {
+  let f;
+  f = await fixture(t, { waitForRetry: async () => { await f.harness.reset({ sessionId: f.params.sessionId }); },
+    worker: async ({ child }) => { await appendRejectedRequest(child); throw overloaded(); } });
+  const result = await f.harness.runAttempt(f.params);
+  assert.equal(result.aborted, true);
+  assert.equal(f.counts().rounds, 1);
 });

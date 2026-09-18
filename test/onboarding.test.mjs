@@ -467,6 +467,33 @@ test("tool-triggered onboarding correlates every request and Ground Truth event 
 });
 
 
+test("exhausted native reviewer budgets do not restart the same full onboarding panel on the next hook", async (t) => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = onboardingPlan(root);
+  const fallback = onboardingFakeFactory({
+    incrementalOperations: (request) => request.currentGroundTruth.version === 0 ? [REQUIREMENT_OP] : [],
+    stopAssessment: passingStopAssessment,
+  });
+  let panelCalls = 0;
+  const factory = async (args) => {
+    if (args.role === "onboarding-extractor") {
+      panelCalls++;
+      throw Object.assign(new Error("OpenClaw reviewer absolute deadline exhausted."), { code: "REVIEWER_DEADLINE" });
+    }
+    return fallback(args);
+  };
+  await stopEvent(root, plan, factory, "deadline-first");
+  const { state, groundTruth } = await readTaskArtifacts(root);
+  assert.equal(state.onboarding.status, "DEGRADED");
+  assert.equal(state.onboarding.retryable, false);
+  assert.equal(groundTruth.version, 1, "incremental requirements are still collected");
+  assert.equal(groundTruth.frozenAtVersion ?? null, null, "failed panels never freeze an incomplete baseline");
+  await write(root, "transcript.jsonl", transcriptEntries(2));
+  await stopEvent(root, plan, factory, "deadline-second");
+  assert.equal(panelCalls, 2, "one pair of extractors, with no automatic full-panel repetition");
+});
+
 test("onboarding fails soft to incremental extraction and journals ONBOARDING_DEGRADED", async (t) => {
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));

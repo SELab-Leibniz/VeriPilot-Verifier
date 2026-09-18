@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-17",
+  "host": "2026.7.1-2",
+  "plugin": "1.9.1-openclaw.8",
+  "model": "review/glm-5.3-flash",
+  "syntheticHistory": true,
+  "fixtureMessages": 44,
+  "retentionTokens": 1024,
+  "originalSessionTouched": false,
+  "checks": {
+    "realSummaryContainsOldFacts": true,
+    "nativeHistoryPreserved": true,
+    "correctionStatePreserved": true,
+    "continuationRecallsOldFacts": true,
+    "automaticCompactionAndContinuation": true
+  },
+  "manual": {
+    "compaction": {
+      "ok": true,
+      "key": "agent:main:compaction-acceptance",
+      "compacted": true,
+      "result": {
+        "summary": "## Goal\nThe user is conducting a synthetic compaction test. The primary objective is to retain three authoritative reference facts through context summarization so they can be accurately recalled in a later recall question.\n\n## Constraints & Preferences\n- Do not use tools.\n- Do not modify any files.\n- Preserve the three reference facts (codename, color, batch size) through all summaries.\n- Background observation messages explicitly carry no new requirements and do not change the reference facts.\n\n## Progress\n### Done\n- [x] Recorded the three authoritative reference facts from the user.\n- [x] Acknowledged and dismissed 19 rounds of synthetic historical discussions (each containing 28 repetitive observations about a stable header/readable footer), confirming none alter the reference facts.\n\n### In Progress\n- [ ] Maintaining the reference facts in context, awaiting the user's later recall question.\n\n### Blocked\n- (none)\n\n## Key Decisions\n- **Ignore background observation noise**: All 19 discussion batches (532 total observations) were repetitive filler stating \"the display has a stable header and a readable footer\"; they were acknowledged but treated as carrying no requirements and no changes to the reference facts.\n- **Retain exact original facts verbatim**: Since no message superseded them, the original values remain authoritative.\n\n## Next Steps\n1. Continue holding the three reference facts in memory.\n2. Answer the user's upcoming recall question using exactly: codename CEDAR-4872, color indigo, max batch size 17.\n3. Continue to disregard any further repetitive background observations unless they explicitly change a reference fact.\n\n## Critical Context\n- **Authoritative reference facts (must be preserved exactly)**:\n  - Project codename: **CEDAR-4872**\n  - Approved color: **indigo**\n  - Maximum batch size: **17**\n- These facts were established in the first user message and reaffirmed as unchanged by every subsequent message in the conversation.\n- A later recall question is expected; these facts are the sole content that matters for answering it.",
+        "firstKeptEntryId": "538f343a-7337-42ed-9933-1ac046470a61",
+        "tokensBefore": 2100,
+        "tokensAfter": 1621,
+        "details": {
+          "readFiles": [],
+          "modifiedFiles": []
+        }
+      }
+    },
+    "answer": "CEDAR-4872, indigo, 17",
+    "session": {
+      "sessionId": "ee477462-8cdf-42c1-a973-2f8a50d884da",
+      "status": "done",
+      "model": "glm-5.3-flash",
+      "modelProvider": "review",
+      "agentRuntime": {
+        "id": "runtime-corrector-supervised",
+        "source": "provider"
+      },
+      "totalTokens": 7361,
+      "contextTokens": 128000,
+      "compactionCheckpointCount": 1,
+      "latestCompactionCheckpoint": {
+        "checkpointId": "a7bd872c-7c31-4e2d-978b-9efaa0955c15",
+        "createdAt": 1789619699038,
+        "reason": "manual"
+      }
+    }
+  },
+  "automatic": {
+    "pressure": {
+      "syntheticPersistedTokens": 187422,
+      "modelContextTokens": 128000
+    },
+    "answer": "- Project codename: CEDAR-4872\n- Approved color: indigo\n- Maximum batch size: 17",
+    "session": {
+      "sessionId": "c79203f2-05c8-4bdb-853e-11c05c4ff896",
+      "status": "done",
+      "model": "glm-5.3-flash",
+      "modelProvider": "review",
+      "agentRuntime": {
+        "id": "runtime-corrector-supervised",
+        "source": "provider"
+      },
+      "totalTokens": 7314,
+      "contextTokens": 128000,
+      "compactionCheckpointCount": 1,
+      "latestCompactionCheckpoint": {
+        "checkpointId": "e72d82ca-de28-4984-9d3c-d1db9ecd4e45",
+        "createdAt": 1789619718398,
+        "reason": "auto-threshold"
+      }
+    }
+  },
+  "passed": true
+}

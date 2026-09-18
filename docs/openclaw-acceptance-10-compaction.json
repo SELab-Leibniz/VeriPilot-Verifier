@@ -1,0 +1,16 @@
+{
+  "host": "2026.7.1-2",
+  "plugin": "1.9.1-openclaw.10",
+  "model": "review/glm-5.3",
+  "syntheticHistory": true,
+  "checks": {
+    "realSummaryContainsOldFacts": true,
+    "nativeHistoryPreserved": true,
+    "correctionStatePreserved": true,
+    "continuationRecallsOldFacts": true,
+    "automaticCompactionAndContinuation": true
+  },
+  "answer": "CEDAR-4872, indigo, 17",
+  "autoAnswer": "CEDAR-4872, indigo, 17.",
+  "passed": true
+}

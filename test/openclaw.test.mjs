@@ -52,7 +52,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.7");
+  assert.equal(pkg.version, "1.9.1-openclaw.10");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2");
   assert.equal(pkg.openclaw.compat.pluginApi, "2026.7.1");
@@ -235,9 +235,37 @@ test("GLM reviewers carry selected effort through native prompts without changin
   await h.followUp({ prompt: "Verify again", nextReviewer: { model: "another/ark-code-latest", effort: "low" } });
   assert.doesNotMatch(calls[3].extraSystemPrompt, /Reasoning Effort:/u);
   assert.equal(calls[3].provider, "another");
+  await h.followUp({ prompt: "Verify again", nextReviewer: { model: "review/glm-5.3-flash", effort: "low" } });
+  assert.match(calls[4].extraSystemPrompt, /^Reasoning Effort: Low\n/u);
   for (const p of calls) { assert.deepEqual(p.toolsAllow, ["read"]); assert.equal(p.agentHarnessRuntimeOverride, "openclaw"); }
   assert.equal(JSON.stringify(host.config), before);
   await h.close();
+});
+
+test("native-hook reviewers propagate real progress to the caller and stop after its cancellation", async (t) => {
+  const project = await workspace(t), progress = [], events = [];
+  let activity, terminal, childSignal, removed = 0;
+  const compatibility = async () => ({
+    onRunActivity: (fn) => { activity = fn; return () => { removed++; }; },
+    onAgentEvent: (fn) => { terminal = fn; return () => { removed++; }; },
+    reportProgress: (parent, reason) => progress.push({ parent, reason }),
+    emitAgentEvent: (event) => events.push(event),
+  });
+  const host = api(project, async (params) => {
+    childSignal = params.abortSignal;
+    activity({ type: "model.call.completed", runId: params.runId });
+    terminal({ runId: "native-parent-run", stream: "lifecycle", data: { phase: "error" } });
+    params.abortSignal.throwIfAborted();
+  });
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", compatibility,
+    activityTarget: { runId: "native-parent-run", sessionId: "native-parent-session", sessionKey: "agent:main:native" } });
+  await assert.rejects(factory({ projectRoot: project, taskId: "native-review", role: "onboarding-extractor",
+    request: {}, schema: objectSchema }), /parent run ended/u);
+  assert.equal(childSignal.aborted, true);
+  assert.equal(removed, 2);
+  assert.ok(progress.some(({ reason }) => reason.endsWith("model.call.completed")));
+  assert.ok(progress.every(({ parent }) => parent.runId === "native-parent-run"));
+  assert.equal(events[0].data.text, "正在提取需求。");
 });
 
 test("native runtime failures do not spend a JSON repair or accept truncated valid-looking JSON", async (t) => {

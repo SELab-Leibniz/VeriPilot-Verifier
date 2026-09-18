@@ -1,0 +1,21 @@
+{
+  "host": "2026.7.1-2",
+  "plugin": "1.9.1-openclaw.9",
+  "model": "review/glm-5.3",
+  "syntheticHistory": true,
+  "checks": {
+    "realSummaryContainsOldFacts": true,
+    "nativeHistoryPreserved": true,
+    "correctionStatePreserved": true,
+    "continuationRecallsOldFacts": true,
+    "automaticCompactionAndContinuation": true
+  },
+  "answer": "Project codename: CEDAR-4872; approved color: indigo; maximum batch size: 17.",
+  "autoAnswer": "Codename: CEDAR-4872 | Approved color: indigo | Maximum batch size: 17",
+  "automaticCheckpoint": {
+    "checkpointId": "54483d9f-e237-4dbb-9b14-a4df1fa62b6f",
+    "createdAt": 1789627270115,
+    "reason": "auto-threshold"
+  },
+  "passed": true
+}

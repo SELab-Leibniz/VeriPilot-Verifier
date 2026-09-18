@@ -39,6 +39,15 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     await diagnostics.waitForDiagnosticEventsDrained();
     assert.equal(activity.r({sessionId:'parent-progress'}).lastProgressReason,'native-review-progress',
       'real native progress must reach the stock stuck-session detector');
+    const {relayNativeReviewActivity} = await import(${JSON.stringify(new URL("../lib/openclaw/review-activity.mjs", import.meta.url).href)});
+    const relayAbort = new AbortController();
+    const closeRelay = relayNativeReviewActivity({sdk,parent:{sessionId:'native-parent',sessionKey:'agent:main:native-parent',runId:'native-parent-run'},
+      runId:'owned-native-review',role:'onboarding-extractor',controller:relayAbort});
+    diagnostics.emitTrustedDiagnosticEvent({type:'run.progress',runId:'owned-native-review',sessionId:'private-review',reason:'model-stream'});
+    await diagnostics.waitForDiagnosticEventsDrained();
+    assert.equal(activity.r({sessionId:'native-parent'}).lastProgressReason,'runtime-corrector:review:run.progress',
+      'native hook mode must reach the exact same stock watchdog as supervised mode');
+    closeRelay();
     const projector = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/live-chat-projector-BfpgAbEg.js")).href)});
     assert.equal(projector.i({previousText:'正在执行任务。',nextText:'VERIFIED',nextDelta:''}),'VERIFIED',
       'final snapshots must replace progress in the stock web/TUI transport');
@@ -56,6 +65,21 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     assert.equal(await prepared.authStorage.getApiKey(prepared.model.provider), prepared.resolvedApiKey);
     assert.notEqual((await sdk.prepareNativeAttempt(nativeParams)).authStorage, prepared.authStorage,
       'provider credentials must stay in per-attempt stores');
+    const {createSupervisedHarness} = await import(${JSON.stringify(new URL("../lib/openclaw/supervised.mjs", import.meta.url).href)});
+    const harnessRegistry = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/registry-DtLZ3rba.js")).href)});
+    const compaction = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/compaction-DiGBGVZl.js")).href)});
+    const supervised = createSupervisedHarness({id:'runtime-corrector'}, {});
+    const compactParams = {provider:'test-native',model:'contract',agentDir:${JSON.stringify(directory)},
+      workspaceDir:${JSON.stringify(directory)},sessionId:'compact-contract',sessionKey:'agent:main:compact-contract',
+      config:{models:{providers:{'test-native':{apiKey:'contract-fixture-only',baseUrl:'https://example.invalid',
+        agentRuntime:{id:supervised.id},models:[]}}}}};
+    const missingCompact = {...supervised}; delete missingCompact.compact;
+    harnessRegistry.a(missingCompact);
+    assert.equal((await compaction.t(compactParams)).failure.reason,'unsupported_harness_compaction',
+      'reproduce the stock host rejecting the old supervised harness');
+    harnessRegistry.a(supervised);
+    assert.equal(await compaction.t(compactParams),undefined,
+      'the supervised harness must hand compaction back to the stock context engine');
     for (const mode of ['off','non-main','all']) {
       const config={agents:{defaults:{sandbox:{mode}}},tools:{sandbox:{tools:{allow:['read'],deny:['exec']}}}};
       const policy=sdk.workerPolicy({config,sessionKey:'agent:main:main'},'agent:main:rc-worker:test');

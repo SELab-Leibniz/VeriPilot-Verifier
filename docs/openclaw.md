@@ -1,13 +1,21 @@
-# Runtime Corrector 1.9.1-openclaw.7
+# Runtime Corrector 1.9.1-openclaw.10
+
+`.10` 补充原生子任务兼容和临时模型过载的有限续跑。子任务沿用 OpenClaw 原生执行，不创建第二套纠偏任务；仅在宿主确认模型请求被临时拒绝、历史持久化且工具结果齐全时，使用同一工作会话等待 10/30 秒后最多续跑两次，不重置纠偏预算或总时限。最终仍须验收。详见[续跑修复记录](openclaw-acceptance-10.md)。
+
+`.9` 修复原生 Hook 模式等待评审时，主会话收不到评审活动而被宿主误判卡死的问题。只转发属于当前评审的真实模型、工具活动；父运行结束或被恢复机制中止时取消评审。受控模式补充需求提取、基线核对、写文件和文档评审的阶段提示。预算耗尽的需求提取面板不再自动完整重跑；仍保留增量提取与最终验收。详见[本版修复记录](openclaw-acceptance-9.md)。
+
+`.8` 修复受控会话无法进行原生上下文压缩的问题：显式将压缩交回宿主 context engine，保留宿主的历史、认证、取消及队列机制，不创建纠偏控制器、不调用评审。`.7` 缺少 `compact` 入口时，宿主在执行前即返回 `unsupported_harness_compaction`，可能表现为“Context is too large and auto-compaction could not recover”。既有 `.7` 验收记录仍只代表其当时的验证范围。
+
+`.8` 已通过真实 GLM 手动压缩、超限自动压缩及压缩后续聊；详见[压缩验收记录](openclaw-acceptance-8.md)。
 
 这是 **OpenClaw 2026.7.1-2 专用插件**。原生执行器接管普通聊天的执行、验收和修正，复用原纠偏核心；不修改宿主源码或替换模块，不需要聊天专用命令。其他 OpenClaw 版本拒绝加载。`.7` 增加独立状态页、终端控制、仅验收模式、核心提交保护和发送回执。保留 `.6` 的 GLM 修复。实际验证范围、未满足的原生入口能力和逐项证据见[本版验收记录](openclaw-acceptance-7.md)。
 
 ## 安装与启用
 
 ```sh
-openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.7.tgz
+openclaw plugins install /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.10.tgz
 # 已安装旧版时
-openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.7.tgz
+openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1-openclaw.10.tgz
 ```
 
 将以下内容合并到现有配置；ark 请替换成已配置的 provider。**插件开关与模型运行时都要设置**；默认开启的 supervisedExecution 不会自动改写模型配置。
@@ -41,6 +49,8 @@ openclaw plugins install --force /absolute/path/runtime-corrector-openclaw-1.9.1
 openclaw gateway restart
 openclaw plugins inspect runtime-corrector --runtime --json
 ```
+
+升级插件后需完整停止并重新启动 Gateway 进程。仅热重载配置或在原进程内发送 `SIGUSR1` 可能仍使用旧的 ESM 模块；新启动的 CLI 显示 `.8` 也不能证明旧 Gateway 已加载新代码。
 
 在网页聊天或 `openclaw tui` 正常提交任务。普通问答沿用原核心的任务触发规则，没有额外模型分类器。项目规则在 `.runtime-corrector/`；可通过 runtime_corrector 管理工具初始化，或使用安装目录下的 scripts/cli.mjs。
 
