@@ -215,6 +215,26 @@ test("A25 detected injected faults do not make unresolved design/tasks pass", as
   assert.equal(report.files.find((file) => file.file === "design.md").status, "DEVIATION");
   assert.equal(report.files.find((file) => file.file === "tasks.md").status, "DEVIATION");
   assert.equal(report.files.find((file) => file.file === "proposal.md").status, "UNVERIFIED");
+  assert.match(report.summary, /design\.md \| 未通过 \| Persistence violated/u);
+  assert.match(report.summary, /tasks\.md \| 未通过 \| Tasks missing/u);
+  assert.match(report.summary, /proposal\.md \| 未验证/u);
+  assert.doesNotMatch(report.summary, /故障检测覆盖|完整纠偏闭环|三份文档|问题 design/u);
+  assert.match(report.text, /故障检测覆盖/u, "full feedback remains available separately");
+});
+
+test("summary preserves core budget exhaustion without a controller record", async (t) => {
+  const f = await fixture(t);
+  await withTaskState(f.target, state => {
+    state.status = "COMPLETED_WITH_ISSUES";
+    state.verification = { status: "DEVIATION", correctionBudgetExhausted: true };
+    state.stop.correctionAttempts = 3;
+    state.control.maxCorrections = 3;
+  });
+  const report = await readReport(f.binding);
+  assert.equal(report.correctionBudgetExhausted, true);
+  assert.match(report.summary, /纠偏已结束/u);
+  assert.match(report.summary, /纠偏额度已用尽：3\/3/u);
+  assert.match(report.text, /纠偏次数已用尽/u);
 });
 
 test('A18 failed exploratory reads do not invent missing required artifacts', async (t) => {
@@ -327,9 +347,12 @@ test('A19 final file quality is independent of injection task PASS and expires w
   let report = await readReport(f.binding);
   assert.equal(report.verification, 'PASS'); assert.equal(report.files[0].status, 'DEVIATION');
   assert.match(report.text, /不能宣布全部成果合格/);
+  assert.match(report.summary, /design\.md \| 未通过 \| Missing persistence/u);
   await fs.writeFile(file, 'persistent');
   report = await readReport(f.binding);
   assert.equal(report.verification, 'STALE'); assert.equal(report.files[0].status, 'UNVERIFIED');
+  assert.match(report.summary, /验收结论已失效/u);
+  assert.doesNotMatch(report.summary, /Missing persistence/u);
 });
 
 test('A20 stale artifact review never publishes legacy latest diagnostics', async (t) => {

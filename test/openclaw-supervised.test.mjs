@@ -7,7 +7,8 @@ import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { createSupervisedHarness, completionStatus } from "../lib/openclaw/supervised.mjs";
 import { withController, controllerDirectory, privateJson, isPersistedWorker } from "../lib/openclaw/controller-store.mjs";
-import { ensureTask, withTaskState } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, withTaskState, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { runInternalExecution, runManagedExecution, runBackgroundExecution, isInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createEvidenceLedger } from "../lib/openclaw/evidence.mjs";
 
@@ -104,7 +105,9 @@ test("supervisor withholds a failed candidate, corrects and then publishes only 
   assert.deepEqual(f.counts(), { rounds: 2, assessments: 2, begins: 1 });
   const history = (await fs.readFile(f.params.sessionFile, "utf8")).trim().split("\n").map(JSON.parse);
   assert.deepEqual(history.map((entry) => entry.message.role), ["user", "assistant"]);
-  assert.equal(result.lastAssistant.content[0].text, "Task completed.");
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
+  assert.equal(history.at(-1).message.content[0].text, result.lastAssistant.content[0].text);
+  assert.doesNotMatch(result.lastAssistant.content[0].text, /任务 oc-|阶段：|连续评审故障|三份文档/u);
   assert.equal(result.replayMetadata.replaySafe, false);
   assert.equal(f.handles.size, 0);
   assert.equal(f.progress.filter((event) => event.stream === "assistant" && event.data.phase !== "final").length, 4);
@@ -327,7 +330,7 @@ test("a genuine requirement during assessment cancels that assessment and is dur
   } });
   assert.equal(persisted, true);
   const result = await running;
-  assert.equal(result.lastAssistant.content[0].text, "Task completed.");
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
   assert.equal(f.counts().rounds, 2);
 });
 
@@ -347,7 +350,7 @@ test("a worker cannot create a child controller, but its next ordinary verificat
     await fs.writeFile(path.join(root, "result.txt"), "VERIFIED");
     return { payloads: [{ text: "Done" }], meta: {} };
   } });
-  assert.equal((await f.harness.runAttempt(f.params)).lastAssistant.content[0].text, "Done");
+  assert.match((await f.harness.runAttempt(f.params)).lastAssistant.content[0].text, /^Done\n\n\*\*验收通过/u);
   assert.equal(f.counts().assessments, 1);
 });
 
@@ -402,13 +405,42 @@ test("unfixed work stops at the core budget; a waiting question is delivered wit
     correctionBudgetExhausted: assessments === 3, feedback: "The file is still wrong." }) });
   const result = await f.harness.runAttempt(f.params);
   assert.equal(f.counts().rounds, 3);
-  assert.match(result.lastAssistant.content[0].text, /次数已用尽/u);
+  assert.match(result.lastAssistant.content[0].text, /纠偏已结束|额度已用尽/u);
+  assert.doesNotMatch(result.lastAssistant.content[0].text, /Task completed|三份文档|故障检测覆盖/u);
   const waiting = await fixture(t, { assess: async () => ({ decision: "allow", review: { stopClassification: "WAITING_FOR_USER" } }),
     worker: async ({ root }) => { await fs.writeFile(path.join(root, "result.txt"), "pending"); return { payloads: [{ text: "Which destination should I use?" }], meta: {} }; } });
   const question = await waiting.harness.runAttempt(waiting.params);
   assert.match(question.lastAssistant.content[0].text, /自动执行已暂停/u);
   assert.match(question.lastAssistant.content[0].text, /Which destination/u);
   assert.equal(waiting.counts().rounds, 1);
+});
+
+for (const quality of ["file", "task"]) test(`a ${quality}-quality failure delivers the concise report instead of candidate success`, async (t) => {
+  const f = await fixture(t, { assess: async ({ request, root }) => {
+    const task = await ensureTask({ projectRoot: root, sessionId: f.params.sessionId });
+    await withTaskState({ projectRoot: root, taskId: task.taskId }, state => {
+      state.status = "COMPLETED";
+      if (quality === "task") state.deviations.remaining = { familyId: "remaining", status: "OPEN",
+        observations: [{ finding: { reason: "缺少验收契约" } }] };
+      state.verification = { status: "PASS", evidence: request.assessmentContext.evidence(),
+        evaluationId: "file-quality", assessmentId: request.assessmentId, rulesDigest: "fixture-rules",
+        requirementVersion: state.groundTruth.version, requirementDigest: state.groundTruth.digest,
+        generation: state.control.generation, cancelEpoch: state.control.cancelEpoch };
+    });
+    await atomicWriteJson(path.join(taskDirectory(root, task.taskId), "evaluations/file-quality.json"), {
+      review: { fileAssessments: [{ path: "result.txt", status: quality === "file" ? "DEVIATION" : "PASS",
+        reason: quality === "file" ? "缺少持久化方案" : "文件内容符合要求", evidence: ["DRAFT"] }] },
+    });
+    return { decision: "allow", report: { status: "PASS" }, review: { stopClassification: "TASK_COMPLETE" } };
+  } });
+  const result = await f.harness.runAttempt(f.params);
+  const text = result.lastAssistant.content[0].text;
+  assert.match(text, /^\*\*成果尚未全部通过验收/u);
+  if (quality === "file") assert.match(text, /result\.txt \| 未通过 \| 缺少持久化方案/u);
+  else assert.match(text, /缺少验收契约/u);
+  assert.doesNotMatch(text, /Task completed|故障检测覆盖|反馈送达|三份文档/u);
+  const history = (await fs.readFile(f.params.sessionFile, "utf8")).trim().split("\n").map(JSON.parse);
+  assert.equal(history.at(-1).message.content[0].text, text);
 });
 
 for (const stop of ["reset", "dispose", "disable"]) test(`${stop} cancels the active native worker without another round`, async (t) => {
@@ -606,7 +638,7 @@ test('transient model rejection resumes the same history without replaying tools
     return { payloads: [{ text: 'Task completed.' }], meta: {} };
   } });
   const result = await f.harness.runAttempt(f.params);
-  assert.equal(result.lastAssistant.content[0].text, 'Task completed.');
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
   assert.equal(calls[0].sessionFile, calls[1].sessionFile);
   assert.equal(calls[0].sessionId, calls[1].sessionId);
   assert.notEqual(calls[0].runId, calls[1].runId);
