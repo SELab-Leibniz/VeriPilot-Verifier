@@ -90,7 +90,7 @@ openclaw runtime-corrector receipt --session agent:main:main --command-id verify
 - 状态／反馈查询不调用模型，不创建任务，不更改需求版本或预算。任务须先经原生聊天建立可信会话绑定；客户端不能指定工作目录。
 - 要求变更区分 RECEIVED、BASELINE_COMMITTED、APPLIED_TO_WORKER；无活动 worker 时明确返回 NO_ACTIVE_WORKER。接收后旧完成证据立即失效。队列确认不等于模型已采纳。
 - 停止保留文件与记录。运行句柄仍未退出时显示 STOPPING／STOP_REQUESTED_UNCONFIRMED，不能当作全部调用已经退出。
-- 仅重验使用新、有限的评审时间窗，不继承旧任务过期时限或取消信号；一次指令只授权一次核心验收，不扣内容修正次数。reviewer 的一次格式修复仍共用该时间窗。活动执行尚未结束时需先停止或等待，避免并行验收。
+- 仅重验使用新、有限的评审时间窗，不继承旧任务过期时限或取消信号；一次指令只授权一次核心验收，不扣内容修正次数。reviewer 的格式修复仍共用该时间窗；默认最多三次，由 RC 配置文件决定。活动执行尚未结束时需先停止或等待，避免并行验收。
 - 仅重验发现当前阻断偏差后，才可授权继续修正。派发意图与预算同事务提交，一次授权只扣一次；基础设施故障不能变成修正授权。文件或需求又变了，需先重验。
 - 最终发送有 READY、SEND_COMMITTED、ACKED／UNKNOWN 四种状态。UNKNOWN 不自动重发；可用 `receipt --delivery-id <状态中的 delivery.id>` 核对原生历史。ACKED 只证明宿主历史持久化，不能证明用户已阅读。发送提交之后才取消，不承诺消息绝不会到达。
 
@@ -134,6 +134,35 @@ openclaw config set plugins.entries.runtime-corrector.config.hookTimeoutMs 60000
 长评审的实际模型/工具进展同时上报给父会话和正在等待工具 Hook 的工作会话，避免后者被宿主误判卡住。没有定时伪造进度；真正无进展仍受原生恢复和超时限制。私有工作/评审配置中的默认会话锁时限按当前运行时限加 5 秒设置（至少 5 分钟），全局配置与显式 `session.writeLock.maxHoldMs` 不变。宿主主动中止工作会话时，控制器也会取消尚未退出的工具评审，并保留未验证状态。
 
 模型配置会影响时限是否足够。2026-09-14 的真实测试中，GLM-5.3 在上述 Anthropic 接口上曾仅思考就耗尽 8192/16384 输出预算；同一 Stop 评审也有返回有效 JSON 的样本，但不能据此保证完整任务稳定。OpenClaw 的 `effort: low` 需要由实际 provider 协议正确映射，不能将 UI 标签或更大的 timeout 当作生效证据。不要通过关闭 Stop 或改成 shadowMode 来掩盖评审失败。可先选已验证的 `ark-code-latest`；若使用其他 reviewer 模型，请先验证完整 JSON、工具读取、时限和复验闭环。
+
+
+## RC 自有评审配置
+
+OpenClaw 原生 reviewer 的默认格式修复次数读取 RC 的 `config/reviewer-defaults.json`，当前文件设置为：
+
+```json
+{"formatRepairAttempts": 3}
+```
+
+这是首次评审之后最多三次修复。每次将最新的结构或引用错误反馈给同一个 reviewer 会话，修复仍共用该角色原来的截止时间；超时、取消和宿主/网络运行失败不会借此续期。`0` 可以关闭格式修复。修改该 RC 文件可改变默认值，无需修改 OpenClaw 代码或全局设置。
+
+项目 `.runtime-corrector/config.yaml` 可以覆盖默认次数和评审时间，单独角色设置优先于 `defaults`：
+
+```yaml
+reviewers:
+  defaults:
+    timeoutMs: 1200000
+    formatRepairAttempts: 3
+  stopReviewer:
+    formatRepairAttempts: 3
+stopCorrection:
+  enabled: true
+  assessmentTimeoutMs: 3600000
+```
+
+`timeoutMs` 为单个 reviewer 的 20 分钟上限，格式修复包含在其中。`assessmentTimeoutMs` 是受控 Stop 一整轮需求刷新、Stop 及实现评审的共享窗口；示例为 60 分钟，省略时按角色及构建预算推导。真实宿主 Hook 保留其原时限，父任务的总截止时间和取消也仍生效。插件 `reviewerTimeoutMs` 若已经显式配置，仍作为上限，RC 不自动改写它。
+
+已完成且身份、需求版本及实际文件依据有效的逐项结果，可在整体验收失败时保留为部分反馈；未完成部分和整体未验证状态仍明确显示。额外的终审/实现评审说明字段可以忽略，但必填字段、判断值、引用身份、来源权威及完成资格仍按原规则判断。反馈给出偏离观察与依据位置，交由宿主决定动作；引文由程序从所选位置获取。
 
 ## GLM-5.3 评审修复（.6）
 

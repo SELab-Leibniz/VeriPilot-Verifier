@@ -307,6 +307,11 @@
         "maxCorrectionsPerEpoch": {
           "type": "integer",
           "minimum": 1
+        },
+        "assessmentTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Shared RC controller assessment window; reviewer roles keep their own deadlines and parent cancellation/total budget still apply."
         }
       },
       "additionalProperties": false
@@ -492,6 +497,11 @@
         "timeoutMs": {
           "type": "integer",
           "minimum": 1000
+        },
+        "formatRepairAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum malformed-output repairs in one reviewer session and its original deadline. Defaults to config/reviewer-defaults.json."
         },
         "maxBudgetUsd": {
           "type": "number",

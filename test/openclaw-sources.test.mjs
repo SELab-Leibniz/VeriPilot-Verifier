@@ -21,7 +21,7 @@ async function fixture(t) {
 function factory(f,runner) {
   return createOpenClawReviewerFactory({rootDir:path.resolve("."),config:{agents:{defaults:{model:{primary:"test/test"}}}},runtime:{agent:{runEmbeddedAgent:runner}}});
 }
-const input=(f,id,text,role="onboarding-extractor")=>({projectRoot:f.root,taskId:f.task.taskId,role,reviewer:{timeoutMs:3000},schema:GROUND_TRUTH_REVIEW_SCHEMA,
+const input=(f,id,text,role="onboarding-extractor")=>({projectRoot:f.root,taskId:f.task.taskId,role,reviewer:{timeoutMs:3000,formatRepairAttempts:1},schema:GROUND_TRUTH_REVIEW_SCHEMA,
   request:{sourceCatalog:catalog(id),userMessages:[text.slice(0,4000)]},evidence:{snapshot:{digest:`frozen-${id}`,entries:[user(id,text)]}}});
 
 test("long user input is complete and identified; preview length never truncates authoritative bytes",async t=>{

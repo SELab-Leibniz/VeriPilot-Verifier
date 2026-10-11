@@ -16,7 +16,7 @@
       "enabled": { "type": "boolean", "default": true },
       "supervisedExecution": { "type": "boolean", "default": true, "description": "Control execute/verify/correct rounds when the model agentRuntime is runtime-corrector-supervised; false restores native Hook behavior." },
       "reviewerModel": { "type": "string", "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model." },
-      "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 600000, "default": 180000 },
+      "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "description": "Optional explicit reviewer cap; otherwise project reviewer timeout applies. Does not increase host Hook or parent task budgets." },
       "hookTimeoutMs": { "type": "integer", "minimum": 2000, "maximum": 600000, "default": 540000 }
     }
   }

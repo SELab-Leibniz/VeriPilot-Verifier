@@ -20,7 +20,7 @@ async function fixture(t) {
   const groundTruth={version:2,claims:[{claimId:"R1",revisionId:"R1@2",text:"Respect the original requirement."}]};
   await atomicWriteJson(gtPath,groundTruth);
   const population={metrics:{M01:[1,2,3].map(i=>({objectId:`M01:R${i}`,metricId:"M01",sourceId:`R${i}`,sourceRevisionId:`R${i}@2`,description:`Original requirement ${i}`}))}};
-  const input={projectRoot:root,taskId:task.taskId,role:"stop-reviewer",reviewer:{timeoutMs:2000},schema:STOP_REVIEW_SCHEMA,
+  const input={projectRoot:root,taskId:task.taskId,role:"stop-reviewer",reviewer:{timeoutMs:2000,formatRepairAttempts:1},schema:STOP_REVIEW_SCHEMA,
     request:{groundTruthPath:gtPath,population,sourceManifest:[{path:"app.py",sha256:sha256(await fs.readFile(file))}]},
     evidence:{groundTruth,snapshot:{digest:"frozen-digest",lastEntryKey:"a1",entries:[]},population}};
   return {root,task,file,gtPath,input,population};
@@ -141,4 +141,68 @@ test("private frozen citation remains readable after cleanup while business cita
 test("OpenClaw manifest declares the private progress tool registered by the native entry",async()=>{
   const manifest=JSON.parse(await fs.readFile(new URL("../packaging/hosts/openclaw/openclaw.plugin.json",import.meta.url),"utf8"));
   assert(manifest.contracts.tools.includes("rc_progress"),"SDK registry requires rc_progress in contracts.tools");
+});
+
+test("caller-owned identities are enumerated and program checkpoints preserve valid rows on schema failure",async t=>{
+  const f=await fixture(t);let calls=0;
+  const valid={objectId:"M01:R1",judgement:"DEVIATION",reason:"Actual source contradicts a requirement.",evidence:["app.py#L2-L3"]};
+  const n=native(f,async params=>{
+    calls++;assert.match(params.extraSystemPrompt,/"enum"/);assert.match(params.extraSystemPrompt,/M01:R1/);
+    return output({...completed(),metricObjectJudgements:[valid,{...valid,objectId:"M05:not-owned"}]});
+  });let error;try{await n.factory(f.input);}catch(e){error=e;}
+  assert(error);assert.equal(calls,2);assert.equal(error.partialReview.recoveredObjects,1);
+  assert.deepEqual(error.partialReview.metricObjectJudgements.map(x=>x.objectId),["M01:R1"]);
+  assert.equal(error.partialReview.finalClassification,null);
+});
+
+test("implementation progress uses the same source/version/expiry recovery guard",async t=>{
+  const f=await fixture(t);let calls=0;
+  const n=native(f,async()=>{calls++;return output({summary:"Partial source review",findings:[],metricObjectJudgements:[
+    {objectId:"M01:R2",judgement:"PASS",reason:"Observed current source.",evidence:["app.py#L2-L3"]},
+    {objectId:"invented",judgement:"PASS",reason:"Invalid identity.",evidence:["app.py#L2-L3"]}]});});
+  const {IMPL_REVIEW_SCHEMA}=await import("../lib/runtime-v2/impl-review.mjs");let error;
+  try{await n.factory({...f.input,role:"implementation-reviewer",schema:IMPL_REVIEW_SCHEMA});}catch(e){error=e;}
+  assert(error);assert.equal(calls,2);assert.equal(error.partialReview.recoveredObjects,1);assert.equal(error.partialReview.finalClassification,null);
+});
+
+test("configured native role timeout is not silently capped by an absent plugin override",async t=>{
+  const f=await fixture(t);
+  for(const cap of [undefined,600000]) {
+    const n=native(f,async params=>{
+      assert(params.timeoutMs>=(cap??1200000)-1000);assert(params.timeoutMs<=(cap??1200000));return output(completed());
+    },cap===undefined?{}:{reviewerTimeoutMs:cap});
+    const h=await n.factory({...f.input,reviewer:{timeoutMs:1200000}});await h.close();
+  }
+});
+
+test('claim references are enumerated separately from metric object identities and cannot be silently rewritten',async t=>{
+ const f=await fixture(t);let calls=0;
+ const n=native(f,async params=>{
+  calls++;assert.match(params.extraSystemPrompt,/"violatedGroundTruthIds":\{"type":"array","items":\{"type":"string","enum":\["R1"\]/);
+  return output({...completed(),findings:[{deviationKey:'d',rootCauseId:'r',severity:'error',reason:'Observed problem',actualEvidence:['app.py#L2-L3'],expectedConstraint:'R1',violatedGroundTruthIds:[calls===1?'M01:R1':'R1']}]});
+ });const h=await n.factory(f.input);assert.equal(calls,2);assert.deepEqual(h.result.findings[0].violatedGroundTruthIds,['R1']);await h.close();
+});
+
+test('extra metric-row annotations do not restart a valid review or alter its judgement and evidence',async t=>{
+ const f=await fixture(t);let calls=0;const row={objectId:'M01:R1',judgement:'DEVIATION',reason:'Current source contradicts the contract.',evidence:['app.py#L2-L3']};
+ const n=native(f,async()=>{calls++;return output({...completed(),suggestedNextAction:'Extra envelope annotation',metricObjectJudgements:[{...row,expectedConstraint:'Extra explanation',suggestedNextAction:'Host decides',severity:'warning'}]});});
+ const h=await n.factory(f.input);assert.equal(calls,1);assert.deepEqual(h.result.metricObjectJudgements,[row]);await h.close();
+});
+test('row annotation tolerance cannot supply a missing reason or make an invalid judgement pass',async t=>{
+ for(const row of [{objectId:'M01:R1',judgement:'PASS',evidence:['app.py#L2-L3'],summary:'Not the required reason'},
+  {objectId:'M01:R1',judgement:'looks-good',reason:'Unrecognized value',evidence:['app.py#L2-L3']}]){
+  const f=await fixture(t);let calls=0;const n=native(f,async()=>{calls++;return output({...completed(),metricObjectJudgements:[row]});});
+  await assert.rejects(n.factory(f.input));assert.equal(calls,2);
+ }
+});
+
+test('file default allows three repairs in one session without resetting the role deadline',async t=>{
+ const f=await fixture(t);delete f.input.reviewer.formatRepairAttempts;let calls=0;const sessions=[],timeouts=[];
+ const n=native(f,async p=>{calls++;sessions.push(p.sessionId);timeouts.push(p.timeoutMs);await new Promise(r=>setTimeout(r,20));return output(calls===4?completed():'{ malformed');});
+ const h=await n.factory(f.input);assert.equal(calls,4);assert.equal(new Set(sessions).size,1);assert(timeouts[3]<timeouts[0]);await h.close();
+});
+test('per-role format-repair setting overrides the RC default file, including disabling repair',async t=>{
+ for(const repairs of [0,2]){const f=await fixture(t);let calls=0;const n=native(f,async()=>{calls++;return output('{ malformed');});
+  await assert.rejects(n.factory({...f.input,reviewer:{timeoutMs:2000,formatRepairAttempts:repairs}}));assert.equal(calls,1+repairs);
+ }
 });

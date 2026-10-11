@@ -339,7 +339,7 @@ test("native reviews reject nested factories and handoffs across module reloads 
   let calls = 0, closedOrigin = false, nested;
   const host = api(project, async () => {
     calls++;
-    assert.ok(calls <= 2, "a reviewer must not recursively launch another native run");
+    assert.ok(calls <= 4, "bounded repairs must not recursively launch another reviewer");
     await assert.rejects(nested(input), { code: "SKIPPED_INTERNAL" });
     await assert.rejects(nested.handoff({ ...input,
       originHandle: { close: async () => { closedOrigin = true; } } }), { code: "SKIPPED_INTERNAL" });
@@ -351,7 +351,7 @@ test("native reviews reject nested factories and handoffs across module reloads 
   const reloaded = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/reviewer.mjs")));
   nested = reloaded.createOpenClawReviewerFactory(host, options);
   await assert.rejects(factory(input), /JSON/u);
-  assert.equal(calls, 2, "one initial assessment and at most one schema repair");
+  assert.equal(calls, 4, "one initial assessment and the file-configured three schema repairs");
   assert.equal(closedOrigin, false, "reject recursion before touching the source session");
   assert.deepEqual(await fs.readdir(path.join(project, ".runtime-correction/internal-runs")), []);
 });
