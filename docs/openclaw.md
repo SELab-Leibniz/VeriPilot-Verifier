@@ -1,6 +1,6 @@
-# OpenClaw 原生 Stop 续作隔离候选
+# OpenClaw 原生纠偏与独立 Stop 终审
 
-`codex/openclaw-native-stop-followup` 从原生输出候选 `522a6ea` 创建，固定宿主 OpenClaw `2026.7.1-2`。当前仅用于隔离验证，未替换原分支或当前安装。真实 App 对照 13/14 → 14/14，原生续作后完整验收 PASS，详见 [实测记录](experiments/rc-native-stop-followup-live-test.md)。
+原生执行、Stop 续作和独立终审预算已通过提交 `f76e7b5` 合入 `codex/openclaw-2026.7.1-2`，固定宿主 OpenClaw `2026.7.1-2`。合并代码不自动替换已安装插件或宿主配置。独立预算 Todo 对照和一次真实 Stop 重修闭环详见 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md)。[合并后记账 App 实测](experiments/rc-postmerge-ledger-live-test.md)跑通两次 Stop、一次宿主重修、最终 19/19 独立 CLI 检查；首次终审超过 10 分钟并完成。RC PASS 不等同于全部业务需求均已通过独立检查。
 
 业务运行、输出、模型选择、工具和审批由宿主负责。RC 不注册业务 harness、不关闭流式文字、不应用补丁、不注册 `before_agent_finalize`。过程意见通过原工具结果交给宿主；Stop 发现有依据的业务偏离时，最多提供配置数量的原生续作机会，宿主自行判断动作。
 
@@ -29,7 +29,7 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 ## 安装前提
 
-本实验不自动安装。候选包版本 `1.9.1-openclaw.10-native-stop-budget.1`。若以后由用户选择迁移，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。
+合并不自动安装。当前包版本 `1.9.1-openclaw.10-native-stop-budget.1`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{
