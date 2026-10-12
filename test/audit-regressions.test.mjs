@@ -9,14 +9,14 @@ import { encodeHookOutput } from "../lib/protocol/core-hooks.mjs";
 import { mergeSemanticReview } from "../lib/result-processing.mjs";
 import { validateProjectPolicy } from "../lib/policy/validator.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { markMetricPassesFixed, recordDeviationFindings } from "../lib/runtime-v2/deviations.mjs";
+import { markMetricPassesFixed, markStopFeedbackDelivered, recordDeviationFindings } from "../lib/runtime-v2/deviations.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { groundTruthSourceCatalog, rejectedGroundTruthSource } from "../lib/runtime-v2/ground-truth-provenance.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { implementationPopulation } from "../lib/runtime-v2/review-routing.mjs";
 import { processMetricJudgements } from "../lib/runtime-v2/process-checks.mjs";
 import { GROUND_TRUTH_REVIEW_SCHEMA, STOP_REVIEW_SCHEMA, reviewerFailureDetail } from "../lib/runtime-v2/reviewer.mjs";
-import { ensureTask, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, taskDirectory, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-audit-regression-"));
@@ -31,7 +31,7 @@ const requirement = (claimId, target = "IMPLEMENTATION", category = "requirement
   source: { ref: "transcript:u1", kind: "USER_MESSAGE", subject: "MAIN_TASK" },
 });
 
-async function harness(t, { claims = [requirement("code")], stage = "implementation", stopJudgement = () => "PASS", implResult = null, maxCorrections = 1, independentStop = false } = {}) {
+async function harness(t, { claims = [requirement("code")], stage = "implementation", stopJudgement = () => "PASS", implResult = null, maxCorrections = 1, independentStop = false, stopFeedbackDeferred = false } = {}) {
   const root = await workspace(t);
   await fs.writeFile(path.join(root, "transcript.jsonl"), JSON.stringify(userEntry));
   const runtimeV2 = compileRuntimeV2Config({
@@ -76,7 +76,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
     root, calls,
     state: async (taskId) => JSON.parse(await fs.readFile(taskStatePath(root, taskId), "utf8")),
     stop: () => handleRuntimeV2Event({
-      projectRoot: root, plan: { runtimeV2 }, reviewerFactory,
+      projectRoot: root, plan: { runtimeV2 }, reviewerFactory, stopFeedbackDeferred,
       env: { ...process.env, TEST_KEY: undefined },
       deviceVerifier: async () => {
         calls.device += 1;
@@ -202,6 +202,34 @@ test("budget exhaustion preserves unresolved state and emits a host-consumable w
   assert.match(last.stop.review.stopReviewerSummary, /Everything passed/u);
 });
 
+
+for (const deferred of [false, true]) test(`Stop ${deferred ? "defers" : "immediately records"} feedback delivery without changing its correction budget`, async t => {
+  const h = await harness(t, { maxCorrections: 3, stopFeedbackDeferred: deferred, implResult: request => ({
+    summary: "Missing implementation.", findings: [], metricObjectJudgements: request.population.metrics.M12.map(object => ({
+      objectId: object.objectId, judgement: "DEVIATION", reason: "Required source behavior is missing.", evidence: [],
+    })),
+  }) });
+  const result = await h.stop();
+  assert.equal(result.decision, "block");
+  let state = await h.state(result.taskId);
+  assert.equal(state.stop.correctionAttempts, 1);
+  const evaluationId = state.stop.lastAssessmentId;
+  const observations = () => Object.values(state.deviations).flatMap(family => family.observations);
+  assert.ok(observations().length > 0);
+  assert.ok(observations().every(observation => observation.delivered === !deferred));
+  assert.deepEqual(await markStopFeedbackDelivered({ projectRoot: h.root, taskId: result.taskId, evaluationId: "other-evaluation" }), []);
+  const deliveredAt = "2026-10-12T01:00:00.000Z";
+  const changed = await markStopFeedbackDelivered({ projectRoot: h.root, taskId: result.taskId, evaluationId, deliveredAt });
+  assert.equal(changed.length > 0, deferred);
+  state = await h.state(result.taskId);
+  assert.equal(state.stop.correctionAttempts, 1);
+  assert.ok(observations().every(observation => observation.delivered === true));
+  if (deferred) assert.ok(observations().every(observation => observation.deliveredAt === deliveredAt));
+  for (const family of changed) assert.deepEqual(JSON.parse(await fs.readFile(path.join(taskDirectory(h.root, result.taskId), "feedback", `${family.familyId}.json`), "utf8")), family);
+  assert.deepEqual(await markStopFeedbackDelivered({ projectRoot: h.root, taskId: result.taskId, evaluationId, deliveredAt: "different-time" }), []);
+  assert.deepEqual(await h.state(result.taskId), state);
+});
+
 test("nonblocking UNVERIFIED is disclosed and never stored as clean completion", async (t) => {
   const h = await harness(t, { claims: [requirement("workflow", "PROCESS", "workflowSteps")], stopJudgement: () => "UNVERIFIED" });
   const outcome = await h.stop();
@@ -299,4 +327,23 @@ test("policy validation discloses independent-provider fallback without leaking 
   const present = await validateProjectPolicy({ cwd: root, env: { TEST_REVIEWER_KEY: "test-secret-not-real" } });
   assert.ok(!present.issues.some((issue) => issue.code === "REVIEWER-PROVIDER-UNAVAILABLE"));
   assert.ok(!JSON.stringify(present).includes("test-secret-not-real"));
+});
+
+
+test("a new failed Stop reopens a previously completed task instead of keeping contradictory status", async t => {
+  let judgement = "PASS";
+  const h = await harness(t, { maxCorrections: 3, stopFeedbackDeferred: true, implResult: request => ({
+    summary: "Current source checked.", findings: [], metricObjectJudgements: request.population.metrics.M12.map(object => ({
+      objectId: object.objectId, judgement, reason: "Current source evidence.", evidence: [],
+    })),
+  }) });
+  const first = await h.stop();
+  assert.equal((await h.state(first.taskId)).status, "COMPLETED");
+  judgement = "DEVIATION";
+  const second = await h.stop();
+  const state = await h.state(second.taskId);
+  assert.equal(second.decision, "block");
+  assert.equal(state.status, "ACTIVE");
+  assert.equal(state.verification.status, "DEVIATION");
+  assert.equal(state.stop.correctionAttempts, 1);
 });

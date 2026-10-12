@@ -83,3 +83,31 @@ test("approval and question results retain original media, error, structure and 
     assert.deepEqual(result, before);
   }
 });
+
+
+test("late terminal callbacks cannot replace or cancel a newer native run", async t => {
+  const f = await fixture(t);
+  await f.runtime.prompt({ prompt: "host-admitted next run" }, { ...f.ctx, runId: "new-host-run" });
+  const controller = f.state.reviewController;
+  f.state.nativeNeedsStop = true;
+  await f.runtime.agentEnd({ success: true, runId: "host-run" }, f.ctx);
+  await f.runtime.agentEnd({ success: false, runId: "host-run", error: "late old error" }, f.ctx);
+  const payload = { text: "old native delivery", mediaUrl: "fixture://media" };
+  assert.equal(await f.runtime.reply({ kind: "final", sessionKey: f.ctx.sessionKey, runId: "host-run", payload }), undefined);
+  assert.equal(f.state.nativeRunId, "new-host-run");
+  assert.equal(f.state.reviewController, controller);
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(f.state.nativeNeedsStop, true);
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
+
+test("an ordinary new chat does not inherit the prior business Stop flag", async t => {
+  const f = await fixture(t);
+  f.state.nativeNeedsStop = true;
+  await f.runtime.prompt({ prompt: "hello" }, { ...f.ctx, runId: "ordinary-chat" });
+  assert.equal(f.state.nativeNeedsStop, false);
+  const payload = { text: "Hello!" };
+  assert.equal(await f.runtime.reply({ kind: "final", sessionKey: f.ctx.sessionKey, runId: "ordinary-chat", payload }), undefined);
+  assert.deepEqual(payload, { text: "Hello!" });
+});

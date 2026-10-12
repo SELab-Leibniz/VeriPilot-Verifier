@@ -54,7 +54,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.10-native-transparency.1");
+  assert.equal(pkg.version, "1.9.1-openclaw.10-native-stop-followup.1");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2");
   assert.equal(pkg.openclaw.compat.pluginApi, "2026.7.1");
