@@ -1,0 +1,181 @@
+{
+  "baseline": {
+    "requestHash": "b227756582937307ef967d75f878aa38a90424ec24d04208e678dd0b3dd1924a",
+    "projectConfigHash": "82dcc8430762b778549d1202e0f2dca9fb5176b4c8ab9740f03798995bd9e036",
+    "initialAcceptance": {
+      "passed": 13,
+      "total": 14,
+      "suiteOk": false,
+      "failures": [
+        "test_12_export_hardlink_protected (__main__.Acceptance.test_12_export_hardlink_protected)"
+      ]
+    },
+    "finalAcceptance": {
+      "passed": 13,
+      "total": 14,
+      "suiteOk": false,
+      "failures": [
+        "test_12_export_hardlink_protected (__main__.Acceptance.test_12_export_hardlink_protected)"
+      ]
+    },
+    "nativeRuns": [
+      {
+        "runId": "080b4ad9-ef6a-4696-9ef6-b200ab2715e1",
+        "initialRun": true,
+        "nativeTextEvents": 82,
+        "firstNativeTextSeconds": 4.433,
+        "toolEvents": 35,
+        "commandOutputEvents": 10,
+        "lifecycle": [
+          "start",
+          "finishing",
+          "end"
+        ]
+      }
+    ],
+    "quoteCount": 254,
+    "allProgramQuotesVerified": true,
+    "checkpoint": {
+      "result": {
+        "arm": "baseline",
+        "status": "ERROR",
+        "phaseRunId": "81c36db3-3608-410f-b265-7ab87e5bae37"
+      },
+      "acceptancePassed": 13,
+      "interpretation": "Expected failing CLI probe was surfaced as a host Exec warning; Stop still completed and recorded DEVIATION. Not a plugin crash."
+    },
+    "savedFinal": {
+      "taskStatus": "ACTIVE",
+      "verification": {
+        "status": "DEVIATION",
+        "evaluationId": "stop-20261012T062408742Z-0713c95d",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-12T06:24:08.765Z"
+      },
+      "groundTruthVersion": 2,
+      "epoch": 2,
+      "correctionAttempts": 1
+    },
+    "receipts": []
+  },
+  "candidate": {
+    "requestHash": "b227756582937307ef967d75f878aa38a90424ec24d04208e678dd0b3dd1924a",
+    "projectConfigHash": "82dcc8430762b778549d1202e0f2dca9fb5176b4c8ab9740f03798995bd9e036",
+    "initialAcceptance": {
+      "passed": 13,
+      "total": 14,
+      "suiteOk": false,
+      "failures": [
+        "test_12_export_hardlink_protected (__main__.Acceptance.test_12_export_hardlink_protected)"
+      ]
+    },
+    "finalAcceptance": {
+      "passed": 14,
+      "total": 14,
+      "suiteOk": true,
+      "failures": []
+    },
+    "nativeRuns": [
+      {
+        "runId": "bf0889f1-4eaf-4401-a3e4-f8edbba77f8d",
+        "initialRun": true,
+        "nativeTextEvents": 125,
+        "firstNativeTextSeconds": 5.148,
+        "toolEvents": 37,
+        "commandOutputEvents": 11,
+        "lifecycle": [
+          "start",
+          "finishing",
+          "end"
+        ]
+      },
+      {
+        "runId": "e63124bf-17a8-4837-8cd4-3c9e5a8d7836",
+        "initialRun": false,
+        "nativeTextEvents": 49,
+        "firstNativeTextSeconds": 22.771,
+        "toolEvents": 8,
+        "commandOutputEvents": 3,
+        "lifecycle": [
+          "start",
+          "finishing",
+          "end"
+        ]
+      },
+      {
+        "runId": "70db45d6-27eb-420e-9ff2-4961f3c2f2f6",
+        "initialRun": false,
+        "nativeTextEvents": 95,
+        "firstNativeTextSeconds": 2.055,
+        "toolEvents": 20,
+        "commandOutputEvents": 3,
+        "lifecycle": [
+          "start",
+          "finishing",
+          "end"
+        ]
+      }
+    ],
+    "quoteCount": 478,
+    "allProgramQuotesVerified": true,
+    "checkpoint": {
+      "result": {
+        "arm": "candidate",
+        "status": "FINISHED",
+        "phaseRunId": "42680518-cff4-4e7c-9b3e-69134dfc6e75"
+      },
+      "acceptancePassed": 14
+    },
+    "savedFinal": {
+      "taskStatus": "COMPLETED",
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261012T063327932Z-7e7c4e27",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-12T06:33:27.939Z",
+        "assessmentId": "a927f9c5-ad28-4dbc-ab45-5dc08baf94b1:stop",
+        "evidence": null,
+        "requirementVersion": 2,
+        "requirementDigest": "b0031d11f544b0072d9762516f8e83c97b3ac3b18e272f7bb9e92951958e5167",
+        "rulesDigest": null,
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "groundTruthVersion": 2,
+      "epoch": 2,
+      "correctionAttempts": 1
+    },
+    "receipts": [
+      {
+        "runId": "e63124bf-17a8-4837-8cd4-3c9e5a8d7836",
+        "epochId": 1,
+        "correctionAttempt": 2,
+        "maxCorrections": 3,
+        "status": "ADMITTED",
+        "modelObservedAt": 1791785083272,
+        "finishedAt": 1791785505228,
+        "reviewStatus": "PASS"
+      },
+      {
+        "runId": "a927f9c5-ad28-4dbc-ab45-5dc08baf94b1",
+        "epochId": 2,
+        "correctionAttempt": 1,
+        "maxCorrections": 3,
+        "status": "ADMITTED",
+        "modelObservedAt": 1791786390260,
+        "finishedAt": 1791786807992,
+        "reviewStatus": "PASS"
+      },
+      {
+        "runId": "70db45d6-27eb-420e-9ff2-4961f3c2f2f6",
+        "epochId": 1,
+        "correctionAttempt": 1,
+        "maxCorrections": 3,
+        "status": "ADMITTED",
+        "modelObservedAt": 1791784728381,
+        "finishedAt": 1791785079024,
+        "reviewStatus": "DEVIATION"
+      }
+    ]
+  }
+}
