@@ -8,6 +8,7 @@
 stopCorrection:
   enabled: true
   maxCorrectionsPerEpoch: 3
+  assessmentTimeoutMs: 3600000 # 可选：一套 RC 终审的总窗口
 reviewers:
   defaults:
     model: registered-provider/model
@@ -22,11 +23,13 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 该公开接口持久化的提示会在宿主聊天显示为一条额外 You 消息，正文标记 RC 意见/非新需求或授权。RC 只在自己的可信转录投影排除它，不写宿主原转录、不改 UI 标签。真实问题、媒体、错误、审批和正常取消保留宿主处理；实际审批 UI 尚未实测。
 
-角色时间仍在自己的 YAML。每次原生业务运行遵循宿主超时；同步 Hook 仍受宿主 10 分钟上限约束，20 分钟角色配置不能突破此限制。旧 `stopCorrection.assessmentTimeoutMs` 属旧私有控制器窗口，不作为新路径有效时间示例。
+角色时间仍在自己的 YAML。原生回复/结束 Hook 只登记 RC 终审回执，业务回复立即返回；评审使用 RC 自己的工作准入与截止时间，不借用宿主业务运行或 Hook 的剩余时间。`stopCorrection.assessmentTimeoutMs` 现在也用于原生 RC 终审总窗口；不配置时沿用既有各角色预算与设备检查预算之和。每个角色仍受自己的 `reviewers.<role>.timeoutMs` 和 RC 总窗口约束，不是每个阶段无限续期。
+
+检查器故障按原核心基础设施预算重新评审，复评使用不同评审身份，但同一 RC 总截止时间；不增加业务 k、不重新冻结用户需求、不让宿主为检查器故障修改业务。新用户轮、重置、会话结束和 Gateway 关闭会取消旧评审；来源/证据失效仍不派发。每个原生业务 run 的回执保存于 `.runtime-correction/openclaw/native-stop-reviews/`，状态为 PENDING/RUNNING/SETTLED，最终 reviewStatus 保存 PASS/DEVIATION/UNVERIFIED/CANCELLED。重启不会偷偷重放旧评审或业务反馈。
 
 ## 安装前提
 
-本实验不自动安装。候选包版本 `1.9.1-openclaw.10-native-stop-followup.1`。若以后由用户选择迁移，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。
+本实验不自动安装。候选包版本 `1.9.1-openclaw.10-native-stop-budget.1`。若以后由用户选择迁移，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{
