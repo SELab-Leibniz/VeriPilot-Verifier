@@ -47,12 +47,14 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const project = await workspace(t);
   const host = api(project);
   entry.register(host);
-  assert.equal(host.hooks.get("before_agent_finalize").options.timeoutMs, 540000);
+  assert.equal(host.hooks.has("before_agent_finalize"), false, "the pinned host buffers native text when a terminal gate is registered");
+  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 540000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
+  assert.equal(host.harness, undefined, "native entry must not register a business harness");
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.10");
+  assert.equal(pkg.version, "1.9.1-openclaw.10-native-transparency.1");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2");
   assert.equal(pkg.openclaw.compat.pluginApi, "2026.7.1");
@@ -687,8 +689,17 @@ test("native tool bindings survive a host plugin registry reload", async (t) => 
   await fs.mkdir(path.join(project, "evidence"));
   for (const file of ["one.txt", "two.txt"]) await fs.writeFile(path.join(project, "evidence", file), "same capture");
   const first = api(project), second = api(project);
+  const transcript = path.join(project, "native.jsonl");
+  await fs.writeFile(transcript, [{ type: "session", id: "reload" }, { type: "message", id: "u", parentId: null,
+    message: { role: "user", content: "Create unmatched.txt and preserve real capture evidence." } }].map(JSON.stringify).join("\n"));
+  for (const host of [first, second]) host.runtime.agent.session = {
+    getSessionEntry: async () => ({ sessionId: "reload", sessionFile: transcript }),
+    resolveStorePath: () => path.join(project, "sessions.json"),
+    resolveSessionFilePath: () => transcript,
+    runWithWorkAdmission: async (_params, run) => run(new AbortController().signal),
+  };
   entry.register(first);
-  const ctx = { sessionId: "reload", runId: "reload-run", agentId: "main", workspaceDir: project };
+  const ctx = { sessionId: "reload", sessionKey: "agent:main:reload", runId: "reload-run", agentId: "main", workspaceDir: project };
   await first.hooks.get("before_tool_call").handler({ toolName: "write", toolCallId: "reload-tool", params: { path: "unmatched.txt" } }, ctx);
   entry.register(second);
   const result = await second.middleware.handler({ toolName: "write", toolCallId: "reload-tool", args: { path: "unmatched.txt" }, result: { content: [] } }, { runtime: "openclaw" });
