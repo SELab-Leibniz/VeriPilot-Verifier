@@ -146,7 +146,11 @@ test("POSIX reviewer timeout terminates the spawned process group", {
   await fs.writeFile(preloadPath, String.raw`
 const fs = require("node:fs");
 const { spawn } = require("node:child_process");
-const child = spawn(process.execPath, [process.env.FAKE_GRANDCHILD], { stdio: "ignore" });
+// The preload belongs to this fake reviewer only. Inheriting it would make
+// every grandchild spawn another reviewer instead of the intended single leaf.
+const childEnv = { ...process.env };
+delete childEnv.NODE_OPTIONS;
+const child = spawn(process.execPath, [process.env.FAKE_GRANDCHILD], { stdio: "ignore", env: childEnv });
 fs.writeFileSync(process.env.FAKE_GRANDCHILD_PID, String(child.pid));
 Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60000);
 `, "utf8");
@@ -163,7 +167,7 @@ Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60000);
     taskId: task.taskId,
     parentSessionId: "process-group-session",
     role: "stop-reviewer",
-    reviewer: reviewer(100),
+    reviewer: reviewer(500),
     schema: RESULT_SCHEMA,
     request: { test: true },
     env: {

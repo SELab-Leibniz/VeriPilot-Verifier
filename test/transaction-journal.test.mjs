@@ -37,6 +37,17 @@ test("dictionary changes and array append/edit/truncate never replace growing hi
   assert.equal({}.x, undefined);
 });
 
+test("direct event writers repair a partial UTF-8 tail before concurrent appends", async t => {
+  const f = await taskFixture(t), file = path.join(f.directory, "journal/events.jsonl");
+  await appendTaskJournal(f.root, f.target.taskId, { type: "FIRST", text: "原记录 🥛" });
+  const partial = Buffer.from('{"unfinished":"中文🙂');
+  await fs.appendFile(file, partial.subarray(0, -2));
+  await Promise.all(["SECOND", "THIRD"].map(type => appendTaskJournal(f.root, f.target.taskId, { type })));
+  const records = (await fs.readFile(file, "utf8")).trim().split("\n").map(JSON.parse);
+  assert.deepEqual(records.map(record => record.type).sort(), ["FIRST", "SECOND", "THIRD"]);
+  assert.equal(records.find(record => record.type === "FIRST").text, "原记录 🥛");
+});
+
 test("ordinary commits stay bounded; one large body shared across results, files and outputs", async t => {
   const { journal } = await journalFixture(t, { checkpointEvery: 10 });
   let loaded = await journal.load(), sizes = [];

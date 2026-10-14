@@ -7,12 +7,13 @@ import { pathToFileURL } from "node:url";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
-let output, pluginRoot, createRuntime, findTask;
+let output, pluginRoot, createRuntime, findTask, readReport;
 before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
   ({ findTask } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
+  ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -132,7 +133,8 @@ reviewers:
   await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
   calls = 0; fail = failures;
-  return { runtime, ctx, warnings, state: state.states.get("main:host"), root, hostAbort, calls: () => calls };
+  return { runtime, ctx, warnings, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
+    restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true }) };
 }
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
   const f = await lifecycle(t), payload = { text: "Delivered.", mediaUrl: "fixture://media" }, original = structuredClone(payload);
@@ -142,6 +144,49 @@ test("native reply preserves payload and finishes RC terminal work in its indepe
   assert.equal(records[0].budgetMs, 11000);
   assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
   assert.equal(f.hostAbort.signal.aborted, false);
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.ok(task.verification.rulesDigest, "Native Stop must retain the project policy binding");
+  assert.ok(task.verification.evidence?.fingerprints[path.join(f.root, "draft.md")], "Native Stop must retain its observed source fingerprints");
+  const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: f.ctx.sessionKey };
+  assert.equal((await readReport(binding)).verification, "PASS", "The report must recognize a fresh native acceptance");
+  await fs.writeFile(path.join(f.root, "draft.md"), "Changed after review.\n");
+  assert.equal((await readReport(binding)).verification, "STALE", "A later source edit must invalidate acceptance");
+});
+test("a fresh Gateway rediscovers modified artifacts from the active native transcript before accepting an exec-only continuation", async t => {
+  const f = await lifecycle(t);
+  await fs.appendFile(path.join(f.root, "native.jsonl"), "\n" + [
+    { type: "message", id: "written", parentId: "u", message: { role: "assistant", content: [
+      { type: "toolCall", id: "prior-write", name: "write", arguments: { path: "draft.md", content: "A delivered draft.\n" } } ] } },
+    { type: "message", id: "write-result", parentId: "written", message: { role: "toolResult", toolCallId: "prior-write", toolName: "write",
+      content: [{ type: "text", text: "Wrote draft.md" }], isError: false } },
+  ].map(JSON.stringify).join("\n"));
+  const runtime = f.restart(), ctx = { ...f.ctx, runId: "after-gateway-restart" };
+  await runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
+  await runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
+  const receipts = await runtime.waitForNativeReviews();
+  assert.equal(receipts[0].reviewStatus, "PASS", JSON.stringify(receipts));
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.ok(task.verification.evidence.fingerprints[path.join(f.root, "draft.md")]);
+  const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: ctx.sessionKey };
+  assert.equal((await readReport(binding)).verification, "PASS");
+  await fs.writeFile(path.join(f.root, "draft.md"), "Changed after the restart's review.\n");
+  assert.equal((await readReport(binding)).verification, "STALE");
+});
+
+test("a terminal review that cannot read its native transcript never inherits an earlier run's PASS", async t => {
+  const f = await lifecycle(t);
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "PASS");
+  const original = await findTask({ projectRoot: f.root, sessionId: "host" });
+  const ctx = { ...f.ctx, runId: "unreadable-native-run" };
+  await f.runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
+  await fs.appendFile(path.join(f.root, "native.jsonl"), '\n{"torn":');
+  await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
+  const receipts = await f.runtime.waitForNativeReviews();
+  assert.equal(receipts.find(record => record.runId === ctx.runId).reviewStatus, "UNVERIFIED");
+  assert.equal(receipts.find(record => record.runId === ctx.runId).evaluationId, null);
+  assert.equal((await findTask({ projectRoot: f.root, sessionId: "host" })).verification.assessmentId,
+    original.verification.assessmentId, "An unavailable check cannot create or replace a verified assessment");
 });
 test("transient checker faults retry RC review without spending business corrections", async t => {
   const f = await lifecycle(t, { failures: 2 });
