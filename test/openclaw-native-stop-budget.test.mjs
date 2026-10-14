@@ -79,7 +79,23 @@ test("an abandoned durable receipt becomes unverified without replay", async t =
   const loaded = await createNativeStopReviews().schedule({ ...params, run: async () => { calls++; } });
   assert.equal(loaded.reviewStatus, "UNVERIFIED"); assert.equal(loaded.reasonCode, "REVIEW_OWNER_LOST"); assert.equal(calls, 0);
 });
-async function lifecycle(t, { failures = 0 } = {}) {
+
+test("recovery retains a committed assessment without replaying uncertain continuation work", async t => {
+  const params = await basic(t), manager = createNativeStopReviews();
+  await manager.schedule({ ...params, run: async ({ commit }) => {
+    await commit({ reviewStatus: "DEVIATION", evaluationId: "committed-evaluation" });
+    throw Object.assign(new Error("Dispatch lost"), { code: "DISPATCH_UNKNOWN" });
+  } });
+  const [record] = await manager.wait();
+  assert.equal(record.reviewStatus, "DEVIATION"); assert.equal(record.evaluationId, "committed-evaluation");
+  const base = path.join(params.projectRoot, ".runtime-correction/openclaw/native-stop-reviews");
+  const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
+  await fs.writeFile(file, JSON.stringify({ ...record, status: "RUNNING" }));
+  const restored = await createNativeStopReviews().schedule({ ...params, run() { assert.fail("No replay after owner loss"); } });
+  assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
+  assert.equal(restored.evaluationId, "committed-evaluation");
+});
+async function lifecycle(t, { failures = 0, deviation = false } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -114,12 +130,15 @@ reviewers:
     calls++;
     if (fail-- > 0) throw new Error("transient checker failure");
     let result;
-    if (schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations: [] };
+    if (schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations:
+      deviation && request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements", text: "Deliver a draft with verified acceptance.",
+        authority: "USER_EXPLICIT", severity: "HARD", source: { ref: request.sourceCatalog.find(s => s.kind === "USER_MESSAGE").ref,
+          subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
     else {
       await pause(50);
       result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [],
         metricObjectJudgements: Object.values(request.population?.metrics ?? {}).flat().map(object => ({
-          objectId: object.objectId, judgement: "PASS", reason: "Current source", evidence: ["draft.md:1"] })) };
+          objectId: object.objectId, judgement: deviation ? "DEVIATION" : "PASS", reason: "Current source", evidence: ["draft.md:1"] })) };
     }
     return { result, sessionId: "review", close: async () => {} };
   };
@@ -135,7 +154,7 @@ reviewers:
   await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
   calls = 0; fail = failures;
-  return { runtime, ctx, warnings, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
+  return { api, runtime, ctx, warnings, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
     restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true }) };
 }
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
@@ -226,4 +245,59 @@ test("permanent checker faults stop at the existing infrastructure ceiling", asy
   assert.equal(task.stop.infrastructureTotalFailures, 3);
   assert.equal(task.stop.correctionAttempts, 0);
   assert.equal(task.status, "STOPPED_UNVERIFIED");
+});
+
+test("admission refusal after one checker failure settles without reusing that failure", async t => {
+  const f = await lifecycle(t, { failures: 1 });
+  const admit = f.api.runtime.agent.session.runWithWorkAdmission;
+  let admissions = 0;
+  f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
+    if (++admissions === 1) return admit(params, run);
+    throw Object.assign(new Error("Admission closed"), { code: "GATEWAY_DRAINING" });
+  };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [record] = await f.runtime.waitForNativeReviews();
+  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.equal(record.reasonCode, "GATEWAY_DRAINING");
+  assert.equal(admissions, 2);
+  assert.equal(f.calls(), 1);
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.stop.infrastructureTotalFailures, 1);
+  assert.equal(task.stop.correctionAttempts, 0);
+});
+
+test("first admission refusal cannot reuse a prior run PASS", async t => {
+  const f = await lifecycle(t);
+  f.state.nativeAssessment = { outcome: { decision: "allow", status: "PASS" } };
+  let admissions = 0;
+  f.api.runtime.agent.session.runWithWorkAdmission = async () => {
+    admissions++; throw Object.assign(new Error("Forbidden"), { code: "PERMISSION_DENIED" });
+  };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [record] = await f.runtime.waitForNativeReviews();
+  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.equal(record.reasonCode, "PERMISSION_DENIED");
+  assert.equal(admissions, 1);
+  assert.equal(f.calls(), 0);
+});
+
+test("a continuation starting before admission returns cannot erase the committed previous assessment", async t => {
+  const f = await lifecycle(t, { deviation: true });
+  let dispatches = 0;
+  f.api.runtime.subagent = { run: async args => {
+    dispatches++;
+    const base = path.join(f.root, ".runtime-correction/openclaw/native-stop-reviews");
+    const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
+    const committed = JSON.parse(await fs.readFile(file));
+    assert.equal(committed.reviewStatus, "DEVIATION");
+    assert(committed.evaluationId && committed.assessmentCompletedAt);
+    await f.runtime.prompt({ prompt: "Write a draft." }, { ...f.ctx, runId: args.idempotencyKey });
+    assert.equal(f.state.nativeAssessment, null, "The new run keeps its own empty assessment");
+    return { runId: args.idempotencyKey };
+  } };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [record] = await f.runtime.waitForNativeReviews();
+  assert.equal(dispatches, 1, JSON.stringify({ record, warnings: f.warnings, assessment: f.state.nativeAssessment }));
+  assert.equal(record.reviewStatus, "DEVIATION");
+  assert(record.evaluationId);
 });

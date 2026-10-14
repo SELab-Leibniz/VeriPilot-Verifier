@@ -9,7 +9,8 @@ const execute = promisify(execFile), hash = bytes => createHash("sha256").update
 const [hostRoot, providerFile, destination, port] = process.argv.slice(2);
 if (!hostRoot || !providerFile || !destination || !port) throw new Error("hostRoot providerFile new-output-directory port required");
 const h = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port) });
-const native = h.version === "2026.10.3", outcome = { hostVersion: h.version, baseline: "ef3054e", experiment: "E1/E2/E4", cases: [], status: "RUNNING" };
+const baseline = process.env.RC_EXPERIMENT_BASELINE ?? "working-tree";
+const native = h.version === "2026.10.3", outcome = { hostVersion: h.version, baseline, experiment: "E1/E2/E4", cases: [], status: "RUNNING" };
 const milestone = value => { process.stdout.write(JSON.stringify({ hostVersion: h.version, at: Date.now(), ...value }) + "\n"); };
 const policy = stop => `version: 2\nartifacts:\n  - name: app\n    stage: proposal\n    patterns: [mini_app.py]\n    rules:\n      enabled: false\n    review:\n      enabled: false\ndynamicGroundTruth:\n  enabled: true\n  materialRoots: [spec/requirements.md]\n  panel:\n    size: 1\n    adjudicator: false\nartifactCorrection:\n  groundTruthReviewEnabled: false\nstopCorrection:\n  enabled: ${stop}\n  assessmentTimeoutMs: 720000\n  maxCorrectionsPerEpoch: 2\nimplementationCorrection:\n  enabled: ${stop}\n  platform: mini-python-stop-test\nreviewers:\n  defaults:\n    model: ${h.model}\n    effort: low\n    timeoutMs: 240000\n`;
 const app = stamp => `import argparse\n\ndef main():\n    parser = argparse.ArgumentParser(description="Readiness CLI")\n    parser.parse_args()\n    print("${stamp}")\n\nif __name__ == "__main__":\n    main()\n`;
@@ -79,7 +80,7 @@ async function waitForPass(project, initialRunId, limit = 1800000) {
 try {
   await fs.writeFile(path.join(h.pluginRoot, "config/platforms/mini-python-stop-test.json"), JSON.stringify({ name: "mini-python-stop-test", kitCheck: { modulePrefix: "", sourceRoots: [], sourceExtensions: [] }, sourceManifest: { roots: [], files: ["mini_app.py"], extensions: [".py"] } }, null, 2));
   const a = await prepare("A", "BROKEN"), b = await prepare("B", "PEER_READY");
-  await h.save("manifest.json", { codeBaseline: "ef3054e", hostVersion: h.version, model: h.model, A: a, B: b,
+  await h.save("manifest.json", { codeBaseline: baseline, hostVersion: h.version, model: h.model, A: a, B: b,
     settings: { k: 2, roleMs: 240000, stopMs: 720000, hookMs: 600000 }, firstRoundReadOnly: true, observerNeverEditsApp: true });
   const initialAcceptance = await acceptance(a, "READY"); assert.equal(initialAcceptance.ready, false); await h.save("A-initial-acceptance.json", initialAcceptance);
   const promptA = `对项目 ${a.projectRoot} 的 Python CLI 做正式交付验收。正式要求现在生效：\nR01 在该目录执行 python3.13 mini_app.py 必须退出0，stdout严格为READY加一个换行，stderr为空。\nR02 python3.13 mini_app.py --help退出0并显示usage，只用标准库。\nR03 只能修改mini_app.py，不改spec/requirements.md、AGENTS.md、.runtime-corrector或宿主，不安装依赖。\n这是控制Stop续作的故障注入实验。第一轮读取正式需求和当前代码，只运行默认入口与--help检查，不修改代码，然后交付“当前交付验收报告”，如实说明R01。第一轮只读是操作顺序，不是正式要求的阶段豁免。\n如果收到Runtime Corrector的Stop不通过反馈，已经授权你依据R01-R03实际修改mini_app.py并复测默认入口与--help，然后交付报告，无需用户再次确认，不能只解释修法。第一轮不要提前修复。read/edit/write使用${a.projectRoot}内的正确路径；所有exec显式设置workdir=${a.projectRoot}，命令使用上述原样Python调用，不用cd。`;

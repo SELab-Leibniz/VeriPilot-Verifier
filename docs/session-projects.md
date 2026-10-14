@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.1`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.2`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
@@ -23,6 +23,8 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 核验依据为正式 v2026.10.3 发布包，以及对应发布源码：[Session 创建](https://github.com/openclaw/openclaw/blob/v2026.10.3/src/gateway/server-methods/sessions-create.ts)、[运行目录解析](https://github.com/openclaw/openclaw/blob/v2026.10.3/src/agents/spawned-context.ts)、[公开 Session SDK](https://github.com/openclaw/openclaw/blob/v2026.10.3/src/plugin-sdk/session-store-runtime.ts)。新版 transcript 使用公开 SQLite transcript reader；旧版保持公开 Session 文件读取。兼容模块不修改宿主导出或源码。
 
 新版宿主还要求 Reviewer 使用已登记的 SQLite 会话标识。`compat-2026.10.3.mjs` 只为 RC 随机生成的私有 Reviewer 身份登记 Session，传入公开 SDK 生成的 marker 和精确 sessionTarget，格式修复复用同一身份；角色关闭后按 expectedSessionId 清理。业务会话和业务执行器不参与该适配，原 Reviewer 提示、格式修复、超时及预算保持原逻辑。
+
+新版交付后的 Stop 通过公开 `registerService({apiVersion: 2})` 的服务生命周期调度器运行，再使用公开 Session work admission 核验会话。旧版保留已验证的 Hook 后后台路径。服务未启动或关闭时保留未验证结果，不回退到过期 RPC 根上下文。内部 Stop 每次返回本轮身份和结果；宿主 Hook 的异常隔离不会吞掉内部调度错误。评审结论先写入当前轮 checkpoint 再请求原生续作，新轮仍重置评审状态。恢复已观察反馈时补齐任务交付状态并去重观察日志，不重派发业务。
 
 宿主 API 兼容声明使用比较区间 `>=2026.7.1 <=2026.10.3`：两版宿主的 pluginApi 解析器不接受 `||`。实际加载入口仍严格限制两个已验证版本；npm peerDependencies 的 `||` 独立生效。
 
@@ -51,3 +53,5 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 本次真实探针关闭 Stop 和实现终审，验证最小纵向的项目目录、实际文件、基线、Reviewer 与跨 Session 隔离；完整 Stop 重修闭环没有在新版重新实测。现有 Stop 预算和复验行为由回归测试守护。项目切换及迟到反馈的并发测试通过，但没有把单元测试声称为宿主 UI 切换的真实模型实测。
 
 2026-10-14 后续扩展实测已开启真实 Stop：旧版完成实际修复与最终 PASS，但首轮 checkpoint 不一致；新版 Worktree 的交付后 Stop 被宿主 Gateway 生命周期保护拒绝，完整终审验收失败。两版实际重启恢复、旧版 Stop 中改绑、新版需求评审中公开取消后切换通过。新版 Stop 阶段切换仍未完成。完整结果和三个已复现缺陷见 [扩展实测报告](experiments/session-projects-extended-results.md)，不能将此前最小项目探针通过解释为新版全部纠偏能力已验证。
+
+2026-10-15 已实现上述生命周期、重试、checkpoint 与反馈恢复修复。真实两版 Gateway 项目接口和新版实际调度/准入契约通过；真实 Python 子进程配合确定性宿主/Reviewer 的原生 Stop 闭环也通过，两 Session 的任务及预算独立。新一轮 GLM 真实 Gateway 首轮遭遇供应商 1308 五小时限额，其他已授权凭据分别返回 1113 余额不足和 1310 周/月额度限制，因此修复后的完整真实模型 Stop 与从空开发 Todo 仍待补验，不能将替身测试标作模型实测。详见 [修复与验证报告](experiments/session-projects-fix-20261015.md)。

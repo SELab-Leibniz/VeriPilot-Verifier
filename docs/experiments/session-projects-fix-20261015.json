@@ -1,0 +1,425 @@
+{
+  "branch": "codex/session-project-scope",
+  "candidateVersion": "1.9.1-openclaw.11-session-projects.2",
+  "baseCommit": "8c8f4f78caab0384e32dd96ec5087347ac1593d3",
+  "sourceWasUncommittedDuringTests": true,
+  "sourceSha256": {
+    "lib/openclaw/entry.mjs": "bf1f4f5fcdfb6ba114a45655567c4027eb7aa762c6f567207b1c02bd6b5413dd",
+    "lib/openclaw/stop-work-owner.mjs": "920b00a8dfc721e87b647db1a5b46e3258aa4d93203869d7ab0bb657d72e1d95",
+    "lib/openclaw/runtime.mjs": "19cfae519090daef5f2dab8008b3d1cfb566cf707e7bdd2cd8961731734578af",
+    "lib/openclaw/native-stop-review.mjs": "4f2ded82456dabb3fa7eac8afb6e60cdc2479558057d1a209a99c81983289db4",
+    "lib/openclaw/native-followup.mjs": "bd7369af56dd04d0a42cab3768d2bd18baafae8dbfc5d12a73cad46003008e66",
+    "lib/runtime-v2/orchestrator.mjs": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8",
+    "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c"
+  },
+  "core": {
+    "lib/runtime-v2/orchestrator.mjs": {
+      "unchangedFromPinnedBranch": true,
+      "sha256": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8"
+    },
+    "lib/runtime-v2/task-store.mjs": {
+      "unchangedFromPinnedBranch": true,
+      "sha256": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c"
+    }
+  },
+  "evidenceRoots": {
+    "legacyContract": "/tmp/rc-project-fix-legacy-contract-20261015",
+    "nativeContract": "/tmp/rc-project-fix-native-contract-20261015",
+    "nativeOwner": "/tmp/rc-stop-owner-contract-fix-20261015-r3",
+    "pythonNative": "/tmp/rc-python-native-stop-fix-20261015-r2",
+    "realModelAttempt": "/tmp/rc-stop-fix-native-20261015"
+  },
+  "testedPluginSnapshots": {
+    "legacyContract": {
+      "version": "1.9.1-openclaw.11-session-projects.1",
+      "sha256": {
+        "lib/openclaw/entry.mjs": "bf1f4f5fcdfb6ba114a45655567c4027eb7aa762c6f567207b1c02bd6b5413dd",
+        "lib/openclaw/stop-work-owner.mjs": "920b00a8dfc721e87b647db1a5b46e3258aa4d93203869d7ab0bb657d72e1d95",
+        "lib/openclaw/runtime.mjs": "0d60c66cbd382007c38a7141ac87aa482538641533eaa5295365df4c16c1d0e6",
+        "lib/openclaw/native-stop-review.mjs": "3d7da2d243f3fcbe1e1b2b857e0413cf8a6ad65fb574dc4687f36c138fa92b0b",
+        "lib/openclaw/native-followup.mjs": "d32f00550cbb3016628060ae7898c993fb01d89b33261dda387ba4abbda5f501",
+        "lib/runtime-v2/orchestrator.mjs": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8",
+        "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c"
+      }
+    },
+    "nativeContract": {
+      "version": "1.9.1-openclaw.11-session-projects.1",
+      "sha256": {
+        "lib/openclaw/entry.mjs": "bf1f4f5fcdfb6ba114a45655567c4027eb7aa762c6f567207b1c02bd6b5413dd",
+        "lib/openclaw/stop-work-owner.mjs": "920b00a8dfc721e87b647db1a5b46e3258aa4d93203869d7ab0bb657d72e1d95",
+        "lib/openclaw/runtime.mjs": "0d60c66cbd382007c38a7141ac87aa482538641533eaa5295365df4c16c1d0e6",
+        "lib/openclaw/native-stop-review.mjs": "3d7da2d243f3fcbe1e1b2b857e0413cf8a6ad65fb574dc4687f36c138fa92b0b",
+        "lib/openclaw/native-followup.mjs": "d32f00550cbb3016628060ae7898c993fb01d89b33261dda387ba4abbda5f501",
+        "lib/runtime-v2/orchestrator.mjs": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8",
+        "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c"
+      }
+    },
+    "realModelAttempt": {
+      "version": "1.9.1-openclaw.11-session-projects.1",
+      "sha256": {
+        "lib/openclaw/entry.mjs": "bf1f4f5fcdfb6ba114a45655567c4027eb7aa762c6f567207b1c02bd6b5413dd",
+        "lib/openclaw/stop-work-owner.mjs": "920b00a8dfc721e87b647db1a5b46e3258aa4d93203869d7ab0bb657d72e1d95",
+        "lib/openclaw/runtime.mjs": "f5267f4795cad2d17520b2d6adae662049deae15c14669800fb2a885165ec750",
+        "lib/openclaw/native-stop-review.mjs": "43de0e7fe6304823e95d730641f3c12dc77a9e8120251fb7ce21c968cd8f662e",
+        "lib/openclaw/native-followup.mjs": "546bbfefdaa10d9ea5aaa5c61e70213cab39377a82988db146b8b5fc0ae2bdc1",
+        "lib/runtime-v2/orchestrator.mjs": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8",
+        "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c"
+      }
+    }
+  },
+  "gatewayContracts": {
+    "legacyContract": {
+      "probe": "host-contract-only-no-model-or-business-files",
+      "hostVersion": "2026.7.1-2",
+      "mode": "legacy",
+      "defaultDir": "/tmp/rc-project-fix-legacy-contract-20261015/default",
+      "sessions": [
+        {
+          "name": "A",
+          "key": "agent:main:rc-project-a",
+          "sessionId": "197711d8-1e0d-4882-a798-206c289d433b",
+          "requestedDirectory": "/tmp/rc-project-fix-legacy-contract-20261015/A",
+          "actualRoot": "/private/tmp/rc-project-fix-legacy-contract-20261015/A",
+          "source": "rc",
+          "enabled": true,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        },
+        {
+          "name": "B",
+          "key": "agent:main:rc-project-b",
+          "sessionId": "69fb2d5f-f009-43ed-8054-73f667972ba8",
+          "requestedDirectory": "/tmp/rc-project-fix-legacy-contract-20261015/B",
+          "actualRoot": "/private/tmp/rc-project-fix-legacy-contract-20261015/B",
+          "source": "rc",
+          "enabled": true,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        },
+        {
+          "name": "off",
+          "key": "agent:main:rc-project-off",
+          "sessionId": "6a06b451-4609-4a56-a6a3-b79821421066",
+          "requestedDirectory": "/tmp/rc-project-fix-legacy-contract-20261015/off",
+          "actualRoot": "/private/tmp/rc-project-fix-legacy-contract-20261015/off",
+          "source": "rc",
+          "enabled": false,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        }
+      ],
+      "errors": [],
+      "status": "PASS"
+    },
+    "nativeContract": {
+      "probe": "host-contract-only-no-model-or-business-files",
+      "hostVersion": "2026.10.3",
+      "mode": "native",
+      "defaultDir": "/tmp/rc-project-fix-native-contract-20261015/default",
+      "sessions": [
+        {
+          "name": "A",
+          "key": "agent:main:rc-project-a",
+          "sessionId": "aac3a671-a424-468e-a741-a96b61cf8d1d",
+          "requestedDirectory": "/tmp/rc-project-fix-native-contract-20261015/A",
+          "actualRoot": "/private/tmp/rc-project-fix-native-contract-20261015/A",
+          "source": "host",
+          "enabled": true,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        },
+        {
+          "name": "B",
+          "key": "agent:main:rc-project-b",
+          "sessionId": "baa68d48-75f9-41bd-b35f-41b1af71c0ad",
+          "requestedDirectory": "/tmp/rc-project-fix-native-contract-20261015/B",
+          "actualRoot": "/private/tmp/rc-project-fix-native-contract-20261015/B",
+          "source": "host",
+          "enabled": true,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        },
+        {
+          "name": "off",
+          "key": "agent:main:rc-project-off",
+          "sessionId": "aca030c3-ed42-485f-9459-3992f4fcde00",
+          "requestedDirectory": "/tmp/rc-project-fix-native-contract-20261015/off",
+          "actualRoot": "/private/tmp/rc-project-fix-native-contract-20261015/off",
+          "source": "host",
+          "enabled": false,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0
+        },
+        {
+          "name": "tree",
+          "key": "agent:main:rc-project-tree",
+          "sessionId": "0dfb245d-510f-409e-af9c-f2fad8864ef5",
+          "requestedDirectory": "/tmp/rc-project-fix-native-contract-20261015/tree",
+          "actualRoot": "/private/tmp/rc-project-fix-native-contract-20261015/host-state/worktrees/f12ffcbfefbf0355/rc-probe",
+          "source": "host",
+          "enabled": true,
+          "fileContents": null,
+          "taskIds": [],
+          "taskStates": [],
+          "reviewerRuns": [],
+          "observedPrivateReviewerEventsDuringTurn": 0,
+          "worktreeDifferentFromOrigin": true
+        }
+      ],
+      "errors": [],
+      "status": "PASS"
+    }
+  },
+  "nativeOwnerContract": {
+    "hostVersion": "2026.10.3",
+    "modelCalls": 0,
+    "businessCodeWritten": false,
+    "productionUsesPrivateExports": false,
+    "baseline": {
+      "globalClosed": false,
+      "subordinateClosed": true,
+      "errorName": "GatewayDrainingError"
+    },
+    "serviceOwned": {
+      "globalClosed": false,
+      "subordinateClosed": false,
+      "executed": true,
+      "sessionAdmissionAcquired": true
+    },
+    "status": "PASS"
+  },
+  "nativeOwnerContractLimit": "Actual installed scheduler and admission guards; plugin registry runner and assertAllowed are diagnostic doubles; no model or real continuation.",
+  "pythonNativeStop": {
+    "status": "PASS",
+    "scope": "Real Python subprocesses and RC native hooks; deterministic host/reviewer doubles; no model API or running OpenClaw server.",
+    "cases": [
+      {
+        "version": "2026.7.1-2",
+        "status": "PASS",
+        "A": {
+          "taskId": "oc-scope-3cc7ac8a-9760-4c0f-af54-cbcb746937b7",
+          "groundTruthVersion": 1,
+          "k": 1,
+          "epoch": 1
+        },
+        "B": {
+          "taskId": "oc-scope-ef3e6e07-4bee-4c89-a068-5de9b28f0b57",
+          "k": 0
+        },
+        "actualPythonTests": 9,
+        "reviewPythonExitCodes": [
+          1,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "runId": "initial-A",
+            "status": "SETTLED",
+            "reviewStatus": "DEVIATION",
+            "evaluationId": "stop-20261014T224254114Z-14f65e4f",
+            "assessmentCompletedAt": 1792017774463
+          },
+          {
+            "runId": "initial-B",
+            "status": "SETTLED",
+            "reviewStatus": "PASS",
+            "evaluationId": "stop-20261014T224254214Z-811c64d8",
+            "assessmentCompletedAt": 1792017774458
+          },
+          {
+            "runId": "2ea14ab9-b71b-4a40-8159-b59c45a73216",
+            "status": "SETTLED",
+            "reviewStatus": "PASS",
+            "evaluationId": "stop-20261014T224257257Z-27820f79",
+            "assessmentCompletedAt": 1792017777510
+          }
+        ],
+        "receipt": {
+          "status": "ADMITTED",
+          "runId": "2ea14ab9-b71b-4a40-8159-b59c45a73216",
+          "assessmentId": "stop-20261014T224254114Z-14f65e4f",
+          "sourceRecordId": "5-agent:main:python-A",
+          "modelObservedAt": 1792017774619,
+          "observationReconciledAt": 1792017774793,
+          "finishedAt": 1792017777548,
+          "reviewStatus": "PASS",
+          "correctionAttempt": 1
+        }
+      },
+      {
+        "version": "2026.10.3",
+        "status": "PASS",
+        "A": {
+          "taskId": "oc-scope-ca76c4e2-235b-4581-8ed4-6d29538890e3",
+          "groundTruthVersion": 1,
+          "k": 1,
+          "epoch": 1
+        },
+        "B": {
+          "taskId": "oc-scope-0b2f4da5-9a17-43bd-bf8d-6108a5897246",
+          "k": 0
+        },
+        "actualPythonTests": 9,
+        "reviewPythonExitCodes": [
+          1,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "runId": "initial-A",
+            "status": "SETTLED",
+            "reviewStatus": "DEVIATION",
+            "evaluationId": "stop-20261014T224302965Z-23782d32",
+            "assessmentCompletedAt": 1792017783278
+          },
+          {
+            "runId": "initial-B",
+            "status": "SETTLED",
+            "reviewStatus": "PASS",
+            "evaluationId": "stop-20261014T224303068Z-08be6c7c",
+            "assessmentCompletedAt": 1792017783332
+          },
+          {
+            "runId": "9c38e92d-1e23-4db6-81a5-4a2808cee034",
+            "status": "SETTLED",
+            "reviewStatus": "PASS",
+            "evaluationId": "stop-20261014T224305990Z-42ec24f2",
+            "assessmentCompletedAt": 1792017786227
+          }
+        ],
+        "receipt": {
+          "status": "ADMITTED",
+          "runId": "9c38e92d-1e23-4db6-81a5-4a2808cee034",
+          "assessmentId": "stop-20261014T224302965Z-23782d32",
+          "sourceRecordId": "5-agent:main:python-A",
+          "modelObservedAt": 1792017783464,
+          "observationReconciledAt": 1792017783605,
+          "finishedAt": 1792017786261,
+          "reviewStatus": "PASS",
+          "correctionAttempt": 1
+        }
+      }
+    ]
+  },
+  "pythonTransactions": {
+    "generatedAt": "2026-10-14T22:35:42.332Z",
+    "environment": {
+      "node": "v26.0.0",
+      "python": "Python 3.9.6",
+      "platform": "darwin"
+    },
+    "scope": "Real Python subprocesses, real JSON files, compiled OpenClaw plugin runtime beforeTool/toolResult and terminal assessment; deterministic local checker runs Python tests; no real model service or running OpenClaw server.",
+    "pythonTests": 9,
+    "defectDetected": true,
+    "repairedDecision": "allow",
+    "finalDecision": "allow",
+    "verification": "PASS",
+    "appOperations": 74,
+    "rejectedToolOperations": 2,
+    "duplicateHookRequestsAtLeast": 144,
+    "assessmentCount": 167,
+    "reconstructedOldPostHookBytes": 4953941,
+    "reconstructedOldPostHookFirst": 40067,
+    "reconstructedOldPostHookLast": 97560,
+    "newPostHookBytes": 123412,
+    "ordinaryFirstBytes": 1705,
+    "ordinaryLastBytes": 1717,
+    "ordinaryMinBytes": 1705,
+    "ordinaryMaxBytes": 1717,
+    "runtimeFileCount": 62,
+    "runtimeTotalBytes": 1194379,
+    "retainedFileCount": 41,
+    "retainedTotalBytes": 1128145,
+    "retainedDeltaBytes": 503625,
+    "checkpointCount": 2,
+    "currentStateBytes": 118241,
+    "deletedProjectionRecoveryMs": 31.858625000000757,
+    "crashes": [
+      {
+        "phase": "commit-written",
+        "signal": "SIGKILL",
+        "outputReferences": 0
+      },
+      {
+        "phase": "published",
+        "signal": "SIGKILL",
+        "outputReferences": 0
+      },
+      {
+        "phase": "projected",
+        "signal": "SIGKILL",
+        "outputReferences": 1
+      },
+      {
+        "phase": "output-partial",
+        "signal": "SIGKILL",
+        "outputReferences": 1
+      },
+      {
+        "phase": "checkpoint-published",
+        "signal": "SIGKILL",
+        "outputReferences": 1
+      }
+    ],
+    "tornUnpublishedTailRecovered": true,
+    "duplicateEventIds": 0,
+    "warnings": [],
+    "elapsedMs": 53138.472458,
+    "testDirectory": "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-python-todo-e2e-71fs63"
+  },
+  "modelVerification": {
+    "status": "BLOCKED_PROVIDER_QUOTA",
+    "actualGatewayAttempt": {
+      "hostVersion": "2026.10.3",
+      "baseline": "ef3054e",
+      "experiment": "E1/E2/E4",
+      "cases": [],
+      "status": "FAIL",
+      "error": "Error: Host turn error: ⚠️ The AI service needs a short break. Please try again in a few minutes.\n    at Object.send (file:///Volumes/PortableSSD/projects/runtime-corrector-toy/scripts/diagnostics/lib/isolated-openclaw.mjs:96:44)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///Volumes/PortableSSD/projects/runtime-corrector-toy/scripts/diagnostics/session-project-stop-live.mjs:88:19"
+    },
+    "staleRawBaselineLabel": "Raw ef3054e label is stale; use bundled file hashes above.",
+    "probes": {
+      "secondKey": {
+        "httpStatus": 429,
+        "body": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"code\":\"1308\",\"message\":\"[1308][已达到 5 小时的使用上限。您的限额将在 2026-10-15 07:44:05 重置。][20261015063227d63911852062487e]\"},\"request_id\":\"20261015063227d63911852062487e\"}"
+      },
+      "firstKey": {
+        "httpStatus": 429,
+        "body": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"code\":\"1113\",\"message\":\"[1113][余额不足或无可用资源包,请充值。][202610150632472b92ac2797c5412b]\"},\"request_id\":\"202610150632472b92ac2797c5412b\"}"
+      },
+      "authorizedExistingCredential": {
+        "httpStatus": 429,
+        "body": "{\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"code\":\"1310\",\"message\":\"[1310][您已达到每周/每月使用上限，您的限额将在 2026-10-16 09:53:18 重置。][20261015063327beade469d0154bda]\"},\"request_id\":\"20261015063327beade469d0154bda\"}"
+      }
+    },
+    "fromEmptyPythonDevelopment": "Prepared; not executed with GLM because no available quota."
+  },
+  "regression": {
+    "finalLog": "/tmp/rc-fix-release-verified-20261015.log",
+    "status": "PASS",
+    "tests": 808,
+    "pass": 806,
+    "fail": 0,
+    "skipped": 2
+  }
+}

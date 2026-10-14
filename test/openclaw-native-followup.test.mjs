@@ -26,6 +26,37 @@ async function fixture(t, run) {
 const message = (id, parentId, role, content, extra = {}) => ({ type: "message", id, parentId, message: { role, content, ...extra } });
 const source = [message("human", null, "user", "Implement the App."), message("final", "human", "assistant", "Implemented.")];
 
+test("reload reconciles a durable observation after task persistence failed without redispatch", async t => {
+  const f = await fixture(t);
+  const receipt = await f.manager.submit(f.params);
+  const records = [...source, message("feedback", "final", "user", receipt.message, { runId: receipt.runId })];
+  let attempts = 0;
+  const failed = createNativeFollowups(f.api, { onObserved: async () => {
+    attempts++; throw new Error("Task persistence failed");
+  } });
+  await assert.rejects(failed.project({ ...f.params, records }), /Task persistence failed/);
+  const restored = createNativeFollowups(f.api, { onObserved: async () => { attempts++; } });
+  assert.equal((await restored.project({ ...f.params, records })).at(-1).isMeta, true);
+  await restored.project({ ...f.params, records });
+  assert.equal(attempts, 2, "The failed reconciliation is retried once and durably acknowledged");
+  assert.equal(f.calls.length, 1);
+  assert.equal((await f.journal()).filter(e => e.type === "NATIVE_STOP_FOLLOWUP_OBSERVED").length, 1);
+});
+
+test("recovery after the observation journal write does not append a second observation", async t => {
+  const f = await fixture(t), receipt = await f.manager.submit(f.params);
+  const records = [...source, message("feedback", "final", "user", receipt.message, { runId: receipt.runId })];
+  await f.manager.project({ ...f.params, records });
+  const base = path.join(f.params.projectRoot, ".runtime-correction/openclaw/native-followups");
+  const dir = path.join(base, (await fs.readdir(base))[0]), file = path.join(dir, (await fs.readdir(dir)).find(name => name.endsWith(".json")));
+  const persisted = JSON.parse(await fs.readFile(file)); delete persisted.observationReconciledAt;
+  await fs.writeFile(file, JSON.stringify(persisted));
+  let reconciled = 0;
+  await createNativeFollowups(f.api, { onObserved: async () => { reconciled++; } }).project({ ...f.params, records });
+  assert.equal(reconciled, 1); assert.equal(f.calls.length, 1);
+  assert.equal((await f.journal()).filter(e => e.type === "NATIVE_STOP_FOLLOWUP_OBSERVED").length, 1);
+});
+
 test("a project change between reservation and dispatch cancels the old feedback without a host continuation", async t => {
   const f = await fixture(t);
   let checks = 0;
