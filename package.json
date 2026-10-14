@@ -13,7 +13,8 @@
     "build:plugins": "node ./scripts/build-plugin.mjs --all",
     "test:artifacts": "node --test test/plugin-artifacts.test.mjs",
     "test": "node --test --test-concurrency=4",
-    "benchmark:session-end": "node ./scripts/benchmark-session-end.mjs"
+    "benchmark:session-end": "node ./scripts/benchmark-session-end.mjs",
+    "benchmark:file-transactions": "node ./scripts/benchmark-file-transactions.mjs"
   },
   "engines": {
     "node": ">=18"

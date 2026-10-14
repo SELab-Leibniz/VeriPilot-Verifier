@@ -10,7 +10,7 @@ import {
   loopBoundedFamilyIds,
   recordDeviationFindings,
 } from "../lib/runtime-v2/deviations.mjs";
-import { ensureTask, taskStatePath } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 
 
 async function workspace(t) {
@@ -120,10 +120,9 @@ test("a FIXED family is never parked and never blocks re-delivery", async (t) =>
     await record(root, taskId, { delivered: true, bound: 5 });
   }
   // Simulate closure, then a regression of the same family.
-  const statePath = taskStatePath(root, taskId);
-  const state = JSON.parse(await fs.readFile(statePath, "utf8"));
-  Object.values(state.deviations)[0].status = "FIXED";
-  await fs.writeFile(statePath, JSON.stringify(state));
+  await withTaskState({ projectRoot: root, taskId }, state => {
+    Object.values(state.deviations)[0].status = "FIXED";
+  });
   const bounded = await loopBoundedFamilyIds({ projectRoot: root, taskId, maxDeliveries: 5 });
   assert.equal(bounded.size, 0, "a closed deviation must be speakable again if it regresses");
 });

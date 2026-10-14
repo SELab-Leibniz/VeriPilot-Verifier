@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-10-14T07:51:41.082Z",
+  "note": "Pure file experiment; isolated new temporary directory; no model or business service. Byte counts are UTF-8. Recovery timing is five-run warm filesystem-cache median, not a cold-start guarantee.",
+  "serialized": [
+    {
+      "N": 100,
+      "baseBytes": 0,
+      "oldTransactionBytes": 1807600,
+      "newDeltaBytes": 83872,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 847,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    },
+    {
+      "N": 200,
+      "baseBytes": 0,
+      "oldTransactionBytes": 7155750,
+      "newDeltaBytes": 168672,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 848,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    },
+    {
+      "N": 400,
+      "baseBytes": 0,
+      "oldTransactionBytes": 28502050,
+      "newDeltaBytes": 338272,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 848,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    },
+    {
+      "N": 100,
+      "baseBytes": 500000,
+      "oldTransactionBytes": 51807600,
+      "newDeltaBytes": 83872,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 847,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    },
+    {
+      "N": 200,
+      "baseBytes": 500000,
+      "oldTransactionBytes": 107155750,
+      "newDeltaBytes": 168672,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 848,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    },
+    {
+      "N": 400,
+      "baseBytes": 500000,
+      "oldTransactionBytes": 228502050,
+      "newDeltaBytes": 338272,
+      "newOrdinaryMin": 770,
+      "newOrdinaryMax": 848,
+      "excluded": "one-time initialization/blob and periodic checkpoints; this row counts serialization only"
+    }
+  ],
+  "disk": {
+    "N": 120,
+    "baseBytes": 131072,
+    "stateEqual": true,
+    "assessmentCount": 121,
+    "before": {
+      "fileCount": 121,
+      "totalBytes": 18497689,
+      "transactionBytes": 18321870,
+      "ordinaryFirst": 131687,
+      "ordinaryLast": 173726,
+      "recoveryMedianMs": 39.04945800000132,
+      "fullStateProjectionWriteBytes": 18437694
+    },
+    "after": {
+      "fileCount": 34,
+      "totalBytes": 464327,
+      "retainedDeltaBytes": 100832,
+      "ordinaryFirst": 770,
+      "ordinaryLast": 848,
+      "recoveryMedianMs": 2.806750000001557,
+      "fullStateProjectionWriteBytes": 18437694,
+      "recoveryProjectionWriteBytes": 175819,
+      "checkpointWriteBytes": 67311,
+      "checkpointCount": 2,
+      "auditPolicy": "retain compact incremental audit segments and referenced blobs indefinitely; reclaim checkpointed recovery files; keep two recovery checkpoints"
+    }
+  },
+  "actualRuntimeHooks": {
+    "N": 80,
+    "baseBytes": 131072,
+    "oldReconstructedTransactionBytes": 12058971,
+    "oldOrdinaryFirst": 133208,
+    "oldOrdinaryLast": 168276,
+    "actualNewOrdinaryFirst": 1474,
+    "actualNewOrdinaryLast": 1446,
+    "actualNewRetainedDeltaBytes": 161759,
+    "actualNewFiles": 41,
+    "actualNewTotalBytes": 505493,
+    "logicalDecisions": 80,
+    "eventCount": 80,
+    "duplicateRequests": 80,
+    "duplicateCalculations": 0,
+    "journalVersionsIncludingProjectionAcks": 161,
+    "fullStateProjectionWriteBytes": 24311356,
+    "projectionWritesPerDecision": 2
+  }
+}

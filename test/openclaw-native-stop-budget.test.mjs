@@ -24,13 +24,17 @@ async function basic(t) {
 }
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
   const params = await basic(t), manager = createNativeStopReviews();
-  let finish, started = 0;
-  const run = async () => { started++; await new Promise(resolve => { finish = resolve; }); return { reviewStatus: "PASS" }; };
+  let finish, started = 0, markStarted;
+  const ready = new Promise(resolve => { markStarted = resolve; });
+  const run = async () => { started++; markStarted(); await new Promise(resolve => { finish = resolve; }); return { reviewStatus: "PASS" }; };
   const record = await manager.schedule({ ...params, run });
   assert.equal(record.status, "PENDING");
   assert.equal(started, 0);
   await manager.schedule({ ...params, run });
-  await pause(20); assert.equal(started, 1);
+  await Promise.race([ready, manager.wait().then(results => {
+    if (!started) assert.fail(`review settled before starting: ${JSON.stringify(results)}`);
+  })]);
+  assert.equal(started, 1);
   finish(); const results = await manager.wait();
   assert.equal(results[0].status, "SETTLED"); assert.equal(results[0].reviewStatus, "PASS");
   await createNativeStopReviews().schedule({ ...params, run });

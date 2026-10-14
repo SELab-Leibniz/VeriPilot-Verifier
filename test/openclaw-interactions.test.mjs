@@ -265,6 +265,8 @@ test('A10 manual reviewer refusing cancellation stays STOPPING until it settles'
   for (let i = 0; i < 100; i++) { if ((await service.handle('receipt', stop, actor)).status === 'STOPPED') break; await new Promise(r => setTimeout(r, 5)); }
   assert.equal((await service.handle('receipt', stop, actor)).status, 'STOPPED');
   assert.equal((await f.current()).control.cancelled, true);
+  // Lock-free receipts observe publication before projection/lock cleanup.
+  await withTaskState(f.target, () => {});
 });
 
 test('A21 stable command target survives a new task and changed native session ID', async (t) => {
