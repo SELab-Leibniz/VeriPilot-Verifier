@@ -40,3 +40,20 @@ npm test
 `npm test` 在具备 Python 3 的 POSIX 系统上运行该场景；缺少 Python 或 Windows 平台会跳过包含 SIGKILL 的场景。应用单测可独立运行。
 
 完整结果见仓库的 `docs/experiments/python-todolist.md` 和 `python-todolist-results.json`。使用 `--keep` 时，结果包含实际测试目录，保留应用数据、测试原始输出、提交审计及报告。
+
+## 真实 OpenClaw 与模型
+
+`scripts/diagnostics/openclaw-python-todolist.mjs` 另行启动实际 OpenClaw `2026.7.1-2` Gateway，加载本分支构建的插件，使用真实模型和独立模型审阅会话。它不注入本地 reviewer factory。此诊断需要明确运行，不属于 `npm test`，会调用已授权的外部模型服务。
+
+智谱 Coding Plan 的私密环境文件包含 `RC_TODO_API_KEY` 和 `RC_TODO_BASE_URL`，地址为 `https://open.bigmodel.cn/api/coding/paas/v4`。密钥放在仓库外。
+
+```sh
+RC_TODO_ENV_FILE=/path/to/private.env \
+RC_TODO_WORK_MODEL=provided/glm-5.3-flash \
+RC_TODO_REVIEW_MODEL=provided/glm-5.3-flash \
+node scripts/diagnostics/openclaw-python-todolist.mjs
+```
+
+每次运行新建临时 profile 与工作区，不修改原 Gateway。需要续跑诊断时，在相同命令末尾加 `--resume <上次测试目录>`；已完成的检查和故障证据不会被重置。诊断只在生成的测试插件中加入中断观察点，并把检查点间隔设为 4 以便覆盖回收过程，生产默认间隔不变。
+
+恢复通过新的原生继续消息触发，沿用相同会话、任务与业务操作 ID；不承诺宿主自动续执行已终止的模型请求。真实测试记录与结果说明见 `docs/experiments/openclaw-python-todolist.md`。

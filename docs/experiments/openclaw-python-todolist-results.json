@@ -1,0 +1,2446 @@
+{
+  "hostVersion": "2026.7.1-2",
+  "pluginVersion": "1.9.1-openclaw.10-native-stop-budget.1",
+  "branch": "codex/file-transaction-deltas",
+  "root": "$TEST_ROOT",
+  "workspace": "$WORKSPACE",
+  "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+  "taskId": "task-20261014T104225443Z-806cf762",
+  "workModel": "provided/glm-5.3-flash",
+  "reviewModel": "provided/glm-5.3-flash",
+  "gatewayUsed": true,
+  "replacementReviewer": false,
+  "originalProfileTouched": false,
+  "testInstrumentation": {
+    "generatedPluginOnly": true,
+    "checkpointEvery": 4,
+    "alteredAlgorithms": false,
+    "seams": [
+      "existing journal fault callback",
+      "after first report file"
+    ],
+    "generatedJournalSha256": "8441875fadcea2682ca109a9b88088ab6ead7c5e5b43e0dcf9c189e9db1cee62"
+  },
+  "checks": {
+    "realModelRepairedBugAndReviewed": true,
+    "pythonNineTests": true,
+    "COMMIT_NOT_PUBLISHED": true,
+    "POST_PUBLISHED_BEFORE_PROJECTION": true,
+    "STOP_PUBLISHED_BEFORE_EVALUATION": true,
+    "OUTPUT_PARTIAL": true,
+    "CHECKPOINT_PUBLISHED_BEFORE_CLEANUP": true,
+    "tornUnpublishedTail": true,
+    "testSuiteUnchanged": true
+  },
+  "passed": true,
+  "phases": [
+    {
+      "name": "REPAIR_AND_CRUD",
+      "runId": "ab70949b-6910-445c-9079-b051ce4cfb8f",
+      "completion": {
+        "runId": "ab70949b-6910-445c-9079-b051ce4cfb8f",
+        "status": "error",
+        "endedAt": 1791974619531,
+        "error": "⚠️ 🛠️ Exec failed: `print text → run $p live-add-001 → run $p live-rename-001 → run $p live-complete-001 → run $p live-reopen-001 → run $p live-delete-001 → run $p live-list-001 → show data/live.json`"
+      },
+      "startedAt": "2026-10-14T10:42:15.685Z"
+    },
+    {
+      "name": "REPAIR_AND_CRUD",
+      "runId": "2b888621-b625-4149-9b00-20d3c7ef496e",
+      "completion": {
+        "runId": "2b888621-b625-4149-9b00-20d3c7ef496e",
+        "status": "ok",
+        "endedAt": 1791974844733
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "2b888621-b625-4149-9b00-20d3c7ef496e",
+        "ownerPid": 94137,
+        "status": "SETTLED",
+        "createdAt": 1791974844727,
+        "deadlineAt": 1791975744727,
+        "budgetMs": 900000,
+        "startedAt": 1791974844734,
+        "settledAt": 1791974905223,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T104825121Z-f7be170f"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T104825121Z-f7be170f",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T10:48:25.121Z",
+        "assessmentId": "2b888621-b625-4149-9b00-20d3c7ef496e:stop",
+        "evidence": {
+          "digest": "9ab96cd4cfeea793cbb486133ea66ff8eed0c1307515f5462e1a891895d10d43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "e1fb99c380be29de4cdc058e3b920ffcaedd88bebb7ab8c283f1c3926203e942"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 2,
+        "requirementDigest": "b766b35c459b2afee17c8c93981c4c387fa55a0273efc872f53e3e6d256d9ddc",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T10:47:02.765Z",
+      "finishedAt": "2026-10-14T10:48:25.841Z"
+    },
+    {
+      "name": "COMMIT_NOT_PUBLISHED",
+      "runId": "9c950a15-6ef8-49e6-9412-e48bea933d38",
+      "boundary": {
+        "name": "COMMIT_NOT_PUBLISHED",
+        "point": "commit-written",
+        "killedPid": 94137,
+        "operationId": "9c950a15-6ef8-49e6-9412-e48bea933d38:call_555861ab43904eeaa26dac9c:pre",
+        "stoppedSequence": 28,
+        "commitSequence": 29,
+        "published": false,
+        "outputReferences": 0,
+        "modelAndReviewRecoveryMs": 72289,
+        "authoritativeAssessmentsPreserved": true,
+        "duplicateBusinessItems": 0,
+        "duplicateLogicalOperations": 0
+      },
+      "startedAt": "2026-10-14T10:48:28.373Z"
+    },
+    {
+      "name": "RECOVER_COMMIT_NOT_PUBLISHED",
+      "runId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04",
+      "completion": {
+        "runId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04",
+        "status": "ok",
+        "endedAt": 1791974930722
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04",
+        "ownerPid": 94423,
+        "status": "SETTLED",
+        "createdAt": 1791974930715,
+        "deadlineAt": 1791975830715,
+        "budgetMs": 900000,
+        "startedAt": 1791974930723,
+        "settledAt": 1791974991367,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T104951260Z-4540b622"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T104951260Z-4540b622",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T10:49:51.261Z",
+        "assessmentId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04:stop",
+        "evidence": {
+          "digest": "9ab96cd4cfeea793cbb486133ea66ff8eed0c1307515f5462e1a891895d10d43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "e1fb99c380be29de4cdc058e3b920ffcaedd88bebb7ab8c283f1c3926203e942"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 3,
+        "requirementDigest": "88c46f3eabebd61f2141ea153b05938b6cc9efffc9b64c6463acb6d48184d83f",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T10:48:42.332Z",
+      "finishedAt": "2026-10-14T10:49:52.803Z"
+    },
+    {
+      "name": "POST_PUBLISHED_BEFORE_PROJECTION",
+      "runId": "0262f917-1af5-4022-8723-9fcbd4207c2f",
+      "boundary": {
+        "name": "POST_PUBLISHED_BEFORE_PROJECTION",
+        "point": "published",
+        "killedPid": 94423,
+        "operationId": "0262f917-1af5-4022-8723-9fcbd4207c2f:call_bfe6e002d8af416691e54b65:post",
+        "stoppedSequence": 39,
+        "commitSequence": 39,
+        "published": true,
+        "outputReferences": 0,
+        "rounds": [],
+        "evaluationFiles": [],
+        "evaluationHashes": {},
+        "businessCommandAlreadyExecuted": true,
+        "modelAndReviewRecoveryMs": 93714,
+        "authoritativeAssessmentsPreserved": true,
+        "duplicateBusinessItems": 0,
+        "duplicateLogicalOperations": 0
+      },
+      "startedAt": "2026-10-14T10:49:55.654Z"
+    },
+    {
+      "name": "RECOVER_POST_PUBLISHED_BEFORE_PROJECTION",
+      "runId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f",
+      "completion": {
+        "runId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f",
+        "status": "ok",
+        "endedAt": 1791975015565
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f",
+        "ownerPid": 94644,
+        "status": "SETTLED",
+        "createdAt": 1791975015559,
+        "deadlineAt": 1791975915559,
+        "budgetMs": 900000,
+        "startedAt": 1791975015565,
+        "settledAt": 1791975100738,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T105140592Z-ce48226c"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T105140592Z-ce48226c",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T10:51:40.594Z",
+        "assessmentId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f:stop",
+        "evidence": {
+          "digest": "9ab96cd4cfeea793cbb486133ea66ff8eed0c1307515f5462e1a891895d10d43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "e1fb99c380be29de4cdc058e3b920ffcaedd88bebb7ab8c283f1c3926203e942"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 4,
+        "requirementDigest": "4fa808678b4a74e65229d10749f870d247d0b30359df2cb06b66ebe3b986d258",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T10:50:09.853Z",
+      "finishedAt": "2026-10-14T10:51:41.727Z"
+    },
+    {
+      "name": "STOP_PUBLISHED_BEFORE_EVALUATION",
+      "runId": "67b5b76d-eb60-4520-85b9-4d893625cf0f",
+      "completion": {
+        "runId": "67b5b76d-eb60-4520-85b9-4d893625cf0f",
+        "status": "ok",
+        "endedAt": 1791975113296
+      },
+      "boundary": {
+        "name": "STOP_PUBLISHED_BEFORE_EVALUATION",
+        "point": "published",
+        "killedPid": 94644,
+        "operationId": "67b5b76d-eb60-4520-85b9-4d893625cf0f:stop",
+        "stoppedSequence": 53,
+        "commitSequence": 53,
+        "published": true,
+        "outputReferences": 0,
+        "rounds": [],
+        "evaluationFiles": [
+          "evaluations/stop-20261014T105341872Z-6a15bfc2.json"
+        ],
+        "evaluationHashes": {
+          "evaluations/stop-20261014T105341872Z-6a15bfc2.json": "02176de41eaee15f155f6a2da4e4da4dcd578a0fa12fee1b04fe52b8eb54f932"
+        },
+        "modelAndReviewRecoveryMs": 84516,
+        "authoritativeAssessmentsPreserved": true,
+        "duplicateBusinessItems": 0,
+        "duplicateLogicalOperations": 0
+      },
+      "startedAt": "2026-10-14T10:51:43.900Z"
+    },
+    {
+      "name": "RECOVER_STOP_PUBLISHED_BEFORE_EVALUATION",
+      "runId": "ea2fa494-5afa-4665-927a-3397fb3f40d1",
+      "completion": {
+        "runId": "ea2fa494-5afa-4665-927a-3397fb3f40d1",
+        "status": "ok",
+        "endedAt": 1791975472145
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "ea2fa494-5afa-4665-927a-3397fb3f40d1",
+        "ownerPid": 95212,
+        "status": "SETTLED",
+        "createdAt": 1791975472139,
+        "deadlineAt": 1791976372139,
+        "budgetMs": 900000,
+        "startedAt": 1791975472145,
+        "settledAt": 1791975543817,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T105903621Z-f41cb6ea"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T105903621Z-f41cb6ea",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T10:59:03.626Z",
+        "assessmentId": "ea2fa494-5afa-4665-927a-3397fb3f40d1:stop",
+        "evidence": {
+          "digest": "9ab96cd4cfeea793cbb486133ea66ff8eed0c1307515f5462e1a891895d10d43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "e1fb99c380be29de4cdc058e3b920ffcaedd88bebb7ab8c283f1c3926203e942"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 6,
+        "requirementDigest": "d0dea42ff4be4cf51a785bb951b019524d0498446e1c0d2065b8253fc8ae49a6",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T10:57:42.556Z",
+      "finishedAt": "2026-10-14T10:59:05.264Z"
+    },
+    {
+      "name": "OUTPUT_PARTIAL",
+      "runId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec",
+      "boundary": {
+        "name": "OUTPUT_PARTIAL",
+        "point": "output-partial",
+        "killedPid": 95212,
+        "operationId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec:call_bd8f5bdd121b41b6a86da853:post",
+        "stoppedSequence": 69,
+        "commitSequence": 69,
+        "published": true,
+        "outputReferences": 1,
+        "rounds": [
+          "20261014T105917Z-6f5ee553"
+        ],
+        "evaluationFiles": [],
+        "evaluationHashes": {},
+        "partialReport": "$WORKSPACE/.runtime-correction/runs/coding/todo-8880add1/20261014T105917Z-6f5ee553/diagnostic.md",
+        "modelAndReviewRecoveryMs": 104986,
+        "authoritativeAssessmentsPreserved": true,
+        "duplicateBusinessItems": 0,
+        "duplicateLogicalOperations": 0
+      },
+      "startedAt": "2026-10-14T10:59:07.914Z"
+    },
+    {
+      "name": "RECOVER_OUTPUT_PARTIAL",
+      "runId": "161d49af-744f-4772-af8e-1a91ac3fadb4",
+      "completion": {
+        "runId": "161d49af-744f-4772-af8e-1a91ac3fadb4",
+        "status": "ok",
+        "endedAt": 1791975677586
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "161d49af-744f-4772-af8e-1a91ac3fadb4",
+        "ownerPid": 95722,
+        "status": "SETTLED",
+        "createdAt": 1791975677579,
+        "deadlineAt": 1791976577579,
+        "budgetMs": 900000,
+        "startedAt": 1791975677586,
+        "settledAt": 1791975757935,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T110237776Z-20d0b6df"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110237776Z-20d0b6df",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T11:02:37.783Z",
+        "assessmentId": "161d49af-744f-4772-af8e-1a91ac3fadb4:stop",
+        "evidence": {
+          "digest": "4ad9d19755c47daac1069e80b5e4230def4a11aef0015ea74a6de29e1fcd1f43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "766065abd0ab0334360139bfead510ecab13a2c715f031dcf0553e84a0d73383"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 8,
+        "requirementDigest": "ef70b23404d647e0ed11ed0393c020a882784364424a970a346c5cc3d1bf43e0",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T11:00:55.835Z",
+      "finishedAt": "2026-10-14T11:02:38.960Z"
+    },
+    {
+      "name": "CHECKPOINT_PUBLISHED_BEFORE_CLEANUP",
+      "runId": "223866f6-342e-4328-8603-523343d25193",
+      "boundary": {
+        "name": "CHECKPOINT_PUBLISHED_BEFORE_CLEANUP",
+        "point": "checkpoint-published",
+        "killedPid": 95722,
+        "operationId": null,
+        "stoppedSequence": 84,
+        "commitSequence": 84,
+        "published": true,
+        "outputReferences": 0,
+        "recoveryFilesBeforeCleanup": 5,
+        "modelAndReviewRecoveryMs": 147000,
+        "authoritativeAssessmentsPreserved": true,
+        "duplicateBusinessItems": 0,
+        "duplicateLogicalOperations": 0
+      },
+      "startedAt": "2026-10-14T11:02:40.999Z"
+    },
+    {
+      "name": "RECOVER_CHECKPOINT_PUBLISHED_BEFORE_CLEANUP",
+      "runId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d",
+      "completion": {
+        "runId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d",
+        "status": "ok",
+        "endedAt": 1791975777168
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d",
+        "ownerPid": 95944,
+        "status": "SETTLED",
+        "createdAt": 1791975777161,
+        "deadlineAt": 1791976677161,
+        "budgetMs": 900000,
+        "startedAt": 1791975777168,
+        "settledAt": 1791975916032,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T110515865Z-ca791361"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110515865Z-ca791361",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T11:05:15.873Z",
+        "assessmentId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d:stop",
+        "evidence": {
+          "digest": "4ad9d19755c47daac1069e80b5e4230def4a11aef0015ea74a6de29e1fcd1f43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "766065abd0ab0334360139bfead510ecab13a2c715f031dcf0553e84a0d73383"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 9,
+        "requirementDigest": "6d6e3661e42e022be9e3027d02546d7f8ff0a6bb0f238d5ded3dd318da191cce",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T11:02:51.113Z",
+      "finishedAt": "2026-10-14T11:05:16.254Z"
+    },
+    {
+      "name": "TORN_TAIL_RECOVERY",
+      "runId": "78551b31-d7c9-47c6-972c-88e20b093c00",
+      "completion": {
+        "runId": "78551b31-d7c9-47c6-972c-88e20b093c00",
+        "status": "ok",
+        "endedAt": 1791975926540
+      },
+      "receipt": {
+        "sessionId": "c133d0a5-1d4c-406c-9470-558d6f73d178",
+        "sessionKey": "agent:main:file-transaction-todo-live",
+        "runId": "78551b31-d7c9-47c6-972c-88e20b093c00",
+        "ownerPid": 95944,
+        "status": "SETTLED",
+        "createdAt": 1791975926533,
+        "deadlineAt": 1791976826533,
+        "budgetMs": 900000,
+        "startedAt": 1791975926541,
+        "settledAt": 1791976084038,
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261014T110803818Z-92b084e9"
+      },
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110803818Z-92b084e9",
+        "correctionBudgetExhausted": false,
+        "updatedAt": "2026-10-14T11:08:03.825Z",
+        "assessmentId": "78551b31-d7c9-47c6-972c-88e20b093c00:stop",
+        "evidence": {
+          "digest": "4ad9d19755c47daac1069e80b5e4230def4a11aef0015ea74a6de29e1fcd1f43",
+          "files": [
+            "$WORKSPACE/.runtime-corrector/config.yaml",
+            "$WORKSPACE/todo.py"
+          ],
+          "fingerprints": {
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/.runtime-corrector/config.yaml": "35a9fa6b13e16e2799a8e3a0b817d4f61f6603edf49b9f774e22aa1f95c11b8e",
+            "/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-openclaw-todo-live-jf3Xux/workspace/todo.py": "766065abd0ab0334360139bfead510ecab13a2c715f031dcf0553e84a0d73383"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 10,
+        "requirementDigest": "9f6fb4263560304083d77b4dcbb88d2a4f338d6a89b0759c4a1eda99622b7cb1",
+        "rulesDigest": "1c0605fb5a3c5a5f1d0aaeea",
+        "cancelEpoch": 0,
+        "generation": null
+      },
+      "startedAt": "2026-10-14T11:05:18.123Z",
+      "finishedAt": "2026-10-14T11:08:04.179Z"
+    }
+  ],
+  "sourceHashes": {
+    "lib/openclaw/runtime.mjs": "d98d55c6d0553c87c8ce6b036814e41818bfb25c5956f3b1999f8528fb8e3840",
+    "lib/openclaw/report.mjs": "91ab75eb444795570ddcf9cd5108d311d1aeabbd20941fab95fef7fd6fdd09ef",
+    "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c",
+    "lib/runtime-v2/utils.mjs": "53b3eed3a6b8376436456be0e15975e6b4c4d9416514d2b5b787ac58c25bc76f"
+  },
+  "native": {
+    "modelRequests": [
+      {
+        "id": "c80b8eb8",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 6977,
+          "output": 7,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 7112,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "d38ff13a",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 7478,
+          "output": 23,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 7501,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "44367d87",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 8943,
+          "output": 86,
+          "cacheRead": 64,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 9093,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "9d9852a0",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 732,
+          "output": 20,
+          "cacheRead": 8960,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 9712,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "00d5d493",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 218,
+          "output": 170,
+          "cacheRead": 9664,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 10052,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "7f32fbf6",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 226,
+          "output": 261,
+          "cacheRead": 9856,
+          "cacheWrite": 0,
+          "reasoningTokens": 13,
+          "totalTokens": 10343,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "2b3d90fa",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 887,
+          "output": 244,
+          "cacheRead": 10048,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 11179,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "ddfb2d09",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 513,
+          "output": 69,
+          "cacheRead": 10880,
+          "cacheWrite": 0,
+          "reasoningTokens": 27,
+          "totalTokens": 11462,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "c33150f8",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 106,
+          "output": 302,
+          "cacheRead": 11392,
+          "cacheWrite": 0,
+          "reasoningTokens": 11,
+          "totalTokens": 11800,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "11ba0832",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 558,
+          "output": 268,
+          "cacheRead": 11456,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 12282,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "94b54ed5",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 436,
+          "output": 52,
+          "cacheRead": 11968,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 12456,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "b58e878e",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 328,
+          "output": 71,
+          "cacheRead": 12352,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 12751,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "80eb26da",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 464,
+          "output": 19,
+          "cacheRead": 12352,
+          "cacheWrite": 0,
+          "reasoningTokens": 12,
+          "totalTokens": 12835,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "ce0aebb3",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 532,
+          "output": 55,
+          "cacheRead": 12352,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 12939,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "cbca58bc",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 559,
+          "output": 74,
+          "cacheRead": 12608,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 13241,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "9bc64882",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 725,
+          "output": 52,
+          "cacheRead": 12608,
+          "cacheWrite": 0,
+          "reasoningTokens": 19,
+          "totalTokens": 13385,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "4e390d77",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 1077,
+          "output": 57,
+          "cacheRead": 12352,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 13486,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "b0999eaa",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 535,
+          "output": 8,
+          "cacheRead": 13056,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 13599,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "e4eb47d4",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 175,
+          "output": 76,
+          "cacheRead": 13568,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 13819,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "d0588f5a",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 242,
+          "output": 76,
+          "cacheRead": 13696,
+          "cacheWrite": 0,
+          "reasoningTokens": 17,
+          "totalTokens": 14014,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "e2552acf",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 272,
+          "output": 12,
+          "cacheRead": 13888,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 14172,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "7413bb96",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 794,
+          "output": 52,
+          "cacheRead": 14144,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 14990,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "fc9328a2",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 294,
+          "output": 55,
+          "cacheRead": 14912,
+          "cacheWrite": 0,
+          "reasoningTokens": 23,
+          "totalTokens": 15261,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "49126a35",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 359,
+          "output": 171,
+          "cacheRead": 14912,
+          "cacheWrite": 0,
+          "reasoningTokens": 105,
+          "totalTokens": 15442,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "aa9c917e",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 368,
+          "output": 82,
+          "cacheRead": 15104,
+          "cacheWrite": 0,
+          "reasoningTokens": 37,
+          "totalTokens": 15554,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "26c824fc",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 668,
+          "output": 57,
+          "cacheRead": 14912,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 15637,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "3727ce59",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 764,
+          "output": 76,
+          "cacheRead": 15104,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 15944,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "08af3923",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 1005,
+          "output": 44,
+          "cacheRead": 15104,
+          "cacheWrite": 0,
+          "reasoningTokens": 4,
+          "totalTokens": 16153,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      },
+      {
+        "id": "eca8a2e6",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 1239,
+          "output": 40,
+          "cacheRead": 14912,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 16191,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "toolUse"
+      },
+      {
+        "id": "aca13b8f",
+        "provider": "todo-work",
+        "model": "glm-5.3-flash",
+        "usage": {
+          "input": 589,
+          "output": 97,
+          "cacheRead": 15744,
+          "cacheWrite": 0,
+          "reasoningTokens": 0,
+          "totalTokens": 16430,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "stopReason": "stop"
+      }
+    ],
+    "tools": [
+      {
+        "id": "call_adf7c5d4da714441abf03097",
+        "name": "read"
+      },
+      {
+        "id": "call_de1732bc18684a3b95b29b90",
+        "name": "read"
+      },
+      {
+        "id": "call_5ad481901952465bb6bc32de",
+        "name": "edit"
+      },
+      {
+        "id": "call_548ae1ed312e4620aec78ff8",
+        "name": "exec",
+        "command": "python3 -m unittest -v test_todo.py"
+      },
+      {
+        "id": "call_b3d227ac591f414aa0b021e0",
+        "name": "exec",
+        "command": "set -e\nP=\"python3 todo.py --store data/live.json\"\necho \"-- add\"; $P --operation-id live-add-001 add \"买牛奶 🥛\"\necho \"-- rename\"; $P --operation-id live-rename-001 rename 1 \"买两瓶牛奶 🥛\"\necho \"-- complete\"; $P --operation-id live-complete-001 complete 1\necho \"-- reopen\"; $P --operation-id live-reopen-001 reopen 1\necho \"-- delete\"; $P --operation-id live-delete-001 delete 1\necho \"-- list\"; $P --operation-id live-list-001 list\necho \"-- store content\"; cat data/live.json"
+      },
+      {
+        "id": "call_0df0ca1b23c44267868d3a74",
+        "name": "exec",
+        "command": "echo \"-- add\"; python3 todo.py --store data/live.json --operation-id live-add-001 add \"买牛奶 🥛\"\necho \"-- rename\"; python3 todo.py --store data/live.json --operation-id live-rename-001 rename 1 \"买两瓶牛奶 🥛\"\necho \"-- complete\"; python3 todo.py --store data/live.json --operation-id live-complete-001 complete 1\necho \"-- reopen\"; python3 todo.py --store data/live.json --operation-id live-reopen-001 reopen 1\necho \"-- delete\"; python3 todo.py --store data/live.json --operation-id live-delete-001 delete 1\necho \"-- list\"; python3 todo.py --store data/live.json --operation-id live-list-001 list\necho \"-- store\"; cat data/live.json\necho \"-- persistence check (complete again, then reload)\"; python3 todo.py --store data/live.json --operation-id live-add-002 add \"交报告\"\npython3 todo.py --store data/live.json --operation-id live-complete-002 complete 2\npython3 todo.py --store data/live.json list\ngrep '\"completed\": true' data/live.json"
+      },
+      {
+        "id": "call_4045def4a87a42648bae5060",
+        "name": "exec",
+        "command": "grep -n 'completed' todo.py | head; echo ---; python3 -m unittest -v test_todo.py 2>&1 | tail -4"
+      },
+      {
+        "id": "call_ad3bb438682948ae86a58704",
+        "name": "exec",
+        "command": "echo \"-- add\"; python3 todo.py --store data/live-validation.json --operation-id live-add-001 add \"买牛奶 🥛\"\necho \"-- rename\"; python3 todo.py --store data/live-validation.json --operation-id live-rename-001 rename 1 \"买两瓶牛奶 🥛\"\necho \"-- complete\"; python3 todo.py --store data/live-validation.json --operation-id live-complete-001 complete 1\necho \"-- reopen\"; python3 todo.py --store data/live-validation.json --operation-id live-reopen-001 reopen 1\necho \"-- delete\"; python3 todo.py --store data/live-validation.json --operation-id live-delete-001 delete 1\necho \"-- list\"; python3 todo.py --store data/live-validation.json --operation-id live-list-001 list\necho \"-- idempotent receipt replay\"; python3 todo.py --store data/live-validation.json --operation-id live-complete-001 complete 1\necho \"-- persistence\"; python3 todo.py --store data/live-validation.json --operation-id live-add-002 add \"交报告\"\npython3 todo.py --store data/live-validation.json --operation-id live-complete-002 complete 2\npython3 todo.py --store data/live-validation.json list\ngrep -c '\"completed\": true' data/live-validation.json"
+      },
+      {
+        "id": "call_555861ab43904eeaa26dac9c",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-COMMIT_NOT_PUBLISHED add '恢复验证 COMMIT_NOT_PUBLISHED'\npython3 todo.py --store data/recovery.json list"
+      },
+      {
+        "id": "call_ed80ea6a3410415794ca2353",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-COMMIT_NOT_PUBLISHED add '恢复验证 COMMIT_NOT_PUBLISHED'\npython3 todo.py --store data/recovery.json list\npython3 -m unittest -v test_todo.py 2>&1 | tail -3"
+      },
+      {
+        "id": "call_bfe6e002d8af416691e54b65",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-POST_PUBLISHED_BEFORE_PROJECTION add '恢复验证 POST_PUBLISHED_BEFORE_PROJECTION'\npython3 todo.py --store data/recovery.json list"
+      },
+      {
+        "id": "call_d2336faf5237401fb3915a8e",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-POST_PUBLISHED_BEFORE_PROJECTION add '恢复验证 POST_PUBLISHED_BEFORE_PROJECTION'\npython3 todo.py --store data/recovery.json list\npython3 -m unittest -v test_todo.py 2>&1 | tail -3"
+      },
+      {
+        "id": "call_94966da8f9644efb9e420b57",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-STOP_PUBLISHED_BEFORE_EVALUATION add '恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION'\npython3 todo.py --store data/recovery.json list"
+      },
+      {
+        "id": "call_b9a41ded6f934d0f965742cd",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-STOP_PUBLISHED_BEFORE_EVALUATION add '恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION'\npython3 todo.py --store data/recovery.json list\npython3 -m unittest -v test_todo.py 2>&1 | tail -3"
+      },
+      {
+        "id": "call_0c7af7877f47415e9a6e5063",
+        "name": "read"
+      },
+      {
+        "id": "call_bd8f5bdd121b41b6a86da853",
+        "name": "edit"
+      },
+      {
+        "id": "call_30d1b06c092c4a5fa162036c",
+        "name": "exec",
+        "command": "tail -5 todo.py; grep -n 'OUTPUT_PARTIAL' todo.py || echo \"NOT_PRESENT\""
+      },
+      {
+        "id": "call_8ffe029c4f584707afaae156",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-OUTPUT_PARTIAL add '恢复验证 OUTPUT_PARTIAL'\npython3 todo.py --store data/recovery.json list\npython3 -m unittest -v test_todo.py 2>&1 | tail -3"
+      },
+      {
+        "id": "call_1180de0f05a64556a9b6039a",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-CHECKPOINT_PUBLISHED_BEFORE_CLEANUP add '恢复验证 CHECKPOINT_PUBLISHED_BEFORE_CLEANUP'\npython3 todo.py --store data/recovery.json list"
+      },
+      {
+        "id": "call_6c5420d4b23848d78b6d6162",
+        "name": "exec",
+        "command": "python3 todo.py --store data/recovery.json --operation-id live-CHECKPOINT_PUBLISHED_BEFORE_CLEANUP add '恢复验证 CHECKPOINT_PUBLISHED_BEFORE_CLEANUP'\npython3 todo.py --store data/recovery.json list\npython3 -m unittest -v test_todo.py 2>&1 | tail -3"
+      },
+      {
+        "id": "call_d058fc0e6c5f48edb19bb644",
+        "name": "exec",
+        "command": "python3 -m unittest -v test_todo.py 2>&1 | tail -4\npython3 todo.py --store data/recovery.json list"
+      }
+    ],
+    "execResults": [
+      {
+        "toolCallId": "call_548ae1ed312e4620aec78ff8",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "test_add_unicode_and_persist_across_processes (test_todo.TodoTests) ... ok\ntest_complete_and_reopen (test_todo.TodoTests) ... ok\ntest_conflicting_operation_rejected_and_no_temporary_files (test_todo.TodoTests) ... ok\ntest_delete_does_not_reuse_ids (test_todo.TodoTests) ... ok\ntest_duplicate_operation_returns_original_receipt (test_todo.TodoTests) ... ok\ntest_empty_list_does_not_write (test_todo.TodoTests) ... ok\ntest_empty_title_rejected_without_mutation (test_todo.TodoTests) ... ok\ntest_missing_id_rejected_without_mutation (test_todo.TodoTests) ... ok\ntest_rename (test_todo.TodoTests) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 1.002s\n\nOK"
+      },
+      {
+        "toolCallId": "call_b3d227ac591f414aa0b021e0",
+        "isError": true,
+        "exitCode": 127,
+        "stdout": "-- add\n(eval):3: no such file or directory: python3 todo.py --store data/live.json\n\nCommand not found"
+      },
+      {
+        "toolCallId": "call_0df0ca1b23c44267868d3a74",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "-- add\n{\"id\": 1, \"title\": \"买牛奶 🥛\", \"completed\": false}\n-- rename\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- complete\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": true}\n-- reopen\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- delete\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- list\n[]\n-- store\n{\n  \"next_id\": 2,\n  \"items\": [],\n  \"receipts\": {\n    \"live-add-001\": {\n      \"request\": {\n        \"action\": \"add\",\n        \"id\": null,\n        \"title\": \"买牛奶 🥛\"\n      },\n      \"result\": {\n        \"id\": 1,\n        \"title\": \"买牛奶 🥛\",\n        \"completed\": false\n      }\n    },\n    \"live-rename-001\": {\n      \"request\": {\n        \"action\": \"rename\",\n        \"id\": 1,\n        \"title\": \"买两瓶牛奶 🥛\"\n      },\n      \"result\": {\n        \"id\": 1,\n        \"title\": \"买两瓶牛奶 🥛\",\n        \"completed\": false\n      }\n    },\n    \"live-complete-001\": {\n      \"request\": {\n        \"action\": \"complete\",\n        \"id\": 1,\n        \"title\": null\n      },\n      \"result\": {\n        \"id\": 1,\n        \"title\": \"买两瓶牛奶 🥛\",\n        \"completed\": true\n      }\n    },\n    \"live-reopen-001\": {\n      \"request\": {\n        \"action\": \"reopen\",\n        \"id\": 1,\n        \"title\": null\n      },\n      \"result\": {\n        \"id\": 1,\n        \"title\": \"买两瓶牛奶 🥛\",\n        \"completed\": false\n      }\n    },\n    \"live-delete-001\": {\n      \"request\": {\n        \"action\": \"delete\",\n        \"id\": 1,\n        \"title\": null\n      },\n      \"result\": {\n        \"id\": 1,\n        \"title\": \"买两瓶牛奶 🥛\",\n        \"completed\": false\n      }\n    }\n  }\n}\n-- persistence check (complete again, then reload)\n{\"id\": 2, \"title\": \"交报告\", \"completed\": false}\n{\"id\": 2, \"title\": \"交报告\", \"completed\": true}\n[{\"id\": 2, \"title\": \"交报告\", \"completed\": true}]\n      \"completed\": true\n        \"completed\": true\n        \"completed\": true"
+      },
+      {
+        "toolCallId": "call_4045def4a87a42648bae5060",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "46:        item = {\"id\": state[\"next_id\"], \"title\": title, \"completed\": False}\n56:            item[\"completed\"] = True\n58:            item[\"completed\"] = False\n---\n----------------------------------------------------------------------\nRan 9 tests in 0.634s\n\nOK"
+      },
+      {
+        "toolCallId": "call_ad3bb438682948ae86a58704",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "-- add\n{\"id\": 1, \"title\": \"买牛奶 🥛\", \"completed\": false}\n-- rename\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- complete\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": true}\n-- reopen\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- delete\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": false}\n-- list\n[]\n-- idempotent receipt replay\n{\"id\": 1, \"title\": \"买两瓶牛奶 🥛\", \"completed\": true}\n-- persistence\n{\"id\": 2, \"title\": \"交报告\", \"completed\": false}\n{\"id\": 2, \"title\": \"交报告\", \"completed\": true}\n[{\"id\": 2, \"title\": \"交报告\", \"completed\": true}]\n3"
+      },
+      {
+        "toolCallId": "call_ed80ea6a3410415794ca2353",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}]\nRan 9 tests in 0.643s\n\nOK"
+      },
+      {
+        "toolCallId": "call_d2336faf5237401fb3915a8e",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}]\nRan 9 tests in 0.658s\n\nOK"
+      },
+      {
+        "toolCallId": "call_94966da8f9644efb9e420b57",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}, {\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}]"
+      },
+      {
+        "toolCallId": "call_b9a41ded6f934d0f965742cd",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}, {\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}]\nRan 9 tests in 0.682s\n\nOK"
+      },
+      {
+        "toolCallId": "call_30d1b06c092c4a5fa162036c",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "# OUTPUT_PARTIAL attempt 1\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())\n94:# OUTPUT_PARTIAL attempt 1"
+      },
+      {
+        "toolCallId": "call_8ffe029c4f584707afaae156",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 4, \"title\": \"恢复验证 OUTPUT_PARTIAL\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}, {\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}, {\"id\": 4, \"title\": \"恢复验证 OUTPUT_PARTIAL\", \"completed\": false}]\nRan 9 tests in 0.657s\n\nOK"
+      },
+      {
+        "toolCallId": "call_6c5420d4b23848d78b6d6162",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "{\"id\": 5, \"title\": \"恢复验证 CHECKPOINT_PUBLISHED_BEFORE_CLEANUP\", \"completed\": false}\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}, {\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}, {\"id\": 4, \"title\": \"恢复验证 OUTPUT_PARTIAL\", \"completed\": false}, {\"id\": 5, \"title\": \"恢复验证 CHECKPOINT_PUBLISHED_BEFORE_CLEANUP\", \"completed\": false}]\nRan 9 tests in 0.650s\n\nOK"
+      },
+      {
+        "toolCallId": "call_d058fc0e6c5f48edb19bb644",
+        "isError": false,
+        "exitCode": 0,
+        "stdout": "----------------------------------------------------------------------\nRan 9 tests in 0.659s\n\nOK\n[{\"id\": 1, \"title\": \"恢复验证 COMMIT_NOT_PUBLISHED\", \"completed\": false}, {\"id\": 2, \"title\": \"恢复验证 POST_PUBLISHED_BEFORE_PROJECTION\", \"completed\": false}, {\"id\": 3, \"title\": \"恢复验证 STOP_PUBLISHED_BEFORE_EVALUATION\", \"completed\": false}, {\"id\": 4, \"title\": \"恢复验证 OUTPUT_PARTIAL\", \"completed\": false}, {\"id\": 5, \"title\": \"恢复验证 CHECKPOINT_PUBLISHED_BEFORE_CLEANUP\", \"completed\": false}]"
+      }
+    ],
+    "reviewRuns": [
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "08c84310-775d-4cab-b51c-9526e681d2a6",
+        "sessionId": "7d306996-472e-40b7-be40-5e7b9f44dac8",
+        "status": "SETTLED",
+        "elapsedMs": 41618
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "12883266-54ef-40ad-9efa-da70d0abb020",
+        "sessionId": "1d7d5325-2f9d-4af3-a42b-d4f9a48fdfdb",
+        "status": "SETTLED",
+        "elapsedMs": 38653
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "1462402e-2a8a-4783-af28-20aba5d809c1",
+        "sessionId": "3f8a9efe-8f92-4dc0-8846-f6b1df39069c",
+        "status": "SETTLED",
+        "elapsedMs": 68637
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "runId": "161c42af-6520-41e8-9f3a-22b7845d5747",
+        "sessionId": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+        "status": "SETTLED",
+        "elapsedMs": 3530
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first",
+        "runId": "1d27a3cd-7b2d-44e0-90c5-70af4b040716",
+        "sessionId": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+        "status": "SETTLED",
+        "elapsedMs": 41020
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "1dc837f7-67da-47a8-902b-296302e6a87d",
+        "sessionId": "40c0d6a3-896d-4a7a-ac80-5131833821b8",
+        "status": "SETTLED",
+        "elapsedMs": 13498
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first",
+        "runId": "2e699cd4-585b-4242-9872-7ea045e6642f",
+        "sessionId": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+        "status": "SETTLED",
+        "elapsedMs": 20799
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "3079a360-356e-4470-9920-acf6de87ec7a",
+        "sessionId": "bcbd8f35-b404-40f0-ab75-ca400b3b3531",
+        "status": "DISPATCH_COMMITTED",
+        "elapsedMs": null
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "33e290ad-93a5-48bc-ae77-74c2b8f0ac65",
+        "sessionId": "9c0deced-94e8-47fd-8108-f417af02c7e0",
+        "status": "SETTLED",
+        "elapsedMs": 21828
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "357c9f0c-2b0b-495a-a5e6-dd92148a5b2c",
+        "sessionId": "5a38ff48-7837-4f6e-be6d-5422fd11c67b",
+        "status": "SETTLED",
+        "elapsedMs": 15321
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first-repair",
+        "runId": "40664d0d-e721-4b58-8fd4-7bc5a8b40360",
+        "sessionId": "9ffda497-2936-4327-8768-e5dc2be7d819",
+        "status": "SETTLED",
+        "elapsedMs": 8997
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "454f5b96-0b0e-4290-ad3f-ed5a4312d970",
+        "sessionId": "e7d77f1a-6b36-42ce-a8a2-d445c5d69b9d",
+        "status": "SETTLED",
+        "elapsedMs": 18713
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "464992cd-6b29-4fe7-a81d-12bad1a25347",
+        "sessionId": "256ce8d1-aa31-470b-bf91-512accde31b0",
+        "status": "SETTLED",
+        "elapsedMs": 11853
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "59a1642e-6e57-4c56-b31b-8a6cb1e2726e",
+        "sessionId": "7d09acf1-a979-43c3-82de-f0992f032155",
+        "status": "SETTLED",
+        "elapsedMs": 22431
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "6341067a-46a6-48d7-9731-580d36060cf9",
+        "sessionId": "6fd4f725-342f-4bee-b7c8-b42c4dfcf7dc",
+        "status": "SETTLED",
+        "elapsedMs": 53579
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "runId": "6519b402-aa05-469b-84e5-7cf2793e1df7",
+        "sessionId": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+        "status": "SETTLED",
+        "elapsedMs": 2604
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "runId": "6a719afc-0e2b-4745-a5dd-352f5eeefec9",
+        "sessionId": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+        "status": "SETTLED",
+        "elapsedMs": 27598
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "6b0152ab-9336-4a91-8ca4-d85d15e11213",
+        "sessionId": "a5552ae1-c5b3-4d7c-939f-13f02fa303bd",
+        "status": "SETTLED",
+        "elapsedMs": 46324
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "719615ff-f0ee-4f7e-a240-48d90b67c3a2",
+        "sessionId": "64b36f89-a45b-48e7-af42-3949467ef2dd",
+        "status": "SETTLED",
+        "elapsedMs": 25717
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "731f5fe1-641d-46eb-a12c-62f368c1acbe",
+        "sessionId": "54d4be5e-15b8-42ae-92cb-e6420f2fb77b",
+        "status": "SETTLED",
+        "elapsedMs": 18200
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "7af017da-47da-4a5a-af19-ed59d6b69f17",
+        "sessionId": "f14b5402-6326-4155-bbd1-8294c929b9cd",
+        "status": "SETTLED",
+        "elapsedMs": 45077
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "runId": "aaaf1535-fb2a-4693-ade4-fc8feb5fd405",
+        "sessionId": "f14b5402-6326-4155-bbd1-8294c929b9cd",
+        "status": "SETTLED",
+        "elapsedMs": 81617
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "b6586a83-0b5d-4749-aed8-7ad27dd42ff8",
+        "sessionId": "1fbeb553-fca4-48cb-9fad-718ddd18b5d5",
+        "status": "SETTLED",
+        "elapsedMs": 11462
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "runId": "be77b801-dc39-4bd9-af68-aa9e218828f3",
+        "sessionId": "6fd4f725-342f-4bee-b7c8-b42c4dfcf7dc",
+        "status": "SETTLED",
+        "elapsedMs": 31218
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "runId": "d52fe12a-74ce-41e9-9cb6-80f75bda0d32",
+        "sessionId": "42d78d0e-89d4-42de-a203-92d4e94ecdb5",
+        "status": "SETTLED",
+        "elapsedMs": 48409
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "runId": "e118e5f9-31ed-4fef-a358-88915604c4ad",
+        "sessionId": "9ffda497-2936-4327-8768-e5dc2be7d819",
+        "status": "SETTLED",
+        "elapsedMs": 14717
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "runId": "e6e17a16-d85d-420e-8604-22f4dd06afbe",
+        "sessionId": "a5552ae1-c5b3-4d7c-939f-13f02fa303bd",
+        "status": "SETTLED",
+        "elapsedMs": 25139
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "f16dd14c-0667-415f-a9ac-b891ba4ac076",
+        "sessionId": "42d78d0e-89d4-42de-a203-92d4e94ecdb5",
+        "status": "SETTLED",
+        "elapsedMs": 83048
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "runId": "fa808a19-da7d-4a74-a4d0-81f6ebe432e7",
+        "sessionId": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+        "status": "SETTLED",
+        "elapsedMs": 2338
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "runId": "fb715a1b-b407-40b1-ba9a-357e68b7357e",
+        "sessionId": "cbbedcff-76c6-4efb-a0d4-b63dd3b93bbc",
+        "status": "SETTLED",
+        "elapsedMs": 56048
+      }
+    ],
+    "reviewerEnvelopes": [
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 22431,
+          "session_id": "7d09acf1-a979-43c3-82de-f0992f032155",
+          "usage": {
+            "input_tokens": 4240,
+            "output_tokens": 1292,
+            "cache_read_input_tokens": 6080
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 20799,
+          "session_id": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+          "usage": {
+            "input_tokens": 9945,
+            "output_tokens": 680,
+            "cache_read_input_tokens": 15360
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 2604,
+          "session_id": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+          "usage": {
+            "input_tokens": 328,
+            "output_tokens": 126,
+            "cache_read_input_tokens": 8768
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 2338,
+          "session_id": "a91bdf07-bc6a-4819-914d-7a83ae99e821",
+          "usage": {
+            "input_tokens": 194,
+            "output_tokens": 125,
+            "cache_read_input_tokens": 9088
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 18713,
+          "session_id": "e7d77f1a-6b36-42ce-a8a2-d445c5d69b9d",
+          "usage": {
+            "input_tokens": 7758,
+            "output_tokens": 873,
+            "cache_read_input_tokens": 13760
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 41618,
+          "session_id": "7d306996-472e-40b7-be40-5e7b9f44dac8",
+          "usage": {
+            "input_tokens": 22326,
+            "output_tokens": 2595,
+            "cache_read_input_tokens": 20608
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 21828,
+          "session_id": "9c0deced-94e8-47fd-8108-f417af02c7e0",
+          "usage": {
+            "input_tokens": 8147,
+            "output_tokens": 839,
+            "cache_read_input_tokens": 24960
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 38653,
+          "session_id": "1d7d5325-2f9d-4af3-a42b-d4f9a48fdfdb",
+          "usage": {
+            "input_tokens": 23207,
+            "output_tokens": 2474,
+            "cache_read_input_tokens": 33536
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 13498,
+          "session_id": "40c0d6a3-896d-4a7a-ac80-5131833821b8",
+          "usage": {
+            "input_tokens": 10446,
+            "output_tokens": 600,
+            "cache_read_input_tokens": 8384
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 46324,
+          "session_id": "a5552ae1-c5b3-4d7c-939f-13f02fa303bd",
+          "usage": {
+            "input_tokens": 25689,
+            "output_tokens": 2965,
+            "cache_read_input_tokens": 35328
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 25139,
+          "session_id": "a5552ae1-c5b3-4d7c-939f-13f02fa303bd",
+          "usage": {
+            "input_tokens": 2646,
+            "output_tokens": 2557,
+            "cache_read_input_tokens": 24192
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 14717,
+          "session_id": "9ffda497-2936-4327-8768-e5dc2be7d819",
+          "usage": {
+            "input_tokens": 11538,
+            "output_tokens": 679,
+            "cache_read_input_tokens": 8896
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 8997,
+          "session_id": "9ffda497-2936-4327-8768-e5dc2be7d819",
+          "usage": {
+            "input_tokens": 610,
+            "output_tokens": 484,
+            "cache_read_input_tokens": 11136
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 53579,
+          "session_id": "6fd4f725-342f-4bee-b7c8-b42c4dfcf7dc",
+          "usage": {
+            "input_tokens": 26915,
+            "output_tokens": 3414,
+            "cache_read_input_tokens": 12480
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 31218,
+          "session_id": "6fd4f725-342f-4bee-b7c8-b42c4dfcf7dc",
+          "usage": {
+            "input_tokens": 3163,
+            "output_tokens": 3094,
+            "cache_read_input_tokens": 25280
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 15321,
+          "session_id": "5a38ff48-7837-4f6e-be6d-5422fd11c67b",
+          "usage": {
+            "input_tokens": 12683,
+            "output_tokens": 719,
+            "cache_read_input_tokens": 9408
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 56048,
+          "session_id": "cbbedcff-76c6-4efb-a0d4-b63dd3b93bbc",
+          "usage": {
+            "input_tokens": 23256,
+            "output_tokens": 3754,
+            "cache_read_input_tokens": 13440
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 18200,
+          "session_id": "54d4be5e-15b8-42ae-92cb-e6420f2fb77b",
+          "usage": {
+            "input_tokens": 11618,
+            "output_tokens": 714,
+            "cache_read_input_tokens": 12096
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 41020,
+          "session_id": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+          "usage": {
+            "input_tokens": 16526,
+            "output_tokens": 1574,
+            "cache_read_input_tokens": 29184
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 27598,
+          "session_id": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+          "usage": {
+            "input_tokens": 245,
+            "output_tokens": 248,
+            "cache_read_input_tokens": 15360
+          }
+        }
+      },
+      {
+        "role": "artifact-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 3530,
+          "session_id": "4f3c9bca-f2af-49a4-8257-e75906a0d8f1",
+          "usage": {
+            "input_tokens": 368,
+            "output_tokens": 250,
+            "cache_read_input_tokens": 15552
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 11462,
+          "session_id": "1fbeb553-fca4-48cb-9fad-718ddd18b5d5",
+          "usage": {
+            "input_tokens": 14761,
+            "output_tokens": 630,
+            "cache_read_input_tokens": 10432
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 68637,
+          "session_id": "3f8a9efe-8f92-4dc0-8846-f6b1df39069c",
+          "usage": {
+            "input_tokens": 32422,
+            "output_tokens": 4475,
+            "cache_read_input_tokens": 43840
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 11853,
+          "session_id": "256ce8d1-aa31-470b-bf91-512accde31b0",
+          "usage": {
+            "input_tokens": 16391,
+            "output_tokens": 672,
+            "cache_read_input_tokens": 11456
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 45077,
+          "session_id": "f14b5402-6326-4155-bbd1-8294c929b9cd",
+          "usage": {
+            "input_tokens": 36752,
+            "output_tokens": 1790,
+            "cache_read_input_tokens": 46912
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 81617,
+          "session_id": "f14b5402-6326-4155-bbd1-8294c929b9cd",
+          "usage": {
+            "input_tokens": 597,
+            "output_tokens": 5324,
+            "cache_read_input_tokens": 69696
+          }
+        }
+      },
+      {
+        "role": "ground-truth-extractor",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 25717,
+          "session_id": "64b36f89-a45b-48e7-af42-3949467ef2dd",
+          "usage": {
+            "input_tokens": 17565,
+            "output_tokens": 1699,
+            "cache_read_input_tokens": 11968
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 83048,
+          "session_id": "42d78d0e-89d4-42de-a203-92d4e94ecdb5",
+          "usage": {
+            "input_tokens": 38516,
+            "output_tokens": 5658,
+            "cache_read_input_tokens": 70528
+          }
+        }
+      },
+      {
+        "role": "stop-reviewer",
+        "phase": "first-repair",
+        "envelope": {
+          "total_cost_usd": null,
+          "num_turns": null,
+          "duration_ms": 48409,
+          "session_id": "42d78d0e-89d4-42de-a203-92d4e94ecdb5",
+          "usage": {
+            "input_tokens": 6616,
+            "output_tokens": 4904,
+            "cache_read_input_tokens": 35840
+          }
+        }
+      }
+    ],
+    "reviewFailures": [
+      {
+        "type": "STOP_ASSESSMENT_RETRY",
+        "reason": "The reviewer did not return a valid assessment of the frozen population.",
+        "attempt": 1
+      }
+    ],
+    "stopDecisions": [
+      {
+        "operationId": "2b888621-b625-4149-9b00-20d3c7ef496e:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T104825121Z-f7be170f",
+        "decision": "allow",
+        "requirementVersion": 2
+      },
+      {
+        "operationId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T104951260Z-4540b622",
+        "decision": "allow",
+        "requirementVersion": 3
+      },
+      {
+        "operationId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T105140592Z-ce48226c",
+        "decision": "allow",
+        "requirementVersion": 4
+      },
+      {
+        "operationId": "67b5b76d-eb60-4520-85b9-4d893625cf0f:stop",
+        "status": "UNVERIFIED",
+        "evaluationId": "stop-20261014T105341872Z-6a15bfc2",
+        "decision": "block",
+        "requirementVersion": 5
+      },
+      {
+        "operationId": "ea2fa494-5afa-4665-927a-3397fb3f40d1:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T105903621Z-f41cb6ea",
+        "decision": "allow",
+        "requirementVersion": 6
+      },
+      {
+        "operationId": "161d49af-744f-4772-af8e-1a91ac3fadb4:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110237776Z-20d0b6df",
+        "decision": "allow",
+        "requirementVersion": 8
+      },
+      {
+        "operationId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110515865Z-ca791361",
+        "decision": "allow",
+        "requirementVersion": 9
+      },
+      {
+        "operationId": "78551b31-d7c9-47c6-972c-88e20b093c00:stop",
+        "status": "PASS",
+        "evaluationId": "stop-20261014T110803818Z-92b084e9",
+        "decision": "allow",
+        "requirementVersion": 10
+      }
+    ]
+  },
+  "verification": {
+    "state": "PASS",
+    "userVisible": "PASS",
+    "rulesBound": true,
+    "sourceFingerprints": [
+      "$WORKSPACE/.runtime-corrector/config.yaml",
+      "$WORKSPACE/todo.py"
+    ],
+    "taskStatus": "COMPLETED",
+    "projectionsPending": false
+  },
+  "journal": {
+    "versions": 98,
+    "ordinaryHooks": [
+      {
+        "sequence": 1,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_5ad481901952465bb6bc32de:pre",
+        "bytes": 2354,
+        "legacyFullStateBytes": 2204,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 3,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_5ad481901952465bb6bc32de:post",
+        "bytes": 32593,
+        "legacyFullStateBytes": 30776,
+        "fileProjections": 2,
+        "outputReferences": 1
+      },
+      {
+        "sequence": 5,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_548ae1ed312e4620aec78ff8:pre",
+        "bytes": 2129,
+        "legacyFullStateBytes": 6390,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 7,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_548ae1ed312e4620aec78ff8:post",
+        "bytes": 1781,
+        "legacyFullStateBytes": 6811,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 9,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_b3d227ac591f414aa0b021e0:pre",
+        "bytes": 2057,
+        "legacyFullStateBytes": 7178,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 11,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_b3d227ac591f414aa0b021e0:post",
+        "bytes": 1786,
+        "legacyFullStateBytes": 7601,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 13,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_0df0ca1b23c44267868d3a74:pre",
+        "bytes": 2062,
+        "legacyFullStateBytes": 7968,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 15,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_0df0ca1b23c44267868d3a74:post",
+        "bytes": 1786,
+        "legacyFullStateBytes": 8389,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 18,
+        "operationId": "2b888621-b625-4149-9b00-20d3c7ef496e:call_4045def4a87a42648bae5060:pre",
+        "bytes": 2200,
+        "legacyFullStateBytes": 8818,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 20,
+        "operationId": "2b888621-b625-4149-9b00-20d3c7ef496e:call_4045def4a87a42648bae5060:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 9239,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 22,
+        "operationId": "2b888621-b625-4149-9b00-20d3c7ef496e:call_ad3bb438682948ae86a58704:pre",
+        "bytes": 2064,
+        "legacyFullStateBytes": 9607,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 24,
+        "operationId": "2b888621-b625-4149-9b00-20d3c7ef496e:call_ad3bb438682948ae86a58704:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 10028,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 30,
+        "operationId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04:call_ed80ea6a3410415794ca2353:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 46839,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 32,
+        "operationId": "19beb9cb-c032-415e-9ba3-7bb9d0e0fc04:call_ed80ea6a3410415794ca2353:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 47260,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 37,
+        "operationId": "0262f917-1af5-4022-8723-9fcbd4207c2f:call_bfe6e002d8af416691e54b65:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 85236,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 39,
+        "operationId": "0262f917-1af5-4022-8723-9fcbd4207c2f:call_bfe6e002d8af416691e54b65:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 85657,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 42,
+        "operationId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f:call_d2336faf5237401fb3915a8e:pre",
+        "bytes": 2201,
+        "legacyFullStateBytes": 86073,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 44,
+        "operationId": "1c7f0009-9c73-4af2-beae-c9ed1903ea5f:call_d2336faf5237401fb3915a8e:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 86494,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 49,
+        "operationId": "67b5b76d-eb60-4520-85b9-4d893625cf0f:call_94966da8f9644efb9e420b57:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 132916,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 51,
+        "operationId": "67b5b76d-eb60-4520-85b9-4d893625cf0f:call_94966da8f9644efb9e420b57:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 133337,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 56,
+        "operationId": "ea2fa494-5afa-4665-927a-3397fb3f40d1:call_b9a41ded6f934d0f965742cd:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 188888,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 58,
+        "operationId": "ea2fa494-5afa-4665-927a-3397fb3f40d1:call_b9a41ded6f934d0f965742cd:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 189309,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 63,
+        "operationId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec:call_0c7af7877f47415e9a6e5063:pre",
+        "bytes": 1939,
+        "legacyFullStateBytes": 247883,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 65,
+        "operationId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec:call_0c7af7877f47415e9a6e5063:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 248304,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 67,
+        "operationId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec:call_bd8f5bdd121b41b6a86da853:pre",
+        "bytes": 2289,
+        "legacyFullStateBytes": 248673,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 69,
+        "operationId": "dc3bb4c9-43a3-4eb4-b029-3d2cf61c9eec:call_bd8f5bdd121b41b6a86da853:post",
+        "bytes": 40435,
+        "legacyFullStateBytes": 269564,
+        "fileProjections": 2,
+        "outputReferences": 1
+      },
+      {
+        "sequence": 72,
+        "operationId": "161d49af-744f-4772-af8e-1a91ac3fadb4:call_30d1b06c092c4a5fa162036c:pre",
+        "bytes": 2330,
+        "legacyFullStateBytes": 253364,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 74,
+        "operationId": "161d49af-744f-4772-af8e-1a91ac3fadb4:call_30d1b06c092c4a5fa162036c:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 253785,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 76,
+        "operationId": "161d49af-744f-4772-af8e-1a91ac3fadb4:call_8ffe029c4f584707afaae156:pre",
+        "bytes": 2064,
+        "legacyFullStateBytes": 254152,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 78,
+        "operationId": "161d49af-744f-4772-af8e-1a91ac3fadb4:call_8ffe029c4f584707afaae156:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 254573,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 83,
+        "operationId": "223866f6-342e-4328-8603-523343d25193:call_1180de0f05a64556a9b6039a:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 319616,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 86,
+        "operationId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d:call_6c5420d4b23848d78b6d6162:pre",
+        "bytes": 2201,
+        "legacyFullStateBytes": 320065,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 88,
+        "operationId": "6cef9f16-4962-4d08-a98f-bb2c32df5e8d:call_6c5420d4b23848d78b6d6162:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 320486,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 93,
+        "operationId": "78551b31-d7c9-47c6-972c-88e20b093c00:call_d058fc0e6c5f48edb19bb644:pre",
+        "bytes": 2355,
+        "legacyFullStateBytes": 398788,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      {
+        "sequence": 95,
+        "operationId": "78551b31-d7c9-47c6-972c-88e20b093c00:call_d058fc0e6c5f48edb19bb644:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 399209,
+        "fileProjections": 0,
+        "outputReferences": 0
+      }
+    ],
+    "observationOnly": {
+      "count": 33,
+      "min": 1781,
+      "max": 2355,
+      "median": 2057,
+      "first": {
+        "sequence": 1,
+        "operationId": "ab70949b-6910-445c-9079-b051ce4cfb8f:call_5ad481901952465bb6bc32de:pre",
+        "bytes": 2354,
+        "legacyFullStateBytes": 2204,
+        "fileProjections": 0,
+        "outputReferences": 0
+      },
+      "last": {
+        "sequence": 95,
+        "operationId": "78551b31-d7c9-47c6-972c-88e20b093c00:call_d058fc0e6c5f48edb19bb644:post",
+        "bytes": 1787,
+        "legacyFullStateBytes": 399209,
+        "fileProjections": 0,
+        "outputReferences": 0
+      }
+    },
+    "deltaLogBytes": 1014514,
+    "retainedFiles": 47,
+    "retainedBytes": 2495539,
+    "checkpoints": 2,
+    "logicalHookLegacyBytes": 4985480,
+    "logicalHookDeltaBytes": 139845,
+    "allLogicalCommitsLegacyFullStateBytes": 6947467,
+    "legacyLogicalCommitFiles": 43,
+    "legacyEstimation": "Same recovered state serialized into each logical decision's immutable commit. Excludes additional legacy files and outputs; v3 metadata/ack versions are not treated as old immutable commits. No large old files are created.",
+    "duplicateOperationIds": 0,
+    "duplicateCommittedEventIds": 0,
+    "stateEqualsAuditReplay": true,
+    "journalRecoveryMs": [
+      16.752041999999996,
+      13.522708000000009,
+      13.299542000000002,
+      11.743458000000004,
+      12.176249999999996
+    ],
+    "blobs": {
+      "uniqueFiles": 21,
+      "bytes": 505900,
+      "largestBytes": 79178,
+      "references": 36,
+      "mostReferencesToOneBlob": 3
+    }
+  },
+  "stateProjectionIo": {
+    "writes": 99,
+    "bytes": 23398052,
+    "fullStateStillWritten": true
+  }
+}
