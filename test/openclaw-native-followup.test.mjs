@@ -26,6 +26,16 @@ async function fixture(t, run) {
 const message = (id, parentId, role, content, extra = {}) => ({ type: "message", id, parentId, message: { role, content, ...extra } });
 const source = [message("human", null, "user", "Implement the App."), message("final", "human", "assistant", "Implemented.")];
 
+test("a project change between reservation and dispatch cancels the old feedback without a host continuation", async t => {
+  const f = await fixture(t);
+  let checks = 0;
+  const manager = createNativeFollowups(f.api, { isCurrent: async () => ++checks === 1 });
+  const receipt = await manager.submit(f.params);
+  assert.equal(receipt.status, "CANCELLED");
+  assert.equal(f.calls.length, 0);
+  assert((await f.journal()).some(event => event.type === "NATIVE_STOP_FOLLOWUP_CANCELLED"));
+});
+
 test("one native admission per assessment survives concurrent hooks and module reload without overriding host settings", async t => {
   const f = await fixture(t);
   const receipts = await Promise.all([f.manager.submit(f.params), f.manager.submit(f.params)]);

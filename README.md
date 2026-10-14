@@ -2,7 +2,7 @@
 
 > English version: [README.en.md](README.en.md) · [文档导航](docs/README.md)
 
-本分支 `codex/openclaw-2026.7.1-2` 从 `codex/multi-host-plugin-root-compat` 创建，默认构建 **OpenClaw 2026.7.1-2 原生插件**。安装、模型配置及宿主限制以 [OpenClaw 专用指南](docs/openclaw.md) 为准。纠偏规则、Ground Truth、工作流、度量和预算继续共用原有核心。
+本分支 `codex/session-project-scope` 基于 `codex/openclaw-2026.7.1-2`，默认构建 **OpenClaw Session 项目作用域插件**。`2026.7.1-2` 使用 RC 会话绑定，`2026.10.3` 优先使用宿主原生项目选择及实际 Worktree。有效项目配置才启用纠偏。用法及验证边界见 [Session 项目说明](docs/session-projects.md)；安装、模型配置及宿主限制见 [OpenClaw 专用指南](docs/openclaw.md)。纠偏规则、Ground Truth、工作流、度量和预算继续共用原有核心。
 
 **1.9.1-openclaw.3 新增受控执行器**：将模型运行时设为 `runtime-corrector-supervised`，即可在普通聊天中串行执行、验收、修正和复验。配置 `supervisedExecution: false` 可恢复 Hook 模式；该模式仍受宿主写入后拒绝最终续跑的限制。已验证范围与故障记录见 [验收记录](docs/openclaw-acceptance.md)。
 

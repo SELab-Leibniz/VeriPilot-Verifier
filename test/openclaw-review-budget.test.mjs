@@ -1,3 +1,4 @@
+import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {promises as fs} from 'node:fs';
@@ -6,7 +7,7 @@ import path from 'node:path';
 import {buildPlugin} from '../lib/plugin-builder.mjs';
 import {pathToFileURL} from 'node:url';
 let artifactRoot,outputRoot,createOpenClawRuntime;
-before(async()=>{outputRoot=await fs.mkdtemp(path.join(os.tmpdir(),'rc-budget-build-'));artifactRoot=await buildPlugin({host:'openclaw',sourceRoot:path.resolve('.'),outputRoot});({createOpenClawRuntime}=await import(pathToFileURL(path.join(artifactRoot,'lib/openclaw/runtime.mjs'))));});
+before(async()=>{outputRoot=await fs.mkdtemp(path.join(os.tmpdir(),'rc-budget-build-'));artifactRoot=await buildPlugin({host:'openclaw',sourceRoot:path.resolve('.'),outputRoot});({createOpenClawRuntime}=await import(pathToFileURL(path.join(artifactRoot,'lib/openclaw/runtime.mjs'))));createOpenClawRuntime = correctionFixtureRuntime(createOpenClawRuntime);});
 after(()=>fs.rm(outputRoot,{recursive:true,force:true,maxRetries:3}));
 
 async function fixture(t,stageBudget=null) {

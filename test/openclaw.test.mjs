@@ -1,3 +1,4 @@
+import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -18,7 +19,7 @@ before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-plugin-test-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: root, outputRoot: output });
   entry = (await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/entry.mjs")))).default;
-  createRuntime = (await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs")))).createOpenClawRuntime;
+  createRuntime = correctionFixtureRuntime((await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs")))).createOpenClawRuntime);
 });
 after(async () => { await fs.rm(output, { recursive: true, force: true }); });
 async function workspace(t) {
@@ -54,10 +55,10 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.10-native-stop-budget.1");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.1");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
-  assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2");
-  assert.equal(pkg.openclaw.compat.pluginApi, "2026.7.1");
+  assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
+  assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");
   for (const item of ["hooks/hooks.json", ".claude-plugin", ".cac-plugin", "lib/hosts/claude.mjs", "lib/hosts/codeagent.mjs"]) {
     await assert.rejects(fs.access(path.join(pluginRoot, item)));
   }
@@ -698,6 +699,13 @@ test("native tool bindings survive a host plugin registry reload", async (t) => 
     resolveSessionFilePath: () => transcript,
     runWithWorkAdmission: async (_params, run) => run(new AbortController().signal),
   };
+  for (const host of [first, second]) {
+    host.runtime.state = { resolveStateDir: () => path.join(output, "reload-host-state") };
+    host.runtime.sandbox = { resolveSandboxRuntimeStatus: () => ({ sandboxed: false }) };
+  }
+  const scopes = (await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/session-projects.mjs")))).createSessionProjects(first, { pluginRoot });
+  await scopes.command({ agentId: "main", sessionId: "reload", sessionKey: "agent:main:reload",
+    isAuthorizedSender: true, gatewayClientScopes: ["operator.admin"], args: `bind ${project}` });
   entry.register(first);
   const ctx = { sessionId: "reload", sessionKey: "agent:main:reload", runId: "reload-run", agentId: "main", workspaceDir: project };
   await first.hooks.get("before_tool_call").handler({ toolName: "write", toolCallId: "reload-tool", params: { path: "unmatched.txt" } }, ctx);

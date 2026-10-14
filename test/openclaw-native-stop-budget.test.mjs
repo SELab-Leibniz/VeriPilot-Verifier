@@ -1,3 +1,4 @@
+import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
@@ -12,6 +13,7 @@ before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
+  createRuntime = correctionFixtureRuntime(createRuntime);
   ({ findTask } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
   ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
 });

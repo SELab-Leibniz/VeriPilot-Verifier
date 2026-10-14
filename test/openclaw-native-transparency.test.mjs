@@ -1,3 +1,4 @@
+import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
@@ -10,6 +11,7 @@ before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-transparency-build-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
+  createRuntime = correctionFixtureRuntime(createRuntime);
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 async function fixture(t) {

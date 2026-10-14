@@ -2,9 +2,9 @@
 
 > 中文版（默认）: [README.md](README.md) · [Documentation index](docs/README.md)
 
-This branch targets **OpenClaw 2026.7.1-2**. Follow the [OpenClaw installation and compatibility guide](docs/openclaw.md) for native tools, model setup and host limits. The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
+This branch supports **OpenClaw 2026.7.1-2 and 2026.10.3**. Legacy sessions require an authenticated RC project binding; newer sessions follow the host's native project or actual worktree. A valid project configuration is required to enable correction. See [Session project scopes](docs/session-projects.md) and the [installation guide](docs/openclaw.md). The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
 
-**1.9.1-openclaw.3 adds supervised execution.** Select `runtime-corrector-supervised` as the model runtime to execute, assess, correct and reassess ordinary chat tasks. Set `supervisedExecution: false` to restore Hook mode, which retains the host's limitation on finalization retries after side effects. See the [acceptance record](docs/openclaw-acceptance.md) for the verified scope and failures.
+**The current candidate is 1.9.1-openclaw.11-session-projects.1.** Business execution and approvals use the host's native runtime. The older supervised execution release is historical; follow the migration instructions in the installation guide.
 
 **What it is:** a plugin for Claude Code and compatible agent hosts that reviews your coding agent's work in real time. While the agent writes code, it checks the changes against the task requirements and feeds problems back; when the agent declares "done", it runs an acceptance check — and blocks completion with a concrete to-do list until the work is actually done or the correction budget runs out.
 

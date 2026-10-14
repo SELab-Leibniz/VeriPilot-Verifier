@@ -41,7 +41,8 @@ test("read only the host's active branch and retain genuine requirement updates"
     ["Build the feature.", "Use persistent storage."]);
   assert.equal(observation.lastExternalUser.uuid, "update");
   assert.equal(f.calls.length, 2);
-  assert.deepEqual(f.calls[0], { agentId: "main", sessionKey: f.state.sessionKey, readConsistency: "latest" });
+  assert.deepEqual(f.calls[0], { agentId: "main", sessionKey: f.state.sessionKey, readConsistency: "latest",
+    storePath: f.api.config.session.store });
   assert.deepEqual(await fs.readFile(f.transcriptPath), before, "The host transcript remains byte-identical.");
   assert.equal(observation.externalUsersDigest, (await observeNativeTranscript(f.api, f.state)).externalUsersDigest);
 });

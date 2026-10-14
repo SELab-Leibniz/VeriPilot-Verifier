@@ -55,7 +55,12 @@ async function host(root, pluginRoot, fresh = false) {
   factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
   const api = { id: "runtime-corrector", config: {}, pluginConfig: { hookTimeoutMs: 10000 }, logger: { warn: text => warnings.push(text), error: text => warnings.push(text) },
     runtime: { agent: { resolveAgentWorkspaceDir: () => root, runEmbeddedAgent: () => assert.fail("No model/network runner is allowed in this experiment") } } };
-  const runtime = mod.createOpenClawRuntime(api, { pluginRoot, reviewerFactory: factory });
+  // This offline business/transaction probe starts with an admitted scope;
+  // real host project authorization has its own Gateway acceptance probe.
+  const runtime = mod.createOpenClawRuntime(api, { pluginRoot, reviewerFactory: factory, projectScopes: {
+    async resolve() { return { enabled: true, projectRoot: root, executionDirectory: root, fingerprint: root }; },
+    async activate() { return {}; },
+  } });
   const params = { sessionId: SESSION, sessionKey: "agent:main:python-todo", runId: RUN, agentId: "main", workspaceDir: root,
     sessionFile: path.join(root, "native.jsonl"), provider: "local-test", modelId: "local-test", prompt: requirement };
   const state = await runtime.beginSupervised(params, new AbortController().signal, { continuation: !fresh, deadlineAt: Date.now() + 300000 });
@@ -213,13 +218,13 @@ export async function runTodoScenario({ rounds = 72, output = null, keep = false
       const committed = pending.decisionSequence != null ? await journal.effects(pending.decisionSequence) : null;
       if (phase === "output-partial") {
         const roundId = committed.outputs[0].result.metadata.roundId;
-        const partialFiles = (await files(path.join(root, ".runtime-correction/runs"))).filter(file => file.name.includes(roundId));
+        const partialFiles = (await files(path.join(root, ".runtime-correction"))).filter(file => file.name.includes(roundId));
         assert.deepEqual(partialFiles.map(file => path.basename(file.name)), ["diagnostic.md"]);
       }
       await h.tool(spec, true);
       if (phase === "output-partial") {
         const roundId = committed.outputs[0].result.metadata.roundId;
-        const completed = (await files(path.join(root, ".runtime-correction/runs"))).filter(file => file.name.includes(roundId));
+        const completed = (await files(path.join(root, ".runtime-correction"))).filter(file => file.name.includes(roundId));
         assert(completed.some(file => file.name.endsWith("result.json")));
         assert.equal(new Set(completed.map(file => path.dirname(file.name))).size, 1, "output retry must reuse the original round");
       }
