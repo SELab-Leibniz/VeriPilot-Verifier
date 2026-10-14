@@ -85,3 +85,82 @@ sequenceDiagram
 此次分析没有调用提供商或新增模型调用，也没有修改生产实现。公开 scheduler 仍是待真实验证的修复候选。
 
 可提交的对照结果与原因更正见 [分析证据 JSON](session-projects-diagnosis-20261015.json)。原实验事实保留，先前的缓存键根因推断已明确撤回。
+
+## 原分支对照：哪些方向正确，哪些修复没有完成
+
+本节对照 `codex/openclaw-2026.7.1-2` 的实际 tip `75f5dba`，它是 Session 项目实现 `ef3054e` 的直接父提交。该 tip 已包含原生输出、原生续作和独立 Stop 预算的实验修订；不是早期 f19 的业务控制器实现。
+
+| 问题 | 归属 | 原分支与当前实现证据 |
+| --- | --- | --- |
+| 新宿主后台 Stop 被拒绝 | 本次宿主迁移缺少生命周期适配 | 新适配处理了项目目录与 SQLite Reviewer 身份，但沿用了旧版本的后台调度执行契约。 |
+| 准入异常后继续使用旧结果 | 原分支已有潜在缺陷 | 公共包装与调度循环相同；`0116513` 引入独立调度时，其有限重试依赖“每轮都进入核心”这一未保证的前提。 |
+| 初轮 checkpoint 被记为 UNVERIFIED | 原分支已有潜在缺陷，而且能定位到具体修复 | `c29ca4c` 在新 run 时清空共享评估；`f6a1c84` 为防止继承旧验收，在派发后又读取这个可变字段。防串线的目的合理，判断依据应该改为原 run 已提交结果。 |
+
+`native-stop-review.mjs` 和核心 orchestrator/task-store 无 diff；公共包装、新 run reset 代码逐字节相同；scheduler 除项目目录和显式 taskId 外等价。用 git archive 导出原分支，在独立临时目录运行三项无模型反例，根代理复跑 **3/3**：原分支同样会出现 30 次准入请求仅一次核心执行、正常准入下三次失败结束，以及 DEVIATION 正式评估对应 UNVERIFIED/null checkpoint。因此回退分支不能消除两个已有边界缺陷。
+
+应保留原设计：
+
+- `522a6ea`：业务、工具、审批和流式输出由宿主管理；不重建业务 harness。
+- `c29ca4c`：原 Session 原生续作，固定幂等 runId；业务 k 与基础设施故障分开；确认拒绝才退款；不确定派发不重放。
+- `0116513`：Hook 快速登记，完整终审使用独立 RC 总期限和每角色预算；不把等待业务回复变成等待整个终审。
+- 本次 Session 作用域：原生项目权威、旧版兼容绑定、显式启用、scope fingerprint、独立 taskId、切换失效检查。
+
+## 成熟做法在本项目中的具体措施
+
+### 1. 后台工作应转交有生命周期的宿主服务
+
+异步任务需要明确的所有者、取消和结果收集。Python 的 TaskGroup 是这种结构化生命周期的一个官方例子；这里应用的是这一原则，不移植 Python 运行时。[Python TaskGroup](https://docs.python.org/3.13/library/asyncio-task.html#task-groups)
+
+Node 的 AsyncLocalStorage 会把 store 传播到在作用域内创建的异步操作，换成 setImmediate 不会自动获得新的宿主工作身份。因此“移出 Hook 时间窗口”还必须完成工作所有权转交。[Node 异步上下文](https://nodejs.org/api/async_context.html#asynclocalstoragerunstore-callback-args)
+
+最低适配方案：
+
+1. v2026.10.3 入口注册公开 `api.registerService({apiVersion:2,...})`，取得宿主提供的 service scheduler；其所有者是 RC 插件服务。
+2. reply/agent_end Hook 只保存现有 PENDING checkpoint，并通过该 scheduler 安排 **现有 RC 评审**。不要另建业务模型 executor。
+3. 执行前重新核对 Session incarnation、项目 fingerprint、taskId、原需求和证据；执行时持有公开 Session admission，并组合服务停止、Session 取消、作用域切换与既有 deadline 信号。
+4. Reviewer 原提示、角色预算、核心有限重试和 Stop 复验算法照旧。业务续作仍只传原 sessionKey、message、固定 idempotencyKey、deliver:false，模型、cwd、工具和审批继续由宿主选择。
+5. 若公开后台能力不可用，应记录当前终审未验证和明确原因；原生模式不能回退旧 RC 手动绑定或 Agent 默认目录。
+
+正式 v2026.10.3 源码已经核对：service scheduler 使用宿主 detached context，保留插件 owner/registry，移除旧 RPC operator authority；`runtime.subagent.run` 调用原 `agent` 方法到传入 Session，没有强制另开业务 child。无 RPC client 时，宿主自己选择 system actor 并保留 plugin attribution，RC 不应伪造操作员角色。目录参数省略时仍由宿主解析 Session 实际目录。
+
+这比笼统宣称“service 无人类权限，所以一定不能续作”更准确，但源码契约不是完整实测。必须验证真实 service → Reviewer → 原 Session 续作 → 宿主工具/审批 → 完整复验。`scheduleSessionTurn` 对此本地插件并非可靠替代：该版本部分工作流能力限 bundled origin；`enqueueNextTurnInjection` 也不自动启动下一轮。
+
+### 2. 内部评审返回本轮结果；公开 Hook 才做降级反馈
+
+将当前 finalize 的核心调用提取成适配层内部函数，例如 `assessOnce(reviewContext, attempt)`，返回带 `runId/assessmentId/scopeFingerprint` 的本轮结构化结果，或者返回本轮取消/准入失败。内部 scheduler 不能再调用吞异常的公开 Hook wrapper，也不能从 Session 的 latest 字段取回结果。
+
+公开 Hook 对 RC 故障的建议式降级仍保留，避免把 RC 健康问题变成宿主工具 veto。内部异常传播与外部产品行为必须分别处理。
+
+重试措施：原核心继续管理 Reviewer/检查故障的首次尝试加两次重试；被释放的 root、权限拒绝、取消、过期 scope 不能对原上下文循环重试。未进入核心的准入失败先有限结束为 UNVERIFIED/CANCELLED，并保留原因，不额外扩大任何 budget。若以后确需重试瞬态准入，应明确归入现有预算且不能在适配层另叠一套无限重试。退避只缓解瞬态负载，不能替代错误分类和本轮结果协议。[AWS 重试经验](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/)
+
+### 3. 原 run 的结果不可变，Session latest 只用于定位当前活动
+
+评审上下文只需现有信息：`agentId/sessionId/sessionKey/scopeTaskId/scopeFingerprint/originRunId/controller/deadlineAt`。以原 run/assessment 为键保存结果；新 run 仍正常清空自己的 latest 状态。
+
+在续作派发前，从原 assessment 固定并持久化 `{reviewStatus,evaluationId}`，再等待宿主接收。后续派发状态单独更新。不能先 await 原生续作，再读取已可能属于新 run 的 `state.nativeAssessment`。原评估、派发接受、模型读取、业务结束和复验通过是不同事实，不能用任一事件替代全部完成。
+
+已有 native-followup 的 RESERVED、ADMITTED、OBSERVED、FINISHED 是证据阶段：OBSERVED/FINISHED 通过 sourceRecordId/modelObservedAt/finishedAt/reviewStatus 表达，status 可能仍为 ADMITTED。本 MVP 不必迁移出一套新的同义状态枚举。
+
+### 4. 使用已有回执做恢复对账，保持副作用边界
+
+保留 intent-before-send、短锁、固定 runId、payload hash、真实宿主转录来源和不确定派发不重放。成熟幂等 API 用请求身份表示意图；仅看相同文本或接口接受一个 idempotencyKey，不能推断永久 exactly-once。[AWS 幂等 API 设计](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)
+
+本地任务状态与外部派发是双写；当前 task transaction 和 followup receipt 是两个写入，不能称作完整事务 outbox。借鉴 outbox 的本地 intent 与幂等对账即可，不需要引入 SQS、数据库或通用任务队列；在现有文件事务能覆盖的范围内保存不可变关联，网络调用放在短事务之外。[AWS outbox 指南](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html)
+
+新增发现一个恢复覆盖点：native-followup:108 先保存 OBSERVED receipt，随后 :109 更新 task delivered。如果回调失败并重载，sourceRecordId 已有使该更新跳过。真实模块的无模型 callback 失败/重载反例已确认：派发只一次、读取回执已持久、恢复回调零次、OBSERVED journal 零条；这不是实际进程 kill/crash 的通过结论。解决措施是对可信已观察 receipt 幂等补齐 task delivered 及其派生审计；不重新派发、不改变 k。既有 markStopFeedbackDelivered 已按 evaluationId 排除已交付 observation，可复用。
+
+项目切换、取消与在途派发仍分开：尚未提交派发时可禁止；宿主已接受的业务运行由宿主管理。晚到 ACK/结束只归原 scope 历史，不恢复旧纠偏、不改变新项目状态；不能承诺撤回已经接受的业务动作。已在仓库恢复设计中规定的这些边界应落实到测试，而不是删除取消信号或扩大原始用户权限。
+
+## 最小实施与验收清单
+
+| 步骤 | 具体修改 | 验收要求 |
+| --- | --- | --- |
+| 1 | runtime 内部本轮结果协议，停止 stale outcome 循环 | 首次准入拒绝；首轮核心失败后拒绝；既有三次永久故障结束；业务 k 不变；原 deadline 不重开 |
+| 2 | 派发前固定原 run checkpoint | 宿主 run API 返回前启动新 prompt；旧结果仍 DEVIATION/原评估 ID，新 run 独立；不继承旧 PASS |
+| 3 | 新版公开 service 生命周期适配 | Hook 已返回后真正启动 Reviewer；原 Session/真实 Worktree 续作修改文件；角色预算超过短 Hook 窗口仍有效；正常文字流与审批保留 |
+| 4 | receipt 幂等恢复对账 | RESERVED 后故障、宿主接受但 ACK 丢失、OBSERVED 后回调失败、重复 Hook/模块重载；已派发至多一次，未知不退款/不重放 |
+| 5 | 两版真实交叉验收 | A/B 并发，评审中及派发在途时换项目，晚到结果，取消/挂起/重启，非零预算恢复；目录、来源、实际产物、回执和复验相互对应 |
+
+步骤 1/2 可先用确定性反例修补，并同时覆盖两版；步骤 3 必须验证真实公开 SDK 服务执行链，不能只把 SDK 版本声明改为兼容。权限/生命周期能力、项目解析与 Reviewer transport 都应由 OpenClaw 兼容模块提供窄接口，纠偏核心继续使用原算法。
+
+原分支函数与历史审计：`/tmp/rc-original-branch-comparison-20261015.json`；原分支反例根代理日志 `/tmp/rc-original-branch-rerun-20261015.log`。恢复窗口反例：`/tmp/rc-observed-recovery-gap-results-20261015.json`。本轮未新增真实模型调用，以上都是分析与待实施措施。

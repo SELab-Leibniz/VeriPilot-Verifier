@@ -180,6 +180,106 @@
       "cancel and project switch",
       "suspend and restart",
       "original deadline and both budgets"
-    ]
-  }
+    ],
+    "sameSessionSubagentPublicContract": {
+      "method": "agent",
+      "sessionKey": "original requested Session",
+      "cwdOverride": "omitted; host resolves effective cwd",
+      "actorWhenNoRpcClient": "system actor chosen by host implementation",
+      "completeLiveFixVerified": false
+    }
+  },
+  "originalBranchComparison": {
+    "oldRef": "codex/openclaw-2026.7.1-2",
+    "oldCommit": "75f5dba3af14820c93d97201af8003fd5f9b0ab1",
+    "newCommit": "ef3054e",
+    "blocks": {
+      "publicWrappers": {
+        "byteIdentical": true,
+        "equivalentAfterProjectOnlyNormalization": true,
+        "oldHash": "438f5011b4f477f8fe473e70e9bc367ebf79b416a1631c3f4341ccbe9da10834",
+        "normalizedNewHash": "438f5011b4f477f8fe473e70e9bc367ebf79b416a1631c3f4341ccbe9da10834"
+      },
+      "nativeRunReset": {
+        "byteIdentical": true,
+        "equivalentAfterProjectOnlyNormalization": true,
+        "oldHash": "15ac8a5406fdf1407e167e6c5678eadf5d72ff54d16255572d664c000ef92a89",
+        "normalizedNewHash": "15ac8a5406fdf1407e167e6c5678eadf5d72ff54d16255572d664c000ef92a89"
+      },
+      "scheduler": {
+        "byteIdentical": false,
+        "equivalentAfterProjectOnlyNormalization": true,
+        "oldHash": "7db88d2895618e41994cbc7cda7ae649ec2cfcd5296c5f3ac4c97fc54229a11b",
+        "normalizedNewHash": "7db88d2895618e41994cbc7cda7ae649ec2cfcd5296c5f3ac4c97fc54229a11b"
+      }
+    },
+    "history": {
+      "asyncSchedulerIntroduced": "0116513",
+      "sharedResultPostDispatchGuardIntroduced": "f6a1c84",
+      "resetOnNewRunIntroduced": "c29ca4c"
+    },
+    "reproFile": "/tmp/rc-legacy-analysis-20261015/source/test/retry-admission-diagnostic.test.mjs",
+    "reproResults": {
+      "admissionRefusal": {
+        "requests": 30,
+        "callbacks": 1,
+        "reviewerCalls": 1,
+        "retries": 29,
+        "coreFailures": 1,
+        "businessCorrections": 0
+      },
+      "admissionAvailable": {
+        "requests": 3,
+        "reviewerCalls": 3,
+        "coreFailures": 3,
+        "taskStatus": "STOPPED_UNVERIFIED",
+        "businessCorrections": 0
+      },
+      "checkpointRace": {
+        "formalVerification": "DEVIATION",
+        "followupAdmission": "ADMITTED",
+        "checkpoint": "UNVERIFIED",
+        "checkpointEvaluationId": null,
+        "newRunSharedAssessment": null
+      }
+    },
+    "rootAgentRerun": {
+      "diagnostics": 3,
+      "reproduced": 3,
+      "failed": 0,
+      "log": "/tmp/rc-original-branch-rerun-20261015.log"
+    }
+  },
+  "observationRecoveryGap": {
+    "note": "No host network/model. Injected callback failure after real receipt persisted, then reloaded manager. This proves lost post-observation reconciliation path, not an actual process crash.",
+    "projectRoot": "/tmp/rc-observed-recovery-gap-OqTyNg",
+    "dispatchCalls": 1,
+    "receiptObservedPersisted": true,
+    "recoveryObservedCalls": 0,
+    "observedJournalEntries": 0,
+    "ownedPromptProjectedAsMeta": true,
+    "actualProcessCrashTest": false
+  },
+  "industrySources": [
+    {
+      "principle": "owned asynchronous lifecycle",
+      "url": "https://docs.python.org/3.13/library/asyncio-task.html#task-groups"
+    },
+    {
+      "principle": "async context propagation",
+      "url": "https://nodejs.org/api/async_context.html#asynclocalstoragerunstore-callback-args"
+    },
+    {
+      "principle": "finite classified retries at one layer",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+    },
+    {
+      "principle": "request identity and idempotent effects",
+      "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    },
+    {
+      "principle": "persist local intent and reconcile external effect",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html"
+    }
+  ]
 }
