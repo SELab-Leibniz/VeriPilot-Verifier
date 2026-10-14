@@ -12,6 +12,14 @@ import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { runInternalExecution, runManagedExecution, runBackgroundExecution, isInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createEvidenceLedger } from "../lib/openclaw/evidence.mjs";
 
+function waitForAbort(signal, reject = false) {
+  return new Promise((resolve, fail) => {
+    const aborted = () => reject ? fail(signal.reason) : resolve();
+    if (signal.aborted) aborted();
+    else signal.addEventListener("abort", aborted, { once: true });
+  });
+}
+
 async function fixture(t, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "oc-supervised-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -187,7 +195,7 @@ test("the controller time budget stops assessment with a visible unverified rece
     } } };
   }, assess: async ({ state, request }) => {
     assert.ok(state.deadlineAt > Date.now());
-    await new Promise((_, reject) => request.abortSignal.addEventListener("abort", () => reject(request.abortSignal.reason), { once: true }));
+    await waitForAbort(request.abortSignal, true);
   } });
   const params = { ...f.params, timeoutMs: 180 };
   const result = await f.harness.runAttempt(params);
@@ -218,7 +226,7 @@ test("the controller time budget stops assessment with a visible unverified rece
 test("cancellation after budget expiry still suppresses the unverified final reply", async (t) => {
   const parent = new AbortController();
   const f = await fixture(t, { assess: async ({ request }) => {
-    await new Promise((_, reject) => request.abortSignal.addEventListener("abort", () => reject(request.abortSignal.reason), { once: true }));
+    await waitForAbort(request.abortSignal, true);
   } });
   const append = f.sdk.appendSessionTranscriptMessage;
   f.sdk.appendSessionTranscriptMessage = async (request) => {
@@ -231,9 +239,9 @@ test("cancellation after budget expiry still suppresses the unverified final rep
   assert.doesNotMatch(await fs.readFile(f.params.sessionFile, "utf8"), /总运行时限|Task completed/u);
 });
 
-test("expiry while the native worker is running aborts it without starting a reviewer", async (t) => {
+test("expiry while the native worker is running aborts it without starting a reviewer", { timeout: 10000 }, async (t) => {
   const f = await fixture(t, { worker: async ({ child }) => {
-    await new Promise(resolve => child.abortSignal.addEventListener("abort", resolve, { once: true }));
+    await waitForAbort(child.abortSignal);
     return { payloads: [{ text: "Late candidate" }], meta: { aborted: true } };
   } });
   const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 180 });
@@ -319,7 +327,7 @@ test("a genuine requirement during assessment cancels that assessment and is dur
   const f = await fixture(t, { assess: async ({ request, assessments }) => {
     if (assessments !== 1) return;
     started();
-    await new Promise((_, reject) => request.abortSignal.addEventListener("abort", () => reject(request.abortSignal.reason), { once: true }));
+    await waitForAbort(request.abortSignal, true);
   } });
   const running = f.harness.runAttempt(f.params);
   await reviewing;
@@ -448,7 +456,7 @@ for (const stop of ["reset", "dispose", "disable"]) test(`${stop} cancels the ac
   const started = new Promise((resolve) => { ready = resolve; });
   const f = await fixture(t, { worker: async ({ child }) => {
     ready();
-    await new Promise((_, reject) => child.abortSignal.addEventListener("abort", () => reject(child.abortSignal.reason), { once: true }));
+    await waitForAbort(child.abortSignal, true);
   } });
   const running = f.harness.runAttempt(f.params);
   await started;

@@ -135,6 +135,8 @@ test("A07/A08 manual reverify uses one fresh finite window and preserves budget 
   const params = { sessionKey: f.binding.sessionKey, commandId: "manual-1", actionId: "main", action: "reverify" };
   const first = await service.handle("control", params, actor);
   assert.equal(first.status, "RECEIVED");
+  const settled = shared.controlJobs.get(first.key)?.settled;
+  assert(settled, "manual job is registered before acknowledgement");
   for (let i = 0; i < 200; i++) {
     const receipt = await service.handle("receipt", params, actor);
     if (receipt.status === "ASSESSED") { done.resolve(receipt); break; }
@@ -149,6 +151,8 @@ test("A07/A08 manual reverify uses one fresh finite window and preserves budget 
   assert.ok(request.deadlineAt > first.receivedAt);
   assert.equal((await f.current()).stop.correctionAttempts, 2);
   assert.equal((await f.current()).stop.infrastructureFailures, 3);
+  // The published ASSESSED receipt precedes active-window/lock cleanup.
+  await settled;
 });
 
 for (const phase of ["READY", "SEND_COMMITTED", "UNKNOWN", "ACKED"]) test(`A20 cancellation and ${phase} retain at-most-once delivery`, async (t) => {
