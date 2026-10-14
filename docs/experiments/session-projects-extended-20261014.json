@@ -402,5 +402,16 @@
     "failed": 0,
     "log": "/tmp/rc-session-extended-targeted-tests.log",
     "limitation": "Unit tests do not replace live host lifecycle acceptance."
+  },
+  "laterDiagnosis": {
+    "date": "2026-10-15",
+    "evidence": "session-projects-diagnosis-20261015.json",
+    "previousCacheKeyInferenceWithdrawn": true,
+    "retryCounts": {
+      "A": 43796,
+      "B": 15418,
+      "total": 59214
+    },
+    "reason": "Subsequent admission exceptions are swallowed; scheduler reads stale state.nativeAssessment, not an outer hook cache hit."
   }
 }

@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "runtime-corrector.session-project-diagnosis.v1",
+  "date": "2026-10-15",
+  "timezone": "Asia/Hong_Kong",
+  "sourceCommit": "ef3054e",
+  "experimentCommit": "98d7be8",
+  "productionCodeModified": false,
+  "additionalRealModelCalls": 0,
+  "gatewayLifecycle": {
+    "liveRootTaskExecuted": true,
+    "globalAdmissionClosed": false,
+    "subordinateAdmissionClosed": true,
+    "queueError": {
+      "name": "GatewayDrainingError",
+      "message": "Gateway is temporarily unavailable. Please try again shortly.",
+      "stack": [
+        "GatewayDrainingError: Gateway is temporarily unavailable. Please try again shortly.",
+        "    at Module.enqueueCommandInLane (file:///private/tmp/rc-host-2026.10.3/node_modules/openclaw/dist/command-queue-CFE60Avj.mjs:558:71)",
+        "    at Immediate.<anonymous> (file:///private/tmp/rc-native-root-analysis-20261015/root-lifetime.mjs:17:19)",
+        "    at process.processImmediate (node:internal/timers:504:21)"
+      ]
+    },
+    "sessionAdmissionError": {
+      "name": "GatewayDrainingError",
+      "message": "Gateway is temporarily unavailable. Please try again shortly.",
+      "stack": [
+        "GatewayDrainingError: Gateway is temporarily unavailable. Please try again shortly.",
+        "    at Module.beginSessionWorkAdmission (file:///private/tmp/rc-host-2026.10.3/node_modules/openclaw/dist/session-lifecycle-admission-BkulHIO4.mjs:605:55)",
+        "    at Immediate.<anonymous> (file:///private/tmp/rc-native-root-analysis-20261015/root-lifetime.mjs:18:21)"
+      ]
+    },
+    "firstRealFailureGuard": "Exact first guard not recorded in the original log; command queue path is inferred."
+  },
+  "retry": {
+    "correctedRootCause": "Public finalize wrapper swallows work admission exception, leaving prior state.nativeAssessment; schedule loop retries stale in-memory outcome. No outer hook decision caching occurs because finalize event has no toolName.",
+    "previousCacheKeyInferenceWithdrawn": true,
+    "A": {
+      "retryCount": 43796,
+      "coreRetries": 1,
+      "infrastructureFailures": 1,
+      "businessCorrections": 0
+    },
+    "B": {
+      "retryCount": 15418,
+      "coreRetries": 1,
+      "infrastructureFailures": 1,
+      "businessCorrections": 0
+    },
+    "totalRetryCount": 59214,
+    "modelRunStartCount": 4,
+    "runCountIsNotHttpRequestCount": true,
+    "noModelReproduction": {
+      "admissionRefusal": {
+        "admissionRequests": 30,
+        "admissionCallbacks": 1,
+        "reviewerCalls": 1,
+        "nativeRetryCount": 29,
+        "failureAttempts": [
+          1
+        ],
+        "infrastructureFailures": 1,
+        "businessCorrections": 0,
+        "stopAssessmentIds": [
+          "business-run:stop"
+        ],
+        "observerCancelled": true
+      },
+      "admissionAvailable": {
+        "admissions": 3,
+        "reviewerCalls": 3,
+        "infrastructureFailures": 3,
+        "businessCorrections": 0,
+        "stopAssessmentIds": [
+          "business-run:stop",
+          "business-run:stop:infra-1",
+          "business-run:stop:infra-2"
+        ],
+        "taskStatus": "STOPPED_UNVERIFIED"
+      }
+    },
+    "rootAgentRerun": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "checkpointRace": {
+    "method": "No models, no host network. Original trials extract production stateFor/submitNativeFollowup/scheduleNativeStop functions unchanged; dependency stand-ins control admission timing. Third trial applies a snapshot-order candidate in temporary memory only. Actual native-stop-review checkpoint writer.",
+    "controls": [
+      {
+        "advanceDuringAdmission": false,
+        "candidateSnapshot": false,
+        "formalEvaluation": "DEVIATION",
+        "checkpoint": {
+          "reviewStatus": "DEVIATION",
+          "evaluationId": "formal-evaluation-1"
+        },
+        "trace": [
+          {
+            "phase": "formalStopCommitted",
+            "runId": "old-business-run",
+            "outcome": "DEVIATION"
+          },
+          {
+            "phase": "hostAdmissionStarted"
+          },
+          {
+            "phase": "hostAdmissionReturned",
+            "status": "ADMITTED"
+          }
+        ]
+      },
+      {
+        "advanceDuringAdmission": true,
+        "candidateSnapshot": false,
+        "formalEvaluation": "DEVIATION",
+        "checkpoint": {
+          "reviewStatus": "UNVERIFIED",
+          "evaluationId": null
+        },
+        "trace": [
+          {
+            "phase": "formalStopCommitted",
+            "runId": "old-business-run",
+            "outcome": "DEVIATION"
+          },
+          {
+            "phase": "hostAdmissionStarted"
+          },
+          {
+            "phase": "nativePromptStateEntered",
+            "runId": "admitted-correction-run",
+            "outcome": null
+          },
+          {
+            "phase": "hostAdmissionReturned",
+            "status": "ADMITTED"
+          }
+        ]
+      },
+      {
+        "advanceDuringAdmission": true,
+        "candidateSnapshot": true,
+        "formalEvaluation": "DEVIATION",
+        "checkpoint": {
+          "reviewStatus": "DEVIATION",
+          "evaluationId": "formal-evaluation-1"
+        },
+        "trace": [
+          {
+            "phase": "formalStopCommitted",
+            "runId": "old-business-run",
+            "outcome": "DEVIATION"
+          },
+          {
+            "phase": "hostAdmissionStarted"
+          },
+          {
+            "phase": "nativePromptStateEntered",
+            "runId": "admitted-correction-run",
+            "outcome": null
+          },
+          {
+            "phase": "hostAdmissionReturned",
+            "status": "ADMITTED"
+          }
+        ]
+      }
+    ],
+    "realResetTimeRecorded": false,
+    "businessRepairAndFinalPass": true,
+    "repairDirection": "Freeze completed original run result before awaiting followup admission; retain normal new-run reset."
+  },
+  "publicServiceSchedulerCandidate": {
+    "publicContractVerifiedFromInstalled2026_10_3": true,
+    "completeLiveFixVerified": false,
+    "remainingChecks": [
+      "private Reviewer execution",
+      "native business-session followup authority",
+      "cancel and project switch",
+      "suspend and restart",
+      "original deadline and both budgets"
+    ]
+  }
+}

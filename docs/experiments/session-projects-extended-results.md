@@ -34,17 +34,21 @@ Worktree 项目基线已成功建立，首轮交付结束后，`ground-truth-ext
 
 需要在宿主兼容模块处理合法的后台工作生命周期或采用经过核验的终审入口，同时保留宿主取消/重启保护；不能靠私有导出或关闭宿主保护绕过。
 
-### 基础设施重试重复同一缓存结果（P1）
+### 基础设施重试重复上一轮内存结果（P1，2026-10-15 更正根因）
 
-上述失败后，人工停止隔离试验之前累计 **43,796 条** `NATIVE_STOP_REVIEW_RETRY`，`failureAttempt` 始终为 1。不是 43,796 次模型调用：它没有真正发起这些新评审，而是在循环读取旧失败结果。
+上述失败后，人工停止隔离试验之前 A 任务记录 **43,796 条** `NATIVE_STOP_REVIEW_RETRY`，B 任务记录 **15,418 条**，共 **59,214 条**；两方 `failureAttempt` 始终为 1。它们是调度循环记录，不是 59,214 次模型调用。每个任务只有一条真正进入核心的基础设施失败记录。
 
-`runtime.mjs` 给内层 Stop 增加了 `:infra-N`，但外层 `withState` 的 `withTaskDecision` 仍使用同一个 run/tool assessmentId。需让基础设施重试与幂等回放身份一致，执行原有有限重试并按原预算停止；本实验未修改算法或扩大预算。诊断脚本现已检测这种停滞，保留失败后关闭隔离网关。
+2026-10-15 逐层定位后撤回此前“外层 assessmentId 缓存重复”的推断：finalize 事件没有 toolName，`withState` 直接调用 callback，绕过那个外层缓存。真正路径是下一轮 `runWithWorkAdmission` 在 callback 前抛异常，`publicHandlers.finalize` 包装吞掉异常并返回 undefined，没有更新 `state.nativeAssessment`；调度循环忽略本轮返回值，继续读取上一轮 UNVERIFIED/block，重复写 retry。它从未重新进入核心，所以失败计数停在 1。
+
+无模型确定性对照已经复现：首轮失败后 admission 拒绝，30 次请求只进入核心 1 次、产生 29 条调度重试；admission 始终允许时，同样的永久 Reviewer 故障严格执行 3 次后停止，`stop:infra-1/2` 正常生效，业务预算不变。修复应在适配调度层传递本轮结果/准入异常并有限处理；不需要改幂等缓存或扩大预算。循环仍有原 720 秒 deadline，并非数学上无限。本实验未更改生产代码。
 
 ### 首轮 checkpoint 与正式评估不一致（P2）
 
 旧版初轮 task assessment 明确是 DEVIATION，随后原生反馈被宿主接收和模型读取；模型实际修改，最终 task verification 和反馈复验都是 PASS。然而初轮 `native-stop-reviews` checkpoint 为 UNVERIFIED。
 
-源码与时间顺序指向：提交续作后，新的宿主 run 可能已经重置共享 `state.nativeAssessment`，旧 checkpoint 再从该可变状态读取结果。需要按旧 run 固定已经完成的评估再生成回执。业务闭环成功不能抵消审计记录的错误。
+源码与时间顺序指向：提交续作后，新的宿主 run 可能已经重置共享 `state.nativeAssessment`，旧 checkpoint 再从该可变状态读取结果。2026-10-15 用未改动的生产函数做确定性对照，已确认在 admission await 内启动新 run 会重现 DEVIATION → UNVERIFIED/null 的回执错误。真实现场没有记录内存 reset 时刻，该现场具体竞态顺序仍是强证据支持的推断。需要在派发前固定旧 run 已完成的评估，而保留新 run 的正常状态重置。业务闭环成功不能抵消审计记录的错误。
+
+后续精确定位、最小重现与公开修复候选见 [2026-10-15 原因分析](session-projects-diagnosis-20261015.md)。首次宿主拒绝缺少原始 stack，分析区分了确定机制与首次抛错位置推断。
 
 ## 失败历史与复现
 
