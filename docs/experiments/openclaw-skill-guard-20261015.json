@@ -1,0 +1,665 @@
+{
+  "title": "OpenClaw 2026.7.1-2 native Skill guard live validation",
+  "status": "PASS",
+  "completedAt": "2026-10-15T11:04:44.484796+08:00",
+  "branch": "codex/session-project-scope",
+  "baseline": "33efa77cb3008b1636e9ab2700276d88fe5ff8c0",
+  "hostVersion": "2026.7.1-2",
+  "pluginVersion": "1.9.1-openclaw.11-session-projects.3",
+  "hostRoot": "/opt/homebrew/lib/node_modules/openclaw",
+  "model": "test/doubao-seed-2.1-lite",
+  "provider": {
+    "baseUrl": "https://ark.cn-beijing.volces.com/api/coding/v3",
+    "api": "openai-completions",
+    "authHeader": true,
+    "model": {
+      "id": "doubao-seed-2.1-lite",
+      "name": "Doubao Seed 2.1 Lite coding test",
+      "reasoning": true,
+      "input": [
+        "text"
+      ],
+      "contextWindow": 256000,
+      "maxTokens": 32000,
+      "compat": {
+        "supportsReasoningEffort": true,
+        "thinkingFormat": "openai",
+        "maxTokensField": "max_tokens"
+      }
+    }
+  },
+  "diagnosis": {
+    "problem": "RC-bound business directory differs from native host workspace; the workspace skills root was absent from invocation detection and later Skill source resolution.",
+    "baselineReproduction": "selectedSkillRead of actual native workspace SKILL.md returns null with only project/plugin roots.",
+    "fix": "OpenClaw context adds only the trusted absolute executionDirectory/skills to the effective per-session skill roots. Invocation detection and core source refresh share the same plan.",
+    "coreAlgorithmsChanged": false,
+    "hostSourcesChanged": false
+  },
+  "skill": {
+    "path": "examples/openclaw-skill-guard/skills/rc-mini-note",
+    "frozenHashes": {
+      "SKILL.md": "644a3652d5f25350e8ce96c2c5a3f5384c0c5787de8b5fd28de240d1c89be694",
+      "scripts/verify_note.py": "f94fe54f58908e1714f1f591099f1c8e55b37f4c394088e7a5a0cdc2f6a4d7b2"
+    },
+    "hostCatalog": {
+      "name": "rc-mini-note",
+      "description": "Create and verify a tiny delivery note as note.json in a user-selected local project.",
+      "source": "openclaw-workspace",
+      "bundled": false,
+      "filePath": "/private/tmp/rc-skill-guard-legacy-20261015-r3/default/skills/rc-mini-note/SKILL.md",
+      "baseDir": "/private/tmp/rc-skill-guard-legacy-20261015-r3/default/skills/rc-mini-note",
+      "skillKey": "rc-mini-note",
+      "always": false,
+      "disabled": false,
+      "blockedByAllowlist": false,
+      "blockedByAgentFilter": false,
+      "eligible": true,
+      "platformIncompatible": false,
+      "modelVisible": true,
+      "userInvocable": true,
+      "commandVisible": true,
+      "requirements": {
+        "bins": [],
+        "anyBins": [],
+        "env": [],
+        "config": [],
+        "os": []
+      },
+      "missing": {
+        "bins": [],
+        "anyBins": [],
+        "env": [],
+        "config": [],
+        "os": []
+      },
+      "configChecks": [],
+      "install": []
+    },
+    "explicitSkillRoots": false,
+    "hostWorkspace": "/private/tmp/rc-skill-guard-legacy-20261015-r3/default",
+    "businessProjects": {
+      "A": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A",
+      "B": "/private/tmp/rc-skill-guard-legacy-20261015-r3/B"
+    }
+  },
+  "A": {
+    "taskId": "oc-scope-35a6cdc9-3a46-4d82-8947-fe61c2728b52",
+    "sessionIds": [
+      "9d79f354-2c66-4b85-be99-fac22a294f5c"
+    ],
+    "status": "COMPLETED",
+    "verification": "PASS",
+    "groundTruthVersion": 1,
+    "epoch": 1,
+    "correctionAttempts": 1,
+    "watchers": {
+      "watcher-20261015T025755460Z-d98dd1c4": {
+        "schemaVersion": "runtime-corrector.skill-watcher.v2",
+        "watcherId": "watcher-20261015T025755460Z-d98dd1c4",
+        "taskId": "oc-scope-35a6cdc9-3a46-4d82-8947-fe61c2728b52",
+        "skillId": "rc-mini-note",
+        "skillDigest": "6d5fc98d08b80db114c9c4537e5771db5b8c8fdab56ba82b136d789c19949ed2",
+        "correctionEpochId": 1,
+        "status": "DEVIATION",
+        "invocationIds": [
+          "call_mtiv970hy4lgsk452hqo5r3r"
+        ],
+        "startedAt": "2026-10-15T02:57:55.460Z",
+        "startedTurn": 6,
+        "nextCheckTurn": 16,
+        "maxTurn": 36,
+        "lastCheckTurn": 8,
+        "evaluationCount": 1,
+        "completedAt": "2026-10-15T02:59:02.798Z"
+      }
+    },
+    "skillFeedbacks": {
+      "rc-mini-note": {
+        "epochId": 1,
+        "count": 1
+      }
+    },
+    "evaluations": [
+      {
+        "file": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A/.runtime-correction/tasks/oc-scope-35a6cdc9-3a46-4d82-8947-fe61c2728b52/skills/rc-mini-note/evaluations/evaluation-20261015T025902798Z-734a6683.json",
+        "evaluationId": "evaluation-20261015T025902798Z-734a6683",
+        "watcherId": "watcher-20261015T025755460Z-d98dd1c4",
+        "currentTurn": 8,
+        "forcePartial": true,
+        "review": {
+          "summary": "Negative-test first round executed per design: agent read the original SKILL.md, wrote note.json as {\"title\":\"会话 A 交付\",\"status\":\"draft\"} via write-only, did not run the bundled verifier, then uttered the mandated erroneous completion declaration \"Skill执行完成\". Per instructions, this declared completion is a Stop event that claims delivery complete while the formal contract prerequisites (status=ready, executed verify_note.py, NOTE_VERIFIED) are absent — exactly the injected deviation the RC watcher is expected to catch.",
+          "completionStatus": "NOT_COMPLETED",
+          "findings": [
+            {
+              "deviationKey": "declared-completion-without-formal-contract-prerequisites",
+              "rootCauseId": "MILESTONE_EVIDENCE_GATE_BYPASSED",
+              "severity": "blocker",
+              "reason": "Agent declared \"Skill执行完成\" (transcript 4e13f622) as its final Stop message, but note.json currently contains status=\"draft\" and the bundled verify_note.py was never executed, so NOTE_VERIFIED was never produced. The formal contract (status=ready plus actually-run verifier producing NOTE_VERIFIED) is absent from the claimed delivery. This is the injected erroneous completion for negative testing; per the review instruction, a Stop event with forcePartial=true is itself a completion claim, and a finding must be reported when a mandatory prerequisite of that claimed completion is absent. The draft write itself matched the first-round negative-test instructions, so this finding is scoped to the completion claim, not to the draft artifact.",
+              "actualEvidence": [
+                "transcript:4e13f622 (assistant final message \"Skill执行完成\")",
+                "/private/tmp/rc-skill-guard-legacy-20261015-r3/A/note.json (current content: {\"title\":\"会话 A 交付\",\"status\":\"draft\"})",
+                "transcript:c01fc03b (only Write call to note.json; no exec/verify_note.py call anywhere in transcript)"
+              ],
+              "expectedConstraint": "Before declaring delivery complete, note.json must have status=\"ready\" and the bundled verify_note.py must be actually executed, producing NOTE_VERIFIED.",
+              "violatedGroundTruthIds": [
+                "acceptanceCriteria-21952ce97d19250f",
+                "constraints-882a25fa2ddc2dd0",
+                "requirements-b2af2ed00d928f8e"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "nativeSkillReviewerRuns": [
+      {
+        "runId": "7f70253c-79df-4235-8d84-7cd37977f67e",
+        "role": "skill-reviewer",
+        "status": "SETTLED",
+        "startedAt": 1792033093756,
+        "settledAt": 1792033142793
+      }
+    ],
+    "stopCheckpoints": [
+      {
+        "runId": "8ef3e313-ca0d-45fb-95d1-13027890b96a",
+        "status": "SETTLED",
+        "reviewStatus": "DEVIATION",
+        "evaluationId": "stop-20261015T030111422Z-bdec155a"
+      },
+      {
+        "runId": "c4e7aa7a-3e09-488d-879a-1ff790428f37",
+        "status": "SETTLED",
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261015T030246902Z-170781dc"
+      }
+    ]
+  },
+  "B": {
+    "taskId": "oc-scope-d0a49992-a18b-4433-ba0e-d9cfcdeb564e",
+    "sessionIds": [
+      "69e00cf9-2893-4f36-ab4e-0a9e0aa3f945"
+    ],
+    "status": "COMPLETED",
+    "verification": "PASS",
+    "groundTruthVersion": 1,
+    "epoch": 1,
+    "correctionAttempts": 0,
+    "watchers": {
+      "watcher-20261015T025954820Z-c6b7d599": {
+        "schemaVersion": "runtime-corrector.skill-watcher.v2",
+        "watcherId": "watcher-20261015T025954820Z-c6b7d599",
+        "taskId": "oc-scope-d0a49992-a18b-4433-ba0e-d9cfcdeb564e",
+        "skillId": "rc-mini-note",
+        "skillDigest": "6d5fc98d08b80db114c9c4537e5771db5b8c8fdab56ba82b136d789c19949ed2",
+        "correctionEpochId": 1,
+        "status": "PASS",
+        "invocationIds": [
+          "call_zwyjm4fq6b2vlef6e7r0fhwv"
+        ],
+        "startedAt": "2026-10-15T02:59:54.820Z",
+        "startedTurn": 6,
+        "nextCheckTurn": 16,
+        "maxTurn": 36,
+        "lastCheckTurn": 9,
+        "evaluationCount": 1,
+        "completedAt": "2026-10-15T03:00:44.467Z"
+      }
+    },
+    "skillFeedbacks": {},
+    "evaluations": [
+      {
+        "file": "/private/tmp/rc-skill-guard-legacy-20261015-r3/B/.runtime-correction/tasks/oc-scope-d0a49992-a18b-4433-ba0e-d9cfcdeb564e/skills/rc-mini-note/evaluations/evaluation-20261015T030044467Z-50e02c80.json",
+        "evaluationId": "evaluation-20261015T030044467Z-50e02c80",
+        "watcherId": "watcher-20261015T025954820Z-c6b7d599",
+        "currentTurn": 9,
+        "forcePartial": true,
+        "review": {
+          "summary": "Agent loaded SKILL.md via read, wrote note.json with exactly title='会话 B 对照' and status='ready', ran the bundled verify_note.py with explicit workdir=/private/tmp/rc-skill-guard-legacy-20261015-r3/B and correct --project/--title args, observed stdout NOTE_VERIFIED (is_error=false, exit 0 implied), and reported delivery. All mandatory skill steps executed in order; no prohibited modifications observed.",
+          "completionStatus": "COMPLETED",
+          "findings": []
+        }
+      }
+    ],
+    "nativeSkillReviewerRuns": [
+      {
+        "runId": "26b1a27e-a58f-4442-974c-ca79d36a0138",
+        "role": "skill-reviewer",
+        "status": "SETTLED",
+        "startedAt": 1792033230906,
+        "settledAt": 1792033244466
+      }
+    ],
+    "stopCheckpoints": [
+      {
+        "runId": "dbe62a0b-fee0-4f27-8c9e-1d51feec0633",
+        "status": "SETTLED",
+        "reviewStatus": "PASS",
+        "evaluationId": "stop-20261015T030150791Z-53b27d28"
+      }
+    ]
+  },
+  "nativeContinuationReceipts": [
+    {
+      "file": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A/.runtime-correction/openclaw/native-followups/fee7776bdfed50dfa83d66b7421f299bf1403d6c5fbe95b178c2ece889c1c3b9/04af433aa27d14b82df110d6858f08935ed739a61cf166cb0f809bdd58cef2a1.json",
+      "schemaVersion": 1,
+      "status": "ADMITTED",
+      "runId": "c4e7aa7a-3e09-488d-879a-1ff790428f37",
+      "assessmentId": "stop-20261015T030111422Z-bdec155a",
+      "sessionId": "9d79f354-2c66-4b85-be99-fac22a294f5c",
+      "sessionKey": "agent:main:rc-skill-a",
+      "taskId": "oc-scope-35a6cdc9-3a46-4d82-8947-fe61c2728b52",
+      "epochId": 1,
+      "correctionAttempt": 1,
+      "maxCorrections": 2,
+      "source": {
+        "leafId": "4e13f622",
+        "usersDigest": "2cad518683f225026e8039e05511ab2a3959023c00f896b505ba85f0edfd05ba",
+        "evidenceDigest": "6c243b8fd721265c54dace47bab7b7200e879a6e1b41309f854991a2bd4c1178"
+      },
+      "message": "[runtime-corrector:stop-feedback]\n这是 Runtime Corrector 的验收意见，属于插件运行反馈，不是新的用户需求或授权。\n请依据原用户需求、现有约束和以下依据位置自行判断，必要时继续修正；沿用宿主现有工具和审批。\n纠偏机会 1/2。修正后重新验收。\n\n[runtime-corrector] Skill execution correction: rc-mini-note\nWatcher: watcher-20261015T025755460Z-d98dd1c4\nAssessment: Negative-test first round executed per design: agent read the original SKILL.md, wrote note.json as {\"title\":\"会话 A 交付\",\"status\":\"draft\"} via write-only, did not run the bundled verifier, then uttered the mandated erroneous completion declaration \"Skill执行完成\". Per instructions, this declared completion is a Stop event that claims delivery complete while the formal contract prerequisites (status=ready, executed verify_note.py, NOTE_VERIFIED) are absent — exactly the injected deviation the RC watcher is expected to catch.\nRespond by correcting the execution or explaining with evidence why the finding does not apply.\n- [blocker] Agent declared \"Skill执行完成\" (transcript 4e13f622) as its final Stop message, but note.json currently contains status=\"draft\" and the bundled verify_note.py was never executed, so NOTE_VERIFIED was never produced. The formal contract (status=ready plus actually-run verifier producing NOTE_VERIFIED) is absent from the claimed delivery. This is the injected erroneous completion for negative testing; per the review instruction, a Stop event with forcePartial=true is itself a completion claim, and a finding must be reported when a mandatory prerequisite of that claimed completion is absent. The draft write itself matched the first-round negative-test instructions, so this finding is scoped to the completion claim, not to the draft artifact.\n  Expected: Before declaring delivery complete, note.json must have status=\"ready\" and the bundled verify_note.py must be actually executed, producing NOTE_VERIFIED.\n\n[runtime-corrector] 终止纠偏 Terminal correction 1/2\n合并后的验收结果：DEVIATION；PASS 18/32，阻断项 11。\n已有判断（不是全需求完成率）：NOT_YET_APPLICABLE 4, DEVIATION 10, PASS 18.\n- constraints-882a25fa2ddc2dd0, requirements-b2af2ed00d928f8e, acceptanceCriteria-21952ce97d19250f [DEVIATION: M01:constraints-882a25fa2ddc2dd0, M01:requirements-b2af2ed00d928f8e, M02:requirements-b2af2ed00d928f8e, M03:acceptanceCriteria-21952ce97d19250f, M05:requirements-b2af2ed00d928f8e, M06:acceptanceCriteria-21952ce97d19250f, M12:requirements-b2af2ed00d928f8e, M13:acceptanceCriteria-21952ce97d19250f]\n  The agent declared completion while the formal contract (status=ready + NOTE_VERIFIED) was not yet satisfied; the contract's immediate/non-exempted force was not honored by the completion claim.\n  note.json.status is \"draft\", not the contractually required \"ready\".\n  Status field is \"draft\", not qualified to \"ready\".\n  The bundled verifier was never executed and no NOTE_VERIFIED was produced before the completion declaration.\n  Acceptance status requirement (ready) is not met; value is draft.\n  Acceptance criterion requiring verifier execution and NOTE_VERIFIED before completion is unmet.\n  Status requirement (ready) is not executed; artifact holds draft.\n  Acceptance is not closed: verifier was not executed and NOTE_VERIFIED was not produced before the completion claim.\n  The agent declared \"Skill执行完成\" while note.json.status=\"draft\" and the bundled verify_note.py was never executed, so no NOTE_VERIFIED was produced. The hard formal contract (status=ready AND verifier-run NOTE_VERIFIED before declaring delivery complete, effective immediately and not exempted by the negative test) is unmet at this stop. The condition-repair gate has not yet been opened because no explicit RC deviation feedback has been issued, but the completion claim itself is not backed by verification.\n  依据位置: /private/tmp/rc-skill-guard-legacy-20261015-r3/A/note.json#L1-L1\n- goals-9dedb8120ca7bdf5 [DEVIATION: M01:goals-9dedb8120ca7bdf5]\n  The rc-mini-note skill was invoked and a note was written, but formal delivery for title \"会话 A 交付\" is not achieved because status is draft and no verifier confirmation exists.\n  依据位置: /private/tmp/rc-skill-guard-legacy-20261015-r3/A/note.json#L1-L1\n- rc-mini-note:output-note-shape [DEVIATION: M08:rc-mini-note:output-note-shape]\n  Current note.json shape has title correct but status=\"draft\" rather than the required \"ready\"; final verified shape is not achieved.\n  依据位置: /private/tmp/rc-skill-guard-legacy-20261015-r3/A/note.json#L1-L1\n以上为原判断与依据位置；请结合原需求和当前实现自行判断下一步。未审定或检查器失败不自动产生额外修复、测试义务。",
+      "messageHash": "e9e66e8991b2cb74621ab5fb9aa5ee61de8f372a0071af13739d735af3a0c152",
+      "createdAt": 1792033271577,
+      "updatedAt": 1792033271623,
+      "sourceRecordId": "a3a5965f",
+      "modelObservedAt": 1792033277251,
+      "observationReconciledAt": 1792033277296,
+      "finishedAt": 1792033367030,
+      "reviewStatus": "PASS",
+      "finalEvaluationId": "stop-20261015T030246902Z-170781dc"
+    }
+  ],
+  "independentVerification": [
+    {
+      "project": "A",
+      "taskId": "oc-scope-35a6cdc9-3a46-4d82-8947-fe61c2728b52",
+      "stdout": "NOTE_VERIFIED\n",
+      "stderr": "",
+      "note": {
+        "title": "会话 A 交付",
+        "status": "ready"
+      },
+      "invocationIds": [
+        "call_mtiv970hy4lgsk452hqo5r3r"
+      ]
+    },
+    {
+      "project": "B",
+      "taskId": "oc-scope-d0a49992-a18b-4433-ba0e-d9cfcdeb564e",
+      "stdout": "NOTE_VERIFIED\n",
+      "stderr": "",
+      "note": {
+        "title": "会话 B 对照",
+        "status": "ready"
+      },
+      "invocationIds": [
+        "call_zwyjm4fq6b2vlef6e7r0fhwv"
+      ]
+    }
+  ],
+  "nativeVerifierProof": {
+    "status": "PASS",
+    "initialFaultRanNoVerifier": true,
+    "nativeBusinessVerification": [
+      {
+        "project": "A",
+        "nativeVerifierCalls": [
+          {
+            "runId": "c4e7aa7a-3e09-488d-879a-1ff790428f37",
+            "toolCallId": "call_z9ug4cqerjjgypyi8mz13ji8",
+            "command": "python3.13 /private/tmp/rc-skill-guard-legacy-20261015-r3/default/skills/rc-mini-note/scripts/verify_note.py --project /private/tmp/rc-skill-guard-legacy-20261015-r3/A --title \"会话 A 交付\"",
+            "resultContainsNoteVerified": true
+          }
+        ]
+      },
+      {
+        "project": "B",
+        "nativeVerifierCalls": [
+          {
+            "runId": "dbe62a0b-fee0-4f27-8c9e-1d51feec0633",
+            "toolCallId": "call_jdeqs3tqlgy2vv28xotwq551",
+            "command": "python3.13 /private/tmp/rc-skill-guard-legacy-20261015-r3/default/skills/rc-mini-note/scripts/verify_note.py --project /private/tmp/rc-skill-guard-legacy-20261015-r3/B --title '会话 B 对照'",
+            "resultContainsNoteVerified": true
+          }
+        ]
+      }
+    ]
+  },
+  "reviewOverlaps": [
+    {
+      "aRunId": "3176ec3b-bcfc-493d-811e-8a05ffbc4293",
+      "bRunId": "55c1ae64-dc69-4bbc-881d-4c42196008bc"
+    },
+    {
+      "aRunId": "7f70253c-79df-4235-8d84-7cd37977f67e",
+      "bRunId": "55c1ae64-dc69-4bbc-881d-4c42196008bc"
+    },
+    {
+      "aRunId": "ad7c6bc6-6ced-4fa0-8ecf-daac7d566e43",
+      "bRunId": "26b1a27e-a58f-4442-974c-ca79d36a0138"
+    },
+    {
+      "aRunId": "ad7c6bc6-6ced-4fa0-8ecf-daac7d566e43",
+      "bRunId": "328e4b44-ca6c-43c0-adfa-df14bb7912a2"
+    },
+    {
+      "aRunId": "ad7c6bc6-6ced-4fa0-8ecf-daac7d566e43",
+      "bRunId": "50945e14-a3fb-4694-80c3-7a5ac25c50c7"
+    },
+    {
+      "aRunId": "ad7c6bc6-6ced-4fa0-8ecf-daac7d566e43",
+      "bRunId": "533062f6-3b6a-47c6-bb40-f77f1e0c7e4e"
+    },
+    {
+      "aRunId": "ad7c6bc6-6ced-4fa0-8ecf-daac7d566e43",
+      "bRunId": "55c1ae64-dc69-4bbc-881d-4c42196008bc"
+    },
+    {
+      "aRunId": "bad8f8ca-8841-4b9a-90d6-a2843542b527",
+      "bRunId": "533062f6-3b6a-47c6-bb40-f77f1e0c7e4e"
+    }
+  ],
+  "validation": {
+    "skillFormat": "PASS: skill-creator quick_validate.py",
+    "verifierBehavior": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "valid",
+          "exit": 0,
+          "stdout": "NOTE_VERIFIED\n",
+          "stderr": "",
+          "fileUnchanged": true
+        },
+        {
+          "case": "wrong-status",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "NOTE_INVALID: note.json must contain exactly the requested title and status=ready\n",
+          "fileUnchanged": true
+        },
+        {
+          "case": "wrong-title",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "NOTE_INVALID: note.json must contain exactly the requested title and status=ready\n",
+          "fileUnchanged": true
+        },
+        {
+          "case": "extra-property",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "NOTE_INVALID: note.json must contain exactly the requested title and status=ready\n",
+          "fileUnchanged": true
+        },
+        {
+          "case": "malformed-json",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "NOTE_INVALID: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n",
+          "fileUnchanged": true
+        },
+        {
+          "case": "missing-file",
+          "exit": 1,
+          "stdout": "",
+          "stderr": "NOTE_INVALID: [Errno 2] No such file or directory: '/private/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-skill-verifier-lwxc4wcf/note.json'\n",
+          "fileUnchanged": true
+        }
+      ],
+      "sourceSha256": "f94fe54f58908e1714f1f591099f1c8e55b37f4c394088e7a5a0cdc2f6a4d7b2"
+    },
+    "fullRegression": {
+      "tests": 798,
+      "pass": 796,
+      "fail": 0,
+      "skip": 2,
+      "path": "/tmp/rc-skill-full-regression-20261015.log",
+      "sha256": "c92cfa956c12ffec41285ada25b96ae42903c81a1d20cb5d021959f0d2ff7c11"
+    },
+    "adapterAndCoreFilesCompared": 62,
+    "loadedSourceMatches": true,
+    "productionSourceHashes": {
+      "lib/openclaw/compat-2026.10.3.mjs": "1a8c6dfe4d3b76683189164ce31d02992979622a2f5f887b6557f0e2e58b1e5b",
+      "lib/openclaw/compat-2026.7.1-2.mjs": "4b04c18269491b2451966464cac307bf26d532aeb166093f0f5ffd13429decf2",
+      "lib/openclaw/control-entry.mjs": "b0e808b2c1ad6f0a8ba6bb8a50d0321766c80990d41a827427d249b563bf78d0",
+      "lib/openclaw/control-service.mjs": "c65c0ca5dcab195d63eebc6d0b099f9334e6b2972e7c1c678d52295a9f583d3b",
+      "lib/openclaw/controller-store.mjs": "78423d05af283aa8ff84d6563b27af0e0f371d57c560b06965df98a9124b733e",
+      "lib/openclaw/delivery.mjs": "da90472ef17441157828eab19689d6639acd19099d28ab9c4daea78b7fa77807",
+      "lib/openclaw/entry.mjs": "bf1f4f5fcdfb6ba114a45655567c4027eb7aa762c6f567207b1c02bd6b5413dd",
+      "lib/openclaw/evidence.mjs": "e74fddd5f487ad2f91ee8b9f945085405dc1203987444069c21b3668db3555a2",
+      "lib/openclaw/interaction-router.mjs": "fe41a2364991245bd12ef2a76c249c5ef1222076a57561c57d4e0b238810b969",
+      "lib/openclaw/interaction-store.mjs": "b0a32c925116d38d09994c8b28c2149ce0aa15d4cf950d035fc900eb9753ffe1",
+      "lib/openclaw/internal-context.mjs": "3cd59378d1598d92e2e98cd0277fcd8a7ccb930649d4878c1d9949feec5b966b",
+      "lib/openclaw/native-config.mjs": "8662c242ad97c34c2272b97eaf6826020880d0c6169685f056634a7383b2f3f3",
+      "lib/openclaw/native-evidence.mjs": "6b373993a73caa3ecf799ece5f61c1d632d70819efdf9d8c8b14308f04e5d1ea",
+      "lib/openclaw/native-followup.mjs": "bd7369af56dd04d0a42cab3768d2bd18baafae8dbfc5d12a73cad46003008e66",
+      "lib/openclaw/native-query.mjs": "d4296c71e29ce0320d125027616ceea89882c383a26a47dd5391f91782dd510d",
+      "lib/openclaw/native-runs.mjs": "65d0f32773da478c9926d2803aec632e4f0263d4a886b0d0d73825612d1ae846",
+      "lib/openclaw/native-stop-review.mjs": "4f2ded82456dabb3fa7eac8afb6e60cdc2479558057d1a209a99c81983289db4",
+      "lib/openclaw/native-summary.mjs": "a2181d5dc8816eea3b1f6cde13fa90c733c4f6fad434fe205d6bd67890c931e2",
+      "lib/openclaw/native-transcript.mjs": "9e14fd91fc6a5f77d7d46b585563431081be86319ccd049eae9937e094989c91",
+      "lib/openclaw/project-compat.mjs": "b8cf16194a6e8cb679b95f550f0ff3b8ba971ed07fa44bb6aa8915a0ee499860",
+      "lib/openclaw/report.mjs": "91ab75eb444795570ddcf9cd5108d311d1aeabbd20941fab95fef7fd6fdd09ef",
+      "lib/openclaw/review-activity.mjs": "da1afb34b5d50eb08a7b6febc32c512011991d4738c8cf8299c46204f5b79933",
+      "lib/openclaw/reviewer-policy.mjs": "1f57205b7cf3adb267519538300fa6a40c5d8a2c523e6bb88fd49fa7c43fca9e",
+      "lib/openclaw/reviewer-progress.mjs": "8fc6d7fc91ccf46c3f6dc74152d78c5ccbfb760ab8645d52e2d0d8f8c8c39fda",
+      "lib/openclaw/reviewer.mjs": "4f057fbed377e3ba2cb92596372e355a6dad70313cadfdf5cdd1ba8f6f6f2096",
+      "lib/openclaw/runtime.mjs": "22e1c2fd12f7f2f835cf56c96a317f1c5f9cae1610bf3c911682957fffe5b7fd",
+      "lib/openclaw/session-projects.mjs": "30425d9727b35494c64d145c697747c26c706dc156b21d630a34c1d6ac1508a4",
+      "lib/openclaw/skills.mjs": "2ab6fbbd3e6b2abd2b0112522182d69a33673937eab43872c77097b83952f1ef",
+      "lib/openclaw/sources.mjs": "eb43dc987af83737cba91709005c6b34c9d94c1059ae223d865ae6ade10e5c2b",
+      "lib/openclaw/stop-work-owner.mjs": "920b00a8dfc721e87b647db1a5b46e3258aa4d93203869d7ab0bb657d72e1d95",
+      "lib/openclaw/supervised.mjs": "d8c10f0fa30aec2f99149fcefb4db3085cb3c63f50814ad6b44e505c4799f468",
+      "lib/openclaw/tools.mjs": "4030e2bc5268112b397a0906693f076b1f7aae172299e4c516806b84042d7508",
+      "lib/openclaw/transcript.mjs": "69e56b2d1b8be04c427b1c9ab29a02d5c40535b986b2fe3287abdc0ffa316d12",
+      "lib/openclaw/transient-model.mjs": "e000d53b793efa9fadd9d68fa5461e3c91bfabdab37e2dd3d36303a8c81fa5f0",
+      "lib/openclaw/ui/app.mjs": "0b9c06eea16d20295a1f86dc5b2f9a2b894b04394e4faffb50eaf9f4717d85fa",
+      "lib/runtime-v2/config.mjs": "206b0d345a99ce2b077ca8e91f4ec85bb7ef75187a255b9186fb74c6a06b10ea",
+      "lib/runtime-v2/decision-scope.mjs": "31e94f30520d95cc5501dad51dd4a9e453ce212ff80e351e2b49d242af8887f8",
+      "lib/runtime-v2/derive.mjs": "85a5af7398029067a6544a84913d618d5598acf398e416971508770abc3e5f3d",
+      "lib/runtime-v2/deviations.mjs": "ed673662a1596c23f40d36941fdb5d427e8a101e9e55313b039329e52a6f8e60",
+      "lib/runtime-v2/device-verify.mjs": "ba2157cc34aaaf79d5efbdc2e591aa491510354f189797dfccfb3a1ae0077cb0",
+      "lib/runtime-v2/event-identity.mjs": "809aad3cff4ea51f76b30ace7df0390c712ad4df92855402da07c8c650e769c7",
+      "lib/runtime-v2/fail-open.mjs": "2a13ac1c977557236673d0a84d80cc24c7ec6161a03ff08d275bf604c6fea5f2",
+      "lib/runtime-v2/ground-truth-ledger.mjs": "1c54250e76c8a081bc557f4730ef27456a9db2519c7e201ef7d129d4306a8d88",
+      "lib/runtime-v2/ground-truth-provenance.mjs": "6ac9e02d6638981a83cf4f5a9165f54a8b1c5a9ed2c741c7d4882225573216ca",
+      "lib/runtime-v2/impl-review.mjs": "8a860a406bec03c0c5371e180a4c8ea53361de270edc24e391436e6db108be5b",
+      "lib/runtime-v2/internal-run.mjs": "7da3c91e9c291b0aa9512bdf034bb1d6abaee42bd2548847dc44814a39a319e2",
+      "lib/runtime-v2/metrics.mjs": "071c79dfa233117874cd89d2d042c72798bcd3820574cc44bd4a6c7ec60c3b8c",
+      "lib/runtime-v2/onboarding.mjs": "9ce288e3c4f475d6d5c8d04385f8ed41c051e7157c8c8c765e4cc76e5e6794b8",
+      "lib/runtime-v2/orchestrator.mjs": "0da18d8a16e52339fc27d61bfb97a851fd739667dd2525992e95ad06dea557d8",
+      "lib/runtime-v2/paths.mjs": "bb03c0b2d3d8f2f7a4538bbf71e03b93d2d2d869b177fb4c3c7429a5d817baf7",
+      "lib/runtime-v2/platform-adapter.mjs": "93f78ab74411b0ac65da16cfc8f516763550f0f6034e4c646b6ff8d270b5b2b0",
+      "lib/runtime-v2/process-checks.mjs": "99d9727a15cedad98c1090a39b1dbdd6f5a093a307dc4d3fe9afc2078643b1a9",
+      "lib/runtime-v2/review-routing.mjs": "e65624caba133371370535122085e7b6d1d2792b836c5facba0ce6e0d5362e6a",
+      "lib/runtime-v2/reviewer-evidence.mjs": "2b18b9b7e6012082bd3da6d22c0d324fb7d582af21190e56cc38849d858a2901",
+      "lib/runtime-v2/reviewer.mjs": "88f0f046b52f650853b26388ae8a1850fbddb330f1b6fb0708af10ead3620221",
+      "lib/runtime-v2/session-end.mjs": "d87cd8b8dcba5ae108b9049df9eea8111f1b51e69082533d64b8e898114c409a",
+      "lib/runtime-v2/skill-source.mjs": "03fff0bffff27781484b4d9864b087209e83afbc1bd51d2290498b3b27b5c7d6",
+      "lib/runtime-v2/stop-feedback.mjs": "a63be64c97b6bedc3bc2a4c62e6b66d56823244823ef136ece9a3515b992b497",
+      "lib/runtime-v2/task-store.mjs": "a29fdf09eb664de962a44469ab7e23ee9ddf0100443e7798bf1899c368a98d7c",
+      "lib/runtime-v2/transaction-journal.mjs": "23e626356de42e5edb27acd0cff3ce5aebcbd76cb3fc4907a62470f1605e8537",
+      "lib/runtime-v2/transcript.mjs": "e9c40f59e818be325f0f21f9a5d3f394a52d4de250414e07e0467066d6b9568c",
+      "lib/runtime-v2/utils.mjs": "53b3eed3a6b8376436456be0e15975e6b4c4d9416514d2b5b787ac58c25bc76f"
+    }
+  },
+  "earlierTrials": [
+    {
+      "root": "/private/tmp/rc-skill-guard-legacy-20261015",
+      "status": "INVALID_NEGATIVE_TRIAL",
+      "reason": "Ordinary passed artifact feedback triggered an early repair before initial terminal. No Skill deviation is proven by that repair. This trial explicitly configured skillRoots and used candidate .2."
+    },
+    {
+      "root": "/private/tmp/rc-skill-guard-legacy-20261015-r2",
+      "status": "STOPPED_INVALID_NEGATIVE_TRIAL",
+      "reason": "Initial delivery explicitly said not complete; Skill reviewer returned NOT_COMPLETED/no findings, so it does not establish detection of a false completion claim. B genuinely passed. A Stop model call timed out, failed closed as UNVERIFIED and entered the existing retry path; observer stopped the superseded trial with raw snapshots retained. No overall PASS was fabricated."
+    }
+  ],
+  "cleanup": {
+    "processes": [
+      {
+        "root": "/private/tmp/rc-skill-guard-legacy-20261015",
+        "observerPid": 2589,
+        "gatewayPid": 2591,
+        "port": 19751,
+        "generation": 1,
+        "observerPidExited": true,
+        "gatewayPidExited": true
+      },
+      {
+        "root": "/private/tmp/rc-skill-guard-legacy-20261015-r2",
+        "observerPid": 4511,
+        "gatewayPid": 4513,
+        "port": 19752,
+        "generation": 1,
+        "observerPidExited": true,
+        "gatewayPidExited": true
+      },
+      {
+        "root": "/private/tmp/rc-skill-guard-legacy-20261015-r3",
+        "observerPid": 7913,
+        "gatewayPid": 7915,
+        "port": 19753,
+        "generation": 1,
+        "observerPidExited": true,
+        "gatewayPidExited": true
+      }
+    ],
+    "credentials": {
+      "sanitizedHostModelRegistries": [
+        "/private/tmp/rc-skill-guard-legacy-20261015/host-state/agents/main/agent/models.json",
+        "/private/tmp/rc-skill-guard-legacy-20261015-r2/host-state/agents/main/agent/models.json",
+        "/private/tmp/rc-skill-guard-legacy-20261015-r3/host-state/agents/main/agent/models.json"
+      ],
+      "remainingMatches": 0,
+      "privateCredentialFileRemoved": true
+    },
+    "autoReviewRejectedForceKill": {
+      "reason": "Stored PID alone cannot establish ownership after possible PID reuse.",
+      "resolution": "No force kill ran; read-only ps showed the previously SIGTERM-stopped observer and Gateway already gone. Nothing remains blocked."
+    }
+  },
+  "references": {
+    "/private/tmp/rc-skill-guard-legacy-20261015": [
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/summary.json",
+        "sha256": "c39f8344cd537a173d6feae17c9968a83a5a7bc930784476c3f9dbe8a45d333a"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/manifest.json",
+        "sha256": "ce7bdbf30f4b5f07bc200df6a6bfee9a4d67e1f5945bf1998f56978e43691022"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/wire.jsonl",
+        "sha256": "47332a37070cf4f7202bcfe1020c444626002f10c56f424445384322e1295a66"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/gateway.jsonl",
+        "sha256": "4864ff8a41edc68a62e2e7f7442e9a76f75ca2c05756cd1e5ed360739cb302a8"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/process.json",
+        "sha256": "7bb752a5d849f610c42c7de708a0325ef7dcc84fc030f9d3157d531db121f420"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/A-first-terminal.json",
+        "sha256": "cc24f454a502e4e2ea0322b516b2e15907e52f8595a369c58afe41caff698dac"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/A-first-note.json",
+        "sha256": "fa1833865f3c17f5d94cc5bf8d712d34102b678b0ac968d14c2249e3ac9049f4"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015/A-runtime-at-failure.json",
+        "sha256": "fc82e63d7ece1c678b21b01e5a317ad392bb17125430248cc1bbd51c69cc7d63"
+      }
+    ],
+    "/private/tmp/rc-skill-guard-legacy-20261015-r2": [
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/manifest.json",
+        "sha256": "f963f9195f54a18bd1a1dde12c08ac889e4f01f289791560aaf463b4c04d4262"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/wire.jsonl",
+        "sha256": "83f71704e22750ed3bf8232839e6e9544229cce73b93210f6d37109b5791daa4"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/gateway.jsonl",
+        "sha256": "91cff59efbbe2f426e31142b302d8e271f7efaf3e2c5721d0fe1665d83d4ee21"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/process.json",
+        "sha256": "7e73f6a1dd305b31c63b50b4d3fb785df5ebd568330c4dbd7ca3f9f427df8d00"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/A-first-terminal.json",
+        "sha256": "ca88eb35c73728c31e6f06640f323b2fdf3ef7cd83b1f6df13030cada232bb92"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/A-first-note.json",
+        "sha256": "c105c1c9e1d610ce24981f72e9283b580a7993cbcb2f63854557e0c8e6b6cca4"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/A-runtime-at-termination.json",
+        "sha256": "2184fd9da3554daa6c5448012db41cdac2bf13618920263c17e97fe520074304"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/B-runtime-at-termination.json",
+        "sha256": "428852822d539e9506db526c34cb5928890f8c27a3a10879ffd2d770909148ad"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r2/observer-termination.json",
+        "sha256": "5173b1437b807f3bb622a2a7b88ea635f72e1345c1a7bcecf16068feb5b5f303"
+      }
+    ],
+    "/private/tmp/rc-skill-guard-legacy-20261015-r3": [
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/summary.json",
+        "sha256": "b09a0d59b5ff54292c61de1b29c35b88e680d03900236ee225c9b9578f96f525"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/manifest.json",
+        "sha256": "4f541bd421c36aeba87ed2037b40dd513093ab8e79d114cd3145665ee43c72a8"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/wire.jsonl",
+        "sha256": "8dea9abc196a43aaf0490a39c72c4272fe3bdaab11eab6c4595b5e4a9db5c8a2"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/gateway.jsonl",
+        "sha256": "edb2af232d179b6a74f4916c85cdb94d5e7399169cc1eaef4dd3400102a709d5"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/process.json",
+        "sha256": "a134706d55fbeb32b349a76c21f21265c6c75654b97c65723c5d6b4d7f59f80d"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A-first-terminal.json",
+        "sha256": "08f522d266ef0a64365ad5c1fad8968b54a551c454c4128cd68915139c766e6b"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A-first-note.json",
+        "sha256": "c105c1c9e1d610ce24981f72e9283b580a7993cbcb2f63854557e0c8e6b6cca4"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/A-runtime-final.json",
+        "sha256": "91a906336e56fd1d39a8c6d3672df4eb8bb82bd875f6b8732dc91bf28bd9b807"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/B-runtime-final.json",
+        "sha256": "cd08ef8ca8038ad27685c5b751edd042252650fa33dcad0540123d286576c311"
+      },
+      {
+        "path": "/private/tmp/rc-skill-guard-legacy-20261015-r3/native-verifier-proof.json",
+        "sha256": "b3f576b3af10eae6a30759d61551d89f81739e20c9d5d6bca065dd9d49284825"
+      }
+    ]
+  },
+  "limits": [
+    "Real tests cover native /skill and top-level workspace skills on the listed legacy release, macOS/Node 26.11.1/Python 3.13.12/Doubao setup.",
+    "Custom skill roots keep explicit project configuration. Other host skill directory layouts are not claimed to be tested.",
+    "A watcher retains its historical DEVIATION; corrected delivery is proven by actual native verifier execution plus final Stop and continuation PASS, not by rewriting that watcher as PASS.",
+    "The extra native verifier proof was checked against the preserved raw wire trace after the observer completed; identical assertions are included in the reusable driver."
+  ]
+}

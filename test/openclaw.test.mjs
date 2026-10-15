@@ -9,7 +9,7 @@ import test, { before, after } from "node:test";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { normalizeMessages, readOpenClawTranscript, persistTranscript } from "../lib/openclaw/transcript.mjs";
 import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-store.mjs";
-import { changedFiles, selectedSkillRead } from "../lib/openclaw/tools.mjs";
+import { changedFiles, selectedSkillRead, sessionSkillPlan } from "../lib/openclaw/tools.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { ensureTask, findTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 
@@ -55,7 +55,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.2");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.3");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
   assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");
@@ -186,6 +186,24 @@ test("Skill boundaries require an actual read inside a discovered skill root", a
   await fs.writeFile(path.join(project, "SKILL.md"), "# Unregistered");
   assert.equal(await selectedSkillRead("read", { path: "skills/example/SKILL.md" }, { projectRoot: project }, pluginRoot), "example");
   assert.equal(await selectedSkillRead("read", { path: "SKILL.md" }, { projectRoot: project }, pluginRoot), null);
+});
+
+test("RC-only binding discovers the host workspace Skill without guessing a business tool cwd", async (t) => {
+  const project = await workspace(t), execution = await workspace(t);
+  const file = path.join(execution, "skills/workspace-note/SKILL.md");
+  await fs.mkdir(path.dirname(file), { recursive: true }); await fs.writeFile(file, "# Native workspace skill");
+  const state = { projectRoot: project, executionDirectory: execution, projectScope: {} };
+  const original = { runtimeV2: { skillCorrection: { enabled: true, skillRoots: [] } } };
+  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot), null, "regression: project roots alone miss this native read");
+  const effective = sessionSkillPlan(original, execution);
+  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot, effective.runtimeV2.skillCorrection.skillRoots), "workspace-note");
+  const { resolveSkillDirectory } = await import("../lib/runtime-v2/skill-source.mjs");
+  assert.equal(await resolveSkillDirectory({ skillId: "workspace-note", projectRoot: project, pluginRoot,
+    configuredRoots: effective.runtimeV2.skillCorrection.skillRoots }), path.dirname(file));
+  assert.deepEqual(original.runtimeV2.skillCorrection.skillRoots, [], "do not mutate project policy");
+  assert.equal(sessionSkillPlan(original, null), original);
+  assert.equal(sessionSkillPlan(original, "relative"), original);
+  assert.equal(state.projectRoot, project); assert.equal(state.executionDirectory, execution);
 });
 
 test("native reviewers own read-only sessions, repair JSON, and transfer frozen evidence before cleanup", async (t) => {

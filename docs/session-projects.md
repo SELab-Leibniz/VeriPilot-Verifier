@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.2`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.3`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
@@ -59,3 +59,5 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 随后使用用户授权的豆包 `doubao-seed-2.1-lite` 完成真实模型补验：两版从空开发 Todo 均最终 Stop/实现终审 PASS、k=0，另有八项独立 CLI 验收通过；两版实际故障修复都取得首轮 DEVIATION、原生续作观察记录及末轮 PASS。新版受控 A/B 整轮通过，旧版把有效故障修复与正确项目的隔离/重启分开取证，未覆盖或改写失败控制组。两版正确项目均验证独立任务和零预算；新版真实 Worktree 与原仓库隔离、两版真实重启不重放通过。新版 Stop 中取消后切换项目经公开 Session reset 生命周期通过；业务已交付时 `chat.abort` 返回 false，不能宣称它取消了 RC 后台评审。平台测试资源必须在新宿主加载插件前准备。详细边界、失败记录及实际模型证据见 [豆包补验报告](experiments/session-projects-doubao-20261015.md)。
 
 2026-10-15 再次针对 **2026.7.1-2** 新建隔离环境：受控 A/B 整轮首次重跑即 PASS（A 真正 DEVIATION → 一次原生续作 → PASS，B k=0），9 对实际评审重叠，真实重启恢复且查询不调用模型。从空开发 Todo 的真实终审及独立 8 项 CLI 验收、Stop Reviewer 运行中改绑取消与新项目基线、未配置项目不运行 RC 及绑定管理亦通过。本轮无需生产代码修改；45 项定向回归全部通过。版本、范围、观察器初轮失败和可核验原始证据见 [旧版再次真实复验](experiments/openclaw-2026.7.1-2-repeat-20261015.md)。
+
+随后新增小 Skill `rc-mini-note`，发现并修复 RC 绑定业务项目与宿主工作区分离时漏掉原生工作区 Skill 的适配缺口。候选 `.3` 统一以宿主可信执行目录补充调用识别及源码刷新，不改业务工具目录或纠偏核心。旧版原生 `/skill` 真实实测：A 遗漏校验并错误宣告完成，被 Skill Reviewer 检出，原生续作实际修复、校验及最终 Stop PASS，k=1；B 正常 Skill 评审和 Stop 均 PASS、k=0。全量回归本轮实际为 798 项、796 PASS、2 项平台跳过。详见 [Skill 看护实测](experiments/openclaw-skill-guard-20261015.md) 和 [可复用示例](../examples/openclaw-skill-guard/README.md)。

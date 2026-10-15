@@ -26,7 +26,7 @@ export async function runtimeState(projectRoot) {
   }
   return { tasks, journals, records, evaluations };
 }
-export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
+export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
   if (!process.env.RC_TEST_MODEL_KEY) throw new Error("RC_TEST_MODEL_KEY required");
   if (!resume) await fs.mkdir(destination, { mode: 0o700 });
   const root = await fs.realpath(destination), pkg = await json(path.join(hostRoot, "package.json"));
@@ -40,6 +40,13 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
   for (const [name, adapter] of Object.entries(platformAdapters)) {
     if (!/^[a-z][a-z0-9-]*$/u.test(name)) throw new Error("Invalid experiment platform name");
     await fs.writeFile(path.join(pluginRoot, "config/platforms", `${name}.json`), JSON.stringify(adapter, null, 2));
+  }
+  // Native skill discovery must see the actual files before Gateway startup.
+  for (const directory of workspaceSkillSources) {
+    const name = path.basename(directory);
+    if (!/^[a-z][a-z0-9-]*$/u.test(name)) throw new Error("Invalid experiment skill name");
+    await fs.access(path.join(directory, "SKILL.md"));
+    await fs.cp(directory, path.join(defaultDir, "skills", name), { recursive: true });
   }
   const descriptor = await json(providerFile), model = `test/${descriptor.model.id}`, token = randomUUID();
   const provider = { baseUrl: descriptor.baseUrl, api: descriptor.api, authHeader: descriptor.authHeader,

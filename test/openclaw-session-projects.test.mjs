@@ -16,7 +16,7 @@ before(async () => {
 });
 after(() => fs.rm(build, { recursive: true, force: true }));
 const config = "version: 2\nartifacts:\n  - name: draft\n    stage: drafting\n    patterns: [draft.md]\n    rules:\n      enabled: false\n    review:\n      enabled: false\ndynamicGroundTruth:\n  enabled: true\n  materialRoots: []\n  panel:\n    size: 0\nstopCorrection:\n  enabled: false\n";
-async function fixture(t, version = "2026.7.1-2") {
+async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-session-projects-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const a = path.join(root, "a"), b = path.join(root, "b"), off = path.join(root, "off"), stateDir = path.join(root, "host-state");
@@ -40,7 +40,7 @@ async function fixture(t, version = "2026.7.1-2") {
   }
   const compatibility = async () => ({ loadTranscriptEvents: ({ sessionKey }) => transcripts.get(sessionKey) });
   const projects = createProjects(api, { pluginRoot, compatibility });
-  const runtime = createRuntime(api, { pluginRoot, sharedState, nativeHooks: true, projectScopes: projects, compatibility });
+  const runtime = createRuntime(api, { pluginRoot, sharedState, nativeHooks: true, projectScopes: projects, compatibility, reviewerFactory });
   async function command(ctx, args, scopes = ["operator.admin"]) { return projects.command({ ...ctx, args, isAuthorizedSender: true, gatewayClientScopes: scopes }); }
   async function user(ctx, text) {
     const records = transcripts.get(ctx.sessionKey), id = `${ctx.sessionId}-u${records.length}`;
@@ -100,6 +100,31 @@ test("same-project sessions have distinct task budgets and requirement state; re
   const reopened = createRuntime(f.api, { pluginRoot, nativeHooks: true });
   await reopened.prompt({ prompt: "A requirement" }, a);
   assert.equal((await reopened.projects.activate(await reopened.projects.resolve({}, a))).taskId, sa.scopeTaskId);
+});
+
+test("native workspace Skill read creates a watcher in the bound business project without skillRoots", async t => {
+  const calls = [];
+  const reviewerFactory = async input => {
+    calls.push(input);
+    return { result: { summary: "Skill constraints", taskClassification: "CONTINUATION", operations: [],
+      skillGroundTruth: { constraints: [{ constraintId: "verify", kind: "STEP", modality: "MUST", statement: "Run the verifier before delivery." }], taskOverlays: [] } },
+      close: async () => {} };
+  };
+  const f = await fixture(t, "2026.7.1-2", reviewerFactory), ctx = await f.session("native-skill");
+  const skill = path.join(f.off, "skills/workspace-note/SKILL.md");
+  await fs.mkdir(path.dirname(skill), { recursive: true }); await fs.writeFile(skill, "# Workspace note\nRun the verifier before delivery.\n");
+  await fs.appendFile(path.join(f.a, ".runtime-corrector/config.yaml"), "skillCorrection:\n  enabled: true\n  selection:\n    mode: include\n    include: [workspace-note]\n");
+  await f.command(ctx, `bind ${f.a}`);
+  await f.runtime.beforeTool({ toolName: "read", toolCallId: "host-skill-read", params: { path: skill } }, ctx);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].request.skill.directory, path.dirname(skill));
+  const state = f.sharedState.states.get("main:native-skill");
+  const task = JSON.parse(await fs.readFile(path.join(f.a, ".runtime-correction/tasks", state.scopeTaskId, "task.json")));
+  const watchers = Object.values(task.watchers);
+  assert.equal(watchers.length, 1); assert.equal(watchers[0].skillId, "workspace-note");
+  assert.deepEqual(watchers[0].invocationIds, ["host-skill-read"]);
+  assert.equal(state.projectRoot, f.a); assert.equal(state.executionDirectory, f.off);
+  assert.equal((await fs.readdir(f.off)).includes(".runtime-correction"), false);
 });
 
 test("only authenticated host-authorized users mutate bindings; sandbox and confined paths fail closed", async t => {
