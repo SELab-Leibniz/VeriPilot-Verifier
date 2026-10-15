@@ -27,7 +27,7 @@ python3.13 /absolute/path/to/kitchen.py --store kitchen.json pantry list
 /skill build-offline-kitchen 项目绝对目录=/absolute/business-project，请按Skill合同实现并真实验收。
 ```
 
-适用于本轮候选插件 `.3` 的标准工作区 Skill 目录，不需要为它额外配置
+适用于候选插件 `.3` / `.4` 的标准工作区 Skill 目录，不需要为它额外配置
 `skillRoots`；RC 绑定不改变宿主工作区或业务工具路径。项目需启用
 `dynamicGroundTruth`、选中该 Skill 的 `skillCorrection` 及 `stopCorrection`。
 完整功能合同在 Skill 的 `references/requirements.md`。
@@ -41,6 +41,13 @@ Unicode、跨进程持久化、库存不足时不扣减、错误操作不改写�
 凭据的 provider 描述 JSON、新输出目录与空闲端口，以环境变量提供测试 key。
 所有宿主状态、业务项目、数据与运行记录均在新的隔离目录中创建。
 
-本轮应用独立功能验收为 21/21 PASS，但两个负向纠偏试验最终都耗尽预算，
+此前 `.3` 应用独立功能验收为 21/21 PASS，但两个负向纠偏试验最终都耗尽预算，
 因此不是整轮全通过。Skill 约束缺失、过程要求误送源码评审及历史流程违规的问题、
 原始 FAIL 和后续措施见 [隔离实测报告](../../docs/experiments/offline-kitchen-openclaw-20261015.md)。
+
+`.4` 的实际从空开发源码另存于 [app/admission-20261015/kitchen.py](app/admission-20261015/kitchen.py)，
+由宿主模型生成，归档时未修改字节。后续有效负向样本中 RC 检出并原生修复了坏文件，
+独立功能验收 21/21 通过；最终终审仍受流程顺序判定阻断，未记为整轮 PASS。
+复验脚本为 `scripts/diagnostics/offline-kitchen-admission-live.mjs`；可选第五参数为
+另一会话真实生成并已验证的源码，只读参考不会由观察器用于修复业务文件。
+证据与边界见 [修复复验报告](../../docs/experiments/offline-kitchen-admission-fix-20261015.md)。

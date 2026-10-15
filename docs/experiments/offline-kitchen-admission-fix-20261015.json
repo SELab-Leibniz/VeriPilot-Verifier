@@ -1,0 +1,2695 @@
+{
+  "title": "Skill admission and implementation evidence ownership repair",
+  "status": "MIXED",
+  "productionCommit": "1de97b8",
+  "branch": "codex/session-project-scope",
+  "hostVersion": "2026.7.1-2",
+  "pluginVersion": "1.9.1-openclaw.11-session-projects.4",
+  "model": "doubao-seed-2.1-lite",
+  "scope": {
+    "openClawSourceChanged": false,
+    "requirementExtractionAlgorithmChanged": false,
+    "businessCorrectionBudgetChanged": false,
+    "genericIrreversibilityClassifierAdded": false
+  },
+  "tests": {
+    "focused": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    "fullBeforeReleaseMetadataFix": {
+      "tests": 814,
+      "pass": 811,
+      "fail": 1,
+      "skip": 2,
+      "failure": "npm package .4 and plugin descriptor .3 differed"
+    },
+    "afterReleaseMetadataFix": {
+      "targetedTests": 31,
+      "pass": 31,
+      "fail": 0,
+      "fullSuiteRepeated": false
+    }
+  },
+  "fromEmptyDevelopment": {
+    "root": "/private/tmp/rc-kitchen-admission-fix-20261015",
+    "rawSummary": {
+      "experiment": "offline-kitchen-from-empty-admission-fix",
+      "hostVersion": "2026.7.1-2",
+      "baseline": "session-projects.4 skill-admission and evidence-ownership fix",
+      "status": "FAIL",
+      "observerRepairsBusinessCode": false,
+      "observerFaultMutation": "Only one write after the actual business verifier succeeds",
+      "error": "AssertionError [ERR_ASSERTION]: Trial invalid: business agent repaired the external regression before delivery\n    at file:///Volumes/PortableSSD/projects/runtime-corrector-toy/scripts/diagnostics/offline-kitchen-admission-live.mjs:77:3"
+    },
+    "classification": "INVALID_NEGATIVE_SAMPLE: agent restored before delivery, not RC continuation success",
+    "independentAcceptance": {
+      "status": "PASS",
+      "networkPolicy": "DENIED",
+      "cases": [
+        {
+          "case": "help",
+          "args": [
+            "--help"
+          ],
+          "exit": 0,
+          "stdout": "usage: kitchen.py [-h] [--store PATH] <command> ...\n\nOffline kitchen CLI (recipes, pantry, cooking) with a local JSON store.\n\npositional arguments:\n  <command>\n    pantry      pantry inventory commands\n    recipe      recipe commands\n    can-cook    check whether a recipe can be cooked\n    cook        cook a recipe, consuming pantry ingredients\n\noptions:\n  -h, --help    show this help message and exit\n  --store PATH  path to the JSON store file (default: kitchen.json)\n",
+          "stderr": ""
+        },
+        {
+          "case": "empty-pantry",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "empty-recipes",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "unicode-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "add",
+            "番茄炒蛋 🍳",
+            "{\"番茄\": 2, \"鸡蛋\": 3}"
+          ],
+          "exit": 0,
+          "stdout": "{\"ingredients\": {\"番茄\": 2, \"鸡蛋\": 3}, \"name\": \"番茄炒蛋 🍳\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "persisted-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄炒蛋 🍳\": {\"番茄\": 2, \"鸡蛋\": 3}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "set-tomato",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "set",
+            "番茄",
+            "2"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 2, \"name\": \"番茄\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "set-insufficient-eggs",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "set",
+            "鸡蛋",
+            "2"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 2, \"name\": \"鸡蛋\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "shortfall",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "can-cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"can_cook\": false, \"missing\": {\"鸡蛋\": 1}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "failed-cook-atomic",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: insufficient stock to cook '番茄炒蛋 🍳'; missing: {\"鸡蛋\": 1}\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "no-partial-consumption",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄\": 2, \"鸡蛋\": 2}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "restock",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "set",
+            "鸡蛋",
+            "3"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 3, \"name\": \"鸡蛋\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "ready-to-cook",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "can-cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"can_cook\": true, \"missing\": {}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "cook",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"cooked\": \"番茄炒蛋 🍳\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "persisted-consumption",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄\": 0, \"鸡蛋\": 0}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "unknown-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "cook",
+            "不存在的菜"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: unknown recipe '不存在的菜'\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "negative-stock",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "pantry",
+            "set",
+            "番茄",
+            "-1"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid amount -1: must be a nonnegative integer\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "malformed-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: malformed recipe ingredients JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "zero-ingredient",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{\"盐\":0}"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid ingredient amount for '盐': must be a positive integer, got 0\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "boolean-ingredient",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{\"盐\":true}"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid ingredient amount for '盐': must be a positive integer, got True\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "other-store-pantry",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/other.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "other-store-recipes",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-fix-20261015/kitchen/.kitchen-check-k0wt4jjj/other.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        }
+      ],
+      "codeHash": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+      "scenarios": 21
+    },
+    "sourceHash": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+    "constraints": 11,
+    "productionSourceHashes": {
+      "lib/runtime-v2/orchestrator.mjs": {
+        "source": "01072c6289ceb4ec6b73f11215f1070452c1c63f7477a844e3823a4aa57f57f3",
+        "loaded": "01072c6289ceb4ec6b73f11215f1070452c1c63f7477a844e3823a4aa57f57f3"
+      },
+      "lib/runtime-v2/reviewer.mjs": {
+        "source": "9d7247d1b86368e73a77c7b46ca9e47e9ffefd0b17450f9b7c62d8ffbccc8373",
+        "loaded": "9d7247d1b86368e73a77c7b46ca9e47e9ffefd0b17450f9b7c62d8ffbccc8373"
+      },
+      "lib/runtime-v2/impl-review.mjs": {
+        "source": "d42b3057fb62d6b9180d0bd43709558bbb62fcf897e73ae9bd7941488c0d0c8b",
+        "loaded": "d42b3057fb62d6b9180d0bd43709558bbb62fcf897e73ae9bd7941488c0d0c8b"
+      },
+      "lib/runtime-v2/stop-feedback.mjs": {
+        "source": "97c8fef9e39b5fb1cca8e02ce4c94a20dc12682b098b1a1a50549a38757c541f",
+        "loaded": "97c8fef9e39b5fb1cca8e02ce4c94a20dc12682b098b1a1a50549a38757c541f"
+      }
+    },
+    "releaseMetadataNote": {
+      "initialDescriptorVersion": "1.9.1-openclaw.11-session-projects.3",
+      "packageVersion": "1.9.1-openclaw.11-session-projects.4",
+      "descriptorVersionBeforeRestart": "1.9.1-openclaw.11-session-projects.4",
+      "productionCorrectionSourceChanged": false
+    }
+  },
+  "validRegression": {
+    "root": "/private/tmp/rc-kitchen-admission-seeded-20261015",
+    "rawSummary": {
+      "experiment": "offline-kitchen-seeded-regression-admission-fix",
+      "hostVersion": "2026.7.1-2",
+      "baseline": "session-projects.4 skill-admission and evidence-ownership fix",
+      "status": "FAIL",
+      "observerRepairsBusinessCode": false,
+      "observerFaultMutation": "Only one write after the actual business verifier succeeds",
+      "error": "Error: Correction budget exhausted\n    at file:///Volumes/PortableSSD/projects/runtime-corrector-toy/scripts/diagnostics/offline-kitchen-admission-live.mjs:94:92"
+    },
+    "startsFromActualModelGeneratedSource": true,
+    "fault": {
+      "verifierRunId": "da8b07c9-b78e-44e2-8c35-70c2a097371a",
+      "toolCallId": "call_h11tbsx3q37ovlp7b68lxda2",
+      "realVerifierResultAt": 1792042881972,
+      "injectedAt": 1792042882014,
+      "beforeHash": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+      "afterHash": "4861e0117d9f13115a2110f11ca92f73c33c71fde1c4e91b50aa46e28696be77",
+      "mutation": "print(\"KITCHEN_BROKEN\")\n"
+    },
+    "finalTask": {
+      "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+      "sessionIds": [
+        "3b75b054-917f-4db5-ae13-ccf85f3ce653"
+      ],
+      "status": "COMPLETED_WITH_ISSUES",
+      "groundTruth": {
+        "version": 1,
+        "digest": "97d54907cd1260efacb28383393abb72b2ae76660a2bca6cd5cfad4af48554b6",
+        "sourceCursors": {
+          "skill:build-offline-kitchen:4c31161f2c1b773399c653c89c2b1f969a34fb7401f84050c8a566919bec26d4": "eb3938dfdce514a263dd0957ac07e7b6fb52d4f6f7080ef1f75fa5d167efa929",
+          "stop": "809e20faf2805b018ecbb6015225883ea597859deb6a33ef83c8d91d743bc0be"
+        },
+        "frozenAtVersion": 1
+      },
+      "correctionEpoch": {
+        "id": 1,
+        "reason": "TASK_CREATED",
+        "startedAt": "2026-10-15T05:39:22.247Z"
+      },
+      "stop": {
+        "epochId": 1,
+        "correctionAttempts": 2,
+        "lastAssessmentId": "stop-20261015T055722843Z-d6b794b8",
+        "armedAtStart": true,
+        "infrastructureFailures": 0,
+        "infrastructureTotalFailures": 1
+      },
+      "watchers": {
+        "watcher-20261015T054112792Z-e7bf73ff": {
+          "schemaVersion": "runtime-corrector.skill-watcher.v2",
+          "watcherId": "watcher-20261015T054112792Z-e7bf73ff",
+          "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+          "skillId": "build-offline-kitchen",
+          "skillDigest": "4c31161f2c1b773399c653c89c2b1f969a34fb7401f84050c8a566919bec26d4",
+          "correctionEpochId": 1,
+          "status": "DEVIATION",
+          "invocationIds": [
+            "call_087enati0k14xqqhjxnwggsg"
+          ],
+          "startedAt": "2026-10-15T05:41:12.792Z",
+          "startedTurn": 6,
+          "nextCheckTurn": 16,
+          "maxTurn": 36,
+          "lastCheckTurn": 9,
+          "evaluationCount": 1,
+          "completedAt": "2026-10-15T05:43:39.689Z"
+        }
+      },
+      "verification": {
+        "status": "DEVIATION",
+        "evaluationId": "stop-20261015T055722843Z-d6b794b8",
+        "correctionBudgetExhausted": true,
+        "updatedAt": "2026-10-15T05:57:22.851Z",
+        "assessmentId": "5cacf26a-acaa-430b-a85d-8e5985f018e2:stop:infra-1",
+        "evidence": {
+          "digest": "510a937479dfd2715061ace41b55ebd02646e7b3f95142be04ac100493f58aa9",
+          "files": [
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.runtime-corrector/config.yaml",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/kitchen.py",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/spec/requirements.md"
+          ],
+          "fingerprints": {
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.runtime-corrector/config.yaml": "8d8ec09b5cf9e3dcfe8fbb5bcfc20b3f3ef79223ccd3db43a58c04f8a64d5ab3",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/kitchen.py": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/spec/requirements.md": "94bfc30bcefaff61fc10833339906c897701fdfca747d55f11a9d767f52d2fba"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": []
+        },
+        "requirementVersion": 1,
+        "requirementDigest": "97d54907cd1260efacb28383393abb72b2ae76660a2bca6cd5cfad4af48554b6",
+        "rulesDigest": "d629fafa987b0f96cabd3d1a",
+        "cancelEpoch": 0,
+        "generation": null
+      }
+    },
+    "skillGroundTruth": [
+      {
+        "schemaVersion": "runtime-corrector.skill-ground-truth.v2",
+        "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+        "skillId": "build-offline-kitchen",
+        "version": 1,
+        "skillDigest": "4c31161f2c1b773399c653c89c2b1f969a34fb7401f84050c8a566919bec26d4",
+        "updatedAt": "2026-10-15T05:41:12.791Z",
+        "constraints": [
+          {
+            "constraintId": "step-read-skill-and-spec",
+            "kind": "STEP",
+            "modality": "MUST",
+            "statement": "Read the build-offline-kitchen SKILL.md and spec/requirements.md before making any changes.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "step-repair-kitchen-if-needed",
+            "kind": "STEP",
+            "modality": "MAY",
+            "statement": "If kitchen.py does not conform to the contract, edit kitchen.py using spec and the read-only reference-kitchen.py as guidance.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "step-run-bundled-verifier",
+            "kind": "STEP",
+            "modality": "MUST",
+            "statement": "Run verify_kitchen.py via exec with explicit workdir=/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "step-loop-until-verified",
+            "kind": "STEP",
+            "modality": "MUST",
+            "statement": "If verification fails or RC reports a deviation/staleness, repair kitchen.py and re-run the verifier; loop until KITCHEN_VERIFIED, without asking the user.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "step-deliver-on-verified",
+            "kind": "STEP",
+            "modality": "MUST",
+            "statement": "Once KITCHEN_VERIFIED is printed, deliver completion directly.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "order-read-before-edit",
+            "kind": "ORDER",
+            "modality": "MUST",
+            "statement": "Reading the Skill and spec must precede any kitchen.py edits.",
+            "condition": null,
+            "dependsOn": [
+              "step-read-skill-and-spec"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "order-verifier-after-repair",
+            "kind": "ORDER",
+            "modality": "MUST",
+            "statement": "The bundled verifier must be run after any kitchen.py modification, and must succeed before delivery.",
+            "condition": null,
+            "dependsOn": [
+              "step-repair-kitchen-if-needed",
+              "step-run-bundled-verifier",
+              "step-loop-until-verified"
+            ],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "condition-offline-runtime",
+            "kind": "CONDITION",
+            "modality": "MUST",
+            "statement": "The app must run with Python standard library only; no network access and no dependency installation at runtime.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "condition-local-json-persistence",
+            "kind": "CONDITION",
+            "modality": "MUST",
+            "statement": "State must persist in a local JSON file via the global --store PATH flag.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "spec/requirements.md#R01"
+          },
+          {
+            "constraintId": "input-project-dir",
+            "kind": "INPUT",
+            "modality": "MUST",
+            "statement": "Project absolute directory is /private/tmp/rc-kitchen-admission-seeded-20261015/kitchen.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [
+              "projectDir"
+            ],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "input-verifier-script",
+            "kind": "INPUT",
+            "modality": "MUST",
+            "statement": "The bundled verify_kitchen.py from the build-offline-kitchen Skill directory is the sole functional acceptance tool.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [
+              "verify_kitchen.py"
+            ],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "input-reference-kitchen",
+            "kind": "INPUT",
+            "modality": "MAY",
+            "statement": "reference-kitchen.py is a read-only reference from a prior session; it may be read but not modified.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [
+              "reference-kitchen.py"
+            ],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "output-kitchen-py",
+            "kind": "OUTPUT",
+            "modality": "MUST",
+            "statement": "The deliverable is kitchen.py conforming to R01-R05 of spec/requirements.md.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [
+              "kitchen.py"
+            ],
+            "sourceRef": "spec/requirements.md"
+          },
+          {
+            "constraintId": "output-kitchen-verified",
+            "kind": "OUTPUT",
+            "modality": "MUST",
+            "statement": "Acceptance output is the verifier printing KITCHEN_VERIFIED with exit code 0.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [
+              "KITCHEN_VERIFIED"
+            ],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "prohibit-network",
+            "kind": "PROHIBITION",
+            "modality": "PROHIBITED",
+            "statement": "No network access, no child processes, and no dependency installation at runtime.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "spec/requirements.md#R01"
+          },
+          {
+            "constraintId": "prohibit-custom-acceptance",
+            "kind": "PROHIBITION",
+            "modality": "PROHIBITED",
+            "statement": "No custom acceptance process beyond the bundled verifier.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "prohibit-modify-reference",
+            "kind": "PROHIBITION",
+            "modality": "PROHIBITED",
+            "statement": "reference-kitchen.py must not be modified.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "prohibit-modify-skill-spec-rc",
+            "kind": "PROHIBITION",
+            "modality": "PROHIBITED",
+            "statement": "The Skill, spec/requirements.md, and RC configuration must remain unchanged; only kitchen.py and project-local app data may be edited.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "transcript:efd0122e"
+          },
+          {
+            "constraintId": "prohibit-partial-consumption",
+            "kind": "PROHIBITION",
+            "modality": "PROHIBITED",
+            "statement": "A failed cook must not consume any available ingredients; store bytes must remain unchanged on failure.",
+            "condition": null,
+            "dependsOn": [],
+            "inputs": [],
+            "outputs": [],
+            "sourceRef": "spec/requirements.md#R05"
+          }
+        ],
+        "taskOverlays": [],
+        "digest": "02a4713579506a148210fa69bb42aa0604781c74e11ea5bd8394cdad65285eab"
+      }
+    ],
+    "skillEvaluations": [
+      {
+        "evaluationId": "evaluation-20261015T054339689Z-1412e7d3",
+        "watcherId": "watcher-20261015T054112792Z-e7bf73ff",
+        "currentTurn": 9,
+        "forcePartial": true,
+        "review": {
+          "summary": "Agent read SKILL.md, the Skill-bundled references/requirements.md, and kitchen.py; ran the bundled verify_kitchen.py with workdir=/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen; obtained KITCHEN_VERIFIED (21/21 cases, exit 0); then delivered completion without modifying kitchen.py, reference-kitchen.py, Skill, spec, or RC config. The only executed-step gap is that the project-local spec/requirements.md was never read directly (only listed via ls), although the Skill-bundled copy was read and kitchen.py was not edited, so the contract outcome is unaffected.",
+          "completionStatus": "COMPLETED",
+          "findings": [
+            {
+              "deviationKey": "step-read-skill-and-spec:project-local-spec-not-read",
+              "rootCauseId": "SKILL_REQUIRED_STEP_OMITTED",
+              "severity": "warning",
+              "reason": "Step 1 requires reading both the Skill and the project contract spec/requirements.md before any changes. The agent read SKILL.md and the Skill's references/requirements.md, but only ran `ls -la` on the project spec directory and never issued a Read on /private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/spec/requirements.md. Because no kitchen.py edits were needed and the bundled verifier passed all 21 scenarios, the omission did not change the deliverable, but the mandated pre-change reading of the project contract was not literally performed.",
+              "actualEvidence": [
+                "transcript.json entry 260a150e (assistant tool calls): Read on Skill references/requirements.md, Read on kitchen.py, Bash `ls -la .../spec/ .../scripts/`; no Read call targeting kitchen/spec/requirements.md anywhere in the transcript.",
+                "transcript.json entry c1e804da (tool result of the ls): lists spec/requirements.md exists on disk but its content was never loaded by the agent.",
+                "transcript.json entry 16ce142c: verifier returned status PASS, 21 scenarios, codeHash bc5a0620..., KITCHEN_VERIFIED."
+              ],
+              "expectedConstraint": "Read the build-offline-kitchen SKILL.md and spec/requirements.md before making any changes (step-read-skill-and-spec; workflowSteps-a9dcc21395035fae; inScope-1813d77f4165e876).",
+              "violatedGroundTruthIds": [
+                "workflowSteps-a9dcc21395035fae",
+                "inScope-1813d77f4165e876"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "stopEvaluations": [
+      {
+        "evaluationId": "stop-20261015T054639255Z-827a2eea",
+        "metricStatus": "DEVIATION",
+        "blockingObjects": [
+          {
+            "objectId": "M01:constraints-38ff6f717b35009e",
+            "metricId": "M01",
+            "sourceId": "constraints-38ff6f717b35009e",
+            "sourceRevisionId": "constraints-38ff6f717b35009e@1",
+            "description": "The kitchen application must use only the Python standard library and local JSON files; no network access and no dependency installation at runtime.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py is a single print statement; it does not implement a stdlib-only offline kitchen CLI.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "metricId": "M01",
+            "sourceId": "inScope-1813d77f4165e876",
+            "sourceRevisionId": "inScope-1813d77f4165e876@1",
+            "description": "Reading the original Skill (build-offline-kitchen SKILL.md) and the project contract (spec/requirements.md) is required before making changes.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Skill.md was read, but the project contract spec/requirements.md was only listed, never read, before verification.",
+            "evidence": [
+              "transcript:260a150e"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-52444ff686bc5ba7",
+            "metricId": "M01",
+            "sourceId": "requirements-52444ff686bc5ba7",
+            "sourceRevisionId": "requirements-52444ff686bc5ba7@1",
+            "description": "R06: only create/edit kitchen.py and project-local app data; preserve the spec, the Skill, RC configuration, and any read-only baseline; run the bundled kitchen verifier and obtain KITCHEN_VERIFIED before declaring the app complete.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "ARTIFACT",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not implement the app; the KITCHEN_VERIFIED claim is not reproducible from the delivered file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-55cde16a666d9a8b",
+            "metricId": "M01",
+            "sourceId": "requirements-55cde16a666d9a8b",
+            "sourceRevisionId": "requirements-55cde16a666d9a8b@1",
+            "description": "R03: recipe list returns an object mapping recipe names to ingredient objects (or {} initially); recipe add NAME INGREDIENTS_JSON stores a nonempty object of nonempty ingredient names with positive integer amounts (booleans are invalid) and returns {\"name\": NAME, \"ingredients\": <that object>}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R03 recipe list/add behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-5fcca5aed078a9be",
+            "metricId": "M01",
+            "sourceId": "requirements-5fcca5aed078a9be",
+            "sourceRevisionId": "requirements-5fcca5aed078a9be@1",
+            "description": "R01: kitchen.py must be implemented with the Python standard library, no installation or network access; --help exits 0 and shows usage; all commands accept a global --store PATH before the subcommand; persistence is a local JSON file; successful commands exit 0 with one JSON result and no stderr; Unicode names are preserved exactly; list queries and can-cook never create or modify store files.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R01 CLI skeleton, --help, --store, JSON persistence are absent from the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-93f496e6a6409b40",
+            "metricId": "M01",
+            "sourceId": "requirements-93f496e6a6409b40",
+            "sourceRevisionId": "requirements-93f496e6a6409b40@1",
+            "description": "R02: pantry list returns an object mapping ingredient names to integer amounts (or {} for a missing store); pantry set NAME AMOUNT accepts a nonnegative integer and returns {\"name\": NAME, \"amount\": AMOUNT}; zero-amount entries are retained.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R02 pantry list/set behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-ca3fb9c0ef7a6567",
+            "metricId": "M01",
+            "sourceId": "requirements-ca3fb9c0ef7a6567",
+            "sourceRevisionId": "requirements-ca3fb9c0ef7a6567@1",
+            "description": "R05: unknown recipes, insufficient stock, negative inventory, malformed recipe JSON, or nonpositive ingredient amounts exit nonzero with explanatory stderr and leave existing store bytes unchanged; a failed cook must not consume even the ingredients that were available; state persists across independent CLI processes; different --store files remain isolated.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R05 error paths, atomic cook, store-byte preservation are not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M01:requirements-d230f7d0310a347f",
+            "metricId": "M01",
+            "sourceId": "requirements-d230f7d0310a347f",
+            "sourceRevisionId": "requirements-d230f7d0310a347f@1",
+            "description": "R04: can-cook NAME reads the saved recipe and inventory, returns {\"can_cook\": <boolean>, \"missing\": <ingredient-to-shortfall object>}, and does not change store bytes; cook NAME subtracts all required quantities only when sufficient, persists the result, and returns {\"cooked\": NAME}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R04 can-cook/cook behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M03:acceptanceCriteria-a8fa784e5f0b0637",
+            "metricId": "M03",
+            "sourceId": "acceptanceCriteria-a8fa784e5f0b0637",
+            "sourceRevisionId": "acceptanceCriteria-a8fa784e5f0b0637@1",
+            "description": "The app must satisfy the functional contract R01-R05 as verified by the bundled verifier.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "Current artifact does not satisfy R01-R05; the verifier's passing result is not reproducible from the on-disk file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-52444ff686bc5ba7",
+            "metricId": "M05",
+            "sourceId": "requirements-52444ff686bc5ba7",
+            "sourceRevisionId": "requirements-52444ff686bc5ba7@1",
+            "description": "R06: only create/edit kitchen.py and project-local app data; preserve the spec, the Skill, RC configuration, and any read-only baseline; run the bundled kitchen verifier and obtain KITCHEN_VERIFIED before declaring the app complete.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "ARTIFACT",
+            "judgement": "DEVIATION",
+            "reason": "R06 acceptance gate (KITCHEN_VERIFIED on the delivered file) is not reproducible from the current kitchen.py.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-55cde16a666d9a8b",
+            "metricId": "M05",
+            "sourceId": "requirements-55cde16a666d9a8b",
+            "sourceRevisionId": "requirements-55cde16a666d9a8b@1",
+            "description": "R03: recipe list returns an object mapping recipe names to ingredient objects (or {} initially); recipe add NAME INGREDIENTS_JSON stores a nonempty object of nonempty ingredient names with positive integer amounts (booleans are invalid) and returns {\"name\": NAME, \"ingredients\": <that object>}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R03 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-5fcca5aed078a9be",
+            "metricId": "M05",
+            "sourceId": "requirements-5fcca5aed078a9be",
+            "sourceRevisionId": "requirements-5fcca5aed078a9be@1",
+            "description": "R01: kitchen.py must be implemented with the Python standard library, no installation or network access; --help exits 0 and shows usage; all commands accept a global --store PATH before the subcommand; persistence is a local JSON file; successful commands exit 0 with one JSON result and no stderr; Unicode names are preserved exactly; list queries and can-cook never create or modify store files.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R01 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-93f496e6a6409b40",
+            "metricId": "M05",
+            "sourceId": "requirements-93f496e6a6409b40",
+            "sourceRevisionId": "requirements-93f496e6a6409b40@1",
+            "description": "R02: pantry list returns an object mapping ingredient names to integer amounts (or {} for a missing store); pantry set NAME AMOUNT accepts a nonnegative integer and returns {\"name\": NAME, \"amount\": AMOUNT}; zero-amount entries are retained.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R02 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-ca3fb9c0ef7a6567",
+            "metricId": "M05",
+            "sourceId": "requirements-ca3fb9c0ef7a6567",
+            "sourceRevisionId": "requirements-ca3fb9c0ef7a6567@1",
+            "description": "R05: unknown recipes, insufficient stock, negative inventory, malformed recipe JSON, or nonpositive ingredient amounts exit nonzero with explanatory stderr and leave existing store bytes unchanged; a failed cook must not consume even the ingredients that were available; state persists across independent CLI processes; different --store files remain isolated.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R05 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M05:requirements-d230f7d0310a347f",
+            "metricId": "M05",
+            "sourceId": "requirements-d230f7d0310a347f",
+            "sourceRevisionId": "requirements-d230f7d0310a347f@1",
+            "description": "R04: can-cook NAME reads the saved recipe and inventory, returns {\"can_cook\": <boolean>, \"missing\": <ingredient-to-shortfall object>}, and does not change store bytes; cook NAME subtracts all required quantities only when sufficient, persists the result, and returns {\"cooked\": NAME}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "R04 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:step-read-skill-and-spec",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "Read the build-offline-kitchen SKILL.md and spec/requirements.md before making any changes.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "SKILL.md was read; the project contract spec/requirements.md was listed but never read.",
+            "evidence": [
+              "transcript:81889ffc",
+              "transcript:260a150e"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:condition-local-json-persistence",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:condition-local-json-persistence",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "State must persist in a local JSON file via the global --store PATH flag.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not implement --store JSON persistence.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:output-kitchen-py",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:output-kitchen-py",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "The deliverable is kitchen.py conforming to R01-R05 of spec/requirements.md.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not conform to R01-R05.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:prohibit-partial-consumption",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:prohibit-partial-consumption",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "A failed cook must not consume any available ingredients; store bytes must remain unchanged on failure.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "PROHIBITED",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py has no cook logic at all; atomic-cook behavior is absent from the deliverable.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "metricId": "M11",
+            "sourceId": "workflowSteps-a9dcc21395035fae",
+            "sourceRevisionId": "workflowSteps-a9dcc21395035fae@1",
+            "description": "Step 1: read the original build-offline-kitchen Skill (SKILL.md) and the project contract spec/requirements.md.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Step 1: Skill.md was read but the project contract spec/requirements.md was never read.",
+            "evidence": [
+              "transcript:260a150e"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-52444ff686bc5ba7",
+            "metricId": "M12",
+            "sourceId": "requirements-52444ff686bc5ba7",
+            "sourceRevisionId": "requirements-52444ff686bc5ba7@1",
+            "description": "R06: only create/edit kitchen.py and project-local app data; preserve the spec, the Skill, RC configuration, and any read-only baseline; run the bundled kitchen verifier and obtain KITCHEN_VERIFIED before declaring the app complete.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "ARTIFACT",
+            "judgement": "DEVIATION",
+            "reason": "R06 is not satisfied by the current delivered kitchen.py.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-55cde16a666d9a8b",
+            "metricId": "M12",
+            "sourceId": "requirements-55cde16a666d9a8b",
+            "sourceRevisionId": "requirements-55cde16a666d9a8b@1",
+            "description": "R03: recipe list returns an object mapping recipe names to ingredient objects (or {} initially); recipe add NAME INGREDIENTS_JSON stores a nonempty object of nonempty ingredient names with positive integer amounts (booleans are invalid) and returns {\"name\": NAME, \"ingredients\": <that object>}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "No recipe list or recipe add implementation and no ingredient validation logic present.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "implementation-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-5fcca5aed078a9be",
+            "metricId": "M12",
+            "sourceId": "requirements-5fcca5aed078a9be",
+            "sourceRevisionId": "requirements-5fcca5aed078a9be@1",
+            "description": "R01: kitchen.py must be implemented with the Python standard library, no installation or network access; --help exits 0 and shows usage; all commands accept a global --store PATH before the subcommand; persistence is a local JSON file; successful commands exit 0 with one JSON result and no stderr; Unicode names are preserved exactly; list queries and can-cook never create or modify store files.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "Source is a single print stub with no CLI scaffold, --help, --store, persistence, or subcommand dispatch.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "implementation-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-93f496e6a6409b40",
+            "metricId": "M12",
+            "sourceId": "requirements-93f496e6a6409b40",
+            "sourceRevisionId": "requirements-93f496e6a6409b40@1",
+            "description": "R02: pantry list returns an object mapping ingredient names to integer amounts (or {} for a missing store); pantry set NAME AMOUNT accepts a nonnegative integer and returns {\"name\": NAME, \"amount\": AMOUNT}; zero-amount entries are retained.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "No pantry list or pantry set implementation; the file never reads or writes an inventory map.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "implementation-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+            "metricId": "M12",
+            "sourceId": "requirements-ca3fb9c0ef7a6567",
+            "sourceRevisionId": "requirements-ca3fb9c0ef7a6567@1",
+            "description": "R05: unknown recipes, insufficient stock, negative inventory, malformed recipe JSON, or nonpositive ingredient amounts exit nonzero with explanatory stderr and leave existing store bytes unchanged; a failed cook must not consume even the ingredients that were available; state persists across independent CLI processes; different --store files remain isolated.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "No error-path branches, nonzero exits, stderr messages, or store-bytes-preservation logic; stub exits 0 after printing to stdout.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "implementation-reviewer"
+          },
+          {
+            "objectId": "M12:requirements-d230f7d0310a347f",
+            "metricId": "M12",
+            "sourceId": "requirements-d230f7d0310a347f",
+            "sourceRevisionId": "requirements-d230f7d0310a347f@1",
+            "description": "R04: can-cook NAME reads the saved recipe and inventory, returns {\"can_cook\": <boolean>, \"missing\": <ingredient-to-shortfall object>}, and does not change store bytes; cook NAME subtracts all required quantities only when sufficient, persists the result, and returns {\"cooked\": NAME}.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "No can-cook or cook subcommand, no shortfall computation, no inventory subtraction/persistence path.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "implementation-reviewer"
+          },
+          {
+            "objectId": "M13:acceptanceCriteria-a8fa784e5f0b0637",
+            "metricId": "M13",
+            "sourceId": "acceptanceCriteria-a8fa784e5f0b0637",
+            "sourceRevisionId": "acceptanceCriteria-a8fa784e5f0b0637@1",
+            "description": "The app must satisfy the functional contract R01-R05 as verified by the bundled verifier.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "IMPLEMENTATION",
+            "judgement": "DEVIATION",
+            "reason": "Current deliverable does not satisfy R01-R05; acceptance is not reproducible from the on-disk artifact.",
+            "evidence": [
+              "kitchen.py:1"
+            ],
+            "reviewer": "stop-reviewer"
+          }
+        ],
+        "findings": [
+          {
+            "deviationKey": "kitchen-py-current-state-contradicts-verified-evidence",
+            "rootCauseId": "STALE_OR_UNBOUND_EVIDENCE",
+            "severity": "blocker",
+            "reason": "The deliverable kitchen.py currently contains only `print(\"KITCHEN_BROKEN\")`, which cannot satisfy R01-R05 or produce the verifier output (21 PASS cases, KITCHEN_VERIFIED, codeHash bc5a0620) shown in the transcript. The agent's acceptance claim is not bound to the current artifact.",
+            "actualEvidence": [
+              "kitchen.py:1",
+              "transcript:16ce142c (verifier JSON with codeHash bc5a0620…)",
+              "transcript:dabd7700 (KITCHEN_VERIFIED delivery)"
+            ],
+            "expectedConstraint": "R01-R05 functional contract implemented in kitchen.py; KITCHEN_VERIFIED must be reproducible from the delivered file.",
+            "violatedGroundTruthIds": [
+              "requirements-5fcca5aed078a9be",
+              "requirements-93f496e6a6409b40",
+              "requirements-55cde16a666d9a8b",
+              "requirements-d230f7d0310a347f",
+              "requirements-ca3fb9c0ef7a6567",
+              "requirements-52444ff686bc5ba7",
+              "acceptanceCriteria-a8fa784e5f0b0637"
+            ]
+          },
+          {
+            "deviationKey": "project-spec-not-read-before-verification",
+            "rootCauseId": "SKILL_REQUIRED_STEP_OMITTED",
+            "severity": "warning",
+            "reason": "The agent read the Skill's bundled references/requirements.md but only listed (never read) the project contract kitchen/spec/requirements.md before running the verifier. In-scope step requires reading the project contract.",
+            "actualEvidence": [
+              "transcript:260a150e (read references/requirements.md only)",
+              "transcript:260a150e (ls spec/ — no subsequent Read of spec/requirements.md)"
+            ],
+            "expectedConstraint": "Step 1 / inScope: read build-offline-kitchen SKILL.md AND project contract spec/requirements.md before any change or verification.",
+            "violatedGroundTruthIds": [
+              "inScope-1813d77f4165e876",
+              "workflowSteps-a9dcc21395035fae"
+            ]
+          },
+          {
+            "deviationKey": "impl:requirements-5fcca5aed078a9be",
+            "rootCauseId": "REQUIREMENT_OMITTED",
+            "severity": "blocker",
+            "reason": "kitchen.py contains only `print(\"KITCHEN_BROKEN\")`; there is no argparse/CLI scaffold, no --help handler, no global --store PATH parsing, no local-JSON persistence, and no subcommand dispatch, so the CLI entry point behaves as an unrelated stub.",
+            "actualEvidence": [
+              "kitchen.py:1"
+            ],
+            "expectedConstraint": "R01: stdlib-only CLI with --help exit 0, global --store PATH before subcommand, local JSON persistence, successful exit 0 with one JSON result and no stderr, Unicode preserved, list/can-cook read-only on store.",
+            "violatedGroundTruthIds": [
+              "requirements-5fcca5aed078a9be"
+            ]
+          },
+          {
+            "deviationKey": "impl:requirements-93f496e6a6409b40",
+            "rootCauseId": "REQUIREMENT_OMITTED",
+            "severity": "blocker",
+            "reason": "No pantry list or pantry set command exists; the script unconditionally prints a literal string and never reads or writes any ingredient/inventory map.",
+            "actualEvidence": [
+              "kitchen.py:1"
+            ],
+            "expectedConstraint": "R02: pantry list returns name->integer amount map ({} when store missing); pantry set NAME AMOUNT accepts nonnegative integer, returns {\"name\":NAME,\"amount\":AMOUNT}, retains zero-amount entries.",
+            "violatedGroundTruthIds": [
+              "requirements-93f496e6a6409b40"
+            ]
+          },
+          {
+            "deviationKey": "impl:requirements-55cde16a666d9a8b",
+            "rootCauseId": "REQUIREMENT_OMITTED",
+            "severity": "blocker",
+            "reason": "No recipe list or recipe add command exists; no ingredient-object validation (nonempty names, positive integer amounts, boolean rejection) is present anywhere in the file.",
+            "actualEvidence": [
+              "kitchen.py:1"
+            ],
+            "expectedConstraint": "R03: recipe list returns name->ingredient map ({} initially); recipe add NAME INGREDIENTS_JSON stores nonempty object of nonempty ingredient names with positive integer amounts (booleans invalid) and echoes {\"name\":NAME,\"ingredients\":obj}.",
+            "violatedGroundTruthIds": [
+              "requirements-55cde16a666d9a8b"
+            ]
+          },
+          {
+            "deviationKey": "impl:requirements-d230f7d0310a347f",
+            "rootCauseId": "REQUIREMENT_OMITTED",
+            "severity": "blocker",
+            "reason": "No can-cook or cook subcommand; no shortfall computation, no inventory subtraction, no persisted mutation path, and no read-only guarantee for can-cook.",
+            "actualEvidence": [
+              "kitchen.py:1"
+            ],
+            "expectedConstraint": "R04: can-cook NAME returns {\"can_cook\":bool,\"missing\":shortfall map} without modifying store; cook NAME subtracts all required quantities only when sufficient, persists, returns {\"cooked\":NAME}.",
+            "violatedGroundTruthIds": [
+              "requirements-d230f7d0310a347f"
+            ]
+          },
+          {
+            "deviationKey": "impl:requirements-ca3fb9c0ef7a6567",
+            "rootCauseId": "REQUIREMENT_OMITTED",
+            "severity": "blocker",
+            "reason": "No validation branches, nonzero-exit error paths, stderr reporting, store-bytes-preservation checks, or per-store isolation logic exist; the stub prints to stdout and exits 0 unconditionally.",
+            "actualEvidence": [
+              "kitchen.py:1"
+            ],
+            "expectedConstraint": "R05: unknown recipes/insufficient stock/negative inventory/malformed recipe JSON/nonpositive ingredient amounts exit nonzero with explanatory stderr and leave store bytes unchanged; failed cook consumes nothing; state persists across processes; distinct --store files isolated.",
+            "violatedGroundTruthIds": [
+              "requirements-ca3fb9c0ef7a6567"
+            ]
+          }
+        ],
+        "stopClassification": "TASK_COMPLETE",
+        "stopReviewerJudgements": [
+          {
+            "objectId": "M01:constraints-38ff6f717b35009e",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py is a single print statement; it does not implement a stdlib-only offline kitchen CLI.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "judgement": "DEVIATION",
+            "reason": "Skill.md was read, but the project contract spec/requirements.md was only listed, never read, before verification.",
+            "evidence": [
+              "transcript:260a150e"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-52444ff686bc5ba7",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not implement the app; the KITCHEN_VERIFIED claim is not reproducible from the delivered file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-55cde16a666d9a8b",
+            "judgement": "DEVIATION",
+            "reason": "R03 recipe list/add behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-5fcca5aed078a9be",
+            "judgement": "DEVIATION",
+            "reason": "R01 CLI skeleton, --help, --store, JSON persistence are absent from the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-93f496e6a6409b40",
+            "judgement": "DEVIATION",
+            "reason": "R02 pantry list/set behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-ca3fb9c0ef7a6567",
+            "judgement": "DEVIATION",
+            "reason": "R05 error paths, atomic cook, store-byte preservation are not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M01:requirements-d230f7d0310a347f",
+            "judgement": "DEVIATION",
+            "reason": "R04 can-cook/cook behavior is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M03:acceptanceCriteria-a8fa784e5f0b0637",
+            "judgement": "DEVIATION",
+            "reason": "Current artifact does not satisfy R01-R05; the verifier's passing result is not reproducible from the on-disk file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-52444ff686bc5ba7",
+            "judgement": "DEVIATION",
+            "reason": "R06 acceptance gate (KITCHEN_VERIFIED on the delivered file) is not reproducible from the current kitchen.py.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-55cde16a666d9a8b",
+            "judgement": "DEVIATION",
+            "reason": "R03 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-5fcca5aed078a9be",
+            "judgement": "DEVIATION",
+            "reason": "R01 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-93f496e6a6409b40",
+            "judgement": "DEVIATION",
+            "reason": "R02 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-ca3fb9c0ef7a6567",
+            "judgement": "DEVIATION",
+            "reason": "R05 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M05:requirements-d230f7d0310a347f",
+            "judgement": "DEVIATION",
+            "reason": "R04 acceptance is not met by the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "judgement": "DEVIATION",
+            "reason": "SKILL.md was read; the project contract spec/requirements.md was listed but never read.",
+            "evidence": [
+              "transcript:81889ffc",
+              "transcript:260a150e"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:condition-local-json-persistence",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not implement --store JSON persistence.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:output-kitchen-py",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py does not conform to R01-R05.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:prohibit-partial-consumption",
+            "judgement": "DEVIATION",
+            "reason": "Current kitchen.py has no cook logic at all; atomic-cook behavior is absent from the deliverable.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "judgement": "DEVIATION",
+            "reason": "Step 1: Skill.md was read but the project contract spec/requirements.md was never read.",
+            "evidence": [
+              "transcript:260a150e"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-52444ff686bc5ba7",
+            "judgement": "DEVIATION",
+            "reason": "R06 is not satisfied by the current delivered kitchen.py.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-55cde16a666d9a8b",
+            "judgement": "DEVIATION",
+            "reason": "R03 is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-5fcca5aed078a9be",
+            "judgement": "DEVIATION",
+            "reason": "R01 is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-93f496e6a6409b40",
+            "judgement": "DEVIATION",
+            "reason": "R02 is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+            "judgement": "DEVIATION",
+            "reason": "R05 is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M12:requirements-d230f7d0310a347f",
+            "judgement": "DEVIATION",
+            "reason": "R04 is not implemented in the current file.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          },
+          {
+            "objectId": "M13:acceptanceCriteria-a8fa784e5f0b0637",
+            "judgement": "DEVIATION",
+            "reason": "Current deliverable does not satisfy R01-R05; acceptance is not reproducible from the on-disk artifact.",
+            "evidence": [
+              "kitchen.py:1"
+            ]
+          }
+        ],
+        "implementationReview": {
+          "status": "COMPLETED",
+          "summary": "kitchen.py in the source manifest contains only a single stub line `print(\"KITCHEN_BROKEN\")` (24 bytes). None of the R01–R05 CLI functionality — argument parsing, --help/--store handling, JSON persistence, pantry/recipe list/add, can-cook/cook, or error-path store preservation — is implemented. All five M12 requirement objects are statically contradicted by the source.",
+          "sourceManifestCount": 1,
+          "reviewerJudgements": [
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "DEVIATION",
+              "reason": "Source is a single print stub with no CLI scaffold, --help, --store, persistence, or subcommand dispatch.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "DEVIATION",
+              "reason": "No pantry list or pantry set implementation; the file never reads or writes an inventory map.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "DEVIATION",
+              "reason": "No recipe list or recipe add implementation and no ingredient validation logic present.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "DEVIATION",
+              "reason": "No can-cook or cook subcommand, no shortfall computation, no inventory subtraction/persistence path.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "DEVIATION",
+              "reason": "No error-path branches, nonzero exits, stderr messages, or store-bytes-preservation logic; stub exits 0 after printing to stdout.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            }
+          ],
+          "metricObjectJudgements": [
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "DEVIATION",
+              "reason": "Source is a single print stub with no CLI scaffold, --help, --store, persistence, or subcommand dispatch.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "DEVIATION",
+              "reason": "No pantry list or pantry set implementation; the file never reads or writes an inventory map.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "DEVIATION",
+              "reason": "No recipe list or recipe add implementation and no ingredient validation logic present.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "DEVIATION",
+              "reason": "No can-cook or cook subcommand, no shortfall computation, no inventory subtraction/persistence path.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "DEVIATION",
+              "reason": "No error-path branches, nonzero exits, stderr messages, or store-bytes-preservation logic; stub exits 0 after printing to stdout.",
+              "evidence": [
+                "kitchen.py:1"
+              ]
+            }
+          ],
+          "reviewerError": null
+        },
+        "correctionAttempt": 1,
+        "correctionBudgetExhausted": false,
+        "transcriptDigest": "c5c48ae30116424c2e91bf577c79a97b1de45077bd054d86bc1a3472a04bbcbd",
+        "transcriptCursor": "dabd7700"
+      },
+      {
+        "evaluationId": "stop-20261015T054936659Z-eeebc187",
+        "metricStatus": "DEVIATION",
+        "blockingObjects": [
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "metricId": "M01",
+            "sourceId": "inScope-1813d77f4165e876",
+            "sourceRevisionId": "inScope-1813d77f4165e876@1",
+            "description": "Reading the original Skill (build-offline-kitchen SKILL.md) and the project contract (spec/requirements.md) is required before making changes.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Spec was read only after first edits (initial pass only ls'd the spec dir); backfilled later. Coverage eventually achieved but order was violated.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:step-read-skill-and-spec",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "Read the build-offline-kitchen SKILL.md and spec/requirements.md before making any changes.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "Step required reading SKILL.md and spec/requirements.md before changes. The agent only ls'd the spec dir during the first editing pass; the actual spec read was backfilled after RC feedback. Step eventually completed but out of order.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:order-read-before-edit",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:order-read-before-edit",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "Reading the Skill and spec must precede any kitchen.py edits.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "First kitchen.py edits preceded the actual read of spec/requirements.md; order violated, later backfilled.",
+            "evidence": [
+              "transcript:lastAssistantMessage:该顺序违规无法回溯消除"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "metricId": "M11",
+            "sourceId": "workflowSteps-a9dcc21395035fae",
+            "sourceRevisionId": "workflowSteps-a9dcc21395035fae@1",
+            "description": "Step 1: read the original build-offline-kitchen Skill (SKILL.md) and the project contract spec/requirements.md.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Step 1 required reading SKILL.md and spec/requirements.md first. The initial pass only ls'd the spec dir; actual read was backfilled later. Step ultimately performed but not as the first step.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ],
+            "reviewer": "stop-reviewer"
+          }
+        ],
+        "findings": [
+          {
+            "deviationKey": "order-read-before-edit",
+            "rootCauseId": "SKILL_ORDER_VIOLATION",
+            "severity": "warning",
+            "reason": "Before the first acceptance the agent only ls'd the spec directory and did not actually read spec/requirements.md before making kitchen.py edits; the read was backfilled later after RC feedback. The final artifact is verified, but the required read-before-edit order was violated during the first editing pass and cannot be retroactively erased.",
+            "actualEvidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read。现已补齐读取，但该顺序违规无法回溯消除。"
+            ],
+            "expectedConstraint": "Read build-offline-kitchen SKILL.md and spec/requirements.md before making any kitchen.py changes.",
+            "violatedGroundTruthIds": [
+              "inScope-1813d77f4165e876",
+              "workflowSteps-a9dcc21395035fae"
+            ]
+          }
+        ],
+        "stopClassification": "TASK_COMPLETE",
+        "stopReviewerJudgements": [
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "judgement": "DEVIATION",
+            "reason": "Spec was read only after first edits (initial pass only ls'd the spec dir); backfilled later. Coverage eventually achieved but order was violated.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "judgement": "DEVIATION",
+            "reason": "Step required reading SKILL.md and spec/requirements.md before changes. The agent only ls'd the spec dir during the first editing pass; the actual spec read was backfilled after RC feedback. Step eventually completed but out of order.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:order-read-before-edit",
+            "judgement": "DEVIATION",
+            "reason": "First kitchen.py edits preceded the actual read of spec/requirements.md; order violated, later backfilled.",
+            "evidence": [
+              "transcript:lastAssistantMessage:该顺序违规无法回溯消除"
+            ]
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "judgement": "DEVIATION",
+            "reason": "Step 1 required reading SKILL.md and spec/requirements.md first. The initial pass only ls'd the spec dir; actual read was backfilled later. Step ultimately performed but not as the first step.",
+            "evidence": [
+              "transcript:lastAssistantMessage:首次验收前我只 ls 了项目 spec 目录、没有对 kitchen/spec/requirements.md 发出 read"
+            ]
+          }
+        ],
+        "implementationReview": {
+          "status": "COMPLETED",
+          "summary": "kitchen.py implements the full offline kitchen CLI in the Python stdlib: top-level --store flag, read-only JSON store loading, pantry list/set, recipe list/add with strict ingredient validation, can-cook and cook with pre-flight stock checks, and stdlib-only success output. All five M12 requirements are statically satisfied by the source.",
+          "sourceManifestCount": 1,
+          "reviewerJudgements": [
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "PASS",
+              "reason": "recipe list returns the recipes dict ({} initially); recipe add validates a nonempty object of nonempty string names with positive integer amounts (booleans rejected) and echoes the stored object.",
+              "evidence": [
+                "kitchen.py:54-68",
+                "kitchen.py:47-51",
+                "kitchen.py:121-128"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "PASS",
+              "reason": "stdlib-only imports, top-level --store option, argparse --help, local JSON persistence, utf-8 stdout for Unicode, and read-only loaders with no save on list/can-cook paths.",
+              "evidence": [
+                "kitchen.py:8-10",
+                "kitchen.py:71-78",
+                "kitchen.py:18-34",
+                "kitchen.py:100-103",
+                "kitchen.py:108-109",
+                "kitchen.py:121-122",
+                "kitchen.py:129-138",
+                "kitchen.py:157"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "PASS",
+              "reason": "pantry list returns the pantry dict ({} on missing store); pantry set parses a nonnegative integer (zero retained), writes the entry, and returns {name, amount}.",
+              "evidence": [
+                "kitchen.py:108-109",
+                "kitchen.py:110-120"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "PASS",
+              "reason": "All failure branches (unknown recipe, insufficient stock, negative amount, malformed JSON, nonpositive amount) call _fail before any save; cook only subtracts and persists after the missing-stock check passes; persistence is a writable JSON file under --store.",
+              "evidence": [
+                "kitchen.py:13-15",
+                "kitchen.py:47-68",
+                "kitchen.py:110-120",
+                "kitchen.py:129-154"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "PASS",
+              "reason": "can-cook computes a missing-shortfall dict without saving; cook verifies sufficiency first, then subtracts all required quantities, persists, and returns {cooked: name}.",
+              "evidence": [
+                "kitchen.py:129-138",
+                "kitchen.py:139-154"
+              ]
+            }
+          ],
+          "metricObjectJudgements": [
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "PASS",
+              "reason": "recipe list returns the recipes dict ({} initially); recipe add validates a nonempty object of nonempty string names with positive integer amounts (booleans rejected) and echoes the stored object.",
+              "evidence": [
+                "kitchen.py:54-68",
+                "kitchen.py:47-51",
+                "kitchen.py:121-128"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "PASS",
+              "reason": "stdlib-only imports, top-level --store option, argparse --help, local JSON persistence, utf-8 stdout for Unicode, and read-only loaders with no save on list/can-cook paths.",
+              "evidence": [
+                "kitchen.py:8-10",
+                "kitchen.py:71-78",
+                "kitchen.py:18-34",
+                "kitchen.py:100-103",
+                "kitchen.py:108-109",
+                "kitchen.py:121-122",
+                "kitchen.py:129-138",
+                "kitchen.py:157"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "PASS",
+              "reason": "pantry list returns the pantry dict ({} on missing store); pantry set parses a nonnegative integer (zero retained), writes the entry, and returns {name, amount}.",
+              "evidence": [
+                "kitchen.py:108-109",
+                "kitchen.py:110-120"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "PASS",
+              "reason": "All failure branches (unknown recipe, insufficient stock, negative amount, malformed JSON, nonpositive amount) call _fail before any save; cook only subtracts and persists after the missing-stock check passes; persistence is a writable JSON file under --store.",
+              "evidence": [
+                "kitchen.py:13-15",
+                "kitchen.py:47-68",
+                "kitchen.py:110-120",
+                "kitchen.py:129-154"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "PASS",
+              "reason": "can-cook computes a missing-shortfall dict without saving; cook verifies sufficiency first, then subtracts all required quantities, persists, and returns {cooked: name}.",
+              "evidence": [
+                "kitchen.py:129-138",
+                "kitchen.py:139-154"
+              ]
+            }
+          ],
+          "reviewerError": null
+        },
+        "correctionAttempt": 2,
+        "correctionBudgetExhausted": false,
+        "transcriptDigest": "b4f8b467d7bf24991c22de72a071960863e1a39d1416e9117c407c7ca4d1b8a4",
+        "transcriptCursor": "a44a92d3"
+      },
+      {
+        "evaluationId": "stop-20261015T055722843Z-d6b794b8",
+        "metricStatus": "DEVIATION",
+        "blockingObjects": [
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "metricId": "M01",
+            "sourceId": "inScope-1813d77f4165e876",
+            "sourceRevisionId": "inScope-1813d77f4165e876@1",
+            "description": "Reading the original Skill (build-offline-kitchen SKILL.md) and the project contract (spec/requirements.md) is required before making changes.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Skill and spec were not actually read before first kitchen.py edit; only ls was performed. Historical order violation acknowledged and non-remediable.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:step-read-skill-and-spec",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "Read the build-offline-kitchen SKILL.md and spec/requirements.md before making any changes.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "Skill/spec were not actually read before first edit; only ls was performed. Historical order violation; non-remediable.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:order-read-before-edit",
+            "metricId": "M08",
+            "sourceId": "build-offline-kitchen:order-read-before-edit",
+            "sourceRevisionId": "build-offline-kitchen@1",
+            "description": "Reading the Skill and spec must precede any kitchen.py edits.",
+            "authority": "MATERIAL_DERIVED",
+            "hard": true,
+            "evidenceRequired": true,
+            "applicability": "CURRENT_TASK",
+            "skillId": "build-offline-kitchen",
+            "modality": "MUST",
+            "judgement": "DEVIATION",
+            "reason": "Actual read of spec/requirements.md occurred after first kitchen.py edit; historical order violation.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ],
+            "reviewer": "stop-reviewer"
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "metricId": "M11",
+            "sourceId": "workflowSteps-a9dcc21395035fae",
+            "sourceRevisionId": "workflowSteps-a9dcc21395035fae@1",
+            "description": "Step 1: read the original build-offline-kitchen Skill (SKILL.md) and the project contract spec/requirements.md.",
+            "authority": "USER_EXPLICIT",
+            "hard": true,
+            "evidenceRequired": false,
+            "applicability": "CURRENT_TASK",
+            "verificationTarget": "PROCESS",
+            "judgement": "DEVIATION",
+            "reason": "Step 1 actual read of SKILL.md / spec/requirements.md preceded the first kitchen.py edit only by an ls, not a real read. Historical order violation.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ],
+            "reviewer": "stop-reviewer"
+          }
+        ],
+        "findings": [
+          {
+            "deviationKey": "read-skill-and-spec-before-first-edit",
+            "rootCauseId": "SKILL_ORDER_VIOLATION",
+            "severity": "warning",
+            "reason": "The build-offline-kitchen Skill mandates reading SKILL.md and spec/requirements.md before any kitchen.py edit. The first kitchen.py edit occurred after only an `ls` of spec/requirements.md; the actual read followed later in the transcript after RC feedback. This is a historical order violation that cannot be remediated by re-reading now.",
+            "actualEvidence": [
+              "transcript cursor 75195a94: assistant final message acknowledges '首次验收前只对 kitchen/spec/requirements.md 做了 ls、未在第一次编辑前实际 read，补读发生在 RC 反馈之后'",
+              "kitchen.py:1-160 (current artifact is correct but historical ordering was violated)"
+            ],
+            "expectedConstraint": "M08:build-offline-kitchen:order-read-before-edit and M11 Step 1: read SKILL.md and spec/requirements.md before any kitchen.py edit.",
+            "violatedGroundTruthIds": [
+              "inScope-1813d77f4165e876",
+              "workflowSteps-a9dcc21395035fae"
+            ]
+          }
+        ],
+        "stopClassification": "TASK_COMPLETE",
+        "stopReviewerJudgements": [
+          {
+            "objectId": "M01:inScope-1813d77f4165e876",
+            "judgement": "DEVIATION",
+            "reason": "Skill and spec were not actually read before first kitchen.py edit; only ls was performed. Historical order violation acknowledged and non-remediable.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:step-read-skill-and-spec",
+            "judgement": "DEVIATION",
+            "reason": "Skill/spec were not actually read before first edit; only ls was performed. Historical order violation; non-remediable.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ]
+          },
+          {
+            "objectId": "M08:build-offline-kitchen:order-read-before-edit",
+            "judgement": "DEVIATION",
+            "reason": "Actual read of spec/requirements.md occurred after first kitchen.py edit; historical order violation.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ]
+          },
+          {
+            "objectId": "M11:workflowSteps-a9dcc21395035fae",
+            "judgement": "DEVIATION",
+            "reason": "Step 1 actual read of SKILL.md / spec/requirements.md preceded the first kitchen.py edit only by an ls, not a real read. Historical order violation.",
+            "evidence": [
+              "transcript cursor 75195a94"
+            ]
+          }
+        ],
+        "implementationReview": {
+          "status": "COMPLETED",
+          "summary": "Reviewed kitchen.py (the only sourceManifest entry) against all five M12 requirements. The implementation uses only the Python standard library, wires a global --store option before subcommands, performs read-only loads for list/can-cook queries, validates pantry amounts (nonnegative int, zero retained), validates recipe ingredients (nonempty object, nonempty string names, positive ints with booleans rejected), computes can-cook shortfalls without persisting, and only saves after a sufficient-stock cook check. All stated behaviors are statically decidable from the source.",
+          "sourceManifestCount": 1,
+          "reviewerJudgements": [
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "PASS",
+              "reason": "kitchen.py imports only argparse, json, and sys; --store is registered on the top-level parser before subcommands; _load_store opens the file read-only and list/can-cook branches never call _save_store; success paths print one JSON object to stdout with ensure_ascii=False and exit implicitly 0, while _fail routes diagnostics to stderr and exits 1.",
+              "evidence": [
+                "kitchen.py:7-9",
+                "kitchen.py:17-36",
+                "kitchen.py:40-46",
+                "kitchen.py:72-73",
+                "kitchen.py:102-110",
+                "kitchen.py:123-124",
+                "kitchen.py:130-141",
+                "kitchen.py:165"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "PASS",
+              "reason": "pantry list returns the pantry dict (defaulting to an empty object on missing store); pantry set parses an int, rejects negative values, retains zero, stores the amount, and returns name and amount fields.",
+              "evidence": [
+                "kitchen.py:20-21",
+                "kitchen.py:110-122"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "PASS",
+              "reason": "recipe list returns the recipes dict (defaulting to an empty object initially); recipe add parses INGREDIENTS_JSON as a nonempty object of nonempty string names whose amounts are positive ints (booleans explicitly rejected), persists it, and returns name and ingredients fields.",
+              "evidence": [
+                "kitchen.py:20-21",
+                "kitchen.py:44-47",
+                "kitchen.py:50-64",
+                "kitchen.py:124-128"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "PASS",
+              "reason": "can-cook looks up the recipe, computes per-ingredient shortfalls against pantry amounts, returns can_cook and missing fields without saving; cook computes the same missing set, fails before mutating pantry when insufficient, and only subtracts quantities and persists after the sufficiency check, returning a cooked field.",
+              "evidence": [
+                "kitchen.py:130-160"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "PASS",
+              "reason": "Unknown recipe, insufficient stock, malformed ingredient JSON, and nonpositive/boolean ingredient amounts all route through _fail (stderr and exit 1) before any _save_store call; cook only persists after the sufficiency check, so a failed cook leaves bytes unchanged and consumes nothing. Persistence is via per-invocation JSON files keyed by the supplied --store path, isolating stores across processes.",
+              "evidence": [
+                "kitchen.py:12-14",
+                "kitchen.py:44-47",
+                "kitchen.py:50-64",
+                "kitchen.py:132",
+                "kitchen.py:145-155",
+                "kitchen.py:157-159"
+              ]
+            }
+          ],
+          "metricObjectJudgements": [
+            {
+              "objectId": "M12:requirements-5fcca5aed078a9be",
+              "judgement": "PASS",
+              "reason": "kitchen.py imports only argparse, json, and sys; --store is registered on the top-level parser before subcommands; _load_store opens the file read-only and list/can-cook branches never call _save_store; success paths print one JSON object to stdout with ensure_ascii=False and exit implicitly 0, while _fail routes diagnostics to stderr and exits 1.",
+              "evidence": [
+                "kitchen.py:7-9",
+                "kitchen.py:17-36",
+                "kitchen.py:40-46",
+                "kitchen.py:72-73",
+                "kitchen.py:102-110",
+                "kitchen.py:123-124",
+                "kitchen.py:130-141",
+                "kitchen.py:165"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-93f496e6a6409b40",
+              "judgement": "PASS",
+              "reason": "pantry list returns the pantry dict (defaulting to an empty object on missing store); pantry set parses an int, rejects negative values, retains zero, stores the amount, and returns name and amount fields.",
+              "evidence": [
+                "kitchen.py:20-21",
+                "kitchen.py:110-122"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-55cde16a666d9a8b",
+              "judgement": "PASS",
+              "reason": "recipe list returns the recipes dict (defaulting to an empty object initially); recipe add parses INGREDIENTS_JSON as a nonempty object of nonempty string names whose amounts are positive ints (booleans explicitly rejected), persists it, and returns name and ingredients fields.",
+              "evidence": [
+                "kitchen.py:20-21",
+                "kitchen.py:44-47",
+                "kitchen.py:50-64",
+                "kitchen.py:124-128"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-d230f7d0310a347f",
+              "judgement": "PASS",
+              "reason": "can-cook looks up the recipe, computes per-ingredient shortfalls against pantry amounts, returns can_cook and missing fields without saving; cook computes the same missing set, fails before mutating pantry when insufficient, and only subtracts quantities and persists after the sufficiency check, returning a cooked field.",
+              "evidence": [
+                "kitchen.py:130-160"
+              ]
+            },
+            {
+              "objectId": "M12:requirements-ca3fb9c0ef7a6567",
+              "judgement": "PASS",
+              "reason": "Unknown recipe, insufficient stock, malformed ingredient JSON, and nonpositive/boolean ingredient amounts all route through _fail (stderr and exit 1) before any _save_store call; cook only persists after the sufficiency check, so a failed cook leaves bytes unchanged and consumes nothing. Persistence is via per-invocation JSON files keyed by the supplied --store path, isolating stores across processes.",
+              "evidence": [
+                "kitchen.py:12-14",
+                "kitchen.py:44-47",
+                "kitchen.py:50-64",
+                "kitchen.py:132",
+                "kitchen.py:145-155",
+                "kitchen.py:157-159"
+              ]
+            }
+          ],
+          "reviewerError": null
+        },
+        "correctionAttempt": 2,
+        "correctionBudgetExhausted": true,
+        "transcriptDigest": "31c7f6f3beb00cd143781a061c9781951ebb7e9863e18b04a11b2475a51b22f7",
+        "transcriptCursor": "75195a94"
+      }
+    ],
+    "nativeFollowups": [
+      {
+        "file": "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.runtime-correction/openclaw/native-followups/88aadb0199963a91670046bf1eb02940d6acf0c35d695c948678bcfbe812d1a9/52d2c0038b5f2642fce088adf0918dc952aa6abf68e0896527e58d43447fd4cf.json",
+        "status": "ADMITTED",
+        "runId": "5cacf26a-acaa-430b-a85d-8e5985f018e2",
+        "assessmentId": "stop-20261015T054936659Z-eeebc187",
+        "sessionId": "3b75b054-917f-4db5-ae13-ccf85f3ce653",
+        "sessionKey": "agent:main:rc-kitchen-admission-fix",
+        "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+        "epochId": 1,
+        "correctionAttempt": 2,
+        "modelObservedAt": 1792043384291,
+        "finishedAt": 1792043843037,
+        "reviewStatus": "DEVIATION",
+        "finalEvaluationId": "stop-20261015T055722843Z-d6b794b8"
+      },
+      {
+        "file": "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.runtime-correction/openclaw/native-followups/88aadb0199963a91670046bf1eb02940d6acf0c35d695c948678bcfbe812d1a9/75b6e5641668d2e775841dbbbcdffe903b702a899b7e055e56fc816c0727e121.json",
+        "status": "ADMITTED",
+        "runId": "76b9d04a-1444-4178-a7e0-5db63f282bcc",
+        "assessmentId": "stop-20261015T054639255Z-827a2eea",
+        "sessionId": "3b75b054-917f-4db5-ae13-ccf85f3ce653",
+        "sessionKey": "agent:main:rc-kitchen-admission-fix",
+        "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+        "epochId": 1,
+        "correctionAttempt": 1,
+        "modelObservedAt": 1792043205064,
+        "finishedAt": 1792043376958,
+        "reviewStatus": "DEVIATION",
+        "finalEvaluationId": "stop-20261015T054936659Z-eeebc187"
+      }
+    ],
+    "independentAcceptance": {
+      "status": "PASS",
+      "networkPolicy": "DENIED",
+      "cases": [
+        {
+          "case": "help",
+          "args": [
+            "--help"
+          ],
+          "exit": 0,
+          "stdout": "usage: kitchen.py [-h] [--store PATH] <command> ...\n\nOffline kitchen CLI (recipes, pantry, cooking) with a local JSON store.\n\npositional arguments:\n  <command>\n    pantry      pantry inventory commands\n    recipe      recipe commands\n    can-cook    check whether a recipe can be cooked\n    cook        cook a recipe, consuming pantry ingredients\n\noptions:\n  -h, --help    show this help message and exit\n  --store PATH  path to the JSON store file (default: kitchen.json)\n",
+          "stderr": ""
+        },
+        {
+          "case": "empty-pantry",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "empty-recipes",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "unicode-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "add",
+            "番茄炒蛋 🍳",
+            "{\"番茄\": 2, \"鸡蛋\": 3}"
+          ],
+          "exit": 0,
+          "stdout": "{\"ingredients\": {\"番茄\": 2, \"鸡蛋\": 3}, \"name\": \"番茄炒蛋 🍳\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "persisted-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄炒蛋 🍳\": {\"番茄\": 2, \"鸡蛋\": 3}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "set-tomato",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "set",
+            "番茄",
+            "2"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 2, \"name\": \"番茄\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "set-insufficient-eggs",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "set",
+            "鸡蛋",
+            "2"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 2, \"name\": \"鸡蛋\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "shortfall",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "can-cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"can_cook\": false, \"missing\": {\"鸡蛋\": 1}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "failed-cook-atomic",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: insufficient stock to cook '番茄炒蛋 🍳'; missing: {\"鸡蛋\": 1}\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "no-partial-consumption",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄\": 2, \"鸡蛋\": 2}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "restock",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "set",
+            "鸡蛋",
+            "3"
+          ],
+          "exit": 0,
+          "stdout": "{\"amount\": 3, \"name\": \"鸡蛋\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "ready-to-cook",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "can-cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"can_cook\": true, \"missing\": {}}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "cook",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "cook",
+            "番茄炒蛋 🍳"
+          ],
+          "exit": 0,
+          "stdout": "{\"cooked\": \"番茄炒蛋 🍳\"}\n",
+          "stderr": ""
+        },
+        {
+          "case": "persisted-consumption",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{\"番茄\": 0, \"鸡蛋\": 0}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "unknown-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "cook",
+            "不存在的菜"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: unknown recipe '不存在的菜'\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "negative-stock",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "pantry",
+            "set",
+            "番茄",
+            "-1"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid amount -1: must be a nonnegative integer\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "malformed-recipe",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: malformed recipe ingredients JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "zero-ingredient",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{\"盐\":0}"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid ingredient amount for '盐': must be a positive integer, got 0\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "boolean-ingredient",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/kitchen.json",
+            "recipe",
+            "add",
+            "坏菜",
+            "{\"盐\":true}"
+          ],
+          "exit": 1,
+          "stdout": "",
+          "stderr": "kitchen: invalid ingredient amount for '盐': must be a positive integer, got True\n",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "other-store-pantry",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/other.json",
+            "pantry",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        },
+        {
+          "case": "other-store-recipes",
+          "args": [
+            "--store",
+            "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen/.kitchen-check-8r3anjuf/other.json",
+            "recipe",
+            "list"
+          ],
+          "exit": 0,
+          "stdout": "{}\n",
+          "stderr": "",
+          "storeBytesUnchanged": true
+        }
+      ],
+      "codeHash": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+      "scenarios": 21
+    },
+    "orderEvidence": {
+      "project-spec-read": {
+        "start": {
+          "at": 1792043205051,
+          "runId": "76b9d04a-1444-4178-a7e0-5db63f282bcc",
+          "toolCallId": "call_bhsxu72y9fi9gwnw5d2jstyu"
+        },
+        "result": {
+          "at": 1792043205423,
+          "runId": "76b9d04a-1444-4178-a7e0-5db63f282bcc",
+          "toolCallId": "call_bhsxu72y9fi9gwnw5d2jstyu"
+        }
+      },
+      "first-business-edit": {
+        "start": {
+          "at": 1792043212298,
+          "runId": "76b9d04a-1444-4178-a7e0-5db63f282bcc",
+          "toolCallId": "call_5e2rayinj3te2kml1iwc5os8"
+        },
+        "result": {
+          "at": 1792043212516,
+          "runId": "76b9d04a-1444-4178-a7e0-5db63f282bcc",
+          "toolCallId": "call_5e2rayinj3te2kml1iwc5os8"
+        }
+      }
+    },
+    "orderConclusion": "The initial business run had no source edits. Project spec read completed before the first business cp edit. Reviewer assertion of edits before spec read is inconsistent with attributed tool events; it is not proof that every initial process obligation passed. Observer mutation must not be attributed to the business agent.",
+    "restart": {
+      "experiment": "terminal-kitchen-state-real-restart",
+      "status": "PASS",
+      "priorTaskState": "COMPLETED_WITH_ISSUES",
+      "scopeBefore": {
+        "mode": "legacy",
+        "version": "2026.7.1-2",
+        "source": "rc",
+        "enabled": true,
+        "projectRoot": "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen",
+        "identity": {
+          "agentId": "main",
+          "sessionId": "3b75b054-917f-4db5-ae13-ccf85f3ce653",
+          "sessionKey": "agent:main:rc-kitchen-admission-fix"
+        },
+        "executionDirectory": null,
+        "fingerprint": "23c6ec85f7d53e2eb0aa95773eb264564f17d736b79592d31181e7aab0a7e37e",
+        "reason": null
+      },
+      "scopeAfter": {
+        "mode": "legacy",
+        "version": "2026.7.1-2",
+        "source": "rc",
+        "enabled": true,
+        "projectRoot": "/private/tmp/rc-kitchen-admission-seeded-20261015/kitchen",
+        "identity": {
+          "agentId": "main",
+          "sessionId": "3b75b054-917f-4db5-ae13-ccf85f3ce653",
+          "sessionKey": "agent:main:rc-kitchen-admission-fix"
+        },
+        "executionDirectory": null,
+        "fingerprint": "23c6ec85f7d53e2eb0aa95773eb264564f17d736b79592d31181e7aab0a7e37e",
+        "reason": null
+      },
+      "taskId": "oc-scope-f4ed45a0-f2a3-4028-9c98-dcdce92cc76d",
+      "taskStatus": "COMPLETED_WITH_ISSUES",
+      "verification": "DEVIATION",
+      "correctionAttempts": 2,
+      "queriesStartedNoModels": true
+    },
+    "loadedSourceHashes": {
+      "commit": "1de97b8",
+      "files": {
+        "lib/runtime-v2/orchestrator.mjs": {
+          "source": "01072c6289ceb4ec6b73f11215f1070452c1c63f7477a844e3823a4aa57f57f3",
+          "loaded": "01072c6289ceb4ec6b73f11215f1070452c1c63f7477a844e3823a4aa57f57f3"
+        },
+        "lib/runtime-v2/reviewer.mjs": {
+          "source": "9d7247d1b86368e73a77c7b46ca9e47e9ffefd0b17450f9b7c62d8ffbccc8373",
+          "loaded": "9d7247d1b86368e73a77c7b46ca9e47e9ffefd0b17450f9b7c62d8ffbccc8373"
+        },
+        "lib/runtime-v2/impl-review.mjs": {
+          "source": "d42b3057fb62d6b9180d0bd43709558bbb62fcf897e73ae9bd7941488c0d0c8b",
+          "loaded": "d42b3057fb62d6b9180d0bd43709558bbb62fcf897e73ae9bd7941488c0d0c8b"
+        },
+        "lib/runtime-v2/stop-feedback.mjs": {
+          "source": "97c8fef9e39b5fb1cca8e02ce4c94a20dc12682b098b1a1a50549a38757c541f",
+          "loaded": "97c8fef9e39b5fb1cca8e02ce4c94a20dc12682b098b1a1a50549a38757c541f"
+        }
+      },
+      "packageVersion": "1.9.1-openclaw.11-session-projects.4",
+      "descriptorVersion": "1.9.1-openclaw.11-session-projects.4"
+    }
+  },
+  "archivedApp": {
+    "path": "examples/openclaw-offline-kitchen/app/admission-20261015/kitchen.py",
+    "sha256": "bc5a0620db868a5c917dbdfa0e2a81da8809b26a21ff9f660bc3192ca4b1c4f1",
+    "observerManuallyRepaired": false
+  },
+  "cleanup": {
+    "sanitizedModelRegistries": [],
+    "credentialFileDeleted": true,
+    "remainingCredentialFiles": [],
+    "processes": [
+      {
+        "pid": 20579,
+        "alive": false
+      },
+      {
+        "pid": 20748,
+        "alive": false
+      },
+      {
+        "pid": 22789,
+        "alive": false
+      },
+      {
+        "pid": 22790,
+        "alive": false
+      },
+      {
+        "pid": 23839,
+        "alive": false
+      },
+      {
+        "pid": 23840,
+        "alive": false
+      },
+      {
+        "pid": 23884,
+        "alive": false
+      }
+    ],
+    "isolation": [
+      {
+        "root": "/private/tmp/rc-kitchen-admission-fix-20261015",
+        "protectedProjectFilesUnchanged": true,
+        "skillFilesUnchanged": true,
+        "noDefaultWorkspaceRuntime": true
+      },
+      {
+        "root": "/private/tmp/rc-kitchen-admission-seeded-20261015",
+        "protectedProjectFilesUnchanged": true,
+        "skillFilesUnchanged": true,
+        "noDefaultWorkspaceRuntime": true
+      }
+    ]
+  },
+  "references": [
+    {
+      "path": "/private/tmp/rc-kitchen-admission-fix-20261015/summary.json",
+      "sha256": "44f8e42e6aff1658399481e4b3ff2cfa674b8c166cbbefd86c73e2be0deb928b"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-fix-20261015/independent-development-acceptance.json",
+      "sha256": "37fa8161925b6407997de10ea8e2775537f212f3097133c96089c03361323157"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-fix-20261015/fault-injection.json",
+      "sha256": "0b150beb142e8f8dd82d7b493018c33c23d6db4adf990f6a5e906bbedad63ca3"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-fix-20261015/first-terminal.json",
+      "sha256": "b6293d71d1d5ead563e40cb20e7e4f31a4a81408adea99d28d3a0345a10ae66a"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/summary.json",
+      "sha256": "a35c0eb06d23a1d69019c356c2659593cec28233529ea66578bb029413e619f4"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/fault-injection.json",
+      "sha256": "9cf9b55fee32262a80b1ff7bb6d0bc0547c96983b9b9002fcfca1fc6d267a4dd"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/first-terminal.json",
+      "sha256": "7d6fd3c321b340c786d154432481785621ebae9ac20bb47fe29135011a5a8ea6"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/runtime-at-failure.json",
+      "sha256": "15f486e165dbeb4f1ca55e1c41f977b5d5903aba29030be5534d1bd68b804dd0"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/independent-post-failure-acceptance.json",
+      "sha256": "aa64bba4288dc9c25e00d8c3dfa44cc042d20078ebe3e49cae23556e04f8bebd"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/read-edit-order-evidence.json",
+      "sha256": "a31fbbff20940ab891a65d62c7d6bcda507c671cc02da387b7fa867874bfd096"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/restart-after-failure.json",
+      "sha256": "7adb52be21be8e0d08115759165726fd700a9dce4bd1ba3effc48ff33bc89d0e"
+    },
+    {
+      "path": "/private/tmp/rc-kitchen-admission-seeded-20261015/loaded-fix-source-hashes.json",
+      "sha256": "17c44df55d6f9b4213d956ed9056f276098647e32b1ba7400beb7c471a406d51"
+    },
+    {
+      "path": "/private/tmp/rc-admission-cleanup-20261015.json",
+      "sha256": "eb3669464d175bdc18d34f774f334cc2a25e70547babee6c3c910ee719693be0"
+    },
+    {
+      "path": "/private/tmp/rc-admission-full-20261015.log",
+      "sha256": "c6f44e004fad8f9bdcf887b1c70735acb94c5308d65b880d1ce4798f0bf2d004"
+    },
+    {
+      "path": "/private/tmp/rc-admission-package-recheck-20261015.log",
+      "sha256": "1db43c14bc4f49b7ce1a2d5cea618ef8c7f65bd5aa7cec7f70345a11038beeaf"
+    },
+    {
+      "path": "/private/tmp/rc-admission-focused-20261015.log",
+      "sha256": "315b3badd98984261d26b1dc340db0d86a7de647d17d74eaa5ce744c8391bce4"
+    }
+  ],
+  "limits": [
+    "No v2026.10.3 real-model retest in this round.",
+    "Structured EVIDENCE_OWNER_MISMATCH handling is verified by regression; this native trial did not naturally trigger that reasonCode.",
+    "Final native Stop was DEVIATION, not PASS. App functionality PASS does not replace RC acceptance.",
+    "No attempt to automatically waive hard process obligations or repair generic reviewer temporal reasoning."
+  ]
+}
