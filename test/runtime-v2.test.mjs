@@ -182,7 +182,7 @@ function stopReview(request) {
 }
 
 
-function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
+function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = skillReview } = {}) {
   let serial = 0;
   const calls = [];
   const factory = async ({ projectRoot, role, request, schema }) => {
@@ -214,7 +214,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
         } : null,
       };
     } else if (isDeepStrictEqual(schema, SKILL_REVIEW_SCHEMA)) {
-      result = skillReview();
+      result = skillAssessment();
     } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       result = await stopAssessment(request, { projectRoot });
     } else {
@@ -225,7 +225,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
       requestDirectory,
       async followUp({ nextSchema }) {
         calls.push({ role: "reviewer-follow-up", request: null, schema: nextSchema });
-        if (nextSchema === SKILL_REVIEW_SCHEMA) return skillReview();
+        if (nextSchema === SKILL_REVIEW_SCHEMA) return skillAssessment();
         if (nextSchema === STOP_REVIEW_SCHEMA) {
           const assessment = JSON.parse(await fs.readFile(
             path.join(requestDirectory, "assessment-request.json"),
@@ -834,6 +834,32 @@ test("Stop checks an active Skill watcher even before its first interval", async
   assert.equal(skillEvaluation.forcePartial, true);
 });
 
+
+test("Skill checker faults preserve uncertainty without PASS, business findings or Skill feedback spending", async (t) => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nRead the contract.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { stopCorrection: { enabled: false } });
+  const reviewerFactory = fakeReviewerFactory({ skillAssessment: () => ({
+    summary: "The claimed edit-before-read event contradicts the supplied trace.",
+    completionStatus: "COMPLETED", findings: [], checkerError: "No attributable reversed event pair.",
+  }) });
+  const base = { cwd: root, session_id: "checker-fault", transcript_path: transcript };
+  const started = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: "skill", tool_input: { skill: "demo" } } });
+  const stopped = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "Stop", hook_event_id: "checker-stop" } });
+  const state = await readJson(taskStatePath(root, started.taskId));
+  assert.equal(stopped.feedback, null);
+  assert.equal(Object.values(state.watchers)[0].status, "UNVERIFIED");
+  assert.deepEqual(state.skillFeedbacks, {});
+  assert.equal(state.stop.correctionAttempts, 0);
+  const evaluations = path.join(root, ".runtime-correction/tasks", started.taskId, "skills/demo/evaluations");
+  const [file] = await fs.readdir(evaluations);
+  const stored = await readJson(path.join(evaluations, file));
+  assert.equal(stored.status, "UNVERIFIED");
+  assert.equal(stored.review.checkerError, "No attributable reversed event pair.");
+});
 
 test("Stop reviewer failure blocks an unverified completion without consuming correction budget", async (t) => {
   const root = await workspace(t);

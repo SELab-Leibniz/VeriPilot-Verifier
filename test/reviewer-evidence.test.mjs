@@ -40,6 +40,7 @@ test("preparation captures every supplied object before asynchronous writes can 
     groundTruth: { version: 4, claims: [{ text: "Original claim." }] },
     population: { metrics: { M01: [{ objectId: "object-1" }] } },
     skillGroundTruth: { constraints: [{ statement: "Original constraint." }] },
+    skillSource: { files: [{ path: "SKILL.md", content: "Read the guide if provided." }] },
     semanticRequest: { version: 1, specification: { criteria: "Original criteria." }, runtimeV2: {} },
   };
   const pending = prepareReviewerRequest({ requestDirectory: root, request, evidence });
@@ -51,6 +52,7 @@ test("preparation captures every supplied object before asynchronous writes can 
   evidence.groundTruth.claims[0].text = "Mutated claim.";
   evidence.population.metrics.M01[0].objectId = "object-2";
   evidence.skillGroundTruth.constraints[0].statement = "Mutated constraint.";
+  evidence.skillSource.files[0].content = "Read before every edit.";
   evidence.semanticRequest.specification.criteria = "Mutated criteria.";
   const prepared = await pending;
 
@@ -61,6 +63,7 @@ test("preparation captures every supplied object before asynchronous writes can 
   assert.equal((await readJson(prepared.groundTruthPath)).claims[0].text, "Original claim.");
   assert.equal(prepared.population.metrics.M01[0].objectId, "object-1");
   assert.equal((await readJson(prepared.skillGroundTruthPath)).constraints[0].statement, "Original constraint.");
+  assert.equal((await readJson(prepared.skillSourcePath)).files[0].content, "Read the guide if provided.");
   assert.equal((await readJson(prepared.semanticReviewRequestPath)).specification.criteria, "Original criteria.");
 });
 
