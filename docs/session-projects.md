@@ -61,3 +61,5 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 2026-10-15 再次针对 **2026.7.1-2** 新建隔离环境：受控 A/B 整轮首次重跑即 PASS（A 真正 DEVIATION → 一次原生续作 → PASS，B k=0），9 对实际评审重叠，真实重启恢复且查询不调用模型。从空开发 Todo 的真实终审及独立 8 项 CLI 验收、Stop Reviewer 运行中改绑取消与新项目基线、未配置项目不运行 RC 及绑定管理亦通过。本轮无需生产代码修改；45 项定向回归全部通过。版本、范围、观察器初轮失败和可核验原始证据见 [旧版再次真实复验](experiments/openclaw-2026.7.1-2-repeat-20261015.md)。
 
 随后新增小 Skill `rc-mini-note`，发现并修复 RC 绑定业务项目与宿主工作区分离时漏掉原生工作区 Skill 的适配缺口。候选 `.3` 统一以宿主可信执行目录补充调用识别及源码刷新，不改业务工具目录或纠偏核心。旧版原生 `/skill` 真实实测：A 遗漏校验并错误宣告完成，被 Skill Reviewer 检出，原生续作实际修复、校验及最终 Stop PASS，k=1；B 正常 Skill 评审和 Stop 均 PASS、k=0。全量回归本轮实际为 798 项、796 PASS、2 项平台跳过。详见 [Skill 看护实测](experiments/openclaw-skill-guard-20261015.md) 和 [可复用示例](../examples/openclaw-skill-guard/README.md)。
+
+离线厨房 Python CLI 扩展实测为 **MIXED**：从空开发、正常 Skill/Stop/实现终审及独立 21 项功能验收通过；两个负向试验虽实际修复了应用，最终 RC 终审仍耗尽预算。确认存在 Skill 提取结果缺少约束却准入 watcher、过程要求误送源码评审并覆盖运行证据、不可重做历史流程事件持续阻断等问题。失败状态与预算经真实重启仍正确保留，查询不重放模型。本轮生产代码未改，不能以之前的小 Skill 成功替代这些失败结果。详见 [厨房扩展实测与定位](experiments/offline-kitchen-openclaw-20261015.md)。
