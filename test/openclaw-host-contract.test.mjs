@@ -5,10 +5,13 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
+import { buildPlugin } from "../lib/plugin-builder.mjs";
 
 test("installed 2026.7.1-2 acknowledged queue, native selection and user transcript recorder contracts", async (t) => {
   let executable;
-  try { executable = await fs.realpath(execFileSync("which", ["openclaw"], { encoding: "utf8" }).trim()); }
+  try { executable = await fs.realpath(process.env.RC_OPENCLAW_HOST_ROOT
+    ? path.join(process.env.RC_OPENCLAW_HOST_ROOT, "openclaw.mjs")
+    : execFileSync("which", ["openclaw"], { encoding: "utf8" }).trim()); }
   catch { t.skip("OpenClaw is not installed on this test machine."); return; }
   const pkg = JSON.parse(await fs.readFile(path.join(path.dirname(executable), "package.json")));
   if (pkg.version !== "2026.7.1-2") { t.skip("The exact target OpenClaw version is not installed."); return; }
@@ -23,6 +26,20 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     assert.equal(interaction.version, '2026.7.1-2');
     assert.equal(interaction.browserClient, 'gateway-CWCQz7bR.js');
     assert.equal(typeof interaction.callGatewayFromCli, 'function');
+    const {B:createWriteToolDefinition} = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/sessions-D8qGY7uC.js")).href)});
+    let writeCount = 0, storedContent = 'BROKEN\\n';
+    const nativeWrite = createWriteToolDefinition(${JSON.stringify(directory)}, {operations:{
+      readFile:async()=>Buffer.from(storedContent),
+      statFile:async()=>({type:'file',size:Buffer.byteLength(storedContent),mtimeMs:1}),
+      mkdir:async()=>{},
+      writeFile:async(_file,content)=>{writeCount++;storedContent=content;}
+    }});
+    const unchangedWrite = await nativeWrite.execute('same-write',{path:'draft.txt',content:'BROKEN\\n'});
+    assert.equal(unchangedWrite.terminate,true,'the stock host terminates a no-op write before another model turn');
+    assert.equal(writeCount,0,'the no-op result must not perform a file write');
+    const changedWrite = await nativeWrite.execute('changed-write',{path:'draft.txt',content:'READY_A\\n'});
+    assert.notEqual(changedWrite.terminate,true,'a real write leaves the stock agent loop able to continue');
+    assert.equal(writeCount,1);
     const fs = await import('node:fs/promises');
     const store = ${JSON.stringify(path.join(directory, "sessions.json"))};
     await fs.writeFile(store, JSON.stringify({'agent:main:bound':{sessionId:'original',updatedAt:1}}));
@@ -98,4 +115,66 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
   const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 30000,
     env: { ...process.env, OPENCLAW_STATE_DIR: path.join(directory, 'host-state'), OPENCLAW_CONFIG_PATH: path.join(directory, 'host-config.json') } });
   assert.match(output, /CONTRACT_PASS/u);
+});
+
+test("explicit host runtime supports plugin registration, automatic projects, logs and manual fallback", async t => {
+  if (!process.env.RC_OPENCLAW_HOST_ROOT) { t.skip("Set RC_OPENCLAW_HOST_ROOT for an isolated installed-host probe."); return; }
+  const host = await fs.realpath(process.env.RC_OPENCLAW_HOST_ROOT);
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-host-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: path.join(root, "build") });
+  const script = `
+    import assert from 'node:assert/strict';
+    import fs from 'node:fs/promises';
+    import path from 'node:path';
+    import {pathToFileURL} from 'node:url';
+    const host = ${JSON.stringify(host)}, root = ${JSON.stringify(root)}, pluginRoot = ${JSON.stringify(pluginRoot)};
+    process.argv[1] = path.join(host,'openclaw.mjs');
+    const {createPluginRuntime} = await import(pathToFileURL(path.join(host,'dist/plugins/runtime/index.js')));
+    const runtime = createPluginRuntime();
+    for (const key of ['agent.runEmbeddedAgent','agent.session.getSessionEntry','agent.session.resolveStorePath',
+      'agent.session.resolveSessionFilePath','agent.session.runWithWorkAdmission','subagent.run','state.resolveStateDir','config.current']) {
+      assert.equal(typeof key.split('.').reduce((obj,part)=>obj?.[part],runtime),'function',key);
+    }
+    const a = path.join(root,'a'), b = path.join(root,'b'), off = path.join(root,'off');
+    for (const dir of [a,b,off]) await fs.mkdir(dir);
+    for (const dir of [a,b]) {
+      await fs.mkdir(path.join(dir,'.runtime-corrector'));
+      await fs.writeFile(path.join(dir,'.runtime-corrector/config.yaml'),'version: 2\\nartifacts:\\n  - name: draft\\n    stage: drafting\\n    patterns: [draft.md]\\n    rules:\\n      enabled: false\\n    review:\\n      enabled: false\\ndynamicGroundTruth:\\n  enabled: false\\nstopCorrection:\\n  enabled: false\\n');
+    }
+    const config = {agents:{defaults:{workspace:off,sandbox:{mode:'off'}}},session:{store:path.join(root,'sessions.json')}};
+    runtime.config.current = () => config;
+    const logs = [], hooks = [];
+    const api = {id:'runtime-corrector',rootDir:pluginRoot,runtime,config,pluginConfig:{},logger:{info:m=>logs.push(m),warn:m=>{throw new Error(m)}},
+      on:name=>hooks.push(name),registerTool(){},registerCommand(){},registerAgentToolResultMiddleware(){}};
+    const entry = (await import(pathToFileURL(path.join(pluginRoot,'lib/openclaw/entry.mjs')))).default;
+    entry.register(api);
+    assert.deepEqual(hooks,['session_start','before_prompt_build','before_tool_call','reply_payload_sending','before_compaction','session_end','before_reset','agent_end','gateway_stop']);
+    const identity = {agentId:'main',sessionKey:'agent:main:chat-rc-project-contract',sessionId:'rc-project-contract'};
+    const sessionFile = path.join(root,'session.jsonl');
+    await fs.writeFile(sessionFile,JSON.stringify({type:'session',id:identity.sessionId})+'\\n'+JSON.stringify({type:'message',id:'a-user',parentId:null,message:{role:'user',content:'A task'}})+'\\n');
+    const params = {...identity,storePath:config.session.store};
+    await runtime.agent.session.upsertSessionEntry({...params,entry:{sessionId:identity.sessionId,updatedAt:Date.now(),sessionFile,spawnedCwd:a}});
+    const {createSessionProjects} = await import(pathToFileURL(path.join(pluginRoot,'lib/openclaw/session-projects.mjs')));
+    const projects = createSessionProjects(api,{pluginRoot});
+    const ctx = {...identity,workspaceDir:off,isAuthorizedSender:true,gatewayClientScopes:['operator.admin']};
+    const first = await projects.resolve({},ctx);
+    assert.equal(first.enabled,true,first.reason); assert.equal(first.source,'host'); assert.equal(first.projectRoot,a); assert.equal(first.executionDirectory,a);
+    const activeA = await projects.activate(first);
+    await runtime.agent.session.patchSessionEntry({...params,update:()=>({spawnedCwd:b})});
+    await fs.appendFile(sessionFile,JSON.stringify({type:'message',id:'b-user',parentId:'a-user',message:{role:'user',content:'B task'}})+'\\n');
+    const second = await projects.resolve({},ctx), activeB = await projects.activate(second);
+    assert.equal(second.projectRoot,b); assert.notEqual(activeA.taskId,activeB.taskId);
+    await runtime.agent.session.patchSessionEntry({...params,update:()=>({spawnedCwd:off})});
+    assert.equal((await projects.resolve({},ctx)).reason,'RC_PROJECT_NOT_ENABLED');
+    assert.deepEqual(await fs.readdir(off),[]);
+    await runtime.agent.session.patchSessionEntry({...params,update:()=>({spawnedCwd:null})});
+    assert.equal((await projects.resolve({},ctx)).reason,'RC_SESSION_PROJECT_UNBOUND');
+    assert.equal((await projects.command({...ctx,args:'bind '+a})).source,'rc');
+    assert(logs.map(line=>JSON.parse(line.slice(line.indexOf('{')))).some(event=>event.type==='RC_PROJECT_SCOPE_ACTIVATED'&&event.projectRoot===b));
+    console.log('MATRIX_PROJECT_CONTRACT_PASS');
+  `;
+  const output = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 30000,
+    env: { ...process.env, OPENCLAW_STATE_DIR: path.join(root, "host-state"), OPENCLAW_CONFIG_PATH: path.join(root, "host-config.json") } });
+  assert.match(output, /MATRIX_PROJECT_CONTRACT_PASS/u);
 });

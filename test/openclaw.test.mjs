@@ -55,7 +55,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.5");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.6");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
   assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");
@@ -677,7 +677,9 @@ for (const shadow of [false, true]) test(`evidence feedback uses native tool res
   await fs.writeFile(path.join(project, "evidence/two.txt"), "same capture");
   await runtime.prompt({ prompt: "Create result.txt with the verified content.", messages: [] }, ctx);
   await runtime.beforeTool({ toolName: "exec", toolCallId: "exec-1", params: { command: "capture" } }, ctx);
-  const event = { toolName: "exec", toolCallId: "exec-1", args: { command: "capture" }, result: { content: [{ type: "text", text: "Original tool output" }] } };
+  const event = { toolName: "exec", toolCallId: "exec-1", args: { command: "capture" }, result: {
+    content: [{ type: "text", text: "Original tool output" }], terminate: true, details: { status: "noop" },
+  } };
   // Exact OpenClaw 2026.7.1-2 native middleware context omits session identity.
   const result = await runtime.toolResult(event, { runtime: "openclaw" });
   if (shadow) {
@@ -686,6 +688,8 @@ for (const shadow of [false, true]) test(`evidence feedback uses native tool res
     assert.equal(await runtime.reply({ kind: "final", runId: ctx.runId, payload: { text: "完成" } }), undefined);
   } else {
     assert.equal(result.result.content[0].text, "Original tool output");
+    assert.equal(result.result.terminate, true);
+    assert.deepEqual(result.result.details, { status: "noop" });
     assert.match(result.result.content.at(-1).text, /证据完整性/u);
     assert.deepEqual(await runtime.toolResult(event, ctx), result);
   }

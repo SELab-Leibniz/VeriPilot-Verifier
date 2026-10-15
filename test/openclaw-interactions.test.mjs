@@ -194,7 +194,7 @@ test("A18/A19 missing or changed required evidence cannot certify completion", a
 
 test("A21 recovery materializes committed projections without rerunning assessment", async (t) => {
   const f = await fixture(t), directory = taskDirectory(f.root, f.taskId);
-  await atomicWriteJson(path.join(directory, "transactions", "committed.json"), { files: { "evaluations/recovered.json": JSON.stringify({ status: "PASS" }) }, events: [] });
+  await atomicWriteJson(path.join(directory, "transactions", "committed.json"), { files: { [path.join("evaluations", "recovered.json")]: JSON.stringify({ status: "PASS" }) }, events: [] });
   await withTaskState(f.target, (state) => { state.decisionCommitId = "committed"; state.projectionPending = true; state.verification.evaluationId = "recovered"; });
   assert.deepEqual(await readJson(path.join(directory, "evaluations/recovered.json")), { status: "PASS" });
   assert.deepEqual((await readReport(f.binding)).assessment, { status: "PASS" }, "lock-free status reads the committed manifest before projection recovery");

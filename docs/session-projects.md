@@ -1,10 +1,12 @@
 # OpenClaw Session 项目作用域
 
-候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.5`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.6`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
-旧版 OpenClaw `2026.7.1-2`：用户在当前会话中执行 `/rc-project bind /绝对业务项目目录`。可直接包含路径中的空格，不加引号。`/rc-project status` 查询，`/rc-project unbind` 解除；再次 bind 修改绑定。身份必须经宿主认证，查询需 `operator.read`，修改需 `operator.write` 或 `operator.admin`；无 Gateway scope 的渠道必须提供可信 owner 身份。沙箱及文件系统限制优先，无法验证权限时拒绝绑定。
+OpenClaw `2026.7.1-2` / MatrixAssistant：每次已有生命周期回调或状态查询时，从公开 Session SDK 读取当前会话的最新记录。记录有非空 `spawnedCwd` 时自动跟随该项目，新建 Session 无需手动绑定；切换项目在下次回调或查询时生效，不增加轮询器。有宿主目录时禁止 RC 手动改绑，避免两套选择相互覆盖。路径非法、不存在、未获权限或配置无效时停用并记明原因，不偷偷回退旧项目。
+
+`spawnedCwd` 缺失、null 或空串时保留手动模式：用户在当前会话中执行 `/rc-project bind /绝对业务项目目录`。可直接包含路径中的空格，不加引号。`/rc-project status` 查询，`/rc-project unbind` 解除；再次 bind 修改绑定。身份必须经宿主认证，查询需 `operator.read`，修改需 `operator.write` 或 `operator.admin`；无 Gateway scope 的渠道必须提供可信 owner 身份。沙箱及文件系统限制优先，无法验证权限时拒绝绑定。
 
 RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具相对路径仍由 OpenClaw 决定；RC 不把工具的相对路径改解释为绑定目录。旧版业务在另一目录工作时应由用户/宿主使用正确的工具路径，RC 只评审绑定项目内实际观察到的文件。
 
@@ -16,7 +18,9 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 ## 宿主契约
 
-`lib/openclaw/project-compat.mjs` 集中维护经过核验的版本和目录规则。`2026.7.1-2` 进入旧版模式；`2026.10.3` 进入原生模式；其他版本的插件入口拒绝加载，需要先验证其契约。不通过一个字段是否存在来判定宿主能力。
+`lib/openclaw/project-compat.mjs` 集中维护经过核验的版本和目录规则。`2026.7.1-2` 仅对经过 Session 身份校验的持久化 `spawnedCwd` 做能力检测；不读取模型参数里的同名字段。这个检测只切换目录解析，Reviewer、转录读取、Hook 和 Stop 仍沿用 7.1 适配。`2026.10.3` 保持原生模式；其他版本仍拒绝加载，不因出现同名字段而放开。
+
+MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写入 `spawnedCwd`，工具运行目录使用该字段；7.1 子会话也以此字段为准。7.1 Hook 若仍报告 Agent 默认工作区，RC 使用已核验的会话目录解析相对路径；其他项目路径冲突继续拒绝。宿主选择只决定纠偏项目，有效 `.runtime-corrector/config.yaml` 才决定启用，不新增项目开关格式。
 
 原生目录来自公开 `runtime.agent.session.getSessionEntry` 的最新、精确 Session incarnation。已核验的 v2026.10.3 执行入口先使用 spawnedBy Session 的 spawnedWorkspaceDir，否则使用 spawnedCwd。Worktree 使用宿主准备完成后保存的执行目录，绝不使用 worktree.repoRoot。有效运行上下文与持久化目录不一致时停用；没有可核验目录时不回退 Agent 默认工作区。远端执行、云仓库和尚未准备完成的项目保守停用，本次不实现远端文件系统桥接。
 
@@ -30,6 +34,10 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 ## 隔离和切换
 
+宿主日志中可搜索 `[runtime-corrector]`：`RC_PROJECT_RESOLVED` 仅在选择或启用状态变化时记录 Session 身份、宿主版本、host/rc 来源、前后项目路径、enabled 和 reason；`RC_PROJECT_SCOPE_ACTIVATED` 在作用域成功持久化后记录前后路径及独立 taskId。日志使用宿主已有 logger，未配置项目也能诊断停用原因；不另建日志系统。`/rc-project status` 或 `runtime_corrector` 的 project 命令可核对当前选择。
+
+切至未启用项目后再切回，或从自动模式退回旧手动绑定时，建立新的作用域并隔离此前项目的用户依据；不把旧任务和预算接回新一轮。
+
 绑定和作用域身份存放在宿主 `resolveStateDir()` 返回的状态目录下：`plugins/runtime-corrector/session-projects/<identity-hash>/`。identity 包含 agentId、sessionKey 和 sessionId；恢复相同会话可继续使用，reset/new 产生新 incarnation 不继承旧绑定。写入用私有文件、原子替换和独占锁；忙锁拒绝变更，不抢占写入者。
 
 每次项目作用域有独立 taskId；同项目不同 Session 也不共用 Reviewer 状态、需求基线或预算。回到此前项目建立新的作用域；项目切换边界限制新作用域读取的用户依据。宿主状态目录持久化作用域身份，所以插件/Gateway 重载后仍可恢复。
@@ -39,6 +47,14 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 切换时取消旧 RC Reviewer 信号和待派发反馈，旧任务记录留在旧项目。返回结果及续作派发前再次核验作用域；迟到工具结果同时核验调用绑定的作用域，即使宿主提供了 Session 身份，也不能重新接入新项目。RC 不取消或接管宿主已接受的业务执行；宿主自身运行切换、取消和权限仍由 OpenClaw 管理。
 
 ## 验证
+
+MatrixAssistant 增量适配 `.6` 在 Windows / Node 24.16.0 完成 264 项相关回归，最终顺序执行全部通过。原三项失败分别修复路径断言、Windows 目录 fsync 兼容及其后显露的 Skill 路径分隔符断言；扩展回归还修复一行需求引用路径键规范化和一个旧恢复测试的跨平台文件键。一次并发运行的旧受控模式用例未通过，单项复跑及最终顺序回归通过，未改该模式的运行协议。
+
+指定 MatrixAssistant 1.8.160 内置 `2026.7.1-2` 的真实 SDK 探针验证 8 项依赖方法、9 个入口 Hook 注册、既有兼容桥，以及 A → B 自动项目、Agent 默认 Hook 目录、无配置停用、日志与字段缺失时手动回退。所有会话和项目均在临时目录；未修改或安装到宿主，也未调用业务模型。设置 `RC_OPENCLAW_HOST_ROOT` 为宿主的 `resources/openclaw` 目录后，运行 `node --test test/openclaw-host-contract.test.mjs` 可复现这两项接口测试。本次不宣称完成 MatrixAssistant UI 和真实模型纠偏闭环。
+
+后续 MatrixAssistant 真实模型补验使用该安装包的实际 Gateway、原装 `register-gateway-method` 目录桥接及 GLM-5.3-Flash，结果为 **未验收通过**：新会话自动跟随 A、独立真实基线 version=1 和写入已观察；随后宿主返回 `incomplete turn`（stopReason=toolUse、payloads=0、replaySafe=no），观察器按错误停止，未观察到纠偏续作和最终 PASS，k=0。真实评审运行中切换项目的步骤未到达，不以既有单测代替。另在同一隔离状态中以零模型调用的实际 Gateway 查询验证 A → B → 未配置项目 → B 的启停及 4 条切换日志。初轮只读未触发屏障、第二轮观察超时及最后的宿主错误均保留；没有覆盖失败或修改纠偏核心。脱敏原始路径、任务状态、构建哈希和验证边界见 [真实模型补验证据](experiments/matrixassistant-session-live-20261015.json)。隔离 Gateway 已结束，宿主文件和现有用户会话未改动。
+
+继续定位确认该 `incomplete turn` 来自原生同内容 `write` 的 `terminate:true`，零模型直接复现无需加载插件。插件保留宿主终止语义，只修正诊断的实际错误写入和过时项目说明；新增结果元数据保留回归，40 项定向回归通过。真实补验按项通过：DEVIATION → 一次被模型观察的原生续作 → 最终 PASS（k=1）；旧 Stop 流程中的需求刷新模型请求活跃时切换项目，旧评审取消，B 独立基线 k=0，实际无配置停用/恢复及切换日志通过。不是一次整段串行探针全通过；模型格式失败、观察器超时及请求上限停止均保留，本轮共 81 次模型请求。详见 [定位与分组复验](experiments/matrixassistant-incomplete-turn-20261015.md)。宿主及用户现有会话未修改，隔离进程均已结束。
 
 项目测试覆盖旧版独立绑定/恢复、相同项目两 Session 状态、无配置无产物、认证/沙箱/目录权限、升级原生优先、无目录及冲突拒绝、Worktree 实际目录、切换取消、迟到结果、并发首次 Hook、手动查询/检查。
 

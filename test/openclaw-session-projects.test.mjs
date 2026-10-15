@@ -22,8 +22,8 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
   const a = path.join(root, "a"), b = path.join(root, "b"), off = path.join(root, "off"), stateDir = path.join(root, "host-state");
   for (const dir of [a, b, off]) await fs.mkdir(dir);
   for (const dir of [a, b]) { await fs.mkdir(path.join(dir, ".runtime-corrector")); await fs.writeFile(path.join(dir, ".runtime-corrector/config.yaml"), config); }
-  const entries = new Map(), transcripts = new Map(), warnings = [], sharedState = {}, calls = [];
-  const api = { id: "runtime-corrector", rootDir: pluginRoot, config: {}, pluginConfig: {}, logger: { warn: m => warnings.push(m) },
+  const entries = new Map(), transcripts = new Map(), warnings = [], infos = [], sharedState = {}, calls = [];
+  const api = { id: "runtime-corrector", rootDir: pluginRoot, config: {}, pluginConfig: {}, logger: { warn: m => warnings.push(m), info: m => infos.push(JSON.parse(m.slice(m.indexOf("{")))) },
     runtime: { version, state: { resolveStateDir: () => stateDir }, sandbox: { resolveSandboxRuntimeStatus: () => ({ sandboxed: false }) }, agent: {
       resolveAgentWorkspaceDir: () => off, runEmbeddedAgent: async () => { calls.push(1); throw new Error("unexpected model"); },
       session: { getSessionEntry: ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(stateDir, "sessions.json"),
@@ -35,7 +35,7 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
     const records = [{ type: "session", id }, { type: "message", id: `${id}-u0`, parentId: null, message: { role: "user", content: `Old ${id}` } }];
     transcripts.set(ctx.sessionKey, records);
     await fs.writeFile(file, records.map(JSON.stringify).join("\n"));
-    entries.set(ctx.sessionKey, { sessionId: id, sessionFile: file, spawnedCwd: cwd });
+    entries.set(ctx.sessionKey, { sessionId: id, sessionFile: file, ...(version === "2026.10.3" ? { spawnedCwd: cwd } : {}) });
     return ctx;
   }
   const compatibility = async () => ({ loadTranscriptEvents: ({ sessionKey }) => transcripts.get(sessionKey) });
@@ -48,15 +48,20 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
     await fs.writeFile(entries.get(ctx.sessionKey).sessionFile, records.map(JSON.stringify).join("\n"));
     await runtime.prompt({ prompt: text }, ctx);
   }
-  return { root, a, b, off, stateDir, api, entries, transcripts, warnings, sharedState, calls, projects, runtime, command, user, session };
+  return { root, a, b, off, stateDir, api, entries, transcripts, warnings, infos, sharedState, calls, projects, runtime, command, user, session };
 }
 
-test("capability uses verified release contracts; arbitrary fields never select native or legacy", () => {
+test("verified versions detect the backported directory without changing other host capabilities", () => {
   assert.equal(projectCapability({ runtime: { version: "2026.7.1-2" } }).mode, "legacy");
   assert.equal(projectCapability({ runtime: { version: "2026.10.3" } }).mode, "native");
+  const legacy = { runtime: { version: "2026.7.1-2" } };
+  assert.equal(projectCapability(legacy, { spawnedCwd: path.resolve("project") }).mode, "native");
+  for (const spawnedCwd of [undefined, null, ""]) assert.equal(projectCapability(legacy, { spawnedCwd }).mode, "legacy");
+  assert.equal(projectCapability({ runtime: { version: "2026.8.1" } }, { spawnedCwd: path.resolve("project") }).mode, "unavailable");
+  assert.equal(nativeProjectDirectory({ spawnedBy: "parent", spawnedWorkspaceDir: path.resolve("default"), spawnedCwd: path.resolve("project") }, "2026.7.1-2"), path.resolve("project"));
   for (const version of [undefined, "2026.10.4", "2026.8.1"]) assert.equal(projectCapability({ runtime: { version, agent: { resolveSessionWorkspaceDir() {} } } }).mode, "unavailable");
-  assert.equal(nativeProjectDirectory({ spawnedCwd: "/task/tree", worktree: { repoRoot: "/origin" } }), "/task/tree");
-  assert.equal(nativeProjectDirectory({ spawnedBy: "parent", spawnedWorkspaceDir: "/child", spawnedCwd: "/other" }), "/child");
+  assert.equal(nativeProjectDirectory({ spawnedCwd: path.resolve("task/tree"), worktree: { repoRoot: path.resolve("origin") } }), path.resolve("task/tree"));
+  assert.equal(nativeProjectDirectory({ spawnedBy: "parent", spawnedWorkspaceDir: path.resolve("child"), spawnedCwd: path.resolve("other") }), path.resolve("child"));
   for (const record of [{}, { spawnedCwd: "relative" }, { spawnedCwd: "/local", execNode: "remote" }, { spawnedCwd: "/local", repositoryWorkspaceId: "cloud" }]) assert.throws(() => nativeProjectDirectory(record));
 });
 
@@ -86,6 +91,7 @@ test("legacy A/B bindings persist independently and never rewrite the host worki
   assert.equal(sa.projectRoot, f.a); assert.equal(sb.projectRoot, f.b); assert.notEqual(sa.scopeTaskId, sb.scopeTaskId);
   assert(!JSON.stringify(sa.entries).includes("Only project B")); assert(!JSON.stringify(sb.entries).includes("Only project A"));
   assert.deepEqual(await fs.readdir(f.off), []);
+  assert.deepEqual(f.warnings, [], "legacy project task creation must not fail open");
   const taskA = JSON.parse(await fs.readFile(path.join(f.a, ".runtime-correction/tasks", sa.scopeTaskId, "task.json")));
   const taskB = JSON.parse(await fs.readFile(path.join(f.b, ".runtime-correction/tasks", sb.scopeTaskId, "task.json")));
   assert.deepEqual(taskA.sessionIds, ["A"]); assert.deepEqual(taskB.sessionIds, ["B"]);
@@ -116,8 +122,8 @@ test("native workspace Skill read creates a watcher in the bound business projec
   await fs.appendFile(path.join(f.a, ".runtime-corrector/config.yaml"), "skillCorrection:\n  enabled: true\n  selection:\n    mode: include\n    include: [workspace-note]\n");
   await f.command(ctx, `bind ${f.a}`);
   await f.runtime.beforeTool({ toolName: "read", toolCallId: "host-skill-read", params: { path: skill } }, ctx);
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].request.skill.directory, path.dirname(skill));
+  assert.equal(calls.length, 1, f.warnings.join("\n"));
+  assert.equal(path.resolve(calls[0].request.skill.directory), path.dirname(skill));
   const state = f.sharedState.states.get("main:native-skill");
   const task = JSON.parse(await fs.readFile(path.join(f.a, ".runtime-correction/tasks", state.scopeTaskId, "task.json")));
   const watchers = Object.values(task.watchers);
@@ -192,14 +198,82 @@ test("concurrent first hooks reuse one Session scope and task", async t => {
   assert.equal((await fs.readdir(path.join(f.a, ".runtime-correction/tasks"))).length, 1);
 });
 
-test("host-native same-session scope changes cancel prior state and fence its old baseline", async t => {
-  const f = await fixture(t, "2026.10.3"), ctx = await f.session("native", f.a);
+for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version} host directory switches cancel old reviews and fence late tool results`, async t => {
+  const f = await fixture(t, version), ctx = await f.session("native", f.a);
+  f.entries.get(ctx.sessionKey).spawnedCwd = f.a;
   await f.user(ctx, "A native task"); const old = f.sharedState.states.get("main:native");
+  await f.runtime.beforeTool({ toolName: "write", toolCallId: "native-late", params: { path: "draft.md" } }, ctx);
   f.entries.get(ctx.sessionKey).spawnedCwd = f.b; ctx.workspaceDir = f.b;
   await f.user(ctx, "B native task");
   const state = f.sharedState.states.get("main:native");
   assert.equal(old.abortSignal.aborted, true); assert.equal(state.projectRoot, f.b);
+  assert.notEqual(state.scopeTaskId, old.scopeTaskId);
   assert(!JSON.stringify(state.entries).includes("A native task")); assert(JSON.stringify(state.entries).includes("B native task"));
+  assert.equal(await f.runtime.toolResult({ toolName: "write", toolCallId: "native-late", args: { path: "draft.md" }, result: { content: [] } }, { runtime: "openclaw" }), undefined);
+  f.entries.get(ctx.sessionKey).spawnedCwd = f.off; ctx.workspaceDir = f.off;
+  await f.runtime.beforeTool({ toolName: "write", toolCallId: "off", params: { path: "draft.md" } }, ctx);
+  assert.equal(state.abortSignal.aborted, true); assert.equal(f.sharedState.states.size, 0);
+  assert.deepEqual(await fs.readdir(f.off), []);
+  const logCount = f.infos.length;
+  await f.projects.resolve({}, ctx); await f.projects.resolve({}, ctx);
+  assert.equal(f.infos.length, logCount, "unchanged selection must not flood logs");
+  const activated = f.infos.filter(x => x.type === "RC_PROJECT_SCOPE_ACTIVATED");
+  assert.deepEqual(activated.map(x => [x.previousProjectRoot, x.projectRoot]), [[null, f.a], [f.a, f.b]]);
+  assert(f.infos.some(x => x.type === "RC_PROJECT_RESOLVED" && x.projectRoot === f.off && !x.enabled && x.reason === "RC_PROJECT_NOT_ENABLED"));
+  f.entries.get(ctx.sessionKey).spawnedCwd = f.b; ctx.workspaceDir = f.b;
+  await f.user(ctx, "Returned B task");
+  const returned = f.sharedState.states.get("main:native");
+  assert.notEqual(returned.scopeTaskId, state.scopeTaskId);
+  assert(!JSON.stringify(returned.entries).includes("B native task"));
+  assert.deepEqual(f.warnings, []);
+});
+
+test("2026.7.1-2 follows spawnedCwd over manual binding and falls back only when it is absent", async t => {
+  const f = await fixture(t), ctx = await f.session("matrix", f.a);
+  await f.command(ctx, `bind ${f.a}`);
+  await f.user(ctx, "Old manual A task");
+  const record = f.entries.get(ctx.sessionKey);
+  record.spawnedCwd = f.b; ctx.workspaceDir = f.b;
+  const native = await f.projects.resolve({}, ctx);
+  assert.equal(native.source, "host"); assert.equal(native.projectRoot, f.b); assert.equal(native.enabled, true);
+  const defaultContext = await f.projects.resolve({}, { ...ctx, workspaceDir: f.off });
+  assert.equal(defaultContext.enabled, true); assert.equal(defaultContext.executionDirectory, f.b);
+  await f.user(ctx, "Native B task");
+  assert.equal(f.api.runtime.version, "2026.7.1-2");
+  for (const args of [`bind ${f.a}`, "unbind"]) await assert.rejects(f.command(ctx, args), /已禁用/);
+  assert.equal((await f.command(ctx, "status")).projectRoot, f.b);
+  const restarted = createProjects(f.api, { pluginRoot });
+  assert.equal((await restarted.resolve({}, ctx)).projectRoot, f.b);
+  f.api.pluginConfig.enabled = false;
+  assert.equal((await f.projects.resolve({}, ctx)).reason, "RC_PLUGIN_DISABLED");
+  delete f.api.pluginConfig.enabled;
+  await fs.writeFile(path.join(f.b, ".runtime-corrector/config.yaml"), "version: invalid\n");
+  assert.equal((await f.projects.resolve({}, ctx)).enabled, false);
+  for (const spawnedCwd of ["relative", path.join(f.root, "missing"), 42]) {
+    record.spawnedCwd = spawnedCwd;
+    const scope = await f.projects.resolve({}, ctx);
+    assert.equal(scope.source, "host"); assert.equal(scope.enabled, false); assert.equal(scope.projectRoot, null);
+  }
+  record.spawnedCwd = f.b;
+  assert.equal((await f.projects.resolve({}, { ...ctx, workspaceDir: f.a })).reason, "HOST_PROJECT_CONTEXT_CONFLICT");
+  delete record.spawnedCwd; ctx.workspaceDir = f.a;
+  const manual = await f.projects.resolve({}, ctx);
+  assert.equal(manual.source, "rc"); assert.equal(manual.projectRoot, f.a); assert.equal(manual.enabled, true);
+  await f.user(ctx, "New manual A task");
+  const returned = f.sharedState.states.get("main:matrix");
+  assert(!JSON.stringify(returned.entries).includes("Native B task"));
+  assert(!JSON.stringify(returned.entries).includes("Old manual A task"));
+  assert(f.infos.some(x => x.type === "RC_PROJECT_RESOLVED" && x.source === "rc" && x.previousProjectRoot !== f.a));
+  assert.deepEqual(f.calls, []);
+});
+
+test("2026.7.1-2 auto-selected sessions sharing a project retain independent tasks", async t => {
+  const f = await fixture(t), a = await f.session("matrix-a", f.a), b = await f.session("matrix-b", f.a);
+  for (const ctx of [a, b]) f.entries.get(ctx.sessionKey).spawnedCwd = f.a;
+  await Promise.all([f.user(a, "Only A"), f.user(b, "Only B")]);
+  const sa = f.sharedState.states.get("main:matrix-a"), sb = f.sharedState.states.get("main:matrix-b");
+  assert.notEqual(sa.scopeTaskId, sb.scopeTaskId);
+  assert(!JSON.stringify(sa.entries).includes("Only B")); assert(!JSON.stringify(sb.entries).includes("Only A"));
 });
 
 test("manual status/check entry uses the same project resolution and cannot trigger zero-config correction", async t => {

@@ -2,7 +2,7 @@
 
 > 中文版（默认）: [README.md](README.md) · [Documentation index](docs/README.md)
 
-This branch supports **OpenClaw 2026.7.1-2 and 2026.10.3**. Legacy sessions require an authenticated RC project binding; newer sessions follow the host's native project or actual worktree. A valid project configuration is required to enable correction. See [Session project scopes](docs/session-projects.md) and the [installation guide](docs/openclaw.md). The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
+This branch supports **OpenClaw 2026.7.1-2 and 2026.10.3**. On 2026.7.1-2, including MatrixAssistant, sessions with persisted `spawnedCwd` follow the host project automatically; missing fields retain authenticated RC manual binding. Newer sessions follow the host's native project or actual worktree. A valid project configuration is required to enable correction; project changes and disabled reasons use the host logger. See [Session project scopes](docs/session-projects.md) and the [installation guide](docs/openclaw.md). The original correction engine remains shared; slash-command examples below also document the retained Claude and CodeAgent builds.
 
 **The current candidate is 1.9.1-openclaw.11-session-projects.1.** Business execution and approvals use the host's native runtime. The older supervised execution release is historical; follow the migration instructions in the installation guide.
 

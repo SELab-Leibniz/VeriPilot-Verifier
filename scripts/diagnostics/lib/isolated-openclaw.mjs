@@ -19,14 +19,15 @@ export async function json(file) { try { return JSON.parse(await fs.readFile(fil
 export async function runtimeState(projectRoot) {
   const tasks = [], journals = [], records = [], evaluations = [];
   for (const file of await files(path.join(projectRoot, ".runtime-correction"))) {
-    if (file.endsWith("/task.json")) tasks.push(await json(file));
-    else if (file.endsWith("/journal/events.jsonl")) for (const row of (await fs.readFile(file, "utf8")).split("\n").filter(Boolean)) journals.push(JSON.parse(row));
-    else if (/\/native-(?:runs|followups|stop-reviews)\/.+\.json$/u.test(file)) records.push({ file, ...await json(file) });
-    else if (/\/evaluations\/stop-.+\.json$/u.test(file)) evaluations.push({ file, ...await json(file) });
+    const portable = file.replaceAll("\\", "/");
+    if (portable.endsWith("/task.json")) tasks.push(await json(file));
+    else if (portable.endsWith("/journal/events.jsonl")) for (const row of (await fs.readFile(file, "utf8")).split("\n").filter(Boolean)) journals.push(JSON.parse(row));
+    else if (/\/native-(?:runs|followups|stop-reviews)\/.+\.json$/u.test(portable)) records.push({ file: portable, ...await json(file) });
+    else if (/\/evaluations\/stop-.+\.json$/u.test(portable)) evaluations.push({ file: portable, ...await json(file) });
   }
   return { tasks, journals, records, evaluations };
 }
-export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
+export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
   if (!process.env.RC_TEST_MODEL_KEY) throw new Error("RC_TEST_MODEL_KEY required");
   if (!resume) await fs.mkdir(destination, { mode: 0o700 });
   const root = await fs.realpath(destination), pkg = await json(path.join(hostRoot, "package.json"));
@@ -55,7 +56,7 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
     agents: { defaults: { workspace: defaultDir, skipBootstrap: true, timeoutSeconds: 1200, thinkingDefault: "off",
       model: { primary: model }, models: { [model]: {} }, sandbox: { mode: "off" } } }, models: { providers: { test: provider } },
     tools: { allow: tools, exec: { security: "full", ask: "off" } },
-    plugins: { allow: ["runtime-corrector"], load: { paths: [pluginRoot] }, entries: { "runtime-corrector": { enabled: true,
+    plugins: { allow: ["runtime-corrector", ...extraPlugins.map(p => p.id)], load: { paths: [pluginRoot, ...extraPlugins.map(p => p.path)] }, entries: { ...Object.fromEntries(extraPlugins.map(p => [p.id, { enabled: true }])), "runtime-corrector": { enabled: true,
       hooks: { allowConversationAccess: true, allowPromptInjection: true }, config: { reviewerModel: model, hookTimeoutMs: 600000 } } } },
     logging: { level: "debug", consoleLevel: "error", file: path.join(root, "gateway.jsonl") } };
   const configFile = path.join(root, "openclaw.json");
@@ -115,7 +116,9 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
     const sent = await send(key, "/rc-project status", 30000), blocks = sent.outcome.message?.content;
     return JSON.parse(typeof blocks === "string" ? blocks : (blocks ?? []).filter(x => x.type === "text").map(x => x.text).join("\n"));
   };
-  const close = async () => { if (closed) return; closed = true; await stop(); await wire.close(); await log.close(); };
+  const close = async () => { if (closed) return; closed = true;
+    for (const resolve of pending.values()) resolve({ state: "aborted", errorMessage: "Isolated observer closed" });
+    await stop(); await wire.close(); await log.close(); };
   try { await start(); } catch (error) { await close(); throw error; }
   return { root, hostRoot, pluginRoot, stateDir, defaultDir, config, configFile, version: pkg.version, model, events, redact, save,
     request, send, status, restart: async () => { await stop(); await start(); }, close };

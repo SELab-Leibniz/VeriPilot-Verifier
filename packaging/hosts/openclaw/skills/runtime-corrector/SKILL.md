@@ -3,9 +3,9 @@ name: runtime-corrector
 description: 在 OpenClaw 原业务会话中使用 Runtime Corrector 的项目规则与监督反馈，保留需求、Skill、成果工作流、实现证据和最终验收。业务执行与审批由宿主管理。
 ---
 
-项目范围由插件统一解析：OpenClaw 2026.10.3 完全使用宿主 Session 选择的项目/实际 Worktree；2026.7.1-2 使用可信用户为该 Session 建立的 RC 绑定。有效 `.runtime-corrector/config.yaml` 才启用纠偏，无配置不自动初始化或启动 Reviewer。
+项目范围由插件统一解析：OpenClaw 2026.10.3 使用宿主 Session 选择的项目/实际 Worktree；2026.7.1-2 检测到可信 Session 条目的 `spawnedCwd` 时自动跟随该项目（包括 MatrixAssistant），缺少该字段时使用用户为该 Session 建立的 RC 绑定。有效 `.runtime-corrector/config.yaml` 才启用纠偏，无配置不自动初始化或启动 Reviewer。成功切换项目会写入插件日志。
 
-用户在旧版会话中可执行 `/rc-project bind /绝对业务项目目录`、`/rc-project unbind`；需宿主认证及写入权限。两版均支持 `/rc-project status`。新版禁止绑定、修改及解绑，请使用宿主项目选择。模型不得通过工具代用户建立绑定。旧版 RC 绑定不改变宿主工作目录或业务工具路径。
+仅在手动回退模式下，用户可执行 `/rc-project bind /绝对业务项目目录`、`/rc-project unbind`；需宿主认证及写入权限。两版均支持 `/rc-project status`。自动跟随模式禁止绑定及解绑，请使用宿主项目选择。模型不得通过工具代用户建立绑定。手动 RC 绑定不改变宿主工作目录或业务工具路径。
 
 使用 `runtime_corrector` 工具：
 

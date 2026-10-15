@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-15",
+  "host": {
+    "product": "MatrixAssistant",
+    "appVersion": "1.8.160",
+    "openclawVersion": "2026.7.1-2",
+    "root": "C:/Users/user/workspace/program_workspace/MatrixAssistant"
+  },
+  "pluginVersion": "1.9.1-openclaw.11-session-projects.6",
+  "model": "glm-5.3-flash",
+  "status": "NOT_ACCEPTED",
+  "checks": [
+    {
+      "name": "New Session automatically follows spawnedCwd",
+      "status": "PASS",
+      "evidence": "Live-model sessions resolved source=host and an independent task under A."
+    },
+    {
+      "name": "Per-project enable/disable and re-enable",
+      "status": "PASS",
+      "evidence": [
+        {
+          "project": "A",
+          "sessionId": "d5517445-4c0c-4887-bb9d-f6140ebe0f96",
+          "source": "host",
+          "enabled": true,
+          "reason": null
+        },
+        {
+          "project": "B",
+          "sessionId": "d5517445-4c0c-4887-bb9d-f6140ebe0f96",
+          "source": "host",
+          "enabled": true,
+          "reason": null
+        },
+        {
+          "project": "off",
+          "sessionId": "d5517445-4c0c-4887-bb9d-f6140ebe0f96",
+          "source": "host",
+          "enabled": false,
+          "reason": "RC_PROJECT_NOT_ENABLED"
+        },
+        {
+          "project": "B",
+          "sessionId": "d5517445-4c0c-4887-bb9d-f6140ebe0f96",
+          "source": "host",
+          "enabled": true,
+          "reason": null
+        }
+      ],
+      "modelCallsDuringControlQueries": 0
+    },
+    {
+      "name": "Project transition logs",
+      "status": "PASS",
+      "rows": 4,
+      "evidence": "C:/Users/user/AppData/Local/Temp/rc-matrix-live-20261015-final-ae9d2faf/controls-selection-logs.json"
+    },
+    {
+      "name": "Real correction and final re-verification loop",
+      "status": "NOT_COMPLETED",
+      "evidence": "After real baseline extraction and a real write, the host reported an incomplete toolUse turn with no response. The observer stopped on this error; no correction continuation/final PASS was observed."
+    },
+    {
+      "name": "Switch projects while an old real Reviewer is running",
+      "status": "NOT_EXERCISED",
+      "evidence": "Not reached because the real-model loop stopped first; unit/SDK tests are not substituted."
+    }
+  ],
+  "trials": [
+    {
+      "directory": "C:/Users/user/AppData/Local/Temp/rc-matrix-live-20261015-de71344b",
+      "status": "INVALID_FIXTURE",
+      "realModel": true,
+      "hostVersion": "2026.7.1-2",
+      "newSessionAutoFollow": "PASS",
+      "reason": "Read-only first turn did not cross the lazy correction barrier; no baseline or Stop was created. Isolated Gateway and observer were stopped after the business turn ended.",
+      "businessRunId": "26865753-cce8-44e1-8b73-75f3523a6ffb",
+      "retainedForAudit": true
+    },
+    {
+      "directory": "C:/Users/user/AppData/Local/Temp/rc-matrix-live-20261015-d478d4d1",
+      "startedAt": "2026-10-15T12:30:05.565Z",
+      "hostVersion": "2026.7.1-2",
+      "model": "glm-5.3-flash",
+      "pluginVersion": "1.9.1-openclaw.11-session-projects.6",
+      "scope": "one Gateway, three temporary projects, two new sessions",
+      "realModel": true,
+      "existingHostAndSessionsUntouched": true,
+      "checks": [
+        {
+          "name": "new Session automatically follows A",
+          "status": "PASS",
+          "sessionId": "38f4f730-78fd-4dca-827f-80d4b3b42efd",
+          "projectRoot": "C:\\Users\\user\\AppData\\Local\\Temp\\rc-matrix-live-20261015-d478d4d1\\A"
+        }
+      ],
+      "status": "FAIL",
+      "error": "Error: Business turn observer deadline\n    at Timeout.<anonymous> (file:///C:/Users/user/workspace/program_workspace/runtime-corrector-toy/scripts/diagnostics/lib/isolated-openclaw.mjs:104:64)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)"
+    },
+    {
+      "directory": "C:/Users/user/AppData/Local/Temp/rc-matrix-live-20261015-final-ae9d2faf",
+      "startedAt": "2026-10-15T12:36:29.783Z",
+      "hostVersion": "2026.7.1-2",
+      "model": "glm-5.3-flash",
+      "pluginVersion": "1.9.1-openclaw.11-session-projects.6",
+      "scope": "one Gateway, three temporary projects, two new sessions",
+      "realModel": true,
+      "existingHostAndSessionsUntouched": true,
+      "checks": [
+        {
+          "name": "new Session automatically follows A",
+          "status": "PASS",
+          "sessionId": "52fa9b9f-0f36-4600-ad04-a94bf23a558c",
+          "projectRoot": "C:\\Users\\user\\AppData\\Local\\Temp\\rc-matrix-live-20261015-final-ae9d2faf\\A"
+        }
+      ],
+      "status": "FAIL",
+      "error": "Error: Host turn error: ⚠️ Agent couldn't generate a response. Note: some tool actions may have already been executed — please verify before retrying.\n    at Object.send (file:///C:/Users/user/workspace/program_workspace/runtime-corrector-toy/scripts/diagnostics/lib/isolated-openclaw.mjs:110:44)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///C:/Users/user/workspace/program_workspace/runtime-corrector-toy/scripts/diagnostics/matrix-session-live.mjs:66:17"
+    }
+  ],
+  "finalEvidence": {
+    "directory": "C:/Users/user/AppData/Local/Temp/rc-matrix-live-20261015-final-ae9d2faf",
+    "hostDiagnostic": "incomplete turn detected: runId=1f3ef4f1-aac1-4f7c-b6aa-04e7535247bb sessionId=52fa9b9f-0f36-4600-ad04-a94bf23a558c provider=test/glm-5.3-flash stopReason=toolUse hasLastAssistant=yes hasCurrentAttemptAssistant=yes payloads=0 tools=4 replaySafe=no compactions=0 reasoningRetries=0/2 emptyRetries=0/1 missingAssistantRetries=0/1 — surfacing error to user",
+    "taskStates": [
+      {
+        "taskId": "oc-scope-b9488c00-db18-4cd3-b897-b9bb117ed88f",
+        "groundTruthVersion": 1,
+        "status": "ACTIVE",
+        "verification": null,
+        "correctionAttempts": 0
+      }
+    ],
+    "draft": "BROKEN\n",
+    "privateRuns": [
+      {
+        "role": "onboarding-extractor",
+        "runId": "934a895f-d78b-4796-b8ae-0bb021f47f78",
+        "status": "SETTLED",
+        "reviewStatus": null
+      },
+      {
+        "role": "ground-truth-extractor",
+        "runId": "f048cf1a-0d1e-464e-83d9-5719ca391c78",
+        "status": "SETTLED",
+        "reviewStatus": null
+      },
+      {
+        "runId": "1f3ef4f1-aac1-4f7c-b6aa-04e7535247bb",
+        "status": "PENDING",
+        "reviewStatus": null
+      }
+    ],
+    "sourceHashes": {
+      "lib/openclaw/project-compat.mjs": "19ffcebefde982a3d37f7cadade66b2ee03eb5b81c876a943530f41f78407b59",
+      "lib/openclaw/session-projects.mjs": "ff8817349bfabbaa65c0b1ebc924724c49b8004cde3989b762154564423779c9",
+      "lib/openclaw/runtime.mjs": "ecdae901c567d46c5006e698bb29c8ff117824eadf77d2bc2c366275e5960b63",
+      "lib/openclaw/reviewer.mjs": "6edb4c7a787c5a76577b5bfb4935aff14c2d656279447631cbf0dc32e06a6168",
+      "lib/openclaw/sources.mjs": "21e34323b7b68e13370d2f320fc6724b40d6a0a027d5d08f200da0943b8b7f2f"
+    }
+  },
+  "isolation": {
+    "hostFilesModified": false,
+    "existingUserSessionsUsed": false,
+    "originalHostConfigurationWritten": false,
+    "privateGatewayStopped": true,
+    "rawEvidenceRetained": true,
+    "plaintextCredentialResiduals": []
+  },
+  "limitation": "The control checks use the real MatrixAssistant Gateway and its supplied cwd bridge without model calls. No desktop UI interaction or successful full correction loop is claimed."
+}
