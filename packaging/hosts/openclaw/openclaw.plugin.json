@@ -1,7 +1,7 @@
 {
   "id": "runtime-corrector",
   "name": "runtime-corrector",
-  "version": "1.9.1-openclaw.11-session-projects.3",
+  "version": "1.9.1-openclaw.11-session-projects.4",
   "description": "Evidence-bound native review; host execution, output and approvals remain native.",
   "activation": { "onStartup": true },
   "contracts": {

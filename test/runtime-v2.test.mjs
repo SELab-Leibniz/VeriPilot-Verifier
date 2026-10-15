@@ -34,6 +34,7 @@ import {
 } from "../lib/runtime-v2/utils.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
+  SKILL_GROUND_TRUTH_REVIEW_SCHEMA,
   SKILL_REVIEW_SCHEMA,
   STOP_REVIEW_SCHEMA,
 } from "../lib/runtime-v2/reviewer.mjs";
@@ -190,7 +191,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview } = {}) {
     await fs.mkdir(requestDirectory, { recursive: true });
     calls.push({ role, request, schema });
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || isDeepStrictEqual(schema, SKILL_GROUND_TRUTH_REVIEW_SCHEMA)) {
       result = {
         summary: "Ground Truth refreshed.",
         taskClassification: "CONTINUATION",
@@ -622,6 +623,46 @@ test("PostToolUse refreshes a Skill watcher at the due turn and emits one correc
   assert.ok(reviewerFactory.calls.filter((call) => call.role === "ground-truth-extractor").length >= 2);
 });
 
+
+test("Skill admission rejects omitted contracts without successful cursor or watcher, and retries the same source", async t => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root), healthyFactory = fakeReviewerFactory();
+  let broken = true, calls = 0;
+  const factory = async options => {
+    if (options.role === "ground-truth-extractor") {
+      calls++;
+      assert.equal(options.schema.required.includes("skillGroundTruth"), true);
+    }
+    const handle = await healthyFactory(options);
+    if (broken && options.role === "ground-truth-extractor") delete handle.result.skillGroundTruth;
+    return handle;
+  };
+  const invoke = id => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
+    input: { cwd: root, session_id: "skill-admission", transcript_path: transcript,
+      hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: id, tool_input: { skill: "demo" } } });
+  const rejected = await invoke("missing-contract");
+  assert.equal(rejected.reason, "SKILL_WATCH_NOT_ESTABLISHED");
+  let state = JSON.parse(await fs.readFile(taskStatePath(root, rejected.taskId), "utf8"));
+  assert.deepEqual(state.watchers, {});
+  assert.equal(Object.keys(state.groundTruth.sourceCursors).filter(key => key.startsWith("skill:")).length, 0);
+  assert.equal(state.stop.correctionAttempts, 0);
+  broken = false;
+  const accepted = await invoke("valid-contract");
+  assert.equal(accepted.watcher.status, "ACTIVE");
+  assert.equal(calls, 2);
+  const file = path.join(path.dirname(taskStatePath(root, accepted.taskId)), "skills/demo/skill-ground-truth.json");
+  const good = JSON.parse(await fs.readFile(file, "utf8"));
+  for (const damage of ["missing", "stale", "corrupt"]) {
+    if (damage === "missing") await fs.rm(file);
+    else await fs.writeFile(file, JSON.stringify({ ...good, skillDigest: damage === "stale" ? "old-source" : good.skillDigest, digest: "invalid" }));
+    const repaired = await invoke(`cache-${damage}`);
+    assert.equal(repaired.watcher.status, "ACTIVE");
+    assert.equal(JSON.parse(await fs.readFile(file, "utf8")).skillDigest, good.skillDigest);
+  }
+  assert.equal(calls, 5, "a cursor alone cannot bypass reconstruction of missing or stale contracts");
+});
 
 test("parallel PostToolUse events evaluate one due Skill watcher exactly once", async (t) => {
   const root = await workspace(t);

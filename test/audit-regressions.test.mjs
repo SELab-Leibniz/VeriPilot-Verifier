@@ -122,6 +122,44 @@ test("independent Stop provider gets its own handle rather than inheriting extra
   });
 });
 
+test("misrouted kitchen process evidence is a bounded checker failure, never a code repair or PASS fallback", async t => {
+  const claim = requirement("r06");
+  claim.text = "Run the bundled kitchen verifier and obtain KITCHEN_VERIFIED before declaring the app complete.";
+  const h = await harness(t, { claims: [claim], implResult: async request => ({
+    summary: "The supplied obligation needs tool history, not source.", findings: [],
+    metricObjectJudgements: Object.values(request.population.metrics).flat().map(object => ({
+      objectId: object.objectId, judgement: "UNVERIFIED", reasonCode: "EVIDENCE_OWNER_MISMATCH",
+      reason: "Verifier execution is a process event.", evidence: [],
+    })),
+  }) });
+  let outcome;
+  for (let i = 0; i < 3; i++) {
+    outcome = await h.stop();
+    assert.equal(outcome.stop.status, "UNVERIFIED");
+    assert.equal(outcome.stop.report.status, "CHECKER_ERROR");
+    assert.equal((await h.state(outcome.taskId)).stop.correctionAttempts, 0);
+    assert(outcome.stop.review.stopReviewerJudgements.every(row => row.judgement === "PASS"));
+    assert.equal(outcome.stop.implementationReview.reviewerJudgements[0].judgement, "UNVERIFIED");
+    assert.equal(outcome.stop.implementationReview.metricObjectJudgements[0].judgement, "CHECKER_ERROR");
+  }
+  assert.equal(outcome.decision, "allow");
+  assert.equal(outcome.stop.verificationUnavailable, true);
+  assert.notEqual((await h.state(outcome.taskId)).verification.status, "PASS");
+});
+
+test("ordinary implementation uncertainty still overrides general PASS and consumes the existing correction opportunity", async t => {
+  const h = await harness(t, { implResult: async request => ({
+    summary: "Runtime behavior is unproven.", findings: [],
+    metricObjectJudgements: Object.values(request.population.metrics).flat().map(object => ({
+      objectId: object.objectId, judgement: "UNVERIFIED", reason: "Runtime evidence is missing.", evidence: [],
+    })),
+  }) });
+  const outcome = await h.stop();
+  assert.equal(outcome.stop.report.status, "DEVIATION");
+  assert.equal(outcome.stop.correctionAttempt, 1);
+  assert.equal(outcome.decision, "block");
+});
+
 test("per-invocation UUID checks reject reuse and refuse to infer shell variables", () => {
   const description = "All claude cli invocations must use non-interactive mode with a freshly generated UUID session id.";
   const population = { metrics: { M12: [{ objectId: "M12:cli", description }], M01: [{ objectId: "M01:cli", description }] } };

@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { prepareSourceInputs, bindSourceSelections, validateSourceBindings } from "../lib/openclaw/sources.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
-import { GROUND_TRUTH_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
+import { GROUND_TRUTH_REVIEW_SCHEMA, SKILL_GROUND_TRUTH_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
@@ -23,6 +23,26 @@ function factory(f,runner) {
 }
 const input=(f,id,text,role="onboarding-extractor")=>({projectRoot:f.root,taskId:f.task.taskId,role,reviewer:{timeoutMs:3000,formatRepairAttempts:1},schema:GROUND_TRUTH_REVIEW_SCHEMA,
   request:{sourceCatalog:catalog(id),userMessages:[text.slice(0,4000)]},evidence:{snapshot:{digest:`frozen-${id}`,entries:[user(id,text)]}}});
+
+test("native Skill extraction repairs an omitted constraint document within the existing session and repair limit", async t => {
+  const f = await fixture(t), sessions = [];
+  const n = factory(f, async params => {
+    sessions.push(params.sessionId);
+    return response({ ...delta([]), ...(sessions.length > 1 ? { skillGroundTruth: { constraints: [], taskOverlays: [] } } : {}) });
+  });
+  const h = await n({ ...input(f, "skill", "Run the selected Skill.", "ground-truth-extractor"), schema: SKILL_GROUND_TRUTH_REVIEW_SCHEMA });
+  assert.equal(sessions.length, 2);
+  assert.equal(sessions[0], sessions[1]);
+  assert.deepEqual(h.result.skillGroundTruth, { constraints: [], taskOverlays: [] });
+  await h.close();
+  let failures = 0;
+  const broken = factory(f, async () => { failures++; return response(delta([])); });
+  await assert.rejects(broken({ ...input(f, "missing", "Read Skill.", "ground-truth-extractor"), schema: SKILL_GROUND_TRUTH_REVIEW_SCHEMA }), /skillGroundTruth/);
+  assert.equal(failures, 2, "persistent omissions cannot add another repair budget");
+  const ordinary = await factory(f, async () => response(delta([])))(input(f, "stop", "Check task.", "ground-truth-extractor"));
+  assert.equal(ordinary.result.skillGroundTruth, undefined);
+  await ordinary.close();
+});
 
 test("long user input is complete and identified; preview length never truncates authoritative bytes",async t=>{
   const f=await fixture(t),text="Header\n"+"完整用户要求 ".repeat(1200)+"\nTAIL-REQUIREMENT-MUST-SURVIVE";
