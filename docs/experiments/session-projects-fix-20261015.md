@@ -2,6 +2,8 @@
 
 分支 `codex/session-project-scope`，候选插件 `1.9.1-openclaw.11-session-projects.2`。代码已经实现；本地回归、真实宿主接口及确定性 Python 闭环通过。修复后的两版 GLM 完整会话和从空开发实验仍未完成，原因是供应商额度限制。
 
+后续使用用户授权豆包模型完成真实补验，结果及首轮失败边界见 [豆包实测报告](session-projects-doubao-20261015.md)。下文保留最初 GLM 阻塞时的结果，不将后来实测混作当时已经通过。
+
 ## 实现
 
 1. 新版宿主通过公开 V2 plugin service 的 `ctx.scheduler.schedule` 承载 Stop，脱离已释放的交付 RPC 根准入；服务关闭取消待运行评审，正在运行的评审保留宿主生命周期信号。仍通过公开 Session work admission 核验会话，未恢复 `before_agent_finalize`，未接管业务 harness 或工具路径。

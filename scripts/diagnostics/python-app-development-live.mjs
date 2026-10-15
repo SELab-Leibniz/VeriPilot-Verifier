@@ -9,7 +9,10 @@ import { isolatedHost, runtimeState, pause } from "./lib/isolated-openclaw.mjs";
 const execute = promisify(execFile), hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const [hostRoot, providerFile, destination, port] = process.argv.slice(2);
 if (!hostRoot || !providerFile || !destination || !port) throw new Error("hostRoot providerFile new-output-directory port required");
-const h = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port) });
+const h = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port), platformAdapters: {
+  "python-todo-development-test": { name: "python-todo-development-test", kitCheck: { modulePrefix: "", sourceRoots: [], sourceExtensions: [] },
+    sourceManifest: { roots: [], files: ["todo.py"], extensions: [".py"] } },
+} });
 const native = h.version === "2026.10.3", result = { hostVersion: h.version, baseline: process.env.RC_EXPERIMENT_BASELINE ?? "working-tree",
   experiment: "from-empty Python Todo development", observerEditsBusinessCode: false, status: "RUNNING" };
 const milestone = value => process.stdout.write(JSON.stringify({ at: Date.now(), hostVersion: h.version, ...value }) + "\n");
@@ -57,6 +60,9 @@ async function cli(root, args) {
 }
 async function acceptance(root) {
   const store = path.join(root, "observer-data", "todos.json"), steps = [];
+  // Provision the isolated test directory, while leaving the store missing.
+  // The frozen contract requires file persistence, not implicit parent-directory creation.
+  await fs.mkdir(path.dirname(store), { recursive: true });
   const call = async args => { const value = await cli(root, ["--store", store, ...args]); steps.push({ args, ...value }); return value; };
   const help = await cli(root, ["--help"]); assert.equal(help.code, 0); assert.match(help.stdout, /usage/iu);
   const empty = await call(["list"]); assert.equal(empty.code, 0); assert.deepEqual(JSON.parse(empty.stdout), []);
@@ -72,9 +78,6 @@ async function acceptance(root) {
   return { status: "PASS", cases: 8, help, steps, codeHash: hash(await fs.readFile(path.join(root, "todo.py"))) };
 }
 try {
-  await fs.writeFile(path.join(h.pluginRoot, "config/platforms/python-todo-development-test.json"), JSON.stringify({
-    name: "python-todo-development-test", kitCheck: { modulePrefix: "", sourceRoots: [], sourceExtensions: [] },
-    sourceManifest: { roots: [], files: ["todo.py"], extensions: [".py"] } }, null, 2));
   const origin = path.join(h.root, "app"); await fs.mkdir(path.join(origin, ".runtime-corrector"), { recursive: true });
   await fs.mkdir(path.join(origin, "spec"));
   await fs.writeFile(path.join(origin, ".runtime-corrector/config.yaml"), policy);

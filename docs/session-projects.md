@@ -55,3 +55,5 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 2026-10-14 后续扩展实测已开启真实 Stop：旧版完成实际修复与最终 PASS，但首轮 checkpoint 不一致；新版 Worktree 的交付后 Stop 被宿主 Gateway 生命周期保护拒绝，完整终审验收失败。两版实际重启恢复、旧版 Stop 中改绑、新版需求评审中公开取消后切换通过。新版 Stop 阶段切换仍未完成。完整结果和三个已复现缺陷见 [扩展实测报告](experiments/session-projects-extended-results.md)，不能将此前最小项目探针通过解释为新版全部纠偏能力已验证。
 
 2026-10-15 已实现上述生命周期、重试、checkpoint 与反馈恢复修复。真实两版 Gateway 项目接口和新版实际调度/准入契约通过；真实 Python 子进程配合确定性宿主/Reviewer 的原生 Stop 闭环也通过，两 Session 的任务及预算独立。新一轮 GLM 真实 Gateway 首轮遭遇供应商 1308 五小时限额，其他已授权凭据分别返回 1113 余额不足和 1310 周/月额度限制，因此修复后的完整真实模型 Stop 与从空开发 Todo 仍待补验，不能将替身测试标作模型实测。详见 [修复与验证报告](experiments/session-projects-fix-20261015.md)。
+
+随后使用用户授权的豆包 `doubao-seed-2.1-lite` 完成真实模型补验：两版从空开发 Todo 均最终 Stop/实现终审 PASS、k=0，另有八项独立 CLI 验收通过；两版实际故障修复都取得首轮 DEVIATION、原生续作观察记录及末轮 PASS。新版受控 A/B 整轮通过，旧版把有效故障修复与正确项目的隔离/重启分开取证，未覆盖或改写失败控制组。两版正确项目均验证独立任务和零预算；新版真实 Worktree 与原仓库隔离、两版真实重启不重放通过。新版 Stop 中取消后切换项目经公开 Session reset 生命周期通过；业务已交付时 `chat.abort` 返回 false，不能宣称它取消了 RC 后台评审。平台测试资源必须在新宿主加载插件前准备。详细边界、失败记录及实际模型证据见 [豆包补验报告](experiments/session-projects-doubao-20261015.md)。

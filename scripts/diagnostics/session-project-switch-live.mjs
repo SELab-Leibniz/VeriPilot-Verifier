@@ -7,8 +7,10 @@ const [hostRoot, providerFile, destination, port] = process.argv.slice(2);
 if (!hostRoot || !providerFile || !destination || !port) throw new Error("hostRoot providerFile new-output-directory port required");
 const h = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port), tools: ["read", "write", "exec"] });
 const native = h.version === "2026.10.3", key = "agent:main:rc-switch";
-const outcome = { experiment: native ? "E3-N-onboarding" : "E3-L", hostVersion: h.version, baseline: "ef3054e", status: "RUNNING",
-  reviewerPhase: native ? "onboarding-extractor" : "stop-reviewer", nativePostTerminalStopNotExercised: native };
+const nativeStop = native && process.env.RC_SWITCH_REVIEW_PHASE === "stop-reviewer";
+const outcome = { experiment: native ? nativeStop ? "E3-N-stop" : "E3-N-onboarding" : "E3-L", hostVersion: h.version,
+  baseline: process.env.RC_EXPERIMENT_BASELINE ?? "working-tree", status: "RUNNING",
+  reviewerPhase: native && !nativeStop ? "onboarding-extractor" : "stop-reviewer", nativePostTerminalStopNotExercised: native && !nativeStop };
 const milestone = value => process.stdout.write(JSON.stringify({ hostVersion: h.version, at: Date.now(), ...value }) + "\n");
 const policy = stop => `version: 2\nartifacts:\n  - name: draft\n    stage: drafting\n    patterns: [draft.md]\n    rules:\n      enabled: false\n    review:\n      enabled: false\ndynamicGroundTruth:\n  enabled: true\n  materialRoots: []\n  panel:\n    size: 1\n    adjudicator: false\nartifactCorrection:\n  groundTruthReviewEnabled: false\nstopCorrection:\n  enabled: ${stop}\n  assessmentTimeoutMs: 720000\n  maxCorrectionsPerEpoch: 2\nimplementationCorrection:\n  enabled: false\nreviewers:\n  defaults:\n    model: ${h.model}\n    effort: low\n    timeoutMs: 240000\n`;
 async function waitFor(check, description, timeoutMs = 480000) {
@@ -27,14 +29,14 @@ try {
   const created = await h.request("sessions.create", { key, model: h.model, emitCommandHooks: false, ...(native ? { cwd: oldRoot } : {}) });
   if (!native) await h.send(key, `/rc-project bind ${oldRoot}`, 30000);
   outcome.initialScope = await h.status(key); outcome.sessionId = created.sessionId;
-  const instruction = native
+  const instruction = native && !nativeStop
     ? `先用write将现有BAD加一个换行原样写回${oldRoot}/draft.md（必须真实调用write，不改变现有字节），再用read读取`
     : `先read读取${oldRoot}/draft.md，再必须调用exec显式workdir=${oldRoot}执行只读命令 python3.13 -c 'from pathlib import Path; print(Path("draft.md").read_text(), end="")'（不使用cd，不写文件）`;
   const prompt = `对项目${oldRoot}的draft.md做正式最终交付验收，正式要求：文件全部内容必须严格是GOOD加一个换行。控制故障注入实验的第一轮按以下顺序操作：${instruction}，然后直接交付当前验收报告，说明GOOD要求未满足。这是首轮操作顺序，不豁免正式GOOD要求。不提前修复，不改纠偏配置、宿主或其他文件。`;
   await h.save("old-request.md", prompt); milestone({ phase: "old project initial turn" });
   const firstPromise = h.send(key, prompt).then(async terminal => { await h.save("old-first-terminal.json", terminal); return { terminal }; }, error => ({ error: h.redact(error.message) }));
   let first;
-  if (!native) { const result = await firstPromise; if (result.error) throw new Error(result.error); first = result.terminal; await h.save("old-first-terminal.json", first); }
+  if (!native || nativeStop) { const result = await firstPromise; if (result.error) throw new Error(result.error); first = result.terminal; await h.save("old-first-terminal.json", first); }
   // Require an actual host model lifecycle start, not just a queued RC record.
   const running = await waitFor(async () => {
     const state = await runtimeState(oldRoot), log = await fs.readFile(path.join(h.root, "gateway.jsonl"), "utf8");
@@ -59,6 +61,13 @@ try {
       assert.equal((await h.status(key)).projectRoot, oldRoot);
       // Use the host's public stop action to drain work before changing its cwd.
       outcome.hostAbort = await h.request("chat.abort", { sessionKey: key });
+      if (nativeStop && outcome.hostAbort.aborted === false) {
+        // chat.abort addresses business runs; a delivered business turn may
+        // have no abort controller while a plugin-owned Stop still runs.
+        // Public reset retires current Session work and invokes before_reset;
+        // the host may preserve its physical sessionId.
+        outcome.hostReset = await h.request("sessions.reset", { key, reason: "reset" });
+      }
       await waitFor(async () => !(await runtimeState(oldRoot)).records.some(r => r.role && r.status !== "SETTLED"), "host cancellation drains reviewer");
       try { outcome.idleChange = { status: "ACCEPTED", response: await h.request("sessions.create", { key, cwd: newRoot, emitCommandHooks: false }) }; }
       catch (error) { outcome.idleChange = { status: "HOST_REJECTED", error: h.redact(error.message) }; throw new Error("Host public API did not allow an effective idle directory change"); }
@@ -71,14 +80,16 @@ try {
   await h.save("new-request.md", newPrompt); const next = await h.send(key, newPrompt); await h.save("new-first-terminal.json", next);
   const settled = await waitFor(async () => {
     const old = await runtimeState(oldRoot), current = await runtimeState(newRoot);
-    const cancelled = native ? old.records.find(r => r.runId === running.run.runId && r.status === "SETTLED")
+    const cancelled = native && !nativeStop ? old.records.find(r => r.runId === running.run.runId && r.status === "SETTLED")
       : old.records.find(r => r.file.includes("/native-stop-reviews/") && r.runId === first.runId && r.status === "SETTLED");
     const task = current.tasks.find(t => t.groundTruth.version > 0 && t.onboarding.status === "COMPLETED");
     return cancelled && task && !old.records.some(r => r.role && r.status !== "SETTLED") && { old, current, cancelled, task };
   }, "old cancellation and fresh new baseline");
-  if (!native) assert.equal(settled.cancelled.reviewStatus, "CANCELLED");
+  if (!native || nativeStop) assert.equal(settled.cancelled.reviewStatus, "CANCELLED");
   else { assert(outcome.hostAbort || outcome.busyChange.status === "ACCEPTED"); assert.equal(settled.old.tasks[0].groundTruth.version, 0); }
-  assert.notEqual(settled.task.taskId, outcome.oldTaskId); assert.deepEqual(settled.task.sessionIds, [created.sessionId]);
+  if (nativeStop) assert(settled.old.tasks[0].groundTruth.version > 0, "A native Stop switch needs an established old-project baseline");
+  assert.notEqual(settled.task.taskId, outcome.oldTaskId);
+  assert.deepEqual(settled.task.sessionIds, [outcome.scopeAfterChange.identity.sessionId]);
   assert.equal(settled.task.stop.correctionAttempts, 0);
   assert(!settled.old.records.some(r => r.file.includes("/native-followups/") && r.status !== "CANCELLED"));
   assert(!settled.current.records.some(r => r.file.includes("/native-followups/")));
