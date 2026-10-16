@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.6`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.7`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
