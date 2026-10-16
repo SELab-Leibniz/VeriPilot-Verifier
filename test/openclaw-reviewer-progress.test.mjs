@@ -75,7 +75,7 @@ test("own reviewer timeout retains a partial checkpoint but caller cutoff cannot
       await n.getTool(params).execute("save",{action:"save",item:item(f,"M01:R1")});
       await new Promise((_,reject)=>{params.abortSignal.addEventListener("abort",()=>reject(params.abortSignal.reason),{once:true});});
     },shared?{deadlineAt:Date.now()+500}:{});
-    let error;try{await n.factory({...f.input,reviewer:{timeoutMs:shared?2000:500}});}catch(e){error=e;}
+    let error;try{await n.factory({...f.input,reviewer:{timeoutMs:shared?2000:1000}});}catch(e){error=e;}
     assert(error);assert.equal(error.code,"REVIEWER_DEADLINE");
     assert.equal(error.partialReview?.recoveredObjects??0,shared?0:1);
   }
@@ -167,11 +167,12 @@ test("implementation progress uses the same source/version/expiry recovery guard
 
 test("configured native role timeout is not silently capped by an absent plugin override",async t=>{
   const f=await fixture(t);
-  for(const cap of [undefined,600000]) {
+  for(const [configured, cap] of [[undefined, undefined], [1800000, undefined], [3600000, undefined], [3600000, 600000]]) {
+    const expected = Math.min(configured ?? 1200000, cap ?? Infinity);
     const n=native(f,async params=>{
-      assert(params.timeoutMs>=(cap??1200000)-1000);assert(params.timeoutMs<=(cap??1200000));return output(completed());
+      assert(params.timeoutMs>=expected-1000);assert(params.timeoutMs<=expected);return output(completed());
     },cap===undefined?{}:{reviewerTimeoutMs:cap});
-    const h=await n.factory({...f.input,reviewer:{timeoutMs:1200000}});await h.close();
+    const h=await n.factory({...f.input,reviewer:{timeoutMs:configured}});await h.close();
   }
 });
 

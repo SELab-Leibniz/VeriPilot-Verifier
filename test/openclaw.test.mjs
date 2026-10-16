@@ -57,7 +57,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.equal(manifest.id, "runtime-corrector");
   assert.equal(manifest.main, pkg.openclaw.extensions[0], "MA startup discovery must find the native entry");
   assert.ok((await fs.stat(path.join(pluginRoot, manifest.main))).isFile());
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.8");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.9");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
   assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");
@@ -362,7 +362,7 @@ test("native reviewer deadlines abort work and release the internal lease", asyn
   const registry = new Set();
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry });
   await assert.rejects(factory({ projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor",
-    reviewer: { timeoutMs: 60 }, request: {}, schema: objectSchema }), /deadline/u);
+    reviewer: { timeoutMs: 1000 }, request: {}, schema: objectSchema }), /deadline/u);
   assert.equal(signal.aborted, true);
   assert.equal(registry.size, 0);
   assert.equal((await fs.readdir(path.join(project, ".runtime-correction/internal-runs"))).length, 0);
@@ -465,7 +465,7 @@ test("late callbacks remain internal while timed out native sessions finish clea
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry,
     onRunStart: (id) => activeReviewRuns.add(id), onRunEnd: (id) => activeReviewRuns.delete(id) });
   const reviewing = assert.rejects(factory({ projectRoot: project, taskId: "late-review-test", role: "stop-reviewer",
-    request: {}, schema: objectSchema, reviewer: { timeoutMs: 100 } }), /deadline/u);
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 1000 } }), /deadline/u);
   const params = await started;
   await reviewing;
   assert.equal(params.abortSignal.aborted, true);
@@ -490,11 +490,11 @@ test("cross-role handoff renews the role timeout but preserves the enclosing dea
   const deadlineAt = Date.now() + 3000;
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", deadlineAt });
   const input = { projectRoot: project, taskId: "handoff-budgets", role: "ground-truth-extractor",
-    request: {}, schema: objectSchema, reviewer: { timeoutMs: 200 } };
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 1000 } };
   const first = await factory(input);
   const second = await factory.handoff({ ...input, originHandle: first, role: "stop-reviewer", reviewer: { timeoutMs: 10000 } });
-  assert.ok(calls[0].timeoutMs <= 200);
-  assert.ok(calls[1].timeoutMs > 1000, "Stop must not inherit the extractor's 200 ms role timeout");
+  assert.ok(calls[0].timeoutMs <= 1000);
+  assert.ok(calls[1].timeoutMs > 1000, "Stop must not inherit the extractor's one-second role timeout");
   assert.ok(calls[1].timeoutMs <= 3000, "the shared hook deadline must still bound the handoff");
   await second.close();
 });

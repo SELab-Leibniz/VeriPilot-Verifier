@@ -166,8 +166,8 @@ limits:
   maxReviewerChars: 6000
 
   # 隔离语义审阅的实际超时（毫秒），范围 1000～1200000。
-  # 20 分钟示例：1200000。插件专属 PostToolUse Hook 的外层上限为 1260 秒。
-  semanticReviewTimeoutMs: 240000
+  # 默认 20 分钟；范围 1000～3600000 毫秒。60 分钟示例：3600000。
+  semanticReviewTimeoutMs: 1200000
 
 # ------------------------------------------------------------------
 # version: 2 追加能力示例（详见 docs/runtime-corrector-v2-design.md）。

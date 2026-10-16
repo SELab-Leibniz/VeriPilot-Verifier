@@ -13,7 +13,7 @@ defaults:
     maxRelatedFiles: 20
     maxFeedbackChars: 12000
     maxReviewerChars: 6000
-    semanticReviewTimeoutMs: 240000
+    semanticReviewTimeoutMs: 1200000
 
 # 业务 Stage 由项目 YAML 声明；核心目录只保留通用 fallback specification。
 stages: []

@@ -113,8 +113,8 @@ reviewer handle 时固定，首次请求、修复和后续请求都沿用同一�
 CodeAgent 启动前拒绝 `--session-id`、`--resume`、`--continue`。公共参数保持不变，
 包括准确拼写的 `--max-budget-usd`。
 
-Claude 的 semantic/v2 reviewer 默认超时均为 240 秒；CodeAgent 均为 900 秒。项目显式
-timeout 继续覆盖宿主默认值。CodeAgent independent reviewer 可使用 Anthropic 环境变量
+所有宿主的 semantic/v2 reviewer 默认超时统一为 20 分钟，范围为 1000～3600000 毫秒，最大 60 分钟。项目显式
+timeout 继续覆盖默认值。CodeAgent independent reviewer 可使用 Anthropic 环境变量
 形态连接兼容网关：
 
 ```yaml
@@ -211,7 +211,7 @@ limits:
   maxRelatedFiles: 20
   maxFeedbackChars: 12000
   maxReviewerChars: 6000
-  semanticReviewTimeoutMs: 240000
+  semanticReviewTimeoutMs: 1200000
 ```
 
 ### 顶层字段
@@ -629,19 +629,26 @@ bundle 任一成员写入都会启动当前快照的语义审查。不完整 bun
 | `maxRelatedFiles` | 一次检查最多读取的 artifact 数 | 20 |
 | `maxFeedbackChars` | 非失败反馈的字符上限；失败时完整 Stage 地图为避免信息缺口不截断 | 12000 |
 | `maxReviewerChars` | 单个 reviewer 字符上限 | 6000 |
-| `semanticReviewTimeoutMs` | 单次隔离语义审阅实际超时，范围 `1000`～`1200000` 毫秒 | 240000 |
+| `semanticReviewTimeoutMs` | 单次隔离语义审阅超时，范围 `1000`～`3600000` 毫秒 | 1200000 |
 
-例如允许隔离 reviewer 最多运行 20 分钟：
+在项目 `.runtime-corrector/config.yaml` 中设置时间（单位：毫秒），例如语义评审 30 分钟、角色评审默认 20 分钟、终审角色 60 分钟：
 
 ```yaml
 limits:
-  semanticReviewTimeoutMs: 1200000
+  semanticReviewTimeoutMs: 1800000
+reviewers:
+  defaults:
+    timeoutMs: 1200000
+  stopReviewer:
+    timeoutMs: 3600000
 ```
 
-Runtime Corrector 自己的 PostToolUse Hook 使用固定的 `1260` 秒外层安全上限，为最长 20 分钟
-审阅预留请求准备和结果落盘时间。该值只属于本插件的 Hook 命令，不会修改其他插件或用户
-配置的 PostToolUse Hook。未命中 artifact、stage 已关闭或语义审阅未启用时，插件仍会快速返回，
-不会等待配置的完整时长。
+角色时间的优先级为 `reviewers.<role>.timeoutMs` > `reviewers.defaults.timeoutMs` >
+`limits.semanticReviewTimeoutMs` > 20 分钟。基线抽取和裁决也遵守显式配置，不再通过内部下限延长时间。
+所有角色字段与语义评审字段均校验整数及 1000～3600000 的范围；配置超出范围会报错。
+同一次评审的格式修复、续问共用原截止时间；宿主取消、Hook 窗口和 RC 总评审窗口仍可使实际评审提前结束。
+OpenClaw 的原生终审使用 RC 自己的总窗口；`stopCorrection.assessmentTimeoutMs` 属于多阶段总预算，不是单个角色的超时。
+未命中 artifact、stage 已关闭或语义审阅未启用时，插件仍会快速返回，不会等待配置的完整时长。
 
 ## 高级兼容配置
 
@@ -675,7 +682,7 @@ Runtime Corrector 自己的 PostToolUse Hook 使用固定的 `1260` 秒外层安
     "maxRelatedFiles": 20,
     "maxFeedbackChars": 12000,
     "maxReviewerChars": 6000,
-    "semanticReviewTimeoutMs": 240000
+    "semanticReviewTimeoutMs": 1200000
   }
 }
 ```

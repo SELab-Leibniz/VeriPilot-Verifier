@@ -196,7 +196,7 @@ implementationCorrection:
 
 **用实际配置的 reviewer CLI 测网关。** Reviewer 默认跟随已构建产物的宿主，也可通过项目级 `reviewerRuntime.executable` 或 `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` 指向同协议的原生 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)。
 
-CodeAgent fresh reviewer 不传会话参数，由宿主创建持久会话并从 JSON 返回 `session_id`；恢复使用 `--sessions <id>`，fork 使用 `--sessions <id> --fork-session`。CodeAgent 产物会拒绝 `--session-id`、`--resume` 和 `--continue`。宿主默认超时为 CodeAgent 900 秒、Claude 240 秒，项目显式 timeout 仍可覆盖。
+CodeAgent fresh reviewer 不传会话参数，由宿主创建持久会话并从 JSON 返回 `session_id`；恢复使用 `--sessions <id>`，fork 使用 `--sessions <id> --fork-session`。CodeAgent 产物会拒绝 `--session-id`、`--resume` 和 `--continue`。所有宿主的 review 默认超时为 20 分钟，最大 60 分钟；项目可通过 limits.semanticReviewTimeoutMs、reviewers.defaults.timeoutMs 和逐角色 timeoutMs 覆盖。
 
 ```bash
 ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \
@@ -263,7 +263,7 @@ output:
 | 终止门豁免 | 它是门不是唠叨，另由 `maxCorrectionsPerEpoch` 约束，否则可能带着未闭合的阻断项退出 |
 | `FIXED` 的不停发 | 回归时可以重新发声 |
 
-**评审角色。** 每个角色都接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`、`provider`；`defaults` 兜底全部角色（effort `low`、240 秒、session `fork`）。显式角色配置始终优先于 `modelPolicy` 预设。
+**评审角色。** 每个角色都接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`、`provider`；`defaults` 兜底全部角色（effort `low`、20 分钟、session `fork`；单个角色最大 60 分钟）。显式角色配置始终优先于 `modelPolicy` 预设。
 
 | 角色 | 何时运行 |
 |---|---|

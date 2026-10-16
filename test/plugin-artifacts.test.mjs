@@ -89,11 +89,13 @@ test("builds mutually exclusive Claude and CodeAgent artifacts", async (t) => {
   await assert.rejects(fs.access(path.join(built.codeagent, "lib", "hosts", "claude.mjs")), { code: "ENOENT" });
   assert.match(await fs.readFile(path.join(built.claude, "lib", "active-host.mjs"), "utf8"), /hosts\/claude/u);
   assert.match(await fs.readFile(path.join(built.codeagent, "lib", "active-host.mjs"), "utf8"), /hosts\/codeagent/u);
-  assert.match(await fs.readFile(path.join(built.codeagent, "config", "runtime.yaml"), "utf8"), /semanticReviewTimeoutMs: 900000/u);
+  for (const name of ["claude", "codeagent"]) {
+    assert.match(await fs.readFile(path.join(built[name], "config", "runtime.yaml"), "utf8"), /semanticReviewTimeoutMs: 1200000/u);
+  }
   const claudeHost = await import(pathToFileURL(path.join(built.claude, "lib", "active-host.mjs")).href);
   const codeAgentHost = await import(pathToFileURL(path.join(built.codeagent, "lib", "active-host.mjs")).href);
-  assert.deepEqual([claudeHost.defaultSemanticReviewTimeoutMs, claudeHost.defaultReviewerTimeoutMs], [240000, 240000]);
-  assert.deepEqual([codeAgentHost.defaultSemanticReviewTimeoutMs, codeAgentHost.defaultReviewerTimeoutMs], [900000, 900000]);
+  assert.deepEqual([claudeHost.defaultSemanticReviewTimeoutMs, claudeHost.defaultReviewerTimeoutMs], [1200000, 1200000]);
+  assert.deepEqual([codeAgentHost.defaultSemanticReviewTimeoutMs, codeAgentHost.defaultReviewerTimeoutMs], [1200000, 1200000]);
 });
 
 for (const host of ["claude", "codeagent"]) {

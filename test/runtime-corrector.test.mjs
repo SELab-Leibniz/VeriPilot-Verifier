@@ -118,7 +118,7 @@ test("PostToolUse defers persistence until one isolated semantic review returns 
   }));
   assert.equal(prepared.feedback, undefined);
   assert.equal(prepared.result.outputFiles, undefined);
-  assert.equal(prepared.reviewContext.semanticReviewTimeoutMs, 240000);
+  assert.equal(prepared.reviewContext.semanticReviewTimeoutMs, 1200000);
   await assert.rejects(fs.access(path.join(cwd, ".runtime-correction", "runs")));
   let invocation;
   const line = original.split(/\r?\n/).findIndex((value) => value === placeholder) + 1;
@@ -154,7 +154,7 @@ test("PostToolUse defers persistence until one isolated semantic review returns 
   assert.equal(invocation.sessionId, input.session_id);
   assert.equal(invocation.cwd, cwd);
   assert.equal(invocation.pluginRoot, PLUGIN_ROOT);
-  assert.equal(invocation.timeoutMs, 240000);
+  assert.equal(invocation.timeoutMs, 1200000);
   assert.match(invocation.prompt, /^\/runtime-corrector:semantic-review /);
   const outcome = await finalizeArtifactCheck(prepared, review);
   const roundDiff = outcome.result.roundOutputFiles.find((file) => file.endsWith("/patch.diff"));
@@ -302,11 +302,11 @@ artifacts:
     review:
       enabled: true
 limits:
-  semanticReviewTimeoutMs: 1200001
+  semanticReviewTimeoutMs: 3600001
 `);
   await assert.rejects(
     loadSimpleProjectConfig(cwd),
-    /semanticReviewTimeoutMs 必须是 1000 到 1200000 之间的整数/,
+    /semanticReviewTimeoutMs/,
   );
 });
 
@@ -1477,8 +1477,8 @@ test("CLI initializes an inactive generic template without overwriting project p
   assert.match(reference, /^enabledStages: \[\]$/m);
   assert.match(reference, /patterns 与 pathTemplates 必须且只能填写一个/);
   assert.match(reference, /可选值：markdown、json、text、auto/);
-  assert.match(reference, /^  semanticReviewTimeoutMs: 240000$/m);
-  assert.match(reference, /20 分钟示例：1200000/);
+  assert.match(reference, /^  semanticReviewTimeoutMs: 1200000$/m);
+  assert.match(reference, /60 分钟示例：3600000/);
   assert.throws(
     () => execFileSync(
       process.execPath,

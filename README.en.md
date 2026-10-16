@@ -193,7 +193,7 @@ implementationCorrection:
 
 **Test the gateway with the configured reviewer CLI.** Reviewers follow the host of the generated artifact. A project-level `reviewerRuntime.executable` or `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` can point to another native CLI implementing that same host protocol. Answering `POST /v1/messages` is not enough; see [Reviewer CLI compatibility](docs/reviewer-cli-compatibility.md).
 
-A fresh CodeAgent reviewer sends no session flag: CodeAgent creates a persistent session and returns `session_id` in its JSON envelope. Resume uses `--sessions <id>` and fork uses `--sessions <id> --fork-session`. The CodeAgent artifact rejects `--session-id`, `--resume`, and `--continue`. Host defaults are 900 seconds for CodeAgent and 240 seconds for Claude; explicit project timeouts still win.
+A fresh CodeAgent reviewer sends no session flag: CodeAgent creates a persistent session and returns `session_id` in its JSON envelope. Resume uses `--sessions <id>` and fork uses `--sessions <id> --fork-session`. The CodeAgent artifact rejects `--session-id`, `--resume`, and `--continue`. All hosts default to 20 minutes per review, with a 60-minute maximum; explicit project timeouts still win.
 
 ```bash
 ANTHROPIC_BASE_URL=<root, no /v1> ANTHROPIC_AUTH_TOKEN=<key> \
@@ -261,7 +261,7 @@ Three things to know:
 | The termination gate is exempt | It's a gate, not a nag — bounded separately by `maxCorrectionsPerEpoch`, or an agent could exit with an unresolved blocker |
 | `FIXED` findings are never parked | A genuine regression can speak again |
 
-**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session`, `provider`. `defaults` covers all roles (effort `low`, 240s, session `fork`). Explicit per-role config always beats the `modelPolicy` preset.
+**Reviewer roles.** Every role accepts `model`, `effort`, `timeoutMs`, `maxBudgetUsd`, `session`, `provider`. `defaults` covers all roles (effort `low`, 20 minutes, session `fork`; maximum 60 minutes per role). Explicit per-role config always beats the `modelPolicy` preset.
 
 | Role | Runs when |
 |---|---|
