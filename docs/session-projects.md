@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-候选分支：`codex/session-project-scope`。候选插件：`1.9.1-openclaw.11-session-projects.7`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+当前适配分支：`codex/openclaw-2026.7.1-2`。候选插件：`1.9.1-openclaw.11-session-projects.7`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
@@ -47,6 +47,8 @@ MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写�
 切换时取消旧 RC Reviewer 信号和待派发反馈，旧任务记录留在旧项目。返回结果及续作派发前再次核验作用域；迟到工具结果同时核验调用绑定的作用域，即使宿主提供了 Session 身份，也不能重新接入新项目。RC 不取消或接管宿主已接受的业务执行；宿主自身运行切换、取消和权限仍由 OpenClaw 管理。
 
 ## 验证
+
+2026-10-16 使用本机安装的 `2026.7.1-2` 完成真实 Python App 分组验证：Session `spawnedCwd` 自动跟随、真实 Git Worktree 切换和旧评审取消、字段缺失时手动绑定，以及零模型重启恢复均通过。A 从空开发独立功能验收 8/8，B 扩展验收 9/9，手动 C 真实数据任务最终 RC PASS。整轮结果为 **MIXED**：两批请求达到预定上限，B 完整终审与无配置项目的业务交付未完成；A 的旧版 RC PASS 还漏检了 exec 向公共 `/tmp` 写测试数据。候选 `.7` 仅补充共享语义评审提示以覆盖相关工具的文件副作用，全量回归 831 项中 829 PASS、2 项平台跳过；一次真实模型复核检出原违规并通过只读反例。没有把复核当成 A/B 完整闭环重跑。详见 [本机 spawnedCwd Python 实测](experiments/spawned-cwd-python-20261016.md)。
 
 MatrixAssistant 增量适配 `.6` 在 Windows / Node 24.16.0 完成 264 项相关回归，最终顺序执行全部通过。原三项失败分别修复路径断言、Windows 目录 fsync 兼容及其后显露的 Skill 路径分隔符断言；扩展回归还修复一行需求引用路径键规范化和一个旧恢复测试的跨平台文件键。一次并发运行的旧受控模式用例未通过，单项复跑及最终顺序回归通过，未改该模式的运行协议。
 
