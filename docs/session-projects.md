@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-当前适配分支：`codex/openclaw-2026.7.1-2`。候选插件：`1.9.1-openclaw.11-session-projects.7`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+当前适配分支：`codex/openclaw-2026.7.1-2`。候选插件：`1.9.1-openclaw.11-session-projects.8`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
 
 ## 使用
 
