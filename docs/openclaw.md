@@ -31,6 +31,22 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 ## 安装前提
 
+### MatrixAssistant 启动后插件配置消失
+
+MatrixAssistant `1.8.160` 的 `cleanupStalePluginConfigs` 不扫描标准的 `~/.openclaw/extensions`，扫描 `plugins.load.paths` 时只检查 manifest 的 `main`（缺省为 `dist/index.js`），不读取 `package.json` 的 `openclaw.extensions`。因此仅执行 OpenClaw 的 install/enable 后，合法插件仍可能被误判为 stale，并从 `plugins.allow` 和 `plugins.entries` 删除；插件文件仍在。
+
+新版产物已在 manifest 中补齐原生入口 `main`。关闭 MatrixAssistant 后，从本仓库构建、使用宿主内置 CLI 重新安装，再运行一次配置命令：
+
+```powershell
+npm run build:plugin
+node "C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw/openclaw.mjs" plugins install --force ./dist/runtime-corrector-openclaw
+node ./scripts/configure-ma-host.mjs
+```
+
+配置命令验证已安装入口，将该插件的绝对目录追加到 `plugins.load.paths`，启用 RC 及所需 Hook 权限，保留其他配置，并在写入前备份原文件。重复执行不增加重复路径或重复备份。自定义配置位置可传 `--config <openclaw.json>` 和 `--plugin-root <已安装插件目录>`；如此前清理已删除 RC 模型设置，可显式传 `--reviewer-model <provider/model>` 恢复。命令不会自动读取旧备份或恢复其中的其他设置。重新打开 MatrixAssistant 后生效。
+
+MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
+
 合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.8`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json

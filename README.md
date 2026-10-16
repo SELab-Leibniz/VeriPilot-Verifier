@@ -40,6 +40,9 @@ cd runtime-corrector
 npm run build:plugin
 openclaw plugins install ./dist/runtime-corrector-openclaw
 
+# MatrixAssistant：重新安装后额外登记加载路径，避免启动清理误删配置
+node ./scripts/configure-ma-host.mjs
+
 # 兼容验证时同时生成 OpenClaw、Claude、CodeAgent 三个互斥产物
 npm run build:plugins
 

@@ -56,9 +56,9 @@ MatrixAssistant 增量适配 `.6` 在 Windows / Node 24.16.0 完成 264 项相�
 
 指定 MatrixAssistant 1.8.160 内置 `2026.7.1-2` 的真实 SDK 探针验证 8 项依赖方法、9 个入口 Hook 注册、既有兼容桥，以及 A → B 自动项目、Agent 默认 Hook 目录、无配置停用、日志与字段缺失时手动回退。所有会话和项目均在临时目录；未修改或安装到宿主，也未调用业务模型。设置 `RC_OPENCLAW_HOST_ROOT` 为宿主的 `resources/openclaw` 目录后，运行 `node --test test/openclaw-host-contract.test.mjs` 可复现这两项接口测试。本次不宣称完成 MatrixAssistant UI 和真实模型纠偏闭环。
 
-后续 MatrixAssistant 真实模型补验使用该安装包的实际 Gateway、原装 `register-gateway-method` 目录桥接及 GLM-5.3-Flash，结果为 **未验收通过**：新会话自动跟随 A、独立真实基线 version=1 和写入已观察；随后宿主返回 `incomplete turn`（stopReason=toolUse、payloads=0、replaySafe=no），观察器按错误停止，未观察到纠偏续作和最终 PASS，k=0。真实评审运行中切换项目的步骤未到达，不以既有单测代替。另在同一隔离状态中以零模型调用的实际 Gateway 查询验证 A → B → 未配置项目 → B 的启停及 4 条切换日志。初轮只读未触发屏障、第二轮观察超时及最后的宿主错误均保留；没有覆盖失败或修改纠偏核心。脱敏原始路径、任务状态、构建哈希和验证边界见 [真实模型补验证据](experiments/matrixassistant-session-live-20261015.json)。隔离 Gateway 已结束，宿主文件和现有用户会话未改动。
+后续 MatrixAssistant 真实模型补验使用该安装包的实际 Gateway、原装 `register-gateway-method` 目录桥接及 GLM-5.3-Flash，结果为 **未验收通过**：新会话自动跟随 A、独立真实基线 version=1 和写入已观察；随后宿主返回 `incomplete turn`（stopReason=toolUse、payloads=0、replaySafe=no），观察器按错误停止，未观察到纠偏续作和最终 PASS，k=0。真实评审运行中切换项目的步骤未到达，不以既有单测代替。另在同一隔离状态中以零模型调用的实际 Gateway 查询验证 A → B → 未配置项目 → B 的启停及 4 条切换日志。初轮只读未触发屏障、第二轮观察超时及最后的宿主错误均保留；没有覆盖失败或修改纠偏核心。脱敏原始路径、任务状态、构建哈希和验证边界见 [真实模型补验证据](experiments/ma-session-live-20261015.json)。隔离 Gateway 已结束，宿主文件和现有用户会话未改动。
 
-继续定位确认该 `incomplete turn` 来自原生同内容 `write` 的 `terminate:true`，零模型直接复现无需加载插件。插件保留宿主终止语义，只修正诊断的实际错误写入和过时项目说明；新增结果元数据保留回归，40 项定向回归通过。真实补验按项通过：DEVIATION → 一次被模型观察的原生续作 → 最终 PASS（k=1）；旧 Stop 流程中的需求刷新模型请求活跃时切换项目，旧评审取消，B 独立基线 k=0，实际无配置停用/恢复及切换日志通过。不是一次整段串行探针全通过；模型格式失败、观察器超时及请求上限停止均保留，本轮共 81 次模型请求。详见 [定位与分组复验](experiments/matrixassistant-incomplete-turn-20261015.md)。宿主及用户现有会话未修改，隔离进程均已结束。
+继续定位确认该 `incomplete turn` 来自原生同内容 `write` 的 `terminate:true`，零模型直接复现无需加载插件。插件保留宿主终止语义，只修正诊断的实际错误写入和过时项目说明；新增结果元数据保留回归，40 项定向回归通过。真实补验按项通过：DEVIATION → 一次被模型观察的原生续作 → 最终 PASS（k=1）；旧 Stop 流程中的需求刷新模型请求活跃时切换项目，旧评审取消，B 独立基线 k=0，实际无配置停用/恢复及切换日志通过。不是一次整段串行探针全通过；模型格式失败、观察器超时及请求上限停止均保留，本轮共 81 次模型请求。详见 [定位与分组复验](experiments/ma-incomplete-turn-20261015.md)。宿主及用户现有会话未修改，隔离进程均已结束。
 
 项目测试覆盖旧版独立绑定/恢复、相同项目两 Session 状态、无配置无产物、认证/沙箱/目录权限、升级原生优先、无目录及冲突拒绝、Worktree 实际目录、切换取消、迟到结果、并发首次 Hook、手动查询/检查。
 

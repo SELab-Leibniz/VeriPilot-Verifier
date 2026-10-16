@@ -29,13 +29,15 @@ async function finish(f,id,parentMs=3600000) {
  return {state,file,ctx};
 }
 
-test('controller-owned terminal assessment uses role20 while actual Hook keeps the original bound',async t=>{
+test('controller-owned terminal assessment uses its role budget while actual Hook defaults to twenty minutes',async t=>{
  const direct=await fixture(t),a=await finish(direct,'direct');
  await direct.runtime.assessSupervised(a.state,{transcriptPath:a.file,text:'All requested task work is complete.',assessmentId:'direct-test',stopHookActive:false});
  assert(direct.calls.length>0,direct.warnings.join('\n'));assert(direct.calls[0].timeoutMs>1000000,`direct extractor kept its existing18min phase ceiling, got ${direct.calls[0].timeoutMs}`);
  const hooked=await fixture(t),b=await finish(hooked,'hook');
  await hooked.runtime.finalize({lastAssistantMessage:'All requested task work is complete.',stopHookActive:false},b.ctx);
- assert(hooked.calls.length>0,hooked.warnings.join('\n'));assert(hooked.calls[0].timeoutMs<600000);
+ assert(hooked.calls.length>0,hooked.warnings.join('\n'));
+ assert(hooked.calls[0].timeoutMs>1000000 && hooked.calls[0].timeoutMs<=1200000,
+  `Hook review must use the new twenty-minute window; got ${hooked.calls[0].timeoutMs}`);
 });
 
 test('explicit RC assessment budget is used by direct manual verification windows',async t=>{

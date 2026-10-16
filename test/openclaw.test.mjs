@@ -49,12 +49,14 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const host = api(project);
   entry.register(host);
   assert.equal(host.hooks.has("before_agent_finalize"), false, "the pinned host buffers native text when a terminal gate is registered");
-  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 540000);
+  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
   assert.equal(host.harness, undefined, "native entry must not register a business harness");
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
   const pkg = JSON.parse(await fs.readFile(path.join(pluginRoot, "package.json")));
   assert.equal(manifest.id, "runtime-corrector");
+  assert.equal(manifest.main, pkg.openclaw.extensions[0], "MA startup discovery must find the native entry");
+  assert.ok((await fs.stat(path.join(pluginRoot, manifest.main))).isFile());
   assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.8");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
@@ -83,6 +85,20 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
 test("native entry supports synchronous ESM loading on the target Node runtime", { skip: Number(process.versions.node.split(".")[0]) < 22 }, () => {
   const loaded = createRequire(import.meta.url)(path.join(pluginRoot, "lib/openclaw/entry.mjs"));
   assert.equal(loaded.default.id, "runtime-corrector");
+});
+
+test("native entry registers configured Hook windows up to sixty minutes", async t => {
+  const project = await workspace(t);
+  for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [7200000, 3600000]]) {
+    const host = api(project);
+    host.pluginConfig.hookTimeoutMs = configured;
+    entry.register(host);
+    for (const name of ["before_prompt_build", "before_tool_call", "reply_payload_sending", "agent_end"]) {
+      assert.equal(host.hooks.get(name).options.timeoutMs, expected, `${name}: ${configured}`);
+    }
+    assert.equal(host.hooks.get("session_start").options.timeoutMs, 30000);
+    assert.equal(host.hooks.get("session_end").options.timeoutMs, 1000);
+  }
 });
 
 test("OpenClaw validates incompatible CLI reviewer settings before starting work", async (t) => {
@@ -122,7 +138,7 @@ test("native artifact review is bounded by the supervised parent's remaining tim
   await runtime.beforeTool({ toolName: "write", toolCallId: "budget-write", params: { path: file } }, childCtx);
   await runtime.toolResult({ toolName: "write", toolCallId: "budget-write", args: { path: file }, result: { content: [] } }, childCtx);
   assert.equal(calls.length, 1, host.warnings.join("\n"));
-  assert.ok(calls[0].timeoutMs > 0 && calls[0].timeoutMs <= 1500, "a 10-minute hook must not outlive a 1.5-second parent budget");
+  assert.ok(calls[0].timeoutMs > 0 && calls[0].timeoutMs <= 1500, "a long Hook must not outlive a 1.5-second parent budget");
   state.runDeadlineAt = Date.now() - 1;
   await runtime.beforeTool({ toolName: "write", toolCallId: "expired-write", params: { path: file } }, childCtx);
   await runtime.toolResult({ toolName: "write", toolCallId: "expired-write", args: { path: file }, result: { content: [] } }, childCtx);

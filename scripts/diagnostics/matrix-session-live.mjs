@@ -1,4 +1,4 @@
-// Bounded real-model probe using the installed MatrixAssistant Gateway and cwd bridge.
+// Bounded real-model probe using the installed MA Gateway and cwd bridge.
 // The only projects/sessions/configuration written belong to this fresh experiment.
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -11,7 +11,7 @@ const [matrixRoot, destination, mode = "all"] = process.argv.slice(2);
 assert(["all", "switch", "switch-resume"].includes(mode), "Use all, switch or switch-resume mode");
 const resume = mode === "switch-resume";
 if (!matrixRoot || !destination || !process.env.ANTHROPIC_AUTH_TOKEN || !process.env.ANTHROPIC_BASE_URL || !process.env.ANTHROPIC_MODEL) {
-  throw new Error("Supply MatrixAssistant root, a new output directory, and the existing ANTHROPIC model environment.");
+  throw new Error("Supply MA root, a new output directory, and the existing ANTHROPIC model environment.");
 }
 const hostRoot = path.join(matrixRoot, "resources/openclaw");
 const bridge = path.join(matrixRoot, "resources/claw-plugin/register-gateway-method");
