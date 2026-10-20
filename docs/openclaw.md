@@ -1,6 +1,6 @@
 # OpenClaw 原生纠偏与独立 Stop 终审
 
-当前候选包 `1.9.1-openclaw.11-session-projects.9` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MatrixAssistant）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
+当前候选包 `1.9.1-openclaw.11-session-projects.9` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
 
 原生执行、Stop 续作和独立终审预算已通过提交 `f76e7b5` 合入 `codex/openclaw-2026.7.1-2`，固定宿主 OpenClaw `2026.7.1-2`。合并代码不自动替换已安装插件或宿主配置。独立预算 Todo 对照和一次真实 Stop 重修闭环详见 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md)。[合并后记账 App 实测](experiments/rc-postmerge-ledger-live-test.md)跑通两次 Stop、一次宿主重修、最终 19/19 独立 CLI 检查；首次终审超过 10 分钟并完成。RC PASS 不等同于全部业务需求均已通过独立检查。
 
@@ -47,19 +47,19 @@ reviewers:
 
 ## 安装前提
 
-### MatrixAssistant 启动后插件配置消失
+### MA 启动后插件配置消失
 
-MatrixAssistant `1.8.160` 的 `cleanupStalePluginConfigs` 不扫描标准的 `~/.openclaw/extensions`，扫描 `plugins.load.paths` 时只检查 manifest 的 `main`（缺省为 `dist/index.js`），不读取 `package.json` 的 `openclaw.extensions`。因此仅执行 OpenClaw 的 install/enable 后，合法插件仍可能被误判为 stale，并从 `plugins.allow` 和 `plugins.entries` 删除；插件文件仍在。
+MA `1.8.160` 的 `cleanupStalePluginConfigs` 不扫描标准的 `~/.openclaw/extensions`，扫描 `plugins.load.paths` 时只检查 manifest 的 `main`（缺省为 `dist/index.js`），不读取 `package.json` 的 `openclaw.extensions`。因此仅执行 OpenClaw 的 install/enable 后，合法插件仍可能被误判为 stale，并从 `plugins.allow` 和 `plugins.entries` 删除；插件文件仍在。
 
-新版产物已在 manifest 中补齐原生入口 `main`。关闭 MatrixAssistant 后，从本仓库构建、使用宿主内置 CLI 重新安装，再运行一次配置命令：
+新版产物已在 manifest 中补齐原生入口 `main`。关闭 MA 后，从本仓库构建、使用宿主内置 CLI 重新安装，再运行一次配置命令：
 
 ```powershell
 npm run build:plugin
-node "C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw/openclaw.mjs" plugins install --force ./dist/runtime-corrector-openclaw
+node "<MA安装目录>/resources/openclaw/openclaw.mjs" plugins install --force ./dist/runtime-corrector-openclaw
 node ./scripts/configure-ma-host.mjs
 ```
 
-配置命令验证已安装入口，将该插件的绝对目录追加到 `plugins.load.paths`，启用 RC 及所需 Hook 权限，保留其他配置，并在写入前备份原文件。重复执行不增加重复路径或重复备份。自定义配置位置可传 `--config <openclaw.json>` 和 `--plugin-root <已安装插件目录>`；如此前清理已删除 RC 模型设置，可显式传 `--reviewer-model <provider/model>` 恢复。命令不会自动读取旧备份或恢复其中的其他设置。重新打开 MatrixAssistant 后生效。
+配置命令验证已安装入口，将该插件的绝对目录追加到 `plugins.load.paths`，启用 RC 及所需 Hook 权限，保留其他配置，并在写入前备份原文件。重复执行不增加重复路径或重复备份。自定义配置位置可传 `--config <openclaw.json>` 和 `--plugin-root <已安装插件目录>`；如此前清理已删除 RC 模型设置，可显式传 `--reviewer-model <provider/model>` 恢复。命令不会自动读取旧备份或恢复其中的其他设置。重新打开 MA 后生效。
 
 MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
