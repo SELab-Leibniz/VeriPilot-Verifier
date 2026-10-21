@@ -27,7 +27,7 @@ export async function runtimeState(projectRoot) {
   }
   return { tasks, journals, records, evaluations };
 }
-export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
+export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], preparePlugin, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
   if (!process.env.RC_TEST_MODEL_KEY) throw new Error("RC_TEST_MODEL_KEY required");
   if (!resume) await fs.mkdir(destination, { mode: 0o700 });
   const root = await fs.realpath(destination), pkg = await json(path.join(hostRoot, "package.json"));
@@ -36,6 +36,7 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
   for (const dir of [stateDir, homeDir, defaultDir]) await fs.mkdir(dir, { recursive: resume });
   const sourceRoot = fileURLToPath(new URL("../../..", import.meta.url));
   const pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot, outputRoot: path.join(root, "plugin") });
+  await preparePlugin?.(pluginRoot);
   // The native host snapshots plugin resources at admission. Prepare test
   // adapters before Gateway startup so the loaded plugin can actually see them.
   for (const [name, adapter] of Object.entries(platformAdapters)) {
