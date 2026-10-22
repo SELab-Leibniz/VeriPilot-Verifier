@@ -312,6 +312,17 @@
           "type": "integer",
           "minimum": 1000,
           "description": "Shared RC controller assessment window; reviewer roles keep their own deadlines and parent cancellation/total budget still apply."
+        },
+        "waitMode": {
+          "type": "string",
+          "enum": ["until_pass", "assessment"],
+          "default": "until_pass",
+          "description": "Native Stop waits for correction and re-verification to PASS, or only assessment and feedback admission. Failures, cancellation, exhausted correction budget and the wait deadline release the wait with a notification."
+        },
+        "waitTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Total native Stop wait across corrective business runs and rechecks; defaults to the assessment budget. The current entry Hook window may impose a shorter deadline."
         }
       },
       "additionalProperties": false

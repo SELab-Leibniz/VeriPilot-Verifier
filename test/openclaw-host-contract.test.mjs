@@ -149,7 +149,7 @@ test("explicit host runtime supports plugin registration, automatic projects, lo
       on:name=>hooks.push(name),registerTool(){},registerCommand(){},registerAgentToolResultMiddleware(){}};
     const entry = (await import(pathToFileURL(path.join(pluginRoot,'lib/openclaw/entry.mjs')))).default;
     entry.register(api);
-    assert.deepEqual(hooks,['session_start','before_prompt_build','before_tool_call','reply_payload_sending','before_compaction','session_end','before_reset','agent_end','gateway_stop']);
+    assert.deepEqual(hooks,['before_dispatch','before_model_resolve','session_start','before_prompt_build','before_tool_call','reply_payload_sending','before_compaction','session_end','before_reset','agent_end','gateway_stop']);
     const identity = {agentId:'main',sessionKey:'agent:main:chat-rc-project-contract',sessionId:'rc-project-contract'};
     const sessionFile = path.join(root,'session.jsonl');
     await fs.writeFile(sessionFile,JSON.stringify({type:'session',id:identity.sessionId})+'\\n'+JSON.stringify({type:'message',id:'a-user',parentId:null,message:{role:'user',content:'A task'}})+'\\n');

@@ -67,6 +67,28 @@ test("a project change between reservation and dispatch cancels the old feedback
   assert((await f.journal()).some(event => event.type === "NATIVE_STOP_FOLLOWUP_CANCELLED"));
 });
 
+test("a parent replaced during asynchronous dispatch validation cannot admit stale feedback", async t => {
+  const f = await fixture(t);
+  f.params.source.runId = f.state.nativeRunId;
+  let checks = 0;
+  const manager = createNativeFollowups(f.api, { isCurrent: async () => {
+    if (++checks === 2) f.state.nativeRunId = "new-business";
+    return true;
+  } });
+  assert.equal((await manager.submit(f.params)).status, "CANCELLED");
+  assert.equal(f.calls.length, 0);
+});
+
+test("a parent replaced while a reservation callback unwinds never enters native admission", async t => {
+  const f = await fixture(t);
+  f.params.source.runId = f.state.nativeRunId;
+  const manager = createNativeFollowups(f.api, { onReserved: async () => { f.state.nativeRunId = "new-business"; } });
+  const receipt = await manager.submit(f.params);
+  assert.equal(receipt.reason, "Native Stop parent changed before feedback admission.");
+  assert.notEqual(receipt.status, "ADMITTED");
+  assert.equal(f.calls.length, 0);
+});
+
 test("one native admission per assessment survives concurrent hooks and module reload without overriding host settings", async t => {
   const f = await fixture(t);
   const receipts = await Promise.all([f.manager.submit(f.params), f.manager.submit(f.params)]);

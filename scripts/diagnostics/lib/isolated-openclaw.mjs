@@ -27,7 +27,7 @@ export async function runtimeState(projectRoot) {
   }
   return { tasks, journals, records, evaluations };
 }
-export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], preparePlugin, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
+export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], preparePlugin, hookTimeoutMs = 600000, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
   if (!process.env.RC_TEST_MODEL_KEY) throw new Error("RC_TEST_MODEL_KEY required");
   if (!resume) await fs.mkdir(destination, { mode: 0o700 });
   const root = await fs.realpath(destination), pkg = await json(path.join(hostRoot, "package.json"));
@@ -58,7 +58,7 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
       model: { primary: model }, models: { [model]: {} }, sandbox: { mode: "off" } } }, models: { providers: { test: provider } },
     tools: { allow: tools, exec: { security: "full", ask: "off" } },
     plugins: { allow: ["runtime-corrector", ...extraPlugins.map(p => p.id)], load: { paths: [pluginRoot, ...extraPlugins.map(p => p.path)] }, entries: { ...Object.fromEntries(extraPlugins.map(p => [p.id, { enabled: true }])), "runtime-corrector": { enabled: true,
-      hooks: { allowConversationAccess: true, allowPromptInjection: true }, config: { reviewerModel: model, hookTimeoutMs: 600000 } } } },
+      hooks: { allowConversationAccess: true, allowPromptInjection: true }, config: { reviewerModel: model, hookTimeoutMs } } } },
     logging: { level: "debug", consoleLevel: "error", file: path.join(root, "gateway.jsonl") } };
   const configFile = path.join(root, "openclaw.json");
   await fs.writeFile(configFile, JSON.stringify(config, null, 2), { mode: 0o600 });

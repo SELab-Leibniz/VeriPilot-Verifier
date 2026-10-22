@@ -11,6 +11,8 @@ stopCorrection:
   enabled: true
   maxCorrectionsPerEpoch: 3
   assessmentTimeoutMs: 3600000 # 可选：一套 RC 终审的总窗口
+  waitMode: until_pass # 默认：等待宿主修正并复验到 PASS；assessment 只等本轮评审与反馈准入
+  waitTimeoutMs: 3600000 # 可选：整条修正与复验链的总等待上限
 reviewers:
   defaults:
     model: registered-provider/model
@@ -27,7 +29,23 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 角色时间仍在自己的 YAML。原生回复/结束 Hook 只登记 RC 终审回执，业务回复立即返回；评审使用 RC 自己的工作准入与截止时间，不借用宿主业务运行或 Hook 的剩余时间。`stopCorrection.assessmentTimeoutMs` 现在也用于原生 RC 终审总窗口；不配置时沿用既有各角色预算与设备检查预算之和。每个角色仍受自己的 `reviewers.<role>.timeoutMs` 和 RC 总窗口约束，不是每个阶段无限续期。
 
-检查器故障按原核心基础设施预算重新评审，复评使用不同评审身份，但同一 RC 总截止时间；不增加业务 k、不重新冻结用户需求、不让宿主为检查器故障修改业务。新用户轮、重置、会话结束和 Gateway 关闭会取消旧评审；来源/证据失效仍不派发。每个原生业务 run 的回执保存于 `.runtime-correction/openclaw/native-stop-reviews/`，状态为 PENDING/RUNNING/SETTLED，最终 reviewStatus 保存 PASS/DEVIATION/UNVERIFIED/CANCELLED。重启不会偷偷重放旧评审或业务反馈。
+检查器故障按原核心基础设施预算重新评审，复评使用不同评审身份，但同一 RC 总截止时间；不增加业务 k、不重新冻结用户需求、不让宿主为检查器故障修改业务。重置、项目切换、会话结束和 Gateway 关闭会取消旧评审；来源/证据失效仍不派发。每个原生业务 run 的回执保存于 `.runtime-correction/openclaw/native-stop-reviews/`，状态为 PENDING/RUNNING/SETTLED，最终 reviewStatus 保存 PASS/DEVIATION/UNVERIFIED/CANCELLED。重启不会偷偷重放旧评审或业务反馈。
+
+### Stop 等待门（本分支）
+
+原生 Stop 登记终审后，回复会提示 RC 正在验收。同会话的下一条普通任务在公开的 `before_dispatch` 等待；直接原生 Agent 入口由 `before_model_resolve` 补充保护，RC 更新当前 runId 之前也会检查。其他会话独立运行，可信回执标识的 RC 续作可直接进入，避免等待自己的派发完成。
+
+`stopCorrection.waitMode` 默认是 `until_pass`：初审发现偏差后，继续等待宿主实际修正及后续 Stop 复验，只有纠偏链当前运行的有效 PASS 才正常放行下一任务。等待门覆盖“反馈已派发、宿主正在修正、尚未开始下一次评审”的间隔，跨原生 runId 沿用同一条链；旧轮次结论不能代替新一轮复验。`maxCorrectionsPerEpoch` 仍限制纠偏次数，最后一次允许的修正仍有完整复验机会。
+
+需要原行为时，在项目 `.runtime-corrector/config.yaml` 中设置 `stopCorrection.waitMode: assessment`：只等待本轮评审及纠偏反馈的宿主准入回执。发现偏差时先记录评审，再完成一次有界派发；最终记录中的 `followupStatus` 区分宿主接受、拒绝与未确认。此模式不要求后续修正到 PASS；新任务仍遵守宿主自己的排队策略。
+
+`until_pass` 的总等待上限由可选 `stopCorrection.waitTimeoutMs` 指定，包含宿主修正及多轮复验；省略时继承一套终审的预算。整条链沿用首次登记的模式和总截止时间，不在每次续跑时重新计时；单次评审仍受 `assessmentTimeoutMs` 和各角色预算约束。`assessment` 沿用本轮评审剩余窗口。实际入口等待还取当前 Hook 可用窗口的较短值；Hook 窗口沿用插件 `hookTimeoutMs` 和宿主对应 Hook 策略，并保留一秒返回余量。
+
+两种模式都在次数耗尽仍未通过、反馈被拒或未确认、评审故障、总超时或用户取消时明确提示后放行；次数耗尽保留 DEVIATION，故障/超时保留 UNVERIFIED，取消保留 CANCELLED 或已提交的原评审结论，不将异常当成 PASS。超时取消 RC 自己的检查，不中止宿主业务执行。即使后端或清理回调不响应，等待门也能释放，迟到结果不能改写等待终态或重新打开原链。后续来源或文件发生变化时，原有证据校验仍阻止过期反馈；重启不会重放旧链。无需修改宿主。
+
+等待期间每 30 秒发送状态心跳，开始等待、验收完成、反馈拒绝或超时使用公开 Agent 事件流提示用户。回复尾部的验收提示只作用于发送载荷，状态事件不追加主会话模型消息；终态更新保留原回复正文。现有宿主共用助手回复展示区域，尚无独立 RC 横幅。没有可用展示通道时尽力提示，通知失败不影响放行。
+
+可用 `node scripts/diagnostics/stop-wait-gate-contract.mjs <hostRoot> <全新输出目录> [空闲Gateway端口]` 做隔离验证：脚本使用本地确定性模型服务，验证默认通过、跨修正与复验等待、显式 assessment 模式、次数耗尽及超时放行，检查真实宿主事件及下一轮模型输入。测试副本通过公开 Hook 观察等待门后的准入，避免把宿主自身排队误当作 RC 等待；无外部模型调用，不改已安装宿主或业务会话。
 
 ## Review 超时配置
 
