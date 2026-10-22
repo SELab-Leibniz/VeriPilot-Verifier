@@ -13,21 +13,23 @@ test("Stop status distinguishes verified acceptance, dispatch refusal and incomp
   }
 });
 
-test("UI replacement retains the complete business delivery and fences retired runs", async () => {
+test("UI progress leaves business delivery untouched and fences retired runs", async () => {
   const events = [], status = createStopWaitStatus({}, async () => ({ emitAgentEvent: event => events.push(event) }));
   const state = { sessionId: "session", sessionKey: "agent:main:session", agentId: "main" };
-  await status({ state, runId: "old", text: "Waiting", baseText: "Original delivery.", phase: "waiting" });
-  assert.equal(events.length, 2);
-  assert.equal(events[1].data.text, "Original delivery.\n\n[runtime-corrector] Waiting");
-  assert.equal(events[1].runId, "old");
-  await status({ state, runId: "old", text: "Late PASS", phase: "settled", isCurrent: () => false });
-  assert.equal(events.length, 2);
+  await status({ state, runId: "waiting", waiting: true, text: "Waiting", baseText: "Original delivery.",
+    phase: "waiting", deadlineAt: Date.now() + 10000 });
+  assert.equal(events.length, 1);
+  assert.equal(events[0].data.partialResult.views[0].text, "Waiting");
+  assert.equal(events[0].runId, "waiting");
+  assert(!JSON.stringify(events).includes("Original delivery."));
+  await status({ state, runId: "waiting", waiting: true, text: "Late PASS", phase: "settled", isCurrent: () => false });
+  assert.equal(events.length, 1);
 });
 
 test("a stalled status channel has a bounded wait and cannot emit a late snapshot", async () => {
   let release;
   const events = [], status = createStopWaitStatus({}, () => new Promise(resolve => { release = resolve; }));
-  await status({ state: {}, runId: "run", text: "Waiting", phase: "waiting" });
+  await status({ state: {}, runId: "run", waiting: true, text: "Waiting", phase: "waiting", deadlineAt: Date.now() + 10000 });
   release({ emitAgentEvent: event => events.push(event) });
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(events.length, 0);

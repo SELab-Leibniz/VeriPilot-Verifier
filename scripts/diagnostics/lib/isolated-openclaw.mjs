@@ -27,7 +27,7 @@ export async function runtimeState(projectRoot) {
   }
   return { tasks, journals, records, evaluations };
 }
-export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], preparePlugin, hookTimeoutMs = 600000, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
+export async function isolatedHost({ hostRoot, providerFile, destination, port, resume = false, platformAdapters = {}, workspaceSkillSources = [], extraPlugins = [], preparePlugin, hookTimeoutMs = 600000, clientCaps = ["tool-events"], subscribeSessionEvents = false, tools = ["read", "write", "edit", "exec", "runtime_corrector"] }) {
   if (!process.env.RC_TEST_MODEL_KEY) throw new Error("RC_TEST_MODEL_KEY required");
   if (!resume) await fs.mkdir(destination, { mode: 0o700 });
   const root = await fs.realpath(destination), pkg = await json(path.join(hostRoot, "package.json"));
@@ -81,13 +81,16 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
     for (const stream of [gateway.stdout, gateway.stderr]) stream.on("data", chunk => { void log.appendFile(redact(chunk)).catch(() => {}); });
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("Gateway readiness timeout")), 60000);
-      client = new GatewayClient({ url: `ws://127.0.0.1:${port}`, token, clientName: "cli", mode: "cli", caps: ["tool-events"],
+      // Retain SDK CLI authentication. MA's empty caps + session subscription
+      // select its real event route without impersonating a browser login.
+      client = new GatewayClient({ url: `ws://127.0.0.1:${port}`, token, clientName: "cli", mode: "cli", caps: clientCaps,
         scopes: ["operator.admin", "operator.read", "operator.write"], env,
         onHelloOk() { clearTimeout(timer); resolve(); }, onConnectError() {}, onEvent(event) {
           const row = { at: Date.now(), generation, ...event }; events.push(row); void wire.appendFile(redact(JSON.stringify(row)) + "\n").catch(() => {});
           if (event.event === "chat" && ["final", "error", "aborted"].includes(event.payload?.state)) pending.get(event.payload.runId)?.(event.payload);
         } }); client.start();
     });
+    if (subscribeSessionEvents) await client.request("sessions.subscribe", {});
     await save("process.json", { observerPid: process.pid, gatewayPid: gateway.pid, port, generation });
   }
   async function stop() {

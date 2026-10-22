@@ -1,6 +1,6 @@
 # OpenClaw 原生纠偏与独立 Stop 终审
 
-当前候选包 `1.9.1-openclaw.11-session-projects.9` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
+当前候选包 `1.9.1-openclaw.11-session-projects.10` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
 
 原生执行、Stop 续作和独立终审预算已通过提交 `f76e7b5` 合入 `codex/openclaw-2026.7.1-2`，固定宿主 OpenClaw `2026.7.1-2`。合并代码不自动替换已安装插件或宿主配置。独立预算 Todo 对照和一次真实 Stop 重修闭环详见 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md)。[合并后记账 App 实测](experiments/rc-postmerge-ledger-live-test.md)跑通两次 Stop、一次宿主重修、最终 19/19 独立 CLI 检查；首次终审超过 10 分钟并完成。RC PASS 不等同于全部业务需求均已通过独立检查。
 
@@ -33,7 +33,7 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 ### Stop 等待门（本分支）
 
-原生 Stop 登记终审后，回复会提示 RC 正在验收。同会话的下一条普通任务在公开的 `before_dispatch` 等待；直接原生 Agent 入口由 `before_model_resolve` 补充保护，RC 更新当前 runId 之前也会检查。其他会话独立运行，可信回执标识的 RC 续作可直接进入，避免等待自己的派发完成。
+原生 Stop 登记终审后，回复会提示 RC 正在验收。同会话的下一条普通任务在公开的 `reply_dispatch` 等待，该入口提供当前请求的 runId 和取消信号；直接原生 Agent 入口由 `before_model_resolve` 补充保护，RC 更新当前 runId 之前也会检查。其他会话独立运行，可信回执标识的 RC 续作可直接进入，避免等待自己的派发完成。
 
 `stopCorrection.waitMode` 默认是 `until_pass`：初审发现偏差后，继续等待宿主实际修正及后续 Stop 复验，只有纠偏链当前运行的有效 PASS 才正常放行下一任务。等待门覆盖“反馈已派发、宿主正在修正、尚未开始下一次评审”的间隔，跨原生 runId 沿用同一条链；旧轮次结论不能代替新一轮复验。`maxCorrectionsPerEpoch` 仍限制纠偏次数，最后一次允许的修正仍有完整复验机会。
 
@@ -43,7 +43,7 @@ k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/co
 
 两种模式都在次数耗尽仍未通过、反馈被拒或未确认、评审故障、总超时或用户取消时明确提示后放行；次数耗尽保留 DEVIATION，故障/超时保留 UNVERIFIED，取消保留 CANCELLED 或已提交的原评审结论，不将异常当成 PASS。超时取消 RC 自己的检查，不中止宿主业务执行。即使后端或清理回调不响应，等待门也能释放，迟到结果不能改写等待终态或重新打开原链。后续来源或文件发生变化时，原有证据校验仍阻止过期反馈；重启不会重放旧链。无需修改宿主。
 
-等待期间每 30 秒发送状态心跳，开始等待、验收完成、反馈拒绝或超时使用公开 Agent 事件流提示用户。回复尾部的验收提示只作用于发送载荷，状态事件不追加主会话模型消息；终态更新保留原回复正文。现有宿主共用助手回复展示区域，尚无独立 RC 横幅。没有可用展示通道时尽力提示，通知失败不影响放行。
+实际等待期间每 30 秒通过公开 Agent 工具进度事件发送状态；验收完成、反馈拒绝或超时发送结束进度。回复尾部的验收提示只作用于发送载荷，状态事件不追加主会话模型消息，也不替换原回复正文。后台评审不对已结束的业务 run 发送保活。没有可用展示通道时尽力提示，通知失败不影响放行。
 
 可用 `node scripts/diagnostics/stop-wait-gate-contract.mjs <hostRoot> <全新输出目录> [空闲Gateway端口]` 做隔离验证：脚本使用本地确定性模型服务，验证默认通过、跨修正与复验等待、显式 assessment 模式、次数耗尽及超时放行，检查真实宿主事件及下一轮模型输入。测试副本通过公开 Hook 观察等待门后的准入，避免把宿主自身排队误当作 RC 等待；无外部模型调用，不改已安装宿主或业务会话。
 
@@ -63,7 +63,9 @@ reviewers:
 
 优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。`hookTimeoutMs` 自身也是默认 20 分钟、最大 60 分钟；它与单个 reviewer 及多阶段总预算分别配置。
 
-原生 Hook 等待 reviewer 时，RC 每 30 秒通过公开 Agent 事件流发送 `runtime-corrector.progress`。这是客户端观察运行存续的状态事件，只有耗时、截止时间和最近真实活动类型，不包含助手正文、工具结果或评审内容，不写入主会话模型消息。它不会把定时器当成模型进展上报，也不延长原有评审预算；评审结束、父运行终止、取消或恢复请求会清理事件与定时器。MA 1.10.1 的客户端会用这类事件刷新现有空闲检查，避免等待审查期间因 `agent.wait` 的短轮询超时而误终止。原有的一次阶段提示保留；本改动不改变其他历史提示的持久化规则。
+原生 Hook 等待 reviewer 时，RC 每 30 秒发送标记为 `runtime-corrector.review` 的工具进度 `update`。MA 1.10.1 的桌面主进程会过滤自定义 Agent 流，旧版 `runtime-corrector.progress` 无法刷新空闲检查；新版本经宿主 `session.tool` 和 MA 现有聊天事件入口更新进度。只发送 `update/end`，不发送模型工具调用 `start` 或结果 `result`，不覆盖业务工具错误摘要；阶段提示也不再写入助手正文。定时器不冒充诊断模型进展，不延长原预算；取消、父运行结束及截止时间均停止周期上报。
+
+Stop 等待使用同一通道，只刷新实际受阻的当前请求；已结束主运行的后台审查及尚无 runId 的排队请求不发送保活。兼容验证读取安装包内真实主进程过滤/转发函数和前端计时/工具分支，未知版本或入口变化直接报错。此项已验证 MA `1.10.1` + OpenClaw `2026.7.1-2` 的函数契约，仍不等于完整 Electron 桌面进程的真实长时验收。详见 [MA 传输修复与验证边界](experiments/ma-progress-transport-20261022.md)。
 
 ## 安装前提
 
@@ -83,7 +85,7 @@ node ./scripts/configure-ma-host.mjs
 
 MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
-合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.9`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
+合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.10`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{

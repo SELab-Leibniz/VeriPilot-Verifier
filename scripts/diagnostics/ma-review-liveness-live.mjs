@@ -16,11 +16,11 @@ import { maRendererObserver } from "./lib/ma-renderer-observer.mjs";
 const [matrixRoot, output, mode = "all"] = process.argv.slice(2);
 if (!matrixRoot || !output || !["smoke", "all", "candidate"].includes(mode)) throw new Error("MA root, fresh output directory, [smoke|all|candidate] required");
 const destination = path.resolve(output), hostRoot = path.join(matrixRoot, "resources/openclaw");
-const baselineRef = process.env.RC_LIVENESS_BASE_REF ?? "f51ef1d";
+const baselineRef = process.env.RC_LIVENESS_BASE_REF ?? "af7aeaf";
 await fs.mkdir(path.dirname(destination), { recursive: true });
 await fs.mkdir(destination, { recursive: false });
 const report = { startedAt: new Date().toISOString(), mode, baselineRef, desktopAutomation: false, installedFilesModified: false,
-  boundary: "Installed MA renderer in headless Chromium; test adapter replaces Electron IPC/storage only; real Gateway and existing remote model", cases: [] };
+  boundary: "Installed MA transport functions plus renderer in headless Chromium; stubbed Electron/window and storage; real Gateway with MA caps/subscriptions and existing remote model", cases: [] };
 const save = (name, value) => fs.writeFile(path.join(destination, name), JSON.stringify(value, null, 2) + "\n");
 const mark = (phase, detail = {}) => process.stdout.write(JSON.stringify({ at: new Date().toISOString(), phase, ...detail }) + "\n");
 const fallback = async (channel, ...args) => {
@@ -36,10 +36,11 @@ if (mode === "smoke") {
   const observer = await maRendererObserver({ matrixRoot, invoke: fallback, onLog: row => mark("renderer-log", row) });
   try {
     await observer.begin("agent:main:rc-liveness-smoke", "smoke-run", "Smoke only");
-    observer.deliver({ event: "agent", payload: { runId: "smoke-run", sessionKey: "agent:main:rc-liveness-smoke", stream: "runtime-corrector.progress", seq: 1,
-      data: { reviewRunId: "private", phase: "waiting", elapsedMs: 30000 } } });
+    observer.deliver({ event: "session.tool", payload: { runId: "smoke-run", sessionKey: "agent:main:rc-liveness-smoke", stream: "tool", seq: 1,
+      data: { name: "runtime-corrector.review", toolCallId: "runtime-corrector:smoke-run:private", phase: "update" } } });
     const state = await observer.snapshot("agent:main:rc-liveness-smoke");
     assert.equal(state.status, "delta"); assert.equal(state.error, null);
+    assert(state.toolProgress.some(item => item.name === "runtime-corrector.review"));
     await save("summary.json", { ...report, status: "PASS", renderer: observer.renderer, rendererSha256: observer.rendererSha256, state });
     mark("smoke passed", { version: observer.version, state });
   } finally { await observer.close(); }
@@ -135,6 +136,7 @@ async function armTrial(arm) {
     await fs.writeFile(descriptorFile, JSON.stringify({ ...provider, baseUrl: `http://127.0.0.1:${proxyPort}/${arm}/v1`, apiKey: undefined,
       model: { ...descriptorModel, reasoning: false } }));
     h = await isolatedHost({ hostRoot, providerFile: descriptorFile, destination: path.join(destination, arm), port: await freePort(), tools: ["read", "write"],
+      clientCaps: [], subscribeSessionEvents: true,
       extraPlugins: [{ id: "register-gateway-method", path: path.join(matrixRoot, "resources/claw-plugin/register-gateway-method") }],
       preparePlugin: arm === "baseline" ? async pluginRoot => {
       for (const file of ["lib/openclaw/review-activity.mjs", "lib/openclaw/reviewer.mjs"]) {
@@ -156,7 +158,7 @@ async function armTrial(arm) {
       }
       return fallback(channel, ...args);
     } });
-    result.renderer = { version: observer.version, file: observer.renderer, sha256: observer.rendererSha256 };
+    result.renderer = { version: observer.version, file: observer.renderer, sha256: observer.rendererSha256, transport: observer.transport };
     let index = 0;
     const flush = () => { while (index < h.events.length) observer.deliver(h.events[index++]); };
     progressTimer = setInterval(flush, 25);
@@ -175,7 +177,9 @@ async function armTrial(arm) {
     }, `${arm} terminal`, 900000);
     flush(); await pause(500);
     result.durationMs = Date.now() - start; result.terminal = terminal.payload.state; result.client = await observer.snapshot(key);
-    result.statusEvents = h.events.filter(event => event.event === "agent" && event.payload.runId === runId && event.payload.stream === "runtime-corrector.progress").map(event => ({ at: event.at, ...event.payload.data }));
+    const isStatus = event => event.event === "session.tool" && event.payload.stream === "tool"
+      && event.payload.data?.name === "runtime-corrector.review" && event.payload.data.phase === "update";
+    result.statusEvents = h.events.filter(event => event.payload?.runId === runId && isStatus(event)).map(event => ({ at: event.at, ...event.payload.data }));
     result.clientLogs = observer.logs; result.clientWaitCalls = observer.calls.filter(call => call.method === "agent.wait");
     result.clientAbortCalls = observer.calls.filter(call => call.method === "chat.abort");
     if (arm === "baseline") {
@@ -212,9 +216,9 @@ async function armTrial(arm) {
       await pause(32000); flush(); await observer.abort();
       await waitFor(() => h.events.some(event => event.event === "chat" && event.payload.runId === cancelRunId && event.payload.state === "aborted"), "manual abort receipt", 15000);
       await pause(1500);
-      const afterAbortAt = Date.now(), before = h.events.filter(event => event.event === "agent" && event.payload.runId === cancelRunId && event.payload.stream === "runtime-corrector.progress").length;
+      const afterAbortAt = Date.now(), before = h.events.filter(event => event.payload?.runId === cancelRunId && isStatus(event)).length;
       await pause(32000);
-      const after = h.events.filter(event => event.event === "agent" && event.payload.runId === cancelRunId && event.payload.stream === "runtime-corrector.progress").length;
+      const after = h.events.filter(event => event.payload?.runId === cancelRunId && isStatus(event)).length;
       assert.equal(after, before);
       result.manualStop = { passed: true, observedAt: afterAbortAt, statusEventsAfterAbort: after - before, client: await observer.snapshot(cancelKey) };
     }

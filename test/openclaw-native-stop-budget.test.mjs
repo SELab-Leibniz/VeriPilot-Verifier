@@ -330,7 +330,9 @@ test("a queued business turn waits before replacing the old run, while UI status
   assert.equal(passed, false);
   assert.equal(f.state.nativeRunId, f.ctx.runId);
   assert.equal(oldController.signal.aborted, false);
-  assert(events.some(event => event.stream === "assistant" && event.data.text.includes("后续任务暂缓")));
+  assert(events.some(event => event.stream === "tool" && event.runId === "next-run"
+    && event.data.partialResult?.views[0].text.includes("后续任务暂缓")));
+  assert(!events.some(event => event.stream === "assistant"));
   finish.resolve();
   await Promise.all([next, prompt]);
   const [record] = await f.runtime.waitForNativeReviews();
@@ -401,7 +403,8 @@ test("incoming model admission releases at its Hook budget and fences an uncoope
   await started.promise;
   await f.runtime.beforeModelResolve({}, { ...f.ctx, runId: "next-after-expiry" });
   assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "UNVERIFIED");
-  assert(events.some(event => event.data.text?.includes("RC 验收超时")));
+  assert(events.some(event => event.runId === "next-after-expiry" && event.data.meta?.includes("RC 验收超时")));
+  assert(!events.some(event => event.stream === "assistant"));
   finish.resolve();
   await f.runtime.waitForNativeReviews({ drain: true });
   const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
@@ -475,12 +478,12 @@ test("until_pass deadline releases a correction with no active reviewer and repo
   await f.runtime.waitForNativeReviews();
   assert(childRunId);
   await f.runtime.prompt({ prompt: "RC feedback" }, { ...f.ctx, runId: childRunId });
-  f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { before_dispatch: 1100 } } } } };
+  f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { reply_dispatch: 1100 } } } } };
   await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {});
   assert.equal(f.chain().record.reviewStatus, "UNVERIFIED");
   assert.equal(f.chain().record.reasonCode, "STOP_WAIT_DEADLINE_EXPIRED");
   await pause(10);
-  assert(events.some(event => /等待修正与复验超时/u.test(event.data.text ?? "")), JSON.stringify(events));
+  assert.equal(events.length, 0, "no live dispatch run exists yet; never renew a finished correction run");
   assert.equal(f.hostAbort.signal.aborted, false);
   await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, { ...f.ctx, runId: childRunId });
   assert.equal((await f.runtime.waitForNativeReviews()).length, 1, "a timed-out child cannot restart the same wait chain");

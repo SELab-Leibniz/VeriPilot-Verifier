@@ -6,8 +6,10 @@ import path from "node:path";
 import http from "node:http";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
+import { readMaContract } from "./ma-transport.mjs";
 
 export async function maRendererObserver({ matrixRoot, invoke, onLog = () => {} }) {
+  const transport = readMaContract(matrixRoot);
   const archive = path.join(matrixRoot, "resources/app.asar"), fd = fs.openSync(archive, "r");
   const prefix = Buffer.alloc(16); fs.readSync(fd, prefix, 0, 16, 0);
   const base = 8 + prefix.readUInt32LE(4), header = Buffer.alloc(prefix.readUInt32LE(12));
@@ -94,14 +96,14 @@ export async function maRendererObserver({ matrixRoot, invoke, onLog = () => {} 
     let queue = Promise.resolve(), closed = false;
     const deliver = event => {
       if (closed) return;
-      const channel = event.event === "chat" || event.event === "session.tool" ? "gateway:chat-message"
-        : event.event === "session.message" ? "gateway:session-snapshot" : "gateway:notification";
-      const payload = channel === "gateway:notification" ? { method: event.event, params: event.payload } : { message: event.payload };
-      queue = queue.then(() => !closed && page.evaluate(({ channel, payload }) => window.__maEmit(channel, payload), { channel, payload }));
+      for (const { channel, payload } of transport.route(event)) {
+        queue = queue.then(() => !closed && page.evaluate(({ channel, payload }) => window.__maEmit(channel, payload), { channel, payload }));
+      }
       queue.catch(error => onLog({ at: Date.now(), text: `observer delivery failed: ${error.message}` }));
     };
     return {
-      version: pkg.version, renderer: `dist${asset}`, rendererSha256: createHash("sha256").update(source).digest("hex"), logs, calls, deliver,
+      version: pkg.version, renderer: `dist${asset}`, rendererSha256: createHash("sha256").update(source).digest("hex"),
+      transport: { mainFile: transport.mainFile, sha256: transport.sha256 }, logs, calls, deliver,
       async begin(sessionKey, runId, prompt) {
         await page.evaluate(({ sessionKey, runId, prompt }) => {
           window.__ma.sessions.setState({ currentSessionKey: sessionKey, currentAgentId: "main" });
@@ -115,7 +117,8 @@ export async function maRendererObserver({ matrixRoot, invoke, onLog = () => {} 
         return page.evaluate(key => {
           const chat = window.__ma.chat.getState(), meta = window.__ma.meta.getState().getMeta(key);
           return { status: meta?.status, error: chat.error, activeRunId: chat.activeRunId,
-            messageRoles: chat.messages.map(message => message.role), lastAssistant: chat.messages.filter(message => message.role === "assistant").at(-1)?.content };
+            messageRoles: chat.messages.map(message => message.role), toolProgress: chat.streamingTools,
+            lastAssistant: chat.messages.filter(message => message.role === "assistant").at(-1)?.content };
         }, sessionKey);
       },
       async abort() { await page.evaluate(() => window.__ma.chat.getState().abortRun()); },

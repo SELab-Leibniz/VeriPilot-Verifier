@@ -48,6 +48,8 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const project = await workspace(t);
   const host = api(project);
   entry.register(host);
+  assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
+  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
   assert.equal(host.hooks.has("before_agent_finalize"), false, "the pinned host buffers native text when a terminal gate is registered");
   assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
@@ -57,7 +59,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.equal(manifest.id, "runtime-corrector");
   assert.equal(manifest.main, pkg.openclaw.extensions[0], "MA startup discovery must find the native entry");
   assert.ok((await fs.stat(path.join(pluginRoot, manifest.main))).isFile());
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.9");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.10");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
   assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");
@@ -302,7 +304,7 @@ test("native-hook reviewers propagate real progress to the caller and stop after
   assert.equal(removed, 2);
   assert.ok(progress.some(({ reason }) => reason.endsWith("model.call.completed")));
   assert.ok(progress.every(({ parent }) => parent.runId === "native-parent-run"));
-  assert.equal(events[0].data.text, "正在提取需求。");
+  assert.equal(events[0].data.partialResult.views[0].text, "正在提取需求。");
 });
 
 test("native runtime failures do not spend a JSON repair or accept truncated valid-looking JSON", async (t) => {

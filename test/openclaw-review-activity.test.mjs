@@ -43,14 +43,15 @@ function clock(t) {
 test("a silent native review stays observable beyond the MA idle window without assistant text or fake diagnostic progress", t => {
   const c = clock(t), f = fixture();
   c.advance(360000);
-  const status = f.visible.filter(event => event.stream === "runtime-corrector.progress");
+  const status = f.visible.filter(event => event.stream === "tool" && event.data.phase === "update");
   assert(status.length >= 7, "a six-minute silent review must emit bounded runtime status updates");
   assert.equal(status[0].data.elapsedMs, 0);
   assert.equal(status.at(-1).data.elapsedMs, 360000);
   assert(status.every(event => event.runId === f.parent.runId && event.sessionKey === f.parent.sessionKey));
   assert(status.every(event => event.data.reviewRunId === "review-run" && event.data.lastActivityAt === null));
   assert(status.every(event => !["text", "content", "message", "role", "state"].some(key => key in event.data)));
-  assert.equal(f.visible.filter(event => event.stream === "assistant").length, 1, "periodic status must not touch the shared assistant buffer");
+  assert.equal(f.visible.filter(event => event.stream === "assistant").length, 0, "status must never touch the shared assistant buffer");
+  assert(status.every(event => !["start", "result"].includes(event.data.phase)));
   assert.equal(f.reported.length, 1, "a timer is not evidence of reviewer progress");
   f.close();
   assert.equal(c.pending, 0);
@@ -61,7 +62,7 @@ test("runtime status reports real activity freshness without forwarding private 
   c.advance(17000);
   f.activity({ runId: "review-run", type: "model.call.started", secretCandidate: "DO_NOT_FORWARD" });
   c.advance(43000);
-  const status = f.visible.filter(event => event.stream === "runtime-corrector.progress").at(-1);
+  const status = f.visible.filter(event => event.stream === "tool" && event.data.phase === "update").at(-1);
   assert.equal(status.data.lastActivityAt, 1017000);
   assert.equal(status.data.lastActivityType, "model.call.started");
   assert.equal(status.data.elapsedMs, 60000);
@@ -77,7 +78,7 @@ test("runtime keepalive stops at its existing absolute deadline without extendin
   assert.equal(f.visible.length, before);
   assert.equal(c.pending, 0);
   assert.equal(f.controller.signal.aborted, false);
-  assert(f.visible.filter(event => event.stream === "runtime-corrector.progress").length >= 2);
+  assert(f.visible.filter(event => event.stream === "tool").length >= 2);
   f.close();
 });
 
@@ -104,7 +105,7 @@ test("expired, already cancelled, and unbounded callers cannot start a periodic 
   for (const options of [{ controller }, { deadlineAt: Date.now() }, { deadlineAt: Infinity }]) {
     const f = fixture(options);
     c.advance(360000);
-    assert.equal(f.visible.filter(event => event.stream === "runtime-corrector.progress").length, 0);
+    assert.equal(f.visible.filter(event => event.stream === "tool").length, 0);
     assert.equal(c.pending, 0);
     f.close();
   }
@@ -121,7 +122,7 @@ test("native hook relays only owned real reviewer activity and detaches after co
   }
   assert.equal(f.reported.length, 5);
   assert.ok(f.reported.every(({ target }) => target === f.parent));
-  assert.equal(f.visible[0].data.text, "正在提取需求。");
+  assert.equal(f.visible[0].data.partialResult.views[0].text, "正在提取需求。");
   f.close(); f.activity({ runId: "review-run", type: "run.progress" });
   assert.equal(f.reported.length, 5);
   assert.equal(f.controller.signal.aborted, false);

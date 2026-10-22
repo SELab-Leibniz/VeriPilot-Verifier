@@ -4,6 +4,7 @@ import path from "node:path";
 import http from "node:http";
 import assert from "node:assert/strict";
 import { isolatedHost, runtimeState, files, pause } from "./lib/isolated-openclaw.mjs";
+import { readMaContract } from "./lib/ma-transport.mjs";
 
 const [hostRoot, destination, port = "18897"] = process.argv.slice(2);
 if (!hostRoot || !destination) throw new Error("hostRoot new-output-directory [gateway-port] required");
@@ -123,16 +124,19 @@ await fs.writeFile(providerFile, JSON.stringify({ api: "openai-completions", aut
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } } }));
 process.env.RC_TEST_MODEL_KEY = "local-contract-fixture-only";
 const result = { status: "RUNNING", cases: [], externalModelCalls: 0, hostModified: false };
+const ma = process.env.RC_MA_ROOT ? readMaContract(process.env.RC_MA_ROOT) : null;
+if (ma) result.maTransport = { version: ma.version, mainFile: ma.mainFile, sha256: ma.sha256 };
 try {
   h = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port), tools: ["read", "write", "runtime_corrector"],
+    clientCaps: [], subscribeSessionEvents: true,
     preparePlugin: async pluginRoot => {
       // Observe the public hook immediately after RC, before the host's own
       // business queue. Only the isolated plugin copy contains this observer.
       const file = path.join(pluginRoot, "lib/openclaw/entry.mjs");
       const source = await fs.readFile(file, "utf8"), marker = "registerProjectCommand(api, runtime.projects);";
       assert(source.includes(marker));
-      await fs.writeFile(file, source.replace(marker, `${marker}\n    api.on("before_dispatch", async (event, ctx) => {
-        const body = String(event.body ?? event.content ?? "");
+      await fs.writeFile(file, source.replace(marker, `${marker}\n    api.on("reply_dispatch", async (event, ctx) => {
+        const body = String(event.ctx?.BodyForAgent ?? event.ctx?.Body ?? event.body ?? event.content ?? "");
         await (await import("node:fs/promises")).appendFile(${JSON.stringify(observerFile)}, JSON.stringify({ at: Date.now(),
           sessionKey: event.sessionKey ?? ctx.sessionKey, next: /STOP_WAIT_[A-Z_]+_B\\b/u.test(body) }) + "\\n");
       }, { priority: -100 });`));
@@ -225,11 +229,15 @@ reviewers:
       assert.equal(snapshot.records.filter(row => row.file.includes("/native-followups/")).length, 1,
         "Exhausted correction budget dispatched another business correction");
     }
-    const ui = h.events.filter(event => event.event === "agent" && event.payload?.sessionKey === key
-      && event.payload?.stream === "assistant" && /\[runtime-corrector\]/u.test(event.payload.data?.text ?? ""));
-    assert(ui.some(event => /后续任务暂缓/u.test(event.payload.data.text)), "Visible wait event missing");
-    if (test.name === "TIMEOUT") assert(ui.some(event => /超时/u.test(event.payload.data.text)), "Visible timeout event missing");
-    if (test.neverPass) assert(ui.some(event => /耗尽|上限|用完/u.test(event.payload.data.text)), "Visible correction exhaustion event missing");
+    const ui = h.events.filter(event => event.event === "session.tool" && event.payload?.sessionKey === key
+      && event.payload?.stream === "tool" && event.payload.data?.name === "runtime-corrector.review"
+      && event.payload.data.toolCallId?.endsWith(":stop-wait"));
+    const uiText = event => event.payload.data.meta ?? event.payload.data.partialResult?.views?.map(view => view.text).join("\n") ?? "";
+    assert(ui.some(event => /后续任务暂缓/u.test(uiText(event))), "Visible wait event missing");
+    assert(ui.every(event => event.payload.runId === bResult.runId), "Status renewed an already-ended original/correction run");
+    if (ma) assert(ui.every(event => ma.route(event).some(item => item.channel === "gateway:chat-message")), "MA desktop filtered a wait status");
+    if (test.name === "TIMEOUT") assert(ui.some(event => /超时/u.test(uiText(event))), "Visible timeout event missing");
+    if (test.neverPass) assert(ui.some(event => /耗尽|上限|用完/u.test(uiText(event))), "Visible correction exhaustion event missing");
     // Drain intentionally held assessment-mode work before the next project.
     if (test.waitMode === "assessment") test.correction.release();
     await pause(500);

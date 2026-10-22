@@ -1,5 +1,7 @@
 # MA 等待 RC 审查的存续验证（2026-10-22）
 
+> 后续纠正：本记录的 renderer 直投适配器绕过了真实 MA 主进程的通知过滤，不能证明桌面兼容。MA 1.10.1 会丢弃 `runtime-corrector.progress`；当日 13:06 的实际会话仍被 idle watchdog 终止。下方 PASS 仅保留为历史实验结果，不代表当前修复有效。新实现及验证边界见 [MA 传输修复](ma-progress-transport-20261022.md)。诊断脚本现已加入真实主进程路由，并匹配 MA 的空能力列表及会话订阅；不得将新版脚本与旧记录混用。
+
 分支：`codex/rc-visible-review-liveness`；对照基线：`f51ef1d`。只修改 RC，不修改 MA 或 OpenClaw 安装文件、默认会话和配置。
 
 ## 原因与实现
