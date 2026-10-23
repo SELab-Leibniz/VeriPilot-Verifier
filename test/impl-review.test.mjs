@@ -88,7 +88,7 @@ function implFakeFactory(state) {
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String((state.serial += 1)));
     await fs.mkdir(requestDirectory, { recursive: true });
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "Ground Truth refreshed.",
         taskClassification: "CONTINUATION",

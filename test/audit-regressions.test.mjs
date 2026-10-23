@@ -57,7 +57,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
     const requestDirectory = path.join(root, `fake-${++serial}`);
     await fs.mkdir(requestDirectory);
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) result = {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") result = {
       summary: "Frozen task obligations.", taskClassification: "CONTINUATION",
       operations: request.currentGroundTruth.version === 0 ? claims : [],
     };

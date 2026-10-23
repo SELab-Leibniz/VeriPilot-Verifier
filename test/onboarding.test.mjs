@@ -136,7 +136,7 @@ function onboardingFakeFactory({
         taskClassification: "CONTINUATION",
         operations: adjudicate(request),
       };
-    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "Incremental refresh.",
         taskClassification: "CONTINUATION",

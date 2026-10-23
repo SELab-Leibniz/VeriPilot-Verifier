@@ -86,6 +86,14 @@ test("complete isolated reviews retain the original full-population PASS behavio
   assert.equal(result.stop.review.collection.complete, true);
   assert.equal(result.feedback, null);
   assert.equal(f.calls.length, 4);
+  const [classification, ...items] = f.calls;
+  assert.equal(classification.request.reviewScope.boundedBasis, true);
+  assert.equal(classification.schema.properties.findings.maxItems, 0);
+  assert.equal(classification.schema.properties.findings.items.properties, undefined,
+    "scope selection does not carry the unused finding schema and its ID enums");
+  assert.ok(Buffer.byteLength(JSON.stringify(classification.schema)) < 1024,
+    "the classification schema stays independent of the business population");
+  assert.ok(items.every(item => item.request.reviewScope.boundedBasis === true));
 });
 
 for (const failed of [-1, 1]) test(`intermediate Stop retains hard findings${failed >= 0 ? " across an overflowing sibling" : " without metric PASS"}`, async t => {

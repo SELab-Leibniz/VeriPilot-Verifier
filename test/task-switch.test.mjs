@@ -51,7 +51,7 @@ test("a mid-turn NEW_TASK reclassification is suppressed instead of aborting the
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String(Math.random()).slice(2));
     await fs.mkdir(requestDirectory, { recursive: true });
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "gt",
         taskClassification: classification,

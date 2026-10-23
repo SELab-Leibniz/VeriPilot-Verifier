@@ -191,7 +191,8 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
     await fs.mkdir(requestDirectory, { recursive: true });
     calls.push({ role, request, schema });
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || isDeepStrictEqual(schema, SKILL_GROUND_TRUTH_REVIEW_SCHEMA)) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || isDeepStrictEqual(schema, SKILL_GROUND_TRUTH_REVIEW_SCHEMA)
+      || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "Ground Truth refreshed.",
         taskClassification: "CONTINUATION",
@@ -938,6 +939,26 @@ test("Ground Truth refresh failure blocks Stop as unverified", async (t) => {
 });
 
 
+test("Stop baseline missing-basis output cannot publish an aligned cursor or a business PASS", async (t) => {
+  const root = await workspace(t);
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { dynamicGroundTruth: { enabled: true, panel: { size: 0 } }, skillCorrection: { enabled: false } });
+  const outcome = await handleRuntimeV2Event({
+    input: { cwd: root, session_id: "missing-baseline", transcript_path: transcript, hook_event_name: "Stop",
+      hook_event_id: "missing-baseline-stop", last_assistant_message: "Task complete." },
+    projectRoot: root, plan, reviewerFactory: async ({ role, schema }) => {
+      assert.equal(role, "ground-truth-extractor", "missing baseline must prevent later judgement");
+      assert(schema.properties.checkerError);
+      return { requestDirectory: root, result: { summary: "The full required basis could not be read.",
+        taskClassification: "CONTINUATION", operations: [], checkerError: "The final conditions page is unavailable." }, close: async () => {} };
+    },
+  });
+  assert.equal(outcome.stop.status, "UNVERIFIED");
+  const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
+  assert.equal(state.groundTruth.sourceCursors.stop, undefined);
+  assert.equal(state.stop.correctionAttempts, 0);
+});
+
 test("reviewer close failure cannot override a fail-closed Stop decision", async (t) => {
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
@@ -1031,6 +1052,11 @@ test("GT to Stop creates a target role with complete already-read evidence witho
     },
   });
   assert.equal(calls.filter((call) => call.role === "ground-truth-extractor").length, 1);
+  const baseline = calls.find((call) => call.role === "ground-truth-extractor");
+  assert.equal(baseline.request.reviewScope.kind, "baseline");
+  assert.equal(baseline.request.reviewScope.boundedBasis, true);
+  assert.ok(baseline.request.sourceCatalog.some(source => source.kind === "USER_MESSAGE"),
+    "paging must retain the original source catalog used to validate new requirements");
   const target = calls.find((call) => call.role === "stop-reviewer");
   assert.ok(target, "Stop must receive its own logical role handle");
   assert.equal(target.env.REVIEWER_ROUTE_MARKER, "original");
@@ -1389,7 +1415,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
       },
       async close() {},
     };
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
       return {
         ...handle,
         result: {

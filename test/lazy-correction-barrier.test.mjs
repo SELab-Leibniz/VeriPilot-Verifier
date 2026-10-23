@@ -117,7 +117,7 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
         taskClassification: "CONTINUATION",
         operations: request.majorityOperations,
       };
-    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA)) {
+    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "No new Ground Truth.",
         taskClassification: "CONTINUATION",
