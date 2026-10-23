@@ -204,6 +204,37 @@ test("large population descriptions remain exact and the materializer cannot re-
   await assertBoundedPages(path.join(f.requestDirectory, "review-scope"));
 });
 
+test("four metrics share one exact long Ground Truth description without repeated mandatory bodies", async t => {
+  const f = await fixture(t), canonical = truth([claim("R1", "requirements", "Complete original with conditions and exceptions. ".repeat(1600))]);
+  const population = { version: 2, metrics: Object.fromEntries(["M01", "M02", "M05", "M12"].map(metric => [metric, [{
+    objectId: `${metric}:R1`, sourceId: "R1", sourceRevisionId: "R1@3", description: canonical.claims[0].text,
+    applicability: "Only for the requested current stage.", customCondition: { exception: "Keep this exact object field." },
+  }]])) };
+  const input = request({ population, reviewScope: { boundedBasis: true, sourceIds: ["R1"], objectIds: Object.values(population.metrics).flat().map(row => row.objectId) } });
+  const prepared = await prepareReviewerRequest({ requestDirectory: f.requestDirectory, request: input, evidence: { groundTruth: canonical, population } });
+  assert.equal(prepared.reviewSources.requiredPopulationBasis, undefined);
+  assert.deepEqual(await original(prepared.reviewSources.originalPopulation), population);
+  assert.equal((await original(prepared.reviewSources.requiredGroundTruthBasis)).claims[0].text, canonical.claims[0].text);
+  assert(Buffer.byteLength(JSON.stringify(prepared.population)) < 8192);
+  for (const [metric, [object]] of Object.entries(prepared.population.metrics)) {
+    assert.equal(object.descriptionBasis.kind, "EXACT_GROUND_TRUTH_TEXT");
+    assert.equal(object.descriptionBasis.claimId, "R1"); assert.equal(object.descriptionBasis.revisionId, "R1@3");
+    const restored = { ...object, description: canonical.claims[0].text }; delete restored.descriptionBasis;
+    assert.deepEqual(restored, population.metrics[metric][0]);
+  }
+  assert.equal(input.population.metrics.M01[0].description, canonical.claims[0].text);
+});
+
+for (const mismatch of ["text", "revision"]) test(`description deduplication refuses a ${mismatch} mismatch`, async t => {
+  const f = await fixture(t), canonical = truth([claim("R1", "requirements", "Original condition. ".repeat(1200))]);
+  const population = { metrics: { M12: [{ objectId: "M12:R1", sourceId: "R1", sourceRevisionId: mismatch === "revision" ? "R1@2" : "R1@3",
+    description: canonical.claims[0].text + (mismatch === "text" ? "Additional mandatory exception." : "") }] } };
+  const out = await prepareReviewScope({ projectRoot: f.root, requestDirectory: f.requestDirectory,
+    request: request({ population, reviewScope: { boundedBasis: true, sourceIds: ["R1"], objectIds: ["M12:R1"] } }), evidence: { groundTruth: canonical, population } });
+  assert(out.request.reviewSources.requiredPopulationBasis);
+  assert.deepEqual(await original(out.request.reviewSources.requiredPopulationBasis), population);
+});
+
 test("oversized Stop instructions and other request fields are recoverable from a required request basis", async t => {
   const f = await fixture(t), instructions = ["Mandatory original instruction. ".repeat(1500) + "FINAL_INSTRUCTION_CONDITION"];
   const sourceCatalog = [{ sourceId: "user:1", text: "Original source declaration🌻".repeat(4000) + "FINAL_SOURCE_CONDITION" }];
