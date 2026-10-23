@@ -88,10 +88,63 @@ async function fixture(t, runner, options = {}) {
 }
 
 async function read(runtime, text, id = "read-1", file = "same-evidence.txt") {
-  const blocked = await runtime.beforeTool({ toolName: "read", params: { path: file }, toolCallId: id }, {});
+  const args = { path: file };
+  const blocked = await runtime.beforeTool({ toolName: "read", params: args, toolCallId: id }, {});
   if (blocked?.block) return { blocked };
-  return runtime.toolResult({ toolName: "read", args: { path: file }, toolCallId: id, result: result(text) }, {});
+  return runtime.toolResult({ toolName: "read", args: blocked?.params ?? args, toolCallId: id, result: result(text) }, {});
 }
+
+test("bounded Stop defaults business reads to honest 80-line pages and leaves explicit ranges and generated basis intact", async t => {
+  const observed = [];
+  const f = await fixture(t, async ({ params, runtime, file }) => {
+    assert.match(params.extraSystemPrompt, /defaults the read to 80 lines/u);
+    assert.match(params.extraSystemPrompt, /never proof that the complete file has been read/u);
+    const body = (await fs.readFile(file, "utf8")).split("\n");
+    for (const [index, args] of [{ path: file }, { file_path: file, offset: 81 }, { path: file, offset: 161, limit: 120 }].entries()) {
+      const original = structuredClone(args);
+      const decision = await runtime.beforeTool({ toolName: "read", params: args, toolCallId: `page-${index}` }, {});
+      const actual = decision?.params ?? args;
+      assert.deepEqual(args, original, "the caller's proposed read remains unchanged for the audit trail");
+      assert.equal(actual.limit, index === 2 ? 120 : 80);
+      assert.equal(actual.offset, args.offset);
+      assert.equal(Boolean(decision), index !== 2, "explicit bounded ranges retain their native parameters");
+      const start = (actual.offset ?? 1) - 1, text = body.slice(start, start + actual.limit).join("\n");
+      if (index === 0) { assert.match(text, /LINE_80$/u); assert.doesNotMatch(text, /LINE_81/u); }
+      await runtime.toolResult({ toolName: "read", args: actual, toolCallId: `page-${index}`, result: result(text) }, {});
+    }
+    const generated = path.join(path.dirname(params.sessionFile), "request.json");
+    assert.equal(await runtime.beforeTool({ toolName: "read", params: { path: generated }, toolCallId: "basis" }, {}), undefined);
+    await runtime.toolResult({ toolName: "read", args: { path: generated }, toolCallId: "basis",
+      result: result(await fs.readFile(generated, "utf8")) }, {});
+    return output();
+  }, { observeTool: (name, args) => { if (name === "read") observed.push(structuredClone(args)); } });
+  await fs.writeFile(path.join(f.root, "app.mjs"), Array.from({ length: 280 }, (_, index) => `LINE_${index + 1}`).join("\n"));
+  const handle = await f.factory(f.input);
+  assert.equal(handle.reviewEvidence.unstable, false);
+  assert.deepEqual(handle.reviewEvidence.reads.map(row => row.input), [
+    { offset: null, limit: 80 }, { offset: 81, limit: 80 }, { offset: 161, limit: 120 },
+  ], "the evidence ledger records the native read's actual ranges");
+  assert.deepEqual(observed.map(args => args.limit ?? null), [80, 80, 120, null]);
+  await handle.close();
+});
+
+test("ordinary reviewers and Stop classification keep their native read parameters", async t => {
+  const f = await fixture(t, async ({ runtime, file }) => {
+    const args = { path: file };
+    assert.equal(await runtime.beforeTool({ toolName: "read", params: args, toolCallId: "ordinary" }, {}), undefined);
+    assert.deepEqual(args, { path: file });
+    await runtime.toolResult({ toolName: "read", args, toolCallId: "ordinary", result: result(await fs.readFile(file, "utf8")) }, {});
+    return output();
+  });
+  for (const mode of ["ordinary", "unmarked", "classification"]) {
+    const input = structuredClone(f.input);
+    if (mode === "ordinary") input.role = "implementation-reviewer";
+    if (mode === "unmarked") input.request.reviewScope.boundedBasis = false;
+    if (mode === "classification") { input.schema = STOP_CLASSIFICATION_SCHEMA; input.request.reviewScope.kind = "classification"; }
+    const handle = await f.factory(input);
+    await handle.close();
+  }
+});
 
 test("bounded Stop aborts cumulative repeated reads, keeps checked progress, and bypasses native fail-open wrapping", async t => {
   let signal, lastResult, blocked;
