@@ -196,6 +196,26 @@ test("bounded Stop scopes preserve oversized obligations, common constraints and
   });
 });
 
+test("mandatory Ground Truth uses lossless compact JSON while its full audit original stays recoverable", async t => {
+  const f = await fixture(t);
+  const canonical = truth([claim("R1"), ...Array.from({ length: 79 }, (_, index) => ({
+    ...claim(`G${index}`, "constraints", "  保留空格、制表和例外\n\t原文🌻  ".repeat(3)),
+    applicability: "When R1 applies, except the stated condition.", source: { ref: "source.md", kind: "MATERIAL" },
+  }))]);
+  const out = await prepareReviewScope({ projectRoot: f.root, requestDirectory: f.requestDirectory,
+    request: request({ reviewScope: { boundedBasis: true, sourceIds: ["R1"], objectIds: ["M12:R1"] } }),
+    evidence: { groundTruth: canonical } });
+  const descriptor = out.request.reviewSources.requiredGroundTruthBasis;
+  const index = JSON.parse(await fs.readFile(descriptor.path, "utf8"));
+  const basis = await original(descriptor);
+  assert.deepEqual(basis.claims, canonical.claims);
+  assert.equal(index.jsonFormat, "COMPACT_VALUE_PRESERVING");
+  assert.ok(Buffer.byteLength(JSON.stringify(basis, null, 2)) - index.sourceBytes > 8000);
+  assert.deepEqual(await original(out.request.reviewSources.originalGroundTruth), canonical);
+  assert.equal(out.evidence.groundTruth.reviewScope.deferredRequiredBasis, true);
+  await assertBoundedPages(path.join(f.requestDirectory, "review-scope"));
+});
+
 test("large population descriptions remain exact and the materializer cannot re-inline captured originals", async t => {
   const f = await fixture(t), body = "完整对象描述🌻\\引号\"".repeat(6000) + "FINAL_OBJECT_CONDITION";
   const population = { version: 7, groundTruthVersion: 3, digest: "frozen-population", metricCatalog: { M12: { name: "Requirement execution" } },
