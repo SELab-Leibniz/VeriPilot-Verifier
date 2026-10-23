@@ -8,8 +8,8 @@ import { createHash } from "node:crypto";
 import { buildPlugin } from "../../lib/plugin-builder.mjs";
 
 const [destination, mode = "probe"] = process.argv.slice(2);
-if (!destination || !["probe", "live", "repair-check"].includes(mode)) throw new Error("new-output-directory [probe|live|repair-check] required");
-const repairCheck = mode === "repair-check", reviewerTimeoutMs = repairCheck ? 180_000 : 90_000;
+if (!destination || !["probe", "live", "repair-check", "bounds-check"].includes(mode)) throw new Error("new-output-directory [probe|live|repair-check|bounds-check] required");
+const boundsCheck = mode === "bounds-check", repairCheck = mode === "repair-check", reviewerTimeoutMs = repairCheck || boundsCheck ? 180_000 : 90_000;
 const sourceRoot = fileURLToPath(new URL("../..", import.meta.url));
 const hostRoot = process.env.RC_KITCHEN_HOST_ROOT ?? "C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw";
 const hostVersion = JSON.parse(await fs.readFile(path.join(hostRoot, "package.json"), "utf8")).version;
@@ -23,7 +23,13 @@ const configuredKey = configured.apiKey ?? cached.apiKey;
 const environmentName = typeof configuredKey === "string" && /^\$\{([^}]+)\}$/u.exec(configuredKey)?.[1];
 const key = environmentName ? process.env[environmentName] : configuredKey;
 if (!key || !configured?.baseUrl || !configured?.api) throw new Error("The existing configured native provider is not usable.");
-const secrets = [key, process.env.ANTHROPIC_AUTH_TOKEN].filter(Boolean);
+const headerSecrets = [configured, cached].flatMap(provider => Object.entries(provider?.headers ?? {})
+  .filter(([name]) => /auth|token|api[-_]?key|secret/iu.test(name)).flatMap(([, value]) => {
+    if (typeof value !== "string") return [];
+    const variable = /^\$\{([^}]+)\}$/u.exec(value)?.[1];
+    return [value, variable ? process.env[variable] : null, value.replace(/^Bearer\s+/iu, "")];
+  }));
+const secrets = [key, process.env.ANTHROPIC_AUTH_TOKEN, ...headerSecrets].filter(value => typeof value === "string" && value.length >= 8);
 const redact = value => secrets.reduce((text, secret) => text.replaceAll(secret, "<redacted>"), String(value));
 await fs.mkdir(destination, { mode: 0o700 });
 const root = await fs.realpath(destination), project = path.join(root, "kitchen");
@@ -41,15 +47,19 @@ const model = { ...configured.models.find(item => item.id === modelId), reasonin
 const config = { agents: { defaults: { workspace: project, skipBootstrap: true, timeoutSeconds: reviewerTimeoutMs / 1000,
   model: { primary: sourceRef }, models: { [sourceRef]: {} }, sandbox: { mode: "off" } } },
   models: { providers: { [providerId]: { ...configured, apiKey: "${RC_KITCHEN_MODEL_KEY}", models: [model] } } },
-  plugins: { enabled: false }, tools: { allow: ["read"] }, logging: { level: "error", consoleLevel: "error" } };
+  plugins: { enabled: false }, tools: { allow: ["read"], fs: { workspaceOnly: true } }, logging: { level: "error", consoleLevel: "error" } };
 process.env.OPENCLAW_STATE_DIR = stateDir;
 process.env.OPENCLAW_HOME = path.join(root, "host-home");
 process.env.OPENCLAW_CONFIG_PATH = path.join(root, "openclaw.json");
 process.env.RC_KITCHEN_MODEL_KEY = key;
-await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config), { mode: 0o600 });
+// Authentication headers and arbitrary provider metadata stay in memory.
+const diskConfig = structuredClone(config);
+diskConfig.models.providers[providerId] = { baseUrl: configured.baseUrl, api: configured.api,
+  apiKey: "${RC_KITCHEN_MODEL_KEY}", models: [model] };
+await save("openclaw.json", diskConfig);
 config.models.providers[providerId].apiKey = key;
 const abort = new AbortController();
-const absoluteDeadline = Date.now() + (mode === "probe" ? 85_000 : repairCheck ? 180_000 : 600_000);
+const absoluteDeadline = Date.now() + (mode === "probe" ? 85_000 : repairCheck || boundsCheck ? 240_000 : 600_000);
 const timer = setTimeout(() => abort.abort(Object.assign(new Error("Isolated native experiment deadline expired."), { code: "EXPERIMENT_DEADLINE" })), absoluteDeadline - Date.now());
 try {
   const pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot, outputRoot: path.join(root, "plugin") });
@@ -57,8 +67,9 @@ try {
   const { createPluginRuntime } = await import(pathToFileURL(path.join(hostRoot, "dist/plugins/runtime/index.js")));
   const native = createPluginRuntime();
   const { createOpenClawReviewerFactory } = await load("openclaw/reviewer.mjs");
+  const { createReviewerContextGuard } = await load("openclaw/reviewer-context.mjs");
   const { collectReviewItems } = await load("runtime-v2/review-collector.mjs");
-  const { STOP_REVIEW_SCHEMA } = await load("runtime-v2/reviewer.mjs");
+  const { STOP_REVIEW_SCHEMA, STOP_CLASSIFICATION_SCHEMA } = await load("runtime-v2/reviewer.mjs");
   const { IMPL_REVIEW_SCHEMA } = await load("runtime-v2/impl-review.mjs");
   const { ensureTask, taskDirectory } = await load("runtime-v2/task-store.mjs");
   const { applyGroundTruthDelta, freezeGroundTruth } = await load("runtime-v2/ground-truth-ledger.mjs");
@@ -70,30 +81,59 @@ try {
     operation: "ADD", category: "requirements", text: `${match[1]} ${match[2].trim()}`, authority: "USER_EXPLICIT", severity: "HARD",
     verificationTarget: match[1] === "R06" ? "PROCESS" : "IMPLEMENTATION", source: { ref: "user:isolated-kitchen-contract" },
   })) } });
+  if (boundsCheck) {
+    // Reproduce a large shared basis using only the authorized kitchen example.
+    // No live task, host transcript or unrelated project source is transmitted.
+    const padding = "The offline kitchen contract remains authoritative. Stock values must be finite and nonnegative; a failed cook leaves inventory unchanged. ";
+    await applyGroundTruthDelta({ projectRoot: project, taskId: task.taskId, delta: { operations: Array.from({ length: 79 }, (_, i) => ({
+      operation: "ADD", category: "constraints", text: `Shared kitchen constraint ${i + 1}. ${padding.repeat(3)}`,
+      authority: "USER_EXPLICIT", severity: "HARD", verificationTarget: "IMPLEMENTATION", source: { ref: "user:isolated-kitchen-boundary" },
+    })) } });
+    report.sharedConstraints = 79;
+  }
   const { current: groundTruth } = await freezeGroundTruth({ projectRoot: project, taskId: task.taskId });
   const truth = groundTruth ?? JSON.parse(await fs.readFile(path.join(taskDirectory(project, task.taskId), "ground-truth/current.json"), "utf8"));
   const groundTruthPath = path.join(taskDirectory(project, task.taskId), "ground-truth/current.json");
+  const trajectoryCursors = new Map(), replayGuards = new Map();
+  report.nativeGuardHooksActive = false;
+  report.guardReplayScope = "Direct harness has no Gateway hooks. Replay recorded native read payloads against the same guard; hook enforcement and abort/progress isolation are tested separately.";
   const factory = createOpenClawReviewerFactory({ config, runtime: { version: hostVersion, agent: native.agent } }, {
     reviewerModel: sourceRef, reviewerTimeoutMs, deadlineAt: absoluteDeadline, abortSignal: abort.signal,
     runEmbeddedAgent: async params => {
-      const call = { ordinal: report.calls.length + 1, sessionId: params.sessionId, runId: params.runId, startedAt: new Date().toISOString() };
+      const call = { ordinal: report.calls.length + 1, sessionId: params.sessionId, runId: params.runId, startedAt: new Date().toISOString(),
+        knownPromptBytes: Buffer.byteLength(`${params.extraSystemPrompt}\n${params.prompt}`) };
       report.calls.push(call); console.log(JSON.stringify({ phase: "native-review-start", ordinal: call.ordinal }));
       const result = await native.agent.runEmbeddedAgent(params);
       call.finishedAt = new Date().toISOString(); call.stopReason = result.meta?.stopReason ?? null;
       call.errorKind = result.meta?.error?.kind ?? null; call.usage = result.meta?.agentMeta?.usage ?? null;
-      call.toolNames = await fs.readFile(params.sessionFile, "utf8").then(text => text.trim().split("\n").flatMap(line => {
-        try { return (JSON.parse(line).message?.content ?? []).filter(item => item.type === "toolCall").map(item => item.name); } catch { return []; }
-      })).catch(() => []);
+      const trajectory = await fs.readFile(params.sessionFile, "utf8").catch(() => "");
+      await save(`native-call-${call.ordinal}.jsonl`, trajectory);
+      const lines = trajectory.trim().split("\n"), cursor = trajectoryCursors.get(params.sessionId) ?? 0;
+      const messages = lines.slice(cursor).flatMap(line => { try { const message = JSON.parse(line).message; return message ? [message] : []; } catch { return []; } });
+      trajectoryCursors.set(params.sessionId, lines.length);
+      call.toolNames = messages.flatMap(message => (message.content ?? []).filter(item => item.type === "toolCall").map(item => item.name));
+      if (boundsCheck) {
+        let replay = replayGuards.get(params.sessionId);
+        if (!replay) { replay = createReviewerContextGuard({ controller: new AbortController() }); replay.configure(config, providerId, modelId); replayGuards.set(params.sessionId, replay); }
+        try {
+          replay.prompt(" ".repeat(call.knownPromptBytes));
+          for (const message of messages) {
+            for (const block of message.content ?? []) if (block.type === "toolCall") replay.observe(block.name, block.arguments);
+            if (message.role === "toolResult") replay.observe("read:result", { result: { content: message.content, details: message.details, isError: message.isError } });
+          }
+          call.guardReplay = { withinLimit: true, ...replay.state };
+        } catch (error) { call.guardReplay = { withinLimit: false, ...replay.state, code: error.code }; }
+      }
       await save("report.json", report); return result;
     },
   });
   const reviewer = { session: "detached", effort: "low", timeoutMs: reviewerTimeoutMs,
-    ...(repairCheck ? {} : { formatRepairAttempts: 0 }) };
-  report.formatRepairSetting = repairCheck ? "production-default" : 0;
+    ...(repairCheck || boundsCheck ? {} : { formatRepairAttempts: 0 }) };
+  report.formatRepairSetting = repairCheck || boundsCheck ? "production-default" : 0;
   if (mode === "probe") {
     const handle = await factory({ projectRoot: project, sessionCwd: project, taskId: task.taskId, role: "stop-reviewer", reviewer,
-      schema: STOP_REVIEW_SCHEMA, request: { population: { metrics: {} }, groundTruthPath,
-        reviewScope: { kind: "classification", objectIds: [], sourceIds: [] },
+      schema: STOP_CLASSIFICATION_SCHEMA, request: { population: { metrics: {} }, groundTruthPath,
+        reviewScope: { kind: "classification", boundedBasis: true, objectIds: [], sourceIds: [] },
         hook: { lastAssistantMessage: "The offline kitchen app is complete." },
         instructions: ["Classify this attempted completion as TASK_COMPLETE. Return empty metricObjectJudgements and findings, stage null, and a concise summary. This transport probe does not establish any application PASS."] },
       evidence: { groundTruth: truth, population: { metrics: {} } }, deadlineAt: absoluteDeadline });
@@ -104,16 +144,16 @@ try {
     if (broken === correct) throw new Error("Controlled cooking debit mutation did not match the seed.");
     await fs.writeFile(file, broken);
     report.controlledBusinessFault = { mutation: "cook returns success without deducting required stock", sourceSha256: hash(broken), observerAuthoredBusinessFix: false };
-    for (const role of repairCheck ? ["implementation-reviewer"] : ["stop-reviewer", "implementation-reviewer"]) {
-      const claims = truth.claims.filter(claim => repairCheck ? claim.text.startsWith("R04 ") : !claim.text.startsWith("R06 "));
-      if (repairCheck && claims.length !== 1) throw new Error("The repair check must own exactly the frozen R04 obligation.");
+    for (const role of repairCheck ? ["implementation-reviewer"] : boundsCheck ? ["stop-reviewer"] : ["stop-reviewer", "implementation-reviewer"]) {
+      const claims = truth.claims.filter(claim => repairCheck || boundsCheck ? claim.text.startsWith("R04 ") : !claim.text.startsWith("R06 "));
+      if ((repairCheck || boundsCheck) && claims.length !== 1) throw new Error("The focused check must own exactly the frozen R04 obligation.");
       const objects = claims.map(claim => ({ objectId: `M12:${claim.claimId}`, metricId: "M12", sourceId: claim.claimId,
         sourceRevisionId: claim.revisionId, description: claim.text, hard: true, evidenceRequired: true, verificationTarget: "IMPLEMENTATION" }));
       const population = { taskId: task.taskId, version: 1, groundTruthVersion: truth.version, digest: hash(JSON.stringify(objects)), metrics: { M12: objects } };
       let attempted = 0;
       const isolated = async options => {
         attempted++;
-        if (role === "stop-reviewer" && attempted === 3) throw Object.assign(new Error("Controlled per-item context overflow; no model failure was fabricated."), { code: "CONTEXT_OVERFLOW" });
+        if (!boundsCheck && role === "stop-reviewer" && attempted === 3) throw Object.assign(new Error("Controlled per-item context overflow; no model failure was fabricated."), { code: "CONTEXT_OVERFLOW" });
         return factory(options);
       };
       const handle = await collectReviewItems({ projectRoot: project, sessionCwd: project, taskId: task.taskId,
@@ -129,15 +169,18 @@ try {
       await save("report.json", report); await handle.close();
       if (abort.signal.aborted || Date.now() >= absoluteDeadline) break;
     }
-    report.scope = repairCheck
+    report.scope = boundsCheck
+      ? "One Stop R04 obligation with 79 paged shared constraints, real source reading and production format repair. Direct native harness, no Gateway hook integration, business repair or whole-application PASS."
+      : repairCheck
       ? "One R04 implementation obligation with production-default format repair; no artificial reviewer overflow, no business repair and no whole-application PASS claim."
       : "R01-R05 source obligations only; R06 process verification is frozen but not claimed as checked in this direct native-collector experiment.";
-    if (repairCheck) {
+    if (repairCheck || boundsCheck) {
       const round = report.rounds[0], rows = round?.result.metricObjectJudgements ?? [];
-      report.status = report.rounds.length === 1 && round.role === "implementation-reviewer"
+      report.status = report.rounds.length === 1 && round.role === (boundsCheck ? "stop-reviewer" : "implementation-reviewer")
         && round.collection.complete && round.collection.totalObjects === 1 && round.collection.reviewedObjects === 1
         && !round.collection.failures.length && rows.length === 1 && rows[0].judgement === "DEVIATION"
-        ? "R04_DEVIATION_CONFIRMED" : "UNVERIFIED";
+        && (!boundsCheck || report.calls.every(call => call.guardReplay?.withinLimit === true))
+        ? boundsCheck ? "PAGED_STOP_R04_DEVIATION_CONFIRMED" : "R04_DEVIATION_CONFIRMED" : "UNVERIFIED";
       if (report.status === "UNVERIFIED") process.exitCode = 1;
     } else report.status = report.rounds.some(round => round.collection.reviewedObjects > 0) ? "COMPLETED_WITH_OBSERVATIONS" : "UNVERIFIED";
   }

@@ -38,6 +38,20 @@ const { ensureTask, taskDirectory, findTask } = await load("runtime-v2/task-stor
 const { applyGroundTruthDelta, freezeGroundTruth } = await load("runtime-v2/ground-truth-ledger.mjs");
 const { createOpenClawReviewerFactory } = await load("openclaw/reviewer.mjs");
 const { createNativeFollowups } = await load("openclaw/native-followup.mjs");
+// Reconstruct exact paged originals for this deterministic transport double.
+// Real reviewers must read these sources through their bounded read tool.
+async function pagedOriginal(source) {
+  const index = await json(source.path);
+  if (index.kind === "records") return index.records;
+  return (await Promise.all(index.pages.map(pagedOriginal))).flat();
+}
+async function reviewTruth(request) {
+  const truth = await json(request.groundTruthPath);
+  const source = request.reviewSources?.requiredGroundTruthBasis;
+  if (!source) return truth;
+  const parts = await pagedOriginal(source);
+  return JSON.parse((await Promise.all(parts.sort((a, b) => a.offset - b.offset).map(part => fs.readFile(part.path, "utf8")))).join(""));
+}
 const wrapper = path.join(root, "verify-with-explicit-utf8.py");
 await fs.writeFile(wrapper, `# Only subprocess IO differs; verifier and business source remain unchanged.\nimport importlib.util, json, subprocess, sys\nfrom pathlib import Path\nspec=importlib.util.spec_from_file_location("bundled_kitchen_verifier", sys.argv[1])\nv=importlib.util.module_from_spec(spec); spec.loader.exec_module(v)\noriginal=subprocess.run\ndef utf8_run(args, **kwargs):\n    kwargs["encoding"]="utf-8"\n    return original([args[0],"-X","utf8",*args[1:]],**kwargs)\nv.subprocess.run=utf8_run\ntry:\n    report=v.verify(Path(sys.argv[2]))\nexcept Exception as error:\n    trace=error.__traceback__; report={}\n    while trace:\n        if trace.tb_frame.f_code.co_name=="verify": report=trace.tb_frame.f_locals.get("report",{})\n        trace=trace.tb_next\n    report.update(status="FAIL",error=str(error),attemptedScenarios=len(report.get("cases",[])))\n    Path(sys.argv[3]).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")\n    print("KITCHEN_INVALID: "+str(error)); sys.exit(1)\nPath(sys.argv[3]).write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")\nprint("KITCHEN_VERIFIED "+str(report["scenarios"])+"/21")\n`);
 const brokenSource = originalSource.replace("    if missing:", "    if False:  # controlled fault: skip the insufficient-stock guard");
@@ -115,7 +129,7 @@ async function assess(f, round, { overflowRole = null, overflowAt = -1 } = {}) {
       const requestPath = path.join(path.dirname(params.sessionFile), "request.json"), request = await json(requestPath);
       const classification = request.reviewScope?.kind === "classification", role = params.extraSystemPrompt.includes("isolated implementation-reviewer") ? "implementation-reviewer" : "stop-reviewer";
       calls.push({ role, classification, sessionId: params.sessionId, requestBytes: Buffer.byteLength(await fs.readFile(requestPath)), objectIds: request.reviewScope?.objectIds ?? [], sourceIds: request.reviewScope?.sourceIds ?? [] });
-      const rows = Object.values(request.population?.metrics ?? {}).flat(), localTruth = await json(request.groundTruthPath);
+      const rows = Object.values(request.population?.metrics ?? {}).flat(), localTruth = await reviewTruth(request);
       const source = path.join(f.projectRoot, "kitchen.py"), sourceLines = (await fs.readFile(source, "utf8")).split("\n");
       const reportLines = (await fs.readFile(actual.reportPath, "utf8")).split("\n");
       const judgements = rows.map(object => {
@@ -203,7 +217,9 @@ try {
   }
   const oversized = await fixture("single-oversized-obligation", { oversized: true }), oversize = await assess(oversized, "oversized");
   assert.equal(oversize.stopStatus, "UNVERIFIED"); assert.equal(oversize.k, 0); assert.equal(oversize.infrastructureFailures, 1);
-  for (const collection of [oversize.stopCollection, oversize.implementationCollection]) {
+  assert.equal(oversize.stopCollection.complete, true, "Stop must page a long original obligation without dropping it.");
+  assert.equal(oversize.stopCollection.failures.length, 0);
+  for (const collection of [oversize.implementationCollection]) {
     assert.equal(collection.failures.length, 1); assert.equal(collection.failures[0].code, "REVIEW_SCOPE_TOO_LARGE");
     assert.equal(collection.completedItems, collection.totalItems - 1); assert.ok(collection.reviewedObjects > 0);
   }
