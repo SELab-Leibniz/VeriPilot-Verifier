@@ -129,6 +129,23 @@ test("implementation requests read canonical Ground Truth when evidence is absen
   await assertBoundedPages(path.join(f.requestDirectory, "review-scope"));
 });
 
+test("bounded Stop navigation omits validation hashes while preserving all semantic metadata and an exact audit manifest", async t => {
+  const f = await fixture(t);
+  const manifest = Array.from({ length: 80 }, (_, index) => ({ path: `src/module-${index}.ets`, size: 19000,
+    sha256: "f".repeat(64), applicability: "Preserve this source condition.", custom: { owner: "R1" } }));
+  const before = structuredClone(manifest);
+  const out = await prepareReviewScope({ projectRoot: f.root, requestDirectory: f.requestDirectory,
+    request: request({ sourceManifest: manifest, reviewScope: { boundedBasis: true, sourceIds: ["R1"], objectIds: ["M12:R1"] } }),
+    evidence: { groundTruth: truth([claim("R1")]) } });
+  assert.deepEqual(manifest, before);
+  assert.deepEqual(await original(out.request.reviewSources.originalSourceManifest), manifest);
+  const navigation = await records(out.request.reviewSources.sourceManifest);
+  assert.deepEqual(navigation, manifest.map(({ sha256: _hash, ...entry }) => entry));
+  assert.ok(Buffer.byteLength(JSON.stringify(manifest)) - Buffer.byteLength(JSON.stringify(navigation)) > 6000);
+  assert.match(out.request.instructions.join("\n"), /do not reread the audit manifest/);
+  await assertBoundedPages(path.join(f.requestDirectory, "review-scope"));
+});
+
 test("oversized local obligations and requests fail explicitly without truncating or weakening requirements", async t => {
   const f = await fixture(t), canonical = truth([claim("R1", "requirements", "必须完整核查的原始需求".repeat(4000))]);
   const before = structuredClone(canonical);

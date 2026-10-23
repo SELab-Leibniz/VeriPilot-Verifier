@@ -6,7 +6,7 @@ import test from "node:test";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 
 async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", severity = "HARD", findingKey = "premature-output") {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-collector-integration-"));
@@ -30,15 +30,16 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
         findings: [], metricObjectJudgements: [] }, close: async () => {},
     };
     const index = item++;
+    const localClassification = options.request.fixedStopClassification?.stopClassification ?? stopClassification;
     if (index === failed) throw Object.assign(new Error("prompt exceeds context window"), { code: "CONTEXT_OVERFLOW" });
     const objects = Object.values(options.request.population.metrics).flat();
-    const findings = stopClassification === "INTERMEDIATE" && index === 0 ? [{
+    const findings = localClassification === "INTERMEDIATE" && index === 0 ? [{
       deviationKey: findingKey, rootCauseId: "REQUIREMENT_OMITTED", severity: "error",
       reason: "A required evidence gate is absent, so the attempted stop is premature and must be blocked.",
       actualEvidence: [`${source}#L1-L1`], expectedConstraint: "Observe the original evidence gate.",
       violatedGroundTruthIds: options.request.reviewScope.sourceIds,
     }] : [];
-    return { result: { summary: "Compared the assigned originals.", stopClassification, stage: null,
+    return { result: { summary: "Compared the assigned originals.", stopClassification: localClassification, stage: null,
       findings, metricObjectJudgements: objects.map(object => ({ objectId: object.objectId,
         judgement: failed >= 0 && index === 0 ? "DEVIATION" : "PASS",
         reason: failed >= 0 && index === 0 ? "The first output has a confirmed local discrepancy." : "Assigned evidence matches.",
@@ -50,7 +51,7 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
     skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
     reviewers: { stopReviewer: { timeoutMs: 15000 } },
   }, { policyRoot: path.join(root, ".runtime-corrector") }) };
-  const run = () => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
+  const run = (extra = {}) => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory, ...extra,
     input: { cwd: root, session_id: "collector-host", transcript_path: transcript,
       hook_event_name: "Stop", hook_event_id: "collector-stop", last_assistant_message: "Task complete." } });
   return { root, task, calls, run };
@@ -94,6 +95,31 @@ test("complete isolated reviews retain the original full-population PASS behavio
   assert.ok(Buffer.byteLength(JSON.stringify(classification.schema)) < 1024,
     "the classification schema stays independent of the business population");
   assert.ok(items.every(item => item.request.reviewScope.boundedBasis === true));
+});
+
+test("explicit verify_only uses the caller's current-output scope without a model classifier", async t => {
+  const f = await fixture(t, -1, "INTERMEDIATE");
+  const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), "task.json"), "utf8"));
+  const result = await f.run({ assessmentContext: { mode: "verify_only", assessmentId: "caller-scope",
+    guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 3 } });
+  assert.equal(f.calls.length, 3, "only the three actual item checks consume model calls");
+  assert.ok(f.calls.every(call => call.request.reviewScope.kind !== "classification"));
+  assert.equal(result.stop.review.stopClassification, "TASK_COMPLETE", "caller scope cannot drift with old assistant progress");
+  assert.equal(result.stop.report.status, "PASS", "PASS still requires every owned object to pass");
+  assert.equal(result.stop.review.metricObjectJudgements.length, 12);
+});
+
+test("caller-selected verification scope cannot turn an overflowing item into PASS", async t => {
+  const f = await fixture(t, 1, "INTERMEDIATE");
+  const statePath = path.join(taskDirectory(f.root, f.task.taskId), "task.json");
+  const state = JSON.parse(await fs.readFile(statePath, "utf8"));
+  const result = await f.run({ assessmentContext: { mode: "verify_only", assessmentId: "caller-scope-failed",
+    guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 3 } });
+  assert.equal(f.calls.length, 3);
+  assert.equal(result.stop.status, "UNVERIFIED");
+  assert.equal(result.stop.review.collection.complete, false);
+  assert.equal(result.stop.review.metricObjectJudgements.filter(row => row.judgement === "UNVERIFIED").length, 4);
+  assert.equal(JSON.parse(await fs.readFile(statePath, "utf8")).stop.correctionAttempts, 0);
 });
 
 for (const failed of [-1, 1]) test(`intermediate Stop retains hard findings${failed >= 0 ? " across an overflowing sibling" : " without metric PASS"}`, async t => {
