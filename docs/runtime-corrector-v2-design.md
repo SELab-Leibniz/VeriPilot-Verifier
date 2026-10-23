@@ -16,6 +16,16 @@ Runtime Corrector v2 keeps the existing artifact node/edge correction model and 
 
 The corrector diagnoses and records. It never edits project artifacts or applies patches on behalf of the main agent.
 
+## Isolated Stop and implementation review collection
+
+The built-in CLI and OpenClaw reviewers use a program-owned collector. Stop first classifies the stopping situation in a small fresh session, then reviews one obligation and its evidence ownership at a time (at most four related metric objects). Each task starts a fresh detached session, or retains an explicitly independent provider. Non-completion stops collect findings without claiming metric PASS. Implementation review uses the same collector for its source-owned population.
+
+The canonical Ground Truth and complete population remain unchanged. A task receives only its assigned objects, the applicable common constraints and explicit dependencies. Request JSON is limited to 24 KiB and its Ground Truth view to 16 KiB; original messages, tool pairs and source indexes remain available as bounded pages. An obligation that cannot fit stays unverified rather than losing conditions through truncation. Ground Truth extraction, onboarding, Skill and artifact reviews retain their existing flows.
+
+Each validated task result and its checked source citations are saved under `tasks/<taskId>/review-collections/` before bounded session cleanup. Overflow, timeout or invalid output affects that task; other tasks continue within the original role and shared assessment deadlines. Failed objects stay in the original denominator. An incomplete collection cannot PASS and spends the existing infrastructure retry budget, never business correction `k`. Cancellation, changed Ground Truth or changed checked evidence prevents stale publication. There is no final model-based summary and no cross-round result cache.
+
+Stop feedback is persisted under `tasks/<taskId>/feedback-delivery/`, then projected to brief diagnosis and evidence locations: at most 768 UTF-8 bytes per item and 8192 bytes for the final host message including its prefix. PASS items are counted. Full item records and a paginated index are linked by `[RC_DETAILS]`; omitted item counts remain explicit. Proven partial results can reach the native host even when a sibling failed, with the whole review still UNVERIFIED and no additional business correction debit. Existing cancellation, source checks and admission receipt deduplication still apply. Injected reviewer factories retain their previous whole-review contract unless they opt in with `supportsReviewCollection = true`.
+
 ## Trust and authority
 
 Ground Truth claims use this authority order:
