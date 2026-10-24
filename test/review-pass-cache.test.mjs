@@ -8,6 +8,7 @@ import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
 const row = (id, metric = "M01", target = "ARTIFACT") => ({ objectId: `${metric}:${id}`, metricId: metric,
   sourceId: id, sourceRevisionId: `${id}@1`, description: `Check ${id}.`, verificationTarget: target });
@@ -32,10 +33,14 @@ async function fixture(t, objects = [row("R1")]) {
       metricObjectJudgements: Object.values(params.request.population.metrics).flat().map(object => ({ objectId: object.objectId, judgement,
         reason: "The checked current output establishes this object.", evidence: [`${source}#L1`] })) };
   }
-  const factory = async params => { const index = calls++; return { result: runItem ? await runItem(params, index) : output(params),
-    reviewEvidence: { files: [source], fingerprints: { [source]: sha256(await fs.readFile(source)) }, unstable: false, missing: [] }, close() {} }; };
+  const factory = async params => { const index = calls++; return withTestReviewProof(params, { result: runItem ? await runItem(params, index) : output(params),
+    reviewEvidence: { files: [source], fingerprints: { [source]: sha256(await fs.readFile(source)) }, unstable: false, missing: [] }, close() {} }); };
   factory.reviewCacheIdentity = () => "fixture/provider/model-1";
-  const run = (extra = {}) => collectReviewItems({ ...input, reviewerFactory: factory, ...extra });
+  const run = (extra = {}) => {
+    const selected = extra.reviewerFactory ?? factory;
+    const witnessed = Object.assign(async params => withTestReviewProof(params, await selected(params)), selected);
+    return collectReviewItems({ ...input, ...extra, reviewerFactory: witnessed });
+  };
   return { root, taskRoot, source, truth, task, groundTruthPath, input, factory, run, output,
     calls: () => calls, setItem: callback => { runItem = callback; } };
 }
@@ -290,6 +295,33 @@ test("a later item cannot publish an earlier reused PASS after its uncited depen
   await fs.appendFile(first.collection.items[1].path, "\n"); mutate = true;
   await assert.rejects(f.run({ reviewerFactory: factory }), error => error.code === "REVIEW_COLLECTION_STALE");
   assert.equal(calls, 3);
+});
+
+test("uncited observations remain publication guards when the transport has no cache identity", async t => {
+  const f = await fixture(t, [row("R1"), row("R2")]), dependency = path.join(f.root, "uncited.txt");
+  await fs.writeFile(dependency, "Original dependency."); let calls = 0;
+  const factory = async params => {
+    if (calls++) await fs.writeFile(dependency, "Changed by a later item.");
+    return { result: f.output(params), reviewEvidence: { files: [dependency], fingerprints: {
+      [dependency]: sha256(await fs.readFile(dependency)),
+    }, unstable: false, missing: [] }, close() {} };
+  };
+  await assert.rejects(f.run({ reviewerFactory: factory }), error => error.code === "REVIEW_COLLECTION_STALE");
+  assert.equal(calls, 2);
+});
+
+test("the conservative PASS cache capacity does not reject a larger valid observed read set", async t => {
+  const f = await fixture(t), fingerprints = {};
+  for (let index = 0; index < 130; index++) {
+    const file = path.join(f.root, `dependency-${index}.txt`);
+    await fs.writeFile(file, `Dependency ${index}.`); fingerprints[file] = sha256(`Dependency ${index}.`);
+  }
+  const factory = async params => ({ result: f.output(params), reviewEvidence: {
+    files: Object.keys(fingerprints), fingerprints, unstable: false, missing: [],
+  }, close() {} });
+  const result = await f.run({ reviewerFactory: factory });
+  assert.equal(result.collection.complete, true);
+  assert.equal(result.collection.reusedItems, 0);
 });
 
 test("bounded cache I/O cannot dispatch a model after consuming the remaining dispatch window", async t => {

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { isDeepStrictEqual } from "node:util";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
@@ -113,7 +114,8 @@ function onboardingFakeFactory({
   implAssessment = null,
 } = {}) {
   const calls = [];
-  const factory = async ({ projectRoot, role, request, schema }) => {
+  const factory = async options => {
+    const { projectRoot, role, request, schema } = options;
     if (failOnboardingRoles && role.startsWith("onboarding-")) {
       throw new Error(`fake ${role} failure`);
     }
@@ -150,7 +152,7 @@ function onboardingFakeFactory({
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
     }
-    return {
+    return observedLegacyStop(options, {
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
@@ -164,7 +166,7 @@ function onboardingFakeFactory({
         throw new Error("Unexpected fake follow-up schema.");
       },
       async close() {},
-    };
+    });
   };
   factory.calls = calls;
   return factory;
@@ -961,8 +963,12 @@ test("onboarding honors role timeouts and runs panel passes in parallel", async 
   const stopSpawns = spawns.filter((spawn) => !spawn.role.startsWith("onboarding-"));
   assert.ok(stopSpawns.every((spawn) => spawn.timeoutMs === (spawn.role === "ground-truth-extractor" ? 3600000 : 1200000)),
     "non-onboarding roles keep the configured/default timeout");
-  assert.ok(stopSpawns.every((spawn) => spawn.deadlineAt == null),
-    "non-onboarding roles are not silently coupled to the onboarding deadline");
+  assert.ok(stopSpawns.filter(spawn => spawn.role !== "stop-reviewer").every(spawn => spawn.deadlineAt == null),
+    "incremental roles are not silently coupled to the onboarding deadline");
+  const stops = stopSpawns.filter(spawn => spawn.role === "stop-reviewer");
+  assert.ok(stops.length > 0 && stops.every(spawn => Number.isFinite(spawn.deadlineAt)
+    && spawn.deadlineAt <= Date.now() + 1200000 && spawn.deadlineAt < extractors[0].deadlineAt),
+    "Stop uses its own configured twenty-minute window, independent of the sixty-minute onboarding phase");
 });
 
 test("resume-transient panel failures defer without consuming the real-failure attempt budget", async (t) => {

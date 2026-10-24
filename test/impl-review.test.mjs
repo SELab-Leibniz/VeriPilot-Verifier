@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -84,7 +85,8 @@ function implFakeFactory(state) {
       })),
     };
   };
-  return async ({ projectRoot, role, request, schema }) => {
+  return async options => {
+    const { projectRoot, role, request, schema } = options;
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String((state.serial += 1)));
     await fs.mkdir(requestDirectory, { recursive: true });
     let result;
@@ -132,7 +134,7 @@ function implFakeFactory(state) {
     } else {
       throw new Error(`Unexpected fake reviewer schema for role ${role}`);
     }
-    return {
+    return observedLegacyStop(options, {
       result,
       requestDirectory,
       // assessStop reuses the ground-truth extractor's handle: it writes
@@ -149,7 +151,7 @@ function implFakeFactory(state) {
         throw new Error("Unexpected followUp schema");
       },
       async close() {},
-    };
+    });
   };
 }
 

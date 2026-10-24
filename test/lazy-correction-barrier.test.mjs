@@ -20,6 +20,7 @@ import {
   withTaskResourceLock,
   withTaskState,
 } from "../lib/runtime-v2/task-store.mjs";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -96,7 +97,8 @@ const REQUIREMENT = Object.freeze({
 
 function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {}) {
   const calls = [];
-  const factory = async ({ projectRoot, role, request, schema }) => {
+  const factory = async params => {
+    const { projectRoot, role, request, schema } = params;
     calls.push({ role, request, schema });
     if (role.startsWith("onboarding-") && onboardingDelayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, onboardingDelayMs));
@@ -148,7 +150,8 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
       String(calls.length),
     );
     await fs.mkdir(requestDirectory, { recursive: true });
-    return {
+    let observedFollowUp = null;
+    return observedLegacyStop(params, {
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
@@ -159,7 +162,7 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
         ));
         calls.push({ role: "reviewer-follow-up", request: assessment, schema: nextSchema });
         const objects = Object.values(assessment.population.metrics).flat();
-        return {
+        const result = {
           summary: "Task complete.",
           stopClassification: "TASK_COMPLETE",
           stage: "implementation",
@@ -171,9 +174,12 @@ function reviewerFactory({ onboardingDelayMs = 0, failOnboarding = false } = {})
             evidence: ["test fixture"],
           })),
         };
+        observedFollowUp = await observedLegacyStop({ ...params, role: "stop-reviewer", request: assessment }, { result });
+        return observedFollowUp.result;
       },
+      async getSourceCitations(report) { return observedFollowUp?.getSourceCitations(report) ?? []; },
       async close() {},
-    };
+    });
   };
   factory.calls = calls;
   return factory;

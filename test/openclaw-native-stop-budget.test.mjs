@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
+import { withTestReviewProof } from "./helpers/review-proof.mjs";
 let output, pluginRoot, createRuntime, findTask, readReport;
 before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
@@ -95,7 +96,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 2000 } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 2000 } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -127,7 +128,8 @@ reviewers:
   await fs.writeFile(transcript, [{ type: "session", id: "host" }, { type: "message", id: "u", parentId: null,
     message: { role: "user", content: "Write a draft." } }].map(JSON.stringify).join("\n"));
   let calls = 0, fail = 0;
-  const factory = async ({ request, schema }) => {
+  const factory = async params => {
+    const { request, schema } = params;
     calls++;
     if (fail-- > 0) throw new Error("transient checker failure");
     let result;
@@ -138,11 +140,11 @@ reviewers:
     else {
       const verdict = await review?.();
       await pause(50);
-      result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [],
+      result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [], ...(quality ? { fileAssessments: quality } : {}),
         metricObjectJudgements: Object.values(request.population?.metrics ?? {}).flat().map(object => ({
           objectId: object.objectId, judgement: (verdict ?? deviation) ? "DEVIATION" : "PASS", reason: "Current source", evidence: ["draft.md:1"] })) };
     }
-    return { result, sessionId: "review", close: async () => {} };
+    return withTestReviewProof(params, { result, sessionId: "review", close: async () => {} });
   };
   factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
   const warnings = [];
@@ -231,6 +233,9 @@ test("reset invalidates a queued native Stop without cancelling host settings", 
   const records = await f.runtime.waitForNativeReviews();
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(f.hostAbort.signal.aborted, false);
+  // Release must precede backend cleanup; this controlled fake does finish.
+  // Drain it before the fixture removes its temporary project directory.
+  await f.runtime.waitForNativeReviews({ drain: true });
 });
 
 test("ongoing review cancellation cannot return PASS or mutate host cancellation", async t => {
@@ -241,6 +246,25 @@ test("ongoing review cancellation cannot return PASS or mutate host cancellation
   const records = await f.runtime.waitForNativeReviews();
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(f.hostAbort.signal.aborted, false);
+  await f.runtime.waitForNativeReviews({ drain: true });
+});
+
+test("incomplete file quality reaches the next normal host prompt without an automatic business continuation", async t => {
+  const f = await lifecycle(t, { quality: [{ path: "draft.md", status: "DEVIATION", reason: "The heading omits the subject, so the draft cannot be identified.", evidence: ["draft.md:1"] }] });
+  let admissions = 0;
+  f.api.runtime.subagent = { run: async () => { admissions++; throw new Error("Quality uncertainty must not admit another business run."); } };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [record] = await f.runtime.waitForNativeReviews({ drain: true });
+  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.match(record.verificationFeedback, /heading omits the subject/);
+  assert.equal(admissions, 0);
+  await fs.appendFile(path.join(f.root, "native.jsonl"), "\n" + JSON.stringify({ type: "message", id: "next-user", parentId: "u",
+    message: { role: "user", content: "Continue the task using the existing requirements." } }) + "\n");
+  const response = await f.runtime.prompt({ prompt: "Continue the task using the existing requirements." }, { ...f.ctx, runId: "next-normal-run" });
+  assert.match(response?.prependContext ?? "", /heading omits the subject/);
+  assert.match(response.prependContext, /历史评审/);
+  assert.ok(Buffer.byteLength(response.prependContext, "utf8") <= 8192);
+  assert.equal(admissions, 0);
 });
 test("permanent checker faults stop at the existing infrastructure ceiling", async t => {
   const f = await lifecycle(t, { failures: 20 });

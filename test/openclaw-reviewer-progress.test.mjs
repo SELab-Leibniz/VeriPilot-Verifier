@@ -127,13 +127,17 @@ test("normal merged review can fetch implementation citations after the implemen
 });
 
 test("private frozen citation remains readable after cleanup while business citations retain original paths",async t=>{
-  const f=await fixture(t);let requestPath;
-  const n=native(f,async params=>{requestPath=path.join(path.dirname(params.sessionFile),"request.json");return output(completed());});
+  const f=await fixture(t);let requestPath,basisPath;
+  const n=native(f,async params=>{requestPath=path.join(path.dirname(params.sessionFile),"request.json");
+    basisPath=JSON.parse(await fs.readFile(requestPath,"utf8")).groundTruthPath;return output(completed());});
   const h=await n.factory(f.input);
-  const report={findings:[{deviationKey:"private",actualEvidence:[`${requestPath}:1-3`]},{deviationKey:"business",actualEvidence:["app.py:2-3"]}],metricObjectJudgements:[]};
+  const report={findings:[{deviationKey:"private",actualEvidence:[`${basisPath}:1-3`]},{deviationKey:"business",actualEvidence:["app.py:2-3"]}],metricObjectJudgements:[]};
   await h.close();await assert.rejects(fs.access(requestPath));
+  await assert.rejects(fs.access(basisPath));
   const citations=await h.getSourceCitations(report),privateCitation=citations.find(c=>c.frozen),businessCitation=citations.find(c=>!c.frozen);
   assert(privateCitation);assert(businessCitation);assert.equal(businessCitation.path,await fs.realpath(f.file));
+  const internal=await h.getSourceCitations({findings:[{deviationKey:"request",actualEvidence:[`${requestPath}:1-3`]}],metricObjectJudgements:[]});
+  assert.equal(internal.some(c=>c.path===requestPath),false,"A private role request is never original business evidence.");
   const durable=await fs.readFile(privateCitation.snapshotPath,"utf8");
   assert.equal(durable.split("\n").slice(privateCitation.start-1,privateCitation.end).join("\n"),privateCitation.exactQuote);
 });

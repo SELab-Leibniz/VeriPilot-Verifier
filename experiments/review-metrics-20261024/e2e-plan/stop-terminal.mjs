@@ -75,15 +75,17 @@ export function classifyStopTerminal(state, { taskId, population, ownerAlive } =
   const excluded = new Set(["NOT_APPLICABLE", "NOT_YET_APPLICABLE"]);
   const applicable = rows.filter(row => !excluded.has(row.judgement));
   const unverifiedObjectIds = rows.filter(row => ["UNVERIFIED", "EXTERNAL_BLOCKED"].includes(row.judgement)).map(row => row.objectId);
+  const incompleteFiles = (review.fileAssessments ?? []).filter(file => file.status !== "PASS")
+    .map(({ path, status }) => ({ path, status }));
   const detail = { evaluationId, evaluationFile: evaluation.file, totalObjects: rows.length,
     applicableObjects: applicable.length, unverifiedObjectIds,
     deviationObjectIds: rows.filter(row => row.judgement === "DEVIATION").map(row => row.objectId),
-    excludedObjectIds: rows.filter(row => excluded.has(row.judgement)).map(row => row.objectId) };
+    excludedObjectIds: rows.filter(row => excluded.has(row.judgement)).map(row => row.objectId), incompleteFiles };
   if (task.status === "COMPLETED" && verification.status === "PASS" && report.status === "PASS"
-    && applicable.length > 0 && applicable.every(row => row.judgement === "PASS"))
+    && applicable.length > 0 && applicable.every(row => row.judgement === "PASS") && !incompleteFiles.length)
     return result("ALL_METRICS_PASS", "All applicable objects in the complete frozen population passed.", { ...detail, allMetricsPass: true });
   if (task.status === "COMPLETED_WITH_ISSUES" && verification.status === "UNVERIFIED"
-    && report.status === "UNVERIFIED" && unverifiedObjectIds.length)
+    && report.status === "UNVERIFIED" && (unverifiedObjectIds.length || incompleteFiles.length))
     return result("SETTLED_WITH_UNVERIFIED", "The core formally allowed completion while retaining unverified objects.", detail);
   return result("NOT_ACCEPTED", "The formal allow does not meet either certification category of this experiment.", detail);
 }

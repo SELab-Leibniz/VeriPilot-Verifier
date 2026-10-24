@@ -12,6 +12,7 @@ import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-stor
 import { changedFiles, selectedSkillRead, sessionSkillPlan } from "../lib/openclaw/tools.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { ensureTask, findTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 let output, pluginRoot, entry, createRuntime;
@@ -591,7 +592,7 @@ evidenceRoots: [evidence]
           reason: "The required result.txt is missing.", actualEvidence: ["result.txt does not exist"],
           expectedConstraint: "Create result.txt", violatedGroundTruthIds: groundTruth.claims.map((claim) => claim.claimId) }] };
     } else throw new Error(`Unexpected role ${role}`);
-    return { result, sessionId: "review", requestDirectory: project, close: async () => {} };
+    return observedLegacyStop(input, { result, sessionId: "review", requestDirectory: project, close: async () => {} });
   };
   factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
   const host = api(project);

@@ -13,6 +13,7 @@ import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { ModelRuntime } from "../lib/review-task/sdk.mjs";
 import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
+import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
 async function fixture(t) {
   const scratch = fileURLToPath(new URL("../.runtime-correction/stop-task-compat-runs/", import.meta.url));
@@ -159,9 +160,9 @@ test("all known single-review metrics remain separate while unknown metric group
   const factory = async input => {
     const owned = Object.values(input.request.population.metrics).flat();
     seen.push(owned.map(row => row.metricId));
-    return { result: { summary: "The assigned scope was checked.", ...classification, findings: [], fileAssessments: [],
+    return withTestReviewProof(input, { result: { summary: "The assigned scope was checked.", ...classification, findings: [], fileAssessments: [],
       metricObjectJudgements: owned.map(row => ({ objectId: row.objectId, judgement: "PASS", reason: "The current file supports this assigned object.", evidence: [`${f.source}#L1-L1`] })) },
-      sourceCitations: [], close: async () => {} };
+      sourceCitations: [], close: async () => {} });
   };
   factory.reviewItemSize = 1;
   factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);

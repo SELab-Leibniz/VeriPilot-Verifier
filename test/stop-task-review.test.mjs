@@ -9,6 +9,7 @@ import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { observedTaskResult } from "./helpers/observed-review.mjs";
 
 const classification = { stopClassification: "TASK_COMPLETE", stage: null };
 const object = (sourceId = "R1", metricId = "M01", target = "ARTIFACT") => ({
@@ -59,14 +60,7 @@ async function fixture(t, rows = [object()]) {
 }
 
 async function scriptedResult(options, verdict = "PASS", reason = "The checked current source establishes this obligation.") {
-  const file = "project/spec.md", content = await fs.readFile(path.resolve(options.root, file));
-  const refs = [{ path: file, start: 1, end: Math.min(2, content.toString("utf8").split("\n").length), sha256: sha256(content) }];
-  await fs.mkdir(options.outputDir, { recursive: true });
-  await fs.writeFile(path.join(options.outputDir, "reads.json"), JSON.stringify(refs.map(({ path: selected, start, end }) => ({ path: selected, start, end }))));
-  const result = { taskId: options.task.id, scope: options.task.scope, completed: true, verdict, reason, refs,
-    metrics: { turns: 1, toolCalls: 2, readBytes: content.length, repeatedLines: 0 }, attempts: 1, elapsedMs: 1 };
-  await fs.writeFile(path.join(options.outputDir, "result.json"), JSON.stringify(result));
-  return result;
+  return observedTaskResult(options, { file: "project/spec.md", verdict, reason });
 }
 
 const judgement = handle => handle.result.metricObjectJudgements[0];

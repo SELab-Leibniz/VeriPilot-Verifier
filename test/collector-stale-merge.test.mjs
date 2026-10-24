@@ -7,6 +7,7 @@ import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
 test("a Stop source changed during implementation review cannot publish the earlier PASS", async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-collector-stale-merge-"));
@@ -39,11 +40,22 @@ test("a Stop source changed during implementation review cannot publish the earl
       await fs.writeFile(source, "The output was replaced during the implementation phase.\n");
     } else stopItems += 1;
     const objects = Object.values(options.request.population.metrics).flat();
-    return { result: { summary: "Compared current original source.", findings: [],
+    const result = { summary: "Compared current original source.", findings: [],
       ...(!implementation ? { stopClassification: "TASK_COMPLETE", stage: null } : {}),
       metricObjectJudgements: objects.map(object => ({ objectId: object.objectId, judgement: "PASS",
         reason: "The original source matches this obligation.",
         evidence: [`${implementation ? implementationSource : source}#L1-L1`] })),
+    };
+    return { result, getSourceCitations: async () => {
+      // One file is deliberately shared by different proof owners in this
+      // mechanism fixture. Preserve each row's own provenance instead of
+      // overwriting one citation's owner with the last grouped metric.
+      const citations = [];
+      for (const row of result.metricObjectJudgements) {
+        const checked = await withTestReviewProof(options, { result: { metricObjectJudgements: [row] } });
+        citations.push(...await checked.getSourceCitations());
+      }
+      return citations;
     }, close: async () => {} };
   };
   factory.supportsReviewCollection = true;

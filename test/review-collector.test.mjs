@@ -9,6 +9,7 @@ import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
 const classification = { stopClassification: "TASK_COMPLETE", stage: null };
 const object = (id, metric = "M01", target = "ARTIFACT") => ({
@@ -46,8 +47,16 @@ async function fixture(t, objects = [object("R1"), object("R2"), object("R3")]) 
   function factory(run = null) {
     return async params => {
       const index = calls++;
-      const result = run ? await run(params, index) : output(params);
-      return { result, close: async () => { closes++; } };
+      try {
+        const result = run ? await run(params, index) : output(params);
+        return withTestReviewProof(params, { result, close: async () => { closes++; } });
+      } catch (error) {
+        if (error.partialReview) {
+          const observed = await withTestReviewProof(params, { result: error.partialReview });
+          error.partialReview = { ...error.partialReview, citations: await observed.getSourceCitations(error.partialReview) };
+        }
+        throw error;
+      }
     };
   }
   return { root, directory, source, truth, task, groundTruthPath, input, output, factory,
@@ -196,11 +205,11 @@ test("program source snapshots remain readable after the reviewer closes its pri
   let closed = false, citationsBeforeClose = false;
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: async params => {
     const report = f.output(params); report.metricObjectJudgements[0].evidence = [`${privateFile}#L1`];
-    return { result: report, getSourceCitations: async () => {
+    return withTestReviewProof(params, { result: report, getSourceCitations: async () => {
       assert.equal(closed, false); citationsBeforeClose = true;
       return [{ selection: `${privateFile}#L1`, path: privateFile, snapshotPath: privateFile, frozen: true,
         start: 1, end: 1, contentHash: sha256(text), usedBy: ["M01:R1"] }];
-    }, close: async () => { closed = true; await fs.rm(path.dirname(privateFile), { recursive: true, force: true }); } };
+    }, close: async () => { closed = true; await fs.rm(path.dirname(privateFile), { recursive: true, force: true }); } });
   } });
   assert.equal(citationsBeforeClose, true); assert.equal(closed, true);
   const citations = await handle.getSourceCitations();
@@ -331,7 +340,7 @@ test("implementation short tasks accept only evidence owned by the declared sour
   for (const valid of [true, false]) {
     const handle = await collectReviewItems({ ...f.input, role: "implementation-reviewer", schema: IMPL_REVIEW_SCHEMA, classification: null,
       request: { ...f.input.request, sourceManifest: [{ path: f.source, sha256: sha256(await fs.readFile(f.source)) }] },
-      reviewerFactory: async params => ({ result: { summary: "Checked implementation.", findings: [], metricObjectJudgements: [{
+      reviewerFactory: async params => withTestReviewProof(params, { result: { summary: "Checked implementation.", findings: [], metricObjectJudgements: [{
         objectId: "M12:R1", judgement: "PASS", reason: "The assigned implementation exists.", evidence: [`${valid ? f.source : other}#L1`],
       }] }, close() {} }) });
     assert.equal(handle.result.metricObjectJudgements[0].judgement, valid ? "PASS" : "UNVERIFIED");
@@ -344,7 +353,7 @@ test("valid task results and progress are durable before a hung reviewer close",
   let calls = 0, savedBeforeClose = false;
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: async params => {
     const index = calls++;
-    return { result: f.output(params), close: async () => {
+    return withTestReviewProof(params, { result: f.output(params), close: async () => {
       if (!index) {
         const collections = path.join(f.directory, "review-collections");
         const [run] = await fs.readdir(collections);
@@ -353,7 +362,7 @@ test("valid task results and progress are durable before a hung reviewer close",
         savedBeforeClose = item.result.metricObjectJudgements[0].judgement === "PASS" && progress.completedItems === 1;
         return new Promise(() => {});
       }
-    } };
+    } });
   } });
   assert.equal(savedBeforeClose, true);
   assert.equal(calls, 3);
@@ -367,7 +376,7 @@ test("hung recovery and citation callbacks are bounded and do not prevent later 
     const handle = await collectReviewItems({ ...f.input, reviewerFactory: async params => {
       const index = calls++, report = f.output(params);
       if (!index && kind === "recoverProgress") report.metricObjectJudgements = [];
-      return { result: report, ...(!index ? { [kind]: () => new Promise(() => {}) } : {}), close() {} };
+      return withTestReviewProof(params, { result: report, ...(!index ? { [kind]: () => new Promise(() => {}) } : {}), close() {} });
     } });
     assert.equal(calls, 3);
     assert.deepEqual(handle.result.metricObjectJudgements.map(row => row.judgement), ["UNVERIFIED", "PASS", "PASS"]);

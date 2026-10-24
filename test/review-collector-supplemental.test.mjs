@@ -9,6 +9,7 @@ import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { reviewProofOwners } from "../lib/runtime-v2/review-result-validation.mjs";
 
 const classification = { stopClassification: "TASK_COMPLETE", stage: null };
 const objectsOf = input => Object.values(input.request.population.metrics).flat();
@@ -46,8 +47,39 @@ async function fixture(t, metrics = ["M01"]) {
   const factory = (callback = null) => {
     const run = async params => {
       calls.push(params);
-      return { result: callback ? await callback(params) : output(params, params.request.reviewScope.kind === "file-quality"
-        ? { fileAssessments: [fileAssessment()] } : {}),
+      // Scripted role transport reads its complete original fixture inputs
+      // before producing any verdict; these markers are not model output.
+      await fs.readFile(groundTruthPath);
+      const observed = new Map();
+      for (const file of [source, path.join(root, "second.md")]) {
+        try { observed.set(file, await fs.readFile(file)); } catch (error) { if (error.code !== "ENOENT") throw error; }
+      }
+      const citations = result => {
+        const citations = [], objects = objectsOf(params);
+        const add = (refs, owner, proofOwner) => {
+          for (const selection of refs ?? []) {
+            const match = /^(.*?)(?:#L|:)([1-9]\d*)(?:-L?([1-9]\d*))?$/u.exec(selection);
+            if (!match) continue;
+            const file = path.resolve(root, match[1]), bytes = observed.get(file);
+            if (bytes) citations.push({ selection, path: file, snapshotPath: file, contentHash: sha256(bytes),
+              start: Number(match[2]), end: Number(match[3] ?? match[2]), usedBy: [owner],
+              readProof: { version: 1, owner: proofOwner, observed: true, basisComplete: true } });
+          }
+        };
+        for (const row of result.metricObjectJudgements ?? []) add(row.evidence, row.objectId,
+          reviewProofOwners(objects.find(object => object.objectId === row.objectId), params.role)[0]);
+        for (const file of result.fileAssessments ?? []) add(file.evidence, file.path, "ARTIFACT");
+        for (const finding of result.findings ?? []) add(finding.actualEvidence, finding.deviationKey, "ARTIFACT");
+        return citations;
+      };
+      let result;
+      try { result = callback ? await callback(params) : output(params, params.request.reviewScope.kind === "file-quality"
+        ? { fileAssessments: [fileAssessment()] } : {}); }
+      catch (error) {
+        if (error.partialReview) error.partialReview.citations = citations(error.partialReview);
+        throw error;
+      }
+      return { result, sourceCitations: citations(result),
         reviewEvidence: { files: [source], fingerprints: { [source]: sha256(await fs.readFile(source)) }, unstable: false, missing: [] }, close() {} };
     };
     run.reviewItemSize = 1; run.singleReviewMetrics = Object.keys(METRIC_CATALOG);

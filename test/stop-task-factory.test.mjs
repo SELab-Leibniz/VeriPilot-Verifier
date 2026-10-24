@@ -14,6 +14,7 @@ import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task
 import { STOP_REVIEW_SCHEMA, reviewResultIssues } from "../lib/runtime-v2/reviewer.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
+import { observedFileCitation } from "./helpers/observed-review.mjs";
 
 const report = () => ({ summary: "Scripted native review.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] });
 const row = (metric = "M01", target = "ARTIFACT") => ({ objectId: `${metric}:R1`, sourceId: "R1", sourceRevisionId: "R1@1",
@@ -205,9 +206,12 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
       assert.ok(input.request.instructions.some(line => line.includes("For each requested deliverable file")));
       assert.equal(input.schema.properties.metricObjectJudgements.maxItems, 0);
     } else assert.equal(input.request.instructions.some(line => line.includes("For each requested deliverable file")), !supplemental);
+    const citation = await observedFileCitation({ file, basisFiles: [input.request.groundTruthPath],
+      usedBy: quality ? [file] : assigned.map(object => object.objectId) });
     return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [],
-      fileAssessments: quality ? [{ path: file, status: "PASS", reason: "Current requested file quality is supported.", evidence: [`${file}#L1-L1`] }] : [],
-      metricObjectJudgements: assigned.map(object => ({ objectId: object.objectId, judgement: "PASS", reason: "The checked current candidate matches.", evidence: [`${file}#L1-L1`] })) },
+      fileAssessments: quality ? [{ path: file, status: "PASS", reason: "Current requested file quality is supported.", evidence: [citation.selection] }] : [],
+      metricObjectJudgements: assigned.map(object => ({ objectId: object.objectId, judgement: "PASS", reason: "The checked current candidate matches.", evidence: [citation.selection] })) },
+      sourceCitations: [citation],
       reviewEvidence: { files: [file], fingerprints: { [file]: sha256(await fs.readFile(file)) }, unstable: false, missing: [] }, close: async () => {} };
   };
   factory.supportsReviewCollection = true; factory.reviewItemSize = 1;

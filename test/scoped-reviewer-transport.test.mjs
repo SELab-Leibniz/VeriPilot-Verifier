@@ -10,6 +10,7 @@ import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { REVIEW_SCOPE_REQUEST_BYTES } from "../lib/runtime-v2/review-scope.mjs";
 import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 import { atomicWriteJson, sha256 } from "../lib/runtime-v2/utils.mjs";
+import { observeInternalTool } from "../lib/openclaw/internal-context.mjs";
 
 const json = async file => JSON.parse(await fs.readFile(file, "utf8"));
 const output = value => ({ payloads: [{ text: typeof value === "string" ? value : JSON.stringify(value) }], meta: {} });
@@ -68,6 +69,19 @@ function native(f, runner, options = {}) {
     registerTool: factory => { toolFactory = factory; }, runtime: { agent: { runEmbeddedAgent: async params => {
       const requestPath = path.join(path.dirname(params.sessionFile), "request.json");
       const request = await json(requestPath); calls.push({ params, request, requestPath });
+      // This transport double actually discloses the full immutable basis.
+      // Implementation verdicts additionally read their declared public source;
+      // an output JSON or a progress save alone is no proof of that reading.
+      const disclose = async file => {
+        const args = { path: file }, changed = await observeInternalTool("read", args), actual = changed?.params ?? args;
+        const lines = (await fs.readFile(file, "utf8")).split("\n");
+        const text = lines.slice((actual.offset ?? 1) - 1, actual.limit == null ? undefined : (actual.offset ?? 1) - 1 + actual.limit).join("\n");
+        await observeInternalTool("read:result", { toolName: "read", toolCallId: `fixture-${file}`, args: actual,
+          result: { content: [{ type: "text", text }] } });
+      };
+      await disclose(requestPath);
+      if (request.groundTruthPath) await disclose(request.groundTruthPath);
+      if (/isolated implementation-reviewer\./u.test(params.extraSystemPrompt)) await disclose(f.source);
       const tool = toolFactory({ sessionId: params.sessionId, workspaceDir: f.root });
       return runner({ params, request, requestPath, tool });
     } } } };
@@ -107,7 +121,8 @@ test("same-task cached private request and evidence pages remain owned by their 
         metricObjectJudgements: [{ objectId: "M01:R1", judgement: "PASS", reason: "Controlled source reference.", evidence: foreignReferences }] });
     });
     const origin = await n.factory(stopInput(f));
-    assert.equal(origin.sourceCitations.length, 2);
+    assert.equal(origin.sourceCitations.length, 1, "A role request is navigation, not a business citation.");
+    assert(origin.sourceCitations.every(citation => citation.path !== n.calls[0].requestPath));
     foreignReferences.push(...origin.sourceCitations.map(citation => citation.selection));
     if (closeOrigin) await origin.close();
     const current = await n.factory(stopInput(f));

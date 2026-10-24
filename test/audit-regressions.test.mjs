@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -52,7 +53,8 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
       objectId: object.objectId, judgement: stopJudgement(object), reason: "Observed task evidence.", evidence: ["transcript:u1"],
     })),
   });
-  const reviewerFactory = async ({ request, schema, role, resolvedSessionPlan }) => {
+  const reviewerFactory = async options => {
+    const { request, schema, role, resolvedSessionPlan } = options;
     calls.roles.push(role);
     const requestDirectory = path.join(root, `fake-${++serial}`);
     await fs.mkdir(requestDirectory);
@@ -70,7 +72,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
         })),
       };
     }
-    return { result, requestDirectory, providerDegradation: resolvedSessionPlan?.degraded ?? null, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) };
+    return observedLegacyStop(options, { result, requestDirectory, providerDegradation: resolvedSessionPlan?.degraded ?? null, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) });
   };
   return {
     root, calls,

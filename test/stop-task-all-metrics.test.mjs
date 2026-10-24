@@ -13,6 +13,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
+import { observedTaskResult } from "./helpers/observed-review.mjs";
 
 async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { projectFile = true, applicability = "CURRENT_TASK", applicabilityKind, text = "Check the assigned current obligation." } = {}) {
   const scratch = fileURLToPath(new URL("../.runtime-correction/stop-task-all-metric-test-runs/", import.meta.url));
@@ -51,12 +52,7 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
 // arbitrary first copied file or a targetFiles seed supplied by the adapter.
 async function result(options, { file = ["PROCESS_COMPLIANCE", "RUNTIME_ACCEPTANCE", "EXECUTION_CLOSURE"].includes(options.task.scope)
   ? "process/000000.json" : "project/candidate.md", verdict = "PASS" } = {}) {
-  const bytes = await fs.readFile(path.join(options.root, file));
-  const snapshot = path.join(options.outputDir, "frozen-source", file);
-  await fs.mkdir(path.dirname(snapshot), { recursive: true });
-  await fs.writeFile(snapshot, bytes);
-  return { completed: true, verdict, reason: "The selected witness supports only the assigned scope.",
-    refs: [{ path: file, start: 1, end: Math.min(2, bytes.toString("utf8").split("\n").length), sha256: sha256(bytes) }] };
+  return observedTaskResult(options, { file, verdict, reason: "The selected witness supports only the assigned scope." });
 }
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
@@ -82,6 +78,7 @@ test("conditional applicability reaches the worker unchanged and only it may ret
   implementation.input.role = "implementation-reviewer";
   assert.equal(canUseStopTaskReview(implementation.input), false, "Conditional implementation reviews retain their native boundary.");
   const f = await fixture(t, "M11", "PROCESS", { applicabilityKind: "CONDITIONAL" });
+  f.input.request.sourceManifest = [{ path: f.source, sha256: sha256(await fs.readFile(f.source)) }];
   for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"]) {
     await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { verdict, file: "project/candidate.md" }) }),
       error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
@@ -317,6 +314,7 @@ test("an unbound process message does not manufacture an artifact subject, and p
   const handle = await runStopTaskReview(f.input, { runTask: () => assert.fail("No declared artifact subject.") });
   assert.equal(judgement(handle).judgement, "UNVERIFIED");
   const process = await fixture(t, "M11", "PROCESS");
+  process.input.request.sourceManifest = [{ path: process.source, sha256: sha256(await fs.readFile(process.source)) }];
   await assert.rejects(runStopTaskReview(process.input, { runTask: options => result(options, { file: "project/candidate.md" }) }),
     error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
   const coverage = await fixture(t, "M01", "ARTIFACT");

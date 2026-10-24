@@ -338,9 +338,17 @@ test("retargeting an uncited directory link cannot reuse a native Stop PASS", as
   const f = await fixture(t, async ({ params, runtime, file }) => {
     assert.match(params.extraSystemPrompt, /Program-generated original pages are at most 16 KiB/u);
     assert.match(params.extraSystemPrompt, /bounded offset\/limit ranges, initially at most 80 lines/u);
+    const requestPath = path.join(path.dirname(params.sessionFile), "request.json");
+    const request = JSON.parse(await fs.readFile(requestPath, "utf8"));
+    await read(runtime, await fs.readFile(requestPath, "utf8"), "request-basis", requestPath);
+    await read(runtime, await fs.readFile(request.groundTruthPath, "utf8"), "truth-basis", request.groundTruthPath);
     await read(runtime, await fs.readFile(file, "utf8"), "artifact", file);
-    const policy = await fs.readFile(alias, "utf8");
-    await read(runtime, policy, "policy", alias);
+    const policyFile = await fs.realpath(alias), policy = await fs.readFile(policyFile, "utf8");
+    await read(runtime, policy, "policy", policyFile);
+    // A linked path was additionally observed, not delivered as model proof.
+    // It forbids cache reuse while the actual basis and policy reads above
+    // remain authenticated public evidence for this independent assessment.
+    await runtime.beforeTool({ toolName: "read", params: { path: alias }, toolCallId: "linked-observation" }, {});
     return output({ summary: "Checked the selected policy.", stopClassification: "TASK_COMPLETE", stage: null, findings: [],
       metricObjectJudgements: [{ objectId: "M01:R1", judgement: policy === "ALLOW\n" ? "PASS" : "DEVIATION",
         reason: "The selected policy controls the current artifact.", evidence: [`${file}#L1`] }] });
@@ -350,6 +358,7 @@ test("retargeting an uncited directory link cannot reuse a native Stop PASS", as
   await fs.writeFile(path.join(allowed, "policy.txt"), "ALLOW\n"); await fs.writeFile(path.join(denied, "policy.txt"), "DENY\n");
   const type = process.platform === "win32" ? "junction" : "dir";
   await fs.symlink(allowed, link, type); alias = path.join(link, "policy.txt");
+  delete f.input.request.sourceManifest; // This fixture owns an artifact, not implementation-source proof.
   f.input.request.population.metrics.M01 = f.input.request.population.metrics.M01.slice(0, 1);
   f.input.evidence.population = structuredClone(f.input.request.population);
   const input = { ...f.input, reviewerFactory: f.factory, classification: { stopClassification: "TASK_COMPLETE", stage: null } };

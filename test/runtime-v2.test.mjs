@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { isDeepStrictEqual } from "node:util";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -186,7 +187,8 @@ function stopReview(request) {
 function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = skillReview } = {}) {
   let serial = 0;
   const calls = [];
-  const factory = async ({ projectRoot, role, request, schema }) => {
+  const factory = async options => {
+    const { projectRoot, role, request, schema } = options;
     serial += 1;
     const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String(serial));
     await fs.mkdir(requestDirectory, { recursive: true });
@@ -222,7 +224,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
     }
-    return {
+    return observedLegacyStop(options, {
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
@@ -238,7 +240,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
         throw new Error("Unexpected fake follow-up schema.");
       },
       async close() {},
-    };
+    });
   };
   factory.calls = calls;
   return factory;
@@ -1434,7 +1436,8 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
       evidence: ["session evidence"],
     })),
   });
-  const factory = async ({ schema, request }) => {
+  const factory = async options => {
+    const { schema, request } = options;
     if (!healthy) throw new Error("reviewer unavailable");
     await fs.mkdir(requestDirectory, { recursive: true });
     // GT and assessment receive distinct role requests, even if the CLI session is reusable.
@@ -1469,7 +1472,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
         },
       };
     }
-    return { ...handle, result: assess(request) };
+    return observedLegacyStop(options, { ...handle, result: assess(request) });
   };
   const stop = (id) => handleRuntimeV2Event({
     input: {

@@ -7,6 +7,7 @@ import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
+import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", severity = "HARD", findingKey = "premature-output", businessDeviation = true) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-collector-integration-"));
@@ -33,13 +34,19 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
     const localClassification = options.request.fixedStopClassification?.stopClassification ?? stopClassification;
     if (index === failed) throw Object.assign(new Error("prompt exceeds context window"), { code: "CONTEXT_OVERFLOW" });
     const objects = Object.values(options.request.population.metrics).flat();
+    await fs.readFile(options.request.groundTruthPath);
+    const sourceHash = sha256(await fs.readFile(source));
     const findings = localClassification === "INTERMEDIATE" && index === 0 && businessDeviation ? [{
       deviationKey: findingKey, rootCauseId: "REQUIREMENT_OMITTED", severity: "error",
       reason: "A required evidence gate is absent, so the attempted stop is premature and must be blocked.",
       actualEvidence: [`${source}#L1-L1`], expectedConstraint: "Observe the original evidence gate.",
       violatedGroundTruthIds: options.request.reviewScope.sourceIds,
     }] : [];
-    return { result: { summary: "Compared the assigned originals.", stopClassification: localClassification, stage: null,
+    return { sourceCitations: [...objects.map(object => object.objectId), ...findings.map(finding => finding.deviationKey)].map(owner => ({
+      selection: `${source}#L1-L1`, path: source, snapshotPath: source, contentHash: sourceHash,
+      start: 1, end: 1, usedBy: [owner],
+      readProof: { version: 1, owner: "ARTIFACT", observed: true, basisComplete: true },
+    })), result: { summary: "Compared the assigned originals.", stopClassification: localClassification, stage: null,
       findings, metricObjectJudgements: objects.map(object => ({ objectId: object.objectId,
         judgement: failed >= 0 && businessDeviation && index === 0 ? "DEVIATION" : "PASS",
         reason: failed >= 0 && businessDeviation && index === 0 ? "The first output has a confirmed local discrepancy." : "Assigned evidence matches.",
