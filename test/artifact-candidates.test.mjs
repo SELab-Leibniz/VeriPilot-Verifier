@@ -34,6 +34,9 @@ test("a source declaration and metricCheckpoint alone do not invent artifact pro
   const source = artifact("kitchen-source", ["kitchen.py"]);
   source.metricCheckpoint = true;
   assert.deepEqual(await collectArtifactCandidates({ projectRoot: f.root, plan: { artifacts: [source] } }), []);
+  const [qualityOnly] = await collectArtifactCandidates({ projectRoot: f.root, plan: { artifacts: [source] }, includeUnmetered: true });
+  assert.deepEqual(qualityOnly.metricIds, [], "A delivery ownership declaration does not grant any metric role.");
+  assert.deepEqual(qualityOnly.files, [{ path: "kitchen.py", sha256: sha256(await fs.readFile(path.join(f.root, "kitchen.py"))) }]);
 });
 
 test("explicit configured ownership binds complete hashed files without a related-file cap or filename role guesses", async t => {

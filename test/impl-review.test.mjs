@@ -78,7 +78,7 @@ function implFakeFactory(state) {
       findings: [],
       metricObjectJudgements: objects.map((object) => ({
         objectId: object.objectId,
-        judgement: "PASS",
+        judgement: state.stopFails && object.metricId === "M12" ? "DEVIATION" : "PASS",
         reason: "Claimed satisfied.",
         evidence: ["developer claim"],
       })),
@@ -201,6 +201,25 @@ test("mergeJudgementsByObjectId dedupes with the implementation judgement winnin
   );
   assert.equal(merged.length, 2);
   assert.equal(merged.find((item) => item.objectId === "M12:c1").judgement, "DEVIATION");
+});
+
+test("implementation PASS cannot erase an independently observed runtime failure", () => {
+  for (const judgement of ["DEVIATION", "CHECKER_ERROR"]) {
+    const prior = { objectId: "M12:runtime", judgement, reason: "Original observed failure.", evidence: ["run.json:1"] };
+    const merged = mergeJudgementsByObjectId([prior], [
+      { objectId: prior.objectId, judgement: "PASS", reason: "Static code looks correct.", evidence: ["app.py:1"] },
+    ], { preservePriorFailures: true });
+    assert.deepEqual(merged, [prior]);
+  }
+});
+
+test("failure-preserving implementation merge retains duplicate detection and conservative unknowns", () => {
+  const pass = { objectId: "M12:runtime", judgement: "PASS" }, unknown = { ...pass, judgement: "UNVERIFIED" };
+  assert.deepEqual(mergeJudgementsByObjectId([pass], [unknown], { preservePriorFailures: true }), [unknown]);
+  const failure = { ...pass, judgement: "DEVIATION" };
+  assert.ok(mergeJudgementsByObjectId([failure], [pass, pass], { preservePriorFailures: true }).length >= 2);
+  assert.ok(mergeJudgementsByObjectId([failure, failure], [pass], { preservePriorFailures: true }).length >= 2);
+  assert.deepEqual(mergeJudgementsByObjectId([failure], [unknown]), [unknown], "program-owned checks retain their explicit authority");
 });
 
 test("filterOwnedJudgements keeps source metrics but never M11 process history", () => {
@@ -381,6 +400,19 @@ test("kit findings block the stop gate and stamp observation.turnIndex", async (
   const family = families.find((item) => item.observations.at(-1)?.finding?.deviationKey === "impl:kit:scan-kit");
   assert.ok(family, "kit finding is recorded as a deviation family");
   assert.equal(family.observations[0].turnIndex, 1, "observation carries the assistant-turn counter");
+});
+
+test("Stop keeps runtime deviation and its owner when static implementation review passes", async t => {
+  const root = await workspace(t);
+  await write(root, "transcript.jsonl", transcriptEntries(1));
+  await write(root, "entry/src/main/ets/pages/Index.ets", "@Entry struct Index {}");
+  const state = { serial: 0, implCalls: 0, implPasses: true, stopFails: true };
+  const result = await runStop(root, implPlan(root), implFakeFactory(state), "runtime-before-static");
+  assert.equal(result.decision, "block");
+  assert.ok(state.implCalls > 0);
+  const rows = result.stop.report.metrics.find(metric => metric.metricId === "M12").objects;
+  assert.ok(rows.length > 0);
+  assert.ok(rows.every(row => row.judgement === "DEVIATION" && row.reviewer === "stop-reviewer"));
 });
 
 test("implementation review detects, delivers, closes on retest, and attributes CRITIC (active arm)", async (t) => {

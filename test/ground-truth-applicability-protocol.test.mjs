@@ -129,7 +129,7 @@ test("CURRENT_TASK preserves the original command scope, text and source through
   assert.equal(handle.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
 });
 
-test("typed non-current or unknown scope keeps its full source-backed condition and stays native without removing denominator objects", async t => {
+test("typed conditional routing preserves its full condition while future and unknown scopes stay native without removing objects", async t => {
   const originals = {
     CONDITIONAL: ["If the authorized verifier fails, fix kitchen.py, preserve all baseline files, then rerun the original verifier.",
       "if the authorized verifier fails; retain the original workdir and source revision"],
@@ -148,7 +148,14 @@ test("typed non-current or unknown scope keeps its full source-backed condition 
     assert.deepEqual(saved.source, original.source);
     assert.equal(object.applicabilityKind, kind);
     assert.equal(object.applicability, applicability);
-    assert.equal(canUseStopTaskReview(f.inputFor("M12")), false);
+    assert.equal(canUseStopTaskReview(f.inputFor("M12")), kind === "CONDITIONAL");
+    if (kind === "CONDITIONAL") {
+      let workerCalls = 0;
+      const checked = await runStopTaskReview(f.inputFor("M12"), { runTask: async () => { workerCalls++; throw new Error("No process proof is available."); } });
+      assert.equal(workerCalls, 0);
+      assert.equal(checked.result.metricObjectJudgements[0].judgement, "UNVERIFIED",
+        "A routing capability cannot turn missing condition/execution evidence into an applicability exclusion.");
+    }
     const report = calculateMetricReport({ population: f.population, judgements: [], metricIds: ["M12"] });
     const metric = report.metrics.find(item => item.metricId === "M12");
     assert.equal(metric.denominator, 1);
@@ -166,7 +173,7 @@ test("natural legacy labels are not upgraded to current-task scope merely by the
     const input = f.inputFor("M12"), object = input.request.population.metrics.M12[0];
     object.applicability = "CURRENT_TASK";
     object.applicabilityKind = kind;
-    assert.equal(canUseStopTaskReview(input), false, "the typed state takes precedence over a legacy-looking label");
+    assert.equal(canUseStopTaskReview(input), kind === "CONDITIONAL", "the explicit typed condition permits review but never activates itself");
   }
 });
 
@@ -202,7 +209,7 @@ test("typed Skill routing metadata preserves the separate original condition and
     assert.equal(object.applicabilityKind, original.applicabilityKind);
     assert.equal(object.applicability, original.condition ?? "CURRENT_TASK");
     const scoped = { ...population, metrics: { M08: [object] } };
-    assert.equal(canUseStopTaskReview(f.inputFor("M08", scoped)), original.applicabilityKind === "CURRENT_TASK");
+    assert.equal(canUseStopTaskReview(f.inputFor("M08", scoped)), ["CURRENT_TASK", "CONDITIONAL"].includes(original.applicabilityKind));
   }
 });
 

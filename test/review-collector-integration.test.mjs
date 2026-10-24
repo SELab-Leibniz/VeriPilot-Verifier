@@ -8,7 +8,7 @@ import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 
-async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", severity = "HARD", findingKey = "premature-output") {
+async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", severity = "HARD", findingKey = "premature-output", businessDeviation = true) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-collector-integration-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const task = await ensureTask({ projectRoot: root, sessionId: "collector-host" });
@@ -33,7 +33,7 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
     const localClassification = options.request.fixedStopClassification?.stopClassification ?? stopClassification;
     if (index === failed) throw Object.assign(new Error("prompt exceeds context window"), { code: "CONTEXT_OVERFLOW" });
     const objects = Object.values(options.request.population.metrics).flat();
-    const findings = localClassification === "INTERMEDIATE" && index === 0 ? [{
+    const findings = localClassification === "INTERMEDIATE" && index === 0 && businessDeviation ? [{
       deviationKey: findingKey, rootCauseId: "REQUIREMENT_OMITTED", severity: "error",
       reason: "A required evidence gate is absent, so the attempted stop is premature and must be blocked.",
       actualEvidence: [`${source}#L1-L1`], expectedConstraint: "Observe the original evidence gate.",
@@ -41,8 +41,8 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
     }] : [];
     return { result: { summary: "Compared the assigned originals.", stopClassification: localClassification, stage: null,
       findings, metricObjectJudgements: objects.map(object => ({ objectId: object.objectId,
-        judgement: failed >= 0 && index === 0 ? "DEVIATION" : "PASS",
-        reason: failed >= 0 && index === 0 ? "The first output has a confirmed local discrepancy." : "Assigned evidence matches.",
+        judgement: failed >= 0 && businessDeviation && index === 0 ? "DEVIATION" : "PASS",
+        reason: failed >= 0 && businessDeviation && index === 0 ? "The first output has a confirmed local discrepancy." : "Assigned evidence matches.",
         evidence: [`${source}#L1-L1`] })) }, close: async () => {},
     };
   };
@@ -56,6 +56,19 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
       hook_event_name: "Stop", hook_event_id: "collector-stop", last_assistant_message: "Task complete." } });
   return { root, task, calls, run };
 }
+
+for (const classification of ["TASK_COMPLETE", "INTERMEDIATE"]) test(`checker-only ${classification} failure retains results without requesting business continuation`, async t => {
+  const f = await fixture(t, 1, classification, "HARD", "premature-output", false);
+  const result = await f.run();
+  assert.equal(result.stop.status, "UNVERIFIED");
+  assert.equal(result.stop.decision, "block");
+  assert.notEqual(result.stop.partialFeedbackEligible, true);
+  assert.equal(result.stop.review.collection.complete, false);
+  assert.equal(result.stop.review.collection.reviewedObjects > 0, true);
+  assert.equal(result.stop.correctionAttempt ?? 0, 0);
+  assert.equal(result.stop.infrastructureAttempt, 1);
+  assert.equal(result.stop.report?.blockingObjects.filter(row => row.judgement === "DEVIATION").length ?? 0, 0);
+});
 
 for (const failed of [1, 2]) test(`Stop retains and delivers source-bound results when ${failed === 1 ? "middle" : "last"} task overflows`, async t => {
   const f = await fixture(t, failed);

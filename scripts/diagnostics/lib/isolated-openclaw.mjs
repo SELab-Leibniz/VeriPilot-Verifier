@@ -125,5 +125,7 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
     await stop(); await wire.close(); await log.close(); };
   try { await start(); } catch (error) { await close(); throw error; }
   return { root, hostRoot, pluginRoot, stateDir, defaultDir, config, configFile, version: pkg.version, model, events, redact, save,
+    get health() { return { alive: Boolean(gateway?.pid && gateway.exitCode === null && gateway.signalCode === null),
+      pid: gateway?.pid ?? null, exitCode: gateway?.exitCode ?? null, signal: gateway?.signalCode ?? null, generation }; },
     request, send, status, restart: async () => { await stop(); await start(); }, close };
 }

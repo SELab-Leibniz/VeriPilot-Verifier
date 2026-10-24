@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
+import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 const row = (id, metric = "M01", target = "ARTIFACT") => ({ objectId: `${metric}:${id}`, metricId: metric,
@@ -52,6 +53,32 @@ test("identical frozen Stop inputs reuse complete PASS items with no new model c
     assert.equal(saved.reusedFrom, item.reusedFrom);
     assert.ok(saved.sourceCitations.every(citation => citation.snapshotPath.startsWith(second.collection.path)));
   }
+});
+
+test("implementation retries reuse only their own unchanged, validated PASS items", async t => {
+  const f = await fixture(t, [row("R1", "M12", "IMPLEMENTATION")]);
+  f.input.request.sourceManifest = [{ path: "output.txt", sha256: sha256(await fs.readFile(f.source)) }];
+  const base = f.output;
+  f.setItem(params => {
+    const result = base(params);
+    if (params.role === "implementation-reviewer") {
+      delete result.fileAssessments; delete result.stopClassification; delete result.stage;
+    }
+    return result;
+  });
+  const impl = { role: "implementation-reviewer", schema: IMPL_REVIEW_SCHEMA, classification: null };
+  const first = await f.run(impl), second = await f.run(impl);
+  assert.equal(first.collection.complete, true);
+  assert.equal(second.collection.reusedItems, 1);
+  assert.equal(f.calls(), 1);
+  assert.equal(second.collection.items[0].reusedFrom, first.collection.items[0].path);
+  const stop = await f.run();
+  assert.equal(stop.collection.reusedItems, 0, "a source PASS cannot be reused as runtime acceptance");
+  assert.equal((await f.run(impl)).collection.reusedItems, 1, "the role index survives another role's review");
+  await fs.writeFile(f.source, "Changed current output.\n");
+  f.input.request.sourceManifest[0].sha256 = sha256(await fs.readFile(f.source));
+  assert.equal((await f.run(impl)).collection.reusedItems, 0);
+  assert.equal(f.calls(), 3);
 });
 
 test("candidate identity participates in PASS reuse and changed declarations cannot publish stale judgements", async t => {

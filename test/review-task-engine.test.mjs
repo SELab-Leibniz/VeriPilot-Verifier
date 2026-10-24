@@ -8,13 +8,18 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
-import { captureFiles, registerCitation, validateDecision } from "../lib/review-task/review-task.mjs";
+import { captureFiles, registerCitation, runReviewTask, taskVerdicts, validateDecision } from "../lib/review-task/review-task.mjs";
+import { ModelRuntime, createAssistantMessageEventStream } from "../lib/review-task/sdk.mjs";
 
 test("review profiles preserve task ownership and keep untuned routes unchanged", () => {
   assert.match(reviewPromptProfile("M01", "REQUIREMENT_DECOMPOSITION_COVERAGE").promptAppend, /Metric M01/);
   assert.equal(reviewPromptProfile("M03", "TEST_CONTRACT_COVERAGE").promptAppend, "");
   assert.match(reviewPromptProfile("M12", "SOURCE_IMPLEMENTATION").promptAppend, /proof before PASS/);
-  assert.equal(reviewPromptProfile("M12", "RUNTIME_ACCEPTANCE").promptAppend, "");
+  const runtime = reviewPromptProfile("M12", "RUNTIME_ACCEPTANCE");
+  assert.equal(runtime.reviewType, "runtime-evidence-reviewer");
+  assert.match(runtime.promptAppend, /attributable original tool invocation and its returned result/);
+  assert.match(runtime.promptAppend, /cannot manufacture execution proof/);
+  assert.match(runtime.promptAppend, /missing or unresolved execution, version or coverage evidence is UNVERIFIED/);
   assert.equal(reviewPromptProfile("M12", "UNRECOGNIZED_SCOPE").promptAppend, "");
   assert.match(reviewPromptProfile("M15", "EXECUTION_CLOSURE").promptAppend, /Missing\/stale results.*UNVERIFIED/);
   assert.equal(reviewPromptProfile("M09", "SOURCE_IMPLEMENTATION").reviewType, "development-standard-reviewer");
@@ -69,4 +74,90 @@ test("discovery cannot promote basis-only or outside-prefix citations, or skip m
   }
   await fs.appendFile(path.join(input.root, "project/candidate.md"), "\nChanged after capture");
   await assert.rejects(validateDecision({ ...input, decision: discoveryDecision("PASS", [input.candidate.citeId]) }), /STALE/u);
+});
+
+test("only the exact caller-owned conditional kind can authorize applicability verdicts", async t => {
+  const f = await discoveryFixture(t);
+  for (const applicabilityKind of [undefined, null, "CURRENT_TASK", "FUTURE", "UNKNOWN", "conditional", "CONDITIONAL ", true, 1, {}, []]) {
+    const task = { ...f.task, applicabilityKind };
+    assert.deepEqual(taskVerdicts(task), ["PASS", "DEVIATION", "UNVERIFIED"]);
+    for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"])
+      await assert.rejects(validateDecision({ ...f, task, decision: discoveryDecision(verdict, [f.candidate.citeId]) }), /Wrong task or verdict/u);
+  }
+  const task = { ...f.task, applicabilityKind: "CONDITIONAL" };
+  for (const verdict of taskVerdicts(task)) {
+    const result = await validateDecision({ ...f, task, decision: discoveryDecision(verdict, verdict === "UNVERIFIED" ? [] : [f.candidate.citeId]) });
+    assert.equal(result.verdict, verdict, "Applicability decisions must never be rewritten into PASS.");
+  }
+  const unknown = await validateDecision({ ...f, task, reads: [],
+    decision: { ...discoveryDecision("UNVERIFIED", []), reason: "The original trigger cannot be established from the available evidence." } });
+  assert.equal(unknown.verdict, "UNVERIFIED");
+});
+
+test("both conditional applicability verdicts retain full basis, target ownership, citation and stale guards", async t => {
+  const f = await discoveryFixture(t), task = { ...f.task, applicabilityKind: "CONDITIONAL" };
+  for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"]) {
+    const decision = discoveryDecision(verdict, [f.candidate.citeId]);
+    await assert.rejects(validateDecision({ ...f, task, reads: f.reads.filter(r => r.path !== "project/basis.md"), decision }), /basis not fully read/u);
+    await assert.rejects(validateDecision({ ...f, task, decision: { ...decision, citeIds: [] } }), /requires source evidence/u);
+    for (const citation of [f.basis, f.outside])
+      await assert.rejects(validateDecision({ ...f, task, decision: { ...decision, citeIds: [citation.citeId] } }), /current target source/u);
+    await assert.rejects(validateDecision({ ...f, task, decision: { ...decision, citeIds: ["made-up-cite"] } }), /Unknown citation/u);
+    const registry = new Map(f.registry);
+    registry.set(f.candidate.citeId, { ...f.candidate, sha256: "0".repeat(64) });
+    await assert.rejects(validateDecision({ ...f, task, registry, decision }), /Tampered citation/u);
+    await assert.rejects(validateDecision({ ...f, task, reads: f.reads.filter(r => r.path !== "project/candidate.md"), decision }), /Unread or invalid citation/u);
+  }
+  await fs.appendFile(path.join(f.root, "project/candidate.md"), "\nCondition evidence changed after capture.");
+  for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"])
+    await assert.rejects(validateDecision({ ...f, task, decision: discoveryDecision(verdict, [f.candidate.citeId]) }), /STALE/u);
+});
+
+// Exercise the real SDK tool schema/save path with an offline scripted provider.
+// This checks protocol enforcement, not a model's semantic trigger reasoning.
+test("conditional SDK submissions keep both applicability verdicts durable while the default schema rejects them", async t => {
+  for (const [kind, verdict] of [["CONDITIONAL", "NOT_APPLICABLE"], ["CONDITIONAL", "NOT_YET_APPLICABLE"], [undefined, "NOT_APPLICABLE"]]) {
+    const f = await discoveryFixture(t), task = { ...f.task, ...(kind ? { applicabilityKind: kind } : {}) };
+    await fs.writeFile(path.join(f.root, "project/basis.md"), "If the release phase is in scope and reached, obtain approval before release.\nMissing approval evidence alone does not establish an applicability exception.");
+    await fs.writeFile(path.join(f.root, "project/candidate.md"), !kind ? "The current release scope and stage cannot be established."
+      : verdict === "NOT_APPLICABLE" ? "Current task scope is an explicitly documentation-only preview; release is outside this task."
+        : "Current task stage is draft review; the in-scope release phase has not yet been reached.");
+    const outputDir = `${f.root}-review`; t.after(() => fs.rm(outputDir, { recursive: true, force: true }));
+    const authPath = `${outputDir}-auth.json`; t.after(() => fs.rm(authPath, { force: true }));
+    const runtime = await ModelRuntime.create({ authPath, modelsPath: null, refreshOnCreate: false });
+    let turns = 0;
+    const provider = `conditional-${crypto.randomUUID()}`;
+    runtime.registerProvider(provider, { api: "openai-completions", apiKey: "offline-placeholder", baseUrl: "http://127.0.0.1:1",
+      models: [{ id: "offline", name: "offline", input: ["text"], contextWindow: 204800, maxTokens: 8192, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
+      streamSimple(model, context) {
+        turns++;
+        const citations = [...JSON.stringify(context.messages).replace(/\\+"/gu, '"').matchAll(/\[citeId="([a-f0-9-]+)" \| range project\/candidate\.md:/gu)];
+        const name = turns <= 2 ? "source_read" : "submit_review";
+        const args = turns <= 2 ? { path: turns === 1 ? "project/basis.md" : "project/candidate.md" }
+          : { taskId: task.id, verdict: turns === 3 ? verdict : "UNVERIFIED", reason: turns !== 3 ? "The original trigger cannot be established."
+            : verdict === "NOT_APPLICABLE" ? "The current task explicitly excludes release." : "The current draft stage precedes the release trigger.",
+            citeIds: turns === 3 ? citations.slice(-1).map(match => match[1]) : [] };
+        const stream = createAssistantMessageEventStream();
+        queueMicrotask(() => {
+          const message = { role: "assistant", api: model.api, provider: model.provider, model: model.id,
+            content: [{ type: "toolCall", id: `call-${turns}`, name, arguments: args }], stopReason: "toolUse", timestamp: Date.now(),
+            usage: { input: 100, output: 10, cacheRead: 0, cacheWrite: 0, totalTokens: 110, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
+          stream.push({ type: "start", partial: message }); stream.push({ type: "done", reason: "toolUse", message }); stream.end();
+        });
+        return stream;
+      },
+    });
+    const result = await runReviewTask({ task, root: f.root, outputDir, modelRuntime: runtime, model: runtime.getModel(provider, "offline"), maxAttempts: 1, maxTurns: 5 });
+    assert.equal(result.completed, true);
+    assert.equal(result.verdict, kind ? verdict : "UNVERIFIED");
+    const saved = JSON.parse(await fs.readFile(path.join(outputDir, "decision.json"), "utf8"));
+    assert.equal(saved.verdict, result.verdict);
+    assert.equal(turns, kind ? 3 : 4);
+    const prompt = await fs.readFile(path.join(outputDir, "prompt.txt"), "utf8");
+    if (kind) {
+      assert.match(prompt, /Missing or incomplete trigger evidence is UNVERIFIED/u);
+      assert.match(prompt, /neither means the business obligation passed/u);
+      assert.equal(saved.refs[0].path, "project/candidate.md");
+    } else assert.doesNotMatch(prompt, /For this conditional task/u);
+  }
 });

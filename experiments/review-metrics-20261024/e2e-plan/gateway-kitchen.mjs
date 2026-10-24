@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { assertIsolatedWorktree } from "./worktree-fence.mjs";
+import { classifyStopTerminal } from "./stop-terminal.mjs";
 
 const execute = promisify(execFile), repository = await fs.realpath(process.cwd());
 const args = process.argv.slice(2), live = args.includes("--live");
@@ -74,6 +75,7 @@ const adapterSource = { commit: sourceRevision, sourceClean, files: Object.fromE
   [file, hash(await fs.readFile(path.join(repository, file)))]))) };
 const admissionPaths = ["scripts/diagnostics/lib/isolated-openclaw.mjs", "lib/plugin-builder.mjs",
   "experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs", "experiments/review-metrics-20261024/e2e-plan/worktree-fence.mjs",
+  "experiments/review-metrics-20261024/e2e-plan/stop-terminal.mjs",
   "experiments/review-metrics-20261024/e2e-plan/kitchen-policy.yaml",
   `examples/openclaw-offline-kitchen/skills/${skillName}/SKILL.md`,
   `examples/openclaw-offline-kitchen/skills/${skillName}/references/requirements.md`,
@@ -212,7 +214,7 @@ try {
     : `请进行最终交付验收。${common}本轮是有明确阶段顺序的隔离续作实验：第一轮只读取、实际运行verifier并如实报告本次最终交付结果，先不修改源码；正式应用合同并未豁免。收到RC反馈后的续作已授权实际修复并复验。第一轮只读是实验操作顺序，不得当作业务验收通过或删除正式合同。`;
   await save("request.md", request); await log("real business model task admission", { projectRoot, mode });
   const first = await host.send(keyId, request, 1200000); await save("first-terminal.json", first);
-  const fallbackDeadline = Date.now() + 1800000; let signature, finalState, observedWindow, windowSignature;
+  const fallbackDeadline = Date.now() + 1800000; let signature, finalState, finalTerminal, observedWindow, windowSignature;
   while (true) {
     const state = await runtimeState(projectRoot);
     observedWindow = stopObservationWindow({ records: state.records, sessionId, fallbackDeadline,
@@ -226,12 +228,20 @@ try {
       stopRecords: state.records.filter(r => r.file.includes("/native-stop-reviews/")).map(r => ({ status: r.status, reviewStatus: r.reviewStatus, reasonCode: r.reasonCode })),
       receipts: state.records.filter(r => r.file.includes("/native-followups/")).map(r => ({ status: r.status, observed: Boolean(r.modelObservedAt), finished: Boolean(r.finishedAt), reviewStatus: r.reviewStatus })) };
     if (JSON.stringify(compact) !== signature) { signature = JSON.stringify(compact); await log("Stop observation", compact); await save("progress.json", compact); }
-    const active = state.records.some(r => ["PENDING", "RUNNING", "DISPATCH_COMMITTED"].includes(r.status));
-    const receipts = state.records.filter(r => r.file.includes("/native-followups/"));
-    const finished = state.tasks.find(t => t.status === "COMPLETED" && t.verification?.status === "PASS");
-    if (finished && !active && receipts.every(r => !["RESERVED", "ADMITTED"].includes(r.status) || r.finishedAt)) { finalState = state; break; }
-    if (!active && state.tasks.some(t => t.verification?.correctionBudgetExhausted)) throw new Error("Correction budget exhausted; do not change budget or business assertions");
-    if (!active && state.records.some(r => r.file.includes("/native-stop-reviews/") && ["UNVERIFIED", "CANCELLED"].includes(r.reviewStatus)) && !receipts.some(r => ["RESERVED", "ADMITTED"].includes(r.status))) throw new Error("Stop ended without verification; inspect saved trace");
+    const tasks = state.tasks.filter(task => task.rootSessionId === sessionId || task.sessionIds?.includes(sessionId));
+    assert(tasks.length <= 1, "More than one task belongs to the isolated session; select an explicit task before certification");
+    const task = tasks[0];
+    let population;
+    if (task) try {
+      population = JSON.parse(await fs.readFile(path.join(projectRoot, ".runtime-correction/tasks", task.taskId, "metrics/population.json"), "utf8"));
+    } catch (error) { if (error.code !== "ENOENT") throw error; }
+    const health = host.health;
+    const terminal = classifyStopTerminal(state, { taskId: task?.taskId, population, ownerAlive: health.alive });
+    if (terminal.kind !== "WAITING") await save("stop-terminal.json", { ...terminal, owner: health, observedAt: Date.now() });
+    if (["ALL_METRICS_PASS", "SETTLED_WITH_UNVERIFIED"].includes(terminal.kind)) {
+      finalState = state; finalTerminal = terminal; break;
+    }
+    if (terminal.kind === "NOT_ACCEPTED") throw new Error(`${terminal.reasonCode ?? terminal.kind}: ${terminal.reason}`);
     if (Date.now() >= observedWindow.deadlineAt) break;
     await pause(1500);
   }
@@ -254,12 +264,13 @@ try {
   // The unchanged actual CLI output remains independently authoritative; tool event naming varies by host release.
   for (const [relative, digest] of Object.entries(protectedHashes)) assert.equal(hash(await fs.readFile(path.join(projectRoot, relative))), digest, `Protected fixture changed: ${relative}`);
   for (const [file, digest] of Object.entries(originals)) assert.equal(hash(await fs.readFile(file)), digest, "Original host configuration/cache changed");
-  Object.assign(report, { status: "PASS", finishedAt: Date.now(), businessAcceptance: app, populations, roleCounts, workerResults,
-    nativeBusinessVerifierToolEvents: nativeBusinessVerifierCalls.length, fullStopVerified: finalState.tasks.some(t => t.verification?.status === "PASS"),
+  Object.assign(report, { status: finalTerminal.allMetricsPass ? "PASS" : "SETTLED_WITH_UNVERIFIED", finishedAt: Date.now(),
+    stopTerminal: finalTerminal, businessAcceptance: app, populations, roleCounts, workerResults,
+    nativeBusinessVerifierToolEvents: nativeBusinessVerifierCalls.length, fullStopVerified: finalTerminal.allMetricsPass,
     artifactReviewConfigured: true, skillReviewConfigured: true, implementationReviewConfigured: true, stopReviewConfigured: true,
     scopeBoundary: "Only naturally populated metrics count as full Stop coverage. Enabled modules are not claimed triggered without saved records.",
     protectedInputsUnchanged: true, originalHostConfigurationUnchanged: true });
-  await log("whole Stop and independent 21-scenario acceptance completed", { status: report.status, populations });
+  await log("Stop formally settled; independent 21-scenario acceptance completed", { status: report.status, populations });
 } catch (error) {
   Object.assign(report, { status: "FAIL", failedAt: Date.now(), error: redact(error.stack) });
   if (projectRoot) await save("runtime-at-failure.json", await runtimeState(projectRoot)).catch(() => {});

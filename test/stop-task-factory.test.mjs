@@ -11,7 +11,7 @@ import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
-import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
+import { STOP_REVIEW_SCHEMA, reviewResultIssues } from "../lib/runtime-v2/reviewer.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 
@@ -84,6 +84,73 @@ test("native-only direct factory use remains the default even for a task-eligibl
   assert.equal(nativeCalls, 1); assert.equal(taskCalls, 0);
   assert.equal(factory.reviewItemSize, undefined);
   assert.equal(factory.supportsSupplementalFileAssessment, undefined);
+});
+
+test("native fallback honors an item cancellation as well as its factory owner", async t => {
+  const f = await fixture(t), owner = new AbortController(), item = new AbortController();
+  let entered, childSignal;
+  const ready = new Promise(resolve => { entered = resolve; });
+  const factory = createOpenClawReviewerFactory(f.api, { abortSignal: owner.signal,
+    runEmbeddedAgent: async params => {
+      childSignal = params.abortSignal; entered();
+      await new Promise(resolve => childSignal.addEventListener("abort", resolve, { once: true }));
+      childSignal.throwIfAborted();
+    } });
+  const work = factory({ ...f.makeInput(), abortSignal: item.signal });
+  void work.catch(() => {});
+  try {
+    await ready;
+    item.abort(new Error("Only this review item was cancelled."));
+    assert.equal(childSignal.aborted, true);
+  } finally { owner.abort(); await work.catch(() => {}); }
+});
+
+test("SDK item signal cannot detach the enclosing factory cancellation", async t => {
+  const f = await fixture(t), owner = new AbortController(), item = new AbortController();
+  let signal;
+  const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", abortSignal: owner.signal,
+    runEmbeddedAgent: async () => { throw new Error("No native calls expected"); },
+    runStopTask: async input => { signal = input.abortSignal; return { result: report() }; } });
+  await factory({ ...f.makeInput(), abortSignal: item.signal });
+  owner.abort(new Error("The enclosing Stop ended."));
+  assert.equal(signal.aborted, true);
+  assert.equal(item.signal.aborted, false);
+});
+
+test("file UNVERIFIED may have no citations, but both native and CLI result validation reject unproved conclusive files", async t => {
+  for (const status of ["UNVERIFIED", "PASS", "DEVIATION"]) await t.test(status, async t => {
+    const f = await fixture(t), result = { ...report(), fileAssessments: [
+      { path: "kitchen.py", status, reason: "The file's required proof has not been established.", evidence: [] },
+    ] };
+    assert.equal(reviewResultIssues(result, STOP_REVIEW_SCHEMA).length > 0, status !== "UNVERIFIED");
+    const factory = createOpenClawReviewerFactory(f.api, { runEmbeddedAgent: async () => ({
+      payloads: [{ text: JSON.stringify(result) }], meta: {},
+    }) });
+    const input = f.makeInput();
+    if (status === "UNVERIFIED") {
+      const handle = await factory(input);
+      assert.deepEqual(handle.result.fileAssessments[0].evidence, []);
+      await handle.close();
+    } else await assert.rejects(factory(input), /conclusive file assessment requires source evidence/iu);
+  });
+});
+
+test("native classification does not receive the collector's potentially large candidate inventory", async t => {
+  const f = await fixture(t), input = f.makeInput();
+  input.request.population = { metrics: {} };
+  input.request.reviewScope = { kind: "classification", boundedBasis: true, objectIds: [], sourceIds: [] };
+  input.request.artifactCandidates = [{ artifactId: "source", metricIds: [], files: Array.from({ length: 2000 }, (_, index) => ({
+    path: `source/feature-${index}.py`, sha256: "a".repeat(64),
+  })) }];
+  let prepared;
+  input.onPrepared = value => { prepared = value.request; };
+  const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", runEmbeddedAgent: async () => ({
+    payloads: [{ text: JSON.stringify(report()) }], meta: {},
+  }) });
+  const handle = await factory(input);
+  assert.equal(Object.hasOwn(prepared, "artifactCandidates"), false);
+  assert.equal(input.request.artifactCandidates[0].files.length, 2000, "Program ownership/cache input remains intact.");
+  await handle.close();
 });
 
 test("task mode preserves native fallback for unresolved ownership, classifier and stage/intermediate work", async t => {

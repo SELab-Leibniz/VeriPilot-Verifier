@@ -58,6 +58,102 @@ async function fixture(t, metrics = ["M01"]) {
   return { root, source, taskRoot, input, calls, factory, output, fileAssessment };
 }
 
+async function boundFiles(f) {
+  const second = path.join(f.root, "second.md");
+  await fs.writeFile(second, "Another real requested delivery file.\nIndependent content quality.\n");
+  f.input.request.artifactCandidates = [{ artifactId: "requested-delivery", metricIds: [],
+    files: await Promise.all([f.source, second].map(async file => ({ path: path.basename(file), sha256: sha256(await fs.readFile(file)) }))),
+    declaration: { configPath: null, configSha256: null, digest: sha256("explicit-fixture-delivery") } }];
+  // Repeating an identical declared file must not multiply quality calls.
+  f.input.request.artifactCandidates[0].files.push({ ...f.input.request.artifactCandidates[0].files[0] });
+  return second;
+}
+
+test("known delivery files each own one durable quality item without changing the metric denominator", async t => {
+  const f = await fixture(t), second = await boundFiles(f);
+  const factory = f.factory(params => {
+    const target = params.request.reviewScope.qualityTarget;
+    if (!target) return f.output(params);
+    assert.equal(objectsOf(params).length, 0);
+    assert.equal(params.request.reviewScope.kind, "file-quality");
+    assert.deepEqual(Object.keys(target).sort(), ["artifactId", "path", "sha256"]);
+    return f.output(params, { fileAssessments: [{ path: target.path, status: target.path === "delivery.md" ? "PASS" : "DEVIATION",
+      reason: "This file's current content has been assessed.", evidence: [`${path.join(f.root, target.path)}#L1-L2`] }] });
+  });
+  const first = await collectReviewItems({ ...f.input, reviewerFactory: factory });
+  assert.equal(f.calls.length, 3);
+  assert.equal(first.collection.totalObjects, 1);
+  assert.equal(first.collection.reviewedObjects, 1);
+  assert.equal(first.collection.totalItems, 3);
+  assert.equal(first.collection.complete, true);
+  assert.deepEqual(first.result.fileAssessments.map(row => [row.path, row.status]), [["delivery.md", "PASS"], ["second.md", "DEVIATION"]]);
+  for (const item of first.collection.items.slice(1)) {
+    const saved = JSON.parse(await fs.readFile(item.path, "utf8"));
+    assert.equal(saved.kind, "file-quality"); assert.deepEqual(saved.objectIds, []);
+    assert.equal(saved.passReuseItemKey, undefined);
+    assert.equal(saved.qualityTarget.path, saved.result.fileAssessments[0].path);
+  }
+  assert.equal(first.sourceCitations.some(citation => citation.path === second), true);
+  await collectReviewItems({ ...f.input, reviewerFactory: factory });
+  assert.equal(f.calls.length, 5, "Only the one metric PASS can be reused; both file-quality items run again.");
+});
+
+test("a later quality failure keeps earlier file and metric results and names the failed file U", async t => {
+  const f = await fixture(t); await boundFiles(f);
+  const handle = await collectReviewItems({ ...f.input, reviewerFactory: f.factory(params => {
+    const target = params.request.reviewScope.qualityTarget;
+    if (!target) return f.output(params);
+    if (target.path === "second.md") throw Object.assign(new Error("The later file worker failed."), { code: "CONTEXT_UNSAFE" });
+    return f.output(params, { fileAssessments: [{ path: target.path, status: "PASS", reason: "Current delivery checked.", evidence: [`${f.source}#L1-L2`] }] });
+  }) });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, "PASS");
+  assert.deepEqual(handle.result.fileAssessments.map(row => [row.path, row.status]), [["delivery.md", "PASS"], ["second.md", "UNVERIFIED"]]);
+  assert.deepEqual(handle.result.fileAssessments[1].evidence, []);
+  assert.equal(handle.collection.complete, false);
+  assert.deepEqual(handle.collection.failures[0].objectIds, []);
+  assert.equal(JSON.parse(await fs.readFile(handle.collection.items[1].path, "utf8")).result.fileAssessments[0].status, "PASS");
+});
+
+test("stage completion keeps one native quality duty even when delivery bindings exist", async t => {
+  const f = await fixture(t); await boundFiles(f);
+  await collectReviewItems({ ...f.input, classification: { stopClassification: "STAGE_COMPLETE", stage: "planning" },
+    reviewerFactory: f.factory() });
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls.at(-1).request.reviewScope.kind, "file-quality");
+  assert.equal(f.calls.at(-1).request.reviewScope.qualityTarget, undefined);
+});
+
+test("a declared quality file cannot be proved by another file or returned under a foreign path", async t => {
+  for (const wrong of ["source", "path"]) await t.test(wrong, async t => {
+    const f = await fixture(t); await boundFiles(f);
+    const handle = await collectReviewItems({ ...f.input, reviewerFactory: f.factory(params => {
+      const target = params.request.reviewScope.qualityTarget;
+      if (!target) return f.output(params);
+      return f.output(params, { fileAssessments: [{ path: wrong === "path" ? "foreign.md" : target.path, status: "PASS",
+        reason: "Unrelated proof cannot certify this file.", evidence: [`${wrong === "source" ? path.join(f.root, target.path === "delivery.md" ? "second.md" : "delivery.md") : f.source}#L1`] }] });
+    }) });
+    assert.equal(handle.collection.complete, false);
+    assert.equal(handle.result.metricObjectJudgements[0].judgement, "PASS");
+    assert.equal(handle.result.fileAssessments.every(row => row.status === "UNVERIFIED"), true);
+    assert.deepEqual(handle.result.fileAssessments.map(row => row.path), ["delivery.md", "second.md"]);
+  });
+});
+
+test("the existing shared cutoff records every unstarted known quality target without invented metric rows", async t => {
+  const f = await fixture(t); await boundFiles(f);
+  const started = Date.now(), deadlineAt = started + 30000; let now = started;
+  t.mock.method(Date, "now", () => now);
+  const handle = await collectReviewItems({ ...f.input, deadlineAt, reviewerFactory: f.factory(params => {
+    now = deadlineAt - 1000; return f.output(params);
+  }) });
+  assert.equal(f.calls.length, 1);
+  assert.equal(handle.collection.totalObjects, 1);
+  assert.equal(handle.collection.totalItems, 3);
+  assert.equal(handle.collection.items.slice(1).every(item => item.unstarted && item.qualityTarget), true);
+  assert.deepEqual(handle.result.fileAssessments.map(row => [row.path, row.status]), [["delivery.md", "UNVERIFIED"], ["second.md", "UNVERIFIED"]]);
+  assert.equal(handle.result.metricObjectJudgements.length, 1);
+});
+
 test("task collection assigns all fifteen metrics independently and checks file quality exactly once afterward", async t => {
   const f = await fixture(t, Object.keys(METRIC_CATALOG));
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: f.factory(params => {

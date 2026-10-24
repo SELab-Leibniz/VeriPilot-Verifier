@@ -60,6 +60,90 @@ async function result(options, { file = ["PROCESS_COMPLIANCE", "RUNTIME_ACCEPTAN
 }
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
+test("conditional applicability reaches the worker unchanged and only it may return applicability verdicts", async t => {
+  for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE", "UNVERIFIED"]) await t.test(verdict, async t => {
+    const text = "If corrective feedback is received, address it and rerun the original verifier without changing protected inputs.";
+    const f = await fixture(t, "M11", "PROCESS", { applicabilityKind: "CONDITIONAL", applicability: "if corrective feedback is received", text });
+    const handle = await runStopTaskReview(f.input, { runTask: async options => {
+      assert.equal(options.task.applicabilityKind, "CONDITIONAL");
+      const basis = (await Promise.all(options.task.basisFiles.map(file => fs.readFile(path.join(options.root, file), "utf8")))).join("");
+      assert(basis.includes(text));
+      return verdict === "UNVERIFIED" ? { completed: true, verdict, reason: "The original condition is unresolved.", refs: [] }
+        : result(options, { verdict });
+    } });
+    assert.equal(judgement(handle).judgement, verdict);
+  });
+  for (const kind of [undefined, "CURRENT_TASK"]) {
+    const f = await fixture(t, "M11", "PROCESS", { applicabilityKind: kind });
+    await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { verdict: "NOT_APPLICABLE" }) }),
+      error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+  }
+  const implementation = await fixture(t, "M12", "IMPLEMENTATION", { applicabilityKind: "CONDITIONAL" });
+  implementation.input.role = "implementation-reviewer";
+  assert.equal(canUseStopTaskReview(implementation.input), false, "Conditional implementation reviews retain their native boundary.");
+  const f = await fixture(t, "M11", "PROCESS", { applicabilityKind: "CONDITIONAL" });
+  for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"]) {
+    await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { verdict, file: "project/candidate.md" }) }),
+      error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+    await assert.rejects(runStopTaskReview(f.input, { runTask: async () => ({ completed: true, verdict, reason: "No original witness.", refs: [] }) }),
+      error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+  }
+});
+
+test("bound file quality is a nonmetric SDK job with all active GT and only its real delivery file", async t => {
+  for (const verdict of ["PASS", "DEVIATION", "UNVERIFIED"]) await t.test(verdict, async t => {
+    const f = await fixture(t, "M01", "ARTIFACT");
+    f.truth.claims[1].severity = "SOFT";
+    f.truth.digest = sha256(f.truth.claims);
+    await fs.writeFile(f.input.request.groundTruthPath, JSON.stringify(f.truth));
+    const statePath = path.join(f.directory, "task.json"), state = JSON.parse(await fs.readFile(statePath, "utf8"));
+    state.groundTruth.digest = f.truth.digest; await fs.writeFile(statePath, JSON.stringify(state));
+    const binding = f.input.request.artifactCandidates[0]; binding.metricIds = [];
+    const target = { path: "candidate.md", sha256: binding.files[0].sha256, artifactId: binding.artifactId };
+    f.input.request.population = { ...f.input.request.population, metrics: {} };
+    f.input.request.reviewScope = { kind: "file-quality", objectIds: [], sourceIds: [], qualityTarget: target };
+    assert.equal(canUseStopTaskReview(f.input), true);
+    const handle = await runStopTaskReview(f.input, { runTask: async options => {
+      assert.equal(options.task.scope, "FILE_QUALITY");
+      assert.equal(Object.hasOwn(options.task, "metricId"), false);
+      assert.deepEqual(options.task.targetFiles, ["project/candidate.md"]);
+      assert.deepEqual(options.task.targetPrefixes, ["project/"]);
+      const part = async name => JSON.parse((await Promise.all(options.task.basisFiles.filter(file => file.startsWith(`basis/${name}-`))
+        .map(file => fs.readFile(path.join(options.root, file), "utf8")))).join(""));
+      assert.deepEqual(await part("ground-truth"), f.truth, "All frozen GT metadata and SOFT background remain intact.");
+      assert.equal(Object.hasOwn(await part("assigned-object"), "object"), false);
+      assert.deepEqual((await part("assigned-object")).qualityTarget, target);
+      await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
+      assert.deepEqual(await fs.readdir(path.join(options.root, "project")), ["candidate.md"]);
+      return verdict === "UNVERIFIED" ? { completed: true, verdict, reason: "Current-file quality cannot be concluded.", refs: [] }
+        : result(options, { verdict });
+    } });
+    assert.deepEqual(handle.result.metricObjectJudgements, []);
+    assert.deepEqual(handle.result.findings, []);
+    assert.equal(handle.result.fileAssessments[0].path, "candidate.md");
+    assert.equal(handle.result.fileAssessments[0].status, verdict);
+    assert.equal(handle.result.fileAssessments[0].evidence.length, verdict === "UNVERIFIED" ? 0 : 1);
+    const oldCaller = structuredClone(f.input); delete oldCaller.request.reviewScope.qualityTarget;
+    assert.equal(canUseStopTaskReview(oldCaller), false, "Unknown old quality callers retain their native boundary.");
+    const stage = structuredClone(f.input); stage.request.fixedStopClassification.stopClassification = "STAGE_COMPLETE";
+    assert.equal(canUseStopTaskReview(stage), false, "Stage quality keeps its original single native duty.");
+  });
+});
+
+test("quality-only ownership cannot become an M01 subject or self-prove a file verdict", async t => {
+  const f = await fixture(t, "M01", "ARTIFACT"), binding = f.input.request.artifactCandidates[0];
+  binding.metricIds = [];
+  const missing = await runStopTaskReview(f.input, { runTask: () => assert.fail("Quality ownership cannot authorize M01.") });
+  assert.equal(judgement(missing).judgement, "UNVERIFIED");
+  f.input.request.population.metrics = {};
+  f.input.request.reviewScope = { kind: "file-quality", objectIds: [], sourceIds: [],
+    qualityTarget: { path: "candidate.md", sha256: binding.files[0].sha256, artifactId: binding.artifactId } };
+  await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { file: "basis/assigned-object-0000.txt" }) }),
+    error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+  await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { verdict: "NOT_APPLICABLE" }) }),
+    error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+});
+
 async function skillFixture(t, { captured = true, privateSource = false, sourceRef = "project/SKILL.md#L2", applicabilityKind, condition = "CURRENT_TASK" } = {}) {
   const f = await fixture(t, "M08", "PROCESS", { projectFile: false }), skillId = "build-offline-kitchen";
   const sourceRoot = privateSource ? path.join(f.directory, "skills", skillId, "source") : path.join(f.projectRoot, "skills", skillId);
@@ -104,7 +188,9 @@ test("all fifteen metric IDs have single current-object Stop eligibility without
     object.applicabilityKind = "CURRENT_TASK";
     assert.equal(canUseStopTaskReview(typed), true, `${metric}: typed current scope`);
     object.applicability = "CURRENT_TASK";
-    for (const kind of ["CONDITIONAL", "FUTURE", "UNKNOWN", "file modifications", undefined, null, true, 1, {}, []]) {
+    object.applicabilityKind = "CONDITIONAL";
+    assert.equal(canUseStopTaskReview(typed), true, `${metric}: explicit conditional scope`);
+    for (const kind of ["FUTURE", "UNKNOWN", "file modifications", undefined, null, true, 1, {}, []]) {
       object.applicabilityKind = kind;
       assert.equal(canUseStopTaskReview(typed), false, `${metric}: present kind ${String(kind)}`);
     }
@@ -136,8 +222,8 @@ test("typed Skill kinds propagate while legacy documents and original nullable c
     const f = await skillFixture(t, { applicabilityKind: kind, condition: null });
     assert.equal(f.object.applicabilityKind, kind);
     assert.equal(f.skillDocument.constraints[0].condition, null);
-    assert.equal(canUseStopTaskReview(f.input), kind === "CURRENT_TASK");
-    if (kind === "CURRENT_TASK") {
+    assert.equal(canUseStopTaskReview(f.input), ["CURRENT_TASK", "CONDITIONAL"].includes(kind));
+    if (["CURRENT_TASK", "CONDITIONAL"].includes(kind)) {
       const handle = await runStopTaskReview(f.input, { runTask: options => result(options) });
       assert.equal(judgement(handle).judgement, "PASS");
     }

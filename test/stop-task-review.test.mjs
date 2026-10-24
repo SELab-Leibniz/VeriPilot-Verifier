@@ -108,7 +108,7 @@ test("acceptance coverage and source/runtime proof tasks receive the correct sel
   for (const config of [
     { metric: "M05", role: "stop-reviewer", target: "ARTIFACT", scope: "METRIC_ARTIFACT_REVIEW", prompt: /M05 judges coverage/u },
     { metric: "M12", role: "implementation-reviewer", target: "IMPLEMENTATION", scope: "SOURCE_IMPLEMENTATION", prompt: /proof before PASS/u },
-    { metric: "M12", role: "stop-reviewer", target: "IMPLEMENTATION", scope: "RUNTIME_ACCEPTANCE", prompt: "" },
+    { metric: "M12", role: "stop-reviewer", target: "IMPLEMENTATION", scope: "RUNTIME_ACCEPTANCE", prompt: /attributable original tool invocation and its returned result/u },
   ]) await t.test(`${config.metric}/${config.scope}`, async t => {
     const f = await fixture(t, [object("R1", config.metric, config.target)]);
     f.input.role = config.role;
