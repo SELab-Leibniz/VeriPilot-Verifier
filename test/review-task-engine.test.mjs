@@ -12,5 +12,7 @@ test("review profiles preserve task ownership and keep untuned routes unchanged"
   assert.match(reviewPromptProfile("M12", "SOURCE_IMPLEMENTATION").promptAppend, /proof before PASS/);
   assert.equal(reviewPromptProfile("M12", "RUNTIME_ACCEPTANCE").promptAppend, "");
   assert.equal(reviewPromptProfile("M12", "UNRECOGNIZED_SCOPE").promptAppend, "");
-  assert.equal(reviewPromptProfile("M15", "OTHER").promptAppend, "");
+  assert.match(reviewPromptProfile("M15", "EXECUTION_CLOSURE").promptAppend, /Missing\/stale results.*UNVERIFIED/);
+  assert.equal(reviewPromptProfile("M09", "SOURCE_IMPLEMENTATION").reviewType, "development-standard-reviewer");
+  assert.equal(reviewPromptProfile("M99", "OTHER").promptAppend, "");
 });

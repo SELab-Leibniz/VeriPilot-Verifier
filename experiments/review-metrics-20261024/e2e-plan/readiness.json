@@ -1,0 +1,49 @@
+{
+  "status": "READY_WAITING_FOR_STAGE2_LIVE_GATE",
+  "at": "2026-10-24T05:45:17.867Z",
+  "modelCalls": 0,
+  "gatewayUsed": false,
+  "originalHostOrSessionModified": false,
+  "productionPolicyPreflight": "PASS_CONFIG_SCHEMA_AND_PRODUCTION_LOAD",
+  "worktreeFencePreflight": "PASS",
+  "files": [
+    {
+      "path": "gateway-kitchen.mjs",
+      "sha256": "9093436b04ccb8fbac0479a5f69654348bdd806a154ddc255addf7675aa5e07c"
+    },
+    {
+      "path": "worktree-fence.mjs",
+      "sha256": "b567d67becaa3850e0f86cdda181a4a8b82638f61c3f7e5db23c1e3444f37c80"
+    },
+    {
+      "path": "check-worktree-fence.mjs",
+      "sha256": "4970943ed813922a71d557efa0c3e16e678448d8cac5f11c071b02ee8bc9cc8c"
+    },
+    {
+      "path": "kitchen-policy.yaml",
+      "sha256": "08f40cabcfec09ad746a038637c243e9b724514d129c2a0c196b41b5cf26d3c3"
+    },
+    {
+      "path": "check-policy.mjs",
+      "sha256": "9c911c24ae1b780a2f6bd2a155ead6da0fe682131897c4dabc6b7cc4cec181e2"
+    },
+    {
+      "path": "plan.md",
+      "sha256": "ad1566f8ea11d67d8a56ea761a569b2286a589bbdf3e86769427d8a45a6bbbc3"
+    },
+    {
+      "path": "policy-preflight.json",
+      "sha256": "b40e4893fe375638ae37bb93b015eb277322b80f789d0454a93b5ab97da54685"
+    },
+    {
+      "path": "worktree-fence-preflight.json",
+      "sha256": "cb21ec2296f4a2ad574ce17d58f5f606f706ebc502e3c45c8d5ac5df998e5b8e"
+    }
+  ],
+  "preAdmissionPromptCorrection": {
+    "allExecWorkdirRequirement": false,
+    "bundledVerifierProjectWorkdir": true,
+    "contractSkillOracleUnchanged": true,
+    "reason": "Preserve original Skill verifier obligation without adding an irreversible all-history exec gate."
+  }
+}

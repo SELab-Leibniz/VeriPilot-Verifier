@@ -44,7 +44,8 @@ async function fixture(t) {
   await fs.mkdir(path.join(sourceRoot, "packaging/hosts/openclaw/skills"));
   for (const file of ["node_modules/top-sentinel", "lib/review-task/node_modules/worker-sentinel",
     "examples/nested/node_modules/example-sentinel", ".runtime-correction/review-module-lab/experiment-sentinel",
-    "examples/nested/.runtime-correction/private-sentinel", "packaging/hosts/openclaw/skills/node_modules/skill-sentinel"]) {
+    "examples/nested/.runtime-correction/private-sentinel", "packaging/hosts/openclaw/skills/node_modules/skill-sentinel",
+    "experiments/live-kitchen-private/host/openclaw.json", "experiments/review-fixtures/oracle-sentinel"]) {
     await write(path.join(sourceRoot, file), "Never include this file in a deliverable.\n");
   }
   return { sourceRoot, outputRoot, worker };
@@ -68,6 +69,7 @@ test("every artifact excludes nested installations and private experiment output
     assert(names.includes("lib/review-task/review-task.mjs"));
     assert(!names.some(name => name.split("/").some(part => ["node_modules", ".runtime-correction"].includes(part))));
     assert(!names.some(name => name.includes("sentinel")));
+    assert(!names.some(name => name === "experiments" || name.startsWith("experiments/")));
     if (host !== "openclaw") {
       const pkg = await read(path.join(artifact, "package.json"));
       assert.equal(pkg.dependencies, undefined);
@@ -94,7 +96,7 @@ test("OpenClaw root package and lock retain exact worker dependencies and all tr
   assert.deepEqual(pkg.overrides, workerPackage.overrides);
   if (workerPackage.overrides?.undici) assert.equal(lock.packages["node_modules/undici"].version, workerPackage.overrides.undici);
   assert.equal(pkg.version, manifest.version);
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.11");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.12");
   assert.equal(lock.lockfileVersion, 3);
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.version, pkg.version);

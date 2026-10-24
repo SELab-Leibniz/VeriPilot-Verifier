@@ -59,7 +59,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.equal(manifest.id, "runtime-corrector");
   assert.equal(manifest.main, pkg.openclaw.extensions[0], "MA startup discovery must find the native entry");
   assert.ok((await fs.stat(path.join(pluginRoot, manifest.main))).isFile());
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.11");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.12");
   assert.equal(manifest.version, pkg.version, "host inspection and npm must report the same release");
   assert.equal(pkg.peerDependencies.openclaw, "2026.7.1-2 || 2026.10.3");
   assert.equal(pkg.openclaw.compat.pluginApi, ">=2026.7.1 <=2026.10.3");

@@ -68,7 +68,7 @@ async function scriptedResult(options, verdict = "PASS", reason = "The checked c
 
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
-test("eligibility keeps the tested metric and proof-owner routes separate from legacy review work", () => {
+test("eligibility admits all current single-object metrics while keeping unsupported review work native", () => {
   const input = (metric, role = "stop-reviewer", target = "ARTIFACT") => {
     const row = object("R1", metric, target);
     return { role, request: { population: populated([row]), fixedStopClassification: classification,
@@ -78,9 +78,11 @@ test("eligibility keeps the tested metric and proof-owner routes separate from l
   assert.equal(canUseStopTaskReview(input("M05")), true);
   assert.equal(canUseStopTaskReview(input("M12", "implementation-reviewer", "IMPLEMENTATION")), true);
   assert.equal(canUseStopTaskReview(input("M12", "stop-reviewer", "IMPLEMENTATION")), true);
-  for (const value of [input("M02"), input("M09", "implementation-reviewer", "IMPLEMENTATION"),
-    input("M01", "stop-reviewer", "PROCESS"), input("M12", "implementation-reviewer", "PROCESS"),
-    input("M12", "stop-reviewer", "ARTIFACT"), input("M01", "ground-truth-reviewer")])
+  assert.equal(canUseStopTaskReview(input("M02")), true);
+  assert.equal(canUseStopTaskReview(input("M09", "implementation-reviewer", "IMPLEMENTATION")), true);
+  assert.equal(canUseStopTaskReview(input("M01", "stop-reviewer", "PROCESS")), true);
+  assert.equal(canUseStopTaskReview(input("M12", "stop-reviewer", "ARTIFACT")), true);
+  for (const value of [input("M12", "implementation-reviewer", "PROCESS"), input("M01", "ground-truth-reviewer"), input("M99")])
     assert.equal(canUseStopTaskReview(value), false);
   const later = input("M01"); later.request.population.metrics.M01[0].applicability = "FUTURE_STAGE";
   assert.equal(canUseStopTaskReview(later), false);
@@ -163,6 +165,7 @@ test("a completed negative review retains a concrete diagnosis and the assigned 
 test("a missing review target never reaches the model or manufactures PASS", async t => {
   const f = await fixture(t);
   await fs.rm(f.source);
+  f.input.evidence.snapshot.entries = [];
   let calls = 0;
   const handle = await runStopTaskReview(f.input, { runTask: async () => { calls++; throw new Error("must not run without a target"); } });
   assert.equal(calls, 0);

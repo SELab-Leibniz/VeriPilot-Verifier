@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 const repository = await fs.realpath(process.cwd()), base = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(base, "policy-preflight");
+const root = path.join(repository, ".runtime-correction", "all-metrics-lab-20261024", `e2e-policy-preflight-${Date.now()}`);
 await fs.mkdir(path.join(root,".runtime-corrector"),{recursive:true});
 await fs.mkdir(path.join(root,"spec"),{recursive:true});
 const policy = (await fs.readFile(path.join(base,"kitchen-policy.yaml"),"utf8")).replaceAll("{{modelId}}","deepseek-v4-flash");

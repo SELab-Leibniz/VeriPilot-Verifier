@@ -13,6 +13,7 @@ import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 
 const report = () => ({ summary: "Scripted native review.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] });
 const row = (metric = "M01", target = "ARTIFACT") => ({ objectId: `${metric}:R1`, sourceId: "R1", sourceRevisionId: "R1@1",
@@ -51,12 +52,14 @@ test("task-mode factory dispatches only eligible metric scopes with the selected
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", deadlineAt: parentDeadline, abortSignal: controller.signal,
     reviewerTimeoutMs: 15000, runEmbeddedAgent: async () => { nativeCalls++; throw new Error("Eligible work must not use native JSON review."); },
     runStopTask: async (input, transport) => { captures.push({ input, transport }); return { result: report(), close: async () => {} }; } });
-  for (const input of [f.makeInput("M01"), f.makeInput("M05"), f.makeInput("M12", "implementation-reviewer", "IMPLEMENTATION"),
-    f.makeInput("M12", "stop-reviewer", "IMPLEMENTATION")]) {
+  const inputs = [...Object.keys(METRIC_CATALOG).map(metric => f.makeInput(metric)),
+    f.makeInput("M09", "implementation-reviewer", "IMPLEMENTATION"), f.makeInput("M12", "implementation-reviewer", "IMPLEMENTATION"),
+    f.makeInput("M12", "stop-reviewer", "IMPLEMENTATION")];
+  for (const input of inputs) {
     input.deadlineAt = parentDeadline + 1000;
     await factory(input);
   }
-  assert.equal(captures.length, 4); assert.equal(nativeCalls, 0);
+  assert.equal(captures.length, inputs.length); assert.equal(nativeCalls, 0);
   for (const value of captures) {
     assert.equal(value.input.deadlineAt, parentDeadline);
     assert.equal(value.input.abortSignal, controller.signal);
@@ -80,9 +83,10 @@ test("native-only direct factory use remains the default even for a task-eligibl
   await handle.close();
   assert.equal(nativeCalls, 1); assert.equal(taskCalls, 0);
   assert.equal(factory.reviewItemSize, undefined);
+  assert.equal(factory.supportsSupplementalFileAssessment, undefined);
 });
 
-test("task mode preserves native fallback for unsupported metrics, process, classifier and stage/intermediate work", async t => {
+test("task mode preserves native fallback for unresolved ownership, classifier and stage/intermediate work", async t => {
   const f = await fixture(t); let taskCalls = 0, nativeCalls = 0;
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task",
     runStopTask: async () => { taskCalls++; throw new Error("A legacy scope cannot use the task worker."); },
@@ -91,8 +95,12 @@ test("task mode preserves native fallback for unsupported metrics, process, clas
   const classifier = f.makeInput(); classifier.request.reviewScope.kind = "classification";
   const stage = f.makeInput(); stage.request.fixedStopClassification = { stopClassification: "STAGE_COMPLETE", stage: "design" };
   const intermediate = f.makeInput(); intermediate.request.fixedStopClassification = { stopClassification: "INTERMEDIATE", stage: null };
-  const inputs = [f.makeInput("M02"), f.makeInput("M01", "stop-reviewer", "PROCESS"),
-    f.makeInput("M12", "implementation-reviewer", "PROCESS"), classifier, stage, intermediate];
+  const conditional = f.makeInput(); conditional.request.population.metrics.M01[0].applicability = "IF_DEPLOYED";
+  const pending = f.makeInput(); pending.request.population.metrics.M01[0].authority = "BASIS_PENDING";
+  const quality = f.makeInput(); quality.request.population.metrics.M01 = [];
+  quality.request.reviewScope = { kind: "file-quality", boundedBasis: true, objectIds: [], sourceIds: ["R1"] };
+  const inputs = [f.makeInput("M99"), f.makeInput("M12", "implementation-reviewer", "PROCESS"), conditional, pending,
+    classifier, stage, intermediate, quality];
   for (const input of inputs) { const handle = await factory(input); await handle.close(); }
   assert.equal(taskCalls, 0); assert.equal(nativeCalls, inputs.length);
 });
@@ -102,13 +110,15 @@ test("task factory cache identity is distinct from native identity and uses a fr
   const native = createOpenClawReviewerFactory(f.api), task = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task" });
   const sameTask = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task" });
   assert.equal(task.reviewItemSize, 1);
+  assert.deepEqual(task.singleReviewMetrics, Object.keys(METRIC_CATALOG));
+  assert.equal(task.supportsSupplementalFileAssessment, true);
   assert.notEqual(task.reviewCacheIdentity({}), native.reviewCacheIdentity({}));
   assert.equal(task.reviewCacheIdentity({}), sameTask.reviewCacheIdentity({}));
   const promptBytes = await fs.readFile(new URL("../lib/review-task/prompts.json", import.meta.url));
   assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash("sha256").update(promptBytes).digest("hex"));
 });
 
-test("the canonical Stop wrapper forwards per-item ownership and runtime cache identity", async t => {
+for (const supplemental of [false, true]) test(`the canonical Stop wrapper preserves cache identity and ${supplemental ? "isolates" : "inlines"} file quality`, async t => {
   const f = await fixture(t);
   await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [
     { operation: "ADD", category: "requirements", text: "Deliver an acknowledged result.", authority: "USER_EXPLICIT", severity: "HARD",
@@ -117,16 +127,25 @@ test("the canonical Stop wrapper forwards per-item ownership and runtime cache i
   const file = path.join(f.root, "spec.md"); await fs.writeFile(file, "The current candidate is acknowledged.\n");
   const transcript = path.join(f.root, "transcript.jsonl");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user:1", message: { content: "Deliver an acknowledged result." } }) + "\n");
-  let identityCalls = 0, itemCalls = 0;
+  let identityCalls = 0, itemCalls = 0, qualityCalls = 0;
   const factory = async input => {
     itemCalls++;
     const assigned = Object.values(input.request.population.metrics).flat();
-    assert.equal(assigned.length, 1);
-    return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [], fileAssessments: [],
+    const quality = input.request.reviewScope.kind === "file-quality";
+    assert.equal(assigned.length, quality ? 0 : 1);
+    if (quality) {
+      qualityCalls++;
+      assert.ok(input.request.instructions.some(line => line.includes("For each requested deliverable file")));
+      assert.equal(input.schema.properties.metricObjectJudgements.maxItems, 0);
+    } else assert.equal(input.request.instructions.some(line => line.includes("For each requested deliverable file")), !supplemental);
+    return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [],
+      fileAssessments: quality ? [{ path: file, status: "PASS", reason: "Current requested file quality is supported.", evidence: [`${file}#L1-L1`] }] : [],
       metricObjectJudgements: assigned.map(object => ({ objectId: object.objectId, judgement: "PASS", reason: "The checked current candidate matches.", evidence: [`${file}#L1-L1`] })) },
       reviewEvidence: { files: [file], fingerprints: { [file]: sha256(await fs.readFile(file)) }, unstable: false, missing: [] }, close: async () => {} };
   };
   factory.supportsReviewCollection = true; factory.reviewItemSize = 1;
+  factory.supportsSupplementalFileAssessment = supplemental;
+  factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);
   factory.reviewCacheIdentity = () => { identityCalls++; return "canonical-scripted-task-runtime-v1"; };
   const config = compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
     artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true } },
@@ -137,5 +156,6 @@ test("the canonical Stop wrapper forwards per-item ownership and runtime cache i
     input: { cwd: f.root, session_id: "factory-host", transcript_path: transcript, hook_event_name: "Stop", hook_event_id: "canonical-stop",
       last_assistant_message: "The delivery is complete." } });
   assert.ok(identityCalls > 0, "The orchestrator wrapper must forward runtime identity to PASS reuse.");
+  assert.equal(qualityCalls, supplemental ? 1 : 0, "The canonical wrapper must forward the supplemental capability.");
   assert.ok(itemCalls > 0); assert.equal(result.stop.report.status, "PASS");
 });

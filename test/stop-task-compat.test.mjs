@@ -12,6 +12,7 @@ import { validateJsonSchema } from "../lib/json-schema-validator.mjs";
 import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { ModelRuntime } from "../lib/review-task/sdk.mjs";
+import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 
 async function fixture(t) {
   const scratch = fileURLToPath(new URL("../.runtime-correction/stop-task-compat-runs/", import.meta.url));
@@ -148,10 +149,10 @@ test("an unknown incomplete error exposes NO_VALID_SUBMISSION without provider t
   assert.equal(path.basename(failure.diagnostic.resultPath), "result.json");
 });
 
-test("single-review metrics leave unrelated metrics of the same obligation grouped", async t => {
+test("all known single-review metrics remain separate while unknown metric groups retain compatibility", async t => {
   const f = await fixture(t), classification = { stopClassification: "TASK_COMPLETE", stage: null };
   const base = f.input.request.population.metrics.M12[0];
-  const metrics = ["M01", "M05", "M02", "M03"];
+  const metrics = ["M01", "M05", "M02", "M03", "M90", "M91"];
   const rows = metrics.map(metricId => ({ ...base, metricId, objectId: `${metricId}:R1`, verificationTarget: "ARTIFACT" }));
   const population = { ...f.input.request.population, metrics: Object.fromEntries(rows.map(row => [row.metricId, [row]])) };
   const seen = [];
@@ -163,14 +164,14 @@ test("single-review metrics leave unrelated metrics of the same obligation group
       sourceCitations: [], close: async () => {} };
   };
   factory.reviewItemSize = 1;
-  factory.singleReviewMetrics = ["M01", "M05", "M12"];
+  factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);
   const input = { ...f.input, role: "stop-reviewer", request: { ...f.input.request, population }, evidence: { ...f.input.evidence, population } };
   const handle = await collectReviewItems({ ...input, reviewerFactory: factory, schema: STOP_REVIEW_SCHEMA, classification });
-  assert.deepEqual(seen, [["M01"], ["M05"], ["M02", "M03"]]);
-  assert.equal(handle.collection.totalItems, 3);
-  assert.equal(handle.collection.totalObjects, 4);
+  assert.deepEqual(seen, [["M01"], ["M05"], ["M02"], ["M03"], ["M90", "M91"]]);
+  assert.equal(handle.collection.totalItems, 5);
+  assert.equal(handle.collection.totalObjects, 6);
   assert.equal(handle.collection.complete, true);
-  assert.equal(handle.result.metricObjectJudgements.length, 4);
+  assert.equal(handle.result.metricObjectJudgements.length, 6);
 });
 
 test("the OpenClaw wrapper relays only a whitelisted cause and this task's result path", async t => {

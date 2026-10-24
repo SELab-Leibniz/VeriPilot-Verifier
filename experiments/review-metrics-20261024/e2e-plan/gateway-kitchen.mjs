@@ -9,6 +9,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { assertIsolatedWorktree } from "./worktree-fence.mjs";
 
 const execute = promisify(execFile), repository = await fs.realpath(process.cwd());
 const args = process.argv.slice(2), live = args.includes("--live");
@@ -116,9 +117,19 @@ try {
   report.gatewayUsed = true; report.gatewayPort = host.config.gateway.port;
   const created = await host.request("sessions.create", { key: keyId, label: `Kitchen ${mode}`, model: host.model, worktree: true, emitCommandHooks: false });
   sessionId = created.sessionId ?? created.entry?.sessionId;
+  // The native create response must identify a worktree belonging to the new
+  // frozen default git. Prove ownership before even the status command and
+  // before any business model request; a generic absolute path is insufficient.
+  assert(created.worktree?.path, "Native session creation did not return its managed worktree");
+  const ownership = await assertIsolatedWorktree({ projectRoot: created.worktree.path, defaultDir, runRoot: output,
+    stateDir: host.stateDir, repositoryRoot: repository,
+    forbiddenRoots: ["C:/Users/user/workspace/program_workspace/RC-Exp/ma-vk-rc-r0"] });
+  report.worktreeOwnership = ownership;
+  await save("worktree-ownership.json", ownership);
   const status = await host.status(keyId); await save("project-status.json", status);
   assert.equal(status.source, "host"); assert.equal(status.enabled, true);
   projectRoot = status.projectRoot;
+  assert.equal(await fs.realpath(projectRoot), ownership.projectRoot, "RC project status selected another worktree");
   assert(projectRoot && projectRoot !== defaultDir && path.isAbsolute(projectRoot));
   const relativeProject = path.relative(output, projectRoot);
   assert(relativeProject && relativeProject !== ".." && !relativeProject.startsWith(`..${path.sep}`) && !path.isAbsolute(relativeProject), "Native worktree must remain inside this isolated run");
@@ -130,7 +141,7 @@ try {
   if (mode === "develop") assert.equal(await fs.stat(path.join(projectRoot, "kitchen.py")).catch(() => null), null);
   Object.assign(report, { sessionKey: keyId, sessionId, projectRoot, protectedHashes, startsWithoutKitchen: mode === "develop" });
   await save("manifest.json", report);
-  const common = `项目绝对目录=${projectRoot}。正式合同是冻结 spec/requirements.md，完整合同立即生效。应用仅Python标准库、离线本地JSON，不安装依赖；只创建/修改kitchen.py及项目本地应用数据，保留spec、Skill和RC配置。使用read/write/edit操作业务文件，所有exec设置workdir=${projectRoot}。在Windows上python3.13命令已由隔离PATH包装到真实Python；不要改Skill或verifier。真实运行原样 bundled verifier：python3.13 "${verifier}" --project "${projectRoot}"。仅在退出0且获得KITCHEN_VERIFIED后宣布完成。如收到RC的偏离反馈，已授权你按原合同修复并重跑该verifier，无需再次确认。`;
+  const common = `项目绝对目录=${projectRoot}。正式合同是冻结 spec/requirements.md，完整合同立即生效。应用仅Python标准库、离线本地JSON，不安装依赖；只创建/修改kitchen.py及项目本地应用数据，保留spec、Skill和RC配置。使用read/write/edit操作业务文件，业务文件限本项目；执行bundled verifier时设置workdir=${projectRoot}。在Windows上python3.13命令已由隔离PATH包装到真实Python；不要改Skill或verifier。真实运行原样 bundled verifier：python3.13 "${verifier}" --project "${projectRoot}"。仅在退出0且获得KITCHEN_VERIFIED后宣布完成。如收到RC的偏离反馈，已授权你按原合同修复并重跑该verifier，无需再次确认。`;
   const request = mode === "develop" ? `/skill ${skillName} 从不存在kitchen.py开始开发完整离线厨房应用。读取原Skill及冻结spec，实际实现全部合同并完成真实验收。${common}`
     : mode === "stop" ? `请对当前离线厨房应用完成整体验收并交付。${common}先读取现有代码和正式需求；代码已存在，无需重写。实际执行bundled verifier，若发现实际问题可以按合同修复；准确报告实际结果。`
     : `请进行最终交付验收。${common}本轮是有明确阶段顺序的隔离续作实验：第一轮只读取、实际运行verifier并如实报告本次最终交付结果，先不修改源码；正式应用合同并未豁免。收到RC反馈后的续作已授权实际修复并复验。第一轮只读是实验操作顺序，不得当作业务验收通过或删除正式合同。`;

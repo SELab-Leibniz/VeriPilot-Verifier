@@ -8,12 +8,13 @@
 - Node：24.16.0；Python：`C:/Users/user/miniforge3/python.exe`。PATH 中没有 python3.13。
 - 已授权模型：custom/deepseek-v4-flash，openai-completions，contextWindow=204800、maxTokens=65536、reasoning=true。当前模型元数据无 cost，使用此前 task adapter 已验证的兼容路径；没有打印key。
 - Skill、正式合同、21场景 verifier 全部使用仓库原始字节。子宿主 PATH 提供 `python3.13.cmd` 转发固定 Python，设置 UTF8 环境并继承到实际验证子进程，不修改 Skill/verifier 来适配 Windows。
+- 业务提示仅保留原Skill要求的“执行bundled verifier时使用项目workdir”；不添加“所有exec均须workdir”的全历史闸门，避免把一次无关探测变成无法补救的历史业务偏离。此项在admission前修改试验提示，原合同、Skill及冻结oracle字节不变。
 
 ## 不可直接照搬的旧入口
 
 1. `offline-kitchen-live.mjs` 写死 Python3.13、旧 `/rc-project bind` 和2026.7.1-2断言，还包含故障注入业务指令。它可作为协议参考，不能直接跑当作新版效果。
 2. 本机2026.7.1-2公开 `sessions.create` schema 不接受 cwd；只有 worktree=true 原生准备工作目录。新入口先在**本次新建** default workspace 准备spec/Skill、初始化git，再由 `sessions.create({worktree:true})` 获取持久化 spawnedCwd，查询 `/rc-project status` 验证 source=host 和enabled=true。不旁路改 session store，不调用legacy bind。
-3. 业务权威材料路径不能包含 `.runtime-correction`。准备脚本在 lab 私有目录，live环境位于仓库 `experiments/live-kitchen-*`；宿主state/home、token占位配置、源码/原始会话均在该run内，需由root把 `experiments/live-*` 加 `.gitignore`。
+3. 业务权威材料路径不能包含 `.runtime-correction`。可复现脚本已保存到本目录，live环境位于仓库 `experiments/live-kitchen-*`；宿主state/home、token占位配置、源码/原始会话均在该run内，`experiments/live-*` 已加入 `.gitignore`，整个experiments也不进入插件产物。
 4. 插件 build 不复制 node_modules。preparePlugin 在新产物根内 `npm ci --ignore-scripts --omit=dev`，再核对嵌套SDK lock与仓库一致；安装发生在 Gateway admission 之前。认证只在进程内取得，生成配置用 env 占位，不把原配置整体写入实验。
 
 ## 复用入口
@@ -25,11 +26,15 @@
 从仓库根启动（root在全指标接入完成后再执行；整个 Node 进程需要网络/子进程的 scoped escalation）：
 
 ```powershell
-node .runtime-correction/all-metrics-lab-20261024/e2e-plan/gateway-kitchen.mjs --mode=stop --live --output=experiments/live-kitchen-stop-20261024-01
-node .runtime-correction/all-metrics-lab-20261024/e2e-plan/gateway-kitchen.mjs --mode=develop --live --output=experiments/live-kitchen-develop-20261024-01
+node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=stop --live --output=experiments/live-kitchen-stop-20261024-01
+node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=develop --live --output=experiments/live-kitchen-develop-20261024-01
 ```
 
 两个run均创建独立随机空闲端口，独立 Gateway/state/home/session/native worktree；不会修改原宿主安装和原进程。每次必须新输出目录，不覆盖失败轨迹。入口finally只关闭本次子进程。
+
+业务发送前另有 [worktree-fence.mjs](worktree-fence.mjs) 只读归属证明：在sessions.create返回之后、连status命令之前，要求新目录在本run的state/worktrees、默认源仓库拥有独立.git、两者git-common-dir精确一致、HEAD等于冻结输入commit，并登记在源仓库git worktree list内；拒绝corrector源仓库、原业务树和default自身。随后status必须指向同一真实目录。本机宿主ManagedWorktreeService从resolveStateDir(env)/worktrees派生目录，既有隔离helper的OPENCLAW_STATE_DIR已将其定位本run，无需修改宿主配置。
+
+纯本地Git小实验 [worktree-fence-preflight.json](worktree-fence-preflight.json) 通过正例及五个反例：corrector源仓库、default自身、错误state、原业务目录、错误git-common归属。该实验没有启动Gateway或模型，仍不能代替首次真实会话返回路径的现场fence检查。
 
 ## 阶段3：现有正确厨房上的整体验收
 

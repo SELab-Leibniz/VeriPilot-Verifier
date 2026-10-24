@@ -1,21 +1,23 @@
 # Stop 单项 Review 交付范围
 
-本版冻结已经对照验证的 Prompt，不再做开放式调参。OpenClaw 默认 `stopReviewEngine: "task"`；设置为 `"native"` 可恢复之前的审阅传输。配置属于插件设置，未改变项目需求或验收分母。
+本版固定选择经过隔离对照的 Prompt。OpenClaw 默认 `stopReviewEngine: "task"`；设置为 `"native"` 可恢复之前的审阅传输。配置属于插件设置，未改变项目需求或验收分母。全指标提示实验记录在 [隔离实验](../experiments/review-metrics-20261024/README.md)。
 
 ## 接入位置
 
 既有 Stop 编排仍负责 Ground Truth 刷新、Stop 分类、指标分母、截止时间、纠偏次数和宿主续作。既有 collector 负责逐项落盘、失败隔离、PASS 缓存、引用字节核验与有界短反馈。新模块仅替换其中可支持的单项审阅。
 
-- 任务完成且明确适用于当前任务的 M01、M05：需求分解覆盖和验收单元覆盖。
-- 实现审查中的 M12：源码实现子证明。
-- 任务完成且实现归属的普通 Stop M12：实际运行证据审查，不能用源码 PASS 代替。
-- 其他指标、PROCESS、条件适用性尚待判断、阶段完成、中间 Stop、分类、Ground Truth 与 Skill：继续原 native 路径。
+- TASK_COMPLETE 且明确适用于当前任务的 M01–M15：每个冻结对象一个会话，按指标和证据归属选定职责。
+- M01–M07 分别检查需求/验收/测试契约的覆盖、资格及追踪；不把实际执行证明当作文档质量的前提。
+- M08、M11 检查原 Skill 或固定流程，M09、M10 根据对象归属检查标准和强制经验。M08 使用正式冻结 Skill 约束和原来源，不伪装成普通 GT claim。
+- M12 在实现审查中做源码子证明；普通 Stop 按原对象区分运行、过程或产物证明。实现审查同时支持 M09 源码标准。
+- M13–M15 分别检查验收、里程碑与关键旅程闭合。有当前成功证明才 PASS；真实反证才 DEVIATION；旧版、缺失、助手自述或未连接的证明保留 UNVERIFIED。
+- 条件适用性尚待判断、阶段完成、中间 Stop、分类、Ground Truth 与 Skill watcher 的专门审阅：继续原 native 路径。支持全部指标不代表支持所有判定枚举或所有阶段。
 
-新工厂按单个冻结对象分派，同源多个指标仍是不同职责；不枚举验收条件的笛卡尔积。没有新增总评模型。M01 的对象覆盖 PASS 不被转换成文件整体质量 PASS；补充文件质量职责继续由原有 native 子项承担。本版未消除 general Stop 与后续 implementation reviewer 之间所有既有重复检查。
+新工厂按单个冻结对象分派，同源多个指标仍是不同职责；不枚举验收条件的笛卡尔积。没有新增总评模型。M01 的对象覆盖 PASS 不被转换成文件整体质量 PASS。真实 Stop 将原补充文件质量职责独立为一次 native 审阅，仅检查当前交付文件，不读取已生成的指标报告；沿用原 schema、来源核验和总截止。它不是逐文件隔离，也不缓存为空对象的 PASS。直接模块实验需 request 与 factory 双标记才追加此职责。本版未消除 general Stop 与后续 implementation reviewer 之间所有既有重复检查。
 
 ## 输入、输出与稳定性
 
-原始义务、公共约束与显式依赖复用同一 `reviewScopeClaims` 选择函数。过大的必读 JSON 按准确 UTF-8 字节分片，未删条件、未另起模型摘要。完整原始基线另外保存，供有具体疑问时检索。进程记录按原事件分别保存，初始 Prompt 不携带完整过程索引或整份源码文件表。
+原始义务、公共约束与显式依赖复用同一 `reviewScopeClaims` 选择函数。过大的必读 JSON 按准确 UTF-8 字节分片，未删条件、未另起模型摘要。完整原始基线另外保存，供有具体疑问时检索。除源码专属证明外，原事件分别保存以支持候选计划、验收单元及过程/运行检索；过程证明可以在没有业务文件时检查。初始 Prompt 不携带完整过程索引或整份源码文件表。
 
 源码仅在允许的业务文本范围内复制；私密目录、认证文件、构建缓存与符号链接不能进入该输入。实现引用仍受原 sourceManifest 约束。模型只读其专属快照，可用 read、grep、find、ls 和本轮历史检索，不能执行或改写业务文件。
 
@@ -23,7 +25,7 @@
 
 PASS 缓存身份包含新协议和固定 Prompt 摘要。复用前仍核验冻结输入和读取依赖；证据不足或范围太大不能安全缓存时重新审查，不猜测旧结论有效。
 
-当前缓存仍沿用最多128个读取依赖的保守限制；大项目可能不复用 PASS。新单项指标才按一对象拆分，其余 native 指标保留原有同源组批，避免扩大请求数量。执行器中止时只透传白名单失败类型与该项 result.json 位置，未知提供商错误不直接回显给宿主。
+当前缓存仍沿用最多128个读取依赖的保守限制；大项目可能不复用 PASS。普通当前任务指标按一对象拆分，阶段或未知适用性继续 native；未知扩展指标保留原组批。执行器中止时只透传白名单失败类型与该项 result.json 位置，未知提供商错误不直接回显给宿主。
 
 ## 开发与安装
 
@@ -45,4 +47,4 @@ Pi 仍为 1.4.0；传输依赖 undici 覆盖为 8.12.2，区别于原实验锁�
 
 验证区分：scripted-provider 的故障与缓存机制、真实模型的生产单项传输、使用宿主/reviewer doubles 的 Native Stop 续作闭环。不会把它们合并宣称为完整真实模型端到端验收。原业务项目和原 session 保持只读；构建和隔离验证不要求替换运行中的 Gateway。
 
-本次记录见 [交付验证](experiments/stop-task-integration-20261024.md)。仓库中的 stop-task-integration.mjs 可重跑已提交厨房/花店冻结案例，默认只预检，真实模型调用需显式 --live。stop-task-complex.mjs 另外依赖本机此前的冻结 complex-preflight-01 capture，不会读取当前原项目或 session；这些复杂业务快照不随安装包分发。
+上一版 M01/M05/M12 的接入记录见 [原交付验证](experiments/stop-task-integration-20261024.md)。全指标提示、正式工厂/collector 及真实 Gateway 的独立入口见 [本轮实验](../experiments/review-metrics-20261024/README.md)，默认只预检，真实模型调用需显式 --live。stop-task-integration.mjs 保留厨房/花店旧案例回归。stop-task-complex.mjs 另外依赖本机此前的冻结 complex-preflight-01 capture，不会读取当前原项目或 session；这些复杂业务快照不随安装包分发。experiments 整体不进入插件发布产物，避免把业务快照、oracle 或隔离宿主状态混入安装包。

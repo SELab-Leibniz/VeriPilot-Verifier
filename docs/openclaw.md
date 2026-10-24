@@ -1,6 +1,6 @@
 # OpenClaw 原生纠偏与独立 Stop 终审
 
-当前候选包 `1.9.1-openclaw.11-session-projects.11` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
+当前候选包 `1.9.1-openclaw.11-session-projects.12` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
 
 原生执行、Stop 续作和独立终审预算已通过提交 `f76e7b5` 合入 `codex/openclaw-2026.7.1-2`，固定宿主 OpenClaw `2026.7.1-2`。合并代码不自动替换已安装插件或宿主配置。独立预算 Todo 对照和一次真实 Stop 重修闭环详见 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md)。[合并后记账 App 实测](experiments/rc-postmerge-ledger-live-test.md)跑通两次 Stop、一次宿主重修、最终 19/19 独立 CLI 检查；首次终审超过 10 分钟并完成。RC PASS 不等同于全部业务需求均已通过独立检查。
 
@@ -85,7 +85,7 @@ node ./scripts/configure-ma-host.mjs
 
 MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
-合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.11`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
+合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.12`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{
