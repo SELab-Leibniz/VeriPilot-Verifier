@@ -78,9 +78,49 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) {
     return { cancel() { clearTimeout(timer); timers.delete(timer); } };
   } } });
   async function python(directory) {
+    // Keep parent and nested acceptance stores in this isolated run. Sandboxed
+    // Windows redirects OS temp to a location that nested Python processes may
+    // not be allowed to use; no source or test assertions need to change.
+    const temporary = path.join(directory, ".runtime-correction", "python-temp");
+    await fs.mkdir(temporary, { recursive: true });
     try { return { code: 0, ...await execute(process.env.PYTHON ?? "python3", ["-m", "unittest", "-v", "test_todo.py"], {
-      cwd: directory, timeout: 20000, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } }) }; }
+      // The unchanged suite launches further CLI processes. Environment flags
+      // also reach those children; a parent-only -X flag would not. This makes
+      // Unicode IO explicit on Windows without weakening any assertion.
+      cwd: directory, timeout: 20000, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1", PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8",
+        TEMP: temporary, TMP: temporary, TMPDIR: temporary } }) }; }
     catch (error) { if (typeof error.code !== "number") throw error; return { code: error.code, stdout: error.stdout, stderr: error.stderr }; }
+  }
+  async function followupReceipts(directory) {
+    const location = path.join(directory, ".runtime-correction/openclaw/native-followups");
+    const scopes = await fs.readdir(location).catch(error => { if (error.code === "ENOENT") return []; throw error; });
+    const result = [];
+    for (const scope of scopes) for (const name of await fs.readdir(path.join(location, scope))) {
+      if (name.endsWith(".json")) result.push(JSON.parse(await fs.readFile(path.join(location, scope, name), "utf8")));
+    }
+    return result;
+  }
+  async function waitForVerified(requested) {
+    const deadline = Date.now() + 60000;
+    let records = [], last;
+    while (Date.now() < deadline) {
+      let timer;
+      try {
+        records = await Promise.race([runtime.waitForNativeReviews(), new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error("Offline Stop observer exceeded its unchanged 60-second window.")), Math.max(1, deadline - Date.now()));
+        })]);
+      } finally { clearTimeout(timer); }
+      const tasks = await Promise.all(requested.map(item => findTask({ projectRoot: item.directory, sessionId: item.ctx.sessionId })));
+      const receipts = (await Promise.all(requested.map(item => followupReceipts(item.directory)))).flat();
+      last = { tasks: tasks.map(task => ({ taskId: task?.taskId, verification: task?.verification?.status })),
+        receipts: receipts.map(receipt => ({ status: receipt.status, observed: Boolean(receipt.modelObservedAt), finished: Boolean(receipt.finishedAt), reason: receipt.reason })) };
+      if (tasks.every(task => task?.verification?.status === "PASS")
+        && receipts.every(receipt => receipt.modelObservedAt && receipt.finishedAt)) return records;
+      if (receipts.some(receipt => ["CANCELLED", "REJECTED", "UNVERIFIED"].includes(receipt.status)))
+        throw new Error(`Offline corrective continuation failed: ${JSON.stringify(last)}`);
+      await new Promise(resolve => setTimeout(resolve, Math.min(50, Math.max(1, deadline - Date.now()))));
+    }
+    throw new Error(`Offline Stop did not finish its corrective review: ${JSON.stringify(last)}`);
   }
   const factory = async ({ request, schema, projectRoot, role }) => {
     let result;
@@ -115,7 +155,10 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) {
     entries.set(sessionKey, { sessionId, sessionFile, spawnedCwd: directory, projectRoot: directory, ctx });
     transcripts.set(sessionKey, [{ type: "session", id: sessionId }]);
     await fs.writeFile(sessionFile, transcripts.get(sessionKey).map(JSON.stringify).join("\n"));
-    if (version === "2026.7.1-2") await runtime.projects.command({ ...ctx, args: `bind ${directory}`, isAuthorizedSender: true, gatewayClientScopes: ["operator.admin"] });
+    // Both supported hosts expose native project selection through this
+    // fixture's persisted spawnedCwd; legacy RC binding is no longer legal.
+    const selected = await runtime.projects.resolve({}, ctx);
+    assert.equal(selected.enabled, true); assert.equal(selected.projectRoot, directory);
     await append(sessionKey, "user", requirement); await runtime.prompt({ prompt: requirement }, ctx);
     return ctx;
   }
@@ -131,12 +174,15 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) {
   try {
     const ca = await session("A", a), cb = await session("B", b);
     await writeBusiness(a, ca.sessionKey, ca, broken, "broken"); await writeBusiness(b, cb.sessionKey, cb, source, "correct");
+    const positive = await python(b); assert.equal(positive.code, 0, positive.stderr);
     const failed = await python(a); assert.notEqual(failed.code, 0); assert.match(failed.stderr, /FAIL: test_complete_and_reopen/);
     for (const ctx of [ca, cb]) {
       await append(ctx.sessionKey, "assistant", "Candidate delivered; RC should independently assess it.");
       await runtime.reply({ kind: "final", sessionKey: ctx.sessionKey, runId: ctx.runId, payload: { text: "Delivered." } }, ctx);
     }
-    let records = await runtime.waitForNativeReviews(); records = await runtime.waitForNativeReviews();
+    // A completed old review is not proof that an admitted correction and its
+    // recheck have both finished. Observe real task state and durable receipts.
+    const records = await waitForVerified([{ ctx: ca, directory: a }, { ctx: cb, directory: b }]);
     const ta = await findTask({ projectRoot: a, sessionId: ca.sessionId }), tb = await findTask({ projectRoot: b, sessionId: cb.sessionId });
     assert.equal(ta.verification.status, "PASS"); assert.equal(tb.verification.status, "PASS");
     assert.equal(ta.stop.correctionAttempts, 1); assert.equal(tb.stop.correctionAttempts, 0); assert.notEqual(ta.taskId, tb.taskId);

@@ -2,7 +2,7 @@
   "id": "runtime-corrector",
   "name": "runtime-corrector",
   "main": "./lib/openclaw/entry.mjs",
-  "version": "1.9.1-openclaw.11-session-projects.10",
+  "version": "1.9.1-openclaw.11-session-projects.11",
   "description": "Evidence-bound native review; host execution, output and approvals remain native.",
   "activation": { "onStartup": true },
   "contracts": {
@@ -16,6 +16,7 @@
     "properties": {
       "enabled": { "type": "boolean", "default": true },
       "reviewerModel": { "type": "string", "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model." },
+      "stopReviewEngine": { "type": "string", "enum": ["task", "native"], "default": "task", "description": "Use isolated single-obligation review for supported completion objects; native preserves the previous reviewer transport." },
       "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "description": "Optional explicit reviewer cap; otherwise project reviewer timeout applies. Does not increase host Hook or parent task budgets." },
       "hookTimeoutMs": { "type": "integer", "minimum": 2000, "maximum": 3600000, "default": 1200000 }
     }

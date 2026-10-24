@@ -1,0 +1,303 @@
+{
+  "schemaVersion": "stop-integration-independent-semantic-audit.v1",
+  "reviewedAt": "2026-10-24T04:38:19.181Z",
+  "status": "COMPLETE",
+  "cases": [
+    {
+      "caseId": "K01",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "PASS",
+      "actualVerdict": "PASS",
+      "proofScope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+      "workerScopes": [
+        "METRIC_ARTIFACT_REVIEW"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "R04的读取、can_cook布尔、missing准确缺额、查询保持字节与充分检查后扣减/持久化/cooked，由D4.1-D4.4覆盖；公共成功输出/Unicode/失败原子性由D1及D5覆盖。仅分解覆盖，不代替代码或实际运行。",
+      "evidenceLocations": [
+        "requirements.md:3-8",
+        "requirements.md:19-28",
+        "decomposition.md:4-8",
+        "decomposition.md:20-28"
+      ],
+      "citations": [
+        {
+          "path": "decomposition.md",
+          "start": 1,
+          "end": 33,
+          "sha256": "1e93078ad9932d0f2433cc37681a9d8009b3d750fdffb61050de1460c38bdbfb",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "4e1c45e6ab2fd76d72e32c609304490217946a179983291741e01f79dbcbfd19",
+      "fixtureStageSha256": "0d17b62d52897285243233579d18a1d9892f851e9d0cf953dd2a3c8893e6ce09"
+    },
+    {
+      "caseId": "K04",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "PASS",
+      "actualVerdict": "PASS",
+      "proofScope": "ACCEPTANCE_CRITERIA_COVERAGE",
+      "workerScopes": [
+        "METRIC_ARTIFACT_REVIEW"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "AC4.1/4.2覆盖足料/缺料输出；AC4.3精确字节及缺文件保护；AC4.4独立进程结果覆盖扣减持久化；AC4.5失败不消耗。公共条件AC1.2/AC5.1/AC5.2仍存在。只判正式验收单元覆盖，不宣称这些测试已实际运行。",
+      "evidenceLocations": [
+        "requirements.md:19-28",
+        "acceptance.md:4-6",
+        "acceptance.md:15-25"
+      ],
+      "citations": [
+        {
+          "path": "acceptance.md",
+          "start": 1,
+          "end": 26,
+          "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "8c5d354918a5d93a26659b0da85ae26d8248e28b0da44c5c8730853e37c508c3",
+      "fixtureStageSha256": "faa3bb91607d7e4d2a6f48f49daf3e3a0bedca5c0b69a9a89f2dc828aa5db677"
+    },
+    {
+      "caseId": "K07",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "PASS",
+      "actualVerdict": "PASS",
+      "proofScope": "SOURCE_IMPLEMENTATION",
+      "workerScopes": [
+        "SOURCE_IMPLEMENTATION"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "load_store只读缺文件默认；_shortfall计算缺额，cmd_can_cook无保存；cmd_cook先拒绝未知配方及缺料，再循环扣减并保存。Unicode、成功退出与错误stderr路径支持附带公共声明。仅R04静态子证明，不代表R06 verifier或全项目运行已通过。",
+      "evidenceLocations": [
+        "requirements.md:19-28",
+        "kitchen.py:22-52",
+        "kitchen.py:114-151",
+        "kitchen.py:199-207"
+      ],
+      "citations": [
+        {
+          "path": "kitchen.py",
+          "start": 1,
+          "end": 214,
+          "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "299f0666e350ea17935d2cfe68c87686d2fe06579ab72d47d0ae4f0b3c566bd8",
+      "fixtureStageSha256": "24d41a115a276e38bafc112951389df1e3204fb93adf42c785363ebaa4d25f95"
+    },
+    {
+      "caseId": "K08",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "DEVIATION",
+      "actualVerdict": "DEVIATION",
+      "proofScope": "SOURCE_IMPLEMENTATION",
+      "workerScopes": [
+        "SOURCE_IMPLEMENTATION"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "cmd_cook检查缺料后直接保存未改store；_shortfall不改pantry。因此足料cook也不消耗库存，是真实源码反例。理由中的充分性检查、未扣减、保存原状态及后果均有依据。",
+      "evidenceLocations": [
+        "requirements.md:19-22",
+        "kitchen.py:114-120",
+        "kitchen.py:137-149"
+      ],
+      "citations": [
+        {
+          "path": "kitchen.py",
+          "start": 1,
+          "end": 210,
+          "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "5a11667f2e2ea241fcf300b493f82641485acc82ba93ae5e666e097ee25a7a79",
+      "fixtureStageSha256": "e0fdd6fb7fbd56922426c9c3656875a8b1debb2894f6c260463923afe7cc69b0"
+    },
+    {
+      "caseId": "F08",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "DEVIATION",
+      "actualVerdict": "DEVIATION",
+      "proofScope": "SOURCE_IMPLEMENTATION",
+      "workerScopes": [
+        "SOURCE_IMPLEMENTATION"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "PRD明确要求图片及加载期间占位。商品卡片仅Text(c.emoji)，Commodity没有图片来源，卡片无Image或图片加载状态；列表请求的isLoading/Refresh不能替代。mock降级许可不豁免图片义务。no image ever loaded按所审商品卡片理解，未扩大为整App无图片。",
+      "evidenceLocations": [
+        "basis/selected-object.json:2-11",
+        "source/app-requirements.md:62-66",
+        "source/app-requirements.md:333-343",
+        "implementation/entry/src/main/ets/pages/Index.ets:30-40",
+        "implementation/entry/src/main/ets/pages/Index.ets:234-267",
+        "implementation/entry/src/main/ets/model/Commodity.ets:1-18"
+      ],
+      "citations": [
+        {
+          "path": "implementation/entry/src/main/ets/pages/Index.ets",
+          "start": 1,
+          "end": 269,
+          "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0",
+          "frozen": false
+        },
+        {
+          "path": "implementation/entry/src/main/ets/model/Commodity.ets",
+          "start": 1,
+          "end": 63,
+          "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "b8e4df2513d1c8fabfb8947c21f54dd7e6fa021c702ee5d5f839523d513d5c61",
+      "fixtureStageSha256": "c4b433533ef6b2260031d6a1cefe535092cc7ebe7d541ea784744843fd65541a"
+    },
+    {
+      "caseId": "F07",
+      "sourceRun": "stop-integration-live-04",
+      "reusedWithoutNewModelCall": false,
+      "completed": true,
+      "expectedVerdict": "PASS",
+      "actualVerdict": "PASS",
+      "proofScope": "SOURCE_IMPLEMENTATION",
+      "workerScopes": [
+        "SOURCE_IMPLEMENTATION"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "gt-025规定的八个权限逐项出现在requestPermissions。模型理由仅声称声明式权限满足；未代替gt-026动态申请、gt-036真实运行或全项目验收。",
+      "evidenceLocations": [
+        "basis/selected-object.json:2-11",
+        "basis/original-ground-truth.md:135-138",
+        "source/app-requirements.md:293-304",
+        "implementation/entry/src/main/module.json5:14-80"
+      ],
+      "citations": [
+        {
+          "path": "implementation/entry/src/main/module.json5",
+          "start": 1,
+          "end": 120,
+          "sha256": "4180a7e3fe69bb7c8125877b3fca5f0785eade823f0aaaf391e16a5673b5dce0",
+          "frozen": false
+        }
+      ],
+      "reportSha256": "a810f200cd646e7dc4bebb0b7605282814dbe00e8b460c3f74e8986308f3713f",
+      "fixtureStageSha256": "7965115231b4a44c35c3c3f28689a5a39ba4c559fd6bd220f777a07e7ef382f3"
+    },
+    {
+      "caseId": "K09",
+      "sourceRun": "stop-integration-live-02",
+      "reusedWithoutNewModelCall": true,
+      "completed": true,
+      "expectedVerdict": "UNVERIFIED",
+      "actualVerdict": "UNVERIFIED",
+      "proofScope": "RUNTIME_ACCEPTANCE",
+      "workerScopes": [
+        "RUNTIME_ACCEPTANCE"
+      ],
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrity": true,
+      "fullOriginalFixtureBytesVerified": true,
+      "fullBasisLosslesslyPreservedInGroundTruth": true,
+      "originalRequirementCountNotExpandedIntoUnrelatedDefects": true,
+      "diagnosis": "合法完成提交，原任务明确需runtime acceptance；输入仅源码且禁止执行，process-index确为[]。缺可归属的can-cook/cook执行证明，UNVERIFIED正确，不是checker故障、源码缺陷或业务PASS。",
+      "evidenceLocations": [
+        "requirements.md:19-28",
+        "fixture-stage.json:fixtureTask",
+        "worker input/process-index.json:1-2"
+      ],
+      "citations": [
+        {
+          "path": ".runtime-correction/tasks/task-20261024T042953962Z-5298ca56/review-task-runs/e14f4f0a-1d8b-454f-be6c-46b7244e7077/input/process-index.json",
+          "start": 1,
+          "end": 2,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+          "frozen": true
+        }
+      ],
+      "reportSha256": "fc02c96694b2fb09f760c58112197fd0dca8eb58e89ef93704b578a197ed6710",
+      "fixtureStageSha256": "2ee2f6908cbed53c9dacd01ed6c6b72de32c0e1155e1c3e57dfed8d4d5338ad3"
+    }
+  ],
+  "pending": [],
+  "summary": {
+    "cases": 7,
+    "completed": 7,
+    "labelCorrect": 7,
+    "diagnosisSupported": 7,
+    "scopeCorrect": 7,
+    "groundedCorrect": 7,
+    "citationIntegrity": 7,
+    "correctUnverified": 1
+  },
+  "limitations": [
+    "Independent source and citation review in the same collaboration, not a blinded statistical quality study.",
+    "Every fixture is one frozen object or sub-proof, not whole-project or whole-metric acceptance.",
+    "K09 reuses completed live-02; it is not a new live-04 model call.",
+    "Later product patches to incomplete-result diagnosis transport are not part of these recorded completed model runs."
+  ],
+  "activity": {
+    "modelCalls": 0,
+    "businessExecution": false,
+    "productionOrHarnessEdits": false,
+    "originalProjectOrSessionAccessed": false
+  },
+  "issues": []
+}

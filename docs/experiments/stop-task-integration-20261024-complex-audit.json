@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "runtime-corrector.stop-integration-complex-independent-semantic-audit.v1",
+  "auditedAt": "2026-10-24T04:45:14.827Z",
+  "status": "COMPLETE",
+  "experiment": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01",
+  "caseId": "M01:f1",
+  "recordedRunStatus": "COMPLETE_PENDING_SEMANTIC_REVIEW",
+  "completed": true,
+  "label": "PASS",
+  "labelCorrect": true,
+  "diagnosisSupported": true,
+  "scopeCorrect": true,
+  "groundedCorrect": true,
+  "citationIntegrity": true,
+  "conclusion": "The PASS is supported for exactly M01:f1 requirement-decomposition coverage. The candidate requirement expressly covers homepage product cards with image, name and price, plus a placeholder while the image is loading. This does not establish implementation/runtime success, all common-condition compliance, or a whole-project PASS.",
+  "counts": {
+    "assignedObjects": 1,
+    "selectedClaims": 80,
+    "commonClaims": 79,
+    "fullCanonicalClaims": 180
+  },
+  "authority": {
+    "claimId": "f1",
+    "authority": "AGENT_INFERRED",
+    "severity": "SOFT",
+    "verificationTarget": "IMPLEMENTATION",
+    "hard": false,
+    "evidenceRequired": false,
+    "originalClaimDictionaryPreserved": true,
+    "noHardImplementationGateIntroduced": true
+  },
+  "basisChecks": {
+    "originalMandatoryBytes": 45655,
+    "originalMandatorySha256": "e44efe520635fdc634fc69e8c85cdc96b47a7a205b06b607c77bef6f57a4b902",
+    "historicalThreePartsByteExact": true,
+    "currentCanonical180ClaimDictionariesEqualOriginal": true,
+    "workerFullCanonical180ClaimsEqualCurrent": true,
+    "selected80ClaimDictionariesExactlyEqualHistoricalMandatory": true,
+    "selectedClaimIdsExactlyMatchPreparedScope": true,
+    "currentGroundTruthPartCount": 4,
+    "currentGroundTruthPartBytes": 58968,
+    "allMandatoryBasisFilesFullyDisclosed": true,
+    "actualReadLedgerAndToolEventsVerified": true,
+    "pages": [
+      {
+        "path": "basis/ground-truth-0000.txt",
+        "bytes": 16384,
+        "sha256": "01cb8c33a9b176a2c574975c7cb3a4bbc00f487e8e0d93c190971c6aa9fadd32",
+        "lines": 514,
+        "ledgerCoverage": [
+          1,
+          514
+        ],
+        "matchingActualReadEvent": true,
+        "untruncated": true,
+        "byteCoverage": [
+          0,
+          16384
+        ]
+      },
+      {
+        "path": "basis/ground-truth-0001.txt",
+        "bytes": 16384,
+        "sha256": "986a377f5afde9150084890d1a6d518fa6cf7a10796f7df35c2e83097036e1db",
+        "lines": 475,
+        "ledgerCoverage": [
+          1,
+          475
+        ],
+        "matchingActualReadEvent": true,
+        "untruncated": true,
+        "byteCoverage": [
+          0,
+          16384
+        ]
+      },
+      {
+        "path": "basis/ground-truth-0002.txt",
+        "bytes": 16384,
+        "sha256": "551b7bc0097e3ea39574582d15332378e7951429fd3c32b2bbf4617fd04668c1",
+        "lines": 437,
+        "ledgerCoverage": [
+          1,
+          437
+        ],
+        "matchingActualReadEvent": true,
+        "untruncated": true,
+        "byteCoverage": [
+          0,
+          16384
+        ]
+      },
+      {
+        "path": "basis/ground-truth-0003.txt",
+        "bytes": 9816,
+        "sha256": "cda646f7eb1a7bf0c59dc7a9fb2a6c6bbc93d3d601ca52093d1af579efabb95d",
+        "lines": 268,
+        "ledgerCoverage": [
+          1,
+          268
+        ],
+        "matchingActualReadEvent": true,
+        "untruncated": true,
+        "byteCoverage": [
+          0,
+          9816
+        ]
+      },
+      {
+        "path": "basis/assigned-object-0000.txt",
+        "bytes": 3146,
+        "sha256": "e0bf2deeaaa32013e982df8d5f8478dcdd4cf95719b7d5611a925f663c756ef6",
+        "lines": 51,
+        "ledgerCoverage": [
+          1,
+          51
+        ],
+        "matchingActualReadEvent": true,
+        "untruncated": true,
+        "byteCoverage": [
+          0,
+          3146
+        ]
+      }
+    ],
+    "interpretation": "All 79 common claim dictionaries were retained and fully disclosed to this worker. Reading them is not equivalent to independently passing all 79; only M01:f1 was judged. Changed JSON envelope/formatting makes the current four-part serialization longer than the historical three-part 45,655-byte basis, without changing any selected claim dictionary."
+  },
+  "semanticAssertions": [
+    {
+      "assertion": "Homepage context",
+      "supported": true,
+      "basis": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\app-requirements.md#L56-L64",
+      "candidate": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\openspec\\changes\\agent-main-session-1792735054175-1jhwwf\\specs\\product-browse\\spec.md#L4"
+    },
+    {
+      "assertion": "Product cards include image, name and price",
+      "supported": true,
+      "basis": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\app-requirements.md#L64",
+      "candidate": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\openspec\\changes\\agent-main-session-1792735054175-1jhwwf\\specs\\product-browse\\spec.md#L4-L8"
+    },
+    {
+      "assertion": "A placeholder is shown while images are loading",
+      "supported": true,
+      "basis": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\app-requirements.md#L64",
+      "candidate": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\openspec\\changes\\agent-main-session-1792735054175-1jhwwf\\specs\\product-browse\\spec.md#L4",
+      "note": "Requirement-body SHALL explicitly covers in-progress loading. M01 decomposition coverage does not require treating the absence of a separate loading-in-progress scenario as a failure of this object."
+    },
+    {
+      "assertion": "The reason also mentions a loading-failure default placeholder",
+      "supported": true,
+      "candidate": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\openspec\\changes\\agent-main-session-1792735054175-1jhwwf\\specs\\product-browse\\spec.md#L4-L12",
+      "note": "This additional candidate behavior is present; it does not replace the distinct in-progress loading obligation."
+    },
+    {
+      "assertion": "The assessment is limited to requirement decomposition rather than implementation/runtime execution",
+      "supported": true,
+      "evidence": [
+        "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\.runtime-correction\\tasks\\task-20261024T044010442Z-df8d5e99\\review-task-runs\\52224cb4-829e-474a-83bf-dfbfb62fb3d7\\review\\frozen-source\\basis\\assigned-object-0000.txt",
+        "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\.runtime-correction\\tasks\\task-20261024T044010442Z-df8d5e99\\review-task-runs\\52224cb4-829e-474a-83bf-dfbfb62fb3d7\\review\\input.json",
+        "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\prepared-stage.json"
+      ],
+      "note": "Original IMPLEMENTATION target metadata is retained. The M01 metric and explicit assigned scope judge whether that requirement was decomposed; they do not claim the implementation was exercised."
+    }
+  ],
+  "evidenceChecks": {
+    "originalRequirementDocumentSha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+    "originalRequirementDocumentMatchesFrozenManifest": true,
+    "candidate": {
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\stop-integration-complex-live-01\\project\\source\\openspec\\changes\\agent-main-session-1792735054175-1jhwwf\\specs\\product-browse\\spec.md",
+      "workerPath": "project/source/openspec/changes/agent-main-session-1792735054175-1jhwwf/specs/product-browse/spec.md",
+      "start": 1,
+      "end": 35,
+      "bytes": 1447,
+      "sha256": "e1915404fb9a8fa3ea87dedaf22292744c91563482545e7302b44f5e67712cd6",
+      "originalAndWorkerFrozenAndCollectorSnapshotBytesEqual": true,
+      "originalCaptureManifestHashMatches": true,
+      "workerCiteMatchesActualRead": true,
+      "collectorExactQuoteProgrammaticallyMatchesRange": true
+    }
+  },
+  "recordedObservations": {
+    "parentCapMs": 120000,
+    "workerElapsedMs": 18388,
+    "initialPromptBytes": 4156,
+    "turns": 4,
+    "toolCalls": 11,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "maxEstimatedContextTokens": 83439,
+    "contextEstimateIsExactTokenizer": false,
+    "feedbackBytes": 705,
+    "workerModelContextWindow": 200000,
+    "reportHostContextWindow": 204800,
+    "contextWindowNotRaisedForThisWorker": true
+  },
+  "notEstablished": [
+    "Application implementation quality, runtime acceptance, or execution of the image placeholder mechanism.",
+    "PASS for the other three historical complex-case objects or for all 79 common conditions.",
+    "A full production Stop orchestration or Gateway lifecycle.",
+    "Universal resistance to context overflow; this record validates one bounded review on this frozen complex requirement."
+  ],
+  "protections": {
+    "allRecordedProtectedInputFlagsTrue": true,
+    "auditModelCalls": 0,
+    "auditBusinessExecution": false,
+    "auditOriginalProjectOrSessionAccess": false,
+    "auditProductionCodeOrHarnessOrFixtureEdits": false
+  },
+  "issues": []
+}

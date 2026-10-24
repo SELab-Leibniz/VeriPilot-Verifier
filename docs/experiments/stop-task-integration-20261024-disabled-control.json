@@ -1,0 +1,12 @@
+{
+  "status": "PASS_DISABLED_CONTROL",
+  "sourceFixture": "K08",
+  "sourceSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+  "result": {
+    "handled": false,
+    "reason": "V2_DISABLED"
+  },
+  "modelCalls": 0,
+  "businessSourceUnchanged": true,
+  "limitation": "Disabled Stop control shows no review/feedback. Compare detection with enabled production-item K08; this is not a full real-model correction-benefit estimate."
+}

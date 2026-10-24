@@ -1,0 +1,26 @@
+{
+  "version": "scoped-review-prompts-v1",
+  "metricPrompts": {
+    "M01": "Metric M01 is semantic coverage of the assigned authoritative obligation in the candidate requirement decomposition. Search the whole candidate for equivalent meaning, including genuine cross-references; matching IDs or headings alone is insufficient, and equivalent paraphrases need no original IDs. Account for all mandatory behaviors and applicable conditions, exceptions, limits and prohibitions from the frozen basis. Do not assess implementation, execution, acceptance-criterion quality or unrelated objects. PASS requires coverage of the entire assigned obligation; a concrete missing or weakened obligation supports DEVIATION. Use UNVERIFIED when unavailable evidence prevents this comparison, not merely because application code or runtime results are absent. Cite the candidate content that supports the decision and identify a specific coverage gap when one exists.",
+    "M05": "",
+    "M12": ""
+  },
+  "scopeOverrides": {
+    "M12": {
+      "RUNTIME_ACCEPTANCE": "",
+      "SOURCE_IMPLEMENTATION": "M12 proof before PASS: preserve every conjunct, condition and exception of the assigned authoritative obligation. The candidate does not redefine the contract. A required declaration may be proven by matching current declarations. For required behavior, follow the actual data/control path from input or resource through processing to rendering, persistence or result; labels, metadata, output shape and static stand-ins alone do not prove that behavior. For conditional or temporal clauses, identify the trigger, implementation path and required effect. A permanent substitute cannot establish a required operation plus its temporary fallback. Accept simulation or simplification where the authoritative basis explicitly permits it; do not invent that permission or demand more than authorized. Every assigned clause needs an appropriate witness for PASS. Concrete contrary code supports DEVIATION; absent necessary runtime/process evidence supports UNVERIFIED. Keep the diagnosis at this object's proof scope."
+    }
+  },
+  "reviewTypes": {
+    "M01": {
+      "default": "requirement-decomposition-reviewer"
+    },
+    "M05": {
+      "default": "acceptance-coverage-reviewer"
+    },
+    "M12": {
+      "SOURCE_IMPLEMENTATION": "source-implementation-reviewer",
+      "RUNTIME_ACCEPTANCE": "runtime-evidence-reviewer"
+    }
+  }
+}

@@ -1,0 +1,433 @@
+{
+  "schemaVersion": "runtime-corrector.stop-task-delivery.v1",
+  "recordedAt": "2026-10-24T04:49:07.388Z",
+  "branch": "codex/stop-review-integration",
+  "baseCommit": "81a5b9ea0063c08ff79f6ef7c638ad3a5f81ac66",
+  "pluginVersion": "1.9.1-openclaw.11-session-projects.11",
+  "status": "VALIDATED_SCOPED_RELEASE",
+  "activeGatewayReplaced": false,
+  "originalProjectOrSessionModified": false,
+  "coverage": {
+    "newTransport": [
+      "TASK_COMPLETE M01 current obligation coverage",
+      "TASK_COMPLETE M05 current acceptance coverage",
+      "M12 SOURCE_IMPLEMENTATION",
+      "TASK_COMPLETE M12 RUNTIME_ACCEPTANCE"
+    ],
+    "unchangedNative": [
+      "classification",
+      "Ground Truth",
+      "Skill",
+      "PROCESS",
+      "STAGE_COMPLETE",
+      "conditional or pending applicability",
+      "other metrics"
+    ],
+    "oneObjectPerTask": true,
+    "noNewSummaryModel": true,
+    "noBudgetIncrease": true
+  },
+  "realModel": {
+    "provider": {
+      "primary": "custom/deepseek-v4-flash",
+      "providerId": "custom",
+      "modelId": "deepseek-v4-flash",
+      "api": "openai-completions",
+      "contextWindow": 204800,
+      "contextTokens": 200000,
+      "maxTokens": 65536
+    },
+    "summary": {
+      "cases": 7,
+      "completed": 7,
+      "labelCorrect": 7,
+      "diagnosisSupported": 7,
+      "scopeCorrect": 7,
+      "groundedCorrect": 7,
+      "citationIntegrity": 7,
+      "correctUnverified": 1
+    },
+    "cases": [
+      {
+        "caseId": "K01",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "PASS",
+        "actual": "PASS",
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "R04的读取、can_cook布尔、missing准确缺额、查询保持字节与充分检查后扣减/持久化/cooked，由D4.1-D4.4覆盖；公共成功输出/Unicode/失败原子性由D1及D5覆盖。仅分解覆盖，不代替代码或实际运行。",
+        "evidenceLocations": [
+          "requirements.md:3-8",
+          "requirements.md:19-28",
+          "decomposition.md:4-8",
+          "decomposition.md:20-28"
+        ],
+        "feedbackBytes": 696
+      },
+      {
+        "caseId": "K04",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "PASS",
+        "actual": "PASS",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "AC4.1/4.2覆盖足料/缺料输出；AC4.3精确字节及缺文件保护；AC4.4独立进程结果覆盖扣减持久化；AC4.5失败不消耗。公共条件AC1.2/AC5.1/AC5.2仍存在。只判正式验收单元覆盖，不宣称这些测试已实际运行。",
+        "evidenceLocations": [
+          "requirements.md:19-28",
+          "acceptance.md:4-6",
+          "acceptance.md:15-25"
+        ],
+        "feedbackBytes": 696
+      },
+      {
+        "caseId": "K07",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "PASS",
+        "actual": "PASS",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "load_store只读缺文件默认；_shortfall计算缺额，cmd_can_cook无保存；cmd_cook先拒绝未知配方及缺料，再循环扣减并保存。Unicode、成功退出与错误stderr路径支持附带公共声明。仅R04静态子证明，不代表R06 verifier或全项目运行已通过。",
+        "evidenceLocations": [
+          "requirements.md:19-28",
+          "kitchen.py:22-52",
+          "kitchen.py:114-151",
+          "kitchen.py:199-207"
+        ],
+        "feedbackBytes": 668
+      },
+      {
+        "caseId": "K08",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "DEVIATION",
+        "actual": "DEVIATION",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "cmd_cook检查缺料后直接保存未改store；_shortfall不改pantry。因此足料cook也不消耗库存，是真实源码反例。理由中的充分性检查、未扣减、保存原状态及后果均有依据。",
+        "evidenceLocations": [
+          "requirements.md:19-22",
+          "kitchen.py:114-120",
+          "kitchen.py:137-149"
+        ],
+        "feedbackBytes": 1380
+      },
+      {
+        "caseId": "F08",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "DEVIATION",
+        "actual": "DEVIATION",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "PRD明确要求图片及加载期间占位。商品卡片仅Text(c.emoji)，Commodity没有图片来源，卡片无Image或图片加载状态；列表请求的isLoading/Refresh不能替代。mock降级许可不豁免图片义务。no image ever loaded按所审商品卡片理解，未扩大为整App无图片。",
+        "evidenceLocations": [
+          "basis/selected-object.json:2-11",
+          "source/app-requirements.md:62-66",
+          "source/app-requirements.md:333-343",
+          "implementation/entry/src/main/ets/pages/Index.ets:30-40",
+          "implementation/entry/src/main/ets/pages/Index.ets:234-267",
+          "implementation/entry/src/main/ets/model/Commodity.ets:1-18"
+        ],
+        "feedbackBytes": 1419
+      },
+      {
+        "caseId": "F07",
+        "sourceRun": "stop-integration-live-04",
+        "expected": "PASS",
+        "actual": "PASS",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "gt-025规定的八个权限逐项出现在requestPermissions。模型理由仅声称声明式权限满足；未代替gt-026动态申请、gt-036真实运行或全项目验收。",
+        "evidenceLocations": [
+          "basis/selected-object.json:2-11",
+          "basis/original-ground-truth.md:135-138",
+          "source/app-requirements.md:293-304",
+          "implementation/entry/src/main/module.json5:14-80"
+        ],
+        "feedbackBytes": 668
+      },
+      {
+        "caseId": "K09",
+        "sourceRun": "stop-integration-live-02",
+        "expected": "UNVERIFIED",
+        "actual": "UNVERIFIED",
+        "scope": "RUNTIME_ACCEPTANCE",
+        "labelCorrect": true,
+        "diagnosisSupported": true,
+        "citationIntegrity": true,
+        "diagnosis": "合法完成提交，原任务明确需runtime acceptance；输入仅源码且禁止执行，process-index确为[]。缺可归属的can-cook/cook执行证明，UNVERIFIED正确，不是checker故障、源码缺陷或业务PASS。",
+        "evidenceLocations": [
+          "requirements.md:19-28",
+          "fixture-stage.json:fixtureTask",
+          "worker input/process-index.json:1-2"
+        ],
+        "feedbackBytes": 708
+      }
+    ],
+    "maxFeedbackBytes": 1419,
+    "wholeProjectPass": false,
+    "fullStopLifecycle": false,
+    "realModelRepairBenefitMeasured": false
+  },
+  "complex": {
+    "sourceRun": "stop-integration-complex-live-01",
+    "caseId": "M01:f1",
+    "authority": "AGENT_INFERRED",
+    "hard": false,
+    "verdict": "PASS",
+    "commonConditions": 79,
+    "selectedClaims": 80,
+    "canonicalClaims": 180,
+    "originalMandatoryBasisBytes": 45655,
+    "initialPromptBytes": 4156,
+    "maxEstimatedContextTokens": 83439,
+    "contextWindow": 204800,
+    "parentCapMs": 120000,
+    "feedbackBytes": 705,
+    "metrics": {
+      "turns": 4,
+      "toolCalls": 11,
+      "readBytes": 70984,
+      "grepBytes": 0,
+      "totalToolBytes": 73375,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 68834,
+      "outputTokens": 1569,
+      "contextChecks": 5,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 18388,
+    "semanticAudit": "stop-task-integration-20261024-complex-audit.json",
+    "fullOldFourObjectSuiteRetested": false,
+    "wholeProjectPass": false
+  },
+  "regression": {
+    "command": "npm test -- --test-concurrency=2",
+    "tests": 1188,
+    "passed": 1179,
+    "skipped": 9,
+    "failed": 0,
+    "durationMs": 172916.5119,
+    "earlierParallel4Run": {
+      "tests": 1188,
+      "passed": 1178,
+      "skipped": 9,
+      "failed": 1,
+      "reason": "Existing SessionEnd 1200ms watchdog observed 1327ms under parallel scheduling; no product or assertion budget increase."
+    },
+    "isolatedWatchdogRecheck": {
+      "tests": 7,
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "nativeLoop": {
+    "status": "PASS",
+    "scope": "Real Python subprocesses and RC native hooks; deterministic host/reviewer doubles; no model API or running OpenClaw server.",
+    "hosts": [
+      {
+        "version": "2026.7.1-2",
+        "status": "PASS",
+        "correctionCountA": 1,
+        "correctionCountB": 0
+      },
+      {
+        "version": "2026.10.3",
+        "status": "PASS",
+        "correctionCountA": 1,
+        "correctionCountB": 0
+      }
+    ],
+    "realPythonAssertions": 9,
+    "modelApi": false,
+    "runningGateway": false
+  },
+  "disabledControl": {
+    "status": "PASS_DISABLED_CONTROL",
+    "sourceFixture": "K08",
+    "sourceSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+    "result": {
+      "handled": false,
+      "reason": "V2_DISABLED"
+    },
+    "modelCalls": 0,
+    "businessSourceUnchanged": true,
+    "limitation": "Disabled Stop control shows no review/feedback. Compare detection with enabled production-item K08; this is not a full real-model correction-benefit estimate.",
+    "allCorrectionDisabled": true,
+    "stopOnlyActiveControl": false,
+    "conclusion": "Enabled K08 adds a grounded defect report absent from this disabled baseline; not a full repair benefit estimate."
+  },
+  "integrationIterations": [
+    {
+      "run": "live-01",
+      "result": "No valid submissions",
+      "cause": "Host model metadata omitted cost; SDK cost.tiers access failed. Zero recorded usage is not proof of zero HTTP requests or zero billing."
+    },
+    {
+      "run": "live-02",
+      "result": "K09 completed UNVERIFIED",
+      "cause": "Implementation report included Stop-only schema fields; restricted helper name blocked fixture preparation. Both adapter problems fixed."
+    },
+    {
+      "run": "live-03",
+      "result": "Worker deviations valid, harness rejected them",
+      "cause": "Harness attached Stop classification to implementation-role collection. Production caller did not do this; harness fixed."
+    },
+    {
+      "run": "live-04",
+      "result": "All six selected collections completed",
+      "cause": "Independent semantic audit plus reused successful K09 gives seven verified object judgments."
+    }
+  ],
+  "boundaries": [
+    "Selected samples are not a statistical accuracy estimate.",
+    "F10 unknown-ID fallback remains a known missed defect from the earlier prompt experiment.",
+    "M01 PASS is decomposition coverage, not implementation or whole-file PASS.",
+    "Large dependency sets beyond the existing 128-dependency cache bound may be re-reviewed.",
+    "Other metrics, classification and Ground Truth remain native; this does not eliminate every possible overflow.",
+    "Native compaction/history retrieval are reused; this does not claim arbitrary process-crash automatic resumption.",
+    "Seven completed samples predate the final failure-diagnostic-only patch; focused compatibility tests cover the patch and the complex live run uses it.",
+    "Context health counts are estimates, not exact wire payload captures; token totals are cumulative across turns.",
+    "Artifact source is integrated and packaged; the active host/Gateway is deliberately untouched."
+  ],
+  "sourceIdentity": [
+    {
+      "path": "lib/openclaw/reviewer.mjs",
+      "sha256": "67bfb1589649689b32c5153fd13079511ad6a814deef396eeb5501886fecc5c2"
+    },
+    {
+      "path": "lib/openclaw/runtime.mjs",
+      "sha256": "f3ea791f24bb83462cff4e2aec58530d2bf8a53c43115691a791bd8a7050a1fc"
+    },
+    {
+      "path": "lib/openclaw/stop-task-runtime.mjs",
+      "sha256": "bf42d513aefae9ecce7af0c96a4de56a25fbe4476f4f1342a1515b9d20485960"
+    },
+    {
+      "path": "lib/runtime-v2/stop-task-review.mjs",
+      "sha256": "ed1a9db56d846eeda98a95253df4fa3054717822387a25c8d4c6ab57fb8d2f67"
+    },
+    {
+      "path": "lib/runtime-v2/review-collector.mjs",
+      "sha256": "474b64954285148066186878a66dac6f6a814a0837e3fc2354dcaa55dbe1f0f0"
+    },
+    {
+      "path": "lib/runtime-v2/review-scope.mjs",
+      "sha256": "d8cb5b23d1b048ddb9854379af2a7a0806921b3c7b988120a71ccd0eb17c9afa"
+    },
+    {
+      "path": "lib/runtime-v2/orchestrator.mjs",
+      "sha256": "8d7210c1d467c6dc78c3b9c40694c7af0fb1df724077e46a6bcfccc7623a138c"
+    },
+    {
+      "path": "lib/review-task/review-task.mjs",
+      "sha256": "f8bf6bb8e189262d28a626755340bcdf200cf2a1d628ba56be038b2922c80bd1"
+    },
+    {
+      "path": "lib/review-task/history-memory.mjs",
+      "sha256": "b45f9621e55f1f1cc100599062d1768997479369e0f36dcf70e24f43d53ffa11"
+    },
+    {
+      "path": "lib/review-task/sdk.mjs",
+      "sha256": "0a6258e82bcb699878552f72a2a3c9daa5df29153b169cd9671549c5a059aa75"
+    },
+    {
+      "path": "lib/review-task/prompt-profile.mjs",
+      "sha256": "e651447a8af59ca6f737281b6d1c96661156250be972480af7201179107f0b75"
+    },
+    {
+      "path": "lib/review-task/prompts.json",
+      "sha256": "edd880f0781347965b4c7199a3d74677c0642dbf968723585791e1406511705f"
+    },
+    {
+      "path": "lib/review-task/package.json",
+      "sha256": "e264f39ff1c64eb898cf3a81cbc1d330d5ff16ab8999344fc9256d0c354dabde"
+    },
+    {
+      "path": "lib/review-task/package-lock.json",
+      "sha256": "ec5a51d42bd6df44e892e237ee23cb6c0e2a73a4db161d077f53b6ec7065ad1a"
+    },
+    {
+      "path": "lib/plugin-builder.mjs",
+      "sha256": "5c8f1fa7dad114ef49d689eb34c8461f57e5a0ccf1f0b4e39ef075ad3ed1175f"
+    },
+    {
+      "path": "packaging/hosts/openclaw/openclaw.plugin.json",
+      "sha256": "834ac04cfa336565138d334243cafc527db539c9074017520b6715e45f6b843f"
+    },
+    {
+      "path": "scripts/diagnostics/stop-task-integration.mjs",
+      "sha256": "fc8ab35a0ca78121863b4d4ad1f4e86072822d057679a02f16aa8df156515c48"
+    },
+    {
+      "path": "scripts/diagnostics/stop-task-complex.mjs",
+      "sha256": "b432e525db262d1c34f5817e88f7a70c651ad43606778789e876d22aa2199f5e"
+    },
+    {
+      "path": "scripts/diagnostics/python-native-stop-offline.mjs",
+      "sha256": "8ad92783e779c4aeddc1c46704327e12e39053db75e06d23ad5f4d0e02b21872"
+    }
+  ],
+  "rawEvidence": [
+    {
+      "path": ".runtime-correction/stop-integration-live-01/report.json",
+      "sha256": "7756076b30b6546d94d5883cb9e1fc3d098664dbf72892c441fb7f3b9dc3b111"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-live-02/report.json",
+      "sha256": "b5dc0b8069e9acaa8cd4dbbc9aaaa2309e85c2fa39205c88cd8be02bbe6a82ea"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-live-03/report.json",
+      "sha256": "8379026a5f3418aba24694121f79a21c9340205fd3a9f9656ae22d859e07d077"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-live-04/report.json",
+      "sha256": "4382a18cf8d88dfb13bd06c2beec66fb2e29b0aa820d8acd937e2a500e35bc7e"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-semantic-audit.json",
+      "sha256": "cfdb6bfc28b97ed2adc45d15ad5855b59d16bdc6d627e7dc7befd0d84dd4bff0"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-complex-live-01/report.json",
+      "sha256": "3b5f97d7922fd32c6abe6799effa916ad163dd96bd3af4df3cd6fe689a8b7f16"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-complex-semantic-audit.json",
+      "sha256": "9e06b9bfd2b33cdc1a682adf70cf7ce773714ad0b294f959ba61a6de66f903e4"
+    },
+    {
+      "path": ".runtime-correction/stop-native-smoke-20261024-04/result.json",
+      "sha256": "22c398f599cc4b434077b8c806e041933bc6aa2f87e13e06ac04dc530e42aac4"
+    },
+    {
+      "path": ".runtime-correction/stop-benefit-disabled-20261024-01/report.json",
+      "sha256": "6f0bc72fda0c5164e390b215c52276bcabd95bee9fbe639303599600c1eefc51"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-full-release.log",
+      "sha256": "624548d335ab5b324c5ac2a7afe9fab1571cf3b3188bf9cf42ee6631cb18d476"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-full-final.log",
+      "sha256": "e3074994a147a6ea1632dee9c64eb49489bd2f49de4d5f6086b717064a1acea7"
+    },
+    {
+      "path": ".runtime-correction/stop-integration-watchdog-recheck.log",
+      "sha256": "69cde9521abd8abb2e4e6a04f44355ee8e2ef18c235dac0b073bd22aaba7ca7d"
+    }
+  ]
+}
