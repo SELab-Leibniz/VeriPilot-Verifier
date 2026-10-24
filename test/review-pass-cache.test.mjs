@@ -54,6 +54,53 @@ test("identical frozen Stop inputs reuse complete PASS items with no new model c
   }
 });
 
+test("candidate identity participates in PASS reuse and changed declarations cannot publish stale judgements", async t => {
+  const f = await fixture(t), config = path.join(f.root, "policy.yaml");
+  await fs.writeFile(config, "metrics: [M01]\n");
+  f.input.request.artifactCandidates = [{ artifactId: "decomposition", metricIds: ["M01"],
+    files: [{ path: "output.txt", sha256: sha256(await fs.readFile(f.source)) }],
+    declaration: { configPath: config, configSha256: sha256(await fs.readFile(config)), digest: "declaration-1" } }];
+  await f.run();
+  assert.equal((await f.run()).collection.reusedItems, 1);
+  f.input.request.artifactCandidates[0].artifactId = "different-owner";
+  assert.equal((await f.run()).collection.reusedItems, 0);
+  await fs.writeFile(config, "metrics: [M05]\n");
+  const before = f.calls();
+  await assert.rejects(f.run(), error => error.code === "REVIEW_COLLECTION_STALE");
+  assert.equal(f.calls(), before, "A stale ownership declaration must be rejected before a model or cache dispatch.");
+});
+
+test("uncited candidate and declaration mutations invalidate a running collection", async t => {
+  for (const changed of ["candidate", "declaration"]) await t.test(changed, async t => {
+    const f = await fixture(t), candidate = path.join(f.root, "candidate.txt"), config = path.join(f.root, "policy.yaml");
+    await fs.writeFile(candidate, "An explicitly owned candidate.\n");
+    await fs.writeFile(config, "metrics: [M01]\n");
+    f.input.request.artifactCandidates = [{ artifactId: "decomposition", metricIds: ["M01"],
+      files: [{ path: "candidate.txt", sha256: sha256(await fs.readFile(candidate)) }],
+      declaration: { configPath: config, configSha256: sha256(await fs.readFile(config)), digest: "declaration-1" } }];
+    f.setItem(async params => {
+      await fs.writeFile(changed === "candidate" ? candidate : config, "Changed during review.\n");
+      return f.output(params);
+    });
+    await assert.rejects(f.run(), error => error.code === "REVIEW_COLLECTION_STALE");
+  });
+});
+
+test("an explicit external policy remains a hash dependency without becoming business evidence", async t => {
+  const f = await fixture(t), policyRoot = await fs.mkdtemp(path.join(os.tmpdir(), "rc-external-policy-"));
+  t.after(() => fs.rm(policyRoot, { recursive: true, force: true }));
+  const config = path.join(policyRoot, "policy.yaml");
+  await fs.writeFile(config, "metrics: [M01]\n");
+  f.input.request.artifactCandidates = [{ artifactId: "decomposition", metricIds: ["M01"],
+    files: [{ path: "output.txt", sha256: sha256(await fs.readFile(f.source)) }],
+    declaration: { configPath: config, configSha256: sha256(await fs.readFile(config)), digest: "declaration-1" } }];
+  const first = await f.run();
+  assert(first.sourceCitations.every(citation => citation.path !== config));
+  await fs.writeFile(config, "metrics: [M05]\n");
+  await assert.rejects(f.run(), error => error.code === "REVIEW_COLLECTION_STALE");
+  assert.equal(f.calls(), 1);
+});
+
 for (const change of ["source", "truth", "schema", "instructions", "classification", "snapshot digest", "snapshot body", "reviewer", "guard", "manifest", "runtime model"])
   test(`${change} changes invalidate old PASS items`, async t => {
     const f = await fixture(t); let runtime = "resolved-runtime-1";

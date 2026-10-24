@@ -52,6 +52,9 @@ async function fixture(t, rows = [object()]) {
     request: { population, groundTruthPath, reviewScope: { objectIds: rows.map(row => row.objectId), sourceIds: [...new Set(rows.map(row => row.sourceId))] },
       fixedStopClassification: classification, instructions: ["Judge the current frozen obligation."] },
     evidence: { groundTruth: truth, population, snapshot }, deadlineAt: Date.now() + 30000 };
+  input.request.artifactCandidates = [{ artifactId: "fixture-decomposition", metricIds: [...new Set(rows.map(row => row.metricId))],
+    files: [{ path: "spec.md", sha256: sha256(await fs.readFile(source)) }],
+    declaration: { configPath: null, configSha256: null, digest: sha256({ fixture: true }) } }];
   return { root, directory, source, truth, state, groundTruthPath, population, input };
 }
 
@@ -103,7 +106,7 @@ test("eligibility admits all current single-object metrics while keeping unsuppo
 
 test("acceptance coverage and source/runtime proof tasks receive the correct selected prompt and scope", async t => {
   for (const config of [
-    { metric: "M05", role: "stop-reviewer", target: "ARTIFACT", scope: "METRIC_ARTIFACT_REVIEW", prompt: "" },
+    { metric: "M05", role: "stop-reviewer", target: "ARTIFACT", scope: "METRIC_ARTIFACT_REVIEW", prompt: /M05 judges coverage/u },
     { metric: "M12", role: "implementation-reviewer", target: "IMPLEMENTATION", scope: "SOURCE_IMPLEMENTATION", prompt: /proof before PASS/u },
     { metric: "M12", role: "stop-reviewer", target: "IMPLEMENTATION", scope: "RUNTIME_ACCEPTANCE", prompt: "" },
   ]) await t.test(`${config.metric}/${config.scope}`, async t => {
@@ -316,6 +319,7 @@ test("production PASS reuse checks the adapter's observed sources and skips unch
   assert.equal(second.collection.reusedItems, 2);
   assert.equal(second.collection.complete, true);
   await fs.appendFile(f.source, "The reviewed artifact now has different content.\n");
+  f.input.request.artifactCandidates[0].files[0].sha256 = sha256(await fs.readFile(f.source));
   const third = await run();
   assert.equal(third.collection.complete, true);
   assert.equal(calls, 4, "A content change requires fresh review for both dependent metric objects.");

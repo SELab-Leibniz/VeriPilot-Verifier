@@ -26,11 +26,12 @@ const read = async file => JSON.parse(await fs.readFile(file, "utf8"));
 const save = (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2) + "\n", { flag: "wx", mode: 0o600 });
 const within = (root, file) => { const rel = path.relative(root, file); return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel); };
 const defaults = ["K01", "K04", "K07", "K08", "K09", "F08", "F07"];
+const supportedCases = [...defaults, "K02", "K05"];
 const args = process.argv.slice(2), live = args.includes("--live");
 const destination = args.find(value => !value.startsWith("--"));
 if (args.some(value => value.startsWith("--") && value !== "--live" && !value.startsWith("--cases="))) throw new Error("Unknown diagnostic option.");
 const caseIds = args.find(value => value.startsWith("--cases="))?.slice(8).split(",") ?? defaults;
-if (!caseIds.length || new Set(caseIds).size !== caseIds.length || caseIds.some(id => !defaults.includes(id))) throw new Error("Unsupported or duplicate fixture case.");
+if (!caseIds.length || new Set(caseIds).size !== caseIds.length || caseIds.some(id => !supportedCases.includes(id))) throw new Error("Unsupported or duplicate fixture case.");
 const outputParent = path.join(repository, ".runtime-correction");
 const output = destination ? path.resolve(destination.includes("/") || destination.includes("\\") ? repository : outputParent, destination)
   : path.join(outputParent, `stop-integration-${new Date().toISOString().replace(/[^0-9TZ]/gu, "")}-${randomUUID().slice(0, 8)}`);
@@ -178,6 +179,12 @@ async function main() {
     const classification = { stopClassification: "TASK_COMPLETE", stage: null };
     const request = { schemaVersion: "runtime-corrector.stop-task-integration-request.v1", projectRoot, taskId: task.taskId,
       population, groundTruthPath: currentGroundTruthPath(projectRoot, task.taskId), fixedStopClassification: classification,
+      artifactCandidates: ["M01", "M02", "M03", "M04", "M05", "M06", "M07"].includes(fixtureTask.metricId) ? [{ artifactId: `fixture:${caseId}:candidate`,
+        metricIds: [fixtureTask.metricId], files: fixtureTask.targetFiles.map(file => {
+          const metadata = files.find(([name]) => name === file)?.[1];
+          assert(metadata, "Declared fixture candidate must exist in the frozen business input.");
+          return { path: file, sha256: metadata.sha256 };
+        }), declaration: { configPath: null, configSha256: null, digest: identity.taskSha256 } }] : [],
       reviewScope: { objectIds: [object.objectId], sourceIds: [caseId], boundedBasis: true },
       instructions: [fixtureTask.requirement, fixtureTask.metricDefinition ?? fixtureTask.metricName,
         `Frozen fixture proof question: ${JSON.stringify({ scope: fixtureTask.scope, phase: fixtureTask.phase, basisAnchors: fixtureTask.basisAnchors ?? [], targetFiles: fixtureTask.targetFiles })}`,

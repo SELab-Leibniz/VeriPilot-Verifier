@@ -24,7 +24,7 @@ M08保留原Skill及正式Skill Ground Truth绑定；过程/闭合角色读取�
 
 ## 完整 Stop 与空代码开发
 
-第三阶段前两轮均发现路由覆盖遗漏，已保存证据并正规取消；正在修复正式路由协议，第四阶段尚未启动。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
+第三阶段前两轮发现路由覆盖遗漏，第三轮已进入真实新执行器但暴露候选身份误判；三轮均保存证据后正规取消，均不算完整Stop通过。正在用冻结失败输入做候选身份小实验，第四阶段尚未启动。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
 
 完整Stop以实际非空population、正式终态、原生续作receipt及独立业务验收判定。启用配置不等于角色已触发，空指标分母不计通过。厨房从空代码开发阶段由真实业务模型写实现，观察器不复制或修补业务代码。
 
@@ -42,7 +42,29 @@ M08保留原Skill及正式Skill Ground Truth绑定；过程/闭合角色读取�
 
 协议补丁的7模块定向回归161/161通过；补强真实生成入口后的CLI、OpenClaw模块分别16/16通过。另一协作者只读复核schema→ledger→population→adapter完整传播、两种宿主initial/followUp严格校验、旧文档兼容及cache v3，未发现阻断。新字段不能证明条件成立、指标适用或义务满足；原数据缺字段不被自动迁移，新legacy更新也不继承失效旧标签。真实worker路由仍需03轮验证。
 
-全仓第一次使用仓库内`.tmp`作为TEMP，触发打包测试递归复制自身，属于实验临时目录设置错误；失败日志保留为`full-regression-typed-protocol.log`。改用系统临时目录及允许本地测试子进程后重跑，没有为此修改产品或断言。该轮1289项：1279通过、9跳过、1失败，208.7秒；唯一失败是已有hook测试的新生成Skill替身缺少kind/condition，触发额外一次格式修复。仅补齐该替身的新输出字段后，所属模块3/3通过，生产、断言及旧持久化fixture不变。日志为`full-regression-typed-protocol-system-temp.log`及`typed-applicability-runtime-hook.log`；没有将全仓失败日志覆盖成全绿。03真实结果待后续记录。
+全仓第一次使用仓库内`.tmp`作为TEMP，触发打包测试递归复制自身，属于实验临时目录设置错误；失败日志保留为`full-regression-typed-protocol.log`。改用系统临时目录及允许本地测试子进程后重跑，没有为此修改产品或断言。该轮1289项：1279通过、9跳过、1失败，208.7秒；唯一失败是已有hook测试的新生成Skill替身缺少kind/condition，触发额外一次格式修复。仅补齐该替身的新输出字段后，所属模块3/3通过，生产、断言及旧持久化fixture不变。日志为`full-regression-typed-protocol-system-temp.log`及`typed-applicability-runtime-hook.log`；没有将全仓失败日志覆盖成全绿。协议提交为`9dc428c`，真实03来源及准入检查冻结于`8c18fde`。
+
+03轮自然GT为37条有效声明（36 CURRENT_TASK、1 CONDITIONAL），形成84对象加1质量项；83对象保留CURRENT_TASK、1条件项保守回退。独立只读重建population摘要与正式collector一致；实际新SDK执行证明kind经过schema、ledger和population传播，修复了前两轮的路由遗漏。真实业务模型再次运行原verifier，退出0/21项通过，源码仍为02c4。
+
+但新执行器暴露了另一个实际错误。首M01在120秒截止前未提交：14轮、约89,949工具字节，无无效工具或字面重复行，最终观测上下文估计64,870，未见overflow；已经读完所需basis后仍寻找未经鉴定的需求拆分候选，并无必要整读约30KB原GT。后续worker `0de81f5e`把RC config当候选而给PASS，`2cc7314b`又因该config缺少read/write/edit约束而给DEVIATION。独立审计确认两者引用字节真实、候选角色错误：原任务要求保留配置，从未要求它承担需求拆分。不能据此要求改配置或新建被禁止的文档。
+
+根因是adapter把任意`permittedTargets[0]`作为非空目标种子，实际为`project/.runtime-corrector/config.yaml`；模型将导航提示误认成候选身份，又在候选缺失时扩大搜索。现有检索工具已经足够，先用冻结失败输入及真实候选正反对照验证最小提示修复，不增加大索引、总结Agent、验收条件删减或预算。03先完整保存运行态、全部worker/collection、原会话与源码后，仅经本隔离22656会话的公开reset正规结束，Stop为`SETTLED/CANCELLED/RC_STOP_CANCELLED`。这属于因错误评审前提主动取消，不是产品自然耗尽预算；首项超时及取消前已提交的错判均保留，不能算完整Stop或语义通过。短结算由03目录保存，独立审计为`.runtime-correction/all-metrics-lab-20261024/stage3-03-independent-audit.json`。
+
+## 候选身份的最小迭代
+
+M01小实验共5个worker：v1修正了真实错D及K01/K02正反对照；同一首项超时输入在v1完成U，但诊断附带一句被原spec反驳的全局否定。v2仅约束U诊断不编造全局缺失，同一输入完成U、主诊断与引用通过独立复核，但耗时59.531秒、工具114722字节，均高于v1的30.137秒、25709字节，不能宣称效率提升。v2未重跑正反对照。M02/M05各P/D/U共6个有效样本均符合基准；此前6个sandbox传输失败任务无有效回复，保留在分开目录，不计语义通过。最终仅采用这三个已审计提示，未改其它角色。精简来源见 [候选身份汇总](../../experiments/review-metrics-20261024/candidate-identity-summary.json)。
+
+去掉错误首文件种子后的真实工厂K01/K04能找到真实候选并PASS，但同一03首项、同33个文件、只将targetFiles置空的独立探针仍在119.957秒未提交。完整basis约2.9秒已读完，后来继续搜索候选；峰值上下文估计55174/200000，没有overflow或compact。该探针没有读完整GT或过程索引，不能继续把失败统称“大索引”。结论是提示与自由发现仍不能封闭缺候选路径；两例真实候选P不能覆盖这个失败。
+
+因此增加一处程序输入前提：父Stop按已有artifact.metrics明确声明及精确路径归属，一次建立带文件SHA与声明身份的候选表。产物证明未绑定时，由程序给原对象U并继续其它项，不再让每个模型独立搜索整个项目；有绑定仍进行真实审查并要求候选引用。metricCheckpoint或源码配置不推断为需求/验收候选。没有删指标、改适用条件或整体改为PASS；旧caller没有声明也会保留U，历史对话候选尚无新绑定协议。声明配置与所有候选即便未被引用，也进入缓存和发布失效检查。新机制必须再经小实验和完整Stop验证，不能用上述提示小实验代替。
+
+候选桥接定向producer/caller52、adapter90、collector/cache84项各自0失败；这些集合有重叠，不能相加作独立样本数。外部配置只作为程序哈希依赖，既不进入模型源码，也不因业务根路径校验而漏掉失效检查。绑定比较列表在当前collection冻结；下一Stop重收集会发现新增匹配文件，本轮没有增加每项重新glob的目录实时监视。
+
+原03首项在同33冻结文件、同原GT及对象上的正式adapter离线重放，23ms程序U、0worker、分母1/分子0，所有输入字节不变；没有宣称模型完成了原超时任务。离线共调用adapter两次：首回同样U，但后验断言误用captureFiles元数据而未写完报告，修正实验断言后第二次验证成功；生产未改。真实工厂/collector另跑9个明确绑定案例，7P/2D全部独立审计正确，完整basis全读、12段引用字节核验、0native回退，每例一个worker。K02确缺missing短缺对象，K05确缺成功cook扣减/持久化路径；其余五类产物职责没有被要求执行业务。最大反馈1340字节。它们采用fixture已有候选manifest声明，不包含oracle，不代替配置producer到完整Gateway的04验证。
+
+候选绑定全仓首轮1346项：1332通过、5失败、9跳过，195.4秒。一个旧路由协议测试缺少显式候选，正确被新前提挡在worker前；仅补齐fixture候选，保留原字节传播及worker断言。其余四项涉及原短时限，仍待复测，不据并行负载推定原因。原日志为`full-regression-candidate-binding-01.log`，没有覆盖成全绿。
+
+补齐fixture、结束小模型并行后第二次全仓1346项：1336通过、1失败、9跳过，154.8秒；原四项短时限中三项通过，剩余SessionEnd“stdin不结束”看门狗在1301.8ms被测试的1200ms外部截止杀死。其独立模块随后7/7通过，该case约1010.9ms；SessionEnd脚本及原时限断言均未修改。这说明单独运行可完成，仍保留全仓并发时限失败这一事实，不把第二轮报告写成全绿。日志分别为`full-regression-candidate-binding-02.log`、`session-end-process-isolated.log`。Stop变更和真实9例均已通过对应门禁，后续按冻结来源进入04，既有并发SessionEnd时限边界不通过修改其它插件环节绕过。
 
 ## 交付边界
 

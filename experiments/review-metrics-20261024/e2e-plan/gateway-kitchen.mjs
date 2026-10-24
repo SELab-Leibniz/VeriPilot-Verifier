@@ -63,6 +63,7 @@ const adapterPaths = [
   "lib/runtime-v2/reviewer.mjs", "lib/runtime-v2/ground-truth-provenance.mjs", "lib/runtime-v2/ground-truth-ledger.mjs",
   "lib/runtime-v2/metrics.mjs", "lib/runtime-v2/review-scope.mjs", "lib/runtime-v2/review-routing.mjs",
   "lib/runtime-v2/stop-task-review.mjs", "lib/runtime-v2/orchestrator.mjs", "lib/runtime-v2/review-collector.mjs",
+  "lib/runtime-v2/artifact-candidates.mjs", "lib/artifact-pipeline.mjs",
   "lib/openclaw/reviewer.mjs", "lib/openclaw/runtime.mjs", "lib/openclaw/stop-task-runtime.mjs",
   "lib/review-task/review-task.mjs", "lib/review-task/history-memory.mjs", "lib/review-task/prompts.json",
   "lib/review-task/prompt-profile.mjs", "lib/review-task/package-lock.json",

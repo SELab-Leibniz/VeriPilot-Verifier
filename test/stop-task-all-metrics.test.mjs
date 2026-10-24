@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { canUseStopTaskReview, runStopTaskReview } from "../lib/runtime-v2/stop-task-review.mjs";
 import { persistSkillGroundTruth } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { buildMetricPopulation, METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
+import { buildMetricPopulation, calculateMetricReport, METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 import { scanSkillDirectory } from "../lib/runtime-v2/skill-source.mjs";
 import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
@@ -41,10 +41,16 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
     request: { population, groundTruthPath, fixedStopClassification: { stopClassification: "TASK_COMPLETE", stage: "VERIFICATION" },
       reviewScope: { objectIds: [object.objectId], sourceIds: [object.sourceId] }, instructions: ["Check only the frozen assigned object."] },
     evidence: { groundTruth: truth, snapshot, population } };
+  if (projectFile) input.request.artifactCandidates = [{ artifactId: "fixture-candidate", metricIds: [metricId],
+    files: [{ path: "candidate.md", sha256: sha256(await fs.readFile(source)) }],
+    declaration: { configPath: null, configSha256: null, digest: sha256({ fixture: true, metricId }) } }];
   return { projectRoot, directory, taskId, source, input, object, truth };
 }
 
-async function result(options, { file = options.task.targetFiles[0], verdict = "PASS" } = {}) {
+// These are explicitly known witnesses authored by this fixture, never an
+// arbitrary first copied file or a targetFiles seed supplied by the adapter.
+async function result(options, { file = ["PROCESS_COMPLIANCE", "RUNTIME_ACCEPTANCE", "EXECUTION_CLOSURE"].includes(options.task.scope)
+  ? "process/000000.json" : "project/candidate.md", verdict = "PASS" } = {}) {
   const bytes = await fs.readFile(path.join(options.root, file));
   const snapshot = path.join(options.outputDir, "frozen-source", file);
   await fs.mkdir(path.dirname(snapshot), { recursive: true });
@@ -173,8 +179,9 @@ test("metric and evidence ownership choose a fixed scope and dedicated profile",
     const f = await fixture(t, metric, target);
     await runStopTaskReview(f.input, { runTask: async options => {
       assert.equal(options.task.scope, scope);
+      assert.deepEqual(options.task.targetFiles, scope === "METRIC_ARTIFACT_REVIEW" ? ["project/candidate.md"] : []);
       assert.deepEqual({ promptAppend: options.promptAppend, reviewType: options.task.reviewType }, reviewPromptProfile(metric, scope));
-      if (scope === "SOURCE_IMPLEMENTATION") await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
+      if (["SOURCE_IMPLEMENTATION", "METRIC_ARTIFACT_REVIEW"].includes(scope)) await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
       else assert.equal((await fs.readdir(path.join(options.root, "process"))).length, 2);
       return result(options);
     } });
@@ -183,14 +190,24 @@ test("metric and evidence ownership choose a fixed scope and dedicated profile",
 
 test("M09 joins only implementation-owned source review and does not acquire process evidence", async t => {
   const f = await fixture(t, "M09", "IMPLEMENTATION"); f.input.role = "implementation-reviewer";
-  f.input.request.sourceManifest = [{ path: f.source, sha256: sha256(await fs.readFile(f.source)) }];
+  const helper = path.join(f.projectRoot, "helper.py"); await fs.writeFile(helper, "def helper(): return True\n");
+  f.input.request.sourceManifest = [f.source, helper].map(source => ({ path: source }));
+  for (const entry of f.input.request.sourceManifest) entry.sha256 = sha256(await fs.readFile(entry.path));
   assert.equal(canUseStopTaskReview(f.input), true);
   const handle = await runStopTaskReview(f.input, { runTask: async options => {
     assert.equal(options.task.scope, "SOURCE_IMPLEMENTATION");
     assert.deepEqual(options.task.targetPrefixes, ["project/"]);
+    assert.deepEqual(options.task.targetFiles, ["project/candidate.md"]);
+    assert.equal(await fs.readFile(path.join(options.root, "project/helper.py"), "utf8"), await fs.readFile(helper, "utf8"));
     return result(options);
   } });
   assert.equal(judgement(handle).judgement, "PASS");
+  const helperHandle = await runStopTaskReview(f.input, { runTask: options => result(options, { file: "project/helper.py" }) });
+  assert.equal(judgement(helperHandle).judgement, "PASS");
+  assert.equal(helperHandle.sourceCitations[0].path, helper);
+  await assert.rejects(runStopTaskReview(f.input, { runTask: async options => {
+    const checked = await result(options); checked.refs[0].sha256 = "0".repeat(64); return checked;
+  } }), error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
   f.input.request.population.metrics.M09[0].verificationTarget = "PROCESS";
   assert.equal(canUseStopTaskReview(f.input), false);
 });
@@ -198,7 +215,7 @@ test("M09 joins only implementation-owned source review and does not acquire pro
 test("process-only review needs no project file and cannot use the authoritative basis as its target", async t => {
   const f = await fixture(t, "M11", "PROCESS", { projectFile: false });
   const handle = await runStopTaskReview(f.input, { runTask: async options => {
-    assert.match(options.task.targetFiles[0], /^process\//u);
+    assert.deepEqual(options.task.targetFiles, []);
     assert.deepEqual(options.task.targetPrefixes, ["process/"]);
     assert.equal(options.task.basisFiles.some(file => file.startsWith("process/")), false);
     return result(options);
@@ -209,16 +226,152 @@ test("process-only review needs no project file and cannot use the authoritative
     error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
 });
 
-test("ordinary coverage may inspect a candidate in original messages, but source and process conclusions cannot swap owners", async t => {
+test("an unbound process message does not manufacture an artifact subject, and proof owners cannot swap", async t => {
   const f = await fixture(t, "M02", "PROCESS", { projectFile: false });
-  const handle = await runStopTaskReview(f.input, { runTask: options => result(options) });
-  assert.equal(judgement(handle).judgement, "PASS");
+  const handle = await runStopTaskReview(f.input, { runTask: () => assert.fail("No declared artifact subject.") });
+  assert.equal(judgement(handle).judgement, "UNVERIFIED");
   const process = await fixture(t, "M11", "PROCESS");
   await assert.rejects(runStopTaskReview(process.input, { runTask: options => result(options, { file: "project/candidate.md" }) }),
     error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
   const coverage = await fixture(t, "M01", "ARTIFACT");
   await assert.rejects(runStopTaskReview(coverage.input, { runTask: options => result(options, { file: options.task.basisFiles[0] }) }),
     error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+});
+
+test("an earlier configuration file is not manufactured into an artifact candidate", async t => {
+  const f = await fixture(t, "M03", "ARTIFACT");
+  await fs.mkdir(path.join(f.projectRoot, ".runtime-corrector"));
+  await fs.writeFile(path.join(f.projectRoot, ".runtime-corrector/config.yaml"), "enabled: true\n");
+  const handle = await runStopTaskReview(f.input, { runTask: async options => {
+    assert.deepEqual(options.task.targetFiles, ["project/candidate.md"]);
+    assert.deepEqual(options.task.targetPrefixes, ["project/"]);
+    await assert.rejects(fs.stat(path.join(options.root, "project/.runtime-corrector/config.yaml")), { code: "ENOENT" });
+    return result(options, { file: "project/candidate.md" });
+  } });
+  assert.equal(judgement(handle).judgement, "PASS");
+});
+
+test("unbound artifact metrics stay eligible but finish programmatically unverified before evidence capture", async t => {
+  for (const metric of ["M01", "M02", "M03", "M04", "M05", "M06", "M07", "M09", "M10"]) await t.test(metric, async t => {
+    const f = await fixture(t, metric, "ARTIFACT"), population = structuredClone(f.input.request.population);
+    delete f.input.request.artifactCandidates;
+    assert.equal(canUseStopTaskReview(f.input), true, "Missing subject must not route back to a native search.");
+    const handle = await runStopTaskReview(f.input, { runTask: () => assert.fail("Unbound subject must not invoke a model.") });
+    assert.equal(judgement(handle).judgement, "UNVERIFIED");
+    assert.match(judgement(handle).reason, /has not been provided or established/u);
+    assert.doesNotMatch(judgement(handle).reason, /does not exist|missing requirement|must create/iu);
+    assert.deepEqual(await fs.readdir(path.join(handle.artifacts, "input")), [], "No project or process copy is needed.");
+    assert.deepEqual(f.input.request.population, population);
+    const report = calculateMetricReport({ population, judgements: handle.result.metricObjectJudgements, metricIds: [metric] });
+    assert.equal(report.status, "UNVERIFIED");
+    assert.equal(report.metrics[0].denominator, 1);
+    assert.equal(report.metrics[0].numerator, 0);
+    assert.equal(report.metrics[0].objects[0].hard, true);
+  });
+});
+
+test("empty, invalid, mismatched or stale artifact bindings cannot dispatch a worker", async t => {
+  const changes = {
+    empty: input => { input.request.artifactCandidates = []; },
+    wrongMetric: input => { input.request.artifactCandidates[0].metricIds = ["M05"]; },
+    unknownMetric: input => { input.request.artifactCandidates[0].metricIds.push("M99"); },
+    noFiles: input => { input.request.artifactCandidates[0].files = []; },
+    missingFile: input => { input.request.artifactCandidates[0].files[0].path = "not-captured.md"; },
+    staleHash: input => { input.request.artifactCandidates[0].files[0].sha256 = "0".repeat(64); },
+    escape: input => { input.request.artifactCandidates[0].files[0].path = "../candidate.md"; },
+    absolute: input => { input.request.artifactCandidates[0].files[0].path = path.join(input.projectRoot, "candidate.md"); },
+    invalidDeclaration: input => { input.request.artifactCandidates[0].declaration.digest = "unverified declaration"; },
+    privateSource: async input => {
+      await fs.writeFile(path.join(input.projectRoot, ".env"), "PRIVATE_CANDIDATE_CANARY");
+      input.request.artifactCandidates[0].files[0] = { path: ".env", sha256: sha256("PRIVATE_CANDIDATE_CANARY") };
+    },
+    configurationAsCandidate: async input => {
+      const config = path.join(input.projectRoot, "config.yaml"), bytes = Buffer.from("artifacts: []\n");
+      await fs.writeFile(config, bytes);
+      input.request.artifactCandidates[0].files = [{ path: "config.yaml", sha256: sha256(bytes) }];
+      Object.assign(input.request.artifactCandidates[0].declaration, { configPath: config, configSha256: sha256(bytes) });
+    },
+  };
+  for (const [name, change] of Object.entries(changes)) await t.test(name, async t => {
+    const f = await fixture(t, "M01", "ARTIFACT"); await change(f.input);
+    const handle = await runStopTaskReview(f.input, { runTask: () => assert.fail("Invalid binding must not dispatch.") });
+    assert.equal(judgement(handle).judgement, "UNVERIFIED");
+    assert.deepEqual(await fs.readdir(path.join(handle.artifacts, "input")), []);
+  });
+});
+
+test("bound artifacts keep complete candidate files off the prompt and require real candidate citations for P/D", async t => {
+  const f = await fixture(t, "M01", "ARTIFACT"), second = path.join(f.projectRoot, "second.md");
+  await fs.writeFile(second, "The candidate's genuine cross-referenced second unit.\n");
+  f.input.request.artifactCandidates[0].files.push({ path: "second.md", sha256: sha256(await fs.readFile(second)) });
+  for (const verdict of ["PASS", "DEVIATION"]) {
+    const handle = await runStopTaskReview(f.input, { runTask: async options => {
+      assert.deepEqual(options.task.targetFiles, ["project/candidate.md"], "Only one declared candidate is a navigation seed.");
+      assert.deepEqual(options.task.targetPrefixes, ["project/"]);
+      assert.equal(await fs.readFile(path.join(options.root, "project/second.md"), "utf8"), await fs.readFile(second, "utf8"));
+      const bindings = JSON.parse(await fs.readFile(path.join(options.root, "candidate-bindings.json"), "utf8"));
+      assert.equal(bindings[0].files.length, 2);
+      assert.equal(options.task.basisFiles.some(file => file.includes("candidate-bindings")), false);
+      assert.doesNotMatch(options.task.requirement, /Original process entries are available/u);
+      return result(options, { file: "project/second.md", verdict });
+    } });
+    assert.equal(judgement(handle).judgement, verdict);
+    assert(handle.reviewEvidence.files.includes(second));
+  }
+  for (const file of ["candidate-bindings.json", "basis/assigned-object-0000.txt"]) {
+    await assert.rejects(runStopTaskReview(f.input, { runTask: options => result(options, { file }) }),
+      error => error.code === "REVIEW_ITEM_EVIDENCE_INVALID");
+  }
+});
+
+test("all bound files and the real declaration config remain dependencies even without a selected citation", async t => {
+  for (const changed of ["otherCandidate", "outsideConfig"]) await t.test(changed, async t => {
+    const f = await fixture(t, "M05", "ARTIFACT"), other = path.join(f.projectRoot, "other.md");
+    await fs.writeFile(other, "Another unit in the same acceptance artifact.\n");
+    f.input.request.artifactCandidates[0].files.push({ path: "other.md", sha256: sha256(await fs.readFile(other)) });
+    const config = path.join(path.dirname(f.projectRoot), `config-${path.basename(f.projectRoot)}.yaml`);
+    await fs.writeFile(config, "artifacts: acceptance\n");
+    t.after(() => fs.rm(config, { force: true }));
+    Object.assign(f.input.request.artifactCandidates[0].declaration, { configPath: config, configSha256: sha256(await fs.readFile(config)) });
+    await assert.rejects(runStopTaskReview(f.input, { runTask: async options => {
+      assert.equal(options.task.targetFiles.includes(config), false);
+      assert.equal((await fs.readdir(path.join(options.root, "project"))).includes(path.basename(config)), false);
+      const answer = await result(options);
+      await fs.appendFile(changed === "otherCandidate" ? other : config, "Changed after the frozen capture.\n");
+      return answer;
+    } }), error => error.code === "REVIEW_COLLECTION_STALE");
+  });
+});
+
+test("an external real declaration config is checked without becoming business evidence or model source", async t => {
+  const f = await fixture(t, "M02", "ARTIFACT"), config = path.join(path.dirname(f.projectRoot), `config-${path.basename(f.projectRoot)}.yaml`);
+  await fs.writeFile(config, "PRIVATE_DECLARATION_BODY_NOT_MODEL_SOURCE\n");
+  t.after(() => fs.rm(config, { force: true }));
+  Object.assign(f.input.request.artifactCandidates[0].declaration, { configPath: config, configSha256: sha256(await fs.readFile(config)) });
+  const handle = await runStopTaskReview(f.input, { runTask: async options => {
+    const entries = await fs.readdir(path.join(options.root, "project"));
+    assert.deepEqual(entries, ["candidate.md"]);
+    assert.doesNotMatch(await fs.readFile(path.join(options.root, "candidate-bindings.json"), "utf8"), /PRIVATE_DECLARATION_BODY_NOT_MODEL_SOURCE/u);
+    return result(options);
+  } });
+  assert.equal(judgement(handle).judgement, "PASS");
+  assert.equal(handle.reviewEvidence.files.includes(config), false);
+  assert.equal(Object.hasOwn(handle.reviewEvidence.fingerprints, config), false);
+});
+
+test("source and process standard/experience routes do not require an artifact candidate binding", async t => {
+  for (const metric of ["M09", "M10"]) for (const target of ["IMPLEMENTATION", "PROCESS"]) {
+    const f = await fixture(t, metric, target);
+    delete f.input.request.artifactCandidates;
+    let calls = 0;
+    const handle = await runStopTaskReview(f.input, { runTask: async options => {
+      calls++;
+      assert.equal(options.task.scope, target === "IMPLEMENTATION" ? "SOURCE_IMPLEMENTATION" : "PROCESS_COMPLIANCE");
+      return result(options);
+    } });
+    assert.equal(calls, 1);
+    assert.equal(judgement(handle).judgement, "PASS");
+  }
 });
 
 test("M08 uses original Skill dictionaries and raw source without manufacturing a GT claim", async t => {

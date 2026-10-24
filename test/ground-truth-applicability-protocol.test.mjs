@@ -11,6 +11,7 @@ import { generationReviewSchema, GROUND_TRUTH_REVIEW_SCHEMA, SKILL_GROUND_TRUTH_
 import { scanSkillDirectory } from "../lib/runtime-v2/skill-source.mjs";
 import { canUseStopTaskReview, runStopTaskReview } from "../lib/runtime-v2/stop-task-review.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 const kinds = ["CURRENT_TASK", "CONDITIONAL", "FUTURE", "UNKNOWN"];
 const source = { ref: "transcript:protocol-user", subject: "MAIN_TASK", kind: "USER_MESSAGE",
@@ -106,7 +107,13 @@ test("CURRENT_TASK preserves the original command scope, text and source through
     assert.equal(canUseStopTaskReview(f.inputFor(metricId)), true);
   }
   let workerCalls = 0;
-  const handle = await runStopTaskReview(f.inputFor("M01"), { runTask: async options => {
+  const candidate = "Assigned pantry set decomposition: retain zero-amount entries.\n";
+  await fs.writeFile(path.join(f.projectRoot, "decomposition.md"), candidate);
+  const scoped = f.inputFor("M01");
+  scoped.request.artifactCandidates = [{ artifactId: "protocol-fixture", metricIds: ["M01"],
+    files: [{ path: "decomposition.md", sha256: sha256(candidate) }],
+    declaration: { configPath: null, configSha256: null, digest: sha256("explicit test candidate") } }];
+  const handle = await runStopTaskReview(scoped, { runTask: async options => {
     workerCalls++;
     const basis = async name => JSON.parse((await Promise.all(options.task.basisFiles
       .filter(file => file.startsWith(`basis/${name}-`)).map(file => fs.readFile(path.join(options.root, file), "utf8")))).join(""));

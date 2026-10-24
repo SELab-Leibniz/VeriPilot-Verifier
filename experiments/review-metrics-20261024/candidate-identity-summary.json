@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "runtime-corrector.candidate-identity-experiment.v1",
+  "status": "PROGRAM_CANDIDATE_BINDING_SMALL_INTEGRATION_AUDITED_FULL_STOP_PENDING",
+  "sourceBase": "8c18fde9b97230a310f229cc4adfd9d580c6155c",
+  "productionProfile": "lib/review-task/prompts.json",
+  "profileVersion": "scoped-review-prompts-v3-candidate-identity",
+  "profileSha256": "e0f24e5d95c92918121009293f4f11de3f1408e3242cac31f77c45f2457a8ad1",
+  "changedMetricPrompts": ["M01", "M02", "M05"],
+  "otherRolePromptsAndScopeOverridesUnchanged": true,
+  "originalFailure": {
+    "run": "experiments/live-kitchen-stop-20261024-03",
+    "summary": "stage3-cancelled-summary.json",
+    "cause": "An arbitrary RC config navigation seed was treated as a requirement-decomposition candidate, producing false PASS and false DEVIATION.",
+    "originalOutputsRetained": true,
+    "wholeStopPassed": false
+  },
+  "m01": {
+    "rawDirectory": ".runtime-correction/all-metrics-lab-20261024/m01-candidate-discovery",
+    "startedWorkerTasks": 5,
+    "v1ThreeStateControls": {
+      "actualWrongDeviationReplayedAsUnverified": true,
+      "actualTaskAndAll33InputFilesUnchanged": true,
+      "genuineCandidatePositive": "K01:PASS",
+      "genuineCandidateNegative": "K02:DEVIATION",
+      "independentSemanticAndCitationAuditPassed": true
+    },
+    "originalTimeout": {
+      "completed": false,
+      "elapsedMs": 117749,
+      "toolBytes": 89949
+    },
+    "v1SameTimeoutTaskReplay": {
+      "completed": true,
+      "verdict": "UNVERIFIED",
+      "elapsedMs": 30137,
+      "toolBytes": 25709,
+      "completeReasonAccuracy": false,
+      "reasonIssue": "An extra unsupported global claim contradicted the original spec; the candidate-unavailability diagnosis remained valid."
+    },
+    "selectedV2SameTimeoutTaskReplay": {
+      "completed": true,
+      "verdict": "UNVERIFIED",
+      "elapsedMs": 59531,
+      "toolBytes": 114722,
+      "sameOriginalTaskAndAll33InputFiles": true,
+      "independentMainDiagnosisAndCitationAuditPassed": true,
+      "improvesEfficiencyOverV1": false,
+      "positiveAndNegativeControlsRerunAtV2": false,
+      "note": "V2 adds only an UNVERIFIED diagnosis constraint. Its absolute candidate-absence wording is understood within the frozen input, not as a global project fact."
+    }
+  },
+  "m02M05": {
+    "rawDirectory": ".runtime-correction/all-metrics-lab-20261024/m02-m05-candidate-discovery",
+    "startedWorkerTasks": 12,
+    "initialTransportFailedTasks": 6,
+    "initialValidReplies": 0,
+    "authorizedRetryTasks": 6,
+    "completedSemanticTasks": 6,
+    "expectedLabels": {"PASS": 2, "DEVIATION": 2, "UNVERIFIED": 2},
+    "independentSemanticAndCitationAuditPassed": true,
+    "elapsedRangeMs": [9197, 15258],
+    "cases": ["A201", "A202", "A203", "K04", "K05", "M05-archive-capture"],
+    "m05ArchiveCaseIsSyntheticMissingCapture": true,
+    "exactRichProcessLiveM02M05ReplayClaimed": false,
+    "httpRequestCount": null
+  },
+  "prefixDiscoveryIntegration": {
+    "genuineCandidateFactoryCollector": {"cases": ["K01", "K04"], "completed": 2, "verdicts": ["PASS", "PASS"], "semanticAuditPassed": true},
+    "sameOriginalNoCandidateProbe": {
+      "startedWorkerTasks": 1, "completed": false, "validSubmission": false, "elapsedMs": 119957,
+      "original33FilesUnchanged": true, "onlyTaskChange": "targetFiles=[]", "peakContextTokens": 55174,
+      "overflowObserved": false, "toolBytes": 66400,
+      "interpretation": "Mandatory basis was read promptly, but open-ended candidate discovery continued until the unchanged deadline. Empty-reference integrity is not proof of a supported verdict."
+    },
+    "gate": "FAILED_NO_CANDIDATE_COMPLETION",
+    "nextChange": "Parent Stop explicitly binds candidate ownership from existing artifact.metrics and configured paths. Missing binding retains the object as program UNVERIFIED before worker dispatch; a binding never proves fulfillment."
+  },
+  "programCandidateBinding": {
+    "focusedLogs": {"producerAndCallers": {"tests": 52, "fail": 0}, "adapter": {"tests": 90, "fail": 0}, "collectorAndCache": {"tests": 84, "fail": 0}},
+    "focusedCountsMayOverlap": true,
+    "fullRegression": {"run1": {"tests": 1346, "pass": 1332, "fail": 5, "skip": 9}, "run2": {"tests": 1346, "pass": 1336, "fail": 1, "skip": 9}, "remainingFailure": "Existing SessionEnd unterminated-stdin watchdog exceeded the test's 1200ms external ceiling in parallel full runs.", "isolatedSessionEndModule": {"tests": 7, "pass": 7, "fail": 0}, "assertionsOrProductTimeoutsRelaxed": false, "wholeSuiteGreenClaimed": false},
+    "original03UnboundReplay": {"elapsedMs": 23, "modelWorkerCalls": 0, "offlineAdapterInvocations": 2, "verdict": "UNVERIFIED", "denominator": 1, "numerator": 0, "original33FilesUnchanged": true, "note": "First offline call also returned U; its postcondition assertion was corrected before the second verified report. No production change or model call."},
+    "boundRealFactoryCollector": {"cases": ["K01", "K02", "K04", "K05", "A201", "A301", "A401", "A601", "A701"], "completed": 9, "labelCorrect": 9, "verdicts": {"PASS": 7, "DEVIATION": 2}, "independentSemanticAndCitationAuditPassed": true, "checkedReferenceRanges": 12, "nativeFallbacks": 0, "maxFeedbackBytes": 1340, "modelWorkerTasks": 9, "httpRequestCount": null},
+    "limits": ["Explicit fixture manifests establish the binding in these nine small tests; producer-to-real-Gateway remains pending.", "This is a frozen candidate manifest, not continuous discovery of newly added glob matches during a review.", "M09/M10 artifact binding is covered by unit tests, not these nine live cases."]
+  },
+  "limits": {
+    "parentDeadlineMs": 120000,
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "maxOutputTokens": 8192,
+    "originalConditionsRemoved": false,
+    "businessExecution": false,
+    "gatewayUsedByTheseSmallExperiments": false
+  },
+  "limitations": [
+    "These are selected single-sample development regressions, not a statistical accuracy or stability estimate.",
+    "A correct verdict is insufficient when the reason contains an unsupported factual claim; the V1 error is preserved.",
+    "V2 completes the original timeout task in this replay but uses more reads and time than V1.",
+    "Direct worker results do not establish production factory, collector, full Stop or end-to-end success.",
+    "Input discovery contract changes require their own integration validation before another full Stop run."
+  ]
+}
