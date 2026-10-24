@@ -31,7 +31,7 @@ else if (count > 1 && process.env.REVIEW_FAILURE === "repair") process.stdout.wr
 else if (count > 1 && process.env.REVIEW_FAILURE === "reminder") process.stdout.write(JSON.stringify({ session_id: "review-session", result: "not-json" }));
 else process.stdout.write(JSON.stringify({
   session_id: valueAfter("--session-id") ?? (valueAfter("--sessions") && !args.includes("--fork-session") ? valueAfter("--sessions") : process.env.RUNTIME_CORRECTOR_INTERNAL_RUN_ID),
-  structured_output: { ok: true },
+  structured_output: process.env.REVIEW_RESULT ? JSON.parse(process.env.REVIEW_RESULT) : { ok: true },
 }));
 `);
   const task = await ensureTask({ projectRoot: root, sessionId: "parent" });
@@ -43,6 +43,26 @@ else process.stdout.write(JSON.stringify({
 function independent(key, endpoint = key) {
   return { ...baseReviewer, session: "independent", provider: { baseUrl: `https://${endpoint}.invalid`, apiKeyEnv: key, model: `model-${key}` } };
 }
+
+test("CLI initial and follow-up generation require typed applicability without tightening the stored schema", async t => {
+  const f = await fixture(t);
+  f.options.role = "ground-truth-extractor";
+  f.options.schema = reviewers.GROUND_TRUTH_REVIEW_SCHEMA;
+  f.options.env.REVIEW_RESULT = JSON.stringify({ summary: "The original scope is retained.", taskClassification: "CONTINUATION",
+    operations: [{ operation: "ADD", category: "requirements", text: "Retain zero-amount entries.", applicability: "pantry set command",
+      applicabilityKind: "CURRENT_TASK", authority: "USER_EXPLICIT", severity: "HARD", source: { ref: "user" } }] });
+  const handle = await reviewers.startRoleReviewer(f.options);
+  await handle.followUp({ prompt: "Check the unchanged scope.", nextSchema: reviewers.GROUND_TRUTH_REVIEW_SCHEMA });
+  await handle.close();
+  const calls = await f.calls();
+  assert.equal(calls.length, 2);
+  for (const call of calls) {
+    const schema = JSON.parse(call.args[call.args.indexOf("--json-schema") + 1]);
+    assert(schema.properties.operations.items.required.includes("applicabilityKind"));
+    assert(schema.properties.skillGroundTruth.properties.constraints.items.required.includes("condition"));
+  }
+  assert.equal(reviewers.GROUND_TRUTH_REVIEW_SCHEMA.properties.operations.items.required.includes("applicabilityKind"), false);
+});
 
 test("handoff always creates target identity and selects target provider, including same-provider independent roles", async (t) => {
   for (const key of ["KEY_A", "KEY_B"]) {

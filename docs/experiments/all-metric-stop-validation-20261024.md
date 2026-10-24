@@ -24,7 +24,7 @@ M08保留原Skill及正式Skill Ground Truth绑定；过程/闭合角色读取�
 
 ## 完整 Stop 与空代码开发
 
-第三阶段首轮在 `8506ff9` 代码上发现路由覆盖遗漏，已保存证据并正规取消；修复后的第二轮尚待执行，第四阶段尚未启动。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
+第三阶段前两轮均发现路由覆盖遗漏，已保存证据并正规取消；正在修复正式路由协议，第四阶段尚未启动。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
 
 完整Stop以实际非空population、正式终态、原生续作receipt及独立业务验收判定。启用配置不等于角色已触发，空指标分母不计通过。厨房从空代码开发阶段由真实业务模型写实现，观察器不复制或修补业务代码。
 
@@ -35,6 +35,14 @@ M08保留原Skill及正式Skill Ground Truth绑定；过程/闭合角色读取�
 最小修复仅在eligibility识别明确的`MAIN_TASK`/`CURRENT_TASK`等价拼写，保留原缺省兼容，不改写原始GT、对象或分母。条件、未来、未知及异常类型继续原路径。新增跨15指标路由和原字节GT不变回归，定向59/59通过；连同factory与兼容层再验75/75通过。重测将使用新task及本轮最终真实21项成功对应的冻结源码`02c4bfc9f2f35c15406f7aeb27be3b3966972adffa48ecd6e68f5657e21e2716`，避免旧native缓存混作新worker证据；观察窗口跟随产品原有Stop截止，而非让实验自身的30分钟观察窗提前终止健康流程。产品70分钟组合上限不变。
 
 首轮采用仅本隔离会话的公开`sessions.reset`触发`before_reset`，Stop正式结算`SETTLED/CANCELLED/RC_STOP_CANCELLED`，自己的56081端口已关闭；原session、完整runtime、collection及源码先行冻结，3个已完成单项保留。它是因新执行器覆盖不足而由实验控制器主动中止，不能算产品自然超时或通过。取消前原生项另有一次120秒超时、一次64工具调用上限及两次累计读取上限；它们与整体取消原因分别记录。源中`runtime-corrector.control`在本native入口未注册，实际请求unknown method未写状态，未旁路手写task/session。短结算见 `experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json`。
+
+第二轮在`9bdf238`上用相同冻结02c4源码、合同及政策重测，真实业务模型再次跑原verifier退出0、21项PASS，但自然GT使用24种自由范围标签，例如`file modifications`、`pantry set command`。形成105个对象加1个质量项；全部不匹配旧别名白名单，实际只启动的两个native项均触及累计读取上限，新SDK任务仍为0。观察器按产品原70分钟截止运行，没有人为30分钟截断；为修复协议再次通过仅本隔离会话的reset正规取消，1206端口已关闭。没有为通过而删除条件或调整预算。短结算见 `experiments/live-kitchen-stop-20261024-02/stage3-cancelled-summary.json`。
+
+别名补丁未能解决自由文本控制路由的根因。新方案保留原范围字段，另加固定枚举`applicabilityKind`。例如第二轮c30正文仅“R02: Retain zero-amount entries.”，其`applicability="pantry set command"`是有效的命令限定，不能直接覆写为CURRENT_TASK或依赖模型重新搬入正文。新枚举只选择执行器，原义务、条件、范围及来源仍完整传入；未知/未来/条件型保守走原路径。严格要求只用于新模型生成，旧持久化文档继续兼容；没有额外分类Agent或新工作流。
+
+协议补丁的7模块定向回归161/161通过；补强真实生成入口后的CLI、OpenClaw模块分别16/16通过。另一协作者只读复核schema→ledger→population→adapter完整传播、两种宿主initial/followUp严格校验、旧文档兼容及cache v3，未发现阻断。新字段不能证明条件成立、指标适用或义务满足；原数据缺字段不被自动迁移，新legacy更新也不继承失效旧标签。真实worker路由仍需03轮验证。
+
+全仓第一次使用仓库内`.tmp`作为TEMP，触发打包测试递归复制自身，属于实验临时目录设置错误；失败日志保留为`full-regression-typed-protocol.log`。改用系统临时目录及允许本地测试子进程后重跑，没有为此修改产品或断言。该轮1289项：1279通过、9跳过、1失败，208.7秒；唯一失败是已有hook测试的新生成Skill替身缺少kind/condition，触发额外一次格式修复。仅补齐该替身的新输出字段后，所属模块3/3通过，生产、断言及旧持久化fixture不变。日志为`full-regression-typed-protocol-system-temp.log`及`typed-applicability-runtime-hook.log`；没有将全仓失败日志覆盖成全绿。03真实结果待后续记录。
 
 ## 交付边界
 

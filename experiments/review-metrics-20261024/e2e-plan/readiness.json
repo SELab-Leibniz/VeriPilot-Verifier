@@ -1,6 +1,6 @@
 {
-  "status": "READY_WAITING_FOR_ROUTE_FIX_COMMIT_AND_STAGE3_02_LIVE_GATE",
-  "at": "2026-10-24T06:26:47.678Z",
+  "status": "PREPARED_WAITING_FOR_MACHINE_PROTOCOL_FREEZE_AND_STAGE3_03_LIVE_GATE",
+  "at": "2026-10-24T06:53:29.102Z",
   "modelCalls": 0,
   "gatewayUsed": false,
   "originalHostOrSessionModified": false,
@@ -10,7 +10,7 @@
   "files": [
     {
       "path": "gateway-kitchen.mjs",
-      "sha256": "6143a7f5213dc82a64f2a4d7793a6af54197a440cc746f5a51e479efdf3ca37b"
+      "sha256": "d4178a2e033160106ed19e2a3c774437267979adf15d6cb189c06f58d478c1a9"
     },
     {
       "path": "worktree-fence.mjs",
@@ -30,7 +30,7 @@
     },
     {
       "path": "plan.md",
-      "sha256": "c8d35e7d3c784604c3bb796661604452be819334e1c078d749cd5666920f38a3"
+      "sha256": "2ec72e179e960b39e004272adf7a54f8c90fc276bf45db73a5e512fb981ff028"
     },
     {
       "path": "policy-preflight.json",
@@ -63,10 +63,16 @@
     "stopSeed": "PASS_ORIGINAL21",
     "developWithoutSeed": "PASS",
     "seedForbiddenOutsideStop": true,
-    "nextOutputNotCreated": true
+    "nextOutputNotCreated": true,
+    "businessPromptSourceUnchangedFrom02": true,
+    "policyByteIdenticalTo02": true,
+    "productionHashCheckFiles": 17,
+    "sourceAdmissionFiles": 25,
+    "allHashInputsExist": true,
+    "doesNotValidateUnfinishedMachineProtocol": true
   },
   "nextLive": {
-    "output": "experiments/live-kitchen-stop-20261024-02",
+    "output": "experiments/live-kitchen-stop-20261024-03",
     "mode": "stop",
     "seedApp": {
       "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\live-kitchen-stop-20261024-01\\before-operator-cancel\\kitchen.py",
@@ -82,35 +88,141 @@
       },
       "fullProof": "Retained in memory during local preflight; a live run saves complete stdout before admission"
     },
-    "adapterSourceAtPreflight": {
-      "commit": "8506ff950da283199894c243e8c71230d28f2648",
-      "files": {
-        "lib/runtime-v2/stop-task-review.mjs": "cff328cbf03b30d9d477db972fdb2d2bf2d60d00dbd6bd43c1b2c86906619c4a",
-        "lib/review-task/review-task.mjs": "f8bf6bb8e189262d28a626755340bcdf200cf2a1d628ba56be038b2922c80bd1",
-        "lib/review-task/prompts.json": "34d230c50f3a292d6b8d447fdcc8f96b61795a5aadf0e17873e092fefadafbb0",
-        "lib/review-task/prompt-profile.mjs": "e651447a8af59ca6f737281b6d1c96661156250be972480af7201179107f0b75"
-      }
-    },
+    "adapterSourceAtPreflight": null,
     "admitted": false,
     "sourceCommitMustBeFrozenAtLiveAdmission": true,
     "allOriginalPolicyGroundTruthSkillVerifierBudgetsRetained": true
   },
   "previousRun": {
     "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
-    "summary": "experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json",
-    "gateway56081Closed": true,
-    "routingEligibility": {
-      "mainTaskFallback": 78,
-      "currentTaskSkillEligibleNotReached": 13,
-      "conditionalIntentionallyNative": 1,
-      "total": 92
-    },
-    "actualNewWorkerCount": 0
+    "iteration": 2,
+    "summary": "experiments/live-kitchen-stop-20261024-02/stage3-cancelled-summary.json",
+    "gateway1206Closed": true,
+    "naturalObjects": 105,
+    "qualityItems": 1,
+    "actualNewWorkerCount": 0,
+    "reason": "Free-text applicability violates the routing protocol; preserve original semantic fields and add a separate typed machine field."
   },
   "preAdmissionPromptCorrection": {
     "allExecWorkdirRequirement": false,
     "bundledVerifierProjectWorkdir": true,
     "contractSkillOracleUnchanged": true,
     "reason": "Preserve original Skill verifier obligation without adding an irreversible all-history exec gate."
-  }
+  },
+  "preparationScope": "03 preparation only. Previous real01/02 model runs are separately retained and are not erased by these zero-call preflight fields.",
+  "sourceFreeze": {
+    "status": "PENDING_FINAL_COMMIT_AND_TESTS",
+    "lastCommittedBase": "9bdf2381680f034eb4bfbb40424c73baf2af6191",
+    "workingSourceCleanAtPreflight": false,
+    "files": [
+      {
+        "path": "lib/runtime-v2/reviewer.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/ground-truth-provenance.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/ground-truth-ledger.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/metrics.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/review-scope.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/review-routing.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/stop-task-review.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/orchestrator.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/runtime-v2/review-collector.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/openclaw/reviewer.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/openclaw/runtime.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/openclaw/stop-task-runtime.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/review-task/review-task.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/review-task/history-memory.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/review-task/prompts.json",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/review-task/prompt-profile.mjs",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      },
+      {
+        "path": "lib/review-task/package-lock.json",
+        "sha256": null,
+        "status": "PENDING_FINAL_FREEZE"
+      }
+    ],
+    "admissionOnlyAdditionalInputs": [
+      "scripts/diagnostics/lib/isolated-openclaw.mjs",
+      "lib/plugin-builder.mjs",
+      "experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs",
+      "experiments/review-metrics-20261024/e2e-plan/worktree-fence.mjs",
+      "experiments/review-metrics-20261024/e2e-plan/kitchen-policy.yaml",
+      "examples/openclaw-offline-kitchen/skills/build-offline-kitchen/SKILL.md",
+      "examples/openclaw-offline-kitchen/skills/build-offline-kitchen/references/requirements.md",
+      "examples/openclaw-offline-kitchen/skills/build-offline-kitchen/scripts/verify_kitchen.py"
+    ],
+    "automaticArtifact": "source-admission.json written by the live entry before Gateway/model admission; no separate classifier or GT generator is introduced."
+  },
+  "previousRuns": [
+    {
+      "iteration": 1,
+      "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
+      "summary": "experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json"
+    },
+    {
+      "iteration": 2,
+      "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
+      "summary": "experiments/live-kitchen-stop-20261024-02/stage3-cancelled-summary.json"
+    }
+  ]
 }

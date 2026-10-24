@@ -79,7 +79,7 @@ fs.appendFileSync(process.env.HOOK_REVIEWER_CAPTURE, JSON.stringify({
 }) + "\n");
 const result = schema.properties.operations
   ? { summary: "No new claims.", taskClassification: "CONTINUATION", operations: [], ...(request?.skill ? {
-    skillGroundTruth: { constraints: [{ constraintId: "read-task", kind: "STEP", modality: "MUST", statement: "Read the task before reviewing." }], taskOverlays: [] },
+    skillGroundTruth: { constraints: [{ constraintId: "read-task", kind: "STEP", modality: "MUST", statement: "Read the task before reviewing.", applicabilityKind: "CURRENT_TASK", condition: null }], taskOverlays: [] },
   } : {}) }
   : schema.properties.completionStatus
     ? { summary: "Skill completed.", completionStatus: "COMPLETED", findings: [] }

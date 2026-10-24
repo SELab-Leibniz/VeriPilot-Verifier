@@ -57,9 +57,27 @@ if (seedArgument) {
       scenarios: acceptance.scenarios, codeHash: acceptance.codeHash, verifierSha256: hash(verifierSource) },
     fullProof: live ? "seed-verifier-proof.json" : "Retained in memory during local preflight; a live run saves complete stdout before admission" };
 }
-const adapterPaths = ["lib/runtime-v2/stop-task-review.mjs", "lib/review-task/review-task.mjs", "lib/review-task/prompts.json", "lib/review-task/prompt-profile.mjs"];
+// Observe the complete machine-protocol path, not just the final task adapter.
+// These files are copied into the new plugin and checked before Gateway startup.
+const adapterPaths = [
+  "lib/runtime-v2/reviewer.mjs", "lib/runtime-v2/ground-truth-provenance.mjs", "lib/runtime-v2/ground-truth-ledger.mjs",
+  "lib/runtime-v2/metrics.mjs", "lib/runtime-v2/review-scope.mjs", "lib/runtime-v2/review-routing.mjs",
+  "lib/runtime-v2/stop-task-review.mjs", "lib/runtime-v2/orchestrator.mjs", "lib/runtime-v2/review-collector.mjs",
+  "lib/openclaw/reviewer.mjs", "lib/openclaw/runtime.mjs", "lib/openclaw/stop-task-runtime.mjs",
+  "lib/review-task/review-task.mjs", "lib/review-task/history-memory.mjs", "lib/review-task/prompts.json",
+  "lib/review-task/prompt-profile.mjs", "lib/review-task/package-lock.json",
+];
 const sourceRevision = (await execute("git", ["rev-parse", "HEAD"], { cwd: repository })).stdout.trim();
-const adapterSource = { commit: sourceRevision, files: Object.fromEntries(await Promise.all(adapterPaths.map(async file =>
+const sourceClean = !(await execute("git", ["status", "--porcelain"], { cwd: repository })).stdout.trim();
+const adapterSource = { commit: sourceRevision, sourceClean, files: Object.fromEntries(await Promise.all(adapterPaths.map(async file =>
+  [file, hash(await fs.readFile(path.join(repository, file)))]))) };
+const admissionPaths = ["scripts/diagnostics/lib/isolated-openclaw.mjs", "lib/plugin-builder.mjs",
+  "experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs", "experiments/review-metrics-20261024/e2e-plan/worktree-fence.mjs",
+  "experiments/review-metrics-20261024/e2e-plan/kitchen-policy.yaml",
+  `examples/openclaw-offline-kitchen/skills/${skillName}/SKILL.md`,
+  `examples/openclaw-offline-kitchen/skills/${skillName}/references/requirements.md`,
+  `examples/openclaw-offline-kitchen/skills/${skillName}/scripts/verify_kitchen.py`];
+const sourceAdmissionFiles = { ...adapterSource.files, ...Object.fromEntries(await Promise.all(admissionPaths.map(async file =>
   [file, hash(await fs.readFile(path.join(repository, file)))]))) };
 const authFiles = [path.join(os.homedir(), ".openclaw/openclaw.json"), path.join(os.homedir(), ".openclaw/agents/main/agent/models.json")];
 const authBytes = await Promise.all(authFiles.map(file => fs.readFile(file)));
@@ -88,6 +106,10 @@ await fs.mkdir(output, { mode: 0o700 });
 const report = { ...metadata, modelCalls: null, modelCallCountMethod: "No HTTP proxy in this harness; do not infer exact dispatch or billing counts from SDK events", startedAt: Date.now(), status: "RUNNING", currentCodeSource: "working tree at explicit --live admission" };
 const secrets = [key], redact = value => secrets.reduce((s, secret) => s.replaceAll(secret, "<redacted>"), String(value));
 const save = async (file, value) => fs.writeFile(path.join(output, file), redact(typeof value === "string" ? value : JSON.stringify(value, null, 2)) + "\n");
+await save("source-admission.json", { phase: mode === "develop" ? 4 : 3, at: new Date().toISOString(), sourceCommit: sourceRevision,
+  sourceClean, output, mode, modelCallsAtAdmission: 0, gatewayUsedAtAdmission: false, stage4Run: mode === "develop",
+  ...(seedMetadata ? { seedSource: seedMetadata.source, seedSha256: seedMetadata.sha256 } : {}),
+  files: Object.entries(sourceAdmissionFiles).map(([file, sha256]) => ({ path: file, sha256 })) });
 if (seedVerification) await save("seed-verifier-proof.json", seedVerification);
 const log = async (phase, extra = {}) => { const row = { at: Date.now(), phase, ...extra }; process.stdout.write(JSON.stringify(row) + "\n"); await fs.appendFile(path.join(output, "timeline.jsonl"), JSON.stringify(row) + "\n"); };
 const originals = Object.fromEntries(authFiles.map((file, index) => [file, hash(authBytes[index])]));

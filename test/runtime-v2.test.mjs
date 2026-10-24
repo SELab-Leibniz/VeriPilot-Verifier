@@ -13,6 +13,7 @@ import { recordDeviationFindings, ROOT_CAUSE_IDS } from "../lib/runtime-v2/devia
 import {
   applyGroundTruthDelta,
   loadCurrentGroundTruth,
+  persistSkillGroundTruth,
 } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import {
   createInternalRunLease,
@@ -347,6 +348,39 @@ test("Ground Truth is append-only, versioned, and inferred claims cannot become 
     /cannot supersede higher-authority Ground Truth/,
   );
   assert.equal((await fs.readFile(path.join(root, ".runtime-correction", "tasks", task.taskId, "ground-truth", "history.jsonl"), "utf8")).trim().split("\n").length, 2);
+});
+
+test("typed applicability survives ledger and metric projection without migrating legacy scopes or inheriting a stale kind", async t => {
+  const root = await workspace(t), task = await ensureTask({ projectRoot: root, sessionId: "typed-scope" });
+  const op = { operation: "ADD", claimId: "R02", category: "requirements", text: "R02: Retain zero-amount entries.",
+    applicability: "pantry set command", applicabilityKind: "CURRENT_TASK", authority: "USER_EXPLICIT", severity: "HARD", source: { ref: "user" } };
+  const first = await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [op,
+    { ...op, claimId: "legacy", applicability: "file modifications", text: "Keep the original file scope.", applicabilityKind: undefined },
+  ].map(row => row.applicabilityKind === undefined ? Object.fromEntries(Object.entries(row).filter(([key]) => key !== "applicabilityKind")) : row) } });
+  const bytesBeforeRead = await fs.readFile(path.join(root, ".runtime-correction/tasks", task.taskId, "ground-truth/current.json"));
+  const current = await loadCurrentGroundTruth(root, task.taskId);
+  assert.deepEqual(await fs.readFile(path.join(root, ".runtime-correction/tasks", task.taskId, "ground-truth/current.json")), bytesBeforeRead);
+  assert.equal(current.claims.find(row => row.claimId === "R02").applicability, op.applicability);
+  assert.equal(current.claims.find(row => row.claimId === "R02").applicabilityKind, "CURRENT_TASK");
+  assert.equal(Object.hasOwn(current.claims.find(row => row.claimId === "legacy"), "applicabilityKind"), false);
+  const skills = await persistSkillGroundTruth({ projectRoot: root, taskId: task.taskId, skillId: "scope-skill", skillDigest: "original-source",
+    constraints: [{ constraintId: "conditional", kind: "STEP", modality: "MUST", statement: "Retry only after a failure.", condition: "if verification fails", applicabilityKind: "CONDITIONAL" },
+      { constraintId: "legacy", kind: "STEP", modality: "MUST", statement: "Preserve the original Skill constraint.", condition: null }] });
+  const population = await buildMetricPopulation({ projectRoot: root, taskId: task.taskId, groundTruth: first.current, skillDocuments: [skills.document] });
+  assert.equal(population.metrics.M01.find(row => row.sourceId === "R02").applicabilityKind, "CURRENT_TASK");
+  assert.equal(population.metrics.M01.find(row => row.sourceId === "R02").applicability, "pantry set command");
+  assert.equal(Object.hasOwn(population.metrics.M01.find(row => row.sourceId === "legacy"), "applicabilityKind"), false);
+  assert.equal(population.metrics.M08[0].applicabilityKind, "CONDITIONAL");
+  assert.equal(population.metrics.M08[0].applicability, "if verification fails");
+  assert.equal(Object.hasOwn(population.metrics.M08[1], "applicabilityKind"), false);
+  const { applicabilityKind, ...legacyUpdate } = op;
+  const updated = await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [
+    { ...legacyUpdate, operation: "SUPERSEDE", text: "Apply only after explicit deployment approval.", applicability: "if deployment is approved" },
+  ] } });
+  assert.equal(Object.hasOwn(updated.current.claims.find(row => row.claimId === "R02"), "applicabilityKind"), false);
+  await assert.rejects(applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [{ ...op, claimId: "invalid", applicabilityKind: "file modifications" }] } }), /applicabilityKind/u);
+  await assert.rejects(persistSkillGroundTruth({ projectRoot: root, taskId: task.taskId, skillId: "invalid", skillDigest: "original-source",
+    constraints: [{ constraintId: "invalid", statement: "Preserve this scope.", applicabilityKind: "entire task" }] }), /applicabilityKind/u);
 });
 
 

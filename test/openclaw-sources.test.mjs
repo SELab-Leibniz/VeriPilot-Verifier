@@ -12,7 +12,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 const response=value=>({payloads:[{text:typeof value==="string"?value:JSON.stringify(value)}],meta:{}});
 const user=(id,text)=>({type:"user",uuid:id,message:{role:"user",content:[{type:"text",text}]}});
 const catalog=id=>[{ref:`transcript:${id}`,kind:"USER_MESSAGE",aliases:[id,`transcript:${id}`,"user","user prompt"]}];
-const operation=(ref,kind="USER_MESSAGE")=>({operation:"ADD",category:"requirements",text:"Preserve the actual user requirement.",authority:"USER_EXPLICIT",severity:"HARD",source:{ref,kind,subject:"MAIN_TASK",excerpt:"invented model quote"}});
+const operation=(ref,kind="USER_MESSAGE")=>({operation:"ADD",category:"requirements",text:"Preserve the actual user requirement.",applicabilityKind:"CURRENT_TASK",authority:"USER_EXPLICIT",severity:"HARD",source:{ref,kind,subject:"MAIN_TASK",excerpt:"invented model quote"}});
 const delta=operations=>({summary:"Full source checked.",taskClassification:"CONTINUATION",operations});
 async function fixture(t) {
   const root=await fs.mkdtemp(path.join(os.tmpdir(),"rc-full-user-source-"));t.after(()=>fs.rm(root,{recursive:true,force:true}));
@@ -23,6 +23,28 @@ function factory(f,runner) {
 }
 const input=(f,id,text,role="onboarding-extractor")=>({projectRoot:f.root,taskId:f.task.taskId,role,reviewer:{timeoutMs:3000,formatRepairAttempts:1},schema:GROUND_TRUTH_REVIEW_SCHEMA,
   request:{sourceCatalog:catalog(id),userMessages:[text.slice(0,4000)]},evidence:{snapshot:{digest:`frozen-${id}`,entries:[user(id,text)]}}});
+
+test("native generation repairs missing routing metadata without rewriting the original scope", async t => {
+  const f = await fixture(t), sessions = [];
+  const n = factory(f, async params => {
+    sessions.push(params.sessionId);
+    const op = { ...operation("transcript:scope"), text: "R02: Retain zero-amount entries.", applicability: "pantry set command" };
+    if (sessions.length % 2 === 1) delete op.applicabilityKind;
+    return response(delta([op]));
+  });
+  const handle = await n(input(f, "scope", "For the pantry set command, retain zero-amount entries."));
+  assert.equal(sessions.length, 2);
+  assert.equal(sessions[0], sessions[1]);
+  assert.equal(handle.result.operations[0].applicabilityKind, "CURRENT_TASK");
+  assert.equal(handle.result.operations[0].applicability, "pantry set command");
+  assert.equal(handle.result.operations[0].text, "R02: Retain zero-amount entries.");
+  const later = await handle.followUp({ prompt: "Check the same original source scope.", nextSchema: GROUND_TRUTH_REVIEW_SCHEMA });
+  assert.equal(sessions.length, 4);
+  assert.equal(new Set(sessions).size, 1);
+  assert.equal(later.operations[0].applicabilityKind, "CURRENT_TASK");
+  assert.equal(later.operations[0].applicability, "pantry set command");
+  await handle.close();
+});
 
 test("native Skill extraction repairs an omitted constraint document within the existing session and repair limit", async t => {
   const f = await fixture(t), sessions = [];

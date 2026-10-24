@@ -14,13 +14,14 @@ import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 
-async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { projectFile = true, applicability = "CURRENT_TASK" } = {}) {
+async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { projectFile = true, applicability = "CURRENT_TASK", applicabilityKind, text = "Check the assigned current obligation." } = {}) {
   const scratch = fileURLToPath(new URL("../.runtime-correction/stop-task-all-metric-test-runs/", import.meta.url));
   await fs.mkdir(scratch, { recursive: true });
   const projectRoot = await fs.mkdtemp(path.join(scratch, "run-")), taskId = "all-metric-task";
   t.after(() => fs.rm(projectRoot, { force: true, recursive: true }));
-  const claim = { claimId: "R1", revisionId: "R1@1", category: METRIC_CATALOG[metricId].source[0], text: "Check the assigned current obligation.",
-    authority: "USER_EXPLICIT", severity: "HARD", applicability, verificationTarget, status: "ACTIVE" };
+  const claim = { claimId: "R1", revisionId: "R1@1", category: METRIC_CATALOG[metricId].source[0], text,
+    authority: "USER_EXPLICIT", severity: "HARD", applicability,
+    ...(applicabilityKind !== undefined ? { applicabilityKind } : {}), verificationTarget, status: "ACTIVE" };
   const common = { ...claim, claimId: "COMMON", category: "constraints", text: "Preserve all applicable exceptions and Unicode names." };
   const truth = { taskId, version: 1, claims: metricId === "M08" ? [common] : [claim, common] };
   truth.digest = sha256(truth.claims);
@@ -32,7 +33,7 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
   const source = path.join(projectRoot, "candidate.md");
   if (projectFile) await fs.writeFile(source, "Current candidate content, not an execution claim.\n");
   const object = { objectId: `${metricId}:R1`, metricId, sourceId: "R1", sourceRevisionId: "R1@1", description: claim.text,
-    applicability, authority: "USER_EXPLICIT", hard: true, verificationTarget };
+    applicability, ...(applicabilityKind !== undefined ? { applicabilityKind } : {}), authority: "USER_EXPLICIT", hard: true, verificationTarget };
   const population = { taskId, version: 1, groundTruthVersion: 1, digest: sha256(object), metrics: { [metricId]: [object] } };
   const snapshot = { entries: [{ type: "assistant", uuid: "original-call", message: { content: [{ type: "tool_use", id: "business-check", name: "exec", input: { command: "verify fixture", workdir: projectRoot } }] } },
     { type: "user", uuid: "original-result", message: { content: [{ type: "tool_result", tool_use_id: "business-check", content: "Observed current result." }] } }], digest: "original-snapshot" };
@@ -53,7 +54,7 @@ async function result(options, { file = options.task.targetFiles[0], verdict = "
 }
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
-async function skillFixture(t, { captured = true, privateSource = false, sourceRef = "project/SKILL.md#L2" } = {}) {
+async function skillFixture(t, { captured = true, privateSource = false, sourceRef = "project/SKILL.md#L2", applicabilityKind, condition = "CURRENT_TASK" } = {}) {
   const f = await fixture(t, "M08", "PROCESS", { projectFile: false }), skillId = "build-offline-kitchen";
   const sourceRoot = privateSource ? path.join(f.directory, "skills", skillId, "source") : path.join(f.projectRoot, "skills", skillId);
   await fs.mkdir(path.join(sourceRoot, "references"), { recursive: true });
@@ -61,7 +62,8 @@ async function skillFixture(t, { captured = true, privateSource = false, sourceR
   await fs.writeFile(path.join(sourceRoot, "references/conditions.md"), "Preserve frozen inputs, including when an optional configuration is absent.\n");
   const source = await scanSkillDirectory(sourceRoot);
   const saved = await persistSkillGroundTruth({ projectRoot: f.projectRoot, taskId: f.taskId, skillId, skillDigest: source.digest,
-    constraints: [{ constraintId: "verify", modality: "MUST", kind: "STEP", statement: "Before completion, run the verifier.", condition: "CURRENT_TASK", dependsOn: ["preserve"], sourceRef },
+    constraints: [{ constraintId: "verify", modality: "MUST", kind: "STEP", statement: "Before completion, run the verifier.", condition,
+      ...(applicabilityKind !== undefined ? { applicabilityKind } : {}), dependsOn: ["preserve"], sourceRef },
       { constraintId: "preserve", modality: "MUST", kind: "CONDITION", statement: "Preserve frozen inputs.", condition: "CURRENT_TASK", sourceRef: "references/conditions.md#L1" }], taskOverlays: [] });
   const population = await buildMetricPopulation({ projectRoot: f.projectRoot, taskId: f.taskId, groundTruth: f.truth, skillDocuments: [saved.document] });
   population.metrics = { M08: population.metrics.M08.filter(row => row.sourceId === `${skillId}:verify`) };
@@ -91,7 +93,52 @@ test("all fifteen metric IDs have single current-object Stop eligibility without
       const copy = structuredClone(f.input); copy.request.population.metrics[metric][0].applicability = applicability;
       assert.equal(canUseStopTaskReview(copy), false);
     }
+    const typed = structuredClone(f.input), object = typed.request.population.metrics[metric][0];
+    object.applicability = "pantry set command";
+    object.applicabilityKind = "CURRENT_TASK";
+    assert.equal(canUseStopTaskReview(typed), true, `${metric}: typed current scope`);
+    object.applicability = "CURRENT_TASK";
+    for (const kind of ["CONDITIONAL", "FUTURE", "UNKNOWN", "file modifications", undefined, null, true, 1, {}, []]) {
+      object.applicabilityKind = kind;
+      assert.equal(canUseStopTaskReview(typed), false, `${metric}: present kind ${String(kind)}`);
+    }
   }
+});
+
+test("typed routing keeps a scope carried only by applicability and does not turn kind into acceptance proof", async t => {
+  const f = await fixture(t, "M01", "IMPLEMENTATION", { applicability: "pantry set command", applicabilityKind: "CURRENT_TASK", text: "R02: Retain zero-amount entries." });
+  const original = await fs.readFile(f.input.request.groundTruthPath);
+  const handle = await runStopTaskReview(f.input, { runTask: async options => {
+    assert.equal(options.task.scope, "METRIC_ARTIFACT_REVIEW");
+    assert.match(options.task.requirement, /applicabilityKind only selects the executor/u);
+    assert.match(options.task.requirement, /does not prove/u);
+    const parts = async name => JSON.parse((await Promise.all(options.task.basisFiles.filter(file => file.startsWith(`basis/${name}-`))
+      .map(file => fs.readFile(path.join(options.root, file), "utf8")))).join(""));
+    assert.equal((await parts("assigned-object")).object.applicability, "pantry set command");
+    const claim = (await parts("ground-truth")).claims.find(row => row.claimId === "R1");
+    assert.equal(claim.text, "R02: Retain zero-amount entries.");
+    assert.equal(claim.applicability, "pantry set command");
+    assert.equal(claim.applicabilityKind, "CURRENT_TASK");
+    return { completed: true, verdict: "UNVERIFIED", reason: "Candidate requirement decomposition is not established.", refs: [] };
+  } });
+  assert.equal(judgement(handle).judgement, "UNVERIFIED");
+  assert.deepEqual(await fs.readFile(f.input.request.groundTruthPath), original);
+});
+
+test("typed Skill kinds propagate while legacy documents and original nullable conditions remain readable", async t => {
+  for (const kind of ["CURRENT_TASK", "CONDITIONAL", "FUTURE", "UNKNOWN"]) {
+    const f = await skillFixture(t, { applicabilityKind: kind, condition: null });
+    assert.equal(f.object.applicabilityKind, kind);
+    assert.equal(f.skillDocument.constraints[0].condition, null);
+    assert.equal(canUseStopTaskReview(f.input), kind === "CURRENT_TASK");
+    if (kind === "CURRENT_TASK") {
+      const handle = await runStopTaskReview(f.input, { runTask: options => result(options) });
+      assert.equal(judgement(handle).judgement, "PASS");
+    }
+  }
+  const legacy = await skillFixture(t);
+  assert.equal(Object.hasOwn(legacy.object, "applicabilityKind"), false);
+  assert.equal(canUseStopTaskReview(legacy.input), true);
 });
 
 test("main-task routing preserves the original applicability and formal Ground Truth in worker input", async t => {
