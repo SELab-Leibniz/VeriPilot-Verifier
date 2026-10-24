@@ -1,11 +1,11 @@
 {
   "status": "PASS_CONFIG_SCHEMA_AND_PRODUCTION_LOAD",
-  "at": "2026-10-24T05:36:27.286Z",
+  "at": "2026-10-24T06:25:20.324Z",
   "modelCalls": 0,
   "gatewayUsed": false,
   "policySha256": "c369347a6179de570d224aee2167d94f18dee2cca6eda805403df41a91099164",
   "templateSha256": "08f40cabcfec09ad746a038637c243e9b724514d129c2a0c196b41b5cf26d3c3",
-  "configPath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\all-metrics-lab-20261024\\e2e-policy-preflight-1792820187171\\.runtime-corrector\\config.yaml",
+  "configPath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\all-metrics-lab-20261024\\e2e-policy-preflight-1792823120244\\.runtime-corrector\\config.yaml",
   "enabled": {
     "runtime": true,
     "dynamicGroundTruth": true,

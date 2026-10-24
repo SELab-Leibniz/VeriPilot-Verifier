@@ -18,13 +18,23 @@ M08保留原Skill及正式Skill Ground Truth绑定；过程/闭合角色读取�
 
 旧7例回归全部完成收集，6例符合基准；F08把永久emoji误作所需图片加载占位而给PASS。该项已读全必读材料，源码引用有效，实际使用正确提示；这是模型语义漏检，不是输入丢失或overflow。K09缺少业务执行证据，由程序直接保留UNVERIFIED；因此该轮为6个模型worker任务加1个程序结算，不能写成7个模型任务。失败原样保留在 `.runtime-correction/stop-integration-allmetrics-regression-01/`，独立审计为 `.runtime-correction/all-metrics-lab-20261024/legacy-regression-semantic-audit.json`。
 
+随后只做一个M12源码候选、严格5次worker任务的有界探针：旧v2与新v3在同一F08输入都判对，另三个v3正负对照也正确。v3未展示相对提升，单次F08还更慢、累计输入更多，因此不接入，生产继续v2。原误PASS不被复测成功覆盖。结果及计量边界见 [探针摘要](../../experiments/review-metrics-20261024/m12-stability-summary.json)。
+
 全仓回归：1248项，1239通过、9跳过、0失败，242.2秒。日志为 `.runtime-correction/all-metrics-lab-20261024/full-regression-01.log`。完整回归证明机制兼容，不消除上述真实模型漏检。
 
 ## 完整 Stop 与空代码开发
 
-尚待执行。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试将使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
+第三阶段首轮在 `8506ff9` 代码上发现路由覆盖遗漏，已保存证据并正规取消；修复后的第二轮尚待执行，第四阶段尚未启动。入口与输入保护见 [隔离宿主计划](../../experiments/review-metrics-20261024/e2e-plan/plan.md)。实际测试使用新端口、独立state/home和原生worktree；原业务项目、原session及18789宿主保持只读。原厨房合同、Skill和21场景verifier保持原字节，不扩大产品预算。
 
 完整Stop以实际非空population、正式终态、原生续作receipt及独立业务验收判定。启用配置不等于角色已触发，空指标分母不计通过。厨房从空代码开发阶段由真实业务模型写实现，观察器不复制或修补业务代码。
+
+第三阶段前置流程已暴露一项真实误报：原归档App在Windows的verifier隔离子进程中因默认cp1252输出Unicode失败；模型首次显式UTF-8修复其实有效，但原生产物评审把子进程编码错误推成父进程也以cp1252解码，建议撤销该修复改成ASCII-safe。独立离线副本使用原字节verifier及相同父环境，复现原版失败、首修21/21通过，并经另一协作者核对输入来源与产物；这是一次复现实测加独立产物审计，不是两次执行。其后模型先撤销有效修复，中间快照真实回到失败实现，又触发一次有据反馈，不能把两条反馈都称误报。首轮主任务约18分48秒后进入真实Stop，该耗时不是单项Review时间。原始轨迹在 `experiments/live-kitchen-stop-20261024-01/`，反例及源码指纹在 `.runtime-correction/all-metrics-lab-20261024/encoding-audit/report.json`。
+
+首次完整Stop形成92个指标对象，另有1个独立文件质量任务。自然GT的34条声明均用`main-task`表示当前主任务，使78个对象回退native；13个Skill对象为`CURRENT_TASK`，另1个为`if verification fails`，后者仍需原生适用性判断。此时没有形成新SDK worker，不能用这轮宣称新路径通过。原生首项120秒超时保留UNVERIFIED，后续已完成PASS仍落盘；不是整个Stop崩溃。
+
+最小修复仅在eligibility识别明确的`MAIN_TASK`/`CURRENT_TASK`等价拼写，保留原缺省兼容，不改写原始GT、对象或分母。条件、未来、未知及异常类型继续原路径。新增跨15指标路由和原字节GT不变回归，定向59/59通过；连同factory与兼容层再验75/75通过。重测将使用新task及本轮最终真实21项成功对应的冻结源码`02c4bfc9f2f35c15406f7aeb27be3b3966972adffa48ecd6e68f5657e21e2716`，避免旧native缓存混作新worker证据；观察窗口跟随产品原有Stop截止，而非让实验自身的30分钟观察窗提前终止健康流程。产品70分钟组合上限不变。
+
+首轮采用仅本隔离会话的公开`sessions.reset`触发`before_reset`，Stop正式结算`SETTLED/CANCELLED/RC_STOP_CANCELLED`，自己的56081端口已关闭；原session、完整runtime、collection及源码先行冻结，3个已完成单项保留。它是因新执行器覆盖不足而由实验控制器主动中止，不能算产品自然超时或通过。取消前原生项另有一次120秒超时、一次64工具调用上限及两次累计读取上限；它们与整体取消原因分别记录。源中`runtime-corrector.control`在本native入口未注册，实际请求unknown method未写状态，未旁路手写task/session。短结算见 `experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json`。
 
 ## 交付边界
 

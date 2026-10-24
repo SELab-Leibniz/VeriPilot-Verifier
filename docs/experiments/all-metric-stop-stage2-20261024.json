@@ -16,7 +16,8 @@
         "DEVIATION": 6,
         "UNVERIFIED": 0
       },
-      "sourceImplementationCases": 1,
+      "implementationReviewerCases": 1,
+      "sourceImplementationScopeCases": 3,
       "maxFeedbackBytes": 1442
     },
     "cases": [

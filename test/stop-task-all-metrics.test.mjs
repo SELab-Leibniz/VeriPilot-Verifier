@@ -14,13 +14,13 @@ import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 
-async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { projectFile = true } = {}) {
+async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { projectFile = true, applicability = "CURRENT_TASK" } = {}) {
   const scratch = fileURLToPath(new URL("../.runtime-correction/stop-task-all-metric-test-runs/", import.meta.url));
   await fs.mkdir(scratch, { recursive: true });
   const projectRoot = await fs.mkdtemp(path.join(scratch, "run-")), taskId = "all-metric-task";
   t.after(() => fs.rm(projectRoot, { force: true, recursive: true }));
   const claim = { claimId: "R1", revisionId: "R1@1", category: METRIC_CATALOG[metricId].source[0], text: "Check the assigned current obligation.",
-    authority: "USER_EXPLICIT", severity: "HARD", applicability: "CURRENT_TASK", verificationTarget, status: "ACTIVE" };
+    authority: "USER_EXPLICIT", severity: "HARD", applicability, verificationTarget, status: "ACTIVE" };
   const common = { ...claim, claimId: "COMMON", category: "constraints", text: "Preserve all applicable exceptions and Unicode names." };
   const truth = { taskId, version: 1, claims: metricId === "M08" ? [common] : [claim, common] };
   truth.digest = sha256(truth.claims);
@@ -32,7 +32,7 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
   const source = path.join(projectRoot, "candidate.md");
   if (projectFile) await fs.writeFile(source, "Current candidate content, not an execution claim.\n");
   const object = { objectId: `${metricId}:R1`, metricId, sourceId: "R1", sourceRevisionId: "R1@1", description: claim.text,
-    applicability: "CURRENT_TASK", authority: "USER_EXPLICIT", hard: true, verificationTarget };
+    applicability, authority: "USER_EXPLICIT", hard: true, verificationTarget };
   const population = { taskId, version: 1, groundTruthVersion: 1, digest: sha256(object), metrics: { [metricId]: [object] } };
   const snapshot = { entries: [{ type: "assistant", uuid: "original-call", message: { content: [{ type: "tool_use", id: "business-check", name: "exec", input: { command: "verify fixture", workdir: projectRoot } }] } },
     { type: "user", uuid: "original-result", message: { content: [{ type: "tool_result", tool_use_id: "business-check", content: "Observed current result." }] } }], digest: "original-snapshot" };
@@ -83,11 +83,35 @@ test("all fifteen metric IDs have single current-object Stop eligibility without
   for (const metric of Object.keys(METRIC_CATALOG)) {
     const f = await fixture(t, metric, "PROCESS");
     assert.equal(canUseStopTaskReview(f.input), true, metric);
-    for (const applicability of ["FUTURE_STAGE", "if checkout occurs", "NOT_APPLICABLE"]) {
+    for (const applicability of ["main-task", "MAIN_TASK", " current-task ", " MaIn-TaSk ", undefined, null, ""]) {
+      const copy = structuredClone(f.input); copy.request.population.metrics[metric][0].applicability = applicability;
+      assert.equal(canUseStopTaskReview(copy), true, `${metric}: ${String(applicability)}`);
+    }
+    for (const applicability of ["FUTURE_STAGE", "future-task", "if checkout occurs", "NOT_APPLICABLE", "main-task if ready", "main-task/future-task", "unknown", "   ", true, 1, {}, []]) {
       const copy = structuredClone(f.input); copy.request.population.metrics[metric][0].applicability = applicability;
       assert.equal(canUseStopTaskReview(copy), false);
     }
   }
+});
+
+test("main-task routing preserves the original applicability and formal Ground Truth in worker input", async t => {
+  const f = await fixture(t, "M13", "PROCESS", { applicability: "main-task" });
+  const originalInput = structuredClone(f.input), originalTruth = await fs.readFile(f.input.request.groundTruthPath);
+  let calls = 0;
+  const handle = await runStopTaskReview(f.input, { runTask: async options => {
+    calls++;
+    assert.equal(options.task.scope, "EXECUTION_CLOSURE");
+    const part = async name => JSON.parse((await Promise.all(options.task.basisFiles.filter(file => file.startsWith(`basis/${name}-`))
+      .map(file => fs.readFile(path.join(options.root, file), "utf8")))).join(""));
+    assert.equal((await part("assigned-object")).object.applicability, "main-task");
+    assert.equal((await part("ground-truth")).claims.find(claim => claim.claimId === "R1").applicability, "main-task");
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "original-ground-truth.json"), "utf8")), f.truth);
+    return result(options);
+  } });
+  assert.equal(calls, 1);
+  assert.equal(judgement(handle).judgement, "PASS");
+  assert.deepEqual(f.input, originalInput);
+  assert.deepEqual(await fs.readFile(f.input.request.groundTruthPath), originalTruth);
 });
 
 test("metric and evidence ownership choose a fixed scope and dedicated profile", async t => {

@@ -1,13 +1,13 @@
-# 阶段3/4：真实 Stop 与厨房端到端隔离入口（准备完成，尚未 live）
+# 阶段3/4：真实 Stop 与厨房端到端隔离入口
 
-2026-10-24 核对。只新增本实验目录文件，没有启动 Gateway、调用模型、修改原宿主配置/原项目/session。默认预检只读元数据；`--live` 才会创建新环境并联网。原有 `127.0.0.1:18789` 不使用。
+2026-10-24 更新。首轮阶段3已在独立Gateway完成真实前置评审和部分Stop，再由实验控制器正规取消；下一轮02仅准备，等待root提交及准入。原宿主配置/原项目/session保持只读，原有 `127.0.0.1:18789` 不使用。默认预检不启动Gateway、不调用模型；有seed时会运行不变的本地21场景verifier，`--live` 才创建新环境并联网。
 
 ## 当前可用环境
 
 - 宿主：`C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw`，2026.7.1-2。它含 MA 的 spawnedCwd 回移；此次没有找到另一个已验证的2026.10.3安装，不虚报双版本真实实验。
 - Node：24.16.0；Python：`C:/Users/user/miniforge3/python.exe`。PATH 中没有 python3.13。
 - 已授权模型：custom/deepseek-v4-flash，openai-completions，contextWindow=204800、maxTokens=65536、reasoning=true。当前模型元数据无 cost，使用此前 task adapter 已验证的兼容路径；没有打印key。
-- Skill、正式合同、21场景 verifier 全部使用仓库原始字节。子宿主 PATH 提供 `python3.13.cmd` 转发固定 Python，设置 UTF8 环境并继承到实际验证子进程，不修改 Skill/verifier 来适配 Windows。
+- Skill、正式合同、21场景 verifier 全部使用仓库原始字节。子宿主 PATH 提供 `python3.13.cmd` 转发固定 Python。首轮实测verifier的 `-I` 应用子进程忽略父UTF8环境，默认cp1252；保留该平台事实，不能声称仅设UTF8环境就修好了子进程。不改Skill/verifier。
 - 业务提示仅保留原Skill要求的“执行bundled verifier时使用项目workdir”；不添加“所有exec均须workdir”的全历史闸门，避免把一次无关探测变成无法补救的历史业务偏离。此项在admission前修改试验提示，原合同、Skill及冻结oracle字节不变。
 
 ## 不可直接照搬的旧入口
@@ -21,12 +21,12 @@
 
 脚本：[gateway-kitchen.mjs](gateway-kitchen.mjs)。它导入既有 `scripts/diagnostics/lib/isolated-openclaw.mjs`，不改变生产插件或helper。已完成 `node --check` 和默认 `--mode=develop` 预检，预检无模型/网关调用。
 
-已另外用生产 `loadProjectConfigDocument`（含真实JSON Schema校验）及 `loadConfig` 编译同一份 [kitchen-policy.yaml](kitchen-policy.yaml)，结果 [policy-preflight.json](policy-preflight.json) 为PASS：dynamic GT、Skill、artifact GT/stage、implementation、Stop全部开启；artifact的rules/review显式enabled合法，Python源码格式为text；assessmentTimeoutMs与waitTimeoutMs均为null，沿用产品默认值。不是只做脚本语法检查。`stageMetricsEnabled`配置为真，源码artifact没有metricCheckpoint，完整指标审查由Stop负责，不在每次源码写入枚举全部指标。
+已另外用生产 `loadProjectConfigDocument`（含真实JSON Schema校验）及 `loadConfig` 编译同一份 [kitchen-policy.yaml](kitchen-policy.yaml)，结果 [policy-preflight.json](policy-preflight.json) 为PASS：dynamic GT、Skill、artifact GT/stage、implementation、Stop全部开启；artifact的rules/review显式enabled合法，Python源码格式为text；assessmentTimeoutMs与waitTimeoutMs均为null，沿用产品默认值。`stageMetricsEnabled`配置为真，源码artifact没有metricCheckpoint，完整指标审查由Stop负责，不在每次源码写入枚举全部指标。
 
 从仓库根启动（root在全指标接入完成后再执行；整个 Node 进程需要网络/子进程的 scoped escalation）：
 
 ```powershell
-node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=stop --live --output=experiments/live-kitchen-stop-20261024-01
+node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=stop --seed-app=experiments/live-kitchen-stop-20261024-01/before-operator-cancel/kitchen.py --live --output=experiments/live-kitchen-stop-20261024-02
 node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=develop --live --output=experiments/live-kitchen-develop-20261024-01
 ```
 
@@ -38,7 +38,11 @@ node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=dev
 
 ## 阶段3：现有正确厨房上的整体验收
 
-`--mode=stop` 预置仓库归档厨房源码，正式模型读取原合同并真实运行bundled verifier，完整Stop走真实分类、动态Ground Truth、实际非空 population、collector与实现审查。启用文档/Skill/实现/Stop纠偏，记录哪些真的触发。
+`--mode=stop` 默认预置归档源码；下一轮明确传入 `--seed-app`，精确复制首轮模型真正写出并已通过原verifier的02c4源码，观察器不编写实现。seed必须名为kitchen.py，入口在Gateway启动前再次真实验证21场景、核对源码hash不变；live保存完整 `seed-verifier-proof.json`，manifest记来源、SHA及原verifier SHA。`develop`和`stop-negative`拒绝seed。正式模型仍读取原合同、真实运行bundled verifier，完整Stop走真实分类、动态Ground Truth、实际非空population、collector及实现审查。启用的模块与实际触发分开记录。
+
+首轮输出 `experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json`：92自然对象/93收集项。78个main-task对象受adapter标签不等价问题影响会回退native；13个CURRENT_TASK Skill对象本可进入新worker但取消前未排到；1个条件项本来就应native。实际新worker=0，因此首轮不能验证新task路由。最终业务源码SHA `02c4bfc9f2f35c15406f7aeb27be3b3966972adffa48ecd6e68f5657e21e2716`，真实verifier退出0、21场景PASS；这不等于Stop通过。
+
+首轮在保存完整runtime/内部request/collection、原main JSONL及trajectory哈希、最终源码后，经本隔离Gateway公开 `sessions.reset`→`before_reset` 正规取消；Stop终态CANCELLED/RC_STOP_CANCELLED、harness exit1并关闭自己的56081端口。没有手写task/session，也没有自然耗尽产品预算。源码中 `runtime-corrector.control` 的注册函数没有被native入口调用，live实际返回unknown method，不能宣称该接口可用。
 
 不强迫模型“造出15个指标类别”。结果必须逐M01-M15记录population数量：空分母不算通过。15指标的精确语义全覆盖由root另一个集成隔离实验承担。此模式是完整Stop健康/误报检查，正确样例零次纠偏是合法结果，并不证明修复收益。
 
@@ -57,8 +61,12 @@ node experiments/review-metrics-20261024/e2e-plan/gateway-kitchen.mjs --mode=dev
 - 独立verifier退出码、完整stdout/stderr、21场景数；原Skill/spec/配置/verifier及原宿主配置/cache前后hash。
 - 失败也写report.json和runtime-at-failure.json，不静默改预算/断言重跑；记录每轮新目录。
 
+业务首轮RPC observer仍为20分钟，产品Stop预算沿用配置且不写其deadline字段。首轮实际Stop组合预算70分钟。首轮终稿后的旧30分钟observer可能早于产品deadline；新入口改为读取本隔离session的native-stop-review实际 `deadlineAt`，加15秒观察器落盘宽限，记录到 `observer-deadline.json`。未发现合法本session记录时才用有限30分钟后备；一旦观察到产品deadline，即使暂时少读一份记录也不退回较早后备。此修改调整观察窗口，不延长产品预算。
+
+入口记录当前commit和stop adapter、worker、prompt/profile源SHA，并核对新产物复制后的SHA；新run使用全新输出、Gateway、task及缓存，不恢复首轮失败任务。
+
 没有HTTP代理，不能据SDK事件推断精确请求次数或费用；live的modelCalls为null。开启纠偏不代表所有角色真实触发。原宿主与新子宿主的认证缓存必须留在忽略目录，不随交付包发布。
 
 ## 目前未做、需要root gate的事项
 
-真实 Gateway/模型尚未启动；须待隔离实验1全指标选择、阶段2接入完成后root明确通知。届时先检查当前代码与profile hash，再启动新run。插件预算/GT与全部真实角色结果取决于后续实际轨迹；本计划不预测PASS。
+下一轮02尚未启动。等待root提交main-task路由修复并明确通知后，才按上面02命令创建全新环境。阶段4尚未准入，不运行。插件预算/GT及真实角色结果取决于实际轨迹；本计划不预测PASS。

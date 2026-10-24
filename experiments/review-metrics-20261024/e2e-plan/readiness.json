@@ -1,15 +1,16 @@
 {
-  "status": "READY_WAITING_FOR_STAGE2_LIVE_GATE",
-  "at": "2026-10-24T05:45:17.867Z",
+  "status": "READY_WAITING_FOR_ROUTE_FIX_COMMIT_AND_STAGE3_02_LIVE_GATE",
+  "at": "2026-10-24T06:26:47.678Z",
   "modelCalls": 0,
   "gatewayUsed": false,
   "originalHostOrSessionModified": false,
   "productionPolicyPreflight": "PASS_CONFIG_SCHEMA_AND_PRODUCTION_LOAD",
-  "worktreeFencePreflight": "PASS",
+  "worktreeFencePreflight": "PASS_PREVIOUS_PROOF_UNCHANGED",
+  "syntax": "PASS",
   "files": [
     {
       "path": "gateway-kitchen.mjs",
-      "sha256": "9093436b04ccb8fbac0479a5f69654348bdd806a154ddc255addf7675aa5e07c"
+      "sha256": "6143a7f5213dc82a64f2a4d7793a6af54197a440cc746f5a51e479efdf3ca37b"
     },
     {
       "path": "worktree-fence.mjs",
@@ -29,17 +30,83 @@
     },
     {
       "path": "plan.md",
-      "sha256": "ad1566f8ea11d67d8a56ea761a569b2286a589bbdf3e86769427d8a45a6bbbc3"
+      "sha256": "c8d35e7d3c784604c3bb796661604452be819334e1c078d749cd5666920f38a3"
     },
     {
       "path": "policy-preflight.json",
-      "sha256": "b40e4893fe375638ae37bb93b015eb277322b80f789d0454a93b5ab97da54685"
+      "sha256": "35bd1d7346dda79ce2c3db34a7acb80b96052f519f5c21a93d7ee1b517c4ab31"
     },
     {
       "path": "worktree-fence-preflight.json",
       "sha256": "cb21ec2296f4a2ad574ce17d58f5f606f706ebc502e3c45c8d5ac5df998e5b8e"
     }
   ],
+  "observerWindowChecks": {
+    "status": "PASS",
+    "checks": [
+      "no-record finite fallback",
+      "actual70min supersedes30min fallback",
+      "foreign session ignored",
+      "other native record ignored",
+      "retains prior actual deadline across incomplete snapshot",
+      "latest actual deadline chosen",
+      "non-finite deadline ignored",
+      "develop rejects seed",
+      "stop-negative rejects seed"
+    ],
+    "productStateWrites": 0,
+    "actualProductDeadlineFollowed": true,
+    "observerPersistenceGraceMs": 15000,
+    "noRecordFallbackMs": 1800000
+  },
+  "preflight": {
+    "stopSeed": "PASS_ORIGINAL21",
+    "developWithoutSeed": "PASS",
+    "seedForbiddenOutsideStop": true,
+    "nextOutputNotCreated": true
+  },
+  "nextLive": {
+    "output": "experiments/live-kitchen-stop-20261024-02",
+    "mode": "stop",
+    "seedApp": {
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\live-kitchen-stop-20261024-01\\before-operator-cancel\\kitchen.py",
+      "sha256": "02c4bfc9f2f35c15406f7aeb27be3b3966972adffa48ecd6e68f5657e21e2716",
+      "exactByteCopyBeforeAdmission": true,
+      "businessCodeAuthoredByObserver": false,
+      "unchangedBundledVerifier": {
+        "exitCode": 0,
+        "status": "PASS",
+        "scenarios": 21,
+        "codeHash": "02c4bfc9f2f35c15406f7aeb27be3b3966972adffa48ecd6e68f5657e21e2716",
+        "verifierSha256": "c7c87e9f723ba45a8890df0664c17e2754a1efc98e96d9ca823fd472eef8ddcd"
+      },
+      "fullProof": "Retained in memory during local preflight; a live run saves complete stdout before admission"
+    },
+    "adapterSourceAtPreflight": {
+      "commit": "8506ff950da283199894c243e8c71230d28f2648",
+      "files": {
+        "lib/runtime-v2/stop-task-review.mjs": "cff328cbf03b30d9d477db972fdb2d2bf2d60d00dbd6bd43c1b2c86906619c4a",
+        "lib/review-task/review-task.mjs": "f8bf6bb8e189262d28a626755340bcdf200cf2a1d628ba56be038b2922c80bd1",
+        "lib/review-task/prompts.json": "34d230c50f3a292d6b8d447fdcc8f96b61795a5aadf0e17873e092fefadafbb0",
+        "lib/review-task/prompt-profile.mjs": "e651447a8af59ca6f737281b6d1c96661156250be972480af7201179107f0b75"
+      }
+    },
+    "admitted": false,
+    "sourceCommitMustBeFrozenAtLiveAdmission": true,
+    "allOriginalPolicyGroundTruthSkillVerifierBudgetsRetained": true
+  },
+  "previousRun": {
+    "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
+    "summary": "experiments/live-kitchen-stop-20261024-01/stage3-cancelled-summary.json",
+    "gateway56081Closed": true,
+    "routingEligibility": {
+      "mainTaskFallback": 78,
+      "currentTaskSkillEligibleNotReached": 13,
+      "conditionalIntentionallyNative": 1,
+      "total": 92
+    },
+    "actualNewWorkerCount": 0
+  },
   "preAdmissionPromptCorrection": {
     "allExecWorkdirRequirement": false,
     "bundledVerifierProjectWorkdir": true,

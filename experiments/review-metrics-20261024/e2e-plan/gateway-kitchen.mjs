@@ -15,7 +15,9 @@ const execute = promisify(execFile), repository = await fs.realpath(process.cwd(
 const args = process.argv.slice(2), live = args.includes("--live");
 const mode = args.find(a => a.startsWith("--mode="))?.slice(7) ?? "develop";
 assert(["stop", "develop", "stop-negative"].includes(mode));
-assert(args.every(a => a === "--live" || a.startsWith("--mode=") || a.startsWith("--output=") || a.startsWith("--host=") || a.startsWith("--python=")), "Unknown option");
+assert(args.every(a => a === "--live" || a.startsWith("--mode=") || a.startsWith("--output=") || a.startsWith("--host=") || a.startsWith("--python=") || a.startsWith("--seed-app=")), "Unknown option");
+const seedArgument = args.find(a => a.startsWith("--seed-app="))?.slice(11);
+assert(!seedArgument || mode === "stop", "--seed-app is allowed only in stop mode; develop must start without kitchen.py");
 const hostRoot = args.find(a => a.startsWith("--host="))?.slice(7) ?? "C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw";
 const python = args.find(a => a.startsWith("--python="))?.slice(9) ?? "C:/Users/user/miniforge3/python.exe";
 const hash = b => createHash("sha256").update(b).digest("hex");
@@ -33,6 +35,32 @@ const skillName = "build-offline-kitchen", skillSource = path.join(repository, "
 const frozenContract = await fs.readFile(path.join(skillSource, "references/requirements.md"));
 const originalSkill = await fs.readFile(path.join(skillSource, "SKILL.md"));
 const verifierSource = await fs.readFile(path.join(skillSource, "scripts/verify_kitchen.py"));
+let seedBytes, seedVerification, seedMetadata;
+if (seedArgument) {
+  const seedPath = await fs.realpath(path.resolve(seedArgument));
+  assert.equal(path.basename(seedPath), "kitchen.py", "The frozen seed must retain the original kitchen.py filename");
+  seedBytes = await fs.readFile(seedPath);
+  // Prove the exact input with the unchanged oracle before any new Gateway or
+  // task exists. The verifier creates and removes only its temporary test data.
+  const checked = await execute(python, [path.join(skillSource, "scripts/verify_kitchen.py"), "--project", path.dirname(seedPath)], {
+    cwd: path.dirname(seedPath), timeout: 120000, maxBuffer: 1024 * 1024,
+    env: { ...process.env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8", PYTHONDONTWRITEBYTECODE: "1" } });
+  assert.equal(checked.stderr, ""); assert.match(checked.stdout, /KITCHEN_VERIFIED\s*$/u);
+  const acceptance = JSON.parse(checked.stdout.trim().split(/\r?\n/u)[0]);
+  assert.equal(acceptance.status, "PASS"); assert.equal(acceptance.scenarios, 21);
+  assert.equal(acceptance.codeHash, hash(seedBytes));
+  assert.equal(hash(await fs.readFile(seedPath)), hash(seedBytes), "The source changed during seed verification");
+  seedVerification = { source: seedPath, exitCode: 0, verifierSha256: hash(verifierSource), ...acceptance,
+    stdout: checked.stdout, stderr: checked.stderr, observedAt: Date.now() };
+  seedMetadata = { source: seedPath, sha256: hash(seedBytes), exactByteCopyBeforeAdmission: true,
+    businessCodeAuthoredByObserver: false, unchangedBundledVerifier: { exitCode: 0, status: acceptance.status,
+      scenarios: acceptance.scenarios, codeHash: acceptance.codeHash, verifierSha256: hash(verifierSource) },
+    fullProof: live ? "seed-verifier-proof.json" : "Retained in memory during local preflight; a live run saves complete stdout before admission" };
+}
+const adapterPaths = ["lib/runtime-v2/stop-task-review.mjs", "lib/review-task/review-task.mjs", "lib/review-task/prompts.json", "lib/review-task/prompt-profile.mjs"];
+const sourceRevision = (await execute("git", ["rev-parse", "HEAD"], { cwd: repository })).stdout.trim();
+const adapterSource = { commit: sourceRevision, files: Object.fromEntries(await Promise.all(adapterPaths.map(async file =>
+  [file, hash(await fs.readFile(path.join(repository, file)))]))) };
 const authFiles = [path.join(os.homedir(), ".openclaw/openclaw.json"), path.join(os.homedir(), ".openclaw/agents/main/agent/models.json")];
 const authBytes = await Promise.all(authFiles.map(file => fs.readFile(file)));
 const [configured, cache] = authBytes.map(bytes => JSON.parse(bytes.toString("utf8")));
@@ -51,6 +79,7 @@ const metadata = { mode, live, hostRoot, hostVersion: pkg.version, node: process
   output, modelCalls: 0, gatewayUsed: false, originalHostModified: false, originalSessionAccessed: false,
   contractSha256: hash(frozenContract), skillSha256: hash(originalSkill), verifierSha256: hash(verifierSource),
   noBusinessCodeAuthoredByObserver: mode === "develop", noBusinessWritesAfterAdmission: true,
+  ...(seedMetadata ? { seedApp: seedMetadata } : {}), adapterSource,
   sourceKeyLocation: "Existing authorized configuration/cache read in memory only", status: "PREFLIGHT_READY" };
 if (!live) { process.stdout.write(JSON.stringify(metadata, null, 2) + "\n"); process.exit(0); }
 
@@ -59,6 +88,7 @@ await fs.mkdir(output, { mode: 0o700 });
 const report = { ...metadata, modelCalls: null, modelCallCountMethod: "No HTTP proxy in this harness; do not infer exact dispatch or billing counts from SDK events", startedAt: Date.now(), status: "RUNNING", currentCodeSource: "working tree at explicit --live admission" };
 const secrets = [key], redact = value => secrets.reduce((s, secret) => s.replaceAll(secret, "<redacted>"), String(value));
 const save = async (file, value) => fs.writeFile(path.join(output, file), redact(typeof value === "string" ? value : JSON.stringify(value, null, 2)) + "\n");
+if (seedVerification) await save("seed-verifier-proof.json", seedVerification);
 const log = async (phase, extra = {}) => { const row = { at: Date.now(), phase, ...extra }; process.stdout.write(JSON.stringify(row) + "\n"); await fs.appendFile(path.join(output, "timeline.jsonl"), JSON.stringify(row) + "\n"); };
 const originals = Object.fromEntries(authFiles.map((file, index) => [file, hash(authBytes[index])]));
 const descriptor = path.join(output, "provider.json");
@@ -80,6 +110,17 @@ const keyId = `agent:main:kitchen-${mode}-${randomUUID().slice(0,8)}`;
 const digestFiles = async root => Object.fromEntries(await Promise.all((await files(root)).filter(p => !p.replaceAll("\\", "/").includes("/.git/")).map(async p => [path.relative(root,p).replaceAll("\\", "/"), hash(await fs.readFile(p))])));
 const protectedPaths = ["spec/requirements.md", ".runtime-corrector/config.yaml", `skills/${skillName}/SKILL.md`, `skills/${skillName}/references/requirements.md`, `skills/${skillName}/scripts/verify_kitchen.py`];
 let protectedHashes;
+// OBSERVER_WINDOW_START: pure observer calculation, does not write product state.
+function stopObservationWindow({ records, sessionId, fallbackDeadline, priorProductDeadline = null, graceMs = 15000 }) {
+  const matching = records.filter(record => record.file?.replaceAll("\\", "/").includes("/native-stop-reviews/")
+    && record.sessionId === sessionId && Number.isFinite(record.deadlineAt) && record.deadlineAt > 0);
+  const productDeadlineAt = Math.max(priorProductDeadline ?? 0, ...matching.map(record => record.deadlineAt)) || null;
+  return productDeadlineAt ? { deadlineAt: productDeadlineAt + graceMs, productDeadlineAt, graceMs,
+    source: "actual native Stop record deadlineAt; grace is observer-only persistence allowance" }
+    : { deadlineAt: fallbackDeadline, productDeadlineAt: null, graceMs: 0,
+      source: "finite 30-minute fallback only while no valid own-session native Stop deadline is observed" };
+}
+// OBSERVER_WINDOW_END
 try {
   await log("isolated Gateway preparation; unchanged Skill/verifier and SDK installation");
   report.gatewayStartupAttempted = true;
@@ -89,6 +130,7 @@ try {
     tools: ["read", "write", "edit", "exec", "runtime_corrector"],
     platformAdapters: { "offline-kitchen-python-test": { name: "offline-kitchen-python-test", kitCheck: { modulePrefix: "", sourceRoots: [], sourceExtensions: [] }, sourceManifest: { roots: [], files: ["kitchen.py"], extensions: [".py"] } } },
     preparePlugin: async pluginRoot => {
+      for (const [file, digest] of Object.entries(adapterSource.files)) assert.equal(hash(await fs.readFile(path.join(pluginRoot, file))), digest, "Adapter source changed during preparation");
       // Windows npm launcher requires the shell; this command has constant arguments and a checked cwd.
       await execute("npm.cmd", ["ci", "--ignore-scripts", "--omit=dev"], { cwd: pluginRoot, shell: true, timeout: 180000, maxBuffer: 1024 * 1024 });
       const lock = await fs.readFile(path.join(pluginRoot, "lib/review-task/package-lock.json"));
@@ -99,7 +141,7 @@ try {
       await fs.writeFile(path.join(defaultDir, ".runtime-corrector/config.yaml"), policy);
       await fs.writeFile(path.join(defaultDir, ".gitignore"), ".runtime-correction/\n__pycache__/\n");
       if (mode !== "develop") {
-        let app = await fs.readFile(path.join(repository, "examples/openclaw-offline-kitchen/app/kitchen.py"), "utf8");
+        let app = seedBytes ?? await fs.readFile(path.join(repository, "examples/openclaw-offline-kitchen/app/kitchen.py"), "utf8");
         if (mode === "stop-negative") {
           // A separate faulted fixture, never changed after admission; record the exact mutation below.
           const before = app; app = app.replace('pantry[ing] = pantry.get(ing, 0) - need', 'pantry[ing] = pantry.get(ing, 0)');
@@ -147,9 +189,16 @@ try {
     : `请进行最终交付验收。${common}本轮是有明确阶段顺序的隔离续作实验：第一轮只读取、实际运行verifier并如实报告本次最终交付结果，先不修改源码；正式应用合同并未豁免。收到RC反馈后的续作已授权实际修复并复验。第一轮只读是实验操作顺序，不得当作业务验收通过或删除正式合同。`;
   await save("request.md", request); await log("real business model task admission", { projectRoot, mode });
   const first = await host.send(keyId, request, 1200000); await save("first-terminal.json", first);
-  const observerDeadline = Date.now() + 1800000; let signature, finalState;
-  while (Date.now() < observerDeadline) {
+  const fallbackDeadline = Date.now() + 1800000; let signature, finalState, observedWindow, windowSignature;
+  while (true) {
     const state = await runtimeState(projectRoot);
+    observedWindow = stopObservationWindow({ records: state.records, sessionId, fallbackDeadline,
+      priorProductDeadline: observedWindow?.productDeadlineAt });
+    if (JSON.stringify(observedWindow) !== windowSignature) {
+      windowSignature = JSON.stringify(observedWindow);
+      await save("observer-deadline.json", { observedAt: Date.now(), ...observedWindow, productDeadlineModified: false });
+      await log("observer follows actual Stop deadline", observedWindow);
+    }
     const compact = { tasks: state.tasks.map(t => ({ taskId: t.taskId, status: t.status, verification: t.verification?.status, groundTruthVersion: t.groundTruth?.version, corrections: t.stop?.correctionAttempts })),
       stopRecords: state.records.filter(r => r.file.includes("/native-stop-reviews/")).map(r => ({ status: r.status, reviewStatus: r.reviewStatus, reasonCode: r.reasonCode })),
       receipts: state.records.filter(r => r.file.includes("/native-followups/")).map(r => ({ status: r.status, observed: Boolean(r.modelObservedAt), finished: Boolean(r.finishedAt), reviewStatus: r.reviewStatus })) };
@@ -160,9 +209,12 @@ try {
     if (finished && !active && receipts.every(r => !["RESERVED", "ADMITTED"].includes(r.status) || r.finishedAt)) { finalState = state; break; }
     if (!active && state.tasks.some(t => t.verification?.correctionBudgetExhausted)) throw new Error("Correction budget exhausted; do not change budget or business assertions");
     if (!active && state.records.some(r => r.file.includes("/native-stop-reviews/") && ["UNVERIFIED", "CANCELLED"].includes(r.reviewStatus)) && !receipts.some(r => ["RESERVED", "ADMITTED"].includes(r.status))) throw new Error("Stop ended without verification; inspect saved trace");
+    if (Date.now() >= observedWindow.deadlineAt) break;
     await pause(1500);
   }
-  assert(finalState, "Observer deadline reached; never infer PASS from business output");
+  assert(finalState, observedWindow?.productDeadlineAt
+    ? "Observer reached the recorded product Stop deadline plus 15-second persistence grace; never infer PASS from business output"
+    : "No valid own-session Stop deadline observed before finite fallback; never infer PASS from business output");
   await save("runtime-final.json", finalState);
   const accepted = await execute(python, [verifier, "--project", projectRoot], { cwd: projectRoot, timeout: 120000, maxBuffer: 1024 * 1024 });
   assert.equal(accepted.stderr, ""); assert.match(accepted.stdout, /KITCHEN_VERIFIED\s*$/u);
