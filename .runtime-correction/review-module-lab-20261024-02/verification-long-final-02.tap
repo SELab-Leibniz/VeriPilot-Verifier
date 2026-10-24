@@ -1,0 +1,105 @@
+✔ joining adjacent read ranges preserves gaps (0.9567ms)
+✔ a conclusive decision binds citations to the frozen bytes (20.674ms)
+✔ an unread exception prevents acceptance (9.5921ms)
+✔ citation to an unread range or outside file is rejected (12.8076ms)
+✔ source mutation invalidates a previously acceptable decision (11.9947ms)
+✔ no findings or a foreign task cannot silently become PASS (9.2168ms)
+✔ UNVERIFIED can preserve the infrastructure failure without false evidence (7.7431ms)
+✔ a missing basis list or target list cannot become PASS (5.3349ms)
+✔ both conclusive verdicts require every basis and a current target citation (18.707ms)
+✔ native byte truncation grants only complete actually disclosed lines (22.5758ms)
+✔ a native overlong first line grants no coverage (17.3692ms)
+✔ native line truncation grants no undisclosed remainder (17.6977ms)
+✔ a real native image result never becomes text line coverage (67.0438ms)
+✔ native BOM and CRLF pages require exact bytes and can join to full coverage (25.2375ms)
+✔ unknown pages, image notes, binary bytes and invalid offsets grant no coverage (0.3186ms)
+✔ a task without a concrete nonempty question is rejected (6.4452ms)
+✔ opaque citations are run-local and offsets cannot be altered (13.1798ms)
+✔ the model cannot submit fabricated paths, line numbers or quotations (5.5914ms)
+✔ BOM CRLF CJK and emoji excerpts preserve exact byte offsets (0.4117ms)
+✔ public projection excludes thinking, system and history retrieval results (29.5808ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-bQA6qr
+✔ long single-line UTF-8 history remains searchable with bounded byte pages (17.9496ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-2jsKmC
+✔ search index stays metadata-only and uses small result pages (212.3904ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-TyGKno
+✔ checkpoint saves only source reads with successful native receipts (18.7395ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-CBamnN
+✔ checkpoint loads reject changed input, foreign task and forged receipt (23.804ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-HBr4eB
+✔ failed source receipt and raw historical observations never count as source evidence (15.2267ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-6A1S1Y
+✔ history lookup rejects unknown ids and does not read arbitrary file paths (7.3637ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-EyWIbz
+✔ standalone reload checks receipts and tolerates only an interrupted final session record (19.3722ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-pcRZaC
+✔ read pages reject invalid byte limits instead of repeating a zero-length UTF-8 page (7.1845ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-9tAr8Q
+✔ after compaction state pages recover old cite metadata without new receipts (12.5805ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\memory-test-runs\run-cTve1E
+✔ a valid tool submission is durable before the native session is closed (183.1989ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-ljw1yn
+✔ missing submission stops after the finite attempt count and stays UNVERIFIED (113.0669ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-TDb83r
+✔ an endless native tool loop stops at the explicit turn safety bound (92.9847ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-eUCBCr
+✔ the native SDK preserves a submitted decision when post-save tool handling throws (92.7462ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-FEiOwp
+✔ a native truncated basis cannot be submitted as PASS or DEVIATION (116.3764ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-zBwEfx
+✔ a native overlong first line is never recorded as read (89.1113ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-rKxqp0
+✔ cancellation before the submission closes the task without a late decision (250.43ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-l60TDn
+✔ cancellation after atomic submission preserves the already saved decision (308.4227ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-aN171T
+✔ a post-save source change invalidates and removes the current decision artifact (277.2752ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-s66YRs
+✔ tools disclose the fixed copy while changed original source prevents submission (259.2048ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-KQ4qjz
+✔ native grep/find expose only captured files and absolute outside reads are rejected (594.1972ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-1Qo9Xg
+✔ native loader disables discovered resources and enables only the explicit memory extension (282.001ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-tafepJ
+✔ native Pi compaction recovers from an injected provider context overflow (352.9512ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-PqaFYd
+✔ independent source reads can share one native tool batch (269.0874ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-CIQdgC
+✔ submission mixed with a new basis read is rejected until a later assistant response (285.3218ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-Nctq8k
+✔ citation markers are visible in native content and excerpts preserve BOM CRLF CJK emoji bytes (429.0368ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-Nb7hfm
+✔ basis anchors come from the task rather than model-selected lines (372.4338ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-UhtMaa
+✔ an overlong diagnosis is saved completely and feedback only points to its file (301.5998ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-cG2sFi
+✔ grep bytes and all native tool bytes are counted separately from source reads (473.3362ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-DmW3Rx
+✔ the truncated read cite never includes undisclosed tail bytes (297.0083ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-KKTSBd
+✔ a read whose wrapper fails before native delivery cannot satisfy the mandatory basis (276.8488ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-A1U75u
+✔ policy uses the original window and reserves earlier compaction space (0.8321ms)
+✔ a directly seeded long stage compacts before the first main request and retrieves omitted old evidence (367.323ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-pEClKg
+✔ large model output capacity is not mistaken for the compaction reserve after a successful summary (343.0735ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-bIhqBL
+✔ a requested per-reply generation limit and the health guard share the model-clamped option (253.8744ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-cC8DfG
+✔ summary failure prevents the next main provider request and preserves a recoverable checkpoint (318.3092ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-dhp7kv
+✔ one oversized parallel batch is compacted or safely stopped before an unsafe main request (307.4964ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-yBtslt
+✔ history lookup and submission cannot share a decision batch (266.48ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-9J4S3H
+✔ CJK tool batches that appear small under chars/4 are stopped before another main provider call (262.1136ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\sdk-test-runs-long\run-Gvc5Wt
+✔ unknown usage after compaction never anchors the old provider prefix (0.6703ms)
+ℹ tests 59
+ℹ suites 0
+ℹ pass 59
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10309.4021

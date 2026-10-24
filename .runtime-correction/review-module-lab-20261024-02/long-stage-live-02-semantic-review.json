@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "long-stage-independent-semantic-review.v1",
+  "run": "long-stage-live-02",
+  "status": "PASS_CONTROLLED_LONG_STAGE",
+  "scope": "Independent source-semantic and byte-integrity review of one controlled long-context stage. Not full project acceptance.",
+  "reviewedAt": "2026-10-24T03:11:15.741Z",
+  "conclusion": "The real threshold summary completed before the first main review request; the reviewer recovered the compacted original historical condition byte-for-byte, read the complete canonical f1+79 common basis, checked current frozen source, and durably saved a semantically supported DEVIATION.",
+  "semantic": {
+    "verdict": "DEVIATION",
+    "supported": true,
+    "mechanism": "The home product-card renderer uses a colored Column and Text(item.icon), followed by name and price. It does not render the distinct Commodity.image field or an image-loading transition. The page-level commodity-fetch LoadingProgress is unrelated to an image-loading placeholder. Therefore both the required product image behavior and its loading placeholder are absent in the home card.",
+    "evidence": [
+      {
+        "path": "source/app-requirements.md",
+        "lines": [
+          64,
+          362
+        ],
+        "role": "Original image and placeholder obligations"
+      },
+      {
+        "path": "basis/f1-and-common-79.json",
+        "start": 1348,
+        "end": 1366,
+        "role": "Identical original f1 claim; 79 common conditions remain present"
+      },
+      {
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 257,
+        "end": 279,
+        "role": "Home card renders color block + emoji Text + name + price"
+      },
+      {
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 200,
+        "end": 208,
+        "role": "Entire-page data loading spinner, not per-image placeholder"
+      },
+      {
+        "path": "source/entry/src/main/ets/model/Commodity.ets",
+        "start": 4,
+        "end": 22,
+        "role": "image and icon are distinct; mock image is empty"
+      }
+    ],
+    "mockImageEntries": 10,
+    "allMockImageValuesEmpty": true,
+    "modelReasonScopeClarification": "The phrase no Image/onError/placeholder is valid for the home product card, not every project page: CommodityDetail.ets:209 does use Image(uri) for user photos.",
+    "commonConditionInterpretation": "Preserving and reading 79 common claims does not prove each claim passed. One source defect suffices for DEVIATION; original PROCESS/RUNTIME obligations and dependencyCompleteness=NOT_PROVEN are not converted to PASS."
+  },
+  "historyRecovery": {
+    "sourceId": "29d128f3:615:0:0",
+    "entryId": "14ee363c",
+    "offset": 0,
+    "returnedBytes": 3468,
+    "originalBytes": 3468,
+    "nextOffset": null,
+    "publicTextSha256": "4a61ef517d39b575f7f9e25a2e886d52ca0ef6046dede652fd54be9c1f31d60e",
+    "actualReadSha256": "4a61ef517d39b575f7f9e25a2e886d52ca0ef6046dede652fd54be9c1f31d60e",
+    "byteExact": true,
+    "nativeArchivedTextExact": true,
+    "fullOriginalPageReturned": true,
+    "metadataHashIndependentlyMatches": true,
+    "stageProvenanceHashMatches": true,
+    "keywordBytesAtSearchMatch": true,
+    "criticalEntryBeforeFirstKept": true,
+    "searchAndReadAfterCompaction": true,
+    "historicalCiteIdsEmpty": true
+  },
+  "inputIdentity": {
+    "inputFiles": 79,
+    "sourceManifestFiles": 67,
+    "allInputHashesMatchWorkspaceFrozenAndBaseline": true,
+    "fileFailures": [],
+    "workspaceAndFrozenFileSetsExact": true,
+    "manifestHashesMatch": true,
+    "manifestFailures": [],
+    "claims": 80,
+    "commonConditions": 79,
+    "originalFullGroundTruthClaims": 180,
+    "allSelectedClaimsIdenticalToFullGroundTruth": true,
+    "claimFailures": [],
+    "wholeBasisEqualsOriginalRequiredBasis": true,
+    "commonSetExactlyOriginalCategorySet": true,
+    "f1OriginalText": "首页商品列表展示商品卡片（图片、名称、价格）；图片加载时显示占位图。",
+    "dependencyCompleteness": "NOT_PROVEN",
+    "basisSha256": "d2225084832b727c13d5c048efa35936fccdd32cf1da0edc27957e67908298f6"
+  },
+  "citationVerification": {
+    "passed": true,
+    "originalBytesChecked": true,
+    "errors": [],
+    "citations": [
+      {
+        "category": "citations",
+        "citeId": "1acb270a-a0b1-40aa-b84b-a45dda89bff3",
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+      },
+      {
+        "category": "citations",
+        "citeId": "c4a3e34f-18bf-41a6-ba5b-d5fce9b16b57",
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 388,
+        "sha256": "98fd46f3f08e50510dfbe7b29283e98a6b42adbcc5c17f13769a884adc9163e5"
+      },
+      {
+        "category": "citations",
+        "citeId": "c43d15f7-8606-4e27-9fb3-a25be500de33",
+        "path": "source/entry/src/main/ets/model/Commodity.ets",
+        "start": 1,
+        "end": 141,
+        "sha256": "7fc4fe1d40dfd9db13a8950f3bbaadb7803013eb091e3fee97b081884c599c93"
+      }
+    ],
+    "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+  },
+  "mechanics": {
+    "trueThresholdCompactionBeforeFirstMainRequest": true,
+    "tokensBefore": 149738,
+    "thresholdTokens": 143360,
+    "estimatedTokensAfter": 21645,
+    "summaryRealUsageObserved": true,
+    "thresholdExceedsRealWindow": false,
+    "physicalWindowUnchanged": true,
+    "unsafeRequestsPrevented": 0,
+    "compactionFailures": 0,
+    "basisCoverage": [
+      {
+        "path": "basis/review-entry.md",
+        "start": 1,
+        "end": 8
+      },
+      {
+        "path": "basis/f1-and-common-79.json",
+        "start": 1,
+        "end": 1481
+      },
+      {
+        "path": "basis/f1-and-common-79.json",
+        "start": 1482,
+        "end": 1700
+      },
+      {
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 388
+      },
+      {
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410
+      },
+      {
+        "path": "source/entry/src/main/ets/model/Commodity.ets",
+        "start": 1,
+        "end": 141
+      }
+    ],
+    "decisionSavedBeforeClosure": true,
+    "completed": true,
+    "conclusive": true,
+    "verdict": "DEVIATION"
+  },
+  "usageAndTime": {
+    "model": "deepseek-v4-flash",
+    "physicalContextWindow": 204800,
+    "summary": {
+      "calls": 1,
+      "inputTokens": 80305,
+      "cacheReadTokens": 0,
+      "outputTokens": 6967,
+      "reasoningTokensIncludedInOutput": 4629,
+      "totalTokens": 87272,
+      "wallMs": 74347,
+      "startedAt": "2026-10-24T03:05:37.962Z",
+      "endedAt": "2026-10-24T03:06:52.309Z"
+    },
+    "mainReview": {
+      "completedResponses": 6,
+      "requestOptionsEvents": 7,
+      "inputTokensUncached": 120461,
+      "cacheReadTokens": 205824,
+      "inputTokensIncludingCache": 326285,
+      "outputTokens": 4672,
+      "reasoningTokensIncludedInOutput": 3792,
+      "totalTokens": 330957,
+      "wallToDurableDecisionMs": 56444,
+      "firstRequestAt": "2026-10-24T03:06:52.330Z",
+      "decisionSavedAt": "2026-10-24T03:07:48.774Z",
+      "actualPerRequestMaxTokens": [
+        8192
+      ],
+      "postSaveAbort": {
+        "at": "2026-10-24T03:07:48.784Z",
+        "zeroUsage": true,
+        "purpose": "The seventh request was aborted immediately after the durable decision was saved; it is not a failed review response."
+      }
+    },
+    "workerElapsedMs": 131113
+  },
+  "protection": {
+    "thisAuditReadOnlyInputs": "Only frozen lab artifacts and tracked repository files were read. No original project/session API, file or model call was invoked; the only write is this report outside the run directory.",
+    "originalProjectOrSessionAccessedByStage": false,
+    "originalProjectOrSessionWrittenByStage": false,
+    "runProtectionFlags": {
+      "repositoryUnchanged": true,
+      "capturedSourcesUnchanged": true,
+      "originalConfigurationUnchanged": true
+    },
+    "independentCurrentTrackedStateMatchesBeforeAndAfter": true,
+    "trackedState": {
+      "head": "20ec5b5abb31d38b1ad714ae95596b7baa4a3567",
+      "status": "",
+      "sha256": "0d726acf06c4e59447e7cf1f3f9cfa0dc2c3ef10886992ddd49fc8be96463933",
+      "files": 601
+    },
+    "hostConfigurationVerification": "The stage loader compared original config/cache bytes before and after; this audit did not reopen credentials. This is scoped hash evidence, not an OS-wide access audit.",
+    "runOriginalsSha256Before": "ec499cba50be87521beb63d9e4efcb8f6d4faf010975ceeb4f632a93c6adc9fb",
+    "runOriginalsSha256After": "ec499cba50be87521beb63d9e4efcb8f6d4faf010975ceeb4f632a93c6adc9fb",
+    "runOriginalsUnchanged": true
+  },
+  "limitations": [
+    "Controlled stage construction supplies the known historical sourceId and literal keyword. It does not test unprompted business retrieval or real end-to-end long-task behavior.",
+    "One native proactive-compaction cycle on 446 sanitized public observations from a real 805-record transcript, with zero synthetic historical provider usage. It is not a long-run stability rate.",
+    "The model saw all 80 selected claims and all original common conditions; it did not prove all 180 full-GT claims or the original four review metrics PASS.",
+    "Source implementation evidence only. No emulator, screenshot, full project run or runtime acceptance was performed.",
+    "Selected source cites span whole files; byte and disclosure integrity passed, while the narrower semantic support locations are recorded above.",
+    "Token estimates are health estimates, not an exact model tokenizer. Cumulative usage includes repeated/cached prefixes; it is not one context size or a currency cost.",
+    "Run01 remains a preserved failure: native summary succeeded but the guard misused compaction reserve as output reserve. Run02 passed after separating actual main output maxTokens=8192 from the 61440 proactive compaction reserve; the physical window and basis conditions were unchanged."
+  ]
+}

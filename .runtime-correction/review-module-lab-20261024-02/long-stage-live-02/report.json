@@ -1,0 +1,303 @@
+{
+  "status": "STAGE_CHECKS_PASSED_PENDING_SEMANTIC_REVIEW",
+  "mode": "LIVE_STAGE",
+  "physicalContextWindow": 204800,
+  "physicalWindowChanged": false,
+  "plannedReserveTokens": 61440,
+  "plannedThresholdTokens": 143360,
+  "targetHistoryTokens": 153600,
+  "estimatedHistoryTokens": 149738,
+  "estimator": "Pi estimateTokens on legal historical-observation message pairs; approximate, not actual provider tokenization",
+  "historyObservations": 446,
+  "historyBytes": 541079,
+  "nativeSerializedHistoryBytes": 345767,
+  "nativeSerializedHistoryTokenEstimate": 84095,
+  "nativeSerializationNote": "Official serializeConversation truncates historical tool bodies for summary; exact originals remain archived. This is a pre-cut upper estimate excluding summary prompt overhead.",
+  "historySourceRange": [
+    0,
+    804
+  ],
+  "historyTokensAfterCritical": 36012,
+  "criticalHistoricalSourceId": "29d128f3:615:0:0",
+  "criticalHistoricalTextSha256": "4a61ef517d39b575f7f9e25a2e886d52ca0ef6046dede652fd54be9c1f31d60e",
+  "canonicalFiles": 79,
+  "commonConditions": 79,
+  "originalF1Claims": 1,
+  "noFakeProviderUsage": true,
+  "E2ERun": false,
+  "originalProjectOrSessionAccessed": false,
+  "nativeSummaryCalls": null,
+  "expectedStageChecks": [
+    "Native threshold compact before first main-review request",
+    "Native summary persisted with usage",
+    "Critical entry compacted out, then actually retrieved from archive",
+    "All canonical basis/source verified afresh",
+    "Small valid f1 result and exact source citations"
+  ],
+  "limitations": "Stage-replayed public observations, not a naturally executed complete long app run. Preflight does not prove live summary, retrieval, model quality or universal overflow safety.",
+  "result": {
+    "taskId": "f1-implementation",
+    "scope": "SOURCE_IMPLEMENTATION",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "DEVIATION",
+    "reason": "f1 要求首页商品卡片展示图片且图片加载时显示占位图；Index.ets 卡片仅用 emoji 文本图标+名称+价格，无任何 Image/onError/占位逻辑，Commodity.image 字段全为空且未被使用，占位图行为未实现。",
+    "limits": {
+      "maxAttempts": 1,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "1acb270a-a0b1-40aa-b84b-a45dda89bff3",
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "byteStart": 0,
+        "byteEnd": 14999,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "c4a3e34f-18bf-41a6-ba5b-d5fce9b16b57",
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 388,
+        "sha256": "98fd46f3f08e50510dfbe7b29283e98a6b42adbcc5c17f13769a884adc9163e5",
+        "byteStart": 0,
+        "byteEnd": 13648,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "c43d15f7-8606-4e27-9fb3-a25be500de33",
+        "path": "source/entry/src/main/ets/model/Commodity.ets",
+        "start": 1,
+        "end": 141,
+        "sha256": "7fc4fe1d40dfd9db13a8950f3bbaadb7803013eb091e3fee97b081884c599c93",
+        "byteStart": 0,
+        "byteEnd": 3658,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "1acb270a-a0b1-40aa-b84b-a45dda89bff3",
+      "c4a3e34f-18bf-41a6-ba5b-d5fce9b16b57",
+      "c43d15f7-8606-4e27-9fb3-a25be500de33"
+    ],
+    "basis": [
+      {
+        "path": "basis/review-entry.md",
+        "start": 1,
+        "end": 8,
+        "sha256": "729e892a3bafd2342921b851fdc11506bd12f5c3c12927deeedc81c0f8d4b31f",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/review-entry.md"
+      },
+      {
+        "path": "basis/f1-and-common-79.json",
+        "start": 1,
+        "end": 1700,
+        "sha256": "d2225084832b727c13d5c048efa35936fccdd32cf1da0edc27957e67908298f6",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/f1-and-common-79.json"
+      },
+      {
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/source/app-requirements.md"
+      }
+    ],
+    "basisAnchors": [
+      {
+        "claimId": "f1",
+        "path": "basis/f1-and-common-79.json",
+        "start": 1348,
+        "end": 1366,
+        "sha256": "d2225084832b727c13d5c048efa35936fccdd32cf1da0edc27957e67908298f6",
+        "rangeKind": "range",
+        "byteStart": 46291,
+        "byteEnd": 46892,
+        "sha256Excerpt": "3ecf6067aea0e9a2a61b223c9b62c5948820998329d23c5aadd2d0ca32a288d1"
+      },
+      {
+        "claimId": "f1-source-requirement",
+        "path": "source/app-requirements.md",
+        "start": 64,
+        "end": 64,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "range",
+        "byteStart": 1766,
+        "byteEnd": 1863,
+        "sha256Excerpt": "08c7c1240b5de138b2e86f2c2e0fb318aaf93d6969ad86c62b952506111422aa"
+      },
+      {
+        "claimId": "f1-source-acceptance",
+        "path": "source/app-requirements.md",
+        "start": 362,
+        "end": 362,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "range",
+        "byteStart": 13682,
+        "byteEnd": 13718,
+        "sha256Excerpt": "7ad4284b33f26904b80edd68a91bb73aee90d18ffccac31b31afa6e73fa5a287"
+      }
+    ],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\long-stage-live-02\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 6,
+      "toolCalls": 13,
+      "readBytes": 93552,
+      "grepBytes": 4593,
+      "totalToolBytes": 104486,
+      "repeatedLines": 0,
+      "compactions": 1,
+      "compactionFailures": 0,
+      "inputTokens": 326285,
+      "outputTokens": 4672,
+      "contextChecks": 7,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 131113,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\long-stage-live-02\\review"
+  },
+  "citationVerification": {
+    "passed": true,
+    "taskId": "f1-implementation",
+    "scope": "SOURCE_IMPLEMENTATION",
+    "completed": true,
+    "conclusive": true,
+    "originalBytesChecked": true,
+    "errors": [],
+    "verified": [
+      {
+        "category": "basis",
+        "citeId": null,
+        "path": "basis/review-entry.md",
+        "start": 1,
+        "end": 8,
+        "sha256": "729e892a3bafd2342921b851fdc11506bd12f5c3c12927deeedc81c0f8d4b31f"
+      },
+      {
+        "category": "basis",
+        "citeId": null,
+        "path": "basis/f1-and-common-79.json",
+        "start": 1,
+        "end": 1700,
+        "sha256": "d2225084832b727c13d5c048efa35936fccdd32cf1da0edc27957e67908298f6"
+      },
+      {
+        "category": "basis",
+        "citeId": null,
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+      },
+      {
+        "category": "basisAnchors",
+        "citeId": null,
+        "path": "basis/f1-and-common-79.json",
+        "start": 1348,
+        "end": 1366,
+        "sha256": "d2225084832b727c13d5c048efa35936fccdd32cf1da0edc27957e67908298f6"
+      },
+      {
+        "category": "basisAnchors",
+        "citeId": null,
+        "path": "source/app-requirements.md",
+        "start": 64,
+        "end": 64,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+      },
+      {
+        "category": "basisAnchors",
+        "citeId": null,
+        "path": "source/app-requirements.md",
+        "start": 362,
+        "end": 362,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+      },
+      {
+        "category": "citations",
+        "citeId": "1acb270a-a0b1-40aa-b84b-a45dda89bff3",
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+      },
+      {
+        "category": "citations",
+        "citeId": "c4a3e34f-18bf-41a6-ba5b-d5fce9b16b57",
+        "path": "source/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 388,
+        "sha256": "98fd46f3f08e50510dfbe7b29283e98a6b42adbcc5c17f13769a884adc9163e5"
+      },
+      {
+        "category": "citations",
+        "citeId": "c43d15f7-8606-4e27-9fb3-a25be500de33",
+        "path": "source/entry/src/main/ets/model/Commodity.ets",
+        "start": 1,
+        "end": 141,
+        "sha256": "7fc4fe1d40dfd9db13a8950f3bbaadb7803013eb091e3fee97b081884c599c93"
+      }
+    ],
+    "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+  },
+  "stageVerification": {
+    "thresholdCompactionBeforeFirstMainRequest": true,
+    "actualNativeCompactions": 1,
+    "summaryUsage": [
+      {
+        "input": 80305,
+        "output": 6967,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 4629,
+        "totalTokens": 87272,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      }
+    ],
+    "nativeSummaryUsageObserved": true,
+    "tokensBefore": [
+      149738
+    ],
+    "criticalHistoryCompactedOut": true,
+    "historySearchObserved": true,
+    "historicalConditionRecoveredExactly": true,
+    "retrievedSourceId": "29d128f3:615:0:0",
+    "sourceCitationIntegrity": true,
+    "expectedVerdict": "DEVIATION",
+    "conclusiveSourceVerdict": true,
+    "semanticValidation": "PENDING_INDEPENDENT_SOURCE_REVIEW: compare to the pre-existing source oracle outside input.",
+    "passed": true
+  },
+  "originalRepositoryUnchanged": true,
+  "capturedSourcesUnchanged": true,
+  "originalConfigurationUnchanged": true,
+  "sourceStateBefore": {
+    "head": "20ec5b5abb31d38b1ad714ae95596b7baa4a3567",
+    "status": "",
+    "sha256": "0d726acf06c4e59447e7cf1f3f9cfa0dc2c3ef10886992ddd49fc8be96463933",
+    "files": 601
+  },
+  "sourceStateAfter": {
+    "head": "20ec5b5abb31d38b1ad714ae95596b7baa4a3567",
+    "status": "",
+    "sha256": "0d726acf06c4e59447e7cf1f3f9cfa0dc2c3ef10886992ddd49fc8be96463933",
+    "files": 601
+  },
+  "originalProjectOrSessionWritten": false,
+  "productionStopIntegrated": false
+}

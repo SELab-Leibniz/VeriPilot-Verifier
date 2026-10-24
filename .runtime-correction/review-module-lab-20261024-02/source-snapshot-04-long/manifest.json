@@ -1,0 +1,50 @@
+[
+  {
+    "name": "checks.mjs",
+    "sha256": "acfb14f5ed15ef91d8f4bab3a797384a969489ee08edf068d3dcba79f98362d8"
+  },
+  {
+    "name": "complex-neutral.mjs",
+    "sha256": "7229ee9d5543d215f203a6b069bc6c1ae447d2ab8420771977ac0f0f27f10046"
+  },
+  {
+    "name": "harness-common.mjs",
+    "sha256": "10f3159de901435e487c5509e59a23155170dd360287e5651ab5c29f88e702d5"
+  },
+  {
+    "name": "history-memory.mjs",
+    "sha256": "b45f9621e55f1f1cc100599062d1768997479369e0f36dcf70e24f43d53ffa11"
+  },
+  {
+    "name": "kitchen-matrix.mjs",
+    "sha256": "5147b5394adf51d165f0aec002aee2e5efc92f3ec485673abbf3172fcbb47f75"
+  },
+  {
+    "name": "long-stage.mjs",
+    "sha256": "1bd0a1259de41720d742f878a24fffba74a7ca17e04399bf1c67b7e908a7fd5e"
+  },
+  {
+    "name": "measure.mjs",
+    "sha256": "63a5acc19c62772b6740911bca17d949eb91d710da8297c15ea2fc3b90e6cd5f"
+  },
+  {
+    "name": "memory-checks.mjs",
+    "sha256": "adc5a6c5dd814ec9ce420dcf5f8058a71a4c87bc0d01e7724e523a18bb671db3"
+  },
+  {
+    "name": "review-task.mjs",
+    "sha256": "e9f9a60599af96c2d4bbd83977bacd38653ae90717c3958602c53a4de0803c63"
+  },
+  {
+    "name": "sdk-checks.mjs",
+    "sha256": "3a74391d251a471fde91f616426d0b417d3ab4c502e05a291a94e002abbf8989"
+  },
+  {
+    "name": "verify-cites.mjs",
+    "sha256": "ea0e50af450c1dfa1b75b5183717196acd9fadc32c5f3ae6b6c72eee5155ad5c"
+  },
+  {
+    "name": "verify-kitchen.py",
+    "sha256": "b6eb3783807ac3ca826c31561c8511c22743fa2337c3fba35e2fd33e8e5b0745"
+  }
+]

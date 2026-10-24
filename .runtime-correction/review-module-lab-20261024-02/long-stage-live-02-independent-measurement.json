@@ -1,0 +1,62 @@
+{
+  "status": "STRUCTURAL_AND_BYTE_CHECKS_PASSED",
+  "sourceSnapshot": "source-snapshot-05-long",
+  "workerFilesUnchangedSinceFreeze": true,
+  "history": {
+    "compactedOut": true,
+    "retrievedAfterCompaction": true,
+    "pageByteForByteMatchesArchive": true,
+    "pageBytes": 3468,
+    "publicTextSha256": "4a61ef517d39b575f7f9e25a2e886d52ca0ef6046dede652fd54be9c1f31d60e"
+  },
+  "checkpoint": {
+    "independentlyReloaded": true,
+    "reason": "review_closed",
+    "files": 79,
+    "reads": 6,
+    "cites": 6
+  },
+  "summary": {
+    "elapsedMs": 74347,
+    "input": 80305,
+    "output": 6967,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 4629,
+    "totalTokens": 87272,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0
+    }
+  },
+  "mainReview": {
+    "streamOptionBoundaryCalls": 7,
+    "successfulResponses": 6,
+    "closedAfterSaved": 1,
+    "requestOutputUpperBound": 8192,
+    "noncachedInputTokens": 120461,
+    "cacheReadTokens": 205824,
+    "inputTokens": 326285,
+    "outputTokens": 4672,
+    "peakObservedInputTokens": 66428,
+    "submitCount": 1,
+    "submitBytes": 441,
+    "feedbackBytes": 442
+  },
+  "workerElapsedMs": 131113,
+  "totalMeasuredTokens": 418229,
+  "protections": {
+    "repositoryUnchanged": true,
+    "capturedSourcesUnchanged": true,
+    "hostConfigurationUnchanged": true
+  },
+  "limitations": [
+    "Controlled direct stage with known retrieval sourceId/keyword; not complete end-to-end application execution",
+    "Stream options are observed before provider adapter, not final HTTP payload; 7 boundary calls include the final cancelled continuation, only 6 successful responses",
+    "Cumulative usage is not simultaneous context occupancy or currency",
+    "Semantic validation recorded separately"
+  ]
+}
