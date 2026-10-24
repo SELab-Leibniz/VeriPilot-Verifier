@@ -1,0 +1,1 @@
+{"metricId":"M03","name":"Test contract coverage","earliestPhase":"TEST_DESIGN","source":["acceptanceCriteria"],"scope":"METRIC_ARTIFACT_REVIEW"}

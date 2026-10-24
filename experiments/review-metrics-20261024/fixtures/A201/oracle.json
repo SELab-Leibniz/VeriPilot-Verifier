@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "Equivalent prose states deterministic success and atomic rejection. Missing implementation/runtime is irrelevant to requirement qualification.",
+  "scope": "METRIC_ARTIFACT_REVIEW"
+}

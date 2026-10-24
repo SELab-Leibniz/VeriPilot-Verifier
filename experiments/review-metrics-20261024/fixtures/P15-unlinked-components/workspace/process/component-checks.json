@@ -1,0 +1,110 @@
+{
+  "recordSource": "original-business-capture",
+  "syntheticFixture": true,
+  "taskId": "kitchen-current-task",
+  "sessionId": "kitchen-current-session",
+  "complete": true,
+  "implementation": {
+    "label": "current",
+    "path": "project/kitchen.py",
+    "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+  },
+  "entries": [
+    {
+      "type": "assistant",
+      "uuid": "component-can-input",
+      "message": {
+        "id": "component-can-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "component-can",
+            "name": "exec",
+            "input": {
+              "command": "python component_tests.py can-cook --store /fixture/a.json",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "component-can-result",
+      "message": {
+        "id": "component-can-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "component-can",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"{\\\"can_cook\\\":true,\\\"missing\\\":{}}\\n\",\n  \"stderr\": \"\",\n  \"testSetup\": {\n    \"recipe\": \"omelette\",\n    \"eggsBefore\": 5\n  },\n  \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "component-cook-input",
+      "message": {
+        "id": "component-cook-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "component-cook",
+            "name": "exec",
+            "input": {
+              "command": "python component_tests.py cook --store /fixture/b.json",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "component-cook-result",
+      "message": {
+        "id": "component-cook-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "component-cook",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"{\\\"cooked\\\":\\\"omelette\\\",\\\"eggsAfter\\\":3}\\n\",\n  \"stderr\": \"\",\n  \"testSetup\": {\n    \"recipe\": \"omelette\",\n    \"eggsBefore\": 5\n  },\n  \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "component-list-input",
+      "message": {
+        "id": "component-list-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "component-list",
+            "name": "exec",
+            "input": {
+              "command": "python component_tests.py list --store /fixture/c.json",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "component-list-result",
+      "message": {
+        "id": "component-list-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "component-list",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"{\\\"eggs\\\":3}\\n\",\n  \"stderr\": \"\",\n  \"testSetup\": {\n    \"eggsBefore\": 3\n  },\n  \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n}\n"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "The original Skill explicitly permits failure followed by repair and successful retry; final current-source success precedes completion.",
+  "scope": "PROCESS_COMPLIANCE"
+}

@@ -1,0 +1,2 @@
+# Authoritative relation
+R04 concerns successful cooking: check all ingredient quantities, deduct every recipe amount atomically, and persist the resulting pantry. The required relation connects this obligation to a planning entry and to an acceptance entry about saved consumption. Endpoints must resolve to matching current content. Equivalent labels are acceptable; no source-code or execution endpoint is required by this relation.

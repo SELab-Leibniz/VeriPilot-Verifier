@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "runtime-corrector.metric-v2-cross-audit.v1",
+  "reviewedAt": "2026-10-24T05:19:19.304Z",
+  "reviewer": "metric_artifact_lab",
+  "status": "NO_BLOCKING_ORACLE_ISSUES",
+  "proposalSha256": "c80bcf3d952e1592426117017d8cb2046103df8b52af2d59605cc5424b27ce48",
+  "extensionSha256": "91c83c8c4ebc091b2c06194062bc64aac266d0daec4505e35c729834216ed050",
+  "profiles": [
+    "M13",
+    "M14",
+    "M15"
+  ],
+  "cases": [
+    {
+      "caseId": "X13-other-task-store-proof",
+      "metricId": "M13",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "Matching source hash does not bind the other task, project or store to the assigned current run. There is no current-subject counterexample: UNVERIFIED.",
+      "issues": []
+    },
+    {
+      "caseId": "X13-observed-wrong-exit",
+      "metricId": "M13",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "The matching current invocation returns exit 0 and no explanatory stderr for an unknown recipe, contradicting the required nonzero/error behavior: DEVIATION.",
+      "issues": []
+    },
+    {
+      "caseId": "X14-approval-for-other-revision",
+      "metricId": "M14",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "Original approval belongs to another document digest; no current decision is captured: UNVERIFIED.",
+      "issues": []
+    },
+    {
+      "caseId": "X14-explicit-current-refusal",
+      "metricId": "M14",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "The required release-owner explicitly refuses the exact current document digest: concrete negative approval gate, DEVIATION without invented document defects.",
+      "issues": []
+    },
+    {
+      "caseId": "X15-final-observation-not-retained",
+      "metricId": "M15",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "The expected rejection is witnessed, but the required fresh-process final state result is not retained; current source plausibility cannot replace that explicit runtime observation: UNVERIFIED.",
+      "issues": []
+    },
+    {
+      "caseId": "X15-observed-partial-consumption",
+      "metricId": "M15",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true,
+      "decision": "The same current-source/resource journey rejects insufficient oil yet a fresh process observes rice=3 rather than5. The unsafe cook source saves partial prior deduction before raising: DEVIATION.",
+      "issues": []
+    }
+  ],
+  "checks": {
+    "toolResultsBoundAndParsed": 13,
+    "currentSourceHashesChecked": 4,
+    "oldFamilyOrExpectedLabelsChanged": false
+  },
+  "promptBoundary": "The v2 append prompts make current-subject counterexample distinct from unavailable closure proof. PASS still needs every required supported clause, actual applicable failures remain DEVIATION, and separate confirmed M08/M11 process violations are not erased.",
+  "notes": [
+    "The six new second-round cases contain U/D pairs; the nine retained M13/M14/M15 cases also contain PASS and must be rerun to detect overcorrection.",
+    "The three diagnosed old holdouts are now development regression cases; do not call their second run unseen validation.",
+    "An expected nonzero command exit can be a successful negative test, not a failed acceptance check. X15 preserves expected insufficient-stock rejection and distinguishes missing final observation from observed forbidden partial deduction.",
+    "X15 unsafe source uses reverse ingredient ordering to deduct rice before oil despite sorted persistent JSON; the save-before-raise path matches the synthetic final state.",
+    "Synthetic records test evidence interpretation, not actual runtime behavior or app acceptance.",
+    "No v2 model result was read before this data/profile review."
+  ],
+  "activity": {
+    "additionalModelCalls": 0,
+    "businessExecution": false,
+    "inputsModified": false,
+    "productionModified": false
+  }
+}

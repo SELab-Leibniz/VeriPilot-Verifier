@@ -1,0 +1,19 @@
+{
+  "id": "P10-propagated-parse",
+  "metricId": "M10",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "phase": "VERIFICATION",
+  "requirement": "Review exactly the assigned M10 current-task obligation using the complete basis and candidate evidence.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/evidence-protocol.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/storage.py"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

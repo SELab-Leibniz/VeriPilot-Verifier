@@ -1,0 +1,19 @@
+{
+  "id": "A703",
+  "metricId": "M07",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess the assigned R04-to-planning-and-acceptance relation. The remote endpoint is declared outside this capture; its absence here is not proof that it does not exist.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/trace.md",
+    "project/tasks.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

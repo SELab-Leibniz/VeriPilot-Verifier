@@ -1,0 +1,20 @@
+{
+  "id": "P09-missing-dependency",
+  "metricId": "M09",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "phase": "VERIFICATION",
+  "requirement": "Review exactly the assigned M09 current-task obligation using the complete basis and candidate evidence.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/evidence-protocol.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/quantity.py",
+    "project/README.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

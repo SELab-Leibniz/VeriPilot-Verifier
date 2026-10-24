@@ -1,0 +1,18 @@
+{
+  "id": "A402",
+  "metricId": "M04",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess qualification of the assigned can-cook test contract. project/test-contract.md contains the entire oracle.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/test-contract.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "The condition, observable success and independently observable persisted quantity are determinate; syntax or application execution is irrelevant to criterion quality.",
+  "scope": "METRIC_ARTIFACT_REVIEW"
+}

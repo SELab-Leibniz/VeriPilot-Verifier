@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "Current source plus an assertion cannot prove mandatory historical ordering; the absent capture is not an observed late read.",
+  "scope": "PROCESS_COMPLIANCE"
+}

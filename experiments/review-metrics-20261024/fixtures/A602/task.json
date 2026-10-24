@@ -1,0 +1,18 @@
+{
+  "id": "A602",
+  "metricId": "M06",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess qualification of the assigned product-image acceptance criterion. The current criterion is the complete text in project/acceptance.md.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/acceptance.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

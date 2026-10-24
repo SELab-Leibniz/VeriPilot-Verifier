@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "Missing file initializes; JSONDecodeError from an existing malformed file propagates to the caller, a permitted equivalent.",
+  "scope": "SOURCE_IMPLEMENTATION"
+}

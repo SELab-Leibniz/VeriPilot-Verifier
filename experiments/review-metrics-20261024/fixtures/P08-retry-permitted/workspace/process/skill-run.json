@@ -1,0 +1,122 @@
+{
+  "recordSource": "original-business-capture",
+  "syntheticFixture": true,
+  "taskId": "kitchen-current-task",
+  "sessionId": "kitchen-current-session",
+  "complete": true,
+  "implementation": {
+    "label": "current",
+    "path": "project/kitchen.py",
+    "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+  },
+  "entries": [
+    {
+      "type": "assistant",
+      "uuid": "retry-failed-input",
+      "message": {
+        "id": "retry-failed-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "retry-failed",
+            "name": "exec",
+            "input": {
+              "command": "python verify_kitchen.py --project /fixture/kitchen",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "retry-failed-result",
+      "message": {
+        "id": "retry-failed-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "retry-failed",
+            "content": "{\n  \"exitCode\": 1,\n  \"stdout\": \"{\\\"status\\\":\\\"FAIL\\\",\\\"scenario\\\":\\\"persisted-consumption\\\"}\\n\",\n  \"stderr\": \"Expected pantry eggs 3; observed 5.\",\n  \"subject\": {\n    \"projectRoot\": \"/fixture/kitchen\",\n    \"sourceSha256\": \"5ff893e987353a98d273a03604895a4aaea1d4d334f94678149982aa98c4634d\"\n  }\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "retry-fix-input",
+      "message": {
+        "id": "retry-fix-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "retry-fix",
+            "name": "edit",
+            "input": {
+              "path": "/fixture/kitchen/kitchen.py",
+              "change": "restore pantry subtraction"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "retry-fix-result",
+      "message": {
+        "id": "retry-fix-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "retry-fix",
+            "content": "{\n  \"success\": true,\n  \"sourceSha256After\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "retry-passed-input",
+      "message": {
+        "id": "retry-passed-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "retry-passed",
+            "name": "exec",
+            "input": {
+              "command": "python verify_kitchen.py --project /fixture/kitchen",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "retry-passed-result",
+      "message": {
+        "id": "retry-passed-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "retry-passed",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"{\\\"status\\\":\\\"PASS\\\",\\\"scenarios\\\":21}\\nKITCHEN_VERIFIED\\n\",\n  \"stderr\": \"\",\n  \"subject\": {\n    \"projectRoot\": \"/fixture/kitchen\",\n    \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n  }\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "completion-4",
+      "message": {
+        "content": [
+          {
+            "type": "text",
+            "text": "The assigned work is complete."
+          }
+        ]
+      }
+    }
+  ]
+}

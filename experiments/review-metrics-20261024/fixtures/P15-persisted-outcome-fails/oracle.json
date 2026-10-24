@@ -1,0 +1,5 @@
+{
+  "expected": "DEVIATION",
+  "mechanism": "The same connected journey reaches a wrong final persisted quantity; success labels on earlier steps cannot close the failing transition.",
+  "scope": "EXECUTION_CLOSURE"
+}

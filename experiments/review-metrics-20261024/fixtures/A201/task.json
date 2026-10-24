@@ -1,0 +1,18 @@
+{
+  "id": "A201",
+  "metricId": "M02",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess qualification of the cook requirement entry in project/decomposition.md against the frozen kitchen obligation. This task delivers documentation; no application source or run is needed.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/decomposition.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

@@ -1,0 +1,2 @@
+Assigned M08 Skill obligation S06, build-offline-kitchen invocation kitchen-current-task. Original Skill source: Before declaring completion, actually run the bundled verifier against this project, with the project as workdir. If it fails, fix the app and run it again. Deliver only after exit 0 and KITCHEN_VERIFIED. A claimed test does not substitute for the bundled verifier. This object concerns the verification action and completion gate, not complete app correctness.
+The frozen original Skill source is project/SKILL.md and sourceRef is its S06 paragraph.

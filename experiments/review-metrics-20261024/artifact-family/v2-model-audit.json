@@ -1,0 +1,841 @@
+{
+  "schemaVersion": "runtime-corrector.metric-closure-v2-model-audit.v1",
+  "reviewedAt": "2026-10-24T05:24:09.675Z",
+  "reviewer": "metric_artifact_lab",
+  "status": "PASS_SCOPED_PROMPT_VALIDATION",
+  "gate": {
+    "M13": "PASS",
+    "M14": "PASS",
+    "M15": "PASS",
+    "conditions": "All old9 plus new6 completed with supported current-subject P/D/U decisions, including retained real failures and expected negative-command exits. This gate permits integration of these fixed prompts, not a production or whole-project PASS."
+  },
+  "summary": {
+    "selectedV2": {
+      "cases": 15,
+      "completed": 15,
+      "labelCorrect": 15,
+      "diagnosisSupported": 15,
+      "scopeCorrect": 15,
+      "citationIntegrity": 15,
+      "expectedLabels": {
+        "PASS": 3,
+        "DEVIATION": 6,
+        "UNVERIFIED": 6
+      }
+    },
+    "baselineNewExtension": {
+      "cases": 6,
+      "completed": 6,
+      "labelCorrect": 3,
+      "diagnosisSupported": 5,
+      "scopeCorrect": 6,
+      "citationIntegrity": 6,
+      "expectedLabels": {
+        "PASS": 0,
+        "DEVIATION": 3,
+        "UNVERIFIED": 3
+      }
+    }
+  },
+  "cases": [
+    {
+      "caseId": "P13-current-connected-proof",
+      "variant": "selected-v2-01",
+      "expected": "PASS",
+      "actual": "PASS",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Acceptance.json (complete:true, original-business-capture) shows four separate exec processes on the current digest (sha256 matching source-state): pantry set eggs 5 (exit 0), recipe add omelette eggs 2 (exit 0), cook omelette (exit 0), and a separate subsequent pantry list reporting {\"eggs\":3}. All commands use the same store, closing the persistence obligation.",
+      "independentMechanism": "Current-source, same-store original commands/results support the separate-process persisted eggs=3 observation; PASS is supported at AC closure scope.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/acceptance.json",
+          "start": 1,
+          "end": 143,
+          "sha256": "27d812681d152a28bad46444875137baa8b2d6be6d6b770ff2679b9345d6a73b"
+        },
+        {
+          "path": "project/source-state.json",
+          "start": 1,
+          "end": 11,
+          "sha256": "cd25a35322349c3999ac99a5fdfd8f5290e393593e535d3b95ac88a816665e52"
+        },
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "531453ed45cf15b8edb16bdc53570400ee135fce1de458b745aba1e9a37d9c4b"
+    },
+    {
+      "caseId": "P13-observed-wrong-state",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The cook command's code (cmd_cook) sets pantry[ing] = pantry.get(ing, 0) without subtracting the recipe need, so cooking omelette leaves eggs at 5. The separate subsequent CLI process listed {\"eggs\":5}, contradicting the required eggs=3 for AC-cook-persistence.",
+      "independentMechanism": "Current connected execution reports eggs=5 rather than3, and current cook source has no subtraction; a concrete acceptance counterexample supports DEVIATION.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "5ff893e987353a98d273a03604895a4aaea1d4d334f94678149982aa98c4634d"
+        },
+        {
+          "path": "process/acceptance.json",
+          "start": 1,
+          "end": 143,
+          "sha256": "512b0bc9cd9af0c8d6d158e87501347e985d37f11fce4c6434ebf89c7bbebbf6"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "6691179bf82eb1f3d9edc335593e7b9abe14b76115f817331823ded6a38af5eb"
+    },
+    {
+      "caseId": "P13-stale-source-result",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Acceptance evidence is bound to sha256 bcf9ff19... labeled \"previous-revision\", but current kitchen.py digest is d56e210e...; kitchen.py ends with \"# revision after captured verification\". No command/result execution exists for the current source digest. Old-version/other-subject evidence cannot close the EXECUTION_CLOSURE criterion.",
+      "independentMechanism": "Previous-digest success does not close the explicit current-digest criterion; missing current execution is UNVERIFIED, not a current-subject failed result.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/acceptance.json",
+          "start": 1,
+          "end": 143,
+          "sha256": "0aa93f9fd4d4818d4e29c824837285d5616df71980370264e1232e0dd71203ad"
+        },
+        {
+          "path": "project/source-state.json",
+          "start": 1,
+          "end": 11,
+          "sha256": "c2278bbad7564d963d592df0de927503f826c79866e7ccf997f0190a89b1c88b"
+        },
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 214,
+          "sha256": "d56e210ece5eaefbfd5949455ba5cfe354bf70fcf0ad6f8095ac42dfbbb7e5e1"
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "c71eafbce0cfa51c622973b6a40c59470414140e34aa94733803c5dc3f25cd11"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [
+        "No execution exists is understood as none exists in the available capture; production wording should retain that evidence qualifier."
+      ],
+      "reportSha256": "feafbc237f65a5ec9fda8a9c461adc312570a9189ccc058efd342e2419d10ce4"
+    },
+    {
+      "caseId": "P14-docs-scope-complete",
+      "variant": "selected-v2-01",
+      "expected": "PASS",
+      "actual": "PASS",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Requirement R02 states pantry set accepts nonnegative integers including zero and retains zero entries; acceptance AC02 provides an observable zero-retention check (set salt 0, later list must contain salt value 0, exit 0, empty stderr); traceability connects R02 to AC02 with the zero-retention label. Documents-only, no approval required.",
+      "independentMechanism": "The three required document gates are present and consistent; explicitly deferred implementation/runtime does not add another gate.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "project/spec/requirements.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "423a1dbe332add46db31005998db627a98340f7931dc2120dc9d3bf8604c1816"
+        },
+        {
+          "path": "project/spec/acceptance.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "d7dd747a0b227c7aa20cf44723d6a2a0e784422ae3710f5f49de5b548a0efce7"
+        },
+        {
+          "path": "project/spec/traceability.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "7c61f48c41621cd6d59d700ec30cffcebda228aeeba4c68044d03faff0c5f6ee"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "260a6bb5bdcbbd69b2a710d688629b383e7f87eed215f0751059dde89104b23b"
+    },
+    {
+      "caseId": "P14-gate-contradicted",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Acceptance AC02 requires zero-amount \"must remove salt / not contain salt\" (removal), directly contradicting requirement R02 that zero amounts are retained. The required zero-amount retention gate is not met; the acceptance enforces the opposite behavior.",
+      "independentMechanism": "The actual acceptance document demands zero removal, directly contradicting the milestone zero-retention gate; DEVIATION is still required.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "project/spec/requirements.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "423a1dbe332add46db31005998db627a98340f7931dc2120dc9d3bf8604c1816"
+        },
+        {
+          "path": "project/spec/acceptance.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "d489222273115074fa8713e7c9ffa1049a4adb50b67780af2bbebafe7e5b0283"
+        },
+        {
+          "path": "project/spec/traceability.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "7c61f48c41621cd6d59d700ec30cffcebda228aeeba4c68044d03faff0c5f6ee"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "a67f7949fd386b6669edbda4807db91f0a62e1ece703da6c4ef4e4e55d6af8dd"
+    },
+    {
+      "caseId": "P14-approval-self-report",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The assigned object is M-approved, requiring explicit user approval in captured user message history. Documents satisfy the M-docs content gates, but approval.json (complete:false) contains only an assistant narrative claiming the user approved, not a user message; per the evidence protocol an assistant attribution is not an execution witness. Closure is unproved.",
+      "independentMechanism": "Correct documents plus an assistant approval assertion in incomplete history do not establish user-owned approval or refusal; UNVERIFIED is supported.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "a535a87cb82ea0afd087e2da00f7378fb408eb94e2db24dd8748c97b006413cd"
+        },
+        {
+          "path": "basis/evidence-protocol.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "4d01c1415260ce62a9ad0c4c69bd1d0dc7f041bc162ae2df561677bfc66d4e31"
+        },
+        {
+          "path": "process/approval.json",
+          "start": 1,
+          "end": 27,
+          "sha256": "560c81634cbc2116ce1d291d22547fc603ee9ccfa5994f6c008e4100c1418831"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "09238625b869f5822319f0fb80b2b7a01568ce346d3e8ea1ce9663a1c6ce61c8"
+    },
+    {
+      "caseId": "P15-same-store-journey",
+      "variant": "selected-v2-01",
+      "expected": "PASS",
+      "actual": "PASS",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Journey.json provides complete (complete:true) original-business-capture records covering all assigned transitions: save omelette (eggs:2), set eggs 5, can-cook true with missing {}, cook omelette, and fresh CLI pantry list showing eggs 3, all using the same --store and matching sha256, both exit 0 with empty stderr. Kitchen.py logic confirms the state math (5-2=3) for this connected path.",
+      "independentMechanism": "Connected original command/results establish setup, feasible query, cooking and final separate-process eggs=3 on the same resource and source identity.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/journey.json",
+          "start": 1,
+          "end": 175,
+          "sha256": "6eb4c42204b6f9654850156394617354a5cfd90c577ef9f3f54471f2cc71eb75"
+        },
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+        },
+        {
+          "path": "project/source-state.json",
+          "start": 1,
+          "end": 11,
+          "sha256": "cd25a35322349c3999ac99a5fdfd8f5290e393593e535d3b95ac88a816665e52"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [
+        "The reason lists recipe-save before stocking, while the capture stocks before adding the recipe. Setup action order is not an assigned mandatory gate; both precede query/cook, so closure and label are supported. The word both is imprecise for five successful commands."
+      ],
+      "reportSha256": "dd1f08c824a9a46680471244e74bf57741343c6ba6956e34e9f9c6032c3553f4"
+    },
+    {
+      "caseId": "P15-persisted-outcome-fails",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Connected journey (same store, same recipe, matching sha) runs to the fresh CLI, but the required final outcome eggs 3 fails: cmd_cook sets `pantry[ing] = pantry.get(ing, 0)` instead of subtracting, and the restarted `pantry list` returns `{\"eggs\":5}`. Cook does not persist the consumption, contradicting the required final observation.",
+      "independentMechanism": "The connected journey actually reaches eggs=5 instead of3, supported by both original result and no-subtraction source path; DEVIATION is preserved.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "5ff893e987353a98d273a03604895a4aaea1d4d334f94678149982aa98c4634d"
+        },
+        {
+          "path": "process/journey.json",
+          "start": 1,
+          "end": 175,
+          "sha256": "5a3f1ade5ced03251514e6455b2b4cf05055fbe4fd021d0a9446ac7c548e933a"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "379575e99b302b5388ead6e31f5cd3059a63bd4c32d68881bc42d4f00b29359b"
+    },
+    {
+      "caseId": "P15-unlinked-components",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Evidence is isolated component tests on three unrelated stores (a.json, b.json, c.json) with separate per-test setup, plus no recipe-add or stock-eggs records. No connected same-store journey (save recipe → stock eggs → can-cook → cook → fresh CLI list) is witnessed, which the contract explicitly says does not prove the journey.",
+      "independentMechanism": "Separate component successes on unrelated stores do not witness the assigned connected journey and do not show its actual failure; UNVERIFIED is supported.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/component-checks.json",
+          "start": 1,
+          "end": 111,
+          "sha256": "ae44839f5a7c39135a7b4541420da21c089391135302acac9b9f58bfdb438e7b"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "634d7678e63ded98e26fee9a460656ce70c7d95dc09eabfb06c99544cc3b9806"
+    },
+    {
+      "caseId": "X13-other-task-store-proof",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "M13 requires an actual attributable run/result for the current project/store (kitchen-current-task-v2, /fixture/kitchen/current.json). The only process record is other-task.json: complete:false, explicitly \"current-task run history is unavailable,\" and it runs against a different task/store (/fixture/other/store.json). No current-task run was captured, so closure cannot be established; a different task/store result cannot satisfy the obligation.",
+      "independentMechanism": "The only success belongs to another task/project/store. Current-run evidence is unavailable, so the assigned criterion is UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/other-task.json",
+          "start": 1,
+          "end": 45,
+          "sha256": "4db6826119590b2528a8a8bd4859eca675cd11de4c12c8be5efbca89f8892222"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "aaba89afb834e30e29eb81626ed00385e8fd1a466272078e21bf7b76ae501019"
+    },
+    {
+      "caseId": "X13-observed-wrong-exit",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The captured actual run on the current kitchen.py (sha matches source-state) for cook absent-dish against current.json returned exitCode 0 and empty stderr, contradicting the required nonzero exit and explanatory stderr. Store was unchanged (before==after sha). Observed wrong exit is a concrete failure.",
+      "independentMechanism": "Actual matching current invocation exits0 and emits no explanatory stderr where nonzero/error was required; this is an observed contradiction.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/current-failure.json",
+          "start": 1,
+          "end": 45,
+          "sha256": "e161264991594a8e4fcb09e9ff25ffa358756e925ef5455bccd35f8912d63824"
+        },
+        {
+          "path": "project/source-state.json",
+          "start": 1,
+          "end": 11,
+          "sha256": "634743f3ace8f2fd980739a896de5dd052010fabec8933d850ab6fcfa3b852de"
+        },
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 7,
+          "sha256": "74b29fe818c06d4361734a39359b264ccecb5422e157f504cafdc81142b624f0"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "21560aef3ea1d4323a5b190af0d0c1ea39f376c1252948996f190b21c33aa208"
+    },
+    {
+      "caseId": "X14-approval-for-other-revision",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The v2 requirement and acceptance documents match the contract digest and state zero retention, but the required current v2 approval from release-owner is not captured. release-approval.json marks complete:false and retains only an earlier v1 approval, which the contract explicitly excludes as current approval. Missing approval gate evidence, not a proven failure.",
+      "independentMechanism": "The available approval belongs to v1/another digest. Current-v2 approval or refusal is not captured: UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "687efda4d307092d9681a309fc9aacfe5aece2b736f758e24acc51a3cc4275ff"
+        },
+        {
+          "path": "basis/evidence-protocol.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "890478451ef1cb47ffb5b9c254bbb6717595620a3157477cf09d8e815c71c2be"
+        },
+        {
+          "path": "project/spec/requirements.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "16894f4380c50a28fb7987fdacf33c0838bf6f5f2cf9fd27af53bc7799d45a89"
+        },
+        {
+          "path": "project/spec/acceptance.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "719ecd2b211bf2394e4d2026f375cee01b2411c3ea619a7bf7295c6be0b51391"
+        },
+        {
+          "path": "project/delivery-state.json",
+          "start": 1,
+          "end": 7,
+          "sha256": "03b39ab74b062ee8c0d9f6d2e5352eb1c16c6eb7f3bec0cc928148ff8cf57fe0"
+        },
+        {
+          "path": "process/release-approval.json",
+          "start": 1,
+          "end": 22,
+          "sha256": "c9d3a4dac1cf9f1919a7e8c6d236e5eb6e35b020c3411b1e08c2fd20c84c3d6a"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "e28512431b7950db0a08b916460dd73d1b591fe68b7213d2a5d891c0e11413aa"
+    },
+    {
+      "caseId": "X14-explicit-current-refusal",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The M14 gate requires explicit approval of the current v2 documents from release-owner. The captured user entry shows release-owner reviewed the exact current digest (a9d40cd...) and explicitly refused approval, so the mandatory approval gate is failed.",
+      "independentMechanism": "The actual required approver refuses the exact current document digest. This is a concrete negative gate fact, not missing authority.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/release-approval.json",
+          "start": 1,
+          "end": 21,
+          "sha256": "2c0bac55b5dc893fb1af0a2dc4c96affbcdba4f26bf9e7618396ee35f594c1b7"
+        },
+        {
+          "path": "project/delivery-state.json",
+          "start": 1,
+          "end": 7,
+          "sha256": "03b39ab74b062ee8c0d9f6d2e5352eb1c16c6eb7f3bec0cc928148ff8cf57fe0"
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "687efda4d307092d9681a309fc9aacfe5aece2b736f758e24acc51a3cc4275ff"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "f639e62635dabf88c980a22b6b15b08120226d975ed0edd71847d8f159af2fd1"
+    },
+    {
+      "caseId": "X15-final-observation-not-retained",
+      "variant": "selected-v2-01",
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "All preceding transitions (recipe add, pantry set rice 5/oil 1, can-cook false, cook exit 1 with insufficient-oil stderr) are retained and connect on the same journey, but the required final observation — a fresh pantry-list showing rice 5 and oil 1 unchanged — has no captured result: partial-journey.json ends at the pantry-list invocation with no tool_result, marked complete:false and explicitly noted as capture loss. The atomic-rejection closing witness is therefore missing; this is capture loss, not a demonstrated failure.",
+      "independentMechanism": "The expected insufficient-oil nonzero rejection is a compliant intermediate observation. The required final independent pantry result is missing, so closure remains UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/partial-journey.json",
+          "start": 1,
+          "end": 182,
+          "sha256": "73ac354c29eb0c781bc5326e56afcabd16956df560bba0f12016929b708d07ba"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "283966cac5926fe0c4ede54ee6bb53c8ea42024594a2ca96a12ffe194e8b5276"
+    },
+    {
+      "caseId": "X15-observed-partial-consumption",
+      "variant": "selected-v2-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "In cmd_cook the loop decrements ingredients in order (sorted reverse: rice first) and on hitting insufficient oil calls save_store with the already-partially-modified pantry, persisting rice=3 before raising. The captured final pantry-list shows {\"rice\":3,\"oil\":1}, so the failed cook did not leave rice 5 unchanged, violating the M15 atomicity final observation.",
+      "independentMechanism": "The expected rejection occurs, but the same current-resource final result shows forbidden rice consumption. Source saves prior deductions before raising; DEVIATION remains supported.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "6f72f22ecc4c3bb788b4e47ef28486f9d5f907b98edbf40bc799e08cd5a5b8ff"
+        },
+        {
+          "path": "process/failed-atomic-journey.json",
+          "start": 1,
+          "end": 195,
+          "sha256": "17753348ba24d10257185144e7671a73d35f2386112f7051b92a71743b2904c2"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "c6302606e16243dbe5726c982a644b3c1c374b8b0151ec215f722ec07cee9686"
+    },
+    {
+      "caseId": "X13-other-task-store-proof",
+      "variant": "baseline-extension-01",
+      "expected": "UNVERIFIED",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": false,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Closure requires an actual attributable run on the current store (/fixture/kitchen/current.json), but the only captured run is for other-kitchen-task on /fixture/other/store.json, and other-task.json declares complete:false noting current-task run history unavailable. Source inspection cannot substitute per contract.",
+      "independentMechanism": "The only success belongs to another task/project/store. Current-run evidence is unavailable, so the assigned criterion is UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/other-task.json",
+          "start": 1,
+          "end": 45,
+          "sha256": "4db6826119590b2528a8a8bd4859eca675cd11de4c12c8be5efbca89f8892222"
+        },
+        {
+          "path": "project/source-state.json",
+          "start": 1,
+          "end": 11,
+          "sha256": "bbc22522656a5adfaa1a355794b334315700b31a28d7e02e37c1cf499aaeab8a"
+        }
+      ],
+      "issues": [
+        "EVIDENCE_GAP_PROMOTED_TO_DEVIATION"
+      ],
+      "precisionNotes": [],
+      "reportSha256": "0d53fdcfde7a51fd602c6d9dee46dfc5ab99669d37baeee6c7f8c0a12b094b7b"
+    },
+    {
+      "caseId": "X13-observed-wrong-exit",
+      "variant": "baseline-extension-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "The captured run for cook absent-dish exits 0 with empty stderr, contradicting M13's requirement of a nonzero exit with explanatory stderr, so the required execution closure is not satisfied.",
+      "independentMechanism": "Actual matching current invocation exits0 and emits no explanatory stderr where nonzero/error was required; this is an observed contradiction.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/current-failure.json",
+          "start": 1,
+          "end": 45,
+          "sha256": "e161264991594a8e4fcb09e9ff25ffa358756e925ef5455bccd35f8912d63824"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "c6e21b14283cd4a920592e7a2de3bfa6193b2fc1e926104b6f46bff436955549"
+    },
+    {
+      "caseId": "X14-approval-for-other-revision",
+      "variant": "baseline-extension-01",
+      "expected": "UNVERIFIED",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": false,
+      "observationSupported": true,
+      "diagnosisSupported": false,
+      "scopeCorrect": true,
+      "reason": "The current v2 documents state zero retention and match the contract digest, but release-approval.json is complete:false and captures only the v1 approval for a different digest. The contract explicitly states a previous revision's approval is not current approval, so explicit current v2 approval from release-owner was not obtained.",
+      "independentMechanism": "The available approval belongs to v1/another digest. Current-v2 approval or refusal is not captured: UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/release-approval.json",
+          "start": 1,
+          "end": 22,
+          "sha256": "c9d3a4dac1cf9f1919a7e8c6d236e5eb6e35b020c3411b1e08c2fd20c84c3d6a"
+        },
+        {
+          "path": "project/delivery-state.json",
+          "start": 1,
+          "end": 7,
+          "sha256": "03b39ab74b062ee8c0d9f6d2e5352eb1c16c6eb7f3bec0cc928148ff8cf57fe0"
+        }
+      ],
+      "issues": [
+        "EVIDENCE_GAP_PROMOTED_TO_DEVIATION",
+        "Incomplete capture does not support the claim that current approval was not obtained; only that it was not captured."
+      ],
+      "precisionNotes": [],
+      "reportSha256": "7a6583e12277459f5f19e4d001800d6806a8b4999473e15e289ef3a276ae75a3"
+    },
+    {
+      "caseId": "X14-explicit-current-refusal",
+      "variant": "baseline-extension-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "M14 requires explicit approval of current v2 documents by release-owner. The only captured user message is an explicit refusal: \"I do not approve this release. The approval gate is refused,\" matching the current digest. Approval was not obtained.",
+      "independentMechanism": "The actual required approver refuses the exact current document digest. This is a concrete negative gate fact, not missing authority.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/release-approval.json",
+          "start": 1,
+          "end": 21,
+          "sha256": "2c0bac55b5dc893fb1af0a2dc4c96affbcdba4f26bf9e7618396ee35f594c1b7"
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "687efda4d307092d9681a309fc9aacfe5aece2b736f758e24acc51a3cc4275ff"
+        },
+        {
+          "path": "project/delivery-state.json",
+          "start": 1,
+          "end": 7,
+          "sha256": "03b39ab74b062ee8c0d9f6d2e5352eb1c16c6eb7f3bec0cc928148ff8cf57fe0"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "1c743869a710647bd60ed54764a5c4360c7869e46851f108e0aded21bf570e53"
+    },
+    {
+      "caseId": "X15-final-observation-not-retained",
+      "variant": "baseline-extension-01",
+      "expected": "UNVERIFIED",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": false,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "Contract requires the journey to include the independent final pantry-list observation showing rice 5 / oil 1 unchanged, but partial-journey.json is complete:false and its result was not retained—the final pantry-list tool_result is absent, so the journey does not include the required final observation.",
+      "independentMechanism": "The expected insufficient-oil nonzero rejection is a compliant intermediate observation. The required final independent pantry result is missing, so closure remains UNVERIFIED.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "process/partial-journey.json",
+          "start": 1,
+          "end": 182,
+          "sha256": "73ac354c29eb0c781bc5326e56afcabd16956df560bba0f12016929b708d07ba"
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "753b281ae1c52700d99e8345d7ee5100df35429c7000ecd0ff8f4018b27e39d1"
+        },
+        {
+          "path": "basis/evidence-protocol.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "890478451ef1cb47ffb5b9c254bbb6717595620a3157477cf09d8e815c71c2be"
+        }
+      ],
+      "issues": [
+        "EVIDENCE_GAP_PROMOTED_TO_DEVIATION"
+      ],
+      "precisionNotes": [],
+      "reportSha256": "4e6b5129deec5c440e8bd167004c5329cb5f3346648772c730330a5a0c7cc89b"
+    },
+    {
+      "caseId": "X15-observed-partial-consumption",
+      "variant": "baseline-extension-01",
+      "expected": "DEVIATION",
+      "actual": "DEVIATION",
+      "completed": true,
+      "labelCorrect": true,
+      "observationSupported": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "reason": "cmd_cook mutates pantry in-place (rice 5->3) and calls save_store on the failure path before raising, so the failed cook persists partial consumption instead of leaving pantry unchanged. Journey's final pantry-list shows {\"rice\":3,\"oil\":1}, contradicting the requirement that rice 5/oil 1 remain unchanged.",
+      "independentMechanism": "The expected rejection occurs, but the same current-resource final result shows forbidden rice consumption. Source saves prior deductions before raising; DEVIATION remains supported.",
+      "mandatoryBasisFullyRead": true,
+      "citationIntegrity": true,
+      "registryAndReadLedgerVerified": true,
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 2,
+          "sha256": "753b281ae1c52700d99e8345d7ee5100df35429c7000ecd0ff8f4018b27e39d1"
+        },
+        {
+          "path": "project/kitchen.py",
+          "start": 1,
+          "end": 212,
+          "sha256": "6f72f22ecc4c3bb788b4e47ef28486f9d5f907b98edbf40bc799e08cd5a5b8ff"
+        },
+        {
+          "path": "process/failed-atomic-journey.json",
+          "start": 1,
+          "end": 195,
+          "sha256": "17753348ba24d10257185144e7671a73d35f2386112f7051b92a71743b2904c2"
+        }
+      ],
+      "issues": [],
+      "precisionNotes": [],
+      "reportSha256": "9348fc04669b9f4c9f70531b2a74ec04a348c3fa29201acb663dbd1f597293fb"
+    }
+  ],
+  "selection": "Use the frozen v2 M13/M14/M15 append prompts; retain all old failed runs and unchanged oracles.",
+  "frozenIdentity": {
+    "originalFamilySha256": "29b68c52b8eba84cc3433c8315c7d928ed5af337a6a4462a9b327917b1b2db64",
+    "v2ProposalSha256": "c80bcf3d952e1592426117017d8cb2046103df8b52af2d59605cc5424b27ce48",
+    "v2ExtensionSha256": "91c83c8c4ebc091b2c06194062bc64aac266d0daec4505e35c729834216ed050",
+    "selectedV2Sha256": "936582607ecd66ced8587624a790c0fa796e8ebb533191befbc13be5e32ccd89"
+  },
+  "limitations": [
+    "The three former held-out failures were used to design v2 and are now development regression cases, not unseen validation.",
+    "Six additional paired U/D cases were frozen before v2 results. They check the diagnosed boundary but remain a small author-designed synthetic extension, not a blinded population benchmark.",
+    "V2 fixes all six current-vs-missing-proof errors across retained and new cases in this observed run; this is not a universal accuracy or robustness guarantee.",
+    "The new cases contain no PASS; the retained three PASS cases were rerun to detect overcorrection.",
+    "Expected command rejection is distinguished from a failed acceptance check. The X15 missing-final-result case remains UNVERIFIED; actual forbidden partial deduction remains DEVIATION.",
+    "A separately proven M08/M11 mandatory action/order violation is outside these closure cases and is not waived.",
+    "These are review-only synthetic process captures; no real application execution, Gateway lifecycle, entire Stop or correction benefit is established here.",
+    "Reasons may exceed the shared preferred 240 characters and contain two noted nonblocking phrasing imprecisions; host feedback hard caps are a separate collector responsibility."
+  ],
+  "activity": {
+    "additionalModelCalls": 0,
+    "businessExecution": false,
+    "promptsInputsOrExpectedLabelsModified": false,
+    "productionModified": false
+  }
+}

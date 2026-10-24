@@ -1,0 +1,58 @@
+{
+  "recordSource": "original-business-capture",
+  "syntheticFixture": true,
+  "taskId": "kitchen-current-task",
+  "sessionId": "kitchen-current-session",
+  "complete": true,
+  "implementation": {
+    "label": "current",
+    "path": "project/kitchen.py",
+    "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+  },
+  "entries": [
+    {
+      "type": "assistant",
+      "uuid": "verify-pass-input",
+      "message": {
+        "id": "verify-pass-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "verify-pass",
+            "name": "exec",
+            "input": {
+              "command": "python verify_kitchen.py --project /fixture/kitchen",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "verify-pass-result",
+      "message": {
+        "id": "verify-pass-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "verify-pass",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"{\\\"status\\\":\\\"PASS\\\",\\\"scenarios\\\":21}\\nKITCHEN_VERIFIED\\n\",\n  \"stderr\": \"\",\n  \"subject\": {\n    \"projectRoot\": \"/fixture/kitchen\",\n    \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n  }\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "completion-1",
+      "message": {
+        "content": [
+          {
+            "type": "text",
+            "text": "The assigned work is complete."
+          }
+        ]
+      }
+    }
+  ]
+}

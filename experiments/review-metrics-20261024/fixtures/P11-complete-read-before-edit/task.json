@@ -1,0 +1,20 @@
+{
+  "id": "P11-complete-read-before-edit",
+  "metricId": "M11",
+  "scope": "PROCESS_COMPLIANCE",
+  "phase": "VERIFICATION",
+  "requirement": "Review exactly the assigned M11 current-task obligation using the complete basis and candidate evidence.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/evidence-protocol.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/kitchen.py",
+    "process/workflow.json"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

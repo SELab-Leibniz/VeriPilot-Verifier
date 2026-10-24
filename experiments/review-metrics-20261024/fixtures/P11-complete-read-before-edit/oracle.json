@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "Successful complete equivalent exec read precedes write invocation; requiring a specific read tool would over-strengthen the original gate.",
+  "scope": "PROCESS_COMPLIANCE"
+}

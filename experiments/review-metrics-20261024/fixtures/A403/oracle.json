@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "The test body and necessary oracle are not available; their qualification cannot be inferred from a named index entry.",
+  "scope": "METRIC_ARTIFACT_REVIEW"
+}

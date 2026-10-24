@@ -1,0 +1,18 @@
+{
+  "id": "A601",
+  "metricId": "M06",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess qualification of the assigned persisted-consumption acceptance criterion in project/acceptance.md. No test implementation or run evidence is required for this metric.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/acceptance.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

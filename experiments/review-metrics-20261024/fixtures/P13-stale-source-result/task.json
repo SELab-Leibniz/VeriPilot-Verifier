@@ -1,0 +1,21 @@
+{
+  "id": "P13-stale-source-result",
+  "metricId": "M13",
+  "scope": "EXECUTION_CLOSURE",
+  "phase": "VERIFICATION",
+  "requirement": "Review exactly the assigned M13 current-task obligation using the complete basis and candidate evidence.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/evidence-protocol.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/kitchen.py",
+    "project/source-state.json",
+    "process/acceptance.json"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

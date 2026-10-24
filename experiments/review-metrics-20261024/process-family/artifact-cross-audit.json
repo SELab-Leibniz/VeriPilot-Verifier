@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "metric-family-independent-oracle-audit.v1",
+  "reviewer": "metric_process_lab",
+  "reviewedAt": "2026-10-24T05:04:10.771Z",
+  "subject": "artifact-family/family.json",
+  "sha256": "328f5fb8e1850ab99658d733c0482cdb14a8908afbd7fda90f1357a785788fd1",
+  "activity": {
+    "modelResultsRead": false,
+    "modelCalls": 0,
+    "businessExecution": false,
+    "subjectModified": false
+  },
+  "cases": [
+    {
+      "id": "A201",
+      "metricId": "M02",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A202",
+      "metricId": "M02",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Positive fractions definitely violate the integer obligation. Whether natural-language numbers includes JSON booleans is ambiguous, so Boolean acceptance is not a required diagnosis for correctness."
+    },
+    {
+      "id": "A203",
+      "metricId": "M02",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A301",
+      "metricId": "M03",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A302",
+      "metricId": "M03",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A303",
+      "metricId": "M03",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A401",
+      "metricId": "M04",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A402",
+      "metricId": "M04",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A403",
+      "metricId": "M04",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A601",
+      "metricId": "M06",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A602",
+      "metricId": "M06",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A603",
+      "metricId": "M06",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A701",
+      "metricId": "M07",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A702",
+      "metricId": "M07",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    },
+    {
+      "id": "A703",
+      "metricId": "M07",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "scopeSupported": true,
+      "basisCandidateSeparated": true,
+      "comment": "Complete available contradiction vs missing unavailable body is distinguished correctly."
+    }
+  ],
+  "summary": {
+    "cases": 15,
+    "labels": {
+      "PASS": 5,
+      "DEVIATION": 5,
+      "UNVERIFIED": 5
+    },
+    "oracleSupported": 15,
+    "scopeSupported": 15
+  },
+  "issues": [],
+  "observations": [
+    "A202 expected label is firmly supported by fractional numbers; do not score a failure merely because a diagnosis does not assert Boolean acceptance.",
+    "This is independent semantic inspection of small authored fixtures, not a blinded statistical study."
+  ]
+}

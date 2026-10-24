@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "Document gates hold but no original user approval is captured. Assistant attribution is not user authority; incomplete history is not proof of rejection.",
+  "scope": "EXECUTION_CLOSURE"
+}

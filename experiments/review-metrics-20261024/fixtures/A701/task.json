@@ -1,0 +1,20 @@
+{
+  "id": "A701",
+  "metricId": "M07",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess the assigned R04-to-artifact relation represented in project/trace.md. Only the listed planning and acceptance endpoints are required by this relation.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/trace.md",
+    "project/tasks.md",
+    "project/acceptance.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

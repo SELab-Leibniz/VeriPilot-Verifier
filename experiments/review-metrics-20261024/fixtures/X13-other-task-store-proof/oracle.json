@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "The source digest matches, but the only actual result belongs to another task/project/store. There is no current-store run witness or contrary current observation.",
+  "scope": "EXECUTION_CLOSURE"
+}

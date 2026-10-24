@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "Implementation code and an archive pointer cannot prove what the inaccessible formal test plan covers.",
+  "scope": "METRIC_ARTIFACT_REVIEW"
+}

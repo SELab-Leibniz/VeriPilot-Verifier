@@ -1,0 +1,5 @@
+{
+  "expected": "PASS",
+  "mechanism": "Exact int type plus positive range implements all assigned source cases without a runtime demand.",
+  "scope": "SOURCE_IMPLEMENTATION"
+}

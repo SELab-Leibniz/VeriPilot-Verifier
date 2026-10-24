@@ -1,0 +1,18 @@
+{
+  "id": "A302",
+  "metricId": "M03",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "phase": "VERIFICATION",
+  "requirement": "Assess test-contract coverage of the assigned failed-cook acceptance obligation. project/test-contracts.md is the complete set of candidate checks for it.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/test-contracts.md"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

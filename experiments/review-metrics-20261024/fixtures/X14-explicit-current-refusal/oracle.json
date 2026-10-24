@@ -1,0 +1,5 @@
+{
+  "expected": "DEVIATION",
+  "mechanism": "The required actual approver explicitly refuses the exact current release, a concrete negative gate fact. This differs from a missing or old approval and does not license invented code defects.",
+  "scope": "EXECUTION_CLOSURE"
+}

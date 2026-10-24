@@ -1,0 +1,1208 @@
+{
+  "schemaVersion": "runtime-corrector.metric-prompt-independent-model-audit.v1",
+  "reviewedAt": "2026-10-24T05:08:18.512Z",
+  "reviewer": "metric_process_lab",
+  "family": "artifact",
+  "status": "COMPLETE",
+  "familySha256": "328f5fb8e1850ab99658d733c0482cdb14a8908afbd7fda90f1357a785788fd1",
+  "activity": {
+    "modelApiCalls": 0,
+    "businessExecution": false,
+    "productionEdits": false,
+    "fixtureOrPromptEdits": false,
+    "holdoutModelResultsRead": false
+  },
+  "cases": [
+    {
+      "caseId": "A201",
+      "metricId": "M02",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The candidate states unambiguous observable success behavior (subtract all required quantities, persist, return {\"cooked\": NAME}, exit 0) and rejection behavior (nonzero exit, stderr explanation, byte-for-byte preservation, deduct nothing), fully preserving atomic failure without weakening R04/R05.",
+      "independentAssessment": "Current requirement text states exact subtraction/persistence and explicit all-or-nothing byte-preserving rejection; document qualification does not need code or run records.",
+      "refs": [
+        {
+          "path": "project/decomposition.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "7f130216a3a4599e9d6c0052f862e099b32fbca887a4267f251034073dbef10d",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A201/report.json",
+      "reportSha256": "40ae52580bc64fffa17b6795cf3136e0669b237577cb0792d75b11d1d82229eb",
+      "metrics": {
+        "turns": 2,
+        "toolCalls": 4,
+        "readBytes": 1429,
+        "grepBytes": 0,
+        "totalToolBytes": 1459,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 4436,
+        "outputTokens": 587,
+        "contextChecks": 3,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 7565
+    },
+    {
+      "caseId": "A203",
+      "metricId": "M02",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The candidate decomposition (decomposition-R03.md v7) is not present in the frozen workspace; only the navigation record exists, which makes no quality claim and is explicitly disallowed as a stand-in. The obligation cannot be assessed against actual source.",
+      "independentAssessment": "The archive index explicitly withholds the candidate body and makes no quality claim; the model correctly treats this as unavailable evidence rather than a candidate defect.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "73e0b5ded578270a19c6b8a2b7e1562fec81c2124d6c695e101e6a2ce574b025",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/archive-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "be9050f5f2237d8a4471b5dccc29c57c33aa7241a67e889e041779b194263ccb",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A203/report.json",
+      "reportSha256": "ea15084c82844853c5398f803a81a1d59a3fe06a5086fc8f20121764f458c613",
+      "metrics": {
+        "turns": 4,
+        "toolCalls": 9,
+        "readBytes": 932,
+        "grepBytes": 704,
+        "totalToolBytes": 2004,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 9868,
+        "outputTokens": 772,
+        "contextChecks": 5,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 14253
+    },
+    {
+      "caseId": "A301",
+      "metricId": "M03",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The test contract represents the mixed sufficient/insufficient case (rice=5 suffices for need 2; oil=1 insufficient for need 2), requires nonzero exit with explanatory stderr, and uses an exact-byte oracle (store equals saved B) that detects both partial writes and partial consumption of any ingredient including rice. No execution required per the check.",
+      "independentAssessment": "The complete mixed-stock test setup and exact-byte oracle cover both failure signaling and no partial inventory mutation; no execution is required.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "3ae863b77f2273ac46172d5fa46dcfb6d00b53a0f20c7cf2152ce2b700488a3b",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/test-contracts.md",
+          "start": 1,
+          "end": 6,
+          "sha256": "7a4c1f517072aa3874ee0258a50481c29f9623f2449db8a0eb0d43af4c13020c",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A301/report.json",
+      "reportSha256": "802f79405b9d61097002fcf0ca1722fb09c10397edb29121838a92f038a686b2",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 1377,
+        "grepBytes": 0,
+        "totalToolBytes": 1628,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 7896,
+        "outputTokens": 1273,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 12007
+    },
+    {
+      "caseId": "A303",
+      "metricId": "M03",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The formal test contract tests/persistence-plan.md is explicitly not included in this capture (capture-index states its bytes are absent in a separate archive). The only other artifact is an application implementation snippet, which the requirement excludes as the test-contract candidate. No test contract exists to assess coverage of AC-persistence.",
+      "independentAssessment": "Only a separately archived test-plan pointer and an implementation excerpt are available; source persistence does not establish planned test coverage.",
+      "refs": [
+        {
+          "path": "project/capture-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "0d76b36723cc91292f4277a2b86fa93c7364963f3c6e7f28e4fb0158f8d7ba6f",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "81d093bd51cea4e30f0491037bb0cbf023016e65d8bdf4bc1c88a47c82bb6760",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/kitchen_excerpt.py",
+          "start": 1,
+          "end": 3,
+          "sha256": "c62cba18e196e6b3711ecb9a4fb5871e5f88f9bdb7ceb2ef053754a7535e9f12",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A303/report.json",
+      "reportSha256": "50e81a129a0f849c953786a1f0ccc248a9e21917bb436f866b3026c54fec2fa8",
+      "metrics": {
+        "turns": 4,
+        "toolCalls": 11,
+        "readBytes": 1059,
+        "grepBytes": 0,
+        "totalToolBytes": 1338,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 9998,
+        "outputTokens": 964,
+        "contextChecks": 5,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 11025
+    },
+    {
+      "caseId": "A401",
+      "metricId": "M04",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The test contract is determinate in setup (exact recipe/pantry fixtures and saved store bytes B), command (kitchen.py --store <fixture> can-cook 汤), observations (exit, stderr, parsed stdout, post-run bytes), and pass/fail oracle (exact expected stdout {\"can_cook\":false,\"missing\":{\"water\":2}} plus byte-equality to B confirming non-mutation). Missing water shortfall (3-1=2) matches. Design artifact qualifies; no executed result required.",
+      "independentAssessment": "Exact water/salt setup, command, shortfall 3-1=2, exit/stderr checks and byte preservation provide a determinate discriminating test oracle.",
+      "refs": [
+        {
+          "path": "project/test-contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "762c3cdbeee28171539a47eca28103e8467932f92333923d60236927f9a0c104",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "e45a2c33f8ceb50c6c948240166aa526fc2be6f60abd9ebf97cbbe5bfa27f334",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A401/report.json",
+      "reportSha256": "83ee69d537b8f60ac779ea8075bdc6cb2d87b79af82d8cbc92646db87a791db8",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 4,
+        "readBytes": 1196,
+        "grepBytes": 0,
+        "totalToolBytes": 1226,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 6935,
+        "outputTokens": 999,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 8844
+    },
+    {
+      "caseId": "A403",
+      "metricId": "M04",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The supplied capture (test-index.md) states the contract body and fixture/oracle are in an external archive chunk tests-04 not present in this frozen workspace, and does not state how the test is specified or whether it ran. No determinate setup, observations, or oracle content exists in the capture to qualify, so the complete obligation cannot be verified.",
+      "independentAssessment": "The test contract body, fixture and oracle are in an absent archive; the model does not hallucinate them or demand an actual test run.",
+      "refs": [
+        {
+          "path": "project/test-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "73601a2d327d78517a980c6bfe87def72a03ed14e1e027ad48a359ea05bef20c",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "d701b6d4bf837480ce49097420f07b2d0d0d019d532bdb52d52fd79248dbc019",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A403/report.json",
+      "reportSha256": "5d7002c1a0bad1c0eaedb84edff6fc7e1d6574588f76566dfdcd8816ddc0859f",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 10,
+        "readBytes": 870,
+        "grepBytes": 0,
+        "totalToolBytes": 2964,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 13158,
+        "outputTokens": 1208,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 14618
+    },
+    {
+      "caseId": "A601",
+      "metricId": "M06",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The acceptance criterion specifies concrete conditions (store with rice=5, recipe requiring rice=2) and observable expected outcomes (cook exits 0 and returns {\"cooked\":\"米饭\"}; a separate subsequent pantry invocation reports rice=3), directly qualifying persisted consumption across independent CLI processes with no prescribed template or implementation detail.",
+      "independentAssessment": "The criterion contains a concrete initial quantity, recipe deduction, successful result, and independent-process same-store observation; it is a qualified design artifact.",
+      "refs": [
+        {
+          "path": "project/acceptance.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "529e8edefcd37f0f235d39a7ab1247de950acdd996bb0889473e250dde3ebaf2",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "bbeb4e9dfea54e87c01ed3865d36d8eb93a6be091836a397f5fa5221caa0d325",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A601/report.json",
+      "reportSha256": "f72a4cf7b10f56012c1217237ad6e1535ca7ffdde6567279fc55a48f7c671e37",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 1109,
+        "grepBytes": 0,
+        "totalToolBytes": 1167,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 6900,
+        "outputTokens": 725,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 8582
+    },
+    {
+      "caseId": "A603",
+      "metricId": "M06",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The insufficient-stock acceptance criterion body is absent from the workspace; only a navigation record (acceptance-index.md) exists, which explicitly states it makes no statement about criterion quality. The task forbids treating that record as the criterion, so the criterion cannot be assessed for clarity, observability, or consistency with the obligation.",
+      "independentAssessment": "An explicitly partial navigation record does not expose criterion content or prove a concrete defect in that unseen content.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "f524615fce15cac5459766c60672aacd35d563ba93b3dfc83801acf942862805",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/metric.json",
+          "start": 1,
+          "end": 2,
+          "sha256": "58d55482e3b5b70e0c26bff4bab978b4505cb8707240bc4a27cedc2d8f72df0d",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/acceptance-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "e37488db67b81b549f8a673568b45a367a630d9ce5487ac393a382ba9c5f7b19",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A603/report.json",
+      "reportSha256": "7e3488fdd5361abd1a47f066f768d9b7b121aa989b711ef8032bcea37154c637",
+      "metrics": {
+        "turns": 6,
+        "toolCalls": 7,
+        "readBytes": 885,
+        "grepBytes": 0,
+        "totalToolBytes": 2797,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 15199,
+        "outputTokens": 1024,
+        "contextChecks": 7,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 13211
+    },
+    {
+      "caseId": "A701",
+      "metricId": "M07",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "R04 relation resolves correctly: tasks.md#prepare-dish covers checking amounts, atomic deduction, and pantry persistence; acceptance.md#saved-consumption verifies saved consumption via an independent query from the same store. Both endpoints match current content.",
+      "independentAssessment": "Both required current endpoints resolve and semantically concern the same saved-consumption obligation; no unrequested code/runtime link is invented.",
+      "refs": [
+        {
+          "path": "project/trace.md",
+          "start": 1,
+          "end": 5,
+          "sha256": "d47063a381a1fe8c2fd90e54fe426bb8bb867dd38ee1b1c6418e0c14cd6554bc",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/tasks.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "f28f8aa0f7cef84608570676fa3bd4c961974ec8467abe81276e7b16b177012d",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/acceptance.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "d70daef0beded0b8916e0408e7cfc79e221acab2893ef732637a11402aa72857",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A701/report.json",
+      "reportSha256": "84839262492e65d44d82e3c1d16cc82ebd8b6caf48ce3e52d1de3ee5d07ffaf1",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 1456,
+        "grepBytes": 0,
+        "totalToolBytes": 1486,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 6903,
+        "outputTokens": 706,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 8479
+    },
+    {
+      "caseId": "A703",
+      "metricId": "M07",
+      "variant": "baseline",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "DEVIATION",
+      "labelCorrect": false,
+      "diagnosisSupported": false,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": false,
+      "citationIntegrity": true,
+      "issues": [
+        "The fact that a remote acceptance endpoint cannot be inspected was promoted into a concrete business DEVIATION. Its content and version are unavailable, so only UNVERIFIED is supported. The factual observations are supported; the conclusive inference is not."
+      ],
+      "reason": "Planning side is supported (prepare-dish describes atomic deduction + persistence), but the acceptance side is only a navigation claim to archive://acceptance-v4#saved-consumption; trace.md explicitly states the link \"is not evidence of endpoint meaning,\" so acceptance-side semantic ownership is not established.",
+      "independentAssessment": "The planning endpoint is established, but the remote acceptance content/version is unavailable; this prevents verification and does not prove the actual relation is defective.",
+      "refs": [
+        {
+          "path": "project/trace.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "a32d4623c97cb22da5a6cfacf344393fb8699ad4fed9b394dd7e2f9fe43c518f",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/tasks.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "61d1d9eb1e4056a2b05c77324624bade281bd8b12abc5df16215785106d181ce",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "02a291e9aa401db00e6f962dcc0d4f366de124d69e9a402c9501431efb86c15f",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "baseline-dev-01/A703/report.json",
+      "reportSha256": "76e0e87c6ac5b17ad3c6356a736ba71f074b1c3f2a58b8510bff60c7f015ac57",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 10,
+        "readBytes": 1117,
+        "grepBytes": 326,
+        "totalToolBytes": 1794,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 12633,
+        "outputTokens": 1842,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 21183
+    },
+    {
+      "caseId": "A201",
+      "metricId": "M02",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "Candidate requirement states success (exact per-ingredient subtraction, store persistence, {\"cooked\":NAME} with exit 0) and rejection (nonzero exit, stderr, byte-for-byte store preservation, deduct nothing including sufficient ingredients) unambiguously, preserving atomic failure per R05.",
+      "independentAssessment": "Current requirement text states exact subtraction/persistence and explicit all-or-nothing byte-preserving rejection; document qualification does not need code or run records.",
+      "refs": [
+        {
+          "path": "project/decomposition.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "7f130216a3a4599e9d6c0052f862e099b32fbca887a4267f251034073dbef10d",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "58ff206cbfb00beca1d6774df1550ac35243595d4e8796765e1781252f6b442b",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A201/report.json",
+      "reportSha256": "1507d600bf2340383b7f8caaed1be92c3cb2077d40ba041d9adc9301c7f3152e",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 7,
+        "readBytes": 1429,
+        "grepBytes": 0,
+        "totalToolBytes": 1704,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 12922,
+        "outputTokens": 945,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 12443
+    },
+    {
+      "caseId": "A203",
+      "metricId": "M02",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "Candidate decomposition body (decomposition-R03.md) is not present in the frozen workspace; only the navigation record exists, and it explicitly states the content is not included. No candidate text exists to assess whether it states the obligations (positive integer amounts excluding booleans; malformed rejection without store-byte changes), so qualification cannot be judged.",
+      "independentAssessment": "The archive index explicitly withholds the candidate body and makes no quality claim; the model correctly treats this as unavailable evidence rather than a candidate defect.",
+      "refs": [
+        {
+          "path": "project/archive-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "be9050f5f2237d8a4471b5dccc29c57c33aa7241a67e889e041779b194263ccb",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A203/report.json",
+      "reportSha256": "b6aa224509b3bb1e020b5d16a7e4a061b1b514f026b4ee4b004dac262f87822b",
+      "metrics": {
+        "turns": 4,
+        "toolCalls": 11,
+        "readBytes": 932,
+        "grepBytes": 0,
+        "totalToolBytes": 1311,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 10694,
+        "outputTokens": 1168,
+        "contextChecks": 5,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 12733
+    },
+    {
+      "caseId": "A301",
+      "metricId": "M03",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The test contract represents the mixed sufficient/insufficient case (rice 5≥2, oil 1<2) and provides an exact-byte oracle (store B unchanged) that detects partial writes and any ingredient consumption, plus nonzero exit and explanatory stderr oracles. All acceptance clauses are covered.",
+      "independentAssessment": "The complete mixed-stock test setup and exact-byte oracle cover both failure signaling and no partial inventory mutation; no execution is required.",
+      "refs": [
+        {
+          "path": "project/test-contracts.md",
+          "start": 1,
+          "end": 6,
+          "sha256": "7a4c1f517072aa3874ee0258a50481c29f9623f2449db8a0eb0d43af4c13020c",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A301/report.json",
+      "reportSha256": "1d3f9c9a3937f20d4a4f3f8f1327c259c4e3815ba3a8e68a4ee76766af5cba9b",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 7,
+        "readBytes": 1377,
+        "grepBytes": 0,
+        "totalToolBytes": 1706,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 7573,
+        "outputTokens": 958,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 10801
+    },
+    {
+      "caseId": "A303",
+      "metricId": "M03",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The only capture content is capture-index.md (stating the test contract tests/persistence-plan.md is in a separately archived package whose bytes are not included) and an application implementation excerpt, which is explicitly not the test-contract candidate. No actual test contract exists in the workspace, so the required setup/stimulus/oracle coverage of AC-persistence cannot be assessed.",
+      "independentAssessment": "Only a separately archived test-plan pointer and an implementation excerpt are available; source persistence does not establish planned test coverage.",
+      "refs": [
+        {
+          "path": "project/capture-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "0d76b36723cc91292f4277a2b86fa93c7364963f3c6e7f28e4fb0158f8d7ba6f",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/kitchen_excerpt.py",
+          "start": 1,
+          "end": 3,
+          "sha256": "c62cba18e196e6b3711ecb9a4fb5871e5f88f9bdb7ceb2ef053754a7535e9f12",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A303/report.json",
+      "reportSha256": "94ad3cd7f7897b8ada66bdfb1440fb28ec6198579cfd55f58c2cec32fc8ae7f1",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 14,
+        "readBytes": 1059,
+        "grepBytes": 897,
+        "totalToolBytes": 4386,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 14979,
+        "outputTokens": 1256,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 14568
+    },
+    {
+      "caseId": "A401",
+      "metricId": "M04",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The contract gives a determinate fixture (recipe 汤, pantry), exact command, and a pass/fail oracle that checks exit=0, empty stderr, parsed stdout exactly {\"can_cook\":false,\"missing\":{\"water\":2}} (correct feasibility and exact shortfall: water 3-1=2; salt satisfied), and post-run store bytes equal to the saved B (store unchanged). This fully operationalizes the authoritative obligation without circularity or ambiguity.",
+      "independentAssessment": "Exact water/salt setup, command, shortfall 3-1=2, exit/stderr checks and byte preservation provide a determinate discriminating test oracle.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "e45a2c33f8ceb50c6c948240166aa526fc2be6f60abd9ebf97cbbe5bfa27f334",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/test-contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "762c3cdbeee28171539a47eca28103e8467932f92333923d60236927f9a0c104",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A401/report.json",
+      "reportSha256": "0be4a9337c35e0b7158a3b371d486eeddc9d1b84bf40513a976e7cdab9d13d17",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 10,
+        "readBytes": 1196,
+        "grepBytes": 772,
+        "totalToolBytes": 2114,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 13481,
+        "outputTokens": 1588,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 19784
+    },
+    {
+      "caseId": "A403",
+      "metricId": "M04",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The contract body (C-Unicode), shared fixture, and oracle referenced by project/test-index.md are retained in an external archive chunk (tests-04) that is absent from the frozen workspace; only the index is present. Without the required contract material, setup determinacy, observations, and oracle correctness cannot be verified.",
+      "independentAssessment": "The test contract body, fixture and oracle are in an absent archive; the model does not hallucinate them or demand an actual test run.",
+      "refs": [
+        {
+          "path": "project/test-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "73601a2d327d78517a980c6bfe87def72a03ed14e1e027ad48a359ea05bef20c",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "d701b6d4bf837480ce49097420f07b2d0d0d019d532bdb52d52fd79248dbc019",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A403/report.json",
+      "reportSha256": "b1d984bfc0e985efd53db4284b115f3a49071a62a2fbc46d034adec91578809b",
+      "metrics": {
+        "turns": 4,
+        "toolCalls": 10,
+        "readBytes": 870,
+        "grepBytes": 0,
+        "totalToolBytes": 1226,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 10174,
+        "outputTokens": 843,
+        "contextChecks": 5,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 11586
+    },
+    {
+      "caseId": "A601",
+      "metricId": "M06",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The acceptance criterion specifies concrete conditions (rice=5, recipe requires 2), observable expected outcomes (cook exits 0, returns {\"cooked\":\"米饭\"}, separate invocation reports rice=3), and explicit failure semantics (either command result differs or second process reports rice=5). It preserves the authoritative obligation: sufficient-stock cooking subtracts quantities, persists across independent CLI processes, and inventory remains observable. No ambiguity or circular oracle.",
+      "independentAssessment": "The criterion contains a concrete initial quantity, recipe deduction, successful result, and independent-process same-store observation; it is a qualified design artifact.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "bbeb4e9dfea54e87c01ed3865d36d8eb93a6be091836a397f5fa5221caa0d325",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "basis/metric.json",
+          "start": 1,
+          "end": 2,
+          "sha256": "58d55482e3b5b70e0c26bff4bab978b4505cb8707240bc4a27cedc2d8f72df0d",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/acceptance.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "529e8edefcd37f0f235d39a7ab1247de950acdd996bb0889473e250dde3ebaf2",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A601/report.json",
+      "reportSha256": "7e2fbad26a50ebaec9f4efe82a1673e31263203d7a0c75bc1369cd1023f369c2",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 1109,
+        "grepBytes": 0,
+        "totalToolBytes": 1357,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 7692,
+        "outputTokens": 1184,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 11805
+    },
+    {
+      "caseId": "A603",
+      "metricId": "M06",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The acceptance criterion body (acceptance-shortage.md) is absent from the frozen workspace; only the navigation record in acceptance-index.md exists, which explicitly states the body was not included. With no criterion text available, M06 qualification cannot be assessed.",
+      "independentAssessment": "An explicitly partial navigation record does not expose criterion content or prove a concrete defect in that unseen content.",
+      "refs": [
+        {
+          "path": "project/acceptance-index.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "e37488db67b81b549f8a673568b45a367a630d9ce5487ac393a382ba9c5f7b19",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A603/report.json",
+      "reportSha256": "822162755cfd8383c2e2e39974228b13e57d098a34a7b9de071e9e19c6c49309",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 885,
+        "grepBytes": 0,
+        "totalToolBytes": 991,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 7282,
+        "outputTokens": 599,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 6071
+    },
+    {
+      "caseId": "A701",
+      "metricId": "M07",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The R04 relation in trace.md lists both required endpoints: tasks.md#prepare-dish (planning entry matching check-quantities/deduct-atomically/persist-pantry) and acceptance.md#saved-consumption (acceptance matching saved pantry consumption). Both resolve to matching current content.",
+      "independentAssessment": "Both required current endpoints resolve and semantically concern the same saved-consumption obligation; no unrequested code/runtime link is invented.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "043132787c6e1897602f7d3d9e1c30080032f636502dc96a5591a99ce84fefe8",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/trace.md",
+          "start": 1,
+          "end": 5,
+          "sha256": "d47063a381a1fe8c2fd90e54fe426bb8bb867dd38ee1b1c6418e0c14cd6554bc",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/tasks.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "f28f8aa0f7cef84608570676fa3bd4c961974ec8467abe81276e7b16b177012d",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/acceptance.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "d70daef0beded0b8916e0408e7cfc79e221acab2893ef732637a11402aa72857",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A701/report.json",
+      "reportSha256": "a1132a49d2a4c18d1b47be69e5c06e88a7c33fcbbbadbbe643b29eeb889b3a73",
+      "metrics": {
+        "turns": 3,
+        "toolCalls": 6,
+        "readBytes": 1456,
+        "grepBytes": 0,
+        "totalToolBytes": 1486,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 7353,
+        "outputTokens": 811,
+        "contextChecks": 4,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 7405
+    },
+    {
+      "caseId": "A703",
+      "metricId": "M07",
+      "variant": "candidate",
+      "completed": true,
+      "expected": "UNVERIFIED",
+      "actual": "UNVERIFIED",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "factualObservationsSupported": true,
+      "decisionInferenceSupported": true,
+      "citationIntegrity": true,
+      "issues": [],
+      "reason": "The planning endpoint (tasks.md#prepare-dish) is resolvable and semantically matches atomic deduction/persistence. However, the required acceptance endpoint (archive://acceptance-v4#saved-consumption) is declared outside this capture with its content and version digest unavailable; no current content proves its meaning about persisted consumption, and absence here is not proof of its nonexistence.",
+      "independentAssessment": "The planning endpoint is established, but the remote acceptance content/version is unavailable; this prevents verification and does not prove the actual relation is defective.",
+      "refs": [
+        {
+          "path": "basis/contract.md",
+          "start": 1,
+          "end": 3,
+          "sha256": "02a291e9aa401db00e6f962dcc0d4f366de124d69e9a402c9501431efb86c15f",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/trace.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "a32d4623c97cb22da5a6cfacf344393fb8699ad4fed9b394dd7e2f9fe43c518f",
+          "byteExactAndRangeValid": true
+        },
+        {
+          "path": "project/tasks.md",
+          "start": 1,
+          "end": 4,
+          "sha256": "61d1d9eb1e4056a2b05c77324624bade281bd8b12abc5df16215785106d181ce",
+          "byteExactAndRangeValid": true
+        }
+      ],
+      "reportPath": "candidate-dev-01/A703/report.json",
+      "reportSha256": "57cd7f75463c1b61f5b9c153320e1dc6eb0265f172641bae8d19ea9cf0bdb388",
+      "metrics": {
+        "turns": 5,
+        "toolCalls": 9,
+        "readBytes": 1117,
+        "grepBytes": 0,
+        "totalToolBytes": 1469,
+        "repeatedLines": 0,
+        "compactions": 0,
+        "compactionFailures": 0,
+        "inputTokens": 13034,
+        "outputTokens": 1259,
+        "contextChecks": 6,
+        "unsafeRequestsPrevented": 0
+      },
+      "elapsedMs": 15599
+    }
+  ],
+  "summary": {
+    "reviewed": 20,
+    "labelCorrect": 19,
+    "diagnosisSupported": 19,
+    "scopeCorrect": 20,
+    "citationIntegrity": 20
+  },
+  "recommendations": {
+    "M02": "baseline",
+    "M03": "baseline",
+    "M04": "baseline",
+    "M06": "candidate",
+    "M07": "candidate"
+  },
+  "recommendationReasons": {
+    "M02": "Both paired dev cases are semantically correct; candidate has more observed turns/input. No accuracy benefit demonstrated, so retain the shorter baseline.",
+    "M03": "Both are semantically correct; candidate adds observed turns/input with no demonstrated accuracy benefit. Keep baseline pending held-out negatives.",
+    "M04": "Both are semantically correct; candidate costs more in the small paired run. Keep baseline rather than claiming an unsupported improvement.",
+    "M06": "Accuracy is tied; candidate has fewer observed turns (6 vs 9) and cumulative input (14974 vs 22099) here. A provisional efficiency choice, not established accuracy or population-wide cost improvement.",
+    "M07": "Candidate resolves the observed unavailable-evidence/defect confusion on A703 while retaining the valid endpoint PASS. This is one concrete paired dev improvement; held-out negative relation tests are still required."
+  },
+  "metricStats": {
+    "M02": {
+      "baseline": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 6,
+        "inputTokens": 14304,
+        "outputTokens": 1359,
+        "toolCalls": 13,
+        "elapsedMs": 21818
+      },
+      "candidate": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 9,
+        "inputTokens": 23616,
+        "outputTokens": 2113,
+        "toolCalls": 18,
+        "elapsedMs": 25176
+      }
+    },
+    "M03": {
+      "baseline": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 7,
+        "inputTokens": 17894,
+        "outputTokens": 2237,
+        "toolCalls": 17,
+        "elapsedMs": 23032
+      },
+      "candidate": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 8,
+        "inputTokens": 22552,
+        "outputTokens": 2214,
+        "toolCalls": 21,
+        "elapsedMs": 25369
+      }
+    },
+    "M04": {
+      "baseline": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 8,
+        "inputTokens": 20093,
+        "outputTokens": 2207,
+        "toolCalls": 14,
+        "elapsedMs": 23462
+      },
+      "candidate": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 9,
+        "inputTokens": 23655,
+        "outputTokens": 2431,
+        "toolCalls": 20,
+        "elapsedMs": 31370
+      }
+    },
+    "M06": {
+      "baseline": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 9,
+        "inputTokens": 22099,
+        "outputTokens": 1749,
+        "toolCalls": 13,
+        "elapsedMs": 21793
+      },
+      "candidate": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 6,
+        "inputTokens": 14974,
+        "outputTokens": 1783,
+        "toolCalls": 12,
+        "elapsedMs": 17876
+      }
+    },
+    "M07": {
+      "baseline": {
+        "cases": 2,
+        "labelCorrect": 1,
+        "diagnosisSupported": 1,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 8,
+        "inputTokens": 19536,
+        "outputTokens": 2548,
+        "toolCalls": 16,
+        "elapsedMs": 29662
+      },
+      "candidate": {
+        "cases": 2,
+        "labelCorrect": 2,
+        "diagnosisSupported": 2,
+        "scopeCorrect": 2,
+        "citationIntegrity": 2,
+        "turns": 8,
+        "inputTokens": 20387,
+        "outputTokens": 2070,
+        "toolCalls": 15,
+        "elapsedMs": 23004
+      }
+    }
+  },
+  "limitations": [
+    "Only two authored development cases per metric; these results are not a statistical accuracy estimate.",
+    "No held-out model result was inspected for this selection.",
+    "Exact labels are insufficient: the baseline A703 facts/citations are genuine, but its conclusive defect inference is not supported.",
+    "Timing and token totals are one stochastic run per variant under shared concurrent load; they do not establish stable latency/cost gains.",
+    "Some correct reasons exceed the preferred 240-character target; the existing short decision/feedback bounds still apply.",
+    "Synthetic document cases do not replace full production Stop or end-to-end kitchen execution."
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "recordSource": "original-business-capture",
+  "syntheticFixture": true,
+  "taskId": "kitchen-current-task",
+  "sessionId": "kitchen-current-session",
+  "complete": true,
+  "implementation": {
+    "label": "current",
+    "path": "project/kitchen.py",
+    "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+  },
+  "entries": [
+    {
+      "type": "assistant",
+      "uuid": "read-complete-input",
+      "message": {
+        "id": "read-complete-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "read-complete",
+            "name": "exec",
+            "input": {
+              "command": "python -c \"from pathlib import Path; print(Path('spec/requirements.md').read_text())\"",
+              "workdir": "/fixture/kitchen"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "read-complete-result",
+      "message": {
+        "id": "read-complete-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "read-complete",
+            "content": "{\n  \"exitCode\": 0,\n  \"stdout\": \"K1 pantry set retains zero entries. K2 cook persists inventory subtraction.\\n\",\n  \"stderr\": \"\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "write-after-read-input",
+      "message": {
+        "id": "write-after-read-input",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "write-after-read",
+            "name": "write",
+            "input": {
+              "path": "/fixture/kitchen/kitchen.py",
+              "content": "print(\"fixture placeholder\")"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "write-after-read-result",
+      "message": {
+        "id": "write-after-read-result",
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "write-after-read",
+            "content": "{\n  \"success\": true\n}\n"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "generatedBy": "fixture-capture",
+  "taskId": "kitchen-current-task",
+  "currentSources": [
+    {
+      "path": "project/kitchen.py",
+      "sha256": "5ff893e987353a98d273a03604895a4aaea1d4d334f94678149982aa98c4634d"
+    }
+  ]
+}

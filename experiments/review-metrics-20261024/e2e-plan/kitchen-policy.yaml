@@ -1,0 +1,33 @@
+version: 2
+artifacts:
+  - name: kitchen-source
+    stage: implementation
+    format: text
+    patterns: [kitchen.py]
+    rules:
+      enabled: false
+    review:
+      enabled: true
+dynamicGroundTruth:
+  enabled: true
+  materialRoots: [spec/requirements.md]
+  panel:
+    size: 1
+    adjudicator: false
+skillCorrection:
+  enabled: true
+  selection:
+    mode: include
+    include: [build-offline-kitchen]
+artifactCorrection:
+  groundTruthReviewEnabled: true
+  stageMetricsEnabled: true
+implementationCorrection:
+  enabled: true
+  platform: offline-kitchen-python-test
+stopCorrection:
+  enabled: true
+reviewers:
+  defaults:
+    model: test/{{modelId}}
+    effort: low

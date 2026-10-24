@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "runtime-corrector.metric-family-cross-audit.v1",
+  "reviewedAt": "2026-10-24T05:05:03.267Z",
+  "reviewer": "metric_artifact_lab",
+  "subject": ".runtime-correction/all-metrics-lab-20261024/process-family/family.json",
+  "subjectSha256": "29b68c52b8eba84cc3433c8315c7d928ed5af337a6a4462a9b327917b1b2db64",
+  "modelResultsRead": false,
+  "modelCalls": 0,
+  "productionEdits": false,
+  "status": "NO_BLOCKING_ORACLE_ISSUES",
+  "cases": [
+    {
+      "id": "P08-pass",
+      "metricId": "M08",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P08-failed-before-completion",
+      "metricId": "M08",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P08-self-report-only",
+      "metricId": "M08",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P08-retry-permitted",
+      "metricId": "M08",
+      "expected": "PASS",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P09-type-exact",
+      "metricId": "M09",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P09-bool-is-int",
+      "metricId": "M09",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P09-missing-dependency",
+      "metricId": "M09",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P10-propagated-parse",
+      "metricId": "M10",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P10-swallowed-corruption",
+      "metricId": "M10",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P10-unavailable-load-path",
+      "metricId": "M10",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P11-complete-read-before-edit",
+      "metricId": "M11",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P11-edit-then-read",
+      "metricId": "M11",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P11-history-not-captured",
+      "metricId": "M11",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P13-current-connected-proof",
+      "metricId": "M13",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P13-observed-wrong-state",
+      "metricId": "M13",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P13-stale-source-result",
+      "metricId": "M13",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P14-docs-scope-complete",
+      "metricId": "M14",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P14-gate-contradicted",
+      "metricId": "M14",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P14-approval-self-report",
+      "metricId": "M14",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P15-same-store-journey",
+      "metricId": "M15",
+      "expected": "PASS",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P15-persisted-outcome-fails",
+      "metricId": "M15",
+      "expected": "DEVIATION",
+      "split": "dev",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    },
+    {
+      "id": "P15-unlinked-components",
+      "metricId": "M15",
+      "expected": "UNVERIFIED",
+      "split": "holdout",
+      "oracleSupported": true,
+      "evidenceOwnershipSupported": true
+    }
+  ],
+  "checks": {
+    "cases": 22,
+    "devCases": 14,
+    "holdoutCases": 8,
+    "toolResultsParsed": 34,
+    "orderedToolBindingsChecked": true,
+    "currentSourceHashesChecked": 10
+  },
+  "notes": [
+    "Synthetic process history is explicitly identified as hypothetical fixture evidence, not a real completed business run.",
+    "P09 integer/boolean exclusion and P10 corrupted-store error propagation are source-owned rules; current code is sufficient at this assigned scope.",
+    "P13 stale-source closure remains UNVERIFIED because this basis explicitly requires the current exact digest; do not generalize this to every possible production source change.",
+    "M14 documentation milestone explicitly defers app implementation/runtime, while its approval variant requires user-owned approval rather than assistant assertion.",
+    "M15 unrelated-store component successes do not establish a connected journey; missing linked proof is distinct from a captured wrong persisted result.",
+    "P11 process snapshots show a placeholder write while the capture metadata names the final current source. The assigned read-before-first-edit oracle depends only on the ordered successful read and first edit; these cases cannot establish final implementation correctness."
+  ],
+  "issues": []
+}

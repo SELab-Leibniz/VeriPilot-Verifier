@@ -1,0 +1,21 @@
+{
+  "id": "X15-final-observation-not-retained",
+  "metricId": "M15",
+  "scope": "EXECUTION_CLOSURE",
+  "phase": "VERIFICATION",
+  "requirement": "Review exactly the assigned M15 obligation using all original conditions and the captured evidence.",
+  "basisFiles": [
+    "basis/contract.md",
+    "basis/evidence-protocol.md",
+    "basis/metric.json"
+  ],
+  "targetFiles": [
+    "project/kitchen.py",
+    "project/source-state.json",
+    "process/partial-journey.json"
+  ],
+  "targetPrefixes": [
+    "project/",
+    "process/"
+  ]
+}

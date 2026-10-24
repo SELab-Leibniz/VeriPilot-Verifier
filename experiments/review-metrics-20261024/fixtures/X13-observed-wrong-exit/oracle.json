@@ -1,0 +1,5 @@
+{
+  "expected": "DEVIATION",
+  "mechanism": "The current matching run exits 0 and emits no explanatory stderr for an unknown recipe. This is a concrete observed acceptance contradiction, not merely an unavailable proof.",
+  "scope": "EXECUTION_CLOSURE"
+}

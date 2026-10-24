@@ -1,0 +1,5 @@
+{
+  "expected": "UNVERIFIED",
+  "mechanism": "The good execution is tied to the previous digest. Current-digest closure is unavailable; a comment-only change does not satisfy this explicit exact-identity evidence gate.",
+  "scope": "EXECUTION_CLOSURE"
+}

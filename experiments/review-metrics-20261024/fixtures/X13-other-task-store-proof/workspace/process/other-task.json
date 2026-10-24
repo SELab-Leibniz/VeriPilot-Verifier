@@ -1,0 +1,44 @@
+{
+  "recordSource": "original-business-capture",
+  "syntheticFixture": true,
+  "taskId": "other-kitchen-task",
+  "sessionId": "other-kitchen-task-session",
+  "complete": false,
+  "note": "Only another task/store result was retained; current-task run history is unavailable.",
+  "implementation": {
+    "path": "project/kitchen.py",
+    "sha256": "bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941"
+  },
+  "entries": [
+    {
+      "type": "assistant",
+      "uuid": "other-store-run-input",
+      "message": {
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "other-store-run",
+            "name": "exec",
+            "input": {
+              "command": "python kitchen.py --store /fixture/other/store.json cook absent-dish",
+              "workdir": "/fixture/other"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "other-store-run-result",
+      "message": {
+        "content": [
+          {
+            "type": "tool_result",
+            "tool_use_id": "other-store-run",
+            "content": "{\n  \"exitCode\": 1,\n  \"stdout\": \"\",\n  \"stderr\": \"Unknown recipe: absent-dish\",\n  \"storeBeforeSha256\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"storeAfterSha256\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"subject\": {\n    \"projectRoot\": \"/fixture/other\",\n    \"sourceSha256\": \"bcf9ff1900acd4220ce991745acea92163c7b6f77bded7a1af4e0b818a92b941\"\n  }\n}\n"
+          }
+        ]
+      }
+    }
+  ]
+}
