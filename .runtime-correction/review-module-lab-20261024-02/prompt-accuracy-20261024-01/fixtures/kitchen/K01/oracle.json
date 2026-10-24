@@ -1,0 +1,29 @@
+{
+  "caseId": "K01",
+  "metricId": "M01",
+  "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "PASS",
+  "mechanism": "The current decomposition represents all R04 behaviors, including the ingredient-to-shortfall quantity object; applicable common conditions are also present.",
+  "mutation": "complete-semantic-decomposition",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "decomposition.md",
+      "start": 20,
+      "end": 29,
+      "role": "Relevant current target region; absence claims must also inspect the complete target"
+    }
+  ],
+  "mustNotClaim": [
+    "Runtime evidence is required to score decomposition coverage",
+    "Identifier correspondence alone proves or disproves semantic coverage",
+    "Current source implementation can substitute for a missing decomposition obligation"
+  ],
+  "historicalCorroboration": null
+}

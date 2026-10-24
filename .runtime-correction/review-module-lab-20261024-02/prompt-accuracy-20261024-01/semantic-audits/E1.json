@@ -1,0 +1,14 @@
+{
+  "tag": "E1",
+  "cases": [
+    {
+      "caseId": "K03",
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "evidence": "requirements.md:19-22 的读取、can_cook/missing 缺额结果、查询字节保持、足量扣减保存及 cooked 返回，在 decomposition.md:20-23 均有对应语义，5-8、26-28 行亦覆盖适用公共条件与异常；actual 对完整目标的引用支持 PASS，无需编号对应或运行证据。"
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,26 @@
+{
+  "status": "PASS_RELOCATED_OFFLINE_PREFLIGHT",
+  "relocatedRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F",
+  "legacyDescriptorBytesRetained": true,
+  "frozenManifestBytesRetained": true,
+  "caseIds": [
+    "F01",
+    "K01"
+  ],
+  "protectedInputs": true,
+  "allFrozenInputsUnchanged": true,
+  "auditPathsUseRelocatedRoot": true,
+  "reviewStageModelCalls": 0,
+  "businessExecution": false,
+  "preflightOutput": {
+    "status": "PREFLIGHT_PASS",
+    "output": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F\\preflight",
+    "cases": 2,
+    "preliminaryLabelMatches": null
+  },
+  "auditOutput": {
+    "tag": "P99",
+    "cases": 2,
+    "output": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F\\semantic-input\\P99.json"
+  }
+}

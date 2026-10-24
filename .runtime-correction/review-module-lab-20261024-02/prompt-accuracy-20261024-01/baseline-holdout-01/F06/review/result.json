@@ -1,0 +1,112 @@
+{
+  "taskId": "M05:gt-014",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "completed": true,
+  "conclusive": true,
+  "verdict": "DEVIATION",
+  "reason": "gt-014's core obligation \"大图加载失败显示默认占位图\" appears only in the candidate requirement-body statement, with no acceptance scenario covering it; the metric contract forbids treating requirement-body statements as acceptance criteria, so this core obligation is uncovered.",
+  "limits": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "tokenBudget": null,
+    "deadline": null
+  },
+  "refs": [
+    {
+      "citeId": "38a5e9e8-5343-48e5-b1d7-50051ea0ec27",
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0",
+      "byteStart": 0,
+      "byteEnd": 1012,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "3df85e4c-2935-420f-bbdd-f09296fd9f78",
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "0e7219f071a3bc7854897b7be912c140e8737d7169a66a5fc698f007098b3ff6",
+      "byteStart": 0,
+      "byteEnd": 462,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "5755f4c0-e52f-4170-a624-415381f786f3",
+      "path": "candidate/specs/commodity-detail/spec.md",
+      "start": 1,
+      "end": 46,
+      "sha256": "d6516e1bc30d8c3fda1c09c53bf3ee165138530f39375e90d037d446a69ead31",
+      "byteStart": 0,
+      "byteEnd": 2218,
+      "rangeKind": "range"
+    }
+  ],
+  "citeIds": [
+    "38a5e9e8-5343-48e5-b1d7-50051ea0ec27",
+    "3df85e4c-2935-420f-bbdd-f09296fd9f78",
+    "5755f4c0-e52f-4170-a624-415381f786f3"
+  ],
+  "basis": [
+    {
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/metric-contract.md"
+    },
+    {
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "0e7219f071a3bc7854897b7be912c140e8737d7169a66a5fc698f007098b3ff6",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/selected-object.json"
+    },
+    {
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/input-roles.json"
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/original-ground-truth.md"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/source/app-requirements.md"
+    }
+  ],
+  "basisAnchors": [],
+  "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-holdout-01\\F06\\review\\evidence.json",
+  "attempts": 1,
+  "metrics": {
+    "turns": 4,
+    "toolCalls": 15,
+    "readBytes": 54838,
+    "grepBytes": 0,
+    "totalToolBytes": 54874,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "compactionFailures": 0,
+    "inputTokens": 45798,
+    "outputTokens": 3712,
+    "contextChecks": 5,
+    "unsafeRequestsPrevented": 0
+  },
+  "elapsedMs": 35722,
+  "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-holdout-01\\F06\\review"
+}

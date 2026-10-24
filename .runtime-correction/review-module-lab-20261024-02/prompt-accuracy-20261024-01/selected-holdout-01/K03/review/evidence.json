@@ -1,0 +1,41 @@
+{
+  "taskId": "M01:R04",
+  "basis": [
+    {
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/requirements.md"
+    }
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "range",
+      "byteStart": 1037,
+      "byteEnd": 1332,
+      "text": "R04 `can-cook NAME` reads the saved recipe and inventory, returns\r\n`{\"can_cook\": <boolean>, \"missing\": <ingredient-to-shortfall object>}`, and\r\ndoes not change store bytes. `cook NAME` subtracts all required quantities only\r\nwhen sufficient, persists the result, and returns `{\"cooked\": NAME}`.\r",
+      "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+    }
+  ],
+  "citations": [
+    {
+      "citeId": "006a3e40-6541-4ddf-b7e6-7f3c9ab4d9ca",
+      "path": "decomposition.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d",
+      "byteStart": 0,
+      "byteEnd": 2324,
+      "rangeKind": "range",
+      "text": "# Kitchen requirements decomposition\n\n## Local CLI and common behavior\n- Implement kitchen.py using only Python standard library; no installation or network access.\n- Every command accepts global --store PATH before its subcommand; persist in that local JSON file. An existing parent directory may be assumed.\n- --help exits 0 and shows usage.\n- Successful commands exit 0, return one JSON result, emit no stderr, and preserve Unicode names exactly.\n- pantry list, recipe list and can-cook do not create or modify store files.\n\n## Pantry\n- pantry list returns a mapping from ingredient names to integer amounts, or {} when no store exists.\n- pantry set NAME AMOUNT accepts nonnegative integers, returns {\"name\": NAME, \"amount\": AMOUNT}, and retains entries whose amount is zero.\n\n## Recipes\n- recipe list returns recipe-name to ingredient-object mappings, or {} initially.\n- recipe add NAME INGREDIENTS_JSON saves a nonempty ingredient object with nonempty names and positive integer quantities; booleans are invalid quantities.\n- Successful recipe add returns {\"name\": NAME, \"ingredients\": that object}.\n\n## Cooking feasibility and consumption\n- can-cook NAME reads the saved named recipe and inventory and returns JSON containing the can_cook boolean.\n- The same result includes missing, an ingredient-to-shortfall-quantity object; each deficit is required minus available, and an adequate pantry produces {}.\n- The feasibility query preserves existing store bytes and does not create a missing store.\n- cook NAME proceeds only when every ingredient is sufficient, subtracts all required quantities, persists the changed inventory, and returns {\"cooked\": NAME}.\n\n## Rejection and persistence boundaries\n- Unknown recipes, insufficient stock, negative pantry amounts, malformed recipe JSON, and nonpositive recipe ingredient quantities fail with a nonzero exit and explanatory stderr; existing store bytes are unchanged.\n- A failed cook consumes none of the available ingredients.\n- State survives independent CLI processes, and different --store paths remain isolated.\n\n## Delivery constraints\n- Edit only kitchen.py and project-local app data; preserve the frozen spec, Skill, RC configuration and any read-only baseline.\n- Before declaring the application complete, run the bundled verifier and obtain KITCHEN_VERIFIED.\n",
+      "sha256Excerpt": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d"
+    }
+  ]
+}

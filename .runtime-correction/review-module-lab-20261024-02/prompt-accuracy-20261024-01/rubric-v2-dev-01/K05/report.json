@@ -1,0 +1,103 @@
+{
+  "caseId": "K05",
+  "metricId": "M05",
+  "domain": "kitchen",
+  "split": "dev",
+  "expectedVerdict": "DEVIATION",
+  "result": {
+    "taskId": "M05:R04",
+    "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "DEVIATION",
+    "reason": "Coverage gap: acceptance criteria cover can-cook outcomes, byte-preservation and failed cook, but no criterion covers the sufficient-stock cook path required by R04 (subtract all required quantities, persist, return {\"cooked\": NAME}) or its success exit/JSON/stderr conditions.",
+    "limits": {
+      "maxAttempts": 2,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "dc973528-3acf-4d1b-9843-1a82988aa788",
+        "path": "requirements.md",
+        "start": 1,
+        "end": 33,
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "byteStart": 0,
+        "byteEnd": 1945,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "01f890fa-d524-4ce6-b8e0-30216e0f9cb1",
+        "path": "acceptance.md",
+        "start": 1,
+        "end": 25,
+        "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+        "byteStart": 0,
+        "byteEnd": 2653,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "dc973528-3acf-4d1b-9843-1a82988aa788",
+      "01f890fa-d524-4ce6-b8e0-30216e0f9cb1"
+    ],
+    "basis": [
+      {
+        "path": "requirements.md",
+        "start": 1,
+        "end": 33,
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/requirements.md"
+      }
+    ],
+    "basisAnchors": [
+      {
+        "claimId": "R04",
+        "path": "requirements.md",
+        "start": 19,
+        "end": 22,
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "rangeKind": "range",
+        "byteStart": 1037,
+        "byteEnd": 1332,
+        "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+      }
+    ],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K05\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 3,
+      "toolCalls": 5,
+      "readBytes": 4750,
+      "grepBytes": 16,
+      "totalToolBytes": 4828,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 11190,
+      "outputTokens": 2437,
+      "contextChecks": 4,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 26017,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K05\\review"
+  },
+  "citationIntegrity": true,
+  "labelMatches": true,
+  "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+  "measured": {
+    "noncachedInputTokens": 7094,
+    "cacheReadTokens": 4096,
+    "cacheWriteTokens": 0,
+    "outputTokens": 2437,
+    "submitCalls": 1,
+    "submitErrors": 0,
+    "maxSubmitBytes": 423,
+    "feedbackBytes": 491,
+    "promptSha256": "fe583e86d24b17115a9c19793ae923d0154a85017684c62b4cc353c881c4c83f"
+  },
+  "frozenInputUnchanged": true
+}

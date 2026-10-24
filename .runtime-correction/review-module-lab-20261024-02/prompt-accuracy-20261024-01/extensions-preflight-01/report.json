@@ -1,0 +1,55 @@
+{
+  "status": "PREFLIGHT_PASS",
+  "variant": "selected",
+  "split": "holdout",
+  "mode": "OFFLINE_PREFLIGHT",
+  "completedCases": 3,
+  "preliminaryLabelMatches": null,
+  "rows": [
+    {
+      "caseId": "F10",
+      "metricId": "M12",
+      "domain": "flower",
+      "split": "holdout",
+      "preflight": true,
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "F11",
+      "metricId": "M12",
+      "domain": "flower",
+      "split": "holdout",
+      "preflight": true,
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "K10",
+      "metricId": "M12",
+      "domain": "kitchen",
+      "split": "holdout",
+      "preflight": true,
+      "frozenInputUnchanged": true
+    }
+  ],
+  "elapsedMs": 986,
+  "protectedInputs": true,
+  "repositoryUnchanged": true,
+  "configurationUnchanged": null,
+  "profileUnchanged": true,
+  "before": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  },
+  "after": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  },
+  "originalProjectOrSessionWritten": false,
+  "businessExecution": false,
+  "productionStopIntegrated": false,
+  "limitation": "Label agreement and byte integrity are preliminary. Independent diagnosis support is required. Selected object results are not whole-metric or project acceptance."
+}

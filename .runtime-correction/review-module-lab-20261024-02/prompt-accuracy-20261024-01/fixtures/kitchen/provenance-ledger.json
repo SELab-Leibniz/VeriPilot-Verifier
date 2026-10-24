@@ -1,0 +1,341 @@
+{
+  "schemaVersion": "prompt-accuracy-kitchen-fixtures.v1",
+  "sources": [
+    {
+      "role": "original-contract",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\examples\\openclaw-offline-kitchen\\skills\\build-offline-kitchen\\references\\requirements.md",
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "bytes": 1945
+    },
+    {
+      "role": "existing-correct-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\workspace\\kitchen.py",
+      "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "bytes": 7339
+    },
+    {
+      "role": "existing-missing-consumption-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\workspace\\kitchen.py",
+      "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+      "bytes": 7223
+    }
+  ],
+  "historicalEvidence": {
+    "positive": {
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\independent-verifier.json",
+      "sha256": "85f3bb1380ad6ec4d5a3f8468d7307ed0604f7b759ece528abdf7cec136c7a02",
+      "sourceSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "passed": true,
+      "scenarioCount": 21,
+      "failure": null
+    },
+    "negative": {
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\independent-verifier.json",
+      "sha256": "2483aa84ce5cc06db74a395f5052efa45429359a61f4fdf5f1eb73f958294db7",
+      "sourceSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+      "passed": false,
+      "scenarioCount": null,
+      "failure": "persisted-consumption: unexpected JSON result: {'case': 'persisted-consumption', 'args': ['--store', 'C:\\\\Users\\\\user\\\\workspace\\\\program_workspace\\\\runtime-corrector-toy\\\\.runtime-correction\\\\review-module-lab-20261024-02\\\\kitchen-v2-live-01\\\\C02\\\\independent-app\\\\.kitchen-check-6_pr__2a\\\\kitchen.json', 'pantry', 'list'], 'exit': 0, 'stdout': '{\"番茄\": 2, \"鸡蛋\": 3}\\n', 'stderr': ''}"
+    }
+  },
+  "noAppOrVerifierRun": true,
+  "originalInputsReadOnly": true,
+  "fixtureCount": 9,
+  "definition": "Three metrics with paired development controls and one held-out mechanism each; labels and mutation explanations remain outside model workspaces.",
+  "cases": [
+    {
+      "caseId": "K01",
+      "domain": "kitchen",
+      "metricId": "M01",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K01\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K01\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K01\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K01\\provenance.json"
+    },
+    {
+      "caseId": "K02",
+      "domain": "kitchen",
+      "metricId": "M01",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K02\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K02\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K02\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K02\\provenance.json"
+    },
+    {
+      "caseId": "K03",
+      "domain": "kitchen",
+      "metricId": "M01",
+      "split": "holdout",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K03\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K03\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K03\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K03\\provenance.json"
+    },
+    {
+      "caseId": "K04",
+      "domain": "kitchen",
+      "metricId": "M05",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K04\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K04\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K04\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K04\\provenance.json"
+    },
+    {
+      "caseId": "K05",
+      "domain": "kitchen",
+      "metricId": "M05",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K05\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K05\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K05\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K05\\provenance.json"
+    },
+    {
+      "caseId": "K06",
+      "domain": "kitchen",
+      "metricId": "M05",
+      "split": "holdout",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K06\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K06\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K06\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K06\\provenance.json"
+    },
+    {
+      "caseId": "K07",
+      "domain": "kitchen",
+      "metricId": "M12",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K07\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K07\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K07\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K07\\provenance.json"
+    },
+    {
+      "caseId": "K08",
+      "domain": "kitchen",
+      "metricId": "M12",
+      "split": "dev",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K08\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K08\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K08\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K08\\provenance.json"
+    },
+    {
+      "caseId": "K09",
+      "domain": "kitchen",
+      "metricId": "M12",
+      "split": "holdout",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K09\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K09\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K09\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K09\\provenance.json"
+    }
+  ],
+  "numberingNeutralizations": [
+    {
+      "caseId": "K02",
+      "beforeSha256": "2afdecdf04f9ca792c1016cbb1920776d1c03be885416a98917c21d9c8198dc8",
+      "afterSha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+      "numberingOnly": true,
+      "semanticTextWithoutIdentifiersSha256": "a1a13ad625bb69165f4a0541cecd99532f21d1e61e8c2e07cf157889288c5b6b",
+      "reason": "Consecutive local numbering removes an incidental deletion-position cue; required behavior and expected judgement unchanged."
+    },
+    {
+      "caseId": "K05",
+      "beforeSha256": "aebeb3e4ab21fc239ec334728d02243b5400ab919fb264c9a34fd500c05274a8",
+      "afterSha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+      "numberingOnly": true,
+      "semanticTextWithoutIdentifiersSha256": "3b54f012c9fb920b3825f6fe79edaddf98ba3560acefa94a6586cd5c2e6b6555",
+      "reason": "Consecutive local numbering removes an incidental deletion-position cue; required behavior and expected judgement unchanged."
+    },
+    {
+      "caseId": "K06",
+      "beforeSha256": "7b03f7201d01e3860d4aca9f65be2792fac7694575f0be20d40e0f38e2c2aa21",
+      "afterSha256": "2b281cc334ba8982ed11dccb548aac629aa96f104b5725007a4a5f46667c9728",
+      "numberingOnly": true,
+      "semanticTextWithoutIdentifiersSha256": "7ec0c2eb8369e51a59ce3555d6af91af92277b6936584d2918ab42c0310f0991",
+      "reason": "Consecutive local numbering removes an incidental deletion-position cue; required behavior and expected judgement unchanged."
+    }
+  ],
+  "oracleRangeCorrection": {
+    "caseId": "K07",
+    "path": "kitchen.py",
+    "start": 137,
+    "end": 151,
+    "reason": "Cover the actual deduction and save loop, rather than only the preceding guard."
+  },
+  "fixtureFileIdentities": [
+    {
+      "caseId": "K01",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "decomposition.md",
+          "sha256": "1e93078ad9932d0f2433cc37681a9d8009b3d750fdffb61050de1460c38bdbfb",
+          "bytes": 2381
+        }
+      ],
+      "taskSha256": "52a2d049442e2d6dc32b176fdcbe9811ff7fa55d37a9ef1c5b6abd920dcd531f",
+      "oracleSha256": "93826672c4d3a802ee6867db252c5ee2f49fe840d6918b166213a381018986ec",
+      "provenanceSha256": "74b6f49efd8cfe547c2a117eeca6a9051cf7101043e953bdca90bb4bdcfe71da"
+    },
+    {
+      "caseId": "K02",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "decomposition.md",
+          "sha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+          "bytes": 2220
+        }
+      ],
+      "taskSha256": "52a2d049442e2d6dc32b176fdcbe9811ff7fa55d37a9ef1c5b6abd920dcd531f",
+      "oracleSha256": "cf406d8ad81178761f8656a859591bb39ef46c56f7027d059a0affe064d8dbf3",
+      "provenanceSha256": "34f5ee0f69881b665e7e35729b616d94190db39b8df6d9854e74ed612c07101f"
+    },
+    {
+      "caseId": "K03",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "decomposition.md",
+          "sha256": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d",
+          "bytes": 2324
+        }
+      ],
+      "taskSha256": "52a2d049442e2d6dc32b176fdcbe9811ff7fa55d37a9ef1c5b6abd920dcd531f",
+      "oracleSha256": "4244a0a1e0ec1f92964b93a346fa698fc6bd11bf4e56af87dde0c3bfbd599674",
+      "provenanceSha256": "0e4f34899546d5b2a0721d4c8cc7a77c6f76d5ca3431443cb5f8f3dc0d8b1847"
+    },
+    {
+      "caseId": "K04",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "acceptance.md",
+          "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+          "bytes": 2874
+        }
+      ],
+      "taskSha256": "105f64f26a495c5cab2b00f310aefe244647698fcb2c92b538eb102be6077609",
+      "oracleSha256": "244ba40dea28465d731990e52a4c5e3ccb9d55ea132e09a09c38cfdf101e449d",
+      "provenanceSha256": "6d53de4ace26e516d399c91e5b2c25662979a3580328ccc6d0e20a1d27818b68"
+    },
+    {
+      "caseId": "K05",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "acceptance.md",
+          "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+          "bytes": 2653
+        }
+      ],
+      "taskSha256": "105f64f26a495c5cab2b00f310aefe244647698fcb2c92b538eb102be6077609",
+      "oracleSha256": "5b2ccf642fa20f747da064da81da3bc4e2a094d038b274b4e9edd9c35615429b",
+      "provenanceSha256": "618f0927e9f510e69f736d2f4484ab7ad3e8bbfb7babbb009fe5f0f09f437a0f"
+    },
+    {
+      "caseId": "K06",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "acceptance.md",
+          "sha256": "2b281cc334ba8982ed11dccb548aac629aa96f104b5725007a4a5f46667c9728",
+          "bytes": 2679
+        }
+      ],
+      "taskSha256": "105f64f26a495c5cab2b00f310aefe244647698fcb2c92b538eb102be6077609",
+      "oracleSha256": "5fb76846ebfc4df24d7761432e95404939a7208574bb89227fc7784822124fe3",
+      "provenanceSha256": "a32e50c7bc05e8542d5e1282f9a49fa4ee70df6c46ebc3b5e494d05f1ed527df"
+    },
+    {
+      "caseId": "K07",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "kitchen.py",
+          "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+          "bytes": 7339
+        }
+      ],
+      "taskSha256": "c49c7072b8e759677a6ff809ecec00d4c1d81ee9cd3e5b5dd959521d3b134a62",
+      "oracleSha256": "f18e36b89e8c3babba97de005aff2e18fa5bb46611860de484be26f0acb1f26f",
+      "provenanceSha256": "1b8253c17a146999e61e37a0798dd9573d8bffee0d4375b02dc5cfdff2357462"
+    },
+    {
+      "caseId": "K08",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "kitchen.py",
+          "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+          "bytes": 7223
+        }
+      ],
+      "taskSha256": "c49c7072b8e759677a6ff809ecec00d4c1d81ee9cd3e5b5dd959521d3b134a62",
+      "oracleSha256": "667db2bcdf4656b0254817f1833440a92f69479b1b301d264d912fda1e5618d0",
+      "provenanceSha256": "ee7688eea4e3d41099accbde0234e816aa023c9b2fcab76b9c1a19c824596929"
+    },
+    {
+      "caseId": "K09",
+      "files": [
+        {
+          "path": "requirements.md",
+          "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+          "bytes": 1945
+        },
+        {
+          "path": "kitchen.py",
+          "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+          "bytes": 7339
+        }
+      ],
+      "taskSha256": "c3dfb17ba99855ca61c74abc78b686acb1bc89bc5581f089fc735402ea249845",
+      "oracleSha256": "ddcc3e8686a2fe75961d8376be82be2dd702cc65637513b5b34d50a2aab9e365",
+      "provenanceSha256": "ca48236eae45306c6f75f2764a2e1f40d762cefc41202baaef03d586a45d37b3"
+    }
+  ],
+  "phasePackagingCorrection": {
+    "caseId": "K09",
+    "before": "IMPLEMENTATION",
+    "after": "VERIFICATION",
+    "scope": "RUNTIME_ACCEPTANCE",
+    "taskMeaningUnchanged": true
+  }
+}

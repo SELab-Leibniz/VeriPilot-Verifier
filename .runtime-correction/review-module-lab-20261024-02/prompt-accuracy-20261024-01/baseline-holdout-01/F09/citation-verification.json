@@ -1,0 +1,92 @@
+{
+  "passed": true,
+  "taskId": "M12:gt-009",
+  "scope": "RUNTIME_ACCEPTANCE",
+  "completed": true,
+  "conclusive": false,
+  "originalBytesChecked": true,
+  "errors": [],
+  "verified": [
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "fca0db40f06abd55be350d9fc0afaafb826644517791c26d35f270c8b8478c22"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "85e42172e2e3d960502e6f240ae5e630f9b297c27296ed6e264ff6a623798b76"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+    },
+    {
+      "category": "citations",
+      "citeId": "51e61a6b-c020-4876-a780-00e96f5c389c",
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "fca0db40f06abd55be350d9fc0afaafb826644517791c26d35f270c8b8478c22"
+    },
+    {
+      "category": "citations",
+      "citeId": "0eb29285-cec6-444a-bbac-b6ed0008233d",
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca"
+    },
+    {
+      "category": "citations",
+      "citeId": "3d1d8b4b-80e6-4d2d-a5dc-d66a6a80e552",
+      "path": "background/self-reported-acceptance.md",
+      "start": 1,
+      "end": 74,
+      "sha256": "9e8328663b7933f0503c4c02390e2ee8af73408c1b37f2f03bb1097df82983ad"
+    },
+    {
+      "category": "citations",
+      "citeId": "08d94e1f-8ed9-4504-9ae5-d4f8ce43ec73",
+      "path": "implementation/entry/src/main/ets/data/StorageUtil.ets",
+      "start": 1,
+      "end": 90,
+      "sha256": "44a04853d057b37f77fbbd76758aa140c3ac13a035bb5cafa9825aaf1fd28b64"
+    },
+    {
+      "category": "citations",
+      "citeId": "ad046f6a-6e85-4119-8b78-ffa7d90438a8",
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "start": 1,
+      "end": 269,
+      "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0"
+    }
+  ],
+  "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+}

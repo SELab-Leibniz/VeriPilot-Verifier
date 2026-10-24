@@ -1,0 +1,2 @@
+M01:gt-009 | PASS | The complete gt-009 object is recognizably decomposed: commodity-browsing/spec.md states the homepage bottom browse-history area, 10-item cap with "仅保留最近 10 条", and persistence after app close; design.md 决策3 adds the storage mechanism (@ohos.data.preferences, key browse_history). No applicable conditions/exceptions are omitted.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-holdout-01\F03\review\result.json

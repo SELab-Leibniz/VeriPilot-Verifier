@@ -1,0 +1,2 @@
+M12:gt-025 | PASS | module.json5 requestPermissions declares all eight required permissions (INTERNET, MICROPHONE, PUBLISH_AGENT_REMINDER, APPROXIMATELY_LOCATION, LOCATION, ACCESS_BIOMETRIC, READ_CALENDAR, WRITE_CALENDAR), satisfying gt-025's declarative manifest obligation, which is statically decidable from source.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\F07\review\result.json

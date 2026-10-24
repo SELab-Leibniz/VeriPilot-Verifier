@@ -1,0 +1,145 @@
+{
+  "taskId": "M12:requirements-3e1172210314804d",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "completed": true,
+  "conclusive": true,
+  "verdict": "PASS",
+  "reason": "GET /api/commodities (fetchList) and GET /api/commodities/{id} (fetchDetail) issue real HTTP GETs, and both catch/empty responses degrade to MockData.commodities()/commodityById(id); Index and CommodityDetail consume these paths to render list/detail, keeping the app usable, with INTERNET permission declared.",
+  "limits": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "tokenBudget": null,
+    "deadline": null
+  },
+  "refs": [
+    {
+      "citeId": "5ae98d09-369b-41e8-979a-e8d942a03cf2",
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "byteStart": 0,
+      "byteEnd": 14999,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "afb8df74-f5d2-43f3-87f3-72f477b00be5",
+      "path": "implementation/entry/src/main/ets/data/Repository.ets",
+      "start": 1,
+      "end": 73,
+      "sha256": "6d7134f8515c4df4703a1019eafda4ea7c8cf6484a729884f65a297ee2efc274",
+      "byteStart": 0,
+      "byteEnd": 2454,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "abd2ca49-ef06-4fe4-9d75-ea3694bcb150",
+      "path": "implementation/entry/src/main/ets/data/MockData.ets",
+      "start": 1,
+      "end": 30,
+      "sha256": "d90e87463b2561609a6ec50229b65122c6f292e912c1958c890c04c905620a4c",
+      "byteStart": 0,
+      "byteEnd": 1509,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "7bd1fd05-ce96-4b88-aa53-9822d682dd4d",
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "start": 1,
+      "end": 213,
+      "sha256": "ea6d203745bbb8542bc47d06647d7dc6cbe91c462ed348cd937b0a97a41dd541",
+      "byteStart": 0,
+      "byteEnd": 6137,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "4937635b-bda1-46fb-a2a9-f71daba0219b",
+      "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+      "start": 1,
+      "end": 188,
+      "sha256": "9c800312d12b99164f7452780d04381eab4afff17b780aafe77c83df1b7e910b",
+      "byteStart": 0,
+      "byteEnd": 5995,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "229973e8-5493-44fe-a202-9083860f1438",
+      "path": "implementation/entry/src/main/module.json5",
+      "start": 1,
+      "end": 104,
+      "sha256": "82e2d63d86e1e67dba890e0ae5a244c498e19b2a15618cf98d0b60ed260168a0",
+      "byteStart": 0,
+      "byteEnd": 2752,
+      "rangeKind": "range"
+    }
+  ],
+  "citeIds": [
+    "5ae98d09-369b-41e8-979a-e8d942a03cf2",
+    "afb8df74-f5d2-43f3-87f3-72f477b00be5",
+    "abd2ca49-ef06-4fe4-9d75-ea3694bcb150",
+    "7bd1fd05-ce96-4b88-aa53-9822d682dd4d",
+    "4937635b-bda1-46fb-a2a9-f71daba0219b",
+    "229973e8-5493-44fe-a202-9083860f1438"
+  ],
+  "basis": [
+    {
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 8,
+      "sha256": "209c67eab8eae65913a6292e1ddb85264e1774440c1eb2e768bece2906024ca3",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/metric-contract.md"
+    },
+    {
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "9f92b7f8c885b8bcd0d74caf5cbac352f77ab43d58d5a0320e979916535d6bb8",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/selected-object.json"
+    },
+    {
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 36,
+      "sha256": "08cf0344f7cd41e3c051b84c25f3c29b2e82f39f5e4c0fc45dff7c05f0d758d5",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/input-roles.json"
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 223,
+      "sha256": "67cea7f53eceb04fd6d609a061ae351ba179a9acfed0b5ccc1d7dde0fb3a5218",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/original-ground-truth.md"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/source/app-requirements.md"
+    }
+  ],
+  "basisAnchors": [],
+  "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\selected-extension-01\\F10\\review\\evidence.json",
+  "attempts": 1,
+  "metrics": {
+    "turns": 4,
+    "toolCalls": 12,
+    "readBytes": 63932,
+    "grepBytes": 0,
+    "totalToolBytes": 63991,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "compactionFailures": 0,
+    "inputTokens": 49381,
+    "outputTokens": 3446,
+    "contextChecks": 5,
+    "unsafeRequestsPrevented": 0
+  },
+  "elapsedMs": 31724,
+  "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\selected-extension-01\\F10\\review"
+}

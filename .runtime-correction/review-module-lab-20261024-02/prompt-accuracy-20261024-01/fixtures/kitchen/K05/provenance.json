@@ -1,0 +1,52 @@
+{
+  "caseId": "K05",
+  "sourceLedger": [
+    {
+      "role": "original-contract",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\examples\\openclaw-offline-kitchen\\skills\\build-offline-kitchen\\references\\requirements.md",
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "bytes": 1945
+    },
+    {
+      "role": "existing-correct-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\workspace\\kitchen.py",
+      "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "bytes": 7339
+    },
+    {
+      "role": "existing-missing-consumption-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\workspace\\kitchen.py",
+      "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+      "bytes": 7223
+    }
+  ],
+  "controlledArtifact": true,
+  "mutation": "uncovered-positive-cook-branch",
+  "originalContractPreservedByteForByte": true,
+  "noAppOrVerifierRun": true,
+  "oracleIncludedInWorkspace": false,
+  "files": [
+    {
+      "path": "requirements.md",
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "bytes": 1945
+    },
+    {
+      "path": "acceptance.md",
+      "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+      "bytes": 2653
+    }
+  ],
+  "targetEvidenceLines": {
+    "path": "acceptance.md",
+    "start": 15,
+    "end": 18
+  },
+  "numberingNeutralization": {
+    "beforeSha256": "aebeb3e4ab21fc239ec334728d02243b5400ab919fb264c9a34fd500c05274a8",
+    "afterSha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+    "numberingOnly": true,
+    "semanticTextWithoutIdentifiersSha256": "3b54f012c9fb920b3825f6fe79edaddf98ba3560acefa94a6586cd5c2e6b6555",
+    "reason": "Consecutive local numbering removes an incidental deletion-position cue; required behavior and expected judgement unchanged."
+  }
+}

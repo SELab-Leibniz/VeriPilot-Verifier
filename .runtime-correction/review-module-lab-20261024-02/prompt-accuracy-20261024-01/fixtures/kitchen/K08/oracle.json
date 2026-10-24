@@ -1,0 +1,35 @@
+{
+  "caseId": "K08",
+  "metricId": "M12",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "DEVIATION",
+  "mechanism": "cook checks sufficiency but saves unchanged pantry because the consumption loop is absent; it reports cooked although required quantities are not deducted. The prior independent verifier recorded the same source hash failing persisted-consumption.",
+  "mutation": "concrete-source-contradiction",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "kitchen.py",
+      "start": 137,
+      "end": 146,
+      "role": "Relevant current target region; absence claims must also inspect the complete target"
+    }
+  ],
+  "mustNotClaim": [
+    "The static sub-proof establishes that the full runtime project or all M12 objects passed",
+    "Historical oracle records outside input were read by the reviewer"
+  ],
+  "historicalCorroboration": {
+    "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\independent-verifier.json",
+    "sha256": "2483aa84ce5cc06db74a395f5052efa45429359a61f4fdf5f1eb73f958294db7",
+    "sourceSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+    "passed": false,
+    "scenarioCount": null,
+    "failure": "persisted-consumption: unexpected JSON result: {'case': 'persisted-consumption', 'args': ['--store', 'C:\\\\Users\\\\user\\\\workspace\\\\program_workspace\\\\runtime-corrector-toy\\\\.runtime-correction\\\\review-module-lab-20261024-02\\\\kitchen-v2-live-01\\\\C02\\\\independent-app\\\\.kitchen-check-6_pr__2a\\\\kitchen.json', 'pantry', 'list'], 'exit': 0, 'stdout': '{\"番茄\": 2, \"鸡蛋\": 3}\\n', 'stderr': ''}"
+  }
+}

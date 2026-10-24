@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "metric-review-independent-oracle.v1",
+  "caseId": "F10",
+  "domain": "flower",
+  "metricId": "M12",
+  "sourceObjectId": "M12:requirements-3e1172210314804d",
+  "expected": "PASS",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "kind": "original-authorized-conditional-fallback",
+  "rootCause": "The complete frozen object expressly authorizes local mock data when a network request fails. Current repository constructs both required GET paths, uses a real HTTP request path, rejects transport/non-200/parse errors, and catches those errors in list/detail methods to return local mock products. Home/detail production entry points actually call those methods. A local fallback is therefore an allowed conditional implementation, not absence of the required source logic. This establishes only SOURCE_IMPLEMENTATION, not that a remote server/device run passed.",
+  "authority": {
+    "populationPath": "C:/Users/user/workspace/program_workspace/runtime-corrector-exp/experiments/ma-rc/run1/flower_eshop/.runtime-correction/tasks/oc-scope-0866f084-6f54-421b-b600-a1a57708af09/metrics/population.json",
+    "populationSha256": "4b01dba57f62a86a2f038c4853bd3d4b9b9e6d061cc2ae20069e9073cf8a0dfb",
+    "originalObject": {
+      "objectId": "M12:requirements-3e1172210314804d",
+      "metricId": "M12",
+      "sourceId": "requirements-3e1172210314804d",
+      "sourceRevisionId": "requirements-3e1172210314804d@1",
+      "description": "Network: GET /api/commodities returns the product list; GET /api/commodities/{id} returns product detail; when a network request fails, automatically degrade to local mock data to keep the app usable.",
+      "authority": "MATERIAL_DERIVED",
+      "hard": true,
+      "evidenceRequired": true,
+      "applicability": "network",
+      "verificationTarget": "IMPLEMENTATION"
+    }
+  },
+  "mutation": null,
+  "evidence": [
+    {
+      "path": "implementation/entry/src/main/ets/data/Repository.ets",
+      "start": 8,
+      "end": 59,
+      "sha256": "6d7134f8515c4df4703a1019eafda4ea7c8cf6484a729884f65a297ee2efc274",
+      "text": "export class CommodityRepository {\n  private baseUrl: string = 'http://127.0.0.1:8080/api';\n\n  async fetchList(context: common.UIAbilityContext): Promise<Commodity[]> {\n    try {\n      const list = await this.request('/commodities');\n      if (Array.isArray(list) && list.length > 0) {\n        return list.map((it: Record<string, Object>) => this.toCommodity(it));\n      }\n      return MockData.commodities();\n    } catch (e) {\n      return MockData.commodities();\n    }\n  }\n\n  async fetchDetail(context: common.UIAbilityContext, id: number): Promise<Commodity> {\n    try {\n      const it = await this.request(`/commodities/${id}`);\n      if (it) {\n        return this.toCommodity(it as Record<string, Object>);\n      }\n      return MockData.commodityById(id) as Commodity;\n    } catch (e) {\n      return MockData.commodityById(id) as Commodity;\n    }\n  }\n\n  private async request(path: string): Promise<Record<string, Object> | Record<string, Object>[]> {\n    return new Promise<Record<string, Object> | Record<string, Object>[]>((resolve, reject) => {\n      const httpRequest = http.createHttp();\n      httpRequest.request(\n        `${this.baseUrl}${path}`,\n        { method: http.RequestMethod.GET, connectTimeout: 3000, readTimeout: 3000 },\n        (err: BusinessError, data: http.HttpResponse) => {\n          httpRequest.destroy();\n          if (err) {\n            reject(err);\n            return;\n          }\n          try {\n            if (data.responseCode === 200) {\n              const body: Record<string, Object> | Record<string, Object>[] =\n                JSON.parse(data.result as string) as Record<string, Object> | Record<string, Object>[];\n              resolve(body);\n            } else {\n              reject(new Error(`HTTP ${data.responseCode}`));\n            }\n          } catch (e) {\n            reject(e);\n          }\n        });\n    });"
+    },
+    {
+      "path": "implementation/entry/src/main/ets/data/MockData.ets",
+      "start": 3,
+      "end": 21,
+      "sha256": "d90e87463b2561609a6ec50229b65122c6f292e912c1958c890c04c905620a4c",
+      "text": "// 本地 mock 数据：网络不可用时降级使用\nexport class MockData {\n  static commodities(): Commodity[] {\n    return [\n      new Commodity(1, '红玫瑰', '热情似火，爱你永恒', '11枝/束', 99, 'app.media.startIcon'),\n      new Commodity(2, '白百合', '纯洁高雅，百年好合', '10枝/束', 129, 'app.media.startIcon'),\n      new Commodity(3, '向日葵', '阳光积极，爱慕忠诚', '5枝/束', 69, 'app.media.startIcon'),\n      new Commodity(4, '满天星', '清纯致远，思念温柔', '整束', 49, 'app.media.startIcon'),\n      new Commodity(5, '郁金香', '博爱体贴，聪颖善良', '12枝/束', 139, 'app.media.startIcon'),\n      new Commodity(6, '康乃馨', '温馨祝福，母爱光辉', '10枝/束', 89, 'app.media.startIcon'),\n      new Commodity(7, '紫罗兰', '永恒之美，爱的羁绊', '6枝/束', 79, 'app.media.startIcon'),\n      new Commodity(8, '绣球花', '希望忠贞，圆满团聚', '单枝', 59, 'app.media.startIcon'),\n    ];\n  }\n\n  static commodityById(id: number): Commodity | undefined {\n    return MockData.commodities().find(c => c.id === id);\n  }\n"
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "start": 20,
+      "end": 39,
+      "sha256": "ea6d203745bbb8542bc47d06647d7dc6cbe91c462ed348cd937b0a97a41dd541",
+      "text": "  private repo: CommodityRepository = new CommodityRepository();\n  private context: common.UIAbilityContext | null = null;\n\n  aboutToAppear(): void {\n    this.context = this.getUIContext().getHostContext() as common.UIAbilityContext;\n    this.loadData();\n  }\n\n  async loadData(): Promise<void> {\n    if (this.context) {\n      this.list = await this.repo.fetchList(this.context);\n    }\n    this.loadHistory();\n  }\n\n  async onRefresh(): Promise<void> {\n    this.refreshing = true;\n    // 模拟网络刷新失败降级：保留现有数据 + 本地缓存\n    if (this.context) {\n      this.list = await this.repo.fetchList(this.context);"
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+      "start": 21,
+      "end": 36,
+      "sha256": "9c800312d12b99164f7452780d04381eab4afff17b780aafe77c83df1b7e910b",
+      "text": "  private repo: CommodityRepository = new CommodityRepository();\n\n  aboutToAppear(): void {\n    this.context = this.getUIContext().getHostContext() as common.UIAbilityContext;\n    const params = router.getParams() as Record<string, number>;\n    const id = params && params['id'] ? params['id'] : 1;\n    this.load(id);\n  }\n\n  async load(id: number): Promise<void> {\n    if (this.context) {\n      this.commodity = await this.repo.fetchDetail(this.context, id);\n      this.favorite = (await PreferencesStore.getFavorites(this.context)).includes(id);\n      PreferencesStore.recordBrowse(this.context, id);\n    }\n  }"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 280,
+      "end": 287,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "text": "### 5.2 网络接口\n\n| 接口 | 方法 | 说明 |\n|------|------|------|\n| /api/commodities | GET | 获取商品列表 |\n| /api/commodities/{id} | GET | 获取商品详情 |\n\n**降级策略**: 网络请求失败时，自动降级到本地mock数据，保障应用可用性。"
+    }
+  ],
+  "sourceCopies": [
+    {
+      "path": "source/app-requirements.md",
+      "source": "C:/Users/user/workspace/program_workspace/runtime-corrector-exp/experiments/ma-rc/run1/flower_eshop/app-requirements.md",
+      "sourceSha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "candidateSha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "bytes": 14999,
+      "unchanged": true
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "source": "C:/Users/user/workspace/program_workspace/runtime-corrector-exp/experiments/ma-rc/run1/flower_eshop/.runtime-correction/tasks/oc-scope-0866f084-6f54-421b-b600-a1a57708af09/ground-truth/current.md",
+      "sourceSha256": "67cea7f53eceb04fd6d609a061ae351ba179a9acfed0b5ccc1d7dde0fb3a5218",
+      "candidateSha256": "67cea7f53eceb04fd6d609a061ae351ba179a9acfed0b5ccc1d7dde0fb3a5218",
+      "bytes": 25155,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/data/MockData.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\data\\MockData.ets",
+      "sourceSha256": "d90e87463b2561609a6ec50229b65122c6f292e912c1958c890c04c905620a4c",
+      "candidateSha256": "d90e87463b2561609a6ec50229b65122c6f292e912c1958c890c04c905620a4c",
+      "bytes": 1509,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/data/PreferencesStore.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\data\\PreferencesStore.ets",
+      "sourceSha256": "7cdb0c678346981579244f207f09d7dba5f0082a60b6c9a0a490f2034e327954",
+      "candidateSha256": "7cdb0c678346981579244f207f09d7dba5f0082a60b6c9a0a490f2034e327954",
+      "bytes": 2395,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/data/Repository.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\data\\Repository.ets",
+      "sourceSha256": "6d7134f8515c4df4703a1019eafda4ea7c8cf6484a729884f65a297ee2efc274",
+      "candidateSha256": "6d7134f8515c4df4703a1019eafda4ea7c8cf6484a729884f65a297ee2efc274",
+      "bytes": 2454,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/entryability/EntryAbility.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\entryability\\EntryAbility.ets",
+      "sourceSha256": "0292623260ad50b5c5fbe884254e257cc82f8b7a342f2b850190578243b1ce85",
+      "candidateSha256": "0292623260ad50b5c5fbe884254e257cc82f8b7a342f2b850190578243b1ce85",
+      "bytes": 1770,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\entrybackupability\\EntryBackupAbility.ets",
+      "sourceSha256": "ae94f286234d41ad5fa9f70bfd11f61e2f609994d6f16687d1ce4ec442115e5d",
+      "candidateSha256": "ae94f286234d41ad5fa9f70bfd11f61e2f609994d6f16687d1ce4ec442115e5d",
+      "bytes": 522,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/model/Models.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\model\\Models.ets",
+      "sourceSha256": "0ca7b5a3f5bc83626d3832c892115bc2e601dd23dacf45b3d830cba623a19c21",
+      "candidateSha256": "0ca7b5a3f5bc83626d3832c892115bc2e601dd23dacf45b3d830cba623a19c21",
+      "bytes": 757,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\pages\\CommodityDetail.ets",
+      "sourceSha256": "9c800312d12b99164f7452780d04381eab4afff17b780aafe77c83df1b7e910b",
+      "candidateSha256": "9c800312d12b99164f7452780d04381eab4afff17b780aafe77c83df1b7e910b",
+      "bytes": 5995,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\pages\\Index.ets",
+      "sourceSha256": "ea6d203745bbb8542bc47d06647d7dc6cbe91c462ed348cd937b0a97a41dd541",
+      "candidateSha256": "ea6d203745bbb8542bc47d06647d7dc6cbe91c462ed348cd937b0a97a41dd541",
+      "bytes": 6137,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/PaySecurity.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\pages\\PaySecurity.ets",
+      "sourceSha256": "220222f379bc8b615bb440223be0d45e805184d4c231589fda9a5d5ae8deeaa6",
+      "candidateSha256": "220222f379bc8b615bb440223be0d45e805184d4c231589fda9a5d5ae8deeaa6",
+      "bytes": 3276,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/Personal.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\pages\\Personal.ets",
+      "sourceSha256": "589eeb4b36435aba504515d5117a4b9c7a3cc2c8df4505119592c7a22894b212",
+      "candidateSha256": "589eeb4b36435aba504515d5117a4b9c7a3cc2c8df4505119592c7a22894b212",
+      "bytes": 2317,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/pages/StoreMap.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\pages\\StoreMap.ets",
+      "sourceSha256": "ab62f8ca1f0b8a4dc95df2b3ee20d74c2fc5a0914fbee3227d3922517d2c5278",
+      "candidateSha256": "ab62f8ca1f0b8a4dc95df2b3ee20d74c2fc5a0914fbee3227d3922517d2c5278",
+      "bytes": 2205,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/CalendarUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\CalendarUtil.ets",
+      "sourceSha256": "7fec012e648b62f7e919a1a7d60d1b573dbeb125e0d986f5b98602a9fc809d34",
+      "candidateSha256": "7fec012e648b62f7e919a1a7d60d1b573dbeb125e0d986f5b98602a9fc809d34",
+      "bytes": 926,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/ImagePickerUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\ImagePickerUtil.ets",
+      "sourceSha256": "7b25806225723b6fd39aae9ecb17d63230b61a8d68e515ffea5d860b93f5f2d4",
+      "candidateSha256": "7b25806225723b6fd39aae9ecb17d63230b61a8d68e515ffea5d860b93f5f2d4",
+      "bytes": 544,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/LocationUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\LocationUtil.ets",
+      "sourceSha256": "d9e4c924e1ddec40384bf0e25bec30fb3f2511c7819c6aba88aa8934cd35eac9",
+      "candidateSha256": "d9e4c924e1ddec40384bf0e25bec30fb3f2511c7819c6aba88aa8934cd35eac9",
+      "bytes": 1274,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/NotificationUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\NotificationUtil.ets",
+      "sourceSha256": "e3a17b1a608f42fd9db824c9ba959db4d14222ad6676e4f3b3198f164779ddfc",
+      "candidateSha256": "e3a17b1a608f42fd9db824c9ba959db4d14222ad6676e4f3b3198f164779ddfc",
+      "bytes": 1158,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/PaymentUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\PaymentUtil.ets",
+      "sourceSha256": "9118c3b0e17077f5aa463cc9a4659a40562313292058936ff2439153372ccbaa",
+      "candidateSha256": "9118c3b0e17077f5aa463cc9a4659a40562313292058936ff2439153372ccbaa",
+      "bytes": 2445,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/PermissionUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\PermissionUtil.ets",
+      "sourceSha256": "e3c083eac03c34657e070af2e44b3415239072e815d96b66845dd86c8992e56f",
+      "candidateSha256": "e3c083eac03c34657e070af2e44b3415239072e815d96b66845dd86c8992e56f",
+      "bytes": 967,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/ScanUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\ScanUtil.ets",
+      "sourceSha256": "a37b358e257609a8ba3fcc3cc7775a23b64bcf81c684a9dbe026603d2c1bded4",
+      "candidateSha256": "a37b358e257609a8ba3fcc3cc7775a23b64bcf81c684a9dbe026603d2c1bded4",
+      "bytes": 1167,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/ShareUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\ShareUtil.ets",
+      "sourceSha256": "3028e0e3e588e5c60d23b09fe4a2753d5319cb92ebebb45ce390f8209525dea1",
+      "candidateSha256": "3028e0e3e588e5c60d23b09fe4a2753d5319cb92ebebb45ce390f8209525dea1",
+      "bytes": 1139,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/SmartVaseUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\SmartVaseUtil.ets",
+      "sourceSha256": "17250d76757c62671151d0cc1d9d0f5577ed2ddc3d8b0fc4082f79f898f19464",
+      "candidateSha256": "17250d76757c62671151d0cc1d9d0f5577ed2ddc3d8b0fc4082f79f898f19464",
+      "bytes": 477,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/ets/utils/VoiceUtil.ets",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-exp\\experiments\\ma-rc\\run1\\flower_eshop\\entry\\src\\main\\ets\\utils\\VoiceUtil.ets",
+      "sourceSha256": "8482e454c9ffc07860362c95fff8699fdc302a27f0fb4708901f1b09557c5d7e",
+      "candidateSha256": "8482e454c9ffc07860362c95fff8699fdc302a27f0fb4708901f1b09557c5d7e",
+      "bytes": 652,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/module.json5",
+      "source": "C:/Users/user/workspace/program_workspace/runtime-corrector-exp/experiments/ma-rc/run1/flower_eshop/entry/src/main/module.json5",
+      "sourceSha256": "82e2d63d86e1e67dba890e0ae5a244c498e19b2a15618cf98d0b60ed260168a0",
+      "candidateSha256": "82e2d63d86e1e67dba890e0ae5a244c498e19b2a15618cf98d0b60ed260168a0",
+      "bytes": 2752,
+      "unchanged": true
+    },
+    {
+      "path": "implementation/entry/src/main/resources/base/profile/main_pages.json",
+      "source": "C:/Users/user/workspace/program_workspace/runtime-corrector-exp/experiments/ma-rc/run1/flower_eshop/entry/src/main/resources/base/profile/main_pages.json",
+      "sourceSha256": "dad15f3d1fa335d542fd17d4eb572bf6e5e3dfafeb16ad61495dba46d50b62e8",
+      "candidateSha256": "dad15f3d1fa335d542fd17d4eb572bf6e5e3dfafeb16ad61495dba46d50b62e8",
+      "bytes": 135,
+      "unchanged": true
+    }
+  ],
+  "limits": [
+    "The original full network object is retained verbatim; no clause is omitted",
+    "No claim of actual HTTP success, device execution or runtime acceptance",
+    "The legitimate fallback does not excuse removing either GET request path or fallback wiring",
+    "Oracle and extension metadata stay outside model workspace",
+    "Original development and holdout cases were not changed"
+  ]
+}

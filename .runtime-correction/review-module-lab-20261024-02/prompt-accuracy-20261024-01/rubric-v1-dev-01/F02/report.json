@@ -1,0 +1,123 @@
+{
+  "caseId": "F02",
+  "metricId": "M01",
+  "domain": "flower",
+  "split": "dev",
+  "expectedVerdict": "DEVIATION",
+  "result": {
+    "taskId": "M01:gt-007",
+    "scope": "METRIC_ARTIFACT_REVIEW",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "DEVIATION",
+    "reason": "commodity-browsing spec covers the home card list (image/name/price) but omits the gt-007 clause \"图片加载时显示占位图\" (placeholder while list images load); the only placeholder statement in the corpus belongs to the commodity-detail spec (gt-014), not the home list. Missing obligation in formal decomposition.",
+    "limits": {
+      "maxAttempts": 2,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "7bc1d587-d9af-461c-bea8-f80283ff9ca3",
+        "path": "candidate/specs/commodity-browsing/spec.md",
+        "start": 1,
+        "end": 35,
+        "sha256": "b367300de6c2b74a049af3f6fb47dcfa3f09982a2a58a184c074a5163603b7c0",
+        "byteStart": 0,
+        "byteEnd": 1444,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "7b8f166a-b0d3-4f2f-8f28-209542d665f8",
+        "path": "candidate/specs/commodity-detail/spec.md",
+        "start": 1,
+        "end": 46,
+        "sha256": "d6516e1bc30d8c3fda1c09c53bf3ee165138530f39375e90d037d446a69ead31",
+        "byteStart": 0,
+        "byteEnd": 2218,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "7bc1d587-d9af-461c-bea8-f80283ff9ca3",
+      "7b8f166a-b0d3-4f2f-8f28-209542d665f8"
+    ],
+    "basis": [
+      {
+        "path": "basis/metric-contract.md",
+        "start": 1,
+        "end": 11,
+        "sha256": "8d15e9fd6bedae99a00078cc55a7f82418ee836a7e1592f0f5953e099df5c09d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/metric-contract.md"
+      },
+      {
+        "path": "basis/selected-object.json",
+        "start": 1,
+        "end": 13,
+        "sha256": "c3cd3a79521cab2ae241cf3d756179d0525123e6820f2b19b388203654d39a9d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/selected-object.json"
+      },
+      {
+        "path": "basis/input-roles.json",
+        "start": 1,
+        "end": 42,
+        "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/input-roles.json"
+      },
+      {
+        "path": "basis/original-ground-truth.md",
+        "start": 1,
+        "end": 158,
+        "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/original-ground-truth.md"
+      },
+      {
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/source/app-requirements.md"
+      }
+    ],
+    "basisAnchors": [],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\F02\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 5,
+      "toolCalls": 13,
+      "readBytes": 47549,
+      "grepBytes": 1742,
+      "totalToolBytes": 49327,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 62319,
+      "outputTokens": 2598,
+      "contextChecks": 6,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 27100,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\F02\\review"
+  },
+  "citationIntegrity": true,
+  "labelMatches": true,
+  "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+  "measured": {
+    "noncachedInputTokens": 28271,
+    "cacheReadTokens": 34048,
+    "cacheWriteTokens": 0,
+    "outputTokens": 2598,
+    "submitCalls": 1,
+    "submitErrors": 0,
+    "maxSubmitBytes": 471,
+    "feedbackBytes": 539,
+    "promptSha256": "0bf3085ff0c73e0f24004b02a32bce11f11451e10b9d13cb1058d29f7f7be54d"
+  },
+  "frozenInputUnchanged": true
+}

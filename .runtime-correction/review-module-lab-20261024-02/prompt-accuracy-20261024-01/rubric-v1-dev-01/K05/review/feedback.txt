@@ -1,0 +1,2 @@
+M05:R04 | DEVIATION | can-cook is covered (AC4.1-4.3) and the failed-cook path is covered (AC4.4), but R04's successful cook obligation — subtract all required quantities when sufficient, persist, and return {"cooked": NAME} — has no acceptance criterion asserting it.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K05\review\result.json

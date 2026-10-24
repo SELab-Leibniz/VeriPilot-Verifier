@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "flower-metric-oracle-independent-audit.v1",
+  "status": "PASS_WITH_EXPLICIT_METRIC_SCOPE",
+  "caseCount": 9,
+  "sourceCopyHashesChecked": 234,
+  "evidenceFileHashesChecked": 12,
+  "workspaceFilesReadOnlyVerified": 261,
+  "allWholeSelectedObjectsPreserved": true,
+  "permissionDeclarationCheck": {
+    "required": [
+      "ohos.permission.INTERNET",
+      "ohos.permission.MICROPHONE",
+      "ohos.permission.PUBLISH_AGENT_REMINDER",
+      "ohos.permission.APPROXIMATELY_LOCATION",
+      "ohos.permission.LOCATION",
+      "ohos.permission.ACCESS_BIOMETRIC",
+      "ohos.permission.READ_CALENDAR",
+      "ohos.permission.WRITE_CALENDAR"
+    ],
+    "found": [
+      "ohos.permission.INTERNET",
+      "ohos.permission.MICROPHONE",
+      "ohos.permission.APPROXIMATELY_LOCATION",
+      "ohos.permission.LOCATION",
+      "ohos.permission.ACCESS_BIOMETRIC",
+      "ohos.permission.READ_CALENDAR",
+      "ohos.permission.WRITE_CALENDAR",
+      "ohos.permission.PUBLISH_AGENT_REMINDER"
+    ],
+    "allEightPresent": true,
+    "doesNotProveRuntimeAuthorization": true
+  },
+  "findings": [
+    {
+      "caseId": "F01",
+      "expected": "PASS",
+      "supported": true,
+      "reason": "Home-card formal requirement and scenarios cover image/name/price and image-loading placeholder; M01 does not judge the deficient implementation.",
+      "evidence": [
+        "candidate/specs/commodity-browsing/spec.md:6-15"
+      ]
+    },
+    {
+      "caseId": "F02",
+      "expected": "DEVIATION",
+      "supported": true,
+      "reason": "All nine declared formal artifacts were inspected. Home-card loading placeholder is absent from its requirement and scenarios. Commodity-detail failure fallback is scoped to a different page; generic design goals referring to original requirements do not decompose this obligation.",
+      "evidence": [
+        "candidate/specs/commodity-browsing/spec.md:6-11",
+        "candidate/specs/commodity-detail/spec.md:6-15",
+        "candidate/design.md:10-20"
+      ]
+    },
+    {
+      "caseId": "F03",
+      "expected": "PASS",
+      "supported": true,
+      "reason": "Browsing spec represents bottom history, last-ten cap and reopen retention; design supplies Preferences and browse_history. Coverage legitimately spans formal artifacts.",
+      "evidence": [
+        "candidate/specs/commodity-browsing/spec.md:28-37",
+        "candidate/design.md:36-39"
+      ]
+    },
+    {
+      "caseId": "F04",
+      "expected": "PASS",
+      "supported": true,
+      "reason": "Normal-card scenario and loading/failure scenario jointly cover the complete assigned object.",
+      "evidence": [
+        "candidate/specs/commodity-browsing/spec.md:9-15"
+      ]
+    },
+    {
+      "caseId": "F05",
+      "expected": "DEVIATION",
+      "supported": true,
+      "interpretationDependency": true,
+      "reason": "The requirement body still states placeholders, but declared candidate acceptance/scenario units lack a home-image loading outcome. This oracle is valid under the explicit predeclared separation of requirement statements from acceptance units; it is not universal policy that every verifiable SHALL sentence can never serve as an acceptance criterion.",
+      "evidence": [
+        "candidate/specs/commodity-browsing/spec.md:6-11",
+        "basis/metric-contract.md",
+        "basis/input-roles.json"
+      ]
+    },
+    {
+      "caseId": "F06",
+      "expected": "DEVIATION",
+      "supported": true,
+      "interpretationDependency": true,
+      "reason": "Detail requirement includes failed-image fallback; detail scenarios cover ordinary content and screen reading but not failed-image fallback. Home-card failure scenario is not a detail-page acceptance unit. Same predeclared requirement/AC role separation applies.",
+      "evidence": [
+        "candidate/specs/commodity-detail/spec.md:6-15"
+      ]
+    },
+    {
+      "caseId": "F07",
+      "expected": "PASS",
+      "supported": true,
+      "reason": "The complete gt-025 object asks only for declaration of eight named permissions in module.json5. All eight occur in requestPermissions. Runtime request/grant handling is the separate gt-026 obligation and must not be imported into this static one-object proof.",
+      "evidence": [
+        "implementation/entry/src/main/module.json5:14-80",
+        "basis/original-ground-truth.md:135-137",
+        "source/app-requirements.md:293-306"
+      ]
+    },
+    {
+      "caseId": "F08",
+      "expected": "DEVIATION",
+      "supported": true,
+      "reason": "Home commodityCard always renders emoji Text on a colored surface, not a product image or its loading transition. Commodity model has emoji but no image field. A placeholder comment and background acceptance narrative cannot satisfy the concrete image requirement.",
+      "evidence": [
+        "implementation/entry/src/main/ets/pages/Index.ets:234-260",
+        "implementation/entry/src/main/ets/model/Commodity.ets:1-18"
+      ]
+    },
+    {
+      "caseId": "F09",
+      "expected": "UNVERIFIED",
+      "supported": true,
+      "reason": "Storage source suggests Preferences storage, ten-item cap and flushing, and Index loads/display history. No definite contradiction to the assigned persistence obligation was found in this read-only review, but no trusted source/build-bound actual restart trace is in input. Self-report alone cannot establish the requested runtime acceptance.",
+      "evidence": [
+        "implementation/entry/src/main/ets/data/StorageUtil.ets:51-87",
+        "implementation/entry/src/main/ets/pages/Index.ets:19-64",
+        "implementation/entry/src/main/ets/pages/Index.ets:175-206",
+        "basis/input-roles.json",
+        "background/self-reported-acceptance.md:23-28"
+      ]
+    }
+  ],
+  "interpretationLimits": [
+    "F05/F06 measure the frozen task contract that distinguishes candidate acceptance units from general requirement text. If M05 policy instead counts those requirement-body SHALL statements as acceptance criteria, these two expectations must be revised before running; do not reinterpret after observing model results.",
+    "M01 candidate completeness is assumed only for the explicit frozen formal-artifact manifest, not unknown external project documents.",
+    "F07 proves declarations only; F09 is missing trusted runtime proof, not a confirmed business defect.",
+    "This audit checks fixture oracle suitability; no model quality or production metric rate is measured."
+  ],
+  "readOnly": true,
+  "modelNetworkCalls": 0,
+  "businessOrVerifierExecutions": 0
+}

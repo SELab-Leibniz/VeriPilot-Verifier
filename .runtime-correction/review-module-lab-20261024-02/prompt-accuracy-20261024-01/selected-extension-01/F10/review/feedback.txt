@@ -1,0 +1,2 @@
+M12:requirements-3e1172210314804d | PASS | GET /api/commodities (fetchList) and GET /api/commodities/{id} (fetchDetail) issue real HTTP GETs, and both catch/empty responses degrade to MockData.commodities()/commodityById(id); Index and CommodityDetail consume these paths to render list/detail, keeping the app usable, with INTERNET permission declared.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\selected-extension-01\F10\review\result.json

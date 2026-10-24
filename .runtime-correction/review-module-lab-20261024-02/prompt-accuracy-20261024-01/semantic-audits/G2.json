@@ -1,0 +1,69 @@
+{
+  "tag": "G2",
+  "cases": [
+    {
+      "caseId": "F10",
+      "actualVerdict": "PASS",
+      "independentVerdict": "DEVIATION",
+      "oracleSupported": true,
+      "labelCorrect": false,
+      "diagnosisSupported": false,
+      "scopeCorrect": true,
+      "groundedCorrect": false,
+      "citationIntegrityVerified": true,
+      "reason": "The required GET request paths and network rejection handling exist, but calling a local lookup does not establish usable failure fallback across the admitted product-ID domain. A valid remote-list product with id 42 is preserved by mapping and routed to detail. If that detail request fails, local commodityById(42) returns undefined because the fixed mock set contains only IDs 1 through 8. The type assertion creates no object. CommodityDetail assigns that result and keeps its loading branch. This source-decidable contradiction invalidates the complete-requirement PASS without requiring or claiming a device/server execution.",
+      "assertionChecks": [
+        { "claim": "The repository issues both required GET paths under /api.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:9-25", "implementation/entry/src/main/ets/data/Repository.ets:35-57"] },
+        { "claim": "Error, non-200 and empty/falsy response branches invoke local mock fallback code.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:11-31", "implementation/entry/src/main/ets/data/Repository.ets:43-56"], "qualification": "This establishes an attempted local lookup, not that the detail fallback yields usable data for every admitted ID." },
+        { "claim": "The implementation degrades to usable MockData on any failure, satisfying the complete requirement.", "supported": false, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:23-31", "implementation/entry/src/main/ets/data/Repository.ets:62-69", "implementation/entry/src/main/ets/data/MockData.ets:5-19", "implementation/entry/src/main/ets/pages/Index.ets:205-209", "implementation/entry/src/main/ets/pages/CommodityDetail.ets:23-35", "implementation/entry/src/main/ets/pages/CommodityDetail.ets:126-181"] },
+        { "claim": "Index and CommodityDetail consume the repository, and INTERNET is declared.", "supported": true, "locations": ["implementation/entry/src/main/ets/pages/Index.ets:20-30", "implementation/entry/src/main/ets/pages/CommodityDetail.ets:21-32", "implementation/entry/src/main/module.json5:13-16"] }
+      ],
+      "evidence": [
+        { "path": "basis/original-ground-truth.md", "start": 162, "end": 163, "finding": "Full original obligation requires both GET operations and automatic local-mock fallback keeping the app usable, with no local-ID-only exception. The complete original GT was reviewed." },
+        { "path": "source/app-requirements.md", "start": 280, "end": 287, "finding": "Original PRD expressly permits conditional mock fallback after request failure; using mock is not itself a defect." },
+        { "path": "implementation/entry/src/main/ets/data/Repository.ets", "start": 11, "end": 31, "finding": "Remote list records are accepted, but both detail-fallback branches merely cast commodityById(id), which may remain undefined." },
+        { "path": "implementation/entry/src/main/ets/data/MockData.ets", "start": 5, "end": 19, "finding": "Only IDs 1 through 8 are in the mock set; find returns undefined for an admitted remote ID such as 42." },
+        { "path": "implementation/entry/src/main/ets/pages/Index.ets", "start": 205, "end": 209, "finding": "Selected product ID is routed unchanged to CommodityDetail; Repository:62-69 preserves the remote ID as a number." },
+        { "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets", "start": 23, "end": 35, "finding": "Requested ID reaches fetchDetail and its undefined result is assigned directly to commodity." },
+        { "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets", "start": 126, "end": 181, "finding": "Falsy commodity takes the loading-only branch rather than usable detail display." },
+        { "path": "basis/metric-contract.md", "start": 6, "end": 7, "finding": "Scope explicitly permits source implementation paths and concrete contradictions; actual runtime acceptance remains separate." }
+      ]
+    },
+    {
+      "caseId": "F11",
+      "actualVerdict": "PASS",
+      "independentVerdict": "PASS",
+      "oracleSupported": true,
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrityVerified": true,
+      "reason": "Within the explicitly requested source-implementation sub-proof, the repository retains both required GET operations and routes request errors to usable local mock data. Its detail fallback returns the matching local product when present, otherwise constructs a Commodity using a guaranteed nonempty local sample and the requested ID. Both failure and falsy-result branches use that helper, so remote IDs outside 1 through 8 no longer produce undefined. Caller/source configuration checks support the additional assertions. This is a source-path PASS, with no claim of actual network/device execution or full-project acceptance.",
+      "assertionChecks": [
+        { "claim": "fetchList and fetchDetail implement GET /api/commodities and GET /api/commodities/{id}.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:9-25", "implementation/entry/src/main/ets/data/Repository.ets:45-69"] },
+        { "claim": "Errors and non-200 responses fall back automatically to local mock data.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:11-43", "implementation/entry/src/main/ets/data/Repository.ets:53-66"] },
+        { "claim": "Empty responses have fallback paths.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:14-19", "implementation/entry/src/main/ets/data/Repository.ets:25-31", "implementation/entry/src/main/ets/data/Repository.ets:58-66"], "qualification": "Empty list, empty HTTP body (JSON parse failure), and null/falsy decoded detail results are covered. This does not assert schema validation for arbitrary truthy malformed successful payloads, which the actual result does not expressly claim." },
+        { "claim": "The detail failure fallback remains usable across the admitted remote-ID domain.", "supported": true, "locations": ["implementation/entry/src/main/ets/data/Repository.ets:35-43", "implementation/entry/src/main/ets/data/MockData.ets:5-19", "implementation/entry/src/main/ets/model/Models.ets:1-16", "implementation/entry/src/main/ets/pages/Index.ets:205-209", "implementation/entry/src/main/ets/pages/CommodityDetail.ets:23-35"] },
+        { "claim": "Both pages consume the repository and INTERNET is declared.", "supported": true, "locations": ["implementation/entry/src/main/ets/pages/Index.ets:20-30", "implementation/entry/src/main/ets/pages/CommodityDetail.ets:21-32", "implementation/entry/src/main/module.json5:13-16"] }
+      ],
+      "evidence": [
+        { "path": "basis/original-ground-truth.md", "start": 162, "end": 163, "finding": "The full original network object allows local mock fallback specifically after request failure. The complete original GT was reviewed and contains no incompatible selected-object restriction." },
+        { "path": "source/app-requirements.md", "start": 280, "end": 287, "finding": "Both GET routes and automatic local-mock degradation to preserve usability are the original obligations." },
+        { "path": "implementation/entry/src/main/ets/data/Repository.ets", "start": 11, "end": 43, "finding": "List error/empty fallback returns the local list; both detail fallback paths call localDetailFallback. That helper returns an existing local record or a newly constructed record preserving requested id." },
+        { "path": "implementation/entry/src/main/ets/data/MockData.ets", "start": 5, "end": 19, "finding": "Fixed mock array has eight valid Commodity objects, so its first sample is present and supplies usable local fields." },
+        { "path": "implementation/entry/src/main/ets/data/Repository.ets", "start": 45, "end": 69, "finding": "HTTP GET request, error rejection, non-200 rejection and JSON-parse rejection are explicit source paths." },
+        { "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets", "start": 23, "end": 35, "finding": "Caller passes the routed ID and assigns the repository object. Current F11 caller and configuration hashes match the directly inspected copies from the same frozen batch." },
+        { "path": "implementation/entry/src/main/module.json5", "start": 13, "end": 16, "finding": "INTERNET permission is declared; the frozen page configuration includes Index and CommodityDetail." },
+        { "path": "basis/metric-contract.md", "start": 6, "end": 7, "finding": "This decision concerns source-decidable implementation sub-proof and does not replace the separate runtime acceptance obligation." }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "caseId": "F10",
+      "type": "fallback-domain-gap-missed",
+      "message": "The actual PASS equates invoking MockData.commodityById with a complete usable fallback. Remote list IDs are unrestricted by the local 1..8 set; a detail request failure for id 42 yields undefined and a loading-only page. The label and complete-coverage diagnosis are unsupported despite genuine citations."
+    }
+  ]
+}

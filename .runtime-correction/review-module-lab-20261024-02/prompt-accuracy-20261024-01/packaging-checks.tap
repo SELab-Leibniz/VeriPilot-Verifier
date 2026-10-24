@@ -1,0 +1,17 @@
+✔ legacy absolute descriptors rebase to the current checkout without opening the old checkout (11.9988ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\packaging-test-runs\relocated-hR2SXQ
+✔ portable relative paths and identity-only descriptors resolve identically (9.6569ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\packaging-test-runs\relocated-OX0JZz
+✔ foreign paths, visible oracle locations and duplicate identities are rejected (4.8831ms)
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\packaging-test-runs\relocated-ag6Jt5
+﹣ a workspace junction cannot expose another directory as model input (5.6581ms) # Filesystem does not permit a symlink/junction fixture
+ℹ artifacts: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\packaging-test-runs\relocated-gQcT77
+✔ an incomplete live review exits nonzero while a valid UNVERIFIED submission remains complete (0.2548ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 129.468

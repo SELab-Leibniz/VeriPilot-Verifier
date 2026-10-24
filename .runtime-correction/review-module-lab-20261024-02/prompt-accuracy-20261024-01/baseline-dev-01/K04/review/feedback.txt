@@ -1,0 +1,2 @@
+M05:R04 | PASS | AC4.1-AC4.5 cover R04's full contract: can-cook's boolean/missing output (both adequate and inadequate), store-byte immutability and no file creation, cook's sufficient-only deduction with persisted result and {"cooked":NAME}, plus insufficient-stock failure behavior; Unicode and stderr/exit conditions are covered.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\K04\review\result.json

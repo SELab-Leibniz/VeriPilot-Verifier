@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "prompt-accuracy-reuse-ledger.v1",
+  "createdAt": "2026-10-24T04:04:52.013Z",
+  "actualCallsDeduplicated": 46,
+  "selectedDevelopment": {
+    "compositionOnly": true,
+    "caseCount": 12,
+    "newActualCalls": 0,
+    "entries": [
+      {
+        "caseId": "K01",
+        "metricId": "M01",
+        "sourceExecutionId": "rubric-v1-dev-01/K01",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v1",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "K02",
+        "metricId": "M01",
+        "sourceExecutionId": "rubric-v1-dev-01/K02",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v1",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "K04",
+        "metricId": "M05",
+        "sourceExecutionId": "baseline-dev-01/K04",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "baseline",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "K05",
+        "metricId": "M05",
+        "sourceExecutionId": "baseline-dev-01/K05",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "baseline",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "K07",
+        "metricId": "M12",
+        "sourceExecutionId": "rubric-v2-dev-01/K07",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v2",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "K08",
+        "metricId": "M12",
+        "sourceExecutionId": "rubric-v2-dev-01/K08",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v2",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F01",
+        "metricId": "M01",
+        "sourceExecutionId": "rubric-v1-dev-01/F01",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v1",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F02",
+        "metricId": "M01",
+        "sourceExecutionId": "rubric-v1-dev-01/F02",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v1",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F04",
+        "metricId": "M05",
+        "sourceExecutionId": "baseline-dev-01/F04",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "baseline",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F05",
+        "metricId": "M05",
+        "sourceExecutionId": "baseline-dev-01/F05",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "baseline",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F07",
+        "metricId": "M12",
+        "sourceExecutionId": "rubric-v2-dev-01/F07",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v2",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      },
+      {
+        "caseId": "F08",
+        "metricId": "M12",
+        "sourceExecutionId": "rubric-v2-dev-01/F08",
+        "selectedView": "selected-development-post-hoc",
+        "newlyExecuted": false,
+        "sourceVariant": "rubric-v2",
+        "reason": "开发集事后按 M01=v1、M05=baseline、M12=v2 组合；不是新的 12 次模型调用。"
+      }
+    ]
+  },
+  "selectedOriginalHoldout": {
+    "caseCount": 6,
+    "newlyExecuted": [
+      "selected-holdout-01/K03",
+      "selected-holdout-01/F03"
+    ],
+    "reused": [
+      {
+        "caseId": "K06",
+        "sourceExecutionId": "baseline-holdout-01/K06",
+        "selectedView": "selected-original-holdout",
+        "newlyExecuted": false,
+        "taskSha256": "105f64f26a495c5cab2b00f310aefe244647698fcb2c92b538eb102be6077609",
+        "workspaceFingerprint": "a64550149c220e933ab97973d9ae424a6bb2537ca0442f1bdec1ad912941435b",
+        "actualTaskMatchesFrozen": true,
+        "actualWorkspaceMatchesFrozen": true,
+        "actualOriginalSystemSha256": "d7e8379fd3977e5307cf6a464b303c8b6270e940bd6d0e0a05a64d94370fa695",
+        "actualOriginalSystemBytes": 1894,
+        "actualPromptSha256": "485a0b35ba982c53d20b1b7b99391592ec0bdf01bd40240fb4a84a3fdad95a21",
+        "baselineAppendBytes": 0,
+        "selectedAppendBytes": 0,
+        "selectedWouldRenderIdenticalPrompt": true,
+        "reason": "同一冻结 task/workspace；实际原六段提示基段逐字节核验，selected 该路由 append 为空，因此复用既有 baseline 调用。"
+      },
+      {
+        "caseId": "K09",
+        "sourceExecutionId": "baseline-holdout-01/K09",
+        "selectedView": "selected-original-holdout",
+        "newlyExecuted": false,
+        "taskSha256": "c3dfb17ba99855ca61c74abc78b686acb1bc89bc5581f089fc735402ea249845",
+        "workspaceFingerprint": "bac8ffc976954c6ff52af679313107429c874eed1a8ee51a7df38f51f256b1a6",
+        "actualTaskMatchesFrozen": true,
+        "actualWorkspaceMatchesFrozen": true,
+        "actualOriginalSystemSha256": "d7e8379fd3977e5307cf6a464b303c8b6270e940bd6d0e0a05a64d94370fa695",
+        "actualOriginalSystemBytes": 1894,
+        "actualPromptSha256": "a3d4602620998ad75aa1a0b3c810ab7aadc1901ba9050e03645613ee92e4d5aa",
+        "baselineAppendBytes": 0,
+        "selectedAppendBytes": 0,
+        "selectedWouldRenderIdenticalPrompt": true,
+        "reason": "同一冻结 task/workspace；实际原六段提示基段逐字节核验，selected 该路由 append 为空，因此复用既有 baseline 调用。"
+      },
+      {
+        "caseId": "F06",
+        "sourceExecutionId": "baseline-holdout-01/F06",
+        "selectedView": "selected-original-holdout",
+        "newlyExecuted": false,
+        "taskSha256": "f26039501fa5d74a1c1c9792dfd7d3f1fc699bd000b2529e5a875ee50bb566da",
+        "workspaceFingerprint": "5ecb7d0bc836e5ae75375037076dcb18cc3ac288f85076eb214d704acb6b82f2",
+        "actualTaskMatchesFrozen": true,
+        "actualWorkspaceMatchesFrozen": true,
+        "actualOriginalSystemSha256": "d7e8379fd3977e5307cf6a464b303c8b6270e940bd6d0e0a05a64d94370fa695",
+        "actualOriginalSystemBytes": 1894,
+        "actualPromptSha256": "4ddf2bd6032414502e71c8f794b5e613b3523a61abec61266d016079de2e23b5",
+        "baselineAppendBytes": 0,
+        "selectedAppendBytes": 0,
+        "selectedWouldRenderIdenticalPrompt": true,
+        "reason": "同一冻结 task/workspace；实际原六段提示基段逐字节核验，selected 该路由 append 为空，因此复用既有 baseline 调用。"
+      },
+      {
+        "caseId": "F09",
+        "sourceExecutionId": "baseline-holdout-01/F09",
+        "selectedView": "selected-original-holdout",
+        "newlyExecuted": false,
+        "taskSha256": "8cac21ad952c5ea5b5701cd67935ab9e3aeb0ad4d491398c736f34eea0ba995d",
+        "workspaceFingerprint": "3a8b76edabacc5ddeb80ed4532c2f36b826f77c00c9909a3d6c87d912d13b58f",
+        "actualTaskMatchesFrozen": true,
+        "actualWorkspaceMatchesFrozen": true,
+        "actualOriginalSystemSha256": "d7e8379fd3977e5307cf6a464b303c8b6270e940bd6d0e0a05a64d94370fa695",
+        "actualOriginalSystemBytes": 1894,
+        "actualPromptSha256": "cfdfbcb4081a89dd1d147328f11a6229194549893d8ac8178cd929eff96d3cf3",
+        "baselineAppendBytes": 0,
+        "selectedAppendBytes": 0,
+        "selectedWouldRenderIdenticalPrompt": true,
+        "reason": "同一冻结 task/workspace；实际原六段提示基段逐字节核验，selected 该路由 append 为空，因此复用既有 baseline 调用。"
+      }
+    ]
+  },
+  "note": "视图成本可用于配对观察；实际总成本只汇总去重的 46 个 executionId。开发组合和复核复用均不另加模型调用。"
+}

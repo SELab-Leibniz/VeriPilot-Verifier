@@ -1,0 +1,123 @@
+{
+  "caseId": "F08",
+  "metricId": "M12",
+  "domain": "flower",
+  "split": "dev",
+  "expectedVerdict": "DEVIATION",
+  "result": {
+    "taskId": "M12:gt-007",
+    "scope": "SOURCE_IMPLEMENTATION",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "PASS",
+    "reason": "Index.ets commodityCard renders each home list item as a card containing an image placeholder (emoji with alt accessibilityText), commodity name, and price; the placeholder is displayed as the image representation, satisfying gt-007's card display and placeholder requirement at source-decidability level.",
+    "limits": {
+      "maxAttempts": 2,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "d6a005b4-f43b-451f-9430-56fb2d16cc2c",
+        "path": "implementation/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 269,
+        "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0",
+        "byteStart": 0,
+        "byteEnd": 8722,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "77996118-4d47-4659-b2b8-50bfdef0e9d1",
+        "path": "implementation/entry/src/main/ets/model/Commodity.ets",
+        "start": 1,
+        "end": 63,
+        "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac",
+        "byteStart": 0,
+        "byteEnd": 2149,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "d6a005b4-f43b-451f-9430-56fb2d16cc2c",
+      "77996118-4d47-4659-b2b8-50bfdef0e9d1"
+    ],
+    "basis": [
+      {
+        "path": "basis/metric-contract.md",
+        "start": 1,
+        "end": 11,
+        "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/metric-contract.md"
+      },
+      {
+        "path": "basis/selected-object.json",
+        "start": 1,
+        "end": 13,
+        "sha256": "7bb3780708a8bb562379eb9c38318c44870b1d650cc63dc7dc3434e5b31a9e45",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/selected-object.json"
+      },
+      {
+        "path": "basis/input-roles.json",
+        "start": 1,
+        "end": 42,
+        "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/input-roles.json"
+      },
+      {
+        "path": "basis/original-ground-truth.md",
+        "start": 1,
+        "end": 158,
+        "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/original-ground-truth.md"
+      },
+      {
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/source/app-requirements.md"
+      }
+    ],
+    "basisAnchors": [],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-dev-01\\F08\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 4,
+      "toolCalls": 10,
+      "readBytes": 49485,
+      "grepBytes": 789,
+      "totalToolBytes": 50407,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 50344,
+      "outputTokens": 3376,
+      "contextChecks": 5,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 37963,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-dev-01\\F08\\review"
+  },
+  "citationIntegrity": true,
+  "labelMatches": false,
+  "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+  "measured": {
+    "noncachedInputTokens": 18856,
+    "cacheReadTokens": 31488,
+    "cacheWriteTokens": 0,
+    "outputTokens": 3376,
+    "submitCalls": 1,
+    "submitErrors": 0,
+    "maxSubmitBytes": 447,
+    "feedbackBytes": 516,
+    "promptSha256": "d1a694d6dc7f324788ef7729720b94966152419d208b55142a18a86ee696093e"
+  },
+  "frozenInputUnchanged": true
+}

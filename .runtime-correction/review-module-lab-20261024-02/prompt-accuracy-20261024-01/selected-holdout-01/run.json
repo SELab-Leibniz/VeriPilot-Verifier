@@ -1,0 +1,29 @@
+{
+  "variant": "selected",
+  "split": "holdout",
+  "live": true,
+  "caseIds": [
+    "K03",
+    "F03"
+  ],
+  "concurrency": 2,
+  "profileSha256": "c3413393ab375a82c8bab90a2fdf3d51ea45db599536b617af96a33acfeaf76d",
+  "workerSha256": "16096d7073f40e3d2defc56e0cd738608fd264c21f03f13a7af88f37009d0b52",
+  "baselineCommit": "73390e0",
+  "frozenCasesSha256": "1a14a77131095083fcdaa286a6ea10671d2437ac67c12a243be4573058ea8da8",
+  "extensionFreezeSha256": null,
+  "controls": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "perReplyMaxTokens": 8192,
+    "runTokenBudget": null,
+    "deadline": null,
+    "E2E": false
+  },
+  "before": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  }
+}

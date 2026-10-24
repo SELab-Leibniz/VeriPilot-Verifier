@@ -1,0 +1,70 @@
+{
+  "taskId": "M01:R04",
+  "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+  "completed": true,
+  "conclusive": true,
+  "verdict": "DEVIATION",
+  "reason": "D4.1 covers only the can_cook boolean; R04's mandatory {\"missing\": ingredient-to-shortfall object} response field is absent from the entire decomposition (D4.2's \"missing store\" is a different concept). Coverage gap in the can-cook contract.",
+  "limits": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "tokenBudget": null,
+    "deadline": null
+  },
+  "refs": [
+    {
+      "citeId": "c185e2d6-3052-4478-a2d8-db890138c4df",
+      "path": "decomposition.md",
+      "start": 1,
+      "end": 32,
+      "sha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+      "byteStart": 0,
+      "byteEnd": 2220,
+      "rangeKind": "range"
+    }
+  ],
+  "citeIds": [
+    "c185e2d6-3052-4478-a2d8-db890138c4df"
+  ],
+  "basis": [
+    {
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/requirements.md"
+    }
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "range",
+      "byteStart": 1037,
+      "byteEnd": 1332,
+      "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+    }
+  ],
+  "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\K02\\review\\evidence.json",
+  "attempts": 1,
+  "metrics": {
+    "turns": 3,
+    "toolCalls": 5,
+    "readBytes": 4320,
+    "grepBytes": 347,
+    "totalToolBytes": 4700,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "compactionFailures": 0,
+    "inputTokens": 9978,
+    "outputTokens": 1467,
+    "contextChecks": 4,
+    "unsafeRequestsPrevented": 0
+  },
+  "elapsedMs": 16791,
+  "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\K02\\review"
+}

@@ -1,0 +1,10 @@
+{
+  "caseId": "F11",
+  "domain": "flower",
+  "metricId": "M12",
+  "split": "holdout",
+  "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\workspace",
+  "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\task.json",
+  "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\oracle.json",
+  "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\provenance.json"
+}

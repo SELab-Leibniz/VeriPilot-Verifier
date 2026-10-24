@@ -1,0 +1,2 @@
+M05:gt-007 | PASS | Both core obligations of gt-007 are covered by declared acceptance scenarios in commodity-browsing/spec.md: card list with image/name/price (正常展示商品列表) and placeholder image during loading/failure (图片加载中或失败).
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\F04\review\result.json

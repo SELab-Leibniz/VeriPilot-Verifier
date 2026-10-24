@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "static-complete-object-precheck.v1",
+  "caseId": "F11",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "checks": {
+    "fullOriginalObjectRetained": true,
+    "listGetPathRetained": true,
+    "detailGetPathRetained": true,
+    "networkMethodAndErrorHandlingUnchanged": true,
+    "networkFailureAuthorizesLocalMock": true,
+    "nonemptyLocalSampleProvedFromOriginalLiteral": true,
+    "knownAndUnknownIdsReturnCommodity": true,
+    "selectedIdPreserved": true,
+    "bothDetailFallbackSitesRepaired": true,
+    "homeAndDetailCallersUnchanged": true,
+    "onlyOneWorkspaceSourceFileChanged": true,
+    "anyRuntimePassClaimed": false
+  },
+  "blockingFindings": [],
+  "reviewMethod": "Source and data-flow inspection only; did not run business code, server, build, verifier or model.",
+  "counterexampleClosure": "For remote id 42 followed by detail request failure, the catch now returns a Commodity with id 42 and local sample fields, while local ids retain their original matching objects. Neither branch returns undefined.",
+  "independentAuditRequiredBeforeModelRun": true
+}

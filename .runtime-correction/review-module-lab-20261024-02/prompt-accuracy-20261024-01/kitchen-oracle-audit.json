@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "independent-kitchen-oracle-audit.v1",
+  "status": "PASS",
+  "reviewedAt": "2026-10-24T03:31:27.175Z",
+  "reviewMethod": "Read the complete current target, complete original contract, all task/oracle declarations and original-source provenance; inspect source statically; do not execute model, application or verifier.",
+  "cases": [
+    {
+      "caseId": "K01",
+      "metricId": "M01",
+      "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "reason": "Complete R04 decomposition plus shared R01/R05 conditions; PASS is coverage, not execution.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "1e93078ad9932d0f2433cc37681a9d8009b3d750fdffb61050de1460c38bdbfb",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K02",
+      "metricId": "M01",
+      "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "reason": "No ingredient-to-shortfall quantity object anywhere in the complete current decomposition; DEVIATION.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K03",
+      "metricId": "M01",
+      "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "reason": "Complete semantics survive removal of D identifiers; PASS, not a traceability or qualification score.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K04",
+      "metricId": "M05",
+      "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "reason": "Acceptance units cover both feasibility results, query bytes, successful full consumption/persistence and failure/common boundaries; PASS for coverage.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K05",
+      "metricId": "M05",
+      "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "reason": "No successful cook consumption/persisted-state criterion; failure atomicity cannot cover that branch; DEVIATION.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K06",
+      "metricId": "M05",
+      "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "reason": "No can-cook store-byte preservation/noncreation criterion. AC1.3 applies only to pantry/recipe list and does not fill this omission; DEVIATION.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "2b281cc334ba8982ed11dccb548aac629aa96f104b5725007a4a5f46667c9728",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K07",
+      "metricId": "M12",
+      "scope": "SOURCE_IMPLEMENTATION",
+      "expected": "PASS",
+      "oracleSupported": true,
+      "reason": "Source-decidable R04 sub-proof supported: _shortfall computes without writing; insufficient cook rejects before mutation; adequate cook deducts every quantity and saves, with common CLI/Unicode/exit behavior present; PASS only within SOURCE_IMPLEMENTATION.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K08",
+      "metricId": "M12",
+      "scope": "SOURCE_IMPLEMENTATION",
+      "expected": "DEVIATION",
+      "oracleSupported": true,
+      "reason": "Sufficiency is checked but pantry is saved without deduction; success is reported with unchanged quantities; DEVIATION.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+      "oracleOutsideWorkspace": true
+    },
+    {
+      "caseId": "K09",
+      "metricId": "M12",
+      "scope": "RUNTIME_ACCEPTANCE",
+      "expected": "UNVERIFIED",
+      "oracleSupported": true,
+      "reason": "RUNTIME_ACCEPTANCE has source but no supplied execution record; UNVERIFIED, not a business defect. The unseen historical verifier cannot be used as model-visible proof.",
+      "basisSha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "targetSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "oracleOutsideWorkspace": true
+    }
+  ],
+  "blockingFindings": [],
+  "nonblockingNotes": [
+    "K09 phase is IMPLEMENTATION while scope is RUNTIME_ACCEPTANCE; if phase describes this proof question, VERIFICATION would be clearer. The explicit scope and missing-evidence statement make the expected UNVERIFIED unambiguous."
+  ],
+  "preservedBoundaries": [
+    "M01 coverage is semantic and may be supplied by shared sections; identifier matching is not coverage",
+    "M05 coverage is distinct from criterion qualification and execution",
+    "M12 K07/K08 are source implementation sub-proofs, not the full runtime/project metric",
+    "K09 evidence gap must not become a business defect or runtime PASS",
+    "All nine basis copies equal the full tracked original contract byte-for-byte"
+  ],
+  "newBusinessOrVerifierExecutions": 0,
+  "newModelCalls": 0
+}

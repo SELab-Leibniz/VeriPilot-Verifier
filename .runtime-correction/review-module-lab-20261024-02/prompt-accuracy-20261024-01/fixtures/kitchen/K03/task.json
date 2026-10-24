@@ -1,0 +1,28 @@
+{
+  "id": "M01:R04",
+  "metricId": "M01",
+  "metricDefinition": "Requirement decomposition coverage: whether the current decomposition semantically represents the assigned original requirement and its applicable conditions.",
+  "phase": "REQUIREMENTS",
+  "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+  "requirement": "Review M01 coverage for the single frozen R04 requirement in the current decomposition.md, using the complete original contract and applicable common conditions and exceptions. This question judges requirement decomposition coverage, not implementation, test execution, decomposition quality or overall project completion.",
+  "basisFiles": [
+    "requirements.md"
+  ],
+  "targetFiles": [
+    "decomposition.md"
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22
+    }
+  ],
+  "navigation": {
+    "diff": null,
+    "baseline": null,
+    "workspace": "FROZEN_STAGE_FIXTURE",
+    "evidence": "Complete original contract and one current metric target; no business execution is requested."
+  }
+}

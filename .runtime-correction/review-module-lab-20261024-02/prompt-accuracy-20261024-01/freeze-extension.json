@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "prospective-risk-extensions.v1",
+  "createdAt": "2026-10-24T03:58:41.748Z",
+  "initialFreezeSha256": "1a14a77131095083fcdaa286a6ea10671d2437ac67c12a243be4573058ea8da8",
+  "selectedProfileSha256": "c3413393ab375a82c8bab90a2fdf3d51ea45db599536b617af96a33acfeaf76d",
+  "rubricV2Sha256": "23fcceb769d73c02cb1bac41fb123e0fa9822e23621baf854ea5cef6c070609a",
+  "note": "Three prospective risk probes added after development selection, before extension review. F10 original PASS oracle independently rejected and corrected before any model run; preserved oracle-initial-rejected.json and oracle-revision.json. Original 18 inputs unchanged. Not independent random samples.",
+  "auditSha256": {
+    "extension-K10-oracle-audit.json": "4e30ac0de96f5df5d81e787ba75ffb57a9ef418446c282c8fccb2dff04e87745",
+    "extension-F10-oracle-audit.json": "17d675f5a82844a1a2273a16ed3d531eed574f95d7191d595726c8c411f43425",
+    "extension-F11-oracle-audit.json": "8b33bba38960200f60d75ed266b1c02b5b04fcdb1395ec3afa0d2c606b3e0e71"
+  },
+  "cases": {
+    "K10": {
+      "inputFingerprint": "ed88645ea1ebe9b5a62a5f3ce0fc37846908ff1fc37d63d36e36d922e2cb3558",
+      "taskSha256": "c49c7072b8e759677a6ff809ecec00d4c1d81ee9cd3e5b5dd959521d3b134a62",
+      "oracleSha256": "2874b04e1b3e43bd8c51722b64ce3b7b40536f8f88a1d28eec66c5216c08f0f6"
+    },
+    "F10": {
+      "inputFingerprint": "19a9f72b560eb451ad21a86458147264f23c6a284e0e385e656780c521116116",
+      "taskSha256": "1381d7a0b0a47ae3d9b8ce22aa6371101f5c475d18e905fa7ea9354979fc4bbe",
+      "oracleSha256": "0238e3951add3bd23ccaa2778809eb55733ffdfadbb351adccd5087e05d50d16"
+    },
+    "F11": {
+      "inputFingerprint": "80d8c122e8747f1c69f8824de2edadf3fc32695e626c8dbbd57bd4a693731cf8",
+      "taskSha256": "1381d7a0b0a47ae3d9b8ce22aa6371101f5c475d18e905fa7ea9354979fc4bbe",
+      "oracleSha256": "c9e07f4e9c4e44b4626c927c731574fd6041c537ef6a50219bbe936688398ba9"
+    }
+  },
+  "descriptors": [
+    {
+      "caseId": "K10",
+      "domain": "kitchen",
+      "metricId": "M12",
+      "split": "holdout",
+      "prospective": true,
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K10\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K10\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K10\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K10\\provenance.json"
+    },
+    {
+      "caseId": "F10",
+      "domain": "flower",
+      "metricId": "M12",
+      "split": "holdout",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F10\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F10\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F10\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F10\\provenance.json"
+    },
+    {
+      "caseId": "F11",
+      "domain": "flower",
+      "metricId": "M12",
+      "split": "holdout",
+      "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\workspace",
+      "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\task.json",
+      "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\oracle.json",
+      "provenance": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F11\\provenance.json"
+    }
+  ]
+}

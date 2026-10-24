@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ModelRuntime } from '@earendil-works/pi-coding-agent';
@@ -58,6 +59,57 @@ function citationIds(context, file) {
   return [...JSON.stringify(context.messages).replace(/\\+"/gu, '"').matchAll(/\[citeId="([a-f0-9-]+)" \| range ([^:]+):/gu)].filter(match => !file || match[2] === file).map(match => match[1]);
 }
 const done = { content: [{ type: 'text', text: 'No comments.' }], stopReason: 'stop' };
+
+// Frozen from commit 73390e0's six system paragraphs, before prompt injection.
+// Runtime tests do not require Git or the historical checkout to verify it.
+const ORIGINAL_SYSTEM_SHA256 = 'd7e8379fd3977e5307cf6a464b303c8b6270e940bd6d0e0a05a64d94370fa695';
+const systemHash = value => createHash('sha256').update(value).digest('hex');
+async function savedPrompt(h) {
+  const prompt = await fs.readFile(path.join(h.directory, 'review/prompt.txt'), 'utf8');
+  const split = prompt.indexOf('\n\n{"task":');
+  assert.ok(split >= 0);
+  return { system: prompt.slice(0, split), user: prompt.slice(split + 2) };
+}
+
+test('omitted and empty promptAppend preserve the original system prompt bytes', async t => {
+  for (const options of [{}, { promptAppend: '' }]) {
+    const h = await harness(t, () => done);
+    await h.run({ maxAttempts: 1, ...options });
+    const prompt = await savedPrompt(h);
+    assert.equal(Buffer.byteLength(prompt.system), 1894);
+    assert.equal(systemHash(prompt.system), ORIGINAL_SYSTEM_SHA256);
+    assert.equal(h.contexts[0].messages[0].sections.preamble, prompt.system, 'the same preamble bytes reach the provider');
+  }
+});
+
+test('promptAppend changes only system guidance while task tools and limits stay fixed', async t => {
+  const baseline = await harness(t, () => done), candidate = await harness(t, () => done);
+  const suffix = 'Metric scope: inspect the assigned acceptance coverage; preserve every original condition.';
+  const oldResult = await baseline.run({ maxAttempts: 1 });
+  const newResult = await candidate.run({ maxAttempts: 1, promptAppend: suffix });
+  const oldPrompt = await savedPrompt(baseline), newPrompt = await savedPrompt(candidate);
+  assert.equal(systemHash(oldPrompt.system), ORIGINAL_SYSTEM_SHA256);
+  assert.equal(newPrompt.system, oldPrompt.system + '\n' + suffix);
+  assert.equal(newPrompt.user, oldPrompt.user);
+  assert.equal(candidate.contexts[0].messages[0].sections.preamble, newPrompt.system);
+  assert.deepEqual(candidate.contexts[0].messages[0].toolsAdded, baseline.contexts[0].messages[0].toolsAdded);
+  const taskMessages = h => h.contexts[0].messages.filter(message => message.role !== 'system')
+    .map(({ timestamp, ...message }) => message);
+  assert.deepEqual(taskMessages(candidate), taskMessages(baseline));
+  assert.deepEqual(newResult.limits, oldResult.limits);
+  const oldInput = JSON.parse(await fs.readFile(path.join(baseline.directory, 'review/input.json'), 'utf8'));
+  const newInput = JSON.parse(await fs.readFile(path.join(candidate.directory, 'review/input.json'), 'utf8'));
+  assert.deepEqual(newInput, oldInput, 'guidance does not alter task, files, model, budget or compaction policy');
+  assert.deepEqual(candidate.requests.map(({ sessionId, ...request }) => request), baseline.requests.map(({ sessionId, ...request }) => request));
+});
+
+test('non-string promptAppend is rejected before creating a review or making a provider call', async t => {
+  const h = await harness(t, () => done);
+  for (const promptAppend of [null, 7, {}, [], () => 'guidance'])
+    await assert.rejects(h.run({ promptAppend }), /promptAppend must be a trusted caller-supplied string/u);
+  assert.equal(h.counts().calls, 0);
+  await assert.rejects(fs.access(path.join(h.directory, 'review')));
+});
 
 test('a valid tool submission is durable before the native session is closed', async t => {
   const h = await harness(t, (n, { context }) => n === 1 ? call('source_read', { path: 'basis.md' }) : n === 2 ? call('source_read', { path: 'app.py' }) : call('submit_review', verdict(context)));

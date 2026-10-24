@@ -1,0 +1,2 @@
+M05:gt-007 | DEVIATION | gt-007 has two core obligations; the candidate scenario "正常展示商品列表" covers only the card display (image/name/price). The placeholder-while-loading obligation appears solely as a requirement-body statement (图片加载时 SHALL 显示占位图) with no acceptance scenario, and such statements do not substitute for candidate acceptance criteria, leaving coverage incomplete.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\F05\review\result.json

@@ -1,0 +1,2 @@
+M12:R04 | DEVIATION | cmd_cook checks sufficiency and persists via save_store but never subtracts required quantities from pantry; store is written unchanged, so R04's "cook subtracts all required quantities only when sufficient" is not implemented.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v2-dev-01\K08\review\result.json

@@ -1,0 +1,61 @@
+{
+  "task": {
+    "id": "M05:R04",
+    "metricId": "M05",
+    "metricDefinition": "Acceptance criteria coverage: whether the current acceptance criteria cover the assigned original requirement and its applicable conditions.",
+    "phase": "REQUIREMENTS",
+    "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+    "requirement": "Review M05 coverage for the single frozen R04 requirement in the current acceptance.md, using the complete original contract and applicable common conditions and exceptions. This question judges coverage by acceptance criteria, not their execution, implementation or criterion qualification.",
+    "basisFiles": [
+      "requirements.md"
+    ],
+    "targetFiles": [
+      "acceptance.md"
+    ],
+    "basisAnchors": [
+      {
+        "claimId": "R04",
+        "path": "requirements.md",
+        "start": 19,
+        "end": 22
+      }
+    ],
+    "navigation": {
+      "diff": null,
+      "baseline": null,
+      "workspace": "FROZEN_STAGE_FIXTURE",
+      "evidence": "Complete original contract and one current metric target; no business execution is requested."
+    }
+  },
+  "model": {
+    "id": "deepseek-v4-flash",
+    "provider": "review-experiment",
+    "contextWindow": 204800
+  },
+  "files": [
+    [
+      "acceptance.md",
+      {
+        "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+        "lines": 26
+      }
+    ],
+    [
+      "requirements.md",
+      {
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "lines": 33
+      }
+    ]
+  ],
+  "maxAttempts": 2,
+  "maxTurns": 100,
+  "tokenBudget": null,
+  "deadline": null,
+  "compactionPolicy": {
+    "enabled": true,
+    "reserveTokens": 61440,
+    "keepRecentTokens": 20000
+  },
+  "initialHistoryRecords": 0
+}

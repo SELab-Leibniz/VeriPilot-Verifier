@@ -1,0 +1,81 @@
+{
+  "taskId": "M01:R04",
+  "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+  "completed": true,
+  "conclusive": true,
+  "verdict": "PASS",
+  "reason": "Decomposition fully mirrors R04: can-cook reads saved recipe/inventory, returns can_cook plus missing shortfalls, preserves store bytes; cook only subtracts when sufficient, persists, returns {\"cooked\": NAME}. Common conditions (JSON result, no stderr, no store creation) and R05 exceptions (no partial consumption, unchanged bytes) are also covered.",
+  "limits": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "tokenBudget": null,
+    "deadline": null
+  },
+  "refs": [
+    {
+      "citeId": "467828ab-b173-442a-8cdf-ebb4163bc644",
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "byteStart": 0,
+      "byteEnd": 1945,
+      "rangeKind": "range"
+    },
+    {
+      "citeId": "e440712c-15e2-4d63-adb3-b50cc0603c1a",
+      "path": "decomposition.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d",
+      "byteStart": 0,
+      "byteEnd": 2324,
+      "rangeKind": "range"
+    }
+  ],
+  "citeIds": [
+    "467828ab-b173-442a-8cdf-ebb4163bc644",
+    "e440712c-15e2-4d63-adb3-b50cc0603c1a"
+  ],
+  "basis": [
+    {
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/requirements.md"
+    }
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "range",
+      "byteStart": 1037,
+      "byteEnd": 1332,
+      "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+    }
+  ],
+  "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-holdout-01\\K03\\review\\evidence.json",
+  "attempts": 1,
+  "metrics": {
+    "turns": 2,
+    "toolCalls": 3,
+    "readBytes": 4424,
+    "grepBytes": 0,
+    "totalToolBytes": 4457,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "compactionFailures": 0,
+    "inputTokens": 5470,
+    "outputTokens": 1880,
+    "contextChecks": 3,
+    "unsafeRequestsPrevented": 0
+  },
+  "elapsedMs": 17252,
+  "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-holdout-01\\K03\\review"
+}

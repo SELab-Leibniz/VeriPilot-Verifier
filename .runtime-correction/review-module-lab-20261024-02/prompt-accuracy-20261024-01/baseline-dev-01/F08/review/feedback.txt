@@ -1,0 +1,2 @@
+M12:gt-007 | PASS | Index.ets commodityCard renders each home list item as a card containing an image placeholder (emoji with alt accessibilityText), commodity name, and price; the placeholder is displayed as the image representation, satisfying gt-007's card display and placeholder requirement at source-decidability level.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\F08\review\result.json

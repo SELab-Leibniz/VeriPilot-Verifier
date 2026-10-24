@@ -1,0 +1,2 @@
+M05:R04 | DEVIATION | R04's successful cook behavior (subtract all required quantities when sufficient, persist the result, return {"cooked": NAME}) is not covered by any acceptance criterion; AC4.4 covers only the insufficient-stock failure path, so the acceptance criteria are incomplete for R04.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\K05\review\result.json

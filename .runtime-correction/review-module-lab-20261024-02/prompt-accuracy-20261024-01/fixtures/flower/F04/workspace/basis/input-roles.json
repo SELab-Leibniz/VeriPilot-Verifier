@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "metric-review-input-roles.v1",
+  "authoritativeInputs": [
+    "basis/selected-object.json",
+    "basis/original-ground-truth.md",
+    "source/app-requirements.md"
+  ],
+  "formalCandidateArtifacts": [
+    "candidate/specs/account-login/spec.md",
+    "candidate/specs/calendar-reminder/spec.md",
+    "candidate/specs/commodity-browsing/spec.md",
+    "candidate/specs/commodity-detail/spec.md",
+    "candidate/specs/pay-security/spec.md",
+    "candidate/specs/purchase-notification/spec.md",
+    "candidate/specs/scan-search/spec.md",
+    "candidate/specs/store-location/spec.md",
+    "candidate/design.md"
+  ],
+  "candidateAcceptanceUnits": "The semantically defined candidate acceptance/scenario units in the declared formal candidate artifacts; no mandatory heading/ID syntax.",
+  "sourceImplementation": [
+    "implementation/entry/src/main/ets/data/PaySecretUtil.ets",
+    "implementation/entry/src/main/ets/data/StorageUtil.ets",
+    "implementation/entry/src/main/ets/entryability/EntryAbility.ets",
+    "implementation/entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
+    "implementation/entry/src/main/ets/model/Commodity.ets",
+    "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+    "implementation/entry/src/main/ets/pages/Index.ets",
+    "implementation/entry/src/main/ets/pages/PaySecurity.ets",
+    "implementation/entry/src/main/ets/pages/Personal.ets",
+    "implementation/entry/src/main/ets/pages/Scan.ets",
+    "implementation/entry/src/main/ets/pages/SearchResult.ets",
+    "implementation/entry/src/main/ets/pages/StoreMap.ets",
+    "implementation/entry/src/main/module.json5",
+    "implementation/entry/src/main/resources/base/profile/main_pages.json"
+  ],
+  "backgroundSelfReports": [
+    "background/self-reported-acceptance.md"
+  ],
+  "trustedSourceBuildBoundRuntimeEvidence": [],
+  "corpusCompleteness": "The enumerated candidate formal corpus is the complete candidate artifact set for this isolated review. Original input PRD, source implementation and self-reports are separate roles."
+}

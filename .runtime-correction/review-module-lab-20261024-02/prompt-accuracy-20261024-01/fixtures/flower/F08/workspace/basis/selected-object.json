@@ -1,0 +1,12 @@
+{
+  "objectId": "M12:gt-007",
+  "metricId": "M12",
+  "sourceId": "gt-007",
+  "sourceRevisionId": "gt-007@1",
+  "description": "首页商品列表展示商品卡片（图片、名称、价格）；图片加载时显示占位图。",
+  "authority": "MATERIAL_DERIVED",
+  "hard": true,
+  "evidenceRequired": true,
+  "applicability": "App实现",
+  "verificationTarget": "IMPLEMENTATION"
+}

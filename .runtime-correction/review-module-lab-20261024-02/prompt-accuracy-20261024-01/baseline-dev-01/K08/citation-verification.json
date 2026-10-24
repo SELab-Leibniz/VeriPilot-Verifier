@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "taskId": "M12:R04",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "completed": true,
+  "conclusive": true,
+  "originalBytesChecked": true,
+  "errors": [],
+  "verified": [
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9"
+    },
+    {
+      "category": "basisAnchors",
+      "citeId": null,
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9"
+    },
+    {
+      "category": "citations",
+      "citeId": "2f3e17c7-c36d-4b11-9a83-d22e19e582c4",
+      "path": "kitchen.py",
+      "start": 1,
+      "end": 210,
+      "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39"
+    }
+  ],
+  "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+}

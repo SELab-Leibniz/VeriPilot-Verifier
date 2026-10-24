@@ -1,0 +1,28 @@
+{
+  "id": "M12:R04",
+  "metricId": "M12",
+  "metricDefinition": "Requirement execution rate: whether the assigned requirement has been executed or implemented, with the requested proof scope and appropriate evidence.",
+  "phase": "VERIFICATION",
+  "scope": "RUNTIME_ACCEPTANCE",
+  "requirement": "Review actual runtime acceptance of the single frozen R04 requirement, using all applicable original conditions and exceptions. The workspace supplies source but no execution records. The reviewer must not execute the application; source reasoning cannot establish that required acceptance executions occurred.",
+  "basisFiles": [
+    "requirements.md"
+  ],
+  "targetFiles": [
+    "kitchen.py"
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22
+    }
+  ],
+  "navigation": {
+    "diff": null,
+    "baseline": null,
+    "workspace": "FROZEN_STAGE_FIXTURE",
+    "evidence": "Complete original contract and one current metric target; no business execution is requested."
+  }
+}

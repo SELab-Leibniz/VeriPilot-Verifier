@@ -1,0 +1,277 @@
+{
+  "task": {
+    "id": "M01:gt-007",
+    "scope": "METRIC_ARTIFACT_REVIEW",
+    "metricId": "M01",
+    "metricName": "Requirement decomposition coverage",
+    "metricCatalogVersion": "vp-m01-m15-v1",
+    "owner": "ARTIFACT",
+    "phase": "REQUIREMENTS",
+    "requirement": "Evaluate whether the entire frozen requirement object is recognizably represented in the declared formal decomposition artifacts, including its applicable conditions and exceptions. This is requirement-understanding coverage, not correctness of implementation or runtime execution. Judge the complete object in basis/selected-object.json using the complete original basis and the role manifest. Review only this one metric/object; observations about other metrics do not substitute for this proof question. The original GT and source PRD remain authoritative. The complete candidate artifact set for this review is enumerated in basis/input-roles.json. All available files are frozen and read-only.",
+    "basisFiles": [
+      "basis/metric-contract.md",
+      "basis/selected-object.json",
+      "basis/input-roles.json",
+      "basis/original-ground-truth.md",
+      "source/app-requirements.md"
+    ],
+    "targetFiles": [
+      "candidate/specs/account-login/spec.md",
+      "candidate/specs/calendar-reminder/spec.md",
+      "candidate/specs/commodity-browsing/spec.md",
+      "candidate/specs/commodity-detail/spec.md",
+      "candidate/specs/pay-security/spec.md",
+      "candidate/specs/purchase-notification/spec.md",
+      "candidate/specs/scan-search/spec.md",
+      "candidate/specs/store-location/spec.md",
+      "candidate/design.md"
+    ],
+    "navigation": {
+      "diff": null,
+      "baseline": null,
+      "workspace": "FROZEN_REVIEW_STAGE",
+      "primaryEvidence": [
+        "candidate/specs/account-login/spec.md",
+        "candidate/specs/calendar-reminder/spec.md",
+        "candidate/specs/commodity-browsing/spec.md",
+        "candidate/specs/commodity-detail/spec.md",
+        "candidate/specs/pay-security/spec.md",
+        "candidate/specs/purchase-notification/spec.md",
+        "candidate/specs/scan-search/spec.md",
+        "candidate/specs/store-location/spec.md",
+        "candidate/design.md"
+      ],
+      "formalArtifacts": [
+        "candidate/specs/account-login/spec.md",
+        "candidate/specs/calendar-reminder/spec.md",
+        "candidate/specs/commodity-browsing/spec.md",
+        "candidate/specs/commodity-detail/spec.md",
+        "candidate/specs/pay-security/spec.md",
+        "candidate/specs/purchase-notification/spec.md",
+        "candidate/specs/scan-search/spec.md",
+        "candidate/specs/store-location/spec.md",
+        "candidate/design.md"
+      ]
+    }
+  },
+  "model": {
+    "id": "deepseek-v4-flash",
+    "provider": "review-experiment",
+    "contextWindow": 204800
+  },
+  "files": [
+    [
+      "background/self-reported-acceptance.md",
+      {
+        "sha256": "9e8328663b7933f0503c4c02390e2ee8af73408c1b37f2f03bb1097df82983ad",
+        "lines": 74
+      }
+    ],
+    [
+      "basis/input-roles.json",
+      {
+        "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+        "lines": 42
+      }
+    ],
+    [
+      "basis/metric-contract.md",
+      {
+        "sha256": "8d15e9fd6bedae99a00078cc55a7f82418ee836a7e1592f0f5953e099df5c09d",
+        "lines": 11
+      }
+    ],
+    [
+      "basis/original-ground-truth.md",
+      {
+        "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+        "lines": 158
+      }
+    ],
+    [
+      "basis/selected-object.json",
+      {
+        "sha256": "c3cd3a79521cab2ae241cf3d756179d0525123e6820f2b19b388203654d39a9d",
+        "lines": 13
+      }
+    ],
+    [
+      "candidate/design.md",
+      {
+        "sha256": "e2d044ee1d77e868864ddc1441b0a071861171d90c65ffe538d26b97bafeefb5",
+        "lines": 65
+      }
+    ],
+    [
+      "candidate/specs/account-login/spec.md",
+      {
+        "sha256": "ddaeed55b20b5d7dc0909ccb40b3e65d1d902320e7bc3fcb8e4c5c943099f026",
+        "lines": 17
+      }
+    ],
+    [
+      "candidate/specs/calendar-reminder/spec.md",
+      {
+        "sha256": "155bc63e4c95c67c6fab362867563c8e77284eccc81dd2d1dce4c9a2431a7ff3",
+        "lines": 24
+      }
+    ],
+    [
+      "candidate/specs/commodity-browsing/spec.md",
+      {
+        "sha256": "b367300de6c2b74a049af3f6fb47dcfa3f09982a2a58a184c074a5163603b7c0",
+        "lines": 35
+      }
+    ],
+    [
+      "candidate/specs/commodity-detail/spec.md",
+      {
+        "sha256": "d6516e1bc30d8c3fda1c09c53bf3ee165138530f39375e90d037d446a69ead31",
+        "lines": 46
+      }
+    ],
+    [
+      "candidate/specs/pay-security/spec.md",
+      {
+        "sha256": "cc493f0725b173e0dfe5890f5e3d5f0843a1cbd29b2d76096822cae758d3ca8f",
+        "lines": 35
+      }
+    ],
+    [
+      "candidate/specs/purchase-notification/spec.md",
+      {
+        "sha256": "50de82cf11679166961da9bbb4411a07e40ae04dae00a1954501cc81918a8bc3",
+        "lines": 24
+      }
+    ],
+    [
+      "candidate/specs/scan-search/spec.md",
+      {
+        "sha256": "56714c6437247e8f94d2aaf8f369b48f51d4638ed63be6b2e0b3f94d0d53d2e6",
+        "lines": 24
+      }
+    ],
+    [
+      "candidate/specs/store-location/spec.md",
+      {
+        "sha256": "33a4551c43eb5f2c1e8df79edfbabfcbbb096e298900bb222f57f226686a31e8",
+        "lines": 28
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/data/PaySecretUtil.ets",
+      {
+        "sha256": "01aad4442d8ae3a6e6d2d200314793bc1467f3ab07e89deae0fc7ee12f242a05",
+        "lines": 202
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/data/StorageUtil.ets",
+      {
+        "sha256": "44a04853d057b37f77fbbd76758aa140c3ac13a035bb5cafa9825aaf1fd28b64",
+        "lines": 90
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/entryability/EntryAbility.ets",
+      {
+        "sha256": "0292623260ad50b5c5fbe884254e257cc82f8b7a342f2b850190578243b1ce85",
+        "lines": 48
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
+      {
+        "sha256": "ae94f286234d41ad5fa9f70bfd11f61e2f609994d6f16687d1ce4ec442115e5d",
+        "lines": 16
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/model/Commodity.ets",
+      {
+        "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac",
+        "lines": 63
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+      {
+        "sha256": "a27b52364eaaa06eb59ed05c125bd5b1db8066487aa2ac58bfeed33436b5d715",
+        "lines": 281
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/Index.ets",
+      {
+        "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0",
+        "lines": 269
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/PaySecurity.ets",
+      {
+        "sha256": "39cfb9728af322d5cc89f2ede13d6ecbe604259e074c049dcf10afa7d7490b05",
+        "lines": 146
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/Personal.ets",
+      {
+        "sha256": "e083ecb147fdf70c3564a6b562c0fa76b2944f0b6d1ff3bd4c263f2ad9ad0de9",
+        "lines": 74
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/Scan.ets",
+      {
+        "sha256": "9e62c14b6c984e904af359d892e35abb3d79cd2a3fafd7261e044b5a2be26d36",
+        "lines": 68
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/SearchResult.ets",
+      {
+        "sha256": "f0dddffe451cbebb8da5a561515bf2410d4d1f9f62bfc94d2490e09c6e14851a",
+        "lines": 88
+      }
+    ],
+    [
+      "implementation/entry/src/main/ets/pages/StoreMap.ets",
+      {
+        "sha256": "be7c83f2e52a973d3a00e65fae604da29ad68a042b0b67acc2842343014f3f24",
+        "lines": 73
+      }
+    ],
+    [
+      "implementation/entry/src/main/module.json5",
+      {
+        "sha256": "4180a7e3fe69bb7c8125877b3fca5f0785eade823f0aaaf391e16a5673b5dce0",
+        "lines": 120
+      }
+    ],
+    [
+      "implementation/entry/src/main/resources/base/profile/main_pages.json",
+      {
+        "sha256": "5799f1397976c5b28bf29dc0ab0ea696cea7ec0d1b49f12747ec3548306cbb90",
+        "lines": 12
+      }
+    ],
+    [
+      "source/app-requirements.md",
+      {
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "lines": 410
+      }
+    ]
+  ],
+  "maxAttempts": 2,
+  "maxTurns": 100,
+  "tokenBudget": null,
+  "deadline": null,
+  "compactionPolicy": {
+    "enabled": true,
+    "reserveTokens": 61440,
+    "keepRecentTokens": 20000
+  },
+  "initialHistoryRecords": 0
+}

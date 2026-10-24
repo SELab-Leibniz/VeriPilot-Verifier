@@ -1,0 +1,169 @@
+{
+  "caseId": "F10",
+  "metricId": "M12",
+  "domain": "flower",
+  "split": "holdout",
+  "expectedVerdict": "DEVIATION",
+  "result": {
+    "taskId": "M12:requirements-3e1172210314804d",
+    "scope": "SOURCE_IMPLEMENTATION",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "PASS",
+    "reason": "Repository.ets implements GET /api/commodities (list) and /api/commodities/{id} (detail) via http GET, degrading to MockData on any failure (catch/non-200/empty); Index and CommodityDetail consume these paths, INTERNET permission declared. Source-decidable proof supports the complete requirement.",
+    "limits": {
+      "maxAttempts": 2,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "d220f476-e530-46b6-a318-d899cfcae650",
+        "path": "implementation/entry/src/main/ets/data/Repository.ets",
+        "start": 1,
+        "end": 73,
+        "sha256": "6d7134f8515c4df4703a1019eafda4ea7c8cf6484a729884f65a297ee2efc274",
+        "byteStart": 0,
+        "byteEnd": 2454,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "f9831868-85f9-416a-8d7d-43d01b7ce279",
+        "path": "implementation/entry/src/main/ets/data/MockData.ets",
+        "start": 1,
+        "end": 30,
+        "sha256": "d90e87463b2561609a6ec50229b65122c6f292e912c1958c890c04c905620a4c",
+        "byteStart": 0,
+        "byteEnd": 1509,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "efcd7fc6-c69e-49df-a9b2-eb27e5f17e53",
+        "path": "implementation/entry/src/main/ets/model/Models.ets",
+        "start": 1,
+        "end": 36,
+        "sha256": "0ca7b5a3f5bc83626d3832c892115bc2e601dd23dacf45b3d830cba623a19c21",
+        "byteStart": 0,
+        "byteEnd": 757,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "6299f333-96c2-4815-9b22-6a9701eeefc0",
+        "path": "implementation/entry/src/main/ets/pages/Index.ets",
+        "start": 1,
+        "end": 213,
+        "sha256": "ea6d203745bbb8542bc47d06647d7dc6cbe91c462ed348cd937b0a97a41dd541",
+        "byteStart": 0,
+        "byteEnd": 6137,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "7de9386d-afa8-4768-8bb9-a464df9f5286",
+        "path": "implementation/entry/src/main/ets/pages/CommodityDetail.ets",
+        "start": 1,
+        "end": 188,
+        "sha256": "9c800312d12b99164f7452780d04381eab4afff17b780aafe77c83df1b7e910b",
+        "byteStart": 0,
+        "byteEnd": 5995,
+        "rangeKind": "range"
+      },
+      {
+        "citeId": "ff096e7b-fd9c-403f-9844-36387306fd46",
+        "path": "implementation/entry/src/main/module.json5",
+        "start": 1,
+        "end": 104,
+        "sha256": "82e2d63d86e1e67dba890e0ae5a244c498e19b2a15618cf98d0b60ed260168a0",
+        "byteStart": 0,
+        "byteEnd": 2752,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "d220f476-e530-46b6-a318-d899cfcae650",
+      "f9831868-85f9-416a-8d7d-43d01b7ce279",
+      "efcd7fc6-c69e-49df-a9b2-eb27e5f17e53",
+      "6299f333-96c2-4815-9b22-6a9701eeefc0",
+      "7de9386d-afa8-4768-8bb9-a464df9f5286",
+      "ff096e7b-fd9c-403f-9844-36387306fd46"
+    ],
+    "basis": [
+      {
+        "path": "basis/metric-contract.md",
+        "start": 1,
+        "end": 8,
+        "sha256": "209c67eab8eae65913a6292e1ddb85264e1774440c1eb2e768bece2906024ca3",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/metric-contract.md"
+      },
+      {
+        "path": "basis/selected-object.json",
+        "start": 1,
+        "end": 13,
+        "sha256": "9f92b7f8c885b8bcd0d74caf5cbac352f77ab43d58d5a0320e979916535d6bb8",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/selected-object.json"
+      },
+      {
+        "path": "basis/input-roles.json",
+        "start": 1,
+        "end": 36,
+        "sha256": "08cf0344f7cd41e3c051b84c25f3c29b2e82f39f5e4c0fc45dff7c05f0d758d5",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/input-roles.json"
+      },
+      {
+        "path": "basis/original-ground-truth.md",
+        "start": 1,
+        "end": 223,
+        "sha256": "67cea7f53eceb04fd6d609a061ae351ba179a9acfed0b5ccc1d7dde0fb3a5218",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/basis/original-ground-truth.md"
+      },
+      {
+        "path": "source/app-requirements.md",
+        "start": 1,
+        "end": 410,
+        "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/source/app-requirements.md"
+      }
+    ],
+    "basisAnchors": [],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-extension-01\\F10\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 5,
+      "toolCalls": 15,
+      "readBytes": 63932,
+      "grepBytes": 1968,
+      "totalToolBytes": 65959,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 76904,
+      "outputTokens": 3973,
+      "contextChecks": 6,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 36503,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\baseline-extension-01\\F10\\review"
+  },
+  "citationIntegrity": true,
+  "labelMatches": false,
+  "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+  "measured": {
+    "reviewType": "M12",
+    "promptAppendSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "noncachedInputTokens": 27752,
+    "cacheReadTokens": 49152,
+    "cacheWriteTokens": 0,
+    "outputTokens": 3973,
+    "submitCalls": 1,
+    "submitErrors": 0,
+    "maxSubmitBytes": 618,
+    "feedbackBytes": 537,
+    "promptSha256": "50a15af61a777141af67d374a958be4d0821439d2aedf3f1073c46434106d76f"
+  },
+  "frozenInputUnchanged": true
+}

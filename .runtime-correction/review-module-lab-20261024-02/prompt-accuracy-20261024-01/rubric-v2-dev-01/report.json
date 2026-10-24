@@ -1,0 +1,957 @@
+{
+  "status": "COMPLETE_PENDING_SEMANTIC_REVIEW",
+  "variant": "rubric-v2",
+  "split": "dev",
+  "mode": "LIVE_REVIEW_STAGE",
+  "completedCases": 8,
+  "preliminaryLabelMatches": 8,
+  "rows": [
+    {
+      "caseId": "F04",
+      "metricId": "M05",
+      "domain": "flower",
+      "split": "dev",
+      "expectedVerdict": "PASS",
+      "result": {
+        "taskId": "M05:gt-007",
+        "scope": "METRIC_ARTIFACT_REVIEW",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "PASS",
+        "reason": "gt-007's two core obligations—homepage cards with image/name/price and placeholder while loading—are both covered by declared acceptance scenarios in commodity-browsing/spec.md (正常展示商品列表; 图片加载中或失败).",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "855a1db8-c466-4ec9-add7-b1ee958ae25a",
+            "path": "candidate/specs/commodity-browsing/spec.md",
+            "start": 1,
+            "end": 39,
+            "sha256": "74344b84fb062fdd5add26d973eb44af61f56905912fac2b624525a8f0bc7064",
+            "byteStart": 0,
+            "byteEnd": 1682,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "855a1db8-c466-4ec9-add7-b1ee958ae25a"
+        ],
+        "basis": [
+          {
+            "path": "basis/metric-contract.md",
+            "start": 1,
+            "end": 11,
+            "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/metric-contract.md"
+          },
+          {
+            "path": "basis/selected-object.json",
+            "start": 1,
+            "end": 13,
+            "sha256": "eacf807a9207347ce43840048d2cc0c6fb8812b713d564d9da0dc822f2a071e5",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/selected-object.json"
+          },
+          {
+            "path": "basis/input-roles.json",
+            "start": 1,
+            "end": 42,
+            "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/input-roles.json"
+          },
+          {
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/original-ground-truth.md"
+          },
+          {
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/source/app-requirements.md"
+          }
+        ],
+        "basisAnchors": [],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F04\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 4,
+          "toolCalls": 15,
+          "readBytes": 54763,
+          "grepBytes": 0,
+          "totalToolBytes": 54799,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 50560,
+          "outputTokens": 2034,
+          "contextChecks": 5,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 21031,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F04\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 20864,
+        "cacheReadTokens": 29696,
+        "cacheWriteTokens": 0,
+        "outputTokens": 2034,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 337,
+        "feedbackBytes": 446,
+        "promptSha256": "2302be290c6aef51f4e8e0a963aa9909e882fa334dd3d5e9cf6a968c46d7c458"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "F05",
+      "metricId": "M05",
+      "domain": "flower",
+      "split": "dev",
+      "expectedVerdict": "DEVIATION",
+      "result": {
+        "taskId": "M05:gt-007",
+        "scope": "METRIC_ARTIFACT_REVIEW",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "DEVIATION",
+        "reason": "The only acceptance scenario (\"正常展示商品列表\") asserts the homepage card list (image/name/price), but no candidate acceptance unit asserts the placeholder image shown while images load; that obligation exists solely as requirement-body SHALL text, which the metric contract excludes as acceptance criteria. Core obligation \"图片加载时显示占位图\" is uncovered.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "6a6d94f3-4282-4769-9304-235d95a29dc0",
+            "path": "basis/selected-object.json",
+            "start": 1,
+            "end": 13,
+            "sha256": "eacf807a9207347ce43840048d2cc0c6fb8812b713d564d9da0dc822f2a071e5",
+            "byteStart": 0,
+            "byteEnd": 387,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "2cca6cae-6794-4d77-8d90-4adaa81e8da1",
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "byteStart": 0,
+            "byteEnd": 19539,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "53d7415e-8e11-4b3b-8b77-a86658cd7e56",
+            "path": "candidate/specs/commodity-browsing/spec.md",
+            "start": 1,
+            "end": 35,
+            "sha256": "75d1a6f3666b68c7dda25daa7d056b9c0bf0a5ace0cd5523bd594bc633198f49",
+            "byteStart": 0,
+            "byteEnd": 1527,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "aeda4289-ee15-459c-8a68-92dd3873979d",
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "byteStart": 0,
+            "byteEnd": 14999,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "6a6d94f3-4282-4769-9304-235d95a29dc0",
+          "2cca6cae-6794-4d77-8d90-4adaa81e8da1",
+          "53d7415e-8e11-4b3b-8b77-a86658cd7e56",
+          "aeda4289-ee15-459c-8a68-92dd3873979d"
+        ],
+        "basis": [
+          {
+            "path": "basis/metric-contract.md",
+            "start": 1,
+            "end": 11,
+            "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/metric-contract.md"
+          },
+          {
+            "path": "basis/selected-object.json",
+            "start": 1,
+            "end": 13,
+            "sha256": "eacf807a9207347ce43840048d2cc0c6fb8812b713d564d9da0dc822f2a071e5",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/selected-object.json"
+          },
+          {
+            "path": "basis/input-roles.json",
+            "start": 1,
+            "end": 42,
+            "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/input-roles.json"
+          },
+          {
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/original-ground-truth.md"
+          },
+          {
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/source/app-requirements.md"
+          }
+        ],
+        "basisAnchors": [],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F05\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 7,
+          "toolCalls": 17,
+          "readBytes": 54608,
+          "grepBytes": 3712,
+          "totalToolBytes": 58413,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 97972,
+          "outputTokens": 4556,
+          "contextChecks": 8,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 46216,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F05\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 41652,
+        "cacheReadTokens": 56320,
+        "cacheWriteTokens": 0,
+        "outputTokens": 4556,
+        "submitCalls": 2,
+        "submitErrors": 1,
+        "maxSubmitBytes": 609,
+        "feedbackBytes": 597,
+        "promptSha256": "2302be290c6aef51f4e8e0a963aa9909e882fa334dd3d5e9cf6a968c46d7c458"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "F07",
+      "metricId": "M12",
+      "domain": "flower",
+      "split": "dev",
+      "expectedVerdict": "PASS",
+      "result": {
+        "taskId": "M12:gt-025",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "PASS",
+        "reason": "module.json5 requestPermissions declares all eight required permissions (INTERNET, MICROPHONE, APPROXIMATELY_LOCATION, LOCATION, ACCESS_BIOMETRIC, READ_CALENDAR, WRITE_CALENDAR, PUBLISH_AGENT_REMINDER), satisfying every conjunct of gt-025.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "54c06c14-a949-4e65-a414-11d8541360a5",
+            "path": "implementation/entry/src/main/module.json5",
+            "start": 1,
+            "end": 120,
+            "sha256": "4180a7e3fe69bb7c8125877b3fca5f0785eade823f0aaaf391e16a5673b5dce0",
+            "byteStart": 0,
+            "byteEnd": 2897,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "54c06c14-a949-4e65-a414-11d8541360a5"
+        ],
+        "basis": [
+          {
+            "path": "basis/metric-contract.md",
+            "start": 1,
+            "end": 11,
+            "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/metric-contract.md"
+          },
+          {
+            "path": "basis/selected-object.json",
+            "start": 1,
+            "end": 13,
+            "sha256": "1f89ab8e10fd28bad131d73ad273f9795204f9c7aceaedbe076880ab7cdcf6f5",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/selected-object.json"
+          },
+          {
+            "path": "basis/input-roles.json",
+            "start": 1,
+            "end": 42,
+            "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/input-roles.json"
+          },
+          {
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/original-ground-truth.md"
+          },
+          {
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/source/app-requirements.md"
+          }
+        ],
+        "basisAnchors": [],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F07\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 3,
+          "toolCalls": 7,
+          "readBytes": 41469,
+          "grepBytes": 0,
+          "totalToolBytes": 41505,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 26324,
+          "outputTokens": 1222,
+          "contextChecks": 4,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 13048,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F07\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 24276,
+        "cacheReadTokens": 2048,
+        "cacheWriteTokens": 0,
+        "outputTokens": 1222,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 342,
+        "feedbackBytes": 451,
+        "promptSha256": "e054e07dfb8fb0acecd9a34e5cc0a94bd517a20b2263a4158266251c73832705"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "F08",
+      "metricId": "M12",
+      "domain": "flower",
+      "split": "dev",
+      "expectedVerdict": "DEVIATION",
+      "result": {
+        "taskId": "M12:gt-007",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "DEVIATION",
+        "reason": "Card \"image\" is Text(c.emoji), a permanent stand-in with no Image element or async load path; the required placeholder-during-image-loading clause has no trigger and no transient placeholder state, so the operation plus its temporary fallback is not established.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "fccb8d51-3138-404f-9aa3-b52fffab76d6",
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "byteStart": 0,
+            "byteEnd": 19539,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "04895609-1dad-404b-82cf-ee34ebd88d35",
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "byteStart": 0,
+            "byteEnd": 14999,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "319c5421-92e9-4f84-8e68-0d8c8e8dc29e",
+            "path": "implementation/entry/src/main/ets/pages/Index.ets",
+            "start": 1,
+            "end": 269,
+            "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0",
+            "byteStart": 0,
+            "byteEnd": 8722,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "f12e8e47-ef8b-4730-8e4f-955bacb19883",
+            "path": "implementation/entry/src/main/ets/model/Commodity.ets",
+            "start": 1,
+            "end": 63,
+            "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac",
+            "byteStart": 0,
+            "byteEnd": 2149,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "4432e565-8e48-4280-afcd-e49c4df4171f",
+            "path": "basis/metric-contract.md",
+            "start": 1,
+            "end": 11,
+            "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+            "byteStart": 0,
+            "byteEnd": 958,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "fccb8d51-3138-404f-9aa3-b52fffab76d6",
+          "04895609-1dad-404b-82cf-ee34ebd88d35",
+          "319c5421-92e9-4f84-8e68-0d8c8e8dc29e",
+          "f12e8e47-ef8b-4730-8e4f-955bacb19883",
+          "4432e565-8e48-4280-afcd-e49c4df4171f"
+        ],
+        "basis": [
+          {
+            "path": "basis/metric-contract.md",
+            "start": 1,
+            "end": 11,
+            "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/metric-contract.md"
+          },
+          {
+            "path": "basis/selected-object.json",
+            "start": 1,
+            "end": 13,
+            "sha256": "7bb3780708a8bb562379eb9c38318c44870b1d650cc63dc7dc3434e5b31a9e45",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/selected-object.json"
+          },
+          {
+            "path": "basis/input-roles.json",
+            "start": 1,
+            "end": 42,
+            "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/input-roles.json"
+          },
+          {
+            "path": "basis/original-ground-truth.md",
+            "start": 1,
+            "end": 158,
+            "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/basis/original-ground-truth.md"
+          },
+          {
+            "path": "source/app-requirements.md",
+            "start": 1,
+            "end": 410,
+            "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/source/app-requirements.md"
+          }
+        ],
+        "basisAnchors": [],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F08\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 4,
+          "toolCalls": 10,
+          "readBytes": 51271,
+          "grepBytes": 2391,
+          "totalToolBytes": 53698,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 49361,
+          "outputTokens": 5627,
+          "contextChecks": 5,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 53158,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\F08\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 23505,
+        "cacheReadTokens": 25856,
+        "cacheWriteTokens": 0,
+        "outputTokens": 5627,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 528,
+        "feedbackBytes": 479,
+        "promptSha256": "219e37b88b379f21527d6e29a06b35b365314480ff3bda2fe757d1e69cbac9a8"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "K04",
+      "metricId": "M05",
+      "domain": "kitchen",
+      "split": "dev",
+      "expectedVerdict": "PASS",
+      "result": {
+        "taskId": "M05:R04",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "PASS",
+        "reason": "R04's complete contract is covered: can-cook true/false with exact shortfall (AC4.1/4.2), store-byte invariance and missing-store no-create (AC4.3), cook full deduction, persistence and {\"cooked\": NAME} (AC4.4), failed-cook no-consumption with unchanged bytes (AC4.5), plus unknown-recipe/negative-inventory exceptions (AC5.1), isolation (AC5.2) and common CLI contract (AC1.2/1.3). No uncovered behavior.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "51c23a58-18ed-4275-9e3c-a0724b27ccc1",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "e3949a43-13d2-42f0-bf71-8e7e087162d0",
+            "path": "acceptance.md",
+            "start": 1,
+            "end": 26,
+            "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+            "byteStart": 0,
+            "byteEnd": 2874,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "51c23a58-18ed-4275-9e3c-a0724b27ccc1",
+          "e3949a43-13d2-42f0-bf71-8e7e087162d0"
+        ],
+        "basis": [
+          {
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/requirements.md"
+          }
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "range",
+            "byteStart": 1037,
+            "byteEnd": 1332,
+            "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+          }
+        ],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K04\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 2,
+          "toolCalls": 3,
+          "readBytes": 4971,
+          "grepBytes": 0,
+          "totalToolBytes": 5004,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 5935,
+          "outputTokens": 3382,
+          "contextChecks": 3,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 35057,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K04\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 5935,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputTokens": 3382,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 546,
+        "feedbackBytes": 614,
+        "promptSha256": "fe583e86d24b17115a9c19793ae923d0154a85017684c62b4cc353c881c4c83f"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "K05",
+      "metricId": "M05",
+      "domain": "kitchen",
+      "split": "dev",
+      "expectedVerdict": "DEVIATION",
+      "result": {
+        "taskId": "M05:R04",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "DEVIATION",
+        "reason": "Coverage gap: acceptance criteria cover can-cook outcomes, byte-preservation and failed cook, but no criterion covers the sufficient-stock cook path required by R04 (subtract all required quantities, persist, return {\"cooked\": NAME}) or its success exit/JSON/stderr conditions.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "dc973528-3acf-4d1b-9843-1a82988aa788",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "01f890fa-d524-4ce6-b8e0-30216e0f9cb1",
+            "path": "acceptance.md",
+            "start": 1,
+            "end": 25,
+            "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+            "byteStart": 0,
+            "byteEnd": 2653,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "dc973528-3acf-4d1b-9843-1a82988aa788",
+          "01f890fa-d524-4ce6-b8e0-30216e0f9cb1"
+        ],
+        "basis": [
+          {
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/requirements.md"
+          }
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "range",
+            "byteStart": 1037,
+            "byteEnd": 1332,
+            "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+          }
+        ],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K05\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 3,
+          "toolCalls": 5,
+          "readBytes": 4750,
+          "grepBytes": 16,
+          "totalToolBytes": 4828,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 11190,
+          "outputTokens": 2437,
+          "contextChecks": 4,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 26017,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K05\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 7094,
+        "cacheReadTokens": 4096,
+        "cacheWriteTokens": 0,
+        "outputTokens": 2437,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 423,
+        "feedbackBytes": 491,
+        "promptSha256": "fe583e86d24b17115a9c19793ae923d0154a85017684c62b4cc353c881c4c83f"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "K07",
+      "metricId": "M12",
+      "domain": "kitchen",
+      "split": "dev",
+      "expectedVerdict": "PASS",
+      "result": {
+        "taskId": "M12:R04",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "PASS",
+        "reason": "can-cook loads store/recipe read-only, emits {\"can_cook\":..., \"missing\": shortfall} without saving; cook subtracts every ingredient only when sufficient (missing empty), persists via save_store, and prints {\"cooked\": NAME}; CLI wiring and exit 0 support all R04 conjuncts.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "46a6a582-c505-4ce2-ba65-4c7dd7cde383",
+            "path": "kitchen.py",
+            "start": 1,
+            "end": 214,
+            "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+            "byteStart": 0,
+            "byteEnd": 7339,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "2c1c255a-cf37-40fe-9ce0-128a6cefe1b4",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "46a6a582-c505-4ce2-ba65-4c7dd7cde383",
+          "2c1c255a-cf37-40fe-9ce0-128a6cefe1b4"
+        ],
+        "basis": [
+          {
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/requirements.md"
+          }
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "range",
+            "byteStart": 1037,
+            "byteEnd": 1332,
+            "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+          }
+        ],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K07\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 3,
+          "toolCalls": 4,
+          "readBytes": 9434,
+          "grepBytes": 0,
+          "totalToolBytes": 9477,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 10641,
+          "outputTokens": 1888,
+          "contextChecks": 4,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 18167,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K07\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 8593,
+        "cacheReadTokens": 2048,
+        "cacheWriteTokens": 0,
+        "outputTokens": 1888,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 417,
+        "feedbackBytes": 481,
+        "promptSha256": "bad4b86d18ae773fcbcc1cac2ed4976de99a40954369990fb2811cf4b4951d48"
+      },
+      "frozenInputUnchanged": true
+    },
+    {
+      "caseId": "K08",
+      "metricId": "M12",
+      "domain": "kitchen",
+      "split": "dev",
+      "expectedVerdict": "DEVIATION",
+      "result": {
+        "taskId": "M12:R04",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "completed": true,
+        "conclusive": true,
+        "verdict": "DEVIATION",
+        "reason": "cmd_cook checks sufficiency and persists via save_store but never subtracts required quantities from pantry; store is written unchanged, so R04's \"cook subtracts all required quantities only when sufficient\" is not implemented.",
+        "limits": {
+          "maxAttempts": 2,
+          "maxTurns": 100,
+          "tokenBudget": null,
+          "deadline": null
+        },
+        "refs": [
+          {
+            "citeId": "99e0966a-ac1a-4f1c-8860-05fd44f51740",
+            "path": "kitchen.py",
+            "start": 1,
+            "end": 210,
+            "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+            "byteStart": 0,
+            "byteEnd": 7223,
+            "rangeKind": "range"
+          }
+        ],
+        "citeIds": [
+          "99e0966a-ac1a-4f1c-8860-05fd44f51740"
+        ],
+        "basis": [
+          {
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "file",
+            "artifactPath": "frozen-source/requirements.md"
+          }
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "rangeKind": "range",
+            "byteStart": 1037,
+            "byteEnd": 1332,
+            "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+          }
+        ],
+        "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K08\\review\\evidence.json",
+        "attempts": 1,
+        "metrics": {
+          "turns": 3,
+          "toolCalls": 4,
+          "readBytes": 9318,
+          "grepBytes": 0,
+          "totalToolBytes": 9377,
+          "repeatedLines": 0,
+          "compactions": 0,
+          "compactionFailures": 0,
+          "inputTokens": 10507,
+          "outputTokens": 1647,
+          "contextChecks": 4,
+          "unsafeRequestsPrevented": 0
+        },
+        "elapsedMs": 17935,
+        "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K08\\review"
+      },
+      "citationIntegrity": true,
+      "labelMatches": true,
+      "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+      "measured": {
+        "noncachedInputTokens": 8459,
+        "cacheReadTokens": 2048,
+        "cacheWriteTokens": 0,
+        "outputTokens": 1647,
+        "submitCalls": 1,
+        "submitErrors": 0,
+        "maxSubmitBytes": 334,
+        "feedbackBytes": 441,
+        "promptSha256": "bad4b86d18ae773fcbcc1cac2ed4976de99a40954369990fb2811cf4b4951d48"
+      },
+      "frozenInputUnchanged": true
+    }
+  ],
+  "elapsedMs": 132353,
+  "protectedInputs": true,
+  "repositoryUnchanged": true,
+  "configurationUnchanged": true,
+  "profileUnchanged": true,
+  "before": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  },
+  "after": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  },
+  "originalProjectOrSessionWritten": false,
+  "businessExecution": false,
+  "productionStopIntegrated": false,
+  "limitation": "Label agreement and byte integrity are preliminary. Independent diagnosis support is required. Selected object results are not whole-metric or project acceptance."
+}

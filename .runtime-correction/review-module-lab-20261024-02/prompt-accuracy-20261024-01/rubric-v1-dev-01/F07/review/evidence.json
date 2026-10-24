@@ -1,0 +1,60 @@
+{
+  "taskId": "M12:gt-025",
+  "basis": [
+    {
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/metric-contract.md"
+    },
+    {
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "1f89ab8e10fd28bad131d73ad273f9795204f9c7aceaedbe076880ab7cdcf6f5",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/selected-object.json"
+    },
+    {
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/input-roles.json"
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/original-ground-truth.md"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/source/app-requirements.md"
+    }
+  ],
+  "basisAnchors": [],
+  "citations": [
+    {
+      "citeId": "d0d7da42-1cd8-483c-b4c1-c4640500775f",
+      "path": "implementation/entry/src/main/module.json5",
+      "start": 1,
+      "end": 120,
+      "sha256": "4180a7e3fe69bb7c8125877b3fca5f0785eade823f0aaaf391e16a5673b5dce0",
+      "byteStart": 0,
+      "byteEnd": 2897,
+      "rangeKind": "range",
+      "text": "{\n  \"module\": {\n    \"name\": \"entry\",\n    \"type\": \"entry\",\n    \"description\": \"$string:module_desc\",\n    \"mainElement\": \"EntryAbility\",\n    \"deviceTypes\": [\n      \"phone\",\n      \"tablet\"\n    ],\n    \"deliveryWithInstall\": true,\n    \"installationFree\": false,\n    \"pages\": \"$profile:main_pages\",\n    \"requestPermissions\": [\n      {\n        \"name\": \"ohos.permission.INTERNET\"\n      },\n      {\n        \"name\": \"ohos.permission.MICROPHONE\",\n        \"reason\": \"$string:perm_microphone_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.APPROXIMATELY_LOCATION\",\n        \"reason\": \"$string:perm_location_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.LOCATION\",\n        \"reason\": \"$string:perm_location_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.ACCESS_BIOMETRIC\",\n        \"reason\": \"$string:perm_biometric_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.READ_CALENDAR\",\n        \"reason\": \"$string:perm_calendar_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.WRITE_CALENDAR\",\n        \"reason\": \"$string:perm_calendar_reason\",\n        \"usedScene\": {\n          \"abilities\": [\n            \"EntryAbility\"\n          ],\n          \"when\": \"inuse\"\n        }\n      },\n      {\n        \"name\": \"ohos.permission.PUBLISH_AGENT_REMINDER\"\n      }\n    ],\n    \"abilities\": [\n      {\n        \"name\": \"EntryAbility\",\n        \"srcEntry\": \"./ets/entryability/EntryAbility.ets\",\n        \"description\": \"$string:EntryAbility_desc\",\n        \"icon\": \"$media:layered_image\",\n        \"label\": \"$string:EntryAbility_label\",\n        \"startWindowIcon\": \"$media:startIcon\",\n        \"startWindowBackground\": \"$color:start_window_background\",\n        \"exported\": true,\n        \"skills\": [\n          {\n            \"entities\": [\n              \"entity.system.home\"\n            ],\n            \"actions\": [\n              \"ohos.want.action.home\"\n            ]\n          }\n        ]\n      }\n    ],\n    \"extensionAbilities\": [\n      {\n        \"name\": \"EntryBackupAbility\",\n        \"srcEntry\": \"./ets/entrybackupability/EntryBackupAbility.ets\",\n        \"type\": \"backup\",\n        \"exported\": false,\n        \"metadata\": [\n          {\n            \"name\": \"ohos.extension.backup\",\n            \"resource\": \"$profile:backup_config\"\n          }\n        ],\n      }\n    ]\n  }\n}\n",
+      "sha256Excerpt": "4180a7e3fe69bb7c8125877b3fca5f0785eade823f0aaaf391e16a5673b5dce0"
+    }
+  ]
+}

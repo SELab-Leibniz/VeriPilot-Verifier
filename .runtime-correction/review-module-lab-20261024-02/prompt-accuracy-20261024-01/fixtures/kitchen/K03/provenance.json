@@ -1,0 +1,40 @@
+{
+  "caseId": "K03",
+  "sourceLedger": [
+    {
+      "role": "original-contract",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\examples\\openclaw-offline-kitchen\\skills\\build-offline-kitchen\\references\\requirements.md",
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "bytes": 1945
+    },
+    {
+      "role": "existing-correct-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\workspace\\kitchen.py",
+      "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+      "bytes": 7339
+    },
+    {
+      "role": "existing-missing-consumption-candidate",
+      "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\workspace\\kitchen.py",
+      "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+      "bytes": 7223
+    }
+  ],
+  "controlledArtifact": true,
+  "mutation": "complete-without-source-identifiers",
+  "originalContractPreservedByteForByte": true,
+  "noAppOrVerifierRun": true,
+  "oracleIncludedInWorkspace": false,
+  "files": [
+    {
+      "path": "requirements.md",
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "bytes": 1945
+    },
+    {
+      "path": "decomposition.md",
+      "sha256": "c927e89799c64d7afe47529846f675fa181da5beb0dcd534d75138d01a13813d",
+      "bytes": 2324
+    }
+  ]
+}

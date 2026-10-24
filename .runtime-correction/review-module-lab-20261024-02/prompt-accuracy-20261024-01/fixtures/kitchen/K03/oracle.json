@@ -1,0 +1,29 @@
+{
+  "caseId": "K03",
+  "metricId": "M01",
+  "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "PASS",
+  "mechanism": "The target semantically represents the same complete behavior as the positive decomposition but has no D-number mapping; absence of matching IDs is not missing requirement coverage.",
+  "mutation": "complete-without-source-identifiers",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "decomposition.md",
+      "start": 20,
+      "end": 29,
+      "role": "Relevant current target region; absence claims must also inspect the complete target"
+    }
+  ],
+  "mustNotClaim": [
+    "Runtime evidence is required to score decomposition coverage",
+    "Identifier correspondence alone proves or disproves semantic coverage",
+    "Current source implementation can substitute for a missing decomposition obligation"
+  ],
+  "historicalCorroboration": null
+}

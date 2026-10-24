@@ -1,0 +1,28 @@
+{
+  "id": "M12:R04",
+  "metricId": "M12",
+  "metricDefinition": "Requirement execution rate: whether the assigned requirement has been executed or implemented, with the requested proof scope and appropriate evidence.",
+  "phase": "IMPLEMENTATION",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "requirement": "Review the source-decidable implementation of the single frozen R04 requirement in current kitchen.py, using all applicable original conditions and exceptions. This is the SOURCE_IMPLEMENTATION sub-proof associated with M12, not actual runtime acceptance, Skill completion or full-project execution rate.",
+  "basisFiles": [
+    "requirements.md"
+  ],
+  "targetFiles": [
+    "kitchen.py"
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22
+    }
+  ],
+  "navigation": {
+    "diff": null,
+    "baseline": null,
+    "workspace": "FROZEN_STAGE_FIXTURE",
+    "evidence": "Complete original contract and one current metric target; no business execution is requested."
+  }
+}

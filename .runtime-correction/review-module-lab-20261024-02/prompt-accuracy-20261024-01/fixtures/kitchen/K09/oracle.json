@@ -1,0 +1,35 @@
+{
+  "caseId": "K09",
+  "metricId": "M12",
+  "scope": "RUNTIME_ACCEPTANCE",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "UNVERIFIED",
+  "mechanism": "Correct source can establish static behavior but the assigned question asks whether actual R04 acceptance executions occurred. No execution record is supplied to this reviewer; the independently held historical verifier cannot be used as an unseen model proof.",
+  "mutation": "runtime-evidence-not-supplied",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "kitchen.py",
+      "start": 137,
+      "end": 146,
+      "role": "Relevant current target region; absence claims must also inspect the complete target"
+    }
+  ],
+  "mustNotClaim": [
+    "The required runtime execution happened because source looks correct",
+    "An evidence gap is a concrete business implementation defect"
+  ],
+  "historicalCorroboration": {
+    "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\independent-verifier.json",
+    "sha256": "85f3bb1380ad6ec4d5a3f8468d7307ed0604f7b759ece528abdf7cec136c7a02",
+    "sourceSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+    "passed": true,
+    "scenarioCount": 21,
+    "failure": null
+  }
+}

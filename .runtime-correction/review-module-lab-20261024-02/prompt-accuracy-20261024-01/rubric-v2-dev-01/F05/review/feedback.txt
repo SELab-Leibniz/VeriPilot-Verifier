@@ -1,0 +1,2 @@
+M05:gt-007 | DEVIATION | The only acceptance scenario ("正常展示商品列表") asserts the homepage card list (image/name/price), but no candidate acceptance unit asserts the placeholder image shown while images load; that obligation exists solely as requirement-body SHALL text, which the metric contract excludes as acceptance criteria. Core obligation "图片加载时显示占位图" is uncovered.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v2-dev-01\F05\review\result.json

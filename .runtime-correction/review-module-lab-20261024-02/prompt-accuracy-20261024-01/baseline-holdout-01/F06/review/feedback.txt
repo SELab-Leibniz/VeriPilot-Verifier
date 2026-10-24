@@ -1,0 +1,2 @@
+M05:gt-014 | DEVIATION | gt-014's core obligation "大图加载失败显示默认占位图" appears only in the candidate requirement-body statement, with no acceptance scenario covering it; the metric contract forbids treating requirement-body statements as acceptance criteria, so this core obligation is uncovered.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-holdout-01\F06\review\result.json

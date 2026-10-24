@@ -1,0 +1,76 @@
+{
+  "passed": true,
+  "taskId": "M05:gt-014",
+  "scope": "METRIC_ARTIFACT_REVIEW",
+  "completed": true,
+  "conclusive": true,
+  "originalBytesChecked": true,
+  "errors": [],
+  "verified": [
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "0e7219f071a3bc7854897b7be912c140e8737d7169a66a5fc698f007098b3ff6"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+    },
+    {
+      "category": "citations",
+      "citeId": "38a5e9e8-5343-48e5-b1d7-50051ea0ec27",
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "3ef1989113bb852b279fa785bc0862d6db8bb8a586ef5b5a010ccf9daebb1be0"
+    },
+    {
+      "category": "citations",
+      "citeId": "3df85e4c-2935-420f-bbdd-f09296fd9f78",
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "0e7219f071a3bc7854897b7be912c140e8737d7169a66a5fc698f007098b3ff6"
+    },
+    {
+      "category": "citations",
+      "citeId": "5755f4c0-e52f-4170-a624-415381f786f3",
+      "path": "candidate/specs/commodity-detail/spec.md",
+      "start": 1,
+      "end": 46,
+      "sha256": "d6516e1bc30d8c3fda1c09c53bf3ee165138530f39375e90d037d446a69ead31"
+    }
+  ],
+  "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+}

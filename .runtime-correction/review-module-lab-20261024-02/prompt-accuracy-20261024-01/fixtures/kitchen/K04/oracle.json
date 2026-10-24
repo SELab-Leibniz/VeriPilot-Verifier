@@ -1,0 +1,29 @@
+{
+  "caseId": "K04",
+  "metricId": "M05",
+  "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "PASS",
+  "mechanism": "Observable acceptance criteria cover feasibility result fields, query byte preservation, successful full consumption and persisted state, plus applicable failure and common conditions.",
+  "mutation": "complete-acceptance-coverage",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "acceptance.md",
+      "start": 15,
+      "end": 24,
+      "role": "Relevant current target region; absence claims must also inspect the complete target"
+    }
+  ],
+  "mustNotClaim": [
+    "A failure to execute an existing criterion proves it is absent",
+    "A failed-cook criterion covers successful cook consumption",
+    "Correct output values alone establish absence of query file side effects"
+  ],
+  "historicalCorroboration": null
+}

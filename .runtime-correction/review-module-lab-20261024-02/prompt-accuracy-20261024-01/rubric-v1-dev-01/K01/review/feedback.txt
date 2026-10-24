@@ -1,0 +1,2 @@
+M01:R04 | PASS | R04 is fully decomposed: D4.1-D4.3 cover can-cook's read, can_cook/missing result shape, and store-bytes preservation; D4.4 covers cook's sufficiency gate, full subtraction, persistence, and {"cooked": NAME}; D1.2/D1.4/D1.5 and D5.1/D5.2 represent applicable common conditions and exceptions. No mandatory behavior missing or weakened.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K01\review\result.json

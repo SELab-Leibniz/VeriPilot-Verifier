@@ -1,0 +1,72 @@
+{
+  "taskId": "M12:gt-007",
+  "basis": [
+    {
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/metric-contract.md"
+    },
+    {
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "7bb3780708a8bb562379eb9c38318c44870b1d650cc63dc7dc3434e5b31a9e45",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/selected-object.json"
+    },
+    {
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/input-roles.json"
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/original-ground-truth.md"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/source/app-requirements.md"
+    }
+  ],
+  "basisAnchors": [],
+  "citations": [
+    {
+      "citeId": "d6a005b4-f43b-451f-9430-56fb2d16cc2c",
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "start": 1,
+      "end": 269,
+      "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0",
+      "byteStart": 0,
+      "byteEnd": 8722,
+      "rangeKind": "range",
+      "text": "import { router } from '@kit.ArkUI';\nimport { promptAction } from '@kit.ArkUI';\nimport { common, abilityAccessCtrl, Permissions } from '@kit.AbilityKit';\nimport { geoLocationManager } from '@kit.LocationKit';\nimport { Commodity, MOCK_COMMODITIES, MOCK_STORES, queryCommodities, getCommodityById, StoreInfo } from '../model/Commodity';\nimport { StorageUtil } from '../data/StorageUtil';\n\n@Entry\n@Component\nstruct Index {\n  @State commodities: Commodity[] = [];\n  @State historyCommodities: Commodity[] = [];\n  @State isLoading: boolean = false;\n  @State locationText: string = '未定位';\n  @State nearbyStores: StoreInfo[] = [];\n\n  private storage: StorageUtil = StorageUtil.getInstance();\n\n  aboutToAppear(): void {\n    // 默认展示门店列表，避免定位权限未授权时门店区域不可见\n    this.nearbyStores = MOCK_STORES;\n    this.loadCommodities();\n    this.loadHistory();\n  }\n\n  onPageShow(): void {\n    this.loadHistory();\n  }\n\n  private loadCommodities(): void {\n    this.isLoading = true;\n    queryCommodities().then((list: Commodity[]) => {\n      this.commodities = list;\n      this.isLoading = false;\n    }).catch(() => {\n      // 网络失败降级本地 mock\n      this.commodities = MOCK_COMMODITIES;\n      this.isLoading = false;\n      promptAction.showToast({ message: '网络不可用，已加载本地缓存商品' });\n    });\n  }\n\n  private loadHistory(): void {\n    const context = getContext(this) as common.UIAbilityContext;\n    this.storage.getHistory(context).then((ids: number[]) => {\n      const list: Commodity[] = [];\n      for (const id of ids) {\n        const c = getCommodityById(id);\n        if (c) {\n          list.push(c);\n        }\n      }\n      this.historyCommodities = list;\n    });\n  }\n\n  private onRefresh(): void {\n    this.loadCommodities();\n  }\n\n  private goDetail(c: Commodity): void {\n    const context = getContext(this) as common.UIAbilityContext;\n    this.storage.recordHistory(context, c.id);\n    router.pushUrl({ url: 'pages/CommodityDetail', params: { id: c.id } });\n  }\n\n  private requestLocation(): void {\n    // 先展示默认门店列表，避免模拟器定位不可用时阻塞 UI\n    this.nearbyStores = MOCK_STORES;\n    const context = getContext(this) as common.UIAbilityContext;\n    const atManager = abilityAccessCtrl.createAtManager();\n    const perms: Array<Permissions> = ['ohos.permission.APPROXIMATELY_LOCATION', 'ohos.permission.LOCATION'];\n    atManager.requestPermissionsFromUser(context, perms).then((result) => {\n      const granted = result.authResults.every((code: number) => code === 0);\n      if (!granted) {\n        this.locationText = '未授权位置权限';\n        promptAction.showToast({ message: '未授权位置权限，可在设置中开启' });\n        return;\n      }\n      // 5 秒超时保护：模拟器无 GPS 时 getCurrentLocation 可能长时间无回调\n      this.getLocationWithTimeout(5000).then((ok: boolean) => {\n        if (ok) {\n          promptAction.showToast({ message: `已定位：${this.locationText}` });\n        } else {\n          this.locationText = '定位失败（模拟器），展示默认门店';\n          promptAction.showToast({ message: '模拟器定位不可用，已展示附近门店列表' });\n        }\n      });\n    }).catch(() => {\n      this.locationText = '未授权位置权限';\n      promptAction.showToast({ message: '未授权位置权限，可在设置中开启' });\n    });\n  }\n\n  private getLocationWithTimeout(timeoutMs: number): Promise<boolean> {\n    return new Promise<boolean>((resolve) => {\n      let settled = false;\n      const timer = setTimeout(() => {\n        if (!settled) {\n          settled = true;\n          resolve(false);\n        }\n      }, timeoutMs);\n      geoLocationManager.getCurrentLocation().then((loc) => {\n        if (!settled) {\n          settled = true;\n          clearTimeout(timer);\n          const lat = loc.latitude.toFixed(4);\n          const lng = loc.longitude.toFixed(4);\n          this.locationText = `纬度 ${lat} 经度 ${lng}`;\n          resolve(true);\n        }\n      }).catch(() => {\n        if (!settled) {\n          settled = true;\n          clearTimeout(timer);\n          this.locationText = '定位失败（模拟器），展示默认门店';\n          resolve(false);\n        }\n      });\n    });\n  }\n\n  build() {\n    Column({ space: 8 }) {\n      // 顶部标题\n      Row() {\n        Text('花店电商')\n          .fontSize(22)\n          .fontWeight(FontWeight.Bold)\n        Blank()\n        Text(this.locationText)\n          .fontSize(12)\n          .fontColor('#888888')\n      }\n      .width('100%')\n      .padding(12)\n\n      // 功能入口：扫一扫 / 语音搜索 / 定位 / 地图\n      Row({ space: 8 }) {\n        this.entry('📷', '扫一扫', () => router.pushUrl({ url: 'pages/Scan' }))\n        this.entry('🎤', '语音搜索', () => router.pushUrl({ url: 'pages/SearchResult' }))\n        this.entry('📍', '定位', () => this.requestLocation())\n        this.entry('🗺️', '地图', () => router.pushUrl({ url: 'pages/StoreMap' }))\n        this.entry('👤', '我的', () => router.pushUrl({ url: 'pages/Personal' }))\n      }\n      .width('100%')\n      .padding({ left: 12, right: 12 })\n\n      // 附近门店（置于商品列表上方，保证可见可达）\n      if (this.nearbyStores.length > 0) {\n        Column({ space: 4 }) {\n          Text('附近门店')\n            .fontSize(16)\n            .fontWeight(FontWeight.Medium)\n          ForEach(this.nearbyStores, (s: StoreInfo) => {\n            Text(`${s.name}  ${s.address}`)\n              .fontSize(13)\n              .width('100%')\n              .onClick(() => router.pushUrl({ url: 'pages/StoreMap' }))\n          }, (s: StoreInfo) => `s${s.id}`)\n        }\n        .width('100%')\n        .padding(12)\n      }\n\n      // 商品列表（支持下拉刷新）\n      Refresh({ refreshing: $$this.isLoading }) {\n        List({ space: 12 }) {\n          ForEach(this.commodities, (c: Commodity) => {\n            ListItem() {\n              this.commodityCard(c)\n            }\n          }, (c: Commodity) => `${c.id}`)\n\n          // 浏览历史区域\n          if (this.historyCommodities.length > 0) {\n            ListItem() {\n              Column({ space: 6 }) {\n                Text('最近浏览')\n                  .fontSize(16)\n                  .fontWeight(FontWeight.Medium)\n                Row({ space: 8 }) {\n                  ForEach(this.historyCommodities, (h: Commodity) => {\n                    Column({ space: 2 }) {\n                      Text(h.emoji)\n                        .fontSize(32)\n                        .width(56)\n                        .height(56)\n                        .textAlign(TextAlign.Center)\n                        .backgroundColor('#FFF3F3')\n                        .borderRadius(8)\n                        .accessibilityText(`${h.name}，价格${h.price}元`)\n                      Text(h.name)\n                        .fontSize(12)\n                    }\n                    .onClick(() => this.goDetail(h))\n                  }, (h: Commodity) => `h${h.id}`)\n                }\n              }\n              .width('100%')\n              .padding(12)\n            }\n          }\n        }\n        .width('100%')\n        .layoutWeight(1)\n      }\n      .onRefreshing(() => this.onRefresh())\n      .width('100%')\n    }\n    .width('100%')\n    .height('100%')\n    .backgroundColor('#FFFFFF')\n  }\n\n  @Builder\n  entry(icon: string, label: string, action: () => void) {\n    Column({ space: 4 }) {\n      Text(icon)\n        .fontSize(26)\n        .width(52)\n        .height(52)\n        .textAlign(TextAlign.Center)\n        .backgroundColor('#FFF7EE')\n        .borderRadius(10)\n      Text(label)\n        .fontSize(12)\n    }\n    .layoutWeight(1)\n    .onClick(action)\n  }\n\n  @Builder\n  commodityCard(c: Commodity) {\n    Row({ space: 12 }) {\n      // 图片占位（emoji 模拟图片，alt 文本说明商品）\n      Text(c.emoji)\n        .fontSize(48)\n        .width(80)\n        .height(80)\n        .textAlign(TextAlign.Center)\n        .backgroundColor('#FFF7EE')\n        .borderRadius(8)\n        .accessibilityText(`${c.name}图片`)\n      Column({ space: 4 }) {\n        Text(c.name)\n          .fontSize(17)\n          .fontWeight(FontWeight.Medium)\n        Text(c.flowerLanguage)\n          .fontSize(13)\n          .fontColor('#888888')\n        Text(`¥${c.price}`)\n          .fontSize(18)\n          .fontColor('#E5484D')\n          .fontWeight(FontWeight.Bold)\n          .accessibilityText(`价格${c.price}元`)\n      }\n      .alignItems(HorizontalAlign.Start)\n      .layoutWeight(1)\n    }\n    .width('100%')\n    .padding(12)\n    .backgroundColor('#F9F9F9')\n    .borderRadius(12)\n    .onClick(() => this.goDetail(c))\n  }\n}\n",
+      "sha256Excerpt": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0"
+    },
+    {
+      "citeId": "77996118-4d47-4659-b2b8-50bfdef0e9d1",
+      "path": "implementation/entry/src/main/ets/model/Commodity.ets",
+      "start": 1,
+      "end": 63,
+      "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac",
+      "byteStart": 0,
+      "byteEnd": 2149,
+      "rangeKind": "range",
+      "text": "export class Commodity {\n  id: number;\n  name: string;\n  price: number;\n  flowerLanguage: string;\n  spec: string;\n  color: string;\n  emoji: string;\n\n  constructor(id: number, name: string, price: number, flowerLanguage: string, spec: string, color: string, emoji: string) {\n    this.id = id;\n    this.name = name;\n    this.price = price;\n    this.flowerLanguage = flowerLanguage;\n    this.spec = spec;\n    this.color = color;\n    this.emoji = emoji;\n  }\n}\n\nexport class StoreInfo {\n  id: number;\n  name: string;\n  address: string;\n  phone: string;\n  latitude: number;\n  longitude: number;\n\n  constructor(id: number, name: string, address: string, phone: string, latitude: number, longitude: number) {\n    this.id = id;\n    this.name = name;\n    this.address = address;\n    this.phone = phone;\n    this.latitude = latitude;\n    this.longitude = longitude;\n  }\n}\n\nexport const MOCK_COMMODITIES: Commodity[] = [\n  new Commodity(1, '红玫瑰', 99, '热烈真挚的爱', '11枝/束 含包装', '#E5484D', '🌹'),\n  new Commodity(2, '白百合', 128, '纯洁庄严', '6枝/束 含包装', '#EEEEEE', '🌷'),\n  new Commodity(3, '向日葵', 88, '阳光开朗', '5枝/束 含包装', '#F5A623', '🌻'),\n  new Commodity(4, '康乃馨', 66, '感恩与温馨', '12枝/束 含包装', '#F78FB3', '🌸'),\n  new Commodity(5, '郁金香', 108, '博爱、体贴', '10枝/束 含包装', '#FF8A65', '🌷'),\n  new Commodity(6, '满天星', 58, '纯洁思念', '300g/束 含包装', '#B0BEC5', '✨')\n];\n\nexport const MOCK_STORES: StoreInfo[] = [\n  new StoreInfo(1, '花语轩（中心店）', '人民中路 88 号', '010-88990001', 39.9042, 116.4074),\n  new StoreInfo(2, '花间集（步行街店）', '步行街 25 号', '010-88990002', 39.9050, 116.4100),\n  new StoreInfo(3, '花匠铺（东门店）', '东门大街 6 号', '010-88990003', 39.9020, 116.4150)\n];\n\nexport function queryCommodities(): Promise<Commodity[]> {\n  return new Promise<Commodity[]>((resolve) => {\n    setTimeout(() => resolve(MOCK_COMMODITIES), 300);\n  });\n}\n\nexport function getCommodityById(id: number): Commodity | undefined {\n  return MOCK_COMMODITIES.find((c) => c.id === id);\n}\n",
+      "sha256Excerpt": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac"
+    }
+  ]
+}

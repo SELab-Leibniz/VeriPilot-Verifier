@@ -1,0 +1,35 @@
+{
+  "caseId": "K07",
+  "metricId": "M12",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "visibility": "OUTSIDE_MODEL_WORKSPACE",
+  "expectedVerdict": "PASS",
+  "mechanism": "The source loads saved state, derives shortfalls without writing in can-cook, rejects insufficient cook before mutation, then subtracts every recipe quantity and saves. This establishes only the assigned static implementation sub-proof.",
+  "mutation": "source-supported-implementation",
+  "evidence": [
+    {
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "role": "Original assigned behavior"
+    },
+    {
+      "path": "kitchen.py",
+      "start": 137,
+      "end": 151,
+      "role": "Current cook implementation: sufficiency guard, full deduction loop, persistence of updated state and success result."
+    }
+  ],
+  "mustNotClaim": [
+    "The static sub-proof establishes that the full runtime project or all M12 objects passed",
+    "Historical oracle records outside input were read by the reviewer"
+  ],
+  "historicalCorroboration": {
+    "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\independent-verifier.json",
+    "sha256": "85f3bb1380ad6ec4d5a3f8468d7307ed0604f7b759ece528abdf7cec136c7a02",
+    "sourceSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+    "passed": true,
+    "scenarioCount": 21,
+    "failure": null
+  }
+}

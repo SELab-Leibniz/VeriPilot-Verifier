@@ -1,0 +1,92 @@
+{
+  "passed": true,
+  "taskId": "M12:gt-007",
+  "scope": "SOURCE_IMPLEMENTATION",
+  "completed": true,
+  "conclusive": true,
+  "originalBytesChecked": true,
+  "errors": [],
+  "verified": [
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "7bb3780708a8bb562379eb9c38318c44870b1d650cc63dc7dc3434e5b31a9e45"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4"
+    },
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+    },
+    {
+      "category": "citations",
+      "citeId": "fccb8d51-3138-404f-9aa3-b52fffab76d6",
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4"
+    },
+    {
+      "category": "citations",
+      "citeId": "04895609-1dad-404b-82cf-ee34ebd88d35",
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d"
+    },
+    {
+      "category": "citations",
+      "citeId": "319c5421-92e9-4f84-8e68-0d8c8e8dc29e",
+      "path": "implementation/entry/src/main/ets/pages/Index.ets",
+      "start": 1,
+      "end": 269,
+      "sha256": "e3e1fc1ab85264e79f31b26c99feb9828672f3a1c7f2e5b4b363f75ac81907e0"
+    },
+    {
+      "category": "citations",
+      "citeId": "f12e8e47-ef8b-4730-8e4f-955bacb19883",
+      "path": "implementation/entry/src/main/ets/model/Commodity.ets",
+      "start": 1,
+      "end": 63,
+      "sha256": "cabee280edf797817c5a0383daddd2d1f25dec0f22606640bd13d44aabd012ac"
+    },
+    {
+      "category": "citations",
+      "citeId": "4432e565-8e48-4280-afcd-e49c4df4171f",
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "4367e9551bfc91913856cbe88e2649377a7ca5726507788035abcb24dffb54cf"
+    }
+  ],
+  "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+}

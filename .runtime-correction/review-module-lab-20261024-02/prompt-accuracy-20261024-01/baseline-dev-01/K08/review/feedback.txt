@@ -1,0 +1,2 @@
+M12:R04 | DEVIATION | cmd_cook computes the shortfall but never subtracts recipe quantities from store["pantry"] before save_store; it persists the store unchanged and returns {"cooked": NAME}. R04 requires cook to subtract all required quantities when sufficient and persist the result, so inventory is never consumed.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\K08\review\result.json

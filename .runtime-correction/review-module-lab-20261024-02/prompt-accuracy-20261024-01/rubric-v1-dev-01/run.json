@@ -1,0 +1,38 @@
+{
+  "variant": "rubric-v1",
+  "split": "dev",
+  "live": true,
+  "caseIds": [
+    "K01",
+    "K02",
+    "K04",
+    "K05",
+    "K07",
+    "K08",
+    "F01",
+    "F02",
+    "F04",
+    "F05",
+    "F07",
+    "F08"
+  ],
+  "concurrency": 2,
+  "profileSha256": "26347ddd7decfa42d156f162deac559bd37509621dabfcadf0edd48ab04e6e6e",
+  "workerSha256": "16096d7073f40e3d2defc56e0cd738608fd264c21f03f13a7af88f37009d0b52",
+  "baselineCommit": "73390e0",
+  "frozenCasesSha256": "1a14a77131095083fcdaa286a6ea10671d2437ac67c12a243be4573058ea8da8",
+  "controls": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "perReplyMaxTokens": 8192,
+    "runTokenBudget": null,
+    "deadline": null,
+    "E2E": false
+  },
+  "before": {
+    "head": "73390e00b46766ca9eb1264d2fe7662dd877a05b",
+    "status": " M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/review-task.mjs\n M .runtime-correction/review-module-lab-20261024-02/experiments/review-task/long/sdk-checks.mjs\n",
+    "sha256": "7582e4aca94417c2d945bf1e34c2362b4e32f005f08a8831e03a32545eeb29c0",
+    "files": 637
+  }
+}

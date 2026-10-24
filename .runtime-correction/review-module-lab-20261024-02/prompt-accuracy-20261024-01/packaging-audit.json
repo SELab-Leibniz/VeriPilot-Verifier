@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "prompt-experiment-packaging-audit.v1",
+  "status": "PASS_OFFLINE_PACKAGING_CHECKS",
+  "scope": "No model calls, no business execution, no auth/config reads, no original fixture/profile/freeze/run changes; only ignored packaging code and new verification artifacts.",
+  "fixes": [
+    {
+      "files": [
+        "fixture-paths.mjs",
+        "run-review.mjs",
+        "prepare-audit.mjs"
+      ],
+      "problem": "Stored absolute fixture descriptors could point to a retired checkout.",
+      "change": "Resolve current paths from domain/caseId under the explicit experiment root; accept canonical legacy absolute tails or portable relative descriptors without rewriting frozen JSON. Reject inconsistent paths, duplicate IDs, symlink roots, and oracle/task inside model workspace."
+    },
+    {
+      "files": [
+        "run-outcome.mjs",
+        "run-review.mjs"
+      ],
+      "problem": "REVIEW_INCOMPLETE without row.error previously exited zero.",
+      "change": "A live incomplete result now exits nonzero; a successfully submitted UNVERIFIED still counts as a completed review."
+    },
+    {
+      "files": [
+        "prepare-audit.mjs"
+      ],
+      "problem": "Descriptor reader accepted arrays only while runner also allowed an object.cases envelope.",
+      "change": "Normalize both input shapes and resolve only cases present in the chosen audit run."
+    }
+  ],
+  "interface": {
+    "resolveFixturePaths": "await resolveFixturePaths(experimentRoot, descriptor)",
+    "resolveFixtureList": "await resolveFixtureList(experimentRoot, descriptors)",
+    "rootOverride": "REVIEW_EXPERIMENT_ROOT (relative to current repository or absolute; output still restricted to the experiment lab)"
+  },
+  "tests": {
+    "packaging": {
+      "tests": 5,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 1,
+      "skipReason": "Sandbox filesystem did not permit creation of a symlink/junction fixture; validation code remains in place.",
+      "artifact": "packaging-checks.tap"
+    },
+    "worker": {
+      "tests": 62,
+      "pass": 62,
+      "fail": 0,
+      "artifact": "packaging-worker-regression.tap"
+    },
+    "allFixtures": {
+      "cases": 21,
+      "status": "PREFLIGHT_PASS",
+      "allFrozenInputsUnchanged": true,
+      "protectedInputs": true,
+      "artifact": "packaging-all-preflight-01/report.json"
+    },
+    "relocation": {
+      "status": "PASS_RELOCATED_OFFLINE_PREFLIGHT",
+      "relocatedRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F",
+      "legacyDescriptorBytesRetained": true,
+      "frozenManifestBytesRetained": true,
+      "caseIds": [
+        "F01",
+        "K01"
+      ],
+      "protectedInputs": true,
+      "allFrozenInputsUnchanged": true,
+      "auditPathsUseRelocatedRoot": true,
+      "reviewStageModelCalls": 0,
+      "businessExecution": false,
+      "preflightOutput": {
+        "status": "PREFLIGHT_PASS",
+        "output": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F\\preflight",
+        "cases": 2,
+        "preliminaryLabelMatches": null
+      },
+      "auditOutput": {
+        "tag": "P99",
+        "cases": 2,
+        "output": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\packaging-test-runs\\checkout-copy-JC5R2F\\semantic-input\\P99.json"
+      },
+      "artifact": "packaging-relocation-verification.json"
+    },
+    "originalFreezeMatchesExtensionIdentity": true
+  },
+  "packagingMinimum": [
+    "Current worker and pinned package/lock",
+    "prompt-accuracy scripts, fixture-paths/run-outcome helpers and packaging-checks",
+    "Curated fixtures with workspace as the sole worker-visible root; task/oracle/provenance remain siblings",
+    "Unchanged profiles, freeze descriptors and independent semantic audits",
+    "Small retained run/decision/prompt/events summaries, excluding sessions/auth/node_modules/full frozen copies"
+  ],
+  "limitations": [
+    "select-profile.mjs is the preserved one-off historical development selection, not a generic prompt optimizer; it was not changed.",
+    "No exact final HTTP payload/network audit was performed.",
+    "The relocation check reused two copied frozen cases offline; live review outcomes were not rerun or relabelled.",
+    "Current domain/case schema is deliberately limited to curated kitchen/flower descriptors."
+  ]
+}

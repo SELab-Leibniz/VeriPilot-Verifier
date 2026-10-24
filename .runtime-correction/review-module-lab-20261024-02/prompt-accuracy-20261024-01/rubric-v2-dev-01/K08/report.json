@@ -1,0 +1,92 @@
+{
+  "caseId": "K08",
+  "metricId": "M12",
+  "domain": "kitchen",
+  "split": "dev",
+  "expectedVerdict": "DEVIATION",
+  "result": {
+    "taskId": "M12:R04",
+    "scope": "SOURCE_IMPLEMENTATION",
+    "completed": true,
+    "conclusive": true,
+    "verdict": "DEVIATION",
+    "reason": "cmd_cook checks sufficiency and persists via save_store but never subtracts required quantities from pantry; store is written unchanged, so R04's \"cook subtracts all required quantities only when sufficient\" is not implemented.",
+    "limits": {
+      "maxAttempts": 2,
+      "maxTurns": 100,
+      "tokenBudget": null,
+      "deadline": null
+    },
+    "refs": [
+      {
+        "citeId": "99e0966a-ac1a-4f1c-8860-05fd44f51740",
+        "path": "kitchen.py",
+        "start": 1,
+        "end": 210,
+        "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+        "byteStart": 0,
+        "byteEnd": 7223,
+        "rangeKind": "range"
+      }
+    ],
+    "citeIds": [
+      "99e0966a-ac1a-4f1c-8860-05fd44f51740"
+    ],
+    "basis": [
+      {
+        "path": "requirements.md",
+        "start": 1,
+        "end": 33,
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "rangeKind": "file",
+        "artifactPath": "frozen-source/requirements.md"
+      }
+    ],
+    "basisAnchors": [
+      {
+        "claimId": "R04",
+        "path": "requirements.md",
+        "start": 19,
+        "end": 22,
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "rangeKind": "range",
+        "byteStart": 1037,
+        "byteEnd": 1332,
+        "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+      }
+    ],
+    "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K08\\review\\evidence.json",
+    "attempts": 1,
+    "metrics": {
+      "turns": 3,
+      "toolCalls": 4,
+      "readBytes": 9318,
+      "grepBytes": 0,
+      "totalToolBytes": 9377,
+      "repeatedLines": 0,
+      "compactions": 0,
+      "compactionFailures": 0,
+      "inputTokens": 10507,
+      "outputTokens": 1647,
+      "contextChecks": 4,
+      "unsafeRequestsPrevented": 0
+    },
+    "elapsedMs": 17935,
+    "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v2-dev-01\\K08\\review"
+  },
+  "citationIntegrity": true,
+  "labelMatches": true,
+  "semanticValidation": "PENDING_INDEPENDENT_REVIEW",
+  "measured": {
+    "noncachedInputTokens": 8459,
+    "cacheReadTokens": 2048,
+    "cacheWriteTokens": 0,
+    "outputTokens": 1647,
+    "submitCalls": 1,
+    "submitErrors": 0,
+    "maxSubmitBytes": 334,
+    "feedbackBytes": 441,
+    "promptSha256": "bad4b86d18ae773fcbcc1cac2ed4976de99a40954369990fb2811cf4b4951d48"
+  },
+  "frozenInputUnchanged": true
+}

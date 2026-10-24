@@ -1,0 +1,9 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/CommodityDetail",
+    "pages/StoreMap",
+    "pages/PaySecurity",
+    "pages/Personal"
+  ]
+}

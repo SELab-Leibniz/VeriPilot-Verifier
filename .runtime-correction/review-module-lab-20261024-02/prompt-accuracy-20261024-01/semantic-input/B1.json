@@ -1,0 +1,629 @@
+{
+  "schemaVersion": "blind-semantic-review.v1",
+  "tag": "B1",
+  "rows": [
+    {
+      "caseId": "K02",
+      "metricId": "M01",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K02\\workspace",
+      "task": {
+        "id": "M01:R04",
+        "metricId": "M01",
+        "metricDefinition": "Requirement decomposition coverage: whether the current decomposition semantically represents the assigned original requirement and its applicable conditions.",
+        "phase": "REQUIREMENTS",
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "requirement": "Review M01 coverage for the single frozen R04 requirement in the current decomposition.md, using the complete original contract and applicable common conditions and exceptions. This question judges requirement decomposition coverage, not implementation, test execution, decomposition quality or overall project completion.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "decomposition.md"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K02",
+        "metricId": "M01",
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "DEVIATION",
+        "mechanism": "The decomposition includes can_cook feasibility but nowhere represents the missing ingredient-to-shortfall quantity object required by R04. Presence of a feasibility flag, IDs or code does not cover this omitted obligation.",
+        "mutation": "omitted-result-component",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "decomposition.md",
+            "start": 20,
+            "end": 22,
+            "role": "Relevant current target region; absence claims must also inspect the complete target"
+          }
+        ],
+        "mustNotClaim": [
+          "Runtime evidence is required to score decomposition coverage",
+          "Identifier correspondence alone proves or disproves semantic coverage",
+          "Current source implementation can substitute for a missing decomposition obligation"
+        ],
+        "historicalCorroboration": null
+      },
+      "actual": {
+        "completed": true,
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "verdict": "DEVIATION",
+        "reason": "D4.1 covers only the can_cook boolean; R04's mandatory {\"missing\": ingredient-to-shortfall object} response field is absent from the entire decomposition (D4.2's \"missing store\" is a different concept). Coverage gap in the can-cook contract.",
+        "refs": [
+          {
+            "citeId": "c185e2d6-3052-4478-a2d8-db890138c4df",
+            "path": "decomposition.md",
+            "start": 1,
+            "end": 32,
+            "sha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+            "byteStart": 0,
+            "byteEnd": 2220,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "decomposition.md",
+          "start": 1,
+          "end": 32
+        },
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        }
+      ]
+    },
+    {
+      "caseId": "K01",
+      "metricId": "M01",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K01\\workspace",
+      "task": {
+        "id": "M01:R04",
+        "metricId": "M01",
+        "metricDefinition": "Requirement decomposition coverage: whether the current decomposition semantically represents the assigned original requirement and its applicable conditions.",
+        "phase": "REQUIREMENTS",
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "requirement": "Review M01 coverage for the single frozen R04 requirement in the current decomposition.md, using the complete original contract and applicable common conditions and exceptions. This question judges requirement decomposition coverage, not implementation, test execution, decomposition quality or overall project completion.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "decomposition.md"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K01",
+        "metricId": "M01",
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "PASS",
+        "mechanism": "The current decomposition represents all R04 behaviors, including the ingredient-to-shortfall quantity object; applicable common conditions are also present.",
+        "mutation": "complete-semantic-decomposition",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "decomposition.md",
+            "start": 20,
+            "end": 29,
+            "role": "Relevant current target region; absence claims must also inspect the complete target"
+          }
+        ],
+        "mustNotClaim": [
+          "Runtime evidence is required to score decomposition coverage",
+          "Identifier correspondence alone proves or disproves semantic coverage",
+          "Current source implementation can substitute for a missing decomposition obligation"
+        ],
+        "historicalCorroboration": null
+      },
+      "actual": {
+        "completed": true,
+        "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+        "verdict": "PASS",
+        "reason": "R04 is fully decomposed: D4.1-D4.3 cover can-cook's read, can_cook/missing result shape, and store-bytes preservation; D4.4 covers cook's sufficiency gate, full subtraction, persistence, and {\"cooked\": NAME}; D1.2/D1.4/D1.5 and D5.1/D5.2 represent applicable common conditions and exceptions. No mandatory behavior missing or weakened.",
+        "refs": [
+          {
+            "citeId": "1ae48e79-2ac9-4564-a05c-edd580158ec1",
+            "path": "decomposition.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "1e93078ad9932d0f2433cc37681a9d8009b3d750fdffb61050de1460c38bdbfb",
+            "byteStart": 0,
+            "byteEnd": 2381,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "733ed363-4212-482f-9068-6690c6979706",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        },
+        {
+          "path": "decomposition.md",
+          "start": 1,
+          "end": 33
+        }
+      ]
+    },
+    {
+      "caseId": "K04",
+      "metricId": "M05",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K04\\workspace",
+      "task": {
+        "id": "M05:R04",
+        "metricId": "M05",
+        "metricDefinition": "Acceptance criteria coverage: whether the current acceptance criteria cover the assigned original requirement and its applicable conditions.",
+        "phase": "REQUIREMENTS",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "requirement": "Review M05 coverage for the single frozen R04 requirement in the current acceptance.md, using the complete original contract and applicable common conditions and exceptions. This question judges coverage by acceptance criteria, not their execution, implementation or criterion qualification.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "acceptance.md"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K04",
+        "metricId": "M05",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "PASS",
+        "mechanism": "Observable acceptance criteria cover feasibility result fields, query byte preservation, successful full consumption and persisted state, plus applicable failure and common conditions.",
+        "mutation": "complete-acceptance-coverage",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "acceptance.md",
+            "start": 15,
+            "end": 24,
+            "role": "Relevant current target region; absence claims must also inspect the complete target"
+          }
+        ],
+        "mustNotClaim": [
+          "A failure to execute an existing criterion proves it is absent",
+          "A failed-cook criterion covers successful cook consumption",
+          "Correct output values alone establish absence of query file side effects"
+        ],
+        "historicalCorroboration": null
+      },
+      "actual": {
+        "completed": true,
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "verdict": "PASS",
+        "reason": "AC4.1–AC4.5 (with AC1.2/AC1.3 common conditions) cover every R04 branch: can-cook true/false with missing shortfall, unchanged/no-created store bytes, full deduction and persisted result when sufficient, no consumption when insufficient, and the {\"cooked\": NAME} return with Unicode preservation.",
+        "refs": [
+          {
+            "citeId": "23a3ec60-85cf-49a9-9545-50d1047197ae",
+            "path": "acceptance.md",
+            "start": 1,
+            "end": 26,
+            "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+            "byteStart": 0,
+            "byteEnd": 2874,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        },
+        {
+          "path": "acceptance.md",
+          "start": 1,
+          "end": 26
+        }
+      ]
+    },
+    {
+      "caseId": "K05",
+      "metricId": "M05",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K05\\workspace",
+      "task": {
+        "id": "M05:R04",
+        "metricId": "M05",
+        "metricDefinition": "Acceptance criteria coverage: whether the current acceptance criteria cover the assigned original requirement and its applicable conditions.",
+        "phase": "REQUIREMENTS",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "requirement": "Review M05 coverage for the single frozen R04 requirement in the current acceptance.md, using the complete original contract and applicable common conditions and exceptions. This question judges coverage by acceptance criteria, not their execution, implementation or criterion qualification.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "acceptance.md"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K05",
+        "metricId": "M05",
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "DEVIATION",
+        "mechanism": "Criteria cover can-cook and failed cook, but no criterion exercises successful cook, full deduction and persisted result. Failure-case atomicity cannot cover the successful execution branch.",
+        "mutation": "uncovered-positive-cook-branch",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "acceptance.md",
+            "start": 15,
+            "end": 18,
+            "role": "Relevant current target region; absence claims must also inspect the complete target"
+          }
+        ],
+        "mustNotClaim": [
+          "A failure to execute an existing criterion proves it is absent",
+          "A failed-cook criterion covers successful cook consumption",
+          "Correct output values alone establish absence of query file side effects"
+        ],
+        "historicalCorroboration": null
+      },
+      "actual": {
+        "completed": true,
+        "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+        "verdict": "DEVIATION",
+        "reason": "can-cook is covered (AC4.1-4.3) and the failed-cook path is covered (AC4.4), but R04's successful cook obligation — subtract all required quantities when sufficient, persist, and return {\"cooked\": NAME} — has no acceptance criterion asserting it.",
+        "refs": [
+          {
+            "citeId": "186b1e92-af52-433e-b5f9-2d24093cceaf",
+            "path": "acceptance.md",
+            "start": 1,
+            "end": 25,
+            "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc",
+            "byteStart": 0,
+            "byteEnd": 2653,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "8f753a8f-1c77-4901-9ae5-dde290de848b",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "acceptance.md",
+          "start": 1,
+          "end": 25
+        },
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        }
+      ]
+    },
+    {
+      "caseId": "K07",
+      "metricId": "M12",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K07\\workspace",
+      "task": {
+        "id": "M12:R04",
+        "metricId": "M12",
+        "metricDefinition": "Requirement execution rate: whether the assigned requirement has been executed or implemented, with the requested proof scope and appropriate evidence.",
+        "phase": "IMPLEMENTATION",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "requirement": "Review the source-decidable implementation of the single frozen R04 requirement in current kitchen.py, using all applicable original conditions and exceptions. This is the SOURCE_IMPLEMENTATION sub-proof associated with M12, not actual runtime acceptance, Skill completion or full-project execution rate.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "kitchen.py"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K07",
+        "metricId": "M12",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "PASS",
+        "mechanism": "The source loads saved state, derives shortfalls without writing in can-cook, rejects insufficient cook before mutation, then subtracts every recipe quantity and saves. This establishes only the assigned static implementation sub-proof.",
+        "mutation": "source-supported-implementation",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "kitchen.py",
+            "start": 137,
+            "end": 151,
+            "role": "Current cook implementation: sufficiency guard, full deduction loop, persistence of updated state and success result."
+          }
+        ],
+        "mustNotClaim": [
+          "The static sub-proof establishes that the full runtime project or all M12 objects passed",
+          "Historical oracle records outside input were read by the reviewer"
+        ],
+        "historicalCorroboration": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C01\\independent-verifier.json",
+          "sha256": "85f3bb1380ad6ec4d5a3f8468d7307ed0604f7b759ece528abdf7cec136c7a02",
+          "sourceSha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+          "passed": true,
+          "scenarioCount": 21,
+          "failure": null
+        }
+      },
+      "actual": {
+        "completed": true,
+        "scope": "SOURCE_IMPLEMENTATION",
+        "verdict": "PASS",
+        "reason": "cmd_can_cook returns the required can_cook/missing JSON without saving (store bytes unchanged); cmd_cook validates sufficiency first and only then subtracts all quantities, persists, and returns {\"cooked\": NAME}, matching R04.",
+        "refs": [
+          {
+            "citeId": "eb9883be-a004-4be5-b237-9ea0ace82f7f",
+            "path": "kitchen.py",
+            "start": 1,
+            "end": 214,
+            "sha256": "2447ad0c21ba2a1b727962c940086a58ea894a56c4dd1bbde1c4ccc5d4005def",
+            "byteStart": 0,
+            "byteEnd": 7339,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "1e4cf46b-5f3d-4dd0-81a2-0c7e5803205a",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "kitchen.py",
+          "start": 1,
+          "end": 214
+        },
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        }
+      ]
+    },
+    {
+      "caseId": "K08",
+      "metricId": "M12",
+      "domain": "kitchen",
+      "split": "dev",
+      "inputWorkspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\kitchen\\K08\\workspace",
+      "task": {
+        "id": "M12:R04",
+        "metricId": "M12",
+        "metricDefinition": "Requirement execution rate: whether the assigned requirement has been executed or implemented, with the requested proof scope and appropriate evidence.",
+        "phase": "IMPLEMENTATION",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "requirement": "Review the source-decidable implementation of the single frozen R04 requirement in current kitchen.py, using all applicable original conditions and exceptions. This is the SOURCE_IMPLEMENTATION sub-proof associated with M12, not actual runtime acceptance, Skill completion or full-project execution rate.",
+        "basisFiles": [
+          "requirements.md"
+        ],
+        "targetFiles": [
+          "kitchen.py"
+        ],
+        "basisAnchors": [
+          {
+            "claimId": "R04",
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22
+          }
+        ],
+        "navigation": {
+          "diff": null,
+          "baseline": null,
+          "workspace": "FROZEN_STAGE_FIXTURE",
+          "evidence": "Complete original contract and one current metric target; no business execution is requested."
+        }
+      },
+      "oracle": {
+        "caseId": "K08",
+        "metricId": "M12",
+        "scope": "SOURCE_IMPLEMENTATION",
+        "visibility": "OUTSIDE_MODEL_WORKSPACE",
+        "expectedVerdict": "DEVIATION",
+        "mechanism": "cook checks sufficiency but saves unchanged pantry because the consumption loop is absent; it reports cooked although required quantities are not deducted. The prior independent verifier recorded the same source hash failing persisted-consumption.",
+        "mutation": "concrete-source-contradiction",
+        "evidence": [
+          {
+            "path": "requirements.md",
+            "start": 19,
+            "end": 22,
+            "role": "Original assigned behavior"
+          },
+          {
+            "path": "kitchen.py",
+            "start": 137,
+            "end": 146,
+            "role": "Relevant current target region; absence claims must also inspect the complete target"
+          }
+        ],
+        "mustNotClaim": [
+          "The static sub-proof establishes that the full runtime project or all M12 objects passed",
+          "Historical oracle records outside input were read by the reviewer"
+        ],
+        "historicalCorroboration": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\kitchen-v2-live-01\\C02\\independent-verifier.json",
+          "sha256": "2483aa84ce5cc06db74a395f5052efa45429359a61f4fdf5f1eb73f958294db7",
+          "sourceSha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+          "passed": false,
+          "scenarioCount": null,
+          "failure": "persisted-consumption: unexpected JSON result: {'case': 'persisted-consumption', 'args': ['--store', 'C:\\\\Users\\\\user\\\\workspace\\\\program_workspace\\\\runtime-corrector-toy\\\\.runtime-correction\\\\review-module-lab-20261024-02\\\\kitchen-v2-live-01\\\\C02\\\\independent-app\\\\.kitchen-check-6_pr__2a\\\\kitchen.json', 'pantry', 'list'], 'exit': 0, 'stdout': '{\"番茄\": 2, \"鸡蛋\": 3}\\n', 'stderr': ''}"
+        }
+      },
+      "actual": {
+        "completed": true,
+        "scope": "SOURCE_IMPLEMENTATION",
+        "verdict": "DEVIATION",
+        "reason": "cmd_cook never subtracts required quantities from pantry; it saves the unchanged store after the sufficiency check and reports {\"cooked\": NAME}, so cooked ingredients are not consumed, violating R04's \"subtracts all required quantities... persists the result\".",
+        "refs": [
+          {
+            "citeId": "40b0c1c8-7f9d-4783-bbe2-1e31bc4666dc",
+            "path": "requirements.md",
+            "start": 1,
+            "end": 33,
+            "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+            "byteStart": 0,
+            "byteEnd": 1945,
+            "rangeKind": "range"
+          },
+          {
+            "citeId": "ce7d19b1-4fde-44f8-9022-07bc3590c076",
+            "path": "kitchen.py",
+            "start": 1,
+            "end": 210,
+            "sha256": "ebb0f076bfad58ccfff1ce531706e2b6d90a3cfd745b2a3966660e3155ccfc39",
+            "byteStart": 0,
+            "byteEnd": 7223,
+            "rangeKind": "range"
+          }
+        ],
+        "citationIntegrity": true
+      },
+      "disclosedReads": [
+        {
+          "path": "kitchen.py",
+          "start": 1,
+          "end": 210
+        },
+        {
+          "path": "requirements.md",
+          "start": 1,
+          "end": 33
+        }
+      ]
+    }
+  ],
+  "instruction": "Judge each result from the frozen task, original inputs and evidence. Do not inspect prompt profiles, other batches or run directories. Check the oracle against originals, not by label alone. Return labelCorrect, diagnosisSupported, scopeCorrect and groundedCorrect per case, with short evidence locations. A completed UNVERIFIED needs the right missing-proof reason; infrastructure failure is not correct abstention."
+}

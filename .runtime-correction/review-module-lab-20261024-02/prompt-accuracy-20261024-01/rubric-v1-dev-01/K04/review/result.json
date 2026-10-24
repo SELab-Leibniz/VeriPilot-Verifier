@@ -1,0 +1,70 @@
+{
+  "taskId": "M05:R04",
+  "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+  "completed": true,
+  "conclusive": true,
+  "verdict": "PASS",
+  "reason": "AC4.1–AC4.5 (with AC1.2/AC1.3 common conditions) cover every R04 branch: can-cook true/false with missing shortfall, unchanged/no-created store bytes, full deduction and persisted result when sufficient, no consumption when insufficient, and the {\"cooked\": NAME} return with Unicode preservation.",
+  "limits": {
+    "maxAttempts": 2,
+    "maxTurns": 100,
+    "tokenBudget": null,
+    "deadline": null
+  },
+  "refs": [
+    {
+      "citeId": "23a3ec60-85cf-49a9-9545-50d1047197ae",
+      "path": "acceptance.md",
+      "start": 1,
+      "end": 26,
+      "sha256": "2a87fd0c9f4e13406d632629dccf730920cefe3e7e412482eafed95dc0d5b3a9",
+      "byteStart": 0,
+      "byteEnd": 2874,
+      "rangeKind": "range"
+    }
+  ],
+  "citeIds": [
+    "23a3ec60-85cf-49a9-9545-50d1047197ae"
+  ],
+  "basis": [
+    {
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/requirements.md"
+    }
+  ],
+  "basisAnchors": [
+    {
+      "claimId": "R04",
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+      "rangeKind": "range",
+      "byteStart": 1037,
+      "byteEnd": 1332,
+      "sha256Excerpt": "5022230abff43f44f9e11e81ef5f38d3eefe86bb8640bfdd7b6a301262576909"
+    }
+  ],
+  "evidencePath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\K04\\review\\evidence.json",
+  "attempts": 1,
+  "metrics": {
+    "turns": 4,
+    "toolCalls": 5,
+    "readBytes": 4971,
+    "grepBytes": 0,
+    "totalToolBytes": 5046,
+    "repeatedLines": 0,
+    "compactions": 0,
+    "compactionFailures": 0,
+    "inputTokens": 14394,
+    "outputTokens": 2566,
+    "contextChecks": 5,
+    "unsafeRequestsPrevented": 0
+  },
+  "elapsedMs": 26580,
+  "artifacts": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\rubric-v1-dev-01\\K04\\review"
+}

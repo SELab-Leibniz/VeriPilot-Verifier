@@ -1,0 +1,72 @@
+{
+  "taskId": "M01:gt-009",
+  "basis": [
+    {
+      "path": "basis/metric-contract.md",
+      "start": 1,
+      "end": 11,
+      "sha256": "8d15e9fd6bedae99a00078cc55a7f82418ee836a7e1592f0f5953e099df5c09d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/metric-contract.md"
+    },
+    {
+      "path": "basis/selected-object.json",
+      "start": 1,
+      "end": 13,
+      "sha256": "23f83275a650dbb7004b4884328379325496f337d1b49e834e252e490b4b3a6d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/selected-object.json"
+    },
+    {
+      "path": "basis/input-roles.json",
+      "start": 1,
+      "end": 42,
+      "sha256": "36382e174623804a5e975bc944eaa981b663b4f5e163ce3d0b3c2c0303af19ca",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/input-roles.json"
+    },
+    {
+      "path": "basis/original-ground-truth.md",
+      "start": 1,
+      "end": 158,
+      "sha256": "8ca7df7350452e113101660cb3fd957cf55f73ed26eb897060c3e2792a2713d4",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/basis/original-ground-truth.md"
+    },
+    {
+      "path": "source/app-requirements.md",
+      "start": 1,
+      "end": 410,
+      "sha256": "e1d996270da418e85971a9f74cfe7fee16d547c2d2acee797e08489c66efa28d",
+      "rangeKind": "file",
+      "artifactPath": "frozen-source/source/app-requirements.md"
+    }
+  ],
+  "basisAnchors": [],
+  "citations": [
+    {
+      "citeId": "04850d9a-f583-49d9-a402-baa55c1330de",
+      "path": "candidate/specs/commodity-browsing/spec.md",
+      "start": 1,
+      "end": 39,
+      "sha256": "74344b84fb062fdd5add26d973eb44af61f56905912fac2b624525a8f0bc7064",
+      "byteStart": 0,
+      "byteEnd": 1682,
+      "rangeKind": "range",
+      "text": "# commodity-browsing Specification\n\n## Purpose\nTBD - created by archiving change agent-main-session-1792621726192-8kt0bj. Update Purpose after archive.\n## Requirements\n### Requirement: 首页商品列表展示\n系统 SHALL 在首页以商品卡片形式展示商品列表，每张卡片包含商品图片、名称与价格。图片加载时 SHALL 显示占位图，加载失败 SHALL 显示默认占位图。\n\n#### Scenario: 正常展示商品列表\n- **WHEN** 用户进入首页\n- **THEN** 展示商品卡片列表，每张卡片包含图片、名称与价格\n\n#### Scenario: 图片加载中或失败\n- **WHEN** 商品图片正在加载或加载失败\n- **THEN** 显示占位图，不阻塞列表其他内容展示\n\n### Requirement: 下拉刷新\n系统 SHALL 支持首页下拉刷新获取最新商品，刷新时 SHALL 显示 loading 反馈。网络请求失败时 SHALL 降级显示本地缓存数据。\n\n#### Scenario: 下拉刷新成功\n- **WHEN** 用户在首页执行下拉手势\n- **THEN** 显示 loading 反馈，刷新完成后更新商品列表\n\n#### Scenario: 网络失败降级\n- **WHEN** 下拉刷新网络请求失败\n- **THEN** 展示本地缓存数据，并提示当前为缓存数据\n\n### Requirement: 浏览历史持久化\n系统 SHALL 在首页底部区域展示最近浏览过的商品，记录最近 10 条，关闭 App 后仍保留（持久化存储）。\n\n#### Scenario: 记录浏览历史\n- **WHEN** 用户浏览商品详情\n- **THEN** 该商品被记录进浏览历史，首页底部展示最近浏览商品，且关闭 App 后重新打开仍保留\n\n#### Scenario: 历史数量上限\n- **WHEN** 浏览历史超过 10 条\n- **THEN** 仅保留最近 10 条\n\n",
+      "sha256Excerpt": "74344b84fb062fdd5add26d973eb44af61f56905912fac2b624525a8f0bc7064"
+    },
+    {
+      "citeId": "65c07598-8ba3-482f-8ad0-077dda5ff70f",
+      "path": "candidate/design.md",
+      "start": 1,
+      "end": 65,
+      "sha256": "e2d044ee1d77e868864ddc1441b0a071861171d90c65ffe538d26b97bafeefb5",
+      "byteStart": 0,
+      "byteEnd": 5252,
+      "rangeKind": "range",
+      "text": "## Context\n\n当前工程为标准的 HarmonyOS Stage 模型脚手架（`entry` 模块，含 `EntryAbility`、首页 `Index.ets`、`mock-config.json5`），尚无任何业务页面与功能逻辑。需求文档 `./app-requirements.md` 定义了完整的「花店电商 App」：商品浏览/详情、收藏、购买+通知、扫码/语音、定位/地图、支付安全、华为登录、配送日历、晒图评价、分享/通讯录等能力。\n\n外部依赖约束：\n- 华为登录（Account Kit）与地图服务（Map Kit）依赖 AGC 平台配置（Client ID、API Key、签名指纹），当前环境未配置。\n- 生物认证（指纹/PIN/人脸）与蓝牙（智能花瓶）在模拟器上不可用。\n- 本阶段为无人值守模式，无真实网络后端，需以本地 mock 数据为默认数据源。\n\n## Goals / Non-Goals\n\n**Goals:**\n- 按需求文档实现全部业务页面与交互，页面布局与行为与需求一致。\n- 实现本地数据层：收藏、浏览历史（arkdata 持久化）、支付密码（本地 AES 加密存储）。\n- 实现权限动态申请（位置、通知、日历、麦克风）与拒绝后的降级提示。\n- 未配置 AGC 的功能（华为登录、地图）以明确、不崩溃的降级表现呈现。\n- 可在鸿蒙模拟器上构建、安装、运行并通过点击操作验收。\n\n**Non-Goals:**\n- 不接入真实网络后端与真实支付通道（支付页为功能预留）。\n- 不做真实生物认证与真实蓝牙智能花瓶交互（模拟器不支持，预留入口）。\n- 不接入真实华为账号 OAuth 与真实地图渲染（依赖 AGC 配置，环境缺失），仅保留入口与降级说明。\n\n## Decisions\n\n### 决策 1：页面与路由组织\n采用单 `entry` 模块多页面，通过 `main_pages.json` 注册路由，页面包括：`Index`（首页/Home）、`CommodityDetail`、`StoreMap`、`PaySecurity`、`Personal`（我的）、`Scan`（扫码）、`SearchResult`（语音搜索结果）。\n- 理由：需求为单模块 App，ArkUI 路由足够，避免多模块复杂度。\n- 备选：`Navigation` 组件式路由 — 因页面较多且需各自独立可直达，采用集中式 `main_pages.json` + `router` 更直观、便于验收点击。\n\n### 决策 2：数据源与降级\n默认使用本地 mock 商品数据（`mock-config.json5` / 内置数据模型），模拟 `/api/commodities` 接口；网络请求失败自动降级本地缓存。\n- 理由：无人值守、无真实后端，需求明确要求「网络失败降级本地缓存」。\n- 备选：接入真实 http 请求 — 无可用服务，不可行。\n\n### 决策 3：本地持久化\n- 收藏列表与浏览历史：使用 `@ohos.data.preferences`（arkdata）存储（key：`favorites`、`browse_history`）。\n- 支付密码：使用 `@ohos.security.cryptoFramework` 进行本地 AES 加密后，经 Asset Store Kit（`@kit.AssetStoreKit`）存储密钥与密文，解密时使用存储时同一密钥比对，清除时同时删除加密数据与密钥。\n- 理由：满足「重启后保留」与「支付密码 Asset (asset-store-kit) AES 加密存储」验收要求；不依赖外部服务。\n\n### 决策 4：权限处理\n在 `module.json5` 声明所需权限（INTERNET、MICROPHONE、LOCATION、APPROXIMATELY_LOCATION、READ/WRITE_CALENDAR、ACCESS_BIOMETRIC、PUBLISH_AGENT_REMINDER），运行时通过 `@ohos.abilityAccessCtrl` + `@ohos.permissionManager` 动态申请；拒绝后按需求文案提示「可在设置中开启」。\n\n### 决策 5：外部依赖降级（无人值守默认方案）\n- 华为登录：保留「我的」页登录入口，因未配置 AGC，点击后提示「华为登录需在 AGC 配置后可用」，不崩溃。\n- 门店地图：`StoreMap` 页以门店列表 + 位置信息呈现（经纬度展示），点击门店显示名称/地址/电话；不依赖真实 Map 渲染。\n- 生物认证 / 蓝牙智能花瓶：保留入口，模拟器上提示「该功能需真机支持」。\n- 理由：无人值守模式要求「自行做出合理决策并继续」，选择最贴近需求意图、且能在当前环境稳定运行的默认方案，并在产物中记录。\n\n## Risks / Trade-offs\n\n- [AGC 未配置导致华为登录/地图无法真实演示] → 以明确降级提示 + 本地呈现（门店列表/经纬度）替代，验收时如实记录为「未完全实现项」。\n- [模拟器不支持生物认证/BLE] → 保留入口并提示需真机，验收标注为「不支持项」。\n- [权限在模拟器上的授予行为差异] → 采用标准动态申请流程，拒绝分支以 Toast/弹窗提示，验收以实际点击结果为准。\n- [真实扫码/语音依赖硬件与识别服务] → 模拟器上以可控 mock 结果（输入/模拟数据）呈现交互流程，标注局限。\n\n## Migration Plan\n\n- 本变更为全新功能实现，无旧逻辑迁移。构建/安装/验收步骤：`hvigorw assembleHap` → `hdc install` → 启动 → 模拟器点击验收。\n- 回滚：删除变更目录或还原脚手架即可，无状态破坏风险。\n\n## Open Questions\n\n- 无阻塞性问题；华为登录、地图、生物认证、蓝牙等依赖 AGC/真机/外设的能力，在无人值守且环境受限下按「决策 5」降级处理。\n",
+      "sha256Excerpt": "e2d044ee1d77e868864ddc1441b0a071861171d90c65ffe538d26b97bafeefb5"
+    }
+  ]
+}

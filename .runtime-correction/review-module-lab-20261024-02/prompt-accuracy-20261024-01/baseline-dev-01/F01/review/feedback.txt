@@ -1,0 +1,2 @@
+M01:gt-007 | PASS | commodity-browsing/spec.md recognizably decomposes gt-007: requirement "首页商品列表展示" SHALL show home-page commodity cards with image/name/price and placeholder during image loading, with scenarios for normal display and loading/failure placeholder; design.md reflects the home page. Complete object incl. conditions covered.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\F01\review\result.json

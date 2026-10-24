@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "taskId": "M05:R04",
+  "scope": "ACCEPTANCE_CRITERIA_COVERAGE",
+  "completed": true,
+  "conclusive": true,
+  "originalBytesChecked": true,
+  "errors": [],
+  "verified": [
+    {
+      "category": "basis",
+      "citeId": null,
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9"
+    },
+    {
+      "category": "basisAnchors",
+      "citeId": null,
+      "path": "requirements.md",
+      "start": 19,
+      "end": 22,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9"
+    },
+    {
+      "category": "citations",
+      "citeId": "186b1e92-af52-433e-b5f9-2d24093cceaf",
+      "path": "acceptance.md",
+      "start": 1,
+      "end": 25,
+      "sha256": "ae19bb5f487ed6c6f5952930a15d1b1c773cbd4956d2c607a077c6ca983d7dbc"
+    },
+    {
+      "category": "citations",
+      "citeId": "8f753a8f-1c77-4901-9ae5-dde290de848b",
+      "path": "requirements.md",
+      "start": 1,
+      "end": 33,
+      "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9"
+    }
+  ],
+  "limitation": "Byte integrity, ownership and read coverage only; this check does not prove semantic support."
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "pre-model-oracle-correction.v1",
+  "caseId": "F10",
+  "initialExpected": "PASS",
+  "finalExpected": "DEVIATION",
+  "initialOracleSha256": "4a9e7a7c2fa512dbbb2942a2f312d0b332fc0633c635e22f4d2b3958ac51a60d",
+  "finalOracleSha256": "0238e3951add3bd23ccaa2778809eb55733ffdfadbb351adccd5087e05d50d16",
+  "initialOraclePath": "oracle-initial-rejected.json",
+  "independentAuditPath": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\extension-F10-oracle-audit.json",
+  "independentAuditSha256": "17d675f5a82844a1a2273a16ed3d531eed574f95d7191d595726c8c411f43425",
+  "reason": "Independent static counterexample rejected the initial oracle before any model review of this extension case.",
+  "sourceWorkspaceUnchanged": true,
+  "originalObjectUnchanged": true,
+  "modelCallsForThisCaseBeforeRevision": 0,
+  "promptChanged": false,
+  "revisedAt": "2026-10-24T03:51:28.139Z"
+}

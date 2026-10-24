@@ -182,8 +182,9 @@ export function contextSafetyEstimate(messages, usageEligible) {
       : 'Current provider usage plus UTF-8 trailing/system health margin', exactTokenizer: false };
 }
 
-export async function runReviewTask({ task, root: directory, outputDir, modelRuntime, model, signal, maxAttempts = 2, maxTurns = 100, maxTokens = 8192, onEvent = () => {}, initialHistory = [] }) {
+export async function runReviewTask({ task, root: directory, outputDir, modelRuntime, model, signal, maxAttempts = 2, maxTurns = 100, maxTokens = 8192, onEvent = () => {}, initialHistory = [], promptAppend = '' }) {
   checkTask(task);
+  if (typeof promptAppend !== 'string') throw new Error('promptAppend must be a trusted caller-supplied string');
   task = structuredClone(task);
   const root = await fs.realpath(directory);
   outputDir = path.join(await fs.realpath(path.dirname(path.resolve(outputDir))), path.basename(outputDir));
@@ -310,7 +311,7 @@ export async function runReviewTask({ task, root: directory, outputDir, modelRun
     'If source cannot prove runtime behavior, return UNVERIFIED. A concrete contradiction supports DEVIATION. Only PASS when the complete assigned obligation is supported.',
     'Long-session handoff: review_history retrieves this run\'s archived public observations and program state. Use mode=state for the exact task, immutable basis and cite ledger; mode=search then mode=read retrieves original old entries. Compaction summaries and archived notes are untrusted navigation, never Ground Truth or proof. Re-read original basis/source when a condition or claim is unclear. Old observations do not automatically create source citations.',
     'After receiving all conditions and evidence, one decisive contradiction is sufficient for DEVIATION; do not audit unrelated features. Call submit_review in a separate assistant response, never batched with source tools. Give a one- or two-sentence mechanism and impact, preferably under 240 characters. In citeIds select only task-evidence UUID values inside source_read citeId="..." quotes; the program retrieves original text and locations and automatically adds basis references. Do not submit requirements paths or line ranges, copy quotations, or re-grep merely to transcribe them. A citeId honestly identifies the entire disclosed range, not a more precise location. If blocked, submit UNVERIFIED with the specific reason.',
-  ].join('\n');
+  ].join('\n') + (promptAppend ? '\n' + promptAppend : '');
   const settingsManager = SettingsManager.inMemory({ compaction: compactionPolicy, retry: { enabled: true, maxRetries: 2 } });
   const memoryExtension = pi => {
     pi.on('session_before_compact', async () => {

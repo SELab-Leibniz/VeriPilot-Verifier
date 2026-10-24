@@ -1,0 +1,61 @@
+{
+  "task": {
+    "id": "M01:R04",
+    "metricId": "M01",
+    "metricDefinition": "Requirement decomposition coverage: whether the current decomposition semantically represents the assigned original requirement and its applicable conditions.",
+    "phase": "REQUIREMENTS",
+    "scope": "REQUIREMENT_DECOMPOSITION_COVERAGE",
+    "requirement": "Review M01 coverage for the single frozen R04 requirement in the current decomposition.md, using the complete original contract and applicable common conditions and exceptions. This question judges requirement decomposition coverage, not implementation, test execution, decomposition quality or overall project completion.",
+    "basisFiles": [
+      "requirements.md"
+    ],
+    "targetFiles": [
+      "decomposition.md"
+    ],
+    "basisAnchors": [
+      {
+        "claimId": "R04",
+        "path": "requirements.md",
+        "start": 19,
+        "end": 22
+      }
+    ],
+    "navigation": {
+      "diff": null,
+      "baseline": null,
+      "workspace": "FROZEN_STAGE_FIXTURE",
+      "evidence": "Complete original contract and one current metric target; no business execution is requested."
+    }
+  },
+  "model": {
+    "id": "deepseek-v4-flash",
+    "provider": "review-experiment",
+    "contextWindow": 204800
+  },
+  "files": [
+    [
+      "decomposition.md",
+      {
+        "sha256": "11d5e693563f2c5bc7459c54e0700777b9c11c5497d0a8fb56cd962c5738197d",
+        "lines": 32
+      }
+    ],
+    [
+      "requirements.md",
+      {
+        "sha256": "bd0e8af1e020c9d15c1c8524ddf54595c6693b54bf84ba388d2dcefb34a2ddc9",
+        "lines": 33
+      }
+    ]
+  ],
+  "maxAttempts": 2,
+  "maxTurns": 100,
+  "tokenBudget": null,
+  "deadline": null,
+  "compactionPolicy": {
+    "enabled": true,
+    "reserveTokens": 61440,
+    "keepRecentTokens": 20000
+  },
+  "initialHistoryRecords": 0
+}

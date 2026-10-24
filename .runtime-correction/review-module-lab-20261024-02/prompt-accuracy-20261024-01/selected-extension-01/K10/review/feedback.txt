@@ -1,0 +1,2 @@
+M12:R04 | DEVIATION | cmd_can_cook hardcodes {"can_cook": True} even when _shortfall is non-empty, so the boolean never reflects whether the recipe can actually be cooked, contradicting R04. The cook half (sufficient-only subtraction, persist, {"cooked": NAME}) is implemented correctly.
+Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\selected-extension-01\K10\review\result.json

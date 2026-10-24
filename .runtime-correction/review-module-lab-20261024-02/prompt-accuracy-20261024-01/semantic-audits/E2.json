@@ -1,0 +1,33 @@
+{
+  "tag": "E2",
+  "cases": [
+    {
+      "caseId": "F03",
+      "actualVerdict": "PASS",
+      "independentVerdict": "PASS",
+      "oracleSupported": true,
+      "labelCorrect": true,
+      "diagnosisSupported": true,
+      "scopeCorrect": true,
+      "groundedCorrect": true,
+      "citationIntegrityVerified": true,
+      "reason": "The complete frozen gt-009 is recognizably decomposed across the browsing specification and design. The specification expressly covers home-bottom history display, retaining the latest ten and preservation after closing/reopening. Design decision 3 supplies Preferences (arkdata) and browse_history. These cover every element and applicable condition of this M01 object. The actual result asserts document coverage, not implementation or runtime success, and contains no unsupported additional finding.",
+      "assertionChecks": [
+        { "claim": "The browsing specification covers home-bottom display of recently viewed products.", "supported": true, "locations": ["candidate/specs/commodity-browsing/spec.md:28-33"] },
+        { "claim": "The specification covers the latest-ten limit, including what happens when the history exceeds ten.", "supported": true, "locations": ["candidate/specs/commodity-browsing/spec.md:29", "candidate/specs/commodity-browsing/spec.md:35-37"] },
+        { "claim": "The specification covers persistence after closing and reopening the application.", "supported": true, "locations": ["candidate/specs/commodity-browsing/spec.md:29", "candidate/specs/commodity-browsing/spec.md:31-33"] },
+        { "claim": "Design decision 3 covers Preferences (arkdata) storage and the browse_history key.", "supported": true, "locations": ["candidate/design.md:36-39"] },
+        { "claim": "No element, condition or exception of the selected gt-009 is missing from the formal decomposition.", "supported": true, "locations": ["basis/selected-object.json:2-6", "basis/original-ground-truth.md:103-104", "source/app-requirements.md:66", "source/app-requirements.md:275-276", "candidate/specs/commodity-browsing/spec.md:28-37", "candidate/design.md:36-39"] }
+      ],
+      "evidence": [
+        { "path": "basis/selected-object.json", "start": 2, "end": 6, "finding": "M01:gt-009 requires home-bottom recent history, recent-ten retention, close/reopen persistence, Preferences storage and browse_history." },
+        { "path": "basis/original-ground-truth.md", "start": 103, "end": 104, "finding": "The original authoritative object agrees with the selected object; the original PRD independently supplies the same history and storage requirements." },
+        { "path": "candidate/specs/commodity-browsing/spec.md", "start": 28, "end": 37, "finding": "Requirement and scenarios cover position, recorded products, latest-ten retention, the over-ten condition, and restart preservation." },
+        { "path": "candidate/design.md", "start": 36, "end": 39, "finding": "The formally declared design completes the storage mechanism and key details." },
+        { "path": "basis/metric-contract.md", "start": 6, "end": 10, "finding": "M01 judges formal decomposition coverage. Runtime persistence proof is outside this proof question." },
+        { "path": "basis/input-roles.json", "start": 8, "end": 19, "finding": "Both cited candidate documents belong to the declared formal corpus, rather than input-only basis or self-report roles." }
+      ]
+    }
+  ],
+  "issues": []
+}

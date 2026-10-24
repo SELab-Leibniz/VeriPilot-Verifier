@@ -1,0 +1,12 @@
+{
+  "objectId": "M12:gt-025",
+  "metricId": "M12",
+  "sourceId": "gt-025",
+  "sourceRevisionId": "gt-025@1",
+  "description": "声明式权限（module.json5）需声明：INTERNET、MICROPHONE、PUBLISH_AGENT_REMINDER、APPROXIMATELY_LOCATION、LOCATION、ACCESS_BIOMETRIC、READ_CALENDAR、WRITE_CALENDAR。",
+  "authority": "MATERIAL_DERIVED",
+  "hard": true,
+  "evidenceRequired": true,
+  "applicability": "App实现",
+  "verificationTarget": "IMPLEMENTATION"
+}

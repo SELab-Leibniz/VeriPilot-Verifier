@@ -1,0 +1,83 @@
+[
+  {
+    "caseId": "F01",
+    "domain": "flower",
+    "metricId": "M01",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F01\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F01\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F01\\oracle.json"
+  },
+  {
+    "caseId": "F02",
+    "domain": "flower",
+    "metricId": "M01",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F02\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F02\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F02\\oracle.json"
+  },
+  {
+    "caseId": "F03",
+    "domain": "flower",
+    "metricId": "M01",
+    "split": "holdout",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F03\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F03\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F03\\oracle.json"
+  },
+  {
+    "caseId": "F04",
+    "domain": "flower",
+    "metricId": "M05",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F04\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F04\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F04\\oracle.json"
+  },
+  {
+    "caseId": "F05",
+    "domain": "flower",
+    "metricId": "M05",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F05\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F05\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F05\\oracle.json"
+  },
+  {
+    "caseId": "F06",
+    "domain": "flower",
+    "metricId": "M05",
+    "split": "holdout",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F06\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F06\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F06\\oracle.json"
+  },
+  {
+    "caseId": "F07",
+    "domain": "flower",
+    "metricId": "M12",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F07\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F07\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F07\\oracle.json"
+  },
+  {
+    "caseId": "F08",
+    "domain": "flower",
+    "metricId": "M12",
+    "split": "dev",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F08\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F08\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F08\\oracle.json"
+  },
+  {
+    "caseId": "F09",
+    "domain": "flower",
+    "metricId": "M12",
+    "split": "holdout",
+    "workspace": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F09\\workspace",
+    "task": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F09\\task.json",
+    "oracle": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\review-module-lab-20261024-02\\prompt-accuracy-20261024-01\\fixtures\\flower\\F09\\oracle.json"
+  }
+]
