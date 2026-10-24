@@ -1,6 +1,6 @@
 {
-  "status": "PREPARED_WAITING_FOR_MACHINE_PROTOCOL_FREEZE_AND_STAGE3_03_LIVE_GATE",
-  "at": "2026-10-24T06:53:29.102Z",
+  "status": "FROZEN_WAITING_FOR_READINESS_COMMIT_AND_STAGE3_03_LIVE_GATE",
+  "at": "2026-10-24T07:10:21.788Z",
   "modelCalls": 0,
   "gatewayUsed": false,
   "originalHostOrSessionModified": false,
@@ -88,10 +88,34 @@
       },
       "fullProof": "Retained in memory during local preflight; a live run saves complete stdout before admission"
     },
-    "adapterSourceAtPreflight": null,
+    "adapterSourceAtPreflight": {
+      "commit": "9dc428c9c50c5780fbafae05cc888197f78e2944",
+      "sourceClean": true,
+      "files": {
+        "lib/runtime-v2/reviewer.mjs": "e75b13b89c06ea9a49dff3c01acebda671a344a8e4663f183e8d3774f04bd66a",
+        "lib/runtime-v2/ground-truth-provenance.mjs": "6a714491c604212f1a1a6a3916464ef566ca021eaa41b46eb499858a0ae562eb",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "a7156c898a3bd2a0aeda2788f75c3e4e40d899690896ab4edcd9e877eb97864f",
+        "lib/runtime-v2/metrics.mjs": "b742edb87bb0e0a098e9eec6c97d95ad5285e624773b6bc736ccd80ecf5feeae",
+        "lib/runtime-v2/review-scope.mjs": "d8cb5b23d1b048ddb9854379af2a7a0806921b3c7b988120a71ccd0eb17c9afa",
+        "lib/runtime-v2/review-routing.mjs": "88cfa59397162ea5208998ed82e6677c8f6433f3d614d48391fce9e0aa40174b",
+        "lib/runtime-v2/stop-task-review.mjs": "415ac0e9064b967394d8762c196574cdc8cb99fe89865ebe493ea534e40696be",
+        "lib/runtime-v2/orchestrator.mjs": "b531bc9c311d222e90ddc6f336b412654d1b97ce4b901a51a3cf6fb303d6795e",
+        "lib/runtime-v2/review-collector.mjs": "aacfcfb84be2693df6aca0a8acd1a6c80e6e2c52eca77ac763dd25b4a25a0fd7",
+        "lib/openclaw/reviewer.mjs": "502ab0ceac90e950c5613677cdb891b420b32288cd4a7ce250a444c572576460",
+        "lib/openclaw/runtime.mjs": "58f39c19387b9946bc7864794f2397e65c1d09c128c7f6b57faa818a357f4476",
+        "lib/openclaw/stop-task-runtime.mjs": "b7f0b35a6f31274270f0252cbf6dbba6615a0922af8a4a5b6fb3f016f00fd6cd",
+        "lib/review-task/review-task.mjs": "f8bf6bb8e189262d28a626755340bcdf200cf2a1d628ba56be038b2922c80bd1",
+        "lib/review-task/history-memory.mjs": "b45f9621e55f1f1cc100599062d1768997479369e0f36dcf70e24f43d53ffa11",
+        "lib/review-task/prompts.json": "34d230c50f3a292d6b8d447fdcc8f96b61795a5aadf0e17873e092fefadafbb0",
+        "lib/review-task/prompt-profile.mjs": "e651447a8af59ca6f737281b6d1c96661156250be972480af7201179107f0b75",
+        "lib/review-task/package-lock.json": "ec5a51d42bd6df44e892e237ee23cb6c0e2a73a4db161d077f53b6ec7065ad1a"
+      }
+    },
     "admitted": false,
     "sourceCommitMustBeFrozenAtLiveAdmission": true,
-    "allOriginalPolicyGroundTruthSkillVerifierBudgetsRetained": true
+    "allOriginalPolicyGroundTruthSkillVerifierBudgetsRetained": true,
+    "frozenProtocolCommit": "9dc428c9c50c5780fbafae05cc888197f78e2944",
+    "liveAdmissionCapturesFinalHeadAndSourceHashes": true
   },
   "previousRun": {
     "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
@@ -111,94 +135,94 @@
   },
   "preparationScope": "03 preparation only. Previous real01/02 model runs are separately retained and are not erased by these zero-call preflight fields.",
   "sourceFreeze": {
-    "status": "PENDING_FINAL_COMMIT_AND_TESTS",
-    "lastCommittedBase": "9bdf2381680f034eb4bfbb40424c73baf2af6191",
-    "workingSourceCleanAtPreflight": false,
+    "status": "FROZEN_AT_PROTOCOL_COMMIT_PENDING_READINESS_COMMIT_AND_LIVE_GATE",
+    "lastCommittedBase": "9dc428c9c50c5780fbafae05cc888197f78e2944",
+    "workingSourceCleanAtPreflight": true,
     "files": [
       {
         "path": "lib/runtime-v2/reviewer.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "e75b13b89c06ea9a49dff3c01acebda671a344a8e4663f183e8d3774f04bd66a",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/ground-truth-provenance.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "6a714491c604212f1a1a6a3916464ef566ca021eaa41b46eb499858a0ae562eb",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/ground-truth-ledger.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "a7156c898a3bd2a0aeda2788f75c3e4e40d899690896ab4edcd9e877eb97864f",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/metrics.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "b742edb87bb0e0a098e9eec6c97d95ad5285e624773b6bc736ccd80ecf5feeae",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/review-scope.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "d8cb5b23d1b048ddb9854379af2a7a0806921b3c7b988120a71ccd0eb17c9afa",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/review-routing.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "88cfa59397162ea5208998ed82e6677c8f6433f3d614d48391fce9e0aa40174b",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/stop-task-review.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "415ac0e9064b967394d8762c196574cdc8cb99fe89865ebe493ea534e40696be",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/orchestrator.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "b531bc9c311d222e90ddc6f336b412654d1b97ce4b901a51a3cf6fb303d6795e",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/runtime-v2/review-collector.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "aacfcfb84be2693df6aca0a8acd1a6c80e6e2c52eca77ac763dd25b4a25a0fd7",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/openclaw/reviewer.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "502ab0ceac90e950c5613677cdb891b420b32288cd4a7ce250a444c572576460",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/openclaw/runtime.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "58f39c19387b9946bc7864794f2397e65c1d09c128c7f6b57faa818a357f4476",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/openclaw/stop-task-runtime.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "b7f0b35a6f31274270f0252cbf6dbba6615a0922af8a4a5b6fb3f016f00fd6cd",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/review-task/review-task.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "f8bf6bb8e189262d28a626755340bcdf200cf2a1d628ba56be038b2922c80bd1",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/review-task/history-memory.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "b45f9621e55f1f1cc100599062d1768997479369e0f36dcf70e24f43d53ffa11",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/review-task/prompts.json",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "34d230c50f3a292d6b8d447fdcc8f96b61795a5aadf0e17873e092fefadafbb0",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/review-task/prompt-profile.mjs",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "e651447a8af59ca6f737281b6d1c96661156250be972480af7201179107f0b75",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       },
       {
         "path": "lib/review-task/package-lock.json",
-        "sha256": null,
-        "status": "PENDING_FINAL_FREEZE"
+        "sha256": "ec5a51d42bd6df44e892e237ee23cb6c0e2a73a4db161d077f53b6ec7065ad1a",
+        "status": "FROZEN_AT_PROTOCOL_COMMIT"
       }
     ],
     "admissionOnlyAdditionalInputs": [
@@ -211,7 +235,9 @@
       "examples/openclaw-offline-kitchen/skills/build-offline-kitchen/references/requirements.md",
       "examples/openclaw-offline-kitchen/skills/build-offline-kitchen/scripts/verify_kitchen.py"
     ],
-    "automaticArtifact": "source-admission.json written by the live entry before Gateway/model admission; no separate classifier or GT generator is introduced."
+    "automaticArtifact": "source-admission.json written by the live entry before Gateway/model admission; no separate classifier or GT generator is introduced.",
+    "commit": "9dc428c9c50c5780fbafae05cc888197f78e2944",
+    "readinessSelfUpdatePendingCommit": true
   },
   "previousRuns": [
     {
@@ -224,5 +250,69 @@
       "status": "EXPERIMENT_OPERATOR_CANCELLED_NOT_PRODUCT_TIMEOUT",
       "summary": "experiments/live-kitchen-stop-20261024-02/stage3-cancelled-summary.json"
     }
+  ],
+  "validationEvidence": {
+    "protocolCommit": "9dc428c9c50c5780fbafae05cc888197f78e2944",
+    "focused": {
+      "path": ".runtime-correction/typed-applicability-focused.log",
+      "sha256": "b5bfdc56a632bc0e1365135d3ff57ba654649f20b59e0551b84b839174454738",
+      "tests": 161,
+      "pass": 161,
+      "fail": 0,
+      "skipped": 0
+    },
+    "cli": {
+      "path": ".runtime-correction/typed-applicability-cli.log",
+      "sha256": "40668403c3ebd941ba82e3b7e707219b7ea5fd0bfd551577eba3933a7ec37779",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0
+    },
+    "native": {
+      "path": ".runtime-correction/typed-applicability-native.log",
+      "sha256": "54aacf595ef685746768d3721b13e80b3e1be2c81e891cb1fa28af58d4b4c9a6",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0
+    },
+    "fullRepositorySystemTemp": {
+      "path": ".runtime-correction/all-metrics-lab-20261024/full-regression-typed-protocol-system-temp.log",
+      "sha256": "126115b2ad1f933179395d7e962c72789c3db5ad36a1851cc82ee00b9d4d8ed6",
+      "tests": 1289,
+      "pass": 1279,
+      "fail": 1,
+      "skipped": 9,
+      "durationMs": 208686.5426,
+      "note": "Retain the original full-suite failure: an existing new-generated Skill fake omitted kind/condition and triggered one extra repair. This is not an all-green full-suite result."
+    },
+    "focusedFixtureRepair": {
+      "path": ".runtime-correction/typed-applicability-runtime-hook.log",
+      "sha256": "fbf3d9110d47b592b84b0f5c484025336b045319a0e2891a2b43af134b7d6913",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0,
+      "note": "Only the new-generated fake fields were supplied; production code, assertions and old persisted fixtures were not relaxed. No full-suite rerun after this focused fixture repair is claimed."
+    },
+    "priorInvalidEnvironmentRun": {
+      "path": ".runtime-correction/all-metrics-lab-20261024/full-regression-typed-protocol.log",
+      "sha256": "172729183a77d35aa2f81247cb5885a87334c7120fafd1dad43d9285907f586c",
+      "note": "Preserved invalid test environment: repository-local .tmp recursively copied itself during package tests. The system-TEMP rerun is the separately recorded full-suite result."
+    },
+    "fullRepositoryAllGreenClaimed": false,
+    "fullRepositoryRerunAfterFixtureRepair": false,
+    "independentProtocolAudit": {
+      "status": "PASSED_REPORTED_BY_ROOT",
+      "evidence": "docs/experiments/all-metric-stop-validation-20261024.md:43",
+      "scope": "schema→ledger→population→adapter propagation, strict initial/follow-up generation, preserved semantic fields, legacy compatibility and cache v3"
+    },
+    "rootSummaryEvidence": "docs/experiments/all-metric-stop-validation-20261024.md:45"
+  },
+  "plannedRuntimeObservations": [
+    "Read the actually generated applicabilityKind and match its saved ledger/population propagation; do not reclassify or modify the baseline.",
+    "Confirm real new SDK worker directory and result/metrics; canUse eligibility alone is not execution success.",
+    "Send the first readable original worker paths promptly for independent semantic audit."
   ]
 }
