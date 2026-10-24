@@ -513,6 +513,32 @@ test("until_pass deadline releases a correction with no active reviewer and repo
   assert.equal((await f.runtime.waitForNativeReviews()).length, 1, "a timed-out child cannot restart the same wait chain");
 });
 
+test("kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running", async t => {
+  const started = deferred(), finish = deferred(); let childRunId, calls = 0;
+  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000,
+    review: async () => { if (++calls === 1) return true; started.resolve(); await finish.promise; return false; } });
+  f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  await f.runtime.waitForNativeReviews();
+  const child = { ...f.ctx, runId: childRunId };
+  await f.runtime.prompt({ prompt: "RC feedback" }, child);
+  await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
+  await started.promise;
+  f.chain().expire(); finish.resolve();
+  await f.runtime.waitForNativeReviews({ drain: true });
+  let task;
+  for (let i = 0; i < 30; i++) { task = await findTask({ projectRoot: f.root, sessionId: "host" });
+    if (task.status === "STOPPED_UNVERIFIED") break; await pause(10); }
+  assert.equal(task.status, "STOPPED_UNVERIFIED"); assert.equal(task.verification.status, "UNVERIFIED");
+  assert.equal(task.verification.previousVerification.status, "DEVIATION");
+  assert.equal(task.stop.correctionAttempts, 1); assert.equal(f.hostAbort.signal.aborted, false);
+  const receiptRoot = path.join(f.root, ".runtime-correction/openclaw/native-followups");
+  const all = async directory => (await Promise.all((await fs.readdir(directory, { withFileTypes: true })).map(async entry =>
+    entry.isDirectory() ? all(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
+  const receipts = await Promise.all((await all(receiptRoot)).filter(p => p.endsWith(".json")).map(async p => JSON.parse(await fs.readFile(p, "utf8"))));
+  assert(receipts.find(r => r.runId === childRunId)?.finishedAt);
+});
+
 test("reset during correction releases until_pass even after the original review has settled", async t => {
   let childRunId;
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });

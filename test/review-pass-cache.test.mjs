@@ -102,6 +102,32 @@ test("candidate identity participates in PASS reuse and changed declarations can
   assert.equal(f.calls(), before, "A stale ownership declaration must be rejected before a model or cache dispatch.");
 });
 
+test("new execution evidence rechecks runtime siblings without discarding an unchanged declared document PASS", async t => {
+  const f = await fixture(t, [row("document"), row("runtime", "M12", "IMPLEMENTATION")]);
+  f.input.request.artifactCandidates = [{ artifactId: "requirements", metricIds: ["M01"],
+    files: [{ path: "output.txt", sha256: sha256(await fs.readFile(f.source)) }],
+    declaration: { configPath: null, configSha256: null, digest: "declared-requirements" } }];
+  await f.run();
+  f.input.evidence.snapshot.entries.push({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "new-check", content: "New observed execution." }] } });
+  f.input.evidence.snapshot.digest = "new-history";
+  const second = await f.run();
+  assert.equal(f.calls(), 3); assert.equal(second.collection.reusedItems, 1);
+  assert(second.collection.items.find(i => i.objectIds.includes("M01:document")).reusedFrom);
+  assert(!second.collection.items.find(i => i.objectIds.includes("M12:runtime")).reusedFrom);
+  f.input.evidence.snapshot.entries.push({ type: "user", uuid: "new-user", message: { content: "A new original instruction." } });
+  assert.equal((await f.run()).collection.reusedItems, 0, "a genuine user instruction invalidates even declared content comparisons");
+});
+
+test("Stop scheduling timestamps and duplicate-hook text do not change the proof identity", async t => {
+  const f = await fixture(t);
+  f.input.request.hook = { hook_event_name: "Stop", hook_event_id: "one", last_assistant_message: "Done" };
+  await f.run({ deadlineAt: Date.now() + 5000 });
+  f.input.request.hook.hook_event_id = "two";
+  f.input.request.hook.last_assistant_message = "Done again";
+  const second = await f.run({ deadlineAt: Date.now() + 9000 });
+  assert.equal(second.collection.reusedItems, 1); assert.equal(f.calls(), 1);
+});
+
 test("uncited candidate and declaration mutations invalidate a running collection", async t => {
   for (const changed of ["candidate", "declaration"]) await t.test(changed, async t => {
     const f = await fixture(t), candidate = path.join(f.root, "candidate.txt"), config = path.join(f.root, "policy.yaml");
@@ -192,6 +218,23 @@ test("a retry reuses successful siblings and checks only previously unfinished i
   f.setItem(params => f.output(params)); const second = await f.run();
   assert.equal(f.calls(), 4); assert.equal(second.collection.reusedItems, 2); assert.equal(second.collection.complete, true);
   assert.deepEqual(second.result.metricObjectJudgements.map(item => item.judgement), ["PASS", "PASS", "PASS"]);
+});
+
+test("outer cancellation retains completed results and names both interrupted and unstarted siblings", async t => {
+  const f = await fixture(t, [row("R1"), row("R2"), row("R3")]), controller = new AbortController();
+  f.setItem((params, index) => { if (index === 1) controller.abort(); return f.output(params); });
+  let caught;
+  await assert.rejects(f.run({ abortSignal: controller.signal }), error => {
+    caught = error;
+    assert.equal(error.code, "REVIEW_COLLECTION_CANCELLED");
+    return true;
+  });
+    const p = JSON.parse(await fs.readFile(caught.collection.progressPath, "utf8"));
+    assert.equal(p.status, "CANCELLED"); assert.equal(p.completedItems, 1); assert.equal(p.items.length, 3);
+    assert.equal(p.items[0].status, "COMPLETED"); assert.equal(p.items[1].interrupted, true);
+    assert.equal(p.items[1].unstarted, false); assert.equal(p.items[2].unstarted, true);
+    assert.deepEqual(p.items.flatMap(i => i.objectIds), ["M01:R1", "M01:R2", "M01:R3"]);
+    assert.equal(p.failures[0].itemCount, 2);
 });
 
 for (const incomplete of ["DEVIATION", "UNVERIFIED", "findings", "partial", "file assessment"])

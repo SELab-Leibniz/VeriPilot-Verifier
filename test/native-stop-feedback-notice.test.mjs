@@ -33,3 +33,13 @@ test("native display wrapping retains the existing total feedback limit", () => 
   const message = stopWaitText({ verificationFeedback: "诊断".repeat(10000) });
   assert.ok(Buffer.byteLength(message, "utf8") <= 8192);
 });
+
+test("ordinary metric UNVERIFIED and process no-progress notices disclose the failure without dispatching a correction", () => {
+  const metric = "UNVERIFIED: runtime proof is missing. See the saved item for details.";
+  assert.equal(stopFeedbackNotice({ report: { status: "UNVERIFIED" }, feedback: metric }), metric);
+  const stopped = "PROCESS_CORRECTION_NO_PROGRESS: the same scope violation remains; automatic correction stopped.";
+  assert.equal(stopFeedbackNotice({ verificationIncomplete: true, feedback: stopped }), stopped);
+  assert.match(stopWaitText({ reviewStatus: "UNVERIFIED", reasonCode: "PROCESS_CORRECTION_NO_PROGRESS", verificationFeedback: stopped }), /same scope violation/u);
+  assert.match(stopWaitText({ reviewStatus: "UNVERIFIED", reasonCode: "REVIEW_DEADLINE_EXPIRED", verificationFeedback: "Saved 98/110: progress.json" }), /98\/110/u);
+  assert.equal(stopFeedbackNotice({ report: { status: "PASS" }, feedback: "Passed." }), null);
+});

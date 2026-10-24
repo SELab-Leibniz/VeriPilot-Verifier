@@ -232,7 +232,9 @@ test("GT or task-generation changes stop publication and preserve earlier durabl
       }) });
     } catch (caught) { error = caught; }
     assert.equal(error.code, "REVIEW_COLLECTION_STALE");
-    assert.equal(error.collection.items.length, 1);
+    assert.equal(error.collection.items.length, 3);
+    assert.equal(error.collection.items.filter(item => item.status === "COMPLETED").length, 1);
+    assert.deepEqual(error.collection.items.slice(1).map(item => [item.status, item.unstarted]), [["UNVERIFIED", false], ["UNVERIFIED", true]]);
     assert.equal(JSON.parse(await fs.readFile(error.collection.items[0].path, "utf8")).result.metricObjectJudgements[0].judgement, "PASS");
     assert.equal(JSON.parse(await fs.readFile(error.collection.progressPath, "utf8")).status, "STALE");
   });
@@ -243,7 +245,9 @@ test("a source checked by an earlier task cannot change before the final collect
   await assert.rejects(collectReviewItems({ ...f.input, reviewerFactory: f.factory(async (params, index) => {
     if (index === 1) await fs.writeFile(f.source, "Changed application source.\n");
     return f.output(params);
-  }) }), error => error.code === "REVIEW_COLLECTION_STALE" && error.collection.items.length === 1);
+  }) }), error => error.code === "REVIEW_COLLECTION_STALE" && error.collection.items.length === 3
+    && error.collection.items.filter(item => item.status === "COMPLETED").length === 1
+    && error.collection.items.filter(item => item.status === "UNVERIFIED").length === 2);
 });
 
 test("caller cancellation preserves the progress ledger but cannot publish the old assessment", async t => {
@@ -254,7 +258,10 @@ test("caller cancellation preserves the progress ledger but cannot publish the o
       reviewerFactory: f.factory(async (params, index) => { if (index === 1) controller.abort(); return f.output(params); }) });
   } catch (caught) { error = caught; }
   assert.equal(error.code, "REVIEW_COLLECTION_CANCELLED");
-  assert.equal(error.collection.items.length, 1);
+  assert.equal(error.collection.items.length, 3);
+  assert.equal(error.collection.items[0].status, "COMPLETED");
+  assert.equal(error.collection.items[1].interrupted, true);
+  assert.equal(error.collection.items[2].unstarted, true);
   assert.equal(JSON.parse(await fs.readFile(error.collection.progressPath, "utf8")).status, "CANCELLED");
 });
 
