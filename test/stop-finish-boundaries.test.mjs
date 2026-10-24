@@ -49,7 +49,7 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
     }));
     if (["PASS", "NOT_APPLICABLE"].includes(legacyMode)) { rows[0].judgement = legacyMode; rows[0].evidence = []; }
     if (legacyMode === "sibling") rows[1].evidence = [];
-    if (mixedFinding) for (const row of rows) if (row.objectId.startsWith("M12:")) row.judgement = "UNVERIFIED";
+    if (mixedFinding) for (const row of rows) if (/^M(?:12|16):/u.test(row.objectId)) row.judgement = "UNVERIFIED";
     if (legacyChecker) rows.push({ ...rows[1] });
     const sourceCitations = [...rows.map(row => row.objectId), ...(file ? ["delivery.md"] : [])].map(owner => ({
       selection: `${source}#L1`, path: source, snapshotPath: source, contentHash: sha256(sourceBytes), start: 1, end: 1,

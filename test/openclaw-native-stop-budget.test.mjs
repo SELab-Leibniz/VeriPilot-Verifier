@@ -135,6 +135,7 @@ reviewers:
     let result;
     if (schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations:
       deviation && request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements", text: "Deliver a draft with verified acceptance.",
+        verificationTarget: "ARTIFACT",
         authority: "USER_EXPLICIT", severity: "HARD", source: { ref: request.sourceCatalog.find(s => s.kind === "USER_MESSAGE").ref,
           subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
     else {
@@ -158,7 +159,7 @@ reviewers:
   await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
   calls = 0; fail = failures;
-  return { api, runtime, ctx, warnings, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
+  return { api, runtime, ctx, warnings, sharedState: state, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
     chain: () => [...state.stopWaitChains.values()].at(-1),
     restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true }) };
 }
@@ -491,6 +492,62 @@ test("until_pass holds the next task during correction execution and recheck, th
   const records = await f.runtime.waitForNativeReviews({ drain: true });
   assert.equal(records.find(record => record.runId === childRunId).reviewStatus, "PASS");
   assert.equal(f.hostAbort.signal.aborted, false);
+});
+
+test("manual check recovers the exact native tool call while its own correction chain is pending", async t => {
+  let childRunId;
+  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });
+  t.after(() => f.runtime.dispose());
+  f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  await f.runtime.waitForNativeReviews();
+  const child = { ...f.ctx, runId: childRunId }, { runId, abortSignal, ...factoryContext } = child;
+  await f.runtime.prompt({ prompt: "RC feedback" }, child);
+  const toolCallId = "check-in-correction";
+  await f.runtime.beforeTool({ toolName: "runtime_corrector", toolCallId, params: { command: "check", subject: "draft.md" } }, child);
+  const checked = await Promise.race([
+    f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId, signal: abortSignal }),
+    pause(1500).then(() => { throw new Error("Manual check waited on its own Stop chain."); }),
+  ]);
+  assert.equal(checked.matched, true);
+  assert.equal(f.chain().pending, true, "A manual check must not release the task gate.");
+  await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md"), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
+  await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId: "unbound" }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
+  await assert.rejects(f.runtime.manualCheck({ ...factoryContext, sessionId: "foreign" }, "draft.md", { toolCallId }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
+  await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId, signal: AbortSignal.abort() }), /RC_CHECK_CANCELLED/u);
+  const bindings = f.sharedState.toolBindings.get(toolCallId), original = [...bindings.values()][0];
+  bindings.set("ambiguous", { ...original });
+  await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
+  bindings.delete("ambiguous");
+  f.chain().expire(); await f.runtime.waitForNativeReviews();
+  await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_(?:INVOCATION_UNAVAILABLE|CANCELLED)/u);
+});
+
+test("an aborted current correction closes its cancelled receipt and terminalizes the exact task", async t => {
+  for (const waitMode of ["until_pass", "assessment"]) await t.test(waitMode, async t => {
+    let childRunId;
+    const f = await lifecycle(t, { deviation: true, waitMode });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
+    await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+    await f.runtime.waitForNativeReviews();
+    const child = { ...f.ctx, runId: childRunId };
+    await f.runtime.prompt({ prompt: "RC feedback" }, child);
+    await f.runtime.agentEnd({ runId: childRunId, success: false, aborted: true }, child);
+    const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+    assert.equal(task.status, "STOPPED_UNVERIFIED");
+    assert.equal(task.verification.terminalRunId, childRunId);
+    assert.equal(task.verification.reasonCode, "RC_NATIVE_ATTEMPT_ENDED");
+    assert.equal(task.verification.previousVerification.status, "DEVIATION");
+    const files = async dir => (await Promise.all((await fs.readdir(dir, { withFileTypes: true })).map(e =>
+      e.isDirectory() ? files(path.join(dir, e.name)) : [path.join(dir, e.name)]))).flat();
+    const receipts = await Promise.all((await files(path.join(f.root, ".runtime-correction/openclaw/native-followups")))
+      .filter(p => p.endsWith(".json")).map(async p => JSON.parse(await fs.readFile(p, "utf8"))));
+    const receipt = receipts.find(r => r.runId === childRunId);
+    assert.equal(receipt.status, "CANCELLED"); assert(receipt.finishedAt); assert(receipt.cancelledAt);
+    assert.equal(f.hostAbort.signal.aborted, false);
+    await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, aborted: true }, f.ctx);
+    assert.deepEqual((await findTask({ projectRoot: f.root, sessionId: "host" })).verification, task.verification);
+  });
 });
 
 test("until_pass deadline releases a correction with no active reviewer and reports non-PASS", async t => {

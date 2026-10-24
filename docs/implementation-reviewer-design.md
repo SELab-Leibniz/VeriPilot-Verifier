@@ -4,6 +4,11 @@ Current behavior update: [2026-09-09 runtime audit fixes](runtime-audit-fixes.md
 supersedes the blanket M09/M11/M12 ownership and silent fail-open/release rules
 in this historical blueprint.
 
+2026-10-25 update: [M16 production implementation coverage](m16-production-implementation-coverage.md)
+is now a runtime metric, owned by source review alongside implementation-targeted
+M09/M12. The historical statement below that M16 exists only offline no longer
+describes the current runtime.
+
 > Produced 2026-08-13 by a 10-agent design workflow (ground → parallel method design → synthesis → adversarial critique), every mechanism verified against source with file:line anchors.
 > Decision: Option A (multi-method implementation review) per user directive; methods = defined testcases, code-summary semantic compare, screenshot verification, click simulation, build/manifest/static/log/a11y.
 

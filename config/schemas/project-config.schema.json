@@ -62,7 +62,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^M(?:0[1-9]|1[0-5])$"
+              "pattern": "^M(?:0[1-9]|1[0-6])$"
             }
           },
           "groundTruth": {

@@ -15,7 +15,7 @@ export async function makeFixture(projectRoot, scenario) {
     ['scope', 'All three documents must exclude login and cloud sync.'],
     ['coverage', 'All three documents must cover add, list, edit, delete and completion status.'],
   ].map(([id, text]) => ({ claimId: `gt-${id}`, revisionId: `revision-${id}-1`, category: 'requirements',
-    text, authority: 'USER_EXPLICIT', severity: 'HARD', status: 'ACTIVE', applicability: 'CURRENT_TASK' }));
+    text, authority: 'USER_EXPLICIT', severity: 'HARD', status: 'ACTIVE', applicability: 'CURRENT_TASK', verificationTarget: 'ARTIFACT' }));
   const groundTruth = { version: 1, claims };
   const population = await buildMetricPopulation({ projectRoot, taskId: 'synthetic-glm-review', groundTruth });
   const good = '# Local todo specification\nAdd, list, edit, delete and completion status. Write JSON to disk after each mutation and reload on startup. No login or cloud sync.\nAcceptance: all five operations documented; restart restores saved items and completion status; no authentication or network dependency.\n';

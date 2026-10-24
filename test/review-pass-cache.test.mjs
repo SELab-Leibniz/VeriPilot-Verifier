@@ -60,8 +60,8 @@ test("identical frozen Stop inputs reuse complete PASS items with no new model c
   }
 });
 
-test("implementation retries reuse only their own unchanged, validated PASS items", async t => {
-  const f = await fixture(t, [row("R1", "M12", "IMPLEMENTATION")]);
+for (const metric of ["M12", "M16"]) test(`${metric} implementation retries reuse only their own unchanged, validated PASS items`, async t => {
+  const f = await fixture(t, [row("R1", metric, "IMPLEMENTATION")]);
   f.input.request.sourceManifest = [{ path: "output.txt", sha256: sha256(await fs.readFile(f.source)) }];
   const base = f.output;
   f.setItem(params => {

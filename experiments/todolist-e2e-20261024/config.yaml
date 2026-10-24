@@ -1,0 +1,34 @@
+version: 2
+artifacts:
+  - name: todo-source
+    stage: implementation
+    format: text
+    patterns: [todo.py]
+    rules:
+      enabled: false
+    review:
+      enabled: false
+dynamicGroundTruth:
+  enabled: true
+  materialRoots: [spec/requirements.md]
+  panel:
+    size: 1
+    adjudicator: false
+skillCorrection:
+  enabled: false
+artifactCorrection:
+  groundTruthReviewEnabled: false
+  stageMetricsEnabled: false
+implementationCorrection:
+  enabled: true
+  platform: offline-todolist-python-test
+stopCorrection:
+  enabled: true
+reviewers:
+  defaults:
+    model: test/{{modelId}}
+    effort: low
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction

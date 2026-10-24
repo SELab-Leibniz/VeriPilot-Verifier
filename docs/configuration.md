@@ -1,6 +1,6 @@
 # 配置与规则参考
 
-本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M15 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Runtime Corrector v2 design](runtime-corrector-v2-design.md)。
+本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M16 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Runtime Corrector v2 design](runtime-corrector-v2-design.md)。
 
 `patterns` 与 `pathTemplates` 可以直接声明源码产物。读取层将 `.ets`、`.ts`、`.tsx`、
 `.js` 等源码以及 `.json5` 视为 UTF-8 `text`，所以 HarmonyOS ArkTS 的 Write/Edit 能与

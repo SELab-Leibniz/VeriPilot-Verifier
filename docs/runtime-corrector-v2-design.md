@@ -1,7 +1,7 @@
 # Runtime Corrector v2 design
 
 Status: implemented contract
-Metric catalog: `vp-m01-m15-v1`
+Metric catalog: `vp-m01-m16-v3-production-implementation`
 
 Current evidence ownership, provenance, failure and completion semantics:
 [2026-09-09 runtime audit fixes](runtime-audit-fixes.md).
@@ -12,7 +12,7 @@ Runtime Corrector v2 keeps the existing artifact node/edge correction model and 
 
 1. a task-scoped, dynamically versioned Ground Truth ledger;
 2. Skill execution supervision based on a task-specific natural-language constraint graph;
-3. stage and terminal assessment using M01 through M15.
+3. stage and terminal assessment using M01 through M16.
 
 The corrector diagnoses and records. It never edits project artifacts or applies patches on behalf of the main agent.
 
@@ -106,7 +106,9 @@ Stop first classifies the response as `INTERMEDIATE`, `WAITING_FOR_USER`, `BLOCK
 
 ## Metrics
 
-The versioned catalog uses M01 through M15 from the VeriPilot experiment protocol. A Ground Truth snapshot produces a frozen population: the explicit list of objects in each denominator. The semantic reviewer labels each population object; deterministic code validates the object set and calculates the ratio. Reviewer judgements for IDs outside that frozen population are quarantined as `checkerIssues`: they never affect a numerator or denominator and do not discard valid judgements from the same assessment.
+The versioned catalog uses M01 through M16. A Ground Truth snapshot produces a frozen population: the explicit list of objects in each denominator. The semantic reviewer labels each population object; deterministic code validates the object set and calculates the ratio. Reviewer judgements for IDs outside that frozen population are quarantined as `checkerIssues`: they never affect a numerator or denominator and do not discard valid judgements from the same assessment.
+
+M16, production implementation coverage, projects implementation-owned `requirements` and `inScope` claims into source-review units. All six required conditions must hold: real existence, production reachability, real core processing, effective data flow, required branches and traceable current-version evidence. Source coverage does not establish execution or acceptance closure. See [M16 definition and integration](m16-production-implementation-coverage.md).
 
 Supported object judgements are `PASS`, `DEVIATION`, `UNVERIFIED`, `BASIS_PENDING`, `EXTERNAL_BLOCKED`, `NOT_APPLICABLE`, `NOT_YET_APPLICABLE`, `CHECKER_ERROR`, and `NOT_YET_EXECUTED`. These states are never silently converted to zero.
 

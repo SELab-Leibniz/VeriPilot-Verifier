@@ -24,6 +24,13 @@ export async function observedTaskResult(options, { file, verdict = "PASS", reas
   const result = { taskId: options.task.id, scope: options.task.scope, completed: true, verdict, reason,
     refs: [ref], citeIds: [ref.citeId], basis, attempts: 1, elapsedMs: 1, artifacts: options.outputDir,
     metrics: { turns: 1, toolCalls: reads.length, readBytes: bytes.length, repeatedLines: 0 } };
+  if (options.task.reviewType === "production-implementation-coverage-reviewer" && verdict === "PASS") {
+    // This is a scripted engine transport witness, not a semantic claim about
+    // arbitrary fixture code. Real-model counterexamples are validated separately.
+    result.productionTrace = { version: 1, entryPoint: "Scripted fixture entry", actualInput: "Assigned fixture input",
+      producerToConsumer: "Scripted source witness for transport validation only", stateful: false,
+      statelessReason: "This controlled transport does not assess application semantics.", stateTargets: [], targetRelations: [] };
+  }
   await fs.writeFile(path.join(options.outputDir, "result.json"), JSON.stringify(result));
   return result;
 }

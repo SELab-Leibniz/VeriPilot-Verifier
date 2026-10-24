@@ -237,6 +237,12 @@ test("cancellation also invalidates uncertain pending submissions while leaving 
   await f.manager.cancel({ ...f.params, reason: "HOST_USER_ABORT" });
   assert.equal((await f.manager.findRun({ ...f.params, runId: receipt.runId })).status, "CANCELLED");
   assert.equal(await f.manager.finish({ ...f.params, runId: receipt.runId, evaluationId: "late", status: "PASS" }), null);
+  const closed = await f.manager.finish({ ...f.params, runId: receipt.runId, status: "UNVERIFIED", reasonCode: "HOST_USER_ABORT" });
+  assert.equal(closed.status, "CANCELLED"); assert(closed.finishedAt); assert(closed.cancelledAt);
+  assert.equal(closed.reviewStatus, "UNVERIFIED"); assert.equal(closed.reason, "HOST_USER_ABORT");
+  assert.equal(await f.manager.finish({ ...f.params, runId: receipt.runId, evaluationId: "later", status: "PASS" }), null);
+  const duplicate = await f.manager.finish({ ...f.params, runId: receipt.runId, status: "CANCELLED" });
+  assert.equal(duplicate.finishedAt, closed.finishedAt); assert.equal(duplicate.reviewStatus, "UNVERIFIED");
   assert.deepEqual(source, before);
   assert.equal(f.calls.length, 1);
 });

@@ -7,7 +7,8 @@
 | 我想了解 | 文档 |
 |---|---|
 | 安装 OpenClaw 2026.7.1-2 专用版本、配置原生评审、了解宿主限制 | [OpenClaw 专用指南](openclaw.md) |
-| 如何启用任务 Ground Truth、Skill 执行看护、M01–M15 与有限 Stop 纠偏 | [Runtime Corrector v2 设计与配置](runtime-corrector-v2-design.md) |
+| 如何启用任务 Ground Truth、Skill 执行看护、M01–M16 与有限 Stop 纠偏 | [Runtime Corrector v2 设计与配置](runtime-corrector-v2-design.md) |
+| M16 生产实现覆盖率的通过条件、证据与接入位置 | [M16 生产实现覆盖率](m16-production-implementation-coverage.md) |
 | 从客户视角理解价值、信任边界、50 个关键问题、互动纠偏闭环与代码证据 | [Runtime Corrector 客户理解指南](customer-guide/runtime-corrector.html)（可直接双击打开） |
 | 一次写入如何变成诊断，Agent 如何收到反馈 | [完整运作机理](how-it-works.md) |
 | 如何开关阶段、修改匹配路径、规则、Reviewer、Schema 和输出持久化 | [配置与规则参考](configuration.md) |

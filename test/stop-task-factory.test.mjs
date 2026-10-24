@@ -53,8 +53,9 @@ test("task-mode factory dispatches only eligible metric scopes with the selected
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", deadlineAt: parentDeadline, abortSignal: controller.signal,
     reviewerTimeoutMs: 15000, runEmbeddedAgent: async () => { nativeCalls++; throw new Error("Eligible work must not use native JSON review."); },
     runStopTask: async (input, transport) => { captures.push({ input, transport }); return { result: report(), close: async () => {} }; } });
-  const inputs = [...Object.keys(METRIC_CATALOG).map(metric => f.makeInput(metric)),
+  const inputs = [...Object.keys(METRIC_CATALOG).map(metric => f.makeInput(metric, "stop-reviewer", metric === "M16" ? "IMPLEMENTATION" : "ARTIFACT")),
     f.makeInput("M09", "implementation-reviewer", "IMPLEMENTATION"), f.makeInput("M12", "implementation-reviewer", "IMPLEMENTATION"),
+    f.makeInput("M16", "implementation-reviewer", "IMPLEMENTATION"),
     f.makeInput("M12", "stop-reviewer", "IMPLEMENTATION")];
   for (const input of inputs) {
     input.deadlineAt = parentDeadline + 1000;

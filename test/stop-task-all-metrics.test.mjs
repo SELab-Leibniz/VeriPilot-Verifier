@@ -45,6 +45,7 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
   if (projectFile) input.request.artifactCandidates = [{ artifactId: "fixture-candidate", metricIds: [metricId],
     files: [{ path: "candidate.md", sha256: sha256(await fs.readFile(source)) }],
     declaration: { configPath: null, configSha256: null, digest: sha256({ fixture: true, metricId }) } }];
+  if (metricId === "M16") input.request.sourceManifest = projectFile ? [{ path: "candidate.md", sha256: sha256(await fs.readFile(source)) }] : [];
   return { projectRoot, directory, taskId, source, input, object, truth };
 }
 
@@ -168,9 +169,9 @@ async function skillFixture(t, { captured = true, privateSource = false, sourceR
   return { ...f, skillId, object, sourceRoot, skillDocument: saved.document, skillDirectory: saved.directory };
 }
 
-test("all fifteen metric IDs have single current-object Stop eligibility without guessing other applicability", async t => {
+test("all sixteen metric IDs have single current-object Stop eligibility without guessing other applicability", async t => {
   for (const metric of Object.keys(METRIC_CATALOG)) {
-    const f = await fixture(t, metric, "PROCESS");
+    const f = await fixture(t, metric, metric === "M16" ? "IMPLEMENTATION" : "PROCESS");
     assert.equal(canUseStopTaskReview(f.input), true, metric);
     for (const applicability of ["main-task", "MAIN_TASK", " current-task ", " MaIn-TaSk ", undefined, null, ""]) {
       const copy = structuredClone(f.input); copy.request.population.metrics[metric][0].applicability = applicability;
@@ -257,12 +258,13 @@ test("metric and evidence ownership choose a fixed scope and dedicated profile",
     ["M10", "IMPLEMENTATION", "SOURCE_IMPLEMENTATION"], ["M10", "PROCESS", "PROCESS_COMPLIANCE"], ["M10", "ARTIFACT", "METRIC_ARTIFACT_REVIEW"],
     ["M11", "IMPLEMENTATION", "PROCESS_COMPLIANCE"], ["M12", "IMPLEMENTATION", "RUNTIME_ACCEPTANCE"], ["M12", "PROCESS", "PROCESS_COMPLIANCE"], ["M12", "ARTIFACT", "ARTIFACT_EXECUTION"],
     ...["M13", "M14", "M15"].map(metric => [metric, "PROCESS", "EXECUTION_CLOSURE"]),
+    ["M16", "IMPLEMENTATION", "SOURCE_IMPLEMENTATION"],
   ];
   for (const [metric, target, scope] of routes) await t.test(`${metric}/${target}`, async t => {
     const f = await fixture(t, metric, target);
     await runStopTaskReview(f.input, { runTask: async options => {
       assert.equal(options.task.scope, scope);
-      assert.deepEqual(options.task.targetFiles, scope === "METRIC_ARTIFACT_REVIEW" ? ["project/candidate.md"] : []);
+      assert.deepEqual(options.task.targetFiles, scope === "METRIC_ARTIFACT_REVIEW" || metric === "M16" ? ["project/candidate.md"] : []);
       assert.deepEqual({ promptAppend: options.promptAppend, reviewType: options.task.reviewType }, reviewPromptProfile(metric, scope));
       if (["SOURCE_IMPLEMENTATION", "METRIC_ARTIFACT_REVIEW"].includes(scope)) await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
       else assert.equal((await fs.readdir(path.join(options.root, "process"))).length, 2);

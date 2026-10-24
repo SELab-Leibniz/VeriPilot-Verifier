@@ -108,7 +108,7 @@ test("mixed tasks route only source-owned objects and preserve process judgement
   const outcome = await h.stop();
   assert.equal(outcome.stop.report.status, "PASS");
   assert.equal(h.calls.implementation.length, 1);
-  assert.deepEqual(Object.values(h.calls.implementation[0].population.metrics).flat().map((object) => object.objectId), ["M12:code"]);
+  assert.deepEqual(Object.values(h.calls.implementation[0].population.metrics).flat().map((object) => object.objectId), ["M12:code", "M16:code"]);
   const objects = outcome.stop.report.metrics.flatMap((metric) => metric.objects);
   assert.equal(objects.find((object) => object.objectId === "M11:workflow").reviewer, "stop-reviewer");
   assert.equal(objects.find((object) => object.objectId === "M12:code").reviewer, "implementation-reviewer");
@@ -226,7 +226,7 @@ test("an omitted source-owned object cannot inherit the general reviewer's PASS"
 
 test("budget exhaustion preserves unresolved state and emits a host-consumable warning", async (t) => {
   const h = await harness(t, { implResult: (request) => ({
-    summary: "Not implemented.", findings: [], metricObjectJudgements: request.population.metrics.M12.map((object) => ({
+    summary: "Not implemented.", findings: [], metricObjectJudgements: Object.values(request.population.metrics).flat().map((object) => ({
       objectId: object.objectId, judgement: "DEVIATION", reason: "Missing source behavior.", evidence: [],
     })),
   }) });
@@ -245,7 +245,7 @@ test("budget exhaustion preserves unresolved state and emits a host-consumable w
 
 for (const deferred of [false, true]) test(`Stop ${deferred ? "defers" : "immediately records"} feedback delivery without changing its correction budget`, async t => {
   const h = await harness(t, { maxCorrections: 3, stopFeedbackDeferred: deferred, implResult: request => ({
-    summary: "Missing implementation.", findings: [], metricObjectJudgements: request.population.metrics.M12.map(object => ({
+    summary: "Missing implementation.", findings: [], metricObjectJudgements: Object.values(request.population.metrics).flat().map(object => ({
       objectId: object.objectId, judgement: "DEVIATION", reason: "Required source behavior is missing.", evidence: [],
     })),
   }) });
@@ -373,7 +373,7 @@ test("policy validation discloses independent-provider fallback without leaking 
 test("a new failed Stop reopens a previously completed task instead of keeping contradictory status", async t => {
   let judgement = "PASS";
   const h = await harness(t, { maxCorrections: 3, stopFeedbackDeferred: true, implResult: request => ({
-    summary: "Current source checked.", findings: [], metricObjectJudgements: request.population.metrics.M12.map(object => ({
+    summary: "Current source checked.", findings: [], metricObjectJudgements: Object.values(request.population.metrics).flat().map(object => ({
       objectId: object.objectId, judgement, reason: "Current source evidence.", evidence: [],
     })),
   }) });

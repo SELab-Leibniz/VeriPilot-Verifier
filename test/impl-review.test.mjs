@@ -109,6 +109,7 @@ function implFakeFactory(state) {
     } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
       state.implCalls += 1;
       const m12 = (request.population.metrics.M12 ?? []);
+      const sourceObjects = [...m12, ...(request.population.metrics.M16 ?? [])];
       assert.ok(m12.length > 0, "impl request must carry the M12 slice");
       const passes = state.implPasses;
       result = {
@@ -124,7 +125,7 @@ function implFakeFactory(state) {
           violatedGroundTruthIds: [`M12:${object.sourceId}`],
           suggestedNextAction: "Implement the requirement.",
         })),
-        metricObjectJudgements: m12.map((object) => ({
+        metricObjectJudgements: sourceObjects.map((object) => ({
           objectId: object.objectId,
           judgement: passes ? "PASS" : "DEVIATION",
           reason: passes ? "Implemented at entry/src/main/ets/pages/Index.ets:1." : "No implementing code found.",
@@ -227,9 +228,9 @@ test("failure-preserving implementation merge retains duplicate detection and co
 test("filterOwnedJudgements keeps source metrics but never M11 process history", () => {
   const owned = filterOwnedJudgements([
     { objectId: "M12:c1" }, { objectId: "M09:c2" }, { objectId: "M11:c3" },
-    { objectId: "M13:c4" }, { objectId: "M01:c5" },
+    { objectId: "M13:c4" }, { objectId: "M01:c5" }, { objectId: "M16:c6" },
   ]);
-  assert.deepEqual(owned.map((item) => item.objectId), ["M12:c1", "M09:c2"]);
+  assert.deepEqual(owned.map((item) => item.objectId), ["M12:c1", "M09:c2", "M16:c6"]);
 });
 
 test("collectSourceManifest hashes production source and skips excluded trees", async (t) => {
@@ -430,6 +431,7 @@ test("implementation review detects, delivers, closes on retest, and attributes 
   const first = await runStop(root, plan, factory, "stop-impl-1");
   assert.equal(first.decision, "block", "impl DEVIATION must override the stop PASS and block");
   assert.ok(state.implCalls >= 1, "implementation reviewer ran");
+  assert.equal(first.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement, "DEVIATION");
   let families = await taskFamilies(root);
   assert.ok(families.length > 0, "a deviation family was recorded");
   const family = families.find((item) => (item.observations.at(-1)?.finding?.violatedGroundTruthIds ?? []).length > 0);
@@ -444,6 +446,7 @@ test("implementation review detects, delivers, closes on retest, and attributes 
   state.implPasses = true;
   const second = await runStop(root, plan, factory, "stop-impl-2");
   assert.equal(second.decision, "allow", "clean retest allows the stop");
+  assert.equal(second.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement, "PASS");
   families = await taskFamilies(root);
   const closed = families.find((item) => item.familyId === family.familyId);
   assert.equal(closed.status, "FIXED", "retest PASS closes the family via markMetricPassesFixed");

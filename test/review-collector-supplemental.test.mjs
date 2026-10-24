@@ -119,7 +119,7 @@ test("known delivery files each own one durable quality item without changing th
   assert.equal(first.collection.totalItems, 3);
   assert.equal(first.collection.complete, true);
   assert.deepEqual(first.result.fileAssessments.map(row => [row.path, row.status]), [["delivery.md", "PASS"], ["second.md", "DEVIATION"]]);
-  for (const item of first.collection.items.slice(1)) {
+  for (const item of first.collection.items.filter(item => item.kind === "file-quality")) {
     const saved = JSON.parse(await fs.readFile(item.path, "utf8"));
     assert.equal(saved.kind, "file-quality"); assert.deepEqual(saved.objectIds, []);
     assert.equal(saved.passReuseItemKey, undefined);
@@ -143,7 +143,7 @@ test("a later quality failure keeps earlier file and metric results and names th
   assert.deepEqual(handle.result.fileAssessments[1].evidence, []);
   assert.equal(handle.collection.complete, false);
   assert.deepEqual(handle.collection.failures[0].objectIds, []);
-  assert.equal(JSON.parse(await fs.readFile(handle.collection.items[1].path, "utf8")).result.fileAssessments[0].status, "PASS");
+  assert.equal(JSON.parse(await fs.readFile(handle.collection.items[0].path, "utf8")).result.fileAssessments[0].status, "PASS");
 });
 
 test("stage completion keeps one native quality duty even when delivery bindings exist", async t => {
@@ -151,8 +151,8 @@ test("stage completion keeps one native quality duty even when delivery bindings
   await collectReviewItems({ ...f.input, classification: { stopClassification: "STAGE_COMPLETE", stage: "planning" },
     reviewerFactory: f.factory() });
   assert.equal(f.calls.length, 2);
-  assert.equal(f.calls.at(-1).request.reviewScope.kind, "file-quality");
-  assert.equal(f.calls.at(-1).request.reviewScope.qualityTarget, undefined);
+  assert.equal(f.calls[0].request.reviewScope.kind, "file-quality");
+  assert.equal(f.calls[0].request.reviewScope.qualityTarget, undefined);
 });
 
 test("a declared quality file cannot be proved by another file or returned under a foreign path", async t => {
@@ -181,12 +181,14 @@ test("the existing shared cutoff records every unstarted known quality target wi
   assert.equal(f.calls.length, 1);
   assert.equal(handle.collection.totalObjects, 1);
   assert.equal(handle.collection.totalItems, 3);
-  assert.equal(handle.collection.items.slice(1).every(item => item.unstarted && item.qualityTarget), true);
+  assert.equal(handle.collection.items.slice(1).every(item => item.unstarted), true);
+  assert.equal(handle.collection.items[1].qualityTarget.path, "second.md");
+  assert.deepEqual(handle.collection.items[2].objectIds, ["M01:R1"]);
   assert.deepEqual(handle.result.fileAssessments.map(row => [row.path, row.status]), [["delivery.md", "UNVERIFIED"], ["second.md", "UNVERIFIED"]]);
   assert.equal(handle.result.metricObjectJudgements.length, 1);
 });
 
-test("task collection assigns all fifteen metrics independently and checks file quality exactly once afterward", async t => {
+test("task collection checks file quality first and assigns all sixteen metrics independently", async t => {
   const f = await fixture(t, Object.keys(METRIC_CATALOG));
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: f.factory(params => {
     const quality = params.request.reviewScope.kind === "file-quality";
@@ -207,17 +209,17 @@ test("task collection assigns all fifteen metrics independently and checks file 
     }
     return f.output(params, quality ? { fileAssessments: [f.fileAssessment("DEVIATION")] } : {});
   }) });
-  assert.equal(f.calls.length, 16);
-  assert.equal(f.calls.at(-1).request.reviewScope.kind, "file-quality");
-  assert.equal(handle.collection.totalObjects, 15);
-  assert.equal(handle.collection.reviewedObjects, 15);
-  assert.equal(handle.collection.totalItems, 16);
-  assert.equal(handle.collection.completedItems, 16);
+  assert.equal(f.calls.length, 17);
+  assert.equal(f.calls[0].request.reviewScope.kind, "file-quality");
+  assert.equal(handle.collection.totalObjects, 16);
+  assert.equal(handle.collection.reviewedObjects, 16);
+  assert.equal(handle.collection.totalItems, 17);
+  assert.equal(handle.collection.completedItems, 17);
   assert.equal(handle.collection.complete, true);
-  assert.equal(handle.result.metricObjectJudgements.length, 15);
+  assert.equal(handle.result.metricObjectJudgements.length, 16);
   assert.ok(handle.result.metricObjectJudgements.every(row => row.judgement === "PASS"));
   assert.equal(handle.result.fileAssessments[0].status, "DEVIATION", "A coverage PASS must not become a file-quality PASS.");
-  const saved = JSON.parse(await fs.readFile(handle.collection.items.at(-1).path, "utf8"));
+  const saved = JSON.parse(await fs.readFile(handle.collection.items[0].path, "utf8"));
   assert.equal(saved.kind, "file-quality"); assert.deepEqual(saved.objectIds, []);
   assert.equal(saved.passReuseItemKey, undefined);
 });
@@ -263,8 +265,8 @@ test("a failed file-quality transport preserves all completed metric rows and an
   assert.equal(handle.collection.failures[0].code, "CONTEXT_UNSAFE");
   assert.deepEqual(handle.collection.failures[0].objectIds, []);
   assert.equal(handle.collection.reviewedObjects, 2);
-  assert.equal(handle.collection.items.at(-1).kind, "file-quality");
-  assert.equal(handle.collection.items.at(-1).status, "UNVERIFIED");
+  assert.equal(handle.collection.items[0].kind, "file-quality");
+  assert.equal(handle.collection.items[0].status, "UNVERIFIED");
 });
 
 test("a metric item cannot publish the separately owned supplemental file verdict", async t => {
@@ -275,7 +277,7 @@ test("a metric item cannot publish the separately owned supplemental file verdic
   assert.equal(handle.collection.failures[0].code, "REVIEW_ITEM_OWNERSHIP_INVALID");
   assert.equal(handle.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
   assert.equal(handle.result.fileAssessments.length, 1, "The separate quality item still produces its own checked verdict.");
-  assert.equal(handle.collection.items.at(-1).status, "COMPLETED");
+  assert.equal(handle.collection.items[0].status, "COMPLETED");
 });
 
 test("file-quality evidence and empty ownership reject invalid ranges, private reports and foreign metric rows", async t => {
@@ -308,8 +310,8 @@ test("identical metric PASS items can be reused while supplemental file quality 
   assert.equal(second.collection.reusedItems, 1);
   assert.equal(second.collection.reusedObjects, 1);
   assert.equal(second.collection.complete, true);
-  assert.equal(second.collection.items[0].reusedFrom, first.collection.items[0].path);
-  assert.equal(second.collection.items.at(-1).reusedFrom, undefined);
+  assert.equal(second.collection.items[1].reusedFrom, first.collection.items[1].path);
+  assert.equal(second.collection.items[0].reusedFrom, undefined);
   const index = JSON.parse(await fs.readFile(path.join(f.taskRoot, "review-pass-cache.json"), "utf8"));
   assert.equal(Object.keys(index.items).length, 1);
 });
@@ -328,22 +330,23 @@ test("checked partial file verdicts can survive supplemental failure without acc
   assert.ok(handle.sourceCitations.some(citation => citation.usedBy.includes(f.source)));
 });
 
-test("the shared cutoff accounts for an unstarted supplemental item without inventing metric rows", async t => {
+test("file quality runs before the metric tail can exhaust the shared cutoff", async t => {
   const f = await fixture(t), started = Date.now(), deadlineAt = started + 30000;
   let now = started;
   t.mock.method(Date, "now", () => now);
   const handle = await collectReviewItems({ ...f.input, deadlineAt, reviewerFactory: f.factory(params => {
     now = deadlineAt - 1000;
-    return f.output(params);
+    return f.output(params, { fileAssessments: [f.fileAssessment()] });
   }) });
   assert.equal(f.calls.length, 1);
   assert.equal(handle.collection.complete, false);
   assert.equal(handle.collection.totalObjects, 1);
   assert.equal(handle.collection.items.length, 2);
-  assert.equal(handle.collection.items.at(-1).kind, "file-quality");
+  assert.equal(handle.collection.items[0].kind, "file-quality");
+  assert.equal(handle.collection.items.at(-1).kind, undefined);
   assert.equal(handle.collection.items.at(-1).unstarted, true);
   assert.deepEqual(handle.collection.items.at(-1).sourceIds, ["R1"]);
-  assert.deepEqual(handle.collection.items.at(-1).objectIds, []);
+  assert.deepEqual(handle.collection.items.at(-1).objectIds, ["M01:R1"]);
   assert.equal(handle.result.metricObjectJudgements.length, 1);
-  assert.equal(handle.result.metricObjectJudgements[0].judgement, "PASS");
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
 });
