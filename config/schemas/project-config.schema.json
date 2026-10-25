@@ -8,6 +8,22 @@
     "artifacts"
   ],
   "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Project-wide OpenClaw/MatrixAssistant correction switch. Session choices cannot override false."
+    },
+    "sessionDefaults": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "description": "Initial OpenClaw/MatrixAssistant control setting for sessions not yet registered in this project."
+    },
     "version": {
       "type": "integer",
       "enum": [

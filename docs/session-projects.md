@@ -12,7 +12,7 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 新版 OpenClaw `2026.10.3`：通过 New Session 选择项目、文件夹或 Worktree。RC 自动跟随宿主，`/rc-project status` 显示 `source: host`；bind、再次 bind、unbind 全部拒绝。旧绑定不参与原生目录解析。也可用 `runtime_corrector` 的 `{"command":"project"}` 查询；模型工具没有项目绑定写入入口。
 
-项目须已有有效 `.runtime-corrector/config.yaml`。既有版本 1/2 配置就是显式启用，不新增配置格式或根级开关；插件级 `enabled: false` 仍优先。没有配置、配置非法、目录失效、Session 身份冲突或能力未核验时不创建基线、不启动 Reviewer、不自动建立项目运行目录。显式 `init` 仅在已经可靠解析的项目中按用户请求执行。
+项目须已有有效 `.runtime-corrector/config.yaml`。既有版本 1/2 配置在省略新控制字段时仍按启用处理；根级 `enabled` 是项目总开关，`sessionDefaults.enabled` 设置首次登记会话的默认状态，各会话选择保存到 `.runtime-corrector/sessions.local.yaml`。宿主插件级 `enabled: false` 仍优先。没有配置、配置非法、目录失效、Session 身份冲突或能力未核验时不创建基线、不启动 Reviewer、不自动建立项目运行目录。显式 `init` 仅在已经可靠解析的项目中按用户请求执行。配置、`/rc-session` 命令和 UI 接口见 [项目与 Session 开关](session-control.md)。
 
 手动 check 使用相同的 Session 项目解析与宿主原生 Reviewer。静态检查与原有语义评审逻辑沿用核心；手动检查不声称完成整个业务任务。
 
@@ -20,7 +20,7 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 `lib/openclaw/project-compat.mjs` 集中维护经过核验的版本和目录规则。`2026.7.1-2` 仅对经过 Session 身份校验的持久化 `spawnedCwd` 做能力检测；不读取模型参数里的同名字段。这个检测只切换目录解析，Reviewer、转录读取、Hook 和 Stop 仍沿用 7.1 适配。`2026.10.3` 保持原生模式；其他版本仍拒绝加载，不因出现同名字段而放开。
 
-MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写入 `spawnedCwd`，工具运行目录使用该字段；7.1 子会话也以此字段为准。7.1 Hook 若仍报告 Agent 默认工作区，RC 使用已核验的会话目录解析相对路径；其他项目路径冲突继续拒绝。宿主选择只决定纠偏项目，有效 `.runtime-corrector/config.yaml` 才决定启用，不新增项目开关格式。
+MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写入 `spawnedCwd`，工具运行目录使用该字段；7.1 子会话也以此字段为准。7.1 Hook 若仍报告 Agent 默认工作区，RC 使用已核验的会话目录解析相对路径；其他项目路径冲突继续拒绝。宿主选择只决定纠偏项目；有效项目配置、项目总开关及当前 Session 的选择共同决定是否运行 RC。
 
 原生目录来自公开 `runtime.agent.session.getSessionEntry` 的最新、精确 Session incarnation。已核验的 v2026.10.3 执行入口先使用 spawnedBy Session 的 spawnedWorkspaceDir，否则使用 spawnedCwd。Worktree 使用宿主准备完成后保存的执行目录，绝不使用 worktree.repoRoot。有效运行上下文与持久化目录不一致时停用；没有可核验目录时不回退 Agent 默认工作区。远端执行、云仓库和尚未准备完成的项目保守停用，本次不实现远端文件系统桥接。
 

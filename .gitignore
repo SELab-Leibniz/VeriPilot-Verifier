@@ -1,4 +1,7 @@
 .runtime-correction/
+**/.runtime-corrector/sessions.local.yaml
+**/.runtime-corrector/sessions.local.yaml.lock
+**/.runtime-corrector/sessions.local.yaml.*.tmp
 dist/
 node_modules/
 experiments/live-*/
