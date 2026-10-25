@@ -202,7 +202,14 @@ function passingImplAssessment(request) {
   };
 }
 
+const startedSessions = new Set();
 async function stopEvent(root, plan, factory, id) {
+  if (!startedSessions.has(root)) {
+    await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
+      input: { cwd: root, session_id: "session-onboarding", transcript_path: path.join(root, "transcript.jsonl"),
+        hook_event_name: "SessionStart", source: "startup" } });
+    startedSessions.add(root);
+  }
   return handleRuntimeV2Event({
       deviceVerifier: staticVerifier,
     input: {
@@ -992,6 +999,7 @@ test("resume-transient panel failures defer without consuming the real-failure a
 
   // Four transient failures in a row: attempts must stay 0, status DEFERRED.
   for (let round = 1; round <= 4; round += 1) {
+    await write(root, "transcript.jsonl", transcriptEntries(round));
     await stopEvent(root, plan, wrapped, `stop-transient-${round}`);
     const { state } = await readTaskArtifacts(root);
     assert.equal(state.onboarding.status, "DEFERRED", `round ${round} defers`);
@@ -1001,6 +1009,7 @@ test("resume-transient panel failures defer without consuming the real-failure a
 
   // The panel becoming healthy afterwards still completes and freezes.
   mode = "healthy";
+  await write(root, "transcript.jsonl", transcriptEntries(5));
   await stopEvent(root, plan, wrapped, "stop-transient-recovery");
   const { state, groundTruth } = await readTaskArtifacts(root);
   assert.equal(state.onboarding.status, "COMPLETED");

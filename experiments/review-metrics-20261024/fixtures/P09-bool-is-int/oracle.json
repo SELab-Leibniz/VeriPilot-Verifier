@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "Python bool subclasses int; True passes isinstance and >0, violating the explicit boolean exclusion.",
-  "scope": "SOURCE_IMPLEMENTATION"
-}

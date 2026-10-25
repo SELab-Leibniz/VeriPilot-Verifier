@@ -1,6 +1,6 @@
 # OpenClaw Session 项目作用域
 
-当前适配分支：`codex/openclaw-2026.7.1-2`。候选插件：`1.9.1-openclaw.11-session-projects.8`。所有改动位于 RC；不修改、替换或升级已有 OpenClaw 安装。
+支持 OpenClaw `2026.7.1-2` 与 `2026.10.3`。插件适配不修改、替换或升级宿主安装。
 
 ## 使用
 
@@ -36,52 +36,18 @@ MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写�
 
 宿主日志中可搜索 `[runtime-corrector]`：`RC_PROJECT_RESOLVED` 仅在选择或启用状态变化时记录 Session 身份、宿主版本、host/rc 来源、前后项目路径、enabled 和 reason；`RC_PROJECT_SCOPE_ACTIVATED` 在作用域成功持久化后记录前后路径及独立 taskId。日志使用宿主已有 logger，未配置项目也能诊断停用原因；不另建日志系统。`/rc-project status` 或 `runtime_corrector` 的 project 命令可核对当前选择。
 
-切至未启用项目后再切回，或从自动模式退回旧手动绑定时，建立新的作用域并隔离此前项目的用户依据；不把旧任务和预算接回新一轮。
+切至未启用项目后再切回，或从自动模式退回旧手动绑定时，建立新的作用域并隔离此前项目的用户依据；不把旧任务和流程状态接回新一轮；宿主级会话累计纠偏额度继续保留。
 
 绑定和作用域身份存放在宿主 `resolveStateDir()` 返回的状态目录下：`plugins/runtime-corrector/session-projects/<identity-hash>/`。identity 包含 agentId、sessionKey 和 sessionId；恢复相同会话可继续使用，reset/new 产生新 incarnation 不继承旧绑定。写入用私有文件、原子替换和独占锁；忙锁拒绝变更，不抢占写入者。
 
-每次项目作用域有独立 taskId；同项目不同 Session 也不共用 Reviewer 状态、需求基线或预算。回到此前项目建立新的作用域；项目切换边界限制新作用域读取的用户依据。宿主状态目录持久化作用域身份，所以插件/Gateway 重载后仍可恢复。
+每次项目作用域有独立 taskId；同项目不同 Session 不共用 Reviewer 状态、需求基线或会话预算。同一 Session 的累计业务纠偏额度跨作用域保留。回到此前项目建立新的作用域；项目切换边界限制新作用域读取的用户依据。宿主状态目录持久化作用域身份，所以插件/Gateway 重载后仍可恢复。
 
 任务记录在对应项目 `.runtime-correction/tasks/`，Session transcript 在 `.runtime-correction/openclaw/` 的独立作用域下，产物 rounds/latest 在 `<output.directory 或 .runtime-correction>/openclaw/session-artifacts/<scope-id>/`。产物配置始终从 Session 绑定的准确项目加载，不通过祖先/子目录的其他配置重新选项目。失败计数按 Session 作用域隔离，原次数与释放逻辑不变。
 
 切换时取消旧 RC Reviewer 信号和待派发反馈，旧任务记录留在旧项目。返回结果及续作派发前再次核验作用域；迟到工具结果同时核验调用绑定的作用域，即使宿主提供了 Session 身份，也不能重新接入新项目。RC 不取消或接管宿主已接受的业务执行；宿主自身运行切换、取消和权限仍由 OpenClaw 管理。
 
-## 验证
+## 兼容与验证边界
 
-同日继续补验：原 B 已实际完成 DEVIATION → 原生续作 → 复验的负向闭环，因首轮有依据的路径违规最终 DEVIATION、k=1；无配置项目真实写入和零模型重启通过。正向 `.7` 对照发现混合条款误标 IMPLEMENTATION，候选 `.8` 只补共享提取提示以明确单一证据归属，92 项相关回归通过；新基线 R05 正确归 PROCESS、两轮源码评审完成且无归属错误。但业务模型仍违反路径实验要求，`.8` 末轮回执还被观察器过早关闭，不能算整轮完整通过。失败状态保留，停止追加 B 模型验证。详见 [闭环补验与边界](experiments/spawned-cwd-python-completion-20261016.md)。
+项目解析、开关、切换取消、迟到结果围栏、回执与预算持久化由离线回归保护。宿主无配置时不调用模型；查询和恢复不得重放已完成业务。已交付后的 `chat.abort` 可能返回 false，不能据此声称取消了 RC 后台工作；Session reset 与精确所属运行取消分别遵守宿主协议。
 
-2026-10-16 使用本机安装的 `2026.7.1-2` 完成真实 Python App 分组验证：Session `spawnedCwd` 自动跟随、真实 Git Worktree 切换和旧评审取消、字段缺失时手动绑定，以及零模型重启恢复均通过。A 从空开发独立功能验收 8/8，B 扩展验收 9/9，手动 C 真实数据任务最终 RC PASS。整轮结果为 **MIXED**：两批请求达到预定上限，B 完整终审与无配置项目的业务交付未完成；A 的旧版 RC PASS 还漏检了 exec 向公共 `/tmp` 写测试数据。候选 `.7` 仅补充共享语义评审提示以覆盖相关工具的文件副作用，全量回归 831 项中 829 PASS、2 项平台跳过；一次真实模型复核检出原违规并通过只读反例。没有把复核当成 A/B 完整闭环重跑。详见 [本机 spawnedCwd Python 实测](experiments/spawned-cwd-python-20261016.md)。
-
-MatrixAssistant 增量适配 `.6` 在 Windows / Node 24.16.0 完成 264 项相关回归，最终顺序执行全部通过。原三项失败分别修复路径断言、Windows 目录 fsync 兼容及其后显露的 Skill 路径分隔符断言；扩展回归还修复一行需求引用路径键规范化和一个旧恢复测试的跨平台文件键。一次并发运行的旧受控模式用例未通过，单项复跑及最终顺序回归通过，未改该模式的运行协议。
-
-指定 MatrixAssistant 1.8.160 内置 `2026.7.1-2` 的真实 SDK 探针验证 8 项依赖方法、9 个入口 Hook 注册、既有兼容桥，以及 A → B 自动项目、Agent 默认 Hook 目录、无配置停用、日志与字段缺失时手动回退。所有会话和项目均在临时目录；未修改或安装到宿主，也未调用业务模型。设置 `RC_OPENCLAW_HOST_ROOT` 为宿主的 `resources/openclaw` 目录后，运行 `node --test test/openclaw-host-contract.test.mjs` 可复现这两项接口测试。本次不宣称完成 MatrixAssistant UI 和真实模型纠偏闭环。
-
-后续 MatrixAssistant 真实模型补验使用该安装包的实际 Gateway、原装 `register-gateway-method` 目录桥接及 GLM-5.3-Flash，结果为 **未验收通过**：新会话自动跟随 A、独立真实基线 version=1 和写入已观察；随后宿主返回 `incomplete turn`（stopReason=toolUse、payloads=0、replaySafe=no），观察器按错误停止，未观察到纠偏续作和最终 PASS，k=0。真实评审运行中切换项目的步骤未到达，不以既有单测代替。另在同一隔离状态中以零模型调用的实际 Gateway 查询验证 A → B → 未配置项目 → B 的启停及 4 条切换日志。初轮只读未触发屏障、第二轮观察超时及最后的宿主错误均保留；没有覆盖失败或修改纠偏核心。脱敏原始路径、任务状态、构建哈希和验证边界见 [真实模型补验证据](experiments/ma-session-live-20261015.json)。隔离 Gateway 已结束，宿主文件和现有用户会话未改动。
-
-继续定位确认该 `incomplete turn` 来自原生同内容 `write` 的 `terminate:true`，零模型直接复现无需加载插件。插件保留宿主终止语义，只修正诊断的实际错误写入和过时项目说明；新增结果元数据保留回归，40 项定向回归通过。真实补验按项通过：DEVIATION → 一次被模型观察的原生续作 → 最终 PASS（k=1）；旧 Stop 流程中的需求刷新模型请求活跃时切换项目，旧评审取消，B 独立基线 k=0，实际无配置停用/恢复及切换日志通过。不是一次整段串行探针全通过；模型格式失败、观察器超时及请求上限停止均保留，本轮共 81 次模型请求。详见 [定位与分组复验](experiments/ma-incomplete-turn-20261015.md)。宿主及用户现有会话未修改，隔离进程均已结束。
-
-项目测试覆盖旧版独立绑定/恢复、相同项目两 Session 状态、无配置无产物、认证/沙箱/目录权限、升级原生优先、无目录及冲突拒绝、Worktree 实际目录、切换取消、迟到结果、并发首次 Hook、手动查询/检查。
-
-真实 Gateway 的本地接口探针已分别验证 `2026.7.1-2` 与 `2026.10.3`，包括原生 A/B 项目、未配置项目、手动绑定禁用，以及真实 Git Worktree 的准备和准确目录。该探针没有调用模型，也没有让业务模型写文件；不能算完整模型纠偏闭环。
-
-重复本地接口验证：设置 `RC_PROJECT_CONTRACT_ONLY=1`，运行 `scripts/diagnostics/openclaw-session-projects.mjs`，传入宿主包目录、测试 provider 描述 JSON、新建输出目录和空闲端口。所有宿主状态、配置、项目和网关均隔离；SDK 导入前也设置隔离环境。
-
-真实模型测试使用相同脚本，去掉上述开关并设置 `RC_TEST_MODEL_KEY`。这会将临时测试会话及项目内容发送至测试 provider。本轮经用户授权使用 GLM-5.3-Flash。前两次凭据分别遭遇配额耗尽与无余额；更换可用凭据后，旧版和新版均已完成真实会话、write/read 文件操作、需求基线和 Reviewer 记录隔离验证。新版 Worktree 文件只写入实际工作树，原仓库未出现该业务文件；两版未启用项目均无 `.runtime-correction` 或 Reviewer 记录。独立新进程通过公开 Session SDK 确认绑定和 taskId 可恢复，任务 Session 身份不混用。
-
-全量回归：798 项，796 通过，0 失败，2 项既有 Windows 专用测试在 macOS 跳过。脱敏验收和失败历史见 [证据](experiments/session-projects-20261014.json)。最终真实模型探针要求启用项目具有有效基线才计通过；初轮新版虽然完成写文件，但 SQLite Reviewer 身份不兼容，未作为最终验收通过。
-
-本次真实探针关闭 Stop 和实现终审，验证最小纵向的项目目录、实际文件、基线、Reviewer 与跨 Session 隔离；完整 Stop 重修闭环没有在新版重新实测。现有 Stop 预算和复验行为由回归测试守护。项目切换及迟到反馈的并发测试通过，但没有把单元测试声称为宿主 UI 切换的真实模型实测。
-
-2026-10-14 后续扩展实测已开启真实 Stop：旧版完成实际修复与最终 PASS，但首轮 checkpoint 不一致；新版 Worktree 的交付后 Stop 被宿主 Gateway 生命周期保护拒绝，完整终审验收失败。两版实际重启恢复、旧版 Stop 中改绑、新版需求评审中公开取消后切换通过。新版 Stop 阶段切换仍未完成。完整结果和三个已复现缺陷见 [扩展实测报告](experiments/session-projects-extended-results.md)，不能将此前最小项目探针通过解释为新版全部纠偏能力已验证。
-
-2026-10-15 已实现上述生命周期、重试、checkpoint 与反馈恢复修复。真实两版 Gateway 项目接口和新版实际调度/准入契约通过；真实 Python 子进程配合确定性宿主/Reviewer 的原生 Stop 闭环也通过，两 Session 的任务及预算独立。新一轮 GLM 真实 Gateway 首轮遭遇供应商 1308 五小时限额，其他已授权凭据分别返回 1113 余额不足和 1310 周/月额度限制，因此修复后的完整真实模型 Stop 与从空开发 Todo 仍待补验，不能将替身测试标作模型实测。详见 [修复与验证报告](experiments/session-projects-fix-20261015.md)。
-
-随后使用用户授权的豆包 `doubao-seed-2.1-lite` 完成真实模型补验：两版从空开发 Todo 均最终 Stop/实现终审 PASS、k=0，另有八项独立 CLI 验收通过；两版实际故障修复都取得首轮 DEVIATION、原生续作观察记录及末轮 PASS。新版受控 A/B 整轮通过，旧版把有效故障修复与正确项目的隔离/重启分开取证，未覆盖或改写失败控制组。两版正确项目均验证独立任务和零预算；新版真实 Worktree 与原仓库隔离、两版真实重启不重放通过。新版 Stop 中取消后切换项目经公开 Session reset 生命周期通过；业务已交付时 `chat.abort` 返回 false，不能宣称它取消了 RC 后台评审。平台测试资源必须在新宿主加载插件前准备。详细边界、失败记录及实际模型证据见 [豆包补验报告](experiments/session-projects-doubao-20261015.md)。
-
-2026-10-15 再次针对 **2026.7.1-2** 新建隔离环境：受控 A/B 整轮首次重跑即 PASS（A 真正 DEVIATION → 一次原生续作 → PASS，B k=0），9 对实际评审重叠，真实重启恢复且查询不调用模型。从空开发 Todo 的真实终审及独立 8 项 CLI 验收、Stop Reviewer 运行中改绑取消与新项目基线、未配置项目不运行 RC 及绑定管理亦通过。本轮无需生产代码修改；45 项定向回归全部通过。版本、范围、观察器初轮失败和可核验原始证据见 [旧版再次真实复验](experiments/openclaw-2026.7.1-2-repeat-20261015.md)。
-
-随后新增小 Skill `rc-mini-note`，发现并修复 RC 绑定业务项目与宿主工作区分离时漏掉原生工作区 Skill 的适配缺口。候选 `.3` 统一以宿主可信执行目录补充调用识别及源码刷新，不改业务工具目录或纠偏核心。旧版原生 `/skill` 真实实测：A 遗漏校验并错误宣告完成，被 Skill Reviewer 检出，原生续作实际修复、校验及最终 Stop PASS，k=1；B 正常 Skill 评审和 Stop 均 PASS、k=0。全量回归本轮实际为 798 项、796 PASS、2 项平台跳过。详见 [Skill 看护实测](experiments/openclaw-skill-guard-20261015.md) 和 [可复用示例](../examples/openclaw-skill-guard/README.md)。
-
-离线厨房 Python CLI 扩展实测为 **MIXED**：从空开发、正常 Skill/Stop/实现终审及独立 21 项功能验收通过；两个负向试验虽实际修复了应用，最终 RC 终审仍耗尽预算。确认存在 Skill 提取结果缺少约束却准入 watcher、过程要求误送源码评审并覆盖运行证据、不可重做历史流程事件持续阻断等问题。失败状态与预算经真实重启仍正确保留，查询不重放模型。本轮生产代码未改，不能以之前的小 Skill 成功替代这些失败结果。详见 [厨房扩展实测与定位](experiments/offline-kitchen-openclaw-20261015.md)。
-
-候选 `.4` 已补齐 Skill 条件化提取协议、成功落盘及摘要匹配后准入 watcher，并增加明确证据错分派的结构化检查器错误；不改业务预算，不以 Stop PASS 代替实现验证。新增关键回归 4/4 通过，版本清单遗漏修正后相关 OpenClaw 回归 31/31 通过。旧版真实厨房实验成功建立约束、运行 Skill Reviewer、检出坏交付并经原生续作恢复功能，独立 21/21 验收通过；最终 RC 仍因读取顺序判定而 DEVIATION、k=2，且其“编辑早于读取”理由与工具时间线冲突。失败和预算经真实重启保留，查询不调用模型。本轮不宣称整轮全通过，也未扩写通用历史违规判断器。详见 [最小修复与隔离复验](experiments/offline-kitchen-admission-fix-20261015.md)。
+OpenClaw 2026.10.3 的项目、SQLite reviewer 和服务生命周期适配，不等于新的自动业务启动协议已整体验收。真实模型缺陷检出、完整桌面长时运行及进程重启/GT 缓存恢复仍需独立验收；历史小样例成功不能外推为全部能力可靠。当前启动协议及限制见 [宿主指南](openclaw.md)。

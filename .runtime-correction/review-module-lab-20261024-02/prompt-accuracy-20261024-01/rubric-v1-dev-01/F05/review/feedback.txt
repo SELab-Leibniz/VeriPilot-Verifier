@@ -1,2 +1,0 @@
-M05:gt-007 | PASS | commodity-browsing spec declares acceptance units for both obligations of gt-007: Requirement SHALL covers card list (image/name/price) plus placeholder during image load and default placeholder on failure; Scenario 正常展示商品列表 operationalizes card content display.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\F05\review\result.json

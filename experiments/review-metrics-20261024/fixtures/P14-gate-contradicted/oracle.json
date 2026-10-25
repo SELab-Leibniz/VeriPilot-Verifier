@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The supplied acceptance gate requires removal of zero entries, directly contradicting the required retention observation.",
-  "scope": "EXECUTION_CLOSURE"
-}

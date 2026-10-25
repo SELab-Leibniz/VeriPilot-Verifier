@@ -452,7 +452,6 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
     assert.equal(marketplacePlugin[key], manifest[key], `marketplace plugin ${key}`);
     assert.equal(packageManifest[key], manifest[key], `package ${key}`);
   }
-  assert.equal(packageManifest.scripts["benchmark:session-end"], "node ./scripts/benchmark-session-end.mjs");
   assert.deepEqual(await discoverCommandNames(), [...contract.commands].sort());
   assert.deepEqual(await discoverSkillNames(), [...contract.skills].sort());
 
@@ -539,39 +538,6 @@ test("root-dependent commands and Skills expose one Bash and PowerShell compatib
 });
 
 
-test("published compatibility docs describe build-time host artifacts", async () => {
-  const read = async (relativePath) => fs.readFile(path.join(PLUGIN_ROOT, relativePath), "utf8");
-  const [readme, readmeEnglish, interfaces, proposal, tutorial] = await Promise.all([
-    read("README.md"),
-    read("README.en.md"),
-    read("docs/interfaces.md"),
-    read("docs/PROPOSAL.md"),
-    read("tutorial.html"),
-  ]);
-
-  for (const [source, document] of [
-    ["README.md", readme],
-    ["README.en.md", readmeEnglish],
-    ["docs/interfaces.md", interfaces],
-  ]) {
-    assert.match(document, /build|构建/u, `${source} build step`);
-    assert.match(document, /CLAUDE_PLUGIN_ROOT/u, `${source} Claude root`);
-    assert.match(document, /CODEAGENT3_PLUGIN_ROOT/u, `${source} CodeAgent3 root`);
-    assert.match(document, /\.claude-plugin/u, `${source} Claude manifest`);
-    assert.match(document, /\.cac-plugin/u, `${source} CodeAgent manifest`);
-    assert.match(document, /Windows/u, `${source} Windows support`);
-    assert.match(document, /Linux/u, `${source} Linux support`);
-    assert.match(document, /macOS/u, `${source} macOS support`);
-    assert.match(document, /Node\.js\s*(?:>=|≥)\s*18/u, `${source} Node floor`);
-  }
-  assert.match(readme, /canonical|规范化/u);
-  assert.match(interfaces, /canonical|规范化/u);
-  assert.doesNotMatch(interfaces, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
-  assert.doesNotMatch(proposal, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
-  assert.doesNotMatch(tutorial, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/cli\.mjs/u);
-});
-
-
 test("production plugin-root routing has no version probe or newer Hook mechanism", async () => {
   const sources = [
     "hooks/hooks.json",
@@ -603,7 +569,6 @@ test("release CI exercises the compatibility suite on Windows, Linux, and macOS"
   assert.match(workflow, /npm test/u);
   assert.match(workflow, /npm run build:plugins/u);
   assert.match(workflow, /npm run test:artifacts/u);
-  assert.match(workflow, /npm run benchmark:session-end/u);
   assert.match(workflow, /test\/plugin-bootstrap-process\.test\.mjs/u);
 });
 

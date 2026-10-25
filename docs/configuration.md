@@ -1,6 +1,6 @@
 # 配置与规则参考
 
-本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M16 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Runtime Corrector v2 design](runtime-corrector-v2-design.md)。
+本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M16 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Stop 审查](stop-task-review.md) 与本页的 v2 配置。
 
 Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
@@ -34,9 +34,7 @@ SHA-256；任一摘要陈旧、重复、缺失或未被当前 bundle 收集，�
 └── example.reviewer.md
 ```
 
-`/runtime-corrector:init` 生成的是结构完整但默认关闭的通用模板。四阶段可运行目录、JSON
-Schema 与作者规范位于
-[`examples/ir-planning-selection-prd-contract/`](../examples/ir-planning-selection-prd-contract/README.md)。
+`/runtime-corrector:init` 生成结构完整但默认关闭的通用模板。最小配置见 [快速开始](tutorial.md)。
 
 ## 配置来源与优先级
 
@@ -355,7 +353,7 @@ enabledStages:
 
 在 `artifacts[]` 中首次声明一个新的 `stage` 值即完成注册；是否启用由 `enabledStages` 独立决定。推荐先注册为关闭状态，依次运行 `stages`、`explain <stage>` 和 `spec <stage>` 核对实际执行源，再通过 `stage <stage> on` 启用。
 
-完整的 `app-design` / `**/design.md` 配置、逐字段解释和可操作运行演示见根目录 [交互式自定义 Stage 教程](../tutorial.html)。同一教程还包含精简 `mini-planning` 示例，展示如何用一个自定义 Stage 收集 `PilotPlan.md` 与 `relations.json`，组合 JSON Schema、图关系规则和公开 reviewer。
+自定义 Stage 可在项目中注册；最小结构与检查步骤见 [快速开始](tutorial.md)，完整接口见 [接口参考](interfaces.md)。
 
 混合格式 Bundle 应优先使用带 `artifact` 参数的目标型规则，例如 `json-schema` 和 `graph-invariants`。`require-heading`、`require-checklist` 和 `require-text` 只检查本次触发文件，`forbid-text` 则会扫描已收集文件；这些无 artifact 定向能力的规则不应直接同时套用到 Markdown 与 JSON pattern。跨格式、跨文件的业务一致性由 reviewer 核对。
 
@@ -695,3 +693,53 @@ OpenClaw 的原生终审使用 RC 自己的总窗口；`stopCorrection.assessmen
 运行时仍会经过同一个策略编译器做语义约束。
 
 自定义扩展契约见 [外部接口参考](interfaces.md#自定义-matcher)。
+
+## 版本 2 任务与 reviewer 配置
+
+版本 1 保持 artifact、node/edge 和规则兼容；使用任务能力时设置 `version: 2` 并显式开启所需功能。最小配置见 [快速开始](tutorial.md)，规范 Stop 字段和旧字段迁移见 [Stop 审查](stop-task-review.md)。
+
+```yaml
+version: 2
+artifacts: []
+dynamicGroundTruth:
+  enabled: true
+  evidenceCapture: minimal
+  materialRoots: [docs]
+  panel:
+    size: 2
+    adjudicator: true
+skillCorrection:
+  enabled: true
+  selection:
+    mode: include
+    include: [documents]
+    exclude: []
+  completionCheckIntervalTurns: 10
+  maxWatchTurns: 30
+  maxFeedbacksPerSkill: 1
+artifactCorrection:
+  groundTruthReviewEnabled: true
+  stageMetricsEnabled: true
+stopCorrection:
+  enabled: true
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+  assessmentTimeoutMs: 1200000
+  feedbackReserveMs: 180000
+  reviewGroupSize: 3
+reviewers:
+  defaults:
+    timeoutMs: 1200000
+  onboardingAdjudicator:
+    session: independent
+    provider:
+      baseUrl: https://provider.example
+      apiKeyEnv: REVIEWER_API_KEY
+      model: registered-model
+```
+
+`panel.size: 0` 关闭 onboarding 小组，保留增量抽取。角色 `session: fork` 复用父上下文的隔离分叉，`detached` 使用环境身份新建会话，`independent` 使用指定提供器新建会话。OpenClaw 使用原生 reviewer 路径，模型须按宿主注册配置。角色级设置优先于 `reviewers.defaults`，再回退到 `limits.semanticReviewTimeoutMs` 和 20 分钟默认值；格式修复共享该角色绝对截止。
+
+`reviewers.modelPolicy` 可使用 `off`、`critical-gates`、`all` 预设；critical-gates 仅覆盖 onboardingAdjudicator 与 stopReviewer。显式角色配置优先。写出配置时预设展开为角色字段。缺失密钥环境变量时记录 `REVIEWER_PROVIDER_DEGRADED` 并按实现回退，独立身份不会把父凭据送往第三方。抽取降级状态如 `DERIVED_CONFIG`、`ONBOARDING_DEGRADED` 可在任务日志中核对。
+
+配置 Schema 是字段校验来源：`config/schemas/project-config.schema.json`；运行时仍须通过统一策略编译器的语义约束。

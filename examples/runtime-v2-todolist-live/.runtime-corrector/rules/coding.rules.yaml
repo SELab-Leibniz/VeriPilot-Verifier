@@ -1,8 +1,0 @@
-version: 1
-
-rules:
-  - id: TODOLIST-CODING-CHECKPOINT-SCHEMA
-    type: json-schema
-    artifact: coding-checkpoint.json
-    schema: schemas/coding-checkpoint.schema.json
-    severity: error

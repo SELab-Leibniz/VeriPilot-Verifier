@@ -1,2 +1,0 @@
-M12:R04 | DEVIATION | cmd_cook never subtracts required quantities from pantry; it saves the unchanged store after the sufficiency check and reports {"cooked": NAME}, so cooked ingredients are not consumed, violating R04's "subtracts all required quantities... persists the result".
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K08\review\result.json

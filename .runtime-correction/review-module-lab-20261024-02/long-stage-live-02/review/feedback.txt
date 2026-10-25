@@ -1,2 +1,0 @@
-f1-implementation | DEVIATION | f1 要求首页商品卡片展示图片且图片加载时显示占位图；Index.ets 卡片仅用 emoji 文本图标+名称+价格，无任何 Image/onError/占位逻辑，Commodity.image 字段全为空且未被使用，占位图行为未实现。
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\long-stage-live-02\review\result.json

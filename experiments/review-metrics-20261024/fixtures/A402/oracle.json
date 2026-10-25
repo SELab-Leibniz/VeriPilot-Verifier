@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The oracle expects total required water=3 rather than the shortfall=2, so it rejects correct behavior and can accept the wrong missing quantity.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

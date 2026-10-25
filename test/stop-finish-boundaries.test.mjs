@@ -8,8 +8,8 @@ import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
-import { runtimeState } from "../scripts/diagnostics/lib/isolated-openclaw.mjs";
-import { classifyStopTerminal } from "../experiments/review-metrics-20261024/e2e-plan/stop-terminal.mjs";
+import { runtimeState } from "./helpers/runtime-state.mjs";
+import { classifyStopTerminal } from "./helpers/stop-terminal.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { prepareHostFeedback, boundHostFeedback } from "../lib/runtime-v2/feedback-delivery.mjs";
 

@@ -1189,9 +1189,17 @@ test("supports custom matching and collection of multiple Markdown IR files", as
 });
 
 
+async function installOfflineCliReviewer(cwd) {
+  const script = path.join(cwd, ".runtime-corrector", "offline-reviewer.mjs");
+  await fs.writeFile(script, "process.stderr.write('OFFLINE_REVIEW_FIXTURE\\n');process.exitCode=2;\n");
+  await fs.appendFile(path.join(cwd, ".runtime-corrector", "config.yaml"),
+    `\nreviewerRuntime:\n  executable: ${JSON.stringify(process.execPath)}\n  argsPrefix: ${JSON.stringify([script])}\n`);
+}
+
 test("CLI hook emits PostToolUse additionalContext JSON", async (t) => {
   const cwd = await workspace(t);
   await installIrTemplate(cwd);
+  await installOfflineCliReviewer(cwd);
   const filePath = await writeFile(cwd, "docs/feature.ir.md", "# Feature IR\n");
   const input = JSON.stringify(hookInput(cwd, filePath));
   const stdout = execFileSync(
@@ -1210,6 +1218,7 @@ test("CLI hook emits PostToolUse additionalContext JSON", async (t) => {
 test("CLI hook accepts UTF-8 BOM input from Windows orchestrators", async (t) => {
   const cwd = await workspace(t);
   await installIrTemplate(cwd);
+  await installOfflineCliReviewer(cwd);
   const filePath = await writeFile(cwd, "docs/feature.ir.md", "# Feature IR\n");
   const input = `\uFEFF${JSON.stringify(hookInput(cwd, filePath))}`;
   const stdout = execFileSync(
@@ -1329,9 +1338,8 @@ async function writeSimpleModeFiles(cwd) {
 
 async function installFourStageExample(cwd, stage = null) {
   const exampleRoot = path.join(
-    PLUGIN_ROOT,
-    "examples",
-    "ir-planning-selection-prd-contract",
+    SOURCE_ROOT,
+    "test", "fixtures", "artifact-policy",
   );
   await fs.cp(
     path.join(exampleRoot, ".runtime-corrector"),
@@ -2098,40 +2106,6 @@ test("PRD criteria enforces generic structure and delegates upstream semantics",
 });
 
 
-test("four-stage delivery policy is a self-contained example", async (t) => {
-  const cwd = await workspace(t);
-  await installFourStageExample(cwd);
-  for (const name of [
-    "README.md",
-    "config.yaml",
-    "ir.rules.yaml",
-    "ir.reviewer.md",
-    "planning.rules.yaml",
-    "planning.reviewer.md",
-    "selection.rules.yaml",
-    "selection.reviewer.md",
-    "prd-contract.rules.yaml",
-    "prd-contract.reviewer.md",
-    "schemas/relations.schema.json",
-    "schemas/granularity-choice.schema.json",
-  ]) {
-    await fs.access(path.join(cwd, ".runtime-corrector", name));
-  }
-  await fs.access(path.join(
-    PLUGIN_ROOT,
-    "examples",
-    "ir-planning-selection-prd-contract",
-    "workflow.yaml",
-  ));
-  const config = await fs.readFile(path.join(cwd, ".runtime-corrector", "config.yaml"), "utf8");
-  assert.match(config, /name: ir/);
-  assert.match(config, /name: planning-bundle/);
-  assert.match(config, /name: selection/);
-  assert.match(config, /name: prd-contract/);
-  assert.match(config, /^  semanticReviewTimeoutMs: 1200000$/m);
-});
-
-
 test("PostToolUse diagnoses HarmonyOS ArkTS .ets source artifacts", async (t) => {
   const cwd = await workspace(t);
   const relativePath = "entry/src/main/ets/pages/ToDoListPage.ets";
@@ -2235,47 +2209,6 @@ rules:
   );
   assert.equal(current.result.status, "passed");
   assert.deepEqual(current.result.diagnostics, []);
-});
-
-
-test("four-stage workflow prompt and correction policy share stage ids and output paths", async (t) => {
-  const cwd = await workspace(t);
-  await installFourStageExample(cwd);
-  const exampleRoot = path.join(
-    PLUGIN_ROOT,
-    "examples",
-    "ir-planning-selection-prd-contract",
-  );
-  const workflow = parseSimpleYaml(
-    await fs.readFile(path.join(exampleRoot, "workflow.yaml"), "utf8"),
-    { source: "workflow.yaml" },
-  );
-  assert.deepEqual(workflow.stages.map((stage) => stage.id), [
-    "ir",
-    "planning",
-    "selection",
-    "prd-contract",
-  ]);
-  assert.deepEqual(workflow.stages.map((stage) => stage.nextStageId), [
-    "planning",
-    "selection",
-    "prd-contract",
-    null,
-  ]);
-  assert.ok(workflow.stages.every(
-    (stage) => Array.isArray(stage.description) && stage.description.length >= 2,
-  ));
-
-  const policy = await loadSimpleProjectConfig(cwd);
-  const declaredPatterns = new Set(
-    policy.configuredArtifacts.flatMap((artifact) => artifact.patterns),
-  );
-  const outputs = workflow.stages.flatMap(
-    (stage) => stage.outputs.map((output) => output.path),
-  );
-  for (const output of outputs) {
-    assert.ok(declaredPatterns.has(output), `${output} must be protected by the example config`);
-  }
 });
 
 
@@ -2789,192 +2722,4 @@ test("Claude command and control skill expose one guarded stage control model", 
   assert.match(controlSkill, /only enable/);
   assert.match(controlSkill, /Never edit generated stage artifacts/);
   assert.match(controlSkill, /Never delete criteria/);
-});
-
-
-test("README is a detailed standalone guide while contracts live under docs", async () => {
-  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.en.md"), "utf8");
-  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
-  const docs = await Promise.all([
-    "README.md",
-    "how-it-works.md",
-    "configuration.md",
-    "interfaces.md",
-    "tutorial.md",
-    "six-stage-workflow-from-zero.md",
-  ].map((name) => fs.readFile(path.join(PLUGIN_ROOT, "docs", name), "utf8")));
-
-  // Standalone publication: an English detailed guide plus a Chinese mirror
-  // with the same seven-section structure, free of upstream project names.
-  for (const document of [readme, readmeZh]) {
-    assert.equal((document.match(/^## [1-7]\. /gm) ?? []).length, 7);
-    assert.doesNotMatch(document, /VeriPilot/i);
-    assert.match(document, /runtime-corrector@runtime-corrector-local/);
-    assert.match(document, /--plugin-dir/);
-    assert.match(document, /DERIVED_CONFIG/);
-    assert.match(document, /ONBOARDING_DEGRADED/);
-    assert.match(document, /REVIEWER_PROVIDER_DEGRADED/);
-    assert.match(document, /apiKeyEnv/);
-    assert.match(document, /modelPolicy/);
-    assert.match(document, /maxCorrectionsPerEpoch/);
-    assert.match(document, /docs\/README\.md/);
-    assert.match(document, /docs\/how-it-works\.md/);
-    assert.match(document, /docs\/configuration\.md/);
-    assert.match(document, /docs\/interfaces\.md/);
-    assert.match(document, /docs\/tutorial\.md/);
-    assert.match(document, /docs\/six-stage-workflow-from-zero\.md/);
-  }
-  assert.ok(readme.split(/\r?\n/).length > 150, "root README is a detailed guide");
-  // zh is the default README; the English alternative links back to it and vice versa.
-  assert.match(readme, /README\.md/);
-  assert.match(readmeZh, /README\.en\.md/);
-  assert.match(docs[1], /`UserPromptSubmit` Hook/);
-  assert.match(docs[1], /Skill 看护/);
-  assert.match(docs[1], /compact_boundary/);
-  assert.match(docs[1], /PostToolUse/);
-  assert.match(docs[1], /agentReview\.status = requested/);
-  assert.match(docs[2], /enabledStages/);
-  assert.match(docs[2], /markdown-records/);
-  assert.match(docs[2], /checkpoint-review/);
-  assert.match(docs[2], /file-digest-manifest/);
-  assert.match(docs[2], /prd-contract/);
-  assert.match(docs[3], /退出码/);
-  assert.match(docs[3], /自定义 Matcher/);
-  assert.match(docs[3], /RUNTIME_CORRECTOR_CLAUDE_EXECUTABLE/);
-  assert.match(docs[3], /"session_id": "parent-session-id"/);
-  assert.match(docs[4], /完整使用教程/);
-  assert.match(docs[4], /CLI `check` 不会创建 Claude 隔离 session/);
-  assert.match(docs[5], /配置六阶段文档看护 Workflow/);
-  assert.match(docs[5], /workflow\.yaml/);
-  assert.match(docs[5], /six-stage\.rules\.yaml/);
-  assert.match(docs[5], /six-stage\.reviewer\.md/);
-  assert.match(docs[5], /workflow-edge\.reviewer\.md/);
-  assert.match(docs[5], /端到端穿刺案例/);
-});
-
-
-test("six-stage YAML example keeps execution inputs aligned with review edges", async () => {
-  const exampleRoot = path.join(PLUGIN_ROOT, "examples", "six-stage-workflow");
-  const workflowSource = await fs.readFile(path.join(exampleRoot, "workflow.yaml"), "utf8");
-  const workflow = parseSimpleYaml(workflowSource, {
-    source: "examples/six-stage-workflow/workflow.yaml",
-  });
-  for (const stage of workflow.stages) {
-    assert.equal(stage.purpose.length, 2, `${stage.name} must have exactly two purpose sentences`);
-    assert.ok(stage.purpose.every((sentence) => (
-      typeof sentence === "string" && sentence.endsWith("。")
-    )), `${stage.name} purpose entries must be complete Chinese sentences`);
-  }
-  assert.deepEqual(
-    workflow.stages.map((stage) => [
-      stage.name,
-      stage.inputs.map((input) => input.from),
-    ]),
-    [
-      ["requirement-analysis", []],
-      ["requirement-breakdown", ["requirement-analysis"]],
-      ["code-understanding", []],
-      ["solution-design", [
-        "requirement-analysis",
-        "requirement-breakdown",
-        "code-understanding",
-      ]],
-      ["manual-test-cases", [
-        "requirement-analysis",
-        "requirement-breakdown",
-        "solution-design",
-      ]],
-      ["dt-design", [
-        "requirement-breakdown",
-        "code-understanding",
-        "solution-design",
-      ]],
-    ],
-  );
-  const config = await loadSimpleProjectConfig(exampleRoot);
-  for (const stage of workflow.stages) {
-    assert.deepEqual(
-      config.reviewGraph
-        .incomingEdges(stage.name)
-        .filter((edge) => edge.reviewEnabled)
-        .map((edge) => edge.from),
-      stage.inputs.map((input) => input.from),
-      `${stage.name} inputs must match its enabled Runtime Corrector incoming edges`,
-    );
-  }
-
-  const explanation = JSON.parse(execFileSync(
-    process.execPath,
-    [
-      path.join(PLUGIN_ROOT, "scripts", "cli.mjs"),
-      "explain",
-      "solution-design",
-      "--cwd",
-      exampleRoot,
-      "--format",
-      "json",
-    ],
-    { cwd: exampleRoot, encoding: "utf8" },
-  ));
-  assert.equal(explanation.stage, "solution-design");
-  assert.deepEqual(
-    explanation.artifacts[0].workflow.incomingEdges.map((edge) => edge.from),
-    workflow.stages
-      .find((stage) => stage.name === "solution-design")
-      .inputs
-      .map((input) => input.from),
-  );
-  assert.equal(explanation.artifacts[0].review.enabled, true);
-  assert.equal(
-    explanation.artifacts[0].rules.file,
-    ".runtime-corrector/six-stage.rules.yaml",
-  );
-  assert.equal(
-    explanation.artifacts[0].review.criteria,
-    ".runtime-corrector/six-stage.reviewer.md",
-  );
-  assert.ok(explanation.artifacts[0].workflow.incomingEdges.every(
-    (edge) => edge.criteria === ".runtime-corrector/workflow-edge.reviewer.md",
-  ));
-});
-
-
-test("standalone custom-stage tutorial exposes Markdown-only and Markdown-plus-JSON journeys", async () => {
-  const tutorial = await fs.readFile(path.join(PLUGIN_ROOT, "tutorial.html"), "utf8");
-  assert.match(tutorial, /<!doctype html>/i);
-  assert.match(tutorial, /app-design/);
-  assert.match(tutorial, /\*\*\/design\.md/);
-  assert.match(tutorial, /app-design\.rules\.yaml/);
-  assert.match(tutorial, /app-design\.reviewer\.md/);
-  assert.match(tutorial, /stage app-design on/);
-  assert.match(tutorial, /PostToolUse/);
-  assert.match(tutorial, /不会自动修改/);
-  assert.match(tutorial, /左侧 · 被检查的文档/);
-  assert.match(tutorial, /右侧 · 当前检查标准/);
-  assert.match(tutorial, /Agent 标准 · 3/);
-  assert.match(tutorial, /data-rule="architecture"/);
-  assert.match(tutorial, /data-target-section="architecture"/);
-  assert.match(tutorial, /六阶段 Workflow 图约束演示/);
-  assert.match(tutorial, /需求分析/);
-  assert.match(tutorial, /需求拆分/);
-  assert.match(tutorial, /代码理解/);
-  assert.match(tutorial, /方案设计/);
-  assert.match(tutorial, /人工测试用例设计/);
-  assert.match(tutorial, /DT 设计/);
-  assert.match(tutorial, /data-edge-path="ra-mt"/);
-  assert.match(tutorial, /直接入边约束/);
-  assert.match(tutorial, /id="workflow-edges-code"/);
-  assert.match(tutorial, /renderWorkflowNode\(selectedWorkflowNode, selectedWorkflowEdge\)/);
-  assert.match(tutorial, /mini-planning/);
-  assert.match(tutorial, /mini-planning\.rules\.yaml/);
-  assert.match(tutorial, /mini-relations\.schema\.json/);
-  assert.match(tutorial, /PilotPlan\.md/);
-  assert.match(tutorial, /relations\.json/);
-  assert.match(tutorial, /pendingUntilComplete/);
-  assert.match(tutorial, /data-bundle-step="plan"/);
-  assert.match(tutorial, /data-bundle-step="invalid-json"/);
-  assert.match(tutorial, /data-bundle-step="corrected-json"/);
-  assert.match(tutorial, /SEMANTIC REVIEW COMPLETED/);
-  assert.doesNotMatch(tutorial, /不下发 reviewer|REVIEW REQUESTED|SIMULATED MAIN AGENT/);
-  assert.doesNotMatch(tutorial, /<(?:script|link)[^>]+(?:src|href)=["']https?:/i);
 });

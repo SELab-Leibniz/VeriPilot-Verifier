@@ -67,6 +67,59 @@ test("plugin-target defaults to OpenClaw and rejects unknown hosts", async () =>
   }), /claude or codeagent/u);
 });
 
+async function filesUnder(directory) {
+  const files = [];
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await filesUnder(file));
+    else if (entry.isFile()) files.push(file);
+  }
+  return files;
+}
+
+async function checkLocalLinks(file) {
+  const document = await fs.readFile(file, "utf8");
+  for (const match of document.matchAll(/\]\(([^\s)]+)(?:\s+"[^"]*")?\)/gu)) {
+    const target = match[1].split("#")[0];
+    if (!target || /^[a-z]+:/iu.test(target) || /[<>*{}]/u.test(target)) continue;
+    await assert.doesNotReject(fs.access(path.resolve(path.dirname(file), decodeURIComponent(target))), `${file}: ${target}`);
+  }
+}
+
+test("all hosts package complete runtime imports, resources and usable documentation only", async t => {
+  const built = await artifacts(t);
+  built.openclaw = await buildPlugin({ host: "openclaw", sourceRoot: SOURCE_ROOT, outputRoot: built.outputRoot });
+  for (const host of ["claude", "codeagent", "openclaw"]) {
+    const root = built[host], files = await filesUnder(root);
+    const scripts = files.filter(file => path.dirname(file) === path.join(root, "scripts")).map(file => path.basename(file)).sort();
+    assert.deepEqual(scripts, (host === "openclaw" ? ["cli.mjs", "configure-ma-host.mjs"]
+      : ["cli.mjs", "evidence-distinctness-guard.mjs", "post-tool-use.mjs", "runtime-event.mjs", "session-end.mjs"]).sort());
+    for (const file of files) {
+      assert(!path.relative(root, file).split(path.sep).some(part => ["experiments", "test", "examples", "diagnostics", "node_modules", ".runtime-correction", ".github"].includes(part)), file);
+      if (file.endsWith(".md")) await checkLocalLinks(file);
+      if (!file.endsWith(".mjs")) continue;
+      const source = await fs.readFile(file, "utf8");
+      for (const match of source.matchAll(/(?:from\s*|import\s*\()(["'])(\.[^"']+\.mjs)\1/gu)) {
+        await assert.doesNotReject(fs.access(path.resolve(path.dirname(file), match[2])), `${host}: ${file}: ${match[2]}`);
+      }
+    }
+    for (const resource of ["config/stop-defaults.json", "config/schemas/project-config.schema.json", "knowledge/ir/default.json",
+      "templates/project/.runtime-corrector/config.yaml", "specs/custom-stage.md", "lib/review-task/prompts.json", "lib/review-task/package-lock.json"]) {
+      await fs.access(path.join(root, resource));
+    }
+    if (host === "openclaw") {
+      const entry = await import(pathToFileURL(path.join(root, "lib/openclaw/entry.mjs")).href);
+      assert.equal(entry.default.id, "runtime-corrector");
+      assert.doesNotThrow(() => entry.default.register({ registrationMode: "cli-metadata" }));
+      await fs.access(path.join(root, "lib/openclaw/ui/index.html"));
+      await fs.access(path.join(root, "skills/runtime-corrector/SKILL.md"));
+    }
+  }
+  for (const name of ["README.md", "README.en.md", ...((await filesUnder(path.join(SOURCE_ROOT, "docs")))
+    .filter(file => file.endsWith(".md") && !file.includes(`${path.sep}experiments${path.sep}`))
+    .map(file => path.relative(SOURCE_ROOT, file)))]) await checkLocalLinks(path.join(SOURCE_ROOT, name));
+});
+
 test("builds mutually exclusive Claude and CodeAgent artifacts", async (t) => {
   const built = await artifacts(t);
   await assert.rejects(fs.access(path.join(SOURCE_ROOT, ".claude-plugin", "plugin.json")), { code: "ENOENT" });

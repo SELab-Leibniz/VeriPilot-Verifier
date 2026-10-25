@@ -20,10 +20,24 @@ before(async () => {
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function within(promise, description, timeoutMs = 5000) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}`)), timeoutMs);
+  })]); } finally { clearTimeout(timer); }
+}
+async function until(predicate, description) {
+  const deadlineAt = Date.now() + 5000;
+  while (!predicate()) {
+    assert(Date.now() < deadlineAt, `Timed out waiting for ${description}`);
+    await pause(2);
+  }
+}
 async function basic(t) {
   const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-"));
-  t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
-  return { projectRoot, sessionId: "host", sessionKey: "agent:main:budget", runId: "business-run",
+  const cleanup = {};
+  t.after(async () => { await cleanup.dispose?.(); await fs.rm(projectRoot, { recursive: true, force: true }); });
+  return { cleanup, projectRoot, sessionId: "host", sessionKey: "agent:main:budget", runId: "business-run",
     signal: new AbortController().signal, budgetMs: 10000 };
 }
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
@@ -115,9 +129,10 @@ dynamicGroundTruth:
     size: 0
 stopCorrection:
   enabled: true
-${metrics ? `  metrics:\n${Object.entries(metrics).map(([id, enabled]) => `    ${id}: ${enabled}`).join("\n")}\n` : ""}  fileQualityReviewEnabled: ${quality !== null}
+${(metrics ?? { M01: true }) ? `  metrics:\n${Object.entries(metrics ?? { M01: true }).map(([id, enabled]) => `    ${id}: ${enabled}`).join("\n")}\n` : ""}  fileQualityReviewEnabled: ${quality !== null}
   waitMode: ${waitMode}
-${waitTimeoutMs ? `  waitTimeoutMs: ${waitTimeoutMs}\n` : ""}  assessmentTimeoutMs: 11000
+  assessmentTimeoutMs: ${waitTimeoutMs ?? 11000}
+  feedbackReserveMs: 1000
 implementationCorrection:
   enabled: false
 reviewers:
@@ -135,7 +150,7 @@ reviewers:
     if (fail-- > 0) throw new Error("transient checker failure");
     let result;
     if (schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations:
-      deviation && request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements", text: "Deliver a draft with verified acceptance.",
+      request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements", text: "Deliver a draft with verified acceptance.",
         verificationTarget: "ARTIFACT",
         authority: "USER_EXPLICIT", severity: "HARD", source: { ref: request.sourceCatalog.find(s => s.kind === "USER_MESSAGE").ref,
           subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
@@ -151,11 +166,13 @@ reviewers:
   factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
   const warnings = [];
   const state = {}, hostAbort = new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs }, config: {}, logger: { warn(message) { warnings.push(message); } },
-    runtime: { agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
+    runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
       resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
       runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };
   const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility });
   const ctx = { agentId: "main", sessionId: "host", sessionKey: params.sessionKey, runId: params.runId, workspaceDir: root, trigger: "user", abortSignal: hostAbort.signal };
+  params.cleanup.dispose = () => runtime.dispose();
+  await runtime.sessionStart({ sessionId: "host" }, ctx);
   await runtime.prompt({ prompt: "Write a draft." }, ctx);
   await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
@@ -171,7 +188,7 @@ test("native reply preserves payload and finishes RC terminal work in its indepe
   assert(response.payload.text.startsWith(original.text));
   assert.match(response.payload.text, /RC 正在验收/u);
   assert.deepEqual(payload, original); assert.equal(f.calls(), 0);
-  const records = await f.runtime.waitForNativeReviews();
+  const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].budgetMs, 11000);
   assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
   assert.equal(f.hostAbort.signal.aborted, false);
@@ -188,7 +205,7 @@ test("all Stop metrics and file quality off settle the native wait as DISABLED w
   const f = await lifecycle(t, { deviation: true, metrics, waitMode: "until_pass" });
   f.api.runtime.subagent = { run: () => assert.fail("Disabled review cannot dispatch a corrective business run.") };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const [record] = await f.runtime.waitForNativeReviews({ drain: true });
+  const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(record.reviewStatus, "DISABLED"); assert.equal(f.chain().pending, false);
   assert.equal(f.calls(), 0);
   const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
@@ -220,13 +237,13 @@ test("a fresh Gateway rediscovers modified artifacts from the active native tran
 test("a terminal review that cannot read its native transcript never inherits an earlier run's PASS", async t => {
   const f = await lifecycle(t);
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
   const original = await findTask({ projectRoot: f.root, sessionId: "host" });
   const ctx = { ...f.ctx, runId: "unreadable-native-run" };
   await f.runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
   await fs.appendFile(path.join(f.root, "native.jsonl"), '\n{"torn":');
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
-  const receipts = await f.runtime.waitForNativeReviews();
+  const receipts = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(receipts.find(record => record.runId === ctx.runId).reviewStatus, "UNVERIFIED");
   assert.equal(receipts.find(record => record.runId === ctx.runId).evaluationId, null);
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "host" })).verification.assessmentId,
@@ -235,7 +252,7 @@ test("a terminal review that cannot read its native transcript never inherits an
 test("transient checker faults retry RC review without spending business corrections", async t => {
   const f = await lifecycle(t, { failures: 2 });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const records = await f.runtime.waitForNativeReviews();
+  const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(task.stop.correctionAttempts, 0);
@@ -245,23 +262,23 @@ test("reset invalidates a queued native Stop without cancelling host settings", 
   const f = await lifecycle(t);
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await f.runtime.reset({}, f.ctx);
-  const records = await f.runtime.waitForNativeReviews();
+  const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(f.hostAbort.signal.aborted, false);
   // Release must precede backend cleanup; this controlled fake does finish.
   // Drain it before the fixture removes its temporary project directory.
-  await f.runtime.waitForNativeReviews({ drain: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
 });
 
 test("ongoing review cancellation cannot return PASS or mutate host cancellation", async t => {
   const f = await lifecycle(t);
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  while (f.calls() === 0) await pause(2);
+  await until(() => f.calls() > 0, "native review to start");
   await f.runtime.reset({}, f.ctx);
-  const records = await f.runtime.waitForNativeReviews();
+  const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(f.hostAbort.signal.aborted, false);
-  await f.runtime.waitForNativeReviews({ drain: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
 });
 
 test("incomplete file quality reaches the next normal host prompt without an automatic business continuation", async t => {
@@ -269,7 +286,7 @@ test("incomplete file quality reaches the next normal host prompt without an aut
   let admissions = 0;
   f.api.runtime.subagent = { run: async () => { admissions++; throw new Error("Quality uncertainty must not admit another business run."); } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const [record] = await f.runtime.waitForNativeReviews({ drain: true });
+  const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(record.reviewStatus, "UNVERIFIED");
   assert.match(record.verificationFeedback, /heading omits the subject/);
   assert.equal(admissions, 0);
@@ -284,7 +301,7 @@ test("incomplete file quality reaches the next normal host prompt without an aut
 test("permanent checker faults stop at the existing infrastructure ceiling", async t => {
   const f = await lifecycle(t, { failures: 20 });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const records = await f.runtime.waitForNativeReviews();
+  const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(records[0].reviewStatus, "UNVERIFIED");
   assert.equal(task.stop.infrastructureTotalFailures, 3);
@@ -301,7 +318,7 @@ test("admission refusal after one checker failure settles without reusing that f
     throw Object.assign(new Error("Admission closed"), { code: "GATEWAY_DRAINING" });
   };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const [record] = await f.runtime.waitForNativeReviews();
+  const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(record.reviewStatus, "UNVERIFIED");
   assert.equal(record.reasonCode, "GATEWAY_DRAINING");
   assert.equal(admissions, 2);
@@ -319,7 +336,7 @@ test("first admission refusal cannot reuse a prior run PASS", async t => {
     admissions++; throw Object.assign(new Error("Forbidden"), { code: "PERMISSION_DENIED" });
   };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const [record] = await f.runtime.waitForNativeReviews();
+  const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(record.reviewStatus, "UNVERIFIED");
   assert.equal(record.reasonCode, "PERMISSION_DENIED");
   assert.equal(admissions, 1);
@@ -342,25 +359,26 @@ test("a continuation starting before admission returns cannot erase the committe
     return { runId: args.idempotencyKey };
   } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  const [record] = await f.runtime.waitForNativeReviews();
+  const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(dispatches, 1, JSON.stringify({ record, warnings: f.warnings, assessment: f.state.nativeAssessment }));
   assert.equal(record.reviewStatus, "DEVIATION");
   assert(record.evaluationId);
 });
 
-const deferred = () => {
+const deferred = t => {
   let resolve;
   const promise = new Promise(done => { resolve = done; });
+  t?.after(() => resolve());
   return { promise, resolve };
 };
 
 test("a queued business turn waits before replacing the old run, while UI status never enters model history", async t => {
-  const started = deferred(), finish = deferred(), events = [];
+  const started = deferred(t), finish = deferred(t), events = [];
   const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; },
     compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
   const source = path.join(f.root, "native.jsonl"), original = await fs.readFile(source, "utf8");
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Original delivery." } }, f.ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   const oldController = f.state.reviewController;
   let passed = false;
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
@@ -374,18 +392,18 @@ test("a queued business turn waits before replacing the old run, while UI status
   assert(!events.some(event => event.stream === "assistant"));
   finish.resolve();
   await Promise.all([next, prompt]);
-  const [record] = await f.runtime.waitForNativeReviews();
+  const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(record.reviewStatus, "PASS");
   assert.equal(f.state.nativeRunId, "next-run");
   assert.equal(await fs.readFile(source, "utf8"), original, "status is UI-only, not a host user/assistant message");
 });
 
 test("Stop deadline releases a hung backend and ignores its late PASS/commit even when cancellation cleanup hangs", async t => {
-  const params = await basic(t), manager = createNativeStopReviews(), started = deferred(), finish = deferred();
+  const params = await basic(t), manager = createNativeStopReviews(), started = deferred(t), finish = deferred(t);
   let commit, reviewSignal;
   await manager.schedule({ ...params, budgetMs: 100, onCancel: () => new Promise(() => {}),
     run: async input => { commit = input.commit; reviewSignal = input.signal; started.resolve(); await finish.promise; return { reviewStatus: "PASS" }; } });
-  await started.promise;
+  await within(started.promise, "started signal");
   const [job] = manager.pending(params);
   const result = await job.released;
   assert.equal(result.reviewStatus, "UNVERIFIED");
@@ -402,10 +420,10 @@ test("Stop deadline releases a hung backend and ignores its late PASS/commit eve
 });
 
 test("reset releases waiting tasks immediately and another session is never held by the gate", async t => {
-  const started = deferred(), finish = deferred();
+  const started = deferred(t), finish = deferred(t);
   const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; } });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   await f.runtime.beforeDispatch({ sessionKey: "agent:main:another-session" }, {});
   let passed = false;
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
@@ -413,58 +431,58 @@ test("reset releases waiting tasks immediately and another session is never held
   assert.equal(passed, false);
   await f.runtime.reset({}, f.ctx);
   await next;
-  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "CANCELLED");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "CANCELLED");
   assert.equal(f.hostAbort.signal.aborted, false);
   finish.resolve();
-  await f.runtime.waitForNativeReviews({ drain: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
 });
 
 test("a cancelled incoming task does not replace or cancel the pending review", async t => {
-  const started = deferred(), finish = deferred();
+  const started = deferred(t), finish = deferred(t);
   const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; } });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   const abort = new AbortController();
   const next = f.runtime.prompt({}, { ...f.ctx, runId: "cancelled-next", abortSignal: abort.signal });
   await pause(10); abort.abort(); await next;
   assert.equal(f.state.nativeRunId, f.ctx.runId);
   assert.equal(f.state.reviewController.signal.aborted, false);
   finish.resolve();
-  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
 });
 
 test("incoming model admission releases at its Hook budget and fences an uncooperative review", async t => {
-  const started = deferred(), finish = deferred(), events = [];
+  const started = deferred(t), finish = deferred(t), events = [];
   const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; },
     compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
   f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { before_model_resolve: 1100 } } } } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   await f.runtime.beforeModelResolve({}, { ...f.ctx, runId: "next-after-expiry" });
-  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "UNVERIFIED");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "UNVERIFIED");
   assert(events.some(event => event.runId === "next-after-expiry" && event.data.meta?.includes("RC 验收超时")));
   assert(!events.some(event => event.stream === "assistant"));
   finish.resolve();
-  await f.runtime.waitForNativeReviews({ drain: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
   assert.notEqual(task.verification?.status, "PASS");
 });
 
 test("new business waits for the deviation feedback admission receipt, not only the assessment", async t => {
-  const admitted = deferred(), dispatching = deferred();
+  const admitted = deferred(t), dispatching = deferred(t);
   const f = await lifecycle(t, { deviation: true });
   f.api.runtime.subagent = { run: async args => {
     dispatching.resolve(); await admitted.promise;
     return { runId: args.idempotencyKey };
   } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await dispatching.promise;
+  await within(dispatching.promise, "dispatching signal");
   let passed = false;
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
   await pause(30);
   assert.equal(passed, false, "committing an assessment must not release a pending dispatch");
   admitted.resolve(); await next;
-  const [record] = await f.runtime.waitForNativeReviews();
+  const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(record.reviewStatus, "DEVIATION");
   assert.equal(record.followupStatus, "ADMITTED");
 });
@@ -479,7 +497,7 @@ test("a crashed review releases admission as UNVERIFIED without waiting for its 
 });
 
 test("until_pass holds the next task during correction execution and recheck, then releases only the new PASS", async t => {
-  const rechecking = deferred(), finish = deferred();
+  const rechecking = deferred(t), finish = deferred(t);
   let reviews = 0, childRunId;
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000, review: async () => {
     if (++reviews === 1) return true;
@@ -487,7 +505,7 @@ test("until_pass holds the next task during correction execution and recheck, th
   } });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  assert.equal((await f.runtime.waitForNativeReviews())[0].reviewStatus, "DEVIATION");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "DEVIATION");
   let passed = false;
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
   const child = { ...f.ctx, runId: childRunId };
@@ -497,13 +515,13 @@ test("until_pass holds the next task during correction execution and recheck, th
   assert.equal(f.chain().record.phase, "CORRECTING");
   await f.runtime.agentEnd({ runId: childRunId, success: true,
     messages: [{ role: "assistant", content: "Corrected delivery." }] }, child);
-  await rechecking.promise;
+  await within(rechecking.promise, "rechecking signal");
   assert.equal(passed, false, JSON.stringify({ chain: f.chain().record, warnings: f.warnings }));
   assert.equal(f.chain().record.phase, "REVIEWING");
   finish.resolve(); await next;
   assert.equal(f.chain().record.reviewStatus, "PASS");
   assert.equal(f.chain().record.runId, childRunId);
-  const records = await f.runtime.waitForNativeReviews({ drain: true });
+  const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(records.find(record => record.runId === childRunId).reviewStatus, "PASS");
   assert.equal(f.hostAbort.signal.aborted, false);
 });
@@ -514,7 +532,7 @@ test("manual check recovers the exact native tool call while its own correction 
   t.after(() => f.runtime.dispose());
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await f.runtime.waitForNativeReviews();
+  await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId }, { runId, abortSignal, ...factoryContext } = child;
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
   const toolCallId = "check-in-correction";
@@ -533,7 +551,7 @@ test("manual check recovers the exact native tool call while its own correction 
   bindings.set("ambiguous", { ...original });
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
   bindings.delete("ambiguous");
-  f.chain().expire(); await f.runtime.waitForNativeReviews();
+  f.chain().expire(); await within(f.runtime.waitForNativeReviews(), "native review settlement");
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_(?:INVOCATION_UNAVAILABLE|CANCELLED)/u);
 });
 
@@ -543,7 +561,7 @@ test("an aborted current correction closes its cancelled receipt and terminalize
     const f = await lifecycle(t, { deviation: true, waitMode });
     f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
     await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-    await f.runtime.waitForNativeReviews();
+    await within(f.runtime.waitForNativeReviews(), "native review settlement");
     const child = { ...f.ctx, runId: childRunId };
     await f.runtime.prompt({ prompt: "RC feedback" }, child);
     await f.runtime.agentEnd({ runId: childRunId, success: false, aborted: true }, child);
@@ -570,7 +588,7 @@ test("until_pass deadline releases a correction with no active reviewer and repo
     compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await f.runtime.waitForNativeReviews();
+  await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert(childRunId);
   await f.runtime.prompt({ prompt: "RC feedback" }, { ...f.ctx, runId: childRunId });
   f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { reply_dispatch: 1100 } } } } };
@@ -581,22 +599,22 @@ test("until_pass deadline releases a correction with no active reviewer and repo
   assert.equal(events.length, 0, "no live dispatch run exists yet; never renew a finished correction run");
   assert.equal(f.hostAbort.signal.aborted, false);
   await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, { ...f.ctx, runId: childRunId });
-  assert.equal((await f.runtime.waitForNativeReviews()).length, 1, "a timed-out child cannot restart the same wait chain");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement")).length, 1, "a timed-out child cannot restart the same wait chain");
 });
 
 test("kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running", async t => {
-  const started = deferred(), finish = deferred(); let childRunId, calls = 0;
+  const started = deferred(t), finish = deferred(t); let childRunId, calls = 0;
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000,
     review: async () => { if (++calls === 1) return true; started.resolve(); await finish.promise; return false; } });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await f.runtime.waitForNativeReviews();
+  await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
   await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
-  await started.promise;
+  await within(started.promise, "started signal");
   f.chain().expire(); finish.resolve();
-  await f.runtime.waitForNativeReviews({ drain: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   let task;
   for (let i = 0; i < 30; i++) { task = await findTask({ projectRoot: f.root, sessionId: "host" });
     if (task.status === "STOPPED_UNVERIFIED") break; await pause(10); }
@@ -615,7 +633,7 @@ test("reset during correction releases until_pass even after the original review
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await f.runtime.waitForNativeReviews();
+  await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
   let passed = false;
@@ -628,14 +646,14 @@ test("reset during correction releases until_pass even after the original review
 
 test("late correction tools after wait expiry cannot replace or cancel the next business review", async t => {
   let childRunId, reviews = 0;
-  const started = deferred(), finish = deferred();
+  const started = deferred(t), finish = deferred(t);
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", waitTimeoutMs: 20000, hookTimeoutMs: 20000, review: async () => {
     if (++reviews === 1) return true;
     started.resolve(); await finish.promise; return false;
   } });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await f.runtime.waitForNativeReviews();
+  await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
   f.chain().expire();
@@ -644,13 +662,13 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   await f.runtime.prompt({ prompt: "Next task" }, next);
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "new-write", params: { path: "draft.md" } }, next);
   await f.runtime.reply({ kind: "final", runId: next.runId, sessionKey: next.sessionKey, payload: { text: "New delivery." } }, next);
-  await started.promise;
+  await within(started.promise, "started signal");
   const controller = f.state.reviewController;
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "late-child-write", params: { path: "draft.md" } }, child);
   assert.equal(f.state.nativeRunId, next.runId);
   assert.equal(f.state.reviewController, controller);
   assert.equal(controller.signal.aborted, false);
   finish.resolve();
-  const records = await f.runtime.waitForNativeReviews({ drain: true });
+  const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "PASS");
 });

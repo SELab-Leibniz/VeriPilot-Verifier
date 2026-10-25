@@ -1,2 +1,0 @@
-M01:gt-009 | PASS | gt-009 is fully represented: commodity-browsing spec covers bottom-area display, latest-10 limit, and persistence after close; design.md Decision 3 covers the Preferences (arkdata) storage with key browse_history. No element, condition, or exception missing.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\selected-holdout-01\F03\review\result.json

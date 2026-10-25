@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "The acceptance endpoint is inaccessible with unresolved version, so source-to-acceptance semantic traceability cannot be verified or disproved from this capture.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

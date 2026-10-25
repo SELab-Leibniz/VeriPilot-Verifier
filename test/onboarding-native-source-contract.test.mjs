@@ -97,6 +97,8 @@ test('native source fault in adjudication can still use the original valid panel
 test('canonical core wrapper carries native binding validation capability into onboarding',async t=>{
   const f=await fixture(t),factory=factoryFor(f,{sourceChecking:true});
   const transcript=path.join(f.root,'transcript.jsonl');await fs.writeFile(transcript,f.snapshot.entries.map(e=>JSON.stringify(e)).join('\n')+'\n');
+  await handleRuntimeV2Event({input:{...f.input,hook_event_name:'SessionStart',source:'startup',transcript_path:transcript},
+    projectRoot:f.root,plan:{runtimeV2:f.runtimeV2},reviewerFactory:factory});
   await handleRuntimeV2Event({input:{...f.input,transcript_path:transcript,last_assistant_message:'Stage complete.'},
     projectRoot:f.root,plan:{runtimeV2:f.runtimeV2},reviewerFactory:factory});
   assert.equal(factory.validations.length,1);

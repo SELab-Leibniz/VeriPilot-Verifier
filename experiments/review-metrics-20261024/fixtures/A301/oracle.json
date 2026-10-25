@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "Mixed stock fixture plus exact-byte oracle covers rejection and all-or-nothing preservation; no runtime result is required for M03.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

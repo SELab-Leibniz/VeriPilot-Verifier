@@ -1,2 +1,0 @@
-M12:R04 | PASS | can-cook loads store/recipe read-only, emits {"can_cook":..., "missing": shortfall} without saving; cook subtracts every ingredient only when sufficient (missing empty), persists via save_store, and prints {"cooked": NAME}; CLI wiring and exit 0 support all R04 conjuncts.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v2-dev-01\K07\review\result.json

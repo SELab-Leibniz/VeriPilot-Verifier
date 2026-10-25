@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "The actual delegated validator is unavailable; the wrapper and developer claim prove neither compliance nor a specific violation.",
-  "scope": "SOURCE_IMPLEMENTATION"
-}

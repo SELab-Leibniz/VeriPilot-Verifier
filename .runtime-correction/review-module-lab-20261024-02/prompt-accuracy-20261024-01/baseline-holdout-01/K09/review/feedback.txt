@@ -1,2 +1,0 @@
-M12:R04 | UNVERIFIED | Runtime acceptance of R04 requires actual executions; the workspace holds only kitchen.py source and the contract, with no execution records or KITCHEN_VERIFIED evidence. Source reasoning cannot establish that required acceptance executions occurred, and the reviewer is barred from executing.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-holdout-01\K09\review\result.json

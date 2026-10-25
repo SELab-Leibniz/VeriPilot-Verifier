@@ -1,10 +1,6 @@
-# Examples
+# 最小示例
 
-Self-contained sample projects and policies for the Runtime Corrector plugin.
-Nothing in this directory is loaded automatically; copy what you need into
-your own project.
+- `simple-project/`：可复制的单个 requirements 文档、规则和 reviewer；用插件 CLI 执行 `validate`、`check docs/requirements.md`。
+- `stop-metric-switches/.runtime-corrector/config.yaml`：v2 任务基线、Stop 预算和全部指标默认开关；复制到目标项目后配置宿主模型。
 
-- `veripilot-guarded-delivery/` is a pipeline-specific sample for the
-  VeriPilot guarded-delivery pipeline. It contains the `run-guarded-delivery`
-  orchestration skill (kept out of `skills/` so it does not auto-load with the
-  plugin) and the `guarded-delivery-workflow` authority files it executes.
+初始化模板见 `templates/project/.runtime-corrector/`。示例不进入插件安装包，安装后的配置与复制步骤见快速开始。

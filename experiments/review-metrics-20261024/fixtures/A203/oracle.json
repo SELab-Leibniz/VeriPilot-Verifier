@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "Candidate requirement body is absent from an explicitly incomplete capture; the index cannot establish either qualification or an omission in the unavailable entry.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

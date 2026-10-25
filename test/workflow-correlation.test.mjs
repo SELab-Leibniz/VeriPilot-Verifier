@@ -316,7 +316,7 @@ test("explain and spec expose path templates and correlation selection rules", a
 });
 
 
-test("workflow skill and README state the instance decision boundary", async () => {
+test("workflow skill requires an explicit instance decision", async () => {
   const skill = await fs.readFile(
     path.join(
       PLUGIN_ROOT,
@@ -326,17 +326,9 @@ test("workflow skill and README state the instance decision boundary", async () 
     ),
     "utf8",
   );
-  const readme = await fs.readFile(path.join(PLUGIN_ROOT, "README.en.md"), "utf8");
-  const readmeZh = await fs.readFile(path.join(PLUGIN_ROOT, "README.md"), "utf8");
-
   assert.match(skill, /continue an existing change/);
   assert.match(skill, /create a new change/);
   assert.match(skill, /read-only references/);
   assert.match(skill, /Do not set or expose an active key/);
   assert.match(skill, /Do not infer history, select the latest file/);
-  assert.match(readme, /continuing an\s+existing change or creating a new one/);
-  assert.match(readme, /never selects the "latest" document by modification\s+time/);
-  assert.match(readmeZh, /不负责决定用户是在继续旧 change 还是创建新 change/);
-  assert.match(readmeZh, /不会按修改时间\s*选择“最新”文件/);
-  assert.match(readmeZh, /只配置 `patterns` 而不配置 correlation/);
 });

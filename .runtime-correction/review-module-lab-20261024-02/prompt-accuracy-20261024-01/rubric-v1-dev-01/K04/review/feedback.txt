@@ -1,2 +1,0 @@
-M05:R04 | PASS | AC4.1–AC4.5 (with AC1.2/AC1.3 common conditions) cover every R04 branch: can-cook true/false with missing shortfall, unchanged/no-created store bytes, full deduction and persisted result when sufficient, no consumption when insufficient, and the {"cooked": NAME} return with Unicode preservation.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K04\review\result.json

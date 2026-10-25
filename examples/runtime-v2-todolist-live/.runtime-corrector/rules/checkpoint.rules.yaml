@@ -1,8 +1,0 @@
-version: 1
-
-rules:
-  - id: TODOLIST-FINAL-CHECKPOINT-SCHEMA
-    type: json-schema
-    artifact: final-checkpoint.json
-    schema: schemas/final-checkpoint.schema.json
-    severity: error

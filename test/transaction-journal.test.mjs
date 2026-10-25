@@ -261,17 +261,6 @@ test("valid JSON projection corruption is ignored, and dictionary reordering is 
   assert.deepEqual((await journal.load()).state, { current: { a: 1, b: 2 }, assessments: {} });
 });
 
-test("serialization reproduces quadratic legacy growth and linear deltas even with a large seed", async () => {
-  const { serializedComparison } = await import("../scripts/benchmark-file-transactions.mjs");
-  const rows = [100, 200, 400].map(N => serializedComparison(N, 0));
-  assert(rows[1].oldTransactionBytes / rows[0].oldTransactionBytes > 3.8);
-  assert(rows[2].oldTransactionBytes / rows[1].oldTransactionBytes > 3.8);
-  assert(rows[2].newDeltaBytes / rows[0].newDeltaBytes < 4.1);
-  const large = serializedComparison(200, 100_000);
-  assert.equal(large.oldTransactionBytes - rows[1].oldTransactionBytes, 200 * 100_000);
-  assert.equal(large.newDeltaBytes, rows[1].newDeltaBytes);
-});
-
 test("growing JSON history in other projected files is incremental and historical versions survive compaction", async t => {
   const root = await directory(t), journal = new FileTransactionJournal(root, { checkpointEvery: 5 });
   await journal.initialize({ current: 0 });

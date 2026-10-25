@@ -1,2 +1,0 @@
-# Authoritative acceptance obligation
-AC-failed-cook: with rice sufficient and oil insufficient for a saved dish, cook must exit nonzero with explanatory stderr and leave the existing store bytes exactly unchanged. No ingredient, including the available rice, may be consumed. The test contract must represent this mixed sufficient/insufficient case and an observation that can detect partial writes or partial consumption.

@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The criterion collapses loading, success and failure into any visual/emoji, allowing a permanent substitute to pass while the required loaded image and fallback transitions are absent.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

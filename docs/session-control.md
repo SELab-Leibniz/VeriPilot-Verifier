@@ -102,3 +102,5 @@ sessions:
 结果包含 `projectRoot`、`source`、`identity`、`projectEnabled`、`requestedEnabled`、`effectiveEnabled`、`reason`、`registered`、`recordKey` 和 `settingsFile`。UI 使用 `effectiveEnabled` 显示实际状态，同时展示上层阻断原因。例如 `requestedEnabled: true` 但 `reason: RC_PROJECT_DISABLED` 时，显示“RC 已关闭：项目已停用”。
 
 UI 设置后由 RC 保存并立即协调启停，重复 `set` 同一个值不反转状态。手工编辑没有后台推送，UI 需要通过状态读取刷新显示。
+
+重新启用保留原任务和会话累计纠偏额度。有新的真实业务输入时，后续 Stop 使用独立的启用代次身份，不能复用先前已取消的评估；旧代次的迟到通知不能取消新的等待链。开关变化不会重新开放同一原始输入下已结束的纠偏流程。

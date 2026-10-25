@@ -1,2 +1,0 @@
-M01:R04 | PASS | Decomposition fully mirrors R04: can-cook reads saved recipe/inventory, returns can_cook plus missing shortfalls, preserves store bytes; cook only subtracts when sufficient, persists, returns {"cooked": NAME}. Common conditions (JSON result, no stderr, no store creation) and R05 exceptions (no partial consumption, unchanged bytes) are also covered.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-holdout-01\K03\review\result.json

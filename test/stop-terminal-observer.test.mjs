@@ -3,12 +3,12 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { classifyStopTerminal } from "../experiments/review-metrics-20261024/e2e-plan/stop-terminal.mjs";
+import { classifyStopTerminal } from "./helpers/stop-terminal.mjs";
 import { calculateMetricReport } from "../lib/runtime-v2/metrics.mjs";
 import { ensureTask, taskDirectory, taskStatePath, withTaskState, withTaskDecision, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { atomicWriteJson, sha256 } from "../lib/runtime-v2/utils.mjs";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
-import { runtimeState } from "../scripts/diagnostics/lib/isolated-openclaw.mjs";
+import { runtimeState } from "./helpers/runtime-state.mjs";
 
 // Generate the saved assessment with the real core transaction and native Stop
 // receipt writer. No business process, model, Gateway or live fixture is used.

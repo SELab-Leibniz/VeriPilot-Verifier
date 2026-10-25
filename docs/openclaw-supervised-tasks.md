@@ -1,6 +1,6 @@
 # OpenClaw 受控执行与防递归
 
-目标 OpenClaw 2026.7.1-2；插件 1.9.1-openclaw.3。实际验证范围以[验收记录](openclaw-acceptance.md)为准。
+保留的受控执行模块面向 OpenClaw 2026.7.1-2，供现有集成及兼容测试使用。当前默认入口使用原生 OpenClaw 运行时和 Stop 启动协议，不在主入口注册 `runtime-corrector-supervised`。迁移及能力边界见 [宿主指南](openclaw.md)。以下描述模块内部约束，不代表当前默认安装提供额外执行器。
 
 ## 身份与控制权
 

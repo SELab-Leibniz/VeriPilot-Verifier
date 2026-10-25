@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The catch converts malformed existing JSON into an empty successful store, hiding corruption.",
-  "scope": "SOURCE_IMPLEMENTATION"
-}

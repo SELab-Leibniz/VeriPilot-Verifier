@@ -1,358 +1,58 @@
 # Runtime Corrector（运行时纠偏器）
 
-> English version: [README.en.md](README.en.md) · [文档导航](docs/README.md)
+[English](README.en.md) · [文档导航](docs/README.md)
 
-本分支默认构建 **OpenClaw Session 项目作用域插件**。`2026.7.1-2`（包括 MatrixAssistant）检测到会话 `spawnedCwd` 时自动跟随项目，字段缺失时保留 RC 手动绑定；`2026.10.3` 使用宿主原生项目选择及实际 Worktree。有效项目配置才启用纠偏，选择及切换原因写入宿主日志。用法及验证边界见 [Session 项目说明](docs/session-projects.md)；安装、模型配置及宿主限制见 [OpenClaw 专用指南](docs/openclaw.md)。纠偏规则、Ground Truth、工作流、度量和预算继续共用原有核心。
+在宿主 Agent 工作时检查产物、需求基线和完成证据，将有依据的偏差交回主 Agent 修复。插件保留 Claude Code、CodeAgent 和 OpenClaw 三种宿主；默认构建面向 MatrixAssistant 的 OpenClaw 产物。
 
-**1.9.1-openclaw.3 新增受控执行器**：将模型运行时设为 `runtime-corrector-supervised`，即可在普通聊天中串行执行、验收、修正和复验。配置 `supervisedExecution: false` 可恢复 Hook 模式；该模式仍受宿主写入后拒绝最终续跑的限制。已验证范围与故障记录见 [验收记录](docs/openclaw-acceptance.md)。
+插件不直接修改业务文件。版本 1 支持项目规则、Schema、工作流入边和隔离语义审阅；显式启用的版本 2 增加 Ground Truth、Skill 看护、M01–M16 和有预算的 Stop 纠偏。允许停止与验收通过是不同结果，证据不足必须保留 UNVERIFIED。
 
-**它是什么：** 一个可用于 Claude Code 和兼容 agent 框架的插件，在你的 coding agent 干活时对它做实时评审。agent 写代码，它对照任务要求检查并把问题反馈回去；agent 说"做完了"，它做验收——没做完就拦下来，附上具体待办，直到做完或用完纠偏预算。
+## 安装
 
-**它不做什么：** 从不修改你的项目文件，从不自动应用补丁，从不因为自身故障阻塞开发（fail-open）。所有决定权始终在主 agent 和你手里。
+在源码目录执行：
 
-## 30 秒看懂协作方式
-
-```text
-你发需求 ──────────► 纠偏器把需求记入任务基线（Ground Truth）
-agent 写代码 ──────► 纠偏器审阅改动 ──► 把前 3 条问题 + 候选补丁递回给 agent
-agent 修复或有据拒绝 ──► …（循环）
-agent 说"完成" ────► 终止门验收：
-    有硬性问题、预算未用完 ──► 拦下 + 给出待办清单 ──► agent 继续
-    预算用完 ─────────────► 放行 + 声明"仍有未解决问题"（留档）
-    验收通过 ─────────────► 放行
-```
-
-三个要点：
-
-1. **agent 不需要知道纠偏器存在。** 双方零耦合——纠偏器挂在 Claude Code 的生命周期 Hook 上，换任何模型驱动的 coding agent 都一样工作。
-2. **反馈有配额。** 每次最多递回 3 条最严重问题，其余完整落盘（agent 想看可以自己读），绝不刷屏淹没 agent 的上下文。
-3. **只有"确定性证实的硬问题"才能拦截完成。** 推断出的疑点只提示、不拦截；拦截有预算上限（默认 3 次/epoch，`maxCorrectionsPerEpoch`），永远不会把会话困死。
-
-## 1. 安装
-
-要求：宿主支持下述核心插件能力、**Node.js >= 18**。插件**零 npm 依赖**，支持 Windows、Linux 和 macOS。
-
-```bash
-git clone <repository-url> runtime-corrector
-cd runtime-corrector
-
-# 本分支默认生成 dist/runtime-corrector-openclaw
-npm run build:plugin
-openclaw plugins install ./dist/runtime-corrector-openclaw
-
-# MatrixAssistant：重新安装后额外登记加载路径，避免启动清理误删配置
-node ./scripts/configure-ma-host.mjs
-
-# 兼容验证时同时生成 OpenClaw、Claude、CodeAgent 三个互斥产物
+```sh
 npm run build:plugins
-
-# Claude 只安装 Claude 产物
-claude --plugin-dir ./dist/runtime-corrector-claude
 ```
 
-CodeAgent 请用其正常插件安装流程选择 `dist/runtime-corrector-codeagent/`；该目录的
-`.cac-plugin/marketplace.json` 可供 CodeAgent 识别并安装插件。源码仓库根目录
-不再是可安装插件：它没有自动发现 manifest，必须先构建对应宿主产物。
+- Claude Code：`claude --plugin-dir ./dist/runtime-corrector-claude`
+- CodeAgent：用宿主插件安装流程选择 `dist/runtime-corrector-codeagent`。
+- OpenClaw：`openclaw plugins install ./dist/runtime-corrector-openclaw`。
+- MatrixAssistant：使用其内置 OpenClaw CLI 安装，再按 [宿主指南](docs/openclaw.md) 登记加载路径。
 
-验证装上了：
+只构建默认宿主使用 `npm run build:plugin`，指定宿主使用 `npm run build:plugin -- --host claude`。源码根目录不提供安装 manifest，安装时选择构建后的目录。
 
-```text
-> /runtime-corrector:help
+Claude/CodeAgent 的 CLI 与 Hook 要求 **Node.js >= 18**，支持 Windows、Linux、macOS。Claude 产物包含 `.claude-plugin` 并读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物包含 `.cac-plugin` 并读取 `CODEAGENT3_PLUGIN_ROOT`。根路径在执行前规范化并校验，包括 Windows Git Bash 的盘符路径。OpenClaw 原生入口仅适配 `2026.7.1-2` 和 `2026.10.3`，Node 要求与自动续作边界见宿主指南。
+
+OpenClaw 审阅任务依赖固定版本 `typebox`，产物包含对应依赖和锁文件；离线预装依赖可在产物目录执行 `npm ci --ignore-scripts`。Claude/CodeAgent 的基础 CLI 与 Hook 无需安装 npm 依赖。
+
+## 快速开始
+
+在目标项目中调用 `/runtime-corrector:init`；OpenClaw 使用 `runtime_corrector` 工具：
+
+```json
+{"command":"init"}
 ```
 
-能看到帮助和阶段状态就成功了。
+初始化不会覆盖已有策略。通用模板的阶段默认关闭：先在 `.runtime-corrector/config.yaml` 声明实际文件、规则和 reviewer，再启用需要的阶段。OpenClaw 自动模式要求项目已存在有效配置；可先在该项目运行 `node <插件目录>/scripts/cli.mjs init`，或复制最小配置。项目选择与启停见 [Session 项目](docs/session-projects.md)。
 
-OpenClaw 使用 `runtime_corrector` 工具的 `help` 命令。下文的 slash command 和 CLI 示例保留给原宿主；在 OpenClaw 中用该工具的同名 `command` 操作，具体参数见专用指南。OpenClaw 的 Node 版本要求也以该指南为准。
-
-### 插件兼容性
-
-兼容性按能力而不是版本判断。单一源码在构建期选择宿主，运行时不根据 executable、环境变量或目录猜测宿主。Claude 产物在 `.claude-plugin/` 中包含 `plugin.json` 与 `marketplace.json`，并读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物在 `.cac-plugin/` 中包含 `plugin.json` 与 `marketplace.json`，并读取 `CODEAGENT3_PLUGIN_ROOT`。CodeAgent 在 Windows + Git Bash 下传入的 `/d/...` 会先规范化为原生盘符路径，再做 absolute path、realpath、manifest identity 和入口 containment 校验。
-
-两个产物都提供七个生命周期事件及相同的 JSON stdin/stdout 语义。若只有错误宿主的 root 环境变量，启动器报告 `PLUGIN_HOST_MISMATCH`；若当前宿主变量存在，另一宿主变量不会参与冲突判断。Hook 从宿主环境读取根路径；slash command 和 Skill 则把宿主的插件根占位符作为一个带引号的独立参数传给固定 Node 启动器，并保留环境变量回退，因此普通 Bash/PowerShell 工具没有导出 root 变量时也能定位插件。
-
-`PowerShell` 与 `Monitor` 会保留在相关工具 Matcher 中；它们是可选工具。运行环境没有其中任一工具时，安装、生命周期处理和其余工具的纠偏行为不受影响。
-
-<details><summary>其他安装方式</summary>
-
-```bash
-# 作为 marketplace 插件常驻（不必每次带 --plugin-dir）
-claude
-> /plugin marketplace add /path/to/runtime-corrector/dist/runtime-corrector-claude
-> /plugin install runtime-corrector@runtime-corrector-local
-```
-</details>
-
-## 2. 快速开始（零配置）
-
-装好插件，打开**任意**项目直接工作——不需要建任何配置。新任务第一次执行可能改变项目或启动工作流的动作前（`Skill`、`Bash`、`PowerShell`、`Write`、`Edit`、`NotebookEdit`、`Monitor`），惰性纠偏屏障会同步完成三件事：
-
-1. **发现材料**：自动找到 `README*`、`docs/**/*.md`、名字含 `requirement`/`spec` 的文档，并识别平台（`oh-package.json5` → harmonyos）。结果记入 journal（`DERIVED_CONFIG` 事件）。
-2. **建立任务基线**：两个独立的抽取器把材料和你的请求分解为原子要求，一个裁定器怀疑式合并，然后基线**冻结**——此后只有你的真实消息能改基线，agent 自己的推断不能。
-3. **开始评审**：此后每次改动、每次宣布完成，都对照冻结基线检查。
-
-第一次拦截通常长这样：
-
-```text
-[runtime-corrector] Terminal correction 1/3
-任务未完成：README 要求的删除流程尚未实现。
-- CR-003：材料要求滑动删除，但不存在任何删除路径
-- M14：里程碑"列表交互"没有验证证据
-继续任务并纠正上述偏差，或给出有证据的拒绝理由。
+```sh
+node <插件目录>/scripts/cli.mjs validate --cwd <项目目录> --format json
+node <插件目录>/scripts/cli.mjs stages --cwd <项目目录> --format json
+node <插件目录>/scripts/cli.mjs check docs/requirements.md --cwd <项目目录> --format json
 ```
 
-想看到并修改自动派生的配置：运行 `/runtime-corrector:init`，它会把派生结果物化为带注释的 `.runtime-corrector/config.yaml`。
+CLI `check` 执行确定性检查并返回待执行的语义审阅请求；宿主 Hook 才负责启动隔离审阅。可以直接复制 [最小规则项目](examples/simple-project/) 或 [Stop 配置](examples/stop-metric-switches/.runtime-corrector/config.yaml)。详细步骤见 [快速开始](docs/tutorial.md)。
 
-## 3. 它与 coding agent 如何协作
+## 配置与行为
 
-### 什么时候触发
+项目可控制阶段、匹配路径、规则、JSON Schema、reviewer、输出目录和审阅时限。版本 2 必须显式启用相应能力。Stop 默认开启 M08、M09、M12、M13、M15、M16，额外文件质量审查默认关闭；每会话和每流程默认最多实际开始三次纠偏。
 
-纠偏器挂在 Claude Code 生命周期 Hook 上，agent 在每个触发点是**同步暂停**的——反馈赶在下一步动作之前到达：
+配置错误与普通 Hook 故障按各入口的 fail-open 约定处理；活动 Stop 无有效结算时保留未验证状态。不要把所有故障都理解成无条件放行。取消、超时、依据变化及额度耗尽均不会伪造 PASS。
 
-| 时机 | 纠偏器做什么 |
-|---|---|
-| 会话开始 | 校验配置，并清理过期内部运行租约及 Runtime Corrector 原子写临时文件；不创建任务、不启动评审员 |
-| 你发消息 | 已有任务只记录新回合并重置本回合屏障；普通问候保持无评审 |
-| 相关工具执行前 | 首次越过惰性屏障并冻结基线；Skill 还会建立并看护其执行契约 |
-| agent 写文件后 | 审阅该产物：确定性检查 + 隔离的语义评审 |
-| agent 宣布完成 | 即使本回合没有工具调用，也先越过屏障，再由终止门验收并放行或拦截 |
-| 会话退出 | 只为已建立索引的任务做尽力而为的生命周期记账；不做清理、不加载配置、不读 transcript、不重试基线建立 |
+- [配置与规则](docs/configuration.md)
+- [接口、命令与宿主协议](docs/interfaces.md)
+- [工作原理与信任边界](docs/how-it-works.md)
+- [Stop 审查与预算](docs/stop-task-review.md)
+- [MatrixAssistant / OpenClaw](docs/openclaw.md)
 
-### 信号怎么递回去
-
-| 通道 | 性质 | 内容 |
-|---|---|---|
-| 上下文注入 | 建议性 | 前 3 条诊断 + 前 2 个候选补丁内联；完整清单的磁盘路径。补丁**绝不自动应用**，修复还是有据拒绝由 agent 决定 |
-| Stop 拦截 | 强制性、有预算 | `decision: block` + 待办清单。只有硬性问题可拦截；试满 `maxCorrectionsPerEpoch` 次后放行并声明 `CORRECTION_BUDGET_EXHAUSTED` |
-| 磁盘留痕 | 拉取式 | `.runtime-correction/` 下的完整诊断、账本、journal——agent 与人都可随时查阅 |
-
-```text
-.runtime-correction/
-├── latest/<stage>/<artifact>/diagnostic.md   # 最新完整诊断
-├── latest/<stage>/<artifact>/patch.diff      # 候选 Git Patch（绝不自动应用）
-├── latest/<stage>/<artifact>/result.json     # 机器可读结果
-├── runs/<stage>/<artifact>/<roundId>/        # 历史轮次归档
-└── tasks/<taskId>/
-    ├── ground-truth/current.md               # 冻结基线（人类可读）
-    ├── evaluations/*.json                    # 各次评审报告
-    └── journal/events.jsonl                  # 追加式事件流
-```
-
-### 评审员在哪里运行
-
-每个评审员（抽取、裁定、Skill、产物、Stop、实现）都是**隔离的只读子会话**：只有 `Read`/`Grep` 两个工具，输出被 JSON Schema 强约束，跑完即释放。评审内容不会污染 agent 的上下文——除了上面那些有配额的反馈。
-
-会话有三种起法：需要看开发对话的角色用 `fork`（默认，从父会话分叉）；**任务基线建立默认用 `detached`**——它只需要请求里附带的材料，分叉一个持续变大的父会话有害无益（材料正文会直接内联进请求，评审员无需再去读文件）；`independent` 则是全新会话 + 指定 provider，用于异构交叉校验。
-
-## 4. 五个名词
-
-| 名词 | 含义 |
-|---|---|
-| Ground Truth（任务基线） | 从材料 + 你的消息中分解出的原子要求账本；建立后冻结 |
-| 冻结 | 冻结后只有你的显式消息能增删基线条目，agent 推断永远不能 |
-| finding（问题） | 一次评审发现的具体偏差，永远引用基线条目或客观证据 |
-| 纠偏预算 | 终止门最多拦截几次（默认 3）；用完放行、问题留档——保证不困死会话 |
-| 保证等级 | 本次验收实际验证到哪一层：static（静态）/ build（构建）/ device（设备），见 §6 |
-| 开放问题 | 材料中的歧义会以"问题 + 默认安全解读"入基线，绝不虚构指令；你回一句话即可裁决 |
-
-## 5. 配置
-
-新增 **[M16｜生产实现覆盖率](docs/m16-production-implementation-coverage.md)**：以本次任务冻结的需求及实现范围为基准，检查真实存在、生产可达、核心处理、数据流、必要分支和可追溯证据。每个实现单元必须同时满足全部必要条件才通过；入口、按钮、SDK 导入、固定结果或测试替身不能单独证明覆盖。
-
-Stop 的 M01–M16 均可通过 `.runtime-corrector/config.yaml` 中的 `stopCorrection.metrics` 单独开关。默认仅开启 **M08、M09、M12、M13、M15、M16**，其它指标及独立文件质量审查默认关闭。关闭项不计分或阻断，不显示成 PASS。详见 [指标开关与配置示例](docs/stop-metric-switches.md)。
-
-**多数项目不需要任何配置。** 需要时建 `.runtime-corrector/config.yaml`，优先级恒为：插件默认 < 自动派生 < 显式配置。
-
-想改什么，看这里：
-
-| 你想 | 改哪个键 |
-|---|---|
-| 只观察不介入（做对照实验） | `shadowMode: true` |
-| 关键环节换个模型交叉校验 | `reviewers.modelPolicy.preset` |
-| CI 里必须真机验证才算过 | `implementationCorrection.device.mode: required` |
-| 终止门少拦/多拦几次 | `stopCorrection.maxCorrectionsPerEpoch` |
-| 同一条问题别反复提醒 | `deviationLoop.maxDeliveriesPerFamily` |
-| 关掉 Kit 检查 | `implementationCorrection.platform: null` |
-
-### 三个常用配方
-
-```yaml
-# ① 观察模式：只记录、零介入（用于对照评估）
-shadowMode: true
-
-# ② 关键门用独立模型交叉校验（推荐）：基线裁定 + 终止门
-reviewers:
-  modelPolicy:
-    preset: critical-gates      # critical-gates = 上述两角色；all = 全部角色
-    provider:
-      baseUrl: https://api.example-provider.com
-      apiKeyEnv: REVIEWER_API_KEY   # 环境变量的"名字"——配置里绝无机密
-      model: example-reviewer-model
-
-# ③ CI 强制设备级验证：没连设备算基础设施故障，直接拦截
-implementationCorrection:
-  device:
-    mode: required
-```
-
-#### 用自己的模型 provider
-
-**机密不进配置。** `apiKeyEnv` 存的是环境变量的*名字*，值只存在于评审子进程环境里。变量未设置时评审退回默认会话并记 `REVIEWER_PROVIDER_DEGRADED`。
-
-**用实际配置的 reviewer CLI 测网关。** Reviewer 默认跟随已构建产物的宿主，也可通过项目级 `reviewerRuntime.executable` 或 `RUNTIME_CORRECTOR_AGENT_EXECUTABLE` 指向同协议的原生 CLI；网关能响应 `POST /v1/messages` 并不够。配置、会话交接与边界见 [Reviewer CLI 兼容性](docs/reviewer-cli-compatibility.md)。
-
-CodeAgent fresh reviewer 不传会话参数，由宿主创建持久会话并从 JSON 返回 `session_id`；恢复使用 `--sessions <id>`，fork 使用 `--sessions <id> --fork-session`。CodeAgent 产物会拒绝 `--session-id`、`--resume` 和 `--continue`。所有宿主的 review 默认超时为 20 分钟，最大 60 分钟；项目可通过 limits.semanticReviewTimeoutMs、reviewers.defaults.timeoutMs 和逐角色 timeoutMs 覆盖。
-
-```bash
-ANTHROPIC_BASE_URL=<不含 /v1 的根地址> ANTHROPIC_AUTH_TOKEN=<key> \
-  claude --print --model <模型> "say OK"
-```
-
-| 结果 | 含义 |
-|---|---|
-| 返回 `OK` | 可用于评审员 |
-| `API returned an empty or malformed response (HTTP 200)` | 网关改写了 CLI 流量——不可用，curl 全过也没用 |
-
-### 完整键参考
-
-```yaml
-version: 2                      # 2 启用运行时纠偏能力
-locale: zh                      # 反馈语言；不写则按环境变量（LC_ALL/LANG）自动推导
-
-dynamicGroundTruth:
-  enabled: true
-  materialRoots: [docs/]        # 不写则自动发现
-  panel:
-    size: 2                     # 基线抽取 pass 数；0 关闭 onboarding
-    adjudicator: true           # 怀疑式合并
-
-stopCorrection:
-  enabled: true
-  maxCorrectionsPerEpoch: 3     # 终止门预算
-
-deviationLoop:
-  maxDeliveriesPerFamily: 5     # 同一偏差族最多重复反馈几次；0/null 关闭
-
-implementationCorrection:
-  enabled: true
-  platform: harmonyos           # 平台适配器；不写自动识别；null 关闭 Kit 检查
-  checklistPaths: [docs/kits.md] # 可选：显式 Kit 清单文档
-  checklistSection: "10\\.1"    # 清单章节标题正则（默认按内容特征匹配）
-  kitColumnIndex: 0             # 清单表中 Kit 名所在列（表头能识别时自动定位）
-  # 清单文档词汇（默认见 config/checklist-vocabulary.v1.json，可按语言/文档习惯覆盖）
-  kitHeaderPattern: "kit|依赖"   # 哪一列是能力列（匹配表头）
-  candidacyMarkers: "候选|可行性" # 整张表属于"候选/可行性"性质 → 只提示不阻断
-  hedgeMarkers: "候选|POC|未来"  # 单元格自身的保留措辞 → 该条只提示不阻断
-  device:
-    mode: auto                  # auto=按环境降级 / required=CI 强制 / off=只静态
-  deviceBudgetMs: 600000        # 构建/设备类验证的墙钟上限
-
-evidenceRoots: [evidence]       # 证据唯一性守卫（不写则关闭）
-
-output:
-  directory: .runtime-correction
-```
-
-**反馈循环上限。** 纠偏器每次改动后都会重新评审，所以一条 agent 满足不了的发现会无限循环：发现 → 反馈 → 改动 → 再发现。
-
-`maxDeliveriesPerFamily`（默认 5）限制同一条发现最多**送达**几次。超过后该发现被"停发"：
-
-- 仍然评审、仍然记账、状态仍是 `OPEN`、仍计入指标
-- 只是不再重复注入 agent 上下文，观测记录标 `suppressedBy: "LOOP_BOUND"`
-
-三点注意：
-
-| | |
-|---|---|
-| 只算已送达的 | 观察模式从不触发上限，对照臂行为不变 |
-| 终止门豁免 | 它是门不是唠叨，另由 `maxCorrectionsPerEpoch` 约束，否则可能带着未闭合的阻断项退出 |
-| `FIXED` 的不停发 | 回归时可以重新发声 |
-
-**评审角色。** 每个角色都接受 `model`、`effort`、`timeoutMs`、`maxBudgetUsd`、`session`、`provider`；`defaults` 兜底全部角色（effort `low`、20 分钟、session `fork`；单个角色最大 60 分钟）。显式角色配置始终优先于 `modelPolicy` 预设。
-
-| 角色 | 何时运行 |
-|---|---|
-| `groundTruthExtractor` | 材料 → 任务基线 |
-| `onboardingAdjudicator` | 合并并冻结基线 |
-| `skillReviewer` | 用到某个 skill/工作流步骤时 |
-| `artifactReviewer` | 写出阶段产物时 |
-| `stopReviewer` | agent 宣布"完成"时（终止门） |
-| `implementationReviewer` | 拿生产代码对照基线核查时 |
-
-`session` 决定评审员在哪儿跑：`fork`（默认，从父会话分叉）· `detached`（全新会话，用环境凭据，免 provider）· `independent`（全新会话 + 指定 provider）。
-
-version 1 的产物/Stage 纠偏（逐文件硬规则、语义审阅、workflow 边）见 [docs/configuration.md](docs/configuration.md)；`/runtime-corrector:init` 会把完整参考保留为 `config.reference.yaml`。
-
-### 命令
-
-| 命令 | 作用 |
-|---|---|
-| `/runtime-corrector:init` | 把派生配置物化为可编辑的 `config.yaml` |
-| `/runtime-corrector:help` | 项目感知的帮助与阶段状态 |
-| `/runtime-corrector:validate` | 校验项目策略 |
-| `/runtime-corrector:stages` | 查看/开关 v1 产物 Stage |
-| `/runtime-corrector:explain <stage>` / `:spec <stage>` | 解释当前策略 / 完整 Stage 规范 |
-| `/runtime-corrector:check <artifact>` | 手动检查一个产物 |
-
-## 6. 验证深度：device / build / static
-
-实现验收按环境条件自动选择验证深度。所有具体命令由平台适配器声明——核心不含任何平台命令：
-
-| 档位 | 条件 | 实际执行 |
-|---|---|---|
-| `device` | 探测到设备/模拟器 + 工具链 | 构建门 + 安装/启动/截图冒烟 |
-| `build` | 仅有工具链 | 构建门（同源缓存，不重复构建） |
-| `static` | 皆无 / 平台未声明 / `mode: off` | 静态核验 |
-
-三条纪律：**缺设备只降低保证等级，绝不改变判定方向**——跑不了的检查一律跳过并记录原因（绝不判通过，也绝不算 agent 的偏差）；真正跑了且客观失败的（构建报错、启动崩溃）才是拦截性问题；每次验收反馈都带一行保证等级声明，静态绿灯永远不会冒充设备级绿灯。
-
-## 7. 出问题时
-
-插件的普通检查**失败即放行**：自身故障绝不阻塞开发。**终止门是唯一例外**：当最终验收本身无法完成
-时，它不会假装验收通过，而是先阻断并要求重试——但这有硬性上限，绝不会困死会话：
-
-| 情形 | 行为 |
-|---|---|
-| 评审失败（基线刷新失败、评审超时或崩溃） | 阻断，最多 2 次；之后放行并声明「已完成但未经验证」 |
-| 插件运行时自身崩溃（读不到会话记录、状态文件损坏等） | 同样阻断最多 2 次后放行——插件自身的 bug 绝不能困死会话 |
-| 连重试计数都写不进去（本地状态本身坏了） | **立即放行**并声明：故障必须朝着「失败即放行」的方向退化，而不是相反 |
-| `stopCorrection.enabled: false` 或 `shadowMode: true` | 门禁完全不武装，崩溃时也不会阻断 |
-
-阻断与放行的文本都会写明上面这个关闭开关，并跟随 `locale` 输出中文或英文；放行时附带
-`STOP_VERIFICATION_UNAVAILABLE` 标记（该标记不随语言变化，便于脚本识别）。纠偏预算与这套基础设施
-重试**互不消耗**：一次外部故障不会花掉开发者的纠偏次数，反之亦然。
-
-排障看 `.runtime-correction/tasks/<taskId>/journal/events.jsonl`：
-
-| Journal 事件 | 含义 | 处置 |
-|---|---|---|
-| `DERIVED_CONFIG` | 信息性：自动派生了哪些材料/平台 | 无需处理；想覆盖就 `/runtime-corrector:init` |
-| `ONBOARDING_DEGRADED` | 基线建立失败；退回增量抽取，账本未冻结 | 多为瞬时；检查评审超时/预算，会自动重试 |
-| `REVIEWER_PROVIDER_DEGRADED` | 独立 provider 不可用；该次评审退回 fork | 导出 `apiKeyEnv` 指名的环境变量 |
-| `STOP_ASSESSMENT_FAILED` / `STOP_ASSESSMENT_RETRY` | 终止评审自身出错；先阻断并要求重试 | 查看记录的错误；反复出现说明评审环境有问题（如 API key、网络） |
-| `STOP_VERIFICATION_UNAVAILABLE` | 重试上限用尽，已放行但本次完成未经验证 | 该完成不可当作已验证；修好评审环境后重跑一次终止验收 |
-| `SKILL_REVIEW_FAILED` / `STOP_REVIEW_FAILED` | 某次隔离评审崩溃；标记 `UNVERIFIED` | 瞬时故障；反复出现再排查 |
-| `DEVICE_VERIFICATION_UNAVAILABLE` | 无设备/工具链；验证降档并声明 | 按需连接设备；CI 用 `device.mode: required` |
-| `STOP_GATE_DISARM_IGNORED` | 任务进行中有人把 `stopCorrection` 关掉，但没有用户提出过——门禁继续生效 | 若确属你本人意图，直接说一句「关闭 stopCorrection」即可；否则说明被评审方试图绕过门禁 |
-
-Hook 自身崩溃时输出有限次的 `[runtime-corrector] v2 features failed open` 提示（观察模式下完全静默），会话继续。
-
-## 8. 设计保证
-
-- **只读评审。** 评审子进程仅有 `Read`/`Grep`；一切内容当证据而非指令。
-- **绝不代改。** 不修改项目文件、不自动应用补丁；变更决定权在主 agent。
-- **任何地方都没有机密。** 代码无端点/key 字面量；配置只存环境变量名字。
-- **平台即数据。** 平台约定（模块命名、源码目录、设备命令）是 `config/platforms/*.json` 数据；未知或 `null` 平台只是跳过相应检查。
-- **确定性检查与模型无关。** 硬规则、Kit 集成、构建门、证据唯一性、闭环归因都是纯代码，可复现。
-- **不接管实例决策。** 插件不负责决定用户是在继续旧 change 还是创建新 change，也不会按修改时间选择“最新”文件；只配置 `patterns` 而不配置 correlation 时，所有命中文件按设计同属一个 legacy bundle。
-- **观察模式。** `shadowMode: true` 记录完全相同的检测但零介入。
-
-## 更多文档
-
-完整导航见 [docs/README.md](docs/README.md)：
-
-- v2 设计与配置：[docs/runtime-corrector-v2-design.md](docs/runtime-corrector-v2-design.md)
-- v1 产物/Stage 配置与规则：[docs/configuration.md](docs/configuration.md)
-- 一轮纠偏的端到端机理：[docs/how-it-works.md](docs/how-it-works.md)
-- 命令、CLI、Hook JSON、自定义 Matcher：[docs/interfaces.md](docs/interfaces.md)
-- 教程：[docs/tutorial.md](docs/tutorial.md)、[docs/six-stage-workflow-from-zero.md](docs/six-stage-workflow-from-zero.md)
-- `examples/` 下可直接复制的业务示例
+验证与维护命令见文档导航中的维护说明。所有自动测试使用本地受控输入；构建和测试不会启动真实模型评测。

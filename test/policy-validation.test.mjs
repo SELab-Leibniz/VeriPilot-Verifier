@@ -68,27 +68,6 @@ artifacts:
 });
 
 
-test("validate command accepts the shipped TodoList Prompt Contract example", () => {
-  const example = path.join(
-    PLUGIN_ROOT,
-    "examples",
-    "harmonyos-todolist-prompt-contract",
-  );
-  const cli = spawnSync(process.execPath, [
-    CLI,
-    "validate",
-    "--cwd",
-    example,
-    "--format",
-    "json",
-  ], { encoding: "utf8" });
-  assert.equal(cli.status, 0, cli.stderr);
-  const result = JSON.parse(cli.stdout);
-  assert.equal(result.status, "valid");
-  assert.equal(result.policyFiles.some((file) => file.path.endsWith("checkpoint.schema.json")), true);
-});
-
-
 test("Ground Truth paths cannot escape the project", async (t) => {
   const cwd = await workspace(t);
   const policyRoot = path.join(cwd, ".runtime-corrector");

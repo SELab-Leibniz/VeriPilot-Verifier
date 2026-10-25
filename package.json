@@ -11,11 +11,8 @@
     "check": "node ./scripts/cli.mjs",
     "build:plugin": "node ./scripts/build-plugin.mjs",
     "build:plugins": "node ./scripts/build-plugin.mjs --all",
-    "test:artifacts": "node --test test/plugin-artifacts.test.mjs",
-    "test": "node --test --test-concurrency=4",
-    "benchmark:session-end": "node ./scripts/benchmark-session-end.mjs",
-    "benchmark:file-transactions": "node ./scripts/benchmark-file-transactions.mjs",
-    "test:python-todolist": "node ./scripts/validate-python-todolist.mjs"
+    "test:artifacts": "node --test test/plugin-artifacts.test.mjs test/stop-task-package.test.mjs",
+    "test": "node ./scripts/test.mjs"
   },
   "engines": {
     "node": ">=18"

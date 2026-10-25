@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The acceptance endpoint resolves syntactically but semantically checks help output, leaving R04 persisted-consumption traceability invalid.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

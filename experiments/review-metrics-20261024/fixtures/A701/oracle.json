@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "Both explicitly required endpoints resolve and concern the same saved-consumption obligation despite nonidentical labels; no implementation/runtime link is required.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

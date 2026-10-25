@@ -1,2 +1,0 @@
-M01:R04 | DEVIATION | D4.1 covers only the can_cook boolean; R04's mandatory {"missing": ingredient-to-shortfall object} response field is absent from the entire decomposition (D4.2's "missing store" is a different concept). Coverage gap in the can-cook contract.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K02\review\result.json

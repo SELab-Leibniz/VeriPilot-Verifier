@@ -1,79 +1,49 @@
-# Stop 单项 Review 交付范围
+# Stop 审查、预算与状态
 
-所有 M01–M16 均可在项目配置中独立开关。默认仅开启 M08、M09、M12、M13、M15、M16，其余指标和独立文件质量职责关闭；下文描述支持范围，不能当作默认全部运行。完整配置、任务冻结和全关行为见 [Stop 指标审查开关](stop-metric-switches.md)。
+生产 Stop 由 `orchestrator.mjs` 进入 `production-stop.mjs` 与 `assessStopCorrection()`，再通过 `stop-review-round.mjs`、`stop-task-group.mjs` 完成共享核心审查。没有静默回退旧 Stop 核心。显式只读验证复用审查机制，不领取业务续作准入，也不终止已有自动流程。
 
-本版固定选择经过隔离对照的 Prompt。OpenClaw 默认 `stopReviewEngine: "task"`；设置为 `"native"` 可恢复之前的审阅传输。配置属于插件设置，未改变项目需求或验收分母。全指标提示实验记录在 [隔离实验](../experiments/review-metrics-20261024/README.md)。
+## 配置
 
-## 接入位置
-
-既有 Stop 编排仍负责 Ground Truth 刷新、Stop 分类、指标分母、截止时间、纠偏次数和宿主续作。既有 collector 负责逐项落盘、失败隔离、PASS 缓存、引用字节核验与有界短反馈。新模块仅替换其中可支持的单项审阅。
-
-- TASK_COMPLETE 且明确适用于当前任务的 M01–M16：每个冻结对象一个会话，按指标和证据归属选定职责。
-- M01–M07 分别检查需求/验收/测试契约的覆盖、资格及追踪；不把实际执行证明当作文档质量的前提。
-- M08、M11 检查原 Skill 或固定流程，M09、M10 根据对象归属检查标准和强制经验。M08 使用正式冻结 Skill 约束和原来源，不伪装成普通 GT claim。
-- M12 在实现审查中做源码子证明；普通 Stop 按原对象区分运行、过程或产物证明。实现审查同时支持 M09 源码标准。
-- M13–M15 分别检查验收、里程碑与关键旅程闭合。有当前成功证明才 PASS；真实反证才 DEVIATION；旧版、缺失、助手自述或未连接的证明保留 UNVERIFIED。
-- [M16 生产实现覆盖率](m16-production-implementation-coverage.md)检查冻结实现单元的真实存在、生产可达、核心处理、数据流、必要分支和可追溯证据，六项全部满足才 PASS。普通 Stop 与可选实现审查均使用源码证据；M16 PASS 不替代 M12 运行验收或 M13–M15 闭合证明。
-- 条件适用性尚待判断、阶段完成、中间 Stop、分类、Ground Truth 与 Skill watcher 的专门审阅：继续原 native 路径。支持全部指标不代表支持所有判定枚举或所有阶段。
-
-新提取输出用独立的 `applicabilityKind`（`CURRENT_TASK`、`CONDITIONAL`、`FUTURE`、`UNKNOWN`）选择执行器。原 `applicability`、Skill 的 `condition`、义务正文和来源保持完整，文件/命令范围不会被替换为枚举。`CURRENT_TASK`只决定路由，不证明实际条件成立、指标适用或已经履约。新模型输出缺少合法枚举会被拒绝并走原格式修复；旧ledger和Skill文档不迁移，已知当前任务旧拼写仍兼容，其余旧自由范围继续保守native。
-
-新工厂按单个冻结对象分派，同源多个指标仍是不同职责；不枚举验收条件的笛卡尔积。没有新增总评模型。M01 的对象覆盖 PASS 不被转换成文件整体质量 PASS。真实 Stop 将原补充文件质量职责独立为一次 native 审阅，仅检查当前交付文件，不读取已生成的指标报告；沿用原 schema、来源核验和总截止。它不是逐文件隔离，也不缓存为空对象的 PASS。直接模块实验需 request 与 factory 双标记才追加此职责。本版未消除 general Stop 与后续 implementation reviewer 之间所有既有重复检查。
-
-## 输入、输出与稳定性
-
-原始义务、公共约束与显式依赖复用同一 `reviewScopeClaims` 选择函数。过大的必读 JSON 按准确 UTF-8 字节分片，未删条件、未另起模型摘要。完整原始基线另外保存，供有具体疑问时检索。除源码专属证明外，原事件分别保存以支持候选计划、验收单元及过程/运行检索；过程证明可以在没有业务文件时检查。初始 Prompt 不携带完整过程索引或整份源码文件表。
-
-产物审查先要求程序建立候选归属。父 Stop 复用已有 artifact 配置的明确`metrics`及路径匹配，一次生成`artifactCandidates`，包含节点、指标、实际文件SHA和声明来源。`metricCheckpoint=true`、文件名、源码manifest或出现在导航中都不能代替这个归属。M01–M07及M09/M10的产物证明没有合法绑定时，在复制项目和启动worker前返回原对象的UNVERIFIED；保留全部义务与分母，不回退全局搜索。旧caller未提供绑定也采用此行为，可能存在但未登记的旧候选不会自动被评审。
-
-有绑定时，模型仍判断候选内容是否具有所需角色、是否满足完整原条件；绑定本身不是履约证明。worker只接收该组候选，P/D必须至少引用一个真实绑定文件。原基线仍完整保留，配置、Skill及规则只作为依据，不能借引用变成候选。缺少必要的比较上下文仍为U，不推断全局不存在或要求新增原任务未授权的文档。这次没有新增候选分类Agent，也没有过程消息候选的新声明协议；未绑定的历史对话候选保留U。
-
-过程与执行证明仍用原始事件按需检索。通用执行器允许`targetFiles`为空而使用合法`targetPrefixes`；明确源码manifest的源码证明保留一个导航目标。必读basis、范围验证、原文读取与引用hash检查保持不变。前一轮仅去掉错误导航种子的实验仍在120秒未提交，说明自由发现不能代替产物候选的输入前提；该失败保留在实验报告中。
-
-源码仅在允许的业务文本范围内复制；私密目录、认证文件、构建缓存与符号链接不能进入该输入。实现引用仍受原 sourceManifest 约束。模型只读其专属快照，可用 read、grep、find、ls 和本轮历史检索，不能执行或改写业务文件。
-
-每个 Review 使用宿主独立原生会话；认证、Agent 循环、请求重试和上下文压缩交给 OpenClaw。RC 用独立观察日志、checkpoint 和 review_history 恢复已确认的读取凭证，不依赖宿主内部会话格式。每项仅提交状态、短诊断和最多六个 citeId；程序获取原文和位置。父取消、任务替换、GT/源码变化与迟到结果均不能升级为 PASS。单项未完成保留为 UNVERIFIED，其他已完成项仍由原 collector 保存和反馈。
-
-PASS 缓存身份包含新协议、固定 Prompt 摘要及候选声明。复用和发布前核验所有绑定文件及声明配置的SHA，即便本项没有引用它们；变更的归属不能复用旧PASS。独立适用范围元数据采用新缓存协议，原型中的native PASS不能冒充新执行器验证。复用前仍核验冻结输入和读取依赖；证据不足或范围太大不能安全缓存时重新审查，不猜测旧结论有效。
-
-候选表定义本次冻结的比较范围；下次Stop重新匹配，文件增删会改变缓存身份。本轮没有在每个单项期间重新遍历glob来监视新增匹配文件，不能将已有文件的hash围栏描述成整个项目目录的实时监视。
-
-当前缓存仍沿用最多128个读取依赖的保守限制；大项目可能不复用 PASS。普通当前任务指标按一对象拆分，阶段或未知适用性继续 native；未知扩展指标保留原组批。执行器中止时只透传白名单失败类型与该项 result.json 位置，未知提供商错误不直接回显给宿主。
-
-2026-10-25 的 [Stop 收敛与终止修复](experiments/stop-convergence-fixes-20261025.md) 增加了父期限后的回执/任务收尾、中断与未启动项清单、只复查原失败过程项的保守退出，以及明确源码交付的文档指标适用性。无进展退出保留 UNVERIFIED 和原失败，不视作整体 PASS。绑定交付内容的 PASS 可在新执行轨迹后复用；运行和过程证明仍依赖当前历史。旧的“完整 Stop 尚未通过”指前次真实长跑，本次离线回归不能替代新的真实端到端验证。
-
-## 开发与安装
-
-仓库开发环境仅安装独立 JSON Schema 依赖：
-
-```powershell
-npm ci --prefix lib/review-task --ignore-scripts
-npm test
-npm run build:plugin -- --host openclaw
+```yaml
+version: 2
+artifacts: []
+dynamicGroundTruth:
+  enabled: true
+stopCorrection:
+  enabled: true
+  waitMode: until_pass
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+  assessmentTimeoutMs: 1200000
+  feedbackReserveMs: 180000
+  reviewGroupSize: 3
+  fileQualityReviewEnabled: false
 ```
 
-发布产物的根 package.json 和锁文件包含相同的精确 typebox 依赖，使用 `npm ci --ignore-scripts` 安装。构建排除所有层级 node_modules 和实验数据。其它 CLI 宿主不会新增这些根依赖，也不会加载这条 OpenClaw 传输。
+指标默认值与全关行为见 [指标开关](stop-metric-switches.md)。两层次数可以为零；分组大小和时间为正整数，预留必须小于总时限。默认 20 分钟包含 3 分钟结算/交付预留；缩短总窗口时需要显式缩短预留。
 
-RC 已移除 Pi 及其传递安装依赖和 undici override。宿主内部依赖由宿主管理。不是将 stopReviewEngine 切成 native：task 协议保留，通过 runTask 注入宿主执行器；既有非 Stop 原生 JSON 审查路径也保留。
+旧 `maxCorrectionsPerEpoch` 只映射为 `maxCorrectionsPerFlow`；旧 `waitTimeoutMs` 只映射为本次 `assessmentTimeoutMs`，均产生弃用提示。新旧同义字段同时出现时报错。需求变化不清零会话额度，业务修复不占已经结束的审查窗口。
 
-审查工具通过 api.registerTool(ctx) 注册，绑定私有会话和生命周期；只把工具名加入白名单不会生成工具。读取凭证在同步 tool_result_persist 边界登记：必须是绑定会话内的真实调用 ID、非 synthetic、成功的最终工具消息，并且与已核验哈希的原文页逐字匹配。onAgentToolResult 是已脱敏的观察副本，仅作遥测，不登记凭证。checkpoint v3 与新缓存身份拒绝复用旧回执。source_read 每页最多 400 行/51200 字节，并按宿主观察接口限制拆成最多 6000 字节的原文块；超过单页的大行保留为无法读取，不推断已读。分页 nextOffset 必须继续读取至完整依据覆盖。grep 使用流式扫描，扫描中即执行全局 100 条命中上限并检查取消；不再读完整文件或累积全部命中后截取。更换执行器后 PASS 缓存身份已更新。
+## 范围与分组
 
-隔离宿主验证只读安装包，配置、会话、日志和安装产物放在 RC 下。scripts/diagnostics/stop-task-integration.mjs 和 stop-task-complex.mjs 的 --live 使用实际宿主，需要 RC_OPENCLAW_HOST_ROOT；不会直接创建独立模型 runtime。历史实验结论不作为本次迁移验收。
+先核对额度再准备 GT、分类、收集源码及启动 reviewer。全关、零额度或历史迁移无法核对时不启动这些模型工作。审查冻结原要求、条件、例外、公共约束和证据版本；中间输出、等待用户、外部阻塞、阶段完成和任务完成分别确定适用范围。
 
-## 解释结果
+同一优先级、同一指标的至多 K 项由一个 Agent 顺序提交。组合任务书只复用公共材料，不改变条目身份或指标分母。调度按 P0/P1/P2 和指标游标持久化，派发时推进；本轮失败组不重新派发。单项提交经完整证明校验并持久化后返回回执，不能用组 PASS 替代成员判断。部分保存后崩溃或截止，已保存项继续参与收尾，未完成项明确保留。
 
-TodoList M16 实验之后的调用身份、中断收尾、M16 重复审查、文件质量调度和混合基线修复见 [修复记录](experiments/todolist-m16-fixes-20261025.md)。当前先执行独立文件质量职责，再按原共享期限收集指标；有读取证明的 M16 结论在同次 Stop 内保留原归属，不重复启动实现审查。历史完整实验结论不因机制回归通过而改写。
+原文工具、字节分页、累计读取预算、程序引文和 M16 生产链证明见 [读取边界](stop-review-bounds.md) 与 [M16](m16-production-implementation-coverage.md)。必要依据未变的单项 PASS 可保守复用；过程/执行结果必须符合当前历史。配置、模型、指令、绑定或证据变化不能复用失效判断。额外文件质量审查由独立开关控制。
 
-后续调用链修复见 [本轮修复与验证边界](experiments/stop-call-chain-fixes-20261024.md)：所有可核验传输统一使用程序读取证明；文件质量缺项进入短反馈与整体未验证状态；准备与发布保留期限/当前性围栏。完整长跑仍暂停。
+## 额度、启动与等待
 
-2026-10-24 的全路径审查和长跑暂停状态见 [Stop 审查与分层修复](experiments/stop-path-audit-20261024.md)。当前候选补齐 typed CONDITIONAL 的 TASK_COMPLETE 单项、已绑定交付文件的逐文件质量任务；阶段、未知范围和无绑定质量任务仍可能使用 native 回退。完整 Stop 尚未通过，旧段落描述的是已提交版本的边界。
+会话额度跨任务、需求修订和项目作用域累计；流程额度只限制本条纠偏链。只有宿主可信地确认实际开始一次业务修复才同时扣一次，两者不因审阅或通知次数增加。未知在途请求保留预留待核对，不自动重发，也不直接当成未开始。
 
-同一冻结输入的实现复核现在复用原有 PASS 缓存机制，和 Stop 使用独立索引；所有输入身份、原文引用和读取依赖仍须重新校验。实际输入或目录依赖改变就重审。checker-only 失败不再唤醒业务宿主；保留已有结果，由原程序重试。存在已证实偏差时仍允许交付部分反馈。源码复核不能抹掉先前已证实的失败，源码未知也不会被升级为运行通过。
+`assessment` 等审查结算和有效反馈交付，然后解除等待；流程最多实际纠偏一次。`until_pass` 在有当前有效偏差且额度允许时继续等待已实际开始的修复及后续 Stop。未开始的排队请求最多等到当前总截止；及时开始的修复不受旧审查计时限制，后续 Stop 有新窗口。
 
-本版的目标是稳定收集可定位的纠偏信息，不承诺完美检出。已知的未知商品 ID fallback 漏报仍是准确度边界。只有源码子证明通过不代表运行、其它指标或整个 Stop 通过。
+入口额度耗尽会跳过自动审查并明确放行，不额外赠送最后一次自动复验，也不冒充 PASS。没有可信逐次启动历史的旧会话进入迁移核对，不能默认累计次数为零。
 
-未验证项仍使指标报告为UNVERIFIED。既有策略只对hard且要求执行证据的缺项阻断；非阻断指标缺少可确认候选时可能允许任务结束，但保留`verificationIncomplete`。因此“宿主正常结束”不能被报告为“所有指标PASS”。
+## 取消、依据与恢复
 
-验证区分：scripted-provider 的故障与缓存机制、真实模型的生产单项传输、使用宿主/reviewer doubles 的 Native Stop 续作闭环。不会把它们合并宣称为完整真实模型端到端验收。原业务项目和原 session 保持只读；构建和隔离验证不要求替换运行中的 Gateway。
+取消、关闭、项目切换、总截止和反馈发布均有身份与当前性围栏。有效偏差子集可以重新筛选，不能生成新条目或悄悄修改旧条目。检查器失败属于基础设施状态，不能伪造成业务违规；同一轮不会因此反复重派。
 
-上一版 M01/M05/M12 的接入记录见 [原交付验证](experiments/stop-task-integration-20261024.md)。全指标提示、正式工厂/collector 及真实 Gateway 的独立入口见 [本轮实验](../experiments/review-metrics-20261024/README.md)，默认只预检，真实模型调用需显式 --live。stop-task-integration.mjs 保留厨房/花店旧案例回归。stop-task-complex.mjs 另外依赖本机此前的冻结 complex-preflight-01 capture，不会读取当前原项目或 session；这些复杂业务快照不随安装包分发。experiments 整体不进入插件发布产物，避免把业务快照、oracle 或隔离宿主状态混入安装包。
+结束流程释放同一流程内旧 Stop 的等待，保留原评估事实。恢复必须确认原拥有进程已退出，保留逐项回执并关闭旧审查轮；缺少拥有者时沿用原绝对截止。迟到事件只影响所属 Stop，不能取消后来的独立等待链。
+
+宿主必须提供经过验证的启动门、真实开始观察和精确运行取消能力；否则返回 `HOST_START_PROTOCOL_UNSUPPORTED`，保存偏差、解除等待且不自动续作。MatrixAssistant 和不同 OpenClaw 版本的具体边界见 [宿主指南](openclaw.md)。离线回归覆盖机制，真实模型准确性、桌面长时流程、重启恢复及 K 分组性能尚未完成整体验收。

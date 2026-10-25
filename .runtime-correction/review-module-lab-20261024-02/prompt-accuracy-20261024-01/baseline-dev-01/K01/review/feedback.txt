@@ -1,2 +1,0 @@
-M01:R04 | PASS | D4.1–D4.4 fully decompose R04: can-cook reads recipe/inventory, returns can_cook and missing shortfall object, preserves store bytes; cook subtracts all quantities only when sufficient, persists, returns {"cooked": NAME}. Common conditions (no store mutation for can-cook, failure handling, failed-cook atomicity) are represented in D1.5/D4.3/D5.1/D5.2. No contradictions.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\K01\review\result.json

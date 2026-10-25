@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-store.mjs";
 
 let build, pluginRoot, createRuntime, findTask, withTaskState;
 before(async () => {
@@ -16,7 +17,13 @@ before(async () => {
   ({ findTask, withTaskState } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
 });
 after(() => fs.rm(build, { recursive: true, force: true }));
-const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+const deferred = t => { let resolve; const promise = new Promise(r => { resolve = r; }); t?.after(resolve); return { promise, resolve }; };
+async function within(promise, description) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}`)), 5000);
+  })]); } finally { clearTimeout(timer); }
+}
 
 async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
@@ -39,8 +46,10 @@ dynamicGroundTruth:
 stopCorrection:
   enabled: ${stop}
   waitMode: ${waitMode}
-  waitTimeoutMs: 20000
   assessmentTimeoutMs: 15000
+  feedbackReserveMs: 1000
+  metrics:
+    M01: true
 implementationCorrection:
   enabled: false
 `);
@@ -51,7 +60,11 @@ implementationCorrection:
   const factory = async params => {
     calls++;
     let result;
-    if (params.schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations: [] };
+    if (params.schema.properties.operations) result = { summary: "Frozen draft obligation", taskClassification: "CONTINUATION",
+      operations: params.request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements",
+        text: "Deliver the requested draft.", verificationTarget: "ARTIFACT", authority: "USER_EXPLICIT", severity: "HARD",
+        source: { ref: params.request.sourceCatalog.find(source => source.kind === "USER_MESSAGE").ref,
+          kind: "USER_MESSAGE", subject: "MAIN_TASK" } }] : [] };
     else {
       await review?.(params);
       result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [],
@@ -80,17 +93,19 @@ implementationCorrection:
     async deactivate(scope) { deactivated.push(scope); tasks.delete(scope.identity.sessionId); },
   };
   const api = { id: "runtime-corrector", pluginConfig: {}, config: {}, logger: { warn: m => warnings.push(m) },
-    runtime: { version: "2026.7.1-2", agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
+    runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
       session: { getSessionEntry: async ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(root, "sessions.json"),
         resolveSessionFilePath: (_id, entry) => entry.sessionFile, runWithWorkAdmission: async (params, callback) => callback(params.signal) } } } };
   const options = { pluginRoot, projectScopes: projects, sharedState, reviewerFactory: factory, nativeHooks: true };
   const runtime = createRuntime(api, options);
+  t.after(() => runtime.dispose());
   async function session(id) {
     const ctx = { agentId: "main", sessionId: id, sessionKey: `agent:main:${id}`, runId: `${id}-run`, workspaceDir: root, abortSignal: hostAbort.signal };
     const sessionFile = path.join(root, `${id}.jsonl`);
     await fs.writeFile(sessionFile, [{ type: "session", id }, { type: "message", id: `${id}-u`, parentId: null,
       message: { role: "user", content: "Write a draft." } }].map(JSON.stringify).join("\n"));
     entries.set(ctx.sessionKey, { sessionId: id, sessionFile });
+    await runtime.sessionStart({ sessionId: id }, ctx);
     await runtime.prompt({ prompt: "Write a draft." }, ctx);
     await runtime.beforeTool({ toolName: "write", toolCallId: `${id}-initial`, params: { path: "draft.md" } }, ctx);
     return ctx;
@@ -141,12 +156,12 @@ test("Session off/on restores its task and budget, admits its first new tool, an
 });
 
 for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: disabling in-flight Stop cannot terminalize its task or publish late PASS`, async t => {
-  const started = deferred(), finish = deferred();
+  const started = deferred(t), finish = deferred(t);
   const f = await fixture(t, { stop: true, waitMode, review: async () => { started.resolve(); await finish.promise; } });
   const ctx = await f.session("late");
   const payload = { text: "Delivered." };
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload }, ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   const before = await f.task(ctx);
   await f.set(ctx, false);
   const stopped = await f.task(ctx);
@@ -154,7 +169,7 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: disablin
   assert.deepEqual(stopped.verification, before.verification);
   assert.equal(stopped.stop.correctionAttempts, before.stop.correctionAttempts);
   finish.resolve();
-  const records = await f.runtime.waitForNativeReviews({ drain: true, settle: true });
+  const records = await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement");
   assert(records.every(record => record.reviewStatus === "CANCELLED"));
   const after = await f.task(ctx);
   assert.equal(after.status, before.status);
@@ -163,26 +178,36 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: disablin
   assert.equal(f.hostAbort.signal.aborted, false);
 });
 
-test("same-run off/on starts a fresh Stop review without reusing its cancelled checkpoint", async t => {
+test("same-run off/on with fresh user input never reuses its cancelled Stop checkpoint or session quota", async t => {
   let reviews = 0;
-  const started = deferred(), finish = deferred();
+  const started = deferred(t), finish = deferred(t);
   const f = await fixture(t, { stop: true, waitMode: "until_pass", review: async () => {
     if (++reviews === 1) { started.resolve(); await finish.promise; }
   } });
+  const store = createStopCorrectionStore({ directory: path.join(f.root, "host-state/runtime-corrector-stop-sessions") });
+  await store.initializeSession({ sessionId: "same-run", initialize: { kind: "VERIFIED_HISTORY",
+    evidence: { kind: "CONTROLLED_HOST_START_RECORDS" }, starts: [
+      { executionId: "prior-execution", flowId: "prior-flow", startedAt: Date.now() - 1000 },
+    ] } });
   const ctx = await f.session("same-run");
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "First delivery." } }, ctx);
-  await started.promise;
+  await within(started.promise, "started signal");
   await f.set(ctx, false);
   await f.set(ctx, true);
+  const prompt = "Continue the same task after re-enabling correction.";
+  await fs.appendFile(path.join(f.root, "same-run.jsonl"), "\n" + JSON.stringify({ type: "message",
+    id: "same-run-resume", parentId: "same-run-u", message: { role: "user", content: prompt } }) + "\n");
+  await f.runtime.prompt({ prompt }, ctx);
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "new-write", params: { path: "draft.md" } }, ctx);
   const current = f.sharedState.states.get("main:same-run");
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "New delivery." } }, ctx);
   finish.resolve();
-  const records = await f.runtime.waitForNativeReviews({ drain: true, settle: true });
+  const records = await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement");
   assert.equal(records.length, 2);
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(records[1].reviewStatus, "PASS", JSON.stringify(records));
   assert.equal(current.abortSignal.aborted, false, "late cancellation cannot abort the reopened controller");
+  assert.equal((await store.inspect("same-run")).used, 1, "re-enabling never replenishes prior session usage");
 });
 
 test("manual control changes are rechecked before a completed review can commit", async t => {
@@ -193,7 +218,7 @@ test("manual control changes are rechecked before a completed review can commit"
   } });
   const ctx = await f.session("manual"), before = await f.task(ctx);
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
-  await f.runtime.waitForNativeReviews({ drain: true, settle: true });
+  await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement");
   assert.equal(changed, true, "the file-equivalent change occurs after the reviewer returned");
   const after = await f.task(ctx);
   assert.deepEqual(after.verification, before.verification);
@@ -210,11 +235,11 @@ test("cleanup failure still cancels RC and allows later recovery without a new t
   const brokenReceipt = path.join(receiptDirectory, "broken.json");
   await fs.writeFile(brokenReceipt, "{invalid JSON");
 
-  const locked = deferred(), release = deferred();
+  const locked = deferred(t), release = deferred(t);
   const holding = withTaskState({ projectRoot: f.root, taskId: before.taskId }, async () => {
     locked.resolve(); await release.promise;
   });
-  await locked.promise;
+  await within(locked.promise, "locked signal");
   const rejected = assert.rejects(f.set(ctx, false), SyntaxError);
   try {
     // Keep the independent metadata write pending while retire encounters the

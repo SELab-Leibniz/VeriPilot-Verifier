@@ -1,2 +1,0 @@
-M12:gt-007 | DEVIATION | Card "image" is Text(c.emoji), a permanent stand-in with no Image element or async load path; the required placeholder-during-image-loading clause has no trigger and no transient placeholder state, so the operation plus its temporary fallback is not established.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v2-dev-01\F08\review\result.json

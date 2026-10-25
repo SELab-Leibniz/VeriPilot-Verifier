@@ -1,0 +1,40 @@
+version: 1
+
+enabledStages:
+  - selection
+
+artifacts:
+  - name: selection
+    stage: selection
+    type: selection
+    patterns:
+      - kit-map.md
+      - "**/stages/30-selection/deliverables/kit-map.md"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+      - "**/stages/30-selection/deliverables/kit-map.md"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: selection.rules.yaml
+    review:
+      enabled: true
+      criteria: selection.reviewer.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000

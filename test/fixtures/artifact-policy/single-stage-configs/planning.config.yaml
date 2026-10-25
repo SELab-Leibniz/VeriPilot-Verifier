@@ -1,0 +1,44 @@
+version: 1
+
+enabledStages:
+  - planning
+
+artifacts:
+  - name: planning-bundle
+    stage: planning
+    type: planning-bundle
+    outputKey: bundle
+    format: auto
+    patterns:
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning.rules.yaml
+    review:
+      enabled: true
+      criteria: planning.reviewer.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000

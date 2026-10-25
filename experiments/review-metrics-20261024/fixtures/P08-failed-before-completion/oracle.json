@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The completed original capture shows verifier failure then completion without a successful retry.",
-  "scope": "PROCESS_COMPLIANCE"
-}

@@ -1,2 +1,0 @@
-M12:gt-007 | PASS | Index.ets commodityCard declares each list item with emoji image placeholder (accessibility alt), name, and price, rendered for all commodities; placeholder is displayed since images are emoji-simulated. Requirement satisfied by source declarations; no contradiction found.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\F08\review\result.json

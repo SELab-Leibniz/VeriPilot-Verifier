@@ -1,2 +1,0 @@
-M01:R04 | PASS | Decomposition covers all of R04: can-cook reads saved recipe/inventory, returns can_cook boolean plus missing shortfall object (deficit = required minus available, {} when adequate), preserves store bytes/does not create store; cook proceeds only when sufficient, subtracts all required quantities, persists, and returns {"cooked": NAME}.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\selected-holdout-01\K03\review\result.json

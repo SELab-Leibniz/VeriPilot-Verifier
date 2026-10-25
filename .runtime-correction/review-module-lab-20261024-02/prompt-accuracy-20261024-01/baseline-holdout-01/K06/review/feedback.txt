@@ -1,2 +1,0 @@
-M05:R04 | DEVIATION | AC4.1/AC4.2 cover can-cook's read and JSON output and AC4.3/AC4.4 cover cook's deduction and persistence, but no criterion asserts can-cook leaves store bytes unchanged; R04's explicit "does not change store bytes" clause and R01's "can-cook never create or modify store files" condition are uncovered (AC1.3 scopes byte-invariance to the two list commands only).
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-holdout-01\K06\review\result.json

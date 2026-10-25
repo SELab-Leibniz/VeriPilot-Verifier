@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "All three document gates are present and linked; app implementation and runtime are explicitly deferred, so their absence is not a failure.",
-  "scope": "EXECUTION_CLOSURE"
-}

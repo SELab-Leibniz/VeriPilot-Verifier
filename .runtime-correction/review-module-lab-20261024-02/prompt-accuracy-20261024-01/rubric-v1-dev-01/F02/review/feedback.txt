@@ -1,2 +1,0 @@
-M01:gt-007 | DEVIATION | commodity-browsing spec covers the home card list (image/name/price) but omits the gt-007 clause "图片加载时显示占位图" (placeholder while list images load); the only placeholder statement in the corpus belongs to the commodity-detail spec (gt-014), not the home list. Missing obligation in formal decomposition.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\F02\review\result.json

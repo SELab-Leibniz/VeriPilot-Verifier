@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "Same invocation contains actual verifier exit 0/KITCHEN_VERIFIED for the current source before completion.",
-  "scope": "PROCESS_COMPLIANCE"
-}

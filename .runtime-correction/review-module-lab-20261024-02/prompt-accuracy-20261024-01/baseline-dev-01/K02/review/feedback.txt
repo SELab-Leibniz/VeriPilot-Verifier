@@ -1,2 +1,0 @@
-M01:R04 | DEVIATION | D4.1 covers only the can_cook boolean and omits R04's required "missing" ingredient-to-shortfall field of the can-cook return, so the decomposition does not fully represent R04.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-dev-01\K02\review\result.json

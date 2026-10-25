@@ -4,7 +4,13 @@ dynamicGroundTruth:
   enabled: true
 stopCorrection:
   enabled: true
-  # Omitted entries inherit these defaults. Selection is frozen per task.
+  waitMode: until_pass
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+  assessmentTimeoutMs: 1200000
+  feedbackReserveMs: 180000
+  reviewGroupSize: 3
+  fileQualityReviewEnabled: false
   metrics:
     M01: false
     M02: false
@@ -22,9 +28,3 @@ stopCorrection:
     M14: false
     M15: true
     M16: true
-  # Independent file quality; enabling it does not enable M01–M16.
-  fileQualityReviewEnabled: false
-  maxCorrectionsPerEpoch: 3
-implementationCorrection:
-  enabled: true
-  platform: null

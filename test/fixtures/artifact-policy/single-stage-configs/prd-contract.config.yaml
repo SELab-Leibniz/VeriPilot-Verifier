@@ -1,0 +1,42 @@
+version: 1
+
+enabledStages:
+  - prd-contract
+
+artifacts:
+  - name: prd-contract
+    stage: prd-contract
+    type: prd-contract
+    patterns:
+      - PRD.md
+      - "**/stages/40-prd-contract/deliverables/PRD.md"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+      - PRD.md
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+      - "**/stages/30-selection/deliverables/kit-map.md"
+      - "**/stages/40-prd-contract/deliverables/PRD.md"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: prd-contract.rules.yaml
+    review:
+      enabled: true
+      criteria: prd-contract.reviewer.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 50
+  maxFeedbackChars: 28000
+  maxReviewerChars: 14000

@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The scenario signals failure but never observes post-command storage; partial inventory consumption or changed bytes can pass this test contract.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

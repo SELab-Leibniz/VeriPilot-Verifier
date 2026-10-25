@@ -1,8 +1,0 @@
-*-dev-*/
-*-holdout-*/
-*-extension-*/
-selected-v2-*/
-preflight-*/
-*.log
-integration-plan/*/
-e2e-plan/preflight-*/

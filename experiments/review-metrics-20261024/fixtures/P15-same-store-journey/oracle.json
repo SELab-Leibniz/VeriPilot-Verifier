@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "All required actions/results share the current source, recipe and store and conclude in the required separate-process inventory state.",
-  "scope": "EXECUTION_CLOSURE"
-}

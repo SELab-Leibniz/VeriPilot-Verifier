@@ -1,5 +1,0 @@
-{
-  "expected": "DEVIATION",
-  "mechanism": "The complete candidate permits positive fractional numbers and booleans instead of positive integers excluding booleans. This weakens the input type obligation, irrespective of whether application code exists.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

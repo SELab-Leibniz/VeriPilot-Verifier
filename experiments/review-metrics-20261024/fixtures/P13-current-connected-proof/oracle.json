@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "Bound current-source commands and independent list observe the required persisted reduction on the same store.",
-  "scope": "EXECUTION_CLOSURE"
-}

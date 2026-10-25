@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "An authorized approval exists only for v1/another digest; current-v2 approval or refusal is unavailable. The current document gate is unproved, not observed rejected.",
-  "scope": "EXECUTION_CLOSURE"
-}

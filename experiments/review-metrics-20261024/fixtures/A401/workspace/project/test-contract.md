@@ -1,2 +1,0 @@
-# Query shortage contract
-Fixture: recipe 汤={"water":3,"salt":2}, pantry={"water":1,"salt":2}. Save the original store bytes B. Run a new process: kitchen.py --store <fixture> can-cook 汤. Pass iff exit=0, stderr is empty, parsed stdout equals {"can_cook":false,"missing":{"water":2}}, and the post-run store bytes equal B. Otherwise fail. Inspect only that selected store; no unlisted shared fixture or oracle is used.

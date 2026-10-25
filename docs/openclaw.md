@@ -1,6 +1,6 @@
 # MatrixAssistant / OpenClaw 纠偏与 Stop 审查
 
-本分支正在实现 [Stop 纠偏需求 v1.1](stop-correction-refactor-requirements.md)，以 MatrixAssistant 内置 OpenClaw `2026.7.1-2` 为主要适配目标。生产 Stop 已切换到新评估核心和单 Agent 分组提交；整体真实验收与性能对照尚未完成。详细证据和未完成范围见 [实现进度](stop-correction-refactor-implementation.md)。分支改动不会自动安装到现有 MatrixAssistant。
+当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。
 
 Session 项目解析、显式启用和作用域隔离继续遵循 [Session 项目说明](session-projects.md)。7.1（包括 MA）优先跟随宿主持久化的 `spawnedCwd`，缺失时才使用 `/rc-project bind /绝对项目目录`；自动模式不接受手动绑定。没有有效项目配置时不启动自动审查。
 
@@ -33,7 +33,6 @@ MatrixAssistant 适配通过公开 `before_prompt_build` 和 `before_agent_run` 
 
 检查器故障不会自动变成业务缺陷，本轮失败组不重派。取消、关闭、项目失效和总截止都有围栏；未知在途请求保留预留待核对，不自动重发。旧 Stop 的有效保存作为历史保留，不能以“放行”替代整体验收通过。
 
-此前 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md) 和 [记账 App 实测](experiments/rc-postmerge-ledger-live-test.md) 属于旧协议的历史证据，不替代本分支新流程验收。`stop-correction-ma-contract.mjs` 可在隔离 Gateway 中用本地提供器验证新协议接线；它不能证明真实模型语义准确性或 K 分组的性能收益。
 
 ## Review 超时配置
 
@@ -53,9 +52,11 @@ reviewers:
 
 原生 Hook 等待 reviewer 时，RC 每 30 秒发送标记为 `runtime-corrector.review` 的工具进度 `update`。MA 1.10.1 的桌面主进程会过滤自定义 Agent 流，旧版 `runtime-corrector.progress` 无法刷新空闲检查；新版本经宿主 `session.tool` 和 MA 现有聊天事件入口更新进度。只发送 `update/end`，不发送模型工具调用 `start` 或结果 `result`，不覆盖业务工具错误摘要；阶段提示也不再写入助手正文。定时器不冒充诊断模型进展，不延长原预算；取消、父运行结束及截止时间均停止周期上报。
 
-Stop 等待使用同一通道，只刷新实际受阻的当前请求；已结束主运行的后台审查及尚无 runId 的排队请求不发送保活。兼容验证读取安装包内真实主进程过滤/转发函数和前端计时/工具分支，未知版本或入口变化直接报错。此项已验证 MA `1.10.1` + OpenClaw `2026.7.1-2` 的函数契约，仍不等于完整 Electron 桌面进程的真实长时验收。详见 [MA 传输修复与验证边界](experiments/ma-progress-transport-20261022.md)。
+Stop 等待使用同一通道，只刷新实际受阻的当前请求；已结束主运行的后台审查及尚无 runId 的排队请求不发送保活。兼容验证读取安装包内真实主进程过滤/转发函数和前端计时/工具分支，未知版本或入口变化直接报错。此项已验证 MA `1.10.1` + OpenClaw `2026.7.1-2` 的函数契约，仍不等于完整 Electron 桌面进程的真实长时验收。
 
 ## 安装前提
+
+OpenClaw 产物声明的 Node 范围为 `>=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0`，并须同时满足所安装宿主的更严格要求。原生审阅任务固定依赖 `typebox 1.3.27`；构建产物包含 npm v3 锁文件，可在产物目录执行 `npm ci --ignore-scripts` 预装。
 
 ### MA 启动后插件配置消失
 
@@ -66,14 +67,14 @@ MA `1.8.160` 的 `cleanupStalePluginConfigs` 不扫描标准的 `~/.openclaw/ext
 ```powershell
 npm run build:plugin
 node "<MA安装目录>/resources/openclaw/openclaw.mjs" plugins install --force ./dist/runtime-corrector-openclaw
-node ./scripts/configure-ma-host.mjs
+node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs
 ```
 
 配置命令验证已安装入口，将该插件的绝对目录追加到 `plugins.load.paths`，启用 RC 及所需 Hook 权限，保留其他配置，并在写入前备份原文件。重复执行不增加重复路径或重复备份。自定义配置位置可传 `--config <openclaw.json>` 和 `--plugin-root <已安装插件目录>`；如此前清理已删除 RC 模型设置，可显式传 `--reviewer-model <provider/model>` 恢复。命令不会自动读取旧备份或恢复其中的其他设置。重新打开 MA 后生效。
 
-MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
+MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
-合并不自动安装。当前候选包版本 `1.9.1-openclaw.11-session-projects.12`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
+合并不自动安装。当前包版本 `1.9.1-openclaw.11-session-projects.12`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{

@@ -1,2 +1,0 @@
-M05:R04 | DEVIATION | Coverage gap: acceptance criteria cover can-cook outcomes, byte-preservation and failed cook, but no criterion covers the sufficient-stock cook path required by R04 (subtract all required quantities, persist, return {"cooked": NAME}) or its success exit/JSON/stderr conditions.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v2-dev-01\K05\review\result.json

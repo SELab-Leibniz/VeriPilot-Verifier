@@ -22,7 +22,13 @@ async function fixture(t) {
     await fs.rm(temporary, { recursive: true, force: true });
   });
   const sourceRoot = path.join(temporary, "source"), outputRoot = path.join(temporary, "output");
+  for (const name of ["commands", "config", "hooks", "knowledge", "lib", "scripts", "skills", "specs", "templates", "docs", "README.md", "README.en.md"]) {
+    await fs.cp(path.join(SOURCE, name), path.join(sourceRoot, name), { recursive: true,
+      filter: file => !["node_modules", ".runtime-correction"].includes(path.basename(file)) });
+  }
   const worker = path.join(sourceRoot, "lib/review-task");
+  await write(path.join(sourceRoot, "packaging/runtime-modules.json"),
+    await fs.readFile(path.join(SOURCE, "packaging/runtime-modules.json"), "utf8"));
   await write(path.join(sourceRoot, "package.json"), {
     name: "runtime-corrector", version: "1.9.1", type: "module", engines: { node: ">=18" },
     bin: { "runtime-corrector": "./scripts/cli.mjs" }, scripts: { check: "node scripts/cli.mjs" },
@@ -31,7 +37,7 @@ async function fixture(t) {
     await write(path.join(worker, file), await fs.readFile(path.join(SOURCE, "lib/review-task", file), "utf8"));
   }
   await write(path.join(worker, "review-task.mjs"), "export const packaged = true;\n");
-  for (const directory of ["commands", "skills"]) await fs.mkdir(path.join(sourceRoot, directory));
+  for (const directory of ["commands", "skills"]) await fs.mkdir(path.join(sourceRoot, directory), { recursive: true });
   await write(path.join(sourceRoot, "hooks/hooks.json"), { hooks: {} });
   await write(path.join(sourceRoot, "docs/openclaw.md"), "# Review package fixture\n");
   for (const host of ["claude", "codeagent", "openclaw"]) {
@@ -42,10 +48,17 @@ async function fixture(t) {
     }
   }
   await fs.mkdir(path.join(sourceRoot, "packaging/hosts/openclaw/skills"));
+  await write(path.join(sourceRoot, "packaging/hosts/openclaw/skills/runtime-corrector/SKILL.md"),
+    await fs.readFile(path.join(SOURCE, "packaging/hosts/openclaw/skills/runtime-corrector/SKILL.md"), "utf8"));
   for (const file of ["node_modules/top-sentinel", "lib/review-task/node_modules/worker-sentinel",
     "examples/nested/node_modules/example-sentinel", ".runtime-correction/review-module-lab/experiment-sentinel",
     "examples/nested/.runtime-correction/private-sentinel", "packaging/hosts/openclaw/skills/node_modules/skill-sentinel",
-    "experiments/live-kitchen-private/host/openclaw.json", "experiments/review-fixtures/oracle-sentinel"]) {
+    "experiments/live-kitchen-private/host/openclaw.json", "experiments/review-fixtures/oracle-sentinel",
+    "unknown-directory/report.md", "scripts/unknown-tool.mjs", "docs/report.md", "unlisted-root.md",
+    "lib/review-task/report.json", "lib/report.md", "lib/unknown-tools/probe.mjs",
+    "lib/one-off-diagnostic.mjs", "lib/runtime-v2/one-off-diagnostic.mjs",
+    "lib/review-task/one-off-diagnostic.mjs", "lib/openclaw/one-off-diagnostic.mjs",
+    "skills/runtime-corrector-init/report.md", "config/report.json", "test/example.test.mjs"]) {
     await write(path.join(sourceRoot, file), "Never include this file in a deliverable.\n");
   }
   return { sourceRoot, outputRoot, worker };
@@ -70,6 +83,13 @@ test("every artifact excludes nested installations and private experiment output
     assert(!names.some(name => name.split("/").some(part => ["node_modules", ".runtime-correction"].includes(part))));
     assert(!names.some(name => name.includes("sentinel")));
     assert(!names.some(name => name === "experiments" || name.startsWith("experiments/")));
+    for (const unwanted of ["unknown-directory", "unknown-tools", "unknown-tool.mjs", "one-off-diagnostic.mjs", "report.md", "report.json", "unlisted-root.md", "test", "examples", "packaging", "build-plugin.mjs", "plugin-builder.mjs"]) {
+      assert(!names.some(name => name.split("/").includes(unwanted)), `${host}: ${unwanted}`);
+    }
+    const pkg = await read(path.join(artifact, "package.json"));
+    assert.deepEqual(pkg.scripts, { check: "node ./scripts/cli.mjs" });
+    assert.deepEqual(names.filter(name => name.startsWith("lib/hosts/") && name.endsWith(".mjs")).sort(),
+      [...new Set([`lib/hosts/${host}.mjs`, "lib/hosts/openclaw.mjs"])].sort());
     if (host !== "openclaw") {
       const pkg = await read(path.join(artifact, "package.json"));
       assert.equal(pkg.dependencies, undefined);

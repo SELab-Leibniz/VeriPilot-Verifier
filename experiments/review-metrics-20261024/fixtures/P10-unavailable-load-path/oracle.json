@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "The real load path is missing; neither propagation nor swallowing can be established from its import.",
-  "scope": "SOURCE_IMPLEMENTATION"
-}

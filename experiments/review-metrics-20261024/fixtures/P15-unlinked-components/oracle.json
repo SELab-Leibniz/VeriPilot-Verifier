@@ -1,5 +1,0 @@
-{
-  "expected": "UNVERIFIED",
-  "mechanism": "Different setup/store resources demonstrate isolated components, without a connected persistent user journey; no actual transition is shown failing.",
-  "scope": "EXECUTION_CLOSURE"
-}

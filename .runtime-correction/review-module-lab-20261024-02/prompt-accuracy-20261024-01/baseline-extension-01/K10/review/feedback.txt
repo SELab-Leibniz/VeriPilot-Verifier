@@ -1,2 +1,0 @@
-M12:R04 | DEVIATION | cmd_can_cook hardcodes "can_cook": True even when _shortfall returns non-empty missing; R04 requires the boolean to reflect actual cookability. Impact: can-cook returns false positives for known recipes with insufficient stock, while R05 reserves errors for unknown recipes.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\baseline-extension-01\K10\review\result.json

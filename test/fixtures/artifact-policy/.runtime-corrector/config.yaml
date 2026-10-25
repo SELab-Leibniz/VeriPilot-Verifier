@@ -1,0 +1,130 @@
+# IR -> Planning -> Selection -> PRD Contract 示例看护配置
+#
+# 这个文件只属于 examples，不是插件默认策略。它把四个业务 Stage 的输出路径、
+# 硬规则与语义 reviewer 组合成一个可直接运行的项目配置。
+#
+# 字段关系：
+# - enabledStages 决定哪些 artifacts 可以被触发；
+# - artifacts[].patterns 决定 Write/Edit 的文件归属，按声明顺序 first-match-wins；
+# - relatedPatterns 为当前节点补充只读上游，relatedRoot: project 表示从项目根扫描；
+# - rules 处理可机械判断的格式，review 处理事实、完整性与上下游一致性；
+# - output 决定诊断是否落盘，limits 限制单次审阅规模。
+version: 1
+
+# Stage 总开关。可填写下方 artifacts 中声明的 ir、planning、selection、
+# prd-contract；未列出的 Stage 不会触发纠偏。
+enabledStages:
+  - ir
+  - planning
+  - selection
+  - prd-contract
+
+# 受保护产物。每个节点都只把当前节点设为可修改目标，上游文件只作为相关证据。
+artifacts:
+  - name: ir
+    stage: ir
+    type: ir
+    patterns:
+      - ir.md
+      - docs/ir.md
+      - docs/*.ir.md
+      - docs/ir/*.md
+      - "**/stages/10-ir/deliverables/IR.md"
+    rules:
+      enabled: true
+      file: ir.rules.yaml
+    review:
+      enabled: true
+      criteria: ir.reviewer.md
+
+  - name: planning-bundle
+    stage: planning
+    type: planning-bundle
+    outputKey: bundle
+    format: auto
+    patterns:
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: planning.rules.yaml
+    review:
+      enabled: true
+      criteria: planning.reviewer.md
+
+  - name: selection
+    stage: selection
+    type: selection
+    patterns:
+      - kit-map.md
+      - "**/stages/30-selection/deliverables/kit-map.md"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+      - "**/stages/30-selection/deliverables/kit-map.md"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: selection.rules.yaml
+    review:
+      enabled: true
+      criteria: selection.reviewer.md
+
+  - name: prd-contract
+    stage: prd-contract
+    type: prd-contract
+    patterns:
+      - PRD.md
+      - "**/stages/40-prd-contract/deliverables/PRD.md"
+    relatedPatterns:
+      - ir.md
+      - PilotPlan.md
+      - relations.json
+      - granularity-choice.json
+      - kit-map.md
+      - PRD.md
+      - "**/stages/10-ir/deliverables/IR.md"
+      - "**/stages/20-planning/deliverables/PilotPlan.md"
+      - "**/stages/20-planning/deliverables/relations.json"
+      - "**/stages/20-planning/deliverables/granularity-choice.json"
+      - "**/stages/30-selection/deliverables/kit-map.md"
+      - "**/stages/40-prd-contract/deliverables/PRD.md"
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: prd-contract.rules.yaml
+    review:
+      enabled: true
+      criteria: prd-contract.reviewer.md
+
+output:
+  persist: true
+  mode: centralized
+  directory: .runtime-correction
+
+limits:
+  maxRelatedFiles: 40
+  maxFeedbackChars: 24000
+  maxReviewerChars: 12000
+  semanticReviewTimeoutMs: 1200000

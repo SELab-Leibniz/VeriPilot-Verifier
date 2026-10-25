@@ -1,5 +1,0 @@
-{
-  "expected": "PASS",
-  "mechanism": "The explicit mixed fixture, command and exact observable oracle can distinguish correct missing quantities and forbidden store mutation without needing the test to run.",
-  "scope": "METRIC_ARTIFACT_REVIEW"
-}

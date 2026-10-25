@@ -1,2 +1,0 @@
-M12:R04 | PASS | cmd_can_cook returns the required can_cook/missing JSON without saving (store bytes unchanged); cmd_cook validates sufficiency first and only then subtracts all quantities, persists, and returns {"cooked": NAME}, matching R04.
-Details: C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\review-module-lab-20261024-02\prompt-accuracy-20261024-01\rubric-v1-dev-01\K07\review\result.json
