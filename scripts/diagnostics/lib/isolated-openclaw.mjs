@@ -80,12 +80,14 @@ export async function isolatedHost({ hostRoot, providerFile, destination, port, 
     gateway = spawn(process.execPath, [path.join(hostRoot, "openclaw.mjs"), "gateway", "run", "--port", String(port)], { env, stdio: ["ignore", "pipe", "pipe"] });
     for (const stream of [gateway.stdout, gateway.stderr]) stream.on("data", chunk => { void log.appendFile(redact(chunk)).catch(() => {}); });
     await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("Gateway readiness timeout")), 60000);
+      let connectionError;
+      const timer = setTimeout(() => reject(new Error(`Gateway readiness timeout${connectionError ? `: ${connectionError}` : ""}`)), 60000);
+      gateway.once("error", error => { clearTimeout(timer); reject(new Error(`Gateway process start failed: ${error.code ?? error.name}`)); });
       // Retain SDK CLI authentication. MA's empty caps + session subscription
       // select its real event route without impersonating a browser login.
       client = new GatewayClient({ url: `ws://127.0.0.1:${port}`, token, clientName: "cli", mode: "cli", caps: clientCaps,
         scopes: ["operator.admin", "operator.read", "operator.write"], env,
-        onHelloOk() { clearTimeout(timer); resolve(); }, onConnectError() {}, onEvent(event) {
+        onHelloOk() { clearTimeout(timer); resolve(); }, onConnectError(error) { connectionError = redact(error.message); }, onEvent(event) {
           const row = { at: Date.now(), generation, ...event }; events.push(row); void wire.appendFile(redact(JSON.stringify(row)) + "\n").catch(() => {});
           if (event.event === "chat" && ["final", "error", "aborted"].includes(event.payload?.state)) pending.get(event.payload.runId)?.(event.payload);
         } }); client.start();

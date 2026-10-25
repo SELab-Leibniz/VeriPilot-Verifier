@@ -10,23 +10,25 @@ import { loadRuntimePlan } from "../lib/runtime-plan.mjs";
 
 const base = { version: 2, artifacts: [], dynamicGroundTruth: { enabled: true } };
 
-test("Stop wait defaults to correction and re-verification with an inherited total budget", () => {
+test("Stop defaults to a fresh 20-minute assessment with a three-minute reserve", () => {
   for (const document of [base, { ...base, stopCorrection: { enabled: true } }]) {
     validateProjectConfig(document, "config.yaml");
     const stop = compileRuntimePolicy(document).runtimeV2.stopCorrection;
     assert.equal(stop.waitMode, "until_pass");
-    assert.equal(stop.waitTimeoutMs, null);
+    assert.equal(stop.assessmentTimeoutMs, 1200000);
+    assert.equal(stop.feedbackReserveMs, 180000);
+    assert.equal(Object.hasOwn(stop, "waitTimeoutMs"), false);
   }
 });
 
-test("Stop wait accepts both modes and retains a total budget independent of one assessment", () => {
+test("both wait modes share one assessment-and-delivery window per Stop", () => {
   for (const waitMode of ["until_pass", "assessment"]) {
     const document = { ...base, stopCorrection: { enabled: true, waitMode,
-      assessmentTimeoutMs: 60000, waitTimeoutMs: 180000 } };
+      assessmentTimeoutMs: 60000, feedbackReserveMs: 10000 } };
     validateProjectConfig(document, "config.yaml");
     const stop = compileRuntimePolicy(document).runtimeV2.stopCorrection;
     assert.equal(stop.waitMode, waitMode);
-    assert.equal(stop.waitTimeoutMs, 180000);
+    assert.equal(stop.feedbackReserveMs, 10000);
     assert.equal(stop.assessmentTimeoutMs, 60000);
   }
 });
@@ -49,15 +51,15 @@ test("loaded YAML preserves default and explicit Stop wait settings and rejects 
   await fs.mkdir(directory);
   const file = path.join(directory, "config.yaml");
   const header = "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\nstopCorrection:\n  enabled: true\n";
-  for (const [suffix, waitMode, waitTimeoutMs] of [
-    ["", "until_pass", null],
-    ["  waitMode: until_pass\n  waitTimeoutMs: 1000\n", "until_pass", 1000],
-    ["  waitMode: assessment\n  waitTimeoutMs: 180000\n", "assessment", 180000],
+  for (const [suffix, waitMode, assessmentTimeoutMs] of [
+    ["", "until_pass", 1200000],
+    ["  waitMode: until_pass\n  waitTimeoutMs: 1000\n  feedbackReserveMs: 100\n", "until_pass", 1000],
+    ["  waitMode: assessment\n  assessmentTimeoutMs: 180000\n  feedbackReserveMs: 30000\n", "assessment", 180000],
   ]) {
     await fs.writeFile(file, header + suffix);
     const stop = (await loadRuntimePlan({ cwd: root })).runtimeV2.stopCorrection;
     assert.equal(stop.waitMode, waitMode);
-    assert.equal(stop.waitTimeoutMs, waitTimeoutMs);
+    assert.equal(stop.assessmentTimeoutMs, assessmentTimeoutMs);
   }
   for (const [suffix, error] of [
     ["  waitMode: wrong\n", /stopCorrection\.waitMode/],

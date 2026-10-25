@@ -1,51 +1,39 @@
-# OpenClaw 原生纠偏与独立 Stop 终审
+# MatrixAssistant / OpenClaw 纠偏与 Stop 审查
 
-当前候选包 `1.9.1-openclaw.11-session-projects.12` 支持 Session 项目解析、显式启用与状态隔离，兼容 `2026.7.1-2` 和 `2026.10.3`。7.1（包括 MA）存在持久化 `spawnedCwd` 时自动跟随宿主项目，缺失时才使用 `/rc-project bind /绝对项目目录`；新版使用宿主 New Session 项目选择。自动模式禁用 RC 手动绑定。没有有效项目配置时不运行零配置纠偏。详见 [Session 项目说明](session-projects.md)。下文旧版真实 Stop 闭环属于历史验证，不替代新版候选的验收。
+本分支正在实现 [Stop 纠偏需求 v1.1](stop-correction-refactor-requirements.md)，以 MatrixAssistant 内置 OpenClaw `2026.7.1-2` 为主要适配目标。生产 Stop 已切换到新评估核心和单 Agent 分组提交；整体真实验收与性能对照尚未完成。详细证据和未完成范围见 [实现进度](stop-correction-refactor-implementation.md)。分支改动不会自动安装到现有 MatrixAssistant。
 
-原生执行、Stop 续作和独立终审预算已通过提交 `f76e7b5` 合入 `codex/openclaw-2026.7.1-2`，固定宿主 OpenClaw `2026.7.1-2`。合并代码不自动替换已安装插件或宿主配置。独立预算 Todo 对照和一次真实 Stop 重修闭环详见 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md)。[合并后记账 App 实测](experiments/rc-postmerge-ledger-live-test.md)跑通两次 Stop、一次宿主重修、最终 19/19 独立 CLI 检查；首次终审超过 10 分钟并完成。RC PASS 不等同于全部业务需求均已通过独立检查。
-
-业务运行、输出、模型选择、工具和审批由宿主负责。RC 不注册业务 harness、不关闭流式文字、不应用补丁、不注册 `before_agent_finalize`。过程意见通过原工具结果交给宿主；Stop 发现有依据的业务偏离时，最多提供配置数量的原生续作机会，宿主自行判断动作。
+Session 项目解析、显式启用和作用域隔离继续遵循 [Session 项目说明](session-projects.md)。7.1（包括 MA）优先跟随宿主持久化的 `spawnedCwd`，缺失时才使用 `/rc-project bind /绝对项目目录`；自动模式不接受手动绑定。没有有效项目配置时不启动自动审查。
 
 ```yaml
 stopCorrection:
   enabled: true
-  maxCorrectionsPerEpoch: 3
-  assessmentTimeoutMs: 3600000 # 可选：一套 RC 终审的总窗口
-  waitMode: until_pass # 默认：等待宿主修正并复验到 PASS；assessment 只等本轮评审与反馈准入
-  waitTimeoutMs: 3600000 # 可选：整条修正与复验链的总等待上限
+  waitMode: until_pass
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+  assessmentTimeoutMs: 1200000 # 每次 Stop 总审查与交付窗口，20 分钟
+  feedbackReserveMs: 180000 # 包含在总窗口内，默认第 17 分钟停止审查
+  reviewGroupSize: 3 # 同一个 M、同一优先级的最多 K 项，一个 Agent 顺序提交
+  fileQualityReviewEnabled: false
 reviewers:
   defaults:
     model: registered-provider/model
     effort: low
-    timeoutMs: 1200000
-    formatRepairAttempts: 3
+    timeoutMs: 1200000 # 单角色上限仍受本次 Stop 的共享截止限制
 ```
 
-k 默认来自包内 `config/stop-defaults.json`，项目 `.runtime-corrector/config.yaml` 优先。沿用原纠偏 epoch：正式 HARD 需求更新可重新开预算，RC 自有反馈不计为新用户需求。Reviewer 超时、格式故障使用原独立故障预算，不当作业务已确认偏离。耗尽仍未通过时保留未通过，不能显示 PASS。PASS 可通过已有记录查询，无须在聊天强插摘要。
+实际开始一次业务纠偏才同时扣会话和流程各一次；审阅 Agent、单项保存、通知和排队不扣。任务、GT、配置、模式或需求周期变化都不恢复会话已用次数。已有会话没有可信的逐次启动历史时明确等待迁移核对，不能默认为新会话。
 
-续作通过公开 `api.runtime.subagent.run` 在同一会话开启下一次原生运行，沿用宿主设置。派发回执区分准备、宿主接受、反馈观察、再次评审完成；不确定派发不重试，确认拒绝不算已读取。下一次自有运行从 `agent_end` 完整复验，最多 k 次。
+旧 `maxCorrectionsPerEpoch` 只在配置入口映射到 `maxCorrectionsPerFlow`，旧 `waitTimeoutMs` 只映射到本次 `assessmentTimeoutMs`，两者均带弃用提示。新旧同义字段同时出现时报错。移除旧“需求变化清零”和“整条纠偏链共享审查时限”语义。总时限小于默认三分钟预留的测试配置，必须同时显式缩短 `feedbackReserveMs`。
 
-该公开接口持久化的提示会在宿主聊天显示为一条额外 You 消息，正文标记 RC 意见/非新需求或授权。RC 只在自己的可信转录投影排除它，不写宿主原转录、不改 UI 标签。真实问题、媒体、错误、审批和正常取消保留宿主处理；实际审批 UI 尚未实测。
+`assessment` 等本次审查结算和有效反馈交付，然后解除 RC 等待；流程最多实际纠偏一次。`until_pass` 在有有效偏差且额度允许时，继续等待已实际开始的宿主修复和后续 Stop。排队请求未开始时最多等到本次总截止；及时确认开始的修复不再受旧审查计时影响。后续 Stop 有新窗口，入口额度耗尽时跳过审查并明确放行，不为最后一次修复额外赠送自动复验，也不冒充 PASS。
 
-角色时间仍在自己的 YAML。原生回复/结束 Hook 只登记 RC 终审回执，业务回复立即返回；评审使用 RC 自己的工作准入与截止时间，不借用宿主业务运行或 Hook 的剩余时间。`stopCorrection.assessmentTimeoutMs` 现在也用于原生 RC 终审总窗口；不配置时沿用既有各角色预算与设备检查预算之和。每个角色仍受自己的 `reviewers.<role>.timeoutMs` 和 RC 总窗口约束，不是每个阶段无限续期。
+MatrixAssistant 适配通过公开 `before_prompt_build` 和 `before_agent_run` 核对当前反馈与启动准入，通过可信 `model.call.started` 的实际时间计账，使用带确切 `runId` 的 `chat.abort` 停止所属失效续作。原生 user-role 消息只携带反馈引用，正文在接入时重新筛选；插件只在自己的可信转录投影标记内部消息，不改原转录或宿主 UI 标签。宿主执行、模型、工具和审批仍由宿主负责。
 
-检查器故障按原核心基础设施预算重新评审，复评使用不同评审身份，但同一 RC 总截止时间；不增加业务 k、不重新冻结用户需求、不让宿主为检查器故障修改业务。重置、项目切换、会话结束和 Gateway 关闭会取消旧评审；来源/证据失效仍不派发。每个原生业务 run 的回执保存于 `.runtime-correction/openclaw/native-stop-reviews/`，状态为 PENDING/RUNNING/SETTLED，最终 reviewStatus 保存 PASS/DEVIATION/UNVERIFIED/CANCELLED。重启不会偷偷重放旧评审或业务反馈。
+宿主缺少已验证的启动门、可信观察或确切运行取消能力时，明确返回 `HOST_START_PROTOCOL_UNSUPPORTED`：保留确认偏差，结束等待，不自动续作，不把 API 成功当实际开始。OpenClaw 2026.10.3 的项目/审阅适配不等于已经验收了这份新的业务启动协议。关闭诊断事件的宿主不能启用依赖可信模型开始观察的自动续作。
 
-### Stop 等待门（本分支）
+检查器故障不会自动变成业务缺陷，本轮失败组不重派。取消、关闭、项目失效和总截止都有围栏；未知在途请求保留预留待核对，不自动重发。旧 Stop 的有效保存作为历史保留，不能以“放行”替代整体验收通过。
 
-原生 Stop 登记终审后，回复会提示 RC 正在验收。同会话的下一条普通任务在公开的 `reply_dispatch` 等待，该入口提供当前请求的 runId 和取消信号；直接原生 Agent 入口由 `before_model_resolve` 补充保护，RC 更新当前 runId 之前也会检查。其他会话独立运行，可信回执标识的 RC 续作可直接进入，避免等待自己的派发完成。
-
-`stopCorrection.waitMode` 默认是 `until_pass`：初审发现偏差后，继续等待宿主实际修正及后续 Stop 复验，只有纠偏链当前运行的有效 PASS 才正常放行下一任务。等待门覆盖“反馈已派发、宿主正在修正、尚未开始下一次评审”的间隔，跨原生 runId 沿用同一条链；旧轮次结论不能代替新一轮复验。`maxCorrectionsPerEpoch` 仍限制纠偏次数，最后一次允许的修正仍有完整复验机会。
-
-需要原行为时，在项目 `.runtime-corrector/config.yaml` 中设置 `stopCorrection.waitMode: assessment`：只等待本轮评审及纠偏反馈的宿主准入回执。发现偏差时先记录评审，再完成一次有界派发；最终记录中的 `followupStatus` 区分宿主接受、拒绝与未确认。此模式不要求后续修正到 PASS；新任务仍遵守宿主自己的排队策略。
-
-`until_pass` 的总等待上限由可选 `stopCorrection.waitTimeoutMs` 指定，包含宿主修正及多轮复验；省略时继承一套终审的预算。整条链沿用首次登记的模式和总截止时间，不在每次续跑时重新计时；单次评审仍受 `assessmentTimeoutMs` 和各角色预算约束。`assessment` 沿用本轮评审剩余窗口。实际入口等待还取当前 Hook 可用窗口的较短值；Hook 窗口沿用插件 `hookTimeoutMs` 和宿主对应 Hook 策略，并保留一秒返回余量。
-
-两种模式都在次数耗尽仍未通过、反馈被拒或未确认、评审故障、总超时或用户取消时明确提示后放行；次数耗尽保留 DEVIATION，故障/超时保留 UNVERIFIED，取消保留 CANCELLED 或已提交的原评审结论，不将异常当成 PASS。超时取消 RC 自己的检查，不中止宿主业务执行。即使后端或清理回调不响应，等待门也能释放，迟到结果不能改写等待终态或重新打开原链。后续来源或文件发生变化时，原有证据校验仍阻止过期反馈；重启不会重放旧链。无需修改宿主。
-
-实际等待期间每 30 秒通过公开 Agent 工具进度事件发送状态；验收完成、反馈拒绝或超时发送结束进度。回复尾部的验收提示只作用于发送载荷，状态事件不追加主会话模型消息，也不替换原回复正文。后台评审不对已结束的业务 run 发送保活。没有可用展示通道时尽力提示，通知失败不影响放行。
-
-可用 `node scripts/diagnostics/stop-wait-gate-contract.mjs <hostRoot> <全新输出目录> [空闲Gateway端口]` 做隔离验证：脚本使用本地确定性模型服务，验证默认通过、跨修正与复验等待、显式 assessment 模式、次数耗尽及超时放行，检查真实宿主事件及下一轮模型输入。测试副本通过公开 Hook 观察等待门后的准入，避免把宿主自身排队误当作 RC 等待；无外部模型调用，不改已安装宿主或业务会话。
+此前 [预算实测](experiments/rc-native-stop-budget-live-test.md)、[迷你重修实测](experiments/rc-native-stop-mini-live-test.md) 和 [记账 App 实测](experiments/rc-postmerge-ledger-live-test.md) 属于旧协议的历史证据，不替代本分支新流程验收。`stop-correction-ma-contract.mjs` 可在隔离 Gateway 中用本地提供器验证新协议接线；它不能证明真实模型语义准确性或 K 分组的性能收益。
 
 ## Review 超时配置
 

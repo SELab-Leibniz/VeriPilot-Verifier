@@ -118,6 +118,36 @@ test('a valid tool submission is durable before the native session is closed', a
   assert.equal(h.counts().calls, 3);
   assert.equal(JSON.parse(await fs.readFile(path.join(h.directory, 'review/decision.json'), 'utf8')).verdict, 'DEVIATION');
 });
+
+test('one native SDK session saves multiple independent members and continues after the first receipt', async t => {
+  const members = ['R1', 'R2'].map(id => ({ id, requirement: `Original independent obligation ${id}`, basisFiles: ['basis.md'], targetFiles: ['app.py'] }));
+  const h = await harness(t, (n, { context }) => n === 1 ? call('source_read', { path: 'basis.md' })
+    : n === 2 ? call('source_read', { path: 'app.py' })
+      : call('submit_review', { ...verdict(context), taskId: n === 3 ? 'R2' : 'R1', verdict: n === 3 ? 'PASS' : 'DEVIATION' }));
+  const receipts = [];
+  const result = await h.run({ tasks: members, onItemResult: async item => { receipts.push(item.taskId); return { itemId: item.taskId, persisted: true }; } });
+  assert.deepEqual(receipts, ['R2', 'R1']);
+  assert.equal(result.completed, true);
+  assert.equal(result.items.length, 2);
+  assert.equal(Object.hasOwn(result, 'verdict'), false, 'Group completion must not masquerade as an individual PASS');
+  assert.equal(h.counts().calls, 4);
+  assert.equal(new Set(h.requests.map(request => request.sessionId)).size, 1);
+  assert.equal(result.items.find(item => item.taskId === 'R1').verdict, 'DEVIATION');
+  assert.equal(result.items.find(item => item.taskId === 'R2').verdict, 'PASS');
+});
+
+test('native SDK group failure after a receipt retains the saved member without claiming group completion', async t => {
+  const members = ['R1', 'R2'].map(id => ({ id, requirement: `Original independent obligation ${id}`, basisFiles: ['basis.md'], targetFiles: ['app.py'] }));
+  const h = await harness(t, (n, { context }) => n === 1 ? call('source_read', { path: 'basis.md' })
+    : n === 2 ? call('source_read', { path: 'app.py' }) : n === 3 ? call('submit_review', { ...verdict(context), taskId: 'R1' })
+      : { stopReason: 'error', errorMessage: 'Controlled provider failure after the first item' });
+  const receipts = [];
+  const result = await h.run({ tasks: members, onItemResult: async item => { receipts.push(item.taskId); return { itemId: item.taskId }; } });
+  assert.equal(result.completed, false);
+  assert.deepEqual(receipts, ['R1']);
+  assert.deepEqual(result.items.map(item => item.taskId), ['R1']);
+  assert.equal(result.items[0].verdict, 'DEVIATION');
+});
 test('missing submission stops after the finite attempt count and stays UNVERIFIED', async t => {
   const h = await harness(t, () => ({ content: [{ type: 'text', text: 'No comments.' }], stopReason: 'stop' }));
   const result = await h.run();

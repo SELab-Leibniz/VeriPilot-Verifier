@@ -1,5 +1,10 @@
 {
-  "maxCorrectionsPerEpoch": 3,
+  "waitMode": "until_pass",
+  "maxCorrectionsPerSession": 3,
+  "maxCorrectionsPerFlow": 3,
+  "assessmentTimeoutMs": 1200000,
+  "feedbackReserveMs": 180000,
+  "reviewGroupSize": 3,
   "metrics": {
     "M01": false,
     "M02": false,

@@ -84,3 +84,20 @@ test("reset during reading and oversized source are never projected", async t =>
   assert.equal((await observeNativeTranscript(f.api, f.state, { maxBytes: 2 })).reason, "HOST_TRANSCRIPT_READ_LIMIT");
   assert.equal((await observeNativeTranscript({ runtime: { agent: {} } }, f.state)).reason, "HOST_PUBLIC_SESSION_READER_UNAVAILABLE");
 });
+
+test("zero-history evidence uses the complete unbranched native first turn and excludes imported or RC-owned input", async t => {
+  const initial = [header, message("human", null, "user", "First business requirement."),
+    message("tool", "human", "assistant", [{ type: "toolCall", id: "write", name: "write", arguments: {} }])];
+  const f = await fixture(t, initial);
+  assert.equal((await observeNativeTranscript(f.api, f.state)).initialTurnEvidence.kind, "VERIFIED_FIRST_NATIVE_TURN");
+  for (const rows of [
+    [header, message("rc", null, "user", "[runtime-corrector:stop-reference] prior continuation")],
+    [header, message("foreign", null, "user", "Imported input.", { provenance: { kind: "inter_session" } })],
+    [header, message("blocked", null, "user", "Blocked input.", { __openclaw: { beforeAgentRunBlocked: {} } })],
+    [...initial, { type: "compaction", id: "compacted", parentId: "tool", summary: "Earlier history omitted" }],
+    [header, message("abandoned", null, "assistant", "Earlier model execution."), ...initial.slice(1)],
+  ]) {
+    await fs.writeFile(f.transcriptPath, rows.map(JSON.stringify).join("\n") + "\n");
+    assert.equal((await observeNativeTranscript(f.api, f.state)).initialTurnEvidence, null);
+  }
+});

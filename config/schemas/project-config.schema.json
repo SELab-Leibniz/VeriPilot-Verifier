@@ -398,12 +398,36 @@
         },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 0,
+          "description": "Deprecated alias of maxCorrectionsPerFlow only. Conflicts with the new field; never initializes or resets session usage."
+        },
+        "maxCorrectionsPerSession": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 3
+        },
+        "maxCorrectionsPerFlow": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 3
+        },
+        "feedbackReserveMs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 180000,
+          "description": "Included in assessmentTimeoutMs. Must be strictly smaller than the total window."
+        },
+        "reviewGroupSize": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3,
+          "description": "Maximum original items of one metric and priority per sequential review agent. Not concurrency."
         },
         "assessmentTimeoutMs": {
           "type": "integer",
-          "minimum": 1000,
-          "description": "Shared RC controller assessment window; reviewer roles keep their own deadlines and parent cancellation/total budget still apply."
+          "minimum": 1,
+          "default": 1200000,
+          "description": "One Stop's total preparation, review, settlement and delivery window. Each eligible later Stop has a fresh window; business repair time is excluded."
         },
         "waitMode": {
           "type": "string",
@@ -414,7 +438,7 @@
         "waitTimeoutMs": {
           "type": "integer",
           "minimum": 1000,
-          "description": "Total native Stop wait across corrective business runs and rechecks; defaults to the assessment budget. The current entry Hook window may impose a shorter deadline."
+          "description": "Deprecated alias of assessmentTimeoutMs for one Stop only. Conflicts with assessmentTimeoutMs; never creates a shared repair-chain timeout."
         }
       },
       "additionalProperties": false
