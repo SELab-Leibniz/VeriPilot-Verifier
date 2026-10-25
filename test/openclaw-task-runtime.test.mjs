@@ -24,11 +24,11 @@ async function fixture(t) {
   const input = { projectRoot: root, taskId: task.taskId, role: 'implementation-reviewer', schema: IMPL_REVIEW_SCHEMA,
     reviewer: { timeoutMs: 3000 }, request: { population, groundTruthPath, reviewScope: { kind: 'metric-object', boundedBasis: true, objectIds: [object.objectId], sourceIds: ['R1'] },
       sourceManifest: [{ path: 'app.js', sha256: sha256(await fs.readFile(path.join(root, 'app.js'))) }] }, evidence: { groundTruth: truth, population, snapshot: { entries: [] } } };
-  let factory;
+  let factory; const hooks = new Map();
   const api = { rootDir: path.resolve('.'), config: { agents: { defaults: { model: { primary: 'host/catalog' } } } },
-    runtime: { version: '2026.7.1-2', agent: {} }, registerTool: fn => { factory = fn; }, on() {} };
+    runtime: { version: '2026.7.1-2', agent: {} }, registerTool: fn => { factory = fn; }, on: (name, fn) => hooks.set(name, fn) };
   registerTaskTools(api);
-  return { root, input, api, tools: ctx => factory(ctx) };
+  return { root, input, api, hooks, tools: ctx => factory(ctx) };
 }
 async function scripted(params, f) {
   assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES); assert.equal(params.customTools, undefined);
@@ -37,8 +37,12 @@ async function scripted(params, f) {
   const tools = new Map(f.tools(params).map(tool => [tool.name, tool]));
   const brief = JSON.parse(params.prompt); let citation;
   for (const file of [...brief.task.basisFiles, ...brief.task.targetFiles]) {
-    params.onAssistantMessageStart(); const result = await tools.get('source_read').execute(crypto.randomUUID(), { path: file });
+    params.onAssistantMessageStart(); const toolCallId = crypto.randomUUID();
+    const result = await tools.get('source_read').execute(toolCallId, { path: file });
     params.onAgentToolResult({ toolName: 'source_read', result, isError: false });
+    const returned = f.hooks.get('tool_result_persist')({ toolName: 'source_read', toolCallId, isSynthetic: false,
+      message: { role: 'toolResult', toolName: 'source_read', toolCallId, content: result.content, isError: false } }, params);
+    assert.equal(returned, undefined, 'Synchronous receipt hook never rewrites the host result');
     if (brief.task.targetFiles.includes(file)) citation = result.details.citation.citeId;
   }
   params.onAssistantMessageStart(); const result = await tools.get('submit_review').execute('submit', { taskId: brief.task.id,
@@ -67,7 +71,7 @@ for (const mode of ['parent-cancel', 'deadline']) test(`native ${mode} closes to
   assert(params.abortSignal.aborted); assert.equal(f.tools(params), null); await new Promise(resolve => setTimeout(resolve, mode === 'deadline' ? 1200 : 150));
 });
 test('task tool registry binds session incarnation and denies sandboxed or stale definitions', async () => {
-  let factory; registerTaskTools({ registerTool: fn => { factory = fn; }, on() {} });
+  let factory; const hooks = new Map(); registerTaskTools({ registerTool: fn => { factory = fn; }, on: (name, fn) => hooks.set(name, fn) });
   const ctx = { sessionId: 'private', sessionKey: 'agent:main:runtime-corrector:private' };
   const release = bindTaskTools({ ...ctx, active() {}, checkpoint() {}, tools: [{ name: 'source_read', execute: () => ({ content: [] }) }] });
   const tool = factory(ctx)[0]; assert.equal(factory({ ...ctx, sandboxed: true }), null);
@@ -85,4 +89,18 @@ test('native protocol repairs reuse the private session with a fresh run identit
   assert.equal(calls.length, 2); assert.equal(calls[0].sessionId, calls[1].sessionId); assert.notEqual(calls[0].runId, calls[1].runId);
   assert(calls[1].timeoutMs < calls[0].timeoutMs); assert(calls[1].timeoutMs <= deadlineAt - Date.now() + 500);
   await handle.close();
+});
+
+test('receipt hooks accept only the bound incarnation and reject synthetic or late callbacks', () => {
+  const hooks = new Map(); registerTaskTools({ registerTool() {}, on: (name, callback) => hooks.set(name, callback) });
+  const ctx = { sessionId: 'receipt-private', sessionKey: 'agent:main:runtime-corrector:receipt-private' };
+  let received = 0;
+  const release = bindTaskTools({ ...ctx, tools: [], active() {}, checkpoint() {}, observeReceipt() { received++; } });
+  const event = { toolName: 'source_read', toolCallId: 'actual-read', isSynthetic: false };
+  const hook = hooks.get('tool_result_persist');
+  hook(event, { ...ctx, sessionKey: 'agent:main:business' });
+  hook(event, { ...ctx, sessionId: 'different-incarnation' });
+  hook({ ...event, isSynthetic: true }, ctx); assert.equal(received, 0);
+  assert.equal(hook(event, { sessionKey: ctx.sessionKey }), undefined); assert.equal(received, 1);
+  release(); hook(event, ctx); assert.equal(received, 1);
 });

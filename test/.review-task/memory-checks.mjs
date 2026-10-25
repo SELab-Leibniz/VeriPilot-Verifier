@@ -29,7 +29,7 @@ function addReceipt(f, overrides = {}) {
   const citation = { citeId: randomUUID(), path: 'app.txt', start: 1, end: 3, sha256: hash(f.bytes), byteStart: 0, byteEnd: f.bytes.length, rangeKind: 'range', ...overrides };
   f.reads.push({ path: citation.path, start: citation.start, end: citation.end });
   f.registry.set(citation.citeId, citation);
-  f.sessionManager.appendMessage({ role: 'toolResult', toolCallId: randomUUID(), toolName: 'source_read', content: [{ type: 'text', text: `[citeId="${citation.citeId}" | range app.txt:1-3]\n${sourcePage(f.bytes, { offset: citation.start, limit: citation.end - citation.start + 1 }).content[0].text}` }], details: { citation }, isError: false, timestamp: Date.now() });
+  f.sessionManager.appendMessage({ role: 'toolResult', toolCallId: randomUUID(), toolName: 'source_read', content: [{ type: 'text', text: `[citeId="${citation.citeId}" | range app.txt:1-3]\n${sourcePage(f.bytes, { offset: citation.start, limit: citation.end - citation.start + 1 }).content[0].text}` }], details: { citation, receiptBoundary: 'openclaw.tool_result_persist.v1' }, isError: false, timestamp: Date.now() });
   return citation;
 }
 
@@ -152,4 +152,13 @@ test('checkpoint reload rejects a receipt whose header survives but original bod
   const receipt = entries.find(entry => entry.message?.toolName === 'source_read');
   receipt.message.content[0].text = receipt.message.content[0].text.split('\n')[0];
   await assert.rejects(loadReviewCheckpoint(f.memory.checkpointPath, { task: f.task, root: f.root, sessionManager: f.sessionManager }), /receipt bytes/);
+});
+
+test('checkpoint recovery requires an explicit successful final receipt and real call identity', async t => {
+  for (const field of ['isError', 'toolCallId', 'receiptBoundary']) {
+    const f = await fixture(t); addReceipt(f); await f.memory.checkpoint('before_compaction');
+    const message = f.sessionManager.getEntries().find(entry => entry.message?.toolName === 'source_read').message;
+    if (field === 'receiptBoundary') delete message.details[field]; else delete message[field];
+    await assert.rejects(loadReviewCheckpoint(f.memory.checkpointPath, { task: f.task, root: f.root, sessionManager: f.sessionManager }), /successful disclosed source read/);
+  }
 });

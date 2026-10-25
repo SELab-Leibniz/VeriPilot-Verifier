@@ -14,7 +14,7 @@ const [hostRoot, destination, port = "18937"] = process.argv.slice(2);
 if (!hostRoot || !destination) throw new Error("hostRoot new-output-directory [gateway-port] required");
 const text = content => typeof content === "string" ? content : (content ?? []).filter(x => x.type === "text").map(x => x.text).join("\n");
 const requests = [], cases = [], model = "ma-stop-contract";
-const code = broken => [0, 1, 2].map(i => `def f${i}(x): return ${broken ? "-1" : `x + ${i + 1}`}`).join("\n") + "\n";
+const code = broken => "# Fictional fixture marker: fc-abcdefghijklmnop\n" + [0, 1, 2].map(i => `def f${i}(x): return ${broken ? "-1" : `x + ${i + 1}`}`).join("\n") + "\n";
 let host, failure;
 const server = http.createServer(async (req, res) => {
   try {
@@ -59,7 +59,7 @@ const server = http.createServer(async (req, res) => {
       row.requestFile = file;
       if (role === "ground-truth-extractor") content = JSON.stringify({ summary: "Controlled original requirements.", taskClassification: "CONTINUATION",
         operations: request.currentGroundTruth?.version === 0 ? [0, 1, 2].map(i => ({ operation: "ADD", claimId: `fixture-R${i}`, category: "requirements",
-          text: `Implement pure function f${i}(x) returning x + ${i + 1}.`, authority: "USER_EXPLICIT", severity: "HARD", verificationTarget: "IMPLEMENTATION",
+          text: `Implement pure function f${i}(x) returning x + ${i + 1}. Preserve the fictional fixture marker fc-abcdefghijklmnop in an app.py comment.`, authority: "USER_EXPLICIT", severity: "HARD", verificationTarget: "IMPLEMENTATION",
           applicabilityKind: "CURRENT_TASK", applicability: "CURRENT_TASK",
           source: { ref: request.sourceCatalog.find(source => source.kind === "USER_MESSAGE").ref, subject: "MAIN_TASK", kind: "USER_MESSAGE" } })) : [] });
       else content = JSON.stringify({ summary: "Declared complete.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] });
@@ -132,7 +132,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     await sessions.patchSessionEntry({ agentId: "main", sessionKey: key, storePath, preserveActivity: true,
       update: existing => { assert.equal(existing.sessionId, entry.sessionId); return { spawnedCwd: current.root }; } });
     const began = Date.now();
-    await host.send(key, `${current.marker} Implement app.py with three pure functions: f0(x)=x+1, f1(x)=x+2, f2(x)=x+3. Complete the controlled fixture.`, 120000);
+    await host.send(key, `${current.marker} Implement app.py with three pure functions: f0(x)=x+1, f1(x)=x+2, f2(x)=x+3. Preserve the fictional fixture marker fc-abcdefghijklmnop in an app.py comment. Complete the controlled fixture.`, 120000);
     const deadline = Date.now() + 150000;
     let state, ledger;
     while (Date.now() < deadline) {
@@ -159,7 +159,20 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     const scope = scopes.find(scope => scope.sessionId === entry.sessionId);
     assert.equal(Object.keys(scope.receipts).length, 6, "Each original requirement needs one receipt per D/P round");
     assert.equal(Object.keys(scope.groups).length, k === 1 ? 6 : 2, "Configured groups must share one native session per round");
-    result.cases.push({ k, elapsedMs: Date.now() - began, groups: Object.keys(scope.groups).length,
+    const receipts = [], observers = new Map();
+    for (const file of (await files(path.join(current.root, '.runtime-correction/tasks'))).filter(file => /review-task-runs.*[\\/]events\.jsonl$/u.test(file))) {
+      for (const line of (await fs.readFile(file, 'utf8')).split('\n').filter(Boolean)) {
+        const event = JSON.parse(line);
+        if (event.type === 'read_observer') observers.set(event.citeId, event);
+        if (event.type === 'read_receipt') receipts.push(event);
+      }
+    }
+    const redactedReceipts = receipts.filter(receipt => {
+      const observer = observers.get(receipt.citeId);
+      return observer?.isError === false && observer.textSha256 !== receipt.textSha256;
+    });
+    assert(redactedReceipts.length >= 2, 'Real redacted observer copies must coexist with successful original-byte receipts');
+    result.cases.push({ redactedReceipts: redactedReceipts.length, k, elapsedMs: Date.now() - began, groups: Object.keys(scope.groups).length,
       receipts: Object.keys(scope.receipts).length, sessionUsed: ledger.used, stops: Object.values(ledger.stops).map(stop => ({ status: stop.reviewStatus, releasedAt: stop.releasedAt })),
       nativeRecords: state.records });
     await host.save(`K${k}-ledger.json`, ledger);

@@ -142,3 +142,51 @@ test('mutated host citation metadata cannot expand an actually disclosed basis p
     await assert.rejects(tools.submit('one', 'PASS', [cite]), /basis not fully read/);
   }); assert.equal(result.completed, false);
 });
+
+test('redacted telemetry cannot erase a final original-byte receipt or its restored checkpoint', async t => {
+  const f = await fixture(t), marker = 'fc-abcdefghijklmnop';
+  await fs.writeFile(path.join(f.root, 'basis.md'), `Preserve the fictional marker ${marker}.\n`);
+  await fs.writeFile(path.join(f.root, 'app.txt'), `The fictional marker is ${marker}.\n`);
+  const masked = value => ({ ...value, content: value.content.map(block => ({ ...block, text: block.text.replaceAll(marker, 'fc-abc…mnop') })) });
+  const result = await run(f, async worker => {
+    const tools = nativeTools(worker);
+    await tools.read('basis.md', {}, { observerTransform: masked });
+    const cite = await tools.read('app.txt', {}, { observerTransform: masked });
+    await worker.checkpoint('before_compaction');
+    tools.turn(); const state = decode(await tools.call('review_history', { mode: 'state' }));
+    assert(state.citations.some(citation => citation.citeId === cite));
+    await tools.submit('one', 'PASS', [cite]);
+  });
+  assert.equal(result.completed, true); assert.equal(result.verdict, 'PASS');
+  const checkpoint = await loadReviewCheckpoint(path.join(f.outputDir, 'review-checkpoint.json'));
+  assert.equal(checkpoint.reads.length, 2);
+  const evidence = JSON.parse(await fs.readFile(result.evidencePath));
+  assert.equal(evidence.citations[0].text, `The fictional marker is ${marker}.\n`);
+  const events = (await fs.readFile(path.join(f.outputDir, 'events.jsonl'), 'utf8')).split('\n').filter(Boolean).map(JSON.parse);
+  const receipt = events.find(event => event.type === 'read_receipt');
+  assert.notEqual(events.find(event => event.type === 'read_observer' && event.citeId === receipt.citeId).textSha256, receipt.textSha256);
+});
+for (const mode of ['observer-only', 'synthetic', 'wrong-call']) test(`${mode} cannot replace a final successful receipt`, async t => {
+  const f = await fixture(t); const result = await run(f, async worker => {
+    const tools = nativeTools(worker);
+    await tools.read('basis.md', {}, mode === 'observer-only' ? { receipt: false } : mode === 'synthetic' ? { isSynthetic: true } : { receiptCallId: 'foreign-call' });
+    const cite = await tools.read('app.txt'); await assert.rejects(tools.submit('one', 'PASS', [cite]), /basis not fully read/);
+  }); assert.equal(result.completed, false);
+});
+
+test('grep inherits parent cancellation when the native caller omits a tool signal', async t => {
+  const f = await fixture(t), controller = new AbortController();
+  await fs.writeFile(path.join(f.root, 'large.txt'), 'no match here\n'.repeat(1000000));
+  const original = (await import('node:fs')).default.createReadStream;
+  const nativeFs = (await import('node:fs')).default;
+  t.mock.method(nativeFs, 'createReadStream', (file, options) => {
+    const stream = original(file, options);
+    stream.once('data', () => setImmediate(() => controller.abort(new Error('parent cancelled grep'))));
+    return stream;
+  });
+  const result = await run(f, async worker => {
+    const tools = nativeTools(worker); tools.turn();
+    await assert.rejects(tools.call('source_grep', { path: 'large.txt', pattern: 'absent' }), /parent cancelled grep/);
+  }, { signal: controller.signal });
+  assert.equal(result.completed, false);
+});

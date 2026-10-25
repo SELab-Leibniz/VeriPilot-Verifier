@@ -56,7 +56,7 @@ npm run build:plugin -- --host openclaw
 
 RC 已移除 Pi 及其传递安装依赖和 undici override。宿主内部依赖由宿主管理。不是将 stopReviewEngine 切成 native：task 协议保留，通过 runTask 注入宿主执行器；既有非 Stop 原生 JSON 审查路径也保留。
 
-审查工具通过 api.registerTool(ctx) 注册，绑定私有会话和生命周期；只把工具名加入白名单不会生成工具。真实成功且逐块匹配的宿主工具结果才产生读取凭证。source_read 每页最多 400 行/51200 字节，并按宿主观察接口限制拆成最多 6000 字节的原文块；超过单页的大行保留为无法读取，不推断已读。分页 nextOffset 必须继续读取至完整依据覆盖。更换执行器后 PASS 缓存身份已更新。
+审查工具通过 api.registerTool(ctx) 注册，绑定私有会话和生命周期；只把工具名加入白名单不会生成工具。读取凭证在同步 tool_result_persist 边界登记：必须是绑定会话内的真实调用 ID、非 synthetic、成功的最终工具消息，并且与已核验哈希的原文页逐字匹配。onAgentToolResult 是已脱敏的观察副本，仅作遥测，不登记凭证。checkpoint v3 与新缓存身份拒绝复用旧回执。source_read 每页最多 400 行/51200 字节，并按宿主观察接口限制拆成最多 6000 字节的原文块；超过单页的大行保留为无法读取，不推断已读。分页 nextOffset 必须继续读取至完整依据覆盖。grep 使用流式扫描，扫描中即执行全局 100 条命中上限并检查取消；不再读完整文件或累积全部命中后截取。更换执行器后 PASS 缓存身份已更新。
 
 隔离宿主验证只读安装包，配置、会话、日志和安装产物放在 RC 下。scripts/diagnostics/stop-task-integration.mjs 和 stop-task-complex.mjs 的 --live 使用实际宿主，需要 RC_OPENCLAW_HOST_ROOT；不会直接创建独立模型 runtime。历史实验结论不作为本次迁移验收。
 
