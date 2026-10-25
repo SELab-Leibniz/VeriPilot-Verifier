@@ -38,7 +38,7 @@ async function fixture(t) {
   factory.reviewItemSize = 1;
   factory.reviewCacheIdentity = () => "fixed-reviewer-v1";
   const plan = { artifacts: [{ nodeId: "kitchen-source", stage: "implementation", patterns: ["kitchen.py"] }], runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
-    skillCorrection: { enabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true },
+    skillCorrection: { enabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true, metrics: { M11: true } },
     reviewers: { defaults: { timeoutMs: 10000 } } }, { policyRoot: path.join(root, ".runtime-corrector") }) };
   let turn = 0;
   const run = async () => {

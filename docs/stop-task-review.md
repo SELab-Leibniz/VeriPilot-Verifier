@@ -1,5 +1,7 @@
 # Stop 单项 Review 交付范围
 
+所有 M01–M16 均可在项目配置中独立开关。默认仅开启 M08、M09、M12、M13、M15、M16，其余指标和独立文件质量职责关闭；下文描述支持范围，不能当作默认全部运行。完整配置、任务冻结和全关行为见 [Stop 指标审查开关](stop-metric-switches.md)。
+
 本版固定选择经过隔离对照的 Prompt。OpenClaw 默认 `stopReviewEngine: "task"`；设置为 `"native"` 可恢复之前的审阅传输。配置属于插件设置，未改变项目需求或验收分母。全指标提示实验记录在 [隔离实验](../experiments/review-metrics-20261024/README.md)。
 
 ## 接入位置

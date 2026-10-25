@@ -38,7 +38,7 @@
 ## 审阅后的接入位置
 
 - `metrics.mjs`：目录、版本和冻结分母；M16 要求证据，文档及过程对象被排除。M16 不取代原 M12 的履约分母。
-- `config.mjs`、项目配置 Schema 和 `artifact-candidates.mjs`：允许声明 M16；默认全指标报告自动包含它。
+- `config.mjs`、项目配置 Schema 和 `artifact-candidates.mjs`：允许声明 M16；Stop 默认开启它。M01–M16 的独立开关及关闭状态见 [Stop 指标审查开关](stop-metric-switches.md)。
 - `review-routing.mjs`、`impl-review.mjs`：实现阶段及之后接入源码审查，与 M09/M12 同属实现审查的证据分区；需求、设计和规划阶段保留原有跳过策略。
 - `orchestrator.mjs`：普通 Stop 同样采集程序生成的源码清单，关闭可选的实现审查也不改用助手自述作为 M16 证明。
 - `stop-task-review.mjs`、`prompts.json`：单项源码职责、完整六条件提示与独立审阅类型；不提供过程记录作为该源码职责的替代证据。

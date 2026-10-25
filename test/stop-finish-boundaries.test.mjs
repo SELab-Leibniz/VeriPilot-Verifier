@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
+import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
@@ -71,7 +71,8 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
   factory.handoff = factory;
   const plan = { artifacts: [{ nodeId: "delivery", stage: "requirements", patterns: ["delivery.md"], metrics: [] }],
     runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
-      skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
+      skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3,
+        metrics: Object.fromEntries(METRIC_IDS.map(id => [id, true])), fileQualityReviewEnabled: quality !== null },
       reviewers: { stopReviewer: { timeoutMs: 15000 } },
     }, { policyRoot: path.join(root, ".runtime-corrector") }) };
   const before = JSON.parse(await fs.readFile(path.join(directory, "task.json"), "utf8"));

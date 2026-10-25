@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
-import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
+import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
@@ -55,7 +55,8 @@ async function fixture(t, failed = -1, stopClassification = "TASK_COMPLETE", sev
   };
   factory.supportsReviewCollection = true;
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
-    skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
+    skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3,
+      metrics: Object.fromEntries(METRIC_IDS.map(id => [id, true])) },
     reviewers: { stopReviewer: { timeoutMs: 15000 } },
   }, { policyRoot: path.join(root, ".runtime-corrector") }) };
   const run = (extra = {}) => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory, ...extra,

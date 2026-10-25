@@ -40,7 +40,7 @@ for (const classification of ["INTERMEDIATE", "WAITING_FOR_USER", "BLOCKED_EXTER
     factory.supportsReviewCollection = true;
     const plan = { configuredArtifacts: [{ nodeId: "delivery", patterns: ["delivery.txt"], metrics: ["M01"] }],
       runtimeV2: compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
-        implementationCorrection: { enabled: false }, stopCorrection: { enabled: true } }, { policyRoot: path.join(root, ".runtime-corrector") }) };
+        implementationCorrection: { enabled: false }, stopCorrection: { enabled: true, metrics: { M01: true } } }, { policyRoot: path.join(root, ".runtime-corrector") }) };
     await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory, input: { cwd: root, session_id: "host", transcript_path: transcript,
       hook_event_name: "Stop", hook_event_id: "order", last_assistant_message: "Task complete." } });
     assert.equal(classified, true);

@@ -187,7 +187,7 @@ test("task factory cache identity is distinct from native identity and uses a fr
   assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash("sha256").update(promptBytes).digest("hex"));
 });
 
-for (const supplemental of [false, true]) test(`the canonical Stop wrapper preserves cache identity and ${supplemental ? "isolates" : "inlines"} file quality`, async t => {
+for (const supplemental of [false, true]) test(`the canonical Stop wrapper preserves cache identity and ${supplemental ? "isolates enabled" : "skips disabled"} file quality`, async t => {
   const f = await fixture(t);
   await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [
     { operation: "ADD", category: "requirements", text: "Deliver an acknowledged result.", authority: "USER_EXPLICIT", severity: "HARD",
@@ -206,7 +206,7 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
       qualityCalls++;
       assert.ok(input.request.instructions.some(line => line.includes("For each requested deliverable file")));
       assert.equal(input.schema.properties.metricObjectJudgements.maxItems, 0);
-    } else assert.equal(input.request.instructions.some(line => line.includes("For each requested deliverable file")), !supplemental);
+    } else assert.equal(input.request.instructions.some(line => line.includes("For each requested deliverable file")), false);
     const citation = await observedFileCitation({ file, basisFiles: [input.request.groundTruthPath],
       usedBy: quality ? [file] : assigned.map(object => object.objectId) });
     return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [],
@@ -220,7 +220,7 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
   factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);
   factory.reviewCacheIdentity = () => { identityCalls++; return "canonical-scripted-task-runtime-v1"; };
   const config = compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
-    artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true } },
+    artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true, fileQualityReviewEnabled: supplemental } },
     { policyRoot: path.join(f.root, ".runtime-corrector") });
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), "task.json"), "utf8"));
   const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: config }, reviewerFactory: factory,

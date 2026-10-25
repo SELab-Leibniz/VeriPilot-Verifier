@@ -158,6 +158,8 @@ claude
 
 新增 **[M16｜生产实现覆盖率](docs/m16-production-implementation-coverage.md)**：以本次任务冻结的需求及实现范围为基准，检查真实存在、生产可达、核心处理、数据流、必要分支和可追溯证据。每个实现单元必须同时满足全部必要条件才通过；入口、按钮、SDK 导入、固定结果或测试替身不能单独证明覆盖。
 
+Stop 的 M01–M16 均可通过 `.runtime-corrector/config.yaml` 中的 `stopCorrection.metrics` 单独开关。默认仅开启 **M08、M09、M12、M13、M15、M16**，其它指标及独立文件质量审查默认关闭。关闭项不计分或阻断，不显示成 PASS。详见 [指标开关与配置示例](docs/stop-metric-switches.md)。
+
 **多数项目不需要任何配置。** 需要时建 `.runtime-corrector/config.yaml`，优先级恒为：插件默认 < 自动派生 < 显式配置。
 
 想改什么，看这里：

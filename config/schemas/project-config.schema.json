@@ -304,6 +304,82 @@
         "enabled": {
           "type": "boolean"
         },
+        "metrics": {
+          "type": "object",
+          "description": "Per-metric Stop review switches. Omitted entries inherit defaults; task scope is frozen before review. Other correction pipelines keep their own switches.",
+          "properties": {
+            "M01": {
+              "type": "boolean",
+              "default": false
+            },
+            "M02": {
+              "type": "boolean",
+              "default": false
+            },
+            "M03": {
+              "type": "boolean",
+              "default": false
+            },
+            "M04": {
+              "type": "boolean",
+              "default": false
+            },
+            "M05": {
+              "type": "boolean",
+              "default": false
+            },
+            "M06": {
+              "type": "boolean",
+              "default": false
+            },
+            "M07": {
+              "type": "boolean",
+              "default": false
+            },
+            "M08": {
+              "type": "boolean",
+              "default": true
+            },
+            "M09": {
+              "type": "boolean",
+              "default": true
+            },
+            "M10": {
+              "type": "boolean",
+              "default": false
+            },
+            "M11": {
+              "type": "boolean",
+              "default": false
+            },
+            "M12": {
+              "type": "boolean",
+              "default": true
+            },
+            "M13": {
+              "type": "boolean",
+              "default": true
+            },
+            "M14": {
+              "type": "boolean",
+              "default": false
+            },
+            "M15": {
+              "type": "boolean",
+              "default": true
+            },
+            "M16": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "fileQualityReviewEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Independent unnumbered deliverable-file quality review at Stop. Disabled by default; does not enable any M metric."
+        },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
           "minimum": 1

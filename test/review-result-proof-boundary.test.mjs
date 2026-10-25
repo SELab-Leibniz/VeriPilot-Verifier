@@ -176,7 +176,7 @@ test("checker proof loss does not consume business correction k", async t => {
     : f.result(params), close: async () => {} });
   factory.supportsReviewCollection = true;
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
-    skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 } }, { policyRoot: path.join(f.root, ".runtime-corrector") }) };
+    skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3, metrics: { M11: true } } }, { policyRoot: path.join(f.root, ".runtime-corrector") }) };
   const result = await handleRuntimeV2Event({ projectRoot: f.root, plan, reviewerFactory: factory,
     input: { cwd: f.root, session_id: sessionId, transcript_path: transcript, hook_event_name: "Stop", hook_event_id: "proof-loss", last_assistant_message: "Task complete." } });
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, task.taskId), "task.json"), "utf8"));

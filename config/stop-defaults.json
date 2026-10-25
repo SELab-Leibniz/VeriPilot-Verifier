@@ -1,3 +1,22 @@
 {
-  "maxCorrectionsPerEpoch": 3
+  "maxCorrectionsPerEpoch": 3,
+  "metrics": {
+    "M01": false,
+    "M02": false,
+    "M03": false,
+    "M04": false,
+    "M05": false,
+    "M06": false,
+    "M07": false,
+    "M08": true,
+    "M09": true,
+    "M10": false,
+    "M11": false,
+    "M12": true,
+    "M13": true,
+    "M14": false,
+    "M15": true,
+    "M16": true
+  },
+  "fileQualityReviewEnabled": false
 }

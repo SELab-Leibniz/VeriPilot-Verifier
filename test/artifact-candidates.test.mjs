@@ -39,6 +39,16 @@ test("a source declaration and metricCheckpoint alone do not invent artifact pro
   assert.deepEqual(qualityOnly.files, [{ path: "kitchen.py", sha256: sha256(await fs.readFile(path.join(f.root, "kitchen.py"))) }]);
 });
 
+test("Stop selection skips disabled declarations and retains only enabled metric identities", async t => {
+  const f = await fixture(t);
+  await f.write("disabled.md"); await f.write("selected.md");
+  const result = await collectArtifactCandidates({ projectRoot: f.root, enabledMetricIds: ["M12"], plan: { artifacts: [
+    artifact("disabled", ["disabled.md"], ["M01"]), artifact("selected", ["selected.md"], ["M01", "M12"]),
+  ] } });
+  assert.equal(result.length, 1); assert.equal(result[0].artifactId, "selected");
+  assert.deepEqual(result[0].metricIds, ["M12"]); assert.equal(result[0].files[0].path, "selected.md");
+});
+
 test("explicit configured ownership binds complete hashed files without a related-file cap or filename role guesses", async t => {
   const f = await fixture(t);
   for (const name of ["config.md", "reviewer.md", "requirements.md"]) await f.write(`docs/${name}`);
@@ -138,7 +148,8 @@ test("the production Stop caller forwards one frozen declaration without changin
   const transcript = await f.write("transcript.jsonl", JSON.stringify({ type: "user", uuid: "user:1",
     message: { content: "The current delivery acknowledges this requirement." } }) + "\n");
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
-    artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true } },
+    artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false },
+    stopCorrection: { enabled: true, metrics: { M01: true, M02: true, M05: true } } },
     { policyRoot: path.join(f.root, ".runtime-corrector") });
   const plan = { runtimeV2, artifacts: [artifact("current-delivery", ["docs/current.md"], ["M01", "M02", "M05"])] };
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, task.taskId), "task.json"), "utf8"));

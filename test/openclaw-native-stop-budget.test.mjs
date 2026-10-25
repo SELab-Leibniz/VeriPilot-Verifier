@@ -96,7 +96,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 2000 } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 2000 } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -115,6 +115,7 @@ dynamicGroundTruth:
     size: 0
 stopCorrection:
   enabled: true
+${metrics ? `  metrics:\n${Object.entries(metrics).map(([id, enabled]) => `    ${id}: ${enabled}`).join("\n")}\n` : ""}  fileQualityReviewEnabled: ${quality !== null}
   waitMode: ${waitMode}
 ${waitTimeoutMs ? `  waitTimeoutMs: ${waitTimeoutMs}\n` : ""}  assessmentTimeoutMs: 11000
 implementationCorrection:
@@ -182,6 +183,19 @@ test("native reply preserves payload and finishes RC terminal work in its indepe
   await fs.writeFile(path.join(f.root, "draft.md"), "Changed after review.\n");
   assert.equal((await readReport(binding)).verification, "STALE", "A later source edit must invalidate acceptance");
 });
+test("all Stop metrics and file quality off settle the native wait as DISABLED without model review or correction", async t => {
+  const metrics = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, "0")}`, false]));
+  const f = await lifecycle(t, { deviation: true, metrics, waitMode: "until_pass" });
+  f.api.runtime.subagent = { run: () => assert.fail("Disabled review cannot dispatch a corrective business run.") };
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [record] = await f.runtime.waitForNativeReviews({ drain: true });
+  assert.equal(record.reviewStatus, "DISABLED"); assert.equal(f.chain().pending, false);
+  assert.equal(f.calls(), 0);
+  const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+  assert.equal(task.verification.status, "DISABLED"); assert.equal(task.stop.correctionAttempts, 0);
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
 test("a fresh Gateway rediscovers modified artifacts from the active native transcript before accepting an exec-only continuation", async t => {
   const f = await lifecycle(t);
   await fs.appendFile(path.join(f.root, "native.jsonl"), "\n" + [

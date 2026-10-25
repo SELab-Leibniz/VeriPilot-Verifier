@@ -8,7 +8,7 @@ import test from "node:test";
 
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { runSemanticReview } from "../lib/semantic-review.mjs";
-import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
+import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { recordFailOpenWarning } from "../lib/runtime-v2/fail-open.mjs";
 import { recordDeviationFindings, ROOT_CAUSE_IDS } from "../lib/runtime-v2/deviations.mjs";
 import {
@@ -87,8 +87,11 @@ function v2Plan(projectRoot, overrides = {}) {
       maxFeedbacksPerSkill: 1,
     },
     artifactCorrection: { groundTruthReviewEnabled: true, stageMetricsEnabled: true },
-    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
     ...overrides,
+    // These legacy scenarios exercise the full catalog. Production defaults
+    // and individual switches are covered in stop-metric-policy.test.mjs.
+    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3,
+      metrics: Object.fromEntries(METRIC_IDS.map(id => [id, true])), ...(overrides.stopCorrection ?? {}) },
   };
   return {
     runtimeV2: compileRuntimeV2Config(config, {

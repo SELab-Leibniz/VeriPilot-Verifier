@@ -25,6 +25,14 @@ test("a successful summary names verified files and confirms fixes only with rec
   assert.doesNotMatch(text, /反馈送达|修改 2 次|连续评审故障|三份文档|PASS|OPEN/u);
 });
 
+test("disabled review is disclosed without a PASS claim and does not hide a stopped execution", () => {
+  const disabled = renderSummary(report({ verification: "DISABLED" }));
+  assert.match(disabled, /按项目配置关闭/u);
+  assert.doesNotMatch(disabled, /验收通过/u);
+  const stopped = renderSummary(report({ verification: "DISABLED", status: "STOPPED", phase: "STOPPED" }));
+  assert.match(stopped, /自动执行已停止/u);
+});
+
 test("budget exhaustion keeps failure, missing verification and a verified fix distinct", () => {
   const text = renderSummary(report({ status: "COMPLETED_WITH_ISSUES", phase: "STOPPED", verification: "DEVIATION",
     correctionBudgetExhausted: true, budget: { correctionsUsed: 3, maximum: 3 }, files: [

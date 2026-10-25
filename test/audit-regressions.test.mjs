@@ -40,7 +40,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
     dynamicGroundTruth: { enabled: true, panel: { size: 0 }, materialRoots: [] },
     skillCorrection: { enabled: false },
     artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
-    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: maxCorrections },
+    stopCorrection: { enabled: true, maxCorrectionsPerEpoch: maxCorrections, metrics: { M11: true } },
     implementationCorrection: { enabled: true, platform: null },
     ...(independentStop ? { reviewers: { stopReviewer: { session: "independent", provider: { baseUrl: "https://example.invalid", apiKeyEnv: "TEST_KEY" } } } } : {}),
   }, { policyRoot: path.join(root, ".runtime-corrector") });
