@@ -8,6 +8,7 @@ import { ensureTask, taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { IMPL_REVIEW_SCHEMA } from '../lib/runtime-v2/impl-review.mjs';
 import { isInternalExecution } from '../lib/openclaw/internal-context.mjs';
+import { withNativeTaskToolPolicy } from '../lib/openclaw/native-config.mjs';
 
 async function fixture(t) {
   const parent = path.resolve('.runtime-correction/native-runtime-tests'); await fs.mkdir(parent, { recursive: true });
@@ -32,6 +33,8 @@ async function fixture(t) {
 }
 async function scripted(params, f) {
   assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES); assert.equal(params.customTools, undefined);
+  assert.deepEqual(params.config.tools.allow, TASK_TOOL_NAMES);
+  assert(TASK_TOOL_NAMES.every(name => params.config.agents.list.find(agent => agent.id === params.agentId).tools.alsoAllow.includes(name)));
   assert.equal(f.tools({ sessionId: 'business', sessionKey: 'agent:main:business' }), null);
   assert.equal(f.tools({ sessionId: 'business', sessionKey: params.sessionKey }), null);
   const tools = new Map(f.tools(params).map(tool => [tool.name, tool]));
@@ -51,6 +54,26 @@ async function scripted(params, f) {
   assert.equal(params.abortSignal.aborted, true, 'Only the finished child execution is stopped after its receipt');
   return { payloads: [], meta: { aborted: true } };
 }
+
+test('private task policy grants the selected agent through its profile without changing host config or denies', () => {
+  const source = { tools: { profile: 'coding', alsoAllow: ['global-extra'], deny: ['exec'] }, agents: { list: [
+    { id: 'main', name: 'Business', tools: { alsoAllow: ['business-extra'], deny: ['source_read'] } },
+    { id: 'other', tools: { alsoAllow: ['other-extra'] } },
+  ] } };
+  const before = structuredClone(source);
+  const result = withNativeTaskToolPolicy(source, 'main', TASK_TOOL_NAMES);
+  assert.deepEqual(source, before);
+  assert.equal(result.tools.profile, 'coding');
+  assert.deepEqual(result.tools.allow, TASK_TOOL_NAMES);
+  assert.deepEqual(result.tools.deny, ['exec']);
+  assert.deepEqual(result.agents.list[0], { id: 'main', name: 'Business', tools: {
+    alsoAllow: ['business-extra', ...TASK_TOOL_NAMES], deny: ['source_read'],
+  } });
+  assert.deepEqual(result.agents.list[1], before.agents.list[1]);
+  const inherited = withNativeTaskToolPolicy({ tools: source.tools }, 'reviewer', TASK_TOOL_NAMES);
+  assert.deepEqual(inherited.agents.list[0].tools.alsoAllow, ['global-extra', ...TASK_TOOL_NAMES]);
+  assert.deepEqual(withNativeTaskToolPolicy(result, 'main', TASK_TOOL_NAMES), result);
+});
 test('task factory delegates authentication/catalog and lifecycle to the host with exact registered tools', async t => {
   const f = await fixture(t); let params;
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: 'task', runEmbeddedAgent: async p => { params = p; return scripted(p, f); } });

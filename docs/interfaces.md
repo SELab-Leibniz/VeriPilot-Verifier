@@ -1,8 +1,28 @@
 # 外部接口参考
 
-Runtime Corrector 支持四类稳定的客户入口：插件命令、Skill/自然语言、CLI、JSON-stdio Hook。高级兼容模式还支持自定义 Matcher 和 Collector。
+Runtime Corrector 提供插件命令、Skill/自然语言、CLI，以及宿主对应的自动 Hook 入口。Claude Code / CodeAgent 使用 JSON-stdio Hook；OpenClaw / MatrixAssistant 使用原生插件注册、Gateway 方法和工具结果中间件。高级兼容模式还支持自定义 Matcher 和 Collector。
 
-## 宿主插件能力基线
+## OpenClaw / MatrixAssistant 原生入口
+
+安装产物中的 `openclaw.plugin.json` 将 `main` 指向 `lib/openclaw/entry.mjs`。插件加载时注册原生接口；OpenClaw 不通过下文的 Claude/CodeAgent JSON-stdio Hook 启动这些能力。支持版本和安装方式见[宿主指南](openclaw.md)。
+
+- **会话开关**：Gateway RPC `runtime-corrector.session.get/set`，以及可信用户命令 `/rc-session status|on|off`。输入为准确的 `sessionKey`、`sessionId`，设置时增加布尔值 `enabled`；输出包含项目、会话选择、实际状态、阻断原因和记录位置。完整输入输出、认证要求、代码位置与调用示例见[开关契约](session-control.md#宿主-gateway--ui-对接)。项目总开关在项目配置中修改，没有独立的项目开关 RPC。
+- **项目查询**：用户命令 `/rc-project status`，或工具 `runtime_corrector` 的 `{"command":"project"}`。前者返回文本中的 JSON，后者返回工具的 `content[].text` 中的 JSON，包含项目来源、准入状态和原因。手动项目绑定仅在旧版缺少宿主项目目录时由可信用户命令提供，见[项目解析契约](session-projects.md)。
+- **手动工具**：宿主注册名为 `runtime_corrector` 的工具，参数为 `command`、可选 `subject`、`enabled`、`format`。支持 `project`、`help`、`init`、`validate`、`stages`、`stage`、`check`、`explain`、`spec`。`check/explain/spec/stage` 必须提供 `subject`，`stage` 还需明确布尔值 `enabled`；`format` 可为 `text` 或 `json`。`init` 可在已可靠解析、配置尚未建立的项目运行；`help/project` 不要求 RC 已开启；其余命令要求当前作用域已启用。宿主工具上下文若没有工作目录或处于 sandbox，该工具不提供。
+
+例如手动检查已配置产物时，输入为：
+
+```json
+{"command":"check","subject":"docs/requirements.md","format":"json"}
+```
+
+返回形式为 `{content: [{type: "text", text: "…"}], isError?: boolean}`；JSON 检查结果在 `text` 内，包含 `status`、`diagnostics`、`agentReview` 等字段，错误时可能只有错误文本。宿主原生 `check` 调用 `runtime.manualCheck`，可运行项目已启用的原生语义审阅；下文独立 CLI 的 `check` 则只返回待执行的语义工作。它不保证整个任务验收通过，也没有 Session 开关写入命令。
+
+自动纠偏由 `entry.mjs` 注册的 `session_start`、`before_prompt_build`、`before_tool_call` 等生命周期回调、工具结果中间件和终止检查协调。宿主传递可信当前会话、项目及工具事件，RC 按有效配置运行并向主 Agent 返回反馈。私有 Reviewer 工具不是宿主 UI 的控制接口；开关也不绕过宿主业务工具权限。
+
+查找可调用接口时以 `entry.mjs` 实际注册的内容为准。仓库虽保留 `control-entry.mjs` 中的 `runtime-corrector.status/feedback/control/receipt` 和独立 HTTP 页面代码，当前生产入口没有调用该模块的注册函数，不能因为源码文件存在就认为这些方法或页面已在宿主开放。
+
+## Claude Code / CodeAgent 插件能力基线
 
 插件兼容性由版本无关的 `claude-plugin-core-hooks-json-stdio` 能力契约定义，而不是由 Claude Code、Claude 插件或任何包的运行时版本定义。运行时不检测版本，也不按版本选择配置、命令或 Hook 处理路径。
 

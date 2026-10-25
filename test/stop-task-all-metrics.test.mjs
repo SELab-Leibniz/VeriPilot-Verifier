@@ -52,7 +52,7 @@ async function fixture(t, metricId = "M11", verificationTarget = "PROCESS", { pr
 // These are explicitly known witnesses authored by this fixture, never an
 // arbitrary first copied file or a targetFiles seed supplied by the adapter.
 async function result(options, { file = ["PROCESS_COMPLIANCE", "RUNTIME_ACCEPTANCE", "EXECUTION_CLOSURE"].includes(options.task.scope)
-  ? "process/000000.json" : "project/candidate.md", verdict = "PASS" } = {}) {
+  ? "execution/000000.json" : "project/candidate.md", verdict = "PASS" } = {}) {
   return observedTaskResult(options, { file, verdict, reason: "The selected witness supports only the assigned scope." });
 }
 const judgement = handle => handle.result.metricObjectJudgements[0];
@@ -111,7 +111,7 @@ test("bound file quality is a nonmetric SDK job with all active GT and only its 
       assert.deepEqual(await part("ground-truth"), f.truth, "All frozen GT metadata and SOFT background remain intact.");
       assert.equal(Object.hasOwn(await part("assigned-object"), "object"), false);
       assert.deepEqual((await part("assigned-object")).qualityTarget, target);
-      await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
+      await assert.rejects(fs.stat(path.join(options.root, "execution")), { code: "ENOENT" });
       assert.deepEqual(await fs.readdir(path.join(options.root, "project")), ["candidate.md"]);
       return verdict === "UNVERIFIED" ? { completed: true, verdict, reason: "Current-file quality cannot be concluded.", refs: [] }
         : result(options, { verdict });
@@ -266,8 +266,8 @@ test("metric and evidence ownership choose a fixed scope and dedicated profile",
       assert.equal(options.task.scope, scope);
       assert.deepEqual(options.task.targetFiles, scope === "METRIC_ARTIFACT_REVIEW" || metric === "M16" ? ["project/candidate.md"] : []);
       assert.deepEqual({ promptAppend: options.promptAppend, reviewType: options.task.reviewType }, reviewPromptProfile(metric, scope));
-      if (["SOURCE_IMPLEMENTATION", "METRIC_ARTIFACT_REVIEW"].includes(scope)) await assert.rejects(fs.stat(path.join(options.root, "process")), { code: "ENOENT" });
-      else assert.equal((await fs.readdir(path.join(options.root, "process"))).length, 2);
+      if (["SOURCE_IMPLEMENTATION", "METRIC_ARTIFACT_REVIEW"].includes(scope)) await assert.rejects(fs.stat(path.join(options.root, "execution")), { code: "ENOENT" });
+      else assert.equal((await fs.readdir(path.join(options.root, "execution"))).length, 2);
       return result(options);
     } });
   });
@@ -301,8 +301,8 @@ test("process-only review needs no project file and cannot use the authoritative
   const f = await fixture(t, "M11", "PROCESS", { projectFile: false });
   const handle = await runStopTaskReview(f.input, { runTask: async options => {
     assert.deepEqual(options.task.targetFiles, []);
-    assert.deepEqual(options.task.targetPrefixes, ["process/"]);
-    assert.equal(options.task.basisFiles.some(file => file.startsWith("process/")), false);
+    assert.deepEqual(options.task.targetPrefixes, ["execution/"]);
+    assert.equal(options.task.basisFiles.some(file => file.startsWith("execution/")), false);
     return result(options);
   } });
   assert.equal(judgement(handle).judgement, "PASS");

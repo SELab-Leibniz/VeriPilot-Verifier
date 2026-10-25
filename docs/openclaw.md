@@ -56,7 +56,7 @@ Stop 等待使用同一通道，只刷新实际受阻的当前请求；已结束
 
 ## 安装前提
 
-OpenClaw 产物声明的 Node 范围为 `>=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0`，并须同时满足所安装宿主的更严格要求。原生审阅任务固定依赖 `typebox 1.3.27`；构建产物包含 npm v3 锁文件，可在产物目录执行 `npm ci --ignore-scripts` 预装。
+OpenClaw 产物声明的 Node 范围为 `>=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0`，并须同时满足所安装宿主的更严格要求。产物将 `typebox 1.3.27` 的私有副本及 MIT 许可证放入 `vendor/typebox/`，审阅模块通过相对路径直接加载，随插件一同复制安装，无需 npm 或网络。它不依赖全局、宿主或其他项目的 TypeBox，也不写入这些位置。构建仅使用仓库内压缩包，先按审阅任务锁文件校验 SHA-512；归档缺失或不匹配时构建失败。原始 npm v3 锁文件保留在 `lib/review-task/`，插件根包不再声明需要另行下载的 TypeBox 依赖。
 
 ### MA 启动后插件配置消失
 
@@ -74,7 +74,11 @@ node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs
 
 MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
-合并不自动安装。当前包版本 `1.9.1-openclaw.11-session-projects.12`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
+Stop 任务审查的六个私有工具还须通过宿主的工具 profile 筛选。RC 仅在每次私有审查的配置副本中，将这些工具追加到所选 Agent 的 `tools.alsoAllow`，并用 `tools.allow` 与运行参数 `toolsAllow` 限定最终工具范围；保留显式 deny。这个配置不保存到宿主配置文件，工具仍须匹配有效的审查会话绑定，业务会话不会因此获得它们。
+
+冻结的执行记录使用 `execution/` 和 `execution-index.json` 作为审查包内部路径，避免 MA 将旧的 `process/`、`process-index.json` 按 `/proc` 敏感路径误判。这些文件仍受原有快照范围、哈希、读取凭据和宿主审核约束。
+
+合并不自动安装。当前包版本 `1.9.1-openclaw.11-session-projects.15`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{

@@ -48,11 +48,12 @@ test("process proof skips unrelated project copies while preserving full origina
   const f = await fixture(t);
   const h = await runStopTaskReview(f.input, { runTask: async options => {
     assert.equal(options.task.scope, "PROCESS_COMPLIANCE");
-    assert.deepEqual(options.task.targetPrefixes, ["process/"]);
+    assert.deepEqual(options.task.targetPrefixes, ["execution/"]);
+    await fs.access(path.join(options.root, "execution-index.json"));
     assert.equal(await fs.stat(path.join(options.root, "project")).catch(error => error.code === "ENOENT" ? null : Promise.reject(error)), null);
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "original-ground-truth.json"), "utf8")), f.truth);
     for (const [index, entry] of f.snapshot.entries.entries())
-      assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "process", `${String(index).padStart(6, "0")}.json`), "utf8")), entry);
+      assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "execution", `${String(index).padStart(6, "0")}.json`), "utf8")), entry);
     const basis = (await Promise.all(options.task.basisFiles.map(file => fs.readFile(path.join(options.root, file), "utf8")))).join("");
     assert.match(basis, /never weaken the verifier/);
     assert.match(basis, /preserve every original condition/);
@@ -76,11 +77,11 @@ test("runtime acceptance retains verifier, implementation and original invocatio
   const f = await fixture(t, "M12", "IMPLEMENTATION");
   await runStopTaskReview(f.input, { runTask: async options => {
     assert.equal(options.task.scope, "RUNTIME_ACCEPTANCE");
-    assert.deepEqual(options.task.targetPrefixes, ["process/"]);
+    assert.deepEqual(options.task.targetPrefixes, ["execution/"]);
     assert.equal(await fs.readFile(path.join(options.root, "project/verify.py"), "utf8"), "assert current_implementation_is_valid\n");
     assert.equal(await fs.readFile(path.join(options.root, "project/src/unrelated.py"), "utf8"), "# unrelated application module\n");
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "original-ground-truth.json"), "utf8")), f.truth);
-    assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "process/000001.json"), "utf8")), f.snapshot.entries[1]);
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(options.root, "execution/000001.json"), "utf8")), f.snapshot.entries[1]);
     return unknown();
   } });
 });
@@ -143,7 +144,7 @@ test("candidate body reads inherit cancellation and stop before reading the next
 for (const proof of ["complete", "missing-basis", "wrong-basis-hash", "missing-cite-id"]) test(`SDK ${proof} input emits only justified program read proof`, async t => {
   const f = await fixture(t);
   const h = await runStopTaskReview(f.input, { runTask: async options => {
-    const file = "process/000001.json", bytes = await fs.readFile(path.join(options.root, file));
+    const file = "execution/000001.json", bytes = await fs.readFile(path.join(options.root, file));
     const citeId = "audit-cite-id";
     const basis = await Promise.all(options.task.basisFiles.map(async file => {
       const bytes = await fs.readFile(path.join(options.root, file));

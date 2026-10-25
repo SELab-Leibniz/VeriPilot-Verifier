@@ -9,6 +9,7 @@ import { ensureTask, withTaskState } from '../lib/runtime-v2/task-store.mjs';
 import { applyGroundTruthDelta, freezeGroundTruth, loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { rejectedGroundTruthSource } from '../lib/runtime-v2/ground-truth-provenance.mjs';
 import { handleRuntimeV2Event, refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
+import { prepareReviewerRequest } from '../lib/runtime-v2/reviewer-evidence.mjs';
 
 const operation = (text='Original requirement.', ref='transcript:u1') => ({ operation:'ADD', category:'requirements', text,
   authority:'USER_EXPLICIT', severity:'HARD', source:{ref,kind:'USER_MESSAGE',subject:'MAIN_TASK'} });
@@ -63,6 +64,27 @@ test('extractors and adjudicator get the complete snapshot while legacy userMess
     assert.equal(call.request.userMessages[0].length,4000);
     assert.equal(call.request.userMessages[1].length,4000);
     assert.ok(!call.request.userMessages.some(text=>text.includes('_TAIL')));
+  }
+});
+
+test('fresh onboarding delivers a readable frozen empty ledger without a nonexistent live path',async t=>{
+  const f=await fixture(t),factory=factoryFor(f);
+  await assert.rejects(fs.access(path.join(f.root,'.runtime-correction/tasks',f.task.taskId,'ground-truth/current.json')),{code:'ENOENT'});
+  const outcome=await runTaskOnboarding({input:f.input,projectRoot:f.root,task:f.task,runtimeV2:f.runtimeV2,snapshot:f.snapshot,reviewerFactory:factory});
+  assert.equal(outcome.status,'COMPLETED');
+  for(const [index,call] of factory.calls.entries()) {
+    assert.equal(call.request.currentGroundTruth.path,undefined,'an unmaterialized live ledger must not be advertised');
+    assert.equal(call.evidence.groundTruth.version,0);
+    assert.deepEqual(call.evidence.groundTruth.claims,[]);
+    const requestDirectory=path.join(f.root,'materialized-empty-ledger',String(index));
+    await fs.mkdir(requestDirectory,{recursive:true});
+    const prepared=await prepareReviewerRequest({requestDirectory,request:call.request,evidence:call.evidence});
+    assert.equal(prepared.currentGroundTruth.path,prepared.groundTruthPath);
+    const frozen=JSON.parse(await fs.readFile(prepared.currentGroundTruth.path,'utf8'));
+    assert.equal(frozen.version,0);
+    assert.deepEqual(frozen.claims,[],'later onboarding commits cannot mutate the captured initial baseline');
+    const relative=path.relative(requestDirectory,prepared.currentGroundTruth.path);
+    assert(!relative.startsWith('..')&&!path.isAbsolute(relative));
   }
 });
 

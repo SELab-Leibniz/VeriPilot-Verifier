@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { buildPlugin } from "../lib/plugin-builder.mjs";
@@ -29,6 +30,7 @@ async function fixture(t) {
   const worker = path.join(sourceRoot, "lib/review-task");
   await write(path.join(sourceRoot, "packaging/runtime-modules.json"),
     await fs.readFile(path.join(SOURCE, "packaging/runtime-modules.json"), "utf8"));
+  await fs.cp(path.join(SOURCE, "packaging/vendor"), path.join(sourceRoot, "packaging/vendor"), { recursive: true });
   await write(path.join(sourceRoot, "package.json"), {
     name: "runtime-corrector", version: "1.9.1", type: "module", engines: { node: ">=18" },
     bin: { "runtime-corrector": "./scripts/cli.mjs" }, scripts: { check: "node scripts/cli.mjs" },
@@ -36,7 +38,6 @@ async function fixture(t) {
   for (const file of ["package.json", "package-lock.json"]) {
     await write(path.join(worker, file), await fs.readFile(path.join(SOURCE, "lib/review-task", file), "utf8"));
   }
-  await write(path.join(worker, "review-task.mjs"), "export const packaged = true;\n");
   for (const directory of ["commands", "skills"]) await fs.mkdir(path.join(sourceRoot, directory), { recursive: true });
   await write(path.join(sourceRoot, "hooks/hooks.json"), { hooks: {} });
   await write(path.join(sourceRoot, "docs/openclaw.md"), "# Review package fixture\n");
@@ -100,7 +101,7 @@ test("every artifact excludes nested installations and private experiment output
   await fs.access(path.join(input.worker, "node_modules/worker-sentinel"));
 });
 
-test("OpenClaw root package and lock retain exact worker dependencies and all transitive records", async t => {
+test("OpenClaw ships a private locked TypeBox without an external install dependency", async t => {
   const input = await fixture(t);
   const artifact = await buildPlugin({ ...input, host: "openclaw" });
   const pkg = await read(path.join(artifact, "package.json"));
@@ -108,24 +109,57 @@ test("OpenClaw root package and lock retain exact worker dependencies and all tr
   const workerPackage = await read(path.join(input.worker, "package.json"));
   const workerLock = await read(path.join(input.worker, "package-lock.json"));
   const manifest = await read(path.join(artifact, "openclaw.plugin.json"));
-  assert.deepEqual(pkg.dependencies, workerPackage.dependencies);
-  assert.equal(Object.keys(pkg.dependencies).length, 1);
+  assert.equal(pkg.dependencies, undefined);
   assert.doesNotMatch(JSON.stringify(lock), /@earendil-works\/pi-/u);
-  assert.equal(pkg.dependencies.typebox, "1.3.27");
+  assert.equal(workerPackage.dependencies.typebox, "1.3.27");
+  assert.deepEqual(pkg.runtimeCorrector.bundledDependencies.typebox, {
+    version: "1.3.27", integrity: workerLock.packages["node_modules/typebox"].integrity,
+    path: "vendor/typebox", license: "MIT",
+  });
+  assert.equal((await read(path.join(artifact, "vendor/typebox/package.json"))).version, "1.3.27");
+  await fs.access(path.join(artifact, "vendor/typebox/license"));
+  assert.match(await fs.readFile(path.join(artifact, "lib/review-task/review-task.mjs"), "utf8"),
+    /from '\.\.\/\.\.\/vendor\/typebox\/build\/index\.mjs'/u);
   assert.deepEqual(pkg.overrides, workerPackage.overrides);
   if (workerPackage.overrides?.undici) assert.equal(lock.packages["node_modules/undici"].version, workerPackage.overrides.undici);
   assert.equal(pkg.version, manifest.version);
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.12");
+  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.15");
   assert.equal(lock.lockfileVersion, 3);
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.version, pkg.version);
   for (const key of ["name", "version", "dependencies", "engines", "bin", "peerDependencies", "peerDependenciesMeta"]) {
     assert.deepEqual(lock.packages[""][key], pkg[key]);
   }
-  assert.deepEqual(Object.fromEntries(Object.entries(lock.packages).filter(([name]) => name !== "")),
-    Object.fromEntries(Object.entries(workerLock.packages).filter(([name]) => name !== "")));
-  for (const [name, version] of Object.entries(pkg.dependencies)) assert.equal(lock.packages[`node_modules/${name}`].version, version);
+  assert.deepEqual(Object.keys(lock.packages), [""]);
+  assert.deepEqual(await read(path.join(artifact, "lib/review-task/package-lock.json")), workerLock);
   assert.equal(pkg.peerDependenciesMeta.openclaw.optional, true);
+});
+
+test("a copied artifact imports its real review engine without node_modules or ambient TypeBox", async t => {
+  const input = await fixture(t);
+  const artifact = await buildPlugin({ ...input, host: "openclaw" });
+  const installed = path.join(input.outputRoot, "copied-install");
+  await fs.cp(artifact, installed, { recursive: true });
+  const ambient = path.join(input.outputRoot, "node_modules/typebox");
+  await write(path.join(ambient, "package.json"), { name: "typebox", version: "0.0.0", type: "module", exports: "./index.mjs" });
+  await write(path.join(ambient, "index.mjs"), "throw new Error('AMBIENT_TYPEBOX_MUST_NOT_LOAD');\n");
+  const url = pathToFileURL(path.join(installed, "lib/review-task/review-task.mjs")).href;
+  const result = spawnSync(process.execPath, ["--input-type=module", "-e",
+    `const worker = await import(${JSON.stringify(url)}); if (typeof worker.runReviewTask !== 'function') process.exit(1); console.log('PRIVATE_REVIEW_IMPORT_OK');`],
+    { cwd: installed, env: { ...process.env, NODE_PATH: path.dirname(ambient) }, encoding: "utf8", windowsHide: true, timeout: 30000 });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /PRIVATE_REVIEW_IMPORT_OK/u);
+  await assert.rejects(fs.access(path.join(installed, "node_modules")), { code: "ENOENT" });
+  assert.equal(await fs.readFile(path.join(ambient, "index.mjs"), "utf8"), "throw new Error('AMBIENT_TYPEBOX_MUST_NOT_LOAD');\n");
+});
+
+test("a changed dependency archive fails the build before it can be installed", async t => {
+  const input = await fixture(t);
+  const archive = path.join(input.sourceRoot, "packaging/vendor/typebox-1.3.27.tgz");
+  const bytes = await fs.readFile(archive);
+  bytes[bytes.length - 1] ^= 1;
+  await fs.writeFile(archive, bytes);
+  await assert.rejects(buildPlugin({ ...input, host: "openclaw" }), /archive integrity/u);
 });
 
 test("a mismatched pinned worker package cannot produce an installable-looking artifact", async t => {
