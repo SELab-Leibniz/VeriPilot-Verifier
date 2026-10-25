@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateProductionTrace } from "../lib/review-task/production-trace.mjs";
 import { captureFiles, registerCitation, runReviewTask, validateDecision } from "../lib/review-task/review-task.mjs";
-import { ModelRuntime, createAssistantMessageEventStream } from "../lib/review-task/sdk.mjs";
+import { nativeTools } from "./helpers/native-task.mjs";
 
 const stateless = () => ({ version: 1, entryPoint: "preview(input)", actualInput: "Caller input is returned",
   producerToConsumer: "The caller's argument flows directly through preview to its return value.", stateful: false,
@@ -82,31 +82,16 @@ test("M16 decision gate requires trace on PASS while preserving early D/U and ot
   await assert.rejects(validateDecision({ ...f, decision: { ...decision, citeIds: [f.source.citeId, f.basis.citeId], productionTrace: foreign } }), /M16_PRODUCTION_TRACE/u);
 });
 
-test("SDK rejects an untraced M16 PASS and preserves the corrected trace through final currentness validation", async t => {
-  const f = await fixture(t), runtime = await ModelRuntime.create({ authPath: f.authPath, modelsPath: null, refreshOnCreate: false });
+test("native submission rejects an untraced M16 PASS and preserves the corrected trace through final currentness validation", async t => {
+  const f = await fixture(t);
   let turns = 0;
-  const provider = `trace-${crypto.randomUUID()}`;
-  runtime.registerProvider(provider, { api: "openai-completions", apiKey: "offline-placeholder", baseUrl: "http://127.0.0.1:1",
-    models: [{ id: "offline", name: "offline", input: ["text"], contextWindow: 204800, maxTokens: 8192, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
-    streamSimple(model, context) {
-      turns++;
-      const citations = [...JSON.stringify(context.messages).replace(/\\+"/gu, '"').matchAll(/\[citeId="([a-f0-9-]+)" \| range project\/main\.js:/gu)];
-      const name = turns <= 2 ? "source_read" : "submit_review";
-      const args = turns <= 2 ? { path: turns === 1 ? "basis.txt" : "project/main.js" }
-        : { taskId: f.task.id, verdict: "PASS", reason: "The actual caller input is returned directly.", citeIds: citations.slice(-1).map(match => match[1]),
-          ...(turns >= 4 ? { productionTrace: stateless() } : {}) };
-      if (turns === 4) assert.match(JSON.stringify(context.messages), /M16_PRODUCTION_TRACE/u);
-      const stream = createAssistantMessageEventStream();
-      queueMicrotask(() => {
-        const message = { role: "assistant", api: model.api, provider: model.provider, model: model.id,
-          content: [{ type: "toolCall", id: `call-${turns}`, name, arguments: args }], stopReason: "toolUse", timestamp: Date.now(),
-          usage: { input: 100, output: 10, cacheRead: 0, cacheWrite: 0, totalTokens: 110, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
-        stream.push({ type: "start", partial: message }); stream.push({ type: "done", reason: "toolUse", message }); stream.end();
-      });
-      return stream;
-    },
-  });
-  const result = await runReviewTask({ task: f.task, root: f.root, outputDir: f.outputDir, modelRuntime: runtime, model: runtime.getModel(provider, "offline"), maxAttempts: 1, maxTurns: 5 });
+  const result = await runReviewTask({ task: f.task, root: f.root, outputDir: f.outputDir, maxAttempts: 1, maxTurns: 5,
+    nativeRun: async worker => {
+      const tools = nativeTools(worker);
+      await tools.read('basis.txt'); const citeId = await tools.read('project/main.js');
+      await assert.rejects(tools.submit(f.task.id, 'PASS', [citeId]), /M16_PRODUCTION_TRACE/);
+      await tools.submit(f.task.id, 'PASS', [citeId], { productionTrace: stateless() }); turns = 4;
+    } });
   assert.equal(turns, 4); assert.equal(result.completed, true); assert.equal(result.verdict, "PASS");
   assert.deepEqual(result.productionTrace, stateless());
   const saved = JSON.parse(await fs.readFile(path.join(f.outputDir, "decision.json"), "utf8"));

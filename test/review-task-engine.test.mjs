@@ -1,6 +1,6 @@
 // Promote the previously validated mechanism checks without replaying business tasks.
 import "./.review-task/checks.mjs";
-import "./.review-task/sdk-checks.mjs";
+import "./.review-task/native-checks.mjs";
 import "./.review-task/memory-checks.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { captureFiles, registerCitation, runReviewTask, taskVerdicts, validateDecision } from "../lib/review-task/review-task.mjs";
-import { ModelRuntime, createAssistantMessageEventStream } from "../lib/review-task/sdk.mjs";
+import { nativeTools } from "./helpers/native-task.mjs";
 
 test("review profiles preserve task ownership and keep untuned routes unchanged", () => {
   assert.match(reviewPromptProfile("M01", "REQUIREMENT_DECOMPOSITION_COVERAGE").promptAppend, /Metric M01/);
@@ -113,9 +113,9 @@ test("both conditional applicability verdicts retain full basis, target ownershi
     await assert.rejects(validateDecision({ ...f, task, decision: discoveryDecision(verdict, [f.candidate.citeId]) }), /STALE/u);
 });
 
-// Exercise the real SDK tool schema/save path with an offline scripted provider.
+// Exercise the native tool schema/save contract with a scripted host.
 // This checks protocol enforcement, not a model's semantic trigger reasoning.
-test("conditional SDK submissions keep both applicability verdicts durable while the default schema rejects them", async t => {
+test("conditional native tool submissions keep both applicability verdicts durable while the default schema rejects them", async t => {
   for (const [kind, verdict] of [["CONDITIONAL", "NOT_APPLICABLE"], ["CONDITIONAL", "NOT_YET_APPLICABLE"], [undefined, "NOT_APPLICABLE"]]) {
     const f = await discoveryFixture(t), task = { ...f.task, ...(kind ? { applicabilityKind: kind } : {}) };
     await fs.writeFile(path.join(f.root, "project/basis.md"), "If the release phase is in scope and reached, obtain approval before release.\nMissing approval evidence alone does not establish an applicability exception.");
@@ -123,31 +123,14 @@ test("conditional SDK submissions keep both applicability verdicts durable while
       : verdict === "NOT_APPLICABLE" ? "Current task scope is an explicitly documentation-only preview; release is outside this task."
         : "Current task stage is draft review; the in-scope release phase has not yet been reached.");
     const outputDir = `${f.root}-review`; t.after(() => fs.rm(outputDir, { recursive: true, force: true }));
-    const authPath = `${outputDir}-auth.json`; t.after(() => fs.rm(authPath, { force: true }));
-    const runtime = await ModelRuntime.create({ authPath, modelsPath: null, refreshOnCreate: false });
     let turns = 0;
-    const provider = `conditional-${crypto.randomUUID()}`;
-    runtime.registerProvider(provider, { api: "openai-completions", apiKey: "offline-placeholder", baseUrl: "http://127.0.0.1:1",
-      models: [{ id: "offline", name: "offline", input: ["text"], contextWindow: 204800, maxTokens: 8192, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
-      streamSimple(model, context) {
-        turns++;
-        const citations = [...JSON.stringify(context.messages).replace(/\\+"/gu, '"').matchAll(/\[citeId="([a-f0-9-]+)" \| range project\/candidate\.md:/gu)];
-        const name = turns <= 2 ? "source_read" : "submit_review";
-        const args = turns <= 2 ? { path: turns === 1 ? "project/basis.md" : "project/candidate.md" }
-          : { taskId: task.id, verdict: turns === 3 ? verdict : "UNVERIFIED", reason: turns !== 3 ? "The original trigger cannot be established."
-            : verdict === "NOT_APPLICABLE" ? "The current task explicitly excludes release." : "The current draft stage precedes the release trigger.",
-            citeIds: turns === 3 ? citations.slice(-1).map(match => match[1]) : [] };
-        const stream = createAssistantMessageEventStream();
-        queueMicrotask(() => {
-          const message = { role: "assistant", api: model.api, provider: model.provider, model: model.id,
-            content: [{ type: "toolCall", id: `call-${turns}`, name, arguments: args }], stopReason: "toolUse", timestamp: Date.now(),
-            usage: { input: 100, output: 10, cacheRead: 0, cacheWrite: 0, totalTokens: 110, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
-          stream.push({ type: "start", partial: message }); stream.push({ type: "done", reason: "toolUse", message }); stream.end();
-        });
-        return stream;
-      },
-    });
-    const result = await runReviewTask({ task, root: f.root, outputDir, modelRuntime: runtime, model: runtime.getModel(provider, "offline"), maxAttempts: 1, maxTurns: 5 });
+    const result = await runReviewTask({ task, root: f.root, outputDir, maxAttempts: 1, maxTurns: 5,
+      nativeRun: async worker => {
+        const tools = nativeTools(worker);
+        await tools.read('project/basis.md'); const citeId = await tools.read('project/candidate.md'); turns = 2;
+        if (!kind) { await assert.rejects(tools.submit(task.id, verdict, [citeId]), /Wrong task or verdict/); turns++; }
+        await tools.submit(task.id, kind ? verdict : 'UNVERIFIED', kind ? [citeId] : []); turns++;
+      } });
     assert.equal(result.completed, true);
     assert.equal(result.verdict, kind ? verdict : "UNVERIFIED");
     const saved = JSON.parse(await fs.readFile(path.join(outputDir, "decision.json"), "utf8"));

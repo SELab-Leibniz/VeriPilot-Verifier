@@ -1,3 +1,4 @@
+import { isolatedNativeReviewHost } from "./lib/native-review-host.mjs";
 // Frozen fixture -> production OpenClaw factory -> production item collector.
 // No Gateway, original business project/session, business execution or oracle injection.
 import fs from "node:fs/promises";
@@ -111,7 +112,7 @@ async function main() {
   const packageIdentity = await read(path.join(repository, "packaging/hosts/openclaw/openclaw.plugin.json"));
   const codeFiles = ["lib/openclaw/reviewer.mjs", "lib/openclaw/stop-task-runtime.mjs", "lib/runtime-v2/stop-task-review.mjs",
     "lib/runtime-v2/review-collector.mjs", "lib/review-task/review-task.mjs", "lib/review-task/history-memory.mjs",
-    "lib/review-task/prompts.json", "lib/review-task/prompt-profile.mjs", "lib/review-task/sdk.mjs",
+    "lib/review-task/prompts.json", "lib/review-task/prompt-profile.mjs", "lib/review-task/source-tools.mjs", "lib/review-task/observation-journal.mjs", "lib/openclaw/task-tools.mjs",
     "lib/review-task/package.json", "lib/review-task/package-lock.json", "scripts/diagnostics/stop-task-integration.mjs"];
   const code = Object.fromEntries(await Promise.all(codeFiles.map(async file => [file, hash(await fs.readFile(path.join(repository, file)))])));
   await save(path.join(output, "code-identity.json"), code);
@@ -119,7 +120,7 @@ async function main() {
     startedAt: new Date().toISOString(), status: "RUNNING", output, caseIds, pluginVersion: packageIdentity.version,
     commit: (await promisify(execFile)("git", ["--no-optional-locks", "rev-parse", "HEAD"], { cwd: repository })).stdout.trim(),
     providerConfigurationRead: false, originalProjectReadOrWritten: false, originalSessionReadOrWritten: false, businessExecution: false,
-    gatewayUsed: false, simulatedHostApiVersion: "2026.10.3", productionFactoryAndCollector: live, fullStopOrchestrator: false,
+    gatewayUsed: false, installedHostApiVersion: "2026.10.3", productionFactoryAndCollector: live, fullStopOrchestrator: false,
     injectedReviewWorker: false, nativeFallbackForbidden: true, wholeProjectPassClaimed: false,
     disabledControlRun: false, wholeBusinessImprovementProven: false, rows: [] };
   if (live) { authorized = await configuredModel(); report.providerConfigurationRead = true; report.model = authorized.identity; }
@@ -205,10 +206,13 @@ async function main() {
     if (live) {
       let nativeFallbackCalls = 0, starts = 0, ends = 0, telemetryWrites = Promise.resolve();
       const telemetry = event => { telemetryWrites = telemetryWrites.then(() => fs.appendFile(path.join(caseDirectory, "host-callbacks.jsonl"), JSON.stringify(event) + "\n")); return telemetryWrites; };
-      const forbidNative = async () => { nativeFallbackCalls++; throw Object.assign(new Error("Unexpected native reviewer fallback."), { code: "NATIVE_FALLBACK_FORBIDDEN" }); };
-      const api = { config: authorized.config, runtime: { version: "2026.10.3", config: { current: () => authorized.config }, agent: { runEmbeddedAgent: forbidNative } } };
+      const host = await isolatedNativeReviewHost({ config: authorized.config, directory: path.join(caseDirectory, 'host') });
+      const api = host.api;
       const factory = createOpenClawReviewerFactory(api, { stopReviewEngine: "task", provider: authorized.providerId, model: authorized.modelId,
-        reviewerTimeoutMs: 120000, runEmbeddedAgent: forbidNative,
+        reviewerTimeoutMs: 120000, runEmbeddedAgent: params => {
+          if (!params.toolsAllow?.includes('submit_review')) { nativeFallbackCalls++; throw new Error('Legacy JSON fallback is forbidden in this task diagnostic'); }
+          return host.runEmbeddedAgent(params);
+        }, compatibility: host.compatibility,
         onRunStart: (runId, value) => { starts++; return telemetry({ type: "start", runId, ...value }); },
         onRunEnd: (runId, value) => { ends++; return telemetry({ type: "end", runId, ...value }); },
         onTool: value => telemetry({ type: "tool", ...value }) });
@@ -233,7 +237,7 @@ async function main() {
         row.collection = handle.collection;
         await save(path.join(caseDirectory, "collection-result.json"), { result: handle.result, collection: handle.collection, citations });
       } catch (error) { row.error = { code: error.code ?? "REVIEW_FAILED", message: redact(error.message) }; row.completed = false; }
-      finally { await handle?.close?.(); }
+      finally { await handle?.close?.(); host.close(); }
       await new Promise(resolve => setImmediate(resolve)); await telemetryWrites;
       row.factoryCallbacks = { starts, ends, nativeFallbackCalls };
       assert.equal(nativeFallbackCalls, 0);

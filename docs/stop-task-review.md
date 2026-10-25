@@ -32,7 +32,7 @@
 
 源码仅在允许的业务文本范围内复制；私密目录、认证文件、构建缓存与符号链接不能进入该输入。实现引用仍受原 sourceManifest 约束。模型只读其专属快照，可用 read、grep、find、ls 和本轮历史检索，不能执行或改写业务文件。
 
-每个 Review 使用独立 Pi 会话，沿用已经实验的原生提前 compact、旧轨迹索引和请求前健康检查。每项仅提交状态、短诊断和最多六个 citeId；程序获取原文和位置。父取消、任务替换、GT/源码变化与迟到结果均不能升级为 PASS。单项未完成保留为 UNVERIFIED，其他已完成项仍由原 collector 保存和反馈。
+每个 Review 使用宿主独立原生会话；认证、Agent 循环、请求重试和上下文压缩交给 OpenClaw。RC 用独立观察日志、checkpoint 和 review_history 恢复已确认的读取凭证，不依赖宿主内部会话格式。每项仅提交状态、短诊断和最多六个 citeId；程序获取原文和位置。父取消、任务替换、GT/源码变化与迟到结果均不能升级为 PASS。单项未完成保留为 UNVERIFIED，其他已完成项仍由原 collector 保存和反馈。
 
 PASS 缓存身份包含新协议、固定 Prompt 摘要及候选声明。复用和发布前核验所有绑定文件及声明配置的SHA，即便本项没有引用它们；变更的归属不能复用旧PASS。独立适用范围元数据采用新缓存协议，原型中的native PASS不能冒充新执行器验证。复用前仍核验冻结输入和读取依赖；证据不足或范围太大不能安全缓存时重新审查，不猜测旧结论有效。
 
@@ -44,7 +44,7 @@ PASS 缓存身份包含新协议、固定 Prompt 摘要及候选声明。复用�
 
 ## 开发与安装
 
-仓库开发环境先安装独立 SDK 依赖：
+仓库开发环境仅安装独立 JSON Schema 依赖：
 
 ```powershell
 npm ci --prefix lib/review-task --ignore-scripts
@@ -52,9 +52,13 @@ npm test
 npm run build:plugin -- --host openclaw
 ```
 
-发布产物的根 package.json 和锁文件包含相同的精确 SDK 依赖，使用 `npm ci --ignore-scripts` 安装。构建排除所有层级 node_modules 和实验数据。其它 CLI 宿主不会新增这些根依赖，也不会加载这条 OpenClaw 传输。
+发布产物的根 package.json 和锁文件包含相同的精确 typebox 依赖，使用 `npm ci --ignore-scripts` 安装。构建排除所有层级 node_modules 和实验数据。其它 CLI 宿主不会新增这些根依赖，也不会加载这条 OpenClaw 传输。
 
-Pi 仍为 1.4.0；传输依赖 undici 覆盖为 8.12.2，区别于原实验锁。这是接入交付时的明确依赖补丁，需同时跑机制和真实模型验证。
+RC 已移除 Pi 及其传递安装依赖和 undici override。宿主内部依赖由宿主管理。不是将 stopReviewEngine 切成 native：task 协议保留，通过 runTask 注入宿主执行器；既有非 Stop 原生 JSON 审查路径也保留。
+
+审查工具通过 api.registerTool(ctx) 注册，绑定私有会话和生命周期；只把工具名加入白名单不会生成工具。真实成功且逐块匹配的宿主工具结果才产生读取凭证。source_read 每页最多 400 行/51200 字节，并按宿主观察接口限制拆成最多 6000 字节的原文块；超过单页的大行保留为无法读取，不推断已读。分页 nextOffset 必须继续读取至完整依据覆盖。更换执行器后 PASS 缓存身份已更新。
+
+隔离宿主验证只读安装包，配置、会话、日志和安装产物放在 RC 下。scripts/diagnostics/stop-task-integration.mjs 和 stop-task-complex.mjs 的 --live 使用实际宿主，需要 RC_OPENCLAW_HOST_ROOT；不会直接创建独立模型 runtime。历史实验结论不作为本次迁移验收。
 
 ## 解释结果
 

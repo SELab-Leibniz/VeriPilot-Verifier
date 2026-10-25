@@ -4,7 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
-import { SessionManager } from '../../lib/review-task/sdk.mjs';
+import { sourcePage } from '../../lib/review-task/source-tools.mjs';
+import { ObservationJournal } from '../../lib/review-task/observation-journal.mjs';
 import { createReviewMemory, publicHistoryEntry, loadReviewCheckpoint } from '../../lib/review-task/history-memory.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -18,7 +19,7 @@ async function fixture(t) {
   await fs.writeFile(path.join(root, 'app.txt'), bytes);
   const snapshot = new Map([['app.txt', { sha256: hash(bytes), lines: 3 }]]), reads = [], registry = new Map();
   const task = { id: 'memory-task', requirement: 'Check before save.', scope: 'SOURCE_IMPLEMENTATION', basisFiles: ['app.txt'], targetFiles: ['app.txt'] };
-  const sessionManager = SessionManager.create(root, path.join(outputDir, 'sessions'));
+  const sessionManager = new ObservationJournal(outputDir);
   sessionManager.appendMessage({ role: 'user', content: 'Review only this task.', timestamp: Date.now() });
   const memory = await createReviewMemory({ sessionManager, task, snapshot, root, outputDir, reads, registry });
   t.diagnostic(`artifacts: ${outputDir}`);
@@ -28,7 +29,7 @@ function addReceipt(f, overrides = {}) {
   const citation = { citeId: randomUUID(), path: 'app.txt', start: 1, end: 3, sha256: hash(f.bytes), byteStart: 0, byteEnd: f.bytes.length, rangeKind: 'range', ...overrides };
   f.reads.push({ path: citation.path, start: citation.start, end: citation.end });
   f.registry.set(citation.citeId, citation);
-  f.sessionManager.appendMessage({ role: 'toolResult', toolCallId: randomUUID(), toolName: 'source_read', content: [{ type: 'text', text: `[citeId="${citation.citeId}" | range app.txt:1-3]\n${f.bytes.toString('utf8')}` }], details: { citation }, isError: false, timestamp: Date.now() });
+  f.sessionManager.appendMessage({ role: 'toolResult', toolCallId: randomUUID(), toolName: 'source_read', content: [{ type: 'text', text: `[citeId="${citation.citeId}" | range app.txt:1-3]\n${sourcePage(f.bytes, { offset: citation.start, limit: citation.end - citation.start + 1 }).content[0].text}` }], details: { citation }, isError: false, timestamp: Date.now() });
   return citation;
 }
 
@@ -130,8 +131,9 @@ test('read pages reject invalid byte limits instead of repeating a zero-length U
 test('after compaction state pages recover old cite metadata without new receipts', async t => {
   const f = await fixture(t), issued = Array.from({ length: 12 }, () => addReceipt(f));
   const retainedId = f.sessionManager.appendMessage({ role: 'user', content: 'Continue from the saved review state.', timestamp: Date.now() });
-  f.sessionManager.appendCompaction('Summary deliberately omits all old citation IDs.', retainedId, 50000);
-  assert.doesNotMatch(JSON.stringify(f.sessionManager.buildSessionContext()), new RegExp(issued[0].citeId, 'u'));
+  const hostContext = 'Summary deliberately omits all old citation IDs.';
+  assert.doesNotMatch(hostContext, new RegExp(issued[0].citeId, 'u'));
+  await f.memory.checkpoint('after_compaction');
   const beforeReads = structuredClone(f.reads), beforeRegistry = [...f.registry];
   const firstRaw = await f.memory.tool.execute('state-1', { mode: 'state', offset: 0, limit: 10 });
   const first = decode(firstRaw);
@@ -142,4 +144,12 @@ test('after compaction state pages recover old cite metadata without new receipt
   assert.equal(last.citations.length, 2); assert.equal(last.nextOffset, null);
   assert.deepEqual(last.citations[1], issued[11]);
   assert.deepEqual(f.reads, beforeReads); assert.deepEqual([...f.registry], beforeRegistry);
+});
+
+test('checkpoint reload rejects a receipt whose header survives but original body was lost', async t => {
+  const f = await fixture(t); addReceipt(f); await f.memory.checkpoint('before_compaction');
+  const entries = f.sessionManager.getEntries();
+  const receipt = entries.find(entry => entry.message?.toolName === 'source_read');
+  receipt.message.content[0].text = receipt.message.content[0].text.split('\n')[0];
+  await assert.rejects(loadReviewCheckpoint(f.memory.checkpointPath, { task: f.task, root: f.root, sessionManager: f.sessionManager }), /receipt bytes/);
 });

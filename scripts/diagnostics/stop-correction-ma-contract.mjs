@@ -1,3 +1,4 @@
+import { installArtifactDependencies } from "./lib/native-review-host.mjs";
 // Real MatrixAssistant-bundled Gateway and SDK sessions, loopback scripted
 // provider only. This validates transport/lifecycle, not semantic accuracy or
 // the real-model TodoList/performance acceptance in requirements section 18.5.
@@ -24,8 +25,9 @@ const server = http.createServer(async (req, res) => {
     let content, action;
     const call = (name, args) => { action = { index: 0, id: `tool_${requests.length}`, type: "function", function: { name, arguments: JSON.stringify(args) } }; };
     if (role === "sdk-group") {
-      const start = messages.filter(m => m.role === "user").map(m => text(m.content)).find(value => value.startsWith('{"task":'));
-      const brief = JSON.parse(start), members = brief.members ?? [brief.task];
+      const start = messages.filter(m => m.role === "user").map(m => text(m.content)).find(value => value.includes('{"task":'));
+      const jsonStart = start?.indexOf('{"task":');
+      const brief = JSON.parse(start.slice(jsonStart)), members = brief.members ?? [brief.task];
       const previousCalls = messages.flatMap(m => m.tool_calls ?? []);
       const saved = new Set();
       for (const message of messages.filter(m => m.role === "tool")) {
@@ -40,7 +42,7 @@ const server = http.createServer(async (req, res) => {
       else {
         const sources = messages.filter(m => m.role === "tool").map(m => text(m.content));
         const source = sources.find(value => /range project\/app\.py:/u.test(value));
-        const citeId = /citeId="([a-f0-9-]+)"/u.exec(source)?.[1];
+        const citeId = /citeId="([^"\s]+)"/u.exec(source)?.[1];
         assert(citeId, "No actual source_read citation");
         const broken = source.includes("return -1");
         row.taskId = member.id; row.members = members.map(m => m.id);
@@ -56,7 +58,7 @@ const server = http.createServer(async (req, res) => {
       const request = JSON.parse(await fs.readFile(file, "utf8"));
       row.requestFile = file;
       if (role === "ground-truth-extractor") content = JSON.stringify({ summary: "Controlled original requirements.", taskClassification: "CONTINUATION",
-        operations: request.currentGroundTruth?.version === 0 ? [0, 1, 2].map(i => ({ operation: "ADD", category: "requirements",
+        operations: request.currentGroundTruth?.version === 0 ? [0, 1, 2].map(i => ({ operation: "ADD", claimId: `fixture-R${i}`, category: "requirements",
           text: `Implement pure function f${i}(x) returning x + ${i + 1}.`, authority: "USER_EXPLICIT", severity: "HARD", verificationTarget: "IMPLEMENTATION",
           applicabilityKind: "CURRENT_TASK", applicability: "CURRENT_TASK",
           source: { ref: request.sourceCatalog.find(source => source.kind === "USER_MESSAGE").ref, subject: "MAIN_TASK", kind: "USER_MESSAGE" } })) : [] });
@@ -95,10 +97,9 @@ const result = { status: "RUNNING", externalModelCalls: 0, hostModified: false, 
 try {
   host = await isolatedHost({ hostRoot, providerFile, destination, port: Number(port), tools: ["read", "write"],
     preparePlugin: async pluginRoot => {
-      // Reuse the exact locally installed pinned SDK dependencies; no package
-      // download or replacement reviewer. The link belongs only to this fixture.
-      await fs.symlink(path.resolve("lib/review-task/node_modules"), path.join(pluginRoot, "lib/review-task/node_modules"), "junction");
+      await installArtifactDependencies(pluginRoot);
     } });
+  result.hostVersion = host.version;
   const sessions = await import(pathToFileURL(path.join(hostRoot, "dist/plugin-sdk/session-store-runtime.js")));
   const storePath = sessions.resolveStorePath(path.join(host.stateDir, "agents/main/sessions/sessions.json"), { agentId: "main" });
   for (const k of [1, 3]) {
@@ -156,6 +157,8 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     const scopes = await Promise.all((await files(path.join(host.stateDir, "runtime-corrector-stop-sessions/review-scopes")))
       .filter(file => file.endsWith(".json")).map(async file => JSON.parse(await fs.readFile(file, "utf8"))));
     const scope = scopes.find(scope => scope.sessionId === entry.sessionId);
+    assert.equal(Object.keys(scope.receipts).length, 6, "Each original requirement needs one receipt per D/P round");
+    assert.equal(Object.keys(scope.groups).length, k === 1 ? 6 : 2, "Configured groups must share one native session per round");
     result.cases.push({ k, elapsedMs: Date.now() - began, groups: Object.keys(scope.groups).length,
       receipts: Object.keys(scope.receipts).length, sessionUsed: ledger.used, stops: Object.values(ledger.stops).map(stop => ({ status: stop.reviewStatus, releasedAt: stop.releasedAt })),
       nativeRecords: state.records });

@@ -89,9 +89,8 @@ test("OpenClaw root package and lock retain exact worker dependencies and all tr
   const workerLock = await read(path.join(input.worker, "package-lock.json"));
   const manifest = await read(path.join(artifact, "openclaw.plugin.json"));
   assert.deepEqual(pkg.dependencies, workerPackage.dependencies);
-  assert.equal(Object.keys(pkg.dependencies).length, 3);
-  assert.equal(pkg.dependencies["@earendil-works/pi-ai"], "1.4.0");
-  assert.equal(pkg.dependencies["@earendil-works/pi-coding-agent"], "1.4.0");
+  assert.equal(Object.keys(pkg.dependencies).length, 1);
+  assert.doesNotMatch(JSON.stringify(lock), /@earendil-works\/pi-/u);
   assert.equal(pkg.dependencies.typebox, "1.3.27");
   assert.deepEqual(pkg.overrides, workerPackage.overrides);
   if (workerPackage.overrides?.undici) assert.equal(lock.packages["node_modules/undici"].version, workerPackage.overrides.undici);
@@ -113,7 +112,15 @@ test("a mismatched pinned worker package cannot produce an installable-looking a
   const input = await fixture(t);
   const lockFile = path.join(input.worker, "package-lock.json");
   const lock = await read(lockFile);
-  lock.packages["node_modules/@earendil-works/pi-ai"].version = "0.0.0";
+  lock.packages["node_modules/typebox"].version = "0.0.0";
   await write(lockFile, lock);
   await assert.rejects(buildPlugin({ ...input, host: "openclaw" }), /matching npm v3 lockfile/u);
+});
+
+test('a transitive Pi package cannot be reintroduced through an otherwise matching lockfile', async t => {
+  const input = await fixture(t), lockFile = path.join(input.worker, 'package-lock.json');
+  const lock = await read(lockFile);
+  lock.packages['node_modules/hidden/node_modules/@earendil-works/pi-ai'] = { version: '1.4.0' };
+  await write(lockFile, lock);
+  await assert.rejects(buildPlugin({ ...input, host: 'openclaw' }), /must not contain Pi/);
 });

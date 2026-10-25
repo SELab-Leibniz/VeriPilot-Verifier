@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createReadToolDefinition } from '../../lib/review-task/sdk.mjs';
+import { sourcePage, PAGE_LINES } from '../../lib/review-task/source-tools.mjs';
 import { captureFiles, covers, disclosedRange, validateDecision, excerpt, registerCitation } from '../../lib/review-task/review-task.mjs';
 
 async function fixture(t) {
@@ -77,29 +77,29 @@ test('both conclusive verdicts require every basis and a current target citation
 async function nativePage(t, content, args = {}) {
   const input = await fixture(t), bytes = Buffer.isBuffer(content) ? content : Buffer.from(content);
   await fs.writeFile(path.join(input.root, 'page.txt'), bytes);
-  const result = await createReadToolDefinition(input.root).execute('read-test', { path: 'page.txt', ...args });
+  let result; try { result = sourcePage(bytes, args); } catch (error) { result = { isError: true, content: [{ type: 'text', text: error.message }] }; }
   return { bytes, result, range: disclosedRange(bytes, args, result) };
 }
 test('native byte truncation grants only complete actually disclosed lines', async t => {
   const { bytes, result, range } = await nativePage(t, Array.from({ length: 80 }, () => 'x'.repeat(1500)).join('\n'));
-  assert.equal(result.details.truncation.truncatedBy, 'bytes');
-  assert.deepEqual(range, { start: 1, end: result.details.truncation.outputLines });
+  assert.ok(result.details.page.nextOffset > 1);
+  assert.deepEqual(range, { start: 1, end: result.details.page.end });
   assert.equal(covers([{ path: 'basis.md', ...range }], 'basis.md', 1, bytes.toString().split('\n').length), false);
 });
 test('a native overlong first line grants no coverage', async t => {
   const { result, range } = await nativePage(t, 'x'.repeat(60000) + '\nexception');
-  assert.equal(result.details.truncation.firstLineExceedsLimit, true);
+  assert.match(result.content[0].text, /First line exceeds/);
   assert.equal(range, null);
 });
 test('native line truncation grants no undisclosed remainder', async t => {
   const { result, range } = await nativePage(t, Array.from({ length: 2200 }, (_, n) => `line ${n}`).join('\n'));
-  assert.equal(result.details.truncation.truncatedBy, 'lines');
-  assert.deepEqual(range, { start: 1, end: 2000 });
+  assert.equal(result.details.page.nextOffset, PAGE_LINES + 1);
+  assert.deepEqual(range, { start: 1, end: PAGE_LINES });
 });
 test('a real native image result never becomes text line coverage', async t => {
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+kdaoAAAAASUVORK5CYII=', 'base64');
   const { result, range } = await nativePage(t, png);
-  assert.match(result.content[0].text, /Read image file/u);
+  assert.equal(result.isError, true);
   assert.equal(range, null);
 });
 test('native BOM and CRLF pages require exact bytes and can join to full coverage', async t => {

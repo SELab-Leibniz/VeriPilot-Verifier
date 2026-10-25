@@ -1,3 +1,4 @@
+import { isolatedNativeReviewHost } from "./lib/native-review-host.mjs";
 // One production Stop-item smoke test from an already frozen local capture.
 // Default is material/route preflight. No original project/session or business execution.
 import fs from "node:fs/promises";
@@ -153,11 +154,14 @@ async function main() {
   if (live) {
     modelSettings = await modelConfiguration(); report.model = modelSettings.identity;
     let fallbackCalls = 0;
-    const forbiddenNative = async () => { fallbackCalls++; throw Object.assign(new Error("Unexpected native fallback."), { code: "NATIVE_FALLBACK_FORBIDDEN" }); };
-    const api = { config: modelSettings.config, runtime: { version: "2026.10.3", config: { current: () => modelSettings.config }, agent: { runEmbeddedAgent: forbiddenNative } } };
+    const host = await isolatedNativeReviewHost({ config: modelSettings.config, directory: path.join(output, 'host') });
+    const api = host.api;
     const deadlineAt = Date.now() + parentCapMs;
     const factory = createOpenClawReviewerFactory(api, { stopReviewEngine: "task", provider: modelSettings.providerId, model: modelSettings.modelId,
-      reviewerTimeoutMs: parentCapMs, deadlineAt, runEmbeddedAgent: forbiddenNative });
+      reviewerTimeoutMs: parentCapMs, deadlineAt, runEmbeddedAgent: params => {
+        if (!params.toolsAllow?.includes('submit_review')) { fallbackCalls++; throw new Error('Legacy JSON fallback is forbidden in this task diagnostic'); }
+        return host.runEmbeddedAgent(params);
+      }, compatibility: host.compatibility });
     report.factoryIdentity = factory.reviewCacheIdentity(input.reviewer);
     let handle;
     try {
@@ -177,7 +181,7 @@ async function main() {
       await fs.writeFile(path.join(output, "feedback.txt"), feedback, { flag: "wx" });
       await save(path.join(output, "collection-result.json"), { result: handle.result, collection: handle.collection, citations });
     } catch (error) { report.error = publicError(error); report.completed = false; }
-    finally { await handle?.close?.(); }
+    finally { await handle?.close?.(); host.close(); }
     report.nativeFallbackCalls = fallbackCalls; assert.equal(fallbackCalls, 0);
     const runs = path.join(taskDirectory(projectRoot, task.taskId), "review-task-runs");
     report.workerRuns = [];

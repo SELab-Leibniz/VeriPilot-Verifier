@@ -6,7 +6,7 @@
   "description": "Evidence-bound native review; host execution, output and approvals remain native.",
   "activation": { "onStartup": true },
   "contracts": {
-    "tools": ["runtime_corrector", "rc_progress"],
+    "tools": ["runtime_corrector", "rc_progress", "source_read", "source_grep", "source_find", "source_ls", "review_history", "submit_review"],
     "agentToolResultMiddleware": ["openclaw", "codex"]
   },
   "skills": ["./skills"],

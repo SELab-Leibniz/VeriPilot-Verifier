@@ -11,7 +11,6 @@ import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { validateJsonSchema } from "../lib/json-schema-validator.mjs";
 import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
-import { ModelRuntime } from "../lib/review-task/sdk.mjs";
 import { METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
@@ -77,29 +76,13 @@ test("a restricted helper in a manifest stays unread while authorized source rem
   assert.match(await fs.readFile(helper, "utf8"), /PRIVATE_HELPER_CANARY/u);
 });
 
-test("host models without pricing register a complete SDK cost shape before a cancelled task", async t => {
+test("a cancelled host task never resolves credentials or normalizes model metadata", async t => {
   const f = await fixture(t), controller = new AbortController(); controller.abort();
-  const definition = { id: "scripted-cost-check", name: "scripted-cost-check", contextWindow: 32768, maxTokens: 8192 };
-  const selection = { provider: "configured", model: definition.id, config: { models: { providers: {
-    configured: { api: "openai-completions", baseUrl: "http://127.0.0.1:1", apiKey: "offline-cost-placeholder", models: [definition] },
-  } } } };
-  const before = structuredClone(selection);
-  const originalCreate = ModelRuntime.create.bind(ModelRuntime);
-  let registered, model, calls = 0;
-  t.mock.method(ModelRuntime, "create", async options => {
-    calls++;
-    const runtime = await originalCreate(options);
-    const register = runtime.registerProvider.bind(runtime), getModel = runtime.getModel.bind(runtime);
-    runtime.registerProvider = (id, config) => { registered = config; return register(id, config); };
-    runtime.getModel = (...args) => { model = getModel(...args); return model; };
-    return runtime;
-  });
-  await assert.rejects(runOpenClawStopTask({ ...f.input, abortSignal: controller.signal }, { selection, env: {}, options: {} }),
-    error => error.code === "REVIEW_COLLECTION_CANCELLED");
-  assert.equal(calls, 1);
-  assert.deepEqual(registered.models[0].cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
-  assert.deepEqual(model.cost, registered.models[0].cost);
-  assert.deepEqual(selection, before, "SDK normalization must not mutate host configuration.");
+  const selection = { provider: 'host', model: 'catalog-model', config: {} }, before = structuredClone(selection);
+  await assert.rejects(runOpenClawStopTask({ ...f.input, abortSignal: controller.signal },
+    { api: { runtime: { agent: {} } }, nativeRunner: () => assert.fail('Cancelled task cannot run'), selection, options: {} }),
+    error => error.code === 'REVIEW_COLLECTION_CANCELLED');
+  assert.deepEqual(selection, before);
 });
 
 async function failedDecision(options, reason) {
@@ -188,20 +171,18 @@ test("the OpenClaw wrapper relays only a whitelisted cause and this task's resul
       configured: { api: "openai-completions", baseUrl: "http://127.0.0.1:1", apiKey: "offline-wrapper-placeholder",
         models: [{ id: modelId, contextWindow: 32768, maxTokens: 8192 }] },
     } } } };
-    t.mock.method(ModelRuntime, "create", async () => {
-      throw Object.assign(new Error(`Unexpected Authorization header: ${secret}`),
-        { code: "REVIEW_ITEM_INCOMPLETE", reviewDiagnostic: diagnostic });
-    });
-    await assert.rejects(runOpenClawStopTask(f.input, { selection, env: {}, options: {} }), error => {
+    const nativeRunner = async () => { throw Object.assign(new Error(`Unexpected Authorization header: ${secret}`),
+      { code: 'REVIEW_ITEM_INCOMPLETE', reviewDiagnostic: diagnostic }); };
+    await assert.rejects(runOpenClawStopTask(f.input, { api: { runtime: { agent: {} } }, nativeRunner, selection, env: {}, options: {} }), error => {
       assert.equal(error.code, "REVIEW_ITEM_INCOMPLETE");
       assert.equal(error.message.includes(secret), false);
       assert.equal(error.message.includes("Authorization"), false);
       if (name === "valid") {
-        assert.deepEqual(error.reviewDiagnostic, { cause: "CONTEXT_UNSAFE", resultPath: localResult });
-        assert.ok(error.message.includes(localResult));
-        assert.match(error.message, /CONTEXT_UNSAFE/u);
+        assert.equal(error.reviewDiagnostic.cause, "NO_VALID_SUBMISSION");
+        assert.ok(error.message.includes(error.reviewDiagnostic.resultPath));
+        assert.match(error.message, /NO_VALID_SUBMISSION/u);
       } else {
-        assert.equal(error.reviewDiagnostic, undefined);
+        assert.equal(error.reviewDiagnostic.cause, "NO_VALID_SUBMISSION");
         assert.equal(error.message.includes(diagnostic.resultPath), false);
       }
       return true;
