@@ -184,9 +184,7 @@ reviewers:
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
   const f = await lifecycle(t), payload = { text: "Delivered.", mediaUrl: "fixture://media" }, original = structuredClone(payload);
   const response = await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload }, f.ctx);
-  assert.equal(response.payload.mediaUrl, original.mediaUrl);
-  assert(response.payload.text.startsWith(original.text));
-  assert.match(response.payload.text, /RC 正在验收/u);
+  assert.equal(response, undefined, "RC progress must not rewrite the host's reply payload");
   assert.deepEqual(payload, original); assert.equal(f.calls(), 0);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].budgetMs, 11000);
@@ -263,7 +261,8 @@ test("reset invalidates a queued native Stop without cancelling host settings", 
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await f.runtime.reset({}, f.ctx);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert.equal(records[0].reviewStatus, "CANCELLED");
+  assert(records.every(record => record.reviewStatus === "CANCELLED"), "reset may beat asynchronous registration; no review may pass");
+  if (!records.length) assert.equal(f.calls(), 0, "an unregistered cancelled Stop never starts reviewer work");
   assert.equal(f.hostAbort.signal.aborted, false);
   // Release must precede backend cleanup; this controlled fake does finish.
   // Drain it before the fixture removes its temporary project directory.
@@ -382,7 +381,9 @@ test("a queued business turn waits before replacing the old run, while UI status
   const oldController = f.state.reviewController;
   let passed = false;
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
-  const prompt = f.runtime.prompt({ prompt: "Next business task" }, { ...f.ctx, runId: "next-run" });
+  const nextContext = { ...f.ctx, runId: "next-run" };
+  const prompt = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, nextContext)
+    .then(() => f.runtime.prompt({ prompt: "Next business task" }, nextContext));
   await pause(30);
   assert.equal(passed, false);
   assert.equal(f.state.nativeRunId, f.ctx.runId);
@@ -443,7 +444,8 @@ test("a cancelled incoming task does not replace or cancel the pending review", 
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await within(started.promise, "started signal");
   const abort = new AbortController();
-  const next = f.runtime.prompt({}, { ...f.ctx, runId: "cancelled-next", abortSignal: abort.signal });
+  const nextContext = { ...f.ctx, runId: "cancelled-next", abortSignal: abort.signal };
+  const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, nextContext).then(() => f.runtime.prompt({}, nextContext));
   await pause(10); abort.abort(); await next;
   assert.equal(f.state.nativeRunId, f.ctx.runId);
   assert.equal(f.state.reviewController.signal.aborted, false);
@@ -451,16 +453,17 @@ test("a cancelled incoming task does not replace or cancel the pending review", 
   assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
 });
 
-test("incoming model admission releases at its Hook budget and fences an uncooperative review", async t => {
+test("incoming model admission already inside the lane releases immediately and fences an uncooperative review", async t => {
   const started = deferred(t), finish = deferred(t), events = [];
   const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; },
     compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
   f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { before_model_resolve: 1100 } } } } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await within(started.promise, "started signal");
+  const enteredAt = Date.now();
   await f.runtime.beforeModelResolve({}, { ...f.ctx, runId: "next-after-expiry" });
+  assert(Date.now() - enteredAt < 300);
   assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "UNVERIFIED");
-  assert(events.some(event => event.runId === "next-after-expiry" && event.data.meta?.includes("RC 验收超时")));
   assert(!events.some(event => event.stream === "assistant"));
   finish.resolve();
   await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");

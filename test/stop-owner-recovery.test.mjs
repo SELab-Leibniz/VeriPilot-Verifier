@@ -79,6 +79,19 @@ test("owner loss before any bound host request releases its reservation and pres
   assert.equal(ledger.used, 0);
 });
 
+test("owner loss after an original revision offer retains uncertain capacity instead of inventing a non-start", async t => {
+  const f = await fixture(t, await deadOwner());
+  await f.store.settleReview({ sessionId: "session", stopId: "stop", status: "DEVIATION", currentDeviations: [{ objectId: "A", receiptId: "saved" }] });
+  const admission = await f.store.reserveFeedback({ sessionId: "session", stopId: "stop", packageId: "package", basisCurrent: async () => true });
+  await f.store.bindOriginalRequest({ sessionId: "session", admissionId: admission.id,
+    request: { runId: "original", sessionKey: "key", afterSequence: 1 } });
+  await f.protocol.recover(f.state);
+  const ledger = await f.store.inspect("session");
+  assert.equal(ledger.admissions[admission.id].accounting, "RESERVED");
+  assert.equal(ledger.used, 0);
+  assert.equal(ledger.admissions[admission.id].cancellationEvidence, undefined);
+});
+
 test("a recovered legacy review without an owner still releases at its original absolute deadline", async t => {
   const f = await fixture(t, undefined, { assessmentTimeoutMs: 300, feedbackReserveMs: 30 });
   let released;

@@ -11,6 +11,8 @@ test("a correction chain stays closed to outsiders across admission, correction 
   chain.assessed({ runId: "first", reviewStatus: "DEVIATION", followupStatus: "ADMITTED" });
   assert.equal(chain.pending, true);
   chain.enter("correction");
+  assert.equal(chain.record.phase, "WAIT_START", "entry is not proof that a model actually started");
+  chain.observeStart("correction");
   assert.equal(chain.record.phase, "CORRECTING");
   assert.equal(manager.begin({ state: scope, runId: "correction", taskId: "task", budgetMs: 1000 }), chain);
   assert.equal(chain.record.phase, "REVIEWING");
@@ -20,6 +22,17 @@ test("a correction chain stays closed to outsiders across admission, correction 
   assert.equal(chain.pending, true, "a prior assessment cannot pass the current correction");
   chain.assessed({ runId: "correction", reviewStatus: "PASS", evaluationId: "new-evaluation" });
   assert.equal((await chain.released).reviewStatus, "PASS");
+});
+
+test("a confirmed repair still releases when its terminal event is lost", async () => {
+  const manager = createNativeStopChains(), scope = state();
+  const chain = start(manager, scope, { budgetMs: 10, repairBudgetMs: 35 });
+  chain.link("first", { runId: "repair", taskId: "task" });
+  chain.observeStart("repair");
+  assert(Number.isFinite(chain.record.deadlineAt));
+  const result = await chain.released;
+  assert.equal(result.reviewStatus, "UNVERIFIED");
+  assert.equal(result.reasonCode, "STOP_WAIT_DEADLINE_EXPIRED");
 });
 
 test("a reentrant correction can pass before its parent admission callback unwinds", async () => {
