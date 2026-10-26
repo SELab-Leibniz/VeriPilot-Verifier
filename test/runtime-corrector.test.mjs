@@ -2041,6 +2041,7 @@ test("selection failure reports current diagnostics and adds public commands onl
   assert.match(repeated.feedback, /SELECTION-KIT-MAP-INPUT-STATUS/);
 
   const diffFile = failed.writtenFiles.find((file) => file.endsWith(".diff"));
+  execFileSync('git',['init','--quiet'],{cwd,encoding:'utf8'});
   execFileSync("git", ["apply", "--check", diffFile], { cwd, encoding: "utf8" });
   execFileSync("git", ["apply", diffFile], { cwd, encoding: "utf8" });
 

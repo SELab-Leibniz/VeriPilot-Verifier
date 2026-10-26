@@ -248,7 +248,8 @@ test("admitted feedbackOnly UNVERIFIED keeps the Stop chain waiting until a curr
   manager.link(state, { runId: "feedback-only-run", taskId: "task", feedbackOnly: true });
   chain.assessed({ runId: "first", reviewStatus: "UNVERIFIED", feedbackOnly: true, followupStatus: "ADMITTED" });
   assert.equal(chain.pending, true);
-  assert.equal(chain.record.phase, "REVIEWING");
+  assert.equal(chain.record.phase, "WAIT_START");
+  assert.equal(chain.startedRuns.size,0,'queue acknowledgement is not a trusted execution start');
   chain.enter("feedback-only-run");
   manager.begin({ state, runId: "feedback-only-run", taskId: "task", budgetMs: 1000 });
   chain.assessed({ runId: "first", reviewStatus: "PASS" });

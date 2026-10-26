@@ -84,7 +84,18 @@ export async function configureMAHost({
     await fs.writeFile(temporary, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600, flag: "wx" });
     if (await fs.readFile(configPath, "utf8") !== original) throw new Error("Config changed during setup; retry after closing MA.");
     await fs.writeFile(backupPath, original, { mode: 0o600, flag: "wx" });
-    await fs.rename(temporary, configPath);
+    const retryable=new Set(['EPERM','EBUSY','EACCES']);
+    for(let attempt=0;;attempt++){
+      // A shared Windows reader may temporarily block atomic replacement.
+      // Never delete the destination, and never overwrite a concurrent edit
+      // after waiting for that reader to release its handle.
+      if(await fs.readFile(configPath,'utf8')!==original)throw new Error('Config changed during setup; retry after closing MA.');
+      try{await fs.rename(temporary,configPath);break;}
+      catch(error){
+        if(!retryable.has(error.code)||attempt>=7)throw error;
+        await new Promise(resolve=>setTimeout(resolve,Math.min(10*2**attempt,250)));
+      }
+    }
   } finally {
     await fs.rm(temporary, { force: true });
   }

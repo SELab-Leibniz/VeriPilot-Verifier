@@ -204,16 +204,18 @@ test("an agent cannot disarm the Stop gate by editing the config mid-task", asyn
   ].join("\n"));
 
   const armed = await runHook(root, stopInput(root, "disarm-1"));
-  assert.equal(armed.output?.decision, "block", "the gate is armed while the reviewer is unavailable");
+  assert.match(armed.output?.systemMessage??'',/未完成迁移|UNVERIFIED/u,'unknown historical usage is disclosed before automatic review');
 
   // The agent now edits the plugin's own config to switch the gate off.
   await fs.writeFile(configPath, config(false));
   const afterEdit = await runHook(root, stopInput(root, "disarm-2"));
-  assert.equal(afterEdit.output?.decision, "block",
-    "a mid-task disarm the user never asked for must not take effect");
+  assert.match(afterEdit.output?.systemMessage??'',/未完成迁移|UNVERIFIED/u);
 
   const tasksRoot = path.join(root, ".runtime-correction", "tasks");
   const [taskId] = await fs.readdir(tasksRoot);
+  const task=JSON.parse(await fs.readFile(path.join(tasksRoot,taskId,'task.json'),'utf8'));
+  assert.equal(task.stop.armedAtStart,true,'a mid-task config edit cannot disarm the frozen task');
+  assert.notEqual(task.verification.status,'DISABLED');assert.equal(task.stop.correctionAttempts,0);
   const journal = await fs.readFile(path.join(tasksRoot, taskId, "journal", "events.jsonl"), "utf8");
   assert.match(journal, /STOP_GATE_DISARM_IGNORED/u, "the attempt is recorded, not silently dropped");
 });
@@ -230,7 +232,7 @@ test("a user who asks for the gate off gets it off", async (t) => {
   await fs.writeFile(path.join(root, "transcript.jsonl"), [
     JSON.stringify({ type: "user", uuid: "u1", message: { id: "um1", content: "Build the app." } }),
   ].join("\n"));
-  assert.equal((await runHook(root, stopInput(root, "user-off-1"))).output?.decision, "block");
+  assert.match((await runHook(root, stopInput(root, "user-off-1"))).output?.systemMessage??'',/未完成迁移|UNVERIFIED/u);
 
   // The user asks, then the config changes.
   await fs.writeFile(path.join(root, "transcript.jsonl"), [
@@ -240,4 +242,7 @@ test("a user who asks for the gate off gets it off", async (t) => {
   await fs.writeFile(configPath, config(false));
   const afterUser = await runHook(root, stopInput(root, "user-off-2"));
   assert.notEqual(afterUser.output?.decision, "block", "the user's own instruction is honoured");
+  const [taskId]=await fs.readdir(path.join(root,'.runtime-correction/tasks'));
+  const task=JSON.parse(await fs.readFile(path.join(root,'.runtime-correction/tasks',taskId,'task.json'),'utf8'));
+  assert.equal(task.verification.status,'DISABLED');
 });

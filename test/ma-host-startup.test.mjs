@@ -30,7 +30,7 @@ function startupSource(hostRoot) {
   }
 }
 
-test("installed MA startup reproduces deletion and retains the repaired plugin twice", {
+test("installed MA startup rejects an invalid plugin and retains the configured plugin twice", {
   skip: !process.env.RC_MA_HOST_ROOT && "Set RC_MA_HOST_ROOT to the packaged MA directory.",
 }, async t => {
   const hostRoot = process.env.RC_MA_HOST_ROOT;
@@ -57,7 +57,8 @@ test("installed MA startup reproduces deletion and retains the repaired plugin t
     enabled: true, config: { reviewerModel: "test/reviewer", hookTimeoutMs: 600000 },
   } } } });
   let config;
-  const context = vm.createContext({ u: fs, path$2: path, DEFAULT_PLUGIN_ENTRY: "dist/index.js",
+  const pathAliases = Object.fromEntries([...functions.matchAll(/\bpath\$\d+\b/gu)].map(([name]) => [name, path]));
+  const context = vm.createContext({ u: fs, ...pathAliases, DEFAULT_PLUGIN_ENTRY: "dist/index.js",
     SEMVER_SUFFIX_REGEX: /[.-]\d+\.\d+.*/,
     electron: { app: { isPackaged: true, getPath: () => root } },
     getResourcesDirPath$1: () => path.join(hostRoot, "resources"),
@@ -69,15 +70,20 @@ test("installed MA startup reproduces deletion and retains the repaired plugin t
   vm.runInContext(functions, context);
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+  assert.equal(vm.runInContext(`pluginEntryExists(${JSON.stringify(pluginRoot)},${JSON.stringify(manifest)})`, context), true,
+    "the adapter must execute the installed path lookup, not swallow a missing compiled alias");
+  const discovered = vm.runInContext(`(()=>{const ids=new Set();scanPluginManifestIds(${JSON.stringify(pluginRoot)},ids);return [...ids];})()`, context);
+  assert(Array.from(discovered).includes(manifest.id), "the installed scanner must discover the fixture before cleanup is tested");
   config = base();
   vm.runInContext("ensureDefaultPluginPaths(); cleanupStalePluginConfigs();", context);
-  assert.equal(config.plugins.entries[manifest.id], undefined, "even a fixed manifest is missed without a load path");
+  t.diagnostic(config.plugins.entries[manifest.id] ? "Host discovers a valid installation without an explicit load path." : "Host requires the configured load path.");
   const { main, ...legacyManifest } = manifest;
-  fs.writeFileSync(manifestPath, JSON.stringify(legacyManifest));
-  config = base();
+  const invalidId = `${manifest.id}-invalid-fixture`;
+  fs.writeFileSync(manifestPath, JSON.stringify({ ...legacyManifest, id: invalidId }));
+  config = { plugins: { allow: [invalidId], entries: { [invalidId]: { enabled: true } } } };
   config.plugins.load = { paths: [pluginRoot] };
   vm.runInContext("ensureDefaultPluginPaths(); cleanupStalePluginConfigs();", context);
-  assert.equal(config.plugins.entries[manifest.id], undefined, "a load path alone cannot fix a missing manifest.main");
+  assert.equal(config.plugins.entries[invalidId], undefined, "a load path does not authorize an unknown plugin with no valid entry");
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest));
   fs.writeFileSync(configPath, JSON.stringify(base()));

@@ -6,7 +6,7 @@ import test from "node:test";
 import { isDeepStrictEqual } from "node:util";
 
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
   STOP_REVIEW_SCHEMA,

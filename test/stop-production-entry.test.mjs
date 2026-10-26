@@ -11,7 +11,7 @@ import { runStopTaskGroup } from "../lib/runtime-v2/stop-task-group.mjs";
 import { observedTaskResult } from "./helpers/observed-review.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
-async function fixture(t, { verdict = "PASS", stop = {} } = {}) {
+async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "stop-entry-"));
@@ -38,7 +38,10 @@ async function fixture(t, { verdict = "PASS", stop = {} } = {}) {
   const calls = [];
   const reviewerFactory = async input => {
     calls.push(input.role === "ground-truth-extractor" ? "baseline" : input.request.reviewScope.kind);
-    if (input.role === "ground-truth-extractor") return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
+    if (input.role === "ground-truth-extractor") {
+      if (baselineFailure) throw Object.assign(new Error(baselineFailure.message), {code:baselineFailure.code,reviewerRuntimeFailure:true});
+      return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
+    }
     if (input.request.reviewScope.kind === "classification") return { result: { summary: "Declared completion.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] }, close: async () => {} };
     assert.equal(input.request.reviewScope.kind, "stop-group");
     return runStopTaskGroup(input, { runTask: async options => {
@@ -78,13 +81,32 @@ test("the production Stop entry dispatches a real composite SDK adapter and neve
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 0);
 });
 
+test("a failed baseline remains UNVERIFIED and delivers a checker notice without corrective admission",async t=>{
+  const f=await fixture(t,{baselineFailure:{code:"REVIEWER_RUN_FAILED",message:"No callable tools"}});
+  await f.event("SessionStart",{source:"startup"});
+  const result=await f.event("Stop");
+  assert.equal(result.stop.status,"UNVERIFIED");
+  assert.equal(result.stop.reasonCode,"REVIEWER_RUN_FAILED");
+  assert.match(result.stop.feedback,/UNVERIFIED/);
+  assert.match(result.stop.feedback,/REVIEWER_RUN_FAILED/);
+  assert.doesNotMatch(result.stop.feedback,/NO_CURRENT_DEVIATION/);
+  assert.equal(result.stop.admission,undefined);
+  assert(!f.calls.includes("stop-group"));
+  assert.equal((await createStopCorrectionStore({directory:f.directory}).inspect("session")).used,0);
+  const task=await findTask({projectRoot:f.root,sessionId:"session"});
+  assert.equal(task.status,"STOPPED_UNVERIFIED");
+  assert.equal(task.stop.infrastructureTotalFailures,3);assert.equal(f.calls.filter(call=>call==='baseline').length,3);
+  assert.equal(task.verification.status,"UNVERIFIED");
+});
+
 test("production entry checks zero budget before onboarding, baseline, classifier or group work", async t => {
   const f = await fixture(t, { stop: { maxCorrectionsPerFlow: 0 } });
   await f.event("SessionStart", { source: "startup" });
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "SKIPPED");
+  assert.equal(result.stop.status, "UNVERIFIED",'a budget-skipped review never presents a completed verification');
   assert.deepEqual(f.calls, []);
   assert.equal(result.stop.reasonCode, "FLOW_CORRECTION_LIMIT");
+  assert.equal((await findTask({projectRoot:f.root,sessionId:'session'})).verification.status,'UNVERIFIED');
 });
 
 test("existing-session migration is explicit and performs no automatic model work", async t => {

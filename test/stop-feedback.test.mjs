@@ -4,10 +4,11 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { renderStopDetails } from "../lib/runtime-v2/stop-feedback.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskStatePath } from "../lib/runtime-v2/task-store.mjs";
+import {withTestReviewProof} from './helpers/review-proof.mjs';
 
 test("all original findings remain visible, including a HARD deviation after five informational findings", () => {
   const findings = Array.from({ length: 6 }, (_, index) => ({ deviationKey: `f${index}`, severity: index === 5 ? "error" : "info",
@@ -82,37 +83,47 @@ for (const active of [true, false]) test(`Stop failure ${active ? "persists vali
     text: "A confirmed output requirement", authority: "USER_EXPLICIT", severity: "HARD", source: { ref: "user" } }] } });
   const transcript = path.join(root, "transcript.jsonl");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user-1", message: { content: "A confirmed output requirement" } }));
+  await fs.writeFile(path.join(root,'business.py'),'# Current source\ndef run():\n  return 0\n# Explicit test witness\n');
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
     skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 } }, { policyRoot: path.join(root, ".runtime-corrector") }) };
-  let partialReview;
-  const factory = async ({ request }) => {
+  let partialReview,calls=0;
+  const factory = async params => {
+    calls++;
+    const {request}=params;
+    if(request.reviewScope?.kind==='classification')return {result:{summary:'Current delivery',stopClassification:'TASK_COMPLETE',stage:null,findings:[],metricObjectJudgements:[]},close(){}};
     const objects = Object.values(request.population.metrics).flat();
     const first = objects[0];
     partialReview = { status: "PARTIAL", finalClassification: null, totalObjects: objects.length, recoveredObjects: 1,
       metricObjectJudgements: [{ objectId: first.objectId, judgement: "DEVIATION", reason: "Actual local deviation", evidence: ["business.py#L2-L4"] }],
       unreviewedObjectIds: objects.slice(1).map(object => object.objectId), rejectedObjectIds: [], citations: [] };
+    const checked=await withTestReviewProof(params,{result:partialReview});partialReview.citations=await checked.getSourceCitations();
     throw Object.assign(new Error("Reviewer final output invalid"), { partialReview, partialReviewIsActive: () => active });
   };
   factory.handoff = factory;
+  factory.supportsReviewCollection=true;
   const stop = id => handleRuntimeV2Event({ input: { cwd: root, session_id: "partial-host", transcript_path: transcript,
     hook_event_name: "Stop", hook_event_id: id, last_assistant_message: "Task complete." }, projectRoot: root, plan, reviewerFactory: factory });
   const first = await stop("p1");
-  assert.equal(first.decision, "block");
+  assert.equal(first.decision, active?'block':'allow');
   assert.equal(first.stop.status, "UNVERIFIED");
-  assert.equal(first.stop.partialReview?.status, active ? "PARTIAL" : undefined);
+  assert.equal(first.stop.partialFeedbackEligible,active);
   assert.equal(first.feedback.includes("Actual local deviation"), active);
   if (active) {
-    const persisted = JSON.parse(await fs.readFile(first.stop.persisted.filePath, "utf8"));
-    assert.deepEqual(persisted.partialReview, partialReview);
-    assert.equal(persisted.status, "UNVERIFIED");
-    assert.equal(persisted.partialReview.finalClassification, null);
+    const collection=first.stop.review.collection;
+    const persisted=JSON.parse(await fs.readFile(collection.progressPath,'utf8'));
+    assert.equal(persisted.status,'UNVERIFIED');
+    const items=await Promise.all(persisted.items.map(async item=>JSON.parse(await fs.readFile(item.path,'utf8'))));
+    assert(items.some(item=>item.result.metricObjectJudgements.some(row=>row.judgement==='DEVIATION'&&row.reason==='Actual local deviation')));
   }
-  await stop("p2");
-  const released = await stop("p3");
-  assert.equal(released.decision, "allow");
-  assert.match(released.feedback, /STOP_VERIFICATION_UNAVAILABLE/u);
+  const firstCalls=calls;await stop("p1");
+  const released = await stop("p1");
+  assert.equal(released.stop.status,'UNVERIFIED');
+  assert.match(released.feedback, /UNVERIFIED/u);
   assert.ok(!released.feedback.includes("never verified"));
   const state = JSON.parse(await fs.readFile(taskStatePath(root, task.taskId), "utf8"));
   assert.equal(state.stop.correctionAttempts, 0);
-  assert.equal(state.stop.infrastructureFailures, 3);
+  assert(state.stop.infrastructureFailures>=1);
+  assert.equal(state.verification.status,'UNVERIFIED');
+  assert.equal(state.stop.infrastructureTotalFailures,1,'only the first assessment ran; pending or closed admissions do not invent more checker failures');
+  assert.equal(calls,firstCalls,'an unresolved admission or closed failed flow must not silently replay reviewer work');
 });

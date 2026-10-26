@@ -51,6 +51,32 @@ test("MA setup preserves other settings, backs up exact bytes and is idempotent"
   assert.deepEqual(await fs.readdir(f.root), files);
 });
 
+test('MA setup retries a temporarily blocked replacement without deleting the config',async t=>{
+ const f=await fixture(t,{tools:{deny:['write']}}),rename=fs.rename;let attempts=0;
+ fs.rename=async function(from,to){if(to===f.configPath&&++attempts<=2)throw Object.assign(new Error('shared reader'),{code:'EPERM'});return rename.call(this,from,to);};
+ let result;try{result=await configureMAHost(f);}finally{fs.rename=rename;}
+ assert.equal(attempts,3);assert.equal(await fs.readFile(result.backupPath,'utf8'),f.original);
+ assert.deepEqual(JSON.parse(await fs.readFile(f.configPath,'utf8')).tools.deny,['write']);
+ assert.equal((await fs.readdir(f.root)).filter(name=>name.endsWith('.tmp')).length,0);
+});
+
+test('a persistent configuration lock fails finitely and preserves the original bytes',async t=>{
+ const f=await fixture(t,{retained:true}),rename=fs.rename;let attempts=0;
+ fs.rename=async function(from,to){if(to===f.configPath){attempts++;throw Object.assign(new Error('still locked'),{code:'EBUSY'});}return rename.call(this,from,to);};
+ try{await assert.rejects(configureMAHost(f),error=>error.code==='EBUSY');}finally{fs.rename=rename;}
+ assert.equal(attempts,8);assert.equal(await fs.readFile(f.configPath,'utf8'),f.original);
+ assert.equal((await fs.readdir(f.root)).filter(name=>name.endsWith('.tmp')).length,0);
+});
+
+test('a concurrent config edit during replacement backoff is never overwritten',async t=>{
+ const f=await fixture(t,{retained:true}),rename=fs.rename;let attempts=0;
+ const concurrent='{"concurrent":"preserve exact bytes"}\n';
+ fs.rename=async function(from,to){if(to===f.configPath){attempts++;await fs.writeFile(to,concurrent);throw Object.assign(new Error('reader released after another editor wrote'),{code:'EPERM'});}return rename.call(this,from,to);};
+ try{await assert.rejects(configureMAHost(f),/Config changed during setup/);}finally{fs.rename=rename;}
+ assert.equal(attempts,1);assert.equal(await fs.readFile(f.configPath,'utf8'),concurrent);
+ assert.equal((await fs.readdir(f.root)).filter(name=>name.endsWith('.tmp')).length,0);
+});
+
 test("CLI restores an erased RC entry and model using an explicit isolated config", async t => {
   const f = await fixture(t);
   const result = spawnSync(process.execPath, ["scripts/configure-ma-host.mjs", "--config", f.configPath,

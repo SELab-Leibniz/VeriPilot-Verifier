@@ -517,6 +517,17 @@ Both artifacts keep the common argument surface: `--print`,
 `--model`, `--max-budget-usd`, `--fork-session`, and
 `--no-session-persistence`.
 
+For `onboarding-extractor`, `onboarding-adjudicator`, `skill-reviewer`,
+`artifact-reviewer` and `implementation-reviewer`, the role launcher omits
+RC's `--tools`, `--allowedTools`, `--strict-mcp-config`
+and `--permission-mode` overrides so the host supplies its configured tools,
+MCP connections and permissions. A role-scoped `--disallowedTools` list excludes
+write, edit, patch, shell/process and code-execution tools while keeping read
+and search tools available. Baseline and classification roles retain their
+read-only tool scope. This applies to the initial invocation,
+contract reminders, schema repairs and follow-ups. Other roles and the legacy
+generic semantic-review launcher retain their scoped tool arguments.
+
 | Operation | Claude artifact | CodeAgent artifact |
 | --- | --- | --- |
 | Fresh | no session flag | no session flag |

@@ -27,7 +27,7 @@ import {
   mergePanelOperations,
   panelClaimKey,
 } from "../lib/runtime-v2/onboarding.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { loadPlatformAdapter } from "../lib/runtime-v2/platform-adapter.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
@@ -950,6 +950,8 @@ test("onboarding honors role timeouts and runs panel passes in parallel", async 
     return factory(args);
   };
   wrapped.calls = factory.calls;
+  await handleRuntimeV2Event({projectRoot:root,plan,reviewerFactory:wrapped,input:{cwd:root,session_id:'session-onboarding',transcript_path:path.join(root,'transcript.jsonl'),
+    hook_event_name:'PreToolUse',hook_event_id:'onboard-before-stop',tool_name:'Write',tool_input:{file_path:'plan.md',content:'Plan'}}});
   await stopEvent(root, plan, wrapped, "stop-onboard-floor");
   const extractors = spawns.filter((spawn) => spawn.role === "onboarding-extractor");
   assert.equal(extractors.length, 2);
@@ -970,8 +972,8 @@ test("onboarding honors role timeouts and runs panel passes in parallel", async 
   const stopSpawns = spawns.filter((spawn) => !spawn.role.startsWith("onboarding-"));
   assert.ok(stopSpawns.every((spawn) => spawn.timeoutMs === (spawn.role === "ground-truth-extractor" ? 3600000 : 1200000)),
     "non-onboarding roles keep the configured/default timeout");
-  assert.ok(stopSpawns.filter(spawn => spawn.role !== "stop-reviewer").every(spawn => spawn.deadlineAt == null),
-    "incremental roles are not silently coupled to the onboarding deadline");
+  assert.ok(stopSpawns.filter(spawn => spawn.role !== "stop-reviewer").every(spawn => Number.isFinite(spawn.deadlineAt)&&spawn.deadlineAt<Date.now()+1200000),
+    "incremental Stop roles share the Stop cutoff, rather than inheriting the sixty-minute onboarding deadline");
   const stops = stopSpawns.filter(spawn => spawn.role === "stop-reviewer");
   assert.ok(stops.length > 0 && stops.every(spawn => Number.isFinite(spawn.deadlineAt)
     && spawn.deadlineAt <= Date.now() + 1200000 && spawn.deadlineAt < extractors[0].deadlineAt),

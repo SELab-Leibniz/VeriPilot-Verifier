@@ -13,7 +13,7 @@ import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { markMetricPassesFixed, markStopFeedbackDelivered, recordDeviationFindings } from "../lib/runtime-v2/deviations.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { groundTruthSourceCatalog, rejectedGroundTruthSource } from "../lib/runtime-v2/ground-truth-provenance.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { implementationPopulation } from "../lib/runtime-v2/review-routing.mjs";
 import { processMetricJudgements } from "../lib/runtime-v2/process-checks.mjs";
 import { GROUND_TRUTH_REVIEW_SCHEMA, STOP_REVIEW_SCHEMA, reviewerFailureDetail } from "../lib/runtime-v2/reviewer.mjs";
@@ -76,6 +76,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
   };
   return {
     root, calls,
+    newUser:async()=>fs.appendFile(path.join(root,'transcript.jsonl'),'\n'+JSON.stringify({...userEntry,uuid:`u-next-${event}`,message:{content:'Inspect the changed source under the same original requirements.'}})),
     state: async (taskId) => JSON.parse(await fs.readFile(taskStatePath(root, taskId), "utf8")),
     stop: () => handleRuntimeV2Event({
       projectRoot: root, plan: { runtimeV2 }, reviewerFactory, stopFeedbackDeferred,
@@ -108,10 +109,11 @@ test("mixed tasks route only source-owned objects and preserve process judgement
   const outcome = await h.stop();
   assert.equal(outcome.stop.report.status, "PASS");
   assert.equal(h.calls.implementation.length, 1);
-  assert.deepEqual(Object.values(h.calls.implementation[0].population.metrics).flat().map((object) => object.objectId), ["M12:code", "M16:code"]);
+  assert.deepEqual(Object.values(h.calls.implementation[0].population.metrics).flat().map((object) => object.objectId), ["M12:code"]);
+  assert.deepEqual(outcome.stop.implementationReview.reusedStopSourceObjectIds,['M16:code'],'the normal source proof is checked and reused without duplicating that review');
   const objects = outcome.stop.report.metrics.flatMap((metric) => metric.objects);
   assert.equal(objects.find((object) => object.objectId === "M11:workflow").reviewer, "stop-reviewer");
-  assert.equal(objects.find((object) => object.objectId === "M12:code").reviewer, "implementation-reviewer");
+  assert.equal(objects.find((object) => object.objectId === "M12:code").reviewer, "stop-reviewer",'static PASS cannot replace the observed runtime proof owner');
 });
 
 test("independent Stop provider gets its own handle rather than inheriting extractor credentials", async (t) => {
@@ -136,6 +138,7 @@ test("misrouted kitchen process evidence is a bounded checker failure, never a c
   }) });
   let outcome;
   for (let i = 0; i < 3; i++) {
+    if(i)await h.newUser();
     outcome = await h.stop();
     assert.equal(outcome.stop.status, "UNVERIFIED");
     assert.equal(outcome.stop.report.status, "CHECKER_ERROR");
@@ -146,10 +149,11 @@ test("misrouted kitchen process evidence is a bounded checker failure, never a c
   }
   assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.verificationUnavailable, true);
+  const calls=h.calls.implementation.length;await h.stop();await h.stop();assert.equal(h.calls.implementation.length,calls,'a closed failed flow cannot silently replay an unverified checker');
   assert.notEqual((await h.state(outcome.taskId)).verification.status, "PASS");
 });
 
-test("ordinary implementation uncertainty still overrides general PASS and consumes the existing correction opportunity", async t => {
+test("ordinary implementation uncertainty overrides general PASS without inventing a business defect", async t => {
   const h = await harness(t, { implResult: async request => ({
     summary: "Runtime behavior is unproven.", findings: [],
     metricObjectJudgements: Object.values(request.population.metrics).flat().map(object => ({
@@ -157,9 +161,10 @@ test("ordinary implementation uncertainty still overrides general PASS and consu
     })),
   }) });
   const outcome = await h.stop();
-  assert.equal(outcome.stop.report.status, "DEVIATION");
-  assert.equal(outcome.stop.correctionAttempt, 1);
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.stop.report.status, "UNVERIFIED");
+  assert.equal(outcome.stop.correctionAttempt, 0);
+  assert.equal(outcome.decision, "allow");assert.equal(outcome.stop.admission,null);
+  assert.equal((await h.state(outcome.taskId)).verification.status,'UNVERIFIED');
 });
 
 test("per-invocation UUID checks reject reuse and refuse to infer shell variables", () => {
@@ -205,22 +210,24 @@ test("an internal-role legacy scope cannot disable production verification", () 
 test("implementation outages fail owned objects, use infrastructure budget, and release visibly unverified", async (t) => {
   const h = await harness(t, { implResult: () => { throw new Error("reviewer timeout"); } });
   const first = await h.stop();
-  assert.equal(first.decision, "block");
+  assert.equal(first.decision, "allow");
   assert.equal(first.stop.report.status, "CHECKER_ERROR");
-  assert.equal(first.stop.report.metrics.find((metric) => metric.metricId === "M12").objects[0].judgement, "CHECKER_ERROR");
+  assert.equal(first.stop.report.metrics.find((metric) => metric.metricId === "M12").objects[0].judgement, "UNVERIFIED");
+  assert.equal(first.stop.implementationReview.metricObjectJudgements[0].judgement,'CHECKER_ERROR');
+  assert.equal(first.stop.admission,null);
   assert.equal((await h.state(first.taskId)).stop.correctionAttempts, 0);
-  assert.equal((await h.stop()).decision, "block");
+  assert.equal((await h.stop()).decision, "allow");
   const last = await h.stop();
   assert.equal(last.decision, "allow");
   assert.equal((await h.state(last.taskId)).status, "STOPPED_UNVERIFIED");
   assert.equal((await h.state(last.taskId)).verification.status, "UNVERIFIED");
-  assert.match(encodeHookOutput("Stop", {}, last).systemMessage, /STOP_VERIFICATION_UNAVAILABLE/u);
+  assert.match(encodeHookOutput("Stop", {}, last).systemMessage, /UNVERIFIED/u);
 });
 
 test("an omitted source-owned object cannot inherit the general reviewer's PASS", async (t) => {
   const h = await harness(t, { implResult: () => ({ summary: "Forgot an object.", findings: [], metricObjectJudgements: [] }) });
   const outcome = await h.stop();
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "allow");assert.equal(outcome.stop.admission,null);
   assert.equal(outcome.stop.report.status, "CHECKER_ERROR");
 });
 
@@ -235,11 +242,12 @@ test("budget exhaustion preserves unresolved state and emits a host-consumable w
   assert.equal(last.decision, "allow");
   const state = await h.state(last.taskId);
   assert.equal(state.status, "COMPLETED_WITH_ISSUES");
-  assert.equal(state.verification.status, "DEVIATION");
+  assert.equal(state.verification.status, "UNVERIFIED");
+  assert.equal(state.verification.previousVerification.status,'DEVIATION');
   assert.ok(Object.values(state.deviations).some((family) => family.status === "OPEN"));
-  assert.match(encodeHookOutput("Stop", {}, last).systemMessage, /CORRECTION_BUDGET_EXHAUSTED/u);
+  assert.match(encodeHookOutput("Stop", {}, last).systemMessage, /FLOW_CORRECTION_LIMIT/u);
   assert.doesNotMatch(last.stop.review.summary, /Everything passed/u);
-  assert.match(last.stop.review.stopReviewerSummary, /Everything passed/u);
+  assert.equal(last.stop.review.metricObjectJudgements.length,0,'quota exhaustion must not execute or invent a new review');
 });
 
 
@@ -275,7 +283,7 @@ test("nonblocking UNVERIFIED is disclosed and never stored as clean completion",
   const outcome = await h.stop();
   assert.equal(outcome.decision, "allow");
   assert.equal((await h.state(outcome.taskId)).status, "COMPLETED_WITH_ISSUES");
-  assert.match(encodeHookOutput("Stop", {}, outcome).systemMessage, /STOP_VERIFICATION_INCOMPLETE/u);
+  assert.match(encodeHookOutput("Stop", {}, outcome).systemMessage, /STOP_REVIEW_INCOMPLETE/u);
   assert.equal(h.calls.implementation.length, 0);
 });
 
@@ -380,6 +388,7 @@ test("a new failed Stop reopens a previously completed task instead of keeping c
   const first = await h.stop();
   assert.equal((await h.state(first.taskId)).status, "COMPLETED");
   judgement = "DEVIATION";
+  await h.newUser();
   const second = await h.stop();
   const state = await h.state(second.taskId);
   assert.equal(second.decision, "block");

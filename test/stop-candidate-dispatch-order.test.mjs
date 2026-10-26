@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";

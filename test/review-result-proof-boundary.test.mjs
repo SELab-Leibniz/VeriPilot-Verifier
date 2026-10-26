@@ -11,7 +11,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { observeInternalTool } from "../lib/openclaw/internal-context.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { reviewReadEvidenceMatches } from "../lib/runtime-v2/review-pass-cache.mjs";

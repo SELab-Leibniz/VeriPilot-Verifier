@@ -18,7 +18,11 @@ export async function withTestReviewProof(params, handle) {
     const rows = [...(report?.metricObjectJudgements ?? []), ...(report?.findings ?? []), ...(report?.fileAssessments ?? [])];
     for (const row of rows) {
       const owner = row.objectId ?? row.deviationKey ?? row.path;
-      const object = objects.get(row.objectId) ?? [...objects.values()].find(value => row.violatedGroundTruthIds?.includes(value.sourceId));
+      const findingClaim = params.request.reviewScope?.findingsOnly
+        ? params.evidence?.groundTruth?.claims?.find(claim => row.violatedGroundTruthIds?.includes(claim.claimId)) : null;
+      const object = objects.get(row.objectId) ?? [...objects.values()].find(value => row.violatedGroundTruthIds?.includes(value.sourceId))
+        ?? (findingClaim ? {metricId:params.request.reviewScope.objectIds?.find(id=>id.endsWith(':'+findingClaim.claimId))?.split(':')[0]??'M01',
+          verificationTarget:findingClaim.verificationTarget} : undefined);
       const kind = row.path ? "ARTIFACT" : reviewProofOwners(object, params.role)[0];
       for (const ref of [...(row.evidence ?? []), ...(row.actualEvidence ?? [])]) {
         const match = /^(.*?)(?:#L|:)([1-9]\d*)(?:-(?:L)?([1-9]\d*))?$/u.exec(ref);

@@ -40,6 +40,7 @@
     "lib/review-task/source-tools.mjs",
     "lib/review-timeout.mjs",
     "lib/reviewer-launcher.mjs",
+    "lib/reviewer-tools.mjs",
     "lib/rules/default-registry.mjs",
     "lib/rules/engine.mjs",
     "lib/rules/file-digest-manifest-provider.mjs",
@@ -76,6 +77,7 @@
     "lib/runtime-v2/process-checks.mjs",
     "lib/runtime-v2/production-stop.mjs",
     "lib/runtime-v2/review-collector.mjs",
+    "lib/runtime-v2/review-evidence-validation.mjs",
     "lib/runtime-v2/review-fingerprint-cache.mjs",
     "lib/runtime-v2/review-pass-cache.mjs",
     "lib/runtime-v2/review-read-proof.mjs",
@@ -152,10 +154,16 @@
     "lib/openclaw/stop-wait-status.mjs",
     "lib/openclaw/stop-work-owner.mjs",
     "lib/openclaw/supervised.mjs",
+    "lib/openclaw/task-session.mjs",
     "lib/openclaw/task-tools.mjs",
+      "lib/openclaw/tool-contracts.mjs",
+      "lib/openclaw/review-notice.mjs",
     "lib/openclaw/tools.mjs",
     "lib/openclaw/transcript.mjs",
     "lib/openclaw/transient-model.mjs",
-    "lib/openclaw/ui-progress.mjs"
+    "lib/openclaw/ui-progress.mjs",
+    "lib/review-task/baseline-task.mjs",
+    "lib/review-task/task-evidence.mjs",
+    "lib/runtime-v2/baseline-task.mjs"
   ]
 }

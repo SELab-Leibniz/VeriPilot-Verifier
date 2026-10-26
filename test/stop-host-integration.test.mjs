@@ -150,6 +150,23 @@ test("native reply runs the new groups and publishes a fresh PASS with independe
   assert.equal((await f.store.inspect("session")).used, 0);
 });
 
+test('an unpublished native assessment closes honestly with a reason and an actual MA notice',async t=>{
+  let release,started;const ready=new Promise(resolve=>{started=resolve;});
+  const f=await nativeFixture(t,'PASS',{reviewWait:async()=>{started();await new Promise(resolve=>{release=resolve;});}});
+  const notices=[];f.api.runtime.gateway={request:async(method,params)=>{notices.push({method,params});return {id:'notice'};}};
+  await f.start();
+  await f.runtime.beforeTool({toolName:'read',toolCallId:'read-source',params:{path:'app.py'}},f.ctx);
+  const stopping=f.stop();await ready;
+  await fs.writeFile(path.join(f.root,'app.py'),'def convert(value): return int(value) + 1\n');release();
+  await stopping;await f.runtime.waitForNativeReviews({drain:true,settle:true});
+  const task=await findTask({projectRoot:f.root,sessionId:'session'});
+  assert.equal(task.status,'STOPPED_UNVERIFIED');assert.equal(task.verification.status,'UNVERIFIED');
+  assert.equal(task.verification.reasonCode,'STOP_ASSESSMENT_EVIDENCECHANGED');
+  assert.equal((await f.store.inspect('session')).used,0);
+  assert.equal(notices.filter(value=>value.method==='chat.inject').length,1);
+  assert.match(notices.find(value=>value.method==='chat.inject').params.message,/UNVERIFIED.*STOP_ASSESSMENT_EVIDENCECHANGED/su);
+});
+
 test("native unsupported start bridge releases its chain with the confirmed deviation and no legacy dispatch", async t => {
   const f = await nativeFixture(t, "DEVIATION");
   await f.start();

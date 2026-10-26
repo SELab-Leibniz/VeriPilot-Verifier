@@ -12,39 +12,22 @@ import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { matchesEvidence } from "../lib/openclaw/evidence.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
+import { REVIEWER_NATIVE_TOOL_DENY } from "../lib/reviewer-tools.mjs";
 
 const result = text => ({ content: [{ type: "text", text }] });
 const output = (value = { summary: "Controlled result", stopClassification: "TASK_COMPLETE", findings: [], metricObjectJudgements: [] }) => ({ payloads: [{ text: JSON.stringify(value) }], meta: {} });
 
-test("cumulative transport bytes count repeated reads and survive compaction/follow-ups", () => {
+test("repeated bounded results have no cumulative byte allowance or byte accounting", () => {
   const controller = new AbortController();
-  const guard = createReviewerContextGuard({ controller, limits: { maxBytes: 400, maxResultBytes: 200 } });
-  guard.prompt("system and first prompt");
-  const event = { result: result("same evidence ".repeat(6)) };
-  guard.observe("read:result", event);
-  const once = guard.state.usedBytes;
-  guard.configure({}, "fixture", "model"); // Reconfiguration must not reset retrieval accounting.
-  guard.prompt("follow-up");
-  guard.observe("read:result", event);
-  assert(guard.state.usedBytes > once * 1.5);
-  assert.throws(() => guard.observe("read:result", event), { code: "REVIEWER_CONTEXT_BUDGET" });
-  assert.equal(controller.signal.aborted, true);
-  assert.equal(controller.signal.reason.code, "REVIEWER_CONTEXT_BUDGET");
-  assert.doesNotMatch(controller.signal.reason.message, /same evidence/);
-});
-
-test("known context/output metadata only tightens the byte allowance and leaves native config unchanged", () => {
-  assert.equal(REVIEWER_CONTEXT_LIMITS.maxBytes, 128 * 1024);
-  const config = { agents: { defaults: { contextTokens: 48000, compaction: { mode: "safeguard" } } },
-    models: { providers: { fixture: { models: [{ id: "model", contextWindow: 128000, maxTokens: 20000 }] } } } };
-  const original = structuredClone(config);
-  const guard = createReviewerContextGuard({ controller: new AbortController() });
-  assert.equal(guard.state.maxBytes, 131072);
-  guard.configure(config, "fixture", "model");
-  assert.equal(guard.state.maxBytes, 48000 - 20000 - REVIEWER_CONTEXT_LIMITS.systemReserve);
-  assert.deepEqual(config, original);
-  guard.configure({}, "unknown", "model");
-  assert.equal(guard.state.maxBytes, 19808, "an unknown follow-up cannot expand the initial allowance");
+  const guard = createReviewerContextGuard({ controller });
+  const event = { result: result("same evidence ".repeat(1700)) };
+  assert(Buffer.byteLength(JSON.stringify(event.result)) * 8 > 128 * 1024);
+  for (let index = 0; index < 8; index++) {
+    guard.observe("read", { path: "same.txt" });
+    guard.observe("read:result", event);
+  }
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(guard.state.toolCalls, 8);
 });
 
 test("single huge results and too many tiny calls terminate without echoing payloads", () => {
@@ -84,7 +67,7 @@ async function fixture(t, runner, options = {}) {
     request: { groundTruthPath, population, sourceManifest: [{ path: file }],
       reviewScope: { kind: "metric", boundedBasis: true, objectIds: ["M01:R1", "M01:R2"], sourceIds: ["R1", "R2"] } },
     evidence: { groundTruth, population, snapshot: { entries: [], digest: "controlled" } } };
-  return { root, factory, input, calls: () => calls };
+  return { root, factory, input, api, calls: () => calls };
 }
 
 async function read(runtime, text, id = "read-1", file = "same-evidence.txt") {
@@ -146,13 +129,112 @@ test("ordinary reviewers and Stop classification keep their native read paramete
   }
 });
 
-test("bounded Stop aborts cumulative repeated reads, keeps checked progress, and bypasses native fail-open wrapping", async t => {
+test("classification and bounded native Stop allow repeated reads beyond 128 KiB without changing model configuration", async t => {
+  for (const kind of ["metric", "classification"]) await t.test(kind, async t => {
+    let signal, reads = 0;
+    const text = "REPEATED_SOURCE ".repeat(1700);
+    assert(Buffer.byteLength(text) * 8 > 128 * 1024);
+    const f = await fixture(t, async ({ params, runtime, file }) => {
+      signal = params.abortSignal;
+      assert.doesNotMatch(params.extraSystemPrompt, /cumulative retrieval allowance/u);
+      if (kind === "classification") {
+        assert(REVIEWER_NATIVE_TOOL_DENY.every(name => params.config.tools.deny.includes(name)));
+        assert.equal(params.config.tools.codeMode.enabled, false);
+        for (const name of ["write", "edit", "exec", "code_execution"])
+          assert.equal((await runtime.beforeTool({ toolName: name, params: {} }, {})).block, true);
+      }
+      for (let index = 0; index < 8; index++) {
+        assert.equal(await read(runtime, text, `read-${index}`, file), undefined);
+        reads++;
+      }
+      return output();
+    });
+    f.api.config.agents.defaults.contextTokens = 48000;
+    f.api.config.agents.defaults.compaction = { mode: "safeguard" };
+    f.api.config.models = { providers: { fixture: { models: [{ id: "model", contextWindow: 128000, maxTokens: 20000 }] } } };
+    const config = structuredClone(f.api.config);
+    if (kind === "classification") {
+      f.input.schema = STOP_CLASSIFICATION_SCHEMA;
+      f.input.request.reviewScope.kind = kind;
+    }
+    const handle = await f.factory(f.input);
+    assert.equal(handle.result.stopClassification, "TASK_COMPLETE");
+    assert.equal(signal.aborted, false);
+    assert.equal(reads, 8);
+    assert.equal(f.calls(), 1);
+    assert.deepEqual(f.api.config, config);
+    await handle.close();
+  });
+});
+
+test("onboarding, skill, artifact and implementation reviewers leave cumulative context and compaction to the host", async t => {
+  for (const role of ["onboarding-extractor", "onboarding-adjudicator", "skill-reviewer", "artifact-reviewer", "implementation-reviewer"])
+    await t.test(role, async t => {
+      const text = "REPEATED_ORIGINAL_SOURCE ".repeat(1000);
+      assert(Buffer.byteLength(text) * 8 > 128 * 1024);
+      let hostConfig, reads = 0;
+      const f = await fixture(t, async ({ params, runtime, file, tool }) => {
+        assert.deepEqual(params.config.agents.defaults, hostConfig.agents.defaults, "the host's context, pruning and compaction settings reach every invocation unchanged");
+        assert.deepEqual(params.config.models, hostConfig.models);
+        assert.equal(params.toolsAllow, undefined, "these roles inherit the host tool catalog instead of a private-only runtime allowlist");
+        assert.equal(params.disableMessageTool, undefined);
+        if (role === "artifact-reviewer") {
+          assert.deepEqual(params.skillsSnapshot, { prompt: "", skills: [] });
+          assert.match(params.extraSystemPrompt, /No external skill file lookup is required/);
+          assert.match(params.extraSystemPrompt, /A brief implementation plan need not restate/);
+          assert.match(params.extraSystemPrompt, /A PostToolUse artifact check is not a completion declaration/);
+          assert.doesNotMatch(params.extraSystemPrompt, new RegExp(path.resolve("skills/semantic-review/SKILL.md").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        } else assert.equal(params.skillsSnapshot, undefined);
+        assert.deepEqual(params.config.tools, { ...hostConfig.tools,
+          deny: [...new Set([...hostConfig.tools.deny, ...REVIEWER_NATIVE_TOOL_DENY])], codeMode: { enabled: false } });
+        const agent = params.config.agents.list.find(agent => agent.id === "main");
+        assert.deepEqual(agent.tools.deny, [...new Set(["exec", ...REVIEWER_NATIVE_TOOL_DENY])]);
+        assert.equal(agent.tools.codeMode.enabled, false);
+        assert.deepEqual(agent.tools.alsoAllow, ["host-agent-tool", "read", "rc_progress"]);
+        assert.deepEqual(params.config.agents.list[1], hostConfig.agents.list[1]);
+        assert.equal((await tool.execute("inspect-progress", { action: "get" })).details.role, role);
+        for (const name of ["write", "edit", "apply_patch", "exec", "bash", "process", "code_execution", "mcp__files__write_file", "mcp__runtime__execute_code"])
+          assert.equal((await runtime.beforeTool({ toolName: name, params: {} }, {})).block, true, `${role} must block ${name} before invocation`);
+        assert.equal(await runtime.beforeTool({ toolName: "grep", params: { query: "source" } }, {}), undefined);
+        assert.doesNotMatch(params.extraSystemPrompt, /You have only (?:the read tool|read)|Never modify business files, execute commands/u);
+        for (let index = 0; index < 8; index++) {
+          assert.equal(await read(runtime, text, `${params.runId}-read-${index}`, file), undefined);
+          reads++;
+        }
+        assert.equal(params.abortSignal.aborted, false);
+        return output();
+      });
+      f.input.role = role;
+      f.input.pluginRoot = path.resolve(".");
+      f.api.config.tools = { profile: "coding", alsoAllow: ["host-global-tool"], deny: ["write"] };
+      f.api.config.agents.list = [
+        { id: "main", tools: { alsoAllow: ["host-agent-tool"], deny: ["exec"] } },
+        { id: "other", tools: { allow: ["read"] } },
+      ];
+      f.api.config.agents.defaults.contextTokens = 48000;
+      f.api.config.agents.defaults.contextPruning = { mode: "cache-ttl", ttl: "5m", keepLastAssistants: 2 };
+      f.api.config.agents.defaults.compaction = { mode: "safeguard", reserveTokens: 12000, keepRecentTokens: 6000 };
+      f.api.config.models = { providers: { fixture: { models: [{ id: "model", contextWindow: 128000, maxTokens: 20000 }] } } };
+      hostConfig = structuredClone(f.api.config);
+      await fs.writeFile(path.join(f.root, "app.mjs"), text);
+      const handle = await f.factory(f.input);
+      try {
+        await handle.followUp({ prompt: "Recheck the current sources using the same host-managed context." });
+        assert.equal(f.calls(), 2);
+        assert.equal(reads, 16);
+        assert.deepEqual(f.api.config, hostConfig, "neither the initial review nor its follow-up mutates host configuration");
+      } finally { await handle.close(); }
+    });
+});
+
+test("bounded Stop call exhaustion keeps checked progress and bypasses native fail-open wrapping", async t => {
   let signal, lastResult, blocked;
   const f = await fixture(t, async ({ params, runtime, tool, file }) => {
     signal = params.abortSignal;
     await tool.execute("save", { action: "save", item: { objectId: "M01:R1", state: "COMPLETED", judgement: "PASS",
       reason: "Checked the actual source.", refs: [{ path: file, start: 1, end: 1 }], unresolved: [] } });
-    for (let index = 0; index < 8 && !signal.aborted; index++) lastResult = await read(runtime, "REPEATED_SOURCE ".repeat(1700), `read-${index}`);
+    for (let index = 0; index <= REVIEWER_CONTEXT_LIMITS.maxToolCalls && !signal.aborted; index++)
+      lastResult = await read(runtime, "SMALL_PRIVATE_SOURCE", `read-${index}`);
     blocked = await runtime.beforeTool({ toolName: "read", params: { path: "after-abort.txt" } }, {});
     return output();
   });
@@ -160,14 +242,39 @@ test("bounded Stop aborts cumulative repeated reads, keeps checked progress, and
   try { await f.factory(f.input); } catch (failure) { error = failure; }
   assert.equal(error?.code, "REVIEWER_CONTEXT_BUDGET");
   assert.equal(signal.aborted, true);
-  assert.equal(f.calls(), 1, "context exhaustion must not start a format repair");
-  assert.equal(lastResult.result.isError, true);
+  assert.equal(f.calls(), 1, "call exhaustion must not start a format repair");
+  assert.equal(lastResult.blocked.block, true);
   assert(JSON.stringify(lastResult).length < 600);
-  assert.doesNotMatch(JSON.stringify(lastResult), /REPEATED_SOURCE/);
+  assert.doesNotMatch(JSON.stringify(lastResult), /SMALL_PRIVATE_SOURCE/);
   assert.equal(blocked.block, true);
   assert.equal(error.partialReview.recoveredObjects, 1);
   assert.deepEqual(error.partialReview.unreviewedObjectIds, ["M01:R2"]);
   assert.equal(error.partialReview.finalClassification, null);
+});
+
+test("format repairs and follow-ups share the original lifetime tool-call allowance", async t => {
+  let attempt = 0, session, signal, blocked;
+  const f = await fixture(t, async ({ params, runtime, file }) => {
+    attempt++;
+    session ??= params.sessionId;
+    assert.equal(params.sessionId, session);
+    signal = params.abortSignal;
+    const calls = attempt === 1 ? 32 : attempt === 2 ? 31 : 2;
+    for (let index = 0; index < calls; index++) {
+      const delivered = await read(runtime, "Small original source.", `attempt-${attempt}-read-${index}`, file);
+      if (attempt < 3 || index === 0) assert.equal(delivered, undefined);
+      else blocked = delivered;
+    }
+    return attempt === 1 ? output({}) : output();
+  });
+  const handle = await f.factory(f.input);
+  assert.equal(f.calls(), 2, "the first malformed response starts one repair");
+  assert.equal(signal.aborted, false);
+  await assert.rejects(handle.followUp({ prompt: "Continue checking the same evidence." }), { code: "REVIEWER_CONTEXT_BUDGET" });
+  assert.equal(signal.aborted, true);
+  assert.equal(blocked.blocked.block, true);
+  assert.equal(f.calls(), 3, "the follow-up must not reset calls or start another repair after exhaustion");
+  await handle.close();
 });
 
 test("one oversized Stop read aborts while ordinary roles and unmarked scopes keep existing behavior", async t => {
@@ -183,9 +290,8 @@ test("one oversized Stop read aborts while ordinary roles and unmarked scopes ke
   const baseline = structuredClone(f.input);
   baseline.role = "ground-truth-extractor";
   baseline.request.reviewScope.kind = "baseline";
-  await assert.rejects(f.factory(baseline), { code: "REVIEWER_CONTEXT_BUDGET" });
-  assert.equal(signal.aborted, true);
-  assert.doesNotMatch(JSON.stringify(delivered), /LARGE_PRIVATE_SOURCE/);
+  // Stop baseline transport now has a dedicated task/schema protocol. Its
+  // long-read/compact behavior is exercised in stop-baseline-task.test.mjs.
   for (const scope of [null, { boundedBasis: false }, { boundedBasis: true }]) {
     const ordinary = structuredClone(f.input);
     ordinary.request.reviewScope = scope;
@@ -267,6 +373,8 @@ test("native cache identity survives new factories and credential rotation but t
     value => { value.models.providers.fixture.api = "openai-responses"; },
     value => { value.models.providers.fixture.models[0].contextWindow = 64000; },
     value => { value.models.providers.fixture.models[0].maxTokens = 8192; },
+    value => { value.tools = { profile: "coding", deny: ["exec"] }; },
+    value => { value.agents.list = [{ id: "main", tools: { deny: ["browser"] } }]; },
   ]) {
     config = structuredClone(original); mutate(config);
     assert.notEqual(factory.reviewCacheIdentity({ effort: "low" }), identity);

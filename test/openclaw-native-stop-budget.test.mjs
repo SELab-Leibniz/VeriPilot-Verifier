@@ -129,7 +129,9 @@ dynamicGroundTruth:
     size: 0
 stopCorrection:
   enabled: true
-${(metrics ?? { M01: true }) ? `  metrics:\n${Object.entries(metrics ?? { M01: true }).map(([id, enabled]) => `    ${id}: ${enabled}`).join("\n")}\n` : ""}  fileQualityReviewEnabled: ${quality !== null}
+  metrics:
+${Object.entries({...Object.fromEntries(Array.from({length:16},(_,i)=>[`M${String(i+1).padStart(2,'0')}`,false])),M01:true,...metrics??{}}).map(([id,enabled])=>`    ${id}: ${enabled}`).join('\n')}
+  fileQualityReviewEnabled: ${quality !== null}
   waitMode: ${waitMode}
   assessmentTimeoutMs: ${waitTimeoutMs ?? 11000}
   feedbackReserveMs: 1000
@@ -146,6 +148,7 @@ reviewers:
   let calls = 0, fail = 0;
   const factory = async params => {
     const { request, schema } = params;
+    await api.runtime.agent.reviewAdmission?.();
     calls++;
     if (fail-- > 0) throw new Error("transient checker failure");
     let result;
@@ -154,6 +157,7 @@ reviewers:
         verificationTarget: "ARTIFACT",
         authority: "USER_EXPLICIT", severity: "HARD", source: { ref: request.sourceCatalog.find(s => s.kind === "USER_MESSAGE").ref,
           subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
+    else if(request.reviewScope?.kind==='classification')result={summary:'Completion scope only',stopClassification:'TASK_COMPLETE',stage:null,findings:[],metricObjectJudgements:[]};
     else {
       const verdict = await review?.();
       await pause(50);
@@ -169,7 +173,23 @@ reviewers:
     runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
       resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
       runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };
-  const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility });
+  const listeners=new Set();let startSequence=0;
+  api.runtime.gateway={request:async()=>({id:'fixture-notice',aborted:true})};
+  const startCompatibility=async()=>({version:1,onStart:callback=>{listeners.add(callback);return()=>listeners.delete(callback);},drain:async()=>{},diagnosticsEnabled:()=>true});
+  const statusCompatibility=async()=>({emitAgentEvent(){},markDiagnosticSessionProgress(){},...(compatibility?await compatibility():{})});
+  const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility:statusCompatibility,stopStartCompatibility:startCompatibility });
+  const prompt=runtime.prompt.bind(runtime);
+  runtime.prompt=async(event,context)=>{
+    const result=await prompt(event,context);
+    if(String(context.runId).startsWith('rc-stop-')&&result?.prependContext){
+      const gate=await runtime.beforeAgentRun({prompt:`${result.prependContext}\n${event.prompt}`},context);
+      assert.equal(gate?.outcome,'pass','a controlled native model starts only after the real gate allows it');
+      for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
+        runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
+      await state.stopStartProtocol.drain();
+    }
+    return result;
+  };
   const ctx = { agentId: "main", sessionId: "host", sessionKey: params.sessionKey, runId: params.runId, workspaceDir: root, trigger: "user", abortSignal: hostAbort.signal };
   params.cleanup.dispose = () => runtime.dispose();
   await runtime.sessionStart({ sessionId: "host" }, ctx);
@@ -179,7 +199,7 @@ reviewers:
   calls = 0; fail = failures;
   return { api, runtime, ctx, warnings, sharedState: state, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
     chain: () => [...state.stopWaitChains.values()].at(-1),
-    restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true }) };
+    restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true,stopStartCompatibility:startCompatibility }) };
 }
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
   const f = await lifecycle(t), payload = { text: "Delivered.", mediaUrl: "fixture://media" }, original = structuredClone(payload);
@@ -244,8 +264,9 @@ test("a terminal review that cannot read its native transcript never inherits an
   const receipts = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(receipts.find(record => record.runId === ctx.runId).reviewStatus, "UNVERIFIED");
   assert.equal(receipts.find(record => record.runId === ctx.runId).evaluationId, null);
-  assert.equal((await findTask({ projectRoot: f.root, sessionId: "host" })).verification.assessmentId,
-    original.verification.assessmentId, "An unavailable check cannot create or replace a verified assessment");
+  const current=await findTask({projectRoot:f.root,sessionId:'host'});
+  assert.equal(current.verification.status,'UNVERIFIED');assert.equal(current.status,'STOPPED_UNVERIFIED');
+  assert.equal(current.verification.previousVerification.assessmentId,original.verification.assessmentId,'the old PASS remains historical evidence, not the current verdict');
 });
 test("transient checker faults retry RC review without spending business corrections", async t => {
   const f = await lifecycle(t, { failures: 2 });
@@ -310,10 +331,9 @@ test("permanent checker faults stop at the existing infrastructure ceiling", asy
 
 test("admission refusal after one checker failure settles without reusing that failure", async t => {
   const f = await lifecycle(t, { failures: 1 });
-  const admit = f.api.runtime.agent.session.runWithWorkAdmission;
   let admissions = 0;
-  f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
-    if (++admissions === 1) return admit(params, run);
+  f.api.runtime.agent.reviewAdmission = async () => {
+    if (++admissions === 1) return;
     throw Object.assign(new Error("Admission closed"), { code: "GATEWAY_DRAINING" });
   };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
@@ -323,7 +343,7 @@ test("admission refusal after one checker failure settles without reusing that f
   assert.equal(admissions, 2);
   assert.equal(f.calls(), 1);
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
-  assert.equal(task.stop.infrastructureTotalFailures, 1);
+  assert.equal(task.stop.infrastructureTotalFailures, 2,'one checker fault and the subsequent denied private admission are both retained');
   assert.equal(task.stop.correctionAttempts, 0);
 });
 
@@ -455,8 +475,11 @@ test("a cancelled incoming task does not replace or cancel the pending review", 
 
 test("incoming model admission already inside the lane releases immediately and fences an uncooperative review", async t => {
   const started = deferred(t), finish = deferred(t), events = [];
-  const f = await lifecycle(t, { review: async () => { started.resolve(); await finish.promise; },
+  const f = await lifecycle(t, {
     compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
+  // Hang at the opaque model dependency, before role-specific preparation can
+  // select another review outcome. The lane fence must cover every role.
+  f.api.runtime.agent.reviewAdmission=async()=>{started.resolve();await finish.promise;};
   f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { before_model_resolve: 1100 } } } } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await within(started.promise, "started signal");
@@ -473,8 +496,10 @@ test("incoming model admission already inside the lane releases immediately and 
 
 test("new business waits for the deviation feedback admission receipt, not only the assessment", async t => {
   const admitted = deferred(t), dispatching = deferred(t);
+  let childRunId;
   const f = await lifecycle(t, { deviation: true });
   f.api.runtime.subagent = { run: async args => {
+    childRunId=args.idempotencyKey;
     dispatching.resolve(); await admitted.promise;
     return { runId: args.idempotencyKey };
   } };
@@ -484,10 +509,11 @@ test("new business waits for the deviation feedback admission receipt, not only 
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
   await pause(30);
   assert.equal(passed, false, "committing an assessment must not release a pending dispatch");
-  admitted.resolve(); await next;
+  admitted.resolve();await f.runtime.prompt({prompt:'RC feedback'}, {...f.ctx,runId:childRunId});await next;
   const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(record.reviewStatus, "DEVIATION");
-  assert.equal(record.followupStatus, "ADMITTED");
+  assert.match(record.followupStatus,/^(?:DELIVERED|STARTED)$/u,'the returned transport snapshot must prove delivery, never just queue acceptance');
+  const delivered=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});assert.equal(delivered.admission.deliveryStatus,'DELIVERED');assert(delivered.admission.startedAt);
 });
 
 test("a crashed review releases admission as UNVERIFIED without waiting for its deadline", async t => {
@@ -513,6 +539,7 @@ test("until_pass holds the next task during correction execution and recheck, th
   const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
+  await fs.writeFile(path.join(f.root,'draft.md'),'The corrected current draft after a real controlled business edit.\n');
   await pause(20);
   assert.equal(passed, false, "feedback admission and active correction are not a PASS");
   assert.equal(f.chain().record.phase, "CORRECTING");
@@ -564,25 +591,42 @@ test("an aborted current correction closes its cancelled receipt and terminalize
     const f = await lifecycle(t, { deviation: true, waitMode });
     f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
     await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-    await within(f.runtime.waitForNativeReviews(), "native review settlement");
+    // Assessment settlement and native queue acceptance are separate events.
+    // Abort the actual child only after its host dispatch has been observed.
+    await until(()=>Boolean(childRunId),'queued corrective run');
+    if(waitMode==='assessment')await f.runtime.prompt({prompt:'RC feedback'},{...f.ctx,runId:childRunId});
+    const reviewed=await within(f.runtime.waitForNativeReviews(), "native review settlement");
+    assert(childRunId,JSON.stringify({reviewed,warnings:f.warnings,task:await findTask({projectRoot:f.root,sessionId:'host'})}));
     const child = { ...f.ctx, runId: childRunId };
-    await f.runtime.prompt({ prompt: "RC feedback" }, child);
+    if(waitMode!=='assessment')await f.runtime.prompt({ prompt: "RC feedback" }, child);
     await f.runtime.agentEnd({ runId: childRunId, success: false, aborted: true }, child);
     const task = await findTask({ projectRoot: f.root, sessionId: "host" });
     assert.equal(task.status, "STOPPED_UNVERIFIED");
     assert.equal(task.verification.terminalRunId, childRunId);
     assert.equal(task.verification.reasonCode, "RC_NATIVE_ATTEMPT_ENDED");
     assert.equal(task.verification.previousVerification.status, "DEVIATION");
-    const files = async dir => (await Promise.all((await fs.readdir(dir, { withFileTypes: true })).map(e =>
-      e.isDirectory() ? files(path.join(dir, e.name)) : [path.join(dir, e.name)]))).flat();
-    const receipts = await Promise.all((await files(path.join(f.root, ".runtime-correction/openclaw/native-followups")))
-      .filter(p => p.endsWith(".json")).map(async p => JSON.parse(await fs.readFile(p, "utf8"))));
-    const receipt = receipts.find(r => r.runId === childRunId);
-    assert.equal(receipt.status, "CANCELLED"); assert(receipt.finishedAt); assert(receipt.cancelledAt);
+    const ledger=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
+    assert.equal(ledger.status,'CANCELLED');assert(ledger.admission.invalidatedAt);assert(ledger.finishedAt);
     assert.equal(f.hostAbort.signal.aborted, false);
     await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, aborted: true }, f.ctx);
     assert.deepEqual((await findTask({ projectRoot: f.root, sessionId: "host" })).verification, task.verification);
   });
+});
+
+test('an initial review that crosses its absolute deadline cannot create a corrective child',async t=>{
+ t.mock.timers.enable({apis:['Date'],now:Date.now()});
+ let childRunId;const f=await lifecycle(t,{deviation:true,waitMode:'until_pass'});
+ f.api.runtime.subagent={run:async args=>{childRunId=args.idempotencyKey;return {runId:childRunId};}};
+ f.api.runtime.agent.reviewAdmission=async()=>{
+  const deadline=f.chain()?.record.deadlineAt;assert(Number.isFinite(deadline));
+  t.mock.timers.tick(Math.max(1,deadline-Date.now()+1));
+ };
+ await f.runtime.reply({kind:'final',runId:f.ctx.runId,sessionKey:f.ctx.sessionKey,payload:{text:'Delivered.'}},f.ctx);
+ const reviewed=await within(f.runtime.waitForNativeReviews(),'expired initial review settlement');
+ assert.equal(childRunId,undefined);assert.equal(reviewed[0].reviewStatus,'UNVERIFIED',JSON.stringify(reviewed));
+ const task=await findTask({projectRoot:f.root,sessionId:'host'});
+ assert.equal(task.status,'STOPPED_UNVERIFIED');assert.equal(task.verification.terminalRunId,f.ctx.runId);
+ assert.equal(task.stop.correctionAttempts,0);
 });
 
 test("until_pass deadline releases a correction with no active reviewer and reports non-PASS", async t => {
@@ -614,6 +658,7 @@ test("kitchen parent expiry closes an admitted receipt and terminalizes the task
   await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
+  await fs.writeFile(path.join(f.root,'draft.md'),'The changed current source requires a fresh child review.\n');
   await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
   await within(started.promise, "started signal");
   f.chain().expire(); finish.resolve();
@@ -624,11 +669,8 @@ test("kitchen parent expiry closes an admitted receipt and terminalizes the task
   assert.equal(task.status, "STOPPED_UNVERIFIED"); assert.equal(task.verification.status, "UNVERIFIED");
   assert.equal(task.verification.previousVerification.status, "DEVIATION");
   assert.equal(task.stop.correctionAttempts, 1); assert.equal(f.hostAbort.signal.aborted, false);
-  const receiptRoot = path.join(f.root, ".runtime-correction/openclaw/native-followups");
-  const all = async directory => (await Promise.all((await fs.readdir(directory, { withFileTypes: true })).map(async entry =>
-    entry.isDirectory() ? all(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
-  const receipts = await Promise.all((await all(receiptRoot)).filter(p => p.endsWith(".json")).map(async p => JSON.parse(await fs.readFile(p, "utf8"))));
-  assert(receipts.find(r => r.runId === childRunId)?.finishedAt);
+  const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
+  assert(receipt.finishedAt);assert.equal(receipt.status,'CANCELLED');
 });
 
 test("reset during correction releases until_pass even after the original review has settled", async t => {
@@ -662,7 +704,9 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   f.chain().expire();
   await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {});
   const next = { ...f.ctx, runId: "new-business" };
+  await fs.appendFile(path.join(f.root,'native.jsonl'),'\n'+JSON.stringify({type:'message',id:'new-real-user',parentId:'u',message:{role:'user',content:'Inspect this new changed draft.'}})+'\n');
   await f.runtime.prompt({ prompt: "Next task" }, next);
+  await fs.writeFile(path.join(f.root,'draft.md'),'The newly changed draft in a distinct real user flow.\n');
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "new-write", params: { path: "draft.md" } }, next);
   await f.runtime.reply({ kind: "final", runId: next.runId, sessionKey: next.sessionKey, payload: { text: "New delivery." } }, next);
   await within(started.promise, "started signal");

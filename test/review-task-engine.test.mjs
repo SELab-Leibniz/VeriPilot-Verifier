@@ -11,6 +11,23 @@ import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { captureFiles, registerCitation, runReviewTask, taskVerdicts, validateDecision } from "../lib/review-task/review-task.mjs";
 import { nativeTools } from "./helpers/native-task.mjs";
 
+test('group submission schema exposes only original member IDs and hides the group ID as a task choice', async t=>{
+  const f=await discoveryFixture(t),outputDir=`${f.root}-group`;
+  t.after(()=>fs.rm(outputDir,{recursive:true,force:true}));
+  const members=[{...f.task,id:'M01:original-A'},{...f.task,id:'M01:original-B'}];
+  const result=await runReviewTask({task:{...f.task,id:'group-opaque-uuid'},tasks:members,root:f.root,outputDir,maxAttempts:1,
+    nativeRun:async worker=>{
+      const submit=worker.tools.find(tool=>tool.name==='submit_review');
+      const choices=submit.parameters.properties.taskId;
+      assert.deepEqual(choices.anyOf.map(value=>value.const),members.map(member=>member.id));
+      const prompt=JSON.parse(worker.prompt);assert.equal(prompt.group.groupId,'group-opaque-uuid');assert.equal(prompt.group.id,undefined);
+      const tools=nativeTools(worker);
+      await assert.rejects(tools.submit('group-opaque-uuid','UNVERIFIED',[]),/Remaining original task IDs: M01:original-A, M01:original-B/u);
+      for(const member of members)await tools.submit(member.id,'UNVERIFIED',[]);
+    }});
+  assert.equal(result.completed,true);
+});
+
 test("review profiles preserve task ownership and keep untuned routes unchanged", () => {
   assert.match(reviewPromptProfile("M01", "REQUIREMENT_DECOMPOSITION_COVERAGE").promptAppend, /Metric M01/);
   assert.equal(reviewPromptProfile("M03", "TEST_CONTRACT_COVERAGE").promptAppend, "");

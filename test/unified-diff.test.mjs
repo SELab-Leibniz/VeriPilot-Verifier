@@ -165,3 +165,30 @@ test("patch validation is anchored to a nested policy root instead of a parent G
     allowedPaths: [relativePath],
   }).status, "passed");
 });
+
+test("scratch Git operations ignore nested TEMP and inherited repository/config overrides", async t => {
+  const parent = await workspace(t);
+  const scratch = path.join(parent, "ignored", "scratch");
+  await fs.mkdir(scratch, { recursive: true });
+  await writeFile(parent, ".gitignore", "ignored/\n");
+  const globalConfig = await writeFile(parent, "host.gitconfig", "[core]\n autocrlf = true\n safecrlf = true\n");
+  const moduleUrl = new URL("../lib/unified-diff.mjs", import.meta.url).href;
+  const script = `
+    import assert from 'node:assert/strict';
+    import fs from 'node:fs/promises';
+    import {createUnifiedDiff,validateUnifiedDiffs} from ${JSON.stringify(moduleUrl)};
+    const cwd=${JSON.stringify(scratch)};
+    const original='alpha\\r\\nbefore\\r\\nomega\\r\\n';
+    await fs.writeFile(cwd+'/evidence.txt',original);
+    const diff=createUnifiedDiff({relativePath:'evidence.txt',original,proposed:'alpha\\r\\nafter\\r\\nomega\\r\\n'});
+    assert.equal(validateUnifiedDiffs({cwd,diffs:[diff],allowedPaths:['evidence.txt']}).status,'passed');
+    assert.equal(await fs.readFile(cwd+'/evidence.txt','utf8'),original);
+    await fs.writeFile(cwd+'/evidence.txt','a changed baseline\\n');
+    assert.throws(()=>validateUnifiedDiffs({cwd,diffs:[diff],allowedPaths:['evidence.txt']}),/git apply --check/);
+  `;
+  execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: parent, encoding: "utf8",
+    env: { ...process.env, TEMP: scratch, TMP: scratch, TMPDIR: scratch,
+      GIT_DIR: path.join(parent, ".git"), GIT_WORK_TREE: parent, GIT_INDEX_FILE: path.join(parent,"foreign-index"),
+      GIT_CONFIG_GLOBAL: globalConfig, GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "core.autocrlf", GIT_CONFIG_VALUE_0: "true" } });
+  await assert.rejects(fs.access(path.join(parent,"foreign-index")), {code:"ENOENT"});
+});

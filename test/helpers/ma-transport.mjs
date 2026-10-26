@@ -33,14 +33,19 @@ export function readMaContract(matrixRoot) {
     const filter = vm.runInNewContext(`${take(main, "function shouldForwardNotificationToRenderer(", "function buildOpenClawChatParams(")};shouldForwardNotificationToRenderer`, {}, { timeout: 1000 });
     const protocol = vm.runInNewContext(`(function ${take(main, "handleProtocolEvent(r,n){", "handleNotification(r){")})`,
       { logger$3: { info() {} } }, { timeout: 1000 });
+    const maxSeqTrackedRuns=Number(/static MAX_SEQ_TRACKED_RUNS=(\d+)/u.exec(main)?.[1]);
+    if(!Number.isSafeInteger(maxSeqTrackedRuns))throw new Error('MA sequence tracking contract changed');
+    const trackChatSeq=vm.runInNewContext(`(function ${take(main,'trackChatSeq(r){','handleProtocolEvent(r,n){')})`,
+      {logger$3:{info(){},warn(){}},GatewayManager:{MAX_SEQ_TRACKED_RUNS:maxSeqTrackedRuns}},{timeout:1000});
     if (!/auth:\{token:n\},caps:\[\]/u.test(main) || !main.includes('this.rpc("sessions.subscribe",')) throw new Error("MA client capabilities/subscriptions changed");
     for (const channel of ["gateway:notification", "gateway:chat-message", "gateway:session-snapshot"]) {
       if (!preload.includes(`"${channel}"`)) throw new Error(`MA preload excludes ${channel}`);
     }
     const mainHandler = take(main, 'e.on("chat:message",', '),e.on("seq:gap"').slice('e.on("chat:message",'.length);
+    const snapshotHandler = take(main, 'e.on("session:snapshot",', '),e.on("welink:outbound-message"').slice('e.on("session:snapshot",'.length);
     const broadcast = take(main, "function isLive(", "const PREPARED_ATTEMPT_TTL_MS=");
     const contract = {
-      version: pkg.version, mainFile: `dist-electron/main/${entry}`, rendererFile, renderer,
+      version: pkg.version, mainFile: `dist-electron/main/${entry}`, rendererFile, renderer,main,
       sha256: { main: createHash("sha256").update(main).digest("hex"),
         renderer: createHash("sha256").update(renderer).digest("hex"),
         preload: createHash("sha256").update(preload).digest("hex") },
@@ -52,12 +57,27 @@ export function readMaContract(matrixRoot) {
           isWorkflowGenSessionKey: () => false, isInternalSessionKey: () => false,
           getAiChatPerformanceCollectorMain: () => ({ recordFirstChatMessageTs() {} }),
         }, { timeout: 1000 });
-        protocol.call({ emit(kind, payload) {
+        const handleSnapshot=vm.runInNewContext(`(${snapshotHandler})`,{n:window,isInternalSessionKey:()=>false},{timeout:1000});
+        protocol.call({chatSeqTrack:new Map(),chatSeqEpoch:0,trackChatSeq, emit(kind, payload) {
           if (kind === "chat:message") handleChat(payload);
           else if (kind === "notification" && filter(payload)) window.webContents.send("gateway:notification", payload);
-          else if (kind === "session:snapshot") window.webContents.send("gateway:session-snapshot", payload);
+          else if (kind === "session:snapshot") handleSnapshot(payload);
         } }, event.event, event.payload);
         return delivered;
+      },
+      snapshotClient({sessionKey,now=()=>Date.now(),lastFinalAt}={}){
+        if(!renderer.includes('const l=new Map,d=5e3;window.electron.ipcRenderer.on("gateway:chat-message"'))throw new Error('MA snapshot deduplication contract changed');
+        const source=take(renderer,'window.electron.ipcRenderer.on("gateway:session-snapshot",','),window.electron.ipcRenderer.on("gateway:agent-state"')
+          .slice('window.electron.ipcRenderer.on("gateway:session-snapshot",'.length);
+        const events=[],warnings=[],lastFinals=new Map(lastFinalAt===undefined?[]:[[sessionKey,lastFinalAt]]);
+        const state={currentSessionKey:sessionKey,handleChatEvent:event=>events.push(event)};
+        const isUuidSession=vm.runInNewContext(`${take(renderer,'function Ke(','const Z4=')};Ke`,{},{timeout:1000});
+        const receive=vm.runInNewContext(`(${source})`,{Date:{now},console:{log(){},warn:(...args)=>warnings.push(args)},
+          Qe:value=>value&&typeof value==='object'?value:undefined,Ie:value=>typeof value==='string'?value:undefined,
+          Ke:isUuidSession,Qo:()=>null,Kf:value=>['gateway','ipc','renderer'].includes(value)?value:undefined,
+          re:{getState:()=>state},X:{getState:()=>({getMeta:()=>({status:'done'})})},
+          l:lastFinals,d:5000,vc:{handleGatewayEvent(){}},Ec(){}},{timeout:1000});
+        return {events,warnings,receive};
       },
       // Pure-code regression: real renderer timer and tool branch; stubs only
       // provide the stores/UI utilities normally supplied by the full app.

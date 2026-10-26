@@ -5,6 +5,18 @@ import path from "node:path";
 import { registerCitation } from "../../lib/review-task/review-task.mjs";
 import { sha256 } from "../../lib/runtime-v2/utils.mjs";
 
+// Explicit opt-in for scripted transport/routing fixtures only. This is the
+// same non-semantic trace witness used by observedTaskResult; proof-boundary
+// tests omit it so a forged PASS still exercises the real rejection path.
+export function scriptedProductionProofs(params,result){
+ return Object.fromEntries((result.metricObjectJudgements??[]).filter(row=>row.objectId.startsWith('M16:')&&row.judgement==='PASS').map(row=>[row.objectId,{
+  sourceCiteIds:row.evidence,
+  productionTrace:{version:1,entryPoint:'Scripted transport fixture entry',actualInput:'Assigned fixture input',
+    producerToConsumer:'The scripted witness exercises transport only; it is not a semantic oracle.',stateful:false,
+    statelessReason:'The controlled transport witness has no persisted business state.',stateTargets:[],targetRelations:[]}
+ }]));
+}
+
 export async function observedTaskResult(options, { file, verdict = "PASS", reason = "The fixture's read witness supports its assigned obligation." }) {
   const reads = [], basis = [];
   for (const file of options.task.basisFiles) {

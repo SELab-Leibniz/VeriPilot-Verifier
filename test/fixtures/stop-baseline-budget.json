@@ -1,0 +1,10 @@
+{
+  "description": "Sanitized metadata from the 2026-10-26 Stop baseline failure. Original private requests were cleaned up; tests generate synthetic original text, not the business application or transcript.",
+  "role": "ground-truth-extractor",
+  "scope": "baseline",
+  "groupsStarted": 0,
+  "observedReadCalls": 10,
+  "observedCumulativeBytes": 133509,
+  "observedLimitBytes": 126272,
+  "pageBytes": 16384
+}

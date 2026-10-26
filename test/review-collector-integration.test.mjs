@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
@@ -69,10 +69,10 @@ for (const classification of ["TASK_COMPLETE", "INTERMEDIATE"]) test(`checker-on
   const f = await fixture(t, 1, classification, "HARD", "premature-output", false);
   const result = await f.run();
   assert.equal(result.stop.status, "UNVERIFIED");
-  assert.equal(result.stop.decision, "block");
+  assert.equal(result.stop.decision, "allow", "checker-only failure never requests a business repair");
   assert.notEqual(result.stop.partialFeedbackEligible, true);
   assert.equal(result.stop.review.collection.complete, false);
-  assert.equal(result.stop.review.collection.reviewedObjects > 0, true);
+  assert.equal(classification==='INTERMEDIATE'?result.stop.review.collection.completedItems>0:result.stop.review.collection.reviewedObjects>0,true);
   assert.equal(result.stop.correctionAttempt ?? 0, 0);
   assert.equal(result.stop.infrastructureAttempt, 1);
   assert.equal(result.stop.report?.blockingObjects.filter(row => row.judgement === "DEVIATION").length ?? 0, 0);
@@ -85,8 +85,8 @@ for (const failed of [1, 2]) test(`Stop retains and delivers source-bound result
   assert.equal(result.stop.partialFeedbackEligible, true);
   assert.equal(result.stop.infrastructureAttempt, 1);
   assert.equal(result.stop.review.collection.complete, false);
-  assert.equal(result.stop.review.collection.items.length, 3);
-  assert.equal(f.calls.length, 4);
+  assert.equal(result.stop.review.collection.items.length, 12, 'four metric groups preserve all three original sources');
+  assert.equal(f.calls.length, 13);
   assert.match(result.feedback, /confirmed local discrepancy/u);
   assert.ok(Buffer.byteLength(result.feedback, "utf8") <= 8192);
   const indexPath = /^\[RC_DETAILS\] ([^\n]+)/mu.exec(result.feedback)?.[1];
@@ -107,7 +107,7 @@ test("complete isolated reviews retain the original full-population PASS behavio
   assert.equal(result.stop.report.status, "PASS");
   assert.equal(result.stop.review.collection.complete, true);
   assert.equal(result.feedback, null);
-  assert.equal(f.calls.length, 4);
+  assert.equal(f.calls.length, 13);
   const [classification, ...items] = f.calls;
   assert.equal(classification.request.reviewScope.boundedBasis, true);
   assert.equal(classification.schema.properties.findings.maxItems, 0);
@@ -123,7 +123,7 @@ test("explicit verify_only uses the caller's current-output scope without a mode
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), "task.json"), "utf8"));
   const result = await f.run({ assessmentContext: { mode: "verify_only", assessmentId: "caller-scope",
     guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 3 } });
-  assert.equal(f.calls.length, 3, "only the three actual item checks consume model calls");
+  assert.equal(f.calls.length, 12, "four metric groups each check their three original members without classification");
   assert.ok(f.calls.every(call => call.request.reviewScope.kind !== "classification"));
   assert.equal(result.stop.review.stopClassification, "TASK_COMPLETE", "caller scope cannot drift with old assistant progress");
   assert.equal(result.stop.report.status, "PASS", "PASS still requires every owned object to pass");
@@ -136,10 +136,10 @@ test("caller-selected verification scope cannot turn an overflowing item into PA
   const state = JSON.parse(await fs.readFile(statePath, "utf8"));
   const result = await f.run({ assessmentContext: { mode: "verify_only", assessmentId: "caller-scope-failed",
     guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 3 } });
-  assert.equal(f.calls.length, 3);
+  assert.equal(f.calls.length, 12);
   assert.equal(result.stop.status, "UNVERIFIED");
   assert.equal(result.stop.review.collection.complete, false);
-  assert.equal(result.stop.review.metricObjectJudgements.filter(row => row.judgement === "UNVERIFIED").length, 4);
+  assert.equal(result.stop.review.metricObjectJudgements.filter(row => row.judgement === "UNVERIFIED").length, 1);
   assert.equal(JSON.parse(await fs.readFile(statePath, "utf8")).stop.correctionAttempts, 0);
 });
 

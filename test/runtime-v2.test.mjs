@@ -1,3 +1,4 @@
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import assert from "node:assert/strict";
 import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { isDeepStrictEqual } from "node:util";
@@ -26,7 +27,7 @@ import {
 import { buildMetricPopulation, calculateMetricReport } from "../lib/runtime-v2/metrics.mjs";
 import {
   finalizeArtifactRuntimeV2,
-  handleRuntimeV2Event,
+
 } from "../lib/runtime-v2/orchestrator.mjs";
 import { encodeHookOutput } from "../lib/protocol/core-hooks.mjs";
 import {
@@ -40,7 +41,7 @@ import {
   SKILL_REVIEW_SCHEMA,
   STOP_REVIEW_SCHEMA,
 } from "../lib/runtime-v2/reviewer.mjs";
-import { ensureTask, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, findTask, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 import { readTranscriptSnapshot, reconcileTurnState } from "../lib/runtime-v2/transcript.mjs";
 
 
@@ -223,7 +224,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
     } else if (isDeepStrictEqual(schema, SKILL_REVIEW_SCHEMA)) {
       result = skillAssessment();
     } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
-      result = await stopAssessment(request, { projectRoot });
+      result = await stopAssessment(request, { projectRoot, taskId: options.taskId });
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
     }
@@ -566,7 +567,9 @@ test("Stop feedback names checker issues outside the frozen population", async (
     reviewerFactory,
   });
 
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "allow",'an unknown metric identity is a checker fault, never business repair authority');
+  assert.equal(outcome.stop.status,'UNVERIFIED');
+  assert.ok(outcome.stop.report.checkerIssues.some(issue=>issue.objectId==='M03:invented-object'));
   assert.match(outcome.feedback, /M03:invented-object/u);
 });
 
@@ -901,7 +904,7 @@ test("Skill checker faults preserve uncertainty without PASS, business findings 
   assert.equal(stored.review.checkerError, "No attributable reversed event pair.");
 });
 
-test("Stop reviewer failure blocks an unverified completion without consuming correction budget", async (t) => {
+test("Stop reviewer failure terminates unverified without consuming correction budget", async (t) => {
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = v2Plan(root, {
@@ -926,12 +929,13 @@ test("Stop reviewer failure blocks an unverified completion without consuming co
     },
   });
 
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.status, "UNVERIFIED");
-  assert.match(outcome.feedback, /Final Stop review is UNVERIFIED/u);
-  assert.match(outcome.feedback, /Do not report the task as fully verified or fully complete/u);
+  assert.match(outcome.feedback, /UNVERIFIED/u);
+  assert.match(outcome.feedback, /Internal reviewer timed out after 5ms/u);
   const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
-  assert.equal(state.status, "ACTIVE");
+  assert.equal(state.status, "STOPPED_UNVERIFIED");
+  assert.equal(state.stop.infrastructureTotalFailures,3,'preparation has a finite internal retry budget');
   assert.equal(state.stop.correctionAttempts, 0, "reviewer infrastructure failures use no deviation budget");
   const journal = await fs.readFile(path.join(
     root,
@@ -941,12 +945,12 @@ test("Stop reviewer failure blocks an unverified completion without consuming co
     "journal",
     "events.jsonl",
   ), "utf8");
-  assert.match(journal, /"type":"STOP_REVIEW_FAILED"/u);
-  assert.match(journal, /"reason":"STOP_REVIEW_EXCEPTION"/u);
+  assert.match(journal, /"type":"STOP_CORRECTION_SETTLED"/u);
+  assert.match(journal, /STOP_ASSESSMENT_FAILED/u);
 });
 
 
-test("Ground Truth refresh failure blocks Stop as unverified", async (t) => {
+test("Ground Truth refresh failure terminates Stop as unverified", async (t) => {
   const root = await workspace(t);
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = v2Plan(root, {
@@ -969,11 +973,11 @@ test("Ground Truth refresh failure blocks Stop as unverified", async (t) => {
     },
   });
 
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.status, "UNVERIFIED");
-  assert.match(outcome.feedback, /Ground Truth refresh failed/u);
+  assert.match(outcome.feedback, /Ground Truth reviewer unavailable/u);
   const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
-  assert.equal(state.status, "ACTIVE");
+  assert.equal(state.status, "STOPPED_UNVERIFIED");
   assert.equal(state.stop.correctionAttempts, 0);
 });
 
@@ -1016,7 +1020,7 @@ test("reviewer close failure cannot override a fail-closed Stop decision", async
     },
     projectRoot: root,
     plan,
-    reviewerFactory: async ({ projectRoot }) => {
+    reviewerFactory: Object.assign(async ({ projectRoot }) => {
       const requestDirectory = path.join(projectRoot, ".runtime-correction", "close-failure-review");
       await fs.mkdir(requestDirectory, { recursive: true });
       return {
@@ -1026,11 +1030,12 @@ test("reviewer close failure cannot override a fail-closed Stop decision", async
           throw new Error("reviewer close failed");
         },
       };
-    },
+    },{supportsReviewCollection:true}),
   });
 
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.status, "UNVERIFIED");
+  assert.equal(outcome.stop.reasonCode,'STOP_CLASSIFICATION_INVALID');
   const journal = await fs.readFile(path.join(
     root,
     ".runtime-correction",
@@ -1068,7 +1073,7 @@ test("Stop blocks three terminal deviations, then records and allows the fourth"
     decisions.push(outcome.decision);
   }
   assert.deepEqual(decisions, ["block", "block", "block", "allow"]);
-  assert.match(outcomes.at(-1).feedback, /CORRECTION_BUDGET_EXHAUSTED/u);
+  assert.equal(outcomes.at(-1).stop.reasonCode,'SESSION_CORRECTION_LIMIT');
   assert.equal(outcomes.at(-1).stop.verificationIncomplete, true);
   assert.equal(outcomes.at(-1).stop.correctionBudgetExhausted, true);
 });
@@ -1109,8 +1114,12 @@ test("Stop blocks hard findings even when the reviewer classifies the attempted 
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = v2Plan(root, { skillCorrection: { enabled: false } });
   const reviewerFactory = fakeReviewerFactory({
-    stopAssessment: async (request, { projectRoot }) => {
-      const groundTruth = await loadCurrentGroundTruth(projectRoot, request.taskId);
+    stopAssessment: async (request, { projectRoot, taskId }) => {
+      if (request.reviewScope?.kind === "classification") return {
+        summary: "Intermediate scope; mandatory findings are reviewed separately.",
+        stopClassification: "INTERMEDIATE", stage: "implementation", findings: [], metricObjectJudgements: [],
+      };
+      const groundTruth = await loadCurrentGroundTruth(projectRoot, taskId);
       const hardClaim = groundTruth.claims.find((claim) => claim.severity === "HARD");
       return {
         summary: "The completion claim is premature and must be blocked.",
@@ -1143,10 +1152,18 @@ test("Stop blocks hard findings even when the reviewer classifies the attempted 
     plan,
     reviewerFactory,
   });
-  assert.equal(outcome.decision, "block");
+  assert.equal(outcome.decision, "block", JSON.stringify(outcome));
   assert.equal(outcome.stop.report, null);
   assert.equal(outcome.stop.correctionAttempt, 1);
-  assert.match(outcome.feedback, /premature and must be blocked/);
+  // The collector publishes owned findings rather than a model's global
+  // summary. Require the concrete blocker and its checked evidence, together
+  // with a complete findings-only collection and the actual-start debit.
+  assert.equal(outcome.stop.status, "DEVIATION");
+  assert.equal(outcome.stop.review.collection.complete, true);
+  assert.equal(outcome.stop.review.collection.completedItems, 2);
+  assert.deepEqual(outcome.stop.review.metricObjectJudgements, []);
+  assert.match(outcome.feedback, /FINDING .*The agent claimed completion before satisfying the evidence gate\./);
+  assert.match(outcome.feedback, /scripted-stop-artifact\.json#L1/);
   const state = JSON.parse(await fs.readFile(taskStatePath(root, outcome.taskId), "utf8"));
   assert.equal(state.stop.correctionAttempts, 1);
   assert.equal(Object.values(state.deviations).length, 1);
@@ -1303,7 +1320,8 @@ test("Stop-gate infrastructure failures block, then release with an unverified d
     stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
   }, { policyRoot: path.join(root, ".runtime-corrector") }) };
   // A reviewer that never recovers (missing credentials, provider outage).
-  const brokenFactory = async () => { throw new Error("reviewer unavailable"); };
+  let failedCalls=0;const failedRoles=[];
+  const brokenFactory = async ({role}) => {failedCalls++;failedRoles.push(role);throw new Error("reviewer unavailable"); };
   const stop = (id) => handleRuntimeV2Event({
     input: {
       cwd: root,
@@ -1319,25 +1337,27 @@ test("Stop-gate infrastructure failures block, then release with an unverified d
   });
 
   const first = await stop("stop-infra-1");
-  assert.equal(first.decision, "block", "an unverifiable completion is not laundered into a verified one");
+  assert.equal(first.decision, "allow", "checker failure is not business repair authority");
   assert.match(first.feedback, /UNVERIFIED/u);
-  assert.match(first.feedback, /attempt 1\/2/u);
-  assert.equal((await stop("stop-infra-2")).decision, "block", "transient faults get a second chance");
+  assert.equal(first.stop.status,'UNVERIFIED');assert.equal(first.stop.admission??null,null);assert.equal(first.stop.infrastructureAttempt,3);
+  assert.equal(failedCalls,9,'each of three preparation attempts has the configured two panel extractors plus baseline fallback');
+  assert.equal(failedRoles.filter(role=>role==='onboarding-extractor').length,6);assert.equal(failedRoles.filter(role=>role==='ground-truth-extractor').length,3);
+  assert.equal((await stop("stop-infra-2")).decision, "allow");
 
   const released = await stop("stop-infra-3");
   assert.equal(released.decision, "allow", "the plugin's own outage must never trap a session");
-  assert.match(released.feedback, /STOP_VERIFICATION_UNAVAILABLE/u);
-  assert.match(released.feedback, /COMPLETED BUT UNVERIFIED/u);
+  assert.match(released.feedback, /UNVERIFIED/u);
+  assert.equal(failedCalls,9,'a closed failed flow cannot replay the internal retry budget');
   assert.equal((await stop("stop-infra-4")).decision, "allow", "release is sticky while the outage lasts");
 
   const tasksRoot = path.join(root, ".runtime-correction", "tasks");
   const [taskId] = await fs.readdir(tasksRoot);
   const state = JSON.parse(await fs.readFile(path.join(tasksRoot, taskId, "task.json"), "utf8"));
   assert.equal(state.stop.correctionAttempts, 0, "an outage never spends the deviation budget");
-  assert.equal(state.stop.infrastructureFailures, 4);
+  assert.equal(state.stop.infrastructureFailures, 1);assert.equal(state.stop.infrastructureTotalFailures,3);
   const journal = await fs.readFile(path.join(tasksRoot, taskId, "journal", "events.jsonl"), "utf8");
-  assert.match(journal, /STOP_ASSESSMENT_RETRY/u);
-  assert.match(journal, /STOP_VERIFICATION_UNAVAILABLE/u);
+  assert.match(journal, /STOP_ASSESSMENT_FAILED/u);
+  assert.match(journal, /CORRECTION_FLOW_CLOSED/u);
 });
 
 
@@ -1372,7 +1392,7 @@ test("a verified Skill deviation keeps Stop blocked without exposing release-onl
       plan,
       reviewerFactory,
     });
-    assert.equal(blocked.decision, "block");
+    assert.equal(blocked.decision, "allow");assert.equal(blocked.stop.status,'UNVERIFIED');assert.equal(blocked.stop.admission??null,null);
   }
 
   await handleRuntimeV2Event({
@@ -1477,7 +1497,7 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
     }
     return observedLegacyStop(options, { ...handle, result: assess(request) });
   };
-  const stop = (id) => handleRuntimeV2Event({
+  const stop = async(id) => {await fs.appendFile(path.join(root,'transcript.jsonl'),'\n'+JSON.stringify({type:'user',uuid:`request-${id}`,message:{content:'Review this new controlled attempt under the existing requirements.'}}));return handleRuntimeV2Event({
     input: {
       cwd: root,
       session_id: "session-reset",
@@ -1489,11 +1509,11 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
     projectRoot: root,
     plan,
     reviewerFactory: factory,
-  });
+  });};
 
   // Two early blips consume both retries.
-  assert.equal((await stop("reset-1")).decision, "block");
-  assert.equal((await stop("reset-2")).decision, "block");
+  assert.equal((await stop("reset-1")).stop.status, "UNVERIFIED");
+  assert.equal((await stop("reset-2")).stop.status, "UNVERIFIED");
   // The reviewer recovers and produces a real assessment.
   healthy = true;
   assert.equal((await stop("reset-3")).decision, "allow");
@@ -1501,8 +1521,9 @@ test("the infrastructure-failure ceiling counts CONSECUTIVE failures, not failur
   // immediately — otherwise the gate silently reverts to permanent fail-open.
   healthy = false;
   const laterBlip = await stop("reset-4");
-  assert.equal(laterBlip.decision, "block", "recovery resets the consecutive-failure count");
-  assert.match(laterBlip.feedback, /attempt 1\/2/u);
+  assert.equal(laterBlip.decision, "allow");assert.equal(laterBlip.stop.status,'UNVERIFIED');assert.equal(laterBlip.stop.admission??null,null);
+  const state=await findTask({projectRoot:root,sessionId:'session-reset'});assert.equal(state.stop.infrastructureFailures,1,'a real complete assessment resets consecutive failure accounting');
+  assert.equal(state.stop.correctionAttempts,0);
 });
 
 for (const classification of ["TASK_COMPLETE", "INTERMEDIATE"]) test(`OpenClaw verify_only ${classification} records blockers without debiting and authorizes once`, async (t) => {
@@ -1512,7 +1533,7 @@ for (const classification of ["TASK_COMPLETE", "INTERMEDIATE"]) test(`OpenClaw v
   const plan = v2Plan(root, { skillCorrection: { enabled: false } });
   const task = await ensureTask({ projectRoot: root, sessionId: "verify-only" });
   const reviewerFactory = fakeReviewerFactory({ stopAssessment: async (request) => {
-    if (classification === "TASK_COMPLETE") return stopReview(request);
+    if (classification === "TASK_COMPLETE"||request.fixedStopClassification?.stopClassification==='TASK_COMPLETE') return stopReview(request);
     const gt = await loadCurrentGroundTruth(root, task.taskId);
     return { summary: "A hard requirement remains unmet", stopClassification: "INTERMEDIATE", stage: null,
       findings: [{ deviationKey: "injected", rootCauseId: "REQUIREMENT_OMITTED", severity: "error", reason: "Required behavior missing",

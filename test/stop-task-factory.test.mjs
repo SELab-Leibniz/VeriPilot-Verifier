@@ -204,13 +204,14 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
     assert.equal(assigned.length, quality ? 0 : 1);
     if (quality) {
       qualityCalls++;
-      assert.ok(input.request.instructions.some(line => line.includes("For each requested deliverable file")));
+      assert.ok(input.request.instructions.some(line => line.includes("current delivery file")));
       assert.equal(input.schema.properties.metricObjectJudgements.maxItems, 0);
-    } else assert.equal(input.request.instructions.some(line => line.includes("For each requested deliverable file")), false);
+    } else assert.equal(input.request.instructions.some(line => line.includes("current delivery file")), false);
+    const qualityPath=input.request.reviewScope.qualityTarget?.path;
     const citation = await observedFileCitation({ file, basisFiles: [input.request.groundTruthPath],
-      usedBy: quality ? [file] : assigned.map(object => object.objectId) });
+      usedBy: quality ? [qualityPath] : assigned.map(object => object.objectId) });
     return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [],
-      fileAssessments: quality ? [{ path: file, status: "PASS", reason: "Current requested file quality is supported.", evidence: [citation.selection] }] : [],
+      fileAssessments: quality ? [{ path: qualityPath, status: "PASS", reason: "Current requested file quality is supported.", evidence: [citation.selection] }] : [],
       metricObjectJudgements: assigned.map(object => ({ objectId: object.objectId, judgement: "PASS", reason: "The checked current candidate matches.", evidence: [citation.selection] })) },
       sourceCitations: [citation],
       reviewEvidence: { files: [file], fingerprints: { [file]: sha256(await fs.readFile(file)) }, unstable: false, missing: [] }, close: async () => {} };
@@ -223,7 +224,7 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
     artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true, fileQualityReviewEnabled: supplemental } },
     { policyRoot: path.join(f.root, ".runtime-corrector") });
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), "task.json"), "utf8"));
-  const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: config }, reviewerFactory: factory,
+  const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: config,artifacts:[{nodeId:'spec',patterns:['spec.md'],metrics:['M12']}] }, reviewerFactory: factory,
     assessmentContext: { mode: "verify_only", assessmentId: "canonical-factory-check", guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 1 },
     input: { cwd: f.root, session_id: "factory-host", transcript_path: transcript, hook_event_name: "Stop", hook_event_id: "canonical-stop",
       last_assistant_message: "The delivery is complete." } });

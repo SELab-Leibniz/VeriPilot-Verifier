@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import * as codeAgentHost from "../lib/hosts/codeagent.mjs";
+import * as claudeHost from "../lib/hosts/claude.mjs";
+import { HOST_TOOL_REVIEWER_ROLES, REVIEWER_CLI_TOOL_DENY } from "../lib/reviewer-tools.mjs";
 import { mergeSemanticReview } from "../lib/result-processing.mjs";
 import { startRoleReviewer } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
@@ -81,6 +83,28 @@ test("v2 initial/reminder/repair/follow-up freeze launcher and preserve literal 
     assert.equal(call.args[call.args.indexOf("--tools") + 1], "Read,Grep");
   }
   for (const call of calls.slice(1)) assert.ok(call.args.includes("--no-session-persistence"));
+});
+
+test("the five host-tool roles retain inheritance through initial, reminder, repair and follow-up invocations", async t => {
+  for (const [index, role] of HOST_TOOL_REVIEWER_ROLES.entries()) await t.test(role, async t => {
+    const f = await fixture(t);
+    const task = await ensureTask({ projectRoot: f.root, sessionId: "parent" });
+    const handle = await startRoleReviewer({ projectRoot: f.root, sessionCwd: f.root, taskId: task.taskId,
+      parentSessionId: "parent", role, reviewer: { ...reviewer, timeoutMs: 10000 }, schema, request: {},
+      hostAdapter: index % 2 ? codeAgentHost : claudeHost,
+      reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry, literal] }, env: f.env });
+    try {
+      assert.deepEqual(await handle.followUp({ prompt: "Continue the assigned review." }), { ok: true });
+      const calls = (await fs.readFile(f.capture, "utf8")).trim().split("\n").map(JSON.parse);
+      assert.equal(calls.length, 6, "both initial and follow-up exercise a contract reminder and a schema repair");
+      for (const call of calls) {
+        for (const flag of ["--tools", "--allowedTools", "--strict-mcp-config", "--permission-mode"])
+          assert.equal(call.args.includes(flag), false, `${role} must leave ${flag} to the host on every invocation`);
+        assert.deepEqual(call.args[call.args.indexOf("--disallowedTools") + 1].split(","), REVIEWER_CLI_TOOL_DENY);
+      }
+      assert.match(calls[0].args[1], /host's available read and search tools/u);
+    } finally { await handle.close(); }
+  });
 });
 
 test("v1 launches Node plus absolute entry with literal prefix and unchanged fork contract", async (t) => {

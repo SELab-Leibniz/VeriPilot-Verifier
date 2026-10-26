@@ -18,7 +18,7 @@ import {
   parseKitManifest,
   runImplementationReview,
 } from "../lib/runtime-v2/impl-review.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { loadPlatformAdapter } from "../lib/runtime-v2/platform-adapter.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
@@ -31,7 +31,7 @@ import { attributeClosures } from "./helpers/critic-contract.mjs";
 
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "impl-review-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  t.after(async()=>{if(process.env.RC_KEEP_IMPL_EVIDENCE==='1')await fs.cp(root,path.resolve('.runtime-correction/acceptance-20261027/impl-debug',path.basename(root)),{recursive:true});await fs.rm(root,{recursive:true,force:true});});
   return root;
 }
 
@@ -79,7 +79,7 @@ function implFakeFactory(state) {
       findings: [],
       metricObjectJudgements: objects.map((object) => ({
         objectId: object.objectId,
-        judgement: state.stopFails && object.metricId === "M12" ? "DEVIATION" : "PASS",
+        judgement: object.metricId === 'M16' ? 'UNVERIFIED' : state.stopFails && object.metricId === "M12" ? "DEVIATION" : "PASS",
         reason: "Claimed satisfied.",
         evidence: ["developer claim"],
       })),
@@ -109,8 +109,8 @@ function implFakeFactory(state) {
     } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
       state.implCalls += 1;
       const m12 = (request.population.metrics.M12 ?? []);
-      const sourceObjects = [...m12, ...(request.population.metrics.M16 ?? [])];
-      assert.ok(m12.length > 0, "impl request must carry the M12 slice");
+      const sourceObjects = Object.values(request.population.metrics).flat();
+      assert.ok(sourceObjects.length>0&&sourceObjects.every(object=>['M09','M12','M16'].includes(object.metricId)), "each independent group must contain only its assigned source obligations");
       const passes = state.implPasses;
       result = {
         summary: passes ? "Source now implements the requirement." : "Source does not implement the requirement.",
@@ -444,9 +444,10 @@ test("implementation review detects, delivers, closes on retest, and attributes 
 
   // Developer "fixes the code"; epoch 2 retest passes -> family closes.
   state.implPasses = true;
+  await write(root,'entry/src/main/ets/pages/Index.ets','@Entry struct Index { products: string[] = ["Product"] }');
   const second = await runStop(root, plan, factory, "stop-impl-2");
   assert.equal(second.decision, "allow", "clean retest allows the stop");
-  assert.equal(second.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement, "PASS");
+  assert.equal(second.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement, "PASS",JSON.stringify({rows:second.stop.report.metrics.find(metric=>metric.metricId==='M16').objects,implementation:second.stop.implementationReview,issues:second.stop.report.checkerIssues}));
   families = await taskFamilies(root);
   const closed = families.find((item) => item.familyId === family.familyId);
   assert.equal(closed.status, "FIXED", "retest PASS closes the family via markMetricPassesFixed");
@@ -475,6 +476,7 @@ test("shadow arm records identical detection but never delivers, and closures at
   assert.equal(family.observations[0].delivered, false, "shadow arm never stamps delivered");
 
   state.implPasses = true;
+  await write(root,'entry/src/main/ets/pages/Index.ets','@Entry struct Index { products: string[] = ["Product"] }');
   await runStop(root, plan, factory, "stop-shadow-2");
   families = await taskFamilies(root);
   const closed = families.find((item) => item.familyId === family.familyId);

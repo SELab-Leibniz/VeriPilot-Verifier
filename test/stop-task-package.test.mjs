@@ -101,6 +101,24 @@ test("every artifact excludes nested installations and private experiment output
   await fs.access(path.join(input.worker, "node_modules/worker-sentinel"));
 });
 
+test("OpenClaw builds complete tool declarations even when the manifest template omitted them",async t=>{
+  const input=await fixture(t);
+  const manifestFile=path.join(input.sourceRoot,"packaging/hosts/openclaw/openclaw.plugin.json");
+  const template=await read(manifestFile);template.contracts.tools=["runtime_corrector"];
+  await write(manifestFile,template);
+  const artifact=await buildPlugin({...input,host:"openclaw"});
+  const manifest=await read(path.join(artifact,"openclaw.plugin.json"));
+  const contracts=await import(pathToFileURL(path.join(artifact,"lib/openclaw/tool-contracts.mjs")));
+  assert.deepEqual(manifest.contracts.tools,contracts.OPENCLAW_TOOL_NAMES);
+  assert(manifest.contracts.tools.includes("save_baseline_batch"));
+  assert(manifest.contracts.tools.includes("finish_baseline"));
+  const {registerTaskTools}=await import(pathToFileURL(path.join(artifact,"lib/openclaw/task-tools.mjs")));
+  let names;
+  registerTaskTools({registerTool(_factory,metadata){names=metadata.names;},on(){}});
+  assert(names.every(name=>manifest.contracts.tools.includes(name)));
+  assert.deepEqual((await read(manifestFile)).contracts.tools,["runtime_corrector"],"build does not rewrite its source template");
+});
+
 test("OpenClaw ships a private locked TypeBox without an external install dependency", async t => {
   const input = await fixture(t);
   const artifact = await buildPlugin({ ...input, host: "openclaw" });

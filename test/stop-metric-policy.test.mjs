@@ -9,9 +9,10 @@ import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { loadRuntimePlan } from "../lib/runtime-plan.mjs";
 import { ensureTask, findTask, taskDirectory, decisionGuard, startCorrectionEpoch, startNewTask } from "../lib/runtime-v2/task-store.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { runImplementationReview } from "../lib/runtime-v2/impl-review.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
+import {scriptedProductionProofs} from './helpers/observed-review.mjs';
 
 const all = value => Object.fromEntries(METRIC_IDS.map(id => [id, value]));
 const defaultsOn = ["M08", "M09", "M12", "M13", "M15", "M16"];
@@ -132,7 +133,7 @@ async function stopFixture(t, switches = {}, options = {}) {
       fileAssessments: quality ? [{ path: target?.path ?? "delivery.md", status: "PASS", reason: "Current file checked", evidence: ["delivery.md#L1"] }] : [],
       metricObjectJudgements: objects.map(object => ({ objectId: object.objectId, judgement: object.metricId === "M11" ? "DEVIATION" : "PASS",
         reason: "Scripted source/process transport witness", evidence: ["src/main.js#L1"] })) };
-    return withTestReviewProof(input, { result, close() {} });
+    return withTestReviewProof(input, { result,proofs:scriptedProductionProofs(input,result), close() {} });
   };
   factory.supportsReviewCollection = true; factory.supportsSupplementalFileAssessment = true;
   factory.reviewItemSize = 1; factory.singleReviewMetrics = METRIC_IDS;
@@ -206,8 +207,10 @@ test("metric selection is frozen across corrections and epochs; a new task can u
   const first = await f.run();
   assert.equal(first.decision, "block");
   assert(first.stop.report.metrics.find(metric => metric.metricId === "M11").objects.some(object => object.judgement === "DEVIATION"));
+  await fs.appendFile(path.join(f.root,'src/main.js'),'// A real corrective source change invalidates the unchanged-history shortcut.\n');
   assert.equal((await f.run(f.makePlan(all(false)))).decision, "block", "An agent cannot disable its failing check through config.");
   await startCorrectionEpoch({ projectRoot: f.root, taskId: f.task.taskId, reason: "REQUIREMENT_CHANGE" });
+  await fs.appendFile(path.join(f.root,'src/main.js'),'// New epoch work.\n');
   assert.equal((await f.run(f.makePlan(all(false)))).decision, "block");
   const task = await findTask({ projectRoot: f.root, sessionId: f.sessionId });
   assert.equal(task.stop.reviewPolicy.metrics.M11, true);

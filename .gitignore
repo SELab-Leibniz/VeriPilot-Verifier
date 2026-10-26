@@ -7,6 +7,9 @@ dist/
 node_modules/
 experiments/
 docs/experiments/
+# Local experiment observer and its experiment-only checks are retained outside Git.
+/scripts/experiment-observer.mjs
+/test/experiment-observer.test.mjs
 /records/
 /results/
 /reports/

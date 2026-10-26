@@ -36,6 +36,17 @@ test("AC-01: new core defaults, switches, two limits and shared 17/20-minute win
   assert.deepEqual(stopCorrectionWindow(value, 1000, 501000), { startedAt: 1000, reviewDeadlineAt: 321000, deadlineAt: 501000 });
 });
 
+test("checker failure keeps its cause when an unverified Stop has no proven business deviation", async t => {
+  const f=await fixture(t);
+  await f.begin("checker-fault");
+  const settled=await f.store.settleReview({sessionId:"session",stopId:"checker-fault",status:"UNVERIFIED",
+    progress:{complete:false,reasonCode:"REVIEWER_RUN_FAILED",reason:"No callable tools"}});
+  assert.equal(settled.control,"ALLOW");
+  assert.equal(settled.reviewStatus,"UNVERIFIED");
+  assert.equal(settled.releaseReason,"REVIEWER_RUN_FAILED");
+  assert.equal((await f.store.inspect("session")).used,0);
+});
+
 test("config rejects invalid scalar types, bounds, legacy conflicts and reserve >= total", () => {
   for (const field of ["maxCorrectionsPerSession", "maxCorrectionsPerFlow"]) {
     assert.equal(config({ [field]: 0 })[field], 0);

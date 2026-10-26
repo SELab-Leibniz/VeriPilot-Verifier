@@ -31,7 +31,7 @@ async function workspace(t) {
 function api(projectRoot, runner = async () => ({ payloads: [{ text: '{"ok":true}' }], meta: {} })) {
   const hooks = new Map(), warnings = [];
   const value = { id: "runtime-corrector", rootDir: pluginRoot, hooks, warnings, config: {}, pluginConfig: {},
-    runtime: { version: "2026.7.1-2", agent: { runEmbeddedAgent: runner, resolveAgentWorkspaceDir: () => projectRoot } },
+    runtime: { version: "2026.7.1-2",state:{resolveStateDir:()=>path.join(projectRoot,'host-state')}, agent: { runEmbeddedAgent: runner, resolveAgentWorkspaceDir: () => projectRoot } },
     logger: { info() {}, warn: (message) => warnings.push(message), error: (message) => warnings.push(message) },
     on: (name, handler, options) => hooks.set(name, { handler, options }),
     registerAgentToolResultMiddleware: (handler, options) => { value.middleware = { handler, options }; },
@@ -51,7 +51,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   entry.register(host);
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
   assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
-  assert.equal(host.hooks.has("before_agent_finalize"), false, "the pinned host buffers native text when a terminal gate is registered");
+  assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
   assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
   assert.equal(host.harness, undefined, "native entry must not register a business harness");
@@ -440,7 +440,9 @@ test("native review scope suppresses incomplete hook identities without suppress
   assert.equal(calls.length, count);
   assert.equal(await findTask({ projectRoot: project, sessionId: params.sessionId }), null);
   const decision = await runtime.finalize({ lastAssistantMessage: "Done" }, ctx);
-  assert.equal(decision?.action, "revise", "main-task final verification remains active");
+  assert.equal(decision,undefined);
+  assert.ok(calls.length>count,'main-task final verification still executes outside the internal review scope');
+  assert.notEqual((await findTask({projectRoot:project,sessionId:ctx.sessionId})).verification.status,'PASS');
 });
 
 test("late callbacks remain internal while timed out native sessions finish cleanup", async (t) => {
@@ -576,7 +578,8 @@ evidenceRoots: [evidence]
     calls.push(input);
     const { request, schema, role } = input;
     let result;
-    if (schema.properties.operations) {
+    if(request.reviewScope?.kind==='classification')result={summary:'Controlled Stop scope',stopClassification:brokenPopulation?'TASK_COMPLETE':'INTERMEDIATE',stage:null,findings:[],metricObjectJudgements:[]};
+    else if (schema.properties.operations) {
       result = { summary: "Task requirements", taskClassification: "CONTINUATION",
         operations: role === "onboarding-extractor" ? [{ operation: "ADD", category: "requirements",
           text: "Create result.txt with the verified content.", authority: "USER_EXPLICIT", severity: "HARD",
@@ -598,10 +601,11 @@ evidenceRoots: [evidence]
   const host = api(project);
   const runtime = createRuntime(host, { pluginRoot, reviewerFactory: factory });
   const ctx = { sessionId: "main", agentId: "main", sessionKey: "agent:main:main", runId: "run-1", sessionFile: path.join(project, "native.jsonl"), workspaceDir: project, trigger: "user" };
+  await runtime.sessionStart({sessionId:'main',source:'startup'},ctx);
   return { project, host, runtime, ctx, calls };
 }
 
-test("invalid population judgements use the original bounded infrastructure budget", async (t) => {
+test("invalid population judgements remain UNVERIFIED and cannot request or count an unsupported business start", async (t) => {
   const { runtime, ctx, project } = await correctionFixture(t, { brokenPopulation: true });
   const state = await runtime.beginSupervised({ ...ctx, prompt: "Create result.txt with the verified content." }, new AbortController().signal);
   const worker = runtime.bindWorker("broken-review-worker", state);
@@ -609,11 +613,11 @@ test("invalid population judgements use the original bounded infrastructure budg
   for (let i = 0; i < 3; i++) {
     const decision = await runtime.assessSupervised(state, { text: "Done.", assessmentId: `broken-${i}` });
     assert.equal(decision.status, "UNVERIFIED", JSON.stringify(decision));
-    assert.equal(decision.decision, i < 2 ? "block" : "allow");
+    assert.equal(decision.decision, "allow");assert.equal(decision.admission??null,null);
   }
   const task = await findTask({ projectRoot: project, sessionId: ctx.sessionId });
   assert.equal(task.stop.correctionAttempts, 0);
-  assert.equal(task.stop.infrastructureFailures, 3);
+  assert.equal(task.stop.infrastructureTotalFailures,1,'the closed failed flow does not replay checker work');
   assert.equal(task.status, "STOPPED_UNVERIFIED");
   worker.close();
 });
@@ -642,10 +646,11 @@ test("supervised completion unwraps the original Stop decision and keeps the roo
   assert.equal(await runtime.finalize({ lastAssistantMessage: "完成了。" }, childCtx), undefined);
   assert.equal(calls.length, before, "native worker finalize must not assess completion");
   const decision = await runtime.assessSupervised(state, { text: "完成了。", assessmentId: "controlled-assessment", stopHookActive: false });
-  assert.equal(decision.decision, "block");
-  assert.equal(decision.correctionAttempt, 1);
+  assert.equal(decision.decision, "allow");
+  assert.equal(decision.correctionAttempt, 0);
+  assert.equal(decision.reasonCode,'HOST_START_PROTOCOL_UNSUPPORTED');
   assert.equal(decision.review.stopClassification, "INTERMEDIATE");
-  assert.equal((await findTask({ projectRoot: project, sessionId: ctx.sessionId })).stop.correctionAttempts, 1);
+  assert.equal((await findTask({ projectRoot: project, sessionId: ctx.sessionId })).stop.correctionAttempts, 0);
   assert.equal(await findTask({ projectRoot: project, sessionId: childCtx.sessionId }), null);
   worker.close();
   await runtime.beforeTool({ toolName: "write", toolCallId: "late-worker", params: {} }, childCtx);
@@ -669,18 +674,18 @@ test("native lifecycle preserves frozen baseline, terminal budget, deduplication
   assert.match(gt, /Create result.txt/u);
   const final = { sessionId: "main", stopHookActive: false, lastAssistantMessage: "完成了。" };
   const first = await runtime.finalize(final, ctx);
-  assert.equal(first?.action, "revise", host.warnings.join("\n"));
+  assert.equal(first,undefined);assert.match(host.warnings.join('\n'),/HOST_START_PROTOCOL_UNSUPPORTED|本次不算通过/u);
   const reply = { kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "完成", mediaUrl: "local://test" } };
-  assert.match((await runtime.reply(reply)).payload.text, /验收尚未通过/u);
+  assert.match((await runtime.reply(reply)).payload.text, /本次不算通过/u);
   assert.equal((await runtime.reply(reply)).payload.mediaUrl, "local://test");
   assert.equal(await runtime.reply({ ...reply, runId: "unrelated" }), undefined);
   await runtime.prompt({ prompt: "Automatically revise the result", messages: [] }, ctx);
   const second = await runtime.finalize(final, ctx);
-  assert.equal(second?.action, "revise");
+  assert.equal(second,undefined);
   assert.equal(await runtime.finalize(final, ctx), undefined);
   const after = await findTask({ projectRoot: project, sessionId: "main" });
-  assert.equal(after.stop.correctionAttempts, 2);
-  assert.equal(after.status, "STOPPED_UNVERIFIED");
+  assert.equal(after.stop.correctionAttempts, 0,'no observed native model start exists on this legacy fixture');
+  assert.notEqual(after.verification.status,'PASS');
   assert.match((await runtime.reply(reply)).payload.text, /runtime-corrector:feedback/u);
   assert.equal(await fs.readFile(path.join(taskDirectory(project, task.taskId), "ground-truth/current.json"), "utf8"), gt);
   await runtime.beforeTool({ ...before, toolCallId: "internal-read" }, { ...ctx, sessionId: "internal", sessionKey: "agent:main:runtime-corrector:internal" });

@@ -6,9 +6,10 @@ import os from "node:os";
 import { ensureTask, taskDirectory, decisionGuard, findTask } from "../lib/runtime-v2/task-store.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
+import {scriptedProductionProofs} from './helpers/observed-review.mjs';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-process-retry-"));
@@ -31,7 +32,7 @@ async function fixture(t) {
     calls.push(objects.map(o => o.objectId));
     const rows = objects.map(o => ({ objectId: o.objectId, judgement: o.metricId === "M11" ? processVerdict : "PASS",
       reason: o.metricId === "M11" ? "Recorded extra-script writes remain outside the allowed scope." : "Frozen CLI acceptance is satisfied.", evidence: [`${source}#L1`] }));
-    return withTestReviewProof(params, { result: { ...fixed, summary: "Reviewed.", findings: [], fileAssessments: [], metricObjectJudgements: rows },
+    return withTestReviewProof(params, { proofs:scriptedProductionProofs(params,{metricObjectJudgements:rows}),result: { ...fixed, summary: "Reviewed.", findings: [], fileAssessments: [], metricObjectJudgements: rows },
       reviewEvidence: { files: [source], fingerprints: { [source]: sha256(await fs.readFile(source)) }, unstable: false, missing: [] }, close() {} });
   };
   factory.supportsReviewCollection = true;

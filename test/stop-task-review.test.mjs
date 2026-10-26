@@ -113,7 +113,7 @@ test("acceptance coverage and source/runtime proof tasks receive the correct sel
       else assert.equal(options.promptAppend, config.prompt);
       if (config.scope === "RUNTIME_ACCEPTANCE") {
         assert.equal(options.task.basisFiles.some(file => file.includes("process")), false, "Full process material must stay on demand.");
-        assert.equal((await fs.readdir(path.join(options.root, "process"))).length, f.input.evidence.snapshot.entries.length);
+        assert.equal((await fs.readdir(path.join(options.root, "execution"))).length, f.input.evidence.snapshot.entries.length);
         return scriptedResult(options, "UNVERIFIED", "No attributable current execution establishes the required runtime result.");
       }
       return scriptedResult(options);

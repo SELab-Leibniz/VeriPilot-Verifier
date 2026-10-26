@@ -25,7 +25,8 @@ test("native review scheduling preserves admitted partial feedback through the S
   assert.equal(first.feedbackOnly, true);
   assert.equal(observed[0].feedbackOnly, true);
   assert.equal(chain.pending, true, "an admitted partial review must not release the waiting chain");
-  assert.equal(chain.record.phase, "REVIEWING");
+  assert.equal(chain.record.phase, "WAIT_START");
+  assert.equal(chain.startedRuns.size,0,'persisted admission must not invent a model start');
   const recordDirectory = path.join(projectRoot, ".runtime-correction/openclaw/native-stop-reviews");
   const [sessionDirectory] = await fs.readdir(recordDirectory);
   const [recordFile] = await fs.readdir(path.join(recordDirectory, sessionDirectory));

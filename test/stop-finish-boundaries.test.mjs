@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
 import { runtimeState } from "./helpers/runtime-state.mjs";
@@ -23,19 +23,21 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
   t.after(() => { Date.now = now; });
   const task = await ensureTask({ projectRoot: root, sessionId: "finish-host" });
   const mixedFinding = ["mixed-finding", "foreign-finding", "basis-finding"].includes(legacyMode);
-  await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [{
+  const operation={
     operation: "ADD", category: "requirements", text: "Deliver the originally requested file content.",
     authority: "USER_EXPLICIT", severity, verificationTarget: mixedFinding ? "IMPLEMENTATION" : "ARTIFACT", source: { ref: "user" },
-  }] } });
+  };
+  await applyGroundTruthDelta({projectRoot:root,taskId:task.taskId,delta:{operations:[operation,...(legacyChecker||legacyMode==='sibling'?[{...operation,text:'Preserve the second independent requested section.'}]:[])]}});
   const directory = taskDirectory(root, task.taskId), source = path.join(root, "delivery.md");
   const transcript = path.join(root, "transcript.jsonl");
   await fs.writeFile(source, "The concrete observed current delivery body.\n");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user-1", message: { content: "Deliver the requested file." } }));
+  let sharedDeadlineAt;
   const factory = async input => {
     const classification = { stopClassification: "TASK_COMPLETE", stage: null };
-    if (input.request.reviewScope?.kind === "classification") return {
+    if (input.request.reviewScope?.kind === "classification") {sharedDeadlineAt=input.deadlineAt;return {
       result: { summary: "Classified the Stop.", ...classification, findings: [], metricObjectJudgements: [] }, close() {},
-    };
+    };}
     const file = input.request.reviewScope?.kind === "file-quality" || legacyMode === "file";
     // Scripted transport actually reads its complete fixture basis and source;
     // the collector independently checks these program-owned proof locations.
@@ -64,7 +66,7 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
       fileAssessments: file ? [{ path: "delivery.md", status: quality,
         reason: quality === "UNVERIFIED" ? "The file quality baseline is unresolved." : "The current file omits a concrete required section.",
         evidence: quality === "UNVERIFIED" || legacyMode === "file" ? [] : [`${source}#L1`] }] : [] },
-      close() { if (expireAfterSave) Date.now = () => input.deadlineAt + 1; } };
+      close() { if (expireAfterSave) Date.now = () => sharedDeadlineAt + 1; } };
   };
   factory.supportsReviewCollection = !legacyChecker && legacyMode === null;
   factory.supportsSupplementalFileAssessment = quality !== null;
@@ -175,7 +177,7 @@ test("legacy checker faults take precedence without losing real HARD deviation f
 for (const legacyMode of ["PASS", "NOT_APPLICABLE", "file", "finding", "sibling"]) {
   test(`legacy ${legacyMode} cannot bypass proof validation or spend business correction budget`, async t => {
     const f = await fixture(t, { legacyMode, ...(legacyMode === "file" ? { quality: "DEVIATION" } : {}) });
-    assert.equal(f.result.decision, "block");
+    assert.equal(f.result.decision, legacyMode==='sibling'?'block':'allow');
     assert.equal(f.result.stop.report.status, "CHECKER_ERROR");
     assert.ok(f.result.stop.review.validationIssues.length > 0);
     assert.equal(f.state.verification.status, "UNVERIFIED");
@@ -192,10 +194,11 @@ for (const legacyMode of ["PASS", "NOT_APPLICABLE", "file", "finding", "sibling"
 
 test("one claim's finding needs one matching evidence owner, not every metric projection", async t => {
   const f = await fixture(t, { legacyMode: "mixed-finding" });
-  assert.equal(f.result.stop.report.status, "DEVIATION");
+  assert.equal(f.result.stop.report.status, "UNVERIFIED",'known findings may be delivered while unrelated assigned runtime/source checks remain incomplete');
   assert.deepEqual(f.result.stop.report.checkerIssues, []);
   assert.equal(f.result.stop.review.findings.length, 1);
-  assert.equal(f.state.stop.correctionAttempts, 1);
+  assert.equal(f.state.stop.correctionAttempts, 0,'partial feedback has not started a business correction');
+  assert.equal(f.result.stop.partialFeedbackEligible,true);
   assert.match(f.result.feedback, /concrete original observation/);
 });
 

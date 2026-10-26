@@ -14,7 +14,7 @@ async function fixture(t,stageBudget=null) {
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rc-direct-budget-'));t.after(()=>fs.rm(root,{recursive:true,force:true,maxRetries:3}));
  await fs.mkdir(path.join(root,'.runtime-corrector'));
  await fs.writeFile(path.join(root,'.runtime-corrector/config.yaml'),`version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\n  materialRoots: []\n  panel:\n    size: 1\n    adjudicator: false\nstopCorrection:\n  enabled: true\n${stageBudget?`  assessmentTimeoutMs: ${stageBudget}\n`:''}implementationCorrection:\n  enabled: false\nreviewers:\n  defaults:\n    timeoutMs: 1200000\n`);
- const calls=[],warnings=[];const api={id:'runtime-corrector',rootDir:artifactRoot,pluginConfig:{},config:{agents:{defaults:{model:{primary:'test/test'}}}},logger:{warn:x=>warnings.push(x)},runtime:{agent:{runEmbeddedAgent:async params=>{
+ const calls=[],warnings=[];const api={id:'runtime-corrector',rootDir:artifactRoot,pluginConfig:{},config:{agents:{defaults:{model:{primary:'test/test'}}}},logger:{warn:x=>warnings.push(x)},runtime:{state:{resolveStateDir:()=>path.join(root,'host-state')},agent:{runEmbeddedAgent:async params=>{
   calls.push(params);return {payloads:[{text:JSON.stringify({summary:'No inferred changes.',taskClassification:'CONTINUATION',operations:[]})}],meta:{}};
  }}}};
  return {root,calls,warnings,runtime:createOpenClawRuntime(api,{pluginRoot:artifactRoot})};
@@ -25,6 +25,7 @@ async function finish(f,id,parentMs=3600000) {
  await fs.writeFile(file,[{type:'message',id:'user',message:{role:'user',content:prompt}},
   {type:'message',id:'done',parentId:'user',message:{role:'assistant',content:'All requested task work is complete.'}}].map(JSON.stringify).join('\n'));
  const ctx={workspaceDir:f.root,sessionId:id,sessionFile:file,sessionKey:'agent:main:'+id,runId:id,agentId:'main',provider:'test',modelId:'test',prompt};
+ await f.runtime.sessionStart({sessionId:id,source:'startup'},ctx);
  const state=await f.runtime.beginSupervised(ctx,new AbortController().signal,{deadlineAt:Date.now()+parentMs});
  return {state,file,ctx};
 }
@@ -46,7 +47,7 @@ test('explicit RC assessment budget is used by direct manual verification window
 
 test('controller review still respects parent absolute deadline',async t=>{
  const f=await fixture(t),a=await finish(f,'parent',1500);
- await f.runtime.assessSupervised(a.state,{transcriptPath:a.file,text:'All requested task work is complete.',assessmentId:'parent-test',stopHookActive:false});
+ await f.runtime.assessSupervised(a.state,{transcriptPath:a.file,text:'All requested task work is complete.',assessmentId:'parent-test',stopHookActive:false,mode:'verify_only'});
  assert(f.calls.length>0,f.warnings.join('\n'));assert(f.calls[0].timeoutMs<=1500);
 });
 

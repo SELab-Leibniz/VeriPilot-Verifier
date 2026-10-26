@@ -206,6 +206,32 @@ test("declared SessionEnd watchdog releases a process stalled before stdin EOF",
   assert.equal(declaration.timeout, 1, "host declaration must match the sub-1200ms capability budget");
 });
 
+test("concurrent unterminated SessionEnd inputs keep the original wall-time deadline", async t => {
+  const root = await workspace(t);
+  const results = await Promise.all(Array.from({ length: 4 }, (_, index) => runDeclaredSessionEnd({
+    cwd: root, keepStdinOpen: true,
+    input: { cwd: root, session_id: `concurrent-${index}`, transcript_path: path.join(root, "transcript.jsonl"), hook_event_name: "SessionEnd", reason: "other" },
+  })));
+  for (const result of results) await assertFastSuccessfulSilence(result);
+});
+
+test("stdin EOF disarms its watchdog before a delayed decoder loads", async t => {
+  const root = await workspace(t), sessionId = "delayed-decoder-session";
+  const task = await ensureTask({ projectRoot: root, sessionId });
+  const decoder = path.join(pluginRoot, "lib/protocol/core-hooks.mjs");
+  const original = await fs.readFile(decoder);
+  // Fault injection in this test's isolated build, never in the real host.
+  await fs.writeFile(decoder, Buffer.concat([Buffer.from("await new Promise(resolve => setTimeout(resolve, 180));\n"), original]));
+  try {
+    const result = await runDeclaredSessionEnd({ cwd: root,
+      input: { cwd: root, session_id: sessionId, transcript_path: path.join(root, "transcript.jsonl"), hook_event_name: "SessionEnd", hook_event_id: "delayed-decoder", reason: "other" } });
+    await assertFastSuccessfulSilence(result);
+    const events = (await fs.readFile(path.join(taskDirectory(root, task.taskId), "journal/events.jsonl"), "utf8"))
+      .trim().split("\n").map(JSON.parse);
+    assert.equal(events.length, 1); assert.equal(events[0].hookEventId, "delayed-decoder");
+  } finally { await fs.writeFile(decoder, original); }
+});
+
 
 test("declared SessionEnd appends one lifecycle event to the indexed task", async (t) => {
   const root = await workspace(t);

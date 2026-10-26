@@ -10,7 +10,7 @@ import { isDeepStrictEqual } from "node:util";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { loadCurrentGroundTruth } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { handleRuntimeV2SessionEnd } from "../lib/runtime-v2/session-end.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,

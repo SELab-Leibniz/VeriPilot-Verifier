@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
-import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
+import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
 
@@ -73,10 +73,11 @@ test("a Stop source changed during implementation review cannot publish the earl
   });
   assert.ok(stopItems > 0);
   assert.ok(implementationItems > 0, "the regression must reach implementation review");
-  assert.equal(result.decision, "block");
+  assert.equal(result.decision, "allow",'stale proof cannot authorize a business repair');
   assert.equal(result.stop.status, "UNVERIFIED");
   assert.notEqual(result.stop.report?.status, "PASS");
-  assert.match(result.stop.error?.message ?? "", /source changed/iu);
+  assert.match(JSON.stringify(result.stop.savedReviewCollection??result.stop.review.collection),/source changed/iu);
+  assert.equal(result.stop.admission,null);
   const directory = taskDirectory(root, task.taskId);
   const state = JSON.parse(await fs.readFile(path.join(directory, "task.json"), "utf8"));
   assert.equal(state.stop.correctionAttempts, 0, "a changed verification basis must not consume business correction budget");

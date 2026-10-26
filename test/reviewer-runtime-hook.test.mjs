@@ -8,6 +8,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { buildPlugin } from "../lib/plugin-builder.mjs";
+import {REVIEWER_CLI_TOOL_DENY,inheritsHostReviewerTools} from '../lib/reviewer-tools.mjs';
 
 
 const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -216,7 +217,11 @@ async function assertInvocation(f, invocation, marker) {
   assert.equal(invocation.argv.filter((arg) => arg === LITERAL_PREFIX).length, 1);
   assert.equal(await fs.realpath(invocation.cwd), await fs.realpath(f.root));
   assert.equal(invocation.argv[invocation.argv.indexOf("--plugin-dir") + 1], await fs.realpath(f.pluginRoot));
-  assert.equal(invocation.argv[invocation.argv.indexOf("--tools") + 1], "Read,Grep");
+  const inherited=inheritsHostReviewerTools(invocation.role);
+  assert.equal(invocation.argv.includes('--tools'),!inherited,'only inheriting reviewer roles retain the host catalog');
+  if(!inherited)assert.equal(invocation.argv[invocation.argv.indexOf('--tools')+1],'Read,Grep');
+  const denied=invocation.argv[invocation.argv.indexOf('--disallowedTools')+1]?.split(',');
+  assert.deepEqual(denied,invocation.role==null?['mcp__*']:inherited?REVIEWER_CLI_TOOL_DENY:[...new Set([...REVIEWER_CLI_TOOL_DENY,'Skill','Agent','mcp__*'])],'write and execution prohibitions remain explicit');
   const requestData = JSON.stringify({ request: invocation.request, semantic: invocation.semanticRequest, frozen: invocation.frozen });
   for (const secret of [AMBIENT_TOKEN, TARGET_TOKEN, "hook-test-parent-api-key"]) {
     assert.ok(!requestData.includes(secret), "reviewer requests must not serialize credentials");

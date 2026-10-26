@@ -1,5 +1,7 @@
 # MatrixAssistant / OpenClaw 纠偏与 Stop 审查
 
+Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构化 compact 恢复和事务应用回执，见 [基线 task 协议与验证边界](stop-baseline-task.md)。其他提取入口及审阅角色保留各自协议。构建不会安装到现有 MA。
+
 当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。
 
 Session 项目解析、显式启用和作用域隔离继续遵循 [Session 项目说明](session-projects.md)。7.1（包括 MA）优先跟随宿主持久化的 `spawnedCwd`，缺失时才使用 `/rc-project bind /绝对项目目录`；自动模式不接受手动绑定。没有有效项目配置时不启动自动审查。
@@ -39,6 +41,8 @@ MatrixAssistant 适配通过公开 `before_prompt_build` 和 `before_agent_run` 
 
 宿主缺少已验证的启动门、可信观察或确切运行取消能力时，明确返回 `HOST_START_PROTOCOL_UNSUPPORTED`：保留确认偏差，结束等待，不自动续作，不把 API 成功当实际开始。OpenClaw 2026.10.3 的项目/审阅适配不等于已经验收了这份新的业务启动协议。关闭诊断事件的宿主不能启用依赖可信模型开始观察的自动续作。
 
+MatrixAssistant 内置的 OpenClaw 2026.7.1-2 使用公开 harness 取消接口。调用前按已核验版本只读核对会话索引和运行索引必须指向同一个 RC 创建的活动句柄；身份核对与取消之间不异步让出。旧运行已被用户新运行替换时，不取消新运行。不申请网关管理员权限，也不调用仅限官方插件的通用网关取消接口。
+
 检查器故障不会自动变成业务缺陷，本轮失败组不重派。取消、关闭、项目失效和总截止都有围栏；未知在途请求保留预留待核对，不自动重发。旧 Stop 的有效保存作为历史保留，不能以“放行”替代整体验收通过。
 
 
@@ -57,6 +61,10 @@ reviewers:
 ```
 
 优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。`hookTimeoutMs` 自身也是默认 20 分钟、最大 60 分钟；它与单个 reviewer 及多阶段总预算分别配置。
+
+`onboarding-extractor`、`onboarding-adjudicator`、`skill-reviewer`、`artifact-reviewer` 和 `implementation-reviewer` 同样不设 RC 累计字节硬中止条件，上下文窗口与压缩由宿主管理。材料扫描、内联预览、单包披露、输出捕获和原文证据边界继续保留；这些限制分别约束材料准备、传输或证据完整性，不等于按会话累计字节中止审阅。
+
+上述五个角色保留 RC 会话专用工具，并继承所选宿主 Agent 允许的读取、检索等工具；编辑、写入、补丁、命令/进程及代码执行工具禁止使用。RC 在每次私有调用的配置副本追加 deny 并在调用前拦截，宿主原有 profile、全局/模型/Agent 工具策略、显式 deny 及审批规则继续生效。私有会话关闭会将工具包装为执行入口的 Code Mode，直接使用剩余工具；宿主上下文管理和压缩配置保持不变。私有 `rc_progress` 只在所属评审会话有对象时注册。初次调用、格式修复和续问沿用相同策略。基线及停止分类 Agent 同样禁止编辑、写入和执行工具；基线候选保存、审查进度与结构化结果提交等专用工具保留，程序保存自身状态不属于业务文件写入。旧版通用语义审查保留原有只读工具范围。
 
 原生 Hook 等待 reviewer 时，RC 每 30 秒发送标记为 `runtime-corrector.review` 的工具进度 `update`。MA 1.10.1 的桌面主进程会过滤自定义 Agent 流，旧版 `runtime-corrector.progress` 无法刷新空闲检查；新版本经宿主 `session.tool` 和 MA 现有聊天事件入口更新进度。只发送 `update/end`，不发送模型工具调用 `start` 或结果 `result`，不覆盖业务工具错误摘要；阶段提示也不再写入助手正文。定时器不冒充诊断模型进展，不延长原预算；取消、父运行结束及截止时间均停止周期上报。
 
@@ -82,7 +90,13 @@ node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs
 
 MA 同时会将顶层 `tools.alsoAllow` 精确同步为内置模板，手工添加的 `runtime_corrector` 会在启动时被移除。若需在主助手使用此工具，运行 `node ./dist/runtime-corrector-openclaw/scripts/configure-ma-host.mjs --tool-agent main`，把授权保存到现有 `agents.list` 中 `id: "main"` 的 `tools.alsoAllow`，这个位置由 MA 保留。首次创建该 Agent 的列表时继承当前全局额外工具；已有独立列表则保留其范围，只追加 `runtime_corrector`。全局工具设置、其他 Agent 及所有 deny 规则保持不变；不会给业务助手开放评审员专用的 `rc_progress`。其他助手须使用其实际 Agent ID 显式配置。
 
-Stop 任务审查的六个私有工具还须通过宿主的工具 profile 筛选。RC 仅在每次私有审查的配置副本中，将这些工具追加到所选 Agent 的 `tools.alsoAllow`，并用 `tools.allow` 与运行参数 `toolsAllow` 限定最终工具范围；保留显式 deny。这个配置不保存到宿主配置文件，工具仍须匹配有效的审查会话绑定，业务会话不会因此获得它们。
+RC 必需工具统一列在 `config/openclaw-tool-contracts.json`。构建自动生成安装包的 `contracts.tools`，运行时注册和私有会话授权使用同一份清单，安装后不需要手填内部工具名。逐项审查与基线刷新使用各自的工具组；RC 在每次私有审查的配置副本中自动追加所需授权，再用 `tools.allow` 与运行参数 `toolsAllow` 限定最终范围。用户显式 deny 保留；授权不保存到全局配置，也不把私有工具开放给业务会话。
+
+产物审查的完整协议由程序直接放入私有调用，模型无需到业务工作区外读取插件的 `SKILL.md`；工作区读取限制不因此放宽。编辑后的产物审查不是完成声明：尚未到期的测试复跑、后续产物与最终回复按待完成处理，不能要求每份短计划重述全任务。历史快照仍保持不可变，最终执行证据由后续检查或 Stop 评估。
+
+Stop 检查器失败必须保留真实失败原因及 `UNVERIFIED`，并提供可显示的未验收通知；不能用 `NO_CURRENT_DEVIATION` 掩盖尚未核验，也不会把检查器故障交给业务 Agent 作为修复指令。
+
+MA 的终态通知使用宿主公开的按会话身份追加助手消息接口：校验 `sessionId/sessionKey/agentId`，由宿主管理写锁、幂等和 `session.message` 广播。不读取网关令牌、不申请管理员权限，也不使用仅限官方插件的内部网关接口。MA 1.10.1 会在业务最终消息后的五秒内去重快照；独立审查通知避开该窗口，并在发送前再次核对会话仍有效。追加被拒绝、能力不可用和应答不明都不能记为已送达；应答不明时核对唯一标记，不盲目重发。
 
 冻结的执行记录使用 `execution/` 和 `execution-index.json` 作为审查包内部路径，避免 MA 将旧的 `process/`、`process-index.json` 按 `/proc` 敏感路径误判。这些文件仍受原有快照范围、哈希、读取凭据和宿主审核约束。
 
