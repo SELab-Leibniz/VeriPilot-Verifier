@@ -40,6 +40,7 @@ function fixture(t) {
     updateRunToolErrorSummary: value => errorSummaryWrites.push(value) });
   const parent = { sessionId: "session", sessionKey: "agent:main:alignment", runId: "business" };
   const sdk = { emitAgentEvent: event => handler({ ...event, seq: ++sequence, ts: now }),
+    markDiagnosticSessionProgress() {},
     reportProgress: (_parent, reason) => diagnostic.push(reason), onRunActivity: () => () => {},
     onAgentEvent: listener => { parentEvents.add(listener); return () => parentEvents.delete(listener); } };
   client.start(parent.sessionKey);

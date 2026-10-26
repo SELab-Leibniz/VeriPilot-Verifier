@@ -45,7 +45,7 @@ test("native repair outlives its first review window and the next Stop gets a fr
   assert.equal(chain.pending, false, "late observations cannot reopen a released wait");
 });
 
-async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitMode = "until_pass", finalizeReviewWaitMs = 0, maxCorrections = 3, compatibility = async () => ({}), reviewWait } = {}) {
+async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitMode = "until_pass", finalizeReviewWaitMs = 0, maxCorrections = 3, compatibility = async () => ({ emitAgentEvent() {}, markDiagnosticSessionProgress() {} }), reviewWait } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "native-new-stop-"));
@@ -117,8 +117,9 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
       dispatches.push(request); return { runId: request.idempotencyKey, status: "accepted" };
     } },
   } };
+  const projectScopes = admittedProjectScopes(api);
   const runtime = createOpenClawRuntime(api, { pluginRoot: path.resolve("."), reviewerFactory: factory,
-    nativeHooks: true, sharedState, projectScopes: admittedProjectScopes(api), compatibility,
+    nativeHooks: true, sharedState, projectScopes, compatibility,
     ...(startProtocol ? { stopStartCompatibility: async () => ({ version: 1,
       onStart: callback => { starts.add(callback); return () => starts.delete(callback); }, drain: async () => {}, diagnosticsEnabled: () => true }) } : {}) });
   t.after(() => runtime.dispose());
@@ -130,7 +131,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     return (await runtime.waitForNativeReviews({ drain: true }))[0];
   };
   const store = createStopCorrectionStore({ directory: path.join(root, "host-state/runtime-corrector-stop-sessions") });
-  return { root, ctx, task, start, stop, calls, warnings, store, sharedState, runtime, transcript, dispatches, aborts, api,
+  return { root, ctx, task, start, stop, calls, warnings, store, sharedState, runtime, transcript, dispatches, aborts, api, projectScopes,
     setVerdict: value => { currentVerdict = value; }, emitStart: (event, metadata = { trusted: true }) => {
       for (const callback of starts) callback({ type: "model.call.started", sessionId: "session", sessionKey: ctx.sessionKey, agentId: "main", seq: 1, ...event }, metadata);
     } };
@@ -286,6 +287,150 @@ async function settlePrepared(f) {
   return f.runtime.waitForNativeReviews({ drain: true, settle: true });
 }
 
+for (const race of [false, true]) test(`an old failed terminal cannot cancel a new run${race ? " admitted during the scope read" : " already admitted"}`, async t => {
+  const f = await nativeFixture(t), event = await armFinalize(f);
+  const state = f.sharedState.states.get("main:session");
+  state.nativeFinalizeHandledRun = event.runId;
+  let ending, release, entered;
+  if (race) {
+    const arrived = new Promise(resolve => { entered = resolve; });
+    const pending = new Promise(resolve => { release = resolve; });
+    const resolveScope = f.projectScopes.resolve;
+    let first = true;
+    f.projectScopes.resolve = async (...args) => {
+      if (first) { first = false; entered(); await pending; }
+      return resolveScope(...args);
+    };
+    ending = f.runtime.agentEnd({ ...event, success: false }, f.ctx);
+    await arrived;
+  }
+  const ctx = { ...f.ctx, runId: "new-business-run" };
+  await f.runtime.prompt({ prompt: "A new task." }, ctx);
+  const controller = state.reviewController;
+  const chain = createNativeStopChains(f.sharedState.stopWaitChains, f.sharedState.stopWaitRunOwners)
+    .begin({ state, runId: ctx.runId, taskId: f.task.taskId, budgetMs: 5000 });
+  t.after(() => chain.cancel("TEST_FINISHED"));
+  if (race) { release(); await ending; }
+  else await f.runtime.agentEnd({ ...event, success: false }, f.ctx);
+  assert.equal(state.nativeRunId, ctx.runId);
+  assert.equal(state.reviewController, controller);
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(chain.pending, true);
+  assert.notEqual(state.nativeEndedRun, event.runId);
+});
+
+test("a late handoff rejection cannot expire a newer run's waiting chain", async t => {
+  const f = await nativeFixture(t), event = await armFinalize(f);
+  const state = f.sharedState.states.get("main:session");
+  state.nativeFinalizeHandledRun = event.runId;
+  let reject;
+  state.nativePendingStop = { runId: event.runId, handoff: new Promise((_, fail) => { reject = fail; }) };
+  await f.runtime.agentEnd({ ...event, success: true }, f.ctx);
+  const ctx = { ...f.ctx, runId: "new-business-run" };
+  await f.runtime.prompt({ prompt: "A new task." }, ctx);
+  const controller = state.reviewController;
+  const chain = createNativeStopChains(f.sharedState.stopWaitChains, f.sharedState.stopWaitRunOwners)
+    .begin({ state, runId: ctx.runId, taskId: f.task.taskId, budgetMs: 5000 });
+  t.after(() => chain.cancel("TEST_FINISHED"));
+  reject(new Error("old handoff failed"));
+  await pause(20);
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(chain.pending, true);
+});
+
+test("a terminal awaiting its receipt cannot abort a replacement controller with the same run ID", async t => {
+  const f = await nativeFixture(t), event = await armFinalize(f);
+  const state = f.sharedState.states.get("main:session");
+  let entered, release;
+  const arrived = new Promise(resolve => { entered = resolve; });
+  const pending = new Promise(resolve => { release = resolve; });
+  f.sharedState.stopStartProtocol.findRun = async () => { entered(); await pending; return null; };
+  const ending = f.runtime.agentEnd({ ...event, success: false }, f.ctx);
+  await arrived;
+  const controller = new AbortController();
+  state.reviewController = controller; state.abortSignal = controller.signal;
+  const chain = createNativeStopChains(f.sharedState.stopWaitChains, f.sharedState.stopWaitRunOwners)
+    .begin({ state, runId: event.runId, taskId: f.task.taskId, budgetMs: 5000 });
+  t.after(() => chain.cancel("TEST_FINISHED"));
+  release(); await ending;
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(chain.pending, true);
+});
+
+for (const fault of ["missing", "throw", "hang", "heartbeat"]) test(`host keepalive ${fault} releases the waiter as UNVERIFIED`, async t => {
+  const later = fault === "heartbeat";
+  let finish, fail = !later;
+  const blocked = new Promise(resolve => { finish = resolve; });
+  const f = await nativeFixture(t, "PASS", { reviewWait: () => blocked, compatibility: async () => ({
+    emitAgentEvent() {}, markDiagnosticSessionProgress: fault === "missing" ? undefined : () => {
+      if (!fail) return;
+      if (fault === "hang") return new Promise(() => {});
+      throw new Error("watchdog unavailable");
+    },
+  }) });
+  const event = await armFinalize(f);
+  await f.runtime.beforeFinalize(event, f.ctx);
+  await f.sharedState.states.get("main:session").nativePreparingStop;
+  if (later) t.mock.timers.enable({ apis: ["setInterval"] });
+  const hostAbort = new AbortController();
+  const waiting = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {
+    ...f.ctx, runId: "ordinary-waiter", abortSignal: hostAbort.signal,
+  });
+  if (later) { await pause(20); fail = true; t.mock.timers.tick(30000); }
+  try {
+    const released = await Promise.race([waiting.then(() => true), pause(1500).then(() => false)]);
+    assert.equal(released, true, "keepalive loss must not leave the host waiting for the review deadline");
+    assert.equal(hostAbort.signal.aborted, false);
+    const chain = [...f.sharedState.stopWaitChains.values()][0];
+    assert.equal(chain.pending, false);
+    assert.equal(chain.record.reviewStatus, "UNVERIFIED");
+    assert.equal(chain.record.reasonCode, "RC_STOP_KEEPALIVE_UNAVAILABLE");
+  } finally { finish(); }
+  const records = await settlePrepared(f);
+  assert.equal(records.at(-1).reviewStatus, "UNVERIFIED", "late PASS cannot reopen the failed chain");
+  assert.equal(records.at(-1).reasonCode, "RC_STOP_KEEPALIVE_UNAVAILABLE");
+  assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).verification.status, "UNVERIFIED");
+  assert.equal(f.dispatches.length, 0);
+});
+
+test("a virtual clock keeps queued input waiting beyond five minutes until the current review passes", async t => {
+  const events = [], activity = [];
+  let ready;
+  const started = new Promise(resolve => { ready = resolve; });
+  const f = await nativeFixture(t, "PASS", { compatibility: async () => ({
+    emitAgentEvent: event => events.push({ ...event, at: Date.now() }),
+    markDiagnosticSessionProgress: () => { activity.push(Date.now()); ready(); },
+  }) });
+  await f.start();
+  const state = f.sharedState.states.get("main:session");
+  state.nativeRunId = f.ctx.runId;
+  t.mock.timers.enable({ apis: ["Date", "setInterval", "setTimeout"], now: Date.now() });
+  const chain = createNativeStopChains(f.sharedState.stopWaitChains, f.sharedState.stopWaitRunOwners)
+    .begin({ state, runId: f.ctx.runId, taskId: f.task.taskId, budgetMs: 400000 });
+  let released = false;
+  const hostAbort = new AbortController();
+  const waiting = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {
+    ...f.ctx, runId: "virtual-clock-waiter", abortSignal: hostAbort.signal,
+  }).then(() => { released = true; });
+  try {
+    await started;
+    await new Promise(setImmediate);
+    for (let tick = 0; tick < 11; tick++) {
+      t.mock.timers.tick(30000);
+      await new Promise(setImmediate);
+      assert.equal(released, false);
+      assert.equal(chain.pending, true);
+    }
+    assert.equal(activity.length, 12);
+    assert.equal(activity.at(-1) - activity[0], 330000);
+    assert.equal(hostAbort.signal.aborted, false);
+    assert(events.every(event => event.stream === "tool"));
+    chain.assessed({ runId: f.ctx.runId, reviewStatus: "PASS" });
+    await waiting;
+    assert.equal(chain.record.reviewStatus, "PASS");
+  } finally { chain.cancel("TEST_FINISHED"); t.mock.timers.reset(); }
+});
+
 test("original revision is charged only on a later trusted call and rechecked under a new Stop identity", async t => {
   const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, finalizeReviewWaitMs: 2000, maxCorrections: 1 });
   const event = await armFinalize(f);
@@ -313,7 +458,7 @@ test("original revision is charged only on a later trusted call and rechecked un
 
 test("declined original revision hands off once after terminal notification while ordinary input stays waiting", async t => {
   const events = [], f = await nativeFixture(t, "DEVIATION", { startProtocol: true, finalizeReviewWaitMs: 2000,
-    compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
+    compatibility: async () => ({ emitAgentEvent: event => events.push(event), markDiagnosticSessionProgress() {} }) });
   const event = await armFinalize(f);
   await f.runtime.finalize(event, { ...f.ctx, runtimeCorrectorIndependentStop: true });
   assert.equal((await f.runtime.beforeFinalize(event, f.ctx))?.action, "revise");
@@ -380,7 +525,8 @@ test("an input already inside the host queue ends RC waiting instead of waiting 
   assert(!f.aborts.some(call => call.params.runId === f.ctx.runId || call.params.runId === "bypassed-outer-gate"));
 });
 
-test("a queued later input preserves current feedback and stays a real user input after the flow ends", async t => {
+for (const nextMessage of ["Next independent task.", "Change the previous task: convert to float instead of int."])
+test(`queued input is deferred until the flow ends: ${nextMessage}`, async t => {
   let finish;
   const blocked = new Promise(resolve => { finish = resolve; });
   const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, reviewWait: () => blocked });
@@ -388,7 +534,7 @@ test("a queued later input preserves current feedback and stays a real user inpu
   await f.runtime.beforeFinalize(event, f.ctx);
   await f.sharedState.states.get("main:session").nativePreparingStop;
   await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: "queued-user", parentId: "answer",
-    message: { role: "user", content: "Next independent task." } }) + "\n");
+    message: { role: "user", content: nextMessage } }) + "\n");
   await f.runtime.agentEnd({ ...event, success: true }, f.ctx);
   finish(); await settlePrepared(f);
   assert.equal(f.dispatches.length, 1, JSON.stringify(f.warnings));
@@ -523,6 +669,7 @@ test("real-time waiting gate emits UI heartbeats beyond five minutes without tra
 }, async t => {
   const events = [], f = await nativeFixture(t, "PASS", { compatibility: async () => ({
     emitAgentEvent: event => events.push({ ...event, observedAt: Date.now() }),
+    markDiagnosticSessionProgress() {},
   }) });
   await f.start();
   const state = f.sharedState.states.get("main:session");

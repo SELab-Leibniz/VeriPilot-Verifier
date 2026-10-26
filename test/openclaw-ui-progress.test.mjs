@@ -7,6 +7,7 @@ function fixture() {
   const events = [], listeners = new Set(), controller = new AbortController();
   const parent = { runId: "business", sessionId: "session", sessionKey: "agent:main:session" };
   const sdk = { emitAgentEvent: event => events.push(event),
+    markDiagnosticSessionProgress() {},
     onAgentEvent: listener => { listeners.add(listener); return () => listeners.delete(listener); } };
   return { sdk, parent, events, listeners, controller,
     end: () => { for (const listener of [...listeners]) listener({ runId: parent.runId, stream: "lifecycle", data: { phase: "end" } }); } };
@@ -87,7 +88,7 @@ test("slow or failed status loading never holds Stop release or emits a late upd
   const f = fixture(); let finish;
   const status = createStopWaitStatus({}, () => new Promise(resolve => { finish = resolve; }));
   const call = status({ state: f.parent, runId: "waiting", waiting: true, phase: "waiting", deadlineAt: Date.now() + 10000 });
-  await call;
+  assert.equal(await call, false);
   finish(f.sdk); await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.events.length, 0);
   const broken = createUiProgress({ sdk: { emitAgentEvent() { throw new Error("offline"); } }, parent: f.parent,
@@ -118,5 +119,19 @@ test("a bounded live Stop waiter renews MA activity, but background, expired and
   assert.equal(activity.length, 22);
   const broken = createStopWaitStatus({}, async () => ({ ...f.sdk,
     markDiagnosticSessionProgress() { throw new Error("diagnostic unavailable"); } }));
-  await assert.doesNotReject(broken({ ...input, waiting: true }));
+  assert.equal(await broken({ ...input, waiting: true }), false);
+});
+
+test("Stop status reports unavailable host keepalive instead of silently accepting it", async () => {
+  const f = fixture(), input = { state: f.parent, runId: f.parent.runId, waiting: true,
+    phase: "waiting", deadlineAt: Date.now() + 10000 };
+  for (const notify of [undefined, () => { throw new Error("offline"); },
+    async () => { throw new Error("offline"); }, () => new Promise(() => {})]) {
+    const status = createStopWaitStatus({}, async () => ({ ...f.sdk, markDiagnosticSessionProgress: notify }));
+    assert.equal(await status(input), false);
+    status.close(input.state, input.runId);
+  }
+  const healthy = createStopWaitStatus({}, async () => f.sdk);
+  assert.equal(await healthy(input), true);
+  healthy.close(input.state, input.runId);
 });

@@ -14,7 +14,7 @@ test("Stop status distinguishes verified acceptance, dispatch refusal and incomp
 });
 
 test("UI progress leaves business delivery untouched and fences retired runs", async () => {
-  const events = [], status = createStopWaitStatus({}, async () => ({ emitAgentEvent: event => events.push(event) }));
+  const events = [], status = createStopWaitStatus({}, async () => ({ emitAgentEvent: event => events.push(event), markDiagnosticSessionProgress() {} }));
   const state = { sessionId: "session", sessionKey: "agent:main:session", agentId: "main" };
   await status({ state, runId: "waiting", waiting: true, text: "Waiting", baseText: "Original delivery.",
     phase: "waiting", deadlineAt: Date.now() + 10000 });
