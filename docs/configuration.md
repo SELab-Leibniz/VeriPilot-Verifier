@@ -29,6 +29,23 @@ reviewers:
 `.js` 等源码以及 `.json5` 视为 UTF-8 `text`，所以 HarmonyOS ArkTS 的 Write/Edit 能与
 文档产物走同一条 PostToolUse 纠偏链。构建、测试和设备结果仍须由独立证据提供。
 
+### Reviewer 思考强度
+
+版本 2 的 `reviewers.defaults.effort` 与 `reviewers.<role>.effort` 接受 `off`、`low`、`medium`、`high`、`xhigh`、`max`。角色设置优先于 defaults，未配置时默认为 `low`。
+
+```yaml
+reviewers:
+  defaults:
+    model: custom/deepseek-v4-flash
+    effort: "off"
+  stopReviewer:
+    effort: high
+```
+
+OpenClaw/MatrixAssistant 将 `off` 原样作为私有调用的 `thinkLevel`，适用于基线、停止分类、逐项/分组审查及其他 reviewer。GLM 的额外 effort 提示在 `off` 时不再添加；具体思考开关由宿主及所选模型负责。`off` 不关闭审查，不改变工具、证据校验、单次输出上限或截止时间，也不修改主会话的思考设置。
+
+本机目标 OpenClaw 的 DeepSeek V4 `openai-completions` 原生兼容路径在 `off` 时发送 `thinking: { type: "disabled" }`，移除 `reasoning_effort`。自定义代理、其他 API 格式及必须思考的模型仍取决于其宿主适配，不能仅由 RC 配置保证零思考。CLI 后端沿用原有 `--effort` 传参，是否接受 `off` 由对应 CLI 决定。参见 [OpenClaw 思考档位](https://docs.openclaw.ai/tools/thinking)与 [DeepSeek 思考模式](https://api-docs.deepseek.com/guides/thinking_mode/)。
+
 ### 高频源码写入：checkpoint-review 拓扑
 
 实现型 Agent 会在一个里程碑内连续 Edit 多个源码和测试文件。如果每次 Edit 都启用隔离

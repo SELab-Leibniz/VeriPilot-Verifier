@@ -283,6 +283,9 @@ test("GLM reviewers carry selected effort through native prompts without changin
   assert.equal(calls[3].provider, "another");
   await h.followUp({ prompt: "Verify again", nextReviewer: { model: "review/glm-5.3-flash", effort: "low" } });
   assert.match(calls[4].extraSystemPrompt, /^Reasoning Effort: Low\n/u);
+  await h.followUp({ prompt: "Verify without thinking", nextReviewer: { effort: "off" } });
+  assert.equal(calls[5].thinkLevel, "off");
+  assert.doesNotMatch(calls[5].extraSystemPrompt, /Reasoning Effort:/u);
   for (const p of calls) { assert.deepEqual(p.toolsAllow, ["read"]); assert.equal(p.agentHarnessRuntimeOverride, "openclaw"); }
   assert.equal(JSON.stringify(host.config), before);
   await h.close();

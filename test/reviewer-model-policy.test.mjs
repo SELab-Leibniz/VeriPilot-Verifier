@@ -8,6 +8,7 @@ import {
   expandReviewerModelPolicy,
 } from "../lib/runtime-v2/config.mjs";
 import { resolveReviewerSession } from "../lib/runtime-v2/reviewer.mjs";
+import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
 
 
 const ALL_ROLES = [
@@ -33,6 +34,29 @@ function compile(reviewers) {
   });
 }
 
+
+test("reviewer effort off survives YAML, validation, inheritance and per-role overrides", () => {
+  for (const effort of ['off', '"off"']) {
+    const config = parseSimpleYaml(`version: 2
+artifacts: []
+dynamicGroundTruth:
+  enabled: true
+reviewers:
+  defaults:
+    model: custom/deepseek-v4-flash
+    effort: ${effort}
+  stopReviewer:
+    effort: high
+`);
+    assert.equal(validateProjectConfig(config, "config.yaml"), config);
+    const compiled = compileRuntimeV2Config(config);
+    for (const role of ALL_ROLES) assert.equal(compiled.reviewers[role].effort, role === "stopReviewer" ? "high" : "off");
+  }
+  assert.equal(compile({ defaults: { effort: "high" }, stopReviewer: { effort: "off" } }).reviewers.stopReviewer.effort, "off");
+  assert.equal(compile({}).reviewers.stopReviewer.effort, "low");
+  assert.throws(() => validateProjectConfig({ version: 2, artifacts: [], dynamicGroundTruth: { enabled: true },
+    reviewers: { defaults: { effort: false } } }, "config.yaml"), /effort/);
+});
 
 test("modelPolicy preset off (or absent) keeps every role on the parent fork", () => {
   for (const reviewers of [undefined, {}, { modelPolicy: { preset: "off", provider: PROVIDER } }]) {

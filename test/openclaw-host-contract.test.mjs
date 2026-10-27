@@ -23,6 +23,18 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
     process.argv[1] = ${JSON.stringify(executable)};
     const sdk = await loadSupervisedCompatibility();
     const interaction = await loadInteractionCompatibility();
+    const {s:normalizeThinkLevel} = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/thinking.shared-BWnbgBUO.js")).href)});
+    const {i:createDeepSeekV4ThinkingWrapper} = await import(${JSON.stringify(pathToFileURL(path.join(path.dirname(executable), "dist/provider-stream-shared-B4Hm1tKd.js")).href)});
+    assert.equal(normalizeThinkLevel('off'), 'off');
+    const payload = {thinking:{type:'enabled'},reasoning_effort:'max',reasoning:{effort:'high'},
+      messages:[{role:'assistant',content:'Previous response',reasoning_content:'Prior reasoning'}]};
+    const noModelStream = createDeepSeekV4ThinkingWrapper({thinkingLevel:'off',shouldPatchModel:()=>true,
+      baseStreamFn:(_model,_context,options)=>{options.onPayload(payload);return 'no-model-stream';}});
+    assert.equal(noModelStream({id:'deepseek-v4-flash',provider:'custom',api:'openai-completions'},{}), 'no-model-stream');
+    assert.deepEqual(payload.thinking,{type:'disabled'});
+    assert.equal(Object.hasOwn(payload,'reasoning_effort'),false);
+    assert.equal(Object.hasOwn(payload,'reasoning'),false);
+    assert.equal(Object.hasOwn(payload.messages[0],'reasoning_content'),false);
     assert.equal(interaction.version, '2026.7.1-2');
     assert.equal(interaction.browserClient, 'gateway-CWCQz7bR.js');
     assert.equal(typeof interaction.callGatewayFromCli, 'function');

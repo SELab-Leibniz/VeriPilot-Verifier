@@ -4,6 +4,29 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 
+for (const kind of ['classification', 'findings']) test(`${kind} forwards effort off to OpenClaw and still requires evidence receipts`, async t => {
+  const f = await stopProtocolFixture(t, kind);
+  f.api.config.agents.defaults.model.primary = 'custom/deepseek-v4-flash';
+  f.input.reviewer.effort = 'off';
+  const before = structuredClone(f.api.config);
+  const handle = await f.run(async ({ params, readAll, submit }) => {
+    assert.equal(params.thinkLevel, 'off');
+    assert.equal(params.provider, 'custom'); assert.equal(params.model, 'deepseek-v4-flash');
+    assert.equal(params.config.agents.defaults.models['custom/deepseek-v4-flash'].params.maxTokens, 32768);
+    assert.doesNotMatch(params.extraSystemPrompt, /Reasoning Effort:/u);
+    await assert.rejects(kind === 'classification'
+      ? submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Completed.' })
+      : submit('finish_findings', { batchIds: [], summary: 'No demonstrated deviation.' }), /not fully read/);
+    await readAll();
+    if (kind === 'classification') await submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Completed.' });
+    else await submit('finish_findings', { batchIds: [], summary: 'No demonstrated deviation.' });
+  });
+  assert.deepEqual(f.api.config, before);
+  assert.equal(f.calls.length, 1);
+  assert.deepEqual(handle.result.metricObjectJudgements, []);
+  await handle.close();
+});
+
 for (const classification of ['INTERMEDIATE', 'WAITING_FOR_USER', 'BLOCKED_EXTERNAL', 'STAGE_COMPLETE', 'TASK_COMPLETE']) {
   test(`classification tool commits ${classification} without a final JSON report`, async t => {
     const f = await stopProtocolFixture(t);

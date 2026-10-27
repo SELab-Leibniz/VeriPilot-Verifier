@@ -629,7 +629,9 @@
         },
         "effort": {
           "type": "string",
+          "description": "Reviewer thinking effort. off requests disabled thinking through OpenClaw; effective support depends on the selected model and backend.",
           "enum": [
+            "off",
             "low",
             "medium",
             "high",
