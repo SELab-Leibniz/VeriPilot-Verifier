@@ -3,6 +3,7 @@
 - [安装与概览](../README.md)
 - [快速开始](tutorial.md)
 - [MatrixAssistant / OpenClaw 宿主指南](openclaw.md)
+- [until_pass 多会话调度与控制页](until-pass-dispatch.md)
 - [Session 项目选择与隔离](session-projects.md)
 - [项目与 Session 开关](session-control.md)
 - [配置与规则](configuration.md)

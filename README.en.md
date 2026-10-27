@@ -115,3 +115,5 @@ The methods are registered in `lib/openclaw/session-control.mjs`, loaded by `lib
 Default Stop metrics are M08, M09, M12, M13, M15 and M16. File-quality review is off by default. Session and flow budgets each allow three actual correction starts. ALLOW means the host may stop; it does not certify PASS. Missing evidence, cancellation, expiry and checker failures retain their distinct states.
 
 See [configuration](docs/configuration.md), [interfaces](docs/interfaces.md), [operation and trust boundaries](docs/how-it-works.md), [Stop review](docs/stop-task-review.md), and [quick start](docs/tutorial.md). Native Stop continuation and real-model end-to-end behavior have the limits stated in the host guide; offline tests do not establish model accuracy.
+
+For MatrixAssistant, `until_pass` now schedules independent reviews after each host run ends. A separate RC control page manages pending tasks per session without modifying the native frontend. See [the multi-session design and control page](docs/until-pass-dispatch.md).

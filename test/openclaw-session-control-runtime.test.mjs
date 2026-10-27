@@ -27,7 +27,8 @@ async function within(promise, description) {
 
 async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let runtime;
+  t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true }); });
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
 artifacts:
@@ -96,9 +97,9 @@ implementationCorrection:
     runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
       session: { getSessionEntry: async ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(root, "sessions.json"),
         resolveSessionFilePath: (_id, entry) => entry.sessionFile, runWithWorkAdmission: async (params, callback) => callback(params.signal) } } } };
-  const options = { pluginRoot, projectScopes: projects, sharedState, reviewerFactory: factory, nativeHooks: true };
-  const runtime = createRuntime(api, options);
-  t.after(() => runtime.dispose());
+  const options = { pluginRoot, projectScopes: projects, sharedState, reviewerFactory: factory, nativeHooks: true, postRunTerminal: async (_id, runId) => ({ runId, status: "ok" }) };
+  runtime = createRuntime(api, options);
+
   async function session(id) {
     const ctx = { agentId: "main", sessionId: id, sessionKey: `agent:main:${id}`, runId: `${id}-run`, workspaceDir: root, abortSignal: hostAbort.signal };
     const sessionFile = path.join(root, `${id}.jsonl`);

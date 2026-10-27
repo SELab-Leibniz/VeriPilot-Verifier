@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import vm from "node:vm";
 import { createStopWaitStatus } from "../lib/openclaw/stop-wait-status.mjs";
 
 // Execute the installed host's queue and hook runner without a Gateway, model,
@@ -11,6 +12,59 @@ const host = process.env.RC_OPENCLAW_HOST_ROOT;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 const load = file => import(pathToFileURL(path.join(host, "dist", file)));
+
+test("MA post-run contract: third-party denial precedes dispatch and the public authenticated client is available", { skip: !host }, async () => {
+  const source = await fs.readFile(path.join(host, "dist/server-plugins-XoQmHCe9.js"), "utf8");
+  const start = source.indexOf("async function dispatchTrustedPluginGatewayMethod");
+  const end = source.indexOf("\nconst PLUGIN_SUBAGENT_SESSION_MESSAGES_MAX_LIMIT", start);
+  assert(start > 0 && end > start);
+  const handler = vm.runInNewContext(`(${source.slice(start, end)})`, {
+    getPluginRuntimeGatewayRequestScope: () => ({ pluginId: "runtime-corrector" }),
+    canTrustedOfficialPluginRequestScopes: () => false,
+    dispatchGatewayMethod: () => assert.fail("The denial must happen before dispatch"),
+  });
+  await assert.rejects(handler("chat.send", {}), error =>
+    error.message === "Gateway requests are only available to bundled or trusted official plugins.");
+  const sdk = await load("plugin-sdk/gateway-runtime.js");
+  assert.equal(typeof sdk.callGatewayFromCli, "function");
+});
+
+test("MA post-run contract: agent.wait ignores the early agent terminal while normal chat replies drain", { skip: !host }, async () => {
+  const source = await fs.readFile(path.join(host, "dist/agent-D6kiZtPt.js"), "utf8");
+  const start = source.lastIndexOf('"agent.wait": ') + '"agent.wait": '.length;
+  assert(start > 20);
+  const gate = deferred(), requests = [];
+  const handler = vm.runInNewContext(`(${source.slice(start, source.lastIndexOf("\n};"))})`, {
+    AbortController, validateAgentWaitParams: () => true,
+    readTerminalSnapshotFromGatewayDedupe: args => { assert.equal(args.ignoreAgentTerminalSnapshot, true); return null; },
+    waitForTerminalGatewayDedupe: args => { requests.push(args); return gate.promise; },
+    waitForAgentJob: () => assert.fail("Early lifecycle completion must not release an active normal chat"),
+  });
+  let result;
+  const waiting = handler({ params: { runId: "run", timeoutMs: 1000 },
+    context: { chatAbortControllers: new Map([["run", { kind: "chat" }]]), dedupe: new Map() },
+    respond: (ok, value) => { assert.equal(ok, true); result = value; } });
+  await pause(20); assert.equal(result, undefined);
+  assert.equal(requests[0].ignoreAgentTerminalSnapshot, true);
+  gate.resolve({ status: "ok", endedAt: Date.now() }); await waiting;
+  assert.equal(result.runId, "run"); assert.equal(result.status, "ok");
+});
+
+test("MA post-run contract: reply_dispatch claiming returns its receipt and bypasses normal resolution", { skip: !host }, async () => {
+  const { i: initialize, t: current, a: reset } = await load("hook-runner-global-BmIrGlLG.js");
+  const receipt = { handled: true, queuedFinal: true, counts: { final: 1, tool: 0, block: 0 } };
+  reset();
+  try {
+    initialize({ hooks: [], plugins: [{ id: "rc-post-run-contract", status: "loaded" }], typedHooks: [
+      { pluginId: "rc-post-run-contract", hookName: "reply_dispatch", timeoutMs: 1000, handler: async () => receipt },
+    ] });
+    assert.deepEqual(await current().runReplyDispatch({ sessionKey: "session", ctx: {} }, {}), receipt);
+    const source = await fs.readFile(path.join(host, "dist/dispatch-DnzGTpPs.js"), "utf8");
+    const branch = source.slice(source.indexOf("if (replyDispatchResult?.handled)"), source.indexOf('const dispatchAcquisition = await ensureDispatchReplyOperation("dispatch")'));
+    assert(branch.includes("completeDispatchReplyOperation()"));
+    assert(branch.includes("return attachSourceReplyDeliveryMode"));
+  } finally { reset(); }
+});
 
 test("MA queue: waiting inside a session lane excludes its own continuation; waiting outside does not", { skip: !host }, async () => {
   const { i: enqueue } = await load("command-queue-DqzpsN4m.js");

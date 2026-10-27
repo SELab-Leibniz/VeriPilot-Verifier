@@ -12,5 +12,6 @@ export function admittedProjectScopes(api) {
 }
 
 export function correctionFixtureRuntime(createRuntime) {
-  return (api, options) => createRuntime(api, { ...options, projectScopes: admittedProjectScopes(api) });
+  return (api, options) => createRuntime(api, { postRunTerminal: async (_identity, runId) => ({ runId, status: "ok" }),
+    ...options, projectScopes: admittedProjectScopes(api) });
 }

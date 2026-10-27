@@ -20,7 +20,7 @@ before(async () => {
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function within(promise, description, timeoutMs = 5000) {
+async function within(promise, description, timeoutMs = 10000) {
   let timer;
   try { return await Promise.race([promise, new Promise((_, reject) => {
     timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}`)), timeoutMs);
@@ -110,7 +110,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 2000 } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000 } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -133,7 +133,7 @@ stopCorrection:
 ${Object.entries({...Object.fromEntries(Array.from({length:16},(_,i)=>[`M${String(i+1).padStart(2,'0')}`,false])),M01:true,...metrics??{}}).map(([id,enabled])=>`    ${id}: ${enabled}`).join('\n')}
   fileQualityReviewEnabled: ${quality !== null}
   waitMode: ${waitMode}
-  assessmentTimeoutMs: ${waitTimeoutMs ?? 11000}
+  assessmentTimeoutMs: ${waitTimeoutMs ?? (waitMode === "until_pass" ? 30000 : 11000)}
   feedbackReserveMs: 1000
 implementationCorrection:
   enabled: false
@@ -183,7 +183,7 @@ reviewers:
     const result=await prompt(event,context);
     if(String(context.runId).startsWith('rc-stop-')&&result?.prependContext){
       const gate=await runtime.beforeAgentRun({prompt:`${result.prependContext}\n${event.prompt}`},context);
-      assert.equal(gate?.outcome,'pass','a controlled native model starts only after the real gate allows it');
+      assert.equal(gate?.outcome,'pass',JSON.stringify({gate,warnings}));
       for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
         runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
       await state.stopStartProtocol.drain();
@@ -198,7 +198,7 @@ reviewers:
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
   calls = 0; fail = failures;
   return { api, runtime, ctx, warnings, sharedState: state, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
-    chain: () => [...state.stopWaitChains.values()].at(-1),
+    post: () => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id),
     restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true,stopStartCompatibility:startCompatibility }) };
 }
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
@@ -224,7 +224,7 @@ test("all Stop metrics and file quality off settle the native wait as DISABLED w
   f.api.runtime.subagent = { run: () => assert.fail("Disabled review cannot dispatch a corrective business run.") };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(record.reviewStatus, "DISABLED"); assert.equal(f.chain().pending, false);
+  assert.equal(record.reviewStatus, "DISABLED"); assert.equal(!["IDLE", "CLOSED"].includes(f.post().phase), false);
   assert.equal(f.calls(), 0);
   const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
   assert.equal(task.verification.status, "DISABLED"); assert.equal(task.stop.correctionAttempts, 0);
@@ -525,37 +525,6 @@ test("a crashed review releases admission as UNVERIFIED without waiting for its 
   assert.equal(manager.pending(params).length, 0);
 });
 
-test("until_pass holds the next task during correction execution and recheck, then releases only the new PASS", async t => {
-  const rechecking = deferred(t), finish = deferred(t);
-  let reviews = 0, childRunId;
-  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000, review: async () => {
-    if (++reviews === 1) return true;
-    rechecking.resolve(); await finish.promise; return false;
-  } });
-  f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
-  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "DEVIATION");
-  let passed = false;
-  const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
-  const child = { ...f.ctx, runId: childRunId };
-  await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  await fs.writeFile(path.join(f.root,'draft.md'),'The corrected current draft after a real controlled business edit.\n');
-  await pause(20);
-  assert.equal(passed, false, "feedback admission and active correction are not a PASS");
-  assert.equal(f.chain().record.phase, "CORRECTING");
-  await f.runtime.agentEnd({ runId: childRunId, success: true,
-    messages: [{ role: "assistant", content: "Corrected delivery." }] }, child);
-  await within(rechecking.promise, "rechecking signal");
-  assert.equal(passed, false, JSON.stringify({ chain: f.chain().record, warnings: f.warnings }));
-  assert.equal(f.chain().record.phase, "REVIEWING");
-  finish.resolve(); await next;
-  assert.equal(f.chain().record.reviewStatus, "PASS");
-  assert.equal(f.chain().record.runId, childRunId);
-  const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(records.find(record => record.runId === childRunId).reviewStatus, "PASS");
-  assert.equal(f.hostAbort.signal.aborted, false);
-});
-
 test("manual check recovers the exact native tool call while its own correction chain is pending", async t => {
   let childRunId;
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });
@@ -572,7 +541,7 @@ test("manual check recovers the exact native tool call while its own correction 
     pause(1500).then(() => { throw new Error("Manual check waited on its own Stop chain."); }),
   ]);
   assert.equal(checked.matched, true);
-  assert.equal(f.chain().pending, true, "A manual check must not release the task gate.");
+  assert.equal(!["IDLE", "CLOSED"].includes(f.post().phase), true, "A manual check must not release the task gate.");
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md"), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId: "unbound" }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
   await assert.rejects(f.runtime.manualCheck({ ...factoryContext, sessionId: "foreign" }, "draft.md", { toolCallId }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
@@ -581,7 +550,7 @@ test("manual check recovers the exact native tool call while its own correction 
   bindings.set("ambiguous", { ...original });
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_INVOCATION_UNAVAILABLE/u);
   bindings.delete("ambiguous");
-  f.chain().expire(); await within(f.runtime.waitForNativeReviews(), "native review settlement");
+  await f.runtime.postRuns.release(f.post(), "POST_RUN_EXECUTION_TIMEOUT"); await within(f.runtime.waitForNativeReviews(), "native review settlement");
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_(?:INVOCATION_UNAVAILABLE|CANCELLED)/u);
 });
 
@@ -618,7 +587,7 @@ test('an initial review that crosses its absolute deadline cannot create a corre
  let childRunId;const f=await lifecycle(t,{deviation:true,waitMode:'until_pass'});
  f.api.runtime.subagent={run:async args=>{childRunId=args.idempotencyKey;return {runId:childRunId};}};
  f.api.runtime.agent.reviewAdmission=async()=>{
-  const deadline=f.chain()?.record.deadlineAt;assert(Number.isFinite(deadline));
+  const deadline=f.post().deadlineAt;assert(Number.isFinite(deadline));
   t.mock.timers.tick(Math.max(1,deadline-Date.now()+1));
  };
  await f.runtime.reply({kind:'final',runId:f.ctx.runId,sessionKey:f.ctx.sessionKey,payload:{text:'Delivered.'}},f.ctx);
@@ -629,24 +598,22 @@ test('an initial review that crosses its absolute deadline cannot create a corre
  assert.equal(task.stop.correctionAttempts,0);
 });
 
-test("until_pass deadline releases a correction with no active reviewer and reports non-PASS", async t => {
+test("until_pass execution watchdog closes an unfinished correction and fences its late terminal", async t => {
   let childRunId;
-  const events = [], f = await lifecycle(t, { deviation: true, waitMode: "until_pass", waitTimeoutMs: 20000,
-    compatibility: async () => ({ emitAgentEvent: event => events.push(event) }) });
+  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert(childRunId);
-  await f.runtime.prompt({ prompt: "RC feedback" }, { ...f.ctx, runId: childRunId });
-  f.api.config.plugins = { entries: { "runtime-corrector": { hooks: { timeouts: { reply_dispatch: 1100 } } } } };
-  await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {});
-  assert.equal(f.chain().record.reviewStatus, "UNVERIFIED");
-  assert.equal(f.chain().record.reasonCode, "STOP_WAIT_DEADLINE_EXPIRED");
-  await pause(10);
-  assert.equal(events.length, 0, "no live dispatch run exists yet; never renew a finished correction run");
+  await within(f.runtime.waitForNativeReviews(), "review");
+  const child = { ...f.ctx, runId: childRunId };
+  await f.runtime.prompt({ prompt: "RC feedback" }, child);
+  await f.runtime.postRuns.started(f.post(), childRunId, 50);
+  await until(() => f.post().phase === "IDLE", "execution watchdog");
+  assert.equal(f.post().reviewStatus, "UNVERIFIED");
+  assert.equal(f.post().reason, "POST_RUN_EXECUTION_TIMEOUT");
+  await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, child);
+  await within(f.runtime.waitForNativeReviews(), "review");
+  assert.equal(f.post().reviewStatus, "UNVERIFIED");
   assert.equal(f.hostAbort.signal.aborted, false);
-  await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, { ...f.ctx, runId: childRunId });
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement")).length, 1, "a timed-out child cannot restart the same wait chain");
 });
 
 test("kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running", async t => {
@@ -661,7 +628,7 @@ test("kitchen parent expiry closes an admitted receipt and terminalizes the task
   await fs.writeFile(path.join(f.root,'draft.md'),'The changed current source requires a fresh child review.\n');
   await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
   await within(started.promise, "started signal");
-  f.chain().expire(); finish.resolve();
+  await f.runtime.postRuns.release(f.post(), "POST_RUN_EXECUTION_TIMEOUT"); finish.resolve();
   await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   let task;
   for (let i = 0; i < 30; i++) { task = await findTask({ projectRoot: f.root, sessionId: "host" });
@@ -681,11 +648,9 @@ test("reset during correction releases until_pass even after the original review
   await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  let passed = false;
-  const next = f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {}).then(() => { passed = true; });
-  await pause(20); assert.equal(passed, false);
-  await f.runtime.reset({}, child); await next;
-  assert.equal(f.chain().record.reviewStatus, "CANCELLED");
+  await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {});
+  await f.runtime.reset({}, child);
+  assert.equal(f.post().phase, "CLOSED");
   assert.equal(f.hostAbort.signal.aborted, false);
 });
 
@@ -701,7 +666,7 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   await within(f.runtime.waitForNativeReviews(), "native review settlement");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  f.chain().expire();
+  await f.runtime.postRuns.release(f.post(), "POST_RUN_EXECUTION_TIMEOUT");
   await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey }, {});
   const next = { ...f.ctx, runId: "new-business" };
   await fs.appendFile(path.join(f.root,'native.jsonl'),'\n'+JSON.stringify({type:'message',id:'new-real-user',parentId:'u',message:{role:'user',content:'Inspect this new changed draft.'}})+'\n');

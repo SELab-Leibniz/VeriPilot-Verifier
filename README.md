@@ -29,6 +29,8 @@ OpenClaw / MatrixAssistant 插件加载后，可由管理员在 Session 中执�
 
 Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-project on`、`/rc-session on`。`init` 使用插件内的默认模板，项目和会话默认开关均为关闭，模型取当前宿主 RC 配置，已有项目配置不覆盖。`/rc-project on|off|status` 控制整个项目，`/rc-session-default on|off|status` 控制首次登记会话的默认选择；已登记会话不受默认值变化影响。详见[项目与会话命令](docs/session-control.md#在-session-中初始化和开关)。
 
+多 Session 的 until_pass 使用 RC 独立控制页管理审查状态与可编辑待办；每轮正常结束后才审查，需要修复时另起运行。仅修改 RC，无需改动 MA 原生界面。见[方案与使用方式](docs/until-pass-dispatch.md)。
+
 ## 快速开始
 
 在目标项目中调用 `/runtime-corrector:init`；OpenClaw 使用 `runtime_corrector` 工具：

@@ -16,7 +16,8 @@ before(async () => {
 after(() => fs.rm(output, { recursive: true, force: true }));
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-native-lifecycle-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let runtime;
+  t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true }); });
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
 artifacts:
@@ -44,7 +45,7 @@ stopCorrection:
   const api = { id: "runtime-corrector", config: { agents: { defaults: { model: { primary: "test/test" } } } },
     pluginConfig: {}, logger: { warn: x => warnings.push(x) }, runtime: { agent: { session: sessions,
       runEmbeddedAgent: async () => assert.fail("these lifecycle/interaction fixtures must not call a model") } } };
-  const runtime = createRuntime(api, { pluginRoot, sharedState, nativeHooks: true });
+  runtime = createRuntime(api, { pluginRoot, sharedState, nativeHooks: true });
   const ctx = { workspaceDir: root, sessionId: sid, sessionKey: "agent:main:native", agentId: "main", runId: "host-run", trigger: "user", abortSignal: hostAbort.signal };
   await runtime.prompt({ prompt: "Write a draft when appropriate." }, ctx);
   return { runtime, ctx, sessions, hostAbort, warnings, state: sharedState.states.get(`main:${sid}`) };

@@ -6,7 +6,6 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { nativeProjectDirectory, projectCapability } from "../lib/openclaw/project-compat.mjs";
-import { createNativeStopChains } from "../lib/openclaw/native-stop-chain.mjs";
 let build, pluginRoot, createProjects, createRuntime, entry;
 before(async () => {
   build = await fs.mkdtemp(path.join(os.tmpdir(), "rc-session-build-"));
@@ -307,9 +306,6 @@ test("registered native check forwards its exact call identity and execution can
   const callId = "registered-call";
   await f.runtime.beforeTool({ toolCallId: callId, toolName: "runtime_corrector", params: { command: "check", subject: "draft.md" } }, ctx);
   const state = f.sharedState.states.get(`main:${ctx.sessionId}`);
-  const chains = createNativeStopChains(f.sharedState.stopWaitChains, f.sharedState.stopWaitRunOwners);
-  const chain = chains.begin({ state, runId: ctx.runId, taskId: state.scopeTaskId, budgetMs: 10000 });
-  t.after(() => { chain.cancel("TEST_CLEANUP"); });
   const key = Symbol.for("runtime-corrector.openclaw.session-project-state");
   const registry = globalThis[key] ??= new Map(), identity = JSON.stringify([pluginRoot, f.stateDir]);
   registry.set(identity, f.sharedState);
@@ -321,7 +317,7 @@ test("registered native check forwards its exact call identity and execution can
   const result = await Promise.race([tool.execute(callId, { command: "check", subject: "draft.md" }, new AbortController().signal),
     new Promise((_, reject) => { const timer = setTimeout(() => reject(new Error("Registered check waited on its own chain.")), 1500); timer.unref(); })]);
   assert.equal(result.isError, false);
-  assert.equal(chain.pending, true);
+  assert.equal(state.reviewController.signal.aborted, false);
   const cancelled = await tool.execute(callId, { command: "check", subject: "draft.md" }, AbortSignal.abort());
   assert.equal(cancelled.isError, true); assert.match(cancelled.content[0].text, /RC_CHECK_CANCELLED/u);
 });

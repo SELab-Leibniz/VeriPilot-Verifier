@@ -4,7 +4,6 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createNativeFollowups } from "../lib/openclaw/native-followup.mjs";
-import { createNativeStopChains } from "../lib/openclaw/native-stop-chain.mjs";
 import { prepareHostFeedback } from "../lib/runtime-v2/feedback-delivery.mjs";
 
 async function fixture(t, run = null, options = {}) {
@@ -239,21 +238,4 @@ test("native operational prefix and partial feedback together stay within 8192 U
   assert.equal(index.itemCount, 41);
   for (const page of index.pages) await fs.access(page.path);
   assert.equal(f.task.stop.correctionAttempts, 0);
-});
-
-test("admitted feedbackOnly UNVERIFIED keeps the Stop chain waiting until a current recheck settles it", async () => {
-  const manager = createNativeStopChains(), state = { projectRoot: "/partial-fixture", sessionId: "host",
-    sessionKey: "agent:main:partial", nativeRunId: "first" };
-  const chain = manager.begin({ state, runId: "first", taskId: "task", budgetMs: 1000 });
-  manager.link(state, { runId: "feedback-only-run", taskId: "task", feedbackOnly: true });
-  chain.assessed({ runId: "first", reviewStatus: "UNVERIFIED", feedbackOnly: true, followupStatus: "ADMITTED" });
-  assert.equal(chain.pending, true);
-  assert.equal(chain.record.phase, "WAIT_START");
-  assert.equal(chain.startedRuns.size,0,'queue acknowledgement is not a trusted execution start');
-  chain.enter("feedback-only-run");
-  manager.begin({ state, runId: "feedback-only-run", taskId: "task", budgetMs: 1000 });
-  chain.assessed({ runId: "first", reviewStatus: "PASS" });
-  assert.equal(chain.pending, true, "an old parent cannot pass the feedback-only child");
-  chain.assessed({ runId: "feedback-only-run", reviewStatus: "PASS", evaluationId: "rechecked" });
-  assert.equal((await chain.released).reviewStatus, "PASS");
 });

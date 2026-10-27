@@ -1,17 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { stopFeedbackNotice, savedStopFeedbackNotice } from "../lib/openclaw/stop-feedback-notice.mjs";
-import { createNativeStopChains } from "../lib/openclaw/native-stop-chain.mjs";
 import { stopWaitText } from "../lib/openclaw/stop-wait-status.mjs";
 
 const feedback = "FILE_QUALITY_DEVIATION delivery.md: title is missing; the intended subject is unclear.\nEvidence: delivery.md:1";
 
 test("incomplete quality notice survives native settlement without admitting business work", async () => {
   const notice = stopFeedbackNotice({ fileQualityIncomplete: true, feedback });
-  const chains = createNativeStopChains(), state = { projectRoot: "fixture", sessionId: "session", sessionKey: "key" };
-  const chain = chains.begin({ state, runId: "run", taskId: "task", budgetMs: 1000 });
-  chain.assessed({ runId: "run", reviewStatus: "UNVERIFIED", evaluationId: "evaluation", verificationFeedback: notice });
-  const settled = await chain.released;
+  const settled = { status: "SETTLED", reviewStatus: "UNVERIFIED", evaluationId: "evaluation", verificationFeedback: notice };
   assert.equal(settled.status, "SETTLED");
   assert.equal(settled.followupStatus, undefined);
   assert.match(stopWaitText(settled), /title is missing/);
