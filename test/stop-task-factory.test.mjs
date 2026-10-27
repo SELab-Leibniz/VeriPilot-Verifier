@@ -73,124 +73,65 @@ test("task-mode factory dispatches only eligible metric scopes with the selected
   earlier.reviewer.maxOutputTokens = 49152;
   await factory(earlier);
   assert.equal(captures.at(-1).input.deadlineAt, earlier.deadlineAt);
-  assert.equal(captures.at(-1).input.reviewer.maxOutputTokens, 49152);
+  assert.equal(captures.at(-1).input.reviewer.maxOutputTokens, 32768);
   controller.abort();
   assert.ok(captures.every(value => value.input.abortSignal.aborted));
 });
 
-test("native-only direct factory use remains the default even for a task-eligible obligation", async t => {
-  const f = await fixture(t); let taskCalls = 0, nativeCalls = 0;
-  const factory = createOpenClawReviewerFactory(f.api, {
-    runStopTask: async () => { taskCalls++; throw new Error("Task mode was not enabled."); },
-    runEmbeddedAgent: async () => { nativeCalls++; return { payloads: [{ text: JSON.stringify(report()) }], meta: {} }; },
-  });
-  const handle = await factory(f.makeInput());
-  await handle.close();
-  assert.equal(nativeCalls, 1); assert.equal(taskCalls, 0);
-  assert.equal(factory.reviewItemSize, undefined);
-  assert.equal(factory.supportsSupplementalFileAssessment, undefined);
-});
 
-test("native fallback honors an item cancellation as well as its factory owner", async t => {
-  const f = await fixture(t), owner = new AbortController(), item = new AbortController();
-  let entered, childSignal;
-  const ready = new Promise(resolve => { entered = resolve; });
-  const factory = createOpenClawReviewerFactory(f.api, { abortSignal: owner.signal,
-    runEmbeddedAgent: async params => {
-      childSignal = params.abortSignal; entered();
-      await new Promise(resolve => childSignal.addEventListener("abort", resolve, { once: true }));
-      childSignal.throwIfAborted();
-    } });
-  const work = factory({ ...f.makeInput(), abortSignal: item.signal });
-  void work.catch(() => {});
-  try {
-    await ready;
-    item.abort(new Error("Only this review item was cancelled."));
-    assert.equal(childSignal.aborted, true);
-  } finally { owner.abort(); await work.catch(() => {}); }
-});
-
-test("SDK item signal cannot detach the enclosing factory cancellation", async t => {
-  const f = await fixture(t), owner = new AbortController(), item = new AbortController();
-  let signal;
-  const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", abortSignal: owner.signal,
-    runEmbeddedAgent: async () => { throw new Error("No native calls expected"); },
-    runStopTask: async input => { signal = input.abortSignal; return { result: report() }; } });
-  await factory({ ...f.makeInput(), abortSignal: item.signal });
-  owner.abort(new Error("The enclosing Stop ended."));
-  assert.equal(signal.aborted, true);
-  assert.equal(item.signal.aborted, false);
-});
-
-test("file UNVERIFIED may have no citations, but both native and CLI result validation reject unproved conclusive files", async t => {
-  for (const status of ["UNVERIFIED", "PASS", "DEVIATION"]) await t.test(status, async t => {
-    const f = await fixture(t), result = { ...report(), fileAssessments: [
-      { path: "kitchen.py", status, reason: "The file's required proof has not been established.", evidence: [] },
-    ] };
-    assert.equal(reviewResultIssues(result, STOP_REVIEW_SCHEMA).length > 0, status !== "UNVERIFIED");
-    const factory = createOpenClawReviewerFactory(f.api, { runEmbeddedAgent: async () => ({
-      payloads: [{ text: JSON.stringify(result) }], meta: {},
-    }) });
-    const input = f.makeInput();
-    if (status === "UNVERIFIED") {
-      const handle = await factory(input);
-      assert.deepEqual(handle.result.fileAssessments[0].evidence, []);
-      await handle.close();
-    } else await assert.rejects(factory(input), /conclusive file assessment requires source evidence/iu);
-  });
-});
-
-test("native classification does not receive the collector's potentially large candidate inventory", async t => {
-  const f = await fixture(t), input = f.makeInput();
-  input.request.population = { metrics: {} };
-  input.request.reviewScope = { kind: "classification", boundedBasis: true, objectIds: [], sourceIds: [] };
-  input.request.artifactCandidates = [{ artifactId: "source", metricIds: [], files: Array.from({ length: 2000 }, (_, index) => ({
-    path: `source/feature-${index}.py`, sha256: "a".repeat(64),
-  })) }];
-  let prepared;
-  input.onPrepared = value => { prepared = value.request; };
-  const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task", runEmbeddedAgent: async () => ({
-    payloads: [{ text: JSON.stringify(report()) }], meta: {},
-  }) });
-  const handle = await factory(input);
-  assert.equal(Object.hasOwn(prepared, "artifactCandidates"), false);
-  assert.equal(input.request.artifactCandidates[0].files.length, 2000, "Program ownership/cache input remains intact.");
-  await handle.close();
-});
-
-test("task mode preserves native fallback for unresolved ownership, classifier and stage/intermediate work", async t => {
-  const f = await fixture(t); let taskCalls = 0, nativeCalls = 0;
-  const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task",
-    runStopTask: async () => { taskCalls++; throw new Error("A legacy scope cannot use the task worker."); },
-    runEmbeddedAgent: async () => { nativeCalls++; return { payloads: [{ text: JSON.stringify(report()) }], meta: {} }; },
-  });
-  const classifier = f.makeInput(); classifier.request.reviewScope.kind = "classification";
-  const stage = f.makeInput(); stage.request.fixedStopClassification = { stopClassification: "STAGE_COMPLETE", stage: "design" };
-  const intermediate = f.makeInput(); intermediate.request.fixedStopClassification = { stopClassification: "INTERMEDIATE", stage: null };
-  const conditional = f.makeInput(); conditional.request.population.metrics.M01[0].applicability = "IF_DEPLOYED";
-  const pending = f.makeInput(); pending.request.population.metrics.M01[0].authority = "BASIS_PENDING";
-  const quality = f.makeInput(); quality.request.population.metrics.M01 = [];
-  quality.request.reviewScope = { kind: "file-quality", boundedBasis: true, objectIds: [], sourceIds: ["R1"] };
-  const inputs = [f.makeInput("M99"), f.makeInput("M12", "implementation-reviewer", "PROCESS"), conditional, pending,
-    classifier, stage, intermediate, quality];
-  for (const input of inputs) { const handle = await factory(input); await handle.close(); }
-  assert.equal(taskCalls, 0); assert.equal(nativeCalls, inputs.length);
-});
-
-test("task factory cache identity is distinct from native identity and uses a frozen profile version", async t => {
+test('default and legacy native settings both dispatch Stop directly to task', async t => {
   const f = await fixture(t);
-  const native = createOpenClawReviewerFactory(f.api), task = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task" });
-  const sameTask = createOpenClawReviewerFactory(f.api, { stopReviewEngine: "task" });
-  assert.equal(task.reviewItemSize, 1);
-  assert.deepEqual(task.singleReviewMetrics, Object.keys(METRIC_CATALOG));
-  assert.equal(task.supportsSupplementalFileAssessment, true);
-  assert.notEqual(task.reviewCacheIdentity({}), native.reviewCacheIdentity({}));
-  assert.equal(task.reviewCacheIdentity({}), sameTask.reviewCacheIdentity({}));
-  assert.notEqual(task.reviewCacheIdentity({ maxOutputTokens: 32768 }), task.reviewCacheIdentity({ maxOutputTokens: 65536 }));
-  const promptBytes = await fs.readFile(new URL("../lib/review-task/prompts.json", import.meta.url));
-  assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash("sha256").update(promptBytes).digest("hex"));
+  for (const stopReviewEngine of [undefined, 'task', 'native']) {
+    let taskCalls = 0;
+    const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine,
+      runStopTask: async input => { taskCalls++; assert.equal(input.taskLimits.maxTurns, 200); assert.equal(input.taskLimits.maxTokens, 32768); return { result: report() }; },
+      runEmbeddedAgent: () => assert.fail('No legacy Stop execution') });
+    await factory(f.makeInput()); assert.equal(taskCalls, 1); assert.equal(factory.supportsStopGroups, true);
+  }
 });
 
+test('task item cancellation remains linked to the enclosing factory owner', async t => {
+  const f = await fixture(t), owner = new AbortController(), item = new AbortController();
+  let child, entered; const ready = new Promise(resolve => { entered = resolve; });
+  const factory = createOpenClawReviewerFactory(f.api, { abortSignal: owner.signal,
+    runStopTask: async input => { child = input.abortSignal; entered(); await new Promise(resolve => child.addEventListener('abort', resolve, { once: true })); child.throwIfAborted(); },
+    runEmbeddedAgent: () => assert.fail('No native fallback') });
+  const work = factory({ ...f.makeInput(), abortSignal: item.signal }); void work.catch(() => {});
+  await ready; item.abort(new Error('Item cancelled')); await assert.rejects(work, /Item cancelled/);
+  assert(child.aborted); assert.equal(owner.signal.aborted, false);
+});
+
+test('file UNVERIFIED may lack citations, while conclusive report files require evidence', () => {
+  for (const status of ['UNVERIFIED', 'PASS', 'DEVIATION']) {
+    const result = { ...report(), fileAssessments: [{ path: 'kitchen.py', status, reason: 'Unestablished proof', evidence: [] }] };
+    assert.equal(reviewResultIssues(result, STOP_REVIEW_SCHEMA).length > 0, status !== 'UNVERIFIED');
+  }
+});
+
+test('all supported worker types dispatch explicitly and unsupported scopes never fall into native', async t => {
+  const f = await fixture(t), seen = [];
+  const factory = createOpenClawReviewerFactory(f.api, { runStopTask: async input => { seen.push(input.workerType); return { result: report() }; },
+    runEmbeddedAgent: () => assert.fail('No legacy Stop path') });
+  const classification = f.makeInput(); classification.request.reviewScope.kind = 'classification';
+  const stage = f.makeInput(); stage.request.fixedStopClassification = { stopClassification: 'STAGE_COMPLETE', stage: 'design' };
+  const findings = f.makeInput(); findings.request.fixedStopClassification = { stopClassification: 'WAITING_FOR_USER', stage: null }; findings.request.reviewScope.findingsOnly = true;
+  for (const input of [classification, stage, findings]) await factory(input);
+  assert.deepEqual(seen, ['classification', 'review', 'findings']);
+  const pending = f.makeInput(); pending.request.population.metrics.M01[0].authority = 'BASIS_PENDING';
+  const conditional = f.makeInput(); conditional.request.population.metrics.M01[0].applicability = 'IF_DEPLOYED';
+  for (const input of [pending, conditional, f.makeInput('M99')]) await assert.rejects(factory(input), { code: 'STOP_TASK_SCOPE_UNSUPPORTED' });
+  assert.equal(seen.length, 3);
+});
+
+test('factory cache identity uses the sole task protocol and all metric profiles', async t => {
+  const f = await fixture(t), factory = createOpenClawReviewerFactory(f.api);
+  assert.deepEqual(factory.singleReviewMetrics, Object.keys(METRIC_CATALOG));
+  assert.equal(factory.supportsSupplementalFileAssessment, true);
+  for (const stopReviewEngine of ['task', 'native']) assert.equal(factory.reviewCacheIdentity(), createOpenClawReviewerFactory(f.api, { stopReviewEngine }).reviewCacheIdentity());
+  assert.notEqual(factory.reviewCacheIdentity({ maxOutputTokens: 32768 }), factory.reviewCacheIdentity({ maxOutputTokens: 65536 }));
+  const promptBytes = await fs.readFile(new URL('../lib/review-task/prompts.json', import.meta.url));
+  assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash('sha256').update(promptBytes).digest('hex'));
+});
 for (const supplemental of [false, true]) test(`the canonical Stop wrapper preserves cache identity and ${supplemental ? "isolates enabled" : "skips disabled"} file quality`, async t => {
   const f = await fixture(t);
   await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [

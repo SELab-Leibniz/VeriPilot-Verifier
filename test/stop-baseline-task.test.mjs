@@ -127,7 +127,7 @@ async function fixture(t, { large = false, faults } = {}) {
   const makeFactory = script => {
     const factory = createOpenClawReviewerFactory(api, { stopReviewEngine: 'task', baselineFaults: faults,
       runEmbeddedAgent: async value => { params = value; captures.push(value); tools = registry(ctx());
-        assert.equal(value.config.agents.defaults.models['fixture/model'].params.maxTokens, input.reviewer.maxOutputTokens ?? 32768);
+        assert.equal(value.config.agents.defaults.models['fixture/model'].params.maxTokens, 32768);
         assert.deepEqual(value.toolsAllow, BASELINE_TOOL_NAMES); assert.equal(value.config.agents.defaults.compaction.mode, 'safeguard');
         assert(REVIEWER_NATIVE_TOOL_DENY.every(name => value.config.tools.deny.includes(name)));
         assert.equal(value.config.tools.codeMode.enabled, false);

@@ -6,6 +6,7 @@ import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { runStopTaskGroup } from "../lib/runtime-v2/stop-task-group.mjs";
 import { observedTaskResult } from "./helpers/observed-review.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { selectStopPopulation } from "../lib/runtime-v2/review-routing.mjs";
 
 async function fixture(t) {
   const parent = path.resolve(".runtime-correction/test-temp");
@@ -67,4 +68,31 @@ test("a group backend failure after the first plugin receipt retains that item a
   assert.equal(launches, 1);
   assert.equal(receipts.length, 1);
   assert.equal(receipts[0].result.metricObjectJudgements[0].judgement, "DEVIATION");
+});
+
+test('stage groups retain the real classification, independent members, and Stop execution policy', async t => {
+  const f = await fixture(t);
+  f.input.request.fixedStopClassification = { stopClassification: 'STAGE_COMPLETE', stage: 'implementation' };
+  f.input.taskLimits = { maxTurns: 200, maxTokens: 32768 };
+  const result = await runStopTaskGroup(f.input, { runTask: async options => {
+    assert.equal(options.maxTurns, 200); assert.equal(options.maxTokens, 32768);
+    for (const task of options.tasks) {
+      assert.equal(task.phase, 'implementation');
+      await options.onItemResult(await observedTaskResult({ ...options, task }, { file: 'project/app.py', verdict: 'DEVIATION' }));
+    }
+    return { completed: true };
+  } });
+  assert.equal(result.result.stopClassification, 'STAGE_COMPLETE'); assert.equal(result.result.stage, 'implementation');
+  assert.equal(result.result.metricObjectJudgements.length, 2);
+});
+
+test('stage routing selects declared duties without admitting future implementation obligations', () => {
+  const population = { metrics: { M01: [{ objectId: 'M01:A' }], M12: [{ objectId: 'M12:A' }], M16: [{ objectId: 'M16:A' }] } };
+  const selected = selectStopPopulation(population, { stopClassification: 'STAGE_COMPLETE', stage: 'design' },
+    [{ stage: 'design', metrics: ['M01'] }, { stage: 'implementation', metrics: ['M12', 'M16'] }]);
+  assert.equal(selected.metrics.M01.length, 1); assert.deepEqual(selected.metrics.M12, []); assert.deepEqual(selected.metrics.M16, []);
+  assert.equal(population.metrics.M12.length, 1);
+  const qualityOnly = selectStopPopulation(population, { stopClassification: 'STAGE_COMPLETE', stage: 'custom-document' }, [{ stage: 'custom-document', metrics: [] }]);
+  assert(Object.values(qualityOnly.metrics).every(objects => objects.length === 0));
+  assert.throws(() => selectStopPopulation(population, { stopClassification: 'STAGE_COMPLETE', stage: 'unknown' }), { code: 'STOP_STAGE_SCOPE_INVALID' });
 });

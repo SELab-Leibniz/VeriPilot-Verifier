@@ -4,22 +4,73 @@
   "main": "./lib/openclaw/entry.mjs",
   "version": "1.9.1-openclaw.11-session-projects.15",
   "description": "Evidence-bound native review; host execution, output and approvals remain native.",
-  "activation": { "onStartup": true },
-  "contracts": {
-    "tools": ["runtime_corrector", "rc_progress", "source_read", "source_grep", "source_find", "source_ls", "review_history", "submit_review", "save_baseline_batch", "finish_baseline"],
-    "agentToolResultMiddleware": ["openclaw", "codex"]
+  "activation": {
+    "onStartup": true
   },
-  "skills": ["./skills"],
+  "contracts": {
+    "tools": [
+      "runtime_corrector",
+      "rc_progress",
+      "source_read",
+      "source_grep",
+      "source_find",
+      "source_ls",
+      "review_history",
+      "submit_review",
+      "save_baseline_batch",
+      "finish_baseline",
+      "submit_classification",
+      "submit_findings",
+      "finish_findings"
+    ],
+    "agentToolResultMiddleware": [
+      "openclaw",
+      "codex"
+    ]
+  },
+  "skills": [
+    "./skills"
+  ],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "enabled": { "type": "boolean", "default": true },
-      "reviewerModel": { "type": "string", "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model." },
-      "stopReviewEngine": { "type": "string", "enum": ["task", "native"], "default": "task", "description": "Use isolated single-obligation review for supported completion objects; native preserves the previous reviewer transport." },
-      "reviewerTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "description": "Optional explicit reviewer cap; otherwise project reviewer timeout applies. Does not increase host Hook or parent task budgets." },
-      "hookTimeoutMs": { "type": "integer", "minimum": 2000, "maximum": 3600000, "default": 1200000 },
-      "finalizeReviewWaitMs": { "type": "integer", "minimum": 0, "maximum": 2000, "default": 0, "description": "Optional short opportunity for same-run Stop revision. Zero keeps slow review off the host hard runtime deadline; background review and native continuation remain active." }
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "reviewerModel": {
+        "type": "string",
+        "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model."
+      },
+      "stopReviewEngine": {
+        "type": "string",
+        "enum": [
+          "task",
+          "native"
+        ],
+        "default": "task",
+        "description": "Stop always uses task workers. The deprecated native value is accepted for compatibility and normalized to task."
+      },
+      "reviewerTimeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 86400000,
+        "description": "Optional explicit reviewer cap; otherwise project reviewer timeout applies. Does not increase host Hook or parent task budgets."
+      },
+      "hookTimeoutMs": {
+        "type": "integer",
+        "minimum": 2000,
+        "maximum": 3600000,
+        "default": 1200000
+      },
+      "finalizeReviewWaitMs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2000,
+        "default": 0,
+        "description": "Optional short opportunity for same-run Stop revision. Zero keeps slow review off the host hard runtime deadline; background review and native continuation remain active."
+      }
     }
   }
 }

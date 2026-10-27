@@ -251,7 +251,7 @@ test("native reviewers own read-only sessions, repair JSON, and transfer frozen 
   assert.equal(calls[0].sessionId, calls[1].sessionId);
   assert.notEqual(first.sessionId, "parent");
   await first.followUp({ prompt: "Check once more." });
-  const second = await factory.handoff({ ...input, originHandle: first, role: "stop-reviewer",
+  const second = await factory.handoff({ ...input, originHandle: first, role: "ground-truth-extractor",
     onPrepared: async (prepared) => {
       await fs.access(prepared.request.transcript.path);
       await assert.rejects(fs.access(first.requestDirectory));
@@ -272,7 +272,7 @@ test("GLM reviewers carry selected effort through native prompts without changin
   host.config = { models: { providers: { review: { api: "anthropic-messages", models: [{ id: "glm-5.3", reasoning: false, maxTokens: 8192 }] } } } };
   const before = JSON.stringify(host.config);
   const factory = createOpenClawReviewerFactory(host, { reviewerModel: "review/glm-5.3" });
-  const h = await factory({ projectRoot: project, taskId: "effort-policy", role: "stop-reviewer", request: {}, schema: objectSchema });
+  const h = await factory({ projectRoot: project, taskId: "effort-policy", role: "ground-truth-extractor", request: {}, schema: objectSchema });
   assert.match(calls[0].extraSystemPrompt, /^Reasoning Effort: Low\n/u);
   await h.followUp({ prompt: "Verify again", nextReviewer: { effort: "max" } });
   assert.match(calls[1].extraSystemPrompt, /^Reasoning Effort: Max\n/u);
@@ -325,7 +325,7 @@ test("native runtime failures do not spend a JSON repair or accept truncated val
   for (const [response, code] of cases) {
     let calls = 0;
     const factory = createOpenClawReviewerFactory(api(project, async () => { calls++; return response; }), { provider: "review", model: "glm-5.3" });
-    await assert.rejects(factory({ projectRoot: project, taskId: code, role: "stop-reviewer", request: {}, schema: objectSchema }), new RegExp(code));
+    await assert.rejects(factory({ projectRoot: project, taskId: code, role: "ground-truth-extractor", request: {}, schema: objectSchema }), new RegExp(code));
     assert.equal(calls, 1, "leave infrastructure retry decisions to the original core");
     const journal = await fs.readFile(path.join(taskDirectory(project, code), "journal/events.jsonl"), "utf8");
     assert.match(journal, /REVIEWER_RUNTIME_FAILED/u);
@@ -382,7 +382,7 @@ test("native reviewer deadlines abort work and release the internal lease", asyn
 test("native reviews reject nested factories and handoffs across module reloads and cap JSON repair", async (t) => {
   const project = await workspace(t);
   const task = await ensureTask({ projectRoot: project, sessionId: "parent" });
-  const input = { projectRoot: project, taskId: task.taskId, role: "stop-reviewer",
+  const input = { projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } };
   let calls = 0, closedOrigin = false, nested;
   const host = api(project, async () => {
@@ -417,8 +417,8 @@ test("native review scope suppresses incomplete hook identities without suppress
     const incomplete = { sessionId: params.sessionId, workspaceDir: project, trigger: "user" };
     assert.equal(await runtime.sessionStart({}, incomplete), undefined);
     assert.equal(await runtime.prompt({ prompt: "Review the task", messages: [] }, incomplete), undefined);
-    assert.equal(await runtime.beforeTool(before, incomplete), undefined);
-    assert.equal(await runtime.beforeTool({ ...before, toolCallId: "late-internal" }, incomplete), undefined);
+    assert.equal((await runtime.beforeTool(before, incomplete)).block, true);
+    assert.equal((await runtime.beforeTool({ ...before, toolCallId: "late-internal" }, incomplete)).block, true);
     assert.equal(await runtime.toolResult({ toolName: "write", toolCallId: "shared-call", args: before.params,
       result: { content: [] } }, { runtime: "openclaw" }), undefined);
     assert.equal(await runtime.finalize({ lastAssistantMessage: "Review done" }, incomplete), undefined);
@@ -427,7 +427,7 @@ test("native review scope suppresses incomplete hook identities without suppress
     return { payloads: [{ text: '{"ok":true}' }] };
   });
   const factory = createOpenClawReviewerFactory(nativeHost, { provider: "test", model: "test" });
-  const reviewing = factory({ projectRoot: project, taskId: "review-scope-test", role: "stop-reviewer",
+  const reviewing = factory({ projectRoot: project, taskId: "review-scope-test", role: "ground-truth-extractor",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } });
   const params = await started;
   await runtime.prompt({ prompt: "Create result.txt with the verified content.", messages: [] }, ctx);
@@ -477,7 +477,7 @@ test("late callbacks remain internal while timed out native sessions finish clea
   };
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry,
     onRunStart: (id) => activeReviewRuns.add(id), onRunEnd: (id) => activeReviewRuns.delete(id) });
-  const reviewing = assert.rejects(factory({ projectRoot: project, taskId: "late-review-test", role: "stop-reviewer",
+  const reviewing = assert.rejects(factory({ projectRoot: project, taskId: "late-review-test", role: "ground-truth-extractor",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 1000 } }), /deadline/u);
   const params = await started;
   await reviewing;
@@ -505,7 +505,7 @@ test("cross-role handoff renews the role timeout but preserves the enclosing dea
   const input = { projectRoot: project, taskId: "handoff-budgets", role: "ground-truth-extractor",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 1000 } };
   const first = await factory(input);
-  const second = await factory.handoff({ ...input, originHandle: first, role: "stop-reviewer", reviewer: { timeoutMs: 10000 } });
+  const second = await factory.handoff({ ...input, originHandle: first, role: "ground-truth-extractor", reviewer: { timeoutMs: 10000 } });
   assert.ok(calls[0].timeoutMs <= 1000);
   assert.ok(calls[1].timeoutMs > 1000, "Stop must not inherit the extractor's one-second role timeout");
   assert.ok(calls[1].timeoutMs <= 3000, "the shared hook deadline must still bound the handoff");
@@ -525,7 +525,7 @@ test("nested reviewer followups cannot abort their owner and independent later f
     return { payloads: [{ text: '{"ok":true}' }] };
   });
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test" });
-  handle = await factory({ projectRoot: project, taskId: task.taskId, role: "stop-reviewer",
+  handle = await factory({ projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor",
     request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } });
   assert.deepEqual(await handle.followUp({ prompt: "Check the current evidence" }), { ok: true });
   assert.deepEqual(await handle.followUp({ prompt: "Resolve the remaining question" }), { ok: true });
@@ -546,7 +546,7 @@ test("native reviewers repair revision ids instead of silently losing blocking f
   });
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "active" });
   host.config.agents = { defaults: { model: { primary: "other/default" } } };
-  const handle = await factory({ projectRoot: project, taskId: task.taskId, role: "stop-reviewer", request: { groundTruthPath },
+  const handle = await factory({ projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor", request: { groundTruthPath },
     schema: { type: "object", required: ["findings"], properties: { findings: { type: "array" } } } });
   assert.equal(calls, 2);
   assert.deepEqual(handle.result.findings[0].violatedGroundTruthIds, ["requirement-1"]);

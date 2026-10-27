@@ -1,3 +1,4 @@
+import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -118,50 +119,37 @@ test("collector retains a source-bound claim finding across artifact/runtime met
   assert.equal(handle.collection.failures.length, 0);
 });
 
-async function nativeRead(file, limit) {
-  const args = { path: file, ...(limit == null ? {} : { limit }) };
-  const changed = await observeInternalTool("read", args), actual = changed?.params ?? args;
-  const text = await fs.readFile(file, "utf8"), lines = text.split("\n");
-  const selected = lines.slice((actual.offset ?? 1) - 1, actual.limit == null ? undefined : (actual.offset ?? 1) - 1 + actual.limit).join("\n");
-  await observeInternalTool("read:result", { toolName: "read", args: actual, result: { content: [{ type: "text", text: selected }] } });
-  return text;
-}
-async function firstOriginal(descriptor) {
-  const node = JSON.parse(await nativeRead(descriptor.path));
-  if (node.pages?.length) return firstOriginal(node.pages[0]);
-  if (node.records?.[0]?.source) return firstOriginal(node.records[0].source);
-  return node.records[0].path;
-}
-
-for (const mode of ["no-read", "arguments-only", "missing-basis", "complete"]) test(`actual native fallback accepts only disclosed owner evidence and complete basis: ${mode}`, async t => {
-  const f = await fixture(t);
-  const api = { rootDir: path.resolve("."), config: { agents: { defaults: { model: { primary: "fixture/model" } } },
-    models: { providers: { fixture: { api: "openai-completions", baseUrl: "http://127.0.0.1:1", models: [{ id: "model", contextWindow: 204800, maxTokens: 8192 }] } } } },
-    logger: { warn() {}, error() {}, info() {} }, runtime: { version: "2026.7.1-2", agent: {} } };
-  let calls = 0;
-  const factory = createOpenClawReviewerFactory(api, { stopReviewEngine: "task", runEmbeddedAgent: async params => {
-    calls++;
-    let ref = f.source + "#L1";
-    if (mode !== "no-read") {
-      const requestPath = /Read the request at (.+?)\. Follow/u.exec(params.prompt)?.[1]; assert(requestPath);
-      if (mode === "arguments-only") await observeInternalTool("read", { path: requestPath });
-      else {
-        const request = JSON.parse(await nativeRead(requestPath));
-        if (mode === "complete") await nativeRead(request.groundTruthPath);
-        const transcript = JSON.parse(await nativeRead(request.transcript.path));
-        const original = await firstOriginal(transcript.entryIndex);
-        await nativeRead(original);
-        ref = original + "#L1";
-      }
-    }
-    return { payloads: [{ text: JSON.stringify({ ...f.result({ request: { ...f.input.request, fixedStopClassification: complete } }, "PASS", [ref]) }) }], meta: {} };
+for (const mode of ['no-read', 'arguments-only', 'missing-basis', 'complete']) test(`task transport accepts only final source receipts and full basis: ${mode}`, async t => {
+  const f = await fixture(t), hooks = new Map(); let toolsFor, calls = 0, brief;
+  const api = { config: { agents: { defaults: { model: { primary: 'offline/model' } } } }, runtime: { version: '2026.7.1-2', agent: {} },
+    registerTool: fn => { toolsFor = fn; }, on: (name, fn) => hooks.set(name, fn) };
+  registerTaskTools(api);
+  const factory = createOpenClawReviewerFactory(api, { runEmbeddedAgent: async params => {
+    calls++; brief ??= JSON.parse(params.prompt);
+    const tools = new Map(toolsFor(params).map(tool => [tool.name, tool]));
+    const read = async file => {
+      params.onAssistantMessageStart(); const id = crypto.randomUUID(), result = await tools.get('source_read').execute(id, { path: file });
+      params.onAgentToolResult({ toolName: 'source_read', result, isError: false });
+      if (mode !== 'arguments-only') hooks.get('tool_result_persist')({ toolName: 'source_read', toolCallId: id, isSynthetic: false,
+        message: { role: 'toolResult', toolName: 'source_read', toolCallId: id, content: result.content, isError: false } }, params);
+      return result.details.citation.citeId;
+    };
+    let citeId;
+    if (mode === 'complete') for (const file of brief.task.basisFiles) await read(file);
+    if (mode !== 'no-read') citeId = await read('execution/000001.json');
+    params.onAssistantMessageStart();
+    const submit = () => tools.get('submit_review').execute(crypto.randomUUID(), { taskId: brief.task.id, verdict: 'PASS',
+      reason: 'The original verifier result establishes the assigned process obligation.', citeIds: citeId ? [citeId] : [] });
+    if (mode === 'complete') { const result = await submit(); params.onAgentToolResult({ toolName: 'submit_review', result, isError: false }); }
+    else await assert.rejects(submit(), /basis not fully read|requires source evidence|Unknown citation/);
+    return { payloads: [{ text: 'Display only.' }], meta: {} };
   } });
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: factory });
-  assert.equal(calls, 1);
-  assert.equal(handle.collection.complete, mode === "complete");
-  assert.equal(handle.result.metricObjectJudgements[0].judgement, mode === "complete" ? "PASS" : "UNVERIFIED");
-  if (mode === "complete") assert(handle.sourceCitations.some(citation => citation.readProof?.owner === "PROCESS"));
-  else assert.equal(handle.collection.failures[0].code, "REVIEW_ITEM_EVIDENCE_UNAVAILABLE");
+  assert.equal(calls, mode === 'complete' ? 1 : 2);
+  assert.equal(handle.collection.complete, mode === 'complete');
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, mode === 'complete' ? 'PASS' : 'UNVERIFIED');
+  if (mode === 'complete') assert(handle.sourceCitations.some(citation => citation.readProof?.owner === 'PROCESS'));
+  else assert.equal(handle.collection.failures[0].code, 'REVIEW_ITEM_INCOMPLETE');
 });
 
 test("checker proof loss does not consume business correction k", async t => {

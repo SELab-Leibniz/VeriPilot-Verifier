@@ -33,9 +33,9 @@ async function fixture(t) {
 }
 async function scripted(params, f) {
   assert.equal(params.config.agents.defaults.models['host/catalog'].params.maxTokens, f.input.reviewer.maxOutputTokens ?? 32768);
-  assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES); assert.equal(params.customTools, undefined);
-  assert.deepEqual(params.config.tools.allow, TASK_TOOL_NAMES);
-  assert(TASK_TOOL_NAMES.every(name => params.config.agents.list.find(agent => agent.id === params.agentId).tools.alsoAllow.includes(name)));
+  assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES.filter(name => !['submit_classification', 'submit_findings', 'finish_findings'].includes(name))); assert.equal(params.customTools, undefined);
+  assert.deepEqual(params.config.tools.allow, params.toolsAllow);
+  assert(params.toolsAllow.every(name => params.config.agents.list.find(agent => agent.id === params.agentId).tools.alsoAllow.includes(name)));
   assert.equal(f.tools({ sessionId: 'business', sessionKey: 'agent:main:business' }), null);
   assert.equal(f.tools({ sessionId: 'business', sessionKey: params.sessionKey }), null);
   const tools = new Map(f.tools(params).map(tool => [tool.name, tool]));
@@ -81,7 +81,7 @@ test('task factory delegates authentication/catalog and lifecycle to the host wi
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: 'task', runEmbeddedAgent: async p => { params = p; return scripted(p, f); } });
   const result = await factory(f.input); assert.equal(result.result.metricObjectJudgements[0].judgement, 'PASS');
   assert.equal(f.tools(params), null); await result.close();
-  const old = factory.reviewCacheIdentity(); assert.notEqual(old, createOpenClawReviewerFactory(f.api, {}).reviewCacheIdentity());
+  const old = factory.reviewCacheIdentity(); assert.equal(old, createOpenClawReviewerFactory(f.api, {}).reviewCacheIdentity());
 });
 for (const mode of ['parent-cancel', 'deadline']) test(`native ${mode} closes tools and rejects late results`, async t => {
   const f = await fixture(t), parent = new AbortController(); let params, held;

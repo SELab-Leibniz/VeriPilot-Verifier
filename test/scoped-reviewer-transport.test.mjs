@@ -1,3 +1,5 @@
+// Legacy native materialization remains supported for non-Stop roles only.
+// Stop source disclosure is verified through the task receipt tests.
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -30,7 +32,8 @@ async function sourceSelection(descriptor, needle) {
 
 async function fixture(t, { hugeSecond = false, withSpaces = false } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), withSpaces ? "rc scoped native 空 格-" : "rc-scoped-native-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  // Native archive cleanup may outlive the collector's bounded close on Windows.
+  t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const task = await ensureTask({ projectRoot: root, sessionId: "scoped-business-host" });
   const source = path.join(root, "src", "service.mjs");
   await fs.mkdir(path.dirname(source), { recursive: true });
@@ -91,7 +94,7 @@ function native(f, runner, options = {}) {
 
 function stopInput(f) {
   const population = f.population(["R1"], "M01");
-  return { projectRoot: f.root, taskId: f.taskId, role: "stop-reviewer", schema: STOP_REVIEW_SCHEMA,
+  return { projectRoot: f.root, taskId: f.taskId, role: "artifact-reviewer", schema: STOP_REVIEW_SCHEMA,
     reviewer: { timeoutMs: 5000, formatRepairAttempts: 0 }, request: { groundTruthPath: f.groundTruthPath, population,
       instructions: ["Assess the supplied original obligation."], reviewScope: { objectIds: ["M01:R1"], sourceIds: ["R1"] } },
     evidence: { groundTruth: f.groundTruth, population, snapshot: f.snapshot } };

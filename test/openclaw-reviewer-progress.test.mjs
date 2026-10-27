@@ -1,3 +1,5 @@
+// Generic native progress is retained for non-Stop implementation/artifact roles.
+// Stop completion and partial receipts are covered by the task protocol tests.
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -20,7 +22,7 @@ async function fixture(t) {
   const groundTruth={version:2,claims:[{claimId:"R1",revisionId:"R1@2",text:"Respect the original requirement."}]};
   await atomicWriteJson(gtPath,groundTruth);
   const population={metrics:{M01:[1,2,3].map(i=>({objectId:`M01:R${i}`,metricId:"M01",sourceId:`R${i}`,sourceRevisionId:`R${i}@2`,description:`Original requirement ${i}`}))}};
-  const input={projectRoot:root,taskId:task.taskId,role:"stop-reviewer",reviewer:{timeoutMs:2000,formatRepairAttempts:1},schema:STOP_REVIEW_SCHEMA,
+  const input={projectRoot:root,taskId:task.taskId,role:"implementation-reviewer",reviewer:{timeoutMs:2000,formatRepairAttempts:1},schema:STOP_REVIEW_SCHEMA,
     request:{groundTruthPath:gtPath,population,sourceManifest:[{path:"app.py",sha256:sha256(await fs.readFile(file))}]},
     evidence:{groundTruth,snapshot:{digest:"frozen-digest",lastEntryKey:"a1",entries:[]},population}};
   return {root,task,file,gtPath,input,population};
@@ -39,7 +41,7 @@ const item=(f,id,judgement="DEVIATION",state="COMPLETED")=>({objectId:id,state,j
 test("private checkpoint short ACK/full get is scoped; normal result does not require save",async t=>{
   const f=await fixture(t);let tool;
   const n=native(f,async params=>{
-    assert.deepEqual(params.toolsAllow,["read","rc_progress"]);
+    assert.equal(params.toolsAllow,undefined);
     tool=n.getTool(params);assert(tool);assert.equal(n.toolFactory({sessionId:"other"}),null);
     const ack=await tool.execute("s",{action:"save",item:item(f,"M01:R1")});
     assert.deepEqual(ack.details,{saved:true,objectId:"M01:R1",state:"COMPLETED"});assert.equal(ack.content[0].text.length<100,true);
@@ -120,7 +122,7 @@ test("valid INTERMEDIATE hard finding and cross-role shared deadline retain orig
 test("normal merged review can fetch implementation citations after the implementation closes",async t=>{
   const f=await fixture(t);
   const n=native(f,async()=>output(completed()));
-  const stop=await n.factory({...f.input,request:{...f.input.request,sourceManifest:[]}});
+  const stop=await n.factory({...f.input,role:"artifact-reviewer",request:{...f.input.request,sourceManifest:[]}});
   const implementation=await n.factory({...f.input,role:"implementation-reviewer"});await implementation.close();
   const citations=await stop.getSourceCitations({findings:[{deviationKey:"impl",actualEvidence:["app.py:2-3"]}],metricObjectJudgements:[]});
   assert.equal(citations.length,1);assert.equal(citations[0].exactQuote,"value = 1\n# actual source bytes");await fs.access(citations[0].snapshotPath);await stop.close();
@@ -130,7 +132,7 @@ test("private frozen citation remains readable after cleanup while business cita
   const f=await fixture(t);let requestPath,basisPath;
   const n=native(f,async params=>{requestPath=path.join(path.dirname(params.sessionFile),"request.json");
     basisPath=JSON.parse(await fs.readFile(requestPath,"utf8")).groundTruthPath;return output(completed());});
-  const h=await n.factory(f.input);
+  const h=await n.factory({...f.input,role:"artifact-reviewer"});
   const report={findings:[{deviationKey:"private",actualEvidence:[`${basisPath}:1-3`]},{deviationKey:"business",actualEvidence:["app.py:2-3"]}],metricObjectJudgements:[]};
   await h.close();await assert.rejects(fs.access(requestPath));
   await assert.rejects(fs.access(basisPath));

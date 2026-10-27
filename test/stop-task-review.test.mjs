@@ -65,7 +65,7 @@ async function scriptedResult(options, verdict = "PASS", reason = "The checked c
 
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
-test("eligibility admits all current single-object metrics while keeping unsupported review work native", () => {
+test("eligibility admits all current single-object metrics with explicit stage support and rejecting unsupported scope", () => {
   const input = (metric, role = "stop-reviewer", target = "ARTIFACT") => {
     const row = object("R1", metric, target);
     return { role, request: { population: populated([row]), fixedStopClassification: classification,
@@ -87,7 +87,7 @@ test("eligibility admits all current single-object metrics while keeping unsuppo
   assert.equal(canUseStopTaskReview(pending), false);
   for (const status of ["INTERMEDIATE", "USER_BLOCKED", "STAGE_COMPLETE"]) {
     const value = input("M01"); value.request.fixedStopClassification = { stopClassification: status, stage: "design" };
-    assert.equal(canUseStopTaskReview(value), false);
+    assert.equal(canUseStopTaskReview(value), status === "STAGE_COMPLETE");
   }
   const classifier = input("M01"); classifier.request.reviewScope.kind = "classification";
   assert.equal(canUseStopTaskReview(classifier), false);

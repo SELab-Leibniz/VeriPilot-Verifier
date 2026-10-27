@@ -122,9 +122,9 @@ test("bound file quality is a nonmetric SDK job with all active GT and only its 
     assert.equal(handle.result.fileAssessments[0].status, verdict);
     assert.equal(handle.result.fileAssessments[0].evidence.length, verdict === "UNVERIFIED" ? 0 : 1);
     const oldCaller = structuredClone(f.input); delete oldCaller.request.reviewScope.qualityTarget;
-    assert.equal(canUseStopTaskReview(oldCaller), false, "Unknown old quality callers retain their native boundary.");
+    assert.equal(canUseStopTaskReview(oldCaller), false, "Unbound quality scope is explicitly unsupported.");
     const stage = structuredClone(f.input); stage.request.fixedStopClassification.stopClassification = "STAGE_COMPLETE";
-    assert.equal(canUseStopTaskReview(stage), false, "Stage quality keeps its original single native duty.");
+    assert.equal(canUseStopTaskReview(stage), true, "Stage quality uses the same task adapter with its unchanged stage scope.");
   });
 });
 

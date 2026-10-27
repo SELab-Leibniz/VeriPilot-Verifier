@@ -58,14 +58,14 @@ test("terminal registration returns before slow reviews and coalesces duplicate 
   await createNativeStopReviews().schedule({ ...params, run });
   assert.equal(started, 1, "persisted terminal checkpoint must not replay model work");
 });
-test("two sequential native reviewer roles each retain configured time beyond a short Hook window", async t => {
+test("two sequential non-Stop native reviewer roles each retain configured time beyond a short Hook window", async t => {
   const params = await basic(t), manager = createNativeStopReviews(), timeouts = [];
   const api = { config: { agents: { defaults: { model: { primary: "test/test" } } } }, runtime: { agent: {
     runEmbeddedAgent: async input => { timeouts.push(input.runTimeoutOverrideMs); await pause(1200); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; },
   } } };
   const factory = createOpenClawReviewerFactory(api, {});
   await manager.schedule({ ...params, run: async ({ deadlineAt }) => {
-    for (const role of ["stop-reviewer", "implementation-reviewer"]) {
+    for (const role of ["ground-truth-extractor", "implementation-reviewer"]) {
       const handle = await factory({ projectRoot: params.projectRoot, taskId: "task", role,
         reviewer: { timeoutMs: 4000 }, deadlineAt,
         schema: { type: "object", required: ["ok"], additionalProperties: false, properties: { ok: { type: "boolean" } } }, request: { instructions: ["fixture"] } });

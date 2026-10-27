@@ -1,5 +1,26 @@
 {
-  "public": ["runtime_corrector", "rc_progress"],
-  "task": ["source_read", "source_grep", "source_find", "source_ls", "review_history", "submit_review"],
-  "baseline": ["source_read", "source_grep", "source_find", "source_ls", "review_history", "save_baseline_batch", "finish_baseline"]
+  "public": [
+    "runtime_corrector",
+    "rc_progress"
+  ],
+  "task": [
+    "source_read",
+    "source_grep",
+    "source_find",
+    "source_ls",
+    "review_history",
+    "submit_review",
+    "submit_classification",
+    "submit_findings",
+    "finish_findings"
+  ],
+  "baseline": [
+    "source_read",
+    "source_grep",
+    "source_find",
+    "source_ls",
+    "review_history",
+    "save_baseline_batch",
+    "finish_baseline"
+  ]
 }

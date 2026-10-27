@@ -2,7 +2,7 @@
 
 ## 适用范围
 
-OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。当前该标记由 Stop 前置基线刷新设置。初始 onboarding 抽取与裁决、Skill 抽取、未标记的普通抽取、停止分类保持既有入口；现有逐项/分组审查保留其裁决协议。
+OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。当前该标记由 Stop 前置基线刷新设置。初始 onboarding 抽取与裁决、Skill 抽取、未标记的普通抽取、停止分类通过专用 classification task 执行；现有逐项/分组审查保留其裁决协议。
 
 `task-session.mjs` 共用原生会话启动、模型与 effort 选择、会话身份、精确工具绑定、取消和绝对截止。执行层从 worker 取得工具、提示词和完成判断，不根据 `submit_review` 名称决定完成。基线工具不会得到业务 Agent 的工具权限，也不能写业务文件或正式 Ground Truth。
 
@@ -23,7 +23,7 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 ## compact、检查点和限制
 
-基线 Agent 不再按累计读取字节数硬中止；读取量、工具返回量和重复读取行数只用于诊断统计。上下文窗口管理与压缩由宿主负责，沿用宿主原生配置。基线与停止分类 Agent 禁止使用编辑、写入、补丁、命令和代码执行工具；私有工具保存候选、进度和结果的能力保留。RC 保留分页、默认 100 个助手轮次、有限修复次数和一个绝对截止；compact、批次保存、协议修复、领域修复都不重置该截止。停止分类 Agent 同样不使用累计字节中止条件，具体单次返回和调用边界见 [读取边界](stop-review-bounds.md)。
+基线 Agent 不再按累计读取字节数硬中止；读取量、工具返回量和重复读取行数只用于诊断统计。上下文窗口管理与压缩由宿主负责，沿用宿主原生配置。基线与停止分类 Agent 禁止使用编辑、写入、补丁、命令和代码执行工具；私有工具保存候选、进度和结果的能力保留。RC 保留分页、OpenClaw Stop 的 200 个累计助手响应轮次和 32768 单次输出 token 上限、有限修复次数和一个绝对截止；compact、批次保存、协议修复、领域修复都不重置该截止。停止分类 Agent 同样不使用累计字节中止条件，不设插件上下文大小或读取次数阻断，正常分页和最终交付证明见 [读取边界](stop-review-bounds.md)。
 
 `review-checkpoint.json` 保存请求身份、来源目录和摘要、原基线版本、已确认读取范围/凭据、候选批次回执、待处理文件范围、阶段、候选代次、累计轮次/修复次数及原截止时间。候选批次本体保存在 `candidates-N/batch-ID.json`，不混入正式账本。
 

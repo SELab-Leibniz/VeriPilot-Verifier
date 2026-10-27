@@ -141,7 +141,7 @@
     "lib/openclaw/project-settings.mjs",
     "lib/openclaw/report.mjs",
     "lib/openclaw/review-activity.mjs",
-    "lib/openclaw/reviewer-context.mjs",
+    "lib/openclaw/review-notice.mjs",
     "lib/openclaw/reviewer-policy.mjs",
     "lib/openclaw/reviewer-progress.mjs",
     "lib/openclaw/reviewer.mjs",
@@ -159,14 +159,20 @@
     "lib/openclaw/supervised.mjs",
     "lib/openclaw/task-session.mjs",
     "lib/openclaw/task-tools.mjs",
-      "lib/openclaw/tool-contracts.mjs",
-      "lib/openclaw/review-notice.mjs",
+    "lib/openclaw/tool-contracts.mjs",
     "lib/openclaw/tools.mjs",
     "lib/openclaw/transcript.mjs",
     "lib/openclaw/transient-model.mjs",
     "lib/openclaw/ui-progress.mjs",
     "lib/review-task/baseline-task.mjs",
+    "lib/review-task/classification-task.mjs",
+    "lib/review-task/findings-task.mjs",
+    "lib/review-task/protocol-task.mjs",
+    "lib/review-task/stop-policy.mjs",
     "lib/review-task/task-evidence.mjs",
-    "lib/runtime-v2/baseline-task.mjs"
+    "lib/runtime-v2/baseline-task.mjs",
+    "lib/runtime-v2/stop-classification-task.mjs",
+    "lib/runtime-v2/stop-findings-task.mjs",
+    "lib/runtime-v2/stop-protocol-task.mjs"
   ]
 }
