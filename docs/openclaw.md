@@ -72,6 +72,26 @@ Stop 等待使用同一通道，只刷新实际受阻的当前请求；已结束
 
 ## 安装前提
 
+OpenClaw 产物的运行环境要求与安装后的配置方式如下。
+
+### 在 Session 中初始化宿主设置
+
+插件已加载后，由管理员在聊天框发送：
+
+```text
+/rc-setup
+```
+
+命令启用 RC 及 `allowConversationAccess`、`allowPromptInjection` 两个 Hook 权限；缺少 `reviewerModel` 时读取 OpenClaw 全局默认模型（兼容字符串、`primary` 和已配置的模型别名），缺少 `hookTimeoutMs` 时设置为 `3600000`。已有明确的 RC 模型、超时及其他参数保留。主 Agent 优先选择 `agents.list` 中第一个默认 Agent，否则第一个 Agent；没有列表时使用宿主隐式 `main`。只给该 Agent 追加业务工具 `runtime_corrector`，保留其工具范围和 deny；全局工具配置、其他 Agent 和私有评审工具授权不变。已有非空插件白名单会补入 RC，空或缺省白名单仍保持不限制插件的语义。
+
+命令不接受路径或模型参数，使用宿主 `runtime.config.mutateConfigFile` 的新鲜源配置和 `afterWrite: auto` 写入；宿主负责配置校验、并发保护、备份和重载。重复执行且配置无变化时不再写入。若宿主没有此接口，命令报错，不另行猜测配置文件路径或绕过宿主写文件。
+
+此命令不创建项目配置、不修改项目或 Session 开关，也不登记 `plugins.load.paths`。当前 MA 内置 OpenClaw 默认 `hybrid` 模式会热加载这些变更；正在执行的审查不保证中途切换参数。`gateway.reload.mode: off` 需要手动重启，`restart` 模式由宿主自动请求重启。命令按实际策略提示，不把“已保存”当作“热加载完成”。可信聊天渠道的 owner 或具有 `operator.admin` 的已认证用户才可执行；私有 RC Reviewer/Worker 不可调用。
+
+### 运行环境
+
+项目内默认配置使用 `/rc-project init` 创建，随后可用 `/rc-project on` 和 `/rc-session on` 开启。`/rc-session-default on|off|status` 只控制首次登记会话的默认值。初始化和开关都作用于当前 Session 的真实项目，不修改宿主配置或重启宿主；详见[项目与 Session 开关](session-control.md#在-session-中初始化和开关)。
+
 OpenClaw 产物声明的 Node 范围为 `>=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0`，并须同时满足所安装宿主的更严格要求。产物将 `typebox 1.3.27` 的私有副本及 MIT 许可证放入 `vendor/typebox/`，审阅模块通过相对路径直接加载，随插件一同复制安装，无需 npm 或网络。它不依赖全局、宿主或其他项目的 TypeBox，也不写入这些位置。构建仅使用仓库内压缩包，先按审阅任务锁文件校验 SHA-512；归档缺失或不匹配时构建失败。原始 npm v3 锁文件保留在 `lib/review-task/`，插件根包不再声明需要另行下载的 TypeBox 依赖。
 
 ### MA 启动后插件配置消失

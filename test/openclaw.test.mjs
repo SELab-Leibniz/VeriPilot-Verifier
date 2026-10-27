@@ -38,7 +38,8 @@ function api(projectRoot, runner = async () => ({ payloads: [{ text: '{"ok":true
     registerTool: (factory) => { value.toolFactory = factory; } };
   value.registerGatewayMethod = () => {};
   value.registerCli = () => {};
-  value.registerCommand = () => {};
+  value.commands = new Map();
+  value.registerCommand = command => value.commands.set(command.name, command);
   value.registerHttpRoute = () => {};
   value.registerAgentHarness = (harness) => { value.harness = harness; };
   return value;
@@ -49,6 +50,9 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   const project = await workspace(t);
   const host = api(project);
   entry.register(host);
+  assert.deepEqual(host.commands.get("rc-setup").requiredScopes, ["operator.admin"]);
+  assert.match((await host.commands.get("rc-setup").handler({ isAuthorizedSender: true,
+    gatewayClientScopes: ["operator.admin"] })).text, /缺少安全配置写入接口/u);
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
   assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");

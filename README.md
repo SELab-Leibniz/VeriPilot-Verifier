@@ -25,6 +25,10 @@ Claude/CodeAgent 的 CLI 与 Hook 要求 **Node.js >= 18**，支持 Windows、Li
 
 OpenClaw 产物内置锁定版本 `typebox 1.3.27`，仅由插件内部的相对路径加载，随插件一同安装，无需额外运行 npm，也不读取或修改系统及其他项目的 TypeBox。构建会验证仓库内依赖压缩包的 SHA-512，并保留原始许可证和依赖锁文件。Claude/CodeAgent 的基础 CLI 与 Hook 无需安装 npm 依赖。
 
+OpenClaw / MatrixAssistant 插件加载后，可由管理员在 Session 中执行 `/rc-setup`，初始化 RC 的模型、超时、Hook 权限和主 Agent 工具授权。已有模型和超时配置保留，默认使用宿主热加载；项目和会话开关保持原样。详见[宿主初始化说明](docs/openclaw.md#在-session-中初始化宿主设置)。
+
+Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-project on`、`/rc-session on`。`init` 使用插件内的默认模板，项目和会话默认开关均为关闭，模型取当前宿主 RC 配置，已有项目配置不覆盖。`/rc-project on|off|status` 控制整个项目，`/rc-session-default on|off|status` 控制首次登记会话的默认选择；已登记会话不受默认值变化影响。详见[项目与会话命令](docs/session-control.md#在-session-中初始化和开关)。
+
 ## 快速开始
 
 在目标项目中调用 `/runtime-corrector:init`；OpenClaw 使用 `runtime_corrector` 工具：

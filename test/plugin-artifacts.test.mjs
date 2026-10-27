@@ -108,11 +108,16 @@ test("all hosts package complete runtime imports, resources and usable documenta
       await fs.access(path.join(root, resource));
     }
     if (host === "openclaw") {
+      for (const name of ["config.yaml", "config.reference.yaml", "example.reviewer.md", "example.rules.yaml", "README.md"]) {
+        await fs.access(path.join(root, ".runtime-corrector-default", name));
+      }
       const entry = await import(pathToFileURL(path.join(root, "lib/openclaw/entry.mjs")).href);
       assert.equal(entry.default.id, "runtime-corrector");
       assert.doesNotThrow(() => entry.default.register({ registrationMode: "cli-metadata" }));
       await fs.access(path.join(root, "lib/openclaw/ui/index.html"));
       await fs.access(path.join(root, "skills/runtime-corrector/SKILL.md"));
+    } else {
+      await assert.rejects(fs.access(path.join(root, ".runtime-corrector-default")), { code: "ENOENT" });
     }
   }
   for (const name of ["README.md", "README.en.md", ...((await filesUnder(path.join(SOURCE_ROOT, "docs")))

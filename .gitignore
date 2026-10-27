@@ -3,6 +3,10 @@
 **/.runtime-corrector/sessions.local.yaml
 **/.runtime-corrector/sessions.local.yaml.lock
 **/.runtime-corrector/sessions.local.yaml.*.tmp
+**/.runtime-corrector/config.yaml.lock
+**/.runtime-corrector/config.yaml.*.tmp
+**/.runtime-corrector.lock
+**/.runtime-corrector-init-*.tmp/
 dist/
 node_modules/
 experiments/

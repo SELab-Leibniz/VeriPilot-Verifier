@@ -1,0 +1,9 @@
+version: 1
+
+# 这里放可重复、可机械判断的规则。config.yaml 中 rules.enabled: true 后生效。
+rules:
+  - id: EXAMPLE-REQUIRE-TITLE
+    type: require-heading
+    heading: 文档标题
+    severity: error
+    enabled: true

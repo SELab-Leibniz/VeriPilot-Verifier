@@ -30,11 +30,19 @@ test("repeated bounded results have no cumulative byte allowance or byte account
   assert.equal(guard.state.toolCalls, 8);
 });
 
-test("single huge results and too many tiny calls terminate without echoing payloads", () => {
-  const guard = createReviewerContextGuard({ controller: new AbortController(), limits: { maxToolCalls: 2 } });
-  guard.observe("read", { path: "same.txt" });
-  guard.observe("read", { path: "same.txt" });
-  assert.throws(() => guard.observe("read", { path: "same.txt" }), { code: "REVIEWER_CONTEXT_BUDGET" });
+test("small reads have no cumulative tool-call allowance", () => {
+  const controller = new AbortController();
+  const guard = createReviewerContextGuard({ controller });
+  for (let index = 0; index < 256; index++) {
+    guard.observe("read", { path: "same.txt" });
+    guard.observe("read:result", { result: result("Small original evidence.") });
+  }
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(guard.state.toolCalls, 256);
+  assert.equal(Object.hasOwn(REVIEWER_CONTEXT_LIMITS, "maxToolCalls"), false);
+});
+
+test("single huge results terminate without echoing payloads", () => {
   const large = createReviewerContextGuard({ controller: new AbortController() });
   assert.throws(() => large.observe("read:result", { result: result("PRIVATE_ORIGINAL".repeat(4000)) }), error => {
     assert.equal(error.code, "REVIEWER_CONTEXT_BUDGET");
@@ -129,7 +137,7 @@ test("ordinary reviewers and Stop classification keep their native read paramete
   }
 });
 
-test("classification and bounded native Stop allow repeated reads beyond 128 KiB without changing model configuration", async t => {
+test("classification and bounded native Stop allow more than 64 reads without changing host context configuration", async t => {
   for (const kind of ["metric", "classification"]) await t.test(kind, async t => {
     let signal, reads = 0;
     const text = "REPEATED_SOURCE ".repeat(1700);
@@ -143,7 +151,7 @@ test("classification and bounded native Stop allow repeated reads beyond 128 KiB
         for (const name of ["write", "edit", "exec", "code_execution"])
           assert.equal((await runtime.beforeTool({ toolName: name, params: {} }, {})).block, true);
       }
-      for (let index = 0; index < 8; index++) {
+      for (let index = 0; index < 96; index++) {
         assert.equal(await read(runtime, text, `read-${index}`, file), undefined);
         reads++;
       }
@@ -160,7 +168,7 @@ test("classification and bounded native Stop allow repeated reads beyond 128 KiB
     const handle = await f.factory(f.input);
     assert.equal(handle.result.stopClassification, "TASK_COMPLETE");
     assert.equal(signal.aborted, false);
-    assert.equal(reads, 8);
+    assert.equal(reads, 96);
     assert.equal(f.calls(), 1);
     assert.deepEqual(f.api.config, config);
     await handle.close();
@@ -227,24 +235,26 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
     });
 });
 
-test("bounded Stop call exhaustion keeps checked progress and bypasses native fail-open wrapping", async t => {
+test("an oversized bounded Stop result after many reads preserves checked progress", async t => {
   let signal, lastResult, blocked;
   const f = await fixture(t, async ({ params, runtime, tool, file }) => {
     signal = params.abortSignal;
     await tool.execute("save", { action: "save", item: { objectId: "M01:R1", state: "COMPLETED", judgement: "PASS",
       reason: "Checked the actual source.", refs: [{ path: file, start: 1, end: 1 }], unresolved: [] } });
-    for (let index = 0; index <= REVIEWER_CONTEXT_LIMITS.maxToolCalls && !signal.aborted; index++)
-      lastResult = await read(runtime, "SMALL_PRIVATE_SOURCE", `read-${index}`);
+    for (let index = 0; index < 96; index++)
+      assert.equal(await read(runtime, "Small original source.", `read-${index}`, file), undefined);
+    assert.equal(signal.aborted, false, "passing the former call cap does not abort the review");
+    lastResult = await read(runtime, "SMALL_PRIVATE_SOURCE".repeat(4000), "oversized", file);
     blocked = await runtime.beforeTool({ toolName: "read", params: { path: "after-abort.txt" } }, {});
     return output();
   });
   let error;
   try { await f.factory(f.input); } catch (failure) { error = failure; }
   assert.equal(error?.code, "REVIEWER_CONTEXT_BUDGET");
+  assert.match(error.message, /single result exceeds/u);
   assert.equal(signal.aborted, true);
-  assert.equal(f.calls(), 1, "call exhaustion must not start a format repair");
-  assert.equal(lastResult.blocked.block, true);
-  assert(JSON.stringify(lastResult).length < 600);
+  assert.equal(f.calls(), 1, "an oversized result must not start a format repair");
+  assert(JSON.stringify(lastResult ?? null).length < 600);
   assert.doesNotMatch(JSON.stringify(lastResult), /SMALL_PRIVATE_SOURCE/);
   assert.equal(blocked.block, true);
   assert.equal(error.partialReview.recoveredObjects, 1);
@@ -252,29 +262,29 @@ test("bounded Stop call exhaustion keeps checked progress and bypasses native fa
   assert.equal(error.partialReview.finalClassification, null);
 });
 
-test("format repairs and follow-ups share the original lifetime tool-call allowance", async t => {
-  let attempt = 0, session, signal, blocked;
+test("format repairs and follow-ups continue beyond the former lifetime call allowance", async t => {
+  let attempt = 0, session, signal, reads = 0;
   const f = await fixture(t, async ({ params, runtime, file }) => {
     attempt++;
     session ??= params.sessionId;
     assert.equal(params.sessionId, session);
     signal = params.abortSignal;
-    const calls = attempt === 1 ? 32 : attempt === 2 ? 31 : 2;
-    for (let index = 0; index < calls; index++) {
-      const delivered = await read(runtime, "Small original source.", `attempt-${attempt}-read-${index}`, file);
-      if (attempt < 3 || index === 0) assert.equal(delivered, undefined);
-      else blocked = delivered;
+    for (let index = 0; index < 48; index++) {
+      assert.equal(await read(runtime, "Small original source.", `attempt-${attempt}-read-${index}`, file), undefined);
+      reads++;
     }
     return attempt === 1 ? output({}) : output();
   });
   const handle = await f.factory(f.input);
-  assert.equal(f.calls(), 2, "the first malformed response starts one repair");
-  assert.equal(signal.aborted, false);
-  await assert.rejects(handle.followUp({ prompt: "Continue checking the same evidence." }), { code: "REVIEWER_CONTEXT_BUDGET" });
-  assert.equal(signal.aborted, true);
-  assert.equal(blocked.blocked.block, true);
-  assert.equal(f.calls(), 3, "the follow-up must not reset calls or start another repair after exhaustion");
-  await handle.close();
+  try {
+    assert.equal(f.calls(), 2, "the first malformed response starts one repair");
+    assert.equal(reads, 96);
+    assert.equal(signal.aborted, false);
+    await handle.followUp({ prompt: "Continue checking the same evidence." });
+    assert.equal(signal.aborted, false);
+    assert.equal(f.calls(), 3);
+    assert.equal(reads, 144);
+  } finally { await handle.close(); }
 });
 
 test("one oversized Stop read aborts while ordinary roles and unmarked scopes keep existing behavior", async t => {

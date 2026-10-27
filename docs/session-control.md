@@ -2,7 +2,29 @@
 
 这里的“宿主”是 MatrixAssistant / OpenClaw，“项目”是代码所在的文件夹，“Session”就是一个聊天会话。下文的 `true` 表示开，`false` 表示关。
 
-先看自己的使用场景：自己开关会话，按情景一操作；给宿主做按钮，按情景三接入。示例假定插件已安装、加载，项目已经有有效的 `.runtime-corrector/config.yaml`。
+先看自己的使用场景：尚未配置项目，按下面的命令初始化；自己开关会话，按情景一操作；给宿主做按钮，按情景三接入。示例假定插件已安装、加载，Session 已通过宿主选择了项目，或在旧版宿主完成 RC 绑定。
+
+## 在 Session 中初始化和开关
+
+首次使用，在当前 Session 中依次发送：
+
+```text
+/rc-project init
+/rc-project on
+/rc-session on
+```
+
+`init` 把插件内的 `.runtime-corrector-default` 五个文件复制到当前 Session 实际绑定的项目下，目录名为 `.runtime-corrector`。`reviewers.defaults.model` 在创建时取当前 OpenClaw RC 的 `reviewerModel`，不使用业务会话临时模型；尚未配置该模型时提示先执行 `/rc-setup`。已有 `.runtime-corrector`（包括空目录）不会覆盖。初始化后的项目总开关和首次登记 Session 的默认开关均为 `false`；不创建基线、评审或任务运行目录。
+
+日常控制可以使用：
+
+- `/rc-project on|off|status`：开关整个项目或查询，修改根级 `enabled`。关闭时暂停本进程中该项目所有活动会话的 RC，保留各会话选择、任务和额度；其他进程在下一次检查点读取新配置。
+- `/rc-session on|off|status`：只修改当前会话的选择，继续使用现有逻辑。项目关闭时不能用会话开关越过项目总开关。
+- `/rc-session-default on|off|status`：修改当前项目的 `sessionDefaults.enabled`，只影响后续首次登记 RC 状态的会话，不修改已登记的选择。返回的 `sessionDefaultEnabled` 是项目默认值，`requestedEnabled` 是当前会话的选择，二者可以不同。
+
+这些命令不需要重启 OpenClaw。项目未初始化时，开关命令会报错，先执行 `init`；状态查询不创建文件。修改命令需要可信用户及宿主写入权限，查询需要读取权限；私有 Reviewer/Worker 不可执行。配置写入采用项目锁、临时文件及替换前检查，保留其他参数、独立行注释与换行格式；发现并发手工修改或 Session 项目切换时拒绝覆盖。
+
+原有旧版 `/rc-project bind /绝对项目目录` 和 `unbind` 保留；宿主原生项目模式仍由 OpenClaw 选择目录。通用 CLI/工具的 `init` 保持原有按项目推导模板的行为，`/rc-project init` 是复制上述默认模板的独立入口。
 
 ## 情景一：A 写快速排序，B 只看代码
 

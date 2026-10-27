@@ -6,6 +6,8 @@ Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；�
 
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 
+`/rc-project init` 从插件的 `.runtime-corrector-default` 创建项目配置，显式设置上述两个开关为 `false`，并将 `reviewers.defaults.model` 填为当前宿主 RC 的 `reviewerModel`；不会覆盖已有目录。`/rc-project on|off|status` 和 `/rc-session-default on|off|status` 分别控制这两个字段。既有配置省略字段时按 `true` 解释的兼容语义不变；这些开关不改动具体纠偏功能的参数。
+
 `patterns` 与 `pathTemplates` 可以直接声明源码产物。读取层将 `.ets`、`.ts`、`.tsx`、
 `.js` 等源码以及 `.json5` 视为 UTF-8 `text`，所以 HarmonyOS ArkTS 的 Write/Edit 能与
 文档产物走同一条 PostToolUse 纠偏链。构建、测试和设备结果仍须由独立证据提供。

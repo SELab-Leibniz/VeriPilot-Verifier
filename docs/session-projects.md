@@ -18,6 +18,8 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 ## 宿主契约
 
+用户可通过 `/rc-project init` 在可靠解析的当前项目中复制插件默认模板，再用 `/rc-project on|off|status` 控制项目总开关。`/rc-session-default on|off|status` 控制首次登记 Session 的默认选择。初始化不覆盖已有 `.runtime-corrector`，两个开关初始为 `false`，模型在创建时跟随宿主 RC 配置；完整步骤见[初始化和开关](session-control.md#在-session-中初始化和开关)。原生模式禁止的是修改 RC 绑定目录，项目内配置的上述操作仍可使用。
+
 `lib/openclaw/project-compat.mjs` 集中维护经过核验的版本和目录规则。`2026.7.1-2` 仅对经过 Session 身份校验的持久化 `spawnedCwd` 做能力检测；不读取模型参数里的同名字段。这个检测只切换目录解析，Reviewer、转录读取、Hook 和 Stop 仍沿用 7.1 适配。`2026.10.3` 保持原生模式；其他版本仍拒绝加载，不因出现同名字段而放开。
 
 MatrixAssistant 1.8.160 的 `register-gateway-method` 插件将项目选择写入 `spawnedCwd`，工具运行目录使用该字段；7.1 子会话也以此字段为准。7.1 Hook 若仍报告 Agent 默认工作区，RC 使用已核验的会话目录解析相对路径；其他项目路径冲突继续拒绝。宿主选择只决定纠偏项目；有效项目配置、项目总开关及当前 Session 的选择共同决定是否运行 RC。

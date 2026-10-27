@@ -23,7 +23,7 @@ async function fixture(t) {
     await fs.rm(temporary, { recursive: true, force: true });
   });
   const sourceRoot = path.join(temporary, "source"), outputRoot = path.join(temporary, "output");
-  for (const name of ["commands", "config", "hooks", "knowledge", "lib", "scripts", "skills", "specs", "templates", "docs", "README.md", "README.en.md"]) {
+  for (const name of [".runtime-corrector-default", "commands", "config", "hooks", "knowledge", "lib", "scripts", "skills", "specs", "templates", "docs", "README.md", "README.en.md"]) {
     await fs.cp(path.join(SOURCE, name), path.join(sourceRoot, name), { recursive: true,
       filter: file => !["node_modules", ".runtime-correction"].includes(path.basename(file)) });
   }
