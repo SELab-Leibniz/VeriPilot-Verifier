@@ -110,7 +110,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000 } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -184,9 +184,13 @@ reviewers:
     if(String(context.runId).startsWith('rc-stop-')&&result?.prependContext){
       const gate=await runtime.beforeAgentRun({prompt:`${result.prependContext}\n${event.prompt}`},context);
       assert.equal(gate?.outcome,'pass',JSON.stringify({gate,warnings}));
-      for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
-        runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
-      await state.stopStartProtocol.drain();
+      const configuredTimeout = api.pluginConfig.hookTimeoutMs;
+      if (executionTimeoutMs) api.pluginConfig.hookTimeoutMs = executionTimeoutMs;
+      try {
+        for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
+          runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
+        await state.stopStartProtocol.drain();
+      } finally { api.pluginConfig.hookTimeoutMs = configuredTimeout; }
     }
     return result;
   };
@@ -600,13 +604,12 @@ test('an initial review that crosses its absolute deadline cannot create a corre
 
 test("until_pass execution watchdog closes an unfinished correction and fences its late terminal", async t => {
   let childRunId;
-  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass" });
+  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", executionTimeoutMs: 50 });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   await within(f.runtime.waitForNativeReviews(), "review");
   const child = { ...f.ctx, runId: childRunId };
   await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  await f.runtime.postRuns.started(f.post(), childRunId, 50);
   await until(() => f.post().phase === "IDLE", "execution watchdog");
   assert.equal(f.post().reviewStatus, "UNVERIFIED");
   assert.equal(f.post().reason, "POST_RUN_EXECUTION_TIMEOUT");

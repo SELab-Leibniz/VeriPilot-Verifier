@@ -12,7 +12,9 @@ import { observedTaskResult } from "./helpers/observed-review.mjs";
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitMode = "until_pass", finalizeReviewWaitMs = 0, maxCorrections = 3, compatibility = async () => ({ emitAgentEvent() {}, markDiagnosticSessionProgress() {} }), reviewWait, terminal = async (_identity, runId) => ({ runId, status: "ok" }) } = {}) {
+async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitMode = "until_pass", finalizeReviewWaitMs = 0, maxCorrections = 3,
+  flowLimit = maxCorrections, sessionLimit = maxCorrections, enabled = true, metricEnabled = true, gatewayRequest,
+  compatibility = async () => ({ emitAgentEvent() {}, markDiagnosticSessionProgress() {} }), reviewWait, terminal = async (_identity, runId) => ({ runId, status: "ok" }) } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "native-new-stop-"));
@@ -29,14 +31,14 @@ implementationCorrection:
   enabled: false
   platform: null
 stopCorrection:
-  enabled: true
+  enabled: ${enabled}
   assessmentTimeoutMs: 10000
   feedbackReserveMs: 1000
   waitMode: ${waitMode}
-  maxCorrectionsPerFlow: ${maxCorrections}
-  maxCorrectionsPerSession: ${maxCorrections}
+  maxCorrectionsPerFlow: ${flowLimit}
+  maxCorrectionsPerSession: ${sessionLimit}
   metrics:
-${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: ${i === 15}`).join("\n")}
+${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: ${metricEnabled && i === 15}`).join("\n")}
 `);
   await fs.writeFile(path.join(root, "app.py"), "def convert(value): return int(value)\n");
   const transcript = path.join(root, "host.jsonl");
@@ -78,7 +80,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     agent: { session: { getSessionEntry: async () => ({ sessionId: "session", sessionFile: transcript }),
       resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
       runWithWorkAdmission: async (params, run) => run(params.signal) } },
-    ...(startProtocol ? { gateway: { request: async (method, params) => { aborts.push({ method, params }); return { aborted: true }; } } } : {}),
+    ...(startProtocol || gatewayRequest ? { gateway: { request: gatewayRequest ?? (async (method, params) => { aborts.push({ method, params }); return { aborted: true }; }) } } : {}),
     subagent: { run: async request => {
       assert(startProtocol, "No old-protocol business continuation is allowed");
       dispatches.push(request); return { runId: request.idempotencyKey, status: "accepted" };
@@ -177,9 +179,9 @@ test("MA input gate cannot initialize unknown history from an existing transcrip
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 0);
 });
 
-async function enterContinuation(f, parentId = "answer") {
-  const request = f.dispatches[0], runId = request.idempotencyKey;
-  await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: "feedback", parentId,
+async function enterContinuation(f, parentId = "answer", index = 0) {
+  const request = f.dispatches[index], runId = request.idempotencyKey;
+  await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: index ? `feedback-${index + 1}` : "feedback", parentId,
     message: { role: "user", content: request.message, idempotencyKey: runId } }) + "\n");
   const ctx = { ...f.ctx, runId };
   const prepared = await f.runtime.prompt({ prompt: request.message }, ctx);
@@ -394,4 +396,132 @@ test("Gateway shutdown preserves pending tasks and recovery reconciles the corre
     assert.deepEqual(observed, [original.correctionRunId]);
     assert.equal(f.dispatches.length, 1);
   } finally { await recovered.dispose(); }
+});
+
+for (const scenario of [
+  { name: "PASS", verdict: "PASS", status: "PASS", options: { startProtocol: true } },
+  { name: "Stop disabled", status: "DISABLED", options: { enabled: false } },
+  { name: "all metrics disabled", status: "DISABLED", options: { metricEnabled: false } },
+  { name: "session quota exhausted", reason: "SESSION_CORRECTION_LIMIT", status: "UNVERIFIED", options: { startProtocol: true, sessionLimit: 0 } },
+  { name: "flow quota exhausted", reason: "FLOW_CORRECTION_LIMIT", status: "UNVERIFIED", options: { startProtocol: true, flowLimit: 0 } },
+  { name: "unsupported start protocol", reason: "HOST_START_PROTOCOL_UNSUPPORTED", status: "DEVIATION", options: {} },
+  { name: "business run failed", reason: "HOST_RUN_NOT_COMPLETED", status: "UNVERIFIED", terminalStatus: "error", options: {} },
+]) test(`production release: ${scenario.name} blocks pending input, then starts its two user turns in order`, async t => {
+  let release;
+  const terminal = new Promise(resolve => { release = resolve; }), sent = [], acknowledgements = [];
+  const f = await nativeFixture(t, scenario.verdict ?? "DEVIATION", { ...scenario.options,
+    terminal: async (_id, runId) => runId === "business-run" ? terminal : { runId, status: "ok" },
+    gatewayRequest: async (method, params) => {
+      if (method === "chat.send") { sent.push(params); return { runId: params.idempotencyKey }; }
+      return { aborted: true };
+    } });
+  await f.start(); await f.runtime.beforeTool({ toolName: "write", toolCallId: "written", params: { path: "app.py" } }, f.ctx);
+  const payload = { text: "Original finished reply." };
+  assert.equal(await f.runtime.reply({ kind: "final", sessionKey: f.ctx.sessionKey, runId: f.ctx.runId, payload }, f.ctx), undefined);
+  const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
+  for (const [index, text] of ["next one", "next two"].entries()) {
+    const claimed = await f.runtime.beforeDispatch({ sessionKey: f.ctx.sessionKey, ctx: {
+      SessionKey: f.ctx.sessionKey, MessageSid: `queued-${index}`, RawBody: text,
+      GatewayClientScopes: ["operator.write"], InputProvenance: { kind: "external_user" },
+    } }, { dispatcher: { sendFinalReply: reply => { acknowledgements.push(reply); return true; }, getQueuedCounts: () => ({ final: 1 }) },
+      recordProcessed() {}, markIdle() {} });
+    assert.equal(claimed.handled, true);
+  }
+  assert.equal(acknowledgements.length, 2); assert.equal(sent.length, 0);
+  assert.equal((await f.runtime.beforeAgentRun({ prompt: "Bypass the task queue" }, { ...f.ctx, runId: "bypass" })).outcome, "block");
+  release({ runId: f.ctx.runId, status: scenario.terminalStatus ?? "ok" });
+  await settlePrepared(f);
+  assert.deepEqual(sent.map(request => request.message), ["next one"], JSON.stringify({ scenario, warnings: f.warnings }));
+  const current = f.runtime.postRuns.byId(record.id);
+  assert.equal(current.reviewStatus, scenario.status);
+  if (scenario.reason) assert.equal(current.reason, scenario.reason, JSON.stringify({ current, warnings: f.warnings }));
+  assert.equal(f.dispatches.length, 0); assert.equal(payload.text, "Original finished reply.");
+  // Execute the queued task through the real public run gate and final hook.
+  const ctx = { ...f.ctx, runId: sent[0].idempotencyKey };
+  await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: "next-human", parentId: "answer",
+    message: { role: "user", content: sent[0].message } }) + "\n");
+  await f.runtime.prompt({ prompt: sent[0].message }, ctx);
+  assert.notEqual((await f.runtime.beforeAgentRun({ prompt: sent[0].message, messages: [] }, ctx))?.outcome, "block");
+  assert.equal(sent.length, 1, "the second task remains blocked during the first task's execution");
+  await f.runtime.agentEnd({ runId: ctx.runId, success: true, messages: [{ role: "assistant", content: "First queued task finished." }] }, ctx);
+  await settlePrepared(f);
+  assert.deepEqual(sent.map(request => request.message), ["next one", "next two"]);
+  assert.equal(f.runtime.postRuns.byId(record.id).pending.length, 0);
+});
+
+test("a late release from an old corrective receipt cannot end the next user run", async t => {
+  const sent = [];
+  const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, gatewayRequest: async (method, params) => {
+    if (method === "chat.send") { sent.push(params); return { runId: params.idempotencyKey }; } return { aborted: true };
+  } });
+  await f.start(); await f.stop();
+  const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
+  const oldStopId = record.correctionStopId;
+  await f.runtime.postRuns.defer(record, { text: "first" }); await f.runtime.postRuns.defer(record, { text: "second" });
+  await f.runtime.postRuns.release(record, "CORRECTION_CANCELLED");
+  assert.equal(sent.length, 1);
+  const state = f.sharedState.states.get("main:session");
+  await f.runtime.postRuns.started(record, sent[0].idempotencyKey);
+  await f.sharedState.stopStartProtocol.cancel({ state, stopId: oldStopId, reason: "LATE_OLD_CANCELLATION" });
+  // Flush the fire-and-forget release callbacks as well as review work.
+  await f.runtime.postRuns.dispose();
+  assert.equal(sent.length, 1); assert.equal(f.runtime.postRuns.byId(record.id).phase, "RUNNING");
+});
+
+for (const limit of [1, 3]) test(`production correction loop with limit ${limit} preserves queued work until PASS or quota release`, async t => {
+  const sent = [];
+  const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, maxCorrections: limit,
+    gatewayRequest: async (method, params) => {
+      if (method === "chat.send") { sent.push(params); return { runId: params.idempotencyKey }; } return { aborted: true };
+    } });
+  await f.start(); await f.stop();
+  const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
+  const task = await f.runtime.postRuns.defer(record, { text: "first queued work" });
+  await f.runtime.postRuns.defer(record, { text: "second queued work" });
+  const rounds = limit === 1 ? 1 : 2;
+  let parentId = "answer";
+  for (let i = 0; i < rounds; i++) {
+    assert.equal(f.runtime.postRuns.byId(record.id).phase, "WAIT_CORRECTION"); assert.equal(sent.length, 0);
+    const { ctx, gate } = await enterContinuation(f, parentId, i); assert.equal(gate.outcome, "pass");
+    f.emitStart({ runId: ctx.runId, ts: Date.now(), seq: i + 1 }); await f.sharedState.stopStartProtocol.drain();
+    assert.equal(f.runtime.postRuns.byId(record.id).phase, "CORRECTING"); assert.equal(sent.length, 0);
+    await f.runtime.postRuns.mutate(record, { id: task.id, revision: i + 1, text: `edited after repair ${i + 1}` });
+    f.setVerdict(limit === 3 && i === 1 ? "PASS" : "DEVIATION");
+    await fs.writeFile(path.join(f.root, "app.py"), `def convert(value): return int(str(value)) + ${i}\n`);
+    parentId = `repair-answer-${i}`;
+    await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: parentId, parentId: i ? `feedback-${i + 1}` : "feedback",
+      message: { role: "assistant", content: "Repair finished normally." } }) + "\n");
+    await f.runtime.agentEnd({ runId: ctx.runId, success: true, messages: [{ role: "assistant", content: "Repair finished normally." }] }, ctx);
+    await settlePrepared(f);
+    assert.equal((await f.store.inspect("session")).used, i + 1);
+  }
+  const current = f.runtime.postRuns.byId(record.id);
+  assert.deepEqual(sent.map(request => request.message), [`edited after repair ${rounds}`]);
+  assert.deepEqual(current.pending.map(task => task.text), ["second queued work"]);
+  assert.equal(f.dispatches.length, rounds); assert.equal(new Set(f.dispatches.map(request => request.idempotencyKey)).size, rounds);
+  if (limit === 3) assert.equal(current.reviewStatus, "PASS");
+  else { assert.notEqual(current.reviewStatus, "PASS"); assert.equal(current.reason, "CORRECTION_BUDGET_EXHAUSTED"); }
+});
+
+test("aborting a corrective run holds user tasks until its host terminal, then releases only the first", async t => {
+  let release;
+  const terminal = new Promise(resolve => { release = resolve; }), sent = [];
+  const f = await nativeFixture(t, "DEVIATION", { startProtocol: true,
+    terminal: async (_identity, runId) => runId.startsWith("rc-stop-") ? terminal : { runId, status: "ok" },
+    gatewayRequest: async (method, params) => {
+      if (method === "chat.send") { sent.push(params); return { runId: params.idempotencyKey }; } return { aborted: true };
+    } });
+  await f.start(); await f.stop();
+  const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
+  await f.runtime.postRuns.defer(record, { text: "first" }); await f.runtime.postRuns.defer(record, { text: "second" });
+  const { ctx, gate } = await enterContinuation(f); assert.equal(gate.outcome, "pass");
+  f.emitStart({ runId: ctx.runId, ts: Date.now() }); await f.sharedState.stopStartProtocol.drain();
+  await f.runtime.agentEnd({ runId: ctx.runId, success: false, aborted: true }, ctx);
+  assert.equal(f.runtime.postRuns.byId(record.id).phase, "FINALIZING"); assert.equal(sent.length, 0);
+  release({ runId: ctx.runId, status: "error" }); await settlePrepared(f);
+  assert.deepEqual(sent.map(request => request.message), ["first"]);
+  assert.equal(f.runtime.postRuns.byId(record.id).reviewStatus, "UNVERIFIED");
+  await f.runtime.agentEnd({ runId: ctx.runId, success: true, messages: [{ role: "assistant", content: "Late success" }] }, ctx);
+  await settlePrepared(f); assert.equal(sent.length, 1);
+  assert.equal(f.runtime.postRuns.byId(record.id).pending[0].text, "second");
 });
