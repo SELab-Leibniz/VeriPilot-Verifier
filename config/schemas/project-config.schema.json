@@ -8,6 +8,13 @@
     "artifacts"
   ],
   "properties": {
+    "maxOutputTokens": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "default": 32768,
+      "description": "Maximum tokens per model response for RC agents, including private execution workers. Reviewer defaults and individual roles may override this value."
+    },
     "enabled": {
       "type": "boolean",
       "default": true,
@@ -610,6 +617,12 @@
     "reviewer": {
       "type": "object",
       "properties": {
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Maximum tokens per model response. Precedence: role, reviewers.defaults, project maxOutputTokens, 32768."
+        },
         "model": {
           "type": "string",
           "minLength": 1

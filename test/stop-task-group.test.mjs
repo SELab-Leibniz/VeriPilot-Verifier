@@ -30,6 +30,7 @@ async function fixture(t) {
 
 test("Stop SDK group shares source once and maps each original member's independent proof and receipt", async t => {
   const f = await fixture(t), receipts = [];
+  f.input.reviewer.maxOutputTokens = 49152;
   let launches = 0;
   const result = await runStopTaskGroup({ ...f.input, onItemResult: async handle => {
     receipts.push(handle.result.metricObjectJudgements[0].objectId);
@@ -37,6 +38,7 @@ test("Stop SDK group shares source once and maps each original member's independ
     return { saved: true, id: receipts.at(-1) };
   } }, { runTask: async options => {
     launches++;
+    assert.equal(options.maxTokens, 49152);
     assert.equal(options.tasks.length, 2);
     const projectFiles = await fs.readdir(path.join(options.root, "project"));
     assert.deepEqual(projectFiles, ["app.py"]);

@@ -182,7 +182,9 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
       assert(Buffer.byteLength(text) * 8 > 128 * 1024);
       let hostConfig, reads = 0;
       const f = await fixture(t, async ({ params, runtime, file, tool }) => {
-        assert.deepEqual(params.config.agents.defaults, hostConfig.agents.defaults, "the host's context, pruning and compaction settings reach every invocation unchanged");
+        assert.deepEqual(params.config.agents.defaults, { ...hostConfig.agents.defaults,
+          models: { 'fixture/model': { params: { maxTokens: 32768 } } },
+        }, "the host's context, pruning and compaction settings are retained alongside the RC output limit");
         assert.deepEqual(params.config.models, hostConfig.models);
         assert.equal(params.toolsAllow, undefined, "these roles inherit the host tool catalog instead of a private-only runtime allowlist");
         assert.equal(params.disableMessageTool, undefined);
@@ -196,6 +198,7 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
         assert.deepEqual(params.config.tools, { ...hostConfig.tools,
           deny: [...new Set([...hostConfig.tools.deny, ...REVIEWER_NATIVE_TOOL_DENY])], codeMode: { enabled: false } });
         const agent = params.config.agents.list.find(agent => agent.id === "main");
+        assert.equal(agent.params.maxTokens, 32768);
         assert.deepEqual(agent.tools.deny, [...new Set(["exec", ...REVIEWER_NATIVE_TOOL_DENY])]);
         assert.equal(agent.tools.codeMode.enabled, false);
         assert.deepEqual(agent.tools.alsoAllow, ["host-agent-tool", "read", "rc_progress"]);

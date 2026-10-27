@@ -32,6 +32,7 @@ async function fixture(t) {
   return { root, input, api, hooks, tools: ctx => factory(ctx) };
 }
 async function scripted(params, f) {
+  assert.equal(params.config.agents.defaults.models['host/catalog'].params.maxTokens, f.input.reviewer.maxOutputTokens ?? 32768);
   assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES); assert.equal(params.customTools, undefined);
   assert.deepEqual(params.config.tools.allow, TASK_TOOL_NAMES);
   assert(TASK_TOOL_NAMES.every(name => params.config.agents.list.find(agent => agent.id === params.agentId).tools.alsoAllow.includes(name)));
@@ -76,6 +77,7 @@ test('private task policy grants the selected agent through its profile without 
 });
 test('task factory delegates authentication/catalog and lifecycle to the host with exact registered tools', async t => {
   const f = await fixture(t); let params;
+  f.input.reviewer.maxOutputTokens = 49152;
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: 'task', runEmbeddedAgent: async p => { params = p; return scripted(p, f); } });
   const result = await factory(f.input); assert.equal(result.result.metricObjectJudgements[0].judgement, 'PASS');
   assert.equal(f.tools(params), null); await result.close();

@@ -29,7 +29,7 @@ async function fixture(t, options = {}) {
   const state = { projectRoot: root, agentId: "main", sessionId: params.sessionId, observedPaths: new Set([path.join(root, "result.txt")]) }, workers = new Map(), handles = new Map(), progress = [];
   let rounds = 0, assessments = 0, begins = 0;
   const runtime = { isWorker: (id) => workers.has(id),
-    async beginSupervised(_params, signal, options) { begins++; state.signal = signal; state.deadlineAt = options?.deadlineAt; return state; },
+    async beginSupervised(_params, signal, runOptions) { begins++; state.signal = signal; state.deadlineAt = runOptions?.deadlineAt; state.maxOutputTokens = options.maxOutputTokens; return state; },
     bindWorker(id) { workers.set(id, {}); return { close() { workers.get(id).closed = true; } }; },
     async acceptRequirement() {},
     async effectiveReviewTimeout() { return 30000; },
@@ -86,6 +86,7 @@ async function fixture(t, options = {}) {
       rounds++;
       assert.equal(isPersistedWorker(root, child.sessionId), true, "worker identity must be durable before native dispatch");
       assert.equal(child.agentHarnessRuntimeOverride, "openclaw");
+      assert.equal(child.config.agents.defaults.models['test/test'].params.maxTokens, options.maxOutputTokens ?? 32768);
       assert.notEqual(child.sessionId, params.sessionId);
       assert.notEqual(child.runId, params.runId);
       assert.equal(child.sandboxSessionKey, child.sessionKey, "native subscription identity must remain private");
@@ -107,7 +108,7 @@ async function fixture(t, options = {}) {
 }
 
 test("supervisor withholds a failed candidate, corrects and then publishes only the verified result", async (t) => {
-  const f = await fixture(t);
+  const f = await fixture(t, { maxOutputTokens: 49152 });
   const result = await f.harness.runAttempt(f.params);
   assert.equal(await fs.readFile(path.join(f.root, "result.txt"), "utf8"), "VERIFIED");
   assert.deepEqual(f.counts(), { rounds: 2, assessments: 2, begins: 1 });

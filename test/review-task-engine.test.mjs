@@ -17,6 +17,7 @@ test('group submission schema exposes only original member IDs and hides the gro
   const members=[{...f.task,id:'M01:original-A'},{...f.task,id:'M01:original-B'}];
   const result=await runReviewTask({task:{...f.task,id:'group-opaque-uuid'},tasks:members,root:f.root,outputDir,maxAttempts:1,
     nativeRun:async worker=>{
+      assert.equal(worker.maxTokens, 32768);
       const submit=worker.tools.find(tool=>tool.name==='submit_review');
       const choices=submit.parameters.properties.taskId;
       assert.deepEqual(choices.anyOf.map(value=>value.const),members.map(member=>member.id));

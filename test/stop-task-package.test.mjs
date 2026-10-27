@@ -81,6 +81,7 @@ test("every artifact excludes nested installations and private experiment output
     const artifact = await buildPlugin({ ...input, host });
     const names = await artifactFiles(artifact);
     assert(names.includes("lib/review-task/review-task.mjs"));
+    assert(names.includes("lib/agent-output.mjs"));
     assert(!names.some(name => name.split("/").some(part => ["node_modules", ".runtime-correction"].includes(part))));
     assert(!names.some(name => name.includes("sentinel")));
     assert(!names.some(name => name === "experiments" || name.startsWith("experiments/")));

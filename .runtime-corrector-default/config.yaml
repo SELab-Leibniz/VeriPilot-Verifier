@@ -3,6 +3,9 @@
 # Project and first-enrollment Session switches start disabled.
 version: 2
 
+# 每个 RC agent 单次模型输出上限；评审角色可在 reviewers 中覆盖。
+maxOutputTokens: 32768
+
 # 项目总开关
 enabled: false
 

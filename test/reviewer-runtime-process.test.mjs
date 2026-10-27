@@ -39,6 +39,7 @@ fs.appendFileSync(file, JSON.stringify({
   parentApiKey: process.env.ANTHROPIC_API_KEY ?? null,
   parentOauth: process.env.CLAUDE_CODE_OAUTH_TOKEN ?? null,
   obsoleteDialect: process.env.RUNTIME_CORRECTOR_AGENT_SESSION_DIALECT ?? null,
+  maxOutputTokens: process.env.CLAUDE_CODE_MAX_OUTPUT_TOKENS ?? null,
 }) + "\\n");
 const envelope = { session_id: sessionId };
 if (process.env.MODE === "unparseable") {
@@ -76,6 +77,7 @@ test("v2 initial/reminder/repair/follow-up freeze launcher and preserve literal 
   const calls = (await fs.readFile(f.capture, "utf8")).trim().split("\n").map(JSON.parse);
   assert.equal(calls.length, 6);
   for (const call of calls) {
+    assert.equal(call.maxOutputTokens, '32768');
     assert.equal(call.args[0], literal);
     assert.equal(call.args.filter((arg) => arg === literal).length, 1);
     assert.equal(call.marker, "original");
@@ -109,12 +111,27 @@ test("the five host-tool roles retain inheritance through initial, reminder, rep
 
 test("v1 launches Node plus absolute entry with literal prefix and unchanged fork contract", async (t) => {
   const f = await fixture(t);
-  const result = await invokeSemanticReviewFork({ cwd: f.root, sessionId: "parent", prompt: "review", env: { ...f.env, MODE: "v1" }, reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry, literal] } });
+  const result = await invokeSemanticReviewFork({ cwd: f.root, sessionId: "parent", prompt: "review", maxOutputTokens: 49152, env: { ...f.env, MODE: "v1" }, reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry, literal] } });
   assert.equal(result.review.summary, "ok");
   const call = JSON.parse((await fs.readFile(f.capture, "utf8")).trim());
   assert.deepEqual(call.args.slice(0, 2), [literal, "review"]);
   assert.equal(call.obsoleteDialect, null);
+  assert.equal(call.maxOutputTokens, '49152');
   for (const flag of ["--fork-session", "--no-session-persistence", "--print"]) assert.ok(call.args.includes(flag));
+});
+
+test('CLI output overrides reach initial calls, repairs and follow-ups without mutating the parent env', async t => {
+  const f = await fixture(t);
+  const env = { ...f.env, CLAUDE_CODE_MAX_OUTPUT_TOKENS: '1024' };
+  const task = await ensureTask({ projectRoot: f.root, sessionId: 'parent' });
+  const handle = await startRoleReviewer({ projectRoot: f.root, sessionCwd: f.root, taskId: task.taskId,
+    parentSessionId: 'parent', role: 'ground-truth-extractor', reviewer: { ...reviewer, maxOutputTokens: 65536 },
+    schema, request: {}, env, reviewerRuntime: { executable: process.execPath, argsPrefix: [f.entry] } });
+  t.after(() => handle.close());
+  await handle.followUp({ prompt: 'Follow up with the new limit.', nextReviewer: { ...reviewer, maxOutputTokens: 24576 } });
+  const calls = (await fs.readFile(f.capture, 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.deepEqual(calls.map(call => call.maxOutputTokens), ['65536', '65536', '65536', '24576', '24576', '24576']);
+  assert.equal(env.CLAUDE_CODE_MAX_OUTPUT_TOKENS, '1024');
 });
 
 test("obsolete session dialect cannot block CodeAgent v1 findings and candidate patches", async (t) => {

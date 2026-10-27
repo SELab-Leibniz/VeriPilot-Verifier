@@ -127,6 +127,7 @@ async function fixture(t, { large = false, faults } = {}) {
   const makeFactory = script => {
     const factory = createOpenClawReviewerFactory(api, { stopReviewEngine: 'task', baselineFaults: faults,
       runEmbeddedAgent: async value => { params = value; captures.push(value); tools = registry(ctx());
+        assert.equal(value.config.agents.defaults.models['fixture/model'].params.maxTokens, input.reviewer.maxOutputTokens ?? 32768);
         assert.deepEqual(value.toolsAllow, BASELINE_TOOL_NAMES); assert.equal(value.config.agents.defaults.compaction.mode, 'safeguard');
         assert(REVIEWER_NATIVE_TOOL_DENY.every(name => value.config.tools.deny.includes(name)));
         assert.equal(value.config.tools.codeMode.enabled, false);
@@ -145,6 +146,7 @@ async function fixture(t, { large = false, faults } = {}) {
 
 test('Stop baseline reads beyond the old byte ceiling and returns source-bound operations, not verdicts', async t => {
   const f = await fixture(t, { large: true });
+  f.input.reviewer.maxOutputTokens = 65536;
   const handle = await f.run(async ({ readAll, call, batch, finish }) => {
     await readAll(); await call('save_baseline_batch', batch()); await finish([1]);
   });

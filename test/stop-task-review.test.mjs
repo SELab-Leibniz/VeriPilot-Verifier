@@ -105,10 +105,12 @@ test("acceptance coverage and source/runtime proof tasks receive the correct sel
     { metric: "M12", role: "stop-reviewer", target: "IMPLEMENTATION", scope: "RUNTIME_ACCEPTANCE", prompt: /attributable original tool invocation and its returned result/u },
   ]) await t.test(`${config.metric}/${config.scope}`, async t => {
     const f = await fixture(t, [object("R1", config.metric, config.target)]);
+    f.input.reviewer.maxOutputTokens = 49152;
     f.input.role = config.role;
     if (config.role === "implementation-reviewer") f.input.request.sourceManifest = [{ path: f.source, sha256: sha256(await fs.readFile(f.source)) }];
     const handle = await runStopTaskReview(f.input, { runTask: async options => {
       assert.equal(options.task.scope, config.scope);
+      assert.equal(options.maxTokens, 49152);
       if (config.prompt instanceof RegExp) assert.match(options.promptAppend, config.prompt);
       else assert.equal(options.promptAppend, config.prompt);
       if (config.scope === "RUNTIME_ACCEPTANCE") {

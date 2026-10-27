@@ -243,7 +243,7 @@ test("native reviewers own read-only sessions, repair JSON, and transfer frozen 
   });
   const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test-model", internalSessions: registry });
   const input = { projectRoot: project, sessionCwd: project, taskId: task.taskId, parentSessionId: "parent", role: "ground-truth-extractor",
-    reviewer: { timeoutMs: 5000, session: "fork" }, request: { requirement: "Frozen task" }, schema: objectSchema,
+    reviewer: { timeoutMs: 5000, session: "fork", maxOutputTokens: 65536 }, request: { requirement: "Frozen task" }, schema: objectSchema,
     evidence: { snapshot: { entries: [{ type: "user", message: { content: "Frozen evidence" } }] } } };
   const first = await factory(input);
   assert.deepEqual(first.result, { ok: true });
@@ -262,6 +262,8 @@ test("native reviewers own read-only sessions, repair JSON, and transfer frozen 
   assert.equal(registry.size, 0);
   await assert.rejects(fs.access(second.requestDirectory));
   assert.equal(calls[0].config.models, undefined);
+  assert.ok(calls.every(call => call.config.agents.defaults.models['test/test-model'].params.maxTokens === 65536));
+  assert.equal(host.config.agents?.defaults?.models?.['test/test-model']?.params?.maxTokens, undefined);
 });
 
 test("GLM reviewers carry selected effort through native prompts without changing provider config", async (t) => {
@@ -341,12 +343,14 @@ test("native independent provider is per run and secrets are absent from evidenc
     assert.equal(params.provider, "runtime-corrector-independent");
     assert.equal(params.config.models.providers[params.provider].apiKey, secret);
     assert.equal(params.config.models.providers[params.provider].baseUrl, "https://example.invalid/api");
+    assert.equal(params.config.models.providers[params.provider].models[0].maxTokens, 49152);
+    assert.equal(params.config.agents.defaults.models['runtime-corrector-independent/test'].params.maxTokens, 49152);
     return { payloads: [{ text: '{"ok":true}' }], meta: {} };
   });
   host.config = originalConfig;
   const factory = createOpenClawReviewerFactory(host, { env: { REVIEW_TEST_KEY: secret } });
   const handle = await factory({ projectRoot: project, taskId: task.taskId, role: "ground-truth-extractor",
-    reviewer: { session: "independent", provider: { baseUrl: "https://example.invalid/api", apiKeyEnv: "REVIEW_TEST_KEY", model: "test" } },
+    reviewer: { maxOutputTokens: 49152, session: "independent", provider: { baseUrl: "https://example.invalid/api", apiKeyEnv: "REVIEW_TEST_KEY", model: "test" } },
     request: { text: "Review" }, schema: objectSchema });
   assert.equal(originalConfig.models.providers["runtime-corrector-independent"], undefined);
   assert.doesNotMatch(await fs.readFile(path.join(handle.requestDirectory, "request.json"), "utf8"), /test-private-api-key/u);

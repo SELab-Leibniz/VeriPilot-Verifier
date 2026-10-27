@@ -8,6 +8,23 @@ OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `s
 
 `/rc-project init` 从插件的 `.runtime-corrector-default` 创建项目配置，显式设置上述两个开关为 `false`，并将 `reviewers.defaults.model` 填为当前宿主 RC 的 `reviewerModel`；不会覆盖已有目录。`/rc-project on|off|status` 和 `/rc-session-default on|off|status` 分别控制这两个字段。既有配置省略字段时按 `true` 解释的兼容语义不变；这些开关不改动具体纠偏功能的参数。
 
+### Agent 单次输出上限
+
+版本 1/2 的 `.runtime-corrector/config.yaml` 均支持根级 `maxOutputTokens`，默认 `32768`（32K），用于所有 RC agent，包括抽取、裁决、Skill/产物/实现评审、停止分类、Stop 单项/分组审查、基线刷新以及受监督执行的私有 worker。版本 2 评审可按默认值或角色单独覆盖：
+
+```yaml
+maxOutputTokens: 32768
+reviewers:
+  defaults:
+    maxOutputTokens: 32768
+  stopReviewer:
+    maxOutputTokens: 65536
+```
+
+评审优先级为 `reviewers.<role>.maxOutputTokens` > `reviewers.defaults.maxOutputTokens` > 根级 `maxOutputTokens` > `32768`。受监督执行 worker 使用根级值。值必须是正安全整数；省略配置也会应用 32K。格式修复与续问沿用当前角色设置。
+
+这是每次模型响应的输出上限，与上下文窗口、累计 token 预算和超时时间分别配置。OpenClaw/MatrixAssistant 在私有调用的模型参数副本中传入 `maxTokens`，不会改写宿主模型目录；CLI 子进程通过 [`CLAUDE_CODE_MAX_OUTPUT_TOKENS`](https://code.claude.com/docs/en/env-vars) 接收该值（自定义 CLI 包装器须支持或转译这一环境变量）。模型和宿主自身的能力上限仍然有效。
+
 `patterns` 与 `pathTemplates` 可以直接声明源码产物。读取层将 `.ets`、`.ts`、`.tsx`、
 `.js` 等源码以及 `.json5` 视为 UTF-8 `text`，所以 HarmonyOS ArkTS 的 Write/Edit 能与
 文档产物走同一条 PostToolUse 纠偏链。构建、测试和设备结果仍须由独立证据提供。

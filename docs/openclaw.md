@@ -1,5 +1,7 @@
 # MatrixAssistant / OpenClaw 纠偏与 Stop 审查
 
+所有 RC agent 的单次模型输出默认上限为 `32768`（32K）。在项目 `.runtime-corrector/config.yaml` 中配置 `maxOutputTokens` 可统一调整；评审还支持 `reviewers.defaults.maxOutputTokens` 与 `reviewers.<role>.maxOutputTokens`，角色配置优先。覆盖停止分类、Stop 单项/分组/文件质量/实现审查、基线刷新及其他评审，也覆盖受监督执行的私有 worker；格式修复与续问继续应用配置。详见 [Agent 单次输出上限](configuration.md#agent-单次输出上限)。
+
 Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构化 compact 恢复和事务应用回执，见 [基线 task 协议与验证边界](stop-baseline-task.md)。其他提取入口及审阅角色保留各自协议。构建不会安装到现有 MA。
 
 当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。

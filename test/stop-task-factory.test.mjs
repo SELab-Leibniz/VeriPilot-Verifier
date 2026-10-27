@@ -63,14 +63,17 @@ test("task-mode factory dispatches only eligible metric scopes with the selected
   }
   assert.equal(captures.length, inputs.length); assert.equal(nativeCalls, 0);
   for (const value of captures) {
+    assert.equal(value.input.reviewer.maxOutputTokens, 32768);
     assert.equal(value.input.deadlineAt, parentDeadline);
     assert.equal(value.input.abortSignal, controller.signal);
     assert.equal(value.transport.selection.provider, "fixture");
     assert.equal(value.transport.selection.model, "model");
   }
   const earlier = f.makeInput(); earlier.deadlineAt = parentDeadline - 1000;
+  earlier.reviewer.maxOutputTokens = 49152;
   await factory(earlier);
   assert.equal(captures.at(-1).input.deadlineAt, earlier.deadlineAt);
+  assert.equal(captures.at(-1).input.reviewer.maxOutputTokens, 49152);
   controller.abort();
   assert.ok(captures.every(value => value.input.abortSignal.aborted));
 });
@@ -183,6 +186,7 @@ test("task factory cache identity is distinct from native identity and uses a fr
   assert.equal(task.supportsSupplementalFileAssessment, true);
   assert.notEqual(task.reviewCacheIdentity({}), native.reviewCacheIdentity({}));
   assert.equal(task.reviewCacheIdentity({}), sameTask.reviewCacheIdentity({}));
+  assert.notEqual(task.reviewCacheIdentity({ maxOutputTokens: 32768 }), task.reviewCacheIdentity({ maxOutputTokens: 65536 }));
   const promptBytes = await fs.readFile(new URL("../lib/review-task/prompts.json", import.meta.url));
   assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash("sha256").update(promptBytes).digest("hex"));
 });

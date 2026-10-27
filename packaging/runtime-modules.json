@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "common": [
+    "lib/agent-output.mjs",
     "lib/artifact-checker.mjs",
     "lib/artifact-pipeline.mjs",
     "lib/candidate-diff.mjs",
