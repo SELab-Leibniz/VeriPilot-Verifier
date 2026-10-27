@@ -107,7 +107,7 @@ artifactCorrection:
   groundTruthReviewEnabled: true
 
 stopCorrection:
-  enabled: true
+  enabled: false
   waitMode: until_pass
 
   maxCorrectionsPerSession: 2
