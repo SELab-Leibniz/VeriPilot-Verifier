@@ -11,6 +11,7 @@
     "tools": [
       "runtime_corrector",
       "rc_progress",
+      "rc_skill_care",
       "source_read",
       "source_grep",
       "source_find",

@@ -11,6 +11,16 @@ import entry from '../lib/openclaw/entry.mjs';
 
 const sourceManifest=()=>fs.readFile(new URL('../packaging/hosts/openclaw/openclaw.plugin.json',import.meta.url),'utf8').then(JSON.parse);
 
+test('the full registration contract includes every actual factory even without an installed-host fixture',async()=>{
+ const names=new Set(),manifest=configureOpenClawToolContract(await sourceManifest());
+ entry.register({rootDir:process.cwd(),config:{},pluginConfig:{},logger:{info(){},warn(){},error(){}},
+  runtime:{version:'2026.7.1-2',agent:{runEmbeddedAgent:async()=>assert.fail('contract inspection must not call a model')}},
+  registerTool(_factory,metadata){for(const name of metadata.names)names.add(name);},
+  registerCommand(){},registerGatewayMethod(){},registerHttpRoute(){},registerAgentToolResultMiddleware(){},on(){}});
+ assert(names.has('rc_skill_care'));
+ assert.deepEqual([...names].sort(),[...manifest.contracts.tools].sort());
+});
+
 test('tool contract configuration repairs missing declarations without operator tool-name edits',async()=>{
  const manifest=await sourceManifest();
  manifest.contracts.tools=['runtime_corrector'];

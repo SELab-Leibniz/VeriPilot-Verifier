@@ -110,6 +110,24 @@ test('idle native identities are disposed and model-policy changes cannot inheri
   await next.release(); await changed.release();
 });
 
+test('failed acquisition of an idle baseline identity preserves its scheduled release', async t => {
+  for (const reason of ['cancelled', 'expired']) {
+    const root = await fixture(t), owner = {}, disposed = [];
+    let notify;
+    const released = new Promise(resolve => { notify = resolve; });
+    const args = { owner, projectRoot: root, agentId: 'main', selection: { model: 'fixture' }, deadlineAt: Date.now() + 10000,
+      idleMs: 50, dispose: async (...identity) => { disposed.push(identity); notify(); } };
+    const first = await acquireBaselineAgent(args); await first.release();
+    const controller = new AbortController(); controller.abort(new Error('cancelled request'));
+    await assert.rejects(acquireBaselineAgent({ ...args,
+      ...(reason === 'cancelled' ? { signal: controller.signal } : { deadlineAt: Date.now() - 1 }) }), /cancelled|deadline/);
+    let deadline;
+    try { await Promise.race([released, new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error('Idle native identity leaked')), 1500); })]); }
+    finally { clearTimeout(deadline); }
+    assert.deepEqual(disposed, [[first.sessionKey, first.sessionId]]);
+  }
+});
+
 test('document correction sessions start independently and release their native identities exactly once', async t => {
   const root = await fixture(t), runs = [], released = [];
   const runner = async params => { runs.push(params); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; };

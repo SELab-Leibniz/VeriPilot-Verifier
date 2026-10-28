@@ -2,6 +2,7 @@
   "public": [
     "runtime_corrector",
     "rc_document",
+    "rc_skill_care",
     "rc_progress"
   ],
   "task": [
