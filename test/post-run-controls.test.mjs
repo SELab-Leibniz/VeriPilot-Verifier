@@ -69,6 +69,15 @@ test("session search covers all records before pagination and isolates same proj
   assert.equal((await f.request("list", { limit: 101 })).ok, false);
 });
 
+test('observation RPC preserves read scopes and exact session identity', async t => {
+  const f = await fixture(t);
+  assert.equal((await f.request('observations', f.record, [])).error.code, 'FORBIDDEN');
+  assert.equal((await f.request('observations', { ...f.record, sessionId: 'foreign' })).error.code, 'CONFLICT');
+  assert.equal((await f.request('observations', { ...f.record, query: { limit: 101 } })).ok, false);
+  const data = await f.request('observations', f.record, ['operator.read']);
+  assert.equal(data.ok, true); assert.equal(data.value.total, 0);
+});
+
 test("control route serves only packaged assets and verified browser-client capabilities", async t => {
   const f = await fixture(t), route = f.routes[0];
   assert.equal(route.auth, "plugin");

@@ -1,13 +1,24 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RC 会话控制台</title><link rel="stylesheet" href="/plugins/runtime-corrector/post-run.css"></head>
 <body><main>
-<header><p class="eyebrow">RUNTIME CORRECTOR</p><h1>会话与待执行任务</h1><p>每个会话独立审查、纠偏和安排后续任务。</p></header>
+<header><p class="eyebrow">RUNTIME CORRECTOR</p><h1>RC 运行控制台</h1><p>查看检查结果、追溯宿主反馈，发现需要关注的运行状态。</p></header>
 <section class="connection" aria-label="连接"><label>Gateway 凭据<input id="token" type="password" autocomplete="off" placeholder="已完成设备认证时可留空"></label><button id="connect">连接</button><span id="connection" role="status">未连接</span></section>
 <p id="error" role="alert" hidden></p>
 <p class="muted">此处仅列出已登记到 RC 调度器的会话，不是 MA 的全部历史聊天。切换 MA 窗口不会自动切换这里的选择。</p>
 <div class="layout"><aside><label>查找会话<input id="search" type="search" placeholder="会话或项目"></label><label>状态<select id="filter"><option value="all">全部会话</option><option value="active">执行或审查中</option><option value="pending">有待执行任务</option></select></label><div id="sessions" aria-label="会话列表"></div><div class="pagination"><button id="previous">上一页</button><span id="page"></span><button id="next">下一页</button></div></aside>
 <section id="detail" aria-label="选中会话"><p id="empty">连接后选择一个会话。切换 MA 会话时，请在这里选择对应会话。</p><div id="selected" hidden><h2 id="name"></h2><p id="project"></p><p id="identity" class="muted"></p>
-<p id="requirements-status" class="muted"></p><ol class="task-rows"><li><strong id="phase"></strong><p id="reason" class="muted"></p></li><li><label for="pending">待执行任务</label><textarea id="pending" rows="6" placeholder="暂无待执行任务"></textarea><div class="actions"><button id="save">保存修改</button><button id="remove" class="secondary">删除这个待办</button><button id="reload" class="secondary" hidden>重新载入待办</button></div><p id="queue-note" class="muted"></p></li></ol>
+<div class="phase-line"><strong id="phase"></strong><p id="reason" class="muted"></p></div>
+<section id="observability" aria-label="纠偏运行记录">
+<div class="section-heading"><h3>纠偏运行概览</h3><button id="obs-refresh" class="secondary">刷新记录</button></div>
+<p id="obs-status" class="muted" role="status">正在读取运行证据…</p><p id="obs-error" role="alert" hidden></p><div id="obs-overview" class="overview"></div>
+<details id="obs-baseline"><summary>当前需求基线</summary><p id="requirements-status" class="muted"></p><div id="obs-baseline-body"></div></details>
+<details id="obs-metrics"><summary>当前指标列表</summary><p class="muted">通过仅代表此基线与证据下的指标结果；范围外、未启用和未验证会分别标记。</p><div id="obs-metric-body" class="table-scroll"></div></details>
+<div class="section-heading"><h3>响应记录</h3><div class="actions"><button id="obs-expand" class="secondary">展开本页</button><button id="obs-collapse" class="secondary">折叠本页</button></div></div>
+<p class="muted">插件触发、检查结论和反馈送达分别记录。历史记录缺少轮次或回执时显示未知。</p>
+<div class="observation-filters"><label class="wide">搜索全部记录<input id="obs-search" type="search" placeholder="轮次、指标、文件、skill、反馈内容；空格分隔关键词"></label><label>记录类型<select id="obs-kind"><option value="all">全部类型</option><option value="response">触发响应</option><option value="artifact">产物看护</option><option value="baseline">基线提取</option><option value="skill">Skill 看护</option><option value="stop">任务完成看护</option><option value="system">运行异常</option></select></label><label>排序<select id="obs-order"><option value="desc">最新优先</option><option value="asc">最早优先</option></select></label><label>开始时间<input id="obs-from" type="datetime-local"></label><label>结束时间<input id="obs-to" type="datetime-local"></label><label class="check"><input id="obs-attention" type="checkbox">仅需关注</label><button id="obs-clear" class="secondary">清除筛选</button></div>
+<p id="obs-count" class="muted" aria-live="polite"></p><div id="obs-records"></div><div class="pagination"><button id="obs-previous" class="secondary">较前一页</button><span id="obs-page"></span><button id="obs-next" class="secondary">较后一页</button></div>
+</section>
+<h3>会话与待执行任务</h3><ol class="task-rows"><li><label for="pending">待执行任务</label><textarea id="pending" rows="6" placeholder="暂无待执行任务"></textarea><div class="actions"><button id="save">保存修改</button><button id="remove" class="secondary">删除这个待办</button><button id="reload" class="secondary" hidden>重新载入待办</button></div><p id="queue-note" class="muted"></p></li></ol>
 <details id="more" hidden><summary>其他待执行任务</summary><div id="other-tasks"></div></details>
 <section id="review-summary" hidden><h3>最近一次审查范围</h3><p id="review-basis"></p><div id="review-objects"></div></section>
 <form id="add-form"><label for="new-task">添加后续任务</label><p id="task-target" class="muted"></p><textarea id="new-task" rows="3" placeholder="审查与纠偏结束后执行；空闲时直接执行"></textarea><button type="submit">加入待办</button></form><p id="task-receipt" role="status"></p>
