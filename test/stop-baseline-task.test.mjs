@@ -79,6 +79,8 @@ test('UTF-8 split-line selections require every genuine part receipt and retain 
   const handle = await f.run(async ({ call, readAll, finish, params }) => {
     const prompt = JSON.parse(params.prompt);
     assert(prompt.selectableSourceIndices.includes(1));
+    const request = await call('source_read', { path: 'request-0000.txt' });
+    assert.match(toolText(request), /"startLine":3,"endLine":4/u, 'part coordinates must reach the real required-read response');
     const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
       operations: [{ outcome: '保留条件与例外', textFrom: { sourceIndex: 1, start: 3, end: 3 } }] };
     const files = prompt.requiredFiles.filter(file => file.startsWith('source-0001'));
@@ -97,6 +99,30 @@ test('UTF-8 split-line selections require every genuine part receipt and retain 
   const source = request.identity.sources.find(item => item.kind === 'MATERIAL');
   assert.equal(source.lineCount, 4);
   assert.deepEqual(source.parts.map(({ startLine, endLine }) => [startLine, endLine]), [[1, 3], [3, 4]]);
+  await handle.close();
+});
+
+test('frozen part-local selectors capture canonical originals without rereads or authority promotion', async t => {
+  const f = await fixture(t, { large: true });
+  let expected;
+  const handle = await f.run(async ({ call, readAll, finish, params }) => {
+    await readAll();
+    const request = JSON.parse(await fs.readFile(path.join(params.cwd, 'request-0000.txt'), 'utf8'));
+    assert.equal(request.sourceNavigation.navigationOnly, true);
+    const source = request.sourceNavigation.sources.find(item => item.sourceIndex === 1), part = source.parts[1];
+    const start = part.startLine + 1;
+    expected = (await fs.readFile(f.material, 'utf8')).split('\n').slice(start - 1, start + 1).join('\n');
+    const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
+      operations: [{ outcome: '材料条件', textFrom: { file: part.file, start: 2, end: 3 } }] };
+    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '混合坐标', textFrom: { ...value.operations[0].textFrom, sourceIndex: 1 } }] }), /exactly one/);
+    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '未知来源', textFrom: { file: '../foreign.txt', start: 1, end: 1 } }] }), /current frozen original source/);
+    await assert.rejects(call('save_baseline_batch', { ...value, defaults: { ...value.defaults, authority: 'USER_EXPLICIT' } }), /SOURCE_BINDING_INVALID|NON_USER_AUTHORITY/);
+    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '边界须用原始坐标', textFrom: { file: part.file, start: 1, end: 1 } }] }), /partial original line/);
+    await call('save_baseline_batch', value); await finish([1]);
+  });
+  assert.equal(handle.result.operations[0].text, expected);
+  assert.equal(handle.result.operations[0].source.kind, 'MATERIAL');
+  assert.equal(handle.result.operations[0].source.excerpt, expected);
   await handle.close();
 });
 
@@ -470,7 +496,8 @@ async function fixture(t, { large = false, materialText, faults, wireMode = 'ful
           assert.equal((await observeInternalTool(name, {})).block, true, `baseline must block ${name}`);
         assert.equal(await observeInternalTool('source_read', {}), undefined);
         assert.equal(registry({ sessionKey: 'agent:main:business', sessionId: 'business' }), null);
-        await script({ call, readAll, batch, finish, params: value, hooks, ctx, seen });
+        try { await script({ call, readAll, batch, finish, params: value, hooks, ctx, seen }); }
+        catch (error) { if (error.code === 'ERR_ASSERTION') t.diagnostic(error.stack); throw error; }
         return { payloads: [], meta: {} };
       } });
     return factory;

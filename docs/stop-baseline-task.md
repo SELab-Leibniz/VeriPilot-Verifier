@@ -23,7 +23,7 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 默认协议只生成 ADD。已有 claim 的改动、综合表述、来源分片、超过 128 行或 200 个草稿单元时使用完整文字协议。模型可用 `fullTextReason` 请求切换，沿用同一会话、已存批次、修复次数和截止；SUPERSEDE 仍须真实 claimId 并保留该 claim 内未变条件。决策、未处理单元和分组名称进入私有检查点及分页历史，不进入宿主上下文。详见 [第二轮方案及配对实验](baseline-token-time-optimization.md)。
 
-完整协议也优先使用 `outcome` + `textFrom`，由程序捕获原文、来源和已经签发的真实读取回执。`start/end` 始终指原始文件行号；每个冻结分片在请求中给出 `startLine/endLine`，分片内行号加 `startLine - 1` 可定位原文。跨分片的行须有所有相交部分的连续读取覆盖，未持久化或缺失的回执不能补足证据。跨来源综合仍使用完整 text/source/bindings；动作、权限和适用性须明确提供，程序不会推断。此优化不赋予完整协议逐段决策完成保证。
+完整协议也优先使用 `outcome` + `textFrom`，由程序捕获原文、来源和已经签发的真实读取回执。可用 `file` 加工具显示的分片内 `start/end`，或 `sourceIndex` 加原始文件行号；两种坐标不能混用。边界处的不完整原始行须使用原始坐标，避免把残句当完整要求。冻结请求的 `sourceNavigation` 给出每片 `startLine/endLine`，分片内行号加 `startLine - 1` 可定位原文；它只是导航信息，不授予读取或权限。跨分片的行须有所有相交部分的连续读取覆盖，未持久化或缺失的回执不能补足证据。跨来源综合仍使用完整 text/source/bindings；动作、权限和适用性须明确提供，程序不会推断。此优化不赋予完整协议逐段决策完成保证。
 
 原始来源引用继续经过 `bindSourceSelections` / `validateSourceBindings`。引用范围须由绑定到该来源的真实读取凭据覆盖。未知、别的会话、导航、摘要和历史检索不会产生新的证据或 USER_EXPLICIT 授权。程序从冻结原文捕获 excerpt；模型提供的引文不充当原文证明。
 

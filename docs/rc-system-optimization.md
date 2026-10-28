@@ -137,3 +137,11 @@
 
 - 统计工具现保留真实 native-run 的 dispatch/settled 时间和各角色 summedRunMs；缺失计时明确记录，不从总耗时相减伪造业务时间，因为不同 run 可能重叠。此为离线派生报告，不改公共模型协议。
 - security_tool_1/c33 原始记录：提取 152097ms，实现审查 27625ms，后者 STOP_REVIEW_DEADLINE。因此新候选需要证明更早结束提取并取得完整审查，不能只用低总 token 宣称效率。更新派生 usage 前另存 before-role-timing 快照，原始宿主日志未改。
+
+### 05:04 开发对照与输入链路修复
+
+- `paired-split-dev-001` 已全部 SETTLED：两组 F2P 5/5、P2P 843/843。会话总 token 1449935→1171210，记录耗时 951849→798126ms；这些原始差异仍不具备同等完成审查资格，不能宣称优化成功。候选 security1 提取 181879ms 后停止，无 workspace 审查；happy12 提取 114468ms、审查 65364ms 后 STOP_REVIEW_DEADLINE。四条最终状态仍 UNVERIFIED。保留所有失败和耗费。
+- 真实工具链路发现 `8a8ec79` 的分片坐标只进入 request 旁路记录，未进入 worker 实际必读的 frozen request；相关早期测试只读旁路，覆盖不足。现实际冻结请求携带最小 sourceNavigation（sourceIndex、lineCount、每片 file/startLine/endLine，navigationOnly=true），回归直接断言真实 source_read 响应包含坐标，不复制完整 identity/sourceCatalog 或授予新证据。
+- 新 `textFrom` 支持 file+工具显示的局部行号，或 sourceIndex+原始行号，明确拒绝两者混用、未知文件和边界残行；原始全文、来源权限与当前连续读取回执仍由程序校验。避免模型手算坐标和为已有引用反复读取。边界完整行仍可使用全局坐标跨块选取。
+- 该候选实际宿主/基线/控制台回归 60/60，无跳过；私有 Skill 校验通过。完整全量回归仍对应此前 8a8ec79，不能声称新候选也已全量通过；在方案选定后再做最终全量检查。
+- 下一步用相同冻结原始输入做提取器组件对照，减少反复业务实现的昂贵波动。新工具明确标识组件实验、使用共享 Git worktree、验证每份源字节摘要、只调用真实私有角色；不伪造业务完成/纠偏反馈，不作为 F2P/P2P 成绩。之后仍须整任务选择及冻结留出。
