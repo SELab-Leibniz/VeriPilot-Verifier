@@ -130,7 +130,15 @@ test('multipart inputs default to compact outcomes and reject redundant source f
   const f = await fixture(t, { large: true, wireMode: null });
   const handle = await f.run(async ({ call, readAll, finish, params }) => {
     assert.equal(JSON.parse(params.prompt).wireMode, 'compact');
-    await readAll({ numberedSources: true });
+    const numbered = await call('source_read', { path: 'source-0000-0000.txt' });
+    assert.equal(numbered.details.page.numbered, true);
+    assert.match(toolText(numbered), /\[1\] Preserve the requested feature\./u);
+    const raw = await call('source_read', { path: 'source-0000-0000.txt', numbered: false });
+    assert.equal(raw.details.page.numbered, undefined, 'explicit raw presentation overrides the role default');
+    assert.doesNotMatch(toolText(raw), /\n\[1\] /u);
+    const request = await call('source_read', { path: 'request-0000.txt' });
+    assert.equal(request.details.page.numbered, undefined, 'JSON stays raw by default');
+    await readAll();
     const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
       outcomes: [{ name: '保留用户要求', file: 'source-0000-0000.txt', lines: [1, 1] }] };
     await assert.rejects(call('save_baseline_batch', { ...value, outcomes: [{ ...value.outcomes[0], source: { ref: 'transcript:U1' } }] }), { code: 'BASELINE_SCHEMA_INVALID' });

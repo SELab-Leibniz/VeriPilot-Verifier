@@ -25,7 +25,7 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 完整协议也优先使用 `outcome` + `textFrom`，由程序捕获原文、来源和已经签发的真实读取回执。可用 `file` 加工具显示的分片内 `start/end`，或 `sourceIndex` 加原始文件行号；两种坐标不能混用。边界处的不完整原始行须使用原始坐标，避免把残句当完整要求。冻结请求的 `sourceNavigation` 给出每片 `startLine/endLine`，分片内行号加 `startLine - 1` 可定位原文；它只是导航信息，不授予读取或权限。跨分片的行须有所有相交部分的连续读取覆盖，未持久化或缺失的回执不能补足证据。跨来源综合仍使用完整 text/source/bindings；动作、权限和适用性须明确提供，程序不会推断。此优化不赋予完整协议逐段决策完成保证。
 
-`source_read` 的 offset 始终是指定文件/分片内的局部行号。可选 `numbered:true` 将每行显示为 `[局部行号] 原文`，编号只用于导航；默认原文格式保持不变，编号的字节也计入显示页预算。基线提取器优先使用该视图选择原文，程序仍以原始字节捕获 text/source 并核对真实持久化读取；修改编号开关或伪造显示内容的回执无效。
+`source_read` 的 offset 始终是指定文件/分片内的局部行号。`numbered:true` 将每行显示为 `[局部行号] 原文`，编号只用于导航，字节计入显示页预算。通用工具默认原文；基线私有角色对精确列入冻结清单的原始分片默认编号，request/baseline JSON 仍默认原文，显式 `numbered:false` 可覆盖。实际显示参数在执行前固定，程序仍以原始字节捕获 text/source 并核对真实持久化读取；修改编号开关或伪造显示内容的回执无效。
 
 原始来源引用继续经过 `bindSourceSelections` / `validateSourceBindings`。引用范围须由绑定到该来源的真实读取凭据覆盖。未知、别的会话、导航、摘要和历史检索不会产生新的证据或 USER_EXPLICIT 授权。程序从冻结原文捕获 excerpt；模型提供的引文不充当原文证明。
 
