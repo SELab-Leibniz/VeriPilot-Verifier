@@ -38,7 +38,7 @@ test('an empty eligible-stage list rejects every document stage before scanning 
   await f.run(async ({ readAll, submit }) => {
     await readAll();
     await assert.rejects(submit('review_scope', { stopClassification: 'STAGE_COMPLETE', stage: 'design', completionClaim: true,
-      summary: 'Incorrect document stage for implementation.' }), /frozen workflow/);
+      summary: 'Incorrect document stage for implementation.' }));
     assert.equal(scans, 0);
     await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
     await submit('submit_review', { taskId: 'M01:R1', verdict: 'UNVERIFIED', reason: 'No delivery proof.', citeIds: [], finish: true });

@@ -30,7 +30,9 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
       for (const path of task.basisFiles) await read(path);
       const classification = task.fixedStopClassification ?? selectedClassification ?? { stopClassification: 'TASK_COMPLETE', stage: null };
       await beforeScope?.();
-      await call('review_checklist', { ...classification, completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification), requiredUserInput: null, externalBlocker: null });
+      await call('review_checklist', { stopClassification: classification.stopClassification,
+        ...(classification.stage ? { stage: classification.stage } : {}),
+        completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification), requiredUserInput: null, externalBlocker: null });
       if (finding) {
         const citeId = await read(file);
         await call('submit_finding', { ...finding, citeIds: [citeId] });

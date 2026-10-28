@@ -54,7 +54,7 @@ try {
   if (brief.attempt === 1) {
     for (const file of brief.task.basisFiles) await read(file);
     if (mode !== 'compact') {
-      await call('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'The original output claims completion.' });
+      await call('review_scope', { stopClassification: 'TASK_COMPLETE', completionClaim: true, summary: 'The original output claims completion.' });
       await call('review_plan', { steps: [{ text: 'Inspect the actual delivery and its external reference.', status: 'active' }] });
       await call('review_notes', { note: 'The original checklist remains authoritative.' });
     }
@@ -62,7 +62,7 @@ try {
     await call('review_history', { mode: 'state' }); await call('review_notes', {});
   }
   if (process.env.RC_TEST_CLI_EXTERNAL) await read(process.env.RC_TEST_CLI_EXTERNAL);
-  const checklist = await call('review_checklist', { limit: 20, ...(mode === 'compact' ? { stopClassification: 'TASK_COMPLETE' } : {}) });
+  const checklist = await call('review_checklist', { limit: 20, ...(mode === 'compact' ? { stopClassification: 'TASK_COMPLETE', completionClaim: true } : {}) });
   let saved = 0;
   for (const item of checklist.items.filter(item => !item.savedResult)) {
     const citeId = await read(process.env.RC_TEST_CLI_ARTIFACT);

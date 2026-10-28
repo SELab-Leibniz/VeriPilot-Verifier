@@ -8,6 +8,9 @@ const args = process.argv.slice(2), arg = name => args[args.indexOf(name) + 1];
 if (!args.includes('--live')) throw new Error('Explicit --live is required.');
 const sourceRoot = path.resolve(arg('--source')), root = path.resolve(arg('--output'));
 const caseId = arg('--case'), hostRoot = path.resolve(arg('--host-root'));
+const revision = execFileSync('git',['-C',sourceRoot,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const sourceFiles = ['lib/runtime-v2/orchestrator.mjs','lib/runtime-v2/production-stop.mjs','lib/openclaw/runtime.mjs','lib/openclaw/reviewer.mjs','lib/runtime-v2/stop-workspace-review.mjs','lib/runtime-v2/stop-classification.mjs','lib/runtime-v2/review-routing.mjs'];
+const sourceBytes = await Promise.all(sourceFiles.map(async file => [file, await fs.readFile(path.join(sourceRoot,file)).then(b=>b.toString('base64'),()=>null)]));
 const load = file => import(pathToFileURL(path.join(sourceRoot, file)).href);
 const { buildPlugin } = await load('lib/plugin-builder.mjs');
 const { createOpenClawReviewerFactory } = await load('lib/openclaw/reviewer.mjs');
@@ -71,9 +74,10 @@ finally{for(const h of handles)await h.close?.();}
 const transcripts=[];async function walk(dir){for(const e of await fs.readdir(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())await walk(f);else if(e.name==='host-session.jsonl')transcripts.push(f);}}await walk(projectRoot);
 const calls=new Map(),errors=new Set(),usage=new Map();
 for(const f of transcripts)for(const line of(await fs.readFile(f,'utf8')).split('\n')){let frame;try{frame=JSON.parse(line);}catch{continue;}const m=frame.message;if(m?.role==='toolResult'&&m.isError)errors.add(f+':'+m.toolCallId);if(m?.role!=='assistant')continue;if(m.usage)usage.set(f+':'+frame.id,m.usage);for(const b of m.content??[])if(b.type==='toolCall')calls.set(f+':'+b.id,b.name);}
+if (error) for (const [key,secret] of Object.entries(process.env)) if (/KEY|TOKEN|SECRET|PASSWORD|BASE_URL/i.test(key) && secret?.length>7) error.message=error.message.split(secret).join('<redacted>');
 if (!outcome?.stop) error ??= {code:'HARNESS_NO_STOP',message:JSON.stringify(outcome).slice(0,600)};
 const rows=outcome?.stop?.review?.metricObjectJudgements??[],expectedCount=claims.length;
-const record={case:caseId,sourceRoot,revision:execFileSync('git',['-C',sourceRoot,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceDigest:sha256(await Promise.all(['lib/runtime-v2/orchestrator.mjs','lib/runtime-v2/production-stop.mjs','lib/openclaw/reviewer.mjs','lib/runtime-v2/stop-workspace-review.mjs'].map(async f=>[f,await fs.readFile(path.join(sourceRoot,f)).then(sha256,()=>null)]))),model,expected:spec.expected,expectedCount,status:outcome?.stop?.status??null,reasonCode:outcome?.stop?.reasonCode,classification:outcome?.stop?.review?.stopClassification,rows,match:rows.length===expectedCount&&rows.every(r=>r.judgement===spec.expected),elapsedMs:Date.now()-startedAt,reviewStarts:starts.length,reviewEnds:ends.length,toolCalls:calls.size,toolErrors:errors.size,sourceReads:[...calls.values()].filter(n=>n==='source_read').length,hostTokenCounters:Object.fromEntries(['input','output','cacheRead','cacheWrite','totalTokens'].map(k=>[k,[...usage.values()].reduce((s,u)=>s+(u[k]??0),0)])),error,transcripts,outputRoot:root};
+const record={case:caseId,sourceRoot,revision,sourceDigest:sha256(sourceBytes),model,expected:spec.expected,expectedCount,status:outcome?.stop?.status??null,reasonCode:outcome?.stop?.reasonCode,classification:outcome?.stop?.review?.stopClassification,rows,match:rows.length===expectedCount&&rows.every(r=>r.judgement===spec.expected),elapsedMs:Date.now()-startedAt,reviewStarts:starts.length,reviewEnds:ends.length,toolCalls:calls.size,toolErrors:errors.size,sourceReads:[...calls.values()].filter(n=>n==='source_read').length,hostTokenCounters:Object.fromEntries(['input','output','cacheRead','cacheWrite','totalTokens'].map(k=>[k,[...usage.values()].reduce((s,u)=>s+(u[k]??0),0)])),error,transcripts,outputRoot:root};
 await fs.writeFile(path.join(root,'result.json'),JSON.stringify(record,null,2));
 console.log(JSON.stringify({...record,rows:rows.map(r=>({objectId:r.objectId,judgement:r.judgement})),transcripts:transcripts.length}));
 // Installed host singletons may retain timers. All awaited reviews and receipts
