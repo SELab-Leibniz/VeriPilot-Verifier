@@ -72,7 +72,8 @@ const input = { projectRoot, taskId: task.taskId, parentSessionId, role: 'ground
   reviewer: { timeoutMs: 180000, effort: 'low', formatRepairAttempts: 3 }, schema: GROUND_TRUTH_REVIEW_SCHEMA,
   evidence: { groundTruth: truth, snapshot: { entries } } };
 const skills = await validateArtifactSkills(artifact, arg('--host-root'));
-const manifest = { kind: 'recorded-source-baseline-component', sourceRun: path.resolve(arg('--source-run')), artifact, projectRoot,
+const manifest = { kind: 'recorded-source-baseline-component', ownerPid: process.pid, createdAt: new Date().toISOString(),
+  sourceRun: path.resolve(arg('--source-run')), artifact, projectRoot,
   taskId: task.taskId, sourceSnapshots, sourceInputId: hash(JSON.stringify({ sourceSnapshots,
     instructions: originalRequest.instructions, baseline: oldTruth.digest })),
   reviewer: input.reviewer, model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, validatedSkills: skills.length,

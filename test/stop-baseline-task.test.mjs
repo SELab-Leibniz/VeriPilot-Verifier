@@ -126,6 +126,21 @@ test('frozen part-local selectors capture canonical originals without rereads or
   await handle.close();
 });
 
+test('multipart inputs default to compact outcomes and reject redundant source fields', async t => {
+  const f = await fixture(t, { large: true, wireMode: null });
+  const handle = await f.run(async ({ call, readAll, finish, params }) => {
+    assert.equal(JSON.parse(params.prompt).wireMode, 'compact');
+    await readAll();
+    const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
+      outcomes: [{ name: '保留用户要求', file: 'source-0000-0000.txt', lines: [1, 1] }] };
+    await assert.rejects(call('save_baseline_batch', { ...value, outcomes: [{ ...value.outcomes[0], source: { ref: 'transcript:U1' } }] }), { code: 'BASELINE_SCHEMA_INVALID' });
+    await call('save_baseline_batch', value);
+    await finish([1]);
+  });
+  assert.equal(handle.result.operations[0].text, 'Preserve the requested feature.');
+  await handle.close();
+});
+
 test('span supersession preserves exact claim identity and unrelated project obligations', async t => {
   const f = await fixture(t);
   f.input.evidence.snapshot.entries[0].message.content = '空闲10分钟释放提取agent。\n并发请求排队，项目之间隔离。';

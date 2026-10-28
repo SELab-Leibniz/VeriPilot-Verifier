@@ -145,3 +145,12 @@
 - 新 `textFrom` 支持 file+工具显示的局部行号，或 sourceIndex+原始行号，明确拒绝两者混用、未知文件和边界残行；原始全文、来源权限与当前连续读取回执仍由程序校验。避免模型手算坐标和为已有引用反复读取。边界完整行仍可使用全局坐标跨块选取。
 - 该候选实际宿主/基线/控制台回归 60/60，无跳过；私有 Skill 校验通过。完整全量回归仍对应此前 8a8ec79，不能声称新候选也已全量通过；在方案选定后再做最终全量检查。
 - 下一步用相同冻结原始输入做提取器组件对照，减少反复业务实现的昂贵波动。新工具明确标识组件实验、使用共享 Git worktree、验证每份源字节摘要、只调用真实私有角色；不伪造业务完成/纠偏反馈，不作为 F2P/P2P 成绩。之后仍须整任务选择及冻结留出。
+
+### 05:14 组件对照结果与紧凑协议选型
+
+- 两个无模型准备的 sourceInputId 均为 b68e519d390de3233fc939b553fa52e759dd3ec7c22b6a65232a4e3551829b21。组件源来自已完成的 c33 security1 开发运行，输入仅冻结公开用户与 AGENTS；复用业务仓库 Git 对象和 detached worktree，没有复制 RC 仓库。
+- `component-extractor-c33-001` 完成：真实私有 run 95760ms、46123 记录 tokens、5 reads、1 save、1 finish，4 条候选要求。终态的额外 assistant aborted 记录 usage 为 0，不是第五次模型请求；实际模型开始 4 次。未执行业务完成事件、反馈或隐藏评分。
+- `component-extractor-local-001`（119f279）完成：真实私有 run 145632ms、88513 tokens、5 reads、3 saves、1 finish，5 条候选要求。确实采用 4 个局部选取和 1 个原始坐标，消除了此前的反复 grep/read，但重复 source 字段和 PROCESS 的 implementationRole=null 导致两次修复。未证明总体更快/省 token。
+- 内容审计：c33 四条全为 USER_MESSAGE，未保留项目命令/约束；119f279 将“旧缺陷背景”单独设为 IMPLEMENTATION 要求，并把命令目录含 optional scenarios 的整块视为当前流程。两者均不能因 complete=true 宣称语义准确，项目 UTF-8 禁止项/条件仍需核对。候选条数不是准确率指标。
+- 新选型复用现有 compact 协议作为长/分片来源的默认方式，隐藏 full text/source/bindings，支持局部 file+lines；仍显式保留完整格式回退、原文回执和权限。Skill 加入“背景与所请求修复合组、命令目录/可选示例不自动成为执行义务”的通用规则，不含任务/仓库/答案硬编码。IMPLEMENTATION 的 PRODUCTION/TEST/SUPPORT 仍由模型明确选择，PROCESS/ARTIFACT 不填无用 null。
+- 紧凑默认及宿主/基线/控制台回归 61/61，0 跳过；新增实际 schema 拒绝重复 source 的反例及同会话完整格式回退；私有 Skill 校验通过。下一步在同一组件输入验证，不重复业务模型；之后再作整任务对照和最终全量回归。
