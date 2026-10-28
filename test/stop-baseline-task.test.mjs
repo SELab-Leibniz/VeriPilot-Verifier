@@ -57,15 +57,47 @@ test('span shortcuts cannot bypass current reads, promote material authority, or
   assert.equal(handle.result.operations[0].text, 'Preserve the requested feature.'); await handle.close();
 });
 
-test('split sources retain the full-text fallback instead of guessing original line coordinates', async t => {
+test('split sources capture exact original lines and retain the full-text fallback', async t => {
   const f = await fixture(t, { large: true });
   const handle = await f.run(async ({ call, readAll, finish, batch }) => {
     await readAll();
-    await assert.rejects(call('save_baseline_batch', { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
-      operations: [{ outcome: 'Material requirement', textFrom: { sourceIndex: 1, start: 1, end: 1 } }] }), /single-part/);
-    await call('save_baseline_batch', batch()); await finish([1]);
+    await call('save_baseline_batch', { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
+      operations: [{ outcome: 'Material requirement', textFrom: { sourceIndex: 1, start: 201, end: 202 } }] });
+    await call('save_baseline_batch', { ...batch(), batchId: 2 }); await finish([1, 2]);
   });
-  assert.equal(handle.result.operations.length, 1); await handle.close();
+  const expected = (await fs.readFile(f.material, 'utf8')).split('\n').slice(200, 202).join('\n');
+  assert.equal(handle.result.operations.length, 2);
+  assert.equal(handle.result.operations[0].text, expected);
+  assert.equal(handle.result.operations[0].source.ref, `${f.material.replaceAll('\\', '/')}#L201-L202`);
+  await handle.close();
+});
+
+test('UTF-8 split-line selections require every genuine part receipt and retain source authority', async t => {
+  const selected = '条件：不得改写源文，例外须保留。'.repeat(8) + '\r';
+  const materialText = '# Context\r\n' + 'x'.repeat(16280) + '\r\n' + selected + '\n尾行';
+  const f = await fixture(t, { materialText });
+  const handle = await f.run(async ({ call, readAll, finish, params }) => {
+    const prompt = JSON.parse(params.prompt);
+    assert(prompt.selectableSourceIndices.includes(1));
+    const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK' },
+      operations: [{ outcome: '保留条件与例外', textFrom: { sourceIndex: 1, start: 3, end: 3 } }] };
+    const files = prompt.requiredFiles.filter(file => file.startsWith('source-0001'));
+    assert.equal(files.length, 2);
+    await call('source_read', { path: files[0] });
+    await assert.rejects(call('save_baseline_batch', value), /not fully disclosed/);
+    await call('source_read', { path: files[1] }, { persist: false });
+    await assert.rejects(call('save_baseline_batch', value), /not fully disclosed/);
+    await readAll();
+    await assert.rejects(call('save_baseline_batch', { ...value, defaults: { ...value.defaults, authority: 'USER_EXPLICIT' } }), /SOURCE_BINDING_INVALID|NON_USER_AUTHORITY/);
+    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ ...value.operations[0], text: '替换原文' }] }), /captured original/);
+    await call('save_baseline_batch', value); await finish([1]);
+  });
+  assert.equal(handle.result.operations[0].text, selected);
+  const request = await readJson(path.join(handle.requestDirectory, 'request.json'));
+  const source = request.identity.sources.find(item => item.kind === 'MATERIAL');
+  assert.equal(source.lineCount, 4);
+  assert.deepEqual(source.parts.map(({ startLine, endLine }) => [startLine, endLine]), [[1, 3], [3, 4]]);
+  await handle.close();
 });
 
 test('span supersession preserves exact claim identity and unrelated project obligations', async t => {
@@ -373,7 +405,7 @@ test('baseline publication failure keeps its typed cause and never commits a cur
  assert.equal(records.findLast(record=>record.type==='STALE_ASSESSMENT').evidenceFailure.code,'BASELINE_INPUT_CHANGED');
 });
 
-async function fixture(t, { large = false, faults, wireMode = 'full' } = {}) {
+async function fixture(t, { large = false, materialText, faults, wireMode = 'full' } = {}) {
   const scratch = path.resolve('.runtime-correction/stop-baseline-tests'); await fs.mkdir(scratch, { recursive: true });
   const root = await fs.mkdtemp(path.join(scratch, 'run-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -384,7 +416,7 @@ async function fixture(t, { large = false, faults, wireMode = 'full' } = {}) {
   await atomicWriteJson(truthPath, truth);
   const material = path.join(root, 'requirements.md');
   const regression = JSON.parse(await fs.readFile('test/fixtures/stop-baseline-budget.json', 'utf8'));
-  const text = large ? Array.from({ length: Math.ceil(regression.observedCumulativeBytes / 64) + 100 }, (_, i) => `${i}: Original condition ${'x'.repeat(68)}`).join('\n') : 'Original material condition.';
+  const text = materialText ?? (large ? Array.from({ length: Math.ceil(regression.observedCumulativeBytes / 64) + 100 }, (_, i) => `${i}: Original condition ${'x'.repeat(68)}`).join('\n') : 'Original material condition.');
   await fs.writeFile(material, text);
   let registry; const hooks = new Map();
   const api = { rootDir: path.resolve('.'), config: { agents: { defaults: { model: { primary: 'fixture/model' }, compaction: { mode: 'safeguard' } } },
@@ -398,7 +430,7 @@ async function fixture(t, { large = false, faults, wireMode = 'full' } = {}) {
     reviewer: { timeoutMs: 20000, formatRepairAttempts: 4 }, schema: GROUND_TRUTH_REVIEW_SCHEMA,
     request: { taskId: task.taskId, hookEventId: 'event-1', lastUserCursor: 'U1', hook: { hook_event_name: 'Stop' },
       currentGroundTruth: { path: truthPath, version: truth.version, digest: truth.digest },
-      sourceCatalog: [{ ref: 'transcript:U1', kind: 'USER_MESSAGE', aliases: ['U1'] }, { ref: material, kind: 'MATERIAL', aliases: ['requirements.md'] }],
+      sourceCatalog: [{ ref: 'transcript:U1', kind: 'USER_MESSAGE', aliases: ['U1'] }, { ref: material.replaceAll('\\', '/'), kind: 'MATERIAL', projectRelativePath: 'requirements.md', aliases: ['requirements.md'] }],
       reviewScope: { kind: 'baseline', boundedBasis: true }, instructions: ['Preserve source authority.'] },
     evidence: { groundTruth: truth, snapshot: { entries: [{ type: 'user', uuid: 'U1', message: { role: 'user', content: 'Preserve the requested feature.' } }] } } };
   let params, tools, callId = 0;
