@@ -17,7 +17,8 @@ async function freePort() {
   return port;
 }
 
-export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false }) {
+export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
+  prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false }) {
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
   const root = path.join(outputRoot, 'native-host');
@@ -29,14 +30,15 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   process.env.OPENCLAW_SKIP_CRON = '1';
   if (process.env.ANTHROPIC_AUTH_TOKEN) process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_AUTH_TOKEN;
   process.argv[1] = path.join(hostRoot, 'openclaw.mjs');
-  const pluginRoot = reuseProfile ? await fs.realpath(path.join(root, 'build/runtime-corrector-openclaw'))
+  const pluginRoot = prebuiltPluginRoot ? await fs.realpath(prebuiltPluginRoot) : reuseProfile ? await fs.realpath(path.join(root, 'build/runtime-corrector-openclaw'))
     : await buildPlugin({ host: 'openclaw', sourceRoot, outputRoot: path.join(root, 'build') });
   let config = { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' } },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
-        tools: { allow: [...new Set(['read', 'write', 'edit', 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
+        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
+    ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
     session: { store: path.join(root, 'sessions.json') },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
       api: 'anthropic-messages', baseUrl: process.env.ANTHROPIC_BASE_URL,
@@ -46,6 +48,11 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } },
     } },
   };
+  for (const extra of extraPluginPaths) {
+    if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
+    config.plugins.allow.push(extra.id); config.plugins.load.paths.push(await fs.realpath(extra.path));
+    config.plugins.entries[extra.id] = { enabled: true };
+  }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
@@ -89,6 +96,8 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
     const registry = getGlobalPluginRegistry(), plugin = registry.plugins.find(item => item.id === 'runtime-corrector');
     if (plugin?.status !== 'loaded') throw new Error('The actual Gateway did not load the built RC plugin.');
+    for (const extra of extraPluginPaths) if (registry.plugins.find(item => item.id === extra.id)?.status !== 'loaded')
+      throw new Error(`Experiment capability failed to load before any business request: ${extra.id}`);
     if (injectDefect && registry.plugins.find(item => item.id === 'rc-fault-fixture')?.status !== 'loaded')
       throw new Error('The isolated fault-injection plugin was not loaded; no business model should be started.');
     const runtime = createPluginRuntime({ allowGatewaySubagentBinding: true });

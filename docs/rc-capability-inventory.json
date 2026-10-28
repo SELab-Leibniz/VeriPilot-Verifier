@@ -1,0 +1,1329 @@
+{
+  "baseline": "c33bae6",
+  "generatedAt": "2026-10-28T18:44:34.957Z",
+  "commit": "29098919cace1eddb62e042d0d0ad90ac6c0be8e",
+  "records": [
+    {
+      "file": "config/reviewer-defaults.json",
+      "bytes": 35,
+      "sha256": "4d4f2cc1322fb59983a00fbf33c7853a5733c0daebe4c716e31939e59e928fe1",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "knowledge/skill-care/SKILL.md",
+      "bytes": 2465,
+      "sha256": "f13ba0834c210549708792cdb9e340f28a5d9bc8c1b6c24ddbc3383e7aa9bfe0",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": false,
+      "name": "skill-care"
+    },
+    {
+      "file": "lib/agent-output.mjs",
+      "bytes": 540,
+      "sha256": "8f6ff2ce1f269ad36dcc61ab3085a6bac6d21d29bba2ac770f3f2c123f14c0a5",
+      "exports": [
+        "DEFAULT_MAX_OUTPUT_TOKENS",
+        "resolveMaxOutputTokens",
+        "withAgentOutputEnvironment"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/document-session.mjs",
+      "bytes": 5802,
+      "sha256": "2f2521d1637bd9c4ecc001f387fbf7c1656649dd66761c63e0751b6b7b344e24",
+      "exports": [
+        "DOCUMENT_IDLE_MS",
+        "acquireDocumentSession",
+        "releaseDocumentSessions"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/document-tools.mjs",
+      "bytes": 10069,
+      "sha256": "71df5fed7f2235f73cf9653bf79549f92e57fdb593ab8dab9ff4f44f7654b68c",
+      "exports": [
+        "createDocumentTools",
+        "bindDocumentTools",
+        "registerDocumentTools"
+      ],
+      "toolNameCandidates": [
+        "rc_document"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/evidence-distinctness.mjs",
+      "bytes": 4210,
+      "sha256": "af22d5ea5be90f290a9761d6f0b95e76cf8db401872cc888143ca7865b351529",
+      "exports": [
+        "checkEvidenceDistinctness"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/hosts/codeagent.mjs",
+      "bytes": 2573,
+      "sha256": "7ff35deb7e9371ae8293579f3d33317974d7a2aa76afa3c5f2a9d21fdcbee326",
+      "exports": [
+        "host",
+        "manifestDirectory",
+        "pluginRootEnv",
+        "foreignPluginRootEnv",
+        "instructionFileNames",
+        "reviewerContextEnvKeys",
+        "localSkillRoots",
+        "resolveDefaultReviewerExecutable",
+        "buildReviewerSessionArguments",
+        "assertReviewerInvocation"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/baseline-agent.mjs",
+      "bytes": 3119,
+      "sha256": "774f4ece52a7d6acaeb69dc3faab94a730e6540fbc06640b72e8e75dcdb457b3",
+      "exports": [
+        "BASELINE_IDLE_MS",
+        "acquireBaselineAgent"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/entry.mjs",
+      "bytes": 9182,
+      "sha256": "e9484cef5bc4cbeb5f6df95d7a5e8e7ad704bfc1d49ac94d54fe1208164d8d99",
+      "exports": [],
+      "toolNameCandidates": [
+        "runtime_corrector"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/evidence.mjs",
+      "bytes": 279,
+      "sha256": "4da1a3a8a05a6dae5f347d8cda04a4ef4ceee9d75c5b893565b0c0b4da968915",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/native-evidence.mjs",
+      "bytes": 3359,
+      "sha256": "16813e22ad68c0bca1e7894fea20c2fd580d3940533047d9eeb2e5b2dc8733c1",
+      "exports": [
+        "sourceManifest",
+        "sourceDigest",
+        "captureCommand",
+        "hostDeviceVerifier",
+        "isInteraction",
+        "reviewAnnotation"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/reviewer-policy.mjs",
+      "bytes": 1983,
+      "sha256": "022e4dd09cc7cfd263e372da1593d724d30a849d556f941e648dd858b533d127",
+      "exports": [
+        "reviewerEffortPrompt",
+        "assertReviewerRunCompleted"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/reviewer-progress.mjs",
+      "bytes": 17601,
+      "sha256": "f9d8293966fdf9fc2f63b25dad74a7e10b22b5b727520e9ccfc11939f3bc2bba",
+      "exports": [
+        "createReviewerProgress",
+        "registerReviewerProgress"
+      ],
+      "toolNameCandidates": [
+        "rc_skill_care",
+        "rc_progress"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/reviewer.mjs",
+      "bytes": 48615,
+      "sha256": "1b3e3bd0df1930cb16f98919555758cb3366fe21c4d445a96f786317e24c695e",
+      "exports": [
+        "INTERNAL_SESSION_MARKER",
+        "createOpenClawReviewerFactory"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/runtime.mjs",
+      "bytes": 116105,
+      "sha256": "6f9a4230a1666ec31278bd983de6198381b18b95fcd5980b6710b205f1eb35a9",
+      "exports": [
+        "createOpenClawRuntime"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 2,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/session-control.mjs",
+      "bytes": 4973,
+      "sha256": "1642780556738a8aedf8474fc6b948bbc162bc2e1b185959da0e9c5755c4fc01",
+      "exports": [
+        "createSessionControl",
+        "registerSessionControl"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/session-projects.mjs",
+      "bytes": 17728,
+      "sha256": "382c38cefc8662d3f801803067b886e101880f0b39da587ccd11a6f509e18c37",
+      "exports": [
+        "createSessionProjects",
+        "registerProjectCommand"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/session-settings.mjs",
+      "bytes": 7815,
+      "sha256": "0688e89d6991fdf6802ec45cfd69bfaaac703b1e7573f555e1cf65ab4e6b79f0",
+      "exports": [
+        "readSessionSetting",
+        "ensureSessionSetting",
+        "setSessionSetting"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/openclaw/task-session.mjs",
+      "bytes": 11226,
+      "sha256": "0a0572fd9d51aee7ead9e0f3cba4dda83a18a628feb8a212f96c3d3dbd61e41c",
+      "exports": [
+        "createNativeTaskSession"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/policy/reviewer-loader.mjs",
+      "bytes": 769,
+      "sha256": "397319404f6256abdb442a8ef980cbf92042acca9bb9173a75746e595deb3eb2",
+      "exports": [
+        "loadReviewer"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/protocol/core-hooks.mjs",
+      "bytes": 3209,
+      "sha256": "f271dc16b4cf5280b8325ac5216a0c1dacb38722443bdb8ebc327c3f84497c1f",
+      "exports": [
+        "decodeHookInput",
+        "encodeHookOutput"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/baseline-notes.mjs",
+      "bytes": 4044,
+      "sha256": "5b3a370517b7a59d68b914593e58a3129955334ac8e99bb45def16cd408aec83",
+      "exports": [
+        "createBaselineNotes"
+      ],
+      "toolNameCandidates": [
+        "baseline_notes"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/baseline-task.mjs",
+      "bytes": 24103,
+      "sha256": "fa287b28e1f6b143ae0949d07c62b00959ffd601164037235ffdeed0fde55ecd",
+      "exports": [
+        "pendingReadRanges",
+        "createBaselineWorker"
+      ],
+      "toolNameCandidates": [
+        "save_baseline_batch",
+        "finish_baseline"
+      ],
+      "promptConstructionSites": 4,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/classification-task.mjs",
+      "bytes": 3260,
+      "sha256": "9494b962af6beeb063731e3509e3342754140377937832e41f55172571d35e00",
+      "exports": [
+        "STOP_CLASSIFICATIONS",
+        "CLASSIFICATION_TASK_PROMPT",
+        "runClassificationTask"
+      ],
+      "toolNameCandidates": [
+        "submit_classification"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/cli-task-session.mjs",
+      "bytes": 13256,
+      "sha256": "6894f2aa584a6c6bb54fa96f58726933c5b4f0a1b43d86b39bee98c3b928b399",
+      "exports": [
+        "createCliReceiptObserver",
+        "createCliTaskSession"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/evidence-utils.mjs",
+      "bytes": 3501,
+      "sha256": "55960c783749ce587d4b1d9dea43781295ec9a47d6510866b5bd6d350a988971",
+      "exports": [
+        "disclosedRange",
+        "captureFiles",
+        "covers",
+        "excerpt",
+        "registerCitation"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/findings-task.mjs",
+      "bytes": 3529,
+      "sha256": "a3142a1098dab19432eb28cf46a5e2aa5049bc3fba8b5c8de3093192fdbaaefb",
+      "exports": [
+        "runFindingsTask"
+      ],
+      "toolNameCandidates": [
+        "submit_findings",
+        "finish_findings"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/history-memory.mjs",
+      "bytes": 17399,
+      "sha256": "11e58f27b03c52e4a2667b48bf4c95d6967ad94ca2ec71842eb48ac3e08afe16",
+      "exports": [
+        "publicHistoryEntry",
+        "loadReviewCheckpoint",
+        "createReviewMemory"
+      ],
+      "toolNameCandidates": [
+        "review_history"
+      ],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/live-source-tools.mjs",
+      "bytes": 5097,
+      "sha256": "73d5c966b7a74d967a5f27eae564a151cb7ad0a827b4267988bc2e152df494f2",
+      "exports": [
+        "createLiveSourceTools"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/prompt-profile.mjs",
+      "bytes": 773,
+      "sha256": "10e022e65a25be9f2ef2efa91a64dc040e759f95668e6085dd1933457e2da2a0",
+      "exports": [
+        "REVIEW_PROMPT_PROFILE_DIGEST",
+        "REVIEW_PROMPT_PROFILE_VERSION",
+        "reviewPromptProfile"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/protocol-task.mjs",
+      "bytes": 7832,
+      "sha256": "cdb54e098c31cbcd134390dfd633f58c64e4e9a73f0c3944d740c27f661862a9",
+      "exports": [
+        "taskError",
+        "runProtocolTask"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/review-task.mjs",
+      "bytes": 30720,
+      "sha256": "86dc288796f9d72cea700485606eea37c40ffc6462a07d26397695a0a87e8ac6",
+      "exports": [
+        "taskVerdicts",
+        "validateDecision",
+        "runReviewTask"
+      ],
+      "toolNameCandidates": [
+        "submit_review"
+      ],
+      "promptConstructionSites": 3,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/skills/baseline-extraction/SKILL.md",
+      "bytes": 4323,
+      "sha256": "2a32b5ab0763aa4aae271853a36d283ab2e87f37c758967e354883df6b7bd005",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": false,
+      "name": "baseline-extraction"
+    },
+    {
+      "file": "lib/review-task/source-tools.mjs",
+      "bytes": 8142,
+      "sha256": "cfb9334a01eaa6ef276ad661b6f73cc5673121c0043a61094ee2a7f0097fe55c",
+      "exports": [
+        "PAGE_LINES",
+        "toolText",
+        "textBlocks",
+        "sourcePage",
+        "createSourceTools"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/review-task/task-evidence.mjs",
+      "bytes": 8617,
+      "sha256": "3631dd755d2b5afae1b8c18eee8ee1880339b74484f19d946c29b87b4ad31557",
+      "exports": [
+        "durableTaskJson",
+        "createTaskEvidence"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/reviewer-launcher.mjs",
+      "bytes": 5235,
+      "sha256": "4181da2ba540dde25473ef6889b4c4c14632a56e4c5ba7c49ff7f6f2b5dec285",
+      "exports": [
+        "sanitizeReviewerEnvironment",
+        "normalizeReviewerRuntime",
+        "resolveReviewerLaunchPlan",
+        "buildReviewerInvocation",
+        "decorateReviewerLaunchError"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/reviewer-tools.mjs",
+      "bytes": 2422,
+      "sha256": "07935dd9628a0ce98669d80d90f1d18efad051bb991f0c5ebc92e3ab62218670",
+      "exports": [
+        "HOST_TOOL_REVIEWER_ROLES",
+        "inheritsHostReviewerTools",
+        "usesReadOnlyReviewerTools",
+        "REVIEWER_NATIVE_TOOL_DENY",
+        "REVIEWER_CLI_TOOL_DENY",
+        "blockReviewerToolCall",
+        "HOST_REVIEWER_TOOL_INSTRUCTIONS"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/baseline-task.mjs",
+      "bytes": 17382,
+      "sha256": "2a8b6783b16102e2ce19704f2d9bb5c6c5b7768cd6afd1da9b73024ba69746e4",
+      "exports": [
+        "isStopBaselineTask",
+        "runStopBaselineTask"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/evidence-state.mjs",
+      "bytes": 4378,
+      "sha256": "4fbdf0bc23a2ab7a991f70c43a11b5a9706f10d7367656faee61413196e64c7c",
+      "exports": [
+        "evidencePath",
+        "fingerprint",
+        "createEvidenceLedger",
+        "matchesEvidence"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/impl-review.mjs",
+      "bytes": 51667,
+      "sha256": "2532edd92760b3a1e4d69c8a4c5dad0273dd4c1d293a3e5043f42b74be3f9867",
+      "exports": [
+        "IMPL_REVIEW_SCHEMA",
+        "normalizeImplFinding",
+        "mergeJudgementsByObjectId",
+        "filterOwnedJudgements",
+        "collectSourceManifest",
+        "failedImplementationReview",
+        "CHECKLIST_VOCABULARY",
+        "checklistVocabularyOverrides",
+        "DEFAULT_CHECKLIST_SECTION_PATTERN",
+        "DEFAULT_KIT_COLUMN_INDEX",
+        "kitModuleName",
+        "kitsFromCell",
+        "cellIsHedged",
+        "parseKitManifest",
+        "capabilityChecklistFromClaims",
+        "checkKitIntegration",
+        "runDeterministicImplementationChecks",
+        "runImplementationReview"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/onboarding.mjs",
+      "bytes": 37053,
+      "sha256": "152d1f117e5cb5e939ccf98b6a8e7966aa6aa343fd375b810f82cb9d6295cecc",
+      "exports": [
+        "materialManifest",
+        "capabilityVoteKey",
+        "panelClaimKey",
+        "mergePanelOperations",
+        "catalogCapabilityName",
+        "crossCheckCapabilityOperations",
+        "deterministicCapabilityOperations",
+        "runTaskOnboarding",
+        "maybeRunTaskOnboarding"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 2,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/orchestrator.mjs",
+      "bytes": 80109,
+      "sha256": "494379237ea7ffd7ea7c1f03b33b37c845f6cc0afae1fa22e6f1aee24f438544",
+      "exports": [
+        "stopAssessmentBlocks",
+        "finalizeArtifactRuntimeV2",
+        "handleRuntimeV2Event",
+        "refreshRuntimeRequirements"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 4,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/review-collector.mjs",
+      "bytes": 48648,
+      "sha256": "80fd43b498dd66b57e590b6d193a0f115d07220aa3bc6c6c85ca58b269fd0974",
+      "exports": [
+        "collectReviewItems"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 2,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/review-evidence-validation.mjs",
+      "bytes": 2945,
+      "sha256": "a41002becdc6fafe3efee416fc3f88ca0ee872c0e28c323d6aaed146da3276ed",
+      "exports": [
+        "validateStructuredReviewEvidence"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/review-scope.mjs",
+      "bytes": 26325,
+      "sha256": "d8cb5b23d1b048ddb9854379af2a7a0806921b3c7b988120a71ccd0eb17c9afa",
+      "exports": [
+        "REVIEW_SCOPE_PAGE_BYTES",
+        "REVIEW_SCOPE_REQUEST_BYTES",
+        "reviewScopeClaims",
+        "assertReviewScopeActive",
+        "finalizeReviewScopeRequest",
+        "prepareReviewScope"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 7,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/reviewer-evidence.mjs",
+      "bytes": 6967,
+      "sha256": "4cb02bee323860aeb1e7055da99335a178a97a39c644719bc397dbc4cec8bf60",
+      "exports": [
+        "prepareReviewerRequest",
+        "scopedSourceCitations"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/reviewer.mjs",
+      "bytes": 47011,
+      "sha256": "12baa6dcada43f62f68bc2c46273addbbed2c1a23333677b0fe2f3282233cb19",
+      "exports": [
+        "generationReviewSchema",
+        "GROUND_TRUTH_REVIEW_SCHEMA",
+        "SKILL_GROUND_TRUTH_REVIEW_SCHEMA",
+        "SKILL_REVIEW_SCHEMA",
+        "STOP_REVIEW_SCHEMA",
+        "STOP_CLASSIFICATION_SCHEMA",
+        "buildArguments",
+        "reviewerFailureDetail",
+        "reviewResultIssues",
+        "reviewerEnvelopeSummary",
+        "journalReviewerEnvelope",
+        "independentReviewerEnvironment",
+        "resolveReviewerSession",
+        "startRoleReviewer",
+        "handoffRoleReviewer",
+        "invokeRoleReviewer"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/session-end.mjs",
+      "bytes": 1301,
+      "sha256": "0063fd7cb3de87bdd91e84082ef7fe5787c722c6a006b787c21f62c583c66cf0",
+      "exports": [
+        "handleRuntimeV2SessionEnd"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/stop-protocol-task.mjs",
+      "bytes": 13956,
+      "sha256": "97cabb0bd328f8f30df4a738a4095586d570da00274cf5fdaa6be55bf847a2a5",
+      "exports": [
+        "DEFAULT_STOP_STAGES",
+        "runStopProtocolTask"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/stop-task-review.mjs",
+      "bytes": 39103,
+      "sha256": "64feddf82ff73ce4b483d048bb6bff89c0aed7b364ee027f3c934ee2c9a47a89",
+      "exports": [
+        "canUseStopTaskReview",
+        "runStopTaskReview"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 3,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "lib/runtime-v2/stop-workspace-review.mjs",
+      "bytes": 41007,
+      "sha256": "9f49f5a0350ed2b4ebf2f2f022ba6b1e14c27c2bcc9cb0f4c0d463324a3d34f4",
+      "exports": [
+        "runWorkspaceStopReview"
+      ],
+      "toolNameCandidates": [
+        "review_scope",
+        "review_checklist",
+        "submit_review",
+        "submit_finding",
+        "review_plan",
+        "review_notes",
+        "review_changes",
+        "finish_stop_review"
+      ],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "lib/semantic-review.mjs",
+      "bytes": 18268,
+      "sha256": "de6d606f1d14db8ad1f27b1cb417870c57230cdcba701046515dde56d26a8979",
+      "exports": [
+        "REVIEW_SCHEMA",
+        "parseClaudeReview",
+        "buildSemanticReviewArguments",
+        "invokeSemanticReviewFork",
+        "runSemanticReview"
+      ],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 1,
+      "packagedHosts": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "type": "source"
+    },
+    {
+      "file": "packaging/hosts/codeagent/marketplace.json",
+      "bytes": 522,
+      "sha256": "f7bf7e9c1f043c206f30f00dae106ca601016c011bc8eb4a953aa43e3bb33334",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "packaging/hosts/codeagent/plugin.json",
+      "bytes": 352,
+      "sha256": "1c9daaefb8c8b8ae505b1d7a84ac0021e78a36f0f1e48e47e24136486fb1b241",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "source"
+    },
+    {
+      "file": "packaging/hosts/openclaw/skills/runtime-corrector/SKILL.md",
+      "bytes": 3810,
+      "sha256": "84972f916ca1206da340462c6fcc58041c5f9a2a350b98912510e728329775cc",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "runtime-corrector"
+    },
+    {
+      "file": "skills/document-corrector/SKILL.md",
+      "bytes": 1948,
+      "sha256": "662cad629cc5f404deafc74167240dd82949220235fa94eb7d328c6fc6aa111f",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "document-corrector"
+    },
+    {
+      "file": "skills/runtime-corrector-control/SKILL.md",
+      "bytes": 6594,
+      "sha256": "516b8992514e4d121f00b81c736183449029094af2783eefbab73ba695fb5066",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "runtime-corrector-control"
+    },
+    {
+      "file": "skills/runtime-corrector-init/SKILL.md",
+      "bytes": 6063,
+      "sha256": "aea276b4af835879248ba06728ee11247389f7a664600679587bc4caceb609d4",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "runtime-corrector-init"
+    },
+    {
+      "file": "skills/runtime-corrector-workflow/SKILL.md",
+      "bytes": 2998,
+      "sha256": "eafbcd7ae0ffef96b449bb7e9be32f968b2140e65b5016e0fcc8d241233c8782",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "runtime-corrector-workflow"
+    },
+    {
+      "file": "skills/semantic-review/SKILL.md",
+      "bytes": 7793,
+      "sha256": "99b3e77ba94008e53e58c4dd450849ca01c4065696a6755ff23a89671b7fa7ca",
+      "exports": [],
+      "toolNameCandidates": [],
+      "promptConstructionSites": 0,
+      "packagedHosts": [],
+      "type": "skill",
+      "hostDiscoverable": true,
+      "name": "semantic-review"
+    }
+  ],
+  "sourceSchemas": {
+    "read": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "grep": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "find": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "ls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    }
+  },
+  "liveSchemas": {
+    "read": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 400
+        }
+      }
+    },
+    "grep": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "includeGenerated": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "find": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "includeGenerated": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "ls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "includeGenerated": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "skillCareSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "action"
+    ],
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "resume",
+          "inventory",
+          "search",
+          "read",
+          "note",
+          "notes"
+        ]
+      },
+      "query": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "prefix": {
+        "type": "string",
+        "enum": [
+          "skill/",
+          "execution/",
+          "constraint/"
+        ]
+      },
+      "id": {
+        "type": "string"
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 16000
+      },
+      "key": {
+        "type": "string",
+        "maxLength": 96
+      },
+      "text": {
+        "type": "string",
+        "maxLength": 1200
+      },
+      "refs": {
+        "type": "array",
+        "maxItems": 8,
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "registeredContract": {
+    "public": [
+      "runtime_corrector",
+      "rc_document",
+      "rc_skill_care",
+      "rc_progress"
+    ],
+    "task": [
+      "source_read",
+      "source_grep",
+      "source_find",
+      "source_ls",
+      "review_history",
+      "submit_review",
+      "submit_classification",
+      "submit_findings",
+      "finish_findings",
+      "review_scope",
+      "review_checklist",
+      "review_changes",
+      "review_plan",
+      "review_notes",
+      "submit_finding",
+      "finish_stop_review"
+    ],
+    "baseline": [
+      "source_read",
+      "source_grep",
+      "source_find",
+      "source_ls",
+      "review_history",
+      "baseline_notes",
+      "save_baseline_batch",
+      "finish_baseline"
+    ]
+  },
+  "roles": [
+    {
+      "role": "ground-truth-extractor",
+      "dispatch": "bounded baseline → runtime-v2/baseline-task → review-task/baseline-task → native task session; other extraction → reviewer transport",
+      "memory": "project identity, baseline_notes, review_history",
+      "scope": "complete original requirement basis"
+    },
+    {
+      "role": "artifact-reviewer",
+      "dispatch": "openclaw/reviewer + semantic-review + document-corrector when semantic request exists",
+      "memory": "document project session, rc_document notes",
+      "scope": "current declared artifact/edge/criteria"
+    },
+    {
+      "role": "skill-reviewer",
+      "dispatch": "openclaw/reviewer + private skill-care + rc_skill_care",
+      "memory": "task/Skill notes and source revision",
+      "scope": "activated original Skill obligations and execution"
+    },
+    {
+      "role": "stop-reviewer",
+      "dispatch": "runtime-v2/stop-workspace-review → protocol-task → task session",
+      "memory": "one isolated review per Stop, review_history/plan/notes",
+      "scope": "scope selection plus original checklist, current workspace and process proof"
+    },
+    {
+      "role": "implementation-reviewer",
+      "dispatch": "scoped stop task or generic reviewer by input",
+      "memory": "task evidence/receipts",
+      "scope": "assigned implementation proof owner"
+    },
+    {
+      "role": "onboarding-extractor/onboarding-adjudicator",
+      "dispatch": "generic reviewer transport",
+      "memory": "frozen onboarding request",
+      "scope": "initial configured baseline"
+    }
+  ],
+  "constraints": [
+    "One tool name does not imply one permission or proof contract.",
+    "Packaged source is not sufficient evidence of production reachability.",
+    "Lexical tool/prompt sites include records and compatibility code; inspect dispatch before optimizing.",
+    "Private document-corrector is currently also discoverable as a host skill; measure/consider a private resource with compatibility explicitly assessed.",
+    "prompts.json/prompt-profile are retained development paths, not in current production module allowlist; do not claim trimming them improves production Stop."
+  ]
+}
