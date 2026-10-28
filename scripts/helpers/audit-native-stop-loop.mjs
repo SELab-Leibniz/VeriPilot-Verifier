@@ -6,8 +6,8 @@ import { pathToFileURL } from 'node:url';
 
 export async function auditNativeStopLoop(outputRoot) {
   const original = await fs.readFile(path.join(outputRoot, 'result.json'), 'utf8'), raw = JSON.parse(original);
-  if (raw.mode === 'original-turn') return auditNativeOriginalTurn(outputRoot, raw);
-  if (raw.mode !== 'automatic-loop' || !raw.sessionId || !raw.sessionKey) throw new Error('No completed native-loop observation is available to audit.');
+  if (raw.mode === 'original-turn' && !raw.injected) return auditNativeOriginalTurn(outputRoot, raw);
+  if (!['automatic-loop', 'original-turn'].includes(raw.mode) || !raw.sessionId || !raw.sessionKey) throw new Error('No completed native-loop observation is available to audit.');
   const projectRoot = path.join(outputRoot, 'project'), pluginRoot = path.join(outputRoot, 'native-host/build/runtime-corrector-openclaw');
   const load = relative => import(pathToFileURL(path.join(pluginRoot, relative)).href);
   const [{ findTask, taskDirectory }, { createStopCorrectionStore }, { listNativeRuns }, { readReport }] = await Promise.all([
@@ -35,17 +35,20 @@ export async function auditNativeStopLoop(outputRoot) {
   const denominatorPreserved = originalObjectIds.length > 0 && JSON.stringify(originalObjectIds) === JSON.stringify(final?.rows.map(row => row.objectId).sort());
   const roles = Object.fromEntries(['ground-truth-extractor', 'stop-reviewer'].map(role => [role, nativeRuns.filter(run => run.role === role).length]));
   const privateStartsObserved = nativeRuns.every(run => raw.modelStarts.some(event => event.runId === run.runId && event.sessionId === run.sessionId));
+  const originalStartObserved = raw.mode !== 'original-turn' || raw.modelStarts.some(event => event.runId === raw.originalRunId && event.sessionId === raw.sessionId);
+  const fault = raw.injected ? JSON.parse(await fs.readFile(path.join(outputRoot, 'native-host/fault-injection.json'), 'utf8')) : null;
+  const faultConfirmed = !raw.injected || fault.runId === raw.originalRunId && fault.beforeHash !== fault.afterHash;
   const complete = Boolean(task?.verification?.status === 'PASS' && report.verification === 'PASS' && ledger?.used === 1 && used.length === 1
     && businessRuns.size === 1 && businessRuns.has(`rc-stop-${admission.id}`) && admission.endedAt >= admission.startedAt && initialDeviation
     && finalReview?.status === 'PASS' && finalReview.evaluationId === task.verification.evaluationId
     && denominatorPreserved && final.rows.every(row => row.judgement === 'PASS') && raw.deliveryChecks === true
     && nativeRuns.length === 3 && roles['ground-truth-extractor'] === 1 && roles['stop-reviewer'] === 2
-    && privateStartsObserved && nativeRuns.every(run => run.status === 'SETTLED'));
+    && privateStartsObserved && originalStartObserved && faultConfirmed && nativeRuns.every(run => run.status === 'SETTLED'));
   const audit = { complete, mode: 'offline-audit', taskId: task?.taskId, rawReportedTaskId: raw.taskId,
     historicalTaskIdMismatch: raw.taskId !== task?.taskId, verification: task?.verification?.status, reportVerification: report.verification,
     used: ledger?.used, admissionCount: Object.keys(ledger?.admissions ?? {}).length, initialDeviation: Boolean(initialDeviation),
     finalReview, actualCorrectionRunIds: [...businessRuns], evaluations, originalObjectIds, denominatorPreserved,
-    privateStartsObserved, roles, deliveryChecks: raw.deliveryChecks === true,
+    privateStartsObserved, originalStartObserved, faultConfirmed, roles, deliveryChecks: raw.deliveryChecks === true,
     privateRuns: nativeRuns.map(({ role, status, sessionId, runId }) => ({ role, status, sessionId, runId })),
     observationSource: path.join(outputRoot, 'result.json'), noModelCall: true, capturedAt: new Date().toISOString() };
   await fs.writeFile(path.join(outputRoot, 'audit.json'), JSON.stringify(audit, null, 2));

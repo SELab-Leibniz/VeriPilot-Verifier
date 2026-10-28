@@ -55,12 +55,15 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     // immediately before the REAL original host run finalizes. Host terminal,
     // RC dispatch, business repair and quota observation remain unmodified.
     const fixtureRoot = path.join(root, 'fault-fixture'); await fs.mkdir(fixtureRoot, { recursive: true });
+    await fs.writeFile(path.join(fixtureRoot, 'package.json'), JSON.stringify({ name: 'rc-fault-fixture', version: '1.0.0', type: 'module',
+      openclaw: { extensions: ['./index.mjs'] } }));
     await fs.writeFile(path.join(fixtureRoot, 'openclaw.plugin.json'), JSON.stringify({ id: 'rc-fault-fixture', name: 'RC isolated fault injection',
       main: './index.mjs', version: '1.0.0', configSchema: { type: 'object', additionalProperties: false, properties: {} } }));
     await fs.writeFile(path.join(fixtureRoot, 'index.mjs'), `import fs from 'node:fs/promises'; import path from 'node:path'; import {createHash} from 'node:crypto';
 const root=${JSON.stringify(root)}, project=${JSON.stringify(projectRoot)};
 export default {id:'rc-fault-fixture',name:'RC isolated fault injection',register(api){api.on('before_agent_finalize',async(event,ctx)=>{
  const target=await fs.readFile(path.join(root,'fault-target.json'),'utf8').then(JSON.parse,()=>null);
+ if(target)await fs.writeFile(path.join(root,'fault-hook-observation.json'),JSON.stringify({eventRunId:event.runId,contextRunId:ctx.runId,workspaceDir:ctx.workspaceDir,targetRunId:target.runId}));
  if(!target||(event.runId??ctx.runId)!==target.runId||path.resolve(ctx.workspaceDir??'')!==project)return;
  const receipt=path.join(root,'fault-injection.json');if(await fs.access(receipt).then(()=>true,()=>false))return;
  const file=path.join(project,'app.mjs'),before=await fs.readFile(file),after=Buffer.from('export const accept = value => value;\\n');
@@ -68,7 +71,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
  await fs.writeFile(receipt,JSON.stringify({kind:'program fault injection before actual original host finalization',runId:target.runId,at:Date.now(),file,beforeHash:hash(before),afterHash:hash(after)}));
 },{priority:1000});}};`);
     config.plugins.allow.push('rc-fault-fixture'); config.plugins.load.paths.push(fixtureRoot);
-    config.plugins.entries['rc-fault-fixture'] = { enabled: true };
+    config.plugins.entries['rc-fault-fixture'] = { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } };
   }
   // The random loopback Gateway token lives in this process only. Existing
   // provider credentials are inherited, not embedded in this saved config.
@@ -86,6 +89,8 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
     const registry = getGlobalPluginRegistry(), plugin = registry.plugins.find(item => item.id === 'runtime-corrector');
     if (plugin?.status !== 'loaded') throw new Error('The actual Gateway did not load the built RC plugin.');
+    if (injectDefect && registry.plugins.find(item => item.id === 'rc-fault-fixture')?.status !== 'loaded')
+      throw new Error('The isolated fault-injection plugin was not loaded; no business model should be started.');
     const runtime = createPluginRuntime({ allowGatewaySubagentBinding: true });
     if (!await runtime.gateway.isAvailable()) throw new Error('The actual in-process Gateway dispatch port is unavailable.');
     const diagnostics = await load('dist/plugin-sdk/diagnostic-runtime.js');

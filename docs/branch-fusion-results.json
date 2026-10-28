@@ -1,0 +1,913 @@
+{
+  "generatedAt": "2026-10-28T05:48:54.709Z",
+  "kind": "six fixed known-answer cases per variant; one draw per case; not population accuracy or billing",
+  "commonCommit": "1435ab857e82b152b7a9684801ba21edd661fb52",
+  "host": "installed OpenClaw 2026.7.1-2, read-only",
+  "branches": {
+    "a": {
+      "records": [
+        {
+          "case": "correct",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 1,
+          "status": "PASS",
+          "reasonCode": "REVIEW_PASSED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "PASS"
+            }
+          ],
+          "elapsedMs": 91235,
+          "reviewStarts": 2,
+          "reviewEnds": 2,
+          "toolCalls": 13,
+          "toolErrors": 1,
+          "sourceReads": 7,
+          "hostTokenCounters": {
+            "input": 20258,
+            "output": 1766,
+            "cacheRead": 25152,
+            "cacheWrite": 0,
+            "totalTokens": 47176
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-correct-v3\\result.json"
+        },
+        {
+          "case": "external",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "UNVERIFIED",
+          "reasonCode": "STOP_REVIEW_INCOMPLETE",
+          "classification": "TASK_COMPLETE",
+          "match": false,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "UNVERIFIED"
+            }
+          ],
+          "elapsedMs": 111198,
+          "reviewStarts": 2,
+          "reviewEnds": 2,
+          "toolCalls": 17,
+          "toolErrors": 4,
+          "sourceReads": 9,
+          "hostTokenCounters": {
+            "input": 35763,
+            "output": 1996,
+            "cacheRead": 27328,
+            "cacheWrite": 0,
+            "totalTokens": 65087
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-external-v3\\result.json"
+        },
+        {
+          "case": "hidden",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 82314,
+          "reviewStarts": 2,
+          "reviewEnds": 2,
+          "toolCalls": 14,
+          "toolErrors": 1,
+          "sourceReads": 8,
+          "hostTokenCounters": {
+            "input": 27340,
+            "output": 1183,
+            "cacheRead": 16704,
+            "cacheWrite": 0,
+            "totalTokens": 45227
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-hidden-v3\\result.json"
+        },
+        {
+          "case": "execution",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "UNVERIFIED",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "INTERMEDIATE",
+          "match": false,
+          "rows": [],
+          "elapsedMs": 153975,
+          "reviewStarts": 2,
+          "reviewEnds": 2,
+          "toolCalls": 17,
+          "toolErrors": 4,
+          "sourceReads": 8,
+          "hostTokenCounters": {
+            "input": 21825,
+            "output": 3512,
+            "cacheRead": 26752,
+            "cacheWrite": 0,
+            "totalTokens": 52089
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-execution-v3\\result.json"
+        },
+        {
+          "case": "optional",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 65558,
+          "reviewStarts": 2,
+          "reviewEnds": 2,
+          "toolCalls": 12,
+          "toolErrors": 1,
+          "sourceReads": 7,
+          "hostTokenCounters": {
+            "input": 22628,
+            "output": 1055,
+            "cacheRead": 9792,
+            "cacheWrite": 0,
+            "totalTokens": 33475
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-optional-v3\\result.json"
+        },
+        {
+          "case": "six",
+          "revision": "b1297e0ac882d7f412412961d4a2ad08259f7c28",
+          "sourceDigest": "c4ec54976783db9e0c3491b83e4eab55ef035a7e424a2ac7b4055ea7a3d8354e",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 6,
+          "status": "UNVERIFIED",
+          "reasonCode": "STOP_REVIEW_CANCELLED",
+          "classification": null,
+          "match": false,
+          "rows": [],
+          "elapsedMs": 180615,
+          "reviewStarts": 3,
+          "reviewEnds": 3,
+          "toolCalls": 27,
+          "toolErrors": 2,
+          "sourceReads": 18,
+          "hostTokenCounters": {
+            "input": 113545,
+            "output": 3711,
+            "cacheRead": 24832,
+            "cacheWrite": 0,
+            "totalTokens": 142088
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\a-six-v3\\result.json"
+        }
+      ],
+      "summary": {
+        "cases": 6,
+        "matchingCases": 3,
+        "expectedObjects": 11,
+        "submittedObjects": 4,
+        "elapsedMs": 684895,
+        "reviewStarts": 13,
+        "reviewEnds": 13,
+        "toolCalls": 100,
+        "toolErrors": 13,
+        "sourceReads": 57,
+        "hostTokens": 385142
+      },
+      "semantics": [
+        {
+          "scenario": "new-user-at-stop",
+          "match": true,
+          "status": "PASS",
+          "reason": "REVIEW_PASSED",
+          "claims": [
+            "Implement quicksort.",
+            "Implement insertion sort."
+          ],
+          "objectIds": [
+            "M16:requirements-0b085e7df9d7d320",
+            "M16:requirements-cd5e035825c00f30"
+          ],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "empty-stage",
+          "match": true,
+          "status": "UNVERIFIED",
+          "reason": "STOP_STAGE_METRICS_UNDECLARED",
+          "claims": [
+            "Implement quicksort."
+          ],
+          "objectIds": [],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "test-source-ownership",
+          "match": true,
+          "status": null,
+          "reason": null,
+          "claims": null,
+          "objectIds": null,
+          "m12": 3,
+          "m16": 1
+        }
+      ]
+    },
+    "b": {
+      "records": [
+        {
+          "case": "correct",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 1,
+          "status": "PASS",
+          "reasonCode": "REVIEW_PASSED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "PASS"
+            }
+          ],
+          "elapsedMs": 44973,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 5,
+          "toolErrors": 0,
+          "sourceReads": 3,
+          "hostTokenCounters": {
+            "input": 13754,
+            "output": 936,
+            "cacheRead": 15744,
+            "cacheWrite": 0,
+            "totalTokens": 30434
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-correct-v3\\result.json"
+        },
+        {
+          "case": "external",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 59346,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 9,
+          "toolErrors": 0,
+          "sourceReads": 5,
+          "hostTokenCounters": {
+            "input": 18939,
+            "output": 1220,
+            "cacheRead": 31296,
+            "cacheWrite": 0,
+            "totalTokens": 51455
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-external-v3\\result.json"
+        },
+        {
+          "case": "hidden",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 64375,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 6,
+          "toolErrors": 0,
+          "sourceReads": 3,
+          "hostTokenCounters": {
+            "input": 20797,
+            "output": 1159,
+            "cacheRead": 25792,
+            "cacheWrite": 0,
+            "totalTokens": 47748
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-hidden-v3\\result.json"
+        },
+        {
+          "case": "execution",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "UNVERIFIED",
+          "expectedCount": 1,
+          "status": "UNVERIFIED",
+          "reasonCode": "STOP_REVIEW_INCOMPLETE",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M12:R1",
+              "judgement": "UNVERIFIED"
+            }
+          ],
+          "elapsedMs": 52198,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 6,
+          "toolErrors": 0,
+          "sourceReads": 4,
+          "hostTokenCounters": {
+            "input": 18240,
+            "output": 1104,
+            "cacheRead": 12288,
+            "cacheWrite": 0,
+            "totalTokens": 31632
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-execution-v3\\result.json"
+        },
+        {
+          "case": "optional",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 63902,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 7,
+          "toolErrors": 0,
+          "sourceReads": 5,
+          "hostTokenCounters": {
+            "input": 21411,
+            "output": 1404,
+            "cacheRead": 17792,
+            "cacheWrite": 0,
+            "totalTokens": 40607
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-optional-v3\\result.json"
+        },
+        {
+          "case": "six",
+          "revision": "508223a4540277403775d868132007f4fbe24422",
+          "sourceDigest": "99a4531f04a7e0b44d4ddd8508aed5367c1587c6d117972a998a7e994400c9c6",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 6,
+          "status": "PASS",
+          "reasonCode": "REVIEW_PASSED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R2",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R3",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R4",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R5",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R6",
+              "judgement": "PASS"
+            }
+          ],
+          "elapsedMs": 68455,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 10,
+          "toolErrors": 0,
+          "sourceReads": 2,
+          "hostTokenCounters": {
+            "input": 26670,
+            "output": 2342,
+            "cacheRead": 17536,
+            "cacheWrite": 0,
+            "totalTokens": 46548
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\experiments\\branch-fusion-20261028\\live\\b-six-v3\\result.json"
+        }
+      ],
+      "summary": {
+        "cases": 6,
+        "matchingCases": 6,
+        "expectedObjects": 11,
+        "submittedObjects": 11,
+        "elapsedMs": 353249,
+        "reviewStarts": 6,
+        "reviewEnds": 6,
+        "toolCalls": 43,
+        "toolErrors": 0,
+        "sourceReads": 22,
+        "hostTokens": 248424
+      },
+      "semantics": [
+        {
+          "scenario": "new-user-at-stop",
+          "match": false,
+          "status": "PASS",
+          "reason": "REVIEW_PASSED",
+          "claims": [
+            "Implement quicksort."
+          ],
+          "objectIds": [
+            "M16:requirements-0b085e7df9d7d320"
+          ],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "empty-stage",
+          "match": false,
+          "status": "UNVERIFIED",
+          "reason": "NO_CURRENT_DEVIATION",
+          "claims": [
+            "Implement quicksort."
+          ],
+          "objectIds": [],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "test-source-ownership",
+          "match": false,
+          "status": null,
+          "reason": null,
+          "claims": null,
+          "objectIds": null,
+          "m12": 3,
+          "m16": 2
+        }
+      ]
+    },
+    "f": {
+      "records": [
+        {
+          "case": "correct",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "4a9c5ce68657fc6e72ba331b7e08634cde7dbbbd55726d099ec9178be251c073",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 1,
+          "status": "PASS",
+          "reasonCode": "REVIEW_PASSED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "PASS"
+            }
+          ],
+          "elapsedMs": 78470,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 8,
+          "toolErrors": 0,
+          "sourceReads": 5,
+          "hostTokenCounters": {
+            "input": 29995,
+            "output": 1753,
+            "cacheRead": 27264,
+            "cacheWrite": 0,
+            "totalTokens": 59012
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-correct\\result.json"
+        },
+        {
+          "case": "external",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "e86194bde80f8c6b17bc4ae2dd0cdc1563b300a6812d0345676feff297a1c282",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 62058,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 8,
+          "toolErrors": 1,
+          "sourceReads": 3,
+          "hostTokenCounters": {
+            "input": 22399,
+            "output": 1051,
+            "cacheRead": 35840,
+            "cacheWrite": 0,
+            "totalTokens": 59290
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-external\\result.json"
+        },
+        {
+          "case": "hidden",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "e86194bde80f8c6b17bc4ae2dd0cdc1563b300a6812d0345676feff297a1c282",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 43977,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 6,
+          "toolErrors": 0,
+          "sourceReads": 3,
+          "hostTokenCounters": {
+            "input": 7845,
+            "output": 741,
+            "cacheRead": 40192,
+            "cacheWrite": 0,
+            "totalTokens": 48778
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-hidden\\result.json"
+        },
+        {
+          "case": "execution",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "e86194bde80f8c6b17bc4ae2dd0cdc1563b300a6812d0345676feff297a1c282",
+          "model": "glm-5.3-flash",
+          "expected": "UNVERIFIED",
+          "expectedCount": 1,
+          "status": "UNVERIFIED",
+          "reasonCode": "STOP_REVIEW_INCOMPLETE",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M12:R1",
+              "judgement": "UNVERIFIED"
+            }
+          ],
+          "elapsedMs": 56211,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 7,
+          "toolErrors": 0,
+          "sourceReads": 4,
+          "hostTokenCounters": {
+            "input": 16594,
+            "output": 1111,
+            "cacheRead": 23616,
+            "cacheWrite": 0,
+            "totalTokens": 41321
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-execution\\result.json"
+        },
+        {
+          "case": "optional",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "e86194bde80f8c6b17bc4ae2dd0cdc1563b300a6812d0345676feff297a1c282",
+          "model": "glm-5.3-flash",
+          "expected": "DEVIATION",
+          "expectedCount": 1,
+          "status": "DEVIATION",
+          "reasonCode": "HOST_START_PROTOCOL_UNSUPPORTED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "DEVIATION"
+            }
+          ],
+          "elapsedMs": 48203,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 5,
+          "toolErrors": 0,
+          "sourceReads": 3,
+          "hostTokenCounters": {
+            "input": 17512,
+            "output": 1066,
+            "cacheRead": 13056,
+            "cacheWrite": 0,
+            "totalTokens": 31634
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-optional\\result.json"
+        },
+        {
+          "case": "six",
+          "revision": "d2c97ae35668e381bff457e7737b07ef6ecfa1e5",
+          "sourceDigest": "e86194bde80f8c6b17bc4ae2dd0cdc1563b300a6812d0345676feff297a1c282",
+          "model": "glm-5.3-flash",
+          "expected": "PASS",
+          "expectedCount": 6,
+          "status": "PASS",
+          "reasonCode": "REVIEW_PASSED",
+          "classification": "TASK_COMPLETE",
+          "match": true,
+          "rows": [
+            {
+              "objectId": "M16:R1",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R2",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R3",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R4",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R5",
+              "judgement": "PASS"
+            },
+            {
+              "objectId": "M16:R6",
+              "judgement": "PASS"
+            }
+          ],
+          "elapsedMs": 81520,
+          "reviewStarts": 1,
+          "reviewEnds": 1,
+          "toolCalls": 12,
+          "toolErrors": 0,
+          "sourceReads": 5,
+          "hostTokenCounters": {
+            "input": 37454,
+            "output": 2923,
+            "cacheRead": 18560,
+            "cacheWrite": 0,
+            "totalTokens": 58937
+          },
+          "error": null,
+          "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\fusion-live\\final-six\\result.json"
+        }
+      ],
+      "summary": {
+        "cases": 6,
+        "matchingCases": 6,
+        "expectedObjects": 11,
+        "submittedObjects": 11,
+        "elapsedMs": 370439,
+        "reviewStarts": 6,
+        "reviewEnds": 6,
+        "toolCalls": 46,
+        "toolErrors": 1,
+        "sourceReads": 23,
+        "hostTokens": 298972
+      },
+      "semantics": [
+        {
+          "scenario": "new-user-at-stop",
+          "match": true,
+          "status": "PASS",
+          "reason": "REVIEW_PASSED",
+          "claims": [
+            "Implement quicksort.",
+            "Implement insertion sort."
+          ],
+          "objectIds": [
+            "M16:requirements-0b085e7df9d7d320",
+            "M16:requirements-cd5e035825c00f30"
+          ],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "empty-stage",
+          "match": true,
+          "status": "UNVERIFIED",
+          "reason": "STOP_STAGE_METRICS_UNDECLARED",
+          "claims": [
+            "Implement quicksort."
+          ],
+          "objectIds": [],
+          "m12": null,
+          "m16": null
+        },
+        {
+          "scenario": "test-source-ownership",
+          "match": true,
+          "status": null,
+          "reason": null,
+          "claims": null,
+          "objectIds": null,
+          "m12": 3,
+          "m16": 1
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "fusionVsAElapsedChange": -0.4591302316413465,
+    "fusionVsBElapsedChange": 0.04866255813887643,
+    "commonSuccessfulCases": [
+      "correct",
+      "hidden",
+      "optional"
+    ],
+    "commonSuccessfulTimeMs": {
+      "a": 239107,
+      "f": 170650
+    }
+  },
+  "caveats": [
+    "No replicated sampling or statistical significance claim.",
+    "Initial program fixtures are not business-model execution.",
+    "A timed-out case remains in the aggregate.",
+    "F runtime digests also record a serialization-only scope metadata fix during the batch; review semantics and model limits stayed fixed.",
+    "Host token counters include cached input; prices are not configured.",
+    "Deterministic semantic cases use scripted transport and verdicts, separately from model samples."
+  ],
+  "actualHostCycle": {
+    "complete": true,
+    "mode": "offline-audit",
+    "taskId": "oc-scope-e1cbd828-3774-4b92-b24c-0b2b421f1f65",
+    "rawReportedTaskId": "oc-scope-e1cbd828-3774-4b92-b24c-0b2b421f1f65",
+    "historicalTaskIdMismatch": false,
+    "verification": "PASS",
+    "reportVerification": "PASS",
+    "used": 1,
+    "admissionCount": 1,
+    "initialDeviation": true,
+    "finalReview": {
+      "status": "PASS",
+      "evaluationId": "stop-2f1d084c52a38d14823cdc01",
+      "at": 1793166432229
+    },
+    "actualCorrectionRunIds": [
+      "rc-stop-ada2a362a5b4d426ebc5dbfd1005f291e9c2e94e96357bb7d0c782c6a9cd398c"
+    ],
+    "originalObjectIds": [
+      "M16:requirements-5ff16aee9f704558",
+      "M16:requirements-714154abdffd33e4",
+      "M16:requirements-edfb36eaba1d9234"
+    ],
+    "denominatorPreserved": true,
+    "privateStartsObserved": true,
+    "originalStartObserved": true,
+    "faultConfirmed": true,
+    "roles": {
+      "ground-truth-extractor": 1,
+      "stop-reviewer": 2
+    },
+    "deliveryChecks": true,
+    "observationSource": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\live-native-loop\\2026-10-28T05-41-30-197Z\\result.json",
+    "noModelCall": true,
+    "capturedAt": "2026-10-28T05:48:54.603Z",
+    "providerRequests": 20,
+    "modelCallStarts": 20,
+    "faultKind": "program fault injection before actual original host finalization",
+    "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction\\live-native-loop\\2026-10-28T05-41-30-197Z",
+    "freshnessProbe": {
+      "staleRejected": true,
+      "reportVerification": "STALE"
+    },
+    "processCleanup": {
+      "pid": 39136,
+      "gatewayClosed": true,
+      "auditComplete": true
+    }
+  },
+  "validation": {
+    "fullSuite": {
+      "files": 147,
+      "completed": 147,
+      "concurrency": 2,
+      "timeoutMs": 180000,
+      "failedFiles": [
+        "test/openclaw-supervised.test.mjs"
+      ],
+      "totals": {
+        "tests": 1744,
+        "pass": 1721,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 22
+      }
+    },
+    "isolatedTimingRecheck": {
+      "tests": 37,
+      "pass": 37,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "package": {
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "installedHost": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "browser": true,
+    "localEvidence": "C:\\Users\\user\\.codex\\worktrees\\fusion-stop-review\\runtime-corrector-toy\\.runtime-correction"
+  }
+}

@@ -32,7 +32,9 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
     await gateway.drain(); task = await findTask({ projectRoot, sessionId }); ledger = await store.inspect(sessionId);
     const progress = { status: task?.status, verification: task?.verification?.status, used: ledger?.used, modelCalls: gateway.metrics().modelStarts.length };
     if (JSON.stringify(progress) !== last) { last = JSON.stringify(progress); console.log(last); }
-    if (task?.verification?.status === 'PASS' || ['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR'].includes(task?.status)) break;
+    const finalReceipt = Object.values(ledger?.admissions ?? {}).find(item => item.accounting === 'USED')?.finalReview;
+    if (task?.verification?.status === 'PASS' && (!gateway.faultInjection || finalReceipt?.status === 'PASS')
+      || ['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR'].includes(task?.status)) break;
     if (!gateway.metrics().modelStarts.length) {
       const snapshot = await gateway.runtime.subagent.getSession({ sessionKey });
       const terminal = (snapshot.messages ?? []).map(record => record.message ?? record).at(-1);
