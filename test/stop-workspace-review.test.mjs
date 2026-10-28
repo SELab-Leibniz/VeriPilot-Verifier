@@ -127,9 +127,30 @@ test('Git diff and untracked files are available as entry points without creatin
   const handle = await f.run(async ({ readAll, submit }) => {
     await readAll(); await f.scope(submit);
     const status = await submit('review_changes', {}); assert.match(status.text, /spec\.md/u); assert.match(status.text, /new\.md/u);
+    assert.doesNotMatch(status.text, /\.runtime-correction/u, 'Program-owned notes and logs must not crowd the business change hints.');
     const diff = await submit('review_changes', { path: 'spec.md' }); assert.match(diff.text, /\+Updated original value/u);
     assert.equal(diff.navigationOnly, true);
     await f.result(submit, [], 'UNVERIFIED'); await submit('finish_stop_review', { summary: 'Diff alone is not acceptance evidence.' });
+  });
+  assert.equal(handle.sourceCitations.length, 0);
+});
+
+test('Windows Git change hints do not invent edits for unchanged long original paths', { skip: process.platform !== 'win32' }, async t => {
+  const f = await fixture(t);
+  const long = path.join(f.root, ...Array.from({ length: 5 }, (_, index) => `${index}-` + 'original'.repeat(6)), 'long-business.md');
+  assert(long.length > 300);
+  await fs.mkdir(path.dirname(long), { recursive: true }); await fs.writeFile(long, 'Unchanged original document.\n');
+  const git = args => execFileSync('git', ['-c', 'core.longpaths=true', '-C', f.root, ...args], { windowsHide: true });
+  execFileSync('git', ['init', '--quiet', f.root], { windowsHide: true });
+  git(['config', 'core.longpaths', 'false']);
+  git(['add', '--', 'spec.md', long]);
+  git(['-c', 'user.name=RC Test', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=NUL', 'commit', '--quiet', '-m', 'original long path']);
+  const handle = await f.run(async ({ readAll, submit }) => {
+    await readAll(); await f.scope(submit);
+    const status = await submit('review_changes', {});
+    assert.doesNotMatch(status.text, /long-business\.md/u, 'An unchanged long path is not a source edit.');
+    const diff = await submit('review_changes', { path: long }); assert.equal(diff.text, '');
+    await f.result(submit, [], 'UNVERIFIED'); await submit('finish_stop_review', { summary: 'Navigation does not grant citations.' });
   });
   assert.equal(handle.sourceCitations.length, 0);
 });
