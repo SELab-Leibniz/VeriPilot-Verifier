@@ -3,6 +3,43 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { eligibleStopStages } from '../lib/runtime-v2/review-routing.mjs';
+
+test('production classification rejects completion disguised as waiting and accepts only unresolved prerequisites', async t => {
+  const f = await stopProtocolFixture(t); f.input.request.classificationContract = 2;
+  await f.run(async ({ readAll, submit }) => {
+    await readAll();
+    await assert.rejects(submit('submit_classification', { stopClassification: 'WAITING_FOR_USER', summary: 'Delivered, optional improvements offered.', completionClaim: true, requiredUserInput: null }), /Waiting requires/);
+    await assert.rejects(submit('submit_classification', { stopClassification: 'WAITING_FOR_USER', summary: 'Pause.', completionClaim: false, requiredUserInput: '' }), /Waiting requires/);
+    await assert.rejects(submit('submit_classification', { stopClassification: 'BLOCKED_EXTERNAL', summary: 'Pause.', completionClaim: false }), /concrete blocker/);
+    await assert.rejects(submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Done.', completionClaim: true, requiredUserInput: 'Choose required output format.' }), /unresolved prerequisites/);
+    await submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Delivered requested work; improvements are optional.', completionClaim: true, requiredUserInput: null, externalBlocker: null });
+  });
+});
+
+test('source-only tasks cannot select configured document stages; an explicit empty stage list never expands to defaults', async t => {
+  assert.deepEqual(eligibleStopStages({ claims: [{ status: 'ACTIVE', severity: 'HARD', verificationTarget: 'IMPLEMENTATION' }] }, ['proposal', 'design', 'tasks', 'implementation']), ['implementation']);
+  assert.deepEqual(eligibleStopStages({ claims: [{ status: 'ACTIVE', severity: 'HARD', verificationTarget: 'ARTIFACT' }] }, ['design']), ['design']);
+  const f = await stopProtocolFixture(t); f.input.request.workflowStages = [];
+  await f.run(async ({ readAll, submit }) => {
+    await readAll(); await assert.rejects(submit('submit_classification', { stopClassification: 'STAGE_COMPLETE', stage: 'tasks', summary: 'Code finished.' }), /frozen workflow/);
+    await submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Requested code finished.' });
+  });
+});
+
+for (const [stopClassification, fields] of [
+  ['WAITING_FOR_USER', { requiredUserInput: 'The user must choose the required output format.', externalBlocker: null }],
+  ['BLOCKED_EXTERNAL', { requiredUserInput: null, externalBlocker: 'The requested external service is unavailable.' }],
+  ['INTERMEDIATE', { requiredUserInput: null, externalBlocker: null }],
+]) test(`production classification preserves a genuine ${stopClassification} scope`, async t => {
+  const f = await stopProtocolFixture(t); f.input.request.classificationContract = 2;
+  const result = await f.run(async ({ readAll, submit }) => {
+    await readAll(); await submit('submit_classification', { stopClassification, completionClaim: false,
+      summary: 'Requested work remains under the stated stopping condition.', ...fields });
+  });
+  assert.equal(result.result.stopClassification, stopClassification);
+  assert.deepEqual(result.result.metricObjectJudgements, []);
+});
 
 for (const kind of ['classification', 'findings']) test(`${kind} forwards effort off to OpenClaw and still requires evidence receipts`, async t => {
   const f = await stopProtocolFixture(t, kind);

@@ -20,6 +20,36 @@ async function fixture(t, overrides = {}) {
   return { root, manager, identity, sent, errors };
 }
 
+test('task history retains target, unknown dispatch, actual start and final review across reload', async t => {
+  const f = await fixture(t, { review: async () => ({ reviewStatus: 'UNVERIFIED', reasonCode: 'STOP_STAGE_METRICS_UNDECLARED',
+    reviewSummary: { groundTruthVersion: 2, status: 'UNVERIFIED', scopeSelection: { fullObjectCount: 4, selectedObjectCount: 0 } } }) });
+  const a = f.identity('a'), b = f.identity('b');
+  const task = await f.manager.defer(a, { sourceId: 'control:one', text: 'insertion sort' }); await f.manager.drain();
+  assert.equal(f.manager.snapshot(a).history[0].status, 'QUEUED');
+  assert.equal(f.manager.snapshot(a).history[0].id, task.id);
+  assert.equal(f.manager.get(b), undefined);
+  const runId = f.sent[0].runId; await f.manager.started(a, runId);
+  assert.equal(f.manager.snapshot(a).history[0].status, 'RUNNING');
+  await f.manager.candidate(a, { runId, text: 'done', reviewBudgetMs: 10000 }); await f.manager.drain();
+  const record = f.manager.snapshot(a);
+  assert.equal(record.history[0].status, 'FINISHED'); assert.equal(record.history[0].reviewStatus, 'UNVERIFIED');
+  assert.equal(record.pending.length, 0); assert.equal(record.reviewSummary.scopeSelection.fullObjectCount, 4);
+  const recovered = createPostRunDispatcher({ directoryFor: () => f.root, defaultDirectory: f.root, validate: async () => true,
+    sendUser: async () => { throw new Error('finished tasks cannot replay'); } });
+  t.after(() => recovered.dispose()); await recovered.load();
+  assert.equal(recovered.snapshot(a).history[0].status, 'FINISHED');
+  assert.equal(recovered.snapshot(a).reviewSummary.groundTruthVersion, 2);
+});
+
+test('an unknown dispatch stays visible with one history record and never reports execution completion', async t => {
+  const f = await fixture(t, { sendUser: async () => { throw new Error('lost response'); } });
+  const id = f.identity('a'); await f.manager.defer(id, { sourceId: 'one', text: 'new work' }); await f.manager.drain();
+  await f.manager.defer(id, { sourceId: 'one', text: 'new work' });
+  assert.equal(f.manager.snapshot(id).history.length, 1);
+  assert.equal(f.manager.snapshot(id).history[0].status, 'UNKNOWN');
+  assert.equal(f.manager.snapshot(id).history[0].endedAt, undefined);
+});
+
 test("normal host terminal precedes review; deferred input never waits and survives correction priority", async t => {
   const terminal = deferred(), reviewed = deferred(); let reviews = 0, f;
   f = await fixture(t, { waitTerminal: () => terminal.promise, review: async record => {

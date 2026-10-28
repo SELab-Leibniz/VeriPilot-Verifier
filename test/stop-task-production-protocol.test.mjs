@@ -54,7 +54,8 @@ test('production Stop moves from a real stage scope to task completion using onl
     const tasks = brief.members ?? [brief.task];
     if (brief.task?.scope === 'classification') {
       types.push('classification'); for (const file of brief.task.basisFiles) await read(file);
-      await submit('submit_classification', { stopClassification: selected, ...(selected === 'STAGE_COMPLETE' ? { stage: 'design' } : {}), summary: 'The frozen response selects this scope.' });
+      await submit('submit_classification', { stopClassification: selected, ...(selected === 'STAGE_COMPLETE' ? { stage: 'design' } : {}),
+        completionClaim: selected !== 'INTERMEDIATE', requiredUserInput: null, externalBlocker: null, summary: 'The frozen response selects this scope.' });
     } else if (brief.task?.scope === 'findings') {
       types.push('findings'); for (const file of brief.task.basisFiles) await read(file);
       const listing = await tools.get('source_find').execute(crypto.randomUUID(), { path: 'project', pattern: 'host-state' });

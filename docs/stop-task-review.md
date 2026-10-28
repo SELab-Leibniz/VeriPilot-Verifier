@@ -1,5 +1,11 @@
 # Stop 审查、预算与状态
 
+每轮结果的 `review.scopeSelection` 记录实际分类、基线版本、全量对象数、范围内对象数，以及各开启指标的原始对象、选择状态和排除原因。`review.metricObjectJudgements` 才是正式保存的指标判断；findings-only 的扫描任务完成数不代表指标通过数。
+
+分类提交协议 v2 要求说明原回复是否声明完成，以及必要的用户决策或外部阻塞。完成后提供可选建议仍选择完成范围；只有真实未解决的必要输入才能选择等待用户。纯实现义务不提供 proposal/design/tasks 文档阶段供分类器选择。合法阶段没有声明指标时记录 `STOP_STAGE_METRICS_UNDECLARED`；合法空对象范围记录 `NO_APPLICABLE_STAGE_OBJECTS` 或 `NO_APPLICABLE_METRIC_OBJECTS`，保持未验证，不能以 `NO_CURRENT_DEVIATION` 冒充已检验。独立文件质量审查仍可在无指标对象时工作。
+
+新增实现义务可携带结构化 `implementationRole`：`PRODUCTION`、`TEST` 或 `SUPPORT`。测试源码义务保留在 M12 的原始分母，明确标为 TEST 的义务不投射到 M16 生产实现覆盖。实际运行测试应另作为 PROCESS 义务保留。旧账本没有此字段时沿用原归属，不根据名称、描述或文件是否存在悄悄删除历史义务。
+
 生产 Stop 由 `orchestrator.mjs` 进入 `production-stop.mjs` 与 `assessStopCorrection()`，再通过 `stop-review-round.mjs`、`stop-task-group.mjs` 完成共享核心审查。没有静默回退旧 Stop 核心。显式只读验证复用审查机制，不领取业务续作准入，也不终止已有自动流程。
 
 ## 配置

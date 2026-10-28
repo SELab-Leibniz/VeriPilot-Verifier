@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createPostRunDispatcher } from "../lib/openclaw/post-run-dispatch.mjs";
 import { registerPostRunControls } from "../lib/openclaw/post-run-controls.mjs";
+import { ensureTask, withTaskState } from '../lib/runtime-v2/task-store.mjs';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-dispatch-controls-"));
@@ -43,6 +44,19 @@ test("control RPC requires authenticated scopes, exact session identity, and tas
   assert.equal((await f.request("get", f.record)).value.pending[0].text, "edited");
   f.invalidate();
   assert.equal((await f.request("edit", { ...task, revision: 2 })).error.code, "CONFLICT");
+});
+
+test('selected-session requirements expose pending input separately from a previous review baseline', async t => {
+  const f = await fixture(t), task = await ensureTask({ projectRoot: f.record.projectRoot, sessionId: f.record.sessionId });
+  await withTaskState({ projectRoot: f.record.projectRoot, taskId: task.taskId }, state => {
+    state.groundTruth.version = 2; state.groundTruth.pendingUserCursor = 'new-user';
+  });
+  const pending = await f.request('get', f.record);
+  assert.deepEqual(pending.value.requirements, { version: 2, pending: true, pendingUserCursor: 'new-user' });
+  await withTaskState({ projectRoot: f.record.projectRoot, taskId: task.taskId }, state => {
+    state.groundTruth.version = 3; state.groundTruth.pendingUserCursor = null;
+  });
+  assert.deepEqual((await f.request('get', f.record)).value.requirements, { version: 3, pending: false, pendingUserCursor: null });
 });
 
 test("session search covers all records before pagination and isolates same project sessions", async t => {

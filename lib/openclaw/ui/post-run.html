@@ -4,9 +4,12 @@
 <header><p class="eyebrow">RUNTIME CORRECTOR</p><h1>会话与待执行任务</h1><p>每个会话独立审查、纠偏和安排后续任务。</p></header>
 <section class="connection" aria-label="连接"><label>Gateway 凭据<input id="token" type="password" autocomplete="off" placeholder="已完成设备认证时可留空"></label><button id="connect">连接</button><span id="connection" role="status">未连接</span></section>
 <p id="error" role="alert" hidden></p>
+<p class="muted">此处仅列出已登记到 RC 调度器的会话，不是 MA 的全部历史聊天。切换 MA 窗口不会自动切换这里的选择。</p>
 <div class="layout"><aside><label>查找会话<input id="search" type="search" placeholder="会话或项目"></label><label>状态<select id="filter"><option value="all">全部会话</option><option value="active">执行或审查中</option><option value="pending">有待执行任务</option></select></label><div id="sessions" aria-label="会话列表"></div><div class="pagination"><button id="previous">上一页</button><span id="page"></span><button id="next">下一页</button></div></aside>
 <section id="detail" aria-label="选中会话"><p id="empty">连接后选择一个会话。切换 MA 会话时，请在这里选择对应会话。</p><div id="selected" hidden><h2 id="name"></h2><p id="project"></p><p id="identity" class="muted"></p>
-<ol class="task-rows"><li><strong id="phase"></strong><p id="reason" class="muted"></p></li><li><label for="pending">待执行任务</label><textarea id="pending" rows="6" placeholder="暂无待执行任务"></textarea><div class="actions"><button id="save">保存修改</button><button id="remove" class="secondary">删除这个待办</button><button id="reload" class="secondary" hidden>重新载入待办</button></div><p id="queue-note" class="muted"></p></li></ol>
+<p id="requirements-status" class="muted"></p><ol class="task-rows"><li><strong id="phase"></strong><p id="reason" class="muted"></p></li><li><label for="pending">待执行任务</label><textarea id="pending" rows="6" placeholder="暂无待执行任务"></textarea><div class="actions"><button id="save">保存修改</button><button id="remove" class="secondary">删除这个待办</button><button id="reload" class="secondary" hidden>重新载入待办</button></div><p id="queue-note" class="muted"></p></li></ol>
 <details id="more" hidden><summary>其他待执行任务</summary><div id="other-tasks"></div></details>
-<form id="add-form"><label for="new-task">添加后续任务</label><textarea id="new-task" rows="3" placeholder="审查与纠偏结束后执行；空闲时直接执行"></textarea><button type="submit">加入待办</button></form><p id="updated" class="muted"></p></div></section></div>
+<section id="review-summary" hidden><h3>最近一次审查范围</h3><p id="review-basis"></p><div id="review-objects"></div></section>
+<form id="add-form"><label for="new-task">添加后续任务</label><p id="task-target" class="muted"></p><textarea id="new-task" rows="3" placeholder="审查与纠偏结束后执行；空闲时直接执行"></textarea><button type="submit">加入待办</button></form><p id="task-receipt" role="status"></p>
+<section><h3>后续任务历史</h3><p class="muted">最近 50 个任务；领取后可在这里查看状态，执行结果保存在目标聊天中。</p><ol id="history"></ol></section><p id="updated" class="muted"></p></div></section></div>
 </main><script type="module" src="/plugins/runtime-corrector/post-run.mjs"></script></body></html>

@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { createPostRunDispatcher } from "../lib/openclaw/post-run-dispatch.mjs";
 import { registerPostRunControls } from "../lib/openclaw/post-run-controls.mjs";
+import { ensureTask, withTaskState } from '../lib/runtime-v2/task-store.mjs';
 
 const require = createRequire(import.meta.url), { chromium } = require(process.env.RC_PLAYWRIGHT ?? "playwright");
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-dispatch-browser-"));
@@ -126,6 +127,42 @@ try {
   await manager.started(identity("beta"), sent[1].runId); userRuns.delete(sent[1].runId);
   await manager.candidate(identity("beta"), { runId: sent[1].runId, text: "done", needsReview: false, reviewBudgetMs: 10000 }); await manager.drain();
   await page.waitForFunction(() => document.getElementById("phase").textContent === "会话空闲");
+  assert.match(await page.locator('#task-target').innerText(), /agent:main:beta/u);
+  assert.match(await page.locator('#history').innerText(), /beta newer unsaved draft/u);
+  assert.match(await page.locator('#history').innerText(), /执行已结束/u);
+  assert.match(await page.locator('body').innerText(), /不是 MA 的全部历史聊天/u);
+  const betaTask = await ensureTask({ projectRoot: root, sessionId: 'beta' });
+  await withTaskState({ projectRoot: root, taskId: betaTask.taskId }, state => {
+    state.groundTruth.version = 2; state.groundTruth.pendingUserCursor = 'insertion-user';
+  });
+  await page.waitForFunction(() => document.getElementById('requirements-status').textContent.includes('有新的用户输入待对齐'));
+  await withTaskState({ projectRoot: root, taskId: betaTask.taskId }, state => { state.groundTruth.pendingUserCursor = null; });
+  await page.waitForFunction(() => document.getElementById('requirements-status').textContent.includes('当前没有登记的待对齐输入'));
+  reviewAction = async () => ({ reviewStatus: 'UNVERIFIED', reasonCode: 'STOP_STAGE_METRICS_UNDECLARED', reviewSummary: {
+    groundTruthVersion: 2, status: 'UNVERIFIED', reviewedObjectCount: 0,
+    scopeSelection: { fullObjectCount: 4, selectedObjectCount: 0, reasonCode: 'STOP_STAGE_METRICS_UNDECLARED', metrics: {
+      M12: { enabled: true, available: 2, selected: 0, objects: [
+        { objectId: 'M12:quick', description: '实现快速排序', selected: false },
+        { objectId: 'M12:insertion', description: '实现插入排序', selected: false },
+      ] },
+      M16: { enabled: true, available: 2, selected: 0, objects: [
+        { objectId: 'M16:quick', description: '快速排序生产实现', selected: false },
+        { objectId: 'M16:insertion', description: '插入排序生产实现', selected: false },
+      ] },
+    } },
+  } });
+  await manager.started(identity('beta'), 'scope-review');
+  await manager.candidate(identity('beta'), { runId: 'scope-review', text: 'done', reviewBudgetMs: 10000 }); await manager.drain();
+  await page.waitForFunction(() => !document.getElementById('review-summary').hidden);
+  assert.match(await page.locator('#review-basis').innerText(), /基线 v2.*0 \/ 原始 4 项/u);
+  await page.getByText('M12：原始 2 项，选中 0 项', { exact: true }).click();
+  assert.match(await page.locator('#review-objects').innerText(), /范围外.*M12:insertion.*实现插入排序/u);
+  await withTaskState({ projectRoot: root, taskId: betaTask.taskId }, state => { state.groundTruth.pendingUserCursor = 'later-input'; });
+  await page.waitForFunction(() => document.getElementById('requirements-status').textContent.includes('有新的用户输入待对齐'));
+  assert.equal(await page.locator('#review-objects details[data-metric="M12"]').evaluate(element => element.open), true);
+  await withTaskState({ projectRoot: root, taskId: betaTask.taskId }, state => { state.groundTruth.pendingUserCursor = null; });
+  await page.waitForFunction(() => document.getElementById('requirements-status').textContent.includes('当前没有登记的待对齐输入'));
+  assert.match(await page.locator('#reason').innerText(), /没有声明指标/u);
   assert.equal(manager.snapshot(identity("alpha")).pending.length, 1);
   await page.screenshot({ path: path.resolve(".runtime-correction/post-run-desktop.png"), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -172,7 +209,7 @@ try {
   await page.waitForFunction(() => document.getElementById("pending").value === "changed in another tab");
   assert.match(await page.locator("#identity").textContent(), /alpha/u);
   assert.deepEqual(errors, []);
-  console.log("PASS browser: session isolation, retained in-flight drafts, stale edits, full task lifecycle, closed controls, 103-session pagination/search/deep link, responsive layout");
+  console.log("PASS browser: session isolation, retained in-flight drafts, stale edits, target and task history, review-scope objects, closed controls, 103-session pagination/search/deep link, responsive layout");
 } finally {
   await browser?.close(); await new Promise(resolve => server.close(resolve));
   await manager.dispose(); await fs.rm(root, { recursive: true, force: true });
