@@ -119,5 +119,13 @@
     "Complete the fixed selection and frozen heldout SWE-ArkTS comparison; the interrupted candidate is not a valid pair.",
     "Verify full-model behavior for additional metrics, Skill/document care, desktop long-running sessions and other host versions.",
     "Only claim lower tokens with complete provider-usage coverage and equivalent completed review scope."
-  ]
+  ],
+  "package": {
+    "archive": ".runtime-correction/system-optimization/runtime-corrector-20261029-stage-001.zip",
+    "bytes": 826735,
+    "sha256": "77bc3907986926e5869dc5746c7699e2783af7081d09b6c5e951926f47d53dbe",
+    "validationCommit": "6782491970f4c6b9c8f8db73204a491dbca1435d",
+    "extractedArchiveVerification": "PASS",
+    "verifiedPluginFiles": 244
+  }
 }
