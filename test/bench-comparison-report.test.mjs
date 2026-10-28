@@ -23,6 +23,12 @@ test('comparison never calls unchanged perfect P2P an improvement or hides unexe
   assert.equal(complete.arms.candidate.f2p, 1); assert.equal(complete.arms.baseline.f2p, .5);
   assert.equal(complete.strictlyHigherObservedAccuracy, false);
   assert.equal(complete.lowerObservedTokens, true); assert.equal(complete.lowerObservedTime, true);
+  assert.equal(complete.efficiencyComparisonQualified, false, 'hidden tests alone do not prove completed RC review');
+  for (const row of rows) row.usage.nativeRuns = [{ role: 'stop-reviewer', protocolCompleted: true }];
+  assert.equal((await run()).efficiencyComparisonQualified, true);
+  rows[0].usage.nativeRuns[0].protocolCompleted = false;
+  assert.equal((await run()).efficiencyComparisonQualified, false, 'doing less review is not qualified as faster review');
+  rows[0].usage.nativeRuns[0].protocolCompleted = true;
   rows.at(-1).grade.results[0].executed = false;
   const incomplete = await run(); assert.equal(incomplete.arms.candidate.f2p, null);
   assert.equal(incomplete.strictlyHigherObservedAccuracy, false); assert.equal(incomplete.lowerObservedTokens, null);
