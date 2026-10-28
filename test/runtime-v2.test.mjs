@@ -667,6 +667,46 @@ test("PostToolUse refreshes a Skill watcher at the due turn and emits one correc
 });
 
 
+test("incomplete original Skill source cannot establish a watcher or invoke an extractor", async t => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");
+  await write(root, ".claude/skills/demo/large.md", "x".repeat(2 * 1024 * 1024));
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const factory = fakeReviewerFactory();
+  const outcome = await handleRuntimeV2Event({ projectRoot: root, plan: v2Plan(root), reviewerFactory: factory,
+    input: { cwd: root, session_id: "incomplete-skill", transcript_path: transcript, hook_event_name: "PreToolUse",
+      tool_name: "Skill", tool_use_id: "incomplete-call", tool_input: { skill: "demo" } } });
+  assert.equal(outcome.reason, "SKILL_WATCH_NOT_ESTABLISHED");
+  assert.equal(outcome.watcher.status, "UNVERIFIED");
+  assert.equal(factory.calls.filter(call => call.role === "ground-truth-extractor").length, 0);
+});
+
+test("unchanged Skill checks reuse a NOT_COMPLETED assessment but changed sources and Stop force review", async t => {
+  const root = await workspace(t);
+  const skillFile = await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(6));
+  const plan = v2Plan(root);
+  const factory = fakeReviewerFactory({ skillAssessment: () => ({ summary: "Still implementing", completionStatus: "NOT_COMPLETED", findings: [] }) });
+  const base = { cwd: root, session_id: "dedup-skill", transcript_path: transcript };
+  const invoke = input => handleRuntimeV2Event({ input: { ...base, ...input }, projectRoot: root, plan, reviewerFactory: factory });
+  const started = await invoke({ hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: "skill-1", tool_input: { skill: "demo" } });
+  const due = async () => {
+    await withTaskState({ projectRoot: root, taskId: started.taskId }, state => {
+      Object.values(state.watchers)[0].nextCheckTurn = 0;
+    });
+  };
+  const checks = () => factory.calls.filter(call => call.role === "skill-reviewer").length;
+  await due(); await invoke({ hook_event_name: "PostToolUse", hook_event_id: "check-1", tool_name: "Read" });
+  assert.equal(checks(), 1);
+  await due(); await invoke({ hook_event_name: "PostToolUse", hook_event_id: "check-retry", tool_name: "Read" });
+  assert.equal(checks(), 1, "the same evidence cannot justify another LLM assessment");
+  await fs.writeFile(skillFile, "# Changed Skill\nVerify before completion.\n");
+  await due(); await invoke({ hook_event_name: "PostToolUse", hook_event_id: "check-changed", tool_name: "Read" });
+  assert.equal(checks(), 2, "source changes invalidate the scheduling cache");
+  await invoke({ hook_event_name: "Stop", hook_event_id: "check-stop", last_assistant_message: "Done" });
+  assert.equal(checks(), 3, "Stop must recheck claimed-completion prerequisites");
+});
+
 test("Skill admission rejects omitted contracts without successful cursor or watcher, and retries the same source", async t => {
   const root = await workspace(t);
   await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");

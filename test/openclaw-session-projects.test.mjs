@@ -122,6 +122,9 @@ test("native workspace Skill read creates a watcher in the bound business projec
   await fs.appendFile(path.join(f.a, ".runtime-corrector/config.yaml"), "skillCorrection:\n  enabled: true\n  selection:\n    mode: include\n    include: [workspace-note]\n");
   await f.command(ctx, `bind ${f.a}`);
   await f.runtime.beforeTool({ toolName: "read", toolCallId: "host-skill-read", params: { path: skill } }, ctx);
+  assert.equal(calls.length, 0, "an attempted discovery read is not yet a Skill invocation");
+  await f.runtime.toolResult({ toolName: "read", toolCallId: "host-skill-read", args: { path: skill },
+    result: { content: [{ type: "text", text: await fs.readFile(skill, "utf8") }] } }, ctx);
   assert.equal(calls.length, 1, f.warnings.join("\n"));
   assert.equal(path.resolve(calls[0].request.skill.directory), path.dirname(skill));
   const state = f.sharedState.states.get("main:native-skill");

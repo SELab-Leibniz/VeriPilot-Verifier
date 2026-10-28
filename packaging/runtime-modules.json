@@ -94,6 +94,7 @@
     "lib/runtime-v2/reviewer.mjs",
     "lib/runtime-v2/session-end.mjs",
     "lib/runtime-v2/skill-source.mjs",
+    "lib/runtime-v2/skill-care.mjs",
     "lib/runtime-v2/stop-correction-assessment.mjs",
     "lib/runtime-v2/stop-correction-config.mjs",
     "lib/runtime-v2/stop-correction-store.mjs",
