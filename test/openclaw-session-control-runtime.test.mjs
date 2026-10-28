@@ -28,7 +28,7 @@ async function within(promise, description) {
 async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
   let runtime;
-  t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true }); });
+  t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
 artifacts:

@@ -27,6 +27,16 @@ async function taskFixture(t) {
   return { root, target, current, directory: taskDirectory(root, state.taskId) };
 }
 
+test('missing or ambiguous decision identity cannot replay a previous assessment or mutate its task', async t => {
+  const f = await taskFixture(t);
+  await withTaskState(f.target, state => { (state.assessments ??= {}).undefined = { result: { stop: { status: 'DEVIATION' } } }; });
+  const before = await f.current(); let calculations = 0;
+  for (const assessmentId of [undefined, null, '', '   ', 0, '__proto__', 'constructor', 'toString'])
+    await assert.rejects(withTaskDecision({ ...f.target, context: { assessmentId } }, () => { calculations++; }), { code: 'ASSESSMENT_ID_REQUIRED' });
+  assert.equal(calculations, 0);
+  assert.deepEqual(await f.current(), before);
+});
+
 test("dictionary changes and array append/edit/truncate never replace growing history", () => {
   const before = JSON.parse('{"assessments":{"seed":{"result":"large"}},"history":[1,2],"__proto__":{"x":1}}');
   const after = JSON.parse('{"assessments":{"seed":{"result":"large"},"a/b":{"result":"new"}},"history":[1,3,4],"__proto__":{"x":2}}');

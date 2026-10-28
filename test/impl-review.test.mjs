@@ -1,3 +1,4 @@
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import assert from "node:assert/strict";
 import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { promises as fs } from "node:fs";
@@ -85,28 +86,8 @@ function implFakeFactory(state) {
       })),
     };
   };
-  return async options => {
-    const { projectRoot, role, request, schema } = options;
-    const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String((state.serial += 1)));
-    await fs.mkdir(requestDirectory, { recursive: true });
-    let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
-      result = {
-        summary: "Ground Truth refreshed.",
-        taskClassification: "CONTINUATION",
-        operations: request.currentGroundTruth.version === 0 ? [{
-          operation: "ADD",
-          category: "requirements",
-          text: "The home page must render the product list.",
-          authority: "USER_EXPLICIT",
-          severity: "HARD",
-          source: { ref: "transcript:user-1" },
-        }] : [],
-        skillGroundTruth: null,
-      };
-    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
-      result = stopAssessment(request);
-    } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
+  const sourceAssessment = request => { let result;
+
       state.implCalls += 1;
       const m12 = (request.population.metrics.M12 ?? []);
       const sourceObjects = Object.values(request.population.metrics).flat();
@@ -132,11 +113,47 @@ function implFakeFactory(state) {
           evidence: ["entry/src/main/ets/pages/Index.ets:1"],
         })),
       };
+
+    return result;
+  };
+  return async options => {
+    const { projectRoot, role, request, schema } = options;
+    const requestDirectory = path.join(projectRoot, ".runtime-correction", "fake-review", String((state.serial += 1)));
+    await fs.mkdir(requestDirectory, { recursive: true });
+    let result;
+    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || request.reviewScope?.kind === "baseline") {
+      result = {
+        summary: "Ground Truth refreshed.",
+        taskClassification: "CONTINUATION",
+        operations: request.currentGroundTruth.version === 0 ? [{
+          operation: "ADD",
+          category: "requirements",
+          text: "The home page must render the product list.",
+          authority: "USER_EXPLICIT",
+          severity: "HARD",
+          source: { ref: "transcript:user-1" },
+        }] : [],
+        skillGroundTruth: null,
+      };
+    } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
+      result = stopAssessment(request);
+      await options.onScope?.({ stopClassification: result.stopClassification, stage: result.stage });
+      const population = { ...request.population, metrics: Object.fromEntries(Object.entries(request.population.metrics).filter(([metric]) => ['M09','M12','M16'].includes(metric))) };
+      if (Object.values(population.metrics).some(objects => objects.length)) {
+        const source = sourceAssessment({ ...request, population });
+        result.findings.push(...source.findings.map(finding => ({ ...finding,
+          violatedGroundTruthIds: finding.violatedGroundTruthIds.map(id => id.replace(/^M\d{2}:/u, '')) })));
+        result.metricObjectJudgements = result.metricObjectJudgements.map(row => row.judgement === 'DEVIATION' ? row : source.metricObjectJudgements.find(item => item.objectId === row.objectId) ?? row);
+      }
+    } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
+      result = sourceAssessment(request);
     } else {
       throw new Error(`Unexpected fake reviewer schema for role ${role}`);
     }
+    const sourceFile = path.join(projectRoot, 'entry/src/main/ets/pages/Index.ets');
+    const sourceBytes = await fs.readFile(sourceFile).catch(error => { if (error.code !== 'ENOENT') throw error; return null; });
     return observedLegacyStop(options, {
-      result,
+      result, reviewEvidence: sourceBytes ? { files: [sourceFile], fingerprints: { [sourceFile]: sha256(sourceBytes) } } : undefined,
       requestDirectory,
       // assessStop reuses the ground-truth extractor's handle: it writes
       // assessment-request.json into the request directory and calls followUp
@@ -395,7 +412,7 @@ test("kit findings block the stop gate and stamp observation.turnIndex", async (
     "| 扫码 | scan-kit | ScanService.ets |",
   ].join("\n"));
   const plan = implPlan(root);
-  // Both LLM reviewers pass everything; only the deterministic check can block.
+  // The shared scripted reviewer passes everything; only the deterministic check can block.
   const state = { serial: 0, implCalls: 0, implPasses: true };
   const first = await runStop(root, plan, implFakeFactory(state), "stop-kit-1");
   assert.equal(first.decision, "block", "an unintegrated manifest kit must block the stop");
@@ -446,7 +463,7 @@ test("implementation review detects, delivers, closes on retest, and attributes 
   state.implPasses = true;
   await write(root,'entry/src/main/ets/pages/Index.ets','@Entry struct Index { products: string[] = ["Product"] }');
   const second = await runStop(root, plan, factory, "stop-impl-2");
-  assert.equal(second.decision, "allow", "clean retest allows the stop");
+  assert.equal(second.decision, 'allow', JSON.stringify({reason:second.stop.reasonCode,rows:second.stop.review?.metricObjectJudgements,findings:second.stop.review?.findings}));
   assert.equal(second.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement, "PASS",JSON.stringify({rows:second.stop.report.metrics.find(metric=>metric.metricId==='M16').objects,implementation:second.stop.implementationReview,issues:second.stop.report.checkerIssues}));
   families = await taskFamilies(root);
   const closed = families.find((item) => item.familyId === family.familyId);

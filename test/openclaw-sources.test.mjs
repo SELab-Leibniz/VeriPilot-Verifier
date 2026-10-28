@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { prepareSourceInputs, bindSourceSelections, validateSourceBindings } from "../lib/openclaw/sources.mjs";
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { GROUND_TRUTH_REVIEW_SCHEMA, SKILL_GROUND_TRUTH_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";

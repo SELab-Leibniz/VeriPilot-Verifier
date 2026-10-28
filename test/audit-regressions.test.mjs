@@ -1,3 +1,4 @@
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import assert from "node:assert/strict";
 import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { promises as fs } from "node:fs";
@@ -34,6 +35,7 @@ const requirement = (claimId, target = "IMPLEMENTATION", category = "requirement
 
 async function harness(t, { claims = [requirement("code")], stage = "implementation", stopJudgement = () => "PASS", implResult = null, maxCorrections = 1, independentStop = false, stopFeedbackDeferred = false } = {}) {
   const root = await workspace(t);
+  await fs.writeFile(path.join(root, "business.mjs"), "export const value = 1;\n");
   await fs.writeFile(path.join(root, "transcript.jsonl"), JSON.stringify(userEntry));
   const runtimeV2 = compileRuntimeV2Config({
     version: 2, locale: "en",
@@ -46,7 +48,7 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
   }, { policyRoot: path.join(root, ".runtime-corrector") });
   let serial = 0;
   let event = 0;
-  const calls = { implementation: [], device: 0, roles: [] };
+  const calls = { sourceScopes: [], device: 0, roles: [] };
   const assessment = (request) => ({
     summary: "Everything passed in the general reviewer.", stopClassification: "TASK_COMPLETE", stage,
     findings: [], metricObjectJudgements: Object.values(request.population.metrics).flat().map((object) => ({
@@ -63,16 +65,38 @@ async function harness(t, { claims = [requirement("code")], stage = "implementat
       summary: "Frozen task obligations.", taskClassification: "CONTINUATION",
       operations: request.currentGroundTruth.version === 0 ? claims : [],
     };
-    else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) result = assessment(request);
+    else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
+      result = assessment(request);
+      await options.onScope?.({ stopClassification: result.stopClassification, stage: result.stage });
+      const sourcePopulation = implementationPopulation(request.population, { groundTruth: options.evidence.groundTruth,
+        stage: result.stopClassification === 'TASK_COMPLETE' ? null : result.stage }).population;
+      if (Object.values(sourcePopulation.metrics).some(objects => objects.length)) {
+        const sourceRequest = { ...request, population: sourcePopulation }; calls.sourceScopes.push(sourceRequest);
+        if (implResult) {
+          try {
+            const source = await implResult(sourceRequest);
+            const ids = new Set(Object.values(sourcePopulation.metrics).flat().map(object => object.objectId));
+            result.findings.push(...source.findings ?? []);
+            result.metricObjectJudgements = result.metricObjectJudgements.flatMap(row => {
+              if (!ids.has(row.objectId)) return [row];
+              const checked = source.metricObjectJudgements.find(item => item.objectId === row.objectId);
+              if (!checked) return [];
+              const { reasonCode, ...owned } = checked;
+              return [row.judgement === 'DEVIATION' ? row : owned];
+            });
+          } catch { throw Object.assign(new Error('The single workspace reviewer is unavailable.'), { code: 'REVIEWER_DEADLINE' }); }
+        }
+      }
+    }
     else {
-      calls.implementation.push(request);
+      calls.sourceScopes.push(request);
       result = implResult ? await implResult(request) : {
         summary: "Source checked.", findings: [], metricObjectJudgements: Object.values(request.population.metrics).flat().map((object) => ({
           objectId: object.objectId, judgement: "PASS", reason: "Source evidence.", evidence: ["src/app.js:1"],
         })),
       };
     }
-    return observedLegacyStop(options, { result, requestDirectory, providerDegradation: resolvedSessionPlan?.degraded ?? null, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) });
+    return observedLegacyStop(options, { result, requestDirectory, reviewEvidence: { files: [path.join(root, 'business.mjs')], fingerprints: { [path.join(root, 'business.mjs')]: sha256(await fs.readFile(path.join(root, 'business.mjs'))) } }, providerDegradation: resolvedSessionPlan?.degraded ?? null, close: async () => {}, followUp: async () => assessment(JSON.parse(await fs.readFile(path.join(requestDirectory, "assessment-request.json"), "utf8"))) });
   };
   return {
     root, calls,
@@ -99,7 +123,7 @@ test("docs-only legacy ledgers never launch source or device review", async (t) 
   const outcome = await h.stop();
   assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.report.status, "PASS");
-  assert.equal(h.calls.implementation.length, 0);
+  assert.equal(h.calls.sourceScopes.length, 0);
   assert.equal(h.calls.device, 0);
   assert.equal((await h.state(outcome.taskId)).status, "COMPLETED");
 });
@@ -108,9 +132,10 @@ test("mixed tasks route only source-owned objects and preserve process judgement
   const h = await harness(t, { claims: [requirement("code"), requirement("design", "ARTIFACT"), requirement("cli", "PROCESS"), requirement("workflow", "PROCESS", "workflowSteps")] });
   const outcome = await h.stop();
   assert.equal(outcome.stop.report.status, "PASS");
-  assert.equal(h.calls.implementation.length, 1);
-  assert.deepEqual(Object.values(h.calls.implementation[0].population.metrics).flat().map((object) => object.objectId), ["M12:code"]);
-  assert.deepEqual(outcome.stop.implementationReview.reusedStopSourceObjectIds,['M16:code'],'the normal source proof is checked and reused without duplicating that review');
+  assert.equal(h.calls.sourceScopes.length, 1);
+  assert.deepEqual(Object.values(h.calls.sourceScopes[0].population.metrics).flat().map((object) => object.objectId), ["M12:code", "M16:code"]);
+  assert.equal(h.calls.roles.filter(role => role === 'stop-reviewer').length, 1);
+  assert(!h.calls.roles.includes('implementation-reviewer'));
   const objects = outcome.stop.report.metrics.flatMap((metric) => metric.objects);
   assert.equal(objects.find((object) => object.objectId === "M11:workflow").reviewer, "stop-reviewer");
   assert.equal(objects.find((object) => object.objectId === "M12:code").reviewer, "stop-reviewer",'static PASS cannot replace the observed runtime proof owner');
@@ -126,7 +151,7 @@ test("independent Stop provider gets its own handle rather than inheriting extra
   });
 });
 
-test("misrouted kitchen process evidence is a bounded checker failure, never a code repair or PASS fallback", async t => {
+test("missing kitchen execution evidence remains UNVERIFIED in the same reviewer without code repair or PASS fallback", async t => {
   const claim = requirement("r06");
   claim.text = "Run the bundled kitchen verifier and obtain KITCHEN_VERIFIED before declaring the app complete.";
   const h = await harness(t, { claims: [claim], implResult: async request => ({
@@ -141,15 +166,14 @@ test("misrouted kitchen process evidence is a bounded checker failure, never a c
     if(i)await h.newUser();
     outcome = await h.stop();
     assert.equal(outcome.stop.status, "UNVERIFIED");
-    assert.equal(outcome.stop.report.status, "CHECKER_ERROR");
+    assert.equal(outcome.stop.report.status, "UNVERIFIED");
     assert.equal((await h.state(outcome.taskId)).stop.correctionAttempts, 0);
-    assert(outcome.stop.review.stopReviewerJudgements.every(row => row.judgement === "PASS"));
-    assert.equal(outcome.stop.implementationReview.reviewerJudgements[0].judgement, "UNVERIFIED");
-    assert.equal(outcome.stop.implementationReview.metricObjectJudgements[0].judgement, "CHECKER_ERROR");
+    assert(outcome.stop.review.metricObjectJudgements.some(row => row.judgement === 'UNVERIFIED'));
+    assert(!h.calls.roles.includes('implementation-reviewer'));
   }
   assert.equal(outcome.decision, "allow");
-  assert.equal(outcome.stop.verificationUnavailable, true);
-  const calls=h.calls.implementation.length;await h.stop();await h.stop();assert.equal(h.calls.implementation.length,calls,'a closed failed flow cannot silently replay an unverified checker');
+  assert.equal(outcome.stop.verificationUnavailable, false);
+  const calls=h.calls.sourceScopes.length;await h.stop();await h.stop();assert.equal(h.calls.sourceScopes.length,calls,'a closed failed flow cannot silently replay an unverified checker');
   assert.notEqual((await h.state(outcome.taskId)).verification.status, "PASS");
 });
 
@@ -197,7 +221,7 @@ test("planning checkpoints skip source review without changing future requiremen
 test("TASK_COMPLETE cannot use a planning stage label to skip required source verification", async (t) => {
   const h = await harness(t, { stage: "design" });
   await h.stop();
-  assert.equal(h.calls.implementation.length, 1);
+  assert.equal(h.calls.sourceScopes.length, 1);
 });
 
 test("an internal-role legacy scope cannot disable production verification", () => {
@@ -211,9 +235,9 @@ test("implementation outages fail owned objects, use infrastructure budget, and 
   const h = await harness(t, { implResult: () => { throw new Error("reviewer timeout"); } });
   const first = await h.stop();
   assert.equal(first.decision, "allow");
-  assert.equal(first.stop.report.status, "CHECKER_ERROR");
-  assert.equal(first.stop.report.metrics.find((metric) => metric.metricId === "M12").objects[0].judgement, "UNVERIFIED");
-  assert.equal(first.stop.implementationReview.metricObjectJudgements[0].judgement,'CHECKER_ERROR');
+  assert.equal(first.stop.status, 'UNVERIFIED');
+  assert.equal(first.stop.reasonCode, 'REVIEWER_DEADLINE');
+  assert(!h.calls.roles.includes('implementation-reviewer'));
   assert.equal(first.stop.admission,null);
   assert.equal((await h.state(first.taskId)).stop.correctionAttempts, 0);
   assert.equal((await h.stop()).decision, "allow");
@@ -284,7 +308,7 @@ test("nonblocking UNVERIFIED is disclosed and never stored as clean completion",
   assert.equal(outcome.decision, "allow");
   assert.equal((await h.state(outcome.taskId)).status, "COMPLETED_WITH_ISSUES");
   assert.match(encodeHookOutput("Stop", {}, outcome).systemMessage, /STOP_REVIEW_INCOMPLETE/u);
-  assert.equal(h.calls.implementation.length, 0);
+  assert.equal(h.calls.sourceScopes.length, 0);
 });
 
 test("all authorities reject reviewer-owned constraints before entering the ledger", async (t) => {
@@ -388,11 +412,12 @@ test("a new failed Stop reopens a previously completed task instead of keeping c
   const first = await h.stop();
   assert.equal((await h.state(first.taskId)).status, "COMPLETED");
   judgement = "DEVIATION";
+  await fs.writeFile(path.join(h.root, "business.mjs"), "export const value = 0;\n");
   await h.newUser();
   const second = await h.stop();
   const state = await h.state(second.taskId);
   assert.equal(second.decision, "block");
   assert.equal(state.status, "ACTIVE");
-  assert.equal(state.verification.status, "DEVIATION");
+  assert.equal(state.verification.status, "DEVIATION", JSON.stringify({verification:state.verification,review:second.stop.review,status:second.stop.status}));
   assert.equal(state.stop.correctionAttempts, 1);
 });

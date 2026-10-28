@@ -164,6 +164,7 @@ test("the production Stop caller forwards one frozen declaration without changin
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, task.taskId), "task.json"), "utf8"));
   const captured=[];
   const reviewerFactory = async input => {
+    await input.onScope?.({ stopClassification: 'TASK_COMPLETE', stage: null });
     captured.push(input.request);
     return { result: { summary: "No semantic verdict in this caller contract test.", stopClassification: "TASK_COMPLETE", stage: null,
       findings: [], metricObjectJudgements: Object.values(input.request.population.metrics).flat().map(object => ({
@@ -174,11 +175,11 @@ test("the production Stop caller forwards one frozen declaration without changin
     assessmentContext: { mode: "verify_only", assessmentId: "candidate-contract", guard: decisionGuard(state),
       deadlineAt: Date.now() + 30000, maxCorrections: 1 }, input: { cwd: f.root, session_id: "candidate-stop", transcript_path: transcript,
       hook_event_name: "Stop", hook_event_id: "candidate-stop-event", last_assistant_message: "The delivery is complete." } });
-  assert.equal(captured.length,4,JSON.stringify(outcome));
+  assert.equal(captured.length,1,JSON.stringify(outcome));
   for(const request of captured){
     assert.deepEqual(request.artifactCandidates[0].files, [{ path: "docs/current.md", sha256: sha256(await fs.readFile(file)) }]);
     assert.deepEqual(request.artifactCandidates[0].metricIds, ["M01", "M02", "M05"]);
-    assert.equal(Object.values(request.population.metrics).flat().length,1,'each grouped request owns one original metric obligation');
+    assert.equal(Object.values(request.population.metrics).flat().length,4,'one workspace request retains every original metric obligation');
   }
   for (const metric of ["M01", "M02", "M05","M12"]) assert.equal(captured.flatMap(request=>request.population.metrics[metric]??[]).length,1);
 });

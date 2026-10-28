@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { createOpenClawRuntime } from "../lib/openclaw/runtime.mjs";
 import { registerReviewerProgress } from "../lib/openclaw/reviewer-progress.mjs";
 import { STOP_CLASSIFICATION_SCHEMA, STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";

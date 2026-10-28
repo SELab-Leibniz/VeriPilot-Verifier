@@ -5,10 +5,11 @@ import { createOpenClawReviewerFactory } from '../../lib/openclaw/reviewer.mjs';
 import { registerTaskTools } from '../../lib/openclaw/task-tools.mjs';
 import { STOP_CLASSIFICATION_SCHEMA, STOP_REVIEW_SCHEMA } from '../../lib/runtime-v2/reviewer.mjs';
 import { sha256 } from '../../lib/runtime-v2/utils.mjs';
+import { runOpenClawStopTask as legacyStopTask } from '../compat/legacy-stop-task-runtime.mjs';
 
 export async function stopProtocolFixture(t, kind = 'classification', options = {}) {
   const parent = path.resolve('.runtime-correction/stop-protocol-tests'); await fs.mkdir(parent, { recursive: true });
-  const root = await fs.mkdtemp(path.join(parent, 'run-')); t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const root = await fs.mkdtemp(path.join(parent, 'run-')); t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }));
   const task = await ensureTask({ projectRoot: root, sessionId: 'protocol-host' });
   const claim = { claimId: 'R1', revisionId: 'R1@1', text: 'Deliver the required value.', category: 'requirements',
     status: 'ACTIVE', severity: 'HARD', authority: 'USER_EXPLICIT', verificationTarget: 'ARTIFACT' };
@@ -32,7 +33,8 @@ export async function stopProtocolFixture(t, kind = 'classification', options = 
     runtime: { version: '2026.7.1-2', agent: {} }, registerTool: fn => { toolsFactory = fn; }, on: (name, fn) => hooks.set(name, fn) };
   registerTaskTools(api);
   const calls = [];
-  const run = async (script, settings = {}) => createOpenClawReviewerFactory(api, { ...settings, runEmbeddedAgent: async params => {
+  const run = async (script, settings = {}) => createOpenClawReviewerFactory(api, {
+    ...(input.request.reviewScope?.kind !== 'workspace-stop' ? { runStopTask: legacyStopTask } : {}), ...settings, runEmbeddedAgent: async params => {
     calls.push(params);
     const brief = JSON.parse(params.prompt), tools = new Map(toolsFactory(params).map(tool => [tool.name, tool]));
     let turns = 0;

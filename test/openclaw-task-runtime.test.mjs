@@ -2,13 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
+import { createOpenClawReviewerFactory } from './helpers/legacy-openclaw-reviewer.mjs';
 import { bindTaskTools, registerTaskTools, TASK_TOOL_NAMES } from '../lib/openclaw/task-tools.mjs';
 import { ensureTask, taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { IMPL_REVIEW_SCHEMA } from '../lib/runtime-v2/impl-review.mjs';
 import { isInternalExecution } from '../lib/openclaw/internal-context.mjs';
 import { withNativeTaskToolPolicy } from '../lib/openclaw/native-config.mjs';
+import { createOpenClawReviewerFactory as createProductionFactory } from '../lib/openclaw/reviewer.mjs';
+
+test('production native Stop rejects every retired model scope before launching or copying files', async t => {
+  const f = await fixture(t); let calls = 0;
+  const factory = createProductionFactory(f.api, { runEmbeddedAgent: async () => { calls++; throw new Error('Retired scope reached a model'); } });
+  assert.equal(factory.supportsStopGroups, false);
+  for (const scope of [{ kind: 'classification' }, { kind: 'stop-group' }, { kind: 'metric' }, { kind: 'file-quality' }, { findingsOnly: true }])
+    await assert.rejects(factory({ ...f.input, role: 'stop-reviewer', request: { ...f.input.request, reviewScope: scope } }), { code: 'STOP_TASK_SCOPE_UNSUPPORTED' });
+  assert.equal(calls, 0);
+  await assert.rejects(fs.access(path.join(taskDirectory(f.root, f.input.taskId), 'review-task-runs')), { code: 'ENOENT' });
+});
 
 async function fixture(t) {
   const parent = path.resolve('.runtime-correction/native-runtime-tests'); await fs.mkdir(parent, { recursive: true });
@@ -33,7 +44,9 @@ async function fixture(t) {
 }
 async function scripted(params, f) {
   assert.equal(params.config.agents.defaults.models['host/catalog'].params.maxTokens, f.input.reviewer.maxOutputTokens ?? 32768);
-  assert.equal(isInternalExecution(), true); assert.deepEqual(params.toolsAllow, TASK_TOOL_NAMES.filter(name => !['submit_classification', 'submit_findings', 'finish_findings'].includes(name))); assert.equal(params.customTools, undefined);
+  assert.equal(isInternalExecution(), true);
+  assert.deepEqual(params.toolsAllow, ['source_read', 'source_grep', 'source_find', 'source_ls', 'review_history', 'submit_review']);
+  assert.equal(params.customTools, undefined);
   assert.deepEqual(params.config.tools.allow, params.toolsAllow);
   assert(params.toolsAllow.every(name => params.config.agents.list.find(agent => agent.id === params.agentId).tools.alsoAllow.includes(name)));
   assert.equal(f.tools({ sessionId: 'business', sessionKey: 'agent:main:business' }), null);

@@ -27,18 +27,30 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
     operation: "ADD", category: "requirements", text: "Deliver the originally requested file content.",
     authority: "USER_EXPLICIT", severity, verificationTarget: mixedFinding ? "IMPLEMENTATION" : "ARTIFACT", source: { ref: "user" },
   };
-  await applyGroundTruthDelta({projectRoot:root,taskId:task.taskId,delta:{operations:[operation,...(legacyChecker||legacyMode==='sibling'?[{...operation,text:'Preserve the second independent requested section.'}]:[])]}});
+  await applyGroundTruthDelta({projectRoot:root,taskId:task.taskId,delta:{operations:[operation,...(legacyChecker||legacyMode==='sibling'||expireAfterSave?[{...operation,text:'Preserve the second independent requested section.'}]:[])]}});
   const directory = taskDirectory(root, task.taskId), source = path.join(root, "delivery.md");
   const transcript = path.join(root, "transcript.jsonl");
   await fs.writeFile(source, "The concrete observed current delivery body.\n");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user-1", message: { content: "Deliver the requested file." } }));
   let sharedDeadlineAt;
+  if (expireAfterSave) {
+    const originalWrite = fs.writeFile;
+    let advancedAt = null; Date.now = () => advancedAt ?? now();
+    t.after(() => { fs.writeFile = originalWrite; });
+    fs.writeFile = async (file, ...args) => {
+      const result = await originalWrite(file, ...args);
+      if (String(file).includes('review-scopes') && Object.values(JSON.parse(String(args[0])).groups ?? {}).some(group => group.closedAt)) { fs.writeFile = originalWrite; advancedAt = sharedDeadlineAt + 1; }
+      return result;
+    };
+  }
   const factory = async input => {
     const classification = { stopClassification: "TASK_COMPLETE", stage: null };
+    sharedDeadlineAt = input.deadlineAt;
+    await input.onScope?.(classification);
     if (input.request.reviewScope?.kind === "classification") {sharedDeadlineAt=input.deadlineAt;return {
       result: { summary: "Classified the Stop.", ...classification, findings: [], metricObjectJudgements: [] }, close() {},
     };}
-    const file = input.request.reviewScope?.kind === "file-quality" || legacyMode === "file";
+    const file = input.request.fileQualityReviewEnabled || legacyMode === "file";
     // Scripted transport actually reads its complete fixture basis and source;
     // the collector independently checks these program-owned proof locations.
     await fs.readFile(input.request.groundTruthPath);
@@ -63,17 +75,17 @@ async function fixture(t, { quality = null, severity = "HARD", legacyChecker = f
       findings: legacyMode === "finding" || mixedFinding ? [{ deviationKey: "unproved-finding", rootCauseId: "REQUIREMENT_OMITTED", severity: "error",
         reason: "A concrete original observation demonstrates the finding.", actualEvidence: mixedFinding ? [`${source}#L1`] : [], expectedConstraint: "The original requirement.",
         violatedGroundTruthIds: [objects[0].sourceId, ...(legacyMode === "foreign-finding" ? ["foreign-claim"] : [])] }] : [], metricObjectJudgements: rows,
-      fileAssessments: file ? [{ path: "delivery.md", status: quality,
+      fileAssessments: file && legacyMode !== 'missing-file' ? [{ path: "delivery.md", status: quality,
         reason: quality === "UNVERIFIED" ? "The file quality baseline is unresolved." : "The current file omits a concrete required section.",
         evidence: quality === "UNVERIFIED" || legacyMode === "file" ? [] : [`${source}#L1`] }] : [] },
-      close() { if (expireAfterSave) Date.now = () => sharedDeadlineAt + 1; } };
+      close() {} };
   };
   factory.supportsReviewCollection = !legacyChecker && legacyMode === null;
   factory.supportsSupplementalFileAssessment = quality !== null;
   factory.handoff = factory;
   const plan = { artifacts: [{ nodeId: "delivery", stage: "requirements", patterns: ["delivery.md"], metrics: [] }],
     runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
-      skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3,
+      skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3, reviewGroupSize: 1,
         metrics: Object.fromEntries(METRIC_IDS.map(id => [id, true])), fileQualityReviewEnabled: quality !== null },
       reviewers: { stopReviewer: { timeoutMs: 15000 } },
     }, { policyRoot: path.join(root, ".runtime-corrector") }) };
@@ -118,6 +130,16 @@ test("conclusive file PASS keeps the ordinary complete Stop behavior", async t =
   assert.equal(f.result.stop.fileQualityIncomplete, false);
   assert.equal(f.state.status, "COMPLETED");
   assert.equal(f.state.verification.status, "PASS");
+});
+
+test('an omitted requested file remains visibly unverified without spending a business correction', async t => {
+  const f = await fixture(t, { quality: 'PASS', legacyMode: 'missing-file' });
+  assert.equal(f.result.stop.status, 'UNVERIFIED');
+  assert.equal(f.result.stop.fileQualityIncomplete, true);
+  assert.deepEqual(f.result.stop.review.fileAssessments.map(file => [file.path, file.status]), [['delivery.md', 'UNVERIFIED']]);
+  assert.match(f.result.stop.review.fileAssessments[0].reason, /not submitted/u);
+  assert.equal(f.state.stop.correctionAttempts, 0);
+  assert.equal(f.result.stop.admission, null);
 });
 
 test("a finished file-quality gap is not certified as a complete Stop PASS", async t => {

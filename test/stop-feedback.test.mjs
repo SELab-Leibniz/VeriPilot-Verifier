@@ -1,3 +1,4 @@
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
@@ -79,28 +80,21 @@ for (const active of [true, false]) test(`Stop failure ${active ? "persists vali
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-partial-core-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const task = await ensureTask({ projectRoot: root, sessionId: "partial-host" });
-  await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [{ operation: "ADD", category: "requirements",
-    text: "A confirmed output requirement", authority: "USER_EXPLICIT", severity: "HARD", source: { ref: "user" } }] } });
+  await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: ["A confirmed output requirement", "Preserve the second independent output requirement"].map(text => ({ operation: "ADD", category: "requirements",
+    text, authority: "USER_EXPLICIT", severity: "HARD", verificationTarget: "ARTIFACT", source: { ref: "user" } })) } });
   const transcript = path.join(root, "transcript.jsonl");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user-1", message: { content: "A confirmed output requirement" } }));
   await fs.writeFile(path.join(root,'business.py'),'# Current source\ndef run():\n  return 0\n# Explicit test witness\n');
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
     skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 } }, { policyRoot: path.join(root, ".runtime-corrector") }) };
-  let partialReview,calls=0;
+  let calls=0;
   const factory = async params => {
     calls++;
-    const {request}=params;
-    if(request.reviewScope?.kind==='classification')return {result:{summary:'Current delivery',stopClassification:'TASK_COMPLETE',stage:null,findings:[],metricObjectJudgements:[]},close(){}};
-    const objects = Object.values(request.population.metrics).flat();
-    const first = objects[0];
-    partialReview = { status: "PARTIAL", finalClassification: null, totalObjects: objects.length, recoveredObjects: 1,
-      metricObjectJudgements: [{ objectId: first.objectId, judgement: "DEVIATION", reason: "Actual local deviation", evidence: ["business.py#L2-L4"] }],
-      unreviewedObjectIds: objects.slice(1).map(object => object.objectId), rejectedObjectIds: [], citations: [] };
-    const checked=await withTestReviewProof(params,{result:partialReview});partialReview.citations=await checked.getSourceCitations();
-    throw Object.assign(new Error("Reviewer final output invalid"), { partialReview, partialReviewIsActive: () => active });
+    const file = path.join(root, 'business.py');
+    const handle = await scriptedWorkspaceReview(params, { file, failAt: 1, verdict: 'DEVIATION', reason: 'Actual local deviation' });
+    if (!active) await fs.writeFile(file, '# Replaced after the original review.\n');
+    return handle;
   };
-  factory.handoff = factory;
-  factory.supportsReviewCollection=true;
   const stop = id => handleRuntimeV2Event({ input: { cwd: root, session_id: "partial-host", transcript_path: transcript,
     hook_event_name: "Stop", hook_event_id: id, last_assistant_message: "Task complete." }, projectRoot: root, plan, reviewerFactory: factory });
   const first = await stop("p1");
@@ -112,8 +106,8 @@ for (const active of [true, false]) test(`Stop failure ${active ? "persists vali
     const collection=first.stop.review.collection;
     const persisted=JSON.parse(await fs.readFile(collection.progressPath,'utf8'));
     assert.equal(persisted.status,'UNVERIFIED');
-    const items=await Promise.all(persisted.items.map(async item=>JSON.parse(await fs.readFile(item.path,'utf8'))));
-    assert(items.some(item=>item.result.metricObjectJudgements.some(row=>row.judgement==='DEVIATION'&&row.reason==='Actual local deviation')));
+    const items=await Promise.all(persisted.items.filter(item=>item.status==='COMPLETED').map(async item=>JSON.parse(await fs.readFile(item.path,'utf8'))));
+    assert(items.some(item=>item.result.judgement==='DEVIATION'&&item.result.reason==='Actual local deviation'));
   }
   const firstCalls=calls;await stop("p1");
   const released = await stop("p1");

@@ -66,6 +66,22 @@ test("Session set is idempotent, reconciles immediately, and preserves other Ses
   assert.equal((await f.control.set(a, true)).effectiveEnabled, true);
 });
 
+test('rename retries preserve a competing human edit to Session settings', async t => {
+  const f = await fixture(t), a = f.session('a'), selection = await f.control.get(a);
+  const originalRename = fs.rename, external = '# Edited while replacement was blocked.\nversion: 1\nsessions: {}\n'; let failures = 0;
+  fs.rename = async (source, destination) => {
+    if (destination === selection.settingsFile && failures++ === 0) {
+      await fs.writeFile(destination, external);
+      throw Object.assign(new Error('Controlled file sharing conflict'), { code: 'EPERM' });
+    }
+    return originalRename(source, destination);
+  };
+  try {
+    await assert.rejects(f.control.set(a, false), /RC_SESSION_SETTINGS_CONFLICT/u);
+    assert.equal(await fs.readFile(selection.settingsFile, 'utf8'), external);
+  } finally { fs.rename = originalRename; }
+});
+
 test("Project and plugin total switches override saved Session preferences", async t => {
   const f = await fixture(t), a = f.session("a");
   await f.control.set(a, true);

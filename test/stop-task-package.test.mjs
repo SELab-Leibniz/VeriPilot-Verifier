@@ -42,7 +42,6 @@ async function fixture(t) {
   await write(path.join(sourceRoot, "hooks/hooks.json"), { hooks: {} });
   await write(path.join(sourceRoot, "docs/openclaw.md"), "# Review package fixture\n");
   for (const host of ["claude", "codeagent", "openclaw"]) {
-    await write(path.join(sourceRoot, "lib/hosts", `${host}.mjs`), `export const host = ${JSON.stringify(host)};\n`);
     for (const file of host === "openclaw" ? ["openclaw.plugin.json"] : ["plugin.json", "marketplace.json"]) {
       await write(path.join(sourceRoot, "packaging/hosts", host, file),
         await fs.readFile(path.join(SOURCE, "packaging/hosts", host, file), "utf8"));
@@ -80,12 +79,12 @@ test("every artifact excludes nested installations and private experiment output
   for (const host of ["claude", "codeagent", "openclaw"]) {
     const artifact = await buildPlugin({ ...input, host });
     const names = await artifactFiles(artifact);
-    assert(names.includes("lib/review-task/review-task.mjs"));
+    assert(names.includes("lib/runtime-v2/stop-workspace-review.mjs"));
     assert(names.includes("lib/agent-output.mjs"));
     assert(!names.some(name => name.split("/").some(part => ["node_modules", ".runtime-correction"].includes(part))));
     assert(!names.some(name => name.includes("sentinel")));
     assert(!names.some(name => name === "experiments" || name.startsWith("experiments/")));
-    for (const unwanted of ["unknown-directory", "unknown-tools", "unknown-tool.mjs", "one-off-diagnostic.mjs", "report.md", "report.json", "unlisted-root.md", "test", "examples", "packaging", "build-plugin.mjs", "plugin-builder.mjs"]) {
+    for (const unwanted of ["unknown-directory", "unknown-tools", "unknown-tool.mjs", "one-off-diagnostic.mjs", "report.md", "report.json", "unlisted-root.md", "stop-simplification-plan.md", "test", "examples", "packaging", "build-plugin.mjs", "plugin-builder.mjs"]) {
       assert(!names.some(name => name.split("/").includes(unwanted)), `${host}: ${unwanted}`);
     }
     const pkg = await read(path.join(artifact, "package.json"));
@@ -120,41 +119,26 @@ test("OpenClaw builds complete tool declarations even when the manifest template
   assert.deepEqual((await read(manifestFile)).contracts.tools,["runtime_corrector"],"build does not rewrite its source template");
 });
 
-test("OpenClaw ships a private locked TypeBox without an external install dependency", async t => {
+test('all runtime artifacts exclude legacy Stop workers and external dependency metadata', async t => {
   const input = await fixture(t);
-  const artifact = await buildPlugin({ ...input, host: "openclaw" });
-  const pkg = await read(path.join(artifact, "package.json"));
-  const lock = await read(path.join(artifact, "package-lock.json"));
-  const workerPackage = await read(path.join(input.worker, "package.json"));
-  const workerLock = await read(path.join(input.worker, "package-lock.json"));
-  const manifest = await read(path.join(artifact, "openclaw.plugin.json"));
-  assert.equal(pkg.dependencies, undefined);
-  assert.doesNotMatch(JSON.stringify(lock), /@earendil-works\/pi-/u);
-  assert.equal(workerPackage.dependencies.typebox, "1.3.27");
-  assert.deepEqual(pkg.runtimeCorrector.bundledDependencies.typebox, {
-    version: "1.3.27", integrity: workerLock.packages["node_modules/typebox"].integrity,
-    path: "vendor/typebox", license: "MIT",
-  });
-  assert.equal((await read(path.join(artifact, "vendor/typebox/package.json"))).version, "1.3.27");
-  await fs.access(path.join(artifact, "vendor/typebox/license"));
-  assert.match(await fs.readFile(path.join(artifact, "lib/review-task/review-task.mjs"), "utf8"),
-    /from '\.\.\/\.\.\/vendor\/typebox\/build\/index\.mjs'/u);
-  assert.deepEqual(pkg.overrides, workerPackage.overrides);
-  if (workerPackage.overrides?.undici) assert.equal(lock.packages["node_modules/undici"].version, workerPackage.overrides.undici);
-  assert.equal(pkg.version, manifest.version);
-  assert.equal(pkg.version, "1.9.1-openclaw.11-session-projects.15");
-  assert.equal(lock.lockfileVersion, 3);
-  assert.equal(lock.name, pkg.name);
-  assert.equal(lock.version, pkg.version);
-  for (const key of ["name", "version", "dependencies", "engines", "bin", "peerDependencies", "peerDependenciesMeta"]) {
-    assert.deepEqual(lock.packages[""][key], pkg[key]);
+  const retired = ['lib/review-task/review-task.mjs', 'lib/review-task/prompt-profile.mjs', 'lib/review-task/prompts.json',
+    'lib/review-task/package.json', 'lib/review-task/package-lock.json', 'lib/runtime-v2/stop-task-review.mjs',
+    'lib/runtime-v2/stop-task-group.mjs', 'lib/runtime-v2/stop-classification-task.mjs', 'lib/runtime-v2/stop-findings-task.mjs',
+    'lib/runtime-v2/stop-protocol-task.mjs', 'lib/review-task/classification-task.mjs', 'lib/review-task/findings-task.mjs',
+    'vendor/typebox', 'package-lock.json'];
+  for (const host of ['claude', 'codeagent', 'openclaw']) {
+    const artifact = await buildPlugin({ ...input, host }), pkg = await read(path.join(artifact, 'package.json'));
+    for (const name of retired) await assert.rejects(fs.access(path.join(artifact, name)), { code: 'ENOENT' });
+    assert.equal(pkg.dependencies, undefined); assert.equal(pkg.optionalDependencies, undefined);
+    assert.equal(pkg.runtimeCorrector, undefined); assert.equal(pkg.overrides, undefined);
+    if (host === 'openclaw') {
+      assert.equal(pkg.version, (await read(path.join(artifact, 'openclaw.plugin.json'))).version);
+      assert.equal(pkg.peerDependenciesMeta.openclaw.optional, true);
+    }
   }
-  assert.deepEqual(Object.keys(lock.packages), [""]);
-  assert.deepEqual(await read(path.join(artifact, "lib/review-task/package-lock.json")), workerLock);
-  assert.equal(pkg.peerDependenciesMeta.openclaw.optional, true);
 });
 
-test("a copied artifact imports its real review engine without node_modules or ambient TypeBox", async t => {
+test("a copied artifact imports its production engine, baseline and entry without node_modules or ambient TypeBox", async t => {
   const input = await fixture(t);
   const artifact = await buildPlugin({ ...input, host: "openclaw" });
   const installed = path.join(input.outputRoot, "copied-install");
@@ -162,9 +146,13 @@ test("a copied artifact imports its real review engine without node_modules or a
   const ambient = path.join(input.outputRoot, "node_modules/typebox");
   await write(path.join(ambient, "package.json"), { name: "typebox", version: "0.0.0", type: "module", exports: "./index.mjs" });
   await write(path.join(ambient, "index.mjs"), "throw new Error('AMBIENT_TYPEBOX_MUST_NOT_LOAD');\n");
-  const url = pathToFileURL(path.join(installed, "lib/review-task/review-task.mjs")).href;
+  const url = pathToFileURL(path.join(installed, "lib/openclaw/entry.mjs")).href;
+  const baselineUrl = pathToFileURL(path.join(installed, "lib/runtime-v2/baseline-task.mjs")).href;
+  const workspaceUrl = pathToFileURL(path.join(installed, 'lib/runtime-v2/stop-workspace-review.mjs')).href;
+  const toolsUrl = pathToFileURL(path.join(installed, 'lib/review-task/live-source-tools.mjs')).href;
   const result = spawnSync(process.execPath, ["--input-type=module", "-e",
-    `const worker = await import(${JSON.stringify(url)}); if (typeof worker.runReviewTask !== 'function') process.exit(1); console.log('PRIVATE_REVIEW_IMPORT_OK');`],
+    `const entry = await import(${JSON.stringify(url)}); const baseline = await import(${JSON.stringify(baselineUrl)}); const workspace = await import(${JSON.stringify(workspaceUrl)}); const tools = await import(${JSON.stringify(toolsUrl)});
+     if (typeof entry.default.register !== 'function' || typeof baseline.runStopBaselineTask !== 'function' || typeof workspace.runWorkspaceStopReview !== 'function' || tools.createLiveSourceTools(process.cwd()).length !== 4) process.exit(1); console.log('PRIVATE_REVIEW_IMPORT_OK');`],
     { cwd: installed, env: { ...process.env, NODE_PATH: path.dirname(ambient) }, encoding: "utf8", windowsHide: true, timeout: 30000 });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /PRIVATE_REVIEW_IMPORT_OK/u);
@@ -172,28 +160,32 @@ test("a copied artifact imports its real review engine without node_modules or a
   assert.equal(await fs.readFile(path.join(ambient, "index.mjs"), "utf8"), "throw new Error('AMBIENT_TYPEBOX_MUST_NOT_LOAD');\n");
 });
 
-test("a changed dependency archive fails the build before it can be installed", async t => {
-  const input = await fixture(t);
-  const archive = path.join(input.sourceRoot, "packaging/vendor/typebox-1.3.27.tgz");
-  const bytes = await fs.readFile(archive);
-  bytes[bytes.length - 1] ^= 1;
-  await fs.writeFile(archive, bytes);
-  await assert.rejects(buildPlugin({ ...input, host: "openclaw" }), /archive integrity/u);
+for (const host of ['claude', 'codeagent']) test(`${host} imports the shared Stop without ambient TypeBox or native host libraries`, async t => {
+  const input = await fixture(t), artifact = await buildPlugin({ ...input, host });
+  const ambient = path.join(input.outputRoot, 'node_modules/typebox');
+  await write(path.join(ambient, 'package.json'), { name: 'typebox', type: 'module', exports: './index.mjs' });
+  await write(path.join(ambient, 'index.mjs'), "throw new Error('CLI_MUST_NOT_LOAD_TYPEBOX');\n");
+  const url = pathToFileURL(path.join(artifact, 'lib/runtime-v2/stop-workspace-review.mjs')).href;
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', `const module = await import(${JSON.stringify(url)}); if (typeof module.runWorkspaceStopReview !== 'function') process.exit(1);`],
+    { cwd: artifact, encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  assert.equal(result.status, 0, result.stderr);
 });
 
-test("a mismatched pinned worker package cannot produce an installable-looking artifact", async t => {
+test('unused legacy worker inputs cannot enter or control production builds', async t => {
   const input = await fixture(t);
-  const lockFile = path.join(input.worker, "package-lock.json");
-  const lock = await read(lockFile);
-  lock.packages["node_modules/typebox"].version = "0.0.0";
-  await write(lockFile, lock);
-  await assert.rejects(buildPlugin({ ...input, host: "openclaw" }), /matching npm v3 lockfile/u);
+  await write(path.join(input.worker, 'review-task.mjs'), "throw new Error('RETIRED_REVIEW_ENGINE_LOADED');\n");
+  await write(path.join(input.worker, 'package-lock.json'), { lockfileVersion: 0, packages: { 'node_modules/hidden/node_modules/@earendil-works/pi-ai': { version: '1.4.0' } } });
+  await write(path.join(input.sourceRoot, 'packaging/vendor/typebox-1.3.27.tgz'), 'not a runtime input');
+  const artifact = await buildPlugin({ ...input, host: 'openclaw' });
+  await assert.rejects(fs.access(path.join(artifact, 'lib/review-task/review-task.mjs')), { code: 'ENOENT' });
+  const url = pathToFileURL(path.join(artifact, 'lib/openclaw/entry.mjs')).href;
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', 'await import(' + JSON.stringify(url) + ')'],
+    { cwd: artifact, encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  assert.equal(child.status, 0, child.stderr);
 });
 
-test('a transitive Pi package cannot be reintroduced through an otherwise matching lockfile', async t => {
-  const input = await fixture(t), lockFile = path.join(input.worker, 'package-lock.json');
-  const lock = await read(lockFile);
-  lock.packages['node_modules/hidden/node_modules/@earendil-works/pi-ai'] = { version: '1.4.0' };
-  await write(lockFile, lock);
-  await assert.rejects(buildPlugin({ ...input, host: 'openclaw' }), /must not contain Pi/);
+for (const key of ['dependencies', 'optionalDependencies']) test('an undeclared ' + key + ' runtime package fails the build', async t => {
+  const input = await fixture(t), file = path.join(input.sourceRoot, 'package.json'), pkg = await read(file);
+  pkg[key] = { '@earendil-works/pi-ai': '1.4.0' }; await write(file, pkg);
+  await assert.rejects(buildPlugin({ ...input, host: 'openclaw' }), /dependency-free/u);
 });

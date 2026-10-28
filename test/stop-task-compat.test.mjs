@@ -6,7 +6,7 @@ import test from "node:test";
 import { runStopTaskReview } from "../lib/runtime-v2/stop-task-review.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
 import { STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
-import { runOpenClawStopTask } from "../lib/openclaw/stop-task-runtime.mjs";
+import { runOpenClawStopTask } from "./compat/legacy-stop-task-runtime.mjs";
 import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
 import { validateJsonSchema } from "../lib/json-schema-validator.mjs";
 import { taskDirectory } from "../lib/runtime-v2/task-store.mjs";

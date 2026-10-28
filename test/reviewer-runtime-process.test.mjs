@@ -67,7 +67,7 @@ test("v2 initial/reminder/repair/follow-up freeze launcher and preserve literal 
   const f = await fixture(t);
   const task = await ensureTask({ projectRoot: f.root, sessionId: "parent" });
   const runtime = { executable: process.execPath, argsPrefix: [f.entry, literal] };
-  const handle = await startRoleReviewer({ projectRoot: f.root, sessionCwd: f.root, taskId: task.taskId, parentSessionId: "parent", role: "stop-reviewer", reviewer, schema, request: {}, reviewerRuntime: runtime, env: f.env });
+  const handle = await startRoleReviewer({ projectRoot: f.root, sessionCwd: f.root, taskId: task.taskId, parentSessionId: "parent", role: "ground-truth-extractor", reviewer, schema, request: {}, reviewerRuntime: runtime, env: f.env });
   t.after(() => handle.close());
   runtime.executable = "changed-program";
   runtime.argsPrefix[0] = "changed-entry";
@@ -337,13 +337,13 @@ test("CodeAgent requires fresh/fork IDs and rejects a mismatched resumed session
 
   const missingEcho = await fixture(t);
   await assert.rejects(startRoleReviewer(await makeOptions(
-    missingEcho, "stop-reviewer", reviewer, { SESSION_ECHO: "omit" },
+    missingEcho, "ground-truth-extractor", reviewer, { SESSION_ECHO: "omit" },
   )), (error) => error.code === "REVIEWER_SESSION_ID_MISSING");
 
   const mismatch = await fixture(t);
   await assert.rejects(
     startRoleReviewer({
-      ...await makeOptions(mismatch, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "mismatch" }),
+      ...await makeOptions(mismatch, "ground-truth-extractor", baseForkReviewer(), { SESSION_ECHO: "mismatch" }),
       continuationSessionId: "known-session",
     }),
     /returned session ID different-session, expected/u,
@@ -351,19 +351,19 @@ test("CodeAgent requires fresh/fork IDs and rejects a mismatched resumed session
 
   const missingFork = await fixture(t);
   await assert.rejects(
-    startRoleReviewer(await makeOptions(missingFork, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "omit" })),
+    startRoleReviewer(await makeOptions(missingFork, "ground-truth-extractor", baseForkReviewer(), { SESSION_ECHO: "omit" })),
     (error) => error.code === "REVIEWER_SESSION_ID_MISSING",
   );
 
   const parentFork = await fixture(t);
   await assert.rejects(
-    startRoleReviewer(await makeOptions(parentFork, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "parent" })),
+    startRoleReviewer(await makeOptions(parentFork, "ground-truth-extractor", baseForkReviewer(), { SESSION_ECHO: "parent" })),
     /returned its parent session ID/u,
   );
 
   const omittedResume = await fixture(t);
   const resumed = await startRoleReviewer({
-    ...await makeOptions(omittedResume, "stop-reviewer", baseForkReviewer(), { SESSION_ECHO: "omit" }),
+    ...await makeOptions(omittedResume, "ground-truth-extractor", baseForkReviewer(), { SESSION_ECHO: "omit" }),
     continuationSessionId: "known-session",
   });
   t.after(() => resumed.close());
@@ -371,7 +371,7 @@ test("CodeAgent requires fresh/fork IDs and rejects a mismatched resumed session
 
   const unparseable = await fixture(t);
   await assert.rejects(startRoleReviewer(await makeOptions(
-    unparseable, "stop-reviewer", reviewer, { MODE: "unparseable" },
+    unparseable, "ground-truth-extractor", reviewer, { MODE: "unparseable" },
   )), /raw output head: not-json/u);
   assert.equal((await fs.readFile(unparseable.capture, "utf8")).trim().split("\n").length, 1);
 });
@@ -396,7 +396,7 @@ test("parallel CodeAgent fresh reviewers receive distinct host-allocated session
     hostAdapter: codeAgentHost,
   };
   const [first, second] = await Promise.all([
-    startRoleReviewer({ ...options, role: "stop-reviewer" }),
+    startRoleReviewer({ ...options, role: "ground-truth-extractor" }),
     startRoleReviewer({ ...options, role: "artifact-reviewer" }),
   ]);
   t.after(() => Promise.allSettled([first.close(), second.close()]));

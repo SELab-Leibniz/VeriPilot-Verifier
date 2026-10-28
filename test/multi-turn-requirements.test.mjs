@@ -8,8 +8,7 @@ import { ensureTask, findTask, taskDirectory } from '../lib/runtime-v2/task-stor
 import { applyGroundTruthDelta, freezeGroundTruth, loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { pendingUserSourceRefs, userSourceRef } from '../lib/runtime-v2/ground-truth-provenance.mjs';
-import { runStopTaskGroup } from '../lib/runtime-v2/stop-task-group.mjs';
-import { observedTaskResult } from './helpers/observed-review.mjs';
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 
 const catalog = id => ({ ref: `transcript:${id}`, kind: 'USER_MESSAGE', aliases: [id, 'user'] });
 const operation = (text, user, extra = {}) => ({ operation: 'ADD', category: 'requirements', text,
@@ -33,17 +32,13 @@ async function fixture(t) {
   const factory = async input => {
     calls.push(input.role);
     if (input.role === 'ground-truth-extractor') return { result: { summary: 'Real user delta.', ...delta }, close: async () => {} };
-    if (input.request.reviewScope.kind === 'classification') { await beforeClassification?.(); return { result: { summary: 'Requested implementation complete.',
-      stopClassification: classification, stage: classification === 'STAGE_COMPLETE' ? 'tasks' : null,
-      findings: [], metricObjectJudgements: [] }, close: async () => {} }; }
-    assert.equal(input.request.reviewScope.kind, 'stop-group');
-    return runStopTaskGroup(input, { runTask: async options => {
-      for (const item of options.tasks) { reviewed.push(item.objectId); await options.onItemResult(await observedTaskResult({ ...options, task: item }, { file: 'project/app.py', verdict: 'PASS' })); }
-      return { completed: true };
-    } });
+    assert.equal(input.request.reviewScope.kind, 'workspace-stop');
+    return scriptedWorkspaceReview(input, { file: path.join(root, 'app.py'),
+      classification: { stopClassification: classification, stage: classification === 'STAGE_COMPLETE' ? 'implementation' : null },
+      beforeScope: async () => { await beforeClassification?.(); }, verdict: item => { reviewed.push(item.objectId); return 'PASS'; } });
   };
   factory.supportsStopTasks = true; factory.supportsStopGroups = true; factory.supportsReviewCollection = true;
-  const event = (hook, fields = {}) => handleRuntimeV2Event({ projectRoot: root, plan: { runtimeV2, configuredArtifacts: [{ stage: 'tasks', metrics: [] }] },
+  const event = (hook, fields = {}) => handleRuntimeV2Event({ projectRoot: root, plan: { runtimeV2, configuredArtifacts: [{ stage: 'implementation', metrics: [] }] },
     reviewerFactory: factory, stopHost: { directory: path.join(root, 'host-state') }, input: { cwd: root, session_id: 'session',
       transcript_path: transcript, hook_event_name: hook, hook_event_id: crypto.randomUUID(), last_assistant_message: 'Implementation complete.', ...fields } });
   await event('SessionStart', { source: 'startup' });

@@ -6,6 +6,8 @@
 
 插件不直接修改业务文件。版本 1 支持项目规则、Schema、工作流入边和隔离语义审阅；显式启用的版本 2 增加 Ground Truth、Skill 看护、M01–M16 和有预算的 Stop 纠偏。允许停止与验收通过是不同结果，证据不足必须保留 UNVERIFIED。
 
+Claude、CodeAgent 和 OpenClaw / MatrixAssistant 的默认 Stop 共用单会话审查引擎，自行规划并完成分类、逐项验收和文件质量审查，直接按需读取当前工作区及所需外部文件，不创建代码仓副本。Git diff、宿主编辑记录、计划、清单和笔记工具帮助组织审查；结论仍须通过原文读取、证据归属和变更校验。详见 [Stop 审查](docs/stop-task-review.md)。
+
 ## 安装
 
 在源码目录执行：
@@ -23,7 +25,7 @@ npm run build:plugins
 
 Claude/CodeAgent 的 CLI 与 Hook 要求 **Node.js >= 18**，支持 Windows、Linux、macOS。Claude 产物包含 `.claude-plugin` 并读取 `CLAUDE_PLUGIN_ROOT`；CodeAgent 产物包含 `.cac-plugin` 并读取 `CODEAGENT3_PLUGIN_ROOT`。根路径在执行前规范化并校验，包括 Windows Git Bash 的盘符路径。OpenClaw 原生入口仅适配 `2026.7.1-2` 和 `2026.10.3`，Node 要求与自动续作边界见宿主指南。
 
-OpenClaw 产物内置锁定版本 `typebox 1.3.27`，仅由插件内部的相对路径加载，随插件一同安装，无需额外运行 npm，也不读取或修改系统及其他项目的 TypeBox。构建会验证仓库内依赖压缩包的 SHA-512，并保留原始许可证和依赖锁文件。Claude/CodeAgent 的基础 CLI 与 Hook 无需安装 npm 依赖。
+三种宿主的产物仅使用 Node.js 内置模块，不包含旧 Stop 工作者、TypeBox 副本或其依赖锁文件；安装无需下载 npm 依赖。旧审查引擎与依赖仅保留在仓库的显式开发对照中，不读取或修改宿主及其他项目的安装。
 
 OpenClaw / MatrixAssistant 插件加载后，可由管理员在 Session 中执行 `/rc-setup`，初始化 RC 的模型、超时、Hook 权限和主 Agent 工具授权。已有模型和超时配置保留，默认使用宿主热加载；项目和会话开关保持原样。详见[宿主初始化说明](docs/openclaw.md#在-session-中初始化宿主设置)。
 
