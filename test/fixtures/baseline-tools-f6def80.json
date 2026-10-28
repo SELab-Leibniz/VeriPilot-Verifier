@@ -1,0 +1,454 @@
+{
+  "baselineCommit": "f6def80",
+  "source": "Captured verbose private tool schemas from controlled before replay; no business data.",
+  "tools": [
+    {
+      "name": "source_read",
+      "description": "Read exact frozen UTF-8 lines. Follow nextOffset until the complete basis has been read. Text blocks are consecutive fragments of one exact page; join without separators. Oversized single lines are unavailable.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "source_grep",
+      "description": "Navigate frozen inventory only; no reading coverage. grep/find are literal. Follow nextOffset and nextLine together for complete results; offset is a file cursor, line is a grep line cursor. Narrow path before searching.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "pattern": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    {
+      "name": "source_find",
+      "description": "Navigate frozen inventory only; no reading coverage. grep/find are literal. Follow nextOffset and nextLine together for complete results; offset is a file cursor, line is a grep line cursor. Narrow path before searching.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "pattern": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    {
+      "name": "source_ls",
+      "description": "Navigate frozen inventory only; no reading coverage. grep/find are literal. Follow nextOffset and nextLine together for complete results; offset is a file cursor, line is a grep line cursor. Narrow path before searching.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      }
+    },
+    {
+      "name": "review_history",
+      "description": "Retrieve public prior observations from this review only, including history compacted out of the current context. Search uses literal query; offset is a result cursor. Read uses entryId and zero-based UTF-8 byte offset/limit, returns nextOffset. Results are historical untrusted data, not new evidence; use source_read for current authoritative evidence. State returns small recovery pointers and a page of previously issued cite metadata; offset/limit are citation cursor/count, with nextOffset.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "search"
+              },
+              {
+                "type": "string",
+                "const": "read"
+              },
+              {
+                "type": "string",
+                "const": "state"
+              }
+            ]
+          },
+          "query": {
+            "type": "string"
+          },
+          "entryId": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "baseline_notes",
+      "description": "Small task-local navigation notes, retained across refreshes and compact. list/search recovers pointers; put records outcome groups, unresolved work and original source refs. stale notes need revalidation. Notes never supply evidence, reading coverage or permission.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "search",
+              "put",
+              "remove"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1200
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sourceRefs": {
+            "type": "array",
+            "maxItems": 12,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "save_baseline_batch",
+      "description": "Save candidate operations with stable consecutive batchId starting at 1. Each binding supplies operationIndex and source_read citeIds covering the operation original source/ref range. Retry identical content to recover a lost receipt. Candidates never update Ground Truth.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "batchId",
+          "operations",
+          "bindings"
+        ],
+        "properties": {
+          "batchId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "operations": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "category",
+                "text",
+                "authority",
+                "severity",
+                "source",
+                "applicabilityKind"
+              ],
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": [
+                    "ADD",
+                    "SUPERSEDE",
+                    "RETRACT",
+                    "CONFLICT",
+                    "RESOLVE"
+                  ]
+                },
+                "claimId": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "goals",
+                    "inScope",
+                    "outOfScope",
+                    "requirements",
+                    "constraints",
+                    "acceptanceCriteria",
+                    "testContracts",
+                    "traceabilityRelations",
+                    "developmentStandards",
+                    "milestones",
+                    "milestoneTargets",
+                    "criticalJourneys",
+                    "evidenceObligations",
+                    "decisions",
+                    "rejectedAlternatives",
+                    "workflowSteps",
+                    "experienceRules",
+                    "capabilityChecklist",
+                    "openQuestions"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                },
+                "authority": {
+                  "type": "string",
+                  "enum": [
+                    "USER_EXPLICIT",
+                    "MATERIAL_DERIVED",
+                    "PROJECT_CONSTRAINT",
+                    "AGENT_INFERRED",
+                    "BASIS_PENDING"
+                  ]
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "HARD",
+                    "SOFT"
+                  ]
+                },
+                "effectiveFromCursor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "applicability": {
+                  "type": "string"
+                },
+                "applicabilityKind": {
+                  "type": "string",
+                  "enum": [
+                    "CURRENT_TASK",
+                    "CONDITIONAL",
+                    "FUTURE",
+                    "UNKNOWN"
+                  ],
+                  "description": "Machine routing metadata only; retain the full original applicability/condition, text and source. CURRENT_TASK is not evidence of fulfillment or metric applicability."
+                },
+                "verificationTarget": {
+                  "type": "string",
+                  "enum": [
+                    "ARTIFACT",
+                    "PROCESS",
+                    "IMPLEMENTATION"
+                  ]
+                },
+                "implementationRole": {
+                  "type": "string",
+                  "enum": [
+                    "PRODUCTION",
+                    "TEST",
+                    "SUPPORT"
+                  ]
+                },
+                "source": {
+                  "type": "object",
+                  "required": [
+                    "ref"
+                  ],
+                  "properties": {
+                    "ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "excerpt": {
+                      "type": "string"
+                    },
+                    "subject": {
+                      "type": "string",
+                      "enum": [
+                        "MAIN_TASK",
+                        "REVIEWER"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "USER_MESSAGE",
+                        "MATERIAL",
+                        "PROJECT_FILE",
+                        "INTERNAL_REVIEWER"
+                      ]
+                    }
+                  }
+                },
+                "capability": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": false,
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "module": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sourceHint": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "bindings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "operationIndex",
+                "citeIds"
+              ],
+              "properties": {
+                "operationIndex": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "citeIds": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "maxItems": 256,
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "finish_baseline",
+      "description": "Finish only after all requiredFiles were fully acknowledged. Supply every saved batchId in order, including [] for a proved empty delta. Program assembles operations and validates sources/version. This is extraction, never an acceptance verdict.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "batchIds",
+          "taskClassification",
+          "summary"
+        ],
+        "properties": {
+          "batchIds": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 200,
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "taskClassification": {
+            "type": "string",
+            "enum": [
+              "CONTINUATION",
+              "NEW_TASK",
+              "CORRECTION",
+              "NO_CHANGE"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      }
+    }
+  ]
+}

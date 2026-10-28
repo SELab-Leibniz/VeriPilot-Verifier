@@ -28,6 +28,7 @@
     "source_find",
     "source_ls",
     "review_history",
+    "baseline_notes",
     "save_baseline_batch",
     "finish_baseline"
   ]

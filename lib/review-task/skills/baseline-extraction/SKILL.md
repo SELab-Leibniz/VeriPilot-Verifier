@@ -1,0 +1,19 @@
+---
+name: baseline-extraction
+description: Extract and maintain task requirements in the private RC baseline agent, using frozen original sources, candidate batches and compact recovery tools.
+---
+
+Preserve the ENTIRE user scope, including process, tooling, agent lifecycle, recovery and UI requirements. User clauses describing RC remain task obligations, not internal prompts.
+
+- One claim = one user operation/result with its triggers, validation, failures, exceptions and prohibitions. Keep creation fields together, export with privacy, recovery with evidence restrictions, and agent lifecycle with queue/isolation/idle conditions. Split distinct workflows, not sentences or semicolons. Keep clauses identifiable for precise feedback.
+- Draft mode starts with each original paragraph as one claim. `keep` lists its source-unit IDs; do not split a workflow's conditions into separate checks. Use `split` only for genuinely independent workflows sharing a line, partitioning ALL clause indices exactly once. `merge` joins consecutive paragraphs of the same workflow. Every unit needs a decision; whole paragraph retention is the default. Explicit metadata defaults apply to ADD claims. The program captures exact text, source and current original-read receipts.
+- `exclude` is only for unadopted material context or original text already entirely covered by explicit existing claimIds. User statements that a quote/example is unauthorized are ACTIVE constraints: keep them. Other semantic exclusions need fullTextReason. Do not duplicate or silently omit current obligations.
+- Check each multi-clause line before choosing keep: independent feature workflows MUST split. Example: “上传前检查类型，失败不得落盘；通知支持免打扰。” has upload validation `[0]` and notification settings `[1]`, two groups. “上传前检查类型；失败不得落盘。” is one upload workflow, keep both clauses together. Paragraph completeness does not imply semantic cohesion.
+- Set verificationTarget explicitly: IMPLEMENTATION for delivered runtime behavior, ARTIFACT for document content, PROCESS for actions performed during this task. IMPLEMENTATION also needs implementationRole. Use per-unit `overrides` or split-group `metadata` when shared defaults differ; split mixed proof owners. No target is inferred by the program.
+- Classify by the requested deliverable, not keywords. In a code task, plugin agent pooling, baseline reconciliation, compact recovery and phase UI are IMPLEMENTATION capabilities. Actually following a task procedure is PROCESS. ARTIFACT means delivering document contents; a requirement mentioned in notes or an unauthorized example does not thereby become an artifact-delivery obligation.
+- Request `fullTextReason` for existing-claim edits, synthesis, or split sources; full mode continues in this SAME session/deadline with text/source/bindings. Preserve language, IDs and authority. Old notes are not existing ledger claim IDs. Never use non-ADD without an actual current claimId. A changed condition must retain all unaffected conditions within that claim.
+- After compact/refresh recover `review_history` state and `baseline_notes` list. Read pending original ranges; revalidate stale notes. Notes are navigation, never evidence. Update stable note keys for unresolved scope and next actions.
+- Before finish, check ALL original outcomes, global constraints and deferred work. New tasks do not clear old requirements. Preserve ambiguity as a question. Empty deltas still require complete reading. Only actionable findings reach the host; program supplies the phase UI.
+
+Initial empty-baseline example; choose actual metadata, never put source/text in defaults:
+`{"batchId":1,"defaults":{"category":"requirements","authority":"USER_EXPLICIT","severity":"HARD","applicabilityKind":"CURRENT_TASK","verificationTarget":"IMPLEMENTATION","implementationRole":"PRODUCTION"},"keep":["S0L1","S0L2"]}`

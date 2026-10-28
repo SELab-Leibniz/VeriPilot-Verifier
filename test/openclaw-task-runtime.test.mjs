@@ -119,13 +119,14 @@ test('native protocol repairs reuse the private session with a fresh run identit
   const f = await fixture(t), calls = [];
   const deadlineAt = Date.now() + 3000;
   const factory = createOpenClawReviewerFactory(f.api, { stopReviewEngine: 'task', deadlineAt, runEmbeddedAgent: async params => {
-    calls.push(params);
+    calls.push({ ...params, dispatchedAt: Date.now() });
     if (calls.length === 1) return { payloads: [{ text: 'No submission yet.' }] };
     return scripted({ ...params, prompt: calls[0].prompt }, f);
   } });
   const handle = await factory(f.input); assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
   assert.equal(calls.length, 2); assert.equal(calls[0].sessionId, calls[1].sessionId); assert.notEqual(calls[0].runId, calls[1].runId);
-  assert(calls[1].timeoutMs < calls[0].timeoutMs); assert(calls[1].timeoutMs <= deadlineAt - Date.now() + 500);
+  assert(calls[1].timeoutMs < calls[0].timeoutMs);
+  assert(calls.every(call => call.timeoutMs <= deadlineAt - call.dispatchedAt + 1));
   await handle.close();
 });
 

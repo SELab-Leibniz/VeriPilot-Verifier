@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { relayNativeReviewActivity, reviewProgressText } from "../lib/openclaw/review-activity.mjs";
 
-function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortController() } = {}) {
+function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortController(), role = 'onboarding-extractor' } = {}) {
   let activity, events;
   const reported = [], visible = [];
   const parent = { sessionId: "parent-session", sessionKey: "agent:main:parent", runId: "parent-run" };
@@ -12,9 +12,22 @@ function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortCont
     reportProgress: (target, reason) => reported.push({ target, reason }),
     emitAgentEvent: (event) => visible.push(event),
   };
-  const close = relayNativeReviewActivity({ sdk, parent, runId: "review-run", role: "onboarding-extractor", controller, deadlineAt });
+  const close = relayNativeReviewActivity({ sdk, parent, runId: "review-run", role, controller, deadlineAt });
   return { parent, controller, reported, visible, close, activity: (event) => activity?.(event), events: (event) => events?.(event) };
 }
+
+test('baseline phase changes use a compact UI event only and repeated phase calls do not add messages', t => {
+  const c = clock(t), f = fixture({ role: 'ground-truth-extractor' });
+  f.close.stage('READING'); f.close.stage('EXTRACTING');
+  const count = f.visible.length;
+  f.close.stage('EXTRACTING'); assert.equal(f.visible.length, count);
+  f.close.stage('CANDIDATE_COMPLETE');
+  const visible = JSON.stringify(f.visible);
+  assert(visible.includes('RC · 整理基线')); assert(visible.includes('RC · 基线待校验'));
+  assert(f.visible.every(event => event.stream === 'tool'));
+  f.controller.abort(); const stopped = f.visible.length;
+  f.close.stage('READING'); c.advance(60000); assert.equal(f.visible.length, stopped); assert.equal(c.pending, 0);
+});
 
 function clock(t) {
   let now = 1000000, nextId = 0;

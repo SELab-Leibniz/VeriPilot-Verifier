@@ -2,7 +2,7 @@
 
 ## 适用范围
 
-OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。当前该标记由 Stop 前置基线刷新设置。初始 onboarding 抽取与裁决、Skill 抽取、未标记的普通抽取、停止分类通过专用 classification task 执行；现有逐项/分组审查保留其裁决协议。
+OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。该标记由任务级普通刷新及 Stop 前置刷新设置；项目内复用串行的私有提取会话，每轮来源凭据独立。初始 onboarding 抽取与裁决、Skill/文档专用抽取保持原协议；停止分类使用专用 classification task；逐项/分组审查保留其裁决协议。粒度、笔记、生命周期和实验见 [基线提取优化](baseline-extraction-optimization.md)。
 
 `task-session.mjs` 共用原生会话启动、模型与 effort 选择、会话身份、精确工具绑定、取消和绝对截止。执行层从 worker 取得工具、提示词和完成判断，不根据 `submit_review` 名称决定完成。基线工具不会得到业务 Agent 的工具权限，也不能写业务文件或正式 Ground Truth。
 
@@ -12,10 +12,16 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 程序冻结完整原始请求、原基线、用户来源及已授权材料/项目约束；长原文按最多 16KiB 的 UTF-8 字节部分交付，不生成语义摘要。请求身份绑定来源目录、原文摘要、任务、事件及原基线版本。当前实现保守地要求本次列出的全部必要文件均已确认读取，尚未实现按变化来源缩减必读集合。
 
-基线会话拥有 `source_read`、`source_grep`、`source_find`、`source_ls`、`review_history` 和两个独立提交工具：
+基线会话拥有 `source_read`、`source_grep`、`source_find`、`source_ls`、`review_history`、仅作导航的 `baseline_notes` 和两个独立提交工具：
 
 - `save_baseline_batch` 保存连续、稳定的批次编号、原有 operation schema、原始来源绑定与读取凭据。批次上限 50KiB，完整 delta 仍遵守现有 schema 的操作条数限制。相同请求/代次/批次的相同内容返回原持久化回执；冲突内容拒绝。回执之前发生的异常可通过相同提交恢复，不将候选写入正式账本。
 - `finish_baseline` 要求显式列出完整批次序列，核对真实读取覆盖、冻结输入、原基线和任务身份。空增量也须完整读取，缺失结果不等于 NO_CHANGE。程序组装完整 delta，模型无需再次输出全部操作。
+
+短来源默认使用逐段草稿协议：每个非空原文行得到 `S{来源序号}L{行号}`。模型用 `keep` 保留完整段落、`split` 分离独立流程、`merge` 合并连续同流程段落，或用带理由的 `exclude` 排除非义务/已入账重复内容。拆分必须覆盖所有顶层分号条款且不得重复；结束时检查全部段落是否都有决策，缺失不能静默完成。原文含引号/括号时不在其内部拆分。程序复制原文、绑定当前读取凭据，模型仍决定语义分组和权限元数据；逐段覆盖不等于已经证明语义正确。
+
+每条草稿明确指定 `verificationTarget`，代码义务另须 `implementationRole`。共享默认值可用逐段 `overrides` 和拆分组 `metadata` 覆盖；只在 overrides 中出现的段落也视为保留整段。不同检查归属的义务分别成条，有效元数据不同的段落不得合并。新用户段落不能被自由排除，只有完整原文与指定的当前 USER_EXPLICIT/USER_MESSAGE 条目一致时才可作为已存在的重复要求排除。
+
+默认协议只生成 ADD。已有 claim 的改动、综合表述、来源分片、超过 128 行或 200 个草稿单元时使用完整文字协议。模型可用 `fullTextReason` 请求切换，沿用同一会话、已存批次、修复次数和截止；SUPERSEDE 仍须真实 claimId 并保留该 claim 内未变条件。决策、未处理单元和分组名称进入私有检查点及分页历史，不进入宿主上下文。详见 [第二轮方案及配对实验](baseline-token-time-optimization.md)。
 
 原始来源引用继续经过 `bindSourceSelections` / `validateSourceBindings`。引用范围须由绑定到该来源的真实读取凭据覆盖。未知、别的会话、导航、摘要和历史检索不会产生新的证据或 USER_EXPLICIT 授权。程序从冻结原文捕获 excerpt；模型提供的引文不充当原文证明。
 
@@ -74,4 +80,4 @@ npm run build:plugin -- --host openclaw
 
 后续若明确安排真实验收，应使用仓库内独立业务夹具、独立宿主状态目录和会话，先运行小规模单次基线抽取，再安排真实 compact，最后才是长 Stop。不要指向正在运行的 MA 状态目录，也不要把上述构建命令当作安装。
 
-当前自动化验证只能证明协议、读取凭据、恢复状态、事务围栏和回归行为；未证明真实模型抽取准确性、真实 compact 摘要质量、完整 Electron 长时行为或整个应用开发闭环。
+协议测试验证读取凭据、恢复状态、事务围栏和回归行为；真实模型受控回放的材料、准确性检查、token/耗时与局限另见上述第二轮实验。两者仍不能证明真实 compact 摘要质量、完整 Electron 长时行为或整个应用开发闭环。

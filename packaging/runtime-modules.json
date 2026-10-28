@@ -168,6 +168,7 @@
     "lib/openclaw/stop-work-owner.mjs",
     "lib/openclaw/supervised.mjs",
     "lib/openclaw/task-session.mjs",
+    "lib/openclaw/baseline-agent.mjs",
     "lib/openclaw/task-tools.mjs",
     "lib/openclaw/tool-contracts.mjs",
     "lib/openclaw/tools.mjs",
@@ -175,6 +176,8 @@
     "lib/openclaw/transient-model.mjs",
     "lib/openclaw/ui-progress.mjs",
     "lib/review-task/baseline-task.mjs",
+    "lib/review-task/baseline-selection.mjs",
+    "lib/review-task/baseline-notes.mjs",
     "lib/runtime-v2/baseline-task.mjs"
   ]
 }

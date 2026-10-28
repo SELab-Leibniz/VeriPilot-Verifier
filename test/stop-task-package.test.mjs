@@ -112,6 +112,8 @@ test("OpenClaw builds complete tool declarations even when the manifest template
   assert.deepEqual(manifest.contracts.tools,contracts.OPENCLAW_TOOL_NAMES);
   assert(manifest.contracts.tools.includes("save_baseline_batch"));
   assert(manifest.contracts.tools.includes("finish_baseline"));
+  assert(manifest.contracts.tools.includes("baseline_notes"));
+  await import(pathToFileURL(path.join(artifact, "lib/review-task/baseline-task.mjs")));
   const {registerTaskTools}=await import(pathToFileURL(path.join(artifact,"lib/openclaw/task-tools.mjs")));
   let names;
   registerTaskTools({registerTool(_factory,metadata){names=metadata.names;},on(){}});
