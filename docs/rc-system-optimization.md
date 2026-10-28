@@ -125,3 +125,10 @@
 - 新模型外部零调用的真实宿主探针：本地悬停 provider 收到请求后，实际 chat.abort 返回 aborted=true，原业务终态为 aborted。probe-001 的宿主单例残留导致进程不自然退出，已验证后释放；脚本仿照主入口等待 shutdown 后显式退出，probe-002 检查完整退出。
 - 基线复用仅允许机械恢复到原控制端摘要，且被采用基线不能存在任何 business-budget-abort.json；两条现有正常基线符合条件。该例外写入新 manifest.adoptionExceptions。无模型负对照人为加入 abort 记录，比较器明确拒绝复用；其他字节变化仍拒绝。业务模型输入、工具、预算、评分和公共导航均相同。
 - 新候选 `8a8ec79` 的无模型配对计划已通过：paired-split-dev-plan-001。当前完整回归运行句柄 39538，日志 full-regression-split-selections.log；通过后才开始新模型，避免回归负载污染耗时。旧配对、全部失败和校准不得重启。
+
+### 04:47 当前活跃运行
+
+- 完整工程回归已结束：161 文件 / 1825 用例，1802 通过、23 条件跳过、0 失败；`full-regression-split-selections.log`。
+- abort-authorization-probe-002 成功且正常退出，外部模型请求 0；原失败与 probe-001 原样保留。
+- 活跃 `paired-split-dev-001`，候选 `8a8ec79`，比较 owner PID 30580，终端句柄 9296。先 security_tool_1 candidate，后 happyword_12 candidate；复用两条正常 c33 基线，manifest 记录受限授权修复例外。公共导航仍冻结 0b72285。当前源码 HEAD ed67340 仅补实验控制端，不能把其差异算成 RC 候选收益。
+- 模型运行期间停止全量回归，避免 CPU/原生测试竞争。先检查 progress + owner PID，不重启活跃模型。后续先评估真实 RC 完成度，再决定三例方案选择与八例留出；尚无严格 F2P/P2P 提升证据。
