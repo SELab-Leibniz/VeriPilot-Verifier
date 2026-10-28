@@ -21,6 +21,8 @@ if (args.includes('--restart-check')) {
 const live = args.includes('--live');
 if (live === args.includes('--transport-check') || !args.includes('--host-root'))
   throw new Error('Use exactly one of --transport-check or --live, plus --host-root <installed OpenClaw>. --live calls real models.');
+if (live && !args.includes('--initial-turn'))
+  throw new Error('Post-run until_pass requires a real Gateway terminal. Use --live --initial-turn for a normal business run; add --inject-defect for the automatic repair cycle. Seeded terminal events cannot replace agent.wait.');
 if (live && (!process.env.ANTHROPIC_AUTH_TOKEN || !process.env.ANTHROPIC_BASE_URL || !(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL)))
   throw new Error('The live loop needs the existing provider environment and an explicit native model.');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
