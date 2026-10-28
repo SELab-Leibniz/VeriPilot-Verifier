@@ -9,6 +9,7 @@
 - [配置与规则](configuration.md)
 - [接口、命令、Hook 与 reviewer 协议](interfaces.md)
 - [工作原理、需求基线与信任边界](how-it-works.md)
+- [文档纠偏会话、工具与实验](document-correction.md)
 - [Stop 分组审查、预算与状态](stop-task-review.md)
 - [Stop 读取与上下文边界](stop-review-bounds.md)
 - [Stop 指标开关](stop-metric-switches.md)

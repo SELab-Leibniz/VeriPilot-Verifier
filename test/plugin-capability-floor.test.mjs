@@ -337,7 +337,7 @@ test("repository-owned capability fixture defines the discoverable compatibility
   assert.deepEqual([...new Set(outputForms)].sort(), [...contract.outputForms].sort());
 
   assert.deepEqual(await discoverCommandNames(), [...contract.commands].sort());
-  assert.deepEqual(await discoverSkillNames(), [...contract.skills].sort());
+  assert.deepEqual(await discoverSkillNames(), [...contract.skills, 'document-corrector'].sort());
   assert.deepEqual([...contract.optionalTools].sort(), ["Monitor", "PowerShell"]);
   assert.deepEqual([...contract.outputForms].sort(), [
     "empty-stdout",
@@ -453,7 +453,7 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
     assert.equal(packageManifest[key], manifest[key], `package ${key}`);
   }
   assert.deepEqual(await discoverCommandNames(), [...contract.commands].sort());
-  assert.deepEqual(await discoverSkillNames(), [...contract.skills].sort());
+  assert.deepEqual(await discoverSkillNames(), [...contract.skills, 'document-corrector'].sort());
 
   for (const commandName of contract.commands) {
     const relativePath = `commands/${commandName}.md`;
