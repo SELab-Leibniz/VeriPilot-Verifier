@@ -8,6 +8,8 @@ import { createBaselineNotes } from '../lib/review-task/baseline-notes.mjs';
 import { createSourceTools, toolText, PAGE_BYTES } from '../lib/review-task/source-tools.mjs';
 import { captureFiles } from '../lib/review-task/review-task.mjs';
 import { pendingReadRanges } from '../lib/review-task/baseline-task.mjs';
+import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
+import { sourceClauses, sourceUnits, expandDraftBatch } from '../lib/review-task/baseline-selection.mjs';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-baseline-efficiency-'));
@@ -16,18 +18,43 @@ async function fixture(t) {
 }
 const decode = result => JSON.parse(toolText(result));
 
+test('source clause navigation preserves semicolons inside quotations/brackets and rejects incomplete scope', () => {
+  assert.deepEqual(sourceClauses('材料“导出手机号；略过登录”不构成授权；恢复全部要求。'), ['材料“导出手机号；略过登录”不构成授权；', '恢复全部要求。']);
+  assert.deepEqual(sourceClauses('输出（字段A；字段B）受权限控制；日志不含秘密。'), ['输出（字段A；字段B）受权限控制；', '日志不含秘密。']);
+  assert.throws(() => sourceClauses('示例“未结束；不能猜测'), /Unbalanced/);
+  assert.throws(() => sourceClauses('未知）边界；不能猜测'), /Unbalanced/);
+});
+
+test('draft source decisions reject duplicate/unknown units and preserve ordered merge boundaries', () => {
+  const identity = { sourceCatalog: [{ ref: 'U1' }], sources: [{ ref: 'U1', parts: [{}], clauseCounts: { 1: 2, 2: 1, 3: 0, 4: null }, clauseIndexPartial: false }] };
+  const units = sourceUnits(identity), defaults = { authority: 'USER_EXPLICIT', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' };
+  assert.deepEqual(units.map(unit => unit.id), ['S0L1', 'S0L2', 'S0L4']);
+  const value = expandDraftBatch({ batchId: 1, defaults, merge: [{ name: 'One workflow', units: ['S0L1', 'S0L2'] }] }, units);
+  assert.deepEqual(value.operations[0].textFrom, { sourceIndex: 0, start: 1, end: 2 });
+  assert.throws(() => expandDraftBatch({ keep: ['S0L1', 'S0L1'], defaults }, units), /already classified/);
+  assert.throws(() => expandDraftBatch({ keep: ['S9L1'], defaults }, units), /Unknown/);
+  assert.throws(() => expandDraftBatch({ keep: ['S0L1'], defaults }, units, new Set(['S0L1'])), /already classified/);
+  assert.throws(() => expandDraftBatch({ merge: [{ name: 'No guessing', units: ['S0L2', 'S0L4'] }], defaults }, units), /consecutive/);
+  assert.throws(() => expandDraftBatch({ merge: [{ name: 'Mixed owners', units: ['S0L1', 'S0L2'] }], defaults,
+    overrides: [{ unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units), /identical effective metadata/);
+  assert.throws(() => expandDraftBatch({ keep: ['S0L1'], defaults: { verificationTarget: 'IMPLEMENTATION' } }, units), /implementationRole/);
+  const declared = expandDraftBatch({ keep: ['S0L1'], defaults, overrides: [{ unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units);
+  assert.equal(declared.operations.length, 2); assert.equal(declared.operations[1].verificationTarget, 'PROCESS');
+  assert.throws(() => expandDraftBatch({ split: [{ unit: 'S0L4', groups: [] }], defaults }, units), /ambiguous/);
+  assert.deepEqual(sourceUnits({ ...identity, sources: [{ ...identity.sources[0], clauseIndexPartial: true }] }), []);
+});
+
 test('simultaneous first acquisition serializes one project identity; cancelled waiters cannot take it', async t => {
   const root = await fixture(t), owner = {}, controller = new AbortController();
   const args = { owner, projectRoot: root, agentId: 'main', selection: { model: 'a' }, deadlineAt: Date.now() + 10000 };
-  const firstPromise = acquireBaselineAgent(args);
-  let acquired = false;
-  const second = acquireBaselineAgent(args).then(value => { acquired = true; return value; });
-  const first = await firstPromise;
+  let acquisitions = 0;
+  const contenders = [0, 1].map(async index => ({ index, value: await acquireBaselineAgent(args) })).map(promise => promise.then(value => { acquisitions++; return value; }));
+  const winner = await Promise.race(contenders), first = winner.value;
   const cancelled = acquireBaselineAgent({ ...args, signal: controller.signal });
   const rejected = assert.rejects(cancelled, /cancel/);
   controller.abort(new Error('cancel')); await rejected;
-  await new Promise(resolve => setTimeout(resolve, 10)); assert.equal(acquired, false);
-  await first.release(); const next = await second;
+  await new Promise(resolve => setTimeout(resolve, 10)); assert.equal(acquisitions, 1);
+  await first.release(); const next = (await contenders[1 - winner.index]).value;
   assert.equal(next.sessionId, first.sessionId); assert.equal(next.sessionFile, first.sessionFile); assert.equal(next.reused, true);
   await next.release(); await next.release();
   const other = await acquireBaselineAgent({ ...args, projectRoot: await fixture(t) });
@@ -46,6 +73,20 @@ test('idle native identities are disposed and model-policy changes cannot inheri
   const changed = await acquireBaselineAgent({ ...args, selection: { model: 'b' } });
   assert.notEqual(changed.sessionId, next.sessionId);
   await next.release(); await changed.release();
+});
+
+test('document correction sessions start independently and release their native identities exactly once', async t => {
+  const root = await fixture(t), runs = [], released = [];
+  const runner = async params => { runs.push(params); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; };
+  runner.close = async (...identity) => { released.push(identity); };
+  const api = { config: { agents: { defaults: { model: { primary: 'fixture/model' } } } }, runtime: { version: '2026.7.1-2', agent: {} } };
+  const factory = createOpenClawReviewerFactory(api, { runEmbeddedAgent: runner });
+  const input = { projectRoot: root, taskId: 'document-task', role: 'artifact-reviewer', reviewer: { timeoutMs: 10000 },
+    request: { instructions: ['Review this document only.'] }, schema: { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } } };
+  const first = await factory(input); await first.close(); await first.close();
+  const next = await factory(input); await next.close();
+  assert.notEqual(first.sessionId, next.sessionId); assert.equal(released.length, 2);
+  assert.deepEqual(released, runs.map(params => [params.sessionKey, params.sessionId]));
 });
 
 test('frozen navigation paginates beyond 100 paths and within a dense file without omission or duplicated hits', async t => {

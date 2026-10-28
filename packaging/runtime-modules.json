@@ -168,6 +168,7 @@
     "lib/openclaw/transient-model.mjs",
     "lib/openclaw/ui-progress.mjs",
     "lib/review-task/baseline-task.mjs",
+    "lib/review-task/baseline-selection.mjs",
     "lib/review-task/baseline-notes.mjs",
     "lib/review-task/classification-task.mjs",
     "lib/review-task/findings-task.mjs",

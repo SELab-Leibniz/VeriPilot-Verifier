@@ -36,3 +36,5 @@
 ## 本轮结果
 
 性能与模型样例的实际观察、回归数量和限制记录在 [实验记录](baseline-extraction-results.md)。
+
+后续逐段决策、独立检查归属、真实模型累计 token 与耗时配对比较见 [第二轮方案与结果](baseline-token-time-optimization.md)。
