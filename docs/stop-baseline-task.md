@@ -23,6 +23,8 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 默认协议只生成 ADD。已有 claim 的改动、综合表述、来源分片、超过 128 行或 200 个草稿单元时使用完整文字协议。模型可用 `fullTextReason` 请求切换，沿用同一会话、已存批次、修复次数和截止；SUPERSEDE 仍须真实 claimId 并保留该 claim 内未变条件。决策、未处理单元和分组名称进入私有检查点及分页历史，不进入宿主上下文。详见 [第二轮方案及配对实验](baseline-token-time-optimization.md)。
 
+完整协议也优先使用 `outcome` + `textFrom`，由程序捕获原文、来源和已经签发的真实读取回执。`start/end` 始终指原始文件行号；每个冻结分片在请求中给出 `startLine/endLine`，分片内行号加 `startLine - 1` 可定位原文。跨分片的行须有所有相交部分的连续读取覆盖，未持久化或缺失的回执不能补足证据。跨来源综合仍使用完整 text/source/bindings；动作、权限和适用性须明确提供，程序不会推断。此优化不赋予完整协议逐段决策完成保证。
+
 原始来源引用继续经过 `bindSourceSelections` / `validateSourceBindings`。引用范围须由绑定到该来源的真实读取凭据覆盖。未知、别的会话、导航、摘要和历史检索不会产生新的证据或 USER_EXPLICIT 授权。程序从冻结原文捕获 excerpt；模型提供的引文不充当原文证明。
 
 读取覆盖复用宿主同步 `tool_result_persist` 最终消息边界：只有非 synthetic、会话绑定正确、调用 ID 和完整披露字节都匹配的消息才进入 RC 自己 fsync 后的读取凭据。普通工具遥测和模型自行声明不能产生覆盖。MA 的该钩子位于最终消息持久化流程中、文本脱敏之前；无模型契约测试执行真实 Hook Runner，并核对真实传输的参数，完整宿主进程中的失败恢复仍需后续真实验收。
