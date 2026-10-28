@@ -69,7 +69,9 @@ test('draft source decisions reject duplicate/unknown units and preserve ordered
   assert.throws(() => expandDraftBatch({ keep: ['S0L1', 'S0L1'], defaults }, units), /already classified/);
   assert.throws(() => expandDraftBatch({ keep: ['S9L1'], defaults }, units), /Unknown/);
   assert.throws(() => expandDraftBatch({ keep: ['S0L1'], defaults }, units, new Set(['S0L1'])), /already classified/);
-  assert.throws(() => expandDraftBatch({ merge: [{ name: 'No guessing', units: ['S0L2', 'S0L4'] }], defaults }, units), /consecutive/);
+  assert.deepEqual(expandDraftBatch({ merge: [{ name: 'Keep the blank separator', units: ['S0L2', 'S0L4'] }], defaults }, units).operations[0].textFrom,
+    { sourceIndex: 0, start: 2, end: 4 });
+  assert.throws(() => expandDraftBatch({ merge: [{ name: 'Do not skip a real unit', units: ['S0L1', 'S0L4'] }], defaults }, units), /consecutive/);
   assert.throws(() => expandDraftBatch({ merge: [{ name: 'Mixed owners', units: ['S0L1', 'S0L2'] }], defaults,
     overrides: [{ unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units), /identical effective metadata/);
   assert.throws(() => expandDraftBatch({ keep: ['S0L1'], defaults: { verificationTarget: 'IMPLEMENTATION' } }, units), /implementationRole/);

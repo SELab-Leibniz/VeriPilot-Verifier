@@ -149,6 +149,25 @@ test('multipart inputs default to compact outcomes and reject redundant source f
   await handle.close();
 });
 
+test('draft workflow merges retain blank-separated title, context, outcome and exceptions in one original span', async t => {
+  const f = await fixture(t, { wireMode: 'draft' });
+  const original = 'Feature title\n\nCurrent detail.\n\nRequired outcome; exceptions preserved.';
+  f.input.evidence.snapshot.entries[0].message.content = original;
+  const handle = await f.run(async ({ call, readAll, finish }) => {
+    await readAll();
+    await call('save_baseline_batch', { batchId: 1, defaults: { category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
+      applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
+      merge: [{ name: 'Complete feature outcome', units: ['S0L1', 'S0L3', 'S0L5'] }],
+      exclude: [{ units: ['S1L1'], reason: 'Unadopted material context, not a user requirement.' }] });
+    await finish([1]);
+  });
+  assert.equal(handle.result.operations.length, 1);
+  assert.equal(handle.result.operations[0].text, original);
+  assert.equal(handle.result.operations[0].source.ref, 'transcript:U1#L1-L5');
+  assert.equal(handle.result.operations[0].source.excerpt, original);
+  await handle.close();
+});
+
 test('span supersession preserves exact claim identity and unrelated project obligations', async t => {
   const f = await fixture(t);
   f.input.evidence.snapshot.entries[0].message.content = '空闲10分钟释放提取agent。\n并发请求排队，项目之间隔离。';
