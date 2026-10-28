@@ -12,6 +12,8 @@ import { createPostRunDispatcher } from '../lib/openclaw/post-run-dispatch.mjs';
 const { chromium } = await import(process.env.RC_PLAYWRIGHT_MODULE ? pathToFileURL(process.env.RC_PLAYWRIGHT_MODULE).href : 'playwright');
 const output = path.resolve('.runtime-correction/console-experiment'); await fs.mkdir(output, { recursive: true });
 const fixture = await consoleFixture({ count: 2000 });
+await fs.writeFile(path.join(fixture.dir, 'baseline-extraction-status.json'), JSON.stringify({ taskId: fixture.task.taskId,
+  phase: 'EXTRACTING', runId: 'fixture-extraction', updatedAt: Date.now(), deadlineAt: Date.now() + 120000 }));
 const manager = createPostRunDispatcher({ directoryFor: () => fixture.root, validate: async () => true,
   waitTerminal: async () => ({ status: 'ok' }), review: async () => ({ reviewStatus: 'PASS' }), sendUser: async () => {} });
 await manager.started(fixture.record, 'fixture-run');
@@ -52,6 +54,11 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/plugins/runtime-corrector/?session=agent:main:demo`);
   await page.getByRole('button', { name: '连接', exact: true }).click();
   await waitCount('共 2004 条');
+  await check('current extraction phase is visible without certifying baseline publication', async () => {
+    await page.locator('#obs-baseline > summary').click();
+    await page.getByText('提取阶段：整理需求', { exact: false }).waitFor();
+    await page.getByText('候选完成不代表正式基线已发布或任务通过', { exact: false }).waitFor();
+  });
   await check('default collapsed, paginated history with explicit feedback states', async () => {
     assert.equal(await page.locator('.observation').count(), 25);
     assert.equal(await page.locator('.observation[open]').count(), 0);

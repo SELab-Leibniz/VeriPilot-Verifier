@@ -78,3 +78,29 @@ test('invalid queries are rejected rather than widening the requested scope', ()
   for (const q of [{ limit: 101 }, { offset: -1 }, { from: 2, to: 1 }, { attention: 'true' }, { search: [] }, { kind: 'unknown' }])
     assert.throws(() => validateObservationQuery(q));
 });
+
+test('foreign-session feedback cannot confirm delivery in the selected session', async t => {
+  const f = await fixture(t);
+  await fs.appendFile(path.join(f.dir, 'journal/events.jsonl'), [
+    { type: 'OPENCLAW_ARTIFACT_REVIEW', eventId: 'owned-artifact', sessionId: 'demo', file: 'other.md', toolCallId: 'shared-call', result: { status: 'failed' } },
+    { type: 'OPENCLAW_FEEDBACK_DELIVERED', sessionId: 'foreign', file: 'other.md', toolCallId: 'shared-call', feedback: 'Foreign delivery receipt' },
+    { type: 'NATIVE_STOP_FOLLOWUP_OBSERVED', sessionId: 'foreign', assessmentId: 'stop-demo' },
+  ].map(JSON.stringify).join('\n') + '\n');
+  const data = await readConsoleObservations(f.record, f.task, { limit: 100 });
+  assert.equal(data.records.find(r => r.id === 'owned-artifact').feedback.state, 'NONE');
+  assert.equal(data.records.find(r => r.kind === 'stop').feedback.state, 'RETURNED');
+});
+
+test('current baseline extraction phase is visible but never establishes publication or PASS', async t => {
+  const f = await fixture(t), file = path.join(f.dir, 'baseline-extraction-status.json');
+  const status = { taskId: f.task.taskId, runId: 'extractor-run', phase: 'READING', deadlineAt: Date.now() + 30000, updatedAt: Date.now() };
+  await fs.writeFile(file, JSON.stringify(status));
+  let data = await readConsoleObservations(f.record, f.task);
+  assert.equal(data.baseline.extraction.phase, 'READING');
+  assert.equal(data.baseline.version, 1);
+  await fs.writeFile(file, JSON.stringify({ ...status, deadlineAt: 1 }));
+  data = await readConsoleObservations(f.record, f.task);
+  assert.equal(data.baseline.extraction.phase, 'UNVERIFIED');
+  await fs.writeFile(file, JSON.stringify({ ...status, taskId: 'another-task' }));
+  assert.equal((await readConsoleObservations(f.record, f.task)).baseline.extraction, undefined);
+});

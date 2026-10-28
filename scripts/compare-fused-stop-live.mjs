@@ -23,7 +23,9 @@ const sources = Object.fromEntries(await Promise.all([['before', before], ['fuse
   source, commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: source, encoding: 'utf8' }).trim(), runtimeDigest: await digest(source),
 }])));
 const rows = [];
-for (const [index, scenario] of ['correct', 'hidden', 'execution', 'optional', 'six', 'external'].entries()) {
+const cases = ['correct', 'hidden', 'execution', 'optional', 'six', 'external'].filter(id => !arg('--case') || id === arg('--case'));
+if (!cases.length) throw new Error('Unknown --case');
+for (const [index, scenario] of cases.entries()) {
   for (const arm of index % 2 ? ['fused', 'before'] : ['before', 'fused']) {
     const output = path.join(root, `${scenario}-${arm}`);
     const command = [path.join(fused, 'scripts/evaluate-branch-fusion.mjs'), '--live', '--source', sources[arm].source,

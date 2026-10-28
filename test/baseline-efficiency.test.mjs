@@ -9,7 +9,11 @@ import { createSourceTools, toolText, PAGE_BYTES } from '../lib/review-task/sour
 import { captureFiles } from '../lib/review-task/review-task.mjs';
 import { pendingReadRanges } from '../lib/review-task/baseline-task.mjs';
 import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
-import { sourceClauses, sourceUnits, expandDraftBatch } from '../lib/review-task/baseline-selection.mjs';
+import { sourceClauses, sourceUnits, expandDraftBatch, draftBaselineSchema } from '../lib/review-task/baseline-selection.mjs';
+import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
+import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
+import { createNativeTaskSession } from '../lib/openclaw/task-session.mjs';
+import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-baseline-efficiency-'));
@@ -17,6 +21,37 @@ async function fixture(t) {
   return root;
 }
 const decode = result => JSON.parse(toolText(result));
+
+test('empty optional keep makes no source decision while nonempty split and complete scope stay mandatory', () => {
+  const schema = draftBaselineSchema(GROUND_TRUTH_REVIEW_SCHEMA);
+  const value = { batchId: 1, keep: [], defaults: { category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
+    applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
+  split: [{ unit: 'S0L1', groups: [{ name: 'Search', clauses: [0] }, { name: 'Export', clauses: [1] }] }] };
+  assert.deepEqual(validateJsonSchema(value, schema), []);
+  assert.equal(expandDraftBatch(value, [{ id: 'S0L1', sourceIndex: 0, line: 1, clauses: 2 }]).operations.length, 2);
+  assert.throws(() => expandDraftBatch({ ...value, split: [] }, []), /Classify source units/);
+  assert.ok(validateJsonSchema({ ...value, split: [{ unit: 'S0L1', groups: [] }] }, schema).length);
+});
+
+test('baseline task side-channel records actual phases and clears unfinished runs without host text', async t => {
+  const root = await fixture(t), taskId = 'phase-task'; let phase = 'READING', native;
+  const runner = async params => { native = params; phase = 'CANDIDATE_COMPLETE';
+    params.onAgentToolResult({ toolName: 'finish_baseline', isError: false }); return { payloads: [], meta: {} }; };
+  const input = { projectRoot: root, taskId, role: 'ground-truth-extractor', request: { reviewScope: { boundedBasis: true } }, reviewer: { timeoutMs: 10000 } };
+  const deps = { api: { runtime: { version: '2026.7.1-2', agent: {} } }, nativeRunner: runner,
+    selection: { config: {}, provider: 'fixture', model: 'fixture' } };
+  const statusFile = path.join(taskDirectory(root, taskId), 'baseline-extraction-status.json');
+  const first = await createNativeTaskSession(input, deps);
+  assert.equal(JSON.parse(await fs.readFile(statusFile)).phase, 'QUEUED');
+  await first.run({ tools: [], cwd: root, outputDir: root, prompt: 'fixture', systemPrompt: '',
+    phase: () => phase, active() {}, isComplete: () => phase === 'CANDIDATE_COMPLETE', onAssistantMessageStart() {} });
+  await first.close();
+  assert.equal(JSON.parse(await fs.readFile(statusFile)).phase, 'CANDIDATE_COMPLETE');
+  assert.equal(native.prompt, 'fixture'); assert.doesNotMatch(native.extraSystemPrompt, /baseline-extraction-status/);
+  phase = 'READING';
+  const next = await createNativeTaskSession(input, deps); await next.close();
+  assert.equal(JSON.parse(await fs.readFile(statusFile)).phase, 'INTERRUPTED');
+});
 
 test('source clause navigation preserves semicolons inside quotations/brackets and rejects incomplete scope', () => {
   assert.deepEqual(sourceClauses('材料“导出手机号；略过登录”不构成授权；恢复全部要求。'), ['材料“导出手机号；略过登录”不构成授权；', '恢复全部要求。']);
