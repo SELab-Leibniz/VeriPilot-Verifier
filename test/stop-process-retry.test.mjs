@@ -8,7 +8,7 @@ import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
-import { withTestReviewProof } from "./helpers/review-proof.mjs";
+import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import {scriptedProductionProofs} from './helpers/observed-review.mjs';
 
 async function fixture(t) {
@@ -32,7 +32,7 @@ async function fixture(t) {
     calls.push(objects.map(o => o.objectId));
     const rows = objects.map(o => ({ objectId: o.objectId, judgement: o.metricId === "M11" ? processVerdict : "PASS",
       reason: o.metricId === "M11" ? "Recorded extra-script writes remain outside the allowed scope." : "Frozen CLI acceptance is satisfied.", evidence: [`${source}#L1`] }));
-    return withTestReviewProof(params, { proofs:scriptedProductionProofs(params,{metricObjectJudgements:rows}),result: { ...fixed, summary: "Reviewed.", findings: [], fileAssessments: [], metricObjectJudgements: rows },
+    return observedLegacyStop(params, { proofs:scriptedProductionProofs(params,{metricObjectJudgements:rows}),result: { ...fixed, summary: "Reviewed.", findings: [], fileAssessments: [], metricObjectJudgements: rows },
       reviewEvidence: { files: [source], fingerprints: { [source]: sha256(await fs.readFile(source)) }, unstable: false, missing: [] }, close() {} });
   };
   factory.supportsReviewCollection = true;
@@ -53,7 +53,7 @@ async function fixture(t) {
   return { root, task, source, entries, calls, run, setProcessVerdict: value => { processVerdict = value; } };
 }
 
-test("a repeated process failure checks only the previous failing obligation and stops with retained failure, not PASS", async t => {
+test("one full workspace review detects an unchanged process failure and retains it without a second reviewer", async t => {
   const f = await fixture(t), first = await f.run();
   assert.equal(first.decision, "block", JSON.stringify(first));
   const state = await findTask({ projectRoot: f.root, sessionId: "retry-host" });
@@ -64,12 +64,12 @@ test("a repeated process failure checks only the previous failing obligation and
   assert.equal(second.stop.reasonCode, "PROCESS_CORRECTION_NO_PROGRESS", JSON.stringify(second));
   assert.equal(second.decision, "allow"); assert.equal(second.stop.status, "UNVERIFIED");
   assert.equal(f.calls.length - before, 1);
-  assert.deepEqual(f.calls.at(-1), ["M11:scope"]);
+  assert(f.calls.at(-1).includes("M11:scope"));
   const ended = await findTask({ projectRoot: f.root, sessionId: "retry-host" });
   assert.equal(ended.status, "STOPPED_UNVERIFIED"); assert.equal(ended.stop.correctionAttempts, 1);
   assert.equal(ended.verification.status, "UNVERIFIED");
   assert.match(second.feedback, /deviations are retained/u);
-  assert(!second.stop.report, "a narrow negative recheck must not manufacture a new full-population PASS report");
+  assert(!second.stop.report, "a no-progress stop must not manufacture a PASS report");
 });
 
 for (const change of ["source", "new user", "fixed process"]) test(`${change} cannot trigger an unchanged-process shortcut`, async t => {
@@ -79,5 +79,5 @@ for (const change of ["source", "new user", "fixed process"]) test(`${change} ca
   if (change === "fixed process") f.setProcessVerdict("PASS");
   const result = await f.run();
   assert.notEqual(result.stop.reasonCode, "PROCESS_CORRECTION_NO_PROGRESS");
-  assert(f.calls.length - before > 1, "a changed or repaired case requires the full remaining assessment");
+  assert.equal(f.calls.length - before, 1, "the same single session checks the full current population");
 });

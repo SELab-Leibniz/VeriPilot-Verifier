@@ -147,6 +147,7 @@ function onboardingFakeFactory({
       };
     } else if (isDeepStrictEqual(schema, STOP_REVIEW_SCHEMA)) {
       result = stopAssessment(request);
+      await options.onScope?.({ stopClassification: result.stopClassification, stage: result.stage });
     } else if (isDeepStrictEqual(schema, IMPL_REVIEW_SCHEMA)) {
       result = implAssessment(request);
     } else {

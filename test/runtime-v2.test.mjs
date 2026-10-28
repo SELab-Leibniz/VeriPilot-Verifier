@@ -1035,7 +1035,7 @@ test("reviewer close failure cannot override a fail-closed Stop decision", async
 
   assert.equal(outcome.decision, "allow");
   assert.equal(outcome.stop.status, "UNVERIFIED");
-  assert.equal(outcome.stop.reasonCode,'STOP_CLASSIFICATION_INVALID');
+  assert.equal(outcome.stop.reasonCode,'STOP_REVIEW_INVALID');
   const journal = await fs.readFile(path.join(
     root,
     ".runtime-correction",
@@ -1106,7 +1106,8 @@ test("GT to Stop creates a target role with complete already-read evidence witho
   assert.equal(target.env.REVIEWER_ROUTE_MARKER, "original");
   assert.ok(target.evidence.snapshot.entries.length > 0);
   assert.ok(target.evidence.groundTruth.claims.length > 0);
-  assert.deepEqual(target.evidence.population, target.request.population);
+  assert.equal(target.request.reviewScope.kind, 'workspace-stop');
+  assert(Object.values(target.request.population.metrics).flat().length > 0);
 });
 
 test("Stop blocks hard findings even when the reviewer classifies the attempted completion as intermediate", async (t) => {
@@ -1160,7 +1161,7 @@ test("Stop blocks hard findings even when the reviewer classifies the attempted 
   // with a complete findings-only collection and the actual-start debit.
   assert.equal(outcome.stop.status, "DEVIATION");
   assert.equal(outcome.stop.review.collection.complete, true);
-  assert.equal(outcome.stop.review.collection.completedItems, 2);
+  assert.equal(outcome.stop.review.collection.completedItems, 1);
   assert.deepEqual(outcome.stop.review.metricObjectJudgements, []);
   assert.match(outcome.feedback, /FINDING .*The agent claimed completion before satisfying the evidence gate\./);
   assert.match(outcome.feedback, /scripted-stop-artifact\.json#L1/);

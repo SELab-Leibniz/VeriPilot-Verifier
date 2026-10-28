@@ -1,3 +1,4 @@
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -5,7 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { REVIEW_PROMPT_PROFILE_DIGEST } from "../lib/review-task/prompt-profile.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
@@ -132,7 +133,7 @@ test('factory cache identity uses the sole task protocol and all metric profiles
   const promptBytes = await fs.readFile(new URL('../lib/review-task/prompts.json', import.meta.url));
   assert.equal(REVIEW_PROMPT_PROFILE_DIGEST, createHash('sha256').update(promptBytes).digest('hex'));
 });
-for (const supplemental of [false, true]) test(`the canonical Stop wrapper preserves cache identity and ${supplemental ? "isolates enabled" : "skips disabled"} file quality`, async t => {
+for (const supplemental of [false, true]) test(`the canonical Stop uses one fresh session and ${supplemental ? "includes enabled" : "skips disabled"} file quality`, async t => {
   const f = await fixture(t);
   await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [
     { operation: "ADD", category: "requirements", text: "Deliver an acknowledged result.", authority: "USER_EXPLICIT", severity: "HARD",
@@ -141,30 +142,14 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
   const file = path.join(f.root, "spec.md"); await fs.writeFile(file, "The current candidate is acknowledged.\n");
   const transcript = path.join(f.root, "transcript.jsonl");
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user:1", message: { content: "Deliver an acknowledged result." } }) + "\n");
-  let identityCalls = 0, itemCalls = 0, qualityCalls = 0;
+  let identityCalls = 0, itemCalls = 0;
   const factory = async input => {
-    itemCalls++;
-    const assigned = Object.values(input.request.population.metrics).flat();
-    const quality = input.request.reviewScope.kind === "file-quality";
-    assert.equal(assigned.length, quality ? 0 : 1);
-    if (quality) {
-      qualityCalls++;
-      assert.ok(input.request.instructions.some(line => line.includes("current delivery file")));
-      assert.equal(input.schema.properties.metricObjectJudgements.maxItems, 0);
-    } else assert.equal(input.request.instructions.some(line => line.includes("current delivery file")), false);
-    const qualityPath=input.request.reviewScope.qualityTarget?.path;
-    const citation = await observedFileCitation({ file, basisFiles: [input.request.groundTruthPath],
-      usedBy: quality ? [qualityPath] : assigned.map(object => object.objectId) });
-    return { result: { summary: "The checked current source supports this item.", ...input.request.fixedStopClassification, findings: [],
-      fileAssessments: quality ? [{ path: qualityPath, status: "PASS", reason: "Current requested file quality is supported.", evidence: [citation.selection] }] : [],
-      metricObjectJudgements: assigned.map(object => ({ objectId: object.objectId, judgement: "PASS", reason: "The checked current candidate matches.", evidence: [citation.selection] })) },
-      sourceCitations: [citation],
-      reviewEvidence: { files: [file], fingerprints: { [file]: sha256(await fs.readFile(file)) }, unstable: false, missing: [] }, close: async () => {} };
+    itemCalls++; assert.equal(input.request.reviewScope.kind, 'workspace-stop');
+    return scriptedWorkspaceReview(input, { file });
   };
-  factory.supportsReviewCollection = true; factory.reviewItemSize = 1;
-  factory.supportsSupplementalFileAssessment = supplemental;
-  factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);
-  factory.reviewCacheIdentity = () => { identityCalls++; return "canonical-scripted-task-runtime-v1"; };
+  factory.supportsReviewCollection = true; factory.supportsStopGroups = true;
+  factory.supportsWorkspaceStopReview = false; factory.supportsSupplementalFileAssessment = !supplemental;
+  factory.reviewCacheIdentity = () => { identityCalls++; return 'retired-per-item-cache'; };
   const config = compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
     artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false }, stopCorrection: { enabled: true, fileQualityReviewEnabled: supplemental } },
     { policyRoot: path.join(f.root, ".runtime-corrector") });
@@ -173,7 +158,7 @@ for (const supplemental of [false, true]) test(`the canonical Stop wrapper prese
     assessmentContext: { mode: "verify_only", assessmentId: "canonical-factory-check", guard: decisionGuard(state), deadlineAt: Date.now() + 30000, maxCorrections: 1 },
     input: { cwd: f.root, session_id: "factory-host", transcript_path: transcript, hook_event_name: "Stop", hook_event_id: "canonical-stop",
       last_assistant_message: "The delivery is complete." } });
-  assert.ok(identityCalls > 0, "The orchestrator wrapper must forward runtime identity to PASS reuse.");
-  assert.equal(qualityCalls, supplemental ? 1 : 0, "The canonical wrapper must forward the supplemental capability.");
-  assert.ok(itemCalls > 0); assert.equal(result.stop.report.status, "PASS");
+  assert.equal(identityCalls, 0, 'A new Stop checks the full workspace instead of selecting old per-item cached results.');
+  assert.equal(result.stop.review.fileAssessments.length, supplemental ? 1 : 0);
+  assert.equal(itemCalls, 1); assert.equal(result.stop.report.status, 'PASS');
 });

@@ -1,3 +1,5 @@
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { observedLegacyStop } from './helpers/legacy-review.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -126,14 +128,15 @@ async function stopFixture(t, switches = {}, options = {}) {
   const factory = async input => {
     calls.push(input);
     const frame = { stopClassification: "TASK_COMPLETE", stage: null };
+    await input.onScope?.(frame);
     if (input.request.reviewScope?.kind === "classification") return { result: { ...frame, summary: "Delivery checkpoint", findings: [], metricObjectJudgements: [] }, close() {} };
     const objects = Object.values(input.request.population.metrics).flat();
-    const quality = input.request.reviewScope?.kind === "file-quality", target = input.request.reviewScope?.qualityTarget;
+    const quality = input.request.fileQualityReviewEnabled, target = input.request.artifactCandidates?.flatMap(binding => binding.files)[0];
     const result = { summary: "Assigned fixture scope checked", ...frame, findings: [],
       fileAssessments: quality ? [{ path: target?.path ?? "delivery.md", status: "PASS", reason: "Current file checked", evidence: ["delivery.md#L1"] }] : [],
       metricObjectJudgements: objects.map(object => ({ objectId: object.objectId, judgement: object.metricId === "M11" ? "DEVIATION" : "PASS",
         reason: "Scripted source/process transport witness", evidence: ["src/main.js#L1"] })) };
-    return withTestReviewProof(input, { result,proofs:scriptedProductionProofs(input,result), close() {} });
+    return observedLegacyStop(input, { result, reviewEvidence: { files: [path.join(root, 'src/main.js')], fingerprints: { [path.join(root, 'src/main.js')]: sha256(await fs.readFile(path.join(root, 'src/main.js'))) } }, proofs:scriptedProductionProofs(input,result), close() {} });
   };
   factory.supportsReviewCollection = true; factory.supportsSupplementalFileAssessment = true;
   factory.reviewItemSize = 1; factory.singleReviewMetrics = METRIC_IDS;
@@ -156,7 +159,7 @@ test("default Stop only dispatches enabled metrics and no independent file quali
   const f = await stopFixture(t), result = await f.run();
   const ids = f.calls.flatMap(c => Object.values(c.request.population.metrics).flat().map(o => o.metricId));
   assert.deepEqual([...new Set(ids)].sort(), ["M09", "M12", "M13", "M15", "M16"]);
-  assert(!f.calls.some(c => c.request.reviewScope?.kind === "file-quality"));
+  assert.equal(f.calls.length, 1); assert.deepEqual(result.stop.review.fileAssessments, []);
   assert.equal(result.decision, "allow");
   assert.equal(result.stop.report.metrics.find(m => m.metricId === "M11").status, "DISABLED");
 });
@@ -196,7 +199,7 @@ test("all-off skips extractor/classifier/review/device work and records DISABLED
 test("explicit quality-only Stop dispatches its file duty without re-enabling M metrics", async t => {
   const f = await stopFixture(t, all(false), { quality: true });
   const result = await f.run();
-  assert.equal(f.calls.filter(c => c.request.reviewScope?.kind === "file-quality").length, 1);
+  assert.equal(f.calls.filter(c => c.request.reviewScope?.kind === "workspace-stop").length, 1);
   assert.equal(f.calls.flatMap(c => Object.values(c.request.population.metrics).flat()).length, 0);
   assert(result.stop.report.metrics.every(metric => metric.status === "DISABLED"));
   assert.equal(result.stop.report.status, "PASS");
@@ -226,11 +229,11 @@ test("M16-only source review needs no process payload, duplicate implementation 
   const result = await f.run();
   const jobs = f.calls.filter(c => c.request.reviewScope?.kind !== "classification");
   assert.equal(jobs.length, 1); assert.equal(jobs[0].request.population.metrics.M16.length, 1);
-  assert.deepEqual(jobs[0].request.processToolEvidence, []);
-  assert(jobs[0].request.sourceManifest.some(file => file.path === "src/main.js"));
+  assert.equal(jobs[0].request.processToolEvidence, undefined);
+  assert.equal(jobs[0].request.sourceManifest, undefined);
   const task = await findTask({ projectRoot: f.root, sessionId: f.sessionId });
   const evaluation = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, task.taskId), "evaluations", `${task.stop.lastAssessmentId}.json`), "utf8"));
-  assert.equal(evaluation.implementationReview.skipReason, "NO_ENABLED_IMPLEMENTATION_OBJECTS");
+  assert.equal(evaluation.implementationReview, undefined);
 });
 
 test("implementation entry itself skips all disabled source duties before probing any platform", async t => {

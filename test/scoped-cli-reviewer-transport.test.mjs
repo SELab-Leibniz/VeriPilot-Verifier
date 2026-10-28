@@ -79,7 +79,9 @@ if(process.env.REF_MODE==="page-utf8"){const bytes=Buffer.from(output),cut=bytes
     { type: "assistant", uuid: "call-1", message: { content: [{ type: "tool_use", id: "exec-1", name: "exec", input: { command: "controlled-check" } }] } },
     { type: "user", uuid: "result-1", message: { content: [{ type: "tool_result", tool_use_id: "exec-1", content: "Original bytes 中文🌻\n".repeat(3000) + "CONTROLLED_END" }] } },
   ] };
-  const factory = options => startRoleReviewer({ ...options, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] },
+  // Explicit legacy collector test: generic JSON source proof, rather than production Stop MCP.
+  const factory = options => startRoleReviewer({ ...options, role: "ground-truth-extractor",
+    reviewer: { ...options.reviewer, readProofStream: true }, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] },
     env: { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, CAPTURE: capture, REF_MODE: mode, FOREIGN_REF: foreign, ARTIFACT_REF: artifact } });
   const run = () => collectReviewItems({ projectRoot: root, taskId: task.taskId, parentSessionId: "business-host", sessionCwd: root,
     role: "stop-reviewer", reviewerFactory: factory, reviewer: { effort: "low", timeoutMs: 5000, formatRepairAttempts: 0 }, schema: STOP_REVIEW_SCHEMA,

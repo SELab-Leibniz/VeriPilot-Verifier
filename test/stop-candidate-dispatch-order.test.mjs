@@ -1,3 +1,4 @@
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
@@ -27,16 +28,9 @@ for (const classification of ["INTERMEDIATE", "WAITING_FOR_USER", "BLOCKED_EXTER
       return originalRead(file, ...args);
     };
     t.after(() => { fs.readFile = originalRead; });
-    const factory = async params => {
-      if (params.request.reviewScope?.kind === "classification") {
-        assert.equal(reads, 0); classified = true;
-        return { result: { summary: "Scope only.", stopClassification: classification, stage: null, findings: [], metricObjectJudgements: [] }, close() {} };
-      }
-      return { result: { summary: "No decisive proof in this controlled fixture.", stopClassification: classification, stage: null, findings: [],
-        metricObjectJudgements: ["TASK_COMPLETE"].includes(classification) ? Object.values(params.request.population.metrics).flat().map(row => ({
-          objectId: row.objectId, judgement: "UNVERIFIED", reason: "The fixture deliberately leaves this obligation unverified.", evidence: [],
-        })) : [] }, close() {} };
-    };
+    const factory = async params => scriptedWorkspaceReview(params, { file: candidate,
+      classification: { stopClassification: classification, stage: null },
+      beforeScope: () => { assert.equal(reads, 0); classified = true; }, verdict: 'UNVERIFIED' });
     factory.supportsReviewCollection = true;
     const plan = { configuredArtifacts: [{ nodeId: "delivery", patterns: ["delivery.txt"], metrics: ["M01"] }],
       runtimeV2: compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },

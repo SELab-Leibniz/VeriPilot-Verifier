@@ -7,8 +7,7 @@ import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { ensureTask, taskDirectory, withTaskState, findTask, startCorrectionEpoch, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
 import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-store.mjs";
-import { runStopTaskGroup } from "../lib/runtime-v2/stop-task-group.mjs";
-import { observedTaskResult } from "./helpers/observed-review.mjs";
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null } = {}) {
@@ -42,15 +41,10 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null 
       if (baselineFailure) throw Object.assign(new Error(baselineFailure.message), {code:baselineFailure.code,reviewerRuntimeFailure:true});
       return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
     }
-    if (input.request.reviewScope.kind === "classification") return { result: { summary: "Declared completion.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] }, close: async () => {} };
-    assert.equal(input.request.reviewScope.kind, "stop-group");
-    return runStopTaskGroup(input, { runTask: async options => {
-      for (const task of options.tasks) await options.onItemResult(await observedTaskResult({ ...options, task }, { file: "project/app.py", verdict }));
-      return { completed: true };
-    } });
+    assert.equal(input.request.reviewScope.kind, "workspace-stop");
+    return scriptedWorkspaceReview(input, { file: path.join(root, "app.py"), verdict: verdict });
   };
   reviewerFactory.supportsReviewCollection = true;
-  reviewerFactory.supportsStopGroups = true;
   const directory = path.join(root, "stable-host-state");
   const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory, stopHost: { directory } };
   const event = (hook, extras = {}) => handleRuntimeV2Event({ ...options, input: { session_id: "session", cwd: root,
@@ -69,13 +63,13 @@ test("project config accepts the v1.1 fields and compiles one canonical new Stop
   assert.throws(() => validateProjectConfig({ ...f.document, stopCorrection: { ...f.document.stopCorrection, maxCorrectionsPerEpoch: 3 } }, "config.yaml"), /conflicts/);
 });
 
-test("the production Stop entry dispatches a real composite SDK adapter and never increments usage while reviewing", async t => {
+test("the production Stop entry dispatches a real workspace task adapter and never increments usage while reviewing", async t => {
   const f = await fixture(t);
   await f.event("SessionStart", { source: "startup" });
   const result = await f.event("Stop");
   assert.equal(result.stop.status, "PASS", JSON.stringify(result.stop));
   assert.equal(result.decision, "allow");
-  assert.equal(f.calls.filter(value => value === "stop-group").length, 1);
+  assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(result.stop.review.metricObjectJudgements.length, 2);
   assert.equal((await createStopCorrectionStore({ directory: f.directory }).inspect("session")).used, 0);
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 0);
@@ -91,7 +85,7 @@ test("a failed baseline remains UNVERIFIED and delivers a checker notice without
   assert.match(result.stop.feedback,/REVIEWER_RUN_FAILED/);
   assert.doesNotMatch(result.stop.feedback,/NO_CURRENT_DEVIATION/);
   assert.equal(result.stop.admission,undefined);
-  assert(!f.calls.includes("stop-group"));
+  assert(!f.calls.includes("workspace-stop"));
   assert.equal((await createStopCorrectionStore({directory:f.directory}).inspect("session")).used,0);
   const task=await findTask({projectRoot:f.root,sessionId:"session"});
   assert.equal(task.status,"STOPPED_UNVERIFIED");
@@ -168,6 +162,47 @@ test("explicit read-only verification ignores exhausted automatic quota and crea
     reviewerFactory: f.reviewerFactory, stopHost: { directory: f.directory },
     assessmentContext: { mode: "verify_only", assessmentId: "read-only-zero-quota", guard: decisionGuard(task) } });
   assert.equal(result.stop?.status, "PASS", JSON.stringify(result));
-  assert.equal(f.calls.filter(value => value === "stop-group").length, 1);
+  assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(await createStopCorrectionStore({ directory: f.directory }).inspect("session"), null);
+});
+
+test('production Stop forwards configured original Skill roots to its single reviewer', async t => {
+  const f = await fixture(t), custom = path.join(path.dirname(f.root), 'external-original-skills');
+  const runtimeV2 = compileRuntimeV2Config({ ...f.document, dynamicGroundTruth: { enabled: false },
+    skillCorrection: { enabled: false, skillRoots: [custom] } });
+  let calls = 0;
+  const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2, artifacts: [] },
+    reviewerFactory: async input => { calls++; assert.equal(input.request.reviewScope.kind, 'workspace-stop');
+      assert.deepEqual(input.skillRoots, [custom]); return f.reviewerFactory(input); },
+    assessmentContext: { mode: 'verify_only', assessmentId: 'configured-original-skill-root' },
+    input: { session_id: 'session', cwd: f.root, transcript_path: path.join(f.root, 'host-transcript.jsonl'), hook_event_name: 'Stop' } });
+  assert.equal(result.stop.status, 'PASS'); assert.equal(calls, 1);
+});
+
+test('program device verification does not build an unused whole-repository source inventory', async t => {
+  const f = await fixture(t);
+  const runtimeV2 = compileRuntimeV2Config({ ...f.document, dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false },
+    implementationCorrection: { enabled: true, platform: null },
+    stopCorrection: { enabled: true, metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, '0')}`, i === 11])) } });
+  const originalRead = fs.readdir; let rootScans = 0, deviceCalls = 0;
+  fs.readdir = async (directory, ...args) => {
+    if (path.resolve(directory) === f.root) { rootScans++; throw new Error('An unused source inventory must not walk the project root.'); }
+    return originalRead(directory, ...args);
+  };
+  t.after(() => { fs.readdir = originalRead; });
+  const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2, artifacts: [] },
+    reviewerFactory: async input => {
+      assert.equal(input.request.reviewScope.kind, 'workspace-stop');
+      await input.onScope({ stopClassification: 'TASK_COMPLETE', stage: null });
+      return { result: { summary: 'No execution proof in this controlled test.', stopClassification: 'TASK_COMPLETE', stage: null,
+        findings: [], metricObjectJudgements: Object.values(input.request.population.metrics).flat().map(object => ({ objectId: object.objectId,
+          judgement: 'UNVERIFIED', reason: 'This fixture checks program preparation only.', evidence: [] })) }, close() {} };
+    },
+    deviceVerifier: async input => { deviceCalls++; assert.equal(input.manifestDigest, undefined);
+      return { build: { status: 'skipped' }, smoke: { status: 'skipped' }, findings: [] }; },
+    assessmentContext: { mode: 'verify_only', assessmentId: 'no-unused-inventory' },
+    input: { session_id: 'session', cwd: f.root, transcript_path: path.join(f.root, 'host-transcript.jsonl'), hook_event_name: 'Stop' } });
+  assert.equal(rootScans, 0); assert.equal(deviceCalls, 1);
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.equal(result.stop.correctionAttempt, 0);
 });

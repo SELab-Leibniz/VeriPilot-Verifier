@@ -12,7 +12,7 @@ import { collectArtifactCandidates } from "../lib/runtime-v2/artifact-candidates
 import { validateJsonSchema } from "../lib/json-schema-validator.mjs";
 import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
-import { observedTaskResult } from "./helpers/observed-review.mjs";
+import { observedFileCitation, scriptedProductionProofs, observedTaskResult } from "./helpers/observed-review.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import { handleRuntimeV2Event } from "../lib/runtime-v2/orchestrator.mjs";
 import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task-store.mjs";
@@ -182,7 +182,7 @@ test("M16 workers use frozen source/config, exclude process proof and reject sta
   assert.equal(unbound.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
 });
 
-test("canonical Stop supplies M16 source once and retries only unverified or unproven source in the implementation role", async t => {
+test("one workspace Stop checks M16 without a second reviewer or a source manifest fence", async t => {
   for (const scenario of [{ enabled: false, verdict: "PASS" }, { enabled: true, verdict: "PASS" },
     { enabled: true, verdict: "DEVIATION" }, { enabled: true, verdict: "UNVERIFIED" }, { enabled: true, verdict: "FORGED" }])
     await t.test(`${scenario.enabled}:${scenario.verdict}`, async t => {
@@ -200,26 +200,19 @@ test("canonical Stop supplies M16 source once and retries only unverified or unp
       await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "user:1", message: { content: "Persist submitted entries." } }) + "\n");
       let m16Calls = 0;
       const factory = async input => {
-        if (!scenario.enabled) assert.equal(input.role, "stop-reviewer");
-        const objects = Object.values(input.request.population.metrics).flat();
-        if (objects[0]?.metricId === "M16") {
-          m16Calls++;
-          if (m16Calls === 1) assert.equal(input.role, "stop-reviewer");
-          else assert.equal(input.role, "implementation-reviewer");
-          assert(input.request.sourceManifest.some(file => file.path === "src/main.js" && file.sha256 === sha256("export const submit = value => store.write(value);\n")));
-          if (scenario.verdict === "FORGED" && m16Calls === 1) return { result: {
-            summary: "Unproven claim", ...input.request.fixedStopClassification, findings: [], fileAssessments: [],
-            metricObjectJudgements: [{ objectId: objects[0].objectId, judgement: "PASS", reason: "Claim without proof", evidence: [] }],
-          }, close() {} };
-          return runStopTaskReview(input, { runTask: options => observedTaskResult(options, { file: "project/src/main.js",
-            verdict: m16Calls === 1 ? scenario.verdict : "PASS" }) });
-        }
-        return { result: { summary: "Other metrics are outside this controlled source-wiring test.", ...input.request.fixedStopClassification,
-          findings: [], fileAssessments: [], metricObjectJudgements: objects.map(object => ({ objectId: object.objectId,
-            judgement: "UNVERIFIED", reason: "Outside this test's source proof.", evidence: [] })) }, close: async () => {} };
+        assert.equal(input.role, 'stop-reviewer'); assert.equal(input.request.reviewScope.kind, 'workspace-stop');
+        assert.equal(input.request.sourceManifest, undefined);
+        m16Calls++;
+        const objects = Object.values(input.request.population.metrics).flat(), object = objects.find(object => object.metricId === 'M16');
+        const result = { summary: 'One controlled workspace source witness.', stopClassification: 'TASK_COMPLETE', stage: null, findings: [], fileAssessments: [],
+          metricObjectJudgements: objects.map(item => ({ objectId: item.objectId,
+            judgement: item === object ? scenario.verdict === 'FORGED' ? 'PASS' : scenario.verdict : 'UNVERIFIED',
+            reason: 'This fixture checks source proof ownership and missing-proof rejection.', evidence: item === object && scenario.verdict !== 'FORGED' ? [source+'#L1-L2'] : [] })) };
+        const citation = scenario.verdict === 'FORGED' ? null : await observedFileCitation({ file: source,
+          basisFiles: [input.request.groundTruthPath], owner: 'SOURCE', usedBy: [object.objectId] });
+        return { result, sourceCitations: citation ? [citation] : [],
+          ...(scenario.verdict === 'PASS' ? { proofs: scriptedProductionProofs(input, result) } : {}), close() {} };
       };
-      factory.supportsReviewCollection = true;
-      factory.singleReviewMetrics = Object.keys(METRIC_CATALOG);
       const config = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
         skillCorrection: { enabled: false }, implementationCorrection: { enabled: scenario.enabled, platform: null },
         stopCorrection: { enabled: true } }, { policyRoot: path.join(f.root, ".runtime-corrector") });
@@ -229,11 +222,11 @@ test("canonical Stop supplies M16 source once and retries only unverified or unp
           deadlineAt: Date.now() + 30000, maxCorrections: 1 },
         input: { cwd: f.root, session_id: sessionId, transcript_path: transcript, hook_event_name: "Stop",
           hook_event_id: "m16-stop", last_assistant_message: "Completed." } });
-      const fallback = ["UNVERIFIED", "FORGED"].includes(scenario.verdict);
-      assert.equal(m16Calls, fallback ? 2 : 1);
-      assert.equal(result.stop.report.metrics.find(metric => metric.metricId === "M16").objects[0].judgement,
-        scenario.verdict === "DEVIATION" ? "DEVIATION" : "PASS");
-      if (scenario.enabled) assert.equal(result.stop.implementationReview.reusedStopSourceObjectIds.length, fallback ? 0 : 1);
+      assert.equal(m16Calls, 1);
+      assert.equal(result.stop.report.metrics.find(metric => metric.metricId === 'M16').objects[0].judgement,
+        scenario.verdict === 'FORGED' ? 'UNVERIFIED' : scenario.verdict);
+      assert.equal(result.stop.implementationReview, undefined);
+
   });
 });
 

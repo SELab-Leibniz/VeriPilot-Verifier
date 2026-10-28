@@ -6,10 +6,9 @@ import { createOpenClawRuntime } from "../lib/openclaw/runtime.mjs";
 import { createNativeStopChains } from "../lib/openclaw/native-stop-chain.mjs";
 import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-store.mjs";
 import { ensureTask, taskDirectory, withTaskState, findTask } from "../lib/runtime-v2/task-store.mjs";
-import { runStopTaskGroup } from "../lib/runtime-v2/stop-task-group.mjs";
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { readReport } from "../lib/openclaw/report.mjs";
 import { admittedProjectScopes } from "./support/openclaw-project-scope.mjs";
-import { observedTaskResult } from "./helpers/observed-review.mjs";
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -94,15 +93,10 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
   const factory = async input => {
     calls.push(input.role === "ground-truth-extractor" ? "baseline" : input.request.reviewScope.kind);
     if (input.role === "ground-truth-extractor") return { result: { summary: "Unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close() {} };
-    if (input.request.reviewScope.kind === "classification") return { result: { summary: "Done.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] }, close() {} };
-    assert.equal(input.request.reviewScope.kind, "stop-group");
+    assert.equal(input.request.reviewScope.kind, "workspace-stop");
     await reviewWait?.();
-    return runStopTaskGroup(input, { runTask: async options => {
-      for (const member of options.tasks) await options.onItemResult(await observedTaskResult({ ...options, task: member }, { file: "project/app.py", verdict: currentVerdict }));
-      return { completed: true };
-    } });
+    return scriptedWorkspaceReview(input, { file: path.join(root, "app.py"), verdict: currentVerdict });
   };
-  factory.supportsStopGroups = true;
   const warnings = [];
   const starts = new Set(), dispatches = [], aborts = [];
   const sharedState = {};
@@ -142,7 +136,7 @@ test("native reply runs the new groups and publishes a fresh PASS with independe
   await f.start();
   const record = await f.stop();
   assert.equal(record.reviewStatus, "PASS", JSON.stringify({ record, warnings: f.warnings }));
-  assert.equal(f.calls.filter(kind => kind === "stop-group").length, 1);
+  assert.equal(f.calls.filter(kind => kind === "workspace-stop").length, 1);
   const binding = { workspaceDir: f.root, sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey };
   assert.equal((await readReport(binding)).verification, "PASS");
   await fs.writeFile(path.join(f.root, "app.py"), "def convert(value): return 0\n");

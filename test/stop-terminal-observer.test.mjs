@@ -60,6 +60,22 @@ test("real saved all-PASS assessment is certified without business-verifier subs
   assert.deepEqual(f.state, before, "The observer must not mutate core records.");
 });
 
+test('transient Windows sharing failures cannot leave a committed native Stop receipt RUNNING', async t => {
+  const originalRename = fs.rename; let failures = 0;
+  fs.rename = async (source, destination) => {
+    if (destination.includes(`${path.sep}native-stop-reviews${path.sep}`) && failures < 2
+      && JSON.parse(await fs.readFile(source, 'utf8')).status === 'SETTLED') {
+      failures++; throw Object.assign(new Error('Controlled file sharing conflict'), { code: 'EPERM' });
+    }
+    return originalRename(source, destination);
+  };
+  try {
+    const f = await terminal(t);
+    assert.equal(failures, 2); assert.equal(f.classify().kind, 'ALL_METRICS_PASS');
+    assert(f.state.records.some(record => record.status === 'SETTLED' && record.assessmentCompletedAt));
+  } finally { fs.rename = originalRename; }
+});
+
 test("real core allow with retained U settles normally but remains unverified", async t => {
   const f = await terminal(t, "UNVERIFIED"), result = f.classify();
   assert.equal(result.kind, "SETTLED_WITH_UNVERIFIED");

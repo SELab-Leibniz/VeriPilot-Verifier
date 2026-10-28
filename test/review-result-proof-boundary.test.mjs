@@ -9,7 +9,7 @@ import { STOP_REVIEW_SCHEMA, startRoleReviewer } from "../lib/runtime-v2/reviewe
 import { calculateMetricReport } from "../lib/runtime-v2/metrics.mjs";
 import { validateReviewJudgement, validateReviewFinding, reviewProofOwners } from "../lib/runtime-v2/review-result-validation.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { observeInternalTool } from "../lib/openclaw/internal-context.mjs";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
 import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
@@ -161,7 +161,7 @@ test("checker proof loss does not consume business correction k", async t => {
   await fs.writeFile(transcript, JSON.stringify({ type: "user", uuid: "u1", message: { content: "Run the verifier before completion." } }));
   const factory = async params => ({ result: params.request.reviewScope?.kind === "classification"
     ? { summary: "Task-level check.", stopClassification: "TASK_COMPLETE", stage: null, findings: [], metricObjectJudgements: [] }
-    : f.result(params), close: async () => {} });
+    : { ...f.result(params), stopClassification: "TASK_COMPLETE", stage: null }, close: async () => {} });
   factory.supportsReviewCollection = true;
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2, locale: "en", dynamicGroundTruth: { enabled: false },
     skillCorrection: { enabled: false }, stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3, metrics: { M11: true } } }, { policyRoot: path.join(f.root, ".runtime-corrector") }) };
@@ -174,12 +174,12 @@ test("checker proof loss does not consume business correction k", async t => {
   assert.equal(state.stop.infrastructureFailures, 1);
 });
 
-test("CLI explicitly reports unavailable read proof instead of trusting an ordinary line reference", async t => {
+test("implementation CLI explicitly reports unavailable read proof instead of trusting an ordinary line reference", async t => {
   const f = await fixture(t), entry = path.join(f.root, "cli.cjs");
   const report = f.result({ request: { ...f.input.request, fixedStopClassification: complete } });
   await fs.writeFile(entry, `process.stdout.write(JSON.stringify({session_id:'proof-cli',structured_output:${JSON.stringify(report)}}));`);
-  await assert.rejects(startRoleReviewer({ ...f.input, classification: undefined, sessionCwd: f.root, parentSessionId: "parent",
-    reviewer: { ...f.input.reviewer, effort: "low", session: "detached" },
+  await assert.rejects(startRoleReviewer({ ...f.input, role: "implementation-reviewer", classification: undefined, sessionCwd: f.root, parentSessionId: "parent",
+    reviewer: { ...f.input.reviewer, readProofStream: true, effort: "low", session: "detached" },
     reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] } }), error => error.code === "REVIEW_ITEM_EVIDENCE_UNAVAILABLE"
       && error.message.includes("CLI_READ_EVENTS_UNAVAILABLE"));
 });
@@ -209,8 +209,9 @@ if(mode==='missing-frame-session')for(const frame of frames)delete frame.session
 frames.push({type:'result',session_id:mode==='missing-terminal-session'?undefined:mode==='wrong-followup-session'&&count>1?'foreign-session':session,structured_output:report});
 process.stdout.write(frames.map(value=>JSON.stringify(value)).join('\\n')+'\\n');
 `);
-  const options = { ...f.input, classification: undefined, sessionCwd: f.root, parentSessionId: "parent",
-    reviewer: { ...f.input.reviewer, effort: "low", session: "detached" }, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] },
+  // Exercise generic JSON read authentication independently of the workspace MCP Stop transport.
+  const options = { ...f.input, role: "ground-truth-extractor", classification: undefined, sessionCwd: f.root, parentSessionId: "parent",
+    reviewer: { ...f.input.reviewer, readProofStream: true, effort: "low", session: "detached" }, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] },
     env: { ...process.env, PROOF_COUNT: count, PROOF_MODE: mode, PROOF_SOURCE: f.source, PROOF_UNCITED: uncited, PROOF_REPORT: JSON.stringify(report) } };
   return { ...f, options, uncited, calls: async () => JSON.parse(await fs.readFile(count, "utf8")) };
 }
@@ -218,7 +219,7 @@ process.stdout.write(frames.map(value=>JSON.stringify(value)).join('\\n')+'\\n')
 for (const mode of ["complete", "numbered", "numbered-eof", "numbered-missing-final", "missing-basis", "forged", "wrong-pair", "assistant-claim", "duplicate-result", "missing-frame-session", "missing-terminal-session", "repair"]) test(`Claude native stream-json read proof: ${mode}`, async t => {
   const f = await streamedCli(t, mode);
   const handle = await collectReviewItems({ ...f.input, reviewerFactory: params => startRoleReviewer({ ...f.options, ...params,
-    reviewer: { ...f.options.reviewer, ...params.reviewer } }) });
+    role: "ground-truth-extractor", reviewer: { ...f.options.reviewer, ...params.reviewer, readProofStream: true } }) });
   const success = ["complete", "numbered", "numbered-eof", "repair"].includes(mode);
   assert.equal(handle.collection.complete, success);
   assert.equal(handle.result.metricObjectJudgements[0].judgement, success ? "PASS" : "UNVERIFIED");

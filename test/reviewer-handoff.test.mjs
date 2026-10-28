@@ -68,10 +68,10 @@ test("handoff always creates target identity and selects target provider, includ
   for (const key of ["KEY_A", "KEY_B"]) {
     const f = await fixture(t);
     const origin = await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor", reviewer: independent("KEY_A") });
-    const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "stop-reviewer", reviewer: independent(key), request: { originDirectory: origin.requestDirectory } });
+    const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "artifact-reviewer", reviewer: independent(key), request: { originDirectory: origin.requestDirectory } });
     t.after(() => target.close());
     assert.notEqual(target.lease.runId, origin.lease.runId);
-    assert.equal(target.lease.role, "stop-reviewer");
+    assert.equal(target.lease.role, "artifact-reviewer");
     assert.notEqual(target.requestDirectory, origin.requestDirectory);
     const calls = await f.calls();
     assert.equal(calls.length, 2, "handoff must not repeat GT extraction");
@@ -142,7 +142,7 @@ test("CodeAgent handoff resumes compatible roles and lets the host allocate inde
   const independentTarget = await reviewers.handoffRoleReviewer({
     ...fresh.options,
     originHandle: independentOrigin,
-    role: "stop-reviewer",
+    role: "artifact-reviewer",
     reviewer: independent("KEY_B"),
   });
   t.after(() => independentTarget.close());
@@ -160,7 +160,7 @@ test("CodeAgent handoff resumes compatible roles and lets the host allocate inde
 test("non-ambient source and missing target key fork original parent using original ambient environment", async (t) => {
   const f = await fixture(t);
   const origin = await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor", reviewer: independent("KEY_A") });
-  const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "stop-reviewer", reviewer: independent("MISSING_KEY") });
+  const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "artifact-reviewer", reviewer: independent("MISSING_KEY") });
   t.after(() => target.close());
   const call = (await f.calls())[1];
   assert.equal(call.args[call.args.indexOf("--resume") + 1], "parent");
@@ -180,7 +180,7 @@ test("incompatible runtime, owner, cwd, parent, or plugin cannot resume source r
     await fs.mkdir(elsewhere);
     const override = field === "reviewerRuntime" ? { ...f.options.reviewerRuntime, argsPrefix: [...f.options.reviewerRuntime.argsPrefix, "--different"] } : elsewhere;
     let captured;
-    const target = await reviewers.handoffRoleReviewer({ ...f.options, [field]: override, originHandle: origin, role: "stop-reviewer", reviewerFactory: async (options) => { captured = options; return { close: async () => {} }; } });
+    const target = await reviewers.handoffRoleReviewer({ ...f.options, [field]: override, originHandle: origin, role: "artifact-reviewer", reviewerFactory: async (options) => { captured = options; return { close: async () => {} }; } });
     await target.close();
     assert.equal(captured.continuationSessionId ?? null, null, field);
     await assert.rejects(fs.access(origin.requestDirectory));
@@ -192,7 +192,7 @@ test("handoff preparation and parsing failures clean source and target owned res
     const f = await fixture(t);
     const origin = await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor" });
     const evidence = failure === "prepare" ? { groundTruth: { bad: 1n } } : {};
-    await assert.rejects(reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "stop-reviewer", evidence, request: { fail: failure === "parse" }, ...(failure === "spawn" ? { reviewerRuntime: { executable: path.join(f.root, "missing") } } : {}) }));
+    await assert.rejects(reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "artifact-reviewer", evidence, request: { fail: failure === "parse" }, ...(failure === "spawn" ? { reviewerRuntime: { executable: path.join(f.root, "missing") } } : {}) }));
     assert.deepEqual(await fs.readdir(path.join(f.root, ".runtime-correction", ".internal-requests")), []);
     assert.deepEqual(await fs.readdir(path.join(f.root, ".runtime-correction", "internal-runs")), []);
   }
@@ -201,10 +201,10 @@ test("handoff preparation and parsing failures clean source and target owned res
 test("detached targets start fresh with ambient credentials and retain target identity", async (t) => {
   const f = await fixture(t);
   const origin = await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor", reviewer: independent("KEY_A") });
-  const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "stop-reviewer", reviewer: { ...baseReviewer, session: "detached" } });
+  const target = await reviewers.handoffRoleReviewer({ ...f.options, originHandle: origin, role: "artifact-reviewer", reviewer: { ...baseReviewer, session: "detached" } });
   t.after(() => target.close());
   const call = (await f.calls())[1];
-  assert.equal(call.role, "stop-reviewer");
+  assert.equal(call.role, "artifact-reviewer");
   assert.equal(call.provider, "https://ambient.invalid");
   assert.equal(call.token, "ambient-token");
   assert.ok(!call.args.includes("--resume"));
@@ -217,7 +217,7 @@ test("handoff retains the source absolute deadline and passes resolved plans to 
   const origin = await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor", deadlineAt });
   let captured;
   await reviewers.handoffRoleReviewer({
-    ...f.options, originHandle: origin, role: "stop-reviewer", deadlineAt: deadlineAt + 30_000,
+    ...f.options, originHandle: origin, role: "artifact-reviewer", deadlineAt: deadlineAt + 30_000,
     reviewerFactory: async (options) => { captured = options; return { close: async () => {} }; },
   });
   assert.equal(captured.deadlineAt, deadlineAt);
@@ -232,7 +232,7 @@ test("handoff snapshots requests, evidence, and reviewer settings before resolve
   const request = { message: "original" };
   const evidence = { groundTruth: { claims: [{ text: "original" }] } };
   const reviewer = independent("KEY_A");
-  const pending = reviewers.handoffRoleReviewer({ ...f.options, role: "stop-reviewer", request, evidence, reviewer });
+  const pending = reviewers.handoffRoleReviewer({ ...f.options, role: "artifact-reviewer", request, evidence, reviewer });
   request.message = "mutated";
   evidence.groundTruth.claims[0].text = "mutated";
   reviewer.provider.model = "mutated-model";
@@ -250,7 +250,7 @@ test("direct startup callback failure releases all resources without launching",
   const f = await fixture(t);
   const failure = new Error("prepared callback failed");
   await assert.rejects(reviewers.startRoleReviewer({
-    ...f.options, role: "stop-reviewer", evidence: { groundTruth: { version: 4 } },
+    ...f.options, role: "artifact-reviewer", evidence: { groundTruth: { version: 4 } },
     onPrepared: async ({ requestDirectory }) => {
       assert.equal(JSON.parse(await fs.readFile(path.join(requestDirectory, "ground-truth.json"), "utf8")).version, 4);
       throw failure;
@@ -264,7 +264,7 @@ test("direct startup callback failure releases all resources without launching",
 test("failed same-role follow-up repair or reminder closes its lease and request", async (t) => {
   for (const failure of ["repair", "reminder"]) {
     const f = await fixture(t);
-    const handle = await reviewers.startRoleReviewer({ ...f.options, env: { ...f.options.env, REVIEW_FAILURE: failure }, role: "stop-reviewer" });
+    const handle = await reviewers.startRoleReviewer({ ...f.options, env: { ...f.options.env, REVIEW_FAILURE: failure }, role: "artifact-reviewer" });
     await assert.rejects(handle.followUp({ prompt: "Continue this assessment." }));
     const calls = await f.calls();
     assert.equal(calls.length, 3);
@@ -284,7 +284,7 @@ test("source cleanup failure cannot replace the original target preparation or f
     const failure = new Error("target failed");
     const originHandle = { close: async () => { closes += 1; throw new Error("cleanup failed"); } };
     await assert.rejects(reviewers.handoffRoleReviewer({
-      ...f.options, role: "stop-reviewer", originHandle,
+      ...f.options, role: "artifact-reviewer", originHandle,
       evidence: badEvidence ? { groundTruth: { revision: 1n } } : null,
       reviewerFactory: async () => { throw failure; },
     }), (error) => badEvidence ? error instanceof TypeError : error === failure);
@@ -298,7 +298,7 @@ test("a fork-configured source with no parent session cannot provide ambient for
   const origin = await reviewers.startRoleReviewer({ ...options, role: "ground-truth-extractor" });
   let captured;
   await reviewers.handoffRoleReviewer({
-    ...options, originHandle: origin, role: "stop-reviewer",
+    ...options, originHandle: origin, role: "artifact-reviewer",
     reviewerFactory: async (value) => { captured = value; return { close: async () => {} }; },
   });
   assert.equal(captured.continuationSessionId, null);
@@ -311,7 +311,7 @@ test("startup and handoff reject unknown runtime keys even when their values are
       const origin = handoff ? await reviewers.startRoleReviewer({ ...f.options, role: "ground-truth-extractor" }) : null;
       const options = {
         ...f.options,
-        role: "stop-reviewer",
+        role: "artifact-reviewer",
         reviewerRuntime: { ...f.options.reviewerRuntime, unknown: undefined },
         env: { ...f.options.env, ...(override ? { RUNTIME_CORRECTOR_AGENT_EXECUTABLE: process.execPath } : {}) },
       };
@@ -331,7 +331,7 @@ test("startup and handoff reject unknown runtime keys even when their values are
 test("ambient follow-ups preserve their requested model while independent follow-ups retain the provider model", async (t) => {
   for (const reviewer of [baseReviewer, independent("KEY_A")]) {
     const f = await fixture(t);
-    const handle = await reviewers.startRoleReviewer({ ...f.options, role: "stop-reviewer", reviewer });
+    const handle = await reviewers.startRoleReviewer({ ...f.options, role: "artifact-reviewer", reviewer });
     t.after(() => handle.close());
     await handle.followUp({ prompt: "Continue.", nextReviewer: { ...baseReviewer, model: "followup-model" } });
     const call = (await f.calls())[1];

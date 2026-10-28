@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
 let output, pluginRoot, createRuntime, findTask, readReport;
@@ -159,6 +159,7 @@ reviewers:
           subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
     else if(request.reviewScope?.kind==='classification')result={summary:'Completion scope only',stopClassification:'TASK_COMPLETE',stage:null,findings:[],metricObjectJudgements:[]};
     else {
+      await params.onScope?.({ stopClassification: 'TASK_COMPLETE', stage: null });
       const verdict = await review?.();
       await pause(50);
       result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [], ...(quality ? { fileAssessments: quality } : {}),

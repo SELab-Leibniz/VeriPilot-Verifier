@@ -21,7 +21,14 @@
       "finish_baseline",
       "submit_classification",
       "submit_findings",
-      "finish_findings"
+      "finish_findings",
+      "review_scope",
+      "review_checklist",
+      "review_changes",
+      "review_plan",
+      "review_notes",
+      "submit_finding",
+      "finish_stop_review"
     ],
     "agentToolResultMiddleware": [
       "openclaw",

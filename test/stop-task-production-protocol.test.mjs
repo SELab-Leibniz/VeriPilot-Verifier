@@ -52,7 +52,23 @@ test('production Stop moves from a real stage scope to task completion using onl
       params.onAgentToolResult({ toolName: name, result, isError: false });
     };
     const tasks = brief.members ?? [brief.task];
-    if (brief.task?.scope === 'classification') {
+    if (brief.task?.scope === 'workspace-stop') {
+      types.push('workspace-stop');
+      assert.equal(params.workspaceDir, root);
+      for (const file of brief.task.basisFiles) await read(file);
+      await submit('review_scope', { stopClassification: selected, ...(selected === 'STAGE_COMPLETE' ? { stage: 'design' } : {}), summary: 'The original response selects this scope.' });
+      let offset = 0;
+      do {
+        const result = await tools.get('review_checklist').execute(crypto.randomUUID(), { offset, limit: 20 });
+        const page = JSON.parse(result.content[0].text);
+        for (const item of page.items) {
+          const citeId = await read(path.join(root, 'spec.md'));
+          await submit('submit_review', { taskId: item.taskId, verdict: 'PASS', reason: 'The current document supports the original obligation.', citeIds: [citeId] });
+        }
+        offset = page.nextOffset;
+      } while (offset !== null);
+      await submit('finish_stop_review', { summary: 'The assigned original checklist is saved.' });
+    } else if (brief.task?.scope === 'classification') {
       types.push('classification'); for (const file of brief.task.basisFiles) await read(file);
       await submit('submit_classification', { stopClassification: selected, ...(selected === 'STAGE_COMPLETE' ? { stage: 'design' } : {}), summary: 'The frozen response selects this scope.' });
     } else if (brief.task?.scope === 'findings') {
@@ -94,5 +110,5 @@ test('production Stop moves from a real stage scope to task completion using onl
     else assert.equal(outcome.stop.review.collection.mode, 'findings-only');
     assert.equal(outcome.stop.correctionAttempt, 0);
   }
-  assert.deepEqual(types, ['classification', 'file-quality', 'review', 'classification', 'file-quality', 'review', 'classification', 'findings']);
+  assert.deepEqual(types, ['workspace-stop', 'workspace-stop', 'workspace-stop']);
 });

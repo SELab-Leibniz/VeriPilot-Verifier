@@ -104,7 +104,7 @@ test("all hosts package complete runtime imports, resources and usable documenta
       }
     }
     for (const resource of ["config/stop-defaults.json", "config/schemas/project-config.schema.json", "knowledge/ir/default.json",
-      "templates/project/.runtime-corrector/config.yaml", "specs/custom-stage.md", "lib/review-task/prompts.json", "lib/review-task/package-lock.json"]) {
+      "templates/project/.runtime-corrector/config.yaml", "specs/custom-stage.md"]) {
       await fs.access(path.join(root, resource));
     }
     if (host === "openclaw") {

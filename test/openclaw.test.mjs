@@ -10,7 +10,7 @@ import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { normalizeMessages, readOpenClawTranscript, persistTranscript } from "../lib/openclaw/transcript.mjs";
 import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-store.mjs";
 import { changedFiles, selectedSkillRead, sessionSkillPlan } from "../lib/openclaw/tools.mjs";
-import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
+import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { ensureTask, findTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 

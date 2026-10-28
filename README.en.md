@@ -4,6 +4,8 @@
 
 Runtime Corrector checks artifacts, source-bound requirements and completion evidence while a host agent works. It returns confirmed deviations to that agent and does not apply patches to business files itself. Version 1 provides rules, schemas, workflow edges and isolated semantic review. Opt-in version 2 adds Ground Truth, Skill monitoring and bounded Stop correction.
 
+The default Claude, CodeAgent and OpenClaw / MatrixAssistant Stop paths share one reviewer session for scope selection, item checks and optional file-quality review. It reads original workspace and external files on demand, without copying the repository. Git diffs, host edits, plans, checklists and notes help organize the investigation; original-read receipts, evidence ownership and freshness still govern acceptance. See the [Stop guide](docs/stop-task-review.md).
+
 ## Install
 
 ```sh
@@ -15,7 +17,7 @@ Install `dist/runtime-corrector-codeagent` with CodeAgent's plugin installer. Fo
 
 `npm run build:plugin` builds the default OpenClaw artifact. Select another host with `npm run build:plugin -- --host claude`. The source checkout is not an installable plugin root.
 
-Claude/CodeAgent CLI and hooks require **Node.js >= 18** on Windows, Linux and macOS. Build-time adapters select `.claude-plugin` / `CLAUDE_PLUGIN_ROOT` or `.cac-plugin` / `CODEAGENT3_PLUGIN_ROOT`. Roots are canonicalized and checked before use. OpenClaw supports exactly `2026.7.1-2` and `2026.10.3`, with different Node requirements and continuation limits described in the host guide. Its artifact bundles a private TypeBox 1.3.27 loaded through a relative path, with the original license and lockfile. Builds verify the bundled archive's SHA-512; installation needs no dependency download and does not use or modify system or other projects' TypeBox. Claude/CodeAgent basic CLI and hooks need no npm installation.
+Claude/CodeAgent CLI and hooks require **Node.js >= 18** on Windows, Linux and macOS. Build-time adapters select `.claude-plugin` / `CLAUDE_PLUGIN_ROOT` or `.cac-plugin` / `CODEAGENT3_PLUGIN_ROOT`. Roots are canonicalized and checked before use. OpenClaw supports exactly `2026.7.1-2` and `2026.10.3`, with different Node requirements and continuation limits described in the host guide. All three runtime artifacts use only Node.js builtins and exclude the old Stop workers, TypeBox and their dependency metadata. Installation needs no npm dependency download. Legacy workers remain available only for explicit repository development comparisons.
 
 ## Start
 
