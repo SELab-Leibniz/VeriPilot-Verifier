@@ -4,11 +4,21 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+async function recordedPluginRoot(outputRoot) {
+  const nativeRoot = path.join(outputRoot, 'native-host');
+  const config = JSON.parse(await fs.readFile(path.join(nativeRoot, 'config.json'), 'utf8'));
+  for (const root of config.plugins?.load?.paths ?? []) {
+    const manifest = await fs.readFile(path.join(root, 'package.json'), 'utf8').then(JSON.parse, () => null);
+    if (manifest?.name === 'runtime-corrector-openclaw') return await fs.realpath(root);
+  }
+  throw new Error('The recorded native profile has no runtime-corrector artifact to audit.');
+}
+
 export async function auditNativeStopLoop(outputRoot) {
   const original = await fs.readFile(path.join(outputRoot, 'result.json'), 'utf8'), raw = JSON.parse(original);
   if (raw.mode === 'original-turn' && !raw.injected) return auditNativeOriginalTurn(outputRoot, raw);
   if (!['automatic-loop', 'original-turn'].includes(raw.mode) || !raw.sessionId || !raw.sessionKey) throw new Error('No completed native-loop observation is available to audit.');
-  const projectRoot = path.join(outputRoot, 'project'), pluginRoot = path.join(outputRoot, 'native-host/build/runtime-corrector-openclaw');
+  const projectRoot = path.join(outputRoot, 'project'), pluginRoot = await recordedPluginRoot(outputRoot);
   const load = relative => import(pathToFileURL(path.join(pluginRoot, relative)).href);
   const [{ findTask, taskDirectory }, { createStopCorrectionStore }, { listNativeRuns }, { readReport }] = await Promise.all([
     load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/stop-correction-store.mjs'), load('lib/openclaw/native-runs.mjs'), load('lib/openclaw/report.mjs'),
@@ -57,7 +67,8 @@ export async function auditNativeStopLoop(outputRoot) {
 
 async function auditNativeOriginalTurn(outputRoot, raw) {
   const projectRoot = path.join(outputRoot, 'project'), nativeRoot = path.join(outputRoot, 'native-host');
-  const load = relative => import(pathToFileURL(path.join(nativeRoot, 'build/runtime-corrector-openclaw', relative)).href);
+  const pluginRoot = await recordedPluginRoot(outputRoot);
+  const load = relative => import(pathToFileURL(path.join(pluginRoot, relative)).href);
   const [{ findTask, taskDirectory }, { createStopCorrectionStore }, { listNativeRuns }, { readReport }, { normalizeMessages }] = await Promise.all([
     load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/stop-correction-store.mjs'), load('lib/openclaw/native-runs.mjs'),
     load('lib/openclaw/report.mjs'), load('lib/openclaw/transcript.mjs'),
@@ -78,9 +89,10 @@ async function auditNativeOriginalTurn(outputRoot, raw) {
   const trajectory = (await fs.readFile(path.join(nativeRoot, `${raw.sessionId}.trajectory.jsonl`), 'utf8')).trim().split('\n').map(JSON.parse);
   const mainTerminal = trajectory.filter(event => event.type === 'session.ended' && event.runId === raw.originalRunId).at(-1);
   const actualMainCompleted = mainTerminal?.data?.status === 'success' && mainTerminal.data.aborted === false && mainTerminal.data.timedOut === false;
+  const contractPaths = [path.join(projectRoot, 'requirements/original-contract.md'), path.join(outputRoot, 'original-contract.md')];
   const originalUserObserved = normalizeMessages(records).some(value => value.type === 'user' && !value.isMeta
-    && (typeof value.message.content === 'string' ? value.message.content
-      : value.message.content.filter(block => block.type === 'text').map(block => block.text).join('\n')).includes(path.join(outputRoot, 'original-contract.md')));
+    && contractPaths.some(contract => (typeof value.message.content === 'string' ? value.message.content
+      : value.message.content.filter(block => block.type === 'text').map(block => block.text).join('\n')).includes(contract)));
   const file = path.join(projectRoot, 'app.mjs');
   const actualDeliveryWriteCalls = records.flatMap(record => {
     const message = record.message ?? record;

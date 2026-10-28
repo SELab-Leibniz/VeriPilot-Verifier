@@ -13,7 +13,7 @@ test('comparison never calls unchanged perfect P2P an improvement or hides unexe
   const rows = ['one', 'two'].flatMap(id => ['baseline', 'candidate'].map(arm => ({ id, arm, nativeComplete: true,
     grade: { results: [{ executed: true, resolved: arm === 'candidate', f2p: { expected: 2, passed: arm === 'candidate' ? ['a', 'b'] : ['a'], passRate: arm === 'candidate' ? 1 : .5 },
       p2p: { expected: 3, passed: ['x', 'y', 'z'], passRate: 1 } }] },
-    usage: { elapsedMs: arm === 'candidate' ? 80 : 100, totals: { input: 20, output: 5, cacheRead: arm === 'candidate' ? 55 : 75, cacheWrite: 0, totalTokens: arm === 'candidate' ? 80 : 100, missingUsage: 0 }, sessions: [{}] } })));
+    usage: { elapsedMs: arm === 'candidate' ? 80 : 100, providerUsageCoverage: { complete: true }, totals: { input: 20, output: 5, cacheRead: arm === 'candidate' ? 55 : 75, cacheWrite: 0, totalTokens: arm === 'candidate' ? 80 : 100, missingUsage: 0 }, sessions: [{}] } })));
   const report = { state: 'SETTLED', cases: ['one', 'two'], results: rows };
   async function run() {
     await fs.writeFile(file, JSON.stringify(report)); execFileSync(process.execPath, [script, `--input=${file}`], { windowsHide: true });
@@ -29,6 +29,11 @@ test('comparison never calls unchanged perfect P2P an improvement or hides unexe
   rows[0].usage.nativeRuns[0].protocolCompleted = false;
   assert.equal((await run()).efficiencyComparisonQualified, false, 'doing less review is not qualified as faster review');
   rows[0].usage.nativeRuns[0].protocolCompleted = true;
+  rows[0].usage.providerUsageCoverage.complete = false;
+  const incompleteProvider = await run();
+  assert.equal(incompleteProvider.lowerObservedTokens, null, 'an interrupted provider request cannot be counted as zero usage');
+  assert.equal(incompleteProvider.lowerObservedTime, true, 'recorded elapsed time is independent of token accounting');
+  rows[0].usage.providerUsageCoverage.complete = true;
   rows.at(-1).grade.results[0].executed = false;
   const incomplete = await run(); assert.equal(incomplete.arms.candidate.f2p, null);
   assert.equal(incomplete.strictlyHigherObservedAccuracy, false); assert.equal(incomplete.lowerObservedTokens, null);

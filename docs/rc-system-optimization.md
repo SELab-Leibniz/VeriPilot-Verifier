@@ -184,3 +184,17 @@
 - 全量 `full-regression-default-numbered.log`：161 文件/1828 tests，1803 pass、23 skip、2 fail（同一取消用例的子项和父项）；失败为 fixture 的 5s 忙轮询等待 queued corrective run。隔离原用例 3/3 pass。测试现改为观察实际 dispatch promise，使用既有 within=10s 异步测试上限；生产角色/11s 评估预算、取消和收据断言不变，超时增加状态诊断。整个预算测试文件 33/33 pass。全量尚须复跑，不能说当前全量全绿。
 - 第二份组件公开输入（happyword_12/c33）摘要 b47361c6d9ae12d45711f6d182db06b61d08f0fb3a9ea6753395bba545bab6d6，用户 849B、项目 989B。两条无模型准备均通过。候选→原版反向顺序已启动，父终端句柄 99906；当前候选 owner PID 18188、项目 cmp-42f991e7a17a。它结束且真实私有基础设施 settled/input hash 匹配后，父脚本才启动 c33；不要重复启动任一组。
 - 先完成该组件对照、复跑全量，再决定固定三例方案选择和冻结八例留出；不以开发集或组件成绩代替 F2P/P2P，目标保持 active。
+
+### 07:18 用户时限下的端到端交付恢复点
+
+- 用户选择“30分钟内先交付阶段版本，完整验收后续继续”，随后明确要求“完成端到端正常运行的交付版本”。本阶段据此交付真实运行闭环和安装包；完整 F2P/P2P 与效率改善仍未达成，不能标为完成。
+- 第二份组件输入：7363338/happy 完成，69008ms、31736 记录 tokens；c33/happy 在 180084ms 截止，记录 49695 tokens。后者有 5 个实际提供方请求、仅 4 条正用量响应，完整用量未知，不可把 49695 当总量或据此计算省 token 百分比。宿主合成的零 usage 终态不证明在途请求零消耗。
+- `bacea56` 的 blank-separated 合组候选完成第二份组件输入：89639ms、44413 记录 tokens，用户 L1–L12 完整合为 IMPLEMENTATION/PRODUCTION，L15 保留为 PROCESS；所有非空用户原文均有归属。只证明该组件内容检查，不是完整业务准确率成绩。相关全量 `full-regression-blank-workflow.log`：161 文件、1829 tests，1806 pass、23 skip、0 fail。
+- `paired-blank-selection-001` 为满足用户交付时限已停止；确认专用 PID 后终止协调与在途候选，停止依据持久化于 `user-timebox-stop.json`。已完成的基线及全部原始日志保留，在途候选不评分、不复用为有效配对。不能因继续提示而重复启动旧运行。
+- 冻结交付目录 `delivery-20261029-stage-001/runtime-corrector-openclaw`，源码 `bacea56c2f571f9d4cd24c28b2232c283d05e549`；当前工作树重新构建的 244 文件 / 2251827 字节与之逐字节相同，6 个公开 Skill 通过实际安装宿主 YAML 解析器校验。未改写冻结 c33 基线，也未修改 MatrixAssistant/OpenClaw。
+- `delivery-e2e-normal-001`：真实认证 sessions.create/chat.send、真实原始用户与模型写文件，COMPLETED/PASS，0 次纠偏，1 提取器 + 1 审查器，全部 SETTLED；独立离线审计通过，真实业务运行正常完成，原始基线对象保留，实际导入最终代码行为检查通过。
+- `delivery-e2e-correction-001`：真实原始用户及模型运行，夹具只在真实原轮完成时将实际写入文件注入缺陷。DEVIATION → 实际启动一次宿主纠偏 → 修复 → PASS/COMPLETED，1 提取器 + 2 审查器全部 SETTLED，额度 used=1/admissions=1。独立离线审计确认同一原始对象从 DEVIATION 到 PASS，未删义务或缩小分母；Gateway 已正常关闭。原始模型请求、转录、终态和审查结论均不是伪造。
+- 验收入口支持显式 `--artifact` 与唯一 `--output`；已有结果拒绝覆盖。离线审计根据实际 profile 记录的产物路径读取，兼容预构建插件和旧契约位置。私有宿主单例的 observer 残留在 await shutdown 后显式退出，不延长模型预算或修改生产取消逻辑。
+- 计量工具新增提供方请求与正 usage 条数覆盖门槛；缺失用量保持未知。耗时和 token 的完整性分别判断，同等审查完成度仍是效率结论前提。
+- 最终完整回归通过：163 文件 / 1833 用例，1810 pass、23 skip、0 fail、0 cancelled、0 timeout，日志 `full-regression-delivery-20261029.log`；[阶段交付摘要](rc-stage-delivery-20261029.results.json) 固定实际结果。最终安装说明见 [交付说明](rc-stage-delivery-20261029.md)。交付包包含去敏摘要、逐文件 SHA256 和只读校验工具，不包含私有宿主状态/凭据；校验工具额外验证篡改、多余文件、缺失文件与目录逃逸四类反例均被拒绝。
+- 后续恢复：先读阶段摘要、配对停止记录和本节；无需重复端到端模型实验来重建报告。先核对源码/产物身份，再从固定选择与留出协议继续完整效果验收；不能以本次 M16 小工程闭环代替其他指标、Electron 长时运行或 13 例基准结果。

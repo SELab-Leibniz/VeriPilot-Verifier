@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
+import { providerUsageCoverage } from './bench/provider-usage-coverage.mjs';
 const arg = name => process.argv.find(value => value.startsWith(`${name}=`))?.slice(name.length + 1);
 for (const name of ['--source-run', '--artifact', '--host-root', '--output']) if (!arg(name)) throw new Error(`${name}= required`);
 const artifact = await fs.realpath(arg('--artifact')), outputRoot = path.resolve(arg('--output'));
@@ -102,12 +103,13 @@ const usage = [];
 for (const file of new Set(nativeRuns.map(run => run.sessionFile).filter(Boolean))) {
   const text = await fs.readFile(file, 'utf8').catch(() => null);
   if (text === null) { usage.push({ file, missing: true }); continue; }
-  const rows = text.split('\n').filter(Boolean).map(line => JSON.parse(line)), stats = { file, turns: 0, usageRecords: 0, missingUsage: 0,
+  const rows = text.split('\n').filter(Boolean).map(line => JSON.parse(line)), stats = { file, turns: 0, usageRecords: 0, nonzeroUsageRecords: 0, missingUsage: 0,
     input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, missingUsageFields: 0, tools: {} };
   for (const { message } of rows) if (message?.role === 'assistant') {
     stats.turns++;
     for (const block of message.content ?? []) if (block.type === 'toolCall') stats.tools[block.name] = (stats.tools[block.name] ?? 0) + 1;
     if (!message.usage) { stats.missingUsage++; continue; } stats.usageRecords++;
+    if (['input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens'].some(key => message.usage[key] > 0)) stats.nonzeroUsageRecords++;
     for (const key of ['input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens'])
       if (typeof message.usage[key] === 'number') stats[key] += message.usage[key]; else stats.missingUsageFields++;
   }
@@ -115,6 +117,7 @@ for (const file of new Set(nativeRuns.map(run => run.sessionFile).filter(Boolean
 }
 const result = { ...manifest, state: nativeRuns.every(run => run.status === 'SETTLED') ? 'SETTLED' : 'UNSETTLED',
   completed: Boolean(handle && !failure), failure, elapsedMs: Date.now() - startedAt, nativeRuns, usage,
+  providerUsageCoverage: providerUsageCoverage(gateway?.metrics().providerRequests, usage.reduce((sum, row) => sum + (row.nonzeroUsageRecords ?? 0), 0)),
   summedPrivateRunMs: nativeRuns.length && nativeRuns.every(run => Number.isFinite(run.startedAt) && Number.isFinite(run.settledAt) && run.settledAt >= run.startedAt)
     ? nativeRuns.reduce((sum, run) => sum + run.settledAt - run.startedAt, 0) : null,
   operations: handle?.result?.operations?.length ?? null, metrics: gateway?.metrics() };

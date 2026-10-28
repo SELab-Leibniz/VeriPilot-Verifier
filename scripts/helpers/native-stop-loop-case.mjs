@@ -10,20 +10,23 @@ import { findTask } from '../../lib/runtime-v2/task-store.mjs';
 import { createStopCorrectionStore } from '../../lib/runtime-v2/stop-correction-store.mjs';
 
 export async function prepareNativeLoopProject({ gateway, projectRoot, outputRoot }) {
-  const contract = path.join(outputRoot, 'original-contract.md'), file = path.join(projectRoot, 'app.mjs');
+  const contract = path.join(projectRoot, 'requirements/original-contract.md'), file = path.join(projectRoot, 'app.mjs');
+  await fs.mkdir(path.dirname(contract), { recursive: true });
   await fs.writeFile(contract, 'The exported accept(value) must return the supplied finite number plus one, without storing state. Other input types are outside scope.\n');
   const requirement = `Implement exported accept(value) in app.mjs: for every allowed finite-number input return that number plus one without storing state. Preserve the complete original contract at ${contract}; other input types are outside scope.`;
   await fs.writeFile(file, 'export const accept = value => value + 1;\n');
-  execFileSync('git', ['init', '--quiet', projectRoot], { windowsHide: true });
-  execFileSync('git', ['-C', projectRoot, 'add', 'app.mjs'], { windowsHide: true });
-  execFileSync('git', ['-C', projectRoot, '-c', 'user.name=RC Local Evaluation', '-c', 'user.email=rc@example.invalid',
+  await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'This isolated acceptance project exports a small ES module from app.mjs.\n');
+  const git = process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git';
+  execFileSync(git, ['init', '--quiet', projectRoot], { windowsHide: true });
+  execFileSync(git, ['-C', projectRoot, 'add', 'app.mjs', 'requirements/original-contract.md', 'AGENTS.md'], { windowsHide: true });
+  execFileSync(git, ['-C', projectRoot, '-c', 'user.name=RC Local Evaluation', '-c', 'user.email=rc@example.invalid',
     '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '-m', 'fixture baseline'], { windowsHide: true });
   await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), `version: 2
 artifacts: []
 dynamicGroundTruth:
   enabled: true
-  materialRoots: []
+  materialRoots: [requirements]
   panel:
     size: 0
 skillCorrection:

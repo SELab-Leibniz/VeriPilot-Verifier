@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "kind": "rc-end-to-end-stage-delivery",
+  "capturedAt": "2026-10-28T23:19:19.500Z",
+  "runtimeSource": "bacea56c2f571f9d4cd24c28b2232c283d05e549",
+  "branch": "codex/rc-general-efficiency-bench",
+  "pluginVersion": "1.9.1-openclaw.11-session-projects.15",
+  "environment": {
+    "node": "v24.16.0",
+    "host": "OpenClaw",
+    "hostVersion": "2026.7.1-2",
+    "model": "glm-5.3-flash",
+    "hostInstallationReadOnly": true,
+    "isolatedProfiles": true
+  },
+  "acceptanceScope": {
+    "metric": "M16",
+    "realOriginalUser": true,
+    "realNativeModelAndTools": true,
+    "injectedFault": "Only the actual delivered file is corrupted at the real original finalization hook",
+    "fullElectronLongRunVerified": false,
+    "allMetricsLiveVerified": false,
+    "fullSWEArktsImprovementProven": false
+  },
+  "normal": {
+    "complete": true,
+    "independentAudit": true,
+    "verification": "PASS",
+    "taskStatus": "COMPLETED",
+    "actualCorrections": 0,
+    "actualMainCompleted": true,
+    "originalUserObserved": true,
+    "actualFileWrites": 1,
+    "originalObjectsPreserved": true,
+    "finalBehaviorChecked": true,
+    "roles": {
+      "ground-truth-extractor": 1,
+      "stop-reviewer": 1
+    },
+    "allPrivateRunsSettled": true
+  },
+  "correction": {
+    "complete": true,
+    "independentAudit": true,
+    "verification": "PASS",
+    "taskStatus": "COMPLETED",
+    "initialDeviation": true,
+    "actualCorrections": 1,
+    "admissionCount": 1,
+    "originalUserObserved": true,
+    "actualFileWrites": 1,
+    "faultConfirmed": true,
+    "actualCorrectionObserved": true,
+    "originalObjectsPreserved": true,
+    "finalBehaviorChecked": true,
+    "roles": {
+      "ground-truth-extractor": 1,
+      "stop-reviewer": 2
+    },
+    "allPrivateRunsSettled": true
+  },
+  "regression": {
+    "files": 163,
+    "completed": 163,
+    "failedFiles": [],
+    "timedOutFiles": [],
+    "totals": {
+      "tests": 1833,
+      "pass": 1810,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 23
+    },
+    "sourceLog": ".runtime-correction/system-optimization/full-regression-delivery-20261029.log",
+    "sourceLogSha256": "2eb18e4ed5ce94e3bc9757c7149d45771c5d0b55ede10a8177fed7cb08321a09"
+  },
+  "artifact": {
+    "files": 244,
+    "bytes": 2251827,
+    "currentSourceRebuildIdentical": true,
+    "publicSkillsValidWithInstalledHostYaml": 6,
+    "integrityVerifierPositive": true,
+    "integrityVerifierNegatives": [
+      {
+        "case": "tampered",
+        "correctlyRejected": true
+      },
+      {
+        "case": "extra",
+        "correctlyRejected": true
+      },
+      {
+        "case": "missing",
+        "correctlyRejected": true
+      },
+      {
+        "case": "escape",
+        "correctlyRejected": true
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "kind": "normal",
+      "result": ".runtime-correction/system-optimization/delivery-e2e-normal-001/result.json",
+      "resultSha256": "5f7800a89d4cac9fff4a68d6d65f3c4639fb2d6a112d89dd05b22c7e3c64f9ec",
+      "audit": ".runtime-correction/system-optimization/delivery-e2e-normal-001/audit.json",
+      "auditSha256": "e12fd491f014622489ae6da18fa489d55dc114ec2e62b90d13137d7e200bd76d"
+    },
+    {
+      "kind": "correction",
+      "result": ".runtime-correction/system-optimization/delivery-e2e-correction-001/result.json",
+      "resultSha256": "54ae12355a0445919e53c62be4a36beffe31b9512ee5268760f6f5fcdc980857",
+      "audit": ".runtime-correction/system-optimization/delivery-e2e-correction-001/audit.json",
+      "auditSha256": "4e43d5e412e03aa723f29f6e9ea25d30e65e5d4795cb983a7b9df9ee3b7a8ab4"
+    }
+  ],
+  "remaining": [
+    "Complete the fixed selection and frozen heldout SWE-ArkTS comparison; the interrupted candidate is not a valid pair.",
+    "Verify full-model behavior for additional metrics, Skill/document care, desktop long-running sessions and other host versions.",
+    "Only claim lower tokens with complete provider-usage coverage and equivalent completed review scope."
+  ]
+}

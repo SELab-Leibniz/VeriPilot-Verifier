@@ -2,6 +2,7 @@
 // or extrapolated token estimates. Missing usage remains explicitly unknown.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { providerUsageCoverage } from './bench/provider-usage-coverage.mjs';
 const directory = path.resolve(process.argv.find(arg => arg.startsWith('--run='))?.slice(6) ?? '');
 if (!process.argv.some(arg => arg.startsWith('--run='))) throw new Error('--run=<settled run directory> required');
 const result = JSON.parse(await fs.readFile(path.join(directory, 'result.json'), 'utf8'));
@@ -41,7 +42,7 @@ for (const file of files) {
   if (text === null) { sessions.push({ file, missing: true }); continue; }
   const records = text.split('\n').filter(Boolean).map(line => JSON.parse(line));
   const stats = { file, owner: file === path.join(nativeRoot, `${result.sessionId}.jsonl`) ? 'business' : 'rc-private',
-    assistantTurns: 0, usageRecords: 0, missingUsage: 0, tools: {}, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0 };
+    assistantTurns: 0, usageRecords: 0, nonzeroUsageRecords: 0, missingUsage: 0, tools: {}, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0 };
   if (stats.owner === 'business') {
     const last = records.filter(row => row.message?.role === 'assistant').at(-1)?.message;
     businessTerminal = { stopReason: last?.stopReason ?? null,
@@ -53,6 +54,7 @@ for (const file of files) {
     for (const block of Array.isArray(message.content) ? message.content : []) if (block.type === 'toolCall') stats.tools[block.name] = (stats.tools[block.name] ?? 0) + 1;
     if (!message.usage) { stats.missingUsage++; continue; }
     stats.usageRecords++;
+    if (['input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens'].some(key => message.usage[key] > 0)) stats.nonzeroUsageRecords++;
     for (const key of ['input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens']) {
       if (typeof message.usage[key] === 'number') stats[key] += message.usage[key];
       else stats[`${key}Missing`] = (stats[`${key}Missing`] ?? 0) + 1;
@@ -60,7 +62,7 @@ for (const file of files) {
   }
   sessions.push(stats);
 }
-const totals = Object.fromEntries(['assistantTurns', 'usageRecords', 'missingUsage', 'input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens']
+const totals = Object.fromEntries(['assistantTurns', 'usageRecords', 'nonzeroUsageRecords', 'missingUsage', 'input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens']
   .map(key => [key, sessions.reduce((sum, row) => sum + (row[key] ?? 0), 0)]));
 const roleTimings = {};
 for (const run of nativeRuns) {
@@ -72,7 +74,7 @@ for (const run of nativeRuns) {
 const report = { instanceId: result.instanceId, rcSource: result.rcSource, elapsedMs: result.elapsedMs,
   endReason: result.endReason, infrastructureComplete: result.infrastructureComplete, sessions, totals,
   reviewStatus: result.verification ?? null, businessTerminal,
-  nativeRuns, roleTimings,
+  nativeRuns, roleTimings, providerUsageCoverage: providerUsageCoverage(result.metrics.providerRequests, totals.nonzeroUsageRecords),
   nativeModelStarts: result.metrics.modelStarts.length, providerRequests: result.metrics.providerRequests,
   note: 'Provider-reported usage; cached and uncached input remain separate. Missing usage/timing is not zero. Role summedRunMs uses persisted dispatch/settlement times and can overlap; never subtract its sum from total elapsedMs as business time. No dollar cost inferred from host pricing=0.' };
 await fs.writeFile(path.join(directory, 'usage-summary.json'), JSON.stringify(report, null, 2));

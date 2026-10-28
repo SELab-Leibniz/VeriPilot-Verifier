@@ -26,11 +26,14 @@ if (live && !args.includes('--initial-turn'))
 if (live && (!process.env.ANTHROPIC_AUTH_TOKEN || !process.env.ANTHROPIC_BASE_URL || !(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL)))
   throw new Error('The live loop needs the existing provider environment and an explicit native model.');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
-const outputRoot = path.join(sourceRoot, '.runtime-correction/live-native-loop', new Date().toISOString().replaceAll(/[:.]/gu, '-'));
+const outputRoot = args.includes('--output') ? path.resolve(value('--output'))
+  : path.join(sourceRoot, '.runtime-correction/live-native-loop', new Date().toISOString().replaceAll(/[:.]/gu, '-'));
+if (await fs.stat(outputRoot).catch(() => null)) throw new Error('Acceptance output already exists; preserve prior evidence and choose a fresh output.');
 const projectRoot = path.join(outputRoot, 'project');
 let gateway;
 try {
   gateway = await createNativeGatewayEvaluation({ hostRoot: value('--host-root'), sourceRoot, outputRoot, projectRoot,
+    prebuiltPluginRoot: args.includes('--artifact') ? path.resolve(value('--artifact')) : null,
     injectDefect: args.includes('--inject-defect') });
   gateway.setPhase(live ? args.includes('--initial-turn') ? 'original-turn' : 'automatic-loop' : 'transport-check');
   if (live && args.includes('--initial-turn')) {
@@ -87,3 +90,5 @@ try {
   }
 }
 }
+// Installed host singletons can retain observers after awaited shutdown.
+process.exit(process.exitCode ?? 0);
