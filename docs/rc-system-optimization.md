@@ -87,3 +87,13 @@
 - 短路径、字面导航与报告门槛等相关回归 17/17 通过；长路径导航 18/18、真实宿主及 YAML 39/39 通过。最终仍需新协议的真实模型配对、留出及完整工程回归。
 
 恢复时先检查比较目录的 progress.json 和 owner PID。旧 paired-dev-001、002、valid-001 均不应重启；它们保留开发失败和历史基线。13 例校准已完成，切勿重复拉取或重跑黄金补丁。新协议必须重新运行 baseline/candidate，不能套用旧基线结果。
+
+### 03:30 当前恢复点
+
+- 新冻结候选 `0b72285`，产物 `candidates/0b72285/runtime-corrector-openclaw`，6 个 Skill 均通过实际 YAML 校验。公共导航也统一使用此产物；基线 RC 仍是 c33，不把公共工具变化计作候选效果。
+- **活跃配对** `paired-short-dev-001`：security_tool_1、happyword_12，前者 baseline→candidate，后者 candidate→baseline；日志 paired-short-dev-001.log。没有采用旧基线。先检查本目录 progress.json / manifest.ownerPid / 子运行 progress.json，不要重复启动。
+- 无模型的原生工具预检 `preflight-short-001`：业务根路径 113 字符、关键内部缓存路径 198 字符；编译与测试均完整执行，真实报告 PASS=452、FAIL=2（原始测试，不是隐藏成绩），退出码 0。结构化输出正确保留失败。
+- 短路径复评分 `grades/short-path-cf4a172-security1`：同一旧补丁实际 F2P 1/1、P2P 611/611。旧长目录的编译失败不算代码回退。当前只证明开发例两组都能通过，尚无准确率提升证据。
+- 新全量工程回归 160 文件 / 1823 用例：1798 通过、23 跳过、2 失败，均在 provider-fetch-timing 的本地 HTTP 请求中报告 fetch failed；其源码未改。真实宿主及独立复测 6/6 通过，原失败仍保存于 full-regression-short-protocol.log，暂不能称全量全绿。
+- 比较器现在锁定实际宿主版本及公共导航依赖；离线报告保留业务完成和 RC 审查状态。单纯代码隐藏测试通过不能冒充业务模型正常完成或 RC 已审查。
+- 待办：完成有效开发配对；判断是否需要新的候选消融；冻结后跑方案选择集 3 例与留出 8 例；比较实际 F2P/P2P 和业务/RC/总 token、缓存与耗时；解决全量检查剩余问题；逐条审计原始目标。不能因开发例或 P2P 上限把目标标完成。

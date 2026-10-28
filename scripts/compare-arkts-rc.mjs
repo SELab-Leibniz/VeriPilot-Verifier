@@ -28,6 +28,8 @@ const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-
   'scripts/bench/native-arkts-tools.mjs', 'scripts/bench/bounded-process.mjs', 'scripts/bench/prepare-arkts-model-workspace.mjs',
   'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs', 'scripts/bench/short-workspace.mjs',
   path.join(navigationArtifact, 'lib/review-task/live-source-tools.mjs'), path.join(navigationArtifact, 'lib/review-task/source-tools.mjs')];
+const navigationPaging = path.join(navigationArtifact, 'lib/line-page.mjs');
+if (await fs.stat(navigationPaging).catch(() => null)) protocolFiles.push(navigationPaging);
 const protocol = Object.fromEntries(await Promise.all(protocolFiles.map(async file => [file, sha(await fs.readFile(file))])));
 const adopted = new Map();
 if (arg('--adopt-baselines')) {
@@ -49,6 +51,7 @@ if (arg('--adopt-baselines')) {
 }
 const order = cases.flatMap((id, index) => (index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']).map(arm => ({ id, arm })));
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
+  hostVersion: JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8')).version,
   model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, arms, cases, order, protocol, calibrations,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
   navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
@@ -70,6 +73,7 @@ try {
     const execution = await stage(id, arm, 'model', ['scripts/run-arkts-rc-case.mjs', '--live', `--case=${id}`, `--artifact=${settings.artifact}`,
       `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`], 1100000);
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
+    if (native && native.metrics.hostVersion !== manifest.hostVersion) throw new Error('Installed host changed during the fixed comparison');
     const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted, nativeComplete: native?.infrastructureComplete === true };
     results.push(row);
     if (native?.infrastructureComplete) {
