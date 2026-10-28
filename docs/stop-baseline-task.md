@@ -2,7 +2,7 @@
 
 ## 适用范围
 
-OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。当前该标记由 Stop 前置基线刷新设置。初始 onboarding 抽取与裁决、Skill 抽取、未标记的普通抽取、停止分类通过专用 classification task 执行；现有逐项/分组审查保留其裁决协议。
+OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。该标记由任务级普通刷新及 Stop 前置刷新设置；项目内复用串行的私有提取会话，每轮来源凭据独立。初始 onboarding 抽取与裁决、Skill/文档专用抽取保持原协议；停止分类使用专用 classification task；逐项/分组审查保留其裁决协议。粒度、笔记、生命周期和实验见 [基线提取优化](baseline-extraction-optimization.md)。
 
 `task-session.mjs` 共用原生会话启动、模型与 effort 选择、会话身份、精确工具绑定、取消和绝对截止。执行层从 worker 取得工具、提示词和完成判断，不根据 `submit_review` 名称决定完成。基线工具不会得到业务 Agent 的工具权限，也不能写业务文件或正式 Ground Truth。
 
@@ -12,7 +12,7 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 程序冻结完整原始请求、原基线、用户来源及已授权材料/项目约束；长原文按最多 16KiB 的 UTF-8 字节部分交付，不生成语义摘要。请求身份绑定来源目录、原文摘要、任务、事件及原基线版本。当前实现保守地要求本次列出的全部必要文件均已确认读取，尚未实现按变化来源缩减必读集合。
 
-基线会话拥有 `source_read`、`source_grep`、`source_find`、`source_ls`、`review_history` 和两个独立提交工具：
+基线会话拥有 `source_read`、`source_grep`、`source_find`、`source_ls`、`review_history`、仅作导航的 `baseline_notes` 和两个独立提交工具：
 
 - `save_baseline_batch` 保存连续、稳定的批次编号、原有 operation schema、原始来源绑定与读取凭据。批次上限 50KiB，完整 delta 仍遵守现有 schema 的操作条数限制。相同请求/代次/批次的相同内容返回原持久化回执；冲突内容拒绝。回执之前发生的异常可通过相同提交恢复，不将候选写入正式账本。
 - `finish_baseline` 要求显式列出完整批次序列，核对真实读取覆盖、冻结输入、原基线和任务身份。空增量也须完整读取，缺失结果不等于 NO_CHANGE。程序组装完整 delta，模型无需再次输出全部操作。

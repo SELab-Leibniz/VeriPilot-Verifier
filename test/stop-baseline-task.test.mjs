@@ -21,6 +21,64 @@ const operation = (ref = 'transcript:U1#L1-L1') => ({ operation: 'ADD', category
   applicabilityKind: 'CURRENT_TASK',
   source: { ref, kind: 'USER_MESSAGE', subject: 'MAIN_TASK' } });
 
+test('same project refresh reuses the extractor but renews tools, reading proof and note validity', async t => {
+  const f = await fixture(t); let oldTool, oldCite;
+  const first = await f.run(async ({ call, readAll, finish, params }) => {
+    await readAll();
+    const state = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
+    oldCite = state.citations[0].citeId;
+    oldTool = f.registry()({ sessionKey: params.sessionKey, sessionId: params.sessionId, runId: params.runId })[0];
+    await call('baseline_notes', { action: 'put', key: 'scope', text: 'Remember the whole request.', sourceRefs: ['transcript:U1'] });
+    await finish([]);
+  });
+  await first.close(); f.input.request.hookEventId = 'event-2';
+  const second = await f.run(async ({ call, readAll, finish }) => {
+    const state = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
+    assert.equal(state.citations.length, 0);
+    assert(!state.citations.some(cite => cite.citeId === oldCite));
+    const notes = JSON.parse(toolText(await call('baseline_notes', { action: 'list' })));
+    assert.equal(notes.notes[0].stale, true);
+    await assert.rejects(oldTool.execute('late', { path: 'request-0000.txt' }), /expired/);
+    await assert.rejects(finish([]), { code: 'BASELINE_INCOMPLETE' });
+    await readAll(); await finish([]);
+  });
+  assert.equal(first.sessionId, second.sessionId); assert.equal(second.extractorReused, true);
+  assert.notEqual(f.captures[0].runId, f.captures[1].runId);
+  assert.equal(f.captures[0].sessionFile, f.captures[1].sessionFile); await second.close();
+});
+
+test('a cancelled non-cooperative extractor cannot overlap the next project refresh', async t => {
+  const f = await fixture(t), controller = new AbortController();
+  let unblock, admitted;
+  const pending = new Promise(resolve => { unblock = resolve; });
+  const started = new Promise(resolve => { admitted = resolve; });
+  f.input.abortSignal = controller.signal;
+  const first = f.run(async () => { admitted(); await pending; });
+  const rejected = assert.rejects(first, /cancel-extractor/);
+  await started; controller.abort(new Error('cancel-extractor')); await rejected;
+  f.input.abortSignal = new AbortController().signal;
+  const second = f.run(async ({ readAll, finish }) => { await readAll(); await finish([]); });
+  await new Promise(resolve => setTimeout(resolve, 20)); assert.equal(f.captures.length, 1);
+  unblock(); const handle = await second;
+  assert.equal(f.captures.length, 2); assert.equal(f.captures[0].sessionId, f.captures[1].sessionId);
+  await handle.close();
+});
+
+test('transient Windows replacement locks preserve durable history and candidates without losing completion', async t => {
+  const f = await fixture(t), originalRename = fs.rename, blocked = new Set();
+  t.mock.method(fs, 'rename', async (source, destination) => {
+    const name = path.basename(destination);
+    if (['history-index.json', 'batch-1.json'].includes(name) && !blocked.has(name)) {
+      blocked.add(name); throw Object.assign(new Error('transient file reader'), { code: 'EPERM' });
+    }
+    return originalRename(source, destination);
+  });
+  const handle = await f.run(async ({ readAll, call, batch, finish }) => {
+    await readAll(); await call('save_baseline_batch', batch()); await finish([1]);
+  });
+  assert.equal(handle.result.operations.length, 1); assert.equal(blocked.size, 2); await handle.close();
+});
+
 test('completed baseline publication uses the parent deadline after the extractor closes',async t=>{
  t.mock.timers.enable({apis:['Date'],now:Date.now()});
  const f=await fixture(t),started=Date.now();f.input.deadlineAt=started+60000;
@@ -181,7 +239,8 @@ test('compact removes visible tool results; history/checkpoint restore receipts 
     }
     await call('save_baseline_batch', batch());
     await hooks.get('before_compaction')({}, ctx());
-    const checkpoint = JSON.parse(await fs.readFile(path.join(path.dirname(params.sessionFile), 'review-checkpoint.json')));
+    const recovery = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
+    const checkpoint = JSON.parse(await fs.readFile(recovery.checkpointPath));
     assert.equal(checkpoint.taskState.batches.length, 1); assert(checkpoint.taskState.pending.length > 0);
     // Simulate a model-visible compacted context: all old source results/IDs
     // are removed; only this untrusted summary and the recovery tool remain.

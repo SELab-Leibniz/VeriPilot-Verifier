@@ -12,6 +12,7 @@
 - [Stop 分组审查、预算与状态](stop-task-review.md)
 - [Stop 读取与上下文边界](stop-review-bounds.md)
 - [Stop 指标开关](stop-metric-switches.md)
+- [基线提取优化与实验](baseline-extraction-optimization.md)
 - [M16 生产实现覆盖率](m16-production-implementation-coverage.md)
 - [受控执行模块的兼容边界](openclaw-supervised-tasks.md)
 - [维护与验证](maintenance.md)
