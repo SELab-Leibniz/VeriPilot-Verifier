@@ -154,3 +154,10 @@
 - 内容审计：c33 四条全为 USER_MESSAGE，未保留项目命令/约束；119f279 将“旧缺陷背景”单独设为 IMPLEMENTATION 要求，并把命令目录含 optional scenarios 的整块视为当前流程。两者均不能因 complete=true 宣称语义准确，项目 UTF-8 禁止项/条件仍需核对。候选条数不是准确率指标。
 - 新选型复用现有 compact 协议作为长/分片来源的默认方式，隐藏 full text/source/bindings，支持局部 file+lines；仍显式保留完整格式回退、原文回执和权限。Skill 加入“背景与所请求修复合组、命令目录/可选示例不自动成为执行义务”的通用规则，不含任务/仓库/答案硬编码。IMPLEMENTATION 的 PRODUCTION/TEST/SUPPORT 仍由模型明确选择，PROCESS/ARTIFACT 不填无用 null。
 - 紧凑默认及宿主/基线/控制台回归 61/61，0 跳过；新增实际 schema 拒绝重复 source 的反例及同会话完整格式回退；私有 Skill 校验通过。下一步在同一组件输入验证，不重复业务模型；之后再作整任务对照和最终全量回归。
+
+### 05:20 编号原文视图与未完成结果
+
+- `component-extractor-compact-001`（7b9ec12）已 SETTLED，但 completed=false / REVIEWER_DEADLINE；私有 run 182030ms，记录 51952 tokens，1 history、6 reads、8 greps，没有保存候选。原日志保留。紧凑 schema 消除了 source/null 误填的接口机会，但本次仍未证明端到端收益。
+- 实际错误为在 33 行的 `source-0001-0001.txt` 使用 offset=382；拒绝后未自动换算/夹紧，未授予错误覆盖。进一步发现 source_read 仅有整页 start/end 元数据，正文没有逐行标签，先前“工具显示行号”的描述过强。
+- 新增可选 numbered=true 视图，复用共享 UTF-8 增量 render 分页；默认原始响应保持不变。offset 参数/错误明确为命名文件的局部行号。基线提取工具指南建议原始 source-* 使用编号视图，request/baseline JSON 可保持原文。显示前缀计入页预算；原文选择仍捕获原始字节，不把编号写入要求。
+- 真实宿主/基线/控制台/分页/grep 共 68/68，无跳过。编号读取可产生当前有效原文回执并提交紧凑选取；伪造编号开关或篡改显示内容被拒绝；高密度行的编号开销计入字节上限。此为工具/权限回归，尚非模型效率收益。
