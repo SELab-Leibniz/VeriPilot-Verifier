@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { relayNativeReviewActivity, reviewProgressText } from "../lib/openclaw/review-activity.mjs";
 
-function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortController(), role = 'onboarding-extractor' } = {}) {
+function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortController(), role = 'onboarding-extractor', labelRole = role } = {}) {
   let activity, events;
   const reported = [], visible = [];
   const parent = { sessionId: "parent-session", sessionKey: "agent:main:parent", runId: "parent-run" };
@@ -12,9 +12,20 @@ function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortCont
     reportProgress: (target, reason) => reported.push({ target, reason }),
     emitAgentEvent: (event) => visible.push(event),
   };
-  const close = relayNativeReviewActivity({ sdk, parent, runId: "review-run", role, controller, deadlineAt });
+  const close = relayNativeReviewActivity({ sdk, parent, runId: "review-run", role, labelRole, controller, deadlineAt });
   return { parent, controller, reported, visible, close, activity: (event) => activity?.(event), events: (event) => events?.(event) };
 }
+
+test('Skill extraction keeps its own UI label when the baseline phase reporter shares its role', t => {
+  clock(t);
+  const f = fixture({ role: 'ground-truth-extractor', labelRole: 'skill-extractor' });
+  assert.match(JSON.stringify(f.visible), /Skill 读取/);
+  const count = f.visible.length;
+  f.close.stage('EXTRACTING');
+  assert.equal(f.visible.length, count);
+  assert.doesNotMatch(JSON.stringify(f.visible), /整理基线|读取基线/);
+  f.close();
+});
 
 test('baseline phase changes use a compact UI event only and repeated phase calls do not add messages', t => {
   const c = clock(t), f = fixture({ role: 'ground-truth-extractor' });
