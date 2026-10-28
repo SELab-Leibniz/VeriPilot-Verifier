@@ -10,6 +10,7 @@ import { prepareArktsModelWorkspace } from './bench/prepare-arkts-model-workspac
 import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { businessMutationPaths } from './bench/business-mutations.mjs';
+import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -33,13 +34,15 @@ try {
 }
 const lockfiles = ['oh-package-lock.json5', 'entry/oh-package-lock.json5'];
 for (const file of lockfiles) if (await fs.stat(path.join(projectRoot, file)).catch(() => null))
-  execFileSync(gitExecutable, ['-C', projectRoot, 'add', '--', file], { windowsHide: true });
+  execFileSync(gitExecutable, ['-C', projectRoot, 'add', '--force', '--', file], { windowsHide: true });
 execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent',
   'commit', '--quiet', '--allow-empty', '-m', 'Common benchmark dependency preparation'], { windowsHide: true });
 prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const artifact = arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
 const baselineRef = arg('--baseline-ref') ?? 'c33bae6';
 if (artifact) {
+  const validatedSkills = await validateArtifactSkills(artifact, arg('--host-root') ?? 'C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw');
+  await fs.writeFile(path.join(outputRoot, 'skill-validation.json'), JSON.stringify(validatedSkills, null, 2));
   const modules = JSON.parse(execFileSync(gitExecutable, ['show', `${baselineRef}:packaging/runtime-modules.json`], { encoding: 'utf8' }));
   const checks = [];
   for (const file of [...modules.common, ...modules.openclaw]) {
@@ -88,6 +91,7 @@ const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, s
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
   rcSource: artifact ? baselineRef : execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
+  businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: ['read', 'write', 'edit', 'bench_nav', 'bench_check'],
   limits: { mainTimeoutMs: 600000, totalTimeoutMs: 960000, correctionAdmissions: 1, privateTimeoutMs: 180000 },
   inputPolicy: 'Only public input and original base source; evaluator test_patch/gold not installed in business workspace.',
   state: 'PREPARED', ownerPid: process.pid };

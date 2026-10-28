@@ -79,6 +79,8 @@ if (candidate) {
     const checked = gradeArkts(task, parsed, original.execution);
     if (!(phase === 'base' ? checked.validFailToPassBase : checked.resolved)) throw new Error(`Calibration does not establish ${phase}`);
   }
+  await fs.copyFile(candidate, path.join(output, 'candidate.patch'));
+  if ((await fs.stat(candidate)).size > 0) {
   const checked = await run('git', ['apply', '--numstat', '-z', candidate], source, 'candidate-paths');
   if (checked.code) throw new Error('Candidate patch metadata invalid');
   const segments = checked.text.split('\0').filter(Boolean), paths = [];
@@ -89,7 +91,6 @@ if (candidate) {
     if (file) paths.push(file); else paths.push(segments[++index], segments[++index]);
   }
   if (paths.some(file => !file || /(?:^|\/)(?:\.git|\.runtime-correction|\.runtime-corrector)(?:\/|$)/u.test(file))) throw new Error('Candidate modifies evaluator/control scope');
-  await fs.copyFile(candidate, path.join(output, 'candidate.patch'));
   // Keep the full model patch for audit, but evaluator-owned test bodies stay
   // exactly the base + test_patch. Updating a legitimate original project test
   // is allowed business work and cannot rewrite the hidden scoring oracle.
@@ -97,6 +98,7 @@ if (candidate) {
   const applied = await run('git', ['apply', '--whitespace=nowarn', ...testExcludes.map(pattern => `--exclude=${pattern}`),
     path.join(output, 'candidate.patch')], source, 'apply-candidate');
   if (applied.code) throw new Error('Candidate patch does not apply in the common prepared environment');
+  } else await fs.writeFile(path.join(output, 'empty-candidate.json'), JSON.stringify({ noEdits: true, meaning: 'Evaluate the unchanged common base with hidden tests; no failure is silently dropped.' }));
 }
 const install = await invoke('install'); if (install.code || install.timedOut) throw new Error('CLT dependency installation failed; see local install.log');
 const coverage = path.join(source, 'entry/.test/default/intermediates/test/coverage_data/coverage.log');

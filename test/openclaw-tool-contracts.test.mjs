@@ -8,8 +8,21 @@ import {OPENCLAW_TOOL_NAMES,BASELINE_TOOL_NAMES,configureOpenClawToolContract,as
 import {registerTaskTools,bindTaskTools} from '../lib/openclaw/task-tools.mjs';
 import {assertRequiredReviewerTools,withNativeTaskToolPolicy} from '../lib/openclaw/native-config.mjs';
 import entry from '../lib/openclaw/entry.mjs';
+import os from 'node:os';
+import { buildPlugin } from '../lib/plugin-builder.mjs';
+import { validateArtifactSkills } from '../scripts/bench/validate-artifact-skills.mjs';
 
 const sourceManifest=()=>fs.readFile(new URL('../packaging/hosts/openclaw/openclaw.plugin.json',import.meta.url),'utf8').then(JSON.parse);
+
+test('packaged Skill metadata parses with the installed host YAML parser before model dispatch', {skip:!process.env.RC_OPENCLAW_HOST_ROOT}, async t => {
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'rc-skill-yaml-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const artifact=await buildPlugin({host:'openclaw',sourceRoot:process.cwd(),outputRoot:root});
+ const records=await validateArtifactSkills(artifact,process.env.RC_OPENCLAW_HOST_ROOT);
+ assert(records.some(record=>record.name==='runtime-corrector-control'));
+ const file=path.join(artifact,'skills/runtime-corrector-control/SKILL.md');
+ await fs.writeFile(file,(await fs.readFile(file,'utf8')).replace(/^description:.*$/mu,'description: Invalid mapping: requires quoting'));
+ await assert.rejects(validateArtifactSkills(artifact,process.env.RC_OPENCLAW_HOST_ROOT),/Invalid Skill YAML/);
+});
 
 test('the full registration contract includes every actual factory even without an installed-host fixture',async()=>{
  const names=new Set(),manifest=configureOpenClawToolContract(await sourceManifest());

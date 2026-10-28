@@ -1,6 +1,6 @@
 ---
 name: runtime-corrector-control
-description: Manage Runtime Corrector project stages and review criteria: inspect status or specifications, validate policy, switch installed stages, or edit requested project rules. Use when the request concerns RC or its correction stages; ordinary debugging, deadlocks, repeated test failures, and generic help alone do not activate this skill.
+description: Manage Runtime Corrector project stages and review criteria. Inspect status or specifications, validate policy, switch installed stages, or edit requested project rules. Use when the request concerns RC or its correction stages; ordinary debugging, deadlocks, repeated test failures, and generic help alone do not activate this skill.
 allowed-tools: Bash, PowerShell
 ---
 

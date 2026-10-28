@@ -46,6 +46,8 @@
 
 - 生产候选 α：共享增量 UTF-8 行分页、宽范围导航跳过明确的依赖/构建缓存、控制 Skill 共用启动模板并收窄触发描述、补齐 OpenClaw `rc_skill_care` 工具注册声明。各协议的原文回执、权限、哈希和判定责任没有合并。
 - 候选实现已提交为 `2909891`；另修复取消/过期获取空闲基线会话时取消清理计时器的问题。原版复现无法按时释放，候选按时释放；相关 16 项回归通过。候选产物位于 `candidates/2909891/runtime-corrector-openclaw`，与 c33 产物分别保留。
+- **2909891 已失去候选资格**：精简后的 description 含未引用冒号，实际 YAML 校验失败（原字符串测试没发现）。源码已改正，Skill Creator 校验通过；新评测入口使用安装宿主的真实 YAML 解析器在模型启动前验证所有打包 Skill，真实宿主回归也覆盖这个反例。旧产物原样保留；不能把 Skill 未发现的实验当成优化成功。
+- Windows 长路径导航另提交 `1e7cc8a`：Git 调用显式开启 longpaths，默认状态排除程序自己的控制目录，但明确指定路径仍可查看其 diff。静止的旧试跑目录中，原调用错误报告 3 个未修改文件，开启后消失；18 项 workspace review 回归通过。
 - 分页实测：与 c33 的完整响应逐字节比对，ArkTS/Python/中文文档各 9 轮交替样本、每轮 80 次调用，CPU 耗时约减少 78–83%。仅证明分页算法收益，不证明模型 token 或 F2P。
 - Skill 实际宿主适配后的体积：Claude 16960→6723 字节，CodeAgent 16966→6724，OpenClaw 4711→4668。OpenClaw 原来已转换重复启动代码，其收益很小，不能宣传成全宿主节省 60% token。所有控制命令和根目录防护保留。
 - 导航合成树：ArkTS/Python 每例 120 个依赖文件，搜索读取 121→1；Node 原来已排除 node_modules，保持 1→1。业务 build/target/vendor 目录、直接读取缓存和 includeGenerated 的可达性均有回归。此为 I/O 机制验证，不是端到端业务成绩。
@@ -63,7 +65,10 @@
 - 003 修复实验工具等待，保留相同模型/任务与插件基线。业务 agent 只访问原 base 源码和公开问题，隐藏 test_patch/gold 只存在独立评分工作树。发现原工作区差异含宿主自动 bootstrap 和文件缺失；完整原 patch 保留，评分使用从成功 native write/edit 回执确定的 candidate-attributed.patch（4308 字节，两个文件），无评分答案参与归属选择。
 - 正式配对前统一公共实验工具：bench_check 返回新鲜原始本地测试的计数、完整日志路径及运行完整性；不提供隐藏预期 ID。003 日志尾部缺失导致大量找报告和负对照动作，所以它只作开发接线和基线观察，不与新工具直接作 token 胜负比较。新协议生成工具、范围校验、评分和子进程共 11/11 回归。
 - Windows Previewer 共享端口：业务模型的 bench_check 与评分器/校准严格串行，不能为了加速并发运行 native test。
-- 剩余校准正在 `calibration-retry-001` 串行执行，命令会话 35329、owner PID 24456；security_tool_10 已校准通过（F2P 0→1/1，P2P 677/677）。继续检查其 progress.json，不覆盖旧失败。
+- 13 例校准均完成并审计：45 个 F2P 在 base 均失败、gold 均通过；7547 按任务累计 P2P 均保持通过。新增三例在 calibration-retry-001；旧网络失败保留。此成绩属于评分器校准，不能算 RC 改进。
+- 公共实验入口首次 paired-dev-001 在模型启动前因忽略的锁文件无法加入准备提交而失败；已仅对两个明确的准备锁文件使用 force，不改业务提交规则。
+- paired-dev-002：security_tool_1 基线已完成、评分通过，用量总计 575877 tokens（含缓存）；其旧候选因 YAML 缺陷在实际 6 次模型开始后取消，原始日志和 invalid-artifact-audit.json 保留。该取消不计正式候选得分，但开发消耗不能隐去。
+- 下一轮可以采用已完成的 security_tool_1 基线以节省重跑：比较器逐字节检查原公共协议；仅允许通过机械删除新 YAML 启动前校验后恢复原 runner 摘要。其余任何模型输入/工具/评分器变化都会拒绝采用。来源与资格写入新 manifest，不混用早先日志尾部工具协议下的 happyword12-003。
 - `dist/runtime-corrector-openclaw` 是 c33 冻结基线产物；不要直接运行默认 build-plugin 覆盖它。候选用 buildPlugin 的专用 outputRoot 构建。
 
 ### 当前不采纳的改动
