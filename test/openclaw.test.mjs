@@ -75,6 +75,9 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
     const text = await fs.readFile(path.join(pluginRoot, "skills", skill, "SKILL.md"), "utf8");
     assert.doesNotMatch(text, /CLAUDE_PLUGIN_ROOT|CODEAGENT3_PLUGIN_ROOT/u);
   }
+  await fs.access(path.join(pluginRoot, "knowledge/skill-care/SKILL.md"));
+  await fs.access(path.join(pluginRoot, "lib/runtime-v2/skill-care.mjs"));
+  await assert.rejects(fs.access(path.join(pluginRoot, "skills/skill-care")), "private review instructions must not enter the host Skill catalog");
   host.runtime.version = "2026.7.1";
   assert.throws(() => entry.register(host), /requires OpenClaw 2026\.7\.1-2/u);
   host.runtime.version = "2026.8.1";
@@ -227,6 +230,39 @@ test("RC-only binding discovers the host workspace Skill without guessing a busi
   assert.equal(sessionSkillPlan(original, null), original);
   assert.equal(sessionSkillPlan(original, "relative"), original);
   assert.equal(state.projectRoot, project); assert.equal(state.executionDirectory, execution);
+});
+
+test("Skill discovery starts its watcher only after a successful original read", async t => {
+  const project = await workspace(t);
+  await fs.mkdir(path.join(project, ".runtime-corrector"));
+  await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"),
+    "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\n  panel:\n    size: 0\nskillCorrection:\n  enabled: true\n  selection:\n    mode: all\nstopCorrection:\n  enabled: false\n");
+  const file = path.join(project, "skills", "demo", "SKILL.md");
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, "# Demo\nVerify before completion.\n");
+  let calls = 0;
+  const host = api(project);
+  const reviewerFactory = async () => {
+    calls++;
+    return { result: { summary: "Original Skill", taskClassification: "CONTINUATION", operations: [],
+      skillGroundTruth: { constraints: [], taskOverlays: [] } }, close: async () => {} };
+  };
+  const sharedState = {};
+  const runtime = createRuntime(host, { pluginRoot, sharedState, reviewerFactory });
+  const ctx = { sessionId: "skill-read-parent", runId: "skill-read-run", workspaceDir: project,
+    agentId: "main", sessionKey: "agent:main:skill-read", provider: "test", modelId: "test" };
+  await runtime.prompt({ prompt: "Use demo Skill", messages: [] }, ctx);
+  const before = { toolName: "read", toolCallId: "failed-skill", params: { path: file } };
+  await runtime.beforeTool(before, ctx);
+  assert.equal(calls, 0, "an attempted read has not invoked a Skill");
+  await runtime.toolResult({ toolName: "read", toolCallId: "failed-skill", args: { path: file },
+    isError: true, result: { isError: true, content: [{ type: "text", text: "Read denied" }] } }, ctx);
+  assert.equal(calls, 0, "a failed read must not start an extractor");
+  await runtime.beforeTool({ ...before, toolCallId: "successful-skill" }, ctx);
+  assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill"), "demo");
+  await runtime.toolResult({ toolName: "read", toolCallId: "successful-skill", args: { path: file },
+    result: { content: [{ type: "text", text: "# Demo\nVerify before completion." }] } }, ctx);
+  assert.equal(calls, 1, host.warnings.join("\n"));
 });
 
 test("native reviewers own read-only sessions, repair JSON, and transfer frozen evidence before cleanup", async (t) => {
