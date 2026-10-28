@@ -31,13 +31,25 @@ const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-
 const navigationPaging = path.join(navigationArtifact, 'lib/line-page.mjs');
 if (await fs.stat(navigationPaging).catch(() => null)) protocolFiles.push(navigationPaging);
 const protocol = Object.fromEntries(await Promise.all(protocolFiles.map(async file => [file, sha(await fs.readFile(file))])));
-const adopted = new Map();
+const adopted = new Map(), adoptionExceptions = [];
 if (arg('--adopt-baselines')) {
   const previous = JSON.parse(await fs.readFile(arg('--adopt-baselines'), 'utf8'));
   if (previous.model !== (process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL)
     || previous.arms.baseline.ref !== arms.baseline.ref || previous.arms.baseline.artifact !== arms.baseline.artifact) throw new Error('Adopted baseline model/artifact mismatch');
   for (const [file, hash] of Object.entries(previous.protocol)) {
     if (protocol[file] === hash) continue;
+    if (file === 'scripts/helpers/native-gateway-evaluation.mjs') {
+      const reconstructed = (await fs.readFile(file, 'utf8')).replace(
+        /config, method, params, timeoutMs: 30000,\r?\n          \/\/ Each request has a new connection\. The isolated controller must\r?\n          \/\/ authenticate its exact-run abort as admin rather than its creator\.\r?\n          \.\.\.\(method === 'chat\.abort' \? \{ scopes: \['operator\.admin'\] \} : \{\}\) \}\);/u,
+        'config, method, params, timeoutMs: 30000 });');
+      if (sha(reconstructed) !== hash) throw new Error('Adopted controller changed beyond the isolated exact-run abort authorization fix');
+      for (const row of previous.results.filter(row => row.arm === 'baseline' && cases.includes(row.id))) {
+        if (await fs.stat(path.join(row.run, 'business-budget-abort.json')).catch(() => null))
+          throw new Error(`Baseline ${row.id} exercised changed abort authorization; rerun it under the new protocol`);
+      }
+      adoptionExceptions.push({ file, reason: 'Exact mechanical abort-only authorization fix; every adopted baseline has no abort request record.', previousSha256: hash, currentSha256: protocol[file] });
+      continue;
+    }
     if (file !== 'scripts/run-arkts-rc-case.mjs') throw new Error(`Adopted business protocol differs: ${file}`);
     // A narrowly checked, input-neutral preflight addition may reuse already
     // completed business work. Any other source-byte change rejects adoption.
@@ -52,7 +64,7 @@ if (arg('--adopt-baselines')) {
 const order = cases.flatMap((id, index) => (index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']).map(arm => ({ id, arm })));
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
   hostVersion: JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8')).version,
-  model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, arms, cases, order, protocol, calibrations,
+  model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, arms, cases, order, protocol, calibrations, adoptionExceptions,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
   navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
 await fs.writeFile(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));

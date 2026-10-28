@@ -110,7 +110,10 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
       async request(method, params) {
         const { callGateway } = await load('dist/call-BZWJ3eG1.js');
         return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,
-          config, method, params, timeoutMs: 30000 });
+          config, method, params, timeoutMs: 30000,
+          // Each request has a new connection. The isolated controller must
+          // authenticate its exact-run abort as admin rather than its creator.
+          ...(method === 'chat.abort' ? { scopes: ['operator.admin'] } : {}) });
       },
       setPhase: value => timing?.setPhase(value),
       async drain() { await diagnostics.waitForDiagnosticEventsDrained(); },

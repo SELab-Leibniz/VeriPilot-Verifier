@@ -117,3 +117,11 @@
 - multipart 候选实际宿主适配和基线/控制台回归 59/59，0 跳过；含 UTF-8/CRLF 跨块、未持久化回执、缺块、权限与伪造原文反例。测试夹具补齐真实 catalog 的规范路径和 projectRelativePath，避免把测试目录的祖先 `.runtime-correction` 错当材料内部来源。生产权限规则未放宽。私有提取 Skill 通过 Skill Creator 校验。模型表现尚待独立试验。
 - `8a8ec79` multipart 候选已独立打包，6 个公开 Skill 均经宿主实际 YAML 解析器验证；未改当前比较公共协议。
 - 轻量 context-profile 修正统计名称：assistant 的 toolCall 是 requestedCalls；持久化 toolResult 是 resultRecords/errorRecords，可能包含宿主合成修复。security_tool_1/c33 实测 finish_baseline 为 1 个实际请求、2 条结果（含 1 条合成错误），不能将第二条结果说成额外一次模型调用或真实执行失败。提供方 usage 和总 token 不受此派生统计修正影响。
+
+### 04:43 控制端终止授权修复
+
+- `paired-recovery-dev-001` 已停止，不能恢复成有效配对：security_tool_1 的 600s 预算终止返回 unauthorized，仍未开始 RC。核对 owner PID 11148 的实际命令后终止其专用进程树；协调进程 13112 随即记为 NEEDS_ATTENTION，后续 happyword 未启动。保留 native-host/session、abort 响应与 interruption-audit。已持久化提供方用量下界 1735759 tokens（含缓存），尚在途用量未知；不评分、不计候选准确率/效率。
+- 根因在实验控制端：每次 callGateway 是新连接，默认最小权限不能终止另一连接创建的 run。仅在该隔离控制端的 chat.abort 请求中显式申请 operator.admin，仍指定原 sessionKey、runId、preserveSideRuns；未改安装宿主、RC 生产权限或任何既有会话。
+- 新模型外部零调用的真实宿主探针：本地悬停 provider 收到请求后，实际 chat.abort 返回 aborted=true，原业务终态为 aborted。probe-001 的宿主单例残留导致进程不自然退出，已验证后释放；脚本仿照主入口等待 shutdown 后显式退出，probe-002 检查完整退出。
+- 基线复用仅允许机械恢复到原控制端摘要，且被采用基线不能存在任何 business-budget-abort.json；两条现有正常基线符合条件。该例外写入新 manifest.adoptionExceptions。无模型负对照人为加入 abort 记录，比较器明确拒绝复用；其他字节变化仍拒绝。业务模型输入、工具、预算、评分和公共导航均相同。
+- 新候选 `8a8ec79` 的无模型配对计划已通过：paired-split-dev-plan-001。当前完整回归运行句柄 39538，日志 full-regression-split-selections.log；通过后才开始新模型，避免回归负载污染耗时。旧配对、全部失败和校准不得重启。
