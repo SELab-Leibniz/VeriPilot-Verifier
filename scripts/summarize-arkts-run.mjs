@@ -27,6 +27,12 @@ await visit(path.join(result.projectRoot, '.runtime-correction', 'baseline-agent
 const { listNativeRuns } = await import('../lib/openclaw/native-runs.mjs');
 const runs = result.taskId ? await listNativeRuns(result.projectRoot, result.taskId) : [];
 for (const run of runs) if (run.sessionFile) files.add(path.resolve(run.sessionFile));
+const nativeRuns = await Promise.all(runs.map(async ({ runId, sessionId, role, status, sessionFile }) => {
+  const protocol = role === 'stop-reviewer' && sessionFile
+    ? await fs.readFile(path.join(path.dirname(sessionFile), 'result.json'), 'utf8').then(JSON.parse, () => null) : null;
+  return { runId, sessionId, role, status, sessionFile, ...(role === 'stop-reviewer'
+    ? { protocolCompleted: protocol?.completed === true, protocolFailure: protocol?.failure?.code ?? null } : {}) };
+}));
 const sessions = [];
 let businessTerminal = null;
 for (const file of files) {
@@ -58,7 +64,7 @@ const totals = Object.fromEntries(['assistantTurns', 'usageRecords', 'missingUsa
 const report = { instanceId: result.instanceId, rcSource: result.rcSource, elapsedMs: result.elapsedMs,
   endReason: result.endReason, infrastructureComplete: result.infrastructureComplete, sessions, totals,
   reviewStatus: result.verification ?? null, businessTerminal,
-  nativeRuns: runs.map(({ runId, sessionId, role, status, sessionFile }) => ({ runId, sessionId, role, status, sessionFile })),
+  nativeRuns,
   nativeModelStarts: result.metrics.modelStarts.length, providerRequests: result.metrics.providerRequests,
   note: 'Provider-reported usage; cached and uncached input remain separate. Missing usage is not zero. No dollar cost inferred from host pricing=0.' };
 await fs.writeFile(path.join(directory, 'usage-summary.json'), JSON.stringify(report, null, 2));

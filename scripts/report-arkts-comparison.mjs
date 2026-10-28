@@ -7,7 +7,7 @@ const arms = {};
 for (const name of ['baseline', 'candidate']) {
   const rows = report.results.filter(row => row.arm === name);
   const score = { planned: report.cases.length, recorded: rows.length, executed: 0, resolved: 0, infrastructureComplete: 0,
-    businessCompletions: 0, rcReviewAttempts: 0, reviewStatuses: {},
+    businessCompletions: 0, rcReviewAttempts: 0, rcReviewCompletedCases: 0, reviewStatuses: {},
     f2pPassed: 0, f2pExpected: 0, p2pPassed: 0, p2pExpected: 0, macroF2p: 0, macroP2p: 0,
     elapsedMs: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, missingUsage: 0, missingUsageFields: 0, missingSessions: 0 };
   for (const row of rows) {
@@ -23,6 +23,7 @@ for (const name of ['baseline', 'candidate']) {
     if (row.usage) {
       if (row.usage.businessTerminal?.completionObserved) score.businessCompletions++;
       if (row.usage.nativeRuns?.some(run => run.role === 'stop-reviewer')) score.rcReviewAttempts++;
+      if (row.usage.nativeRuns?.some(run => run.role === 'stop-reviewer' && run.protocolCompleted)) score.rcReviewCompletedCases++;
       const status = row.usage.reviewStatus ?? 'NO_REVIEW'; score.reviewStatuses[status] = (score.reviewStatuses[status] ?? 0) + 1;
       score.elapsedMs += row.usage.elapsedMs;
       for (const key of ['input', 'output', 'cacheRead', 'cacheWrite', 'totalTokens', 'missingUsage']) score[key] += row.usage.totals[key];
@@ -44,6 +45,7 @@ const strictlyHigherObservedAccuracy = complete && arms.candidate.f2p > arms.bas
 const completeAccounting = complete && Object.values(arms).every(row => !row.missingUsage && !row.missingUsageFields && !row.missingSessions && row.infrastructureComplete === row.planned);
 const summary = { kind: 'observed-native-paired-results', state: report.state, cases: report.cases, completePairs, arms,
   strictlyHigherObservedAccuracy,
+  efficiencyComparisonQualified: completeAccounting && Object.values(arms).every(row => row.rcReviewCompletedCases === row.planned),
   lowerObservedTokens: completeAccounting ? arms.candidate.totalTokens < arms.baseline.totalTokens : null,
   lowerObservedTime: completeAccounting ? arms.candidate.elapsedMs < arms.baseline.elapsedMs : null,
   evidenceLimits: ['Only this fixed set and these runs; no causal/statistical significance inferred.',

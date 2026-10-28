@@ -20,4 +20,6 @@ test('independent read scheduling preserves every source, order, byte budget and
   }
   await assert.rejects(planIndependentReads(root, ['missing.txt']), { code: 'ENOENT' });
   await assert.rejects(planIndependentReads(root, names, { maxBatchBytes: 0 }), /budgets/);
+  const cancelled = new Error('cancelled before metadata lookup');
+  await assert.rejects(planIndependentReads(root, ['missing.txt'], { active() { throw cancelled; } }), error => error === cancelled);
 });

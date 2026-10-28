@@ -17,4 +17,5 @@ test('numbered documents and unnumbered original evidence keep distinct byte acc
   assert.deepEqual(boundedLinePage(lines, { start: 1, count: 2, byteLimit: 6, render: (line, n) => `${n}: ${line}` }).lines, ['1: abc']);
   assert.throws(() => sourcePage(Buffer.from('x'.repeat(51201))), /First line/);
   assert.throws(() => sourcePage(Buffer.from([0xff])), /UTF-8/);
+  assert.throws(() => sourcePage(Buffer.from('one\ntwo'), { offset: 3 }), /2 lines.*Offset is a line number/);
 });
