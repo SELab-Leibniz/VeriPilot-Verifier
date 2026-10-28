@@ -561,13 +561,23 @@ test("manual check recovers the exact native tool call while its own correction 
 
 test("an aborted current correction closes its cancelled receipt and terminalizes the exact task", async t => {
   for (const waitMode of ["until_pass", "assessment"]) await t.test(waitMode, async t => {
-    let childRunId;
+    let childRunId, dispatched;
+    const dispatchObserved = new Promise(resolve => { dispatched = resolve; });
     const f = await lifecycle(t, { deviation: true, waitMode });
-    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched(); return { runId: childRunId }; } };
     await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
     // Assessment settlement and native queue acceptance are separate events.
     // Abort the actual child only after its host dispatch has been observed.
-    await until(()=>Boolean(childRunId),'queued corrective run');
+    // Observe the actual dispatch event within the existing asynchronous-test
+    // bound, instead of a separate five-second busy-poll horizon shorter than
+    // this fixture's eleven-second assessment budget.
+    try { await within(dispatchObserved, 'queued corrective run'); }
+    catch (error) {
+      const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+      t.diagnostic(JSON.stringify({ phase: f.post()?.phase, reviewStatus: f.post()?.reviewStatus,
+        taskStatus: task?.status, verification: task?.verification?.status, warnings: f.warnings.slice(-3) }));
+      throw error;
+    }
     if(waitMode==='assessment')await f.runtime.prompt({prompt:'RC feedback'},{...f.ctx,runId:childRunId});
     const reviewed=await within(f.runtime.waitForNativeReviews(), "native review settlement");
     assert(childRunId,JSON.stringify({reviewed,warnings:f.warnings,task:await findTask({projectRoot:f.root,sessionId:'host'})}));

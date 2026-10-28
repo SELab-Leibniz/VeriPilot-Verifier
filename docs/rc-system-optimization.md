@@ -176,3 +176,11 @@
 - 候选语义不合格：功能主体“20/24 选项和 20 长度映射”被错配为 PROCESS；另一个 IMPLEMENTATION 只捕获旧缺陷背景的残句；项目可选命令块仍被升格为当前 HARD。故不进入留出，也不能声称比 c33 准确。原始 delta/日志完整保留。
 - 新修复为角色控制的显示默认值：createTaskEvidence 接受精确冻结文件清单的编号显示选项，拒绝 live/未知清单；基线角色仅对原始 source 分片启用，request/baseline JSON 原样。执行前规范化实际参数，内容验证和回执匹配使用同一参数；显式 numbered=false 保留。它不改变权限、原始行号/字节或覆盖规则。
 - 相关真实宿主/权限/分页/基线回归 68/68；新增默认编号、JSON 原文和显式覆盖断言。下一次只验证这一显示默认改动；若提取仍不完整或预算仍不足，转向阶段调度/提前提取调查，避免无限重复微小提示实验。最终成功门槛不变。
+
+### 05:42 默认编号结果与反向顺序验证
+
+- `component-extractor-default-numbered-001`（7363338）完成：真实私有 run 84364ms、57800 记录 tokens，5 reads、2 个不同批次 saves、1 finish，没有 grep、history 或工具错误；初轮三个原始源分片均实际编号，request/baseline 原文。相比 c33 此输入的 95760ms/46123 tokens，耗时较低但 token 较高，不能声称整体更省 token；且两组覆盖的项目规则不同。
+- 该候选把用户原始 L1-L10 合为完整功能要求并标为 IMPLEMENTATION/PRODUCTION，L12-L13 原样保留为 PROCESS；所有非空用户原文都包含在这两条中。UTF-8 禁止项保留；包名/权限修改的原始条件与 CONDITIONAL 路由保留；没有把 optional command 目录升为本轮 HARD。该局部内容检查通过，不代表任意来源或完整基准均已证明准确。
+- 全量 `full-regression-default-numbered.log`：161 文件/1828 tests，1803 pass、23 skip、2 fail（同一取消用例的子项和父项）；失败为 fixture 的 5s 忙轮询等待 queued corrective run。隔离原用例 3/3 pass。测试现改为观察实际 dispatch promise，使用既有 within=10s 异步测试上限；生产角色/11s 评估预算、取消和收据断言不变，超时增加状态诊断。整个预算测试文件 33/33 pass。全量尚须复跑，不能说当前全量全绿。
+- 第二份组件公开输入（happyword_12/c33）摘要 b47361c6d9ae12d45711f6d182db06b61d08f0fb3a9ea6753395bba545bab6d6，用户 849B、项目 989B。两条无模型准备均通过。候选→原版反向顺序已启动，父终端句柄 99906；当前候选 owner PID 18188、项目 cmp-42f991e7a17a。它结束且真实私有基础设施 settled/input hash 匹配后，父脚本才启动 c33；不要重复启动任一组。
+- 先完成该组件对照、复跑全量，再决定固定三例方案选择和冻结八例留出；不以开发集或组件成绩代替 F2P/P2P，目标保持 active。
