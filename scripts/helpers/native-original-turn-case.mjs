@@ -17,6 +17,7 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
   const saved = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
   if (!saved?.sessionId || saved.spawnedCwd !== projectRoot) throw new Error('The actual project selection was not persisted.');
   const sessionId = saved.sessionId, runId = randomUUID();
+  if (gateway.faultInjection) await fs.writeFile(path.join(gateway.root, 'fault-target.json'), JSON.stringify({ runId }));
   const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message: requirement,
     idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: 180000 });
   console.log(JSON.stringify({ state: 'actual-chat-request', sessionId, runId, acceptedRunId: accepted.runId, outputRoot }));
@@ -60,12 +61,20 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
   let deliveryChecks = false;
   if (task?.verification?.status === 'PASS') { const module = await import(pathToFileURL(file).href); deliveryChecks = [0, 7, -2].every(value => module.accept(value) === value + 1); }
   const actualMainStart = gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId);
-  const complete = report.verification === 'PASS' && ledger?.used === 0 && Object.keys(ledger?.admissions ?? {}).length === 0
+  const expectedUsed = gateway.faultInjection ? 1 : 0;
+  const used = Object.values(ledger?.admissions ?? {}).filter(item => item.accounting === 'USED');
+  const injected = gateway.faultInjection ? await fs.readFile(path.join(gateway.root, 'fault-injection.json'), 'utf8').then(JSON.parse, () => null) : null;
+  const faultCycleComplete = !gateway.faultInjection || injected?.runId === runId && used.length === 1
+    && used[0].finalReview?.status === 'PASS' && used[0].finalReview.evaluationId === task?.verification?.evaluationId
+    && ledger.events.some(event => event.type === 'STOP_REVIEW_SETTLED' && event.stopId === used[0].stopId && event.status === 'DEVIATION')
+    && gateway.metrics().modelStarts.some(event => event.runId === `rc-stop-${used[0].id}` && event.sessionId === sessionId);
+  const complete = report.verification === 'PASS' && ledger?.used === expectedUsed && Object.keys(ledger?.admissions ?? {}).length === expectedUsed
     && originalUserObserved && actualMainStart && writes.length > 0 && deliveryChecks
-    && roles['ground-truth-extractor'] === 1 && roles['stop-reviewer'] === 1 && runs.every(run => run.status === 'SETTLED');
+    && roles['ground-truth-extractor'] === 1 && roles['stop-reviewer'] === expectedUsed + 1 && runs.every(run => run.status === 'SETTLED') && faultCycleComplete;
   return { mode: 'original-turn', complete, gatewayEntry: 'authenticated sessions.create + chat.send; no seeded lifecycle',
     sessionId, sessionKey, originalRunId: runId, taskId: task?.taskId, verification: report.verification, status: task?.status,
     evaluationId: task?.verification?.evaluationId, used: ledger?.used, earlyTermination, admissionCount: Object.keys(ledger?.admissions ?? {}).length,
     originalUserObserved, actualMainStart, actualDeliveryWriteCalls: writes.length, deliveryChecks, roles,
+    ...(gateway.faultInjection ? { injected, faultCycleComplete, finalReview: used[0]?.finalReview } : {}),
     privateRuns: runs.map(({ role, status, sessionId, runId }) => ({ role, status, sessionId, runId })), ...gateway.metrics(), outputRoot };
 }

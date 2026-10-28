@@ -17,7 +17,7 @@ async function freePort() {
   return port;
 }
 
-export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false }) {
+export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false }) {
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
   const root = path.join(outputRoot, 'native-host');
@@ -50,6 +50,26 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
   }
+  if (injectDefect && !reuseProfile) {
+    // A local experiment plugin corrupts only this fixture's delivery, once,
+    // immediately before the REAL original host run finalizes. Host terminal,
+    // RC dispatch, business repair and quota observation remain unmodified.
+    const fixtureRoot = path.join(root, 'fault-fixture'); await fs.mkdir(fixtureRoot, { recursive: true });
+    await fs.writeFile(path.join(fixtureRoot, 'openclaw.plugin.json'), JSON.stringify({ id: 'rc-fault-fixture', name: 'RC isolated fault injection',
+      main: './index.mjs', version: '1.0.0', configSchema: { type: 'object', additionalProperties: false, properties: {} } }));
+    await fs.writeFile(path.join(fixtureRoot, 'index.mjs'), `import fs from 'node:fs/promises'; import path from 'node:path'; import {createHash} from 'node:crypto';
+const root=${JSON.stringify(root)}, project=${JSON.stringify(projectRoot)};
+export default {id:'rc-fault-fixture',name:'RC isolated fault injection',register(api){api.on('before_agent_finalize',async(event,ctx)=>{
+ const target=await fs.readFile(path.join(root,'fault-target.json'),'utf8').then(JSON.parse,()=>null);
+ if(!target||(event.runId??ctx.runId)!==target.runId||path.resolve(ctx.workspaceDir??'')!==project)return;
+ const receipt=path.join(root,'fault-injection.json');if(await fs.access(receipt).then(()=>true,()=>false))return;
+ const file=path.join(project,'app.mjs'),before=await fs.readFile(file),after=Buffer.from('export const accept = value => value;\\n');
+ await fs.writeFile(file,after);const hash=b=>createHash('sha256').update(b).digest('hex');
+ await fs.writeFile(receipt,JSON.stringify({kind:'program fault injection before actual original host finalization',runId:target.runId,at:Date.now(),file,beforeHash:hash(before),afterHash:hash(after)}));
+},{priority:1000});}};`);
+    config.plugins.allow.push('rc-fault-fixture'); config.plugins.load.paths.push(fixtureRoot);
+    config.plugins.entries['rc-fault-fixture'] = { enabled: true };
+  }
   // The random loopback Gateway token lives in this process only. Existing
   // provider credentials are inherited, not embedded in this saved config.
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
@@ -72,7 +92,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     unsubscribe = diagnostics.onInternalDiagnosticEvent(event => {
       if (event.type === 'model.call.started') modelStarts.push({ runId: event.runId, sessionId: event.sessionId, sessionKey: event.sessionKey, ts: event.ts, seq: event.seq });
     });
-    return { runtime, hooks: getGlobalHookRunner(), registry, config, model, pluginRoot, root, port,
+    return { runtime, hooks: getGlobalHookRunner(), registry, config, model, pluginRoot, root, port, faultInjection: injectDefect,
       async request(method, params) {
         const { callGateway } = await load('dist/call-BZWJ3eG1.js');
         return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,

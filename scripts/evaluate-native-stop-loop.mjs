@@ -28,7 +28,8 @@ const outputRoot = path.join(sourceRoot, '.runtime-correction/live-native-loop',
 const projectRoot = path.join(outputRoot, 'project');
 let gateway;
 try {
-  gateway = await createNativeGatewayEvaluation({ hostRoot: value('--host-root'), sourceRoot, outputRoot, projectRoot });
+  gateway = await createNativeGatewayEvaluation({ hostRoot: value('--host-root'), sourceRoot, outputRoot, projectRoot,
+    injectDefect: args.includes('--inject-defect') });
   gateway.setPhase(live ? args.includes('--initial-turn') ? 'original-turn' : 'automatic-loop' : 'transport-check');
   if (live && args.includes('--initial-turn')) {
     const { runNativeOriginalTurn } = await import('./helpers/native-original-turn-case.mjs');
