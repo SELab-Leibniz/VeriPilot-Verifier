@@ -10,12 +10,30 @@ import { installProviderFetchTiming } from '../scripts/helpers/provider-fetch-ti
 
 async function fixture(t, handler) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-fetch-timing-'));
-  const server = http.createServer(handler);
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const origin = `http://127.0.0.1:${server.address().port}`;
-  const timing = await installProviderFetchTiming({ file: path.join(root, 'timing.jsonl'), origin });
-  t.after(async () => { await timing.close(); server.closeAllConnections();
-    await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }); });
+  const probe = '/__rc_local_transport_probe__';
+  const server = http.createServer((request, response) => {
+    if (request.url === probe) { request.resume(); response.writeHead(204); response.end(); }
+    else handler(request, response);
+  });
+  let timing, origin;
+  t.after(async () => { await timing?.close(); server.closeAllConnections();
+    if (server.listening) await new Promise(resolve => server.close(resolve));
+    await fs.rm(root, { recursive: true, force: true }); });
+  // Some Windows machines allocate ephemeral ports from 1024, including
+  // fetch-blocked ports. Verify transport BEFORE installing the observer, so
+  // the probe never contributes to requestCount. Retry only that exact cause.
+  for (let attempt = 0; attempt < 16; attempt++) {
+    await new Promise((resolve, reject) => { server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => { server.removeListener('error', reject); resolve(); }); });
+    origin = `http://127.0.0.1:${server.address().port}`;
+    try { assert.equal((await fetch(origin + probe, { signal: AbortSignal.timeout(2000) })).status, 204); break; }
+    catch (error) {
+      if (error.cause?.message !== 'bad port') throw error;
+      origin = null; await new Promise(resolve => server.close(resolve));
+    }
+  }
+  if (!origin) throw new Error('No fetch-compatible local test port was allocated');
+  timing = await installProviderFetchTiming({ file: path.join(root, 'timing.jsonl'), origin });
   return { origin, timing, rows: async () => (await fs.readFile(timing.file, 'utf8')).trim().split('\n').map(JSON.parse) };
 }
 
