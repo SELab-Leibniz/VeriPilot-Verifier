@@ -53,7 +53,7 @@ test('navigation checks original paths, rereads changes, and honors cancellation
 test('live and frozen find explain wildcard misses without silently changing literal semantics', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-literal-find-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  await fs.writeFile(path.join(root, 'main.ets'), 'original\n');
+  await fs.writeFile(path.join(root, 'main.ets'), 'original NEEDLE_IN_CONTENT\n');
   for (const tools of [createLiveSourceTools(root), createSourceTools(root, await captureFiles(root))]) {
     const find = tools.find(tool => tool.name === 'find');
     const missing = JSON.parse(toolText(await find.execute('wildcard', { pattern: '*.ets' })));
@@ -61,5 +61,11 @@ test('live and frozen find explain wildcard misses without silently changing lit
     assert.equal(missing.navigationOnly, true);
     const found = JSON.parse(toolText(await find.execute('literal', { pattern: 'main.ets' })));
     assert.equal(found.hits.length, 1); assert.equal(found.hint, undefined);
+    const symbol = JSON.parse(toolText(await find.execute('symbol', { pattern: 'NEEDLE_IN_CONTENT' })));
+    assert.equal(symbol.hits.length, 0); assert.match(symbol.hint, /use grep/);
+    const grep = tools.find(tool => tool.name === 'grep');
+    assert.equal(JSON.parse(toolText(await grep.execute('contents', { pattern: 'NEEDLE_IN_CONTENT' }))).hits.length, 1);
+    const end = JSON.parse(toolText(await find.execute('end', { pattern: 'NEEDLE_IN_CONTENT', offset: 1 })));
+    assert.equal(end.hint, undefined);
   }
 });
