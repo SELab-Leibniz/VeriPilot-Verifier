@@ -1,6 +1,7 @@
 {
   "public": [
     "runtime_corrector",
+    "rc_document",
     "rc_progress"
   ],
   "task": [

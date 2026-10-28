@@ -7,6 +7,8 @@
     "lib/candidate-diff.mjs",
     "lib/default-runtime.mjs",
     "lib/diagnostic-status.mjs",
+    "lib/document-session.mjs",
+    "lib/document-tools.mjs",
     "lib/evidence-distinctness.mjs",
     "lib/feedback.mjs",
     "lib/ground-truth.mjs",

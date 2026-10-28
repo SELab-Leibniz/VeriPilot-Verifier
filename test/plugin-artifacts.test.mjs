@@ -92,8 +92,8 @@ test("all hosts package complete runtime imports, resources and usable documenta
   for (const host of ["claude", "codeagent", "openclaw"]) {
     const root = built[host], files = await filesUnder(root);
     const scripts = files.filter(file => path.dirname(file) === path.join(root, "scripts")).map(file => path.basename(file)).sort();
-    assert.deepEqual(scripts, (host === "openclaw" ? ["cli.mjs", "configure-ma-host.mjs"]
-      : ["cli.mjs", "evidence-distinctness-guard.mjs", "post-tool-use.mjs", "runtime-event.mjs", "session-end.mjs"]).sort());
+    assert.deepEqual(scripts, (host === "openclaw" ? ["cli.mjs", "configure-ma-host.mjs", "document-tools.mjs"]
+      : ["cli.mjs", "document-tools.mjs", "evidence-distinctness-guard.mjs", "post-tool-use.mjs", "runtime-event.mjs", "session-end.mjs"]).sort());
     for (const file of files) {
       assert(!path.relative(root, file).split(path.sep).some(part => ["experiments", "test", "examples", "diagnostics", "node_modules", ".runtime-correction", ".github"].includes(part)), file);
       if (file.endsWith(".md")) await checkLocalLinks(file);

@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "reports": [
+    {
+      "name": "document-experiment-live",
+      "createdAt": "2026-10-28T07:37:19.340Z",
+      "rows": [
+        {
+          "mode": "cold",
+          "round": 1,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "0a21e264-9cd1-45ad-bc47-e3b509bd1c8f",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 1768,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 3968,
+            "output_tokens": 311,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 29374,
+          "reportedCostUsd": 0.032704000000000004
+        },
+        {
+          "mode": "cold",
+          "round": 2,
+          "expected": "PASS",
+          "correct": true,
+          "modelSessionId": "009f69d6-db36-43b7-88f4-5f979d227d4e",
+          "verdict": "PASS",
+          "usage": {
+            "input_tokens": 747,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 4928,
+            "output_tokens": 238,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 30827,
+          "reportedCostUsd": 0.029853999999999995
+        },
+        {
+          "mode": "cold",
+          "round": 3,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "925198bb-34ba-4009-85fb-abd056d410e8",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 802,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 4992,
+            "output_tokens": 270,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 31665,
+          "reportedCostUsd": 0.031971000000000006
+        },
+        {
+          "mode": "reused",
+          "round": 1,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "46b3e63b-3eaf-4134-b3f1-7f4161e229eb",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 1017,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 4736,
+            "output_tokens": 289,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 31017,
+          "reportedCostUsd": 0.035208
+        },
+        {
+          "mode": "reused",
+          "round": 2,
+          "expected": "PASS",
+          "correct": true,
+          "modelSessionId": "46b3e63b-3eaf-4134-b3f1-7f4161e229eb",
+          "verdict": "PASS",
+          "usage": {
+            "input_tokens": 1056,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 8128,
+            "output_tokens": 282,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 28847,
+          "reportedCostUsd": 0.016394
+        },
+        {
+          "mode": "reused",
+          "round": 3,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "46b3e63b-3eaf-4134-b3f1-7f4161e229eb",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 964,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 11712,
+            "output_tokens": 291,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 28032,
+          "reportedCostUsd": 0.017951
+        }
+      ],
+      "caveats": [
+        "The fixture is generated; no repository is copied.",
+        "Elapsed time includes local tool/IO overhead.",
+        "Only --live measures model tokens and correctness; deterministic mode makes no semantic accuracy claim.",
+        "Native host integration and UI behavior are covered separately by contract tests; this is not a live MatrixAssistant UI test."
+      ]
+    },
+    {
+      "name": "document-experiment-batched",
+      "createdAt": "2026-10-28T07:41:36.250Z",
+      "batched": true,
+      "rows": [
+        {
+          "mode": "cold",
+          "round": 1,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "b0f763c1-9179-45a0-a603-4934773c34c9",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 2147,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 6016,
+            "output_tokens": 356,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 42147,
+          "reportedCostUsd": 0.040853
+        },
+        {
+          "mode": "cold",
+          "round": 2,
+          "expected": "PASS",
+          "correct": true,
+          "modelSessionId": "ea0df3ba-a5c3-4112-8454-3b51f8addc77",
+          "verdict": "PASS",
+          "usage": {
+            "input_tokens": 1201,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 3136,
+            "output_tokens": 251,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 20007,
+          "reportedCostUsd": 0.031083000000000003
+        },
+        {
+          "mode": "cold",
+          "round": 3,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "ab20335b-3291-4ab0-9ae9-7e7ceb846853",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 801,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 3584,
+            "output_tokens": 229,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 18033,
+          "reportedCostUsd": 0.028742
+        },
+        {
+          "mode": "reused",
+          "round": 1,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "10175717-bc87-4cfb-87e1-d8f9c5dfa661",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 607,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 2048,
+            "output_tokens": 171,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 13757,
+          "reportedCostUsd": 0.027664
+        },
+        {
+          "mode": "reused",
+          "round": 2,
+          "expected": "PASS",
+          "correct": true,
+          "modelSessionId": "10175717-bc87-4cfb-87e1-d8f9c5dfa661",
+          "verdict": "PASS",
+          "usage": {
+            "input_tokens": 797,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 3328,
+            "output_tokens": 129,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 11618,
+          "reportedCostUsd": 0.008874
+        },
+        {
+          "mode": "reused",
+          "round": 3,
+          "expected": "DEVIATION",
+          "correct": true,
+          "modelSessionId": "10175717-bc87-4cfb-87e1-d8f9c5dfa661",
+          "verdict": "DEVIATION",
+          "usage": {
+            "input_tokens": 944,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 4800,
+            "output_tokens": 139,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          },
+          "durationMs": 12410,
+          "reportedCostUsd": 0.010595
+        }
+      ],
+      "caveats": [
+        "The fixture is generated; no repository is copied.",
+        "Elapsed time includes local tool/IO overhead.",
+        "Only --live measures model tokens and correctness; deterministic mode makes no semantic accuracy claim.",
+        "Native host integration and UI behavior are covered separately by contract tests; this is not a live MatrixAssistant UI test."
+      ]
+    }
+  ],
+  "validation": {
+    "initialFullSuite": {
+      "files": 144,
+      "followUp": "All 12 initially failed files plus document-agent were rechecked serially without relaxing timing assertions."
+    },
+    "serialRecheck": {
+      "files": 13,
+      "passed": 304,
+      "failed": []
+    },
+    "documentSuite": {
+      "tests": 59,
+      "pass": 59
+    },
+    "finalLifecycleSuite": {
+      "tests": 10,
+      "pass": 10
+    },
+    "packagingAndInstalledHostContracts": {
+      "tests": 26,
+      "pass": 26
+    },
+    "skill": "quick_validate.py passed",
+    "ui": "Event contracts verified; no live MatrixAssistant UI deployment or pixel review."
+  }
+}

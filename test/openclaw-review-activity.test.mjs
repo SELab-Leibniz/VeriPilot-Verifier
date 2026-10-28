@@ -142,7 +142,7 @@ test("native parent terminal and watchdog recovery cancel its outstanding review
 });
 
 test("review phase notices expose stage and filename without internal assessment text", () => {
-  assert.equal(reviewProgressText({ role: "artifact-reviewer", file: "/private/work/proposal.md" }), "正在评审文档：proposal.md。");
+  assert.equal(reviewProgressText({ role: "artifact-reviewer", file: "/private/work/proposal.md" }), "文档·评审：proposal.md。");
   assert.equal(reviewProgressText({ phase: "WRITING", file: "/private/work/design.md" }), "正在修改文件：design.md。");
   assert.equal(reviewProgressText({ phase: "TOOL_EXECUTION" }), null);
 });

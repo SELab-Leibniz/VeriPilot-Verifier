@@ -12,6 +12,7 @@
 - [工作原理、需求基线与信任边界](how-it-works.md)
 - [Stop 单会话审查、预算与状态](stop-task-review.md)
 - [Stop 简化目标与验收进度](stop-simplification-plan.md)
+- [文档纠偏会话、工具与实验](document-correction.md)
 - [Stop 读取与上下文边界](stop-review-bounds.md)
 - [Stop 指标开关](stop-metric-switches.md)
 - [M16 生产实现覆盖率](m16-production-implementation-coverage.md)
