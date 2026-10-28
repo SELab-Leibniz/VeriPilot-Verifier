@@ -115,3 +115,5 @@
 - 活跃 `paired-recovery-dev-001`，协调 owner PID 13112，统一公共协议/导航 0b72285；比较器已验证并采用 `paired-short-dev-001` 的两条 c33 基线，只运行两个新候选，不能重新启动。终端运行句柄 50274。先检查 progress 的 state/ownerPid/id/arm/stage，不输出整个 results，避免重复读测试列表。
 - 当前后续开发（未纳入 2e059b0）扩展 multipart 原文行选取：原实现已有跨块精确字节回执合并，textFrom 却只允许单块，且 full-mode 提示反而要求重复完整 text/source/bindings。新实现允许原始全局行号、记录每块原始行跨度，优先程序捕获原文和已有回执；来源权限、连续覆盖、所有必读源和完整结束检查照常执行。须通过 UTF-8 跨块/未读/虚假回执/权限反例后另冻结，不能把它的收益归给正在运行的旧候选。
 - multipart 候选实际宿主适配和基线/控制台回归 59/59，0 跳过；含 UTF-8/CRLF 跨块、未持久化回执、缺块、权限与伪造原文反例。测试夹具补齐真实 catalog 的规范路径和 projectRelativePath，避免把测试目录的祖先 `.runtime-correction` 错当材料内部来源。生产权限规则未放宽。私有提取 Skill 通过 Skill Creator 校验。模型表现尚待独立试验。
+- `8a8ec79` multipart 候选已独立打包，6 个公开 Skill 均经宿主实际 YAML 解析器验证；未改当前比较公共协议。
+- 轻量 context-profile 修正统计名称：assistant 的 toolCall 是 requestedCalls；持久化 toolResult 是 resultRecords/errorRecords，可能包含宿主合成修复。security_tool_1/c33 实测 finish_baseline 为 1 个实际请求、2 条结果（含 1 条合成错误），不能将第二条结果说成额外一次模型调用或真实执行失败。提供方 usage 和总 token 不受此派生统计修正影响。
