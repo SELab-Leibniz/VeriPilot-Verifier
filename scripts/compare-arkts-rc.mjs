@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
+import { providerBaseFingerprint, assertNativeProviderIdentity } from './bench/provider-identity.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const directory = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/paired-${Date.now()}`);
 const root = path.resolve('.runtime-correction/system-optimization');
@@ -15,6 +16,7 @@ const arms = {
   candidate: { artifact: path.resolve(arg('--candidate-artifact') ?? '.runtime-correction/system-optimization/candidates/2909891/runtime-corrector-openclaw'), ref: arg('--candidate-ref') ?? '2909891' },
 };
 const navigationArtifact = path.resolve(arg('--navigation-artifact') ?? arms.baseline.artifact);
+const providerBaseSha256 = providerBaseFingerprint(process.env.ANTHROPIC_BASE_URL);
 const audit = JSON.parse(await fs.readFile(path.join(root, 'calibration-audit.json'), 'utf8'));
 const sha = value => createHash('sha256').update(value).digest('hex');
 if (audit.evaluatorSha256 !== sha(await fs.readFile(new URL('./bench/hypium-results.mjs', import.meta.url)))) throw new Error('Refresh calibration audit after evaluator changes');
@@ -59,12 +61,15 @@ if (arg('--adopt-baselines')) {
       .replace(/^  await fs\.writeFile\(path\.join\(outputRoot, 'skill-validation\.json'\)[^\r\n]*\r?\n/mu, '');
     if (sha(reconstructed) !== hash) throw new Error('Adopted runner changed beyond the Skill preflight guard');
   }
-  for (const row of previous.results) if (row.arm === 'baseline' && row.nativeComplete && row.grade?.results[0]?.executed && row.usage && cases.includes(row.id)) adopted.set(row.id, structuredClone(row));
+  for (const row of previous.results) if (row.arm === 'baseline' && row.nativeComplete && row.grade?.results[0]?.executed && row.usage && cases.includes(row.id)) {
+    await assertNativeProviderIdentity(row.run, providerBaseSha256);
+    adopted.set(row.id, structuredClone(row));
+  }
 }
 const order = cases.flatMap((id, index) => (index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']).map(arm => ({ id, arm })));
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
   hostVersion: JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8')).version,
-  model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, arms, cases, order, protocol, calibrations, adoptionExceptions,
+  model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, providerBaseSha256, arms, cases, order, protocol, calibrations, adoptionExceptions,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
   navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
 await fs.writeFile(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -86,6 +91,7 @@ try {
       `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`], 1100000);
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
     if (native && native.metrics.hostVersion !== manifest.hostVersion) throw new Error('Installed host changed during the fixed comparison');
+    if (native) await assertNativeProviderIdentity(run, providerBaseSha256);
     const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted, nativeComplete: native?.infrastructureComplete === true };
     results.push(row);
     if (native?.infrastructureComplete) {
