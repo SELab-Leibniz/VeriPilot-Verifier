@@ -116,7 +116,7 @@ try {
   const { findTask } = await load('lib/runtime-v2/task-store.mjs');
   const { listNativeRuns } = await load('lib/openclaw/native-runs.mjs');
   const postDirectory = path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions/post-run');
-  let currentTask, post, runs = [], last;
+  let currentTask, post, runs = [], last, businessBudgetAbortRequested = false;
   while (Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
     await gateway.drain(); currentTask = await findTask({ projectRoot, sessionId });
     const names = await fs.readdir(postDirectory).catch(() => []);
@@ -129,6 +129,11 @@ try {
       taskStatus: currentTask?.status, verification: currentTask?.verification?.status, postPhase: post?.phase,
       privateStarts: runs.length, privateSettled: runs.filter(run => run.status === 'SETTLED').length, modelStarts: gateway.metrics().modelStarts.length };
     if (JSON.stringify(state) !== last) { last = JSON.stringify(state); await fs.writeFile(path.join(outputRoot, 'progress.json'), last); console.log(last); }
+    if (!businessBudgetAbortRequested && !runs.length && Date.now() - startedAt >= manifest.limits.mainTimeoutMs) {
+      businessBudgetAbortRequested = true;
+      const aborted = await gateway.request('chat.abort', { sessionKey, runId, preserveSideRuns: true }).then(response => ({ response }), error => ({ error: error.message }));
+      await fs.writeFile(path.join(outputRoot, 'business-budget-abort.json'), JSON.stringify({ runId, sessionKey, requestedAt: Date.now(), ...aborted }, null, 2));
+    }
     if (['IDLE', 'CLOSED'].includes(post?.phase) && gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId)
       && runs.every(run => run.status === 'SETTLED')) break;
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -149,6 +154,7 @@ try {
     privateRuns: runs.map(({ runId, sessionId, role, status }) => ({ runId, sessionId, role, status })), metrics: gateway.metrics(),
     patchBytes: patch.length, actualBusinessStart: gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId),
     infrastructureComplete: ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED'),
+    businessBudgetAbortRequested,
     score: 'NOT_YET_GRADED: evaluate candidate.patch with hidden tests in an independent evaluator worktree' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
   await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: 'SETTLED', ownerPid: process.pid, sessionId, endedAt: Date.now() }));

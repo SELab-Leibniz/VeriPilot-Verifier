@@ -1,7 +1,7 @@
 {
   "baseline": "c33bae6",
-  "generatedAt": "2026-10-28T18:44:34.957Z",
-  "commit": "29098919cace1eddb62e042d0d0ad90ac6c0be8e",
+  "generatedAt": "2026-10-28T19:21:30.404Z",
+  "commit": "cf4a1720a47975f87bbe501ba40ee4f8e8c0d9ea",
   "records": [
     {
       "file": "config/reviewer-defaults.json",
@@ -457,8 +457,8 @@
     },
     {
       "file": "lib/review-task/live-source-tools.mjs",
-      "bytes": 5097,
-      "sha256": "73d5c966b7a74d967a5f27eae564a151cb7ad0a827b4267988bc2e152df494f2",
+      "bytes": 5365,
+      "sha256": "d22095991b2c04648d7f01d56d7817eeab194dc5cd4e31add968658873d5bf28",
       "exports": [
         "createLiveSourceTools"
       ],
@@ -532,12 +532,13 @@
     },
     {
       "file": "lib/review-task/source-tools.mjs",
-      "bytes": 8142,
-      "sha256": "cfb9334a01eaa6ef276ad661b6f73cc5673121c0043a61094ee2a7f0097fe55c",
+      "bytes": 8664,
+      "sha256": "9e32a3434183176dff3d827196b6be62308f13079ccddd9a90058b4e078bc86a",
       "exports": [
         "PAGE_LINES",
         "toolText",
         "textBlocks",
+        "literalFindHint",
         "sourcePage",
         "createSourceTools"
       ],
@@ -864,8 +865,8 @@
     },
     {
       "file": "lib/runtime-v2/stop-workspace-review.mjs",
-      "bytes": 41007,
-      "sha256": "9f49f5a0350ed2b4ebf2f2f022ba6b1e14c27c2bcc9cb0f4c0d463324a3d34f4",
+      "bytes": 41278,
+      "sha256": "eb6b5fae083dfbb56fa4f8043d03df08097ccac71f589af47e201065653b7c05",
       "exports": [
         "runWorkspaceStopReview"
       ],
@@ -954,7 +955,7 @@
     {
       "file": "skills/runtime-corrector-control/SKILL.md",
       "bytes": 6594,
-      "sha256": "516b8992514e4d121f00b81c736183449029094af2783eefbab73ba695fb5066",
+      "sha256": "489877d9348e01145aed923e7e0788681e5e83e0df7c9e38898e3f31f469a346",
       "exports": [],
       "toolNameCandidates": [],
       "promptConstructionSites": 0,
@@ -1040,7 +1041,8 @@
         },
         "pattern": {
           "type": "string",
-          "maxLength": 500
+          "maxLength": 500,
+          "description": "Literal text in original UTF-8 lines."
         }
       }
     },
@@ -1066,7 +1068,8 @@
         },
         "pattern": {
           "type": "string",
-          "maxLength": 500
+          "maxLength": 500,
+          "description": "Literal path fragment; not a glob or regular expression."
         }
       }
     },
@@ -1134,7 +1137,8 @@
         "pattern": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 500
+          "maxLength": 500,
+          "description": "Literal text in original UTF-8 lines."
         }
       }
     },
@@ -1160,7 +1164,8 @@
         "pattern": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 500
+          "maxLength": 500,
+          "description": "Literal path fragment; not a glob or regular expression."
         }
       }
     },

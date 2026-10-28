@@ -25,8 +25,8 @@ const inside=file=>{const r=path.relative(root,file);if(r==='..'||r.startsWith('
 export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register(api){
  const tools=new Map(createLiveSourceTools(root,{onPath(requested,real){inside(requested);inside(real);}}).map(t=>[t.name,t]));
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_nav',label:'Workspace navigation',
- description:'Find source paths, list directories or search literal text inside this workspace. Navigation grants no execution or correctness evidence.',
- parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['ls','find','grep']},path:{type:'string'},pattern:{type:'string'},offset:{type:'integer'},limit:{type:'integer'}}},
+ description:'Navigate only this workspace. find matches literal path fragments, never globs or regex: use main.ets rather than *.ets. grep searches literal UTF-8 text. ls lists a directory. Narrow path first and follow nextOffset to page. Navigation grants no execution or correctness evidence.',
+ parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['ls','find','grep']},path:{type:'string'},pattern:{type:'string',description:'Literal path fragment for find, or literal text for grep; not a glob.'},offset:{type:'integer'},limit:{type:'integer'},includeGenerated:{type:'boolean'}}},
  async execute(id,args,signal){return tools.get(args.action).execute(id,args,signal);}}, {names:['bench_nav']});
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_check',label:'Project check',
  description:'Run a fixed project check with the installed HarmonyOS toolchain. build uses devecocli; test returns actual runtime pass/fail counts for the available original local tests. Full output is saved at outputPath. No arbitrary commands.',

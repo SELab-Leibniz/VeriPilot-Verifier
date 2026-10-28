@@ -4,7 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createLiveSourceTools } from '../lib/review-task/live-source-tools.mjs';
-import { toolText } from '../lib/review-task/source-tools.mjs';
+import { toolText, createSourceTools } from '../lib/review-task/source-tools.mjs';
+import { captureFiles } from '../lib/review-task/evidence-utils.mjs';
 
 test('broad navigation omits caches but preserves project build sources and explicit cache access', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-nav-'));
@@ -47,4 +48,18 @@ test('navigation checks original paths, rereads changes, and honors cancellation
   assert(paths.some(([requested, real]) => requested === file && real === file));
   const controller = new AbortController(); controller.abort();
   await assert.rejects(tools.get('find').execute('cancelled', { pattern: 'main' }, controller.signal), { name: 'AbortError' });
+});
+
+test('live and frozen find explain wildcard misses without silently changing literal semantics', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-literal-find-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, 'main.ets'), 'original\n');
+  for (const tools of [createLiveSourceTools(root), createSourceTools(root, await captureFiles(root))]) {
+    const find = tools.find(tool => tool.name === 'find');
+    const missing = JSON.parse(toolText(await find.execute('wildcard', { pattern: '*.ets' })));
+    assert.deepEqual(missing.hits, []); assert.match(missing.hint, /literal path fragments/);
+    assert.equal(missing.navigationOnly, true);
+    const found = JSON.parse(toolText(await find.execute('literal', { pattern: 'main.ets' })));
+    assert.equal(found.hits.length, 1); assert.equal(found.hint, undefined);
+  }
 });

@@ -14,6 +14,7 @@ const arms = {
   baseline: { artifact: path.resolve(arg('--baseline-artifact') ?? 'dist/runtime-corrector-openclaw'), ref: arg('--baseline-ref') ?? 'c33bae6' },
   candidate: { artifact: path.resolve(arg('--candidate-artifact') ?? '.runtime-correction/system-optimization/candidates/2909891/runtime-corrector-openclaw'), ref: arg('--candidate-ref') ?? '2909891' },
 };
+const navigationArtifact = path.resolve(arg('--navigation-artifact') ?? arms.baseline.artifact);
 const audit = JSON.parse(await fs.readFile(path.join(root, 'calibration-audit.json'), 'utf8'));
 const sha = value => createHash('sha256').update(value).digest('hex');
 if (audit.evaluatorSha256 !== sha(await fs.readFile(new URL('./bench/hypium-results.mjs', import.meta.url)))) throw new Error('Refresh calibration audit after evaluator changes');
@@ -25,7 +26,8 @@ const calibrations = Object.fromEntries(cases.map(id => {
 await fs.mkdir(path.dirname(directory), { recursive: true }); await fs.mkdir(directory);
 const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs',
   'scripts/bench/native-arkts-tools.mjs', 'scripts/bench/bounded-process.mjs', 'scripts/bench/prepare-arkts-model-workspace.mjs',
-  'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs'];
+  'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs', 'scripts/bench/short-workspace.mjs',
+  path.join(navigationArtifact, 'lib/review-task/live-source-tools.mjs'), path.join(navigationArtifact, 'lib/review-task/source-tools.mjs')];
 const protocol = Object.fromEntries(await Promise.all(protocolFiles.map(async file => [file, sha(await fs.readFile(file))])));
 const adopted = new Map();
 if (arg('--adopt-baselines')) {
@@ -49,7 +51,7 @@ const order = cases.flatMap((id, index) => (index % 2 ? ['candidate', 'baseline'
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
   model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, arms, cases, order, protocol, calibrations,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
-  navigationArtifact: arms.baseline.artifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
+  navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
 await fs.writeFile(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));
 if (!process.argv.includes('--live')) { console.log(JSON.stringify({ state: 'PLAN_NO_MODEL', directory, order })); process.exit(0); }
 async function stage(id, arm, name, argv, timeoutMs) {
@@ -66,11 +68,11 @@ try {
     if (arm === 'baseline' && adopted.has(id)) { results.push(adopted.get(id)); continue; }
     const run = path.join(directory, `${id}-${arm}`), grade = path.join(directory, `${id}-${arm}-grade`), settings = arms[arm];
     const execution = await stage(id, arm, 'model', ['scripts/run-arkts-rc-case.mjs', '--live', `--case=${id}`, `--artifact=${settings.artifact}`,
-      `--baseline-ref=${settings.ref}`, `--navigation-artifact=${arms.baseline.artifact}`, `--host-root=${hostRoot}`, `--output=${run}`], 1100000);
+      `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`], 1100000);
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
     const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted, nativeComplete: native?.infrastructureComplete === true };
     results.push(row);
-    if (native) {
+    if (native?.infrastructureComplete) {
       const scored = await stage(id, arm, 'grade', ['scripts/calibrate-arkts-bench.mjs', `--case=${id}`, `--candidate=${path.join(run, 'candidate.patch')}`,
         `--calibration-dir=${calibrations[id]}`, `--output=${grade}`], 400000);
       row.gradeExit = scored.exitCode;
@@ -81,7 +83,7 @@ try {
     await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: 'PARTIAL', results }, null, 2));
     console.log(JSON.stringify({ id, arm, nativeComplete: row.nativeComplete, executed: row.grade?.results[0]?.executed,
       resolved: row.grade?.results[0]?.resolved, totalTokens: row.usage?.totals.totalTokens }));
-    if (!native || execution.interrupted) throw new Error('Model infrastructure did not settle; preserve state and investigate before further model spend');
+    if (!native?.infrastructureComplete || execution.interrupted) throw new Error('Model infrastructure did not settle; preserve state and investigate before further model spend');
   }
   await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ state: 'SETTLED', ownerPid: process.pid, endedAt: Date.now(), results: results.map(({ id, arm, nativeComplete }) => ({ id, arm, nativeComplete })) }, null, 2));
   await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: 'SETTLED', results }, null, 2));

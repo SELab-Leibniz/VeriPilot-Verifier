@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
+import { shortArktsWorkspace } from './bench/short-workspace.mjs';
 import { loadArktsTask, arktsAgentInput, digest } from './bench/arkts-dataset.mjs';
 import { parseHypium, gradeArkts } from './bench/hypium-results.mjs';
 const args = process.argv.slice(2), arg = key => args.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
@@ -46,7 +47,8 @@ if (cached.code) {
 // same tree repeatedly. These refs never enter business-agent tools.
 const retained = await run('git', ['--git-dir', cache, 'update-ref', `refs/rc-bench/base/${task.base_commit}`, task.base_commit], output, 'retain-base');
 if (retained.code) throw new Error('Could not retain shared base objects');
-const source = path.join(output, 'workspace');
+const source = shortArktsWorkspace(output, 'grd');
+await fs.mkdir(path.dirname(source), { recursive: true });
 const checkout = await run('git', ['-c', 'core.longpaths=true', '--git-dir', cache, 'worktree', 'add', '--detach', source, task.base_commit], output, 'checkout');
 if (checkout.code) throw new Error('Shared source worktree creation failed');
 const testPatch = path.join(output, 'hidden-test.patch'); await fs.writeFile(testPatch, task.test_patch);
@@ -123,7 +125,7 @@ for (const phase of candidate ? ['candidate'] : ['base', 'gold']) {
     compileSucceeded: /Finished :entry:.*@UnitTestArkTS/u.test(execution.text), freshReport: Boolean(fresh), durationMs: execution.durationMs });
   results.push({ phase, ...grade });
   await fs.writeFile(path.join(output, 'results.json'), JSON.stringify({ kind: candidate ? 'hidden-test-candidate-grade' : 'evaluator-calibration-no-agent',
-    instanceId: id, baseCommit: task.base_commit, environment, ...(candidate ? { candidateSha256: digest(await fs.readFile(candidate)), calibrationDirectory: path.resolve(arg('--calibration-dir')) } : {}), results }, null, 2));
+    instanceId: id, baseCommit: task.base_commit, workspace: source, environment, ...(candidate ? { candidateSha256: digest(await fs.readFile(candidate)), calibrationDirectory: path.resolve(arg('--calibration-dir')) } : {}), results }, null, 2));
   console.log(JSON.stringify({ phase, executed: grade.executed, f2p: `${grade.f2p.passed.length}/${grade.f2p.expected}`, p2p: `${grade.p2p.passed.length}/${grade.p2p.expected}`, errors: grade.runtimeErrors.length, validBase: grade.validFailToPassBase, resolved: grade.resolved }));
 }
 process.exitCode = candidate ? results[0]?.resolved ? 0 : 1 : results[0]?.validFailToPassBase && results[1]?.resolved ? 0 : 1;
