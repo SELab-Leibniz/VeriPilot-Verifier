@@ -71,6 +71,7 @@
     "lib/runtime-v2/device-verify.mjs",
     "lib/runtime-v2/event-identity.mjs",
     "lib/runtime-v2/evidence-state.mjs",
+    "lib/runtime-v2/expected-files.mjs",
     "lib/runtime-v2/fail-open.mjs",
     "lib/runtime-v2/feedback-delivery.mjs",
     "lib/runtime-v2/ground-truth-ledger.mjs",

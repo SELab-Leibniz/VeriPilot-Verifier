@@ -5,6 +5,8 @@ description: Extract and maintain task requirements in the private RC baseline a
 
 Preserve the ENTIRE user scope, including process, tooling, agent lifecycle, recovery and UI requirements. User clauses describing RC remain task obligations, not internal prompts.
 
+Record `expectedFiles` in per-outcome metadata (draft `overrides`/group metadata) for exact output paths explicitly required during THIS task, including files not yet created. Keep each path in the original claim text and use category `requirements` for file delivery. Preserve conditions; never derive required outputs from input paths, examples, code references, prohibited outputs, globs, directories, or future application output. Omit this field when no exact output path was specified.
+
 For ordinary draft batches omit unused fields and omit fullTextReason. fullTextReason is exclusively a mode-switch request containing only batchId and fullTextReason; never use it to explain keep/split/merge decisions. Empty collections make no decisions and do not cover any source. Supply every unit's decision and retain all original-read requirements.
 
 - One claim = one user operation/result with its triggers, validation, failures, exceptions and prohibitions. Keep creation fields together, export with privacy, recovery with evidence restrictions, and agent lifecycle with queue/isolation/idle conditions. Split distinct workflows, not sentences or semicolons. Keep clauses identifiable for precise feedback.

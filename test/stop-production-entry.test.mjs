@@ -9,8 +9,10 @@ import { ensureTask, taskDirectory, withTaskState, findTask, startCorrectionEpoc
 import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-store.mjs";
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { stopFeedbackCurrent } from '../lib/runtime-v2/production-stop.mjs';
+import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 
-async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null } = {}) {
+async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "stop-entry-"));
@@ -22,14 +24,15 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null 
     { type: "assistant", uuid: "assistant-1", message: { id: "assistant-1", role: "assistant", content: "Implementation complete." } },
   ].map(value => JSON.stringify(value)).join("\n") + "\n");
   const task = await ensureTask({ projectRoot: root, sessionId: "session" });
-  const truth = { taskId: task.taskId, version: 1, digest: "frozen", claims: ["A", "B"].map(id => ({ claimId: id,
-    revisionId: `${id}@1`, category: "requirements", text: `Frozen original conversion obligation ${id}`, authority: "USER_EXPLICIT",
-    severity: "HARD", status: "ACTIVE", applicability: "CURRENT_TASK", applicabilityKind: "CURRENT_TASK", verificationTarget: "IMPLEMENTATION" })) };
+  const truth = { taskId: task.taskId, version: 1, digest: "frozen", claims: (expectedFile ? ['A'] : ["A", "B"]).map(id => ({ claimId: id,
+    revisionId: `${id}@1`, category: "requirements", text: expectedFile ? `Deliver ${expectedFile}.` : `Frozen original conversion obligation ${id}`, authority: "USER_EXPLICIT",
+    severity: "HARD", status: "ACTIVE", applicability: "CURRENT_TASK", applicabilityKind: "CURRENT_TASK", verificationTarget: expectedFile ? 'ARTIFACT' : "IMPLEMENTATION",
+    ...(expectedFile ? { expectedFiles: [expectedFile] } : {}) })) };
   const truthPath = path.join(taskDirectory(root, task.taskId), "ground-truth/current.json");
   await fs.mkdir(path.dirname(truthPath), { recursive: true });
   await fs.writeFile(truthPath, JSON.stringify(truth));
   await withTaskState({ projectRoot: root, taskId: task.taskId }, state => { state.groundTruth.version = 1; state.groundTruth.digest = "frozen"; });
-  const metrics = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, "0")}`, i === 15]));
+  const metrics = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, "0")}`, i === (expectedFile ? 11 : 15)]));
   const document = { version: 2, artifacts: [], dynamicGroundTruth: { enabled: true, panel: { size: 0 } },
     implementationCorrection: { enabled: false, platform: null },
     stopCorrection: { enabled: true, metrics, ...stop } };
@@ -42,15 +45,46 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null 
       return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
     }
     assert.equal(input.request.reviewScope.kind, "workspace-stop");
-    return scriptedWorkspaceReview(input, { file: path.join(root, "app.py"), verdict: verdict });
+    return scriptedWorkspaceReview(input, { file: path.join(root, expectedFile ?? "app.py"), verdict: verdict });
   };
   reviewerFactory.supportsReviewCollection = true;
   const directory = path.join(root, "stable-host-state");
   const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory, stopHost: { directory } };
   const event = (hook, extras = {}) => handleRuntimeV2Event({ ...options, input: { session_id: "session", cwd: root,
     transcript_path: transcript, hook_event_name: hook, last_assistant_message: "Implementation complete.", ...extras } });
-  return { root, directory, task, calls, event, document, runtimeV2, reviewerFactory };
+  return { root, directory, task, calls, event, document, runtimeV2, reviewerFactory, transcript };
 }
+
+test('missing output enters the production correction gate, then creation invalidates old feedback and a new Stop reviews the delivered file', async t => {
+  const f = await fixture(t, { expectedFile: 'docs/report.md' });
+  await f.event('SessionStart', { source: 'startup' });
+  const event = stopId => handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: f.runtimeV2, artifacts: [] }, reviewerFactory: f.reviewerFactory,
+    stopHost: { directory: f.directory, startProtocol: { version: 1 }, stopId },
+    input: { session_id: 'session', cwd: f.root, transcript_path: f.transcript, hook_event_name: 'Stop', last_assistant_message: 'Task complete.' } });
+  const first = await event('missing-output');
+  assert.equal(first.stop.status, 'DEVIATION', JSON.stringify(first.stop));
+  assert.equal(first.decision, 'block');
+  assert.match(first.stop.feedback, /docs\/report.md/);
+  assert(first.stop.admission);
+  const store = createStopCorrectionStore({ directory: f.directory });
+  const ledger = await store.inspect('session'), deviations = ledger.stops['missing-output'].currentDeviations;
+  const feedback = () => stopFeedbackCurrent({ directory: f.directory, sessionId: 'session', projectRoot: f.root, taskId: f.task.taskId, deviations });
+  assert.equal((await feedback()).length, 1);
+  const prior = (await findTask({ projectRoot: f.root, sessionId: 'session' })).verification.evidence;
+  assert.equal(await matchesEvidence(prior), true, 'Confirmed absence is valid evidence, not an unreadable dependency');
+  await store.delivery({ sessionId: 'session', admissionId: first.stop.admission.id, status: 'DELIVERED' });
+  await store.observeStart({ sessionId: 'session', admissionId: first.stop.admission.id, executionId: 'repair-output', observationId: 'repair-start', startedAt: Date.now() });
+  await fs.mkdir(path.join(f.root, 'docs'));
+  await fs.writeFile(path.join(f.root, 'docs/report.md'), 'The requested complete report.\n');
+  await store.observeEnd({ sessionId: 'session', admissionId: first.stop.admission.id, executionId: 'repair-output', endedAt: Date.now() });
+  assert.deepEqual(await feedback(), []);
+  assert.equal(await matchesEvidence(prior), false);
+  await fs.appendFile(f.transcript, JSON.stringify({ type: 'assistant', uuid: 'assistant-2', message: { id: 'assistant-2', role: 'assistant', content: 'The required file has been delivered.' } }) + '\n');
+  const second = await event('output-delivered');
+  assert.equal(second.stop.status, 'PASS', JSON.stringify(second.stop));
+  assert.equal(second.stop.admission, null);
+  assert.equal((await store.inspect('session')).used, 1, 'Only the actual business start consumes correction quota');
+});
 
 test("project config accepts the v1.1 fields and compiles one canonical new Stop policy", async t => {
   const f = await fixture(t, { stop: { maxCorrectionsPerSession: 0, maxCorrectionsPerFlow: 0, reviewGroupSize: 1,

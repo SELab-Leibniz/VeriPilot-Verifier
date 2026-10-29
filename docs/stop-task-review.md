@@ -8,6 +8,10 @@
 
 生产 Stop 由 `orchestrator.mjs` 进入 `production-stop.mjs` 与 `assessStopCorrection()`，由 `stop-workspace-review.mjs` 的单一私有会话完成分类、指标、findings 和文件质量审查，`stop-review-round.mjs` 结算逐项回执。没有静默回退旧 Stop 核心。显式只读验证复用审查机制，不领取业务续作准入，也不终止已有自动流程。
 
+明确要求在本次任务交付的具体文件路径以 `expectedFiles` 保存到对应 Ground Truth claim，并进入指标对象。例如 `text: "生成 docs/report.md"` 对应 `expectedFiles: ["docs/report.md"]`。初始抽取、后续刷新和紧凑抽取均支持此字段；它不从当前已存在文件反推，也不把输入、引用代码、示例、通配符、目录或未来运行产物自动升级为必交文件。没有明确路径时不猜测名称；旧账本缺少该字段时保持原行为。
+
+当审查选择 `TASK_COMPLETE` 时，程序对已开启 M12/M16 中具有可信来源、HARD 且 `CURRENT_TASK` 的文件义务逐个检查存在性。确认不存在或目标不是普通文件时，保存程序生成的缺失证据和 `DEVIATION`，沿原有额度、宿主启动协议和反馈链触发主 Agent 补写；不需要读取不存在文件，也不依赖文件质量开关。存在文件不会自动得到 PASS，仍需内容或实现审查。条件、未来、未知范围及中间/阶段输出不自动判缺；权限或 I/O 错误保留为未验证。结算、反馈和报告均重新核对观察状态；文件补齐或原路径状态改变后，旧缺失证据失效。
+
 ## 配置
 
 ```yaml

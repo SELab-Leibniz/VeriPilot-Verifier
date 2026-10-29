@@ -1,0 +1,168 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { applyGroundTruthDelta, loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
+import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
+import { normalizeExpectedFiles, observeExpectedFile, expectedFilesCurrent } from '../lib/runtime-v2/expected-files.mjs';
+import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
+import { draftBaselineSchema, compactBaselineSchema, expandDraftBatch } from '../lib/review-task/baseline-selection.mjs';
+import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
+import { validateStructuredReviewEvidence } from '../lib/runtime-v2/review-evidence-validation.mjs';
+import { validateReviewJudgement } from '../lib/runtime-v2/review-result-validation.mjs';
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
+
+async function fixture(t, { kind = 'CURRENT_TASK', severity = 'HARD', status = 'ACTIVE', metric = 'M12', target = 'ARTIFACT', expected = ['docs/report.md'] } = {}) {
+  const f = await stopProtocolFixture(t, 'findings');
+  f.input.request.reviewScope = { kind: 'workspace-stop' };
+  delete f.input.request.fixedStopClassification;
+  const claim = { ...f.input.evidence.groundTruth.claims[0], text: `Deliver ${expected.join(' and ')}.`, expectedFiles: expected,
+    applicabilityKind: kind, severity, status, verificationTarget: target };
+  const truth = { ...f.input.evidence.groundTruth, claims: [claim], digest: sha256([claim]) };
+  f.input.evidence.groundTruth = truth;
+  await fs.writeFile(f.input.request.groundTruthPath, JSON.stringify(truth));
+  const population = await buildMetricPopulation({ projectRoot: f.root, taskId: f.task.taskId, groundTruth: truth });
+  f.input.request.population = { ...population, metrics: { [metric]: population.metrics[metric] } };
+  const start = async (readAll, submit, classification = 'TASK_COMPLETE') => {
+    await readAll(); return submit('review_checklist', { stopClassification: classification,
+      ...(classification === 'STAGE_COMPLETE' ? { stage: 'design' } : {}) });
+  };
+  const finish = async submit => submit('finish_stop_review', { summary: 'Checked the explicit output contract.' });
+  const run = async (...args) => {
+    const handle = await f.run(...args);
+    assert.notEqual(handle.collection?.complete, false, JSON.stringify(handle.collection));
+    return handle;
+  };
+  return { ...f, truth, start, finish, run };
+}
+
+test('expected paths survive full/draft/compact extraction metadata, ledger revisions and metric projection', async t => {
+  const f = await fixture(t);
+  const metadata = { category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'ARTIFACT' };
+  const batch = { batchId: 1, defaults: metadata, keep: ['S0L1'], overrides: [{ unit: 'S0L1', metadata: { expectedFiles: ['docs/new.md'] } }] };
+  assert.deepEqual(validateJsonSchema(batch, draftBaselineSchema(GROUND_TRUTH_REVIEW_SCHEMA)), []);
+  assert.deepEqual(expandDraftBatch(batch, [{ id: 'S0L1', sourceIndex: 0, line: 1, clauses: 1 }]).operations[0].expectedFiles, ['docs/new.md']);
+  const compact = { batchId: 1, defaults: { ...metadata, operation: 'ADD' }, outcomes: [{ name: 'output', lines: [1, 1], metadata: { expectedFiles: ['docs/new.md'] } }] };
+  assert.deepEqual(validateJsonSchema(compact, compactBaselineSchema(GROUND_TRUTH_REVIEW_SCHEMA)), []);
+  const operation = { ...metadata, operation: 'SUPERSEDE', claimId: 'R1', text: 'Deliver docs/new.md.', expectedFiles: ['docs/new.md'], source: { ref: 'user' } };
+  assert.deepEqual(validateJsonSchema({ summary: 'New output', taskClassification: 'CORRECTION', operations: [operation] }, GROUND_TRUTH_REVIEW_SCHEMA), []);
+  await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [operation] } });
+  const saved = await loadCurrentGroundTruth(f.root, f.task.taskId);
+  assert.deepEqual(saved.claims[0].expectedFiles, ['docs/new.md']);
+  const population = await buildMetricPopulation({ projectRoot: f.root, taskId: f.task.taskId, groundTruth: saved });
+  assert.deepEqual(population.metrics.M12[0].expectedFiles, ['docs/new.md']);
+  assert.notEqual(population.digest, f.input.request.population.digest);
+  await applyGroundTruthDelta({ projectRoot: f.root, taskId: f.task.taskId, delta: { operations: [{ ...operation, text: 'Deliver an inline explanation.', expectedFiles: [] }] } });
+  assert.deepEqual((await loadCurrentGroundTruth(f.root, f.task.taskId)).claims[0].expectedFiles, []);
+});
+
+test('output declarations require named exact paths rather than invented names, globs or directories', () => {
+  assert.deepEqual(normalizeExpectedFiles(['docs\\report.md'], 'Deliver docs/report.md.'), ['docs/report.md']);
+  for (const files of [['invented.md'], ['docs/*.md'], ['docs/'], ['<report>.md'], [''], [null], ['.'], ['https://example.com/report.md'], ['~/report.md'], ['C:report.md']])
+    assert.throws(() => normalizeExpectedFiles(files, 'Deliver docs/report.md.'));
+});
+
+test('a completely absent output gets a trusted deviation without any delivery source read; it cannot be overwritten with PASS', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async ({ readAll, submit }) => {
+    const checklist = await f.start(readAll, submit);
+    assert.equal(checklist.items[0].savedResult.judgement, 'DEVIATION');
+    assert.equal(checklist.pending, 0);
+    assert.equal(checklist.expectedFileChecks[0].status, 'MISSING');
+    await assert.rejects(submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'A completion claim.', citeIds: [] }), /already has/);
+    await f.finish(submit);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+  assert.match(handle.result.metricObjectJudgements[0].reason, /docs\/report.md/);
+  assert.equal(handle.sourceCitations[0].readProof.protocol, 'expected-file-v1');
+  assert.deepEqual(validateStructuredReviewEvidence(handle.result, f.input.request.population.metrics.M12, handle.sourceCitations, f.root), []);
+  assert.equal(await expectedFilesCurrent(handle.reviewEvidence.expectedFiles), true);
+});
+
+test('M16 alone can prove a missing explicitly required production file', async t => {
+  const f = await fixture(t, { metric: 'M16', target: 'IMPLEMENTATION', expected: ['src/app.py'] });
+  const handle = await f.run(async ({ readAll, submit }) => { await f.start(readAll, submit); await f.finish(submit); });
+  assert.equal(handle.result.metricObjectJudgements[0].objectId, 'M16:R1');
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+});
+
+test('existence is no automatic PASS; a directory is not a delivered file', async t => {
+  for (const directory of [false, true]) {
+    const f = await fixture(t);
+    await fs.mkdir(path.join(f.root, 'docs'), { recursive: true });
+    if (directory) await fs.mkdir(path.join(f.root, 'docs/report.md'));
+    else await fs.writeFile(path.join(f.root, 'docs/report.md'), 'Placeholder, not an acceptance result.');
+    const handle = await f.run(async ({ readAll, submit }) => {
+      const page = await f.start(readAll, submit);
+      assert.equal(page.expectedFileChecks[0].status, directory ? 'NOT_FILE' : 'FILE');
+      if (!directory) {
+        assert.equal(page.items[0].savedResult, null);
+        await submit('submit_review', { taskId: 'M12:R1', verdict: 'UNVERIFIED', reason: 'Content still needs review.', citeIds: [] });
+      }
+      await f.finish(submit);
+    });
+    assert.equal(handle.result.metricObjectJudgements[0].judgement, directory ? 'DEVIATION' : 'UNVERIFIED');
+  }
+});
+
+test('conditional/future/unknown/soft obligations and unfinished stages do not acquire automatic missing-output deviations', async t => {
+  for (const options of [{ kind: 'CONDITIONAL' }, { kind: 'FUTURE' }, { kind: 'UNKNOWN' }, { severity: 'SOFT' }, { status: 'RETRACTED' }, { classification: 'INTERMEDIATE' }, { classification: 'STAGE_COMPLETE' }]) {
+    const f = await fixture(t, options);
+    const handle = await f.run(async ({ readAll, submit }) => {
+      const page = await f.start(readAll, submit, options.classification);
+      assert.deepEqual(page.expectedFileChecks, []);
+      for (const item of page.items) await submit('submit_review', { taskId: item.taskId, verdict: 'UNVERIFIED', reason: 'No automatic scope assumption.', citeIds: [] });
+      await f.finish(submit);
+    });
+    assert(!handle.result.metricObjectJudgements.some(row => row.judgement === 'DEVIATION'));
+  }
+});
+
+test('disabled delivery metrics retain no implicit existence duty', async t => {
+  const f = await fixture(t);
+  f.input.request.population.metrics = { M12: [], M16: [] };
+  const handle = await f.run(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit);
+    assert.deepEqual(page.expectedFileChecks, []);
+    await f.finish(submit);
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements, []);
+});
+
+test('creating a checked missing file invalidates the old verdict before settlement and later feedback', async t => {
+  const f = await fixture(t);
+  let checked;
+  await assert.rejects(f.run(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit); checked = page.expectedFileChecks;
+    await fs.mkdir(path.join(f.root, 'docs'));
+    await fs.writeFile(path.join(f.root, 'docs/report.md'), 'Now delivered.');
+    await f.finish(submit);
+  }), { code: 'STOP_TASK_INPUT_CHANGED' });
+  assert.equal(await expectedFilesCurrent(checked), false);
+});
+
+test('permission errors remain unavailable and cannot produce a missing-file verdict', async t => {
+  const f = await fixture(t), stat = fs.stat;
+  t.mock.method(fs, 'stat', async (file, ...args) => {
+    if (String(file).endsWith('report.md')) throw Object.assign(new Error('Denied'), { code: 'EACCES' });
+    return stat(file, ...args);
+  });
+  const observed = await observeExpectedFile(f.root, 'docs/report.md');
+  assert.equal(observed.status, 'UNAVAILABLE');
+  const handle = await f.run(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit);
+    assert.equal(page.items[0].savedResult, null);
+    await submit('submit_review', { taskId: 'M12:R1', verdict: 'UNVERIFIED', reason: 'No filesystem access.', citeIds: [], finish: true });
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
+});
+
+test('a negative receipt cannot prove PASS, a different obligation, an undeclared output, or conditional applicability', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async ({ readAll, submit }) => { await f.start(readAll, submit); await f.finish(submit); });
+  const object = f.input.request.population.metrics.M12[0], citations = handle.sourceCitations;
+  for (const change of [{ sourceId: 'other' }, { sourceRevisionId: 'R1@2' }, { expectedFiles: ['other.md'] }, { applicabilityKind: 'CONDITIONAL' }, { hard: false }])
+    assert.throws(() => validateReviewJudgement({ row: { judgement: 'DEVIATION' }, object: { ...object, ...change }, citations }), /actually read/);
+  assert.throws(() => validateReviewJudgement({ row: { judgement: 'PASS' }, object, citations }), /actually read/);
+});
