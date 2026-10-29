@@ -200,3 +200,11 @@ e8fba6f 完整回归 181 文件、1927 用例，1918 pass、9 skip、0 fail、0 
 24f04d0 的 after002 在组件实验固定 180 秒窗口内仍持续生成，实际结算 completed=false/REVIEWER_DEADLINE，没有候选或语义结论，部分提供方用量不能算零。after003 在独立证据目录保留同一原始驱动，仅将组件 reviewer 窗口改为与业务评测相同的 1800000ms，主仓 runner/grader 未修改，模型与 effort 不变；sourceInputId 与前两次完全相同。该次真实 native 提取 118.3s 完成，九条开发规范保留原 CONDITIONAL 条件，其中工具查找和 UTF-8 正确归 M09；无测试命令目录义务、无裸标题执行项，明确项目检查动作仍在 requirements PROCESS 中。原结果与核对位于 taxonomy-component-after-003 和 taxonomy-audit/component-after-003-audit.json；小样本不证明普遍分类准确率。
 
 冻结 round005：176 runtime 模块逐文件与 Git 24f04d0 对照，较完整回归的 round004 模块全部相同，仅内置提取 Skill 规则细化并核对 Git 内容 SHA、六份 Skill 兼容性。该细化相关回归 53 pass/1 skip/0 fail。第一例 attempt002 现使用 round005 重新运行，实际项目配置再次核验六项默认指标开启；第一次的独立功能满分与 RC UNVERIFIED 保留在首轮统计，不用重跑覆盖原事实。
+
+### 六指标第一例重跑完成与证据归属复盘
+
+attempt002 真实 SETTLED，业务及基础设施完成均 true，原业务 agent.wait=ok，两次私有运行全部 SETTLED，原生 RC PASS，17 个对象全部保存 PASS（13 M09、3 M12、1 M16）。本地 454 pass/2 fail，对比原 452 pass/2 fail 无新增回归、无原用例缺失；独立 F2P 1/1、P2P 611/611，实际执行完整且无全局运行错误。总用量 4041652（含缓存），审查 49 轮；原报告、八次协议错误和完整逐项判断保存在 security_tool_1/attempt-002-review.json。实际导航限于本例及其执行目录，没有再次扫描整个父工作区。
+
+人工复核发现一个不受证据支持的 M09 PASS：理由宣称修改文件没有中文，并将审查者 23:19:43 自己对 DataModels.ets:345-354 的读取当成业务修改后回读。实际完整文件 line289 有八个 Han 字符，原业务 23:13:17 编辑后无该文件回读；之后读取的是另一个 models/data-models.test.ets，也不是被修改的 settings-viewmodel.test.ets。原判定不覆盖，证据及全部后续业务动作固定在 rc-actor-order-scope-evidence.json。正确处理是保留原条件、文件范围和执行者/顺序，缺少可归属的过程证明返回 UNVERIFIED，不能凭缺记录虚构偏差。
+
+另记录提取器将多个条件规范统一标 CURRENT_TASK，导致一次原本有条件的 handoff NOT_APPLICABLE 提交被程序拒绝后改成 vacuous PASS；后续明确逐条设置 CONDITIONAL，保留原触发条件。M16 校验确实拦截了过程引用冒充生产源码，但错误笼统使模型多次改动无关字段；下一版仅细化目标/引用错误位置，并明确运行时写入与开发编辑的区别，不放松版本或引文校验。相关第一组 147 用例为 146 pass/1 skip，另有实际文件 I/O 的三个过程时序夹具校准及协议回归 24/24 通过；夹具最终内容相同，区别仅在修改前读取、修改后局部读取、修改后完整读取，接下来使用真实私有审查验证。该例已经完成两次独立评分，修复后进入第二例，不继续重复第一例替代全套进度。

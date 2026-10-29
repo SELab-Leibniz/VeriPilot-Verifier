@@ -45,6 +45,19 @@ test("production trace rejects omitted or duplicate target comparisons and forei
   assert.throws(() => validateProductionTrace(hidden, ["source"]), /stateless flow/u);
 });
 
+test("production trace identifies the bad target and keeps process citations outside production proof", () => {
+  const trace = stateful(); trace.targetRelations[0].effect = "SAFE";
+  trace.stateTargets[1].citeIds = ["process-read-before-edit"];
+  assert.throws(() => validateProductionTrace(trace, ["source"]), /stateTargets\[1\]\.citeIds.*process-read-before-edit/u);
+  trace.stateTargets[1].citeIds = ["source"];
+  assert.deepEqual(validateProductionTrace(trace, ["source"]), trace);
+  trace.stateTargets[1].id = "business";
+  assert.throws(() => validateProductionTrace(trace, ["source"]), /stateTargets\[1\]\.id duplicates/u);
+  trace.stateTargets[1].id = "auxiliary";
+  trace.stateTargets[1].readers = []; trace.stateTargets[1].writers = [];
+  assert.throws(() => validateProductionTrace(trace, ["source"]), /stateTargets\[1\].*actual production read\/write/u);
+});
+
 async function fixture(t) {
   const scratch = path.resolve(".runtime-correction/m16-trace-tests");
   await fs.mkdir(scratch, { recursive: true });

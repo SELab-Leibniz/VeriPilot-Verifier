@@ -15,6 +15,7 @@ import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from './helpers/mixed-skill-evaluation.mjs';
 import { failureEffectCases, exceptionalFlowCases } from './helpers/failure-effect-fixtures.mjs';
+import { processOrderCases } from './helpers/process-order-fixtures.mjs';
 import * as hostAdapter from '../lib/hosts/claude.mjs';
 
 const args = process.argv.slice(2);
@@ -33,6 +34,7 @@ const model = process.env.RC_EVAL_MODEL ?? 'sonnet';
 const cases = [
   ...failureEffectCases,
   ...exceptionalFlowCases,
+  ...processOrderCases,
   { id: 'mixed-skill', expected: 'MIXED', expectedRows: MIXED_SKILL_EXPECTED, metricId: 'M16', metricIds: ['M08', 'M12', 'M16'],
     code: 'export const accept = value => value + 1;\n',
     requirement: 'Implement accept(value) in app.mjs. The allowed input domain consists only of finite numbers; arrays and every non-number input are outside scope and require no handling or rejection. For each allowed input, return that number plus one without storing state.',
@@ -104,7 +106,7 @@ for (const spec of cases) {
   for (const engine of engines.filter(engine => !spec.expectedRows || engine === 'workspace')) {
     const task = await ensureTask({ projectRoot, sessionId: `${spec.id}-${engine}` });
     const statements = spec.requirements ?? [requirement, ...(spec.extraRequirements ?? []).map(claim => claim.text)];
-    const claims = statements.map((text, index) => ({ claimId: `R${index + 1}`, revisionId: `R${index + 1}@1`, text, category: 'requirements', status: 'ACTIVE', severity: 'HARD', authority: 'USER_EXPLICIT',
+    const claims = statements.map((text, index) => ({ claimId: `R${index + 1}`, revisionId: `R${index + 1}@1`, text, category: spec.category ?? 'requirements', status: 'ACTIVE', severity: 'HARD', authority: 'USER_EXPLICIT',
       applicabilityKind: 'CURRENT_TASK', verificationTarget: spec.extraRequirements?.[index - 1]?.verificationTarget ?? spec.target ?? 'IMPLEMENTATION' }));
     const truth = { taskId: task.taskId, version: 1, digest: sha256(claims), claims };
     const truthPath = path.join(taskDirectory(projectRoot, task.taskId), 'ground-truth/current.json');
@@ -120,6 +122,7 @@ for (const spec of cases) {
     const objects = Object.values(population.metrics).flat();
     const snapshot = { entries: [{ type: 'user', uuid: 'U1', message: { content: statements.join('\n') } },
       { type: 'assistant', uuid: 'A1', message: { content: 'The task is complete. The implementation and requested verification are complete.' } }] };
+    if (spec.prepare) snapshot.entries.splice(1, 0, ...await spec.prepare({ file }));
     const reviewer = { session: 'detached', model, effort: 'low', timeoutMs: 180000, maxOutputTokens: 32768, maxBudgetUsd: 0.25 };
     const input = { projectRoot, sessionCwd: projectRoot, taskId: task.taskId, role: 'stop-reviewer', reviewer, schema: STOP_REVIEW_SCHEMA, hostAdapter, skillRoots,
       excludedEvidencePaths: [path.join(outputRoot, 'results.json')],
