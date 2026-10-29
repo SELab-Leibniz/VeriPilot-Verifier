@@ -210,3 +210,9 @@ attempt002 真实 SETTLED，业务及基础设施完成均 true，原业务 agen
 另记录提取器将多个条件规范统一标 CURRENT_TASK，导致一次原本有条件的 handoff NOT_APPLICABLE 提交被程序拒绝后改成 vacuous PASS；后续明确逐条设置 CONDITIONAL，保留原触发条件。M16 校验确实拦截了过程引用冒充生产源码，但错误笼统使模型多次改动无关字段；下一版仅细化目标/引用错误位置，并明确运行时写入与开发编辑的区别，不放松版本或引文校验。相关第一组 147 用例为 146 pass/1 skip，另有实际文件 I/O 的三个过程时序夹具校准及协议回归 24/24 通过；夹具最终内容相同，区别仅在修改前读取、修改后局部读取、修改后完整读取，接下来使用真实私有审查验证。该例已经完成两次独立评分，修复后进入第二例，不继续重复第一例替代全套进度。
 
 f49e39d 第一项真实过程审查 52.0s 返回 UNVERIFIED，匹配“只有修改前读取”的预期。第二项 67.8s 返回 DEVIATION，原夹具误设 UNVERIFIED，流水线如实停止；原始结果留在 live-stop-evaluation/2026-10-29T23-33-00-256Z。复核后校正的是夹具预期而非生产审查：该样本有明确的修改后 Read offset=1/limit=3 及三行结果，随后宣告完整验证，而实际文件十行且末尾有中文，属于已观察到的错误范围执行。它不同于仅缺少修改后动作记录；后者仍是 UNVERIFIED。仅调整该样本预期为 DEVIATION，保持原问题、文件、真实操作记录与 RC 代码不变，再验证剩余正例及条件分类；原失败预期和实际理由不会改写成首轮通过，也不算 F2P/P2P 提升。
+
+修改后完整读取的真实审查 82.0s PASS，三个实际输出按复核后的正确判定为 UNVERIFIED/DEVIATION/PASS；不是“三次原始自动预期全部匹配”，oracle 更正保存在 rc-process-oracle-correction.json。conditional-component-after001 真实提取 134.9s 完成，导航、UTF-8、hvigor 工具规范均保留 CONDITIONAL，原编码/工具触发条件保留，没有把测试命令目录转成任务执行。该小样本仅支持这些实际选中条件的元数据核对，不宣称穷尽整个项目规范。
+
+继续核对正式落账发现确定性 RC 本体缺陷：实际候选把同一段 baseline 说明分别提成 PROCESS/CURRENT_TASK 和 IMPLEMENTATION/CONDITIONAL；旧自动 ID 只看原文、权威和来源，两条均生成 requirements-975e7cd9e43d14bf，accepted=2 但最终仅剩实现条目。typed-claim-collision-proof/proof.json 在独立目录复现原样覆盖，原业务与原组件未改。修复使新自动 ID 纳入有效证明范围、适用条件、角色及显式输出，并在去重之后拒绝推导 ID 替换已有记录；语义相同的重复请求仍保留旧 ID，现有引用不迁移。能力绑定去重同样保留不同模块。
+
+同一真实 11 操作候选修复后落账为 10 个唯一条目（一个真正重复项合并），过程与实现两条均保留，默认指标投影为 3 M09、4 M12、1 M16，证明在 typed-claim-collision-proof/fixed-proof.json。相关 74 测试为 73 pass/1 skip/0 fail。初始失败日志保留；其中一个辅助测试误以为无变化返回必含 accepted 数组，已改为检查既有 changed=false 接口，其余数据丢失/隐式恢复断言真实复现旧缺陷。下一版冻结前执行完整回归；新样本进入第二例，不以继续重复第一例替代全套进度。
