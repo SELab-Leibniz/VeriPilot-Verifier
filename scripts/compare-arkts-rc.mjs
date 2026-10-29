@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { providerBaseFingerprint, assertNativeProviderIdentity } from './bench/provider-identity.mjs';
 import { arktsRunProfile } from './bench/arkts-run-profile.mjs';
+import { knownBusinessTerminal } from './bench/business-completion.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const runProfile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const phaseArgs = runProfile.explicit ? [`--phase-timeout-ms=${runProfile.phaseTimeoutMs}`] : [];
@@ -33,6 +34,7 @@ const calibrations = Object.fromEntries(cases.map(id => {
 }));
 await fs.mkdir(path.dirname(directory), { recursive: true }); await fs.mkdir(directory);
 const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs', 'scripts/bench/arkts-run-profile.mjs',
+  'scripts/bench/business-completion.mjs', 'scripts/summarize-arkts-run.mjs',
   'scripts/bench/native-arkts-tools.mjs', 'scripts/bench/bounded-process.mjs', 'scripts/bench/prepare-arkts-model-workspace.mjs',
   'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs', 'scripts/bench/short-workspace.mjs',
   path.join(navigationArtifact, 'lib/review-task/live-source-tools.mjs'), path.join(navigationArtifact, 'lib/review-task/source-tools.mjs')];
@@ -102,11 +104,13 @@ try {
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
     if (native && native.metrics.hostVersion !== manifest.hostVersion) throw new Error('Installed host changed during the fixed comparison');
     if (native) await assertNativeProviderIdentity(run, providerBaseSha256);
-    const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted, nativeComplete: native?.infrastructureComplete === true };
+    const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted,
+      nativeComplete: native?.infrastructureComplete === true, businessComplete: native?.businessCompleted === true };
     results.push(row);
-    const capturedFailedAttempt = runProfile.explicit && native?.actualBusinessStart && native?.businessTerminal
+    const capturedFailedAttempt = runProfile.explicit && native?.actualBusinessStart
+      && (native.businessTerminal || knownBusinessTerminal(native.officialBusinessTerminal, native.finalBusinessRunId ?? native.originalRunId))
       && native.privateRuns.every(run => run.status === 'SETTLED') && !execution.interrupted;
-    if (!row.nativeComplete && capturedFailedAttempt) row.gradeQualification = 'Actual captured attempt graded separately from incomplete runtime; not an end-to-end success.';
+    if ((!row.nativeComplete || !row.businessComplete) && capturedFailedAttempt) row.gradeQualification = 'Actual captured attempt graded separately from incomplete runtime; not an end-to-end success.';
     if (native?.infrastructureComplete || capturedFailedAttempt) {
       const scored = await stage(id, arm, 'grade', ['scripts/calibrate-arkts-bench.mjs', `--case=${id}`, `--candidate=${path.join(run, 'candidate.patch')}`,
         `--calibration-dir=${calibrations[id]}`, `--output=${grade}`, ...phaseArgs, ...workspaceArgs, ...toolArgs],
@@ -121,7 +125,7 @@ try {
       resolved: row.grade?.results[0]?.resolved, totalTokens: row.usage?.totals.totalTokens }));
     if ((!native?.infrastructureComplete && !capturedFailedAttempt) || execution.interrupted) throw new Error('Model infrastructure did not settle; preserve state and investigate before further model spend');
   }
-  const finalState = results.every(row => row.nativeComplete) ? 'SETTLED' : 'SETTLED_WITH_RUNTIME_FAILURES';
+  const finalState = results.every(row => row.nativeComplete && row.businessComplete) ? 'SETTLED' : 'SETTLED_WITH_RUNTIME_FAILURES';
   await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ state: finalState, ownerPid: process.pid, endedAt: Date.now(), results: results.map(({ id, arm, nativeComplete }) => ({ id, arm, nativeComplete })) }, null, 2));
   await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: finalState, results }, null, 2));
 } catch (error) {

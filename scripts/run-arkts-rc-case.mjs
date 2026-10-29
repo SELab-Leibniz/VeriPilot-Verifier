@@ -10,6 +10,7 @@ import { prepareArktsModelWorkspace } from './bench/prepare-arkts-model-workspac
 import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { businessMutationPaths } from './bench/business-mutations.mjs';
+import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, latestBusinessRunId } from './bench/business-completion.mjs';
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
 import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
@@ -125,7 +126,7 @@ try {
   const { findTask } = await load('lib/runtime-v2/task-store.mjs');
   const { listNativeRuns } = await load('lib/openclaw/native-runs.mjs');
   const postDirectory = path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions/post-run');
-  let currentTask, post, runs = [], last, businessBudgetAbortRequested = false;
+  let currentTask, post, runs = [], last, businessBudgetAbortRequested = false, officialBusinessTerminal;
   while (manifest.limits.totalTimeoutMs === null || Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
     await gateway.drain(); currentTask = await findTask({ projectRoot, sessionId });
     const names = await fs.readdir(postDirectory).catch(() => []);
@@ -143,15 +144,23 @@ try {
       const aborted = await gateway.request('chat.abort', { sessionKey, runId, preserveSideRuns: true }).then(response => ({ response }), error => ({ error: error.message }));
       await fs.writeFile(path.join(outputRoot, 'business-budget-abort.json'), JSON.stringify({ runId, sessionKey, requestedAt: Date.now(), ...aborted }, null, 2));
     }
+    const activeBusinessRunId = latestBusinessRunId(gateway.metrics().modelStarts, sessionId, runId);
     if (['IDLE', 'CLOSED'].includes(post?.phase) && gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId)
-      && runs.every(run => run.status === 'SETTLED')) break;
+      && runs.every(run => run.status === 'SETTLED')) {
+      officialBusinessTerminal = await readBusinessTerminal(gateway.request, activeBusinessRunId);
+      if (knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId) || !profile.hostNoTimeout) break;
+    }
     if (profile.explicit && post?.reason === 'HOST_RUN_RECONCILIATION_REQUIRED' && runs.every(run => run.status === 'SETTLED')) {
       if (!profile.hostNoTimeout) break;
-      const terminal = await gateway.request('agent.wait', { runId, timeoutMs: 1000 });
-      if ((terminal.result ?? terminal)?.runId === runId && (terminal.result ?? terminal)?.status === 'error') break;
+      officialBusinessTerminal = await readBusinessTerminal(gateway.request, activeBusinessRunId);
+      if (knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId) && officialBusinessTerminal.status === 'error') break;
     }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
+  const finalBusinessRunId = latestBusinessRunId(gateway.metrics().modelStarts, sessionId, runId);
+  if (!knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId))
+    officialBusinessTerminal = await readBusinessTerminal(gateway.request, finalBusinessRunId);
+  await fs.writeFile(path.join(outputRoot, 'official-business-terminal.json'), JSON.stringify(officialBusinessTerminal, null, 2));
   const session = await gateway.runtime.subagent.getSession({ sessionKey });
   await fs.writeFile(path.join(outputRoot, 'business-session.json'), JSON.stringify(session, null, 2));
   const nativeTranscript = await fs.readFile(path.join(gateway.root, `${sessionId}.jsonl`), 'utf8');
@@ -166,7 +175,8 @@ try {
   await fs.writeFile(path.join(outputRoot, 'candidate.patch'), patch);
   await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths,
     basis: 'Successful native write/edit tool receipts; fixed checks and host bootstrap are environment producers. Full workspace.patch retained.' }, null, 2));
-  const infrastructureComplete = ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED');
+  const infrastructureComplete = ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED')
+    && knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId);
   result = { ...manifest, state: infrastructureComplete ? 'SETTLED' : 'INCOMPLETE', sessionId, sessionKey, originalRunId: runId, elapsedMs: Date.now() - startedAt,
     verification: currentTask?.verification?.status, taskId: currentTask?.taskId, postPhase: post?.phase,
     endReason: currentTask?.verification?.status ? 'RC_REVIEW_SETTLED' : 'HOST_ENDED_WITHOUT_REVIEW',
@@ -174,7 +184,8 @@ try {
     patchBytes: patch.length, actualBusinessStart: gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId),
     infrastructureComplete,
     businessBudgetAbortRequested,
-    businessTerminal, businessCompleted: businessTerminal?.status === 'success' && businessTerminal.aborted === false && businessTerminal.timedOut === false,
+    businessTerminal, officialBusinessTerminal, finalBusinessRunId,
+    businessCompleted: businessCompleted(officialBusinessTerminal, finalBusinessRunId),
     runtimeReason: currentTask?.verification?.reasonCode ?? post?.reason ?? null,
     score: 'NOT_YET_GRADED: evaluate candidate.patch with hidden tests in an independent evaluator worktree' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
