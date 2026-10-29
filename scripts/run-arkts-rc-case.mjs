@@ -10,7 +10,7 @@ import { prepareArktsModelWorkspace } from './bench/prepare-arkts-model-workspac
 import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
 import { createNativeGatewayEvaluation, nativeModelContextWindow } from './helpers/native-gateway-evaluation.mjs';
 import { businessMutationPaths, inheritedBusinessMutationScope } from './bench/business-mutations.mjs';
-import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker } from './bench/business-completion.mjs';
+import { knownBusinessTerminal, businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver } from './bench/business-completion.mjs';
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
 import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile.mjs';
 import { verifyFrozenArtifact } from './bench/frozen-artifact-verification.mjs';
@@ -176,6 +176,13 @@ try {
   const entry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' }), sessionId = entry.sessionId;
   const runId = randomUUID(), startedAt = Date.now();
   const businessRun = createBusinessRunTracker(runId, sessionId);
+  const businessTerminalObserver = createBusinessTerminalObserver();
+  async function observeBusinessTerminal(force = false) {
+    const terminal = await businessTerminalObserver.poll(gateway.request, businessRun.runId,
+      () => gateway.metrics().modelStarts, post?.phase, { force });
+    for (const event of businessTerminalObserver.drainEvents()) await fs.appendFile(path.join(outputRoot, 'business-terminal-observations.jsonl'), JSON.stringify(event) + '\n');
+    return terminal;
+  }
   const continuationLimits = `Host business timeout: ${profile.mainTimeoutMs === 0 ? 'none' : `${profile.mainTimeoutMs}ms`}; RC assessment timeout: ${profile.assessmentTimeoutMs}ms; private review timeout: ${profile.privateTimeoutMs}ms.`;
   const prompt = resumeEntry && process.argv.includes('--verify-pending-rc')
     ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Its final RC acceptance remains pending. Give a truthful status based on existing work; normal automatic post-run RC review will execute after your response. Preserve the implementation and address only genuine remaining blockers. ${continuationLimits} No evaluator results, hidden tests, implementation hints or expected answers are supplied.`
@@ -197,6 +204,7 @@ try {
     }
     runs = currentTask ? await listNativeRuns(projectRoot, currentTask.taskId) : [];
     businessRun.observe(post);
+    officialBusinessTerminal = await observeBusinessTerminal();
     const state = { state: 'RUNNING', ownerPid: process.pid, sessionId, sessionKey, runId, startedAt,
       selectedBusinessRunId: businessRun.runId,
       actualBusinessStart: gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId),
@@ -211,19 +219,17 @@ try {
     const activeBusinessRunId = businessRun.runId;
     if (['IDLE', 'CLOSED'].includes(post?.phase) && gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId)
       && runs.every(run => run.status === 'SETTLED')) {
-      officialBusinessTerminal = await readBusinessTerminal(gateway.request, activeBusinessRunId);
       if (knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId) || !profile.hostNoTimeout) break;
     }
     if (profile.explicit && post?.reason === 'HOST_RUN_RECONCILIATION_REQUIRED' && runs.every(run => run.status === 'SETTLED')) {
       if (!profile.hostNoTimeout) break;
-      officialBusinessTerminal = await readBusinessTerminal(gateway.request, activeBusinessRunId);
       if (knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId) && officialBusinessTerminal.status === 'error') break;
     }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   const finalBusinessRunId = businessRun.runId;
   if (!knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId))
-    officialBusinessTerminal = await readBusinessTerminal(gateway.request, finalBusinessRunId);
+    officialBusinessTerminal = await observeBusinessTerminal(true);
   await fs.writeFile(path.join(outputRoot, 'official-business-terminal.json'), JSON.stringify(officialBusinessTerminal, null, 2));
   const session = await gateway.runtime.subagent.getSession({ sessionKey });
   await fs.writeFile(path.join(outputRoot, 'business-session.json'), JSON.stringify(session, null, 2));
