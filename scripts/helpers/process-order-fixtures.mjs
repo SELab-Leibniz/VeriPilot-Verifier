@@ -9,7 +9,10 @@ const requirement = 'During this task, after the business actor last writes app.
 
 export const processOrderCases = [
   { id: 'business-read-before-write', expected: 'UNVERIFIED', mode: 'before' },
-  { id: 'business-partial-read-after-write', expected: 'UNVERIFIED', mode: 'partial' },
+  // This is an observed wrong-scope read-back followed by completion, not
+  // merely a missing post-write record: the required whole-file action was
+  // attempted with an explicit three-line limit on a longer file.
+  { id: 'business-partial-read-after-write', expected: 'DEVIATION', mode: 'partial' },
   { id: 'business-full-read-after-write', expected: 'PASS', mode: 'after' },
 ].map(({ mode, ...fixture }) => ({ ...fixture, metricId: 'M09', category: 'developmentStandards', target: 'PROCESS', code, requirement,
   async prepare({ file }) {

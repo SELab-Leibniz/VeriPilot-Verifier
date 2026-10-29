@@ -27,6 +27,12 @@ test('controlled process fixtures preserve actual read/write order, contents and
       assert.match(readText, /value \+ 1/u);
     }
     assert.equal(/\p{Script=Han}/u.test(readText), fixture.id !== 'business-partial-read-after-write');
+    if (fixture.id === 'business-partial-read-after-write') {
+      assert.equal(read.input.limit, 3);
+      assert.equal(readText.split('\n').length, 3);
+      assert(readText.split('\n').length < fixture.code.split('\n').length);
+      assert.equal(fixture.expected, 'DEVIATION', 'An observed truncated read-back is concrete wrong-scope execution.');
+    }
     assert.equal(fixture.expected === 'PASS', fixture.id === 'business-full-read-after-write');
     finals.push(await fs.readFile(file, 'utf8'));
   }
