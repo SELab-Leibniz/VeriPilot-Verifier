@@ -120,7 +120,13 @@ test('owned subscriptions are released without removing other diagnostics listen
 test('installed host direct provider transport is observed without a model call or host mutation', {
   skip: !process.env.RC_OPENCLAW_HOST_ROOT,
 }, async t => {
-  const f = await fixture(t, (request, response) => { request.resume(); response.writeHead(200, { 'content-type': 'text/event-stream' });
+  const requestSettings = [];
+  const f = await fixture(t, async (request, response) => {
+    let raw = ''; for await (const part of request) raw += part;
+    const payload = JSON.parse(raw);
+    requestSettings.push({ thinkingPresent: Object.hasOwn(payload, 'thinking'),
+      thinkingType: payload.thinking?.type ?? null, maxTokens: payload.max_tokens });
+    response.writeHead(200, { 'content-type': 'text/event-stream' });
     response.end('event: message_start\ndata: {"type":"message_start","message":{"id":"local","type":"message","role":"assistant","model":"controlled-transport","content":[],"stop_reason":null,"usage":{"input_tokens":1,"output_tokens":0}}}\n\n' +
       'event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":1}}\n\n' +
       'event: message_stop\ndata: {"type":"message_stop"}\n\n'); });
@@ -130,10 +136,20 @@ test('installed host direct provider transport is observed without a model call 
   const model = { id: 'controlled-transport', name: 'controlled-transport', provider: 'anthropic', api: 'anthropic-messages', baseUrl: f.origin,
     reasoning: false, input: ['text'], contextWindow: 128000, maxTokens: 1024, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } };
   const stream = createStream(model)(model, { messages: [{ role: 'user', content: 'Local transport contract only.', timestamp: Date.now() }] },
-    { apiKey: 'controlled-local-not-a-secret', maxTokens: 16 });
-  const result = await stream.result(); await f.timing.close();
+    { apiKey: 'controlled-local-not-a-secret', maxTokens: 16, reasoning: 'off' });
+  const result = await stream.result();
   assert.equal(result.stopReason, 'stop', JSON.stringify({ stopReason: result.stopReason, error: result.errorMessage }));
-  assert.equal(f.timing.requestCount, 1); assert.equal(globalThis.fetch, original);
+  // The pinned host emits explicit disabled thinking only when the model
+  // advertises that capability. A false capability flag leaves it unspecified.
+  assert.deepEqual(requestSettings[0], { thinkingPresent: false, thinkingType: null, maxTokens: 16 });
+  const capable = { ...model, reasoning: true };
+  const second = await createStream(capable)(capable,
+    { messages: [{ role: 'user', content: 'Local transport contract only.', timestamp: Date.now() }] },
+    { apiKey: 'controlled-local-not-a-secret', maxTokens: 16, reasoning: 'off' }).result();
+  assert.equal(second.stopReason, 'stop');
+  assert.deepEqual(requestSettings[1], { thinkingPresent: true, thinkingType: 'disabled', maxTokens: 16 });
+  await f.timing.close();
+  assert.equal(f.timing.requestCount, 2); assert.equal(globalThis.fetch, original);
   assert.equal((await f.rows()).find(row => row.event === 'response').status, 200);
   assert.equal((await f.rows()).at(-1).event, 'response_end');
 });

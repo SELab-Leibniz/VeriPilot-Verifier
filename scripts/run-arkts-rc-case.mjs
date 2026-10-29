@@ -129,6 +129,10 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
   modelCapacity: { contextWindowTokens, maximumOutputTokens: 32768, appliedToCustomProvider: Boolean(process.env.ANTHROPIC_BASE_URL),
     source: arg('--context-window-tokens') ? 'explicit CLI declaration' : 'legacy benchmark default' },
+  modelThinkingPolicy: { businessRequested: 'off', customModelReasoningCapability: process.env.ANTHROPIC_BASE_URL ? false : null,
+    providerThinkingDisabledVerified: false, qualification: process.env.ANTHROPIC_BASE_URL
+      ? 'Pinned native transport omits the thinking field for this non-reasoning custom-model declaration. Requested off does not prove remote thinking is disabled; no request override or effort change is applied.'
+      : 'The installed provider model definition is used. Requested off alone does not prove the emitted request or remote thinking policy; no request override or effort change is applied.' },
   limits: { ...profile, correctionAdmissions: 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default', sessionReset: EXPERIMENT_SESSION_RESET },
   originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,

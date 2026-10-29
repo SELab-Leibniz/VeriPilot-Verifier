@@ -142,3 +142,11 @@ attempt-003 使用 444da1f，沿 attempt-001 原会话 c593642c-9b35-4213-ac21-a
 ## security_tool_7（运行中）
 
 采用 bf004ba harness，PID 27144、终端 19613、会话 3277d70c-0cf6-4fee-84e0-84bed7075f23，项目 .runtime-correction/b/biz-9ed20ea2fcb2。原始本地 674/674 通过，已确认真实业务模型启动。公开问题要求模式切换部分失败/抛错时回滚规则、还原前模式/映射并重载服务确认状态；模式切换与保护开关互斥，重叠调用返回 in progress。八项公开要求清单位于 security_tool_7/requirements-audit.json。源码原本只分别检查自身 busy 标志；规则失败无事务恢复，抛错时跳过 UI 重载。原服务已仅在 failedItems 为空时保存目标模式，不能把问题叙述当成当前源码逐字事实。完成真实结算、独立评分和复盘后再进入第八例。
+
+### 第七例等待期间：声明 off 不等于提供方已禁用思考
+
+第七例持续出现长响应但正常返回数据，尚未形成候选。对安装宿主及其请求构造代码只读核对，发现自定义模型声明 reasoning=false 时，thinking=off 只得到内部 thinkingEnabled=false，外层 capability guard 仍会省略请求的 thinking 字段。不能把内部 off 声称为提供方已禁用思考。thinking-policy-proof-002/proof.json 使用实际安装宿主的 transport、仅本地假 SSE 响应验证：reasoning=false/off 时字段缺失，reasoning=true/off 时发出 disabled，两次本地请求、远程请求与模型调用均 0；自然退出成功。首个诊断脚本在写完证明后强制退出，触发 Windows 句柄关闭断言，原日志保留，不冒称干净退出；移除强制退出的第二份证明与独立测试均正常完成。
+
+provider-fetch-timing.test.mjs 的真实安装宿主测试加入这两种明确请求设置断言，7/7 通过、0 skip，见 thinking-contract-regression.log。业务原转录的计数快照也确实观察到 thinking 块，保存前缀长度和 SHA，仅记录数量/长度，不保存新的思考文本。该证据证明 off 未有效阻止可见思考块，不推断远程隐藏计算，也不声称解释所有耗时。
+
+后续清单补记 modelThinkingPolicy：业务请求 off，自定义 capability=false，提供方禁用未验证。当前及后续实际模型、capability、请求设置、质量/努力程度均保持原协议；不通过修改宿主或请求来强制关思考。此项修复是如实记录实验设置，不能算作性能提升。当前第七例仍使用启动时已加载的 bf004ba harness，原 manifest 与请求不热改；iteration7 完整回归早于这项清单/传输测试更新，新增部分由上述 7 项原生传输测试覆盖。
