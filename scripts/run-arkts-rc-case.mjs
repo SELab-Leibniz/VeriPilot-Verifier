@@ -20,6 +20,8 @@ import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+const pagedReads = process.argv.includes('--paged-reads');
+const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 'bench_nav', 'bench_check'];
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -113,7 +115,7 @@ if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
   if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
 }
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
-const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests });
+const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads });
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
   rcSource: verifiedRcCommit,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs',
@@ -121,7 +123,8 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
     'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
     'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
-  businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: ['read', 'write', 'edit', 'bench_nav', 'bench_check'],
+  businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: businessToolNames,
+  businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
   limits: { ...profile, correctionAdmissions: 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default' },
   originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,
@@ -134,7 +137,7 @@ const hostRoot = arg('--host-root'); if (!hostRoot) throw new Error('--host-root
 let gateway, result, restoredRecordCount = 0;
 try {
   gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
-    extraPluginPaths: [extra], businessToolNames: ['read', 'write', 'edit', 'bench_nav', 'bench_check'], confineBusinessFiles: true,
+    extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
     disableMemoryFlush: true });
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
@@ -174,7 +177,8 @@ try {
     ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Its final RC acceptance remains pending. Give a truthful status based on existing work; normal automatic post-run RC review will execute after your response. Preserve the implementation and address only genuine remaining blockers. The host has no task completion deadline; RC phases remain 30 minutes. No evaluator results, hidden tests, implementation hints or expected answers are supplied.`
     : resumeEntry ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Complete the implementation and actual checks, rather than stopping at analysis. Preserve and use the existing progress and compaction notes. The human has removed the host task completion deadline; RC review phases remain limited to 30 minutes. No new implementation hints or hidden evaluation data are supplied.`
     : `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.${baselineLocalTests ? `\nThe unmodified original local tests were executed before your changes: ${JSON.stringify({ counts: baselineLocalTests.counts, failures: baselineLocalTests.failures })}. bench_check test compares against this baseline. Preserve passing behavior and distinguish existing failures from regressions; a baseline match does not establish the requested fix.` : ''}`;
-  await gateway.request('chat.send', { sessionKey, sessionId, message: prompt, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: profile.mainTimeoutMs });
+  const readGuidance = pagedReads ? '\nUse bench_read for bounded source pages. Locate relevant symbols with bench_nav grep before reading their line ranges; follow nextOffset only when additional context is needed.' : '';
+  await gateway.request('chat.send', { sessionKey, sessionId, message: prompt + readGuidance, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: profile.mainTimeoutMs });
   const load = file => import(pathToFileURL(path.join(gateway.pluginRoot, file)).href);
   const { findTask } = await load('lib/runtime-v2/task-store.mjs');
   const { listNativeRuns } = await load('lib/openclaw/native-runs.mjs');

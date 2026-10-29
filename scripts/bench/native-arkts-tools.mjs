@@ -4,7 +4,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs = 180000, baselineLocalTests = null }) {
+export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs = 180000, baselineLocalTests = null, pagedReads = false }) {
   if (!Number.isSafeInteger(checkTimeoutMs) || checkTimeoutMs < 1000) throw new Error('A positive project-check timeout is required.');
   const directory = path.join(outputRoot, 'bench-tools'); await fs.mkdir(directory);
   const checkScript = fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url));
@@ -13,7 +13,7 @@ export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot,
   const localEvidenceModule = new URL('./local-test-evidence.mjs', import.meta.url).href;
   await fs.writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: 'rc-arkts-bench-tools', version: '1.0.0', type: 'module', openclaw: { extensions: ['./index.mjs'] } }));
   await fs.writeFile(path.join(directory, 'openclaw.plugin.json'), JSON.stringify({ id: 'rc-arkts-bench-tools', name: 'Controlled ArkTS benchmark tools',
-    main: './index.mjs', activation: { onStartup: true }, contracts: { tools: ['bench_nav', 'bench_check'] },
+    main: './index.mjs', activation: { onStartup: true }, contracts: { tools: ['bench_nav', 'bench_check', ...(pagedReads ? ['bench_read'] : [])] },
     configSchema: { type: 'object', additionalProperties: false, properties: {} } }));
   await fs.writeFile(path.join(directory, 'index.mjs'), `import path from 'node:path';
 import {createLiveSourceTools} from ${JSON.stringify(navigationModule)};
@@ -26,6 +26,12 @@ const result=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
 const inside=file=>{const r=path.relative(root,file);if(r==='..'||r.startsWith('..'+path.sep)||path.isAbsolute(r))throw Error('Outside benchmark workspace');};
 export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register(api){
  const tools=new Map(createLiveSourceTools(root,{onPath(requested,real){inside(requested);inside(real);}}).map(t=>[t.name,t]));
+ ${pagedReads ? `api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_read',label:'Read source page',
+ description:'Read an exact UTF-8 source page inside this workspace. First locate relevant functions with bench_nav grep, then read their line ranges. Default 120 lines, maximum 250. Offsets are one-based. The returned nextOffset gives access to every remaining line; null means the file ends. Avoid reading whole large files when a targeted range suffices.',
+ parameters:{type:'object',additionalProperties:false,required:['path'],properties:{path:{type:'string'},offset:{type:'integer',minimum:1},limit:{type:'integer',minimum:1,maximum:250}}},
+ async execute(id,args,signal){const offset=args.offset??1,limit=args.limit??120;
+  if(!Number.isSafeInteger(offset)||offset<1||!Number.isSafeInteger(limit)||limit<1||limit>250)throw Error('Use a positive one-based offset and a limit from 1 to 250.');
+  return tools.get('read').execute(id,{path:args.path,offset,limit},signal);}}, {names:['bench_read']});` : ''}
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_nav',label:'Workspace navigation',
  description:'Navigate only this workspace. find matches literal path fragments, never globs or regex: use main.ets rather than *.ets. grep searches literal UTF-8 text. ls lists a directory. Narrow path first and follow nextOffset to page. Navigation grants no execution or correctness evidence.',
  parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['ls','find','grep']},path:{type:'string'},pattern:{type:'string',description:'Literal path fragment for find, or literal text for grep; not a glob.'},offset:{type:'integer'},limit:{type:'integer'},includeGenerated:{type:'boolean'}}},
