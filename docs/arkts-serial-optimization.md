@@ -160,3 +160,7 @@ provider-fetch-timing.test.mjs 的真实安装宿主测试加入这两种明确�
 回查第六例原 RC 审查发现一项具体的理由过度保证：M16 的派发失败项 PASS 理由还声称 repository save failure 没有 partial state，而被引用的 PeripheralDevicePolicyRepository.set 在 saveRecords 之前已修改 records，catch 仅返回 false，没有回滚。原要求限定系统派发失败；该要求本身仍可能正确 PASS，不能据额外错误说明直接翻转整个原判定。原审查结果 SHA、源码 SHA、精确分支与条件区别保存为 rc-plugin-failure-effects-evidence.json，不向业务提供评分内容。
 
 插件工作区审查提示与共享 productionTrace.producerValue 描述补充：保留准确失败操作/条件，区分内存、持久化和外部系统状态，按顺序检查失败前写入与补偿，别名快照必须独立，理由也不能扩大保证。原 version1 见证结构、判定与证据来源规则保持兼容。新增四个独立 RC 审查语义样本（失败前已写内存、正确补偿、别名假补偿、仅派发失败要求），直接运行源码对 false/throw 路径校准其预期结果；它们不是 ArkTS 隐藏测试，也不是外围跑测能力开发。校准、M16 协议及工作区审查 24 项回归通过，接下来用现有显式 native workspace 审查入口运行语义验证，再冻结新插件用于后续样本。当前第七例冻结 round001 未变。
+
+RC 本体改动 3d76dd2 的四项真实 native production workspace 审查均匹配预期：失败前已写内存 DEVIATION（65.2s）、正确补偿 PASS（80.7s）、别名假补偿 DEVIATION（74.8s）、仅限定派发失败 PASS（62.0s）。最后一例理由明确允许成功派发后持久化失败仍保留追加值，没有额外要求原任务未声明的持久化原子性。四项总计 20 次提供方请求、4 个审查启动且全部结算、业务续作启动为 0。原始回执/理由/来源保留在 rc-failure-effects-live-results.json。该结果只验证这四例，不宣称任意语义已形式证明，也没有固定配对的 benchmark 提升结论。
+
+相同提交完整回归 iteration8：181 文件、1924 用例，1916 pass、8 skip、0 fail、0 timeout。此次启用安装宿主原生契约测试，skip 数与之前默认环境不同，不能把全部新增通过数视作新修复。冻结 artifacts/round-002/runtime-corrector-openclaw，并按 Git 提交逐模块核验，兼容 Skill 验证通过。与 round001 比较仅两个 runtime 模块变化：stop-workspace-review.mjs 和 production-trace.mjs；见 round-002/verification.json 与 changed-runtime-modules.json。当前第七例仍运行 round001；后续第八例使用新插件，公共业务导航继续固定 round001，外围不新增功能、模型/努力程度不变。
