@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import { arktsRunProfile, renderArktsRunConfig } from '../scripts/bench/arkts-run-profile.mjs';
 import { shortArktsWorkspace } from '../scripts/bench/short-workspace.mjs';
 import { loadRuntimePlan } from '../lib/runtime-plan.mjs';
+import { DEFAULT_STOP_METRICS, enabledStopMetricIds } from '../lib/runtime-v2/metric-policy.mjs';
 
 test('an explicit 30-minute profile gives each phase its window and preserves later phases', () => {
   const p = arktsRunProfile('1800000');
@@ -41,4 +42,7 @@ test('the actual generated project YAML resolves every review role and phase to 
   assert.equal(plan.limits.semanticReviewTimeoutMs, 1800000);
   assert.equal(plan.runtimeV2.stopCorrection.assessmentTimeoutMs, 1800000);
   assert.equal(plan.runtimeV2.implementationCorrection.deviceBudgetMs, 1800000);
+  assert.deepEqual(plan.runtimeV2.stopCorrection.metrics, DEFAULT_STOP_METRICS,
+    'The benchmark must inherit the RC metric defaults instead of narrowing review to M16.');
+  assert.deepEqual(enabledStopMetricIds(plan.runtimeV2.stopCorrection), ['M08', 'M09', 'M12', 'M13', 'M15', 'M16']);
 });

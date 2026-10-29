@@ -1,5 +1,7 @@
 # ArkTS 逐例调优记录（2026-10-30）
 
+当前有效口径更正：原 serial-20261030 是显式 M16-only 诊断，不能代表默认指标评测。用户提供参考配置后，已确认默认开启 M08/M09/M12/M13/M15/M16；在跑第七例按原配置结算，后续转入 serial-default-metrics-20261030，从第一例起按六项默认指标重新补齐全部十三例。原始数据保留，两个口径不混合汇总。
+
 本轮按用户要求逐个执行 13 个样本：真实业务运行 → 独立原生隐藏评分 → 阅读轨迹和源码 → 通用 harness 修复及回归 → 进入下例。目标是全量 F2P、P2P 尽可能达到 95%。所有样本均用于迭代开发，本轮不能宣称未见留出集泛化成绩。
 
 工作分支为 `codex/rc-general-efficiency-bench`。MatrixAssistant、其 OpenClaw、数据集和 Huawei 工具安装只读。实验索引为 `.runtime-correction/system-optimization/serial-20261030/`。按编号 1–13 推进；每次尝试和独立评分各用新目录，保留失败及原始消耗。
@@ -164,3 +166,11 @@ provider-fetch-timing.test.mjs 的真实安装宿主测试加入这两种明确�
 RC 本体改动 3d76dd2 的四项真实 native production workspace 审查均匹配预期：失败前已写内存 DEVIATION（65.2s）、正确补偿 PASS（80.7s）、别名假补偿 DEVIATION（74.8s）、仅限定派发失败 PASS（62.0s）。最后一例理由明确允许成功派发后持久化失败仍保留追加值，没有额外要求原任务未声明的持久化原子性。四项总计 20 次提供方请求、4 个审查启动且全部结算、业务续作启动为 0。原始回执/理由/来源保留在 rc-failure-effects-live-results.json。该结果只验证这四例，不宣称任意语义已形式证明，也没有固定配对的 benchmark 提升结论。
 
 相同提交完整回归 iteration8：181 文件、1924 用例，1916 pass、8 skip、0 fail、0 timeout。此次启用安装宿主原生契约测试，skip 数与之前默认环境不同，不能把全部新增通过数视作新修复。冻结 artifacts/round-002/runtime-corrector-openclaw，并按 Git 提交逐模块核验，兼容 Skill 验证通过。与 round001 比较仅两个 runtime 模块变化：stop-workspace-review.mjs 和 production-trace.mjs；见 round-002/verification.json 与 changed-runtime-modules.json。当前第七例仍运行 round001；后续第八例使用新插件，公共业务导航继续固定 round001，外围不新增功能、模型/努力程度不变。
+
+### 用户纠正：恢复默认指标范围
+
+参考文件 C:/Users/user/Documents/防作弊将历史文件临时移出/261026纠偏配置/.runtime-corrector/config.yaml 没有显式 metrics 开关，按当前 RC/冻结 round002 默认解析，应开启 M08（Skill step compliance）、M09（Development standard compliance）、M12（Requirement execution rate）、M13（Acceptance closure rate）、M15（Critical journey pass rate）、M16（Production implementation coverage）；其他十项关闭，独立 fileQualityReviewEnabled=false。之前 runner 显式把 M01-M15 全设 false，是评测范围收窄，不是插件默认。按用户明确要求，删除这一覆盖，使新启动样本继承 RC 默认指标；没有复制参考文件的其他路径或参数，没有更改模型、额度、时间窗口。
+
+新增实际生成 YAML 的默认继承断言先复现错误，删除覆盖后与 metric policy 的 18 项回归全过。用冻结 round002 的真实 loadConfig 解析新生成配置，与用户参考的有效指标逐项一致；全局 Stop enabled=true，零模型调用，并核对在跑第七例的归档/项目配置逐字节仍一致。证明位于 default-metrics-policy-preflight/proof.json，参考文件保持只读。
+
+原六例分数仍保留为 M16-only 诊断，不作为六默认指标下的 >=95% 证据。当前第七例完成真实纠偏/复审与独立评分后，进入新目录 serial-default-metrics-20261030，按原顺序从第一例重新评测全部十三例，继续只优化 RC 插件本体。各指标开启不代表必有适用对象，后续按实际基线、范围与回执报告，不把空对象或 M16 PASS 当作其他指标通过。

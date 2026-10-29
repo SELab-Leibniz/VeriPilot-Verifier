@@ -38,8 +38,6 @@ ${profile.explicit ? `  deviceBudgetMs: ${profile.phaseTimeoutMs}\n` : ''}stopCo
   maxCorrectionsPerFlow: 1
   assessmentTimeoutMs: ${profile.assessmentTimeoutMs}
   feedbackReserveMs: ${profile.feedbackReserveMs}
-  metrics:
-${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, '0')}: ${i === 15}`).join('\n')}
 reviewers:
   defaults:
     model: anthropic/${model}
