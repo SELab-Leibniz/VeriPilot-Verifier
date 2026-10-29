@@ -11,7 +11,13 @@
 - 原版 c33bae6 不支持该配置，因此本次先续接当前版，不静默用旧限制启动原版。原配对目标保留待后续匹配协议；本次续接结果不能混入旧 10 分钟/30 分钟配对作为同协议效率结论。
 - 宿主不设完成时限不代表真实 SDK/模型错误会变成成功；按外层正式终态与 RC 实际结算记录。中间嵌入尝试的错误或上下文自动压缩不作为整体任务结束依据。
 
-## 当前交付进展（2026-10-29 22:00）
+## 当前交付进展（2026-10-29 22:15）
+
+**第四次恢复已完整通过。** 冻结版 `bc9fb9b3f55ebd618525ed4721490fc2db37d55b` 的真实业务运行 `2d890c9e-4e42-4b83-b567-7ef9e7eebd7c` 获得公开 `agent.wait: ok`，原任务 `oc-scope-d2f85228-38e3-46e6-a608-54e191c49c8b` 于 22:13:32 结算为 `COMPLETED / PASS`。基线提取和最终审查两项私有运行均为 `SETTLED`，没有迁移错误、业务预算中止或运行时错误。此次宿主及 RC 流程约 399683ms（6 分 40 秒）；不是从头实现整个案例的耗时。
+
+随后独立原生评分完成：**F2P 2/2、P2P 746/746**，完整执行、修复通过、缺失和错误均为 0。补丁与上一轮一致（58248 字节），宿主只读检查后由正常最终审查完成验收，没有制造文件修改。原始账本逐字节恢复，SHA 与源一致，已用次数保留为 0，不重置预算。公开终态、私有运行和评分汇总在 `.runtime-correction/system-optimization/security2-natural-host-004/completion-proof.json`；原始记录、评分、用量及恢复回执均保留在同目录。
+
+本结果证明真实续接可以在宿主无完成时限、RC 阶段 30 分钟下完成端到端流程。它继承了前轮真实进度，不能当作全新输入的公平对照或据此声称整体提速。后续仍使用 security_tool_3 / security_tool_2 两例、交替顺序、双方相同无截止配置验证；security_tool_2 已用于排障，不再称未见样本。项目模板中的 Stop 总评估设置也统一为 1800000ms，其他已有阶段设置保持 30 分钟。
 
 第三次恢复使用冻结版 `fb897bb83c7c09531d38596ac57ab49c01214cce`，真实业务运行 `235b7f3d-d6b1-43d6-aaf8-a5c497b62a47` 于 21:08–21:17 自然完成。公开 `agent.wait` 回执为 `ok`，基础执行完整；没有业务或全流程截止。宿主原生构建及 749 项本地测试通过，独立评分为 **F2P 2/2、P2P 746/746**。但 RC 最终验收为 `UNVERIFIED / STOP_SESSION_MIGRATION_REQUIRED`，私有审查尚未开始，仍不能称完整 RC 端到端成功。
 
@@ -19,7 +25,7 @@
 
 对迁移阻挡的未验证任务，真实后续只读回复可以继续正常最终审查；使用已有任务基线，不要求为触发审查而制造文件修改。已经通过的任务不会因此重复审查。原生生命周期、账本恢复、任务绑定、业务身份及运行配置共 **56/56** 项测试通过。第四次恢复将使用 `--verify-pending-rc`，在模型准入前校验上一轮正式业务成功、未完成验收和真实账本/任务绑定；不传入独立评分、隐藏测试或实现答案。
 
-当前工作目录为 `C:/Users/user/.codex/worktrees/rc-natural-host-delivery/runtime-corrector-toy`，分支 `codex/rc-host-natural-completion`。持久入口为 `security2-natural-host-003/experiment.json`；第四次恢复启动后更新到 `security2-natural-host-004/`。旧记录均保留，勿按下方历史入口重复启动旧运行。
+当前工作目录为 `C:/Users/user/.codex/worktrees/rc-natural-host-delivery/runtime-corrector-toy`，分支 `codex/rc-host-natural-completion`。最新持久入口为 `security2-natural-host-004/experiment.json` 与 `completion-proof.json`，控制端已退出。旧记录均保留，勿按下方历史入口重复启动旧运行。
 
 ## 初始版本和验证记录
 

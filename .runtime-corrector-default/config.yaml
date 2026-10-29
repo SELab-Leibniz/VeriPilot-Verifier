@@ -113,7 +113,7 @@ stopCorrection:
   maxCorrectionsPerSession: 2
   maxCorrectionsPerFlow: 2
 
-  assessmentTimeoutMs: 3600000
+  assessmentTimeoutMs: 1800000
   feedbackReserveMs: 180000
   reviewGroupSize: 3
 
