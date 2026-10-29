@@ -120,3 +120,11 @@
 原控制器只在 RC 全部结束后才查询公开 agent.wait，遇到长审查超过宿主约 10 分钟终态缓存。安装宿主源码只读核对，隔离零模型复现 terminal-cache-proof/proof.json 记录先 ok、推进 11 分钟后 timeout/queue；原运行真实查询也返回 timeout/queue，而非正式成功。不得从 RC PASS 反推公开终态。原 owner PID 12544 的精确命令、无子进程及三项私有结算状态复核后，仅停止空等控制器，封存 attempt-001 为 INCOMPLETE。七个真实业务文件、44102 字节候选、原始报告、独立私有会话快照和 terminal-loss.json 均保存，保留原任务身份与原 ledger。原候选先独立评分，生命周期缺失与功能分数分开。
 
 修复在业务离开 RUNNING 时及时读取并留存真实公开终态，审查结束使用同一回执；纠偏换 run 或同一 run 新模型调用使旧回执失效，查询期间开始的新调用和早于该调用的结束时间均拒绝。超时、不可用、错配身份不转换为成功，真实查询日志单独保留。终态及相关协议/写入归属 15 项定向回归通过（terminal-retention-regression.log）；iteration5 全量回归早于此修复。下一步沿真实会话和工作目录续接 attempt-002，验证终态留存后再进入第七例，不把原缺失证据覆盖掉。
+
+独立评分 attempt-001-grade 完整执行，无运行/解析错误，F2P 7/7、P2P 616/617，resolved=false。唯一失败为原 U-USB-008 空事件用例（device_deny 对 default_allow）；原始评分原样保存，不放宽计分，不向业务会话提供隐藏评分内容。该候选仍缺少原公开终态，不计作正式接受。
+
+attempt-002 沿原会话恢复后，宿主默认凌晨 4 点 daily reset 按 sessionStartedAt 判断过期（仅改 updatedAt 无效），归档恢复的转录并启动不同 sessionId。原生作用域/ledger 恢复本身已严格通过，但重置后绑定失效，不能冒认续跑成功。发现身份变化后核对专属 PID 42720 和无子进程并停止，保存 session-drift.json 与 INCOMPLETE 结果；模型只调用读取/导航及启用工具，七文件业务候选逐字节未变。误绑定请求报告 376069 tokens（含缓存），中断未报告消耗仍未知。
+
+隔离实验改用宿主正式支持的 reset.mode=idle 且省略 idleMinutes（原生解析为 0，即无每日/空闲重置），不改历史时间戳，所有新样本使用同一策略。循环检查真实 SessionEntry 与业务诊断中的 sessionId；任一变化写入失败证明、请求停止精确 run，拒绝接纳新历史。13 项定向回归通过，包含安装宿主原生 freshness 函数验证；session-continuity-preflight-001/proof.json 由真实 Gateway 严格加载配置，原转录 SHA 保持一致，跨 4 点仍 fresh，模型和提供方调用均 0。接下来 attempt-003 仍从 attempt-001 的原始历史、作用域与 ledger 恢复。
+
+完整回归 iteration6：179 文件 / 1920 用例，1897 pass、23 skip、0 fail、0 timeout。其运行期间开发了会话修复，初始文件清单未包含新测试，故不冒称最终完整覆盖，稍后以已提交版本重跑。

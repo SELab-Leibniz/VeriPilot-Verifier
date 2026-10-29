@@ -18,6 +18,7 @@ import { restoreStopSessionLedger } from './bench/restore-stop-session.mjs';
 import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
+import { assertBusinessSessionIdentity, EXPERIMENT_SESSION_RESET } from './bench/session-continuity.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const contextWindowTokens = nativeModelContextWindow(arg('--context-window-tokens'));
@@ -121,7 +122,7 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   rcSource: verifiedRcCommit,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
-    'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
+    'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/session-continuity.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
     'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: businessToolNames,
@@ -129,7 +130,7 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   modelCapacity: { contextWindowTokens, maximumOutputTokens: 32768, appliedToCustomProvider: Boolean(process.env.ANTHROPIC_BASE_URL),
     source: arg('--context-window-tokens') ? 'explicit CLI declaration' : 'legacy benchmark default' },
   limits: { ...profile, correctionAdmissions: 1 },
-  hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default' },
+  hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default', sessionReset: EXPERIMENT_SESSION_RESET },
   originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,
   recoveryIntent: process.argv.includes('--verify-pending-rc') ? 'pending-rc-acceptance' : 'complete-business-task',
   inputPolicy: 'Only public input and original base source; evaluator test_patch/gold not installed in business workspace.',
@@ -142,7 +143,7 @@ try {
   gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
-    disableMemoryFlush: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) });
+    disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) });
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
   if (resumeEntry) {
     const original = resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`);
@@ -196,7 +197,10 @@ try {
   const postDirectory = path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions/post-run');
   let currentTask, post, runs = [], last, businessBudgetAbortRequested = false, officialBusinessTerminal;
   while (manifest.limits.totalTimeoutMs === null || Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
-    await gateway.drain(); currentTask = await findTask({ projectRoot, sessionId });
+    await gateway.drain();
+    const admittedEntry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
+    assertBusinessSessionIdentity({ sessionId, sessionKey, runId }, admittedEntry, gateway.metrics().modelStarts);
+    currentTask = await findTask({ projectRoot, sessionId });
     const names = await fs.readdir(postDirectory).catch(() => []);
     for (const name of names.filter(name => name.endsWith('.json'))) {
       const record = await fs.readFile(path.join(postDirectory, name), 'utf8').then(JSON.parse, () => null);
@@ -264,6 +268,17 @@ try {
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
   await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: result.state, ownerPid: process.pid, sessionId,
     businessCompleted: result.businessCompleted, infrastructureComplete, officialBusinessStatus: officialBusinessTerminal.status, endedAt: Date.now() }));
+} catch (error) {
+  if (error.code === 'ARKTS_SESSION_IDENTITY_DRIFT') {
+    const evidence = { kind: 'native-business-session-identity-failure', observedAt: new Date().toISOString(), ...error.evidence };
+    await fs.writeFile(path.join(outputRoot, 'session-identity-failure.json'), JSON.stringify(evidence, null, 2), { flag: 'wx' });
+    await gateway.request('chat.abort', { sessionKey: evidence.sessionKey, runId: evidence.runId }).catch(() => {});
+    result = { ...manifest, state: 'INCOMPLETE', ...error.evidence, businessCompleted: false, infrastructureComplete: false,
+      endReason: error.code, officialBusinessTerminal: null, qualification: 'Replacement session activity cannot establish genuine business continuation.' };
+    await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2), { flag: 'wx' });
+    await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ ...result, endedAt: Date.now() }, null, 2));
+  }
+  throw error;
 } finally { await gateway?.close(); }
 // Native host singletons may retain observers; only awaited settled runs are
 // eligible for a normal result. This development process owns no desktop host.

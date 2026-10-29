@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
+import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
 
 export function nativeModelContextWindow(value = 128000) {
   const tokens = Number(value);
@@ -26,7 +27,7 @@ async function freePort() {
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
-  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, contextWindowTokens }) {
+  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   if (contextWindowTokens !== undefined && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
@@ -62,7 +63,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
         tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
-    session: { store: path.join(root, 'sessions.json') },
+    session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
       api: 'anthropic-messages', baseUrl: process.env.ANTHROPIC_BASE_URL,
       models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768 }],
