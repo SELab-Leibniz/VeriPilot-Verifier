@@ -69,3 +69,42 @@ test('live and frozen find explain wildcard misses without silently changing lit
     assert.equal(end.hint, undefined);
   }
 });
+
+test('recursive entry budget reports an incomplete miss and preserves direct and narrowed external access', async t => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-budget-'));
+  t.after(() => fs.rm(parent, { recursive: true, force: true }));
+  const root = path.join(parent, 'project'); await fs.mkdir(root);
+  for (const file of ['a.ts', 'b.ts', 'c.ts', 'z.ts']) await fs.writeFile(path.join(parent, file), file === 'z.ts' ? 'needle\n' : 'other\n');
+  const tools = new Map(createLiveSourceTools(root, { navigationBudget: { entries: 3, bytes: 1024 } }).map(tool => [tool.name, tool]));
+  const partial = JSON.parse(toolText(await tools.get('grep').execute('broad', { path: '..', pattern: 'needle' })));
+  assert.deepEqual(partial.hits, []);
+  assert.equal(partial.scanIncomplete, true);
+  assert.equal(partial.scanned.entries, 3);
+  assert.equal(partial.nextOffset, null);
+  assert.match(partial.hint, /incomplete.*Narrow/s);
+  assert.match(toolText(await tools.get('read').execute('known', { path: '../z.ts' })), /needle/);
+  const narrow = JSON.parse(toolText(await tools.get('grep').execute('narrow', { path: '../z.ts', pattern: 'needle' })));
+  assert.equal(narrow.hits.length, 1);
+  assert.equal(narrow.scanIncomplete, undefined);
+});
+
+test('recursive byte and empty-directory budgets bound scans without manufacturing search completeness', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-byte-budget-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, 'a.ts'), '12345678');
+  await fs.writeFile(path.join(root, 'b.ts'), 'needle');
+  const grep = createLiveSourceTools(root, { navigationBudget: { entries: 100, bytes: 8 } }).find(tool => tool.name === 'grep');
+  const partial = JSON.parse(toolText(await grep.execute('bytes', { pattern: 'needle' })));
+  assert.equal(partial.scanIncomplete, true);
+  assert.equal(partial.scanned.bytes, 8);
+  assert.deepEqual(partial.hits, []);
+  const narrowed = JSON.parse(toolText(await grep.execute('one-file', { path: 'b.ts', pattern: 'needle' })));
+  assert.equal(narrowed.hits.length, 1);
+  const directories = path.join(root, 'directories'); await fs.mkdir(directories);
+  for (let i = 0; i < 6; i++) await fs.mkdir(path.join(directories, String(i)));
+  const find = createLiveSourceTools(root, { navigationBudget: { entries: 3, bytes: 8 } }).find(tool => tool.name === 'find');
+  const empty = JSON.parse(toolText(await find.execute('empty-dirs', { path: directories, pattern: 'not-present' })));
+  assert.equal(empty.scanIncomplete, true);
+  assert.equal(empty.scanned.entries, 3);
+  assert.deepEqual(empty.hits, []);
+});

@@ -184,3 +184,11 @@ RC 本体改动 3d76dd2 的四项真实 native production workspace 审查均匹
 RC 本体继续只改工作区审查提示和共享 productionTrace 描述：多效果条目逐项追踪适用结果，返回失败与异常拒绝分别检查，finally 只证明自身操作，不能用回滚或忙标志清理替代另一个必需效果；依赖下层吞掉异常时需要相关边界的完整契约。version1 结构及判定协议不变。新增三个通用 RC 语义夹具，分别为异常跳过必需刷新、finally 正确刷新、原要求明确排除异常刷新；直接执行代码独立校准三种结果，防止扩大义务。相关回归 25/25 通过，真实 native production 审查另行保存。此迭代不是外围框架功能开发。
 
 f67ab07 的三项真实 native production 审查均匹配：遗漏异常刷新 DEVIATION（68.4s）、finally 正确刷新 PASS（72.3s）、原要求排除异常刷新 PASS（75.6s），三个私有运行全部结算、业务启动为 0；结果在 rc-exception-paths-live-results.json。它们只验证 M16 审查语义，不代替六指标 benchmark。round003 对 Git 的 176 个 runtime 模块和 6 个 Skill 验证通过，较 round002 仍只改两个审查模块。冻结插件实际解析新评测配置与参考文件的十六个指标开关逐项一致，证明在新套件 policy-preflight/proof.json。新套件已从 security_tool_1 重新启动，公共导航仍固定 round001；原七例诊断与失败留存，按新套件独立统计全部十三例。
+
+### 六指标第一例：规范分类与 RC 搜索预算
+
+新第一例确认实际项目配置开启全部六默认指标。本地构建成功，测试 453 pass/2 fail，与原 452 pass/2 fail 对比无新增回归或原用例缺失。冻结原审查依据中，提取器将项目 hvigor 工具查找与 UTF-8 规范保存为 PROCESS constraints，而非 developmentStandards；其后投影到关闭的 M11，M09 因分类错误无对象。另有仅含“### 构建”的 PROCESS requirements。实际选择只有 5 个 M12 和 1 个 M16。原依据 SHA、原条目和用同一配置在独立证据目录重算的路由结果保存在新套件 taxonomy-audit/evidence.json；这不是规范均不适用，也不能为了填充指标而任意改类别。
+
+下一版 RC 内置 baseline-extraction Skill 明确类别与证据归属独立：编码、测试、构建/工具等项目开发规范归 developmentStandards，并保留原条件与权威；普通边界、任务步骤、验收条件和端到端路径分别按原义分类，不从开关反推类别，不制造或重复对象。标题/示例不是独立执行义务。
+
+同一轮审查的真实 source_grep 以整个 program_workspace 为根搜索 PASSWORD_LENGTH_OPTIONS，长时间无返回，宿主记录 blocked_tool_call。新 RC 工作区提示/工具描述首先指向 task.workspace，并给递归导航增加条目/字节预算及明确的未完成状态；绝对路径、父目录和直接读取继续可用。原调用参数在新工具组件上实测 756ms 后返回 scanIncomplete=true（1090 条目、16767973 bytes、0 命中），证明在 taxonomy-audit/navigation-budget-proof.json；没有给原运行热换工具，没有把零命中当不存在，也不以组件耗时宣称端到端提升。相关 172 用例为 171 pass/1 skip/0 fail，见 rc-taxonomy-navigation-regression.log。原轮仍按冻结 round003 继续，下一版需真实提取器验证后才用于下一样本。
