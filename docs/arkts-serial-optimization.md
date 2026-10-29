@@ -216,3 +216,5 @@ f49e39d 第一项真实过程审查 52.0s 返回 UNVERIFIED，匹配“只有修
 继续核对正式落账发现确定性 RC 本体缺陷：实际候选把同一段 baseline 说明分别提成 PROCESS/CURRENT_TASK 和 IMPLEMENTATION/CONDITIONAL；旧自动 ID 只看原文、权威和来源，两条均生成 requirements-975e7cd9e43d14bf，accepted=2 但最终仅剩实现条目。typed-claim-collision-proof/proof.json 在独立目录复现原样覆盖，原业务与原组件未改。修复使新自动 ID 纳入有效证明范围、适用条件、角色及显式输出，并在去重之后拒绝推导 ID 替换已有记录；语义相同的重复请求仍保留旧 ID，现有引用不迁移。能力绑定去重同样保留不同模块。
 
 同一真实 11 操作候选修复后落账为 10 个唯一条目（一个真正重复项合并），过程与实现两条均保留，默认指标投影为 3 M09、4 M12、1 M16，证明在 typed-claim-collision-proof/fixed-proof.json。相关 74 测试为 73 pass/1 skip/0 fail。初始失败日志保留；其中一个辅助测试误以为无变化返回必含 accepted 数组，已改为检查既有 changed=false 接口，其余数据丢失/隐式恢复断言真实复现旧缺陷。下一版冻结前执行完整回归；新样本进入第二例，不以继续重复第一例替代全套进度。
+
+cc66a20 全仓回归首轮 183 文件、1934 用例，1924 pass、9 skip、1 fail、0 timeout。唯一失败是 post-run-dispatch 的排队截止测试：固定 pause(100) 后仍见 REVIEW_QUEUED；该文件单独 18/18 通过，原日志与单测日志均保留。源码显示截止前后的落盘与排队结算异步发生，测试不能把 100ms 当作完成保证。仅将测试改为最多 2 秒观察终态，生产 40ms 截止保持不变，仍要求首审占用槽位时第二审变为 UNVERIFIED 且审查调用数仍为 1；未放宽结果或并发断言。随后重新完整回归，首轮失败不改写成通过。

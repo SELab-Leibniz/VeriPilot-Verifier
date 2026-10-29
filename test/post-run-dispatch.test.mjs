@@ -148,7 +148,12 @@ test("review concurrency is bounded and queue wait consumes the review deadline"
   await f.manager.started(a, "run-a"); await f.manager.started(b, "run-b");
   await f.manager.candidate(a, { runId: "run-a", text: "done", reviewBudgetMs: 10000 }); await started.promise;
   await f.manager.candidate(b, { runId: "run-b", text: "done", reviewBudgetMs: 40 });
-  await pause(100); assert.equal(f.manager.snapshot(b).phase, "IDLE");
+  // The absolute review budget remains 40ms. Under concurrent filesystem
+  // load its expiry still needs asynchronous persistence/queue settlement;
+  // observe that terminal state rather than promise a 100ms wall-clock turn.
+  const settlementDeadline = Date.now() + 2000;
+  while (f.manager.snapshot(b).phase !== "IDLE" && Date.now() < settlementDeadline) await pause(10);
+  assert.equal(f.manager.snapshot(b).phase, "IDLE");
   assert.equal(f.manager.snapshot(b).reviewStatus, "UNVERIFIED"); assert.equal(calls, 1);
   gate.resolve(); await f.manager.drain();
 });
