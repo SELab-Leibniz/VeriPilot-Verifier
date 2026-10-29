@@ -118,7 +118,7 @@ if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local
 const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads });
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
   rcSource: verifiedRcCommit,
-  harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs',
+  harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
     'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
     'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),

@@ -6,7 +6,8 @@ import { channel } from 'node:diagnostics_channel';
 
 const errorType = error => ['AbortError', 'TimeoutError', 'TypeError', 'Error'].includes(error?.name) ? error.name : 'OtherError';
 
-export async function installProviderFetchTiming({ file, origin }) {
+export async function installProviderFetchTiming({ file, origin, progressIntervalMs = 15000 }) {
+  if (!Number.isSafeInteger(progressIntervalMs) || progressIntervalMs < 1) throw new Error('A positive stream progress interval is required.');
   await fs.mkdir(path.dirname(file), { recursive: true });
   const selectedOrigin = new URL(origin).origin, active = new Map(), subscriptions = [];
   let phase = 'setup', serial = 0, writes = Promise.resolve(), closed = false;
@@ -27,7 +28,8 @@ export async function installProviderFetchTiming({ file, origin }) {
   subscribe('create', ({ request }) => {
     if (new URL(request.origin).origin !== selectedOrigin) return;
     const base = { id: ++serial, phase, startedAt: new Date().toISOString() };
-    active.set(request, { base, started: Date.now(), bytes: 0, bodyChunks: 0, firstBodyMs: null });
+    const started = Date.now();
+    active.set(request, { base, started, lastProgressAt: started, bytes: 0, bodyChunks: 0, firstBodyMs: null });
     save({ ...base, event: 'request' });
   });
   subscribe('headers', ({ request, response }) => {
@@ -39,6 +41,12 @@ export async function installProviderFetchTiming({ file, origin }) {
     if (!state) return;
     state.firstBodyMs ??= Date.now() - state.started;
     state.bytes += chunk.byteLength; state.bodyChunks++;
+    const now = Date.now();
+    if (now - state.lastProgressAt >= progressIntervalMs) {
+      state.lastProgressAt = now;
+      save({ ...state.base, event: 'response_progress', durationMs: now - state.started,
+        bytes: state.bytes, bodyChunks: state.bodyChunks, firstBodyMs: state.firstBodyMs });
+    }
   });
   subscribe('trailers', ({ request }) => finish(request, 'response_end'));
   subscribe('error', ({ request, error }) => finish(request, 'request_error', errorType(error)));

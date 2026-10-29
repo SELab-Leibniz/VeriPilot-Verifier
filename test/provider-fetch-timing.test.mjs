@@ -8,7 +8,7 @@ import { channel } from 'node:diagnostics_channel';
 import { pathToFileURL } from 'node:url';
 import { installProviderFetchTiming } from '../scripts/helpers/provider-fetch-timing.mjs';
 
-async function fixture(t, handler) {
+async function fixture(t, handler, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-fetch-timing-'));
   const probe = '/__rc_local_transport_probe__';
   const server = http.createServer((request, response) => {
@@ -33,7 +33,7 @@ async function fixture(t, handler) {
     }
   }
   if (!origin) throw new Error('No fetch-compatible local test port was allocated');
-  timing = await installProviderFetchTiming({ file: path.join(root, 'timing.jsonl'), origin });
+  timing = await installProviderFetchTiming({ file: path.join(root, 'timing.jsonl'), origin, ...options });
   return { origin, timing, rows: async () => (await fs.readFile(timing.file, 'utf8')).trim().split('\n').map(JSON.parse) };
 }
 
@@ -64,6 +64,27 @@ test('HTTP failures are observable while another origin and response bodies rema
   assert.equal(f.timing.requestCount, 1);
   assert.equal((await f.rows()).find(row => row.event === 'response').status, 429);
   assert.equal((await fs.readFile(f.timing.file, 'utf8')).includes('PRIVATE_RESPONSE'), false);
+});
+
+test('a long response reports byte progress before completion without recording stream content', async t => {
+  let finish;
+  const secret = 'PRIVATE_STREAM_PROGRESS';
+  const f = await fixture(t, (request, response) => {
+    request.resume(); response.writeHead(200); response.write(secret);
+    setTimeout(() => response.write(secret), 15);
+    finish = () => response.end(secret);
+  }, { progressIntervalMs: 1 });
+  const response = await fetch(f.origin), text = response.text();
+  let rows = [];
+  for (const end = Date.now() + 2000; Date.now() < end;) {
+    rows = await f.rows().catch(() => []);
+    if (rows.some(row => row.event === 'response_progress' && row.bytes >= Buffer.byteLength(secret) * 2)) break;
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert(rows.some(row => row.event === 'response_progress' && row.bytes >= Buffer.byteLength(secret) * 2 && row.bodyChunks > 0));
+  assert(!rows.some(row => row.event === 'response_end'));
+  finish(); assert.equal(await text, secret.repeat(3)); await f.timing.close();
+  assert.equal((await fs.readFile(f.timing.file, 'utf8')).includes(secret), false);
 });
 
 test('closing a stalled observation is immediate and does not cancel its actual request', async t => {
