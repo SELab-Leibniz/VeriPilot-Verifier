@@ -35,7 +35,15 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_nav',label:'Workspace navigation',
  description:'Navigate only this workspace. find matches literal path fragments, never globs or regex: use main.ets rather than *.ets. grep searches literal UTF-8 text. ls lists a directory. Narrow path first and follow nextOffset to page. Navigation grants no execution or correctness evidence.',
  parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['ls','find','grep']},path:{type:'string'},pattern:{type:'string',description:'Literal path fragment for find, or literal text for grep; not a glob.'},offset:{type:'integer'},limit:{type:'integer'},includeGenerated:{type:'boolean'}}},
- async execute(id,args,signal){return tools.get(args.action).execute(id,args,signal);}}, {names:['bench_nav']});
+ async execute(id,args,signal){
+  const response=await tools.get(args.action).execute(id,args,signal);
+  if(args.action==='grep'&&(args.pattern??'').includes('|')){
+   const value=JSON.parse(response.content.map(block=>block.text??'').join(''));
+   if(value.hits?.length===0)return {...response,...result({...value,
+    hint:'grep matches literal text. The pipe character is not OR/alternation. Search each alternative in a separate call or use a shorter exact fragment. This empty result does not establish that the individual alternatives are absent.'})};
+  }
+  return response;
+ }}, {names:['bench_nav']});
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_check',label:'Project check',
  description:'Run a fixed project check with the installed HarmonyOS toolchain. build uses devecocli; test returns actual runtime pass/fail counts for the available original local tests. Full output is saved at outputPath. No arbitrary commands.',
  parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['build','test']}}},

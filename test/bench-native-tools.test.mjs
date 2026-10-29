@@ -18,6 +18,11 @@ test('generated business tools load, confine navigation, and remain absent from 
   const nav = factories[0]({ sessionKey: 'agent:main:business' });
   const result = await nav.execute('nav', { action: 'grep', pattern: 'needle' });
   assert.equal(JSON.parse(result.content[0].text).hits.length, 1);
+  const alternatives = JSON.parse((await nav.execute('literal', { action: 'grep', pattern: 'needle|absent' })).content[0].text);
+  assert.deepEqual(alternatives.hits, []); assert.match(alternatives.hint, /pipe character is not OR/);
+  await fs.writeFile(path.join(project, 'literal.ets'), 'literal|pipe\n');
+  const actualPipe = JSON.parse((await nav.execute('pipe', { action: 'grep', pattern: 'literal|pipe' })).content[0].text);
+  assert.equal(actualPipe.hits.length, 1); assert.equal(actualPipe.hint, undefined);
   await assert.rejects(nav.execute('escape', { action: 'ls', path: '..' }), /Outside benchmark workspace/);
   assert.equal(factories[1]({ sessionKey: 'agent:main:business' }).name, 'bench_check');
 });
