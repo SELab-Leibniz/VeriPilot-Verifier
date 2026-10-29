@@ -41,3 +41,28 @@ test('different target scopes are never replaced and inactive sources are never 
   await fs.writeFile(other.source, JSON.stringify({ ...scope, inactive: true }));
   assert.equal((await restoreNativeProjectScope(other.params)).status, 'SOURCE_INACTIVE_NO_REACTIVATION');
 });
+
+test('an interrupted host allocation needs exact independent capture of the result, identity and scope bytes', async t => {
+  const f = await fixture(t);
+  const resultFile = path.join(f.params.sourceRun, 'result.json');
+  const original = JSON.parse(await fs.readFile(resultFile, 'utf8'));
+  delete original.taskId;
+  await fs.writeFile(resultFile, JSON.stringify({ ...original, operatorInterrupted: true }));
+  await assert.rejects(restoreNativeProjectScope(f.params), /no verified capture/);
+  const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+  const resultBytes = await fs.readFile(resultFile), scopeBytes = await fs.readFile(f.source);
+  const proof = { kind: 'captured-native-task-binding', identity: f.params.identity, projectRoot: f.params.projectRoot,
+    taskId: 'original-task', resultSha256: sha(resultBytes), sourceScopeSha256: sha(scopeBytes) };
+  const proofFile = path.join(f.params.sourceRun, 'native-binding-capture.json');
+  await fs.writeFile(proofFile, JSON.stringify(proof));
+  const restored = await restoreNativeProjectScope(f.params);
+  assert.equal(restored.taskId, 'original-task'); assert.match(restored.bindingAuthority, /host allocation/);
+  assert((await fs.readFile(restored.target)).equals(scopeBytes));
+  await fs.appendFile(resultFile, ' ');
+  await assert.rejects(restoreNativeProjectScope(f.params), /no verified capture/);
+  await fs.writeFile(resultFile, resultBytes); await fs.appendFile(f.source, ' ');
+  await assert.rejects(restoreNativeProjectScope(f.params), /no verified capture/);
+  await fs.writeFile(f.source, scopeBytes);
+  await fs.writeFile(proofFile, JSON.stringify({ ...proof, identity: { ...proof.identity, sessionKey: 'another-session' } }));
+  await assert.rejects(restoreNativeProjectScope(f.params), /no verified capture/);
+});

@@ -17,6 +17,31 @@ if (!Number.isSafeInteger(manifest.ownerPid) || manifest.ownerPid < 1 || progres
   || !progress.sessionId || !progress.runId || progress.actualBusinessStart !== true) throw new Error('Missing persisted business-owner observations');
 try { process.kill(manifest.ownerPid, 0); throw new Error('Experiment owner is still alive'); }
 catch (error) { if (error.code !== 'ESRCH') throw error; }
+async function captureNativeBinding() {
+  const resultBytes = await fs.readFile(path.join(directory, 'result.json'));
+  const result = JSON.parse(resultBytes);
+  if (result.operatorInterrupted !== true || result.actualBusinessStart !== true || result.sessionId !== progress.sessionId
+    || result.sessionKey !== progress.sessionKey) throw new Error('Native binding capture requires this interrupted business identity');
+  const identity = { agentId: 'main', sessionId: result.sessionId, sessionKey: result.sessionKey };
+  const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+  const hash = sha(JSON.stringify(identity));
+  const source = path.join(directory, 'native-host/state/plugins/runtime-corrector/session-projects', hash, 'scope.json');
+  const bytes = await fs.readFile(source).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+  if (!bytes) return { status: 'NO_NATIVE_SCOPE_FOUND' };
+  const scope = JSON.parse(bytes);
+  if (scope.source !== 'host' || !scope.taskId || scope.inactive || (result.taskId && result.taskId !== scope.taskId)
+    || path.relative(path.resolve(manifest.projectRoot), path.resolve(scope.projectRoot)) !== '') throw new Error('Native binding capture authority mismatch');
+  const proof = { kind: 'captured-native-task-binding', identity, projectRoot: manifest.projectRoot, taskId: scope.taskId,
+    sourceScopeSha256: sha(bytes), resultSha256: sha(resultBytes) };
+  const file = path.join(directory, 'native-binding-capture.json');
+  const existing = await fs.readFile(file, 'utf8').then(JSON.parse, error => { if (error.code === 'ENOENT') return null; throw error; });
+  if (existing && JSON.stringify(existing) !== JSON.stringify(proof)) throw new Error('Existing native binding capture conflicts');
+  if (!existing) await fs.writeFile(file, JSON.stringify(proof, null, 2), { flag: 'wx' });
+  return { status: existing ? 'ALREADY_IDENTICAL' : 'CAPTURED_AUTHENTIC_BINDING', ...proof };
+}
+if (process.argv.includes('--capture-binding-only')) {
+  console.log(JSON.stringify(await captureNativeBinding())); process.exit(0);
+}
 if (await fs.stat(path.join(directory, 'result.json')).catch(() => null)) throw new Error('Preserve existing result.json');
 const git = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const projectRoot = await fs.realpath(manifest.projectRoot);
@@ -53,5 +78,6 @@ const result = { ...manifest, state: 'INCOMPLETE', operatorInterrupted: true, se
   endReason: 'HARNESS_DIAGNOSTIC_INTERRUPTION', officialBusinessTerminal: null, patchBytes: patch.length,
   interruption: 'interruption.json', score: 'NOT_YET_GRADED; interrupted lifecycle is separate from functional score.' };
 await fs.writeFile(path.join(directory, 'result.json'), JSON.stringify(result, null, 2), { flag: 'wx' });
+const nativeBinding = await captureNativeBinding();
 await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ ...progress, state: 'INTERRUPTED', endedAt: Date.now(), reason: arg('--reason') }, null, 2));
-console.log(JSON.stringify({ state: result.state, mutationPaths, patchBytes: patch.length, nonzeroUsageRecords, requestCount, completeUsageKnown: false }));
+console.log(JSON.stringify({ state: result.state, mutationPaths, patchBytes: patch.length, nonzeroUsageRecords, requestCount, completeUsageKnown: false, nativeBinding }));

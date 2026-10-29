@@ -7,7 +7,8 @@ import { readSessionSetting, setSessionSetting } from '../../lib/openclaw/sessio
  * Live post-run queues and unfinished worker ownership are not relocated. */
 export async function restoreNativeProjectScope({ sourceRun, targetStateDirectory, identity, projectRoot }) {
   const manifest = JSON.parse(await fs.readFile(path.join(sourceRun, 'manifest.json'), 'utf8'));
-  const result = JSON.parse(await fs.readFile(path.join(sourceRun, 'result.json'), 'utf8'));
+  const resultBytes = await fs.readFile(path.join(sourceRun, 'result.json'));
+  const result = JSON.parse(resultBytes);
   if (result.actualBusinessStart !== true || result.sessionId !== identity.sessionId || result.sessionKey !== identity.sessionKey
     || path.relative(path.resolve(projectRoot), path.resolve(manifest.projectRoot)) !== '') throw new Error('Native project scope authority mismatch');
   const sourceState = path.join(sourceRun, 'native-host/state');
@@ -25,12 +26,25 @@ export async function restoreNativeProjectScope({ sourceRun, targetStateDirector
   if (!bytes) return { status: 'NO_NATIVE_SCOPE_FOUND', sessionEnabled: sourceSetting.enabled };
   const scope = JSON.parse(bytes);
   if (scope.inactive) return { status: 'SOURCE_INACTIVE_NO_REACTIVATION', sessionEnabled: sourceSetting.enabled };
-  if (scope.source !== 'host' || scope.taskId !== result.taskId || !scope.taskId
+  let taskId = result.taskId, bindingAuthority = 'captured task state';
+  if (!taskId && result.operatorInterrupted === true) {
+    const proof = await fs.readFile(path.join(sourceRun, 'native-binding-capture.json'), 'utf8').then(JSON.parse, error => {
+      if (error.code === 'ENOENT') return null; throw error;
+    });
+    const sha = value => createHash('sha256').update(value).digest('hex');
+    if (!proof || proof.kind !== 'captured-native-task-binding' || proof.resultSha256 !== sha(resultBytes)
+      || proof.sourceScopeSha256 !== sha(bytes) || proof.identity?.agentId !== identity.agentId
+      || proof.identity?.sessionId !== identity.sessionId || proof.identity?.sessionKey !== identity.sessionKey
+      || path.relative(path.resolve(projectRoot), path.resolve(proof.projectRoot)) !== '')
+      throw new Error('Interrupted native task binding has no verified capture');
+    taskId = proof.taskId; bindingAuthority = 'captured host allocation before task-state creation';
+  }
+  if (scope.source !== 'host' || scope.taskId !== taskId || !scope.taskId
     || path.relative(path.resolve(projectRoot), path.resolve(scope.projectRoot)) !== '') throw new Error('Native task binding changed');
   const existing = await fs.readFile(target).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   if (existing && !existing.equals(bytes)) throw new Error('Refuse to overwrite a different native task scope');
   if (!existing) { await fs.mkdir(path.dirname(target), { recursive: true }); await fs.writeFile(target, bytes, { flag: 'wx' }); }
-  return { status: existing ? 'ALREADY_IDENTICAL' : 'RESTORED_AUTHENTIC_SCOPE', source, target, taskId: scope.taskId,
+  return { status: existing ? 'ALREADY_IDENTICAL' : 'RESTORED_AUTHENTIC_SCOPE', source, target, taskId: scope.taskId, bindingAuthority,
     sessionEnabled: sourceSetting.enabled, sourceSettingRegistered: sourceSetting.registered,
     sha256: createHash('sha256').update(bytes).digest('hex') };
 }
