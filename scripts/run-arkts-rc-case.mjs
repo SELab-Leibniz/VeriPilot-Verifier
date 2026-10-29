@@ -14,8 +14,11 @@ import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createB
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
 import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile.mjs';
 import { verifyFrozenArtifact } from './bench/frozen-artifact-verification.mjs';
+import { restoreStopSessionLedger } from './bench/restore-stop-session.mjs';
+import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
@@ -27,6 +30,12 @@ const resumeRoot = arg('--resume-run') ? await fs.realpath(arg('--resume-run')) 
 let resumeManifest, resumeEntry, resumeSessionKey;
 if (resumeRoot) {
   resumeManifest = JSON.parse(await fs.readFile(path.join(resumeRoot, 'manifest.json'), 'utf8'));
+  if (process.argv.includes('--verify-pending-rc')) {
+    const prior = JSON.parse(await fs.readFile(path.join(resumeRoot, 'result.json'), 'utf8'));
+    if (!businessCompleted(prior.officialBusinessTerminal, prior.finalBusinessRunId ?? prior.originalRunId)
+      || prior.infrastructureComplete !== true || prior.verification !== 'UNVERIFIED')
+      throw new Error('Pending verification requires an authoritative completed business run with unresolved RC acceptance');
+  }
   if (resumeManifest.instanceId !== task.instance_id || resumeManifest.datasetDigest !== datasetDigest) throw new Error('Resume task identity changed.');
   try { process.kill(resumeManifest.ownerPid, 0); throw new Error('Prior run owner is still alive.'); }
   catch (error) { if (error.code !== 'ESRCH') throw error; }
@@ -90,6 +99,7 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: ['read', 'write', 'edit', 'bench_nav', 'bench_check'],
   limits: { ...profile, correctionAdmissions: 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default' },
+  recoveryIntent: process.argv.includes('--verify-pending-rc') ? 'pending-rc-acceptance' : 'complete-business-task',
   inputPolicy: 'Only public input and original base source; evaluator test_patch/gold not installed in business workspace.',
   state: 'PREPARED', ownerPid: process.pid };
 await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -108,6 +118,19 @@ try {
     const originalBytes = await fs.readFile(original);
     await fs.writeFile(restored, originalBytes, { flag: 'wx' });
     restoredRecordCount = originalBytes.toString('utf8').split('\n').filter(line => line.trim()).length;
+    const targetStateDirectory = gateway.runtime.state.resolveStateDir();
+    const restoredLedger = await restoreStopSessionLedger({ sourceRun: resumeRoot,
+      targetStateDirectory, sessionId: resumeEntry.sessionId, projectRoot });
+    await fs.writeFile(path.join(outputRoot, 'stop-session-restore.json'), JSON.stringify(restoredLedger, null, 2));
+    if (process.argv.includes('--verify-pending-rc') && !['RESTORED_AUTHENTIC_BYTES', 'ALREADY_IDENTICAL'].includes(restoredLedger.status))
+      throw new Error('Pending verification requires an authentic session ledger before model admission');
+    if (inheritedScope.sourceRun) {
+      const restoredScope = await restoreNativeProjectScope({ sourceRun: inheritedScope.sourceRun, targetStateDirectory,
+        identity: { agentId: 'main', sessionId: resumeEntry.sessionId, sessionKey: key }, projectRoot });
+      await fs.writeFile(path.join(outputRoot, 'project-scope-restore.json'), JSON.stringify(restoredScope, null, 2));
+      if (process.argv.includes('--verify-pending-rc') && !['RESTORED_AUTHENTIC_SCOPE', 'ALREADY_IDENTICAL'].includes(restoredScope.status))
+        throw new Error('Pending verification cannot replace the original native task scope');
+    }
     await gateway.runtime.agent.session.upsertSessionEntry({ agentId: 'main', sessionKey: key, storePath: gateway.config.session.store,
       entry: { ...resumeEntry, sessionFile: restored, spawnedCwd: projectRoot, updatedAt: Date.now() } });
     await fs.writeFile(path.join(outputRoot, 'resume-evidence.json'), JSON.stringify({ source: original, sourceSha256: createHash('sha256').update(originalBytes).digest('hex'), restored, restoredRecordCount,
@@ -121,7 +144,9 @@ try {
   const entry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' }), sessionId = entry.sessionId;
   const runId = randomUUID(), startedAt = Date.now();
   const businessRun = createBusinessRunTracker(runId, sessionId);
-  const prompt = resumeEntry ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Complete the implementation and actual checks, rather than stopping at analysis. Preserve and use the existing progress and compaction notes. The human has removed the host task completion deadline; RC review phases remain limited to 30 minutes. No new implementation hints or hidden evaluation data are supplied.`
+  const prompt = resumeEntry && process.argv.includes('--verify-pending-rc')
+    ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Its final RC acceptance remains pending. Give a truthful status based on existing work; normal automatic post-run RC review will execute after your response. Preserve the implementation and address only genuine remaining blockers. The host has no task completion deadline; RC phases remain 30 minutes. No evaluator results, hidden tests, implementation hints or expected answers are supplied.`
+    : resumeEntry ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Complete the implementation and actual checks, rather than stopping at analysis. Preserve and use the existing progress and compaction notes. The human has removed the host task completion deadline; RC review phases remain limited to 30 minutes. No new implementation hints or hidden evaluation data are supplied.`
     : `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.`;
   await gateway.request('chat.send', { sessionKey, sessionId, message: prompt, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: profile.mainTimeoutMs });
   const load = file => import(pathToFileURL(path.join(gateway.pluginRoot, file)).href);

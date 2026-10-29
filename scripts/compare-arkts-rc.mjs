@@ -36,6 +36,8 @@ await fs.mkdir(path.dirname(directory), { recursive: true }); await fs.mkdir(dir
 const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs', 'scripts/bench/arkts-run-profile.mjs',
   'scripts/bench/business-completion.mjs', 'scripts/summarize-arkts-run.mjs',
   'scripts/bench/frozen-artifact-verification.mjs',
+  'scripts/bench/restore-stop-session.mjs',
+  'scripts/bench/restore-project-scope.mjs',
   'scripts/bench/native-arkts-tools.mjs', 'scripts/bench/bounded-process.mjs', 'scripts/bench/prepare-arkts-model-workspace.mjs',
   'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs', 'scripts/bench/short-workspace.mjs',
   path.join(navigationArtifact, 'lib/review-task/live-source-tools.mjs'), path.join(navigationArtifact, 'lib/review-task/source-tools.mjs')];
