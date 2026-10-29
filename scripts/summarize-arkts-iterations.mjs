@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadArktsTask } from './bench/arkts-dataset.mjs';
 import { summarizeArktsIterations } from './bench/iteration-summary.mjs';
+import { arktsGradingRevisions } from './bench/arkts-grading-revisions.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 if (!arg('--suite')) throw new Error('--suite=<iteration directory> required');
 const suite = await fs.realpath(arg('--suite'));
@@ -17,16 +18,10 @@ for (const id of ids) {
   for (const entry of entries.filter(row => row.isDirectory() && /^attempt-\d+$/u.test(row.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) {
     const directory = path.join(root, entry.name), native = await read(path.join(directory, 'result.json'));
     const manifest = await read(path.join(directory, 'manifest.json'));
-    const graded = await read(path.join(root, `${entry.name}-grade`, 'results.json'));
-    for (const value of [native, manifest, graded]) if (value && (value.instanceId !== id || (value.datasetDigest ?? value.environment?.datasetDigest) !== datasetDigest))
+    for (const value of [native, manifest]) if (value && (value.instanceId !== id || value.datasetDigest !== datasetDigest))
       throw new Error(`Mismatched run evidence: ${directory}`);
-    if (graded && (!native || !graded.candidateSha256)) throw new Error(`Grade has no captured candidate: ${directory}`);
-    if (graded) {
-      const { digest } = await import('./bench/arkts-dataset.mjs');
-      if (digest(await fs.readFile(path.join(directory, 'candidate.patch'))) !== graded.candidateSha256)
-        throw new Error(`Candidate changed after grading: ${directory}`);
-    }
-    attempts.push({ directory, native, grade: graded?.results?.find(row => row.phase === 'candidate') ?? null,
+    const gradingRevisions = await arktsGradingRevisions(directory, { id, datasetDigest }, native);
+    attempts.push({ directory, native, gradingRevisions, grade: gradingRevisions.at(-1)?.grade ?? null,
       review: await read(path.join(root, `${entry.name}-review.json`)) });
   }
   cases.push({ id, datasetDigest, f2p: task.FAIL_TO_PASS.length, p2p: task.PASS_TO_PASS.length, attempts });

@@ -70,3 +70,15 @@
 用量报告为 1827658 tokens（含缓存），57 次请求对应 57 条正用量记录；一次取消终态的零用量记录不被拿来证明请求免费。复盘为 `security_tool_3/attempt-001-review.json`。目前最新结果完成 3/13，F2P 4/4、P2P 1952/1952；其余十例仍在全量分母中，不能宣称整体达标。
 
 本轮等待期间，补跑近期全部 harness 改动的完整回归，包含恢复绑定、宏平均/全量分母和当前续跑用量归属：177 文件、1903 用例，1880 pass、23 skip、0 fail、0 timeout，记录为 `full-regression-iteration3.log`。
+
+## security_tool_4（已完成，修复候选导出遗漏）
+
+`attempt-001` 使用 `edcea57` harness 和相同公共协议。历史 PID 5596、终端 76190、会话 `c79d1287-2561-40b0-8425-7feb6a256a0c`，项目 `.runtime-correction/b/biz-9df5fd2b01ca`。实际业务已正常结算，RC PASS、两个私有运行 SETTLED，耗时 259379ms。公开问题要求浅色主题的危险按钮文字使用 AppColors.DANGER，深色仍保持白色。模型只修改一条生产返回值及一条固化旧错误的原始断言；构建通过，本地最终 593 PASS / 3 FAIL 与原始基线完全一致。三项 PeripheralDevicePolicyRepository 失败未被误作新增回归，没有无关改动、用例丢失或弱化断言。
+
+独立评分首次发现实际 harness 缺陷：宿主提供原生 `apply_patch`，成功回执已列明两个文件，但 `businessMutationPaths` 只识别 write/edit，导致 candidate.patch 导出为 0 字节，评分实际测了未修改源码。另外一次原生 GC 日志交错把类名损坏为 `SecureStorageService.Performance2:`，严格解析报告 CONFLICTING_CLASS。原始评分 `executed=false`，全部保留，部分通过不能计作有效分数。
+
+修复使业务写入归属支持匹配的成功 apply_patch 结构化回执，记录 added/modified/deleted 文件（包括移动两端），缺少结构化回执、失败调用、错配身份及控制目录仍拒绝。业务工具清单显式记录 apply_patch。新增 `reexport-arkts-candidate.mjs --run=<原运行> --output=<新目录>`，只允许已结束 owner，从封存的 workspace.patch 和成功回执用独立 Git index 重建候选；不读取后来工作目录差异、不覆盖原始结果或原候选，不发起模型调用。新文件未被原始差异封存时明确拒绝恢复，不能取后来内容补造证据。
+
+本例重导出 `attempt-001/candidate-exports/export-001/candidate.patch` 为 1481 字节，与实际两文件修改一致。proof.json 绑定原清单、结果、完整差异、原候选、继承范围和转录的 SHA。重导出候选的全新原生评分位于该目录的 `grade/`，**F2P 1/1、P2P 595/595**，完整执行且没有解析错误；严格解析器未放宽。汇总保留原始和修复后的所有 gradingRevisions，按时间使用最新修订，不择优、不把重导出称为新模型尝试；首轮/最新轮仍指真实业务尝试。
+
+归属、封存重建、二进制/增删文件、原 index/原证据不变、活跃 owner/身份/HEAD 拒绝、缺失封存文件拒绝、评分修订哈希/时间顺序及原生工具/评分器的 24 项回归通过，见 `candidate-capture-regression.log`。业务用量 17 请求 / 17 正用量记录、289043 tokens（含缓存）；离线修复增加模型调用为 0。完整复盘为 `security_tool_4/attempt-001-review.json`。目前最新结果完成 4/13，F2P 5/5、P2P 2547/2547，其余九例仍未完成。

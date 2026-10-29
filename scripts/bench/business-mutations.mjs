@@ -9,6 +9,11 @@ function mutationPath(file, projectRoot) {
   return relative.replaceAll('\\', '/');
 }
 
+export function validateBusinessMutationPaths(files, projectRoot) {
+  if (!Array.isArray(files)) throw new Error('Missing captured business mutation scope');
+  return [...new Set(files.map(file => mutationPath(file, projectRoot)))].sort();
+}
+
 // Follow explicit continuation ancestry only. A maintenance-only attempt must
 // preserve earlier business progress without adding its memory writes to it.
 export async function inheritedBusinessMutationScope(directory, projectRoot) {
@@ -28,7 +33,7 @@ export async function inheritedBusinessMutationScope(directory, projectRoot) {
     if (result?.actualBusinessStart === true) {
       const scope = JSON.parse(await fs.readFile(path.join(directory, 'candidate-scope.json'), 'utf8'));
       if (!Array.isArray(scope.mutationPaths)) throw new Error('Missing captured business mutation scope');
-      return { mutationPaths: [...new Set(scope.mutationPaths.map(file => mutationPath(file, projectRoot)))].sort(),
+      return { mutationPaths: validateBusinessMutationPaths(scope.mutationPaths, projectRoot),
         sourceRun: directory, skippedStartupRuns };
     }
     if (!manifest.resumedFrom) {
@@ -41,20 +46,30 @@ export async function inheritedBusinessMutationScope(directory, projectRoot) {
 }
 
 // This benchmark exposes no shell or general execution to the business model.
-// Its only source mutators are native write/edit; fixed build/test tools and
+// Its source mutators are native write/edit/apply_patch; fixed build/test tools and
 // host bootstrap can also produce files, which must not become candidate edits.
 export function businessMutationPaths(records, projectRoot) {
   const calls = new Map(), paths = new Set();
   for (const record of records) {
     const message = record.message ?? record;
     if (message.role === 'assistant') for (const block of Array.isArray(message.content) ? message.content : []) {
-      if (block.type === 'toolCall' && ['write', 'edit'].includes(block.name)) calls.set(block.id, block);
+      if (block.type === 'toolCall' && ['write', 'edit', 'apply_patch'].includes(block.name)) calls.set(block.id, block);
     }
     if (message.role !== 'toolResult' || message.isError === true) continue;
     const call = calls.get(message.toolCallId);
     if (!call || message.toolName !== call.name) continue;
-    const file = call.arguments?.path ?? call.arguments?.file_path;
-    paths.add(mutationPath(file, projectRoot));
+    if (call.name === 'apply_patch') {
+      // The native receipt lists actual changes, including both sides of a
+      // move. Do not infer success from requested patch text or console prose.
+      const summary = message.details?.summary;
+      if (!summary || !['added', 'modified', 'deleted'].every(key => Array.isArray(summary[key]))
+        || !['added', 'modified', 'deleted'].some(key => summary[key].length))
+        throw new Error('Successful apply_patch has no structured mutation receipt');
+      for (const key of ['added', 'modified', 'deleted']) for (const file of summary[key]) paths.add(mutationPath(file, projectRoot));
+    } else {
+      const file = call.arguments?.path ?? call.arguments?.file_path;
+      paths.add(mutationPath(file, projectRoot));
+    }
   }
   return [...paths].sort();
 }

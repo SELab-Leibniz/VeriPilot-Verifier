@@ -56,7 +56,7 @@ await fs.writeFile(path.join(directory, 'workspace.patch'), execute(['diff', '--
 const patch = mutationPaths.length ? execute(['diff', '--binary', 'HEAD', '--', ...mutationPaths]) : Buffer.alloc(0);
 await fs.writeFile(path.join(directory, 'candidate.patch'), patch, { flag: 'wx' });
 await fs.writeFile(path.join(directory, 'candidate-scope.json'), JSON.stringify({ mutationPaths, inheritedScope: inherited,
-  basis: 'Persisted successful native write/edit receipts after experiment-owner death; no host terminal is inferred.' }, null, 2), { flag: 'wx' });
+  basis: 'Persisted successful native write/edit/apply_patch receipts after experiment-owner death; no host terminal is inferred.' }, null, 2), { flag: 'wx' });
 const task = await findTask({ projectRoot, sessionId: progress.sessionId });
 const runs = task ? await listNativeRuns(projectRoot, task.taskId) : [];
 const assistants = records.filter(row => row.message?.role === 'assistant').map(row => row.message);

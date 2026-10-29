@@ -22,7 +22,7 @@ const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slic
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const contextWindowTokens = nativeModelContextWindow(arg('--context-window-tokens'));
 const pagedReads = process.argv.includes('--paged-reads');
-const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 'bench_nav', 'bench_check'];
+const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 'apply_patch', 'bench_nav', 'bench_check'];
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -241,7 +241,7 @@ try {
   const patch = mutationPaths.length ? execFileSync(gitExecutable, ['--literal-pathspecs', '-C', projectRoot, 'diff', '--binary', 'HEAD', '--', ...mutationPaths], { maxBuffer: 4 * 1024 * 1024 }) : Buffer.alloc(0);
   await fs.writeFile(path.join(outputRoot, 'candidate.patch'), patch);
   await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths, inheritedScope, restoredRecordCount,
-    basis: 'Captured business write/edit receipts plus prior genuine business scope. Maintenance-only startup attempts excluded; full workspace.patch and notes retained.' }, null, 2));
+    basis: 'Captured business write/edit/apply_patch receipts plus prior genuine business scope. Maintenance-only startup attempts excluded; full workspace.patch and notes retained.' }, null, 2));
   const infrastructureComplete = ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED')
     && knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId);
   result = { ...manifest, state: infrastructureComplete ? 'SETTLED' : 'INCOMPLETE', sessionId, sessionKey, originalRunId: runId, elapsedMs: Date.now() - startedAt,

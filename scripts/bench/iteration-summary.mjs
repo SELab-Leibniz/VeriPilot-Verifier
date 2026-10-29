@@ -42,5 +42,5 @@ export function summarizeArktsIterations(cases) {
     return totals;
   };
   return { firstAttempts: summarize(row => row[0]), latestAttempts: summarize(row => row.at(-1)),
-    qualification: 'Sequential development tuning, not unseen holdout evidence. Full-suite rates are lower bounds until every task is graded; ungraded tasks remain in the denominator. Test-weighted and equal-task macro rates are separate, and both must reach 95 percent. Whole-task resolution and RC acceptance are separate. P2P populations overlap between tasks.' };
+    qualification: 'Sequential development tuning, not unseen holdout evidence. First/latest refer to real business attempts. When a frozen candidate capture is repaired, its latest chronological grading revision is used and every original/repaired grade is retained; revisions do not invent additional model runs. Full-suite rates are lower bounds until every task is graded; ungraded tasks remain in the denominator. Test-weighted and equal-task macro rates are separate, and both must reach 95 percent. Whole-task resolution and RC acceptance are separate. P2P populations overlap between tasks.' };
 }

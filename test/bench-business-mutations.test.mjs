@@ -13,3 +13,20 @@ test('candidate scope uses successful native mutation receipts, excluding host a
   assert.throws(() => businessMutationPaths([call('bad', 'write', '../outside.ts'), receipt('bad', 'write')], path.resolve('.')), /outside project/);
   assert.throws(() => businessMutationPaths([call('bad', 'write', '.runtime-correction/notes.json'), receipt('bad', 'write')], path.resolve('.')), /control state/);
 });
+
+test('native apply_patch requires a successful matching structured receipt and attributes all changed paths', () => {
+  const root = path.resolve('.');
+  const call = { message: { role: 'assistant', content: [{ type: 'toolCall', id: 'patch', name: 'apply_patch',
+    arguments: { input: 'Requested patch text is not mutation evidence' } }] } };
+  const receipt = { message: { role: 'toolResult', toolCallId: 'patch', toolName: 'apply_patch', isError: false,
+    details: { summary: { added: ['new file.ets'], modified: ['src/main.ets'], deleted: ['old file.ets'] } } } };
+  assert.deepEqual(businessMutationPaths([call, receipt], root), ['new file.ets', 'old file.ets', 'src/main.ets']);
+  assert.deepEqual(businessMutationPaths([receipt], root), []);
+  assert.deepEqual(businessMutationPaths([call, { message: { ...receipt.message, isError: true } }], root), []);
+  assert.deepEqual(businessMutationPaths([call, { message: { ...receipt.message, toolName: 'edit' } }], root), []);
+  assert.throws(() => businessMutationPaths([call, { message: { ...receipt.message, details: undefined } }], root), /structured mutation receipt/);
+  const invalid = file => ({ message: { ...receipt.message, details: { summary: { added: [], modified: [file], deleted: [] } } } });
+  assert.throws(() => businessMutationPaths([call, invalid('../outside.ets')], root), /outside project/);
+  assert.throws(() => businessMutationPaths([call, invalid('.git/config')], root), /control state/);
+  assert.throws(() => businessMutationPaths([call, invalid(null)], root), /attributable path/);
+});
