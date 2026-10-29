@@ -97,7 +97,7 @@
 
 用量报告为 1003396 tokens（含缓存），40 请求 / 40 正用量记录；需求提取约 130.9s、审查约 269.9s，原始计量全部保留。复盘为 `security_tool_5/attempt-001-review.json`。目前最新结果完成 5/13，F2P 6/6、P2P 3157/3157；其余八例仍未完成，全量目标保持 active。
 
-## security_tool_6（运行中）
+## security_tool_6（已结算，保留一项 P2P 失败）
 
 `attempt-001` 使用 `5f3307d` harness 和相同公共协议。PID 12544、终端 31430、会话 `c593642c-9b35-4213-ac21-afb2d232c538`，项目 `.runtime-correction/b/biz-c9ab31566370`；原始本地 615/615 通过，已观察到实际业务模型启动。公开问题要求蓝牙/USB 首次接入自动拒绝、成功后才保存匹配本地策略，失败仍允许并记录原因；USB 显式 deny 的种类/优先级和不支持类型/策略的早期拒绝也必须覆盖。接续此运行，真正结算后用 calibration-heldout-001/security_tool_6 独立评分，再进入第七例。
 
@@ -138,3 +138,7 @@ attempt-003 使用 444da1f，沿 attempt-001 原会话 c593642c-9b35-4213-ac21-a
 正式候选 44102 字节，SHA de378e811716c339374199d4f3b85afbe570a64041172c6ae3cc0da4d1ff17f9；独立复评仍为 **F2P 7/7、P2P 616/617、resolved=false**，无解析/执行错误。U-USB-008 的空事件在评分的派发测试设置下被记录为 device_deny，而原期望 default_allow；新增本地派发执行器对 USB_OTHER 返回失败，因此本地全过不能替代这项失败。按原规则保留分数，不修改评分器或向业务泄漏隐藏内容。完成本例轨迹/源码复盘及两项通用 harness 修复后，进入第七例，保留这一未全通过项。完整复盘见 security_tool_6/attempt-003-review.json。
 
 以提交 444da1f 固定源码完成的 iteration7 全量回归：180 文件 / 1922 用例，1899 pass、23 skip、0 fail、0 timeout。本轮包含终态留存和跨日会话防护，未在测试期间修改代码。
+
+## security_tool_7（运行中）
+
+采用 bf004ba harness，PID 27144、终端 19613、会话 3277d70c-0cf6-4fee-84e0-84bed7075f23，项目 .runtime-correction/b/biz-9ed20ea2fcb2。原始本地 674/674 通过，已确认真实业务模型启动。公开问题要求模式切换部分失败/抛错时回滚规则、还原前模式/映射并重载服务确认状态；模式切换与保护开关互斥，重叠调用返回 in progress。八项公开要求清单位于 security_tool_7/requirements-audit.json。源码原本只分别检查自身 busy 标志；规则失败无事务恢复，抛错时跳过 UI 重载。原服务已仅在 failedItems 为空时保存目标模式，不能把问题叙述当成当前源码逐字事实。完成真实结算、独立评分和复盘后再进入第八例。
