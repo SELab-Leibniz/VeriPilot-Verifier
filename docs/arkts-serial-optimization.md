@@ -174,3 +174,11 @@ RC 本体改动 3d76dd2 的四项真实 native production workspace 审查均匹
 新增实际生成 YAML 的默认继承断言先复现错误，删除覆盖后与 metric policy 的 18 项回归全过。用冻结 round002 的真实 loadConfig 解析新生成配置，与用户参考的有效指标逐项一致；全局 Stop enabled=true，零模型调用，并核对在跑第七例的归档/项目配置逐字节仍一致。证明位于 default-metrics-policy-preflight/proof.json，参考文件保持只读。
 
 原六例分数仍保留为 M16-only 诊断，不作为六默认指标下的 >=95% 证据。当前第七例完成真实纠偏/复审与独立评分后，进入新目录 serial-default-metrics-20261030，按原顺序从第一例重新评测全部十三例，继续只优化 RC 插件本体。各指标开启不代表必有适用对象，后续按实际基线、范围与回执报告，不把空对象或 M16 PASS 当作其他指标通过。
+
+### 第七例结算：异常分支刷新漏判
+
+旧 M16-only 第七例实际 SETTLED，业务结束与基础设施完成均 true，最终纠偏 run 的真实 agent.wait=ok，四个私有运行均 SETTLED。原审查发现回滚重建系统规则后仍保存旧 systemRuleId，真实自动纠偏消耗一次额度，改为使用返回的新 ID，并按 localRuleId 分组恢复多用户映射。最终 RC PASS，三次实际本地测试均 679/679；独立评分实际执行完整、无编译或全局运行错误，F2P 4/5、P2P 673/673，resolved=false。失败项为切换抛错后重新加载已确认模式，保存原始 test ERROR，不能因本地全过或 RC PASS 改写。
+
+最终 ViewModel 的刷新在 await switchMode 之后，finally 只清除忙标志；调用拒绝时刷新被跳过。原需求明确含 operation throws 与 confirmed mode reloaded，但最终审查把普通返回路径上的刷新当成了该复合条目全部通过的证据。审查全文、源码 SHA、原终态、六次 build/test 回执及用量 8,787,474（含缓存）存于 security_tool_7/attempt-001-review.json，需求核对表关闭为存在一项异常路径缺口。rc-plugin-exception-paths-evidence.json 固定公开需求、最终来源和漏判理由；隐藏结果不发送给业务。
+
+RC 本体继续只改工作区审查提示和共享 productionTrace 描述：多效果条目逐项追踪适用结果，返回失败与异常拒绝分别检查，finally 只证明自身操作，不能用回滚或忙标志清理替代另一个必需效果；依赖下层吞掉异常时需要相关边界的完整契约。version1 结构及判定协议不变。新增三个通用 RC 语义夹具，分别为异常跳过必需刷新、finally 正确刷新、原要求明确排除异常刷新；直接执行代码独立校准三种结果，防止扩大义务。相关回归 25/25 通过，真实 native production 审查另行保存。此迭代不是外围框架功能开发。
