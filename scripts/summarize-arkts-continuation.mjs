@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { continuationUsage } from './bench/continuation-usage.mjs';
+import { continuationUsage, currentRunUsage } from './bench/continuation-usage.mjs';
 import { businessCompleted } from './bench/business-completion.mjs';
 const value = process.argv.find(arg => arg.startsWith('--run='))?.slice(6);
 if (!value) throw new Error('--run=<captured continuation directory> required');
@@ -15,5 +15,8 @@ const report = { instanceId: result.instanceId, runId: result.originalRunId,
   completionAuthority: result.officialBusinessTerminal ? 'agent.wait' : 'Legacy capture lacks an authoritative terminal; diagnostic success is insufficient.',
   ...continuationUsage({ transcript: await fs.readFile(evidence.restored),
     restoredSource: await fs.readFile(evidence.source), sourceSha256: evidence.sourceSha256 }) };
+const sourceResult = result.resumedFrom ? await fs.readFile(path.join(result.resumedFrom, 'result.json'), 'utf8').then(JSON.parse, () => null) : null;
+const accounting = await fs.readFile(path.join(directory, 'usage-summary.json'), 'utf8').then(JSON.parse, () => null);
+report.currentRunAllRoles = currentRunUsage({ result, sourceResult, accounting, continuation: report });
 await fs.writeFile(path.join(directory, 'continuation-usage.json'), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report));

@@ -77,6 +77,7 @@ const report = { instanceId: result.instanceId, rcSource: result.rcSource, elaps
   reviewStatus: result.verification ?? null, businessTerminal,
   authoritativeBusinessCompletion: result.officialBusinessTerminal ? businessCompleted(result.officialBusinessTerminal, result.finalBusinessRunId ?? result.originalRunId) : null,
   nativeRuns, roleTimings, providerUsageCoverage: providerUsageCoverage(result.metrics.providerRequests, totals.nonzeroUsageRecords),
+  restoredHistoryIncluded: Boolean(result.resumedFrom), currentRunUsageFile: result.resumedFrom ? 'continuation-usage.json' : null,
   nativeModelStarts: result.metrics.modelStarts.length, providerRequests: result.metrics.providerRequests,
   note: 'Provider-reported usage; cached and uncached input remain separate. Missing usage/timing is not zero. Role summedRunMs uses persisted dispatch/settlement times and can overlap; never subtract its sum from total elapsedMs as business time. No dollar cost inferred from host pricing=0.' };
 await fs.writeFile(path.join(directory, 'usage-summary.json'), JSON.stringify(report, null, 2));
