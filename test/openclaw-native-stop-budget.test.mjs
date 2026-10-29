@@ -698,3 +698,40 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "PASS");
 });
+
+test("host auto-compaction after a failed attempt does not become an RC hook failure", async t => {
+  const f = await lifecycle(t, { waitMode: "until_pass" });
+  const releases = [], release = f.runtime.postRuns.release.bind(f.runtime.postRuns);
+  f.runtime.postRuns.release = (identity, reason) => { releases.push(reason); return release(identity, reason); };
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: "Context overflow" }, f.ctx);
+  assert.equal(f.state.reviewController.signal.reason.code, "RC_NATIVE_ATTEMPT_ENDED");
+  // Native admission rejects work under an already cancelled review signal.
+  f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
+    params.signal.throwIfAborted();
+    return run(params.signal);
+  };
+  await f.runtime.compact({ sessionId: f.ctx.sessionId }, f.ctx);
+  await pause(30);
+  assert(!releases.includes("RC_HOOK_UNAVAILABLE"), JSON.stringify(releases));
+  assert.equal(f.hostAbort.signal.aborted, false);
+  await f.runtime.prompt({ prompt: "Continue the original task." }, f.ctx);
+  assert.equal(f.state.reviewController.signal.aborted, false);
+  assert.equal(f.state.nativeInvalidated, false);
+  await f.runtime.reset({}, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+});
+
+test("an unrelated admission failure during compaction still releases RC as unavailable", async t => {
+  const f = await lifecycle(t, { waitMode: "until_pass" });
+  const releases = [], release = f.runtime.postRuns.release.bind(f.runtime.postRuns);
+  f.runtime.postRuns.release = (identity, reason) => { releases.push(reason); return release(identity, reason); };
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: "Context overflow" }, f.ctx);
+  f.api.runtime.agent.session.runWithWorkAdmission = async () => {
+    throw Object.assign(new Error("Admission backend unavailable"), { code: "RC_NATIVE_ATTEMPT_ENDED" });
+  };
+  await f.runtime.compact({ sessionId: f.ctx.sessionId }, f.ctx);
+  assert(releases.includes("RC_HOOK_UNAVAILABLE"), JSON.stringify(releases));
+  assert.equal(f.hostAbort.signal.aborted, false);
+  await f.runtime.reset({}, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+});
