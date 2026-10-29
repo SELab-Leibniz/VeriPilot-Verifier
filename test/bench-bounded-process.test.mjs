@@ -17,3 +17,13 @@ test('the deadline resolves independently of child close notification', async ()
   const result = await runBoundedProcess(process.execPath, ['-e', 'setTimeout(()=>{},10000)'], { timeoutMs: 80 });
   assert.equal(result.reason, 'deadline'); assert.equal(result.interrupted, true); assert.equal(result.outputComplete, false);
 });
+
+test('an explicitly unbounded child exits naturally and remains cancellable by its owner', async () => {
+  const natural = await runBoundedProcess(process.execPath, ['-e', 'setTimeout(()=>{},80)'], { timeoutMs: null });
+  assert.equal(natural.exitCode, 0); assert.equal(natural.interrupted, false);
+  const controller = new AbortController();
+  const pending = runBoundedProcess(process.execPath, ['-e', 'setTimeout(()=>{},10000)'], { timeoutMs: null, signal: controller.signal });
+  setTimeout(() => controller.abort(), 50);
+  const cancelled = await pending;
+  assert.equal(cancelled.reason, 'cancelled'); assert.equal(cancelled.interrupted, true);
+});

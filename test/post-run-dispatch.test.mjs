@@ -20,6 +20,37 @@ async function fixture(t, overrides = {}) {
   return { root, manager, identity, sent, errors };
 }
 
+test('an unbounded trusted business correction reaches its next bounded review without execution expiry', async t => {
+  let reviews = 0, cancelled = 0, f;
+  f = await fixture(t, { cancelCorrection: async () => { cancelled++; }, review: async record => {
+    reviews++;
+    if (reviews === 1) { await f.manager.correction(record, 'repair-unbounded', Date.now() + 10000, 'stop-1'); return { reviewStatus: 'DEVIATION' }; }
+    assert(Number.isFinite(record.deadlineAt));
+    return { reviewStatus: 'PASS' };
+  } });
+  const id = f.identity('unbounded'); await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'done', reviewBudgetMs: 10000 }); await f.manager.drain();
+  await f.manager.started(id, 'repair-unbounded', null);
+  await pause(60);
+  assert.equal(f.manager.snapshot(id).phase, 'CORRECTING'); assert.equal(f.manager.snapshot(id).deadlineAt, null);
+  await f.manager.started(id, 'repair-unbounded', 5);
+  assert.equal(f.manager.snapshot(id).deadlineAt, null); assert.equal(cancelled, 0);
+  await f.manager.candidate(id, { runId: 'repair-unbounded', text: 'fixed', reviewBudgetMs: 10000 }); await f.manager.drain();
+  assert.equal(f.manager.snapshot(id).phase, 'IDLE'); assert.equal(f.manager.snapshot(id).reviewStatus, 'PASS');
+  assert.equal(reviews, 2); assert.equal(cancelled, 0);
+});
+
+test('explicit owner cancellation still cancels an unbounded correction', async t => {
+  let cancelled = 0, f;
+  f = await fixture(t, { cancelCorrection: async (_record, runId) => { assert.equal(runId, 'repair-unbounded'); cancelled++; },
+    review: async record => { await f.manager.correction(record, 'repair-unbounded', Date.now() + 10000, 'stop-1'); return { reviewStatus: 'DEVIATION' }; } });
+  const id = f.identity('cancel-unbounded'); await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'done', reviewBudgetMs: 10000 }); await f.manager.drain();
+  await f.manager.started(id, 'repair-unbounded', null);
+  await f.manager.release(id, 'USER_DISABLED'); await f.manager.drain();
+  assert.equal(cancelled, 1); assert.equal(f.manager.snapshot(id).phase, 'IDLE');
+});
+
 test('task history retains target, unknown dispatch, actual start and final review across reload', async t => {
   const f = await fixture(t, { review: async () => ({ reviewStatus: 'UNVERIFIED', reasonCode: 'STOP_STAGE_METRICS_UNDECLARED',
     reviewSummary: { groundTruthVersion: 2, status: 'UNVERIFIED', scopeSelection: { fullObjectCount: 4, selectedObjectCount: 0 } } }) });

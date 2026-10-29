@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "kind": "observed-fixed-budget-native-submission-comparison",
+  "capturedAt": "2026-10-29T06:48:08.550Z",
+  "candidateSource": "7cbd698",
+  "baselineSource": "c33bae6",
+  "model": "glm-5.3-flash",
+  "hostVersion": "2026.7.1-2",
+  "toolRoot": "C:/Program Files/Huawei/command-line-tools",
+  "ideOpened": false,
+  "codeScoringComplete": true,
+  "normalPairedWorkflowComplete": false,
+  "sourceComparison": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/continuation-results.json",
+  "sourceComparisonSha256": "333dd15a11e3e04c35c5d111fe624f7a655f6c3ac0b47f10551818c2bb9eae1c",
+  "cases": [
+    {
+      "id": "security_tool_3",
+      "split": "selection",
+      "arms": {
+        "baseline": {
+          "source": "c33bae6",
+          "nativeTestsExecuted": true,
+          "resolved": true,
+          "f2p": {
+            "passed": 1,
+            "expected": 1,
+            "passRate": 1
+          },
+          "p2p": {
+            "passed": 595,
+            "expected": 595,
+            "passRate": 1
+          },
+          "infrastructureComplete": true,
+          "businessCompleted": false,
+          "businessBudgetAborted": true,
+          "reviewStatus": "NO_REVIEW",
+          "runtimeReason": null,
+          "gradeQualification": "Original paired native grading",
+          "patchBytes": 4911,
+          "elapsedMs": 618617,
+          "providerUsageCoverage": {
+            "providerRequests": 18,
+            "nonzeroUsageRecords": 17,
+            "unreportedRequests": 1,
+            "unexpectedUsageRecords": 0,
+            "complete": false,
+            "note": "Count coverage only. Zero-usage terminal messages do not prove an interrupted provider request consumed zero tokens. Missing usage is unknown."
+          },
+          "privateRuns": [],
+          "evidence": {
+            "native": ".runtime-correction/system-optimization/paired-blank-selection-001/security_tool_3-baseline/result.json",
+            "nativeSha256": "eba80a0747a783f85ffa6fc87f889e67928bb38164050786e03b1d771e0618ef",
+            "grade": ".runtime-correction/system-optimization/paired-blank-selection-001/security_tool_3-baseline-grade/results.json",
+            "gradeSha256": "22a61c717d0beef5b03c65e679675862b93c478178baf0ec03316a434001f31d",
+            "candidatePatchSha256": "9c385e5909622f79a6b18ea129ab380028f13232cc6d6668265c301e0af9ebad"
+          }
+        },
+        "candidate": {
+          "source": "7cbd698",
+          "nativeTestsExecuted": true,
+          "resolved": true,
+          "f2p": {
+            "passed": 1,
+            "expected": 1,
+            "passRate": 1
+          },
+          "p2p": {
+            "passed": 595,
+            "expected": 595,
+            "passRate": 1
+          },
+          "infrastructureComplete": true,
+          "businessCompleted": true,
+          "businessBudgetAborted": false,
+          "reviewStatus": "UNVERIFIED",
+          "runtimeReason": "STOP_ASSESSMENT_STOP_REVIEW_DEADLINE",
+          "gradeQualification": "Original paired native grading",
+          "patchBytes": 3233,
+          "elapsedMs": 690549,
+          "providerUsageCoverage": {
+            "providerRequests": 25,
+            "nonzeroUsageRecords": 24,
+            "unreportedRequests": 1,
+            "unexpectedUsageRecords": 0,
+            "complete": false,
+            "note": "Count coverage only. Zero-usage terminal messages do not prove an interrupted provider request consumed zero tokens. Missing usage is unknown."
+          },
+          "privateRuns": [
+            {
+              "role": "ground-truth-extractor",
+              "status": "SETTLED"
+            },
+            {
+              "role": "stop-reviewer",
+              "status": "SETTLED"
+            }
+          ],
+          "evidence": {
+            "native": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_3-candidate/result.json",
+            "nativeSha256": "afd6feaa1244e2201c7ecf1a191f3d61c3a6b93ec7d277815329c9a736691999",
+            "grade": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_3-candidate-grade/results.json",
+            "gradeSha256": "c0d04433b982e137da4371a522dc9417d2a6ef4d16ffaddc38dc38f403390d1b",
+            "candidatePatchSha256": "a62be9e0fb820b519d4c37f506c9d5ebba83923ac1f0634dc0fb0649c118703c"
+          }
+        }
+      },
+      "deltaPercentagePoints": {
+        "f2p": 0,
+        "p2p": 0
+      }
+    },
+    {
+      "id": "security_tool_2",
+      "split": "heldout",
+      "arms": {
+        "baseline": {
+          "source": "c33bae6",
+          "nativeTestsExecuted": true,
+          "resolved": false,
+          "f2p": {
+            "passed": 0,
+            "expected": 2,
+            "passRate": 0
+          },
+          "p2p": {
+            "passed": 746,
+            "expected": 746,
+            "passRate": 1
+          },
+          "infrastructureComplete": false,
+          "businessCompleted": false,
+          "businessBudgetAborted": true,
+          "reviewStatus": "NO_REVIEW",
+          "runtimeReason": null,
+          "gradeQualification": "Actual fixed-budget submission tested independently; runtime infrastructure did not settle. This is not a successful end-to-end run.",
+          "patchBytes": 0,
+          "elapsedMs": 961001,
+          "providerUsageCoverage": {
+            "providerRequests": 16,
+            "nonzeroUsageRecords": 15,
+            "unreportedRequests": 1,
+            "unexpectedUsageRecords": 0,
+            "complete": false,
+            "note": "Count coverage only. Zero-usage terminal messages do not prove an interrupted provider request consumed zero tokens. Missing usage is unknown."
+          },
+          "privateRuns": [],
+          "evidence": {
+            "native": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_2-baseline/result.json",
+            "nativeSha256": "100a657fe658b10957aed3e830dbf8b4163b9c49d4c57b75a3ce7bbfe04fddc8",
+            "grade": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_2-baseline-grade/results.json",
+            "gradeSha256": "f99a624572bc1d555df33f77be01ba77da13acd5f7e7b19c5a3a1dfd52c48d9d",
+            "candidatePatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "candidate": {
+          "source": "7cbd698",
+          "nativeTestsExecuted": true,
+          "resolved": false,
+          "f2p": {
+            "passed": 0,
+            "expected": 2,
+            "passRate": 0
+          },
+          "p2p": {
+            "passed": 746,
+            "expected": 746,
+            "passRate": 1
+          },
+          "infrastructureComplete": false,
+          "businessCompleted": false,
+          "businessBudgetAborted": true,
+          "reviewStatus": "NO_REVIEW",
+          "runtimeReason": null,
+          "gradeQualification": "Actual fixed-budget submission tested independently; runtime infrastructure did not settle. This is not a successful end-to-end run.",
+          "patchBytes": 0,
+          "elapsedMs": 960631,
+          "providerUsageCoverage": {
+            "providerRequests": 15,
+            "nonzeroUsageRecords": 14,
+            "unreportedRequests": 1,
+            "unexpectedUsageRecords": 0,
+            "complete": false,
+            "note": "Count coverage only. Zero-usage terminal messages do not prove an interrupted provider request consumed zero tokens. Missing usage is unknown."
+          },
+          "privateRuns": [],
+          "evidence": {
+            "native": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_2-candidate/result.json",
+            "nativeSha256": "a4e11f2018ccc0b3d02055e18e82e78ccaf45cbb586d940be5d73fd450b72541",
+            "grade": ".runtime-correction/system-optimization/paired-two-case-7cbd698-001/security_tool_2-candidate-grade/results.json",
+            "gradeSha256": "ca6e4c716eec7432edd8406e3e48ced1fabed32bf97c15e0a2d0cca34a248e15",
+            "candidatePatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      },
+      "deltaPercentagePoints": {
+        "f2p": 0,
+        "p2p": 0
+      }
+    }
+  ],
+  "totals": {
+    "baseline": {
+      "f2p": {
+        "passed": 1,
+        "expected": 3,
+        "microRate": 0.3333333333333333,
+        "taskMacroRate": 0.5
+      },
+      "p2p": {
+        "passed": 1341,
+        "expected": 1341,
+        "microRate": 1,
+        "taskMacroRate": 1
+      }
+    },
+    "candidate": {
+      "f2p": {
+        "passed": 1,
+        "expected": 3,
+        "microRate": 0.3333333333333333,
+        "taskMacroRate": 0.5
+      },
+      "p2p": {
+        "passed": 1341,
+        "expected": 1341,
+        "microRate": 1,
+        "taskMacroRate": 1
+      }
+    }
+  },
+  "p2pAggregation": "Task-summed P2P counts; overlapping tests are not independent observations.",
+  "strictlyHigherBothObservedRates": false,
+  "efficiencyComparisonQualified": false,
+  "limitations": [
+    "Exactly these two fixed tasks and frozen artifacts; no statistical or causal improvement inferred.",
+    "Runtime failures were retained. Empty fixed-budget submissions received actual independent hidden native tests; this does not establish successful end-to-end operation.",
+    "No failed model was retried. Inputs, budgets, public tools, artifacts and test populations were unchanged.",
+    "Provider usage and review completion are incomplete; token/time savings are not established."
+  ]
+}

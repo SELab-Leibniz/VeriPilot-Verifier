@@ -56,6 +56,10 @@ MatrixAssistant 内置的 OpenClaw 2026.7.1-2 使用公开 harness 取消接口�
 
 ## Review 超时配置
 
+宿主业务执行与 RC 语义评审使用独立时限。在宿主的 RC 插件配置中设置 `businessRunTimeoutMs: 0`，可关闭实际开始后的自动业务修复截止；准入等待、语义审查、用户取消及作用域失效检查继续生效。省略该字段时保持原有修复窗口行为。宿主自身的任务超时还须单独关闭，不能只改项目 YAML：已核验的 OpenClaw 2026.7.1-2 接受 `chat.send.timeoutMs: 0` 作为原生无任务截止模式。该宿主在内部使用平台最大安全定时器值作为无截止哨兵，不应把较短评测窗口再套在外层。
+
+例如项目的 `reviewers.defaults.timeoutMs`、`limits.semanticReviewTimeoutMs` 与 `stopCorrection.assessmentTimeoutMs` 可继续设为 `1800000`（30 分钟），与宿主业务自然完成相互独立。Stop 的总窗口仍包含基线准备、审查与反馈预留；自动修复结束后的新 Stop 获得自己的审查窗口。
+
 所有语义评审和角色 reviewer 默认 20 分钟，最大 60 分钟（1000～3600000 毫秒）。在项目 `.runtime-corrector/config.yaml` 中设置：
 
 ```yaml

@@ -13,7 +13,7 @@ test('comparison never calls unchanged perfect P2P an improvement or hides unexe
   const rows = ['one', 'two'].flatMap(id => ['baseline', 'candidate'].map(arm => ({ id, arm, nativeComplete: true,
     grade: { results: [{ executed: true, resolved: arm === 'candidate', f2p: { expected: 2, passed: arm === 'candidate' ? ['a', 'b'] : ['a'], passRate: arm === 'candidate' ? 1 : .5 },
       p2p: { expected: 3, passed: ['x', 'y', 'z'], passRate: 1 } }] },
-    usage: { elapsedMs: arm === 'candidate' ? 80 : 100, providerUsageCoverage: { complete: true }, totals: { input: 20, output: 5, cacheRead: arm === 'candidate' ? 55 : 75, cacheWrite: 0, totalTokens: arm === 'candidate' ? 80 : 100, missingUsage: 0 }, sessions: [{}] } })));
+    usage: { authoritativeBusinessCompletion: true, elapsedMs: arm === 'candidate' ? 80 : 100, providerUsageCoverage: { complete: true }, totals: { input: 20, output: 5, cacheRead: arm === 'candidate' ? 55 : 75, cacheWrite: 0, totalTokens: arm === 'candidate' ? 80 : 100, missingUsage: 0 }, sessions: [{}] } })));
   const report = { state: 'SETTLED', cases: ['one', 'two'], results: rows };
   async function run() {
     await fs.writeFile(file, JSON.stringify(report)); execFileSync(process.execPath, [script, `--input=${file}`], { windowsHide: true });
@@ -26,6 +26,15 @@ test('comparison never calls unchanged perfect P2P an improvement or hides unexe
   assert.equal(complete.efficiencyComparisonQualified, false, 'hidden tests alone do not prove completed RC review');
   for (const row of rows) row.usage.nativeRuns = [{ role: 'stop-reviewer', protocolCompleted: true }];
   assert.equal((await run()).efficiencyComparisonQualified, true);
+  rows[0].usage.businessTerminal = { completionObserved: true };
+  for (const completion of [false, null]) {
+    rows[0].usage.authoritativeBusinessCompletion = completion;
+    const failedHost = await run();
+    assert.equal(failedHost.efficiencyComparisonQualified, false, 'inner success cannot qualify an errored or unknown outer host');
+    assert.equal(failedHost.lowerObservedTokens, null);
+    assert.equal(failedHost.arms.baseline.businessCompletions, 1);
+  }
+  rows[0].usage.authoritativeBusinessCompletion = true;
   rows[0].usage.nativeRuns[0].protocolCompleted = false;
   assert.equal((await run()).efficiencyComparisonQualified, false, 'doing less review is not qualified as faster review');
   rows[0].usage.nativeRuns[0].protocolCompleted = true;

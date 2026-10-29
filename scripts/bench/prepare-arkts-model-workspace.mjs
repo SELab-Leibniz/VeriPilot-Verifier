@@ -5,10 +5,10 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { shortArktsWorkspace } from './short-workspace.mjs';
 const execute = promisify(execFile);
-export async function prepareArktsModelWorkspace({ task, outputRoot, cacheRoot,
+export async function prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, workspaceBase = process.cwd(), preparationTimeoutMs = 180000,
   gitExecutable = process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git' }) {
-  const cache = path.join(cacheRoot, task.repo.replace('/', '--') + '.git'), projectRoot = shortArktsWorkspace(outputRoot, 'biz');
-  const git = argv => execute(gitExecutable, ['-c', 'core.longpaths=true', ...argv], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: 180000 });
+  const cache = path.join(cacheRoot, task.repo.replace('/', '--') + '.git'), projectRoot = shortArktsWorkspace(outputRoot, 'biz', workspaceBase);
+  const git = argv => execute(gitExecutable, ['-c', 'core.longpaths=true', ...argv], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: preparationTimeoutMs });
   await fs.mkdir(outputRoot, { recursive: false });
   await fs.mkdir(path.dirname(projectRoot), { recursive: true });
   await git(['--git-dir', cache, 'cat-file', '-e', `${task.base_commit}^{commit}`]);

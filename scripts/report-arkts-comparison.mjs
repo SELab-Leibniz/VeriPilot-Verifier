@@ -22,7 +22,7 @@ for (const name of ['baseline', 'candidate']) {
     }
     if (row.usage) {
       if (row.usage.providerUsageCoverage?.complete !== true) score.incompleteProviderCoverageCases++;
-      if (row.usage.businessTerminal?.completionObserved) score.businessCompletions++;
+      if (row.usage.authoritativeBusinessCompletion === true) score.businessCompletions++;
       if (row.usage.nativeRuns?.some(run => run.role === 'stop-reviewer')) score.rcReviewAttempts++;
       if (row.usage.nativeRuns?.some(run => run.role === 'stop-reviewer' && run.protocolCompleted)) score.rcReviewCompletedCases++;
       const status = row.usage.reviewStatus ?? 'NO_REVIEW'; score.reviewStatuses[status] = (score.reviewStatuses[status] ?? 0) + 1;
@@ -42,7 +42,8 @@ for (const name of ['baseline', 'candidate']) {
   arms[name] = score;
 }
 const completePairs = report.cases.filter(id => ['baseline', 'candidate'].every(arm => report.results.some(row => row.id === id && row.arm === arm && row.grade?.results[0]?.executed)));
-const complete = report.state === 'SETTLED' && completePairs.length === report.cases.length;
+const complete = report.state === 'SETTLED' && completePairs.length === report.cases.length
+  && Object.values(arms).every(row => row.businessCompletions === row.planned);
 const strictlyHigherObservedAccuracy = complete && arms.candidate.f2p > arms.baseline.f2p && arms.candidate.p2p > arms.baseline.p2p;
 const completeAccounting = complete && Object.values(arms).every(row => !row.missingUsage && !row.missingUsageFields && !row.missingSessions && !row.incompleteProviderCoverageCases && row.infrastructureComplete === row.planned);
 const completeTiming = complete && Object.values(arms).every(row => !row.missingTimingCases && row.recorded === row.planned && row.infrastructureComplete === row.planned && !row.missingSessions);

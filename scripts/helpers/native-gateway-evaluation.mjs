@@ -18,9 +18,16 @@ async function freePort() {
 }
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
-  prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false }) {
+  prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
+  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false }) {
+  if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
+    || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
+  // This pinned host defines overrideMs=0 as its native no-timeout sentinel.
+  // Defaults must use that same sentinel for automatic business corrections;
+  // private reviewers still receive their explicit project role deadlines.
+  const noTimeoutMs = unlimitedBusiness ? (await import(pathToFileURL(path.join(hostRoot, 'dist/timeout-0Cw4kcol.js')).href)).n({ overrideMs: 0 }) : null;
   const root = path.join(outputRoot, 'native-host');
   await fs.mkdir(root, { recursive: true }); await fs.mkdir(projectRoot, { recursive: true });
   const port = await freePort(), model = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
@@ -32,10 +39,16 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   process.argv[1] = path.join(hostRoot, 'openclaw.mjs');
   const pluginRoot = prebuiltPluginRoot ? await fs.realpath(prebuiltPluginRoot) : reuseProfile ? await fs.realpath(path.join(root, 'build/runtime-corrector-openclaw'))
     : await buildPlugin({ host: 'openclaw', sourceRoot, outputRoot: path.join(root, 'build') });
+  if (unlimitedBusiness) {
+    const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, 'openclaw.plugin.json'), 'utf8'));
+    if (!manifest.configSchema?.properties?.businessRunTimeoutMs) throw new Error('This frozen plugin cannot disable RC business-correction deadlines; do not silently claim an unbounded host.');
+  }
   let config = { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
-    agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' } },
+    agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
+      ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+      ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
         tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
@@ -45,7 +58,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000, maxTokens: 32768 }],
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
-      'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } },
+      'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
+        ...(phaseTimeoutMs ? { config: { hookTimeoutMs: phaseTimeoutMs, reviewerTimeoutMs: phaseTimeoutMs,
+          ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
     } },
   };
   for (const extra of extraPluginPaths) {
@@ -57,6 +72,12 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
   }
+  if (unlimitedBusiness) {
+    config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
+    config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
+  }
+  if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,
+    memoryFlush: { ...config.agents.defaults.compaction?.memoryFlush, enabled: false } };
   if (injectDefect && !reuseProfile) {
     // A local experiment plugin corrupts only this fixture's delivery, once,
     // immediately before the REAL original host run finalizes. Host terminal,

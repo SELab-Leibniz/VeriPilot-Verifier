@@ -9,13 +9,14 @@ import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs"
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { withTestReviewProof } from "./helpers/review-proof.mjs";
-let output, pluginRoot, createRuntime, findTask, readReport;
+import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
+let output, pluginRoot, createRuntime, findTask, withTaskState, readReport;
 before(async () => {
   output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
   createRuntime = correctionFixtureRuntime(createRuntime);
-  ({ findTask } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
+  ({ findTask, withTaskState } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
   ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
@@ -110,7 +111,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal } = {}) {
   const params = await basic(t), root = params.projectRoot;
   await fs.mkdir(path.join(root, ".runtime-corrector"));
   await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
@@ -178,7 +179,8 @@ reviewers:
   api.runtime.gateway={request:async()=>({id:'fixture-notice',aborted:true})};
   const startCompatibility=async()=>({version:1,onStart:callback=>{listeners.add(callback);return()=>listeners.delete(callback);},drain:async()=>{},diagnosticsEnabled:()=>true});
   const statusCompatibility=async()=>({emitAgentEvent(){},markDiagnosticSessionProgress(){},...(compatibility?await compatibility():{})});
-  const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility:statusCompatibility,stopStartCompatibility:startCompatibility });
+  const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility:statusCompatibility,stopStartCompatibility:startCompatibility,
+    ...(postRunTerminal ? { postRunTerminal } : {}) });
   const prompt=runtime.prompt.bind(runtime);
   runtime.prompt=async(event,context)=>{
     const result=await prompt(event,context);
@@ -697,4 +699,109 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   finish.resolve();
   const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
   assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "PASS");
+});
+
+test("host auto-compaction after a failed attempt does not become an RC hook failure", async t => {
+  const terminal = deferred(t);
+  const f = await lifecycle(t, { waitMode: "until_pass", postRunTerminal: async (_identity, runId) => {
+    await terminal.promise; return { runId, status: "ok" };
+  } });
+  try {
+  const releases = [], release = f.runtime.postRuns.release.bind(f.runtime.postRuns);
+  f.runtime.postRuns.release = (identity, reason) => { releases.push(reason); return release(identity, reason); };
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: "Context overflow" }, f.ctx);
+  assert.equal(f.state.reviewController.signal.reason.code, "RC_NATIVE_ATTEMPT_ENDED");
+  // Native admission rejects work under an already cancelled review signal.
+  f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
+    params.signal.throwIfAborted();
+    return run(params.signal);
+  };
+  await f.runtime.compact({ sessionId: f.ctx.sessionId }, f.ctx);
+  await pause(30);
+  assert(!releases.includes("RC_HOOK_UNAVAILABLE"), JSON.stringify(releases));
+  assert.equal(f.hostAbort.signal.aborted, false);
+  await f.runtime.prompt({ prompt: "Continue the original task." }, f.ctx);
+  assert.equal(f.state.reviewController.signal.aborted, false);
+  assert.equal(f.state.nativeInvalidated, false);
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered after retry." } }, f.ctx);
+  terminal.resolve();
+  const [review] = await within(f.runtime.waitForNativeReviews(), "review after a genuine outer terminal");
+  assert.equal(review.reviewStatus, "PASS");
+  } finally {
+    terminal.resolve();
+    await f.runtime.reset({}, f.ctx);
+    await f.runtime.waitForNativeReviews({ drain: true });
+  }
+});
+
+test("an unrelated admission failure during compaction still releases RC as unavailable", async t => {
+  const f = await lifecycle(t, { waitMode: "until_pass" });
+  const releases = [], release = f.runtime.postRuns.release.bind(f.runtime.postRuns);
+  f.runtime.postRuns.release = (identity, reason) => { releases.push(reason); return release(identity, reason); };
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: "Context overflow" }, f.ctx);
+  f.api.runtime.agent.session.runWithWorkAdmission = async () => {
+    throw Object.assign(new Error("Admission backend unavailable"), { code: "RC_NATIVE_ATTEMPT_ENDED" });
+  };
+  await f.runtime.compact({ sessionId: f.ctx.sessionId }, f.ctx);
+  assert(releases.includes("RC_HOOK_UNAVAILABLE"), JSON.stringify(releases));
+  assert.equal(f.hostAbort.signal.aborted, false);
+  await f.runtime.reset({}, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+});
+
+test("host memory maintenance cannot replace or finalize the business run in the same session", async t => {
+  const f = await lifecycle(t, { waitMode: "until_pass" });
+  const controller = f.state.reviewController;
+  const maintenance = { ...f.ctx, runId: "host-memory-flush", trigger: "memory" };
+  await f.runtime.prompt({ prompt: "Continue the OpenClaw runtime event." }, maintenance);
+  const later = { ...maintenance }; delete later.trigger;
+  await f.runtime.beforeTool({ toolName: "write", toolCallId: "memory-write", params: { path: "memory/today.md" } }, later);
+  await f.runtime.reply({ kind: "final", runId: later.runId, sessionKey: later.sessionKey, payload: { text: "NO_REPLY" } }, later);
+  await f.runtime.agentEnd({ runId: later.runId, success: true }, later);
+  assert.equal(f.state.nativeRunId, f.ctx.runId);
+  assert.equal(f.state.reviewController, controller);
+  assert.equal(controller.signal.aborted, false);
+  assert.equal(f.calls(), 0);
+  assert.equal(f.post().phase, "RUNNING");
+  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+  const [review] = await within(f.runtime.waitForNativeReviews(), "business review after maintenance");
+  assert.equal(review.reviewStatus, "PASS");
+});
+
+test("host maintenance filtering retains private reviewer tool authorization", async t => {
+  const f = await lifecycle(t);
+  let observed = 0;
+  const result = await runInternalExecution("private", () => f.runtime.beforeTool({ toolName: "write", params: { path: "memory/today.md" } },
+    { ...f.ctx, sessionId: "private", sessionKey: "agent:main:runtime-corrector:private", runId: "private-memory", trigger: "memory" }),
+  async () => { observed++; return { block: true, blockReason: "Private write denied" }; });
+  assert.equal(observed, 1);
+  assert.equal(result.block, true);
+  assert.equal(f.state.nativeRunId, f.ctx.runId);
+});
+
+test("a read-only continuation resumes a migration-blocked Stop, while accepted work stays quiet", async t => {
+  for (const status of ["UNVERIFIED", "PASS"]) await t.test(status, async t => {
+    const f = await lifecycle(t, { waitMode: "until_pass" });
+    await f.runtime.postRuns.release(f.post(), "PREVIOUS_RUN_ENDED");
+    const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+    await withTaskState({ projectRoot: f.root, taskId: task.taskId }, current => {
+      current.verification = { status, ...(status === "UNVERIFIED" ? { reasonCode: "STOP_SESSION_MIGRATION_REQUIRED" } : {}) };
+    });
+    await fs.appendFile(path.join(f.root, 'native.jsonl'), '\n' + JSON.stringify({ type: 'message', id: 'continue-verification', parentId: 'u',
+      message: { role: 'user', content: 'Continue pending final verification.' } }) + '\n');
+    const next = { ...f.ctx, runId: 'read-only-continuation' };
+    await f.runtime.prompt({ prompt: 'Continue pending final verification.' }, next);
+    assert.equal(f.state.nativeNeedsStop, status === "UNVERIFIED");
+    if (status === "UNVERIFIED") {
+      await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
+      const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');
+      const after = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+      assert.equal(review.reviewStatus, 'PASS', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
+        taskStatus: after.status, verification: { status: after.verification?.status, reason: after.verification?.reasonCode, assessmentId: after.verification?.assessmentId },
+        armed: after.stop.armedAtStart, assessmentReason: f.state.nativeAssessment?.outcome?.reason,
+        assessmentMode: f.state.nativeAssessment?.outcome?.assessmentMode, warnings: f.warnings.slice(-2) }));
+    } else {
+      assert.equal(f.calls(), 0, 'accepted work must not trigger another private review');
+    }
+  });
 });
