@@ -11,7 +11,9 @@ import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { businessMutationPaths } from './bench/business-mutations.mjs';
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
+import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
+const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
@@ -19,23 +21,43 @@ const dataset = arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/E
 const { task, datasetDigest } = await loadArktsTask(dataset, arg('--case') ?? 'happyword_12');
 const cacheRoot = path.resolve('.runtime-correction/system-optimization/source-cache');
 await fs.mkdir(path.dirname(outputRoot), { recursive: true });
-const prepared = await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable });
+const resumeRoot = arg('--resume-run') ? await fs.realpath(arg('--resume-run')) : null;
+let resumeManifest, resumeEntry, resumeSessionKey;
+if (resumeRoot) {
+  resumeManifest = JSON.parse(await fs.readFile(path.join(resumeRoot, 'manifest.json'), 'utf8'));
+  if (resumeManifest.instanceId !== task.instance_id || resumeManifest.datasetDigest !== datasetDigest) throw new Error('Resume task identity changed.');
+  try { process.kill(resumeManifest.ownerPid, 0); throw new Error('Prior run owner is still alive.'); }
+  catch (error) { if (error.code !== 'ESRCH') throw error; }
+  const sessions = JSON.parse(await fs.readFile(path.join(resumeRoot, 'native-host/sessions.json'), 'utf8'));
+  const matches = Object.entries(sessions).filter(([key, entry]) => key.startsWith('agent:main:arkts-') && entry.spawnedCwd === resumeManifest.projectRoot);
+  if (matches.length !== 1) throw new Error('Cannot uniquely identify the genuine prior business session.');
+  [resumeSessionKey, resumeEntry] = matches[0];
+  const transcript = await fs.readFile(resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`), 'utf8');
+  for (const line of transcript.trim().split('\n')) JSON.parse(line);
+  const head = execFileSync(gitExecutable, ['-C', resumeManifest.projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  if (head !== resumeManifest.preparedHead) throw new Error('Prior prepared business HEAD changed.');
+  await fs.mkdir(outputRoot, { recursive: false });
+}
+const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
+  baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot } : await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable,
+  ...(arg('--workspace-base') ? { workspaceBase: path.resolve(arg('--workspace-base')) } : {}),
+  ...(profile.explicit ? { preparationTimeoutMs: profile.setupTimeoutMs } : {}) });
 const input = arktsAgentInput(task), projectRoot = prepared.projectRoot;
 await fs.writeFile(path.join(outputRoot, 'public-input.json'), JSON.stringify(input, null, 2));
 const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
 const setupScript = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
-try {
+if (!resumeRoot) try {
   const installed = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
-    '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'install'], { windowsHide: true, timeout: 240000, maxBuffer: 2 * 1024 * 1024 });
+    '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'install'], { windowsHide: true, timeout: profile.setupTimeoutMs, maxBuffer: 2 * 1024 * 1024 });
   await fs.writeFile(path.join(outputRoot, 'install.log'), installed);
 } catch (error) {
   await fs.writeFile(path.join(outputRoot, 'install.log'), String(error.stdout ?? '') + String(error.stderr ?? ''));
   throw new Error('Business-workspace dependency preparation failed; no model should start');
 }
 const lockfiles = ['oh-package-lock.json5', 'entry/oh-package-lock.json5'];
-for (const file of lockfiles) if (await fs.stat(path.join(projectRoot, file)).catch(() => null))
+for (const file of resumeRoot ? [] : lockfiles) if (await fs.stat(path.join(projectRoot, file)).catch(() => null))
   execFileSync(gitExecutable, ['-C', projectRoot, 'add', '--force', '--', file], { windowsHide: true });
-execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent',
+if (!resumeRoot) execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent',
   'commit', '--quiet', '--allow-empty', '-m', 'Common benchmark dependency preparation'], { windowsHide: true });
 prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const artifact = arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
@@ -56,43 +78,19 @@ if (artifact) {
 const model = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
 if (!model) throw new Error('Configured native model is required');
 await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
-await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), `version: 2
-artifacts: []
-dynamicGroundTruth:
-  enabled: true
-  materialRoots: []
-  panel:
-    size: 0
-skillCorrection:
-  enabled: false
-artifactCorrection:
-  groundTruthReviewEnabled: false
-implementationCorrection:
-  enabled: false
-stopCorrection:
-  enabled: true
-  waitMode: until_pass
-  maxCorrectionsPerSession: 1
-  maxCorrectionsPerFlow: 1
-  assessmentTimeoutMs: 210000
-  feedbackReserveMs: 30000
-  metrics:
-${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, '0')}: ${i === 15}`).join('\n')}
-reviewers:
-  defaults:
-    model: anthropic/${model}
-    effort: low
-    timeoutMs: 180000
-    maxOutputTokens: 32768
-`);
+await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(model, profile));
+await fs.copyFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), path.join(outputRoot, 'project-config.yaml'));
+// Validate actual generated policy before starting the native Gateway/model.
+const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
+await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
 // Freeze common business navigation to the baseline artifact in both arms.
 const stableNavigationRoot = path.resolve(arg('--navigation-artifact') ?? artifact ?? 'dist/runtime-corrector-openclaw');
-const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot });
+const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs });
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
   rcSource: artifact ? baselineRef : execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: ['read', 'write', 'edit', 'bench_nav', 'bench_check'],
-  limits: { mainTimeoutMs: 600000, totalTimeoutMs: 960000, correctionAdmissions: 1, privateTimeoutMs: 180000 },
+  limits: { ...profile, correctionAdmissions: 1 },
   inputPolicy: 'Only public input and original base source; evaluator test_patch/gold not installed in business workspace.',
   state: 'PREPARED', ownerPid: process.pid };
 await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -101,23 +99,34 @@ const hostRoot = arg('--host-root'); if (!hostRoot) throw new Error('--host-root
 let gateway, result;
 try {
   gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
-    extraPluginPaths: [extra], businessToolNames: ['read', 'write', 'edit', 'bench_nav', 'bench_check'], confineBusinessFiles: true });
-  const key = `agent:main:arkts-${randomUUID()}`;
-  const created = await gateway.request('sessions.create', { key, agentId: 'main', label: `ArkTS task ${task.instance_id}` });
+    extraPluginPaths: [extra], businessToolNames: ['read', 'write', 'edit', 'bench_nav', 'bench_check'], confineBusinessFiles: true,
+    phaseTimeoutMs: profile.explicit ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true });
+  const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
+  if (resumeEntry) {
+    const original = resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`);
+    const restored = path.join(gateway.root, `${resumeEntry.sessionId}.jsonl`);
+    await fs.copyFile(original, restored);
+    await gateway.runtime.agent.session.upsertSessionEntry({ agentId: 'main', sessionKey: key, storePath: gateway.config.session.store,
+      entry: { ...resumeEntry, sessionFile: restored, spawnedCwd: projectRoot, updatedAt: Date.now() } });
+    await fs.writeFile(path.join(outputRoot, 'resume-evidence.json'), JSON.stringify({ source: original, sourceSha256: createHash('sha256').update(await fs.readFile(original)).digest('hex'), restored,
+      sessionKey: key, sessionId: resumeEntry.sessionId, originalRecordsUnmodified: true, priorPreparedHead: prepared.preparedHead }, null, 2));
+  }
+  const created = resumeEntry ? { ok: true, key } : await gateway.request('sessions.create', { key, agentId: 'main', label: `ArkTS task ${task.instance_id}` });
   const sessionKey = created.key;
   if (!created.ok || !sessionKey) throw new Error('Native session was not created');
   const scope = { agentId: 'main', sessionKey, storePath: gateway.config.session.store };
   await gateway.runtime.agent.session.patchSessionEntry({ ...scope, update: entry => ({ ...entry, spawnedCwd: projectRoot }) });
   const entry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' }), sessionId = entry.sessionId;
   const runId = randomUUID(), startedAt = Date.now();
-  const prompt = `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.`;
-  await gateway.request('chat.send', { sessionKey, sessionId, message: prompt, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: 600000 });
+  const prompt = resumeEntry ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Complete the implementation and actual checks, rather than stopping at analysis. Preserve and use the existing progress and compaction notes. The human has removed the host task completion deadline; RC review phases remain limited to 30 minutes. No new implementation hints or hidden evaluation data are supplied.`
+    : `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.`;
+  await gateway.request('chat.send', { sessionKey, sessionId, message: prompt, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: profile.mainTimeoutMs });
   const load = file => import(pathToFileURL(path.join(gateway.pluginRoot, file)).href);
   const { findTask } = await load('lib/runtime-v2/task-store.mjs');
   const { listNativeRuns } = await load('lib/openclaw/native-runs.mjs');
   const postDirectory = path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions/post-run');
   let currentTask, post, runs = [], last, businessBudgetAbortRequested = false;
-  while (Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
+  while (manifest.limits.totalTimeoutMs === null || Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
     await gateway.drain(); currentTask = await findTask({ projectRoot, sessionId });
     const names = await fs.readdir(postDirectory).catch(() => []);
     for (const name of names.filter(name => name.endsWith('.json'))) {
@@ -129,18 +138,27 @@ try {
       taskStatus: currentTask?.status, verification: currentTask?.verification?.status, postPhase: post?.phase,
       privateStarts: runs.length, privateSettled: runs.filter(run => run.status === 'SETTLED').length, modelStarts: gateway.metrics().modelStarts.length };
     if (JSON.stringify(state) !== last) { last = JSON.stringify(state); await fs.writeFile(path.join(outputRoot, 'progress.json'), last); console.log(last); }
-    if (!businessBudgetAbortRequested && !runs.length && Date.now() - startedAt >= manifest.limits.mainTimeoutMs) {
+    if (manifest.limits.mainTimeoutMs > 0 && !businessBudgetAbortRequested && !runs.length && post?.phase === 'RUNNING' && Date.now() - startedAt >= manifest.limits.mainTimeoutMs) {
       businessBudgetAbortRequested = true;
       const aborted = await gateway.request('chat.abort', { sessionKey, runId, preserveSideRuns: true }).then(response => ({ response }), error => ({ error: error.message }));
       await fs.writeFile(path.join(outputRoot, 'business-budget-abort.json'), JSON.stringify({ runId, sessionKey, requestedAt: Date.now(), ...aborted }, null, 2));
     }
     if (['IDLE', 'CLOSED'].includes(post?.phase) && gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId)
       && runs.every(run => run.status === 'SETTLED')) break;
+    if (profile.explicit && post?.reason === 'HOST_RUN_RECONCILIATION_REQUIRED' && runs.every(run => run.status === 'SETTLED')) {
+      if (!profile.hostNoTimeout) break;
+      const terminal = await gateway.request('agent.wait', { runId, timeoutMs: 1000 });
+      if ((terminal.result ?? terminal)?.runId === runId && (terminal.result ?? terminal)?.status === 'error') break;
+    }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   const session = await gateway.runtime.subagent.getSession({ sessionKey });
   await fs.writeFile(path.join(outputRoot, 'business-session.json'), JSON.stringify(session, null, 2));
   const nativeTranscript = await fs.readFile(path.join(gateway.root, `${sessionId}.jsonl`), 'utf8');
+  const trajectory = await fs.readFile(path.join(gateway.root, `${sessionId}.trajectory.jsonl`), 'utf8').then(text => text.trim().split('\n').filter(Boolean).map(JSON.parse), () => []);
+  const terminalEvent = trajectory.filter(event => event.type === 'session.ended' && event.runId === runId).at(-1);
+  const businessTerminal = terminalEvent ? { status: terminalEvent.data?.status, aborted: terminalEvent.data?.aborted,
+    timedOut: terminalEvent.data?.timedOut, ts: terminalEvent.ts } : null;
   const mutationPaths = businessMutationPaths(nativeTranscript.split('\n').filter(Boolean).map(line => JSON.parse(line)), projectRoot);
   if (mutationPaths.length) execFileSync(gitExecutable, ['--literal-pathspecs', '-C', projectRoot, 'add', '--intent-to-add', '--', ...mutationPaths], { windowsHide: true });
   await fs.writeFile(path.join(outputRoot, 'workspace.patch'), execFileSync(gitExecutable, ['-C', projectRoot, 'diff', '--binary', 'HEAD'], { maxBuffer: 4 * 1024 * 1024 }));
@@ -148,13 +166,16 @@ try {
   await fs.writeFile(path.join(outputRoot, 'candidate.patch'), patch);
   await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths,
     basis: 'Successful native write/edit tool receipts; fixed checks and host bootstrap are environment producers. Full workspace.patch retained.' }, null, 2));
-  result = { ...manifest, state: 'SETTLED', sessionId, sessionKey, originalRunId: runId, elapsedMs: Date.now() - startedAt,
+  const infrastructureComplete = ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED');
+  result = { ...manifest, state: infrastructureComplete ? 'SETTLED' : 'INCOMPLETE', sessionId, sessionKey, originalRunId: runId, elapsedMs: Date.now() - startedAt,
     verification: currentTask?.verification?.status, taskId: currentTask?.taskId, postPhase: post?.phase,
     endReason: currentTask?.verification?.status ? 'RC_REVIEW_SETTLED' : 'HOST_ENDED_WITHOUT_REVIEW',
     privateRuns: runs.map(({ runId, sessionId, role, status }) => ({ runId, sessionId, role, status })), metrics: gateway.metrics(),
     patchBytes: patch.length, actualBusinessStart: gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId),
-    infrastructureComplete: ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED'),
+    infrastructureComplete,
     businessBudgetAbortRequested,
+    businessTerminal, businessCompleted: businessTerminal?.status === 'success' && businessTerminal.aborted === false && businessTerminal.timedOut === false,
+    runtimeReason: currentTask?.verification?.reasonCode ?? post?.reason ?? null,
     score: 'NOT_YET_GRADED: evaluate candidate.patch with hidden tests in an independent evaluator worktree' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
   await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: 'SETTLED', ownerPid: process.pid, sessionId, endedAt: Date.now() }));

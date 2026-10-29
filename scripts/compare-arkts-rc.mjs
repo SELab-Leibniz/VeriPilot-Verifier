@@ -5,7 +5,13 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { providerBaseFingerprint, assertNativeProviderIdentity } from './bench/provider-identity.mjs';
+import { arktsRunProfile } from './bench/arkts-run-profile.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
+const runProfile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+const phaseArgs = runProfile.explicit ? [`--phase-timeout-ms=${runProfile.phaseTimeoutMs}`] : [];
+if (runProfile.hostNoTimeout) phaseArgs.push('--host-no-timeout');
+const workspaceArgs = arg('--workspace-base') ? [`--workspace-base=${path.resolve(arg('--workspace-base'))}`] : [];
+const toolArgs = arg('--tool-root') ? [`--tool-root=${path.resolve(arg('--tool-root'))}`] : [];
 const directory = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/paired-${Date.now()}`);
 const root = path.resolve('.runtime-correction/system-optimization');
 const cases = (arg('--cases') ?? 'security_tool_1,happyword_12').split(',');
@@ -26,7 +32,7 @@ const calibrations = Object.fromEntries(cases.map(id => {
   return [id, record.root];
 }));
 await fs.mkdir(path.dirname(directory), { recursive: true }); await fs.mkdir(directory);
-const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs',
+const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs', 'scripts/bench/arkts-run-profile.mjs',
   'scripts/bench/native-arkts-tools.mjs', 'scripts/bench/bounded-process.mjs', 'scripts/bench/prepare-arkts-model-workspace.mjs',
   'scripts/bench/business-mutations.mjs', 'scripts/bench/run-arkts-toolchain.ps1', 'scripts/bench/hypium-results.mjs', 'scripts/bench/validate-artifact-skills.mjs', 'scripts/bench/short-workspace.mjs',
   path.join(navigationArtifact, 'lib/review-task/live-source-tools.mjs'), path.join(navigationArtifact, 'lib/review-task/source-tools.mjs')];
@@ -66,10 +72,12 @@ if (arg('--adopt-baselines')) {
     adopted.set(row.id, structuredClone(row));
   }
 }
-const order = cases.flatMap((id, index) => (index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']).map(arm => ({ id, arm })));
+const candidateFirst = process.argv.includes('--candidate-first');
+const order = cases.flatMap((id, index) => ((index % 2 === 1) !== candidateFirst ? ['candidate', 'baseline'] : ['baseline', 'candidate']).map(arm => ({ id, arm })));
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
   hostVersion: JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8')).version,
   model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, providerBaseSha256, arms, cases, order, protocol, calibrations, adoptionExceptions,
+  runProfile, workspaceBase: arg('--workspace-base') ? path.resolve(arg('--workspace-base')) : null,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
   navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
 await fs.writeFile(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -88,15 +96,21 @@ try {
     if (arm === 'baseline' && adopted.has(id)) { results.push(adopted.get(id)); continue; }
     const run = path.join(directory, `${id}-${arm}`), grade = path.join(directory, `${id}-${arm}-grade`), settings = arms[arm];
     const execution = await stage(id, arm, 'model', ['scripts/run-arkts-rc-case.mjs', '--live', `--case=${id}`, `--artifact=${settings.artifact}`,
-      `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`], 1100000);
+      `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`,
+      ...phaseArgs, ...workspaceArgs, ...toolArgs, ...(arg(`--resume-${arm}-run`) ? [`--resume-run=${path.resolve(arg(`--resume-${arm}-run`))}`] : [])],
+      runProfile.hostNoTimeout ? null : runProfile.explicit ? runProfile.totalTimeoutMs + runProfile.setupTimeoutMs * 2 + 300000 : 1100000);
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
     if (native && native.metrics.hostVersion !== manifest.hostVersion) throw new Error('Installed host changed during the fixed comparison');
     if (native) await assertNativeProviderIdentity(run, providerBaseSha256);
     const row = { id, arm, run, modelExit: execution.exitCode, modelInterrupted: execution.interrupted, nativeComplete: native?.infrastructureComplete === true };
     results.push(row);
-    if (native?.infrastructureComplete) {
+    const capturedFailedAttempt = runProfile.explicit && native?.actualBusinessStart && native?.businessTerminal
+      && native.privateRuns.every(run => run.status === 'SETTLED') && !execution.interrupted;
+    if (!row.nativeComplete && capturedFailedAttempt) row.gradeQualification = 'Actual captured attempt graded separately from incomplete runtime; not an end-to-end success.';
+    if (native?.infrastructureComplete || capturedFailedAttempt) {
       const scored = await stage(id, arm, 'grade', ['scripts/calibrate-arkts-bench.mjs', `--case=${id}`, `--candidate=${path.join(run, 'candidate.patch')}`,
-        `--calibration-dir=${calibrations[id]}`, `--output=${grade}`], 400000);
+        `--calibration-dir=${calibrations[id]}`, `--output=${grade}`, ...phaseArgs, ...workspaceArgs, ...toolArgs],
+        runProfile.explicit ? runProfile.setupTimeoutMs * 3 + 300000 : 400000);
       row.gradeExit = scored.exitCode;
       row.grade = await fs.readFile(path.join(grade, 'results.json'), 'utf8').then(JSON.parse, () => null);
       await stage(id, arm, 'usage', ['scripts/summarize-arkts-run.mjs', `--run=${run}`], 30000);
@@ -105,10 +119,11 @@ try {
     await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: 'PARTIAL', results }, null, 2));
     console.log(JSON.stringify({ id, arm, nativeComplete: row.nativeComplete, executed: row.grade?.results[0]?.executed,
       resolved: row.grade?.results[0]?.resolved, totalTokens: row.usage?.totals.totalTokens }));
-    if (!native?.infrastructureComplete || execution.interrupted) throw new Error('Model infrastructure did not settle; preserve state and investigate before further model spend');
+    if ((!native?.infrastructureComplete && !capturedFailedAttempt) || execution.interrupted) throw new Error('Model infrastructure did not settle; preserve state and investigate before further model spend');
   }
-  await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ state: 'SETTLED', ownerPid: process.pid, endedAt: Date.now(), results: results.map(({ id, arm, nativeComplete }) => ({ id, arm, nativeComplete })) }, null, 2));
-  await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: 'SETTLED', results }, null, 2));
+  const finalState = results.every(row => row.nativeComplete) ? 'SETTLED' : 'SETTLED_WITH_RUNTIME_FAILURES';
+  await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ state: finalState, ownerPid: process.pid, endedAt: Date.now(), results: results.map(({ id, arm, nativeComplete }) => ({ id, arm, nativeComplete })) }, null, 2));
+  await fs.writeFile(path.join(directory, 'results.json'), JSON.stringify({ ...manifest, state: finalState, results }, null, 2));
 } catch (error) {
   await fs.writeFile(path.join(directory, 'progress.json'), JSON.stringify({ state: 'NEEDS_ATTENTION', ownerPid: process.pid, reason: error.message, results }, null, 2));
   throw error;

@@ -3,7 +3,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 export function runBoundedProcess(command, args, { cwd, signal, timeoutMs = 180000, exitDrainMs = 1000, maxTail = 6000, onOutput = () => {} } = {}) {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('A finite process timeout is required');
+  if (timeoutMs !== null && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) throw new Error('A finite process timeout or explicit null (no deadline) is required');
   if (signal?.aborted) return Promise.resolve({ exitCode: null, interrupted: true, reason: 'cancelled-before-launch', outputComplete: false, tail: '' });
   return new Promise(resolve => {
     const startedAt = Date.now(), child = spawn(command, args, { cwd, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -22,7 +22,7 @@ export function runBoundedProcess(command, args, { cwd, signal, timeoutMs = 1800
       }
       finish({ interrupted: true, reason, outputComplete: false });
     };
-    const cancel = () => stop('cancelled'), timer = setTimeout(() => stop('deadline'), timeoutMs);
+    const cancel = () => stop('cancelled'), timer = timeoutMs === null ? null : setTimeout(() => stop('deadline'), timeoutMs);
     signal?.addEventListener('abort', cancel, { once: true });
     const output = value => { tail = (tail + value).slice(-maxTail); onOutput(value); };
     child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');

@@ -4,7 +4,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot }) {
+export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs = 180000 }) {
+  if (!Number.isSafeInteger(checkTimeoutMs) || checkTimeoutMs < 1000) throw new Error('A positive project-check timeout is required.');
   const directory = path.join(outputRoot, 'bench-tools'); await fs.mkdir(directory);
   const checkScript = fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url));
   const navigationModule = pathToFileURL(path.join(stableNavigationRoot, 'lib/review-task/live-source-tools.mjs')).href;
@@ -19,7 +20,7 @@ import {createLiveSourceTools} from ${JSON.stringify(navigationModule)};
 import {runBoundedProcess} from ${JSON.stringify(boundedProcessModule)};
 import fs from 'node:fs/promises';
 import {parseHypium} from ${JSON.stringify(hypiumModule)};
-const root=${JSON.stringify(projectRoot)}, toolRoot=${JSON.stringify(toolRoot)}, script=${JSON.stringify(checkScript)};
+const root=${JSON.stringify(projectRoot)}, toolRoot=${JSON.stringify(toolRoot)}, script=${JSON.stringify(checkScript)}, checkTimeoutMs=${checkTimeoutMs};
 const result=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
 const inside=file=>{const r=path.relative(root,file);if(r==='..'||r.startsWith('..'+path.sep)||path.isAbsolute(r))throw Error('Outside benchmark workspace');};
 export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register(api){
@@ -38,7 +39,7 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
   const directory=path.join(root,'.runtime-correction/bench-checks'); await fs.mkdir(directory,{recursive:true});
   const outputPath=path.join(directory,String(started)+'-'+args.action+'.log');
   let fullOutput='';
-  const checked=await runBoundedProcess('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',script,'-Project',root,'-ToolRoot',toolRoot,'-Phase',args.action],{cwd:root,signal,onOutput(value){fullOutput+=value;}});
+  const checked=await runBoundedProcess('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',script,'-Project',root,'-ToolRoot',toolRoot,'-Phase',args.action],{cwd:root,signal,timeoutMs:checkTimeoutMs,onOutput(value){fullOutput+=value;}});
   await fs.writeFile(outputPath,fullOutput);
   let localTests;
   if(args.action==='test'){

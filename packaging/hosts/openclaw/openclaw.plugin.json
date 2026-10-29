@@ -67,6 +67,12 @@
         "maximum": 86400000,
         "description": "Optional explicit reviewer cap; otherwise project reviewer timeout applies. Does not increase host Hook or parent task budgets."
       },
+      "businessRunTimeoutMs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 86400000,
+        "description": "Optional RC business-correction execution window, separate from reviewer and Hook budgets. Zero disables the RC execution deadline after a trusted start; admission, reviews, cancellation and scope checks remain active. The host run timeout is configured separately."
+      },
       "hookTimeoutMs": {
         "type": "integer",
         "minimum": 2000,

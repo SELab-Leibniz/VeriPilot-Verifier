@@ -8,7 +8,9 @@ import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { shortArktsWorkspace } from './bench/short-workspace.mjs';
 import { loadArktsTask, arktsAgentInput, digest } from './bench/arkts-dataset.mjs';
 import { parseHypium, gradeArkts } from './bench/hypium-results.mjs';
+import { arktsRunProfile } from './bench/arkts-run-profile.mjs';
 const args = process.argv.slice(2), arg = key => args.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
+const runProfile = arktsRunProfile(arg('--phase-timeout-ms'));
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const candidate = arg('--candidate') ? await fs.realpath(arg('--candidate')) : null;
 const dataset = path.resolve(arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/Experiments/swe-arkts-bench');
@@ -18,7 +20,7 @@ const cacheRoot = path.resolve(arg('--cache') ?? '.runtime-correction/system-opt
 const { task, datasetDigest } = await loadArktsTask(dataset, id);
 await fs.mkdir(output, { recursive: false });
 await fs.writeFile(path.join(output, 'agent-input.json'), JSON.stringify(arktsAgentInput(task), null, 2));
-async function run(command, argv, cwd, name, timeoutMs = 180000) {
+async function run(command, argv, cwd, name, timeoutMs = runProfile.explicit ? runProfile.setupTimeoutMs : 180000) {
   if (command === 'git') { command = gitExecutable;
     if (arg('--git-proxy')) argv = ['-c', `http.proxy=${arg('--git-proxy')}`, ...argv]; }
   const start = Date.now();
@@ -47,7 +49,7 @@ if (cached.code) {
 // same tree repeatedly. These refs never enter business-agent tools.
 const retained = await run('git', ['--git-dir', cache, 'update-ref', `refs/rc-bench/base/${task.base_commit}`, task.base_commit], output, 'retain-base');
 if (retained.code) throw new Error('Could not retain shared base objects');
-const source = shortArktsWorkspace(output, 'grd');
+const source = shortArktsWorkspace(output, 'grd', arg('--workspace-base') ? path.resolve(arg('--workspace-base')) : process.cwd());
 await fs.mkdir(path.dirname(source), { recursive: true });
 const checkout = await run('git', ['-c', 'core.longpaths=true', '--git-dir', cache, 'worktree', 'add', '--detach', source, task.base_commit], output, 'checkout');
 if (checkout.code) throw new Error('Shared source worktree creation failed');
@@ -69,7 +71,7 @@ const environment = { requestedSdk: task.version, actualSdk: 'API24 / 6.1.1.125'
 await fs.writeFile(path.join(output, 'environment.json'), JSON.stringify(environment, null, 2));
 const script = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
 const shell = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-const invoke = phase => run(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Project', source, '-ToolRoot', toolRoot, '-Phase', phase], source, phase, 240000);
+const invoke = phase => run(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Project', source, '-ToolRoot', toolRoot, '-Phase', phase], source, phase, runProfile.setupTimeoutMs);
 let calibration;
 if (candidate) {
   const directory = arg('--calibration-dir'); if (!directory) throw new Error('--candidate requires --calibration-dir with native base and gold evidence');
