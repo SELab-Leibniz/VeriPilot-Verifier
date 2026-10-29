@@ -154,3 +154,9 @@ provider-fetch-timing.test.mjs 的真实安装宿主测试加入这两种明确�
 ### 用户确认优化范围
 
 用户明确要求：“这例结束可以停下优化外围框架了。我目前只想优化RC 插件本体。” 第七例维持当前真实运行，完成评分与复盘。此后停止开发外围运行/评测框架，仅使用既有流程执行、评分及保存证据；逐例优化对象限定 RC 插件本体的需求提取、审查与纠偏逻辑。发现插件问题后在 runtime-corrector-toy 修改、验证并冻结新插件，再进入下一例，不热换在跑版本，不为制造迭代而修改无证据的问题。全部十三例及 F2P/P2P 95% 目标保持不变；MatrixAssistant/OpenClaw 继续只读。
+
+### RC 插件本体：条件性失败保证的证据约束
+
+回查第六例原 RC 审查发现一项具体的理由过度保证：M16 的派发失败项 PASS 理由还声称 repository save failure 没有 partial state，而被引用的 PeripheralDevicePolicyRepository.set 在 saveRecords 之前已修改 records，catch 仅返回 false，没有回滚。原要求限定系统派发失败；该要求本身仍可能正确 PASS，不能据额外错误说明直接翻转整个原判定。原审查结果 SHA、源码 SHA、精确分支与条件区别保存为 rc-plugin-failure-effects-evidence.json，不向业务提供评分内容。
+
+插件工作区审查提示与共享 productionTrace.producerValue 描述补充：保留准确失败操作/条件，区分内存、持久化和外部系统状态，按顺序检查失败前写入与补偿，别名快照必须独立，理由也不能扩大保证。原 version1 见证结构、判定与证据来源规则保持兼容。新增四个独立 RC 审查语义样本（失败前已写内存、正确补偿、别名假补偿、仅派发失败要求），直接运行源码对 false/throw 路径校准其预期结果；它们不是 ArkTS 隐藏测试，也不是外围跑测能力开发。校准、M16 协议及工作区审查 24 项回归通过，接下来用现有显式 native workspace 审查入口运行语义验证，再冻结新插件用于后续样本。当前第七例冻结 round001 未变。

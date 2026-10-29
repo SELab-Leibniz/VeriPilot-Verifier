@@ -14,6 +14,7 @@ import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from './helpers/mixed-skill-evaluation.mjs';
+import { failureEffectCases } from './helpers/failure-effect-fixtures.mjs';
 import * as hostAdapter from '../lib/hosts/claude.mjs';
 
 const args = process.argv.slice(2);
@@ -30,6 +31,7 @@ const executable = process.env.RUNTIME_CORRECTOR_AGENT_EXECUTABLE ?? (process.pl
   : await hostAdapter.resolveDefaultReviewerExecutable());
 const model = process.env.RC_EVAL_MODEL ?? 'sonnet';
 const cases = [
+  ...failureEffectCases,
   { id: 'mixed-skill', expected: 'MIXED', expectedRows: MIXED_SKILL_EXPECTED, metricId: 'M16', metricIds: ['M08', 'M12', 'M16'],
     code: 'export const accept = value => value + 1;\n',
     requirement: 'Implement accept(value) in app.mjs. The allowed input domain consists only of finite numbers; arrays and every non-number input are outside scope and require no handling or rejection. For each allowed input, return that number plus one without storing state.',
