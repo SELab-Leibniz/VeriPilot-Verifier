@@ -182,3 +182,5 @@ RC 本体改动 3d76dd2 的四项真实 native production workspace 审查均匹
 最终 ViewModel 的刷新在 await switchMode 之后，finally 只清除忙标志；调用拒绝时刷新被跳过。原需求明确含 operation throws 与 confirmed mode reloaded，但最终审查把普通返回路径上的刷新当成了该复合条目全部通过的证据。审查全文、源码 SHA、原终态、六次 build/test 回执及用量 8,787,474（含缓存）存于 security_tool_7/attempt-001-review.json，需求核对表关闭为存在一项异常路径缺口。rc-plugin-exception-paths-evidence.json 固定公开需求、最终来源和漏判理由；隐藏结果不发送给业务。
 
 RC 本体继续只改工作区审查提示和共享 productionTrace 描述：多效果条目逐项追踪适用结果，返回失败与异常拒绝分别检查，finally 只证明自身操作，不能用回滚或忙标志清理替代另一个必需效果；依赖下层吞掉异常时需要相关边界的完整契约。version1 结构及判定协议不变。新增三个通用 RC 语义夹具，分别为异常跳过必需刷新、finally 正确刷新、原要求明确排除异常刷新；直接执行代码独立校准三种结果，防止扩大义务。相关回归 25/25 通过，真实 native production 审查另行保存。此迭代不是外围框架功能开发。
+
+f67ab07 的三项真实 native production 审查均匹配：遗漏异常刷新 DEVIATION（68.4s）、finally 正确刷新 PASS（72.3s）、原要求排除异常刷新 PASS（75.6s），三个私有运行全部结算、业务启动为 0；结果在 rc-exception-paths-live-results.json。它们只验证 M16 审查语义，不代替六指标 benchmark。round003 对 Git 的 176 个 runtime 模块和 6 个 Skill 验证通过，较 round002 仍只改两个审查模块。冻结插件实际解析新评测配置与参考文件的十六个指标开关逐项一致，证明在新套件 policy-preflight/proof.json。新套件已从 security_tool_1 重新启动，公共导航仍固定 round001；原七例诊断与失败留存，按新套件独立统计全部十三例。
