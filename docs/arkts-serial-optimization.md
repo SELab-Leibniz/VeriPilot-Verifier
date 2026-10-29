@@ -82,3 +82,15 @@
 本例重导出 `attempt-001/candidate-exports/export-001/candidate.patch` 为 1481 字节，与实际两文件修改一致。proof.json 绑定原清单、结果、完整差异、原候选、继承范围和转录的 SHA。重导出候选的全新原生评分位于该目录的 `grade/`，**F2P 1/1、P2P 595/595**，完整执行且没有解析错误；严格解析器未放宽。汇总保留原始和修复后的所有 gradingRevisions，按时间使用最新修订，不择优、不把重导出称为新模型尝试；首轮/最新轮仍指真实业务尝试。
 
 归属、封存重建、二进制/增删文件、原 index/原证据不变、活跃 owner/身份/HEAD 拒绝、缺失封存文件拒绝、评分修订哈希/时间顺序及原生工具/评分器的 24 项回归通过，见 `candidate-capture-regression.log`。业务用量 17 请求 / 17 正用量记录、289043 tokens（含缓存）；离线修复增加模型调用为 0。完整复盘为 `security_tool_4/attempt-001-review.json`。目前最新结果完成 4/13，F2P 5/5、P2P 2547/2547，其余九例仍未完成。
+
+另外回查已完成四例的成功写入归属，`completed-mutation-scope-audit.json` 确认前三例无相同遗漏，第四例的修复范围与真实回执完全一致。
+
+## security_tool_5（已完成）
+
+`attempt-001` 使用 `bf47c1c` harness，包含原生 apply_patch 回执归属修复。历史 PID 29872、终端 61295、会话 `0a6219d7-e61c-4715-aa01-405ddcd15957`，项目 `.runtime-correction/b/biz-99f0cddd99fc`。已正常结算：业务公开终态成功、RC PASS、两个私有运行 SETTLED，耗时 561575ms。独立原生隐藏评分 **F2P 1/1、P2P 610/610**，完整执行且没有运行或解析错误。
+
+公开问题是无效防火墙更新在验证之前删除旧系统规则。模型在 updateRule 的既有规则检查之后，先复用完整 validateRuleIntentInput，再进入删除/新建路径；空名称返回真实的 `rule name is required`，不触发删除或保存。新增回归同时检查返回错误、零系统删除、零意图保存，原有创建及合法更新路径保持不变。原始本地 610/610、最终 611/611 通过，没有回归或消失用例。
+
+轨迹为 6 次导航、8 次分页读取、2 次 edit、2 次检查，没有业务错误或上下文溢出。正式导出包含两个真实业务文件、3137 字节，与原生写入范围一致；本例没有使用 apply_patch，不能把它冒称为新的 apply_patch 端到端证明，相关真实恢复证据在第四例。原始完整问题保留为一条 USER_EXPLICIT 实现要求，审查沿生产调用方及实际存储/系统写入路径确认 TASK_COMPLETE，无新增 harness 功能缺陷。
+
+用量报告为 1003396 tokens（含缓存），40 请求 / 40 正用量记录；需求提取约 130.9s、审查约 269.9s，原始计量全部保留。复盘为 `security_tool_5/attempt-001-review.json`。目前最新结果完成 5/13，F2P 6/6、P2P 3157/3157；其余八例仍未完成，全量目标保持 active。
