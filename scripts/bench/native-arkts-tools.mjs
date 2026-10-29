@@ -4,13 +4,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs = 180000 }) {
+export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs = 180000, baselineLocalTests = null }) {
   if (!Number.isSafeInteger(checkTimeoutMs) || checkTimeoutMs < 1000) throw new Error('A positive project-check timeout is required.');
   const directory = path.join(outputRoot, 'bench-tools'); await fs.mkdir(directory);
   const checkScript = fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url));
   const navigationModule = pathToFileURL(path.join(stableNavigationRoot, 'lib/review-task/live-source-tools.mjs')).href;
   const boundedProcessModule = new URL('./bounded-process.mjs', import.meta.url).href;
-  const hypiumModule = new URL('./hypium-results.mjs', import.meta.url).href;
+  const localEvidenceModule = new URL('./local-test-evidence.mjs', import.meta.url).href;
   await fs.writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: 'rc-arkts-bench-tools', version: '1.0.0', type: 'module', openclaw: { extensions: ['./index.mjs'] } }));
   await fs.writeFile(path.join(directory, 'openclaw.plugin.json'), JSON.stringify({ id: 'rc-arkts-bench-tools', name: 'Controlled ArkTS benchmark tools',
     main: './index.mjs', activation: { onStartup: true }, contracts: { tools: ['bench_nav', 'bench_check'] },
@@ -19,7 +19,8 @@ export async function createArktsBenchTools({ outputRoot, projectRoot, toolRoot,
 import {createLiveSourceTools} from ${JSON.stringify(navigationModule)};
 import {runBoundedProcess} from ${JSON.stringify(boundedProcessModule)};
 import fs from 'node:fs/promises';
-import {parseHypium} from ${JSON.stringify(hypiumModule)};
+import {localTestEvidence,publicLocalTestEvidence} from ${JSON.stringify(localEvidenceModule)};
+const baselineLocalTests=${JSON.stringify(baselineLocalTests)};
 const root=${JSON.stringify(projectRoot)}, toolRoot=${JSON.stringify(toolRoot)}, script=${JSON.stringify(checkScript)}, checkTimeoutMs=${checkTimeoutMs};
 const result=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
 const inside=file=>{const r=path.relative(root,file);if(r==='..'||r.startsWith('..'+path.sep)||path.isAbsolute(r))throw Error('Outside benchmark workspace');};
@@ -44,11 +45,8 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
   let localTests;
   if(args.action==='test'){
     const stat=await fs.stat(coverage).catch(()=>null), fresh=Boolean(stat&&stat.mtimeMs>=started-2000);
-    const parsed=fresh?parseHypium(await fs.readFile(coverage,'utf8')):null;
-    const counts={};for(const status of Object.values(parsed?.statuses??{}))counts[status]=(counts[status]??0)+1;
-    const completeRuntime=Boolean(fresh&&checked.outputComplete&&!checked.interrupted&&parsed?.finished&&!parsed.errors.length&&/Finished :entry:.*@UnitTestArkTS/u.test(fullOutput));
-    localTests={freshReport:fresh,reportPath:fresh?coverage:null,finished:parsed?.finished===true,completeRuntime,
-      allObservedPassed:completeRuntime&&Object.keys(parsed.statuses).length>0&&Object.values(parsed.statuses).every(status=>status==='PASS'),counts,metadataErrors:parsed?.errors??[],
+    const current=localTestEvidence(fresh?await fs.readFile(coverage,'utf8'):'',checked,{freshReport:fresh,compileOutput:fullOutput});
+    localTests={...publicLocalTestEvidence(current,baselineLocalTests),reportPath:fresh?coverage:null,
       interpretation:'Only tests present in this business workspace; no hidden evaluation tests or expected benchmark IDs.'};
   }
   return result({action:args.action,...checked,outputPath,...(localTests?{localTests}:{}),notice:'Compiler/test runner exit alone does not prove every required behavior. An interrupted or incomplete output cannot certify checks.'});

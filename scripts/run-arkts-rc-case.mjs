@@ -16,6 +16,8 @@ import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile
 import { verifyFrozenArtifact } from './bench/frozen-artifact-verification.mjs';
 import { restoreStopSessionLedger } from './bench/restore-stop-session.mjs';
 import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
+import { runBoundedProcess } from './bench/bounded-process.mjs';
+import { localTestEvidence } from './bench/local-test-evidence.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
@@ -24,7 +26,7 @@ const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
 const dataset = arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/Experiments/swe-arkts-bench';
 const { task, datasetDigest } = await loadArktsTask(dataset, arg('--case') ?? 'happyword_12');
-const cacheRoot = path.resolve('.runtime-correction/system-optimization/source-cache');
+const cacheRoot = path.resolve(arg('--cache') ?? '.runtime-correction/system-optimization/source-cache');
 await fs.mkdir(path.dirname(outputRoot), { recursive: true });
 const resumeRoot = arg('--resume-run') ? await fs.realpath(arg('--resume-run')) : null;
 let resumeManifest, resumeEntry, resumeSessionKey;
@@ -76,10 +78,12 @@ if (!resumeRoot) execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.nam
 prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const artifact = arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
 const baselineRef = arg('--baseline-ref') ?? 'c33bae6';
+let verifiedRcCommit = execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 if (artifact) {
   const validatedSkills = await validateArtifactSkills(artifact, arg('--host-root') ?? 'C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw');
   await fs.writeFile(path.join(outputRoot, 'skill-validation.json'), JSON.stringify(validatedSkills, null, 2));
   const validation = await verifyFrozenArtifact({ gitExecutable, cwd: sourceRoot, reference: baselineRef, artifact });
+  verifiedRcCommit = validation.baselineCommit;
   await fs.writeFile(path.join(outputRoot, 'baseline-artifact-validation.json'), JSON.stringify(validation, null, 2));
 }
 const model = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
@@ -92,13 +96,35 @@ const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRo
 await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
 // Freeze common business navigation to the baseline artifact in both arms.
 const stableNavigationRoot = path.resolve(arg('--navigation-artifact') ?? artifact ?? 'dist/runtime-corrector-openclaw');
-const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs });
+let baselineLocalTests = resumeRoot ? await fs.readFile(path.join(resumeRoot, 'baseline-local-tests.json'), 'utf8').then(JSON.parse, error => {
+  if (error.code === 'ENOENT') return null; throw error;
+}) : null;
+if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
+  const coverage = path.join(projectRoot, 'entry/.test/default/intermediates/test/coverage_data/coverage.log');
+  await fs.rm(coverage, { force: true });
+  const started = Date.now(); let fullOutput = '';
+  const execution = await runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
+    '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'test'], { cwd: projectRoot, timeoutMs: profile.checkTimeoutMs, onOutput(value) { fullOutput += value; } });
+  await fs.writeFile(path.join(outputRoot, 'baseline-local-test.log'), fullOutput);
+  const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
+  const raw = freshReport ? await fs.readFile(coverage, 'utf8') : '';
+  await fs.writeFile(path.join(outputRoot, 'baseline-local-coverage.log'), raw);
+  baselineLocalTests = localTestEvidence(raw, execution, { freshReport, compileOutput: fullOutput });
+  if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
+}
+if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
+const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests });
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
-  rcSource: artifact ? baselineRef : execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+  rcSource: verifiedRcCommit,
+  harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs',
+    'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
+    'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
+    'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: ['read', 'write', 'edit', 'bench_nav', 'bench_check'],
   limits: { ...profile, correctionAdmissions: 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default' },
+  originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,
   recoveryIntent: process.argv.includes('--verify-pending-rc') ? 'pending-rc-acceptance' : 'complete-business-task',
   inputPolicy: 'Only public input and original base source; evaluator test_patch/gold not installed in business workspace.',
   state: 'PREPARED', ownerPid: process.pid };
@@ -147,7 +173,7 @@ try {
   const prompt = resumeEntry && process.argv.includes('--verify-pending-rc')
     ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Its final RC acceptance remains pending. Give a truthful status based on existing work; normal automatic post-run RC review will execute after your response. Preserve the implementation and address only genuine remaining blockers. The host has no task completion deadline; RC phases remain 30 minutes. No evaluator results, hidden tests, implementation hints or expected answers are supplied.`
     : resumeEntry ? `Continue the original ${task.instance_id} task in this genuine session and existing workspace. Complete the implementation and actual checks, rather than stopping at analysis. Preserve and use the existing progress and compaction notes. The human has removed the host task completion deadline; RC review phases remain limited to 30 minutes. No new implementation hints or hidden evaluation data are supplied.`
-    : `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.`;
+    : `${input.problem_statement}\n\n${input.hints_text}\nWork in the current repository. API24 and unsigned local preparation are provided. Use available workspace navigation and project checks; keep the change focused on this issue. Report actual checks and any remaining uncertainty.${baselineLocalTests ? `\nThe unmodified original local tests were executed before your changes: ${JSON.stringify({ counts: baselineLocalTests.counts, failures: baselineLocalTests.failures })}. bench_check test compares against this baseline. Preserve passing behavior and distinguish existing failures from regressions; a baseline match does not establish the requested fix.` : ''}`;
   await gateway.request('chat.send', { sessionKey, sessionId, message: prompt, idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: profile.mainTimeoutMs });
   const load = file => import(pathToFileURL(path.join(gateway.pluginRoot, file)).href);
   const { findTask } = await load('lib/runtime-v2/task-store.mjs');

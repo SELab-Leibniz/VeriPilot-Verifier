@@ -33,7 +33,7 @@ const calibrations = Object.fromEntries(cases.map(id => {
   return [id, record.root];
 }));
 await fs.mkdir(path.dirname(directory), { recursive: true }); await fs.mkdir(directory);
-const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs', 'scripts/bench/arkts-run-profile.mjs',
+const protocolFiles = ['scripts/run-arkts-rc-case.mjs', 'scripts/helpers/native-gateway-evaluation.mjs', 'scripts/calibrate-arkts-bench.mjs', 'scripts/bench/arkts-run-profile.mjs', 'scripts/bench/local-test-evidence.mjs',
   'scripts/bench/business-completion.mjs', 'scripts/summarize-arkts-run.mjs',
   'scripts/bench/frozen-artifact-verification.mjs',
   'scripts/bench/restore-stop-session.mjs',
