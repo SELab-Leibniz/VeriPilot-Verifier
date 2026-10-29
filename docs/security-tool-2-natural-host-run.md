@@ -67,3 +67,9 @@
 2026-10-29 检测到旧 `rc-five-branch-fusion` 工作目录被另一项工作切换到 `codex/rc-expected-files-targeted-repair`，并有不属于本次任务的源码修改。保留全部文件和该分支；本次改用独立 worktree `C:/Users/user/.codex/worktrees/rc-natural-host-delivery/runtime-corrector-toy`，分支 `codex/rc-host-natural-completion`，仍共享原仓 Git 对象。
 
 第一轮完整原始记录仍在旧目录的 `security2-natural-host-001/`；新工作目录的 `security2-natural-host-002/experiment.json` 和 `source-boundary.json` 保存绝对恢复入口。业务仍沿用原临时项目，原始会话字节及文件进度继续保留，RC 使用冻结修复版 32531a4；不向宿主传递独立评分结果或隐藏测试信息。新运行器分别展示真实业务终态和 RC 结算状态，进度标识不再把未结算统一写成 SETTLED。
+
+## 离线预检提速实验（尚未接入当前运行）
+
+现有预检为 176 个模块分别启动 Git，再读取各产物文件。辅助工具 `scripts/bench/frozen-artifact-verification.mjs` 固定解析 commit 后，通过批量 blob 协议取回原文；实际产物仍逐文件重读、规范化换行并比较，不缓存放行。Git 进程从 177 次变为 3 次。UTF-8、空格路径、CRLF 等价、篡改后再次校验和缺失输入的 3 项测试通过。
+
+离线复用本轮已有预检证据，176 项文件及 SHA 全部一致；原运行预检文件标识间隔约 139858ms，批量调用观察为 5934ms。冷热缓存与当时负载不同，这仅是一次阶段观察，不外推为整任务提速比例。原检查没有重复执行。记录在 `frozen-artifact-verification-experiment.json`；复现入口 `scripts/benchmark-frozen-artifact-verification.mjs --run=<prepared-native-run> --output=<result.json>`。当前模型运行继续使用冻结的原预检代码，待本次结算后再接入后续共同协议。
