@@ -29,3 +29,37 @@ test('an interrupted report or incomplete baseline cannot establish regression a
     assert.equal(diff.comparable, false); assert.equal(diff.regressions, undefined);
   }
 });
+
+test('public local evidence includes exact native assertion messages and report lines without changing scoring', () => {
+  const diagnostic = 'OHOS_REPORT_STATUS: stream=Error in broken, expect bluetooth_dispatch_failed equals unsupported_policy';
+  const raw = lines('broken', 'fail') + diagnostic + '\n';
+  const before = observe(lines('broken', 'fail')), after = observe(raw);
+  assert.deepEqual(after.statuses, before.statuses);
+  assert.equal(after.allObservedPassed, false);
+  const exposed = publicLocalTestEvidence(after).runtimeDiagnostics;
+  assert.equal(exposed.available, true);
+  assert.equal(exposed.matchedLines, 1);
+  assert.equal(exposed.messages[0].line, raw.split('\n').indexOf(diagnostic) + 1);
+  assert.equal(exposed.messages[0].text, 'Error in broken, expect bluetooth_dispatch_failed equals unsupported_policy');
+});
+
+test('stale native report text is never exposed as a new failure diagnostic', () => {
+  const raw = 'OHOS_REPORT_STATUS: stream=Error in old, stale assertion\n';
+  const current = localTestEvidence(raw, { outputComplete: true, interrupted: false },
+    { freshReport: false, compileOutput: 'Finished :entry:default@UnitTestArkTS' });
+  assert.equal(current.runtimeDiagnostics.available, false);
+  assert.deepEqual(current.runtimeDiagnostics.messages, []);
+  assert.equal(current.completeRuntime, false);
+});
+
+test('diagnostics bound line count and message length while keeping all parsed failures', () => {
+  const raw = Array.from({ length: 25 }, (_, i) => lines(`failure-${i}`, 'fail')
+    + `OHOS_REPORT_STATUS: stream=Error in failure-${i}, ${'详情'.repeat(1000)}\n`).join('');
+  const current = observe(raw), diagnostics = current.runtimeDiagnostics;
+  assert.equal(current.failures.length, 25);
+  assert.equal(diagnostics.matchedLines, 25);
+  assert.equal(diagnostics.messages.length, 16);
+  assert.equal(diagnostics.truncated, true);
+  assert(diagnostics.messages.every(message => message.text.length <= 800 && message.truncated));
+  assert.equal(current.allObservedPassed, false);
+});

@@ -45,7 +45,7 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
   return response;
  }}, {names:['bench_nav']});
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_check',label:'Project check',
- description:'Run a fixed project check with the installed HarmonyOS toolchain. build uses devecocli; test returns actual runtime pass/fail counts for the available original local tests. Full output is saved at outputPath. No arbitrary commands.',
+ description:'Run a fixed project check with the installed HarmonyOS toolchain. build uses devecocli; test returns actual runtime pass/fail counts and bounded assertion diagnostics for the available original local tests. Full command output is saved at outputPath; each fresh runtime report is archived at localTests.reportPath. No arbitrary commands.',
  parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['build','test']}}},
  async execute(id,args,signal){
   if(!['build','test'].includes(args.action))throw Error('Unknown check');
@@ -59,8 +59,11 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
   let localTests;
   if(args.action==='test'){
     const stat=await fs.stat(coverage).catch(()=>null), fresh=Boolean(stat&&stat.mtimeMs>=started-2000);
-    const current=localTestEvidence(fresh?await fs.readFile(coverage,'utf8'):'',checked,{freshReport:fresh,compileOutput:fullOutput});
-    localTests={...publicLocalTestEvidence(current,baselineLocalTests),reportPath:fresh?coverage:null,
+    const raw=fresh?await fs.readFile(coverage,'utf8'):'';
+    const reportPath=fresh?outputPath.slice(0,-4)+'.coverage.log':null;
+    if(reportPath)await fs.writeFile(reportPath,raw,{flag:'wx'});
+    const current=localTestEvidence(raw,checked,{freshReport:fresh,compileOutput:fullOutput});
+    localTests={...publicLocalTestEvidence(current,baselineLocalTests),reportPath,sourceReportPath:fresh?coverage:null,
       interpretation:'Only tests present in this business workspace; no hidden evaluation tests or expected benchmark IDs.'};
   }
   return result({action:args.action,...checked,outputPath,...(localTests?{localTests}:{}),notice:'Compiler/test runner exit alone does not prove every required behavior. An interrupted or incomplete output cannot certify checks.'});

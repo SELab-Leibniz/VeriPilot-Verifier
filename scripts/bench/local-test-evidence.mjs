@@ -1,5 +1,21 @@
 import { parseHypium } from './hypium-results.mjs';
 
+function runtimeDiagnostics(raw, freshReport) {
+  const messages = [];
+  let matchedLines = 0;
+  if (freshReport) for (const [index, line] of raw.split(/\r?\n/u).entries()) {
+    const marker = 'OHOS_REPORT_STATUS: stream=Error in ';
+    const start = line.indexOf(marker);
+    if (start < 0) continue;
+    matchedLines++;
+    if (messages.length >= 16) continue;
+    const text = line.slice(start + 'OHOS_REPORT_STATUS: stream='.length);
+    messages.push({ line: index + 1, text: text.slice(0, 800), truncated: text.length > 800 });
+  }
+  return { available: Boolean(freshReport), messages, matchedLines, truncated: matchedLines > messages.length,
+    interpretation: 'Fresh original local runtime assertion messages only. Diagnostic text does not establish test identity, completion or score; use the parsed results separately. Line numbers refer to the supplied report; bench_check exposes its archived reportPath.' };
+}
+
 // These are original, public workspace tests, never the hidden test oracle.
 export function localTestEvidence(raw, execution, { freshReport, compileOutput }) {
   const parsed = freshReport ? parseHypium(raw) : { statuses: {}, errors: [], finished: false };
@@ -10,7 +26,7 @@ export function localTestEvidence(raw, execution, { freshReport, compileOutput }
   return { freshReport, finished: parsed.finished, completeRuntime, statuses: parsed.statuses, counts,
     allObservedPassed: completeRuntime && Object.keys(parsed.statuses).length > 0 && Object.values(parsed.statuses).every(status => status === 'PASS'),
     failures: Object.entries(parsed.statuses).filter(([, status]) => status !== 'PASS').map(([id, status]) => ({ id, status })),
-    metadataErrors: parsed.errors };
+    metadataErrors: parsed.errors, runtimeDiagnostics: runtimeDiagnostics(raw, freshReport) };
 }
 
 export function publicLocalTestEvidence(current, baseline) {
