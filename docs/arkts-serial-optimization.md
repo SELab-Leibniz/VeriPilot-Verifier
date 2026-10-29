@@ -85,6 +85,8 @@
 
 另外回查已完成四例的成功写入归属，`completed-mutation-scope-audit.json` 确认前三例无相同遗漏，第四例的修复范围与真实回执完全一致。
 
+捕获修复后的完整工程回归也已通过：178 文件、1908 用例，1885 pass、23 skip、0 fail、0 timeout，记录为 `full-regression-iteration4.log`。这轮包含新增原生 patch 回执、冻结候选重建和评分修订的测试，不与修复前的 iteration3 计数混用。
+
 ## security_tool_5（已完成）
 
 `attempt-001` 使用 `bf47c1c` harness，包含原生 apply_patch 回执归属修复。历史 PID 29872、终端 61295、会话 `0a6219d7-e61c-4715-aa01-405ddcd15957`，项目 `.runtime-correction/b/biz-99f0cddd99fc`。已正常结算：业务公开终态成功、RC PASS、两个私有运行 SETTLED，耗时 561575ms。独立原生隐藏评分 **F2P 1/1、P2P 610/610**，完整执行且没有运行或解析错误。
@@ -98,3 +100,5 @@
 ## security_tool_6（运行中）
 
 `attempt-001` 使用 `5f3307d` harness 和相同公共协议。PID 12544、终端 31430、会话 `c593642c-9b35-4213-ac21-afb2d232c538`，项目 `.runtime-correction/b/biz-c9ab31566370`；原始本地 615/615 通过，已观察到实际业务模型启动。公开问题要求蓝牙/USB 首次接入自动拒绝、成功后才保存匹配本地策略，失败仍允许并记录原因；USB 显式 deny 的种类/优先级和不支持类型/策略的早期拒绝也必须覆盖。接续此运行，真正结算后用 calibration-heldout-001/security_tool_6 独立评分，再进入第七例。
+
+本轮核对 owner PID 的精确命令和原终端，均仍活跃；模型已进行新的源码/测试/模块文档查询，尚未产出补丁。较长响应期间提供方观察器持续记录新字节，未出现上下文溢出或进程终态。等待模型真实完成，不从观察超时推断停止。最新运行快照与提供方进度保存在 `next-step.json`，恢复时必须再次核对实时进程与同一终端。
