@@ -11,6 +11,7 @@
 - 发现此前同仓 worktree 的完整 13 例原生校准证据。模型运行通过显式 `--cache` 复用共享源码对象；评分仍核验原始数据摘要及 base/gold 的原生覆盖日志，不重复下载。
 - 当前第一轮使用 `glm-5.3-flash` 和冻结候选 `artifacts/round-001/runtime-corrector-openclaw`；业务宿主自然结束、RC 阶段 1800000ms、纠偏额度一次、仅启用 M16。后续如改变协议必须记录，不能混称固定配对比较。
 - `scripts/summarize-arkts-iterations.mjs --suite=.runtime-correction/system-optimization/serial-20261030` 汇总全量 45 F2P / 7547 按任务累计 P2P。分别展示首轮和最新轮，不择优；未评分任务保留在全量分母，部分日志不计有效得分，业务/RC 接受数与测试解决数分列。
+- 同时展示按测试数加权的通过率、每例等权的宏平均和整例解决/接受率。全量未评分完时，总分母中的比例只是已知通过的下界；已观测通过率另列。95% 判断要求两种口径均达标，不能让大测试集掩盖小样本失败；全部样本完成仍单独检查 `allCasesResolved` / `allCasesAccepted`。
 
 ## 恢复
 

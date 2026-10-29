@@ -15,3 +15,13 @@ test('latest failures never silently reuse the best attempt or a partial runtime
 test('changed test populations are rejected rather than improving the score by shrinking the denominator', () => {
   assert.throws(() => summarizeArktsIterations([{ id: 'one', f2p: 2, p2p: 2, attempts: [{ grade: passed }] }]), /population changed/);
 });
+
+test('a large passing test population cannot hide a failed small task in the 95 percent target', () => {
+  const large = { ...passed, f2p: { expected: 99, passed: Array.from({ length: 99 }, (_, i) => String(i)) } };
+  const small = { ...passed, resolved: false, f2p: { expected: 1, passed: [] } };
+  const report = summarizeArktsIterations([{ id: 'large', f2p: 99, p2p: 2, attempts: [{ grade: large }] },
+    { id: 'small', f2p: 1, p2p: 2, attempts: [{ grade: small }] }]).latestAttempts;
+  assert.equal(report.f2p.fullSuitePassRate, .99); assert.equal(report.f2p.fullSuiteMacroPassRate, .5);
+  assert.equal(report.resolvedCaseRate, .5); assert.equal(report.allCasesResolved, false);
+  assert.equal(report.targetReached, false);
+});

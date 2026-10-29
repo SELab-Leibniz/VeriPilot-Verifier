@@ -21,13 +21,26 @@ export function summarizeArktsIterations(cases) {
         totals[key].observedExpected += row[key];
       }
     }
-    for (const key of ['f2p', 'p2p']) Object.assign(totals[key], {
-      fullSuitePassRate: totals[key].expected ? totals[key].passed / totals[key].expected : null,
-      observedPassRate: totals[key].observedExpected ? totals[key].passed / totals[key].observedExpected : null,
-    });
-    totals.targetReached = totals.graded === totals.cases && totals.f2p.fullSuitePassRate >= .95 && totals.p2p.fullSuitePassRate >= .95;
+    for (const key of ['f2p', 'p2p']) {
+      const applicable = cases.filter(row => row[key] > 0);
+      const observed = applicable.filter(row => select(row.attempts)?.grade?.executed === true);
+      const sum = observed.reduce((value, row) => value + select(row.attempts).grade[key].passed.length / row[key], 0);
+      Object.assign(totals[key], {
+        fullSuitePassRate: totals[key].expected ? totals[key].passed / totals[key].expected : null,
+        observedPassRate: totals[key].observedExpected ? totals[key].passed / totals[key].observedExpected : null,
+        fullSuiteMacroPassRate: applicable.length ? sum / applicable.length : null,
+        observedMacroPassRate: observed.length ? sum / observed.length : null,
+      });
+    }
+    totals.resolvedCaseRate = totals.cases ? totals.resolved / totals.cases : null;
+    totals.acceptedCaseRate = totals.cases ? totals.accepted / totals.cases : null;
+    totals.gradingCoverage = totals.cases ? totals.graded / totals.cases : null;
+    totals.allCasesResolved = totals.cases > 0 && totals.resolved === totals.cases;
+    totals.allCasesAccepted = totals.cases > 0 && totals.accepted === totals.cases;
+    totals.targetReached = totals.graded === totals.cases && ['f2p', 'p2p'].every(key =>
+      totals[key].fullSuitePassRate >= .95 && totals[key].fullSuiteMacroPassRate >= .95);
     return totals;
   };
   return { firstAttempts: summarize(row => row[0]), latestAttempts: summarize(row => row.at(-1)),
-    qualification: 'Sequential development tuning, not unseen holdout evidence. Ungraded tasks remain in the full-suite denominator. P2P populations overlap between tasks.' };
+    qualification: 'Sequential development tuning, not unseen holdout evidence. Full-suite rates are lower bounds until every task is graded; ungraded tasks remain in the denominator. Test-weighted and equal-task macro rates are separate, and both must reach 95 percent. Whole-task resolution and RC acceptance are separate. P2P populations overlap between tasks.' };
 }
