@@ -128,3 +128,13 @@ attempt-002 沿原会话恢复后，宿主默认凌晨 4 点 daily reset 按 ses
 隔离实验改用宿主正式支持的 reset.mode=idle 且省略 idleMinutes（原生解析为 0，即无每日/空闲重置），不改历史时间戳，所有新样本使用同一策略。循环检查真实 SessionEntry 与业务诊断中的 sessionId；任一变化写入失败证明、请求停止精确 run，拒绝接纳新历史。13 项定向回归通过，包含安装宿主原生 freshness 函数验证；session-continuity-preflight-001/proof.json 由真实 Gateway 严格加载配置，原转录 SHA 保持一致，跨 4 点仍 fresh，模型和提供方调用均 0。接下来 attempt-003 仍从 attempt-001 的原始历史、作用域与 ledger 恢复。
 
 完整回归 iteration6：179 文件 / 1920 用例，1897 pass、23 skip、0 fail、0 timeout。其运行期间开发了会话修复，初始文件清单未包含新测试，故不冒称最终完整覆盖，稍后以已提交版本重跑。
+
+### 第六例正式续跑结算与复评
+
+attempt-003 使用 444da1f，沿 attempt-001 原会话 c593642c-9b35-4213-ac21-afb2d232c538 恢复 198 条真实记录，原 ledger used=0 且 budgetReset=false，原 task scope 恢复通过。真实业务 5 次模型调用，公开终态在 FINALIZING 立即保存为 agent.wait:ok，154760ms 后正常 SETTLED。完成的原任务返回 STOP_NOT_REQUIRED，没有新增私有审查；原实施 RC PASS 在候选逐字节不变的前提下继承，不能称为新 RC 审查。
+
+真实续跑构建通过、本地 617/617；原三个固化旧行为的测试合理更新断言，其他通过用例未被删减。新鲜报告副本 2610105 字节，与原报告逐字节一致，诊断/归档能力已获得端到端验证。当前业务增量 541188 tokens（含缓存）/5 条正用量；标准工具保守地不推断历史私有会话增量，原首轮 110 请求/110 正用量、6568234 tokens 保存在 terminal-loss.json 与私有快照。
+
+正式候选 44102 字节，SHA de378e811716c339374199d4f3b85afbe570a64041172c6ae3cc0da4d1ff17f9；独立复评仍为 **F2P 7/7、P2P 616/617、resolved=false**，无解析/执行错误。U-USB-008 的空事件在评分的派发测试设置下被记录为 device_deny，而原期望 default_allow；新增本地派发执行器对 USB_OTHER 返回失败，因此本地全过不能替代这项失败。按原规则保留分数，不修改评分器或向业务泄漏隐藏内容。完成本例轨迹/源码复盘及两项通用 harness 修复后，进入第七例，保留这一未全通过项。完整复盘见 security_tool_6/attempt-003-review.json。
+
+以提交 444da1f 固定源码完成的 iteration7 全量回归：180 文件 / 1922 用例，1899 pass、23 skip、0 fail、0 timeout。本轮包含终态留存和跨日会话防护，未在测试期间修改代码。
