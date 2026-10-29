@@ -7,12 +7,15 @@ import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { providerBaseFingerprint, assertNativeProviderIdentity } from './bench/provider-identity.mjs';
 import { arktsRunProfile } from './bench/arkts-run-profile.mjs';
 import { knownBusinessTerminal } from './bench/business-completion.mjs';
+import { nativeModelContextWindow } from './helpers/native-gateway-evaluation.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const runProfile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+const modelContextWindowTokens = nativeModelContextWindow(arg('--context-window-tokens'));
 const phaseArgs = runProfile.explicit ? [`--phase-timeout-ms=${runProfile.phaseTimeoutMs}`] : [];
 if (runProfile.hostNoTimeout) phaseArgs.push('--host-no-timeout');
 const workspaceArgs = arg('--workspace-base') ? [`--workspace-base=${path.resolve(arg('--workspace-base'))}`] : [];
 const toolArgs = arg('--tool-root') ? [`--tool-root=${path.resolve(arg('--tool-root'))}`] : [];
+const capacityArgs = arg('--context-window-tokens') ? [`--context-window-tokens=${arg('--context-window-tokens')}`] : [];
 const directory = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/paired-${Date.now()}`);
 const root = path.resolve('.runtime-correction/system-optimization');
 const cases = (arg('--cases') ?? 'security_tool_1,happyword_12').split(',');
@@ -47,6 +50,8 @@ const protocol = Object.fromEntries(await Promise.all(protocolFiles.map(async fi
 const adopted = new Map(), adoptionExceptions = [];
 if (arg('--adopt-baselines')) {
   const previous = JSON.parse(await fs.readFile(arg('--adopt-baselines'), 'utf8'));
+  if ((previous.modelCapacity?.contextWindowTokens ?? 128000) !== modelContextWindowTokens)
+    throw new Error('Adopted baseline model context capacity differs');
   if (previous.model !== (process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL)
     || previous.arms.baseline.ref !== arms.baseline.ref || previous.arms.baseline.artifact !== arms.baseline.artifact) throw new Error('Adopted baseline model/artifact mismatch');
   for (const [file, hash] of Object.entries(previous.protocol)) {
@@ -82,7 +87,8 @@ const order = cases.flatMap((id, index) => ((index % 2 === 1) !== candidateFirst
 const results = [], manifest = { kind: 'paired-native-arkts-comparison', createdAt: new Date().toISOString(), ownerPid: process.pid,
   hostVersion: JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8')).version,
   model: process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, providerBaseSha256, arms, cases, order, protocol, calibrations, adoptionExceptions,
-  runProfile, workspaceBase: arg('--workspace-base') ? path.resolve(arg('--workspace-base')) : null,
+  runProfile, modelCapacity: { contextWindowTokens: modelContextWindowTokens },
+  workspaceBase: arg('--workspace-base') ? path.resolve(arg('--workspace-base')) : null,
   adoptedBaselines: arg('--adopt-baselines') ? { source: path.resolve(arg('--adopt-baselines')), cases: [...adopted.keys()], qualification: 'All original protocol bytes match, except the mechanically reconstructed model-free YAML preflight guard.' } : null,
   navigationArtifact, fairness: 'Identical public inputs, business tools, toolchain, budget and hidden grader. Alternating arm order. No automatic retries.' };
 await fs.writeFile(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -102,7 +108,7 @@ try {
     const run = path.join(directory, `${id}-${arm}`), grade = path.join(directory, `${id}-${arm}-grade`), settings = arms[arm];
     const execution = await stage(id, arm, 'model', ['scripts/run-arkts-rc-case.mjs', '--live', `--case=${id}`, `--artifact=${settings.artifact}`,
       `--baseline-ref=${settings.ref}`, `--navigation-artifact=${navigationArtifact}`, `--host-root=${hostRoot}`, `--output=${run}`,
-      ...phaseArgs, ...workspaceArgs, ...toolArgs, ...(arg(`--resume-${arm}-run`) ? [`--resume-run=${path.resolve(arg(`--resume-${arm}-run`))}`] : [])],
+      ...phaseArgs, ...workspaceArgs, ...toolArgs, ...capacityArgs, ...(arg(`--resume-${arm}-run`) ? [`--resume-run=${path.resolve(arg(`--resume-${arm}-run`))}`] : [])],
       runProfile.hostNoTimeout ? null : runProfile.explicit ? runProfile.totalTimeoutMs + runProfile.setupTimeoutMs * 2 + 300000 : 1100000);
     const native = await fs.readFile(path.join(run, 'result.json'), 'utf8').then(JSON.parse, () => null);
     if (native && native.metrics.hostVersion !== manifest.hostVersion) throw new Error('Installed host changed during the fixed comparison');

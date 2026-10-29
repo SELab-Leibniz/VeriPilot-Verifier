@@ -9,6 +9,13 @@ import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 
+export function nativeModelContextWindow(value = 128000) {
+  const tokens = Number(value);
+  if (!Number.isSafeInteger(tokens) || tokens < 65536 || tokens > 2097152)
+    throw new Error('Model context capacity must be an integer from 65536 to 2097152 tokens.');
+  return tokens;
+}
+
 async function freePort() {
   const socket = net.createServer();
   await new Promise((resolve, reject) => { socket.once('error', reject); socket.listen(0, '127.0.0.1', resolve); });
@@ -19,7 +26,10 @@ async function freePort() {
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
-  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false }) {
+  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, contextWindowTokens }) {
+  const contextWindow = nativeModelContextWindow(contextWindowTokens);
+  if (contextWindowTokens !== undefined && !process.env.ANTHROPIC_BASE_URL)
+    throw new Error('An explicit model context capacity requires the configured custom provider definition.');
   if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
@@ -55,7 +65,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     session: { store: path.join(root, 'sessions.json') },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
       api: 'anthropic-messages', baseUrl: process.env.ANTHROPIC_BASE_URL,
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000, maxTokens: 32768 }],
+      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768 }],
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
@@ -70,6 +80,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
+    if (contextWindowTokens !== undefined && config.models?.providers?.anthropic?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
+      throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
   }
   if (unlimitedBusiness) {

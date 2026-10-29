@@ -8,7 +8,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { loadArktsTask, arktsAgentInput } from './bench/arkts-dataset.mjs';
 import { prepareArktsModelWorkspace } from './bench/prepare-arkts-model-workspace.mjs';
 import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
-import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
+import { createNativeGatewayEvaluation, nativeModelContextWindow } from './helpers/native-gateway-evaluation.mjs';
 import { businessMutationPaths, inheritedBusinessMutationScope } from './bench/business-mutations.mjs';
 import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker } from './bench/business-completion.mjs';
 import { validateArtifactSkills } from './bench/validate-artifact-skills.mjs';
@@ -20,6 +20,7 @@ import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+const contextWindowTokens = nativeModelContextWindow(arg('--context-window-tokens'));
 const pagedReads = process.argv.includes('--paged-reads');
 const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 'bench_nav', 'bench_check'];
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
@@ -125,6 +126,8 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: businessToolNames,
   businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
+  modelCapacity: { contextWindowTokens, maximumOutputTokens: 32768, appliedToCustomProvider: Boolean(process.env.ANTHROPIC_BASE_URL),
+    source: arg('--context-window-tokens') ? 'explicit CLI declaration' : 'legacy benchmark default' },
   limits: { ...profile, correctionAdmissions: 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default' },
   originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,
@@ -139,7 +142,7 @@ try {
   gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
-    disableMemoryFlush: true });
+    disableMemoryFlush: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) });
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
   if (resumeEntry) {
     const original = resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`);
