@@ -17,6 +17,15 @@ export function knownBusinessTerminal(terminal, runId) {
 export function businessCompleted(terminal, runId) {
   return knownBusinessTerminal(terminal, runId) && terminal.status === 'ok';
 }
-export function latestBusinessRunId(modelStarts, sessionId, fallback) {
-  return modelStarts.filter(event => event.sessionId === sessionId && typeof event.runId === 'string').at(-1)?.runId ?? fallback;
+export function createBusinessRunTracker(originalRunId, sessionId) {
+  let selected = originalRunId;
+  return {
+    get runId() { return selected; },
+    observe(record) {
+      // Only RC's trusted correction receipt may replace the original ID.
+      // A memory/compaction run can have the same session and a later model call.
+      if (record?.sessionId === sessionId && typeof record.correctionRunId === 'string' && record.correctionRunId)
+        selected = record.correctionRunId;
+    },
+  };
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, latestBusinessRunId } from '../scripts/bench/business-completion.mjs';
+import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker } from '../scripts/bench/business-completion.mjs';
 test('an outer context-compaction error remains failed after a successful diagnostic attempt', async () => {
   const terminal = await readBusinessTerminal(async () => ({ result: { runId: 'host', status: 'error' } }), 'host');
   assert.equal(knownBusinessTerminal(terminal, 'host'), true);
@@ -18,8 +18,14 @@ test('unknown, unavailable and cross-run terminals never establish completion', 
   }
   assert.equal(businessCompleted(await readBusinessTerminal(async () => { throw new Error('Unavailable'); }, 'host'), 'host'), false);
 });
-test('the latest actual business correction owns final completion, excluding private reviewers', () => {
-  assert.equal(latestBusinessRunId([{ sessionId: 'business', runId: 'original' },
-    { sessionId: 'business', runId: 'correction' }, { sessionId: 'reviewer', runId: 'private' }], 'business', 'original'), 'correction');
-  assert.equal(latestBusinessRunId([], 'business', 'original'), 'original');
+test('memory runs in the same session cannot replace the authoritative business identity', () => {
+  const tracker = createBusinessRunTracker('original', 'business');
+  tracker.observe({ sessionId: 'business', runId: 'memory-flush', phase: 'FINALIZING' });
+  assert.equal(tracker.runId, 'original');
+  tracker.observe({ sessionId: 'reviewer', correctionRunId: 'foreign' });
+  assert.equal(tracker.runId, 'original');
+  tracker.observe({ sessionId: 'business', runId: 'original', correctionRunId: 'trusted-correction' });
+  assert.equal(tracker.runId, 'trusted-correction');
+  tracker.observe({ sessionId: 'business', phase: 'IDLE', correctionRunId: null });
+  assert.equal(tracker.runId, 'trusted-correction', 'settlement must retain the actual correction identity');
 });

@@ -19,7 +19,7 @@ async function freePort() {
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
-  phaseTimeoutMs = null, unlimitedBusiness = false }) {
+  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false }) {
   if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
@@ -47,7 +47,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
-      ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}) },
+      ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+      ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
         tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
@@ -75,6 +76,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
     config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
   }
+  if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,
+    memoryFlush: { ...config.agents.defaults.compaction?.memoryFlush, enabled: false } };
   if (injectDefect && !reuseProfile) {
     // A local experiment plugin corrupts only this fixture's delivery, once,
     // immediately before the REAL original host run finalizes. Host terminal,
