@@ -61,3 +61,9 @@
 索引 `shared-natural-host-protocol/protocol-baseline.json` 保存来源、完整差异、预检和新配对计划。计划为全新独立输入下的 security_tool_3 / security_tool_2、交替运行顺序；当前仅 `PLAN_NO_MODEL`，尚未启动。续跑不能与从头运行混作公平配对，也不能把派生对照称为未经修改的 c33。先等本次宿主自然结束及独立评分；任务完成后优先执行公平配对验证修复版，任务未完成则先继续真实进度，避免重复无效工作。
 
 原配对计划的运行器哈希在公开终态判定修复后已过期，启动前须重新生成共同协议，不得绕过校验。当前先续接未完成的宿主收尾。模型耗时还受提供商行为影响：GLM-5.3-FLASH 强制思考，不能通过 off 关闭；官方支持 low/high/max 推理强度，默认 max。当前案例保持原配置；未来若调节强度，须核验实际发出参数并对两版应用相同协议。[提供商说明](https://docs.z.ai/guides/capabilities/thinking)
+
+## 独立工作目录与续接
+
+2026-10-29 检测到旧 `rc-five-branch-fusion` 工作目录被另一项工作切换到 `codex/rc-expected-files-targeted-repair`，并有不属于本次任务的源码修改。保留全部文件和该分支；本次改用独立 worktree `C:/Users/user/.codex/worktrees/rc-natural-host-delivery/runtime-corrector-toy`，分支 `codex/rc-host-natural-completion`，仍共享原仓 Git 对象。
+
+第一轮完整原始记录仍在旧目录的 `security2-natural-host-001/`；新工作目录的 `security2-natural-host-002/experiment.json` 和 `source-boundary.json` 保存绝对恢复入口。业务仍沿用原临时项目，原始会话字节及文件进度继续保留，RC 使用冻结修复版 32531a4；不向宿主传递独立评分结果或隐藏测试信息。新运行器分别展示真实业务终态和 RC 结算状态，进度标识不再把未结算统一写成 SETTLED。

@@ -189,7 +189,8 @@ try {
     runtimeReason: currentTask?.verification?.reasonCode ?? post?.reason ?? null,
     score: 'NOT_YET_GRADED: evaluate candidate.patch with hidden tests in an independent evaluator worktree' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
-  await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: 'SETTLED', ownerPid: process.pid, sessionId, endedAt: Date.now() }));
+  await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: result.state, ownerPid: process.pid, sessionId,
+    businessCompleted: result.businessCompleted, infrastructureComplete, officialBusinessStatus: officialBusinessTerminal.status, endedAt: Date.now() }));
 } finally { await gateway?.close(); }
 // Native host singletons may retain observers; only awaited settled runs are
 // eligible for a normal result. This development process owns no desktop host.
