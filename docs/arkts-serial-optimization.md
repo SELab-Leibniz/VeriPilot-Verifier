@@ -192,3 +192,7 @@ f67ab07 的三项真实 native production 审查均匹配：遗漏异常刷新 D
 下一版 RC 内置 baseline-extraction Skill 明确类别与证据归属独立：编码、测试、构建/工具等项目开发规范归 developmentStandards，并保留原条件与权威；普通边界、任务步骤、验收条件和端到端路径分别按原义分类，不从开关反推类别，不制造或重复对象。标题/示例不是独立执行义务。
 
 同一轮审查的真实 source_grep 以整个 program_workspace 为根搜索 PASSWORD_LENGTH_OPTIONS，长时间无返回，宿主记录 blocked_tool_call。新 RC 工作区提示/工具描述首先指向 task.workspace，并给递归导航增加条目/字节预算及明确的未完成状态；绝对路径、父目录和直接读取继续可用。原调用参数在新工具组件上实测 756ms 后返回 scanIncomplete=true（1090 条目、16767973 bytes、0 命中），证明在 taxonomy-audit/navigation-budget-proof.json；没有给原运行热换工具，没有把零命中当不存在，也不以组件耗时宣称端到端提升。相关 172 用例为 171 pass/1 skip/0 fail，见 rc-taxonomy-navigation-regression.log。原轮仍按冻结 round003 继续，下一版需真实提取器验证后才用于下一样本。
+
+原第一例随后真实 SETTLED：业务结束和基础设施完成均 true，RC=UNVERIFIED / STOP_REVIEW_INCOMPLETE。私有审查 completed=false、OPENCLAW_DIRECT_ABORT，无逐项语义判断；搜索调用时间为 22:51:06.904 UTC，原助手 aborted 为 22:57:26.502 UTC。这里只记录搜索期间实际中止，不推断中止的精确原因。独立评分完整执行，F2P 1/1、P2P 611/611，resolved=true；RC accepted 仍为 false，不能用功能通过替代审查。原候选、用量 683030（含缓存）、审查和分类缺口保存在新套件 security_tool_1/attempt-001-review.json。
+
+e8fba6f 完整回归 181 文件、1927 用例，1918 pass、9 skip、0 fail、0 timeout；执行期间源码不修改。实际 native 提取组件 after001 使用旧第一例的字节核验原来源、初始空基线，100.2s 真实结算、1 个私有运行、业务启动为 0。它把工具查找和 UTF-8 两项正确归到 developmentStandards，却额外将 Test Framework Baseline 标题下的可用测试/安装/冒烟命令表保存成 CURRENT_TASK HARD PROCESS 规范；该结果是部分修复，不能视为验证通过。原始输出和 audit 保留在 taxonomy-component-after-001 与 taxonomy-audit/component-after-001-audit.json。继续收紧 RC 内置提取规则：PROCESS 规范必须在原文有指令/禁止及触发条件，目录标题和可用命令不能补出执行授权；同一操作的明确任务动作与环境条件保持一起，避免把动作藏入普通约束。后续仍须新的真实组件验证，保留每次结果。
