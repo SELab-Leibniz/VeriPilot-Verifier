@@ -220,3 +220,11 @@ f49e39d 第一项真实过程审查 52.0s 返回 UNVERIFIED，匹配“只有修
 cc66a20 全仓回归首轮 183 文件、1934 用例，1924 pass、9 skip、1 fail、0 timeout。唯一失败是 post-run-dispatch 的排队截止测试：固定 pause(100) 后仍见 REVIEW_QUEUED；该文件单独 18/18 通过，原日志与单测日志均保留。源码显示截止前后的落盘与排队结算异步发生，测试不能把 100ms 当作完成保证。仅将测试改为最多 2 秒观察终态，生产 40ms 截止保持不变，仍要求首审占用槽位时第二审变为 UNVERIFIED 且审查调用数仍为 1；未放宽结果或并发断言。随后重新完整回归，首轮失败不改写成通过。
 
 775b8ce 完整重跑：183 文件全部完成，1934 用例中 1925 pass、9 skip、0 fail、0 timeout，原调度文件在完整负载下也通过；源码在测试期间不修改。结果为 full-regression-round007-retry.json，首轮失败文件仍保留。round007 runtime 固定 cc66a20（775b8ce 仅改测试与此进度文档），176 模块及内置 Skill 对照 Git 验证；过程语义、条件提取与实际候选正式落账证据均记录于 verification.json。随后启动六指标第二例 security_tool_2/attempt-001，公共业务导航仍 round001，模型、额度、SDK、时间窗口与既有 runner/grader 均保持原协议。
+
+### 六指标第二例：真实中止与原始记录保留
+
+attempt001 原业务最终助手明确 aborted，未修改源码、候选补丁为零字节，未启动私有 RC 审查。第 20 个提供方请求约 25 分钟后返回 AbortError；最后完整业务动作是源码读取。公开 agent.wait 虽返回 ok，不能据此把真实中止改成任务完成；准确中止原因尚未确定。完整独立评分 F2P 0/2、P2P 746/746，未出现评分执行或解析错误；用量报告 563495（含缓存），20 个请求中一个没有完整用量，不能补零。原终态差异、轨迹、原候选和评分均在 security_tool_2/attempt-001-review.json 保留。
+
+attempt002 使用既有原会话恢复流程：Stop 状态真实字节恢复且 budgetReset=false，但原结果缺少 taskId，原任务绑定保护在业务接纳前拒绝 Native task binding changed。未伪造 operatorInterrupted、未弱化绑定保护、未修改外围框架。拒绝和原始日志保存在 attempt-002-review.json；原业务没有代码进展，因此随后按相同公开任务、round007、模型及预算启动干净 attempt003。
+
+attempt003 于 2026-10-30 00:42 UTC 启动，精确 owner PID 36280、session 8c511745-5067-4cfc-bfcf-ea446135760a；新准备项目原本地测试 747 PASS。冻结插件实际加载项目配置，M08、M09、M12、M13、M15、M16 六项全部开启，其余关闭，文件质量附加审查关闭；实际与归档配置逐字节相同，effective-metric-policy.json 保存核验。用户提供的参考 config.yaml 只作只读参考，其指标继承默认六项，未因此替换评测模型、纠偏次数或时限。继续严格逐例运行，当前业务未结束时不并行启动下一样本，不把运行中或中止结果计为通过。
