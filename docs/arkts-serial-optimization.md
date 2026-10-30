@@ -228,3 +228,9 @@ attempt001 原业务最终助手明确 aborted，未修改源码、候选补丁�
 attempt002 使用既有原会话恢复流程：Stop 状态真实字节恢复且 budgetReset=false，但原结果缺少 taskId，原任务绑定保护在业务接纳前拒绝 Native task binding changed。未伪造 operatorInterrupted、未弱化绑定保护、未修改外围框架。拒绝和原始日志保存在 attempt-002-review.json；原业务没有代码进展，因此随后按相同公开任务、round007、模型及预算启动干净 attempt003。
 
 attempt003 于 2026-10-30 00:42 UTC 启动，精确 owner PID 36280、session 8c511745-5067-4cfc-bfcf-ea446135760a；新准备项目原本地测试 747 PASS。冻结插件实际加载项目配置，M08、M09、M12、M13、M15、M16 六项全部开启，其余关闭，文件质量附加审查关闭；实际与归档配置逐字节相同，effective-metric-policy.json 保存核验。用户提供的参考 config.yaml 只作只读参考，其指标继承默认六项，未因此替换评测模型、纠偏次数或时限。继续严格逐例运行，当前业务未结束时不并行启动下一样本，不把运行中或中止结果计为通过。
+
+attempt003 在 01:10 UTC 真实结束，原助手 stopReason=length，公开 agent.wait=error，businessCompleted=false、基础设施完成。最后一个请求 672562ms，报告 output=32000 tokens，内容仅一个 139933 字符的 thinking 块与空 text；没有源码修改、候选仍为零字节，RC 私有审查启动为 0。这不是输入上下文已满的证明，也不是 RC 语义审查失败。所有 30 个请求均有正用量记录，总计 1256883 tokens（含缓存）。完整独立评分仍为 F2P 0/2、P2P 746/746，无执行或解析错误；原结果、转录哈希、空候选、评分和用量在 attempt-003-review.json 保留。
+
+检查 RC 本体 post-run-dispatch 的非 ok 终态分支，其 HOST_RUN_NOT_COMPLETED / UNVERIFIED 处理保守拒绝接纳，不能为了恢复业务而将错误改成成功、伪造任务绑定或放宽恢复保护。该轮没有支持新增 RC 语义规则的证据，模型、额度和外围框架不变。第二例明确保留未解决、待补跑；先按原顺序进入第三例以推进全套覆盖，后续仍须回补第二例，不以已完成子集替代十三例目标。人工审查另固定原 AGENTS.md 的模块设计先于实现、含中文文件修改后业务回读两项适用范围，审查者自身读取不冒充业务证据。
+
+六指标第三例 security_tool_3/attempt001 于 01:13 UTC 启动（owner 26084、终端 6300），原本地测试 595 PASS；冻结 round007 真实加载配置再次核实六项默认指标、额外文件质量关闭，配置与归档逐字节一致。该次只接收原公开任务。人工依据使用本次 preparedHead 的三个原始 Git 文件哈希：ViewModel 的 finally 无条件写 initialized=true，页面在失败后仍 activate/refresh，而 runtime manager 已有失败立即返回；直接初始化失败分支原本就会跳过快照，不能虚构该部分完全缺失。复核严格区分初始化快照与独立刷新操作，三条原始需求及来源固定于新套件 security_tool_3/requirements-audit.json。第二例仍在 deferredCases 中明确保留。
