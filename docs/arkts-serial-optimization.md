@@ -234,3 +234,15 @@ attempt003 在 01:10 UTC 真实结束，原助手 stopReason=length，公开 age
 检查 RC 本体 post-run-dispatch 的非 ok 终态分支，其 HOST_RUN_NOT_COMPLETED / UNVERIFIED 处理保守拒绝接纳，不能为了恢复业务而将错误改成成功、伪造任务绑定或放宽恢复保护。该轮没有支持新增 RC 语义规则的证据，模型、额度和外围框架不变。第二例明确保留未解决、待补跑；先按原顺序进入第三例以推进全套覆盖，后续仍须回补第二例，不以已完成子集替代十三例目标。人工审查另固定原 AGENTS.md 的模块设计先于实现、含中文文件修改后业务回读两项适用范围，审查者自身读取不冒充业务证据。
 
 六指标第三例 security_tool_3/attempt001 于 01:13 UTC 启动（owner 26084、终端 6300），原本地测试 595 PASS；冻结 round007 真实加载配置再次核实六项默认指标、额外文件质量关闭，配置与归档逐字节一致。该次只接收原公开任务。人工依据使用本次 preparedHead 的三个原始 Git 文件哈希：ViewModel 的 finally 无条件写 initialized=true，页面在失败后仍 activate/refresh，而 runtime manager 已有失败立即返回；直接初始化失败分支原本就会跳过快照，不能虚构该部分完全缺失。复核严格区分初始化快照与独立刷新操作，三条原始需求及来源固定于新套件 security_tool_3/requirements-audit.json。第二例仍在 deferredCases 中明确保留。
+
+### 六指标第三例完成与全文字符证据
+
+第三例真实 SETTLED：原公开 agent.wait=ok，businessCompleted/infrastructureComplete=true，两个私有运行全部结算，原生 RC PASS。候选 4160 bytes，两个生产文件修复初始化标记与页面失败立即返回，测试文件仅增加两项用例和调用计数；构建通过、本地 597 PASS，对原 595 PASS 无新增失败或用例缺失。独立完整执行 F2P 1/1、P2P 595/595、resolved=true、无全局运行或解析错误。候选阶段 validFailToPassBase=false 仅表示该阶段不再复现原始失败；复核原 base 的该标记为 true，gold 为 resolved=true，校准有效。不要将这个按阶段计算的字段误读为候选评分失效。
+
+实际基线 12 条唯一依据全部保留，七项开发规范为 CONDITIONAL；原公开问题逐字节保留为一个包含三条行为的生产单元。审查分配 7 M09、4 M12、1 M16，其余开启指标无对象，原判定 6 PASS/6 NOT_APPLICABLE；完成后正式 ledger 发布为 version1/12 claims，与审查中的暂存依据区分。总报告用量 1739237（含缓存），46 个正用量请求计数完整。原判断、引文和评分保存在 security_tool_3/attempt-001-review.json。
+
+人工核实一个证据不足的编码排除理由：三个最终文件确实均为 ASCII，但 reviewer 只见到 90/456、40/452、50/472 行，就使用中文逗号零命中、局部差异和测试通过声称全文 ASCII。先前真实第一例的 DataModels.ets 有 8 个 Han 字符但零个中文逗号，构成同种推断的反例。保留本例原生 NOT_APPLICABLE 与功能满分；不能因此认证其理由可靠，也不能将方法修复宣称为本例 F2P 提升。证据在 whole-file-applicability-navigation-audit.json。
+
+RC 本体新增 source_read 的 fileFacts：按整个具名 UTF-8 文件原始字节计算 SHA、ASCII、非 ASCII 码点数和 Han 码点数，随每页返回。统计不代表更大逻辑文档的其它冻结分片，不证明文本语义正确或业务回读，也不扩大行引文和强制阅读覆盖。旧格式真实回执仍只按其逐字节匹配的原行范围接纳；伪造统计、内容变化和伪造范围继续拒绝。实际第一例相同 345–354 行配对读取，新增统计明确显示页外 8 Han，前后引用范围均保持 345–354。该项是组件证明，未重跑或改写业务评分。
+
+相关六文件定向回归 47/47 通过；新增字符/回执/条件夹具测试 7/7，通过后仍待完整回归与真实 native 条件审查。新增受控条件场景覆盖页外含 Han 无业务回读、全文 ASCII 无需触发、真实业务全文回读；实际 I/O 调用和结果保留，不运行额外 benchmark 业务模型。下一例使用新版本前须完成这些验证并冻结独立 artifact，原 round007 不变。
