@@ -252,3 +252,7 @@ RC 本体新增 source_read 的 fileFacts：按整个具名 UTF-8 文件原始�
 同版本首轮真实 native 组件四项全部结算：页外含 Han 无回读 UNVERIFIED（93.7s）、纯 ASCII 不适用 NOT_APPLICABLE（75.2s）、真实全文回读 PASS（84.3s）均匹配；原局部回读控制返回 UNVERIFIED（73.0s），未匹配已校准的 DEVIATION。原结果 3/4、完整理由及转录均保留在 rc-named-file-facts-native-first-results.json，版本未放行，不将失败改写为通过，也不从单次未配对输出断言元数据导致退化。
 
 进一步明确 RC 本体对正面错误执行与证据缺失的区别：原始调用、结果和完成语境若能确定修改后读取就是规定的全文验证尝试，而实际显式范围缺少必读部分，可按已观察到的错误范围判 DEVIATION；修改前探索读取、无法归属为验证的局部导航、或仅缺少后续行为证据，仍为 UNVERIFIED。保持原局部回读 oracle、任务输入与 I/O 记录不变，并追加原“修改前读取”控制验证不会过度判偏差。该澄清后 26 项相关回归通过；接下来在新 source ref 上重跑五项真实组件和启用宿主契约的完整回归，全部满足后才冻结下一版及进入第四例。
+
+56d0489 完整复验完成：184 文件、1941 测试，1932 pass、9 skip、0 fail、0 timeout，已启用与 round007 一致的只读安装宿主契约。五项真实 native 原过程对照全部匹配：修改前读取 UNVERIFIED（118.7s）、修改后局部验证 DEVIATION（88.1s）、页外 Han 无回读 UNVERIFIED（69.2s）、全文 ASCII 条件不触发 NOT_APPLICABLE（48.8s）、业务实际全文回读 PASS（90.3s）。原 fixture 输入及 oracle 不变，首轮不匹配仍保留。结果及运行时模块哈希在 rc-named-file-facts-validation.json；这些是受控组件证据，不是新的 benchmark 分数或一般准确率证明。
+
+用户随后明确“第三个样例完成后，就可以停下来了”。已停在第三例：该例正式 F2P 1/1、P2P 595/595，后续 RC 源码修复与验证均已收齐；第四例只有公开需求核对清单，没有启动业务，也没有构建或接纳新 round008 benchmark artifact。全部十三例目标保留为暂停，第二例 0/2 F2P 的未解决状态和待补跑记录不消除。恢复点为新套件 next-step.json；仅在用户明确要求继续时，检查已验证源码是否变化，再按原配置冻结下一版及进入第四例。
