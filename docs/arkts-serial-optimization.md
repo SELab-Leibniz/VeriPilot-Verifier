@@ -218,3 +218,5 @@ f49e39d 第一项真实过程审查 52.0s 返回 UNVERIFIED，匹配“只有修
 同一真实 11 操作候选修复后落账为 10 个唯一条目（一个真正重复项合并），过程与实现两条均保留，默认指标投影为 3 M09、4 M12、1 M16，证明在 typed-claim-collision-proof/fixed-proof.json。相关 74 测试为 73 pass/1 skip/0 fail。初始失败日志保留；其中一个辅助测试误以为无变化返回必含 accepted 数组，已改为检查既有 changed=false 接口，其余数据丢失/隐式恢复断言真实复现旧缺陷。下一版冻结前执行完整回归；新样本进入第二例，不以继续重复第一例替代全套进度。
 
 cc66a20 全仓回归首轮 183 文件、1934 用例，1924 pass、9 skip、1 fail、0 timeout。唯一失败是 post-run-dispatch 的排队截止测试：固定 pause(100) 后仍见 REVIEW_QUEUED；该文件单独 18/18 通过，原日志与单测日志均保留。源码显示截止前后的落盘与排队结算异步发生，测试不能把 100ms 当作完成保证。仅将测试改为最多 2 秒观察终态，生产 40ms 截止保持不变，仍要求首审占用槽位时第二审变为 UNVERIFIED 且审查调用数仍为 1；未放宽结果或并发断言。随后重新完整回归，首轮失败不改写成通过。
+
+775b8ce 完整重跑：183 文件全部完成，1934 用例中 1925 pass、9 skip、0 fail、0 timeout，原调度文件在完整负载下也通过；源码在测试期间不修改。结果为 full-regression-round007-retry.json，首轮失败文件仍保留。round007 runtime 固定 cc66a20（775b8ce 仅改测试与此进度文档），176 模块及内置 Skill 对照 Git 验证；过程语义、条件提取与实际候选正式落账证据均记录于 verification.json。随后启动六指标第二例 security_tool_2/attempt-001，公共业务导航仍 round001，模型、额度、SDK、时间窗口与既有 runner/grader 均保持原协议。
