@@ -6,10 +6,12 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { nativeStopTimeouts } from './native-stop-timeouts.mjs';
 import { findTask } from '../../lib/runtime-v2/task-store.mjs';
 import { createStopCorrectionStore } from '../../lib/runtime-v2/stop-correction-store.mjs';
 
 export async function prepareNativeLoopProject({ gateway, projectRoot, outputRoot }) {
+  const timeouts = gateway.stopTimeouts ?? nativeStopTimeouts();
   const contract = path.join(projectRoot, 'requirements/original-contract.md'), file = path.join(projectRoot, 'app.mjs');
   await fs.mkdir(path.dirname(contract), { recursive: true });
   await fs.writeFile(contract, 'The exported accept(value) must return the supplied finite number plus one, without storing state. Other input types are outside scope.\n');
@@ -40,15 +42,15 @@ stopCorrection:
   waitMode: until_pass
   maxCorrectionsPerSession: 1
   maxCorrectionsPerFlow: 1
-  assessmentTimeoutMs: 210000
-  feedbackReserveMs: 30000
+  assessmentTimeoutMs: ${timeouts.assessmentTimeoutMs}
+  feedbackReserveMs: ${timeouts.feedbackReserveMs}
   metrics:
-${Array.from({ length: 16 }, (_, index) => `    M${String(index + 1).padStart(2, '0')}: ${index === 15}`).join('\n')}
+${Array.from({ length: 16 }, (_, index) => `    M${String(index + 1).padStart(2, '0')}: ${[7, 8, 11, 12, 14, 15].includes(index)}`).join('\n')}
 reviewers:
   defaults:
     model: ${gateway.modelRef ?? `anthropic/${gateway.model}`}
     effort: low
-    timeoutMs: 180000
+    timeoutMs: ${timeouts.reviewerTimeoutMs}
     maxOutputTokens: 32768
 `);
   const { loadConfig } = await import(pathToFileURL(path.join(gateway.pluginRoot, 'lib/runtime-corrector.mjs')).href);
@@ -83,7 +85,7 @@ export async function runNativeStopLoopCase({ gateway, projectRoot, outputRoot, 
   await gateway.hooks.runBeforeAgentFinalize({ sessionId, runId: initialRunId, lastAssistantMessage: text }, ctx);
   await gateway.hooks.runAgentEnd({ sessionId, runId: initialRunId, success: true, messages: [user.message, assistant.message] }, ctx);
   const store = createStopCorrectionStore({ directory: path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions') });
-  const deadline = Date.now() + 540000; let last, state, ledger;
+  const deadline = Date.now() + (gateway.stopTimeouts ?? nativeStopTimeouts()).wallMs; let last, state, ledger;
   while (Date.now() < deadline) {
     await gateway.drain();
     state = await findTask({ projectRoot, sessionId }); ledger = await store.inspect(sessionId);

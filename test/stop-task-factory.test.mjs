@@ -80,6 +80,20 @@ test("task-mode factory dispatches only eligible metric scopes with the selected
 });
 
 
+test('configured Stop steps reach the native task and change its cache identity', async t => {
+  const f = await fixture(t), calls = [];
+  const create = maxReviewSteps => createOpenClawReviewerFactory(f.api, {
+    stopMaxReviewSteps: maxReviewSteps,
+    runStopTask: async input => { calls.push(input); return { result: report() }; },
+    runEmbeddedAgent: () => assert.fail('Stop must use the task engine'),
+  });
+  const old = create(200), large = create(2000);
+  await large(f.makeInput());
+  assert.equal(calls[0].taskLimits.maxTurns, 2000);
+  assert.equal(calls[0].taskLimits.maxTokens, 32768);
+  assert.notEqual(old.reviewCacheIdentity(), large.reviewCacheIdentity());
+});
+
 test('default and legacy native settings both dispatch Stop directly to task', async t => {
   const f = await fixture(t);
   for (const stopReviewEngine of [undefined, 'task', 'native']) {

@@ -11,8 +11,8 @@ const base = { version: 2, artifacts: [], dynamicGroundTruth: { enabled: true } 
 const roles = ["groundTruthExtractor", "onboardingAdjudicator", "skillReviewer",
   "artifactReviewer", "stopReviewer", "implementationReviewer"];
 
-test("schema and compiler accept the thirty-minute regression and sixty-minute boundary", () => {
-  for (const timeoutMs of [1000, 1200000, 1800000, 3600000]) {
+test("schema and compiler accept the thirty-minute regression and twenty-four-hour boundary", () => {
+  for (const timeoutMs of [1000, 1200000, 1800000, 3600000, 5400000, 43200000, 86400000]) {
     const config = { ...base, limits: { semanticReviewTimeoutMs: timeoutMs },
       reviewers: { defaults: { timeoutMs } } };
     validateProjectConfig(config, "config.yaml");
@@ -23,7 +23,7 @@ test("schema and compiler accept the thirty-minute regression and sixty-minute b
 });
 
 test("schema and direct compilation reject invalid limits and every reviewer timeout", () => {
-  for (const timeoutMs of [999, 3600001, 7200000, 1200000.5, "1800000", null]) {
+  for (const timeoutMs of [999, 86400001, 172800000, 1200000.5, "1800000", null]) {
     const candidates = [{ ...base, limits: { semanticReviewTimeoutMs: timeoutMs } },
       ...["defaults", ...roles].map(role => ({ ...base, reviewers: { [role]: { timeoutMs } } }))];
     for (const config of candidates) {
@@ -42,7 +42,7 @@ test("loaded YAML defaults to twenty minutes and preserves explicit role/default
   for (const [suffix, common, stop] of [
     ["", 1200000, 1200000],
     ["limits:\n  semanticReviewTimeoutMs: 1800000\n", 1800000, 1800000],
-    ["limits:\n  semanticReviewTimeoutMs: 1800000\nreviewers:\n  defaults:\n    timeoutMs: 2400000\n  stopReviewer:\n    timeoutMs: 3600000\n", 2400000, 3600000],
+    ["limits:\n  semanticReviewTimeoutMs: 1800000\nreviewers:\n  defaults:\n    timeoutMs: 2400000\n  stopReviewer:\n    timeoutMs: 5400000\n", 2400000, 5400000],
   ]) {
     await fs.writeFile(path.join(directory, "config.yaml"), header + suffix);
     const plan = await loadRuntimePlan({ cwd: root });
@@ -54,7 +54,7 @@ test("schema defaults and maximum agree with every packaged host adapter", async
   const schema = JSON.parse(await fs.readFile(new URL("../config/schemas/project-config.schema.json", import.meta.url)));
   for (const definition of [schema.properties.limits.properties.semanticReviewTimeoutMs, schema.$defs.reviewer.properties.timeoutMs]) {
     assert.equal(definition.default, 1200000);
-    assert.equal(definition.maximum, 3600000);
+    assert.equal(definition.maximum, 86400000);
   }
   for (const name of ["claude", "codeagent", "openclaw"]) {
     const adapter = await import(`../lib/hosts/${name}.mjs`);

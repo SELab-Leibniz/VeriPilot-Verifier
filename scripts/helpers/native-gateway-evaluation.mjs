@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
+import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
 import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
@@ -43,7 +44,7 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
       ...(flash ? { thinkingLevelMap: { off: 'low', minimal: 'low', low: 'low', medium: 'high', high: 'high', xhigh: 'max', max: 'max' } } : {}),
       contextWindow: nativeModelContextWindow(contextWindow), maxTokens: 32768,
       compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
-        supportsDeveloperRole: false, supportsReasoningEffort: flash, ...(flash ? { thinkingFormat: 'openai' } : {}) } }],
+        supportsDeveloperRole: false, supportsReasoningEffort: flash, requiresReasoningContentOnAssistantMessages: provider.model.startsWith('glm-'), ...(flash ? { thinkingFormat: 'openai' } : {}) } }],
   } };
 }
 
@@ -69,7 +70,7 @@ export function createNativeGatewayRequest({ load, port, config }) {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, provider, providerGuard }) {
+  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, skipBootstrap = false, provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' }) : null;
   const authorizedDocument = provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
@@ -79,7 +80,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
   validatePhaseTimeoutMs(phaseTimeoutMs);
   for (const [name, value, minimum] of [['reviewerTimeoutMs', reviewerTimeoutMs, 1000], ['hookTimeoutMs', hookTimeoutMs, 2000], ['businessTimeoutMs', businessTimeoutMs, 1000]])
-    if (value !== null && (!Number.isSafeInteger(value) || value < minimum || value > 3600000 || value % 1000 !== 0))
+    if (value !== null && (!Number.isSafeInteger(value) || value < minimum || value > MAX_REVIEW_TIMEOUT_MS || value % 1000 !== 0))
       throw new Error(`Invalid isolated ${name}.`);
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
@@ -107,7 +108,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
-      ...(coding ? { thinkingDefault: 'low', skipBootstrap: !authorizedDocument, skills: ['runtime-corrector', 'runtime-corrector-control',
+      ...(coding ? { thinkingDefault: 'low', skipBootstrap: skipBootstrap || !authorizedDocument, skills: ['runtime-corrector', 'runtime-corrector-control',
         'runtime-corrector-init', 'runtime-corrector-workflow', 'semantic-review', 'document-corrector'] } : {}),
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : businessTimeoutMs ? { timeoutSeconds: businessTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
@@ -128,11 +129,6 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
           ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
     } },
   };
-  for (const extra of extraPluginPaths) {
-    if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
-    config.plugins.allow.push(extra.id); config.plugins.load.paths.push(await fs.realpath(extra.path));
-    config.plugins.entries[extra.id] = { enabled: true };
-  }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
     if (coding && JSON.stringify(config.models?.providers?.[providerId]) !== JSON.stringify(coding.definition))
@@ -141,9 +137,20 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
   }
+  for (const extra of extraPluginPaths) {
+    if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
+    config.plugins.allow = [...new Set([...config.plugins.allow, extra.id])];
+    config.plugins.load.paths = [...new Set([...config.plugins.load.paths, await fs.realpath(extra.path)])];
+    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
+  }
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
     config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
+    config.agents.defaults.timeoutSeconds = (businessTimeoutMs ?? phaseTimeoutMs) / 1000;
+    const settings = config.plugins.entries['runtime-corrector'];
+    settings.config = { ...settings.config, hookTimeoutMs: hookTimeoutMs ?? phaseTimeoutMs, reviewerTimeoutMs: reviewerTimeoutMs ?? phaseTimeoutMs };
+    if (reuseProfile && provider) config.models.providers[providerId] = { ...config.models.providers[providerId],
+      baseUrl: provider.baseUrl, timeoutSeconds: phaseTimeoutMs / 1000 };
   }
   if (unlimitedBusiness) {
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
@@ -183,6 +190,10 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   let gateway, unsubscribe;
   let restoreCredential = () => {};
   const modelStarts = [];
+  const previousOpenAIKey = process.env.OPENAI_API_KEY;
+  const restoreCredential = () => {
+    if (previousOpenAIKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previousOpenAIKey;
+  };
   try {
     if (coding) {
       const credential = providerGuard.credential?.();

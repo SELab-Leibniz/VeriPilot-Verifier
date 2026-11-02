@@ -439,7 +439,10 @@
         },
         "waitMode": {
           "type": "string",
-          "enum": ["until_pass", "assessment"],
+          "enum": [
+            "until_pass",
+            "assessment"
+          ],
           "default": "until_pass",
           "description": "Native Stop waits for correction and re-verification to PASS, or only assessment and feedback admission. Failures, cancellation, exhausted correction budget and the wait deadline release the wait with a notification."
         },
@@ -447,13 +450,27 @@
           "type": "integer",
           "minimum": 1000,
           "description": "Deprecated alias of assessmentTimeoutMs for one Stop only. Conflicts with assessmentTimeoutMs; never creates a shared repair-chain timeout."
+        },
+        "maxReviewSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 200,
+          "description": "Model response steps per Stop review and its necessary bounded extraction; larger explicit positive safe integers are supported."
+        },
+        "maxRepairSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000,
+          "description": "Trusted model-start steps per plugin-created business repair, separate from the maximum number of repairs."
         }
       },
       "additionalProperties": false
     },
     "reviewerRuntime": {
       "type": "object",
-      "required": ["executable"],
+      "required": [
+        "executable"
+      ],
       "properties": {
         "executable": {
           "type": "string",

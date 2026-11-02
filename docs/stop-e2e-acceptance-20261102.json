@@ -1,0 +1,98 @@
+{
+  "scope": "Native Stop normal and one-fault feedback/repair/review only; not four-module or general semantic qualification",
+  "baseCommit": "28071d1",
+  "branch": "codex/rc-stop-e2e-timeouts",
+  "complete": true,
+  "hostVersion": "2026.7.1-2",
+  "model": "glm-5.3-flash",
+  "timeoutMsPerCase": 5400000,
+  "cases": [
+    {
+      "name": "normal",
+      "verification": "PASS",
+      "used": 0,
+      "elapsedMs": 168131,
+      "exitCode": 0,
+      "gatewayClosed": true,
+      "model": "glm-5.3-flash",
+      "terminals": [
+        {
+          "runId": "3705584b-d3ab-4d32-8d91-b1d06b7936e1",
+          "status": "ok",
+          "endedAt": 1793602094000
+        }
+      ],
+      "roles": {
+        "ground-truth-extractor": 1,
+        "stop-reviewer": 1
+      },
+      "privateRunsSettled": 2,
+      "actualDeliveryWriteCalls": 1,
+      "faultCycleComplete": null,
+      "ownerProcessAbsent": true
+    },
+    {
+      "name": "fault",
+      "verification": "PASS",
+      "used": 1,
+      "elapsedMs": 554148,
+      "exitCode": 0,
+      "gatewayClosed": true,
+      "model": "glm-5.3-flash",
+      "terminals": [
+        {
+          "runId": "57ccf7c0-b163-4347-8f86-d0f6b3291288",
+          "status": "ok",
+          "endedAt": 1793602302971
+        },
+        {
+          "runId": "rc-stop-e58f569cef20ee735c988a78b444772e25d049b76e36993e166e2f54571eab5f",
+          "status": "ok",
+          "endedAt": 1793602656545,
+          "stopReason": "stop",
+          "livenessState": "working"
+        }
+      ],
+      "roles": {
+        "ground-truth-extractor": 1,
+        "stop-reviewer": 2
+      },
+      "privateRunsSettled": 3,
+      "actualDeliveryWriteCalls": 2,
+      "faultCycleComplete": true,
+      "ownerProcessAbsent": true
+    }
+  ],
+  "focusedRegression": {
+    "tests": 35,
+    "pass": 34,
+    "skipped": 1,
+    "fail": 0
+  },
+  "extendedRegression": {
+    "tests": 66,
+    "pass": 44,
+    "fail": 21,
+    "skipped": 1,
+    "unchangedBaseSameTotals": true,
+    "baselineEvidence": ".runtime-correction/stop-e2e-20261102/base-extended-regression.json"
+  },
+  "credentialScan": {
+    "files": 592,
+    "persistedCredentialFiles": []
+  },
+  "artifactTreeSha256": "3e76aa30ecd8aa2cb0e835299106dbcbffec31dc2923eda0a22a371a6b220fd6",
+  "artifactFiles": 245,
+  "changedRuntimeFilesMatchArtifact": {
+    "lib/review-timeout.mjs": true,
+    "lib/openclaw/entry.mjs": true,
+    "lib/openclaw/runtime.mjs": true,
+    "config/schemas/project-config.schema.json": true
+  },
+  "limitations": [
+    "Two small task controls only",
+    "Original working-tree baseline audit/proposal changes excluded",
+    "21 extended regression failures remain and were reproduced on the unchanged base"
+  ],
+  "evidenceRoot": ".runtime-correction/stop-e2e-20261102/flash-pair-001"
+}

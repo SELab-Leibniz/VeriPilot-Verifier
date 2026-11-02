@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { waitPostRunTerminal } from '../../lib/openclaw/post-run-host.mjs';
+import { nativeStopTimeouts } from './native-stop-timeouts.mjs';
 import { prepareNativeLoopProject } from './native-stop-loop-case.mjs';
 import { dispatchHarborOriginalAgent } from '../bench/harbor-gateway-runner.mjs';
 import { awaitHarborGatewaySettlement } from '../bench/harbor-gateway-controller.mjs';
@@ -15,7 +17,7 @@ export async function dispatchNativeOriginalTurn({ gateway, requirement, runId, 
     instruction: requirement, runId, sessionId, sessionKey,
     deadlineAt: Math.min(deadlineAt, now() + 180000), now });
   return gateway.request('chat.send', { sessionKey, sessionId, message: requirement,
-    idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: 180000 });
+    idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: Math.max(1, deadlineAt - now()) });
 }
 
 export async function auditNativeOriginalTerminals({ gateway, originalRunId, sessionId, sessionKey,
@@ -39,7 +41,7 @@ export async function finalizeNativeOriginalCompletion({ inspect, auditTerminals
       && authenticTerminals.dispatch?.reviewStatus === 'PASS' };
 }
 
-export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, signal, wallMs = 540000,
+export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, signal, wallMs = gateway.stopTimeouts?.wallMs ?? nativeStopTimeouts().wallMs,
   originalBusinessEntry = 'chat', deadlineAt = Date.now() + wallMs }) {
   signal?.throwIfAborted();
   if (!Number.isSafeInteger(deadlineAt) || deadlineAt <= Date.now()) throw new Error('Original component deadline expired');
@@ -63,7 +65,7 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, 
     load('lib/openclaw/native-runs.mjs'), load('lib/openclaw/transcript.mjs'),
   ]);
   const store = createStopCorrectionStore({ directory: path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions') });
-  const deadline = deadlineAt; let last, task, ledger, earlyTermination;
+  const deadline = deadlineAt; let last, task, ledger, earlyTermination, originalTerminal, lastTerminalCheck = 0;
   while (Date.now() < deadline) {
     if (signal?.aborted) {
       earlyTermination = 'The experiment admission boundary stopped the original run.';
@@ -75,12 +77,23 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, 
     if (JSON.stringify(progress) !== last) { last = JSON.stringify(progress); console.log(last); }
     const finalReceipt = Object.values(ledger?.admissions ?? {}).find(item => item.accounting === 'USED')?.finalReview;
     if (task?.verification?.status === 'PASS' && (!gateway.faultInjection || finalReceipt?.status === 'PASS')) {
-      // PASS publication can precede the final asynchronous native receipt.
-      // Keep observing inside the existing deadline rather than failing early.
       const privateRuns = await listNativeRuns(projectRoot, task.taskId);
       if (privateRuns.length && privateRuns.every(run => run.status === 'SETTLED')) break;
     }
-    if (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR'].includes(task?.status)) break;
+    if ((['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
+      || task?.status === 'COMPLETED_WITH_ISSUES' && task?.verification?.status === 'UNVERIFIED')) break;
+    if (!originalTerminal && Date.now() - lastTerminalCheck >= 1000) {
+      lastTerminalCheck = Date.now();
+      const response = await gateway.request('agent.wait', { runId, timeoutMs: 1 }, { timeoutMs: 2000 });
+      const terminal = response?.result ?? response;
+      if (terminal?.runId !== runId) throw new Error('Original terminal identity mismatch');
+      if (['ok', 'error'].includes(terminal.status)) {
+        originalTerminal = terminal;
+        if (terminal.status === 'error' || !task) {
+          earlyTermination = `Original host ended with ${terminal.status}${task ? '' : ' before creating an RC task'}`; break;
+        }
+      }
+    }
     if (!gateway.metrics().modelStarts.length) {
       const snapshot = await gateway.runtime.subagent.getSession({ sessionKey });
       const terminal = (snapshot.messages ?? []).map(record => record.message ?? record).at(-1);
@@ -90,6 +103,12 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, 
       }
     }
     await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  if (signal?.aborted || Date.now() >= deadline) {
+    await gateway.request('chat.abort', { sessionKey, runId }).catch(() => {});
+    for (const item of Object.values(ledger?.admissions ?? {}).filter(item => item.accounting === 'USED' && !item.endedAt))
+      await gateway.request('chat.abort', { sessionKey, runId: `rc-stop-${item.id}` }).catch(() => {});
+    earlyTermination = signal?.aborted ? 'Evaluation cancelled' : 'Evaluation deadline expired';
   }
   const session = await gateway.runtime.subagent.getSession({ sessionKey }), records = session.messages ?? [];
   const entries = normalizeMessages(records);
@@ -133,7 +152,17 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, 
     ? await finalizeNativeOriginalCompletion({ inspect: inspectCompletion,
       auditTerminals: () => auditNativeOriginalTerminals({ gateway, originalRunId: runId, sessionId, sessionKey,
         projectRoot, deadlineAt, signal }) })
-    : { ...await inspectCompletion(), authenticTerminals: null };
+    : await (async () => {
+      const current = await inspectCompletion();
+      const terminals = [];
+      if (current.complete) for (const id of [runId, ...used.map(item => `rc-stop-${item.id}`)])
+        terminals.push(id === runId && originalTerminal ? originalTerminal
+          : await waitPostRunTerminal(null, null, id, deadlineAt, signal,
+            (method, params, options) => gateway.request(method, params, options)));
+      return { ...current, terminals, authenticTerminals: null,
+        complete: current.complete && !signal?.aborted && Date.now() < deadlineAt
+          && terminals.length === expectedUsed + 1 && terminals.every(item => item?.status === 'ok') };
+    })();
   const { complete, authenticTerminals, report, runs, roles, deliveryChecks, actualMainStart, used, injected, faultCycleComplete } = snapshot;
   return { mode: 'original-turn', complete, originalBusinessEntry, authenticTerminals,
     gatewayEntry: `authenticated sessions.create + ${originalBusinessEntry === 'agent' ? 'agent' : 'chat.send'}; no seeded lifecycle`,

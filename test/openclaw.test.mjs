@@ -55,7 +55,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.match((await host.commands.get("rc-setup").handler({ isAuthorizedSender: true,
     gatewayClientScopes: ["operator.admin"] })).text, /缺少安全配置写入接口/u);
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
-  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
+  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 86400000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
   assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
@@ -98,9 +98,9 @@ test("native entry supports synchronous ESM loading on the target Node runtime",
   assert.equal(loaded.default.id, "runtime-corrector");
 });
 
-test("native entry registers configured Hook windows up to sixty minutes", async t => {
+test("native entry registers configured Hook windows up to twenty-four hours", async t => {
   const project = await workspace(t);
-  for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [7200000, 3600000]]) {
+  for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [5400000, 5400000], [7200000, 7200000], [43200000, 43200000], [86400000, 86400000], [172800000, 86400000]]) {
     const host = api(project);
     host.pluginConfig.hookTimeoutMs = configured;
     entry.register(host);
@@ -119,6 +119,25 @@ test('baseline-specific long Hook window is registered without changing ordinary
   for (const name of ['before_prompt_build', 'before_tool_call', 'reply_payload_sending', 'agent_end'])
     assert.equal(host.hooks.get(name).options.timeoutMs, 86460000);
   assert.equal(host.hooks.get('session_end').options.timeoutMs, 1000);
+});
+
+test("native reply wait arms the full twenty-four-hour window and honors a shorter host limit", async t => {
+  const project = await workspace(t), timers = [], realSetTimeout = globalThis.setTimeout;
+  const mock = t.mock.method(globalThis, "setTimeout", (callback, delay, ...args) => {
+    timers.push(delay);
+    return realSetTimeout(callback, delay, ...args);
+  });
+  try {
+    for (const [policy, expected] of [[undefined, 86399000], [600000, 599000]]) {
+      const host = api(project);
+      host.pluginConfig.hookTimeoutMs = 86400000;
+      if (policy !== undefined) host.config.plugins = { entries: { "runtime-corrector": { hooks: { timeoutMs: policy } } } };
+      entry.register(host);
+      timers.length = 0;
+      await host.hooks.get("reply_dispatch").handler({}, {});
+      assert(timers.some(delay => delay >= expected - 1000 && delay <= expected), JSON.stringify({ policy, timers }));
+    }
+  } finally { mock.mock.restore(); }
 });
 
 test("OpenClaw validates incompatible CLI reviewer settings before starting work", async (t) => {

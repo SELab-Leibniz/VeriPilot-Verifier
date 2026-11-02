@@ -1,0 +1,750 @@
+{
+  "scope": "Injected-fault recovery control on real DeepSWE etree XML diff/patch/merge demand; separate from natural-task pass rates",
+  "passed": true,
+  "acceptanceChecks": {
+    "modelAndControllerCompleted": true,
+    "injectedOnceBeforeRealTerminal": true,
+    "firstStopDetectedDeviation": true,
+    "nativeRepairDispatched": true,
+    "withinThreeRepairLimit": true,
+    "freshFinalReviewPassed": true,
+    "privateWorkersSettled": true,
+    "authenticatedTerminalsOK": true,
+    "officialControlPassed": true,
+    "officialInjectedCandidateFailed": true,
+    "officialRepairedCandidatePassed": true,
+    "hostAndRelayClosed": true,
+    "initialReviewIdentifiesInjectedStub": true
+  },
+  "worktree": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy",
+  "branch": "codex/rc-stop-e2e-timeouts",
+  "controllerCommit": "a1a5828bde68f7e306cd4b79522ef1440f3833e7",
+  "scoringDriverCommit": "59a7f13fe2678f85e154f729f1094df7e128c421",
+  "scoringDriverSha256": "8445f59b96d46f4cd97b6120278d92f0300ab840fbc4fb7be8b0e128136d7e56",
+  "manifest": {
+    "benchmark": "DeepSWE 1.1",
+    "task": "etree-xml-diff-patch",
+    "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+    "baseCommit": "4032e04c8f2e2f35e43ce5d772fcef14a5df4d74",
+    "repository": "https://github.com/beevik/etree",
+    "image": "sha256:274798ace3bd52b4e1527a901a1dd8120f751e551a23c7d84206aa681cf1678b",
+    "originalImageReference": "public.ecr.aws/d3j8x8q7/swe-bench-202605:kh7e0e2z02keqh6j7db6bcg1c9822140-v1.1",
+    "imageId": "sha256:e057fb0080708ee7a527b9c2d1d55351f602126d35eecb595d506b1aa52581d3",
+    "instructionSha256": "1e3a04653a4cdfa7354279d11f8f6fe1f96adb87196dafbd601f71545d8f651e",
+    "sourceCommit": "a1a5828bde68f7e306cd4b79522ef1440f3833e7",
+    "model": "glm-5.3-flash",
+    "maxRuntimeMs": 86400000,
+    "correctionLimit": 3,
+    "modules": {
+      "stop": true,
+      "document": false,
+      "skill": false,
+      "writeTimeImplementationCorrection": false,
+      "requirements": "Necessary existing single extractor; panel off"
+    },
+    "hiddenVerifierMountedInAgent": false,
+    "injectedDefect": true,
+    "beforeAfter": "Deliberately corrupted committed first Stop candidate versus model repaired final commit; pre-injection good patch retained; not a natural-task quality sample",
+    "verifierImage": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+    "officialVerifierFiles": {
+      "test.sh": "ffb75d0fa4c759ded3186c1ec49c533db27ec34776a6ae829de5a4692337099a",
+      "test.patch": "7cab6711718deca89a068e57146c28b490e77320144b413061fab2333b1f8c88",
+      "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+      "config.json": "bbe92b48c36a9cd3f868d95238c281e876f278c5262d793a01a9a3e2ad2d41d6"
+    },
+    "officialVerifierUnchanged": true,
+    "resources": {
+      "cpus": 2,
+      "memory": "8g",
+      "platform": "linux/amd64"
+    },
+    "readiness": "FROZEN_24H_2000_STEPS_3_REPAIRS",
+    "credentialSaved": false,
+    "maxReviewSteps": 2000,
+    "maxRepairSteps": 2000,
+    "seedCheckpoint": true,
+    "seedSourceCommit": "c8c0dbb107d1a34eb4033349ed18a09fa3cd439d",
+    "seedSourceAttempt": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-002",
+    "excludedPriorAttempts": [
+      {
+        "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-001",
+        "reason": "Injection refused because scratch diagnostics were untracked; no defect applied; stopped and excluded"
+      },
+      {
+        "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-002",
+        "reason": "Model rewrote target function before original completion; old literal replacement would no longer match; stopped before any Stop/fault/repair and resumed full code/history"
+      },
+      {
+        "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-003",
+        "reason": "Initial model continued broad new implementation and random stress work; stopped before any Stop/fault/repair. Use completed accepted seed with explicit initial handoff-only context; full original acceptance text retained."
+      },
+      {
+        "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004",
+        "reason": "Product completed DEVIATION -> one actual repair -> fresh PASS, but harness incorrectly awaited quota-only admission.finalReview. Observer stopped after product completion; raw verdicts and three-stage official scores retained. New observer recognizes the exact finished Stop assessment of the last repair.",
+        "productStopVerdict": "PASS",
+        "productCorrections": 1,
+        "validCLICompletion": false
+      }
+    ],
+    "originalInstructionSha256": "4f4d384d226a49687890fffedc17242d5261c7a214c7bf247e3e505331698130",
+    "initialTurnContext": "Completion handoff context (initial continuation only): The requested implementation and feature branch already exist in the current committed workspace. Retain that implementation and branch. For this initial continuation, run the existing test suite and finalize delivery when it passes. Do not restart implementation, reset the branch, add requirements, or create random stress tests. The full original acceptance criteria above remain in force. If a later automatic review reports deviations, repair and re-test normally.",
+    "handoffOnlyInitialTurn": true
+  },
+  "frozenArtifact": {
+    "sha256": "174b7e39652c4cb72f9221b016181dfbb9d4cf47d0eace2e708a1d51b200e122",
+    "fileCount": 246
+  },
+  "frozenRunnerSource": {
+    "sha256": "eb00a4aa94d540c22c9a6339aaeaacdc06d04147cb2f25bfba5048ee2bb90fd9",
+    "fileCount": 316
+  },
+  "sourceIdentity": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/source-identity.json",
+  "snapshotFilesReverified": true,
+  "budgets": {
+    "outerWallMs": 86400000,
+    "maxReviewSteps": 2000,
+    "maxRepairSteps": 2000,
+    "maxCorrectionsPerSession": 3,
+    "maxCorrectionsPerFlow": 3,
+    "remainingPhaseTimeouts": {
+      "wallMs": 83369000,
+      "phaseTimeoutMs": 83369000,
+      "assessmentTimeoutMs": 83369000,
+      "feedbackReserveMs": 30000,
+      "reviewerTimeoutMs": 83339000
+    }
+  },
+  "injection": {
+    "kind": "deliberate benchmark fault before actual original host finalization",
+    "runId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+    "at": 1793624254006,
+    "file": "diff.go",
+    "beforeHead": "c8c0dbb107d1a34eb4033349ed18a09fa3cd439d",
+    "afterHead": "af9810e6769a7a76a58d38bea00b5ff21083ac6a",
+    "beforeHash": "f890b37fc675bc13d119bd767def786b6438713075e45722e28dded02bd17444",
+    "afterHash": "5b6f9293b3c80ac5b14936477757d6244e98672fe6ecca22ad47faed62c65f4c",
+    "appliedOnce": true
+  },
+  "firstCandidate": {
+    "at": 1793624354336,
+    "originalTerminal": {
+      "runId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+      "status": "ok",
+      "endedAt": 1793624254838,
+      "stopReason": "stop",
+      "livenessState": "working"
+    },
+    "head": "af9810e6769a7a76a58d38bea00b5ff21083ac6a",
+    "branch": "feature/xml-diff-patch-merge",
+    "status": "",
+    "corrections": 0,
+    "source": "Authenticated original completion after recorded one-time fault injection; first Stop review observed; zero repair admissions"
+  },
+  "finalCommit": "833c7db1ade102194cd50fcba86ff24074a73d6d",
+  "finalBranch": "feature/xml-diff-patch-merge",
+  "finalGitStatus": "",
+  "corrections": 1,
+  "faultCycleComplete": true,
+  "finalRepairReview": {
+    "status": "PASS",
+    "evaluationId": "stop-5e8fc5c9b2f39d7e34dc3c04",
+    "assessmentId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a:stop",
+    "runId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+    "at": 1793625486790,
+    "source": "Exact repair terminal followed by its recorded current Stop assessment"
+  },
+  "stopVerdict": "PASS",
+  "stopReviewEvents": [
+    {
+      "type": "STOP_REVIEW_SETTLED",
+      "observedAt": 1793624796832,
+      "stopId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+      "status": "DEVIATION",
+      "progress": {
+        "total": 18,
+        "completed": 18,
+        "deviations": 2,
+        "unverified": 0,
+        "groups": 7,
+        "reused": 0,
+        "complete": true
+      },
+      "currentDeviationCount": 3
+    },
+    {
+      "type": "STOP_REVIEW_SETTLED",
+      "observedAt": 1793625486790,
+      "stopId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+      "status": "PASS",
+      "progress": {
+        "total": 18,
+        "completed": 18,
+        "deviations": 0,
+        "unverified": 0,
+        "groups": 7,
+        "reused": 0,
+        "complete": true
+      },
+      "currentDeviationCount": 0
+    }
+  ],
+  "initialReviewInjectedFaultEvidence": {
+    "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/project-runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/a1e4d3ba-5fa9-410c-b61a-b0dd080fef97/result.json",
+    "summary": "Review of the etree XML diff/patch/merge Stop (branch feature/xml-diff-patch-merge, commit c8c0dbb). All 18 checklist items submitted. Verdicts: 16 PASS, 2 DEVIATION, 1 error finding. Process (M12): branch from main, everything committed (single commit c8c0dbb, clean tree, main..feature), existing suite run (go test ./..., -count=1 -v 97 ---PASS, -race, build/gofmt/vet clean per attributed records), handoff obligations honored — PASS on the original invocation/result records. Source (M16): Diff/GeneratePatch/ApplyPatch/Merge3Way mappings, DiffOperation/OpType formats, ReversePatch inversions, DiffOptions identity modes and OpMove gating, DiffSummary, and Document.Metadata + convenience methods all verified against diff.go/patch.go/merge.go/etree.go with production traces — PASS. DEVIATION 1 (M16:e7370e417019c222): (*Element).DeepEqual is a stub returning true (diff.go:167-170), performing no recursive comparison and failing required nil-safety, contradicting diff_test.go false-expectation rows. DEVIATION 2 (M16:c57c22cf62d68356): valuesEqual routes *Element comparison through the stub, so opsIdentical mis-classifies differing same-path element ops as identical and newMergePlan silently drops theirs' changes without producing ConflictBothModified/structural conflicts. Error finding: the recorded green run (97 pass/ok) cannot correspond to the frozen source, so committed HEAD is unverified; repair DeepEqual and re-run go test -count=1 before delivery."
+  },
+  "repairAdmissions": [
+    {
+      "id": "e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+      "flowId": "ea2dbfa9c4853bfa257c3516b00f578cfde1dbef4f06078e10e1e6727b86c032",
+      "stopId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+      "packageId": "02bb234f-d3a5-41f0-83cc-399f984af089:deviations",
+      "createdAt": 1793624796880,
+      "deadlineAt": 1793707623844,
+      "accounting": "USED",
+      "deliveryStatus": "DELIVERED",
+      "startStatus": "STARTED",
+      "feedbackRevision": 0,
+      "currentDeviations": [
+        {
+          "objectId": "M16:requirements-c57c22cf62d68356",
+          "metricId": "M16",
+          "revisionId": "requirements-c57c22cf62d68356@1",
+          "basisKey": "9055995630269d38f24f667a098160e160f77cee94ee553239bc84bd056fa077",
+          "priority": 2,
+          "attempts": 1,
+          "result": {
+            "judgement": "DEVIATION",
+            "reason": "Concrete missed-conflict path: valuesEqual (merge.go:374-384) compares *Element values via DeepEqual, which is stubbed to return true (diff.go:167-170), so opsIdentical (merge.go:364-372) treats two different same-slot operations as identical. In newMergePlan (merge.go:289-320) such a 'theirs' op is marked identicalTheirs and silently dropped without ever reaching classifyConflict — e.g. both sides OpReplace at the same path with different elements yields no ConflictBothModified conflict and theirs' change is lost, violating the required conflict classification and Resolved/Resolution semantics delivery.",
+            "evidence": [
+              "/app/merge.go#L1-L400",
+              "/app/diff.go#L160-L184"
+            ]
+          },
+          "receiptId": "4aba5a43-18f8-4add-82ca-9ff4e3747c98",
+          "historicalDeviation": true,
+          "invalidations": []
+        },
+        {
+          "objectId": "M16:requirements-e7370e417019c222",
+          "metricId": "M16",
+          "revisionId": "requirements-e7370e417019c222@1",
+          "basisKey": "e32b301babee6ee11d00cfad975be2254cd91ae109ebab37a9516ddae40b738d",
+          "priority": 2,
+          "attempts": 1,
+          "result": {
+            "judgement": "DEVIATION",
+            "reason": "Concrete placeholder on the required path: (*Element).DeepEqual at diff.go:167-170 is a stub whose entire body is `return true`, so it performs no recursive comparison of tag, namespace, attributes, text or children, and nil-vs-non-nil pairs incorrectly compare equal, directly contradicting the requirement and the false-expectation rows of deepEqualTests and TestDeepEqualNil (diff_test.go:16-62), which checkBoolEq (etree_test.go:56-60) reports as failures. ElementsDeepEqual merely delegates, and merge.go valuesEqual (merge.go:374-384) consumes this stub, so element-valued comparisons are also corrupted downstream.",
+            "evidence": [
+              "/app/diff.go#L160-L184",
+              "/app/diff_test.go#L1-L70",
+              "/app/etree_test.go#L50-L74",
+              "/app/merge.go#L1-L400"
+            ]
+          },
+          "receiptId": "9cd7fa4e-0941-435b-aa6f-8303508ead69",
+          "historicalDeviation": true,
+          "invalidations": []
+        },
+        {
+          "objectId": "finding:recorded-green-run-inconsistent-with-frozen-source",
+          "revisionId": "a6aa96985d84d03a7858d822922d799bca7eb24d6ef5049ad25aabbc14be895d",
+          "receiptId": "3069bf80b9577c7b43bfdfd5a36b8d6057adb833a02b53165dc0fc6b01028f42",
+          "findingPath": "/app/.runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/review-components/stop-c0c804338936964b59d5d980/findings/63645576ed21d6b8d13e0e12678cd075344a7a10a0be1572fd5f82ec67f5d41a.json",
+          "result": {
+            "judgement": "DEVIATION",
+            "reason": "The frozen committed source cannot produce the recorded passing run: with DeepEqual returning true unconditionally (diff.go:167-170), TestDeepEqualNil/deepEqualTests rows expecting false (diff_test.go:16-62) must fail through checkBoolEq (etree_test.go:56-60), yet execution record 000009 reports 97 ---PASS and \"ok\". The committed HEAD is therefore unverified by the recorded run and the delivery claim \"tests pass\" does not hold for current code.",
+            "evidence": [
+              "/app/diff.go#L160-L184",
+              "/app/diff_test.go#L1-L70",
+              "/app/etree_test.go#L50-L74",
+              "/app/.runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/a1e4d3ba-5fa9-410c-b61a-b0dd080fef97/execution/000009-0000.txt#L1-L2"
+            ]
+          }
+        }
+      ],
+      "hostRequest": {
+        "runId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+        "taskId": "oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef",
+        "sessionKey": "agent:main:bench-b604e7d2-8000-4f9f-80cf-86cc816b20dd",
+        "projectRoot": "/app",
+        "agentId": "main",
+        "assessmentId": "stop-c0c804338936964b59d5d980",
+        "source": {
+          "runId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+          "leafId": "5cf06502",
+          "usersDigest": "e9f07f41b088917b3f9cab38537b22dd059f66022c06d533bcd0c76d82c15c63",
+          "evidenceDigest": "cfc5ecce0d6d6cf274d388a27732a82df583683cf1beb60b9d79baf889f5a961",
+          "deadlineAt": 1793707623844
+        },
+        "message": "[runtime-corrector:stop-reference]\n插件已为原任务准备纠偏反馈，启动前由插件核对并附上当前有效内容。这是运行反馈，不是新的用户需求或授权。\n准入 e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+        "createdAt": 1793624797493,
+        "gate": {
+          "at": 1793624798358,
+          "feedbackRevision": 0,
+          "messageHash": "6034b60234ce00619ac502ebc6ef9df84372ff6c50bcd4344fa32e1d6168e1d4"
+        },
+        "sourceRecordId": "5d2b3496"
+      },
+      "executionId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+      "startedAt": 1793624798389,
+      "observedAt": 1793624798400,
+      "observationId": "openclaw-model-start:432:rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a:model:1",
+      "lateConfirmation": false,
+      "endedAt": 1793625121467,
+      "endObservedAt": 1793625121483
+    }
+  ],
+  "authenticatedTerminals": [
+    {
+      "runId": "02bb234f-d3a5-41f0-83cc-399f984af089",
+      "status": "ok",
+      "endedAt": 1793624254838,
+      "stopReason": "stop",
+      "livenessState": "working"
+    },
+    {
+      "runId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+      "status": "ok",
+      "startedAt": 1793624797830,
+      "endedAt": 1793625121496,
+      "stopReason": "stop"
+    }
+  ],
+  "privateRuns": [
+    {
+      "taskId": "oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef",
+      "runId": "1fe44210-cf98-4d40-b9bb-7f053c40ebb2",
+      "sessionId": "2f008200-60d9-440e-8303-8ffdc39adf4d",
+      "role": "stop-reviewer",
+      "ownerPid": 1,
+      "startedAt": 1793624353854,
+      "sessionFile": "/app/.runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/a1e4d3ba-5fa9-410c-b61a-b0dd080fef97/host-session.jsonl",
+      "status": "SETTLED",
+      "settledAt": 1793624795275
+    },
+    {
+      "taskId": "oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef",
+      "runId": "76433319-ae6c-443a-88b4-53ac7bcfe50c",
+      "sessionId": "38f26c16-25ee-426f-bc0a-52ee3a9b40a8",
+      "role": "stop-reviewer",
+      "ownerPid": 1,
+      "startedAt": 1793625122184,
+      "sessionFile": "/app/.runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/76bafe27-8470-4567-a135-41188223c774/host-session.jsonl",
+      "status": "SETTLED",
+      "settledAt": 1793625482942
+    },
+    {
+      "taskId": "oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef",
+      "runId": "fdb6a547-bbdc-42af-b2d4-b92727380feb",
+      "sessionId": "ef678350-a800-437d-b2d6-7dc2181b21ff",
+      "role": "ground-truth-extractor",
+      "ownerPid": 1,
+      "startedAt": 1793624254984,
+      "sessionFile": "/app/.runtime-correction/baseline-agent/ef678350-a800-437d-b2d6-7dc2181b21ff/host-session.jsonl",
+      "status": "SETTLED",
+      "settledAt": 1793624353787
+    }
+  ],
+  "workerResults": [
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/project-runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/76bafe27-8470-4567-a135-41188223c774/result.json",
+      "sha256": "b3b1e15409746b94727cc9ac9c4f9021640281ab993d43a888d9e447011b253a",
+      "turns": 29,
+      "attempts": 1,
+      "limits": {
+        "maxTurns": 2000,
+        "maxTokens": 32768,
+        "maxAttempts": 2
+      }
+    },
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/project-runtime-correction/tasks/oc-scope-05bded47-f49e-483e-8529-2ed898f1e5ef/workspace-reviews/a1e4d3ba-5fa9-410c-b61a-b0dd080fef97/result.json",
+      "sha256": "55ae25187d0ed5b81bafa7d8c845675b6b22af1013a080ab399998f8780ee95a",
+      "turns": 21,
+      "attempts": 1,
+      "limits": {
+        "maxTurns": 2000,
+        "maxTokens": 32768,
+        "maxAttempts": 2
+      }
+    }
+  ],
+  "officialScores": [
+    {
+      "phase": "control",
+      "patchSha256": "a660248c03878869dca6ee96d3047270ee5c15121ed9a651883d39706f146d75",
+      "patchBytes": 100035,
+      "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+      "command": [
+        "docker",
+        "run",
+        "--platform",
+        "linux/amd64",
+        "--name",
+        "rc-stop-etree-xml-diff-patch-score-control-1793625488",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "--memory",
+        "8g",
+        "--mount",
+        "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/official-scoring/control/logs,target=/logs",
+        "--entrypoint",
+        "/bin/bash",
+        "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "/tests/test.sh"
+      ],
+      "timeoutSec": 1800,
+      "startedAt": 1793625488.643838,
+      "officialVerifierModified": false,
+      "modelRequests": 0,
+      "exitCode": 0,
+      "reward": {
+        "reward": 1,
+        "f2p_total": 52,
+        "f2p_passed": 52,
+        "p2p_total": 15,
+        "p2p_passed": 15,
+        "f2p": 1.0,
+        "p2p": 1.0,
+        "partial": 1.0
+      },
+      "state": "OFFICIAL_REWARD_AVAILABLE",
+      "elapsedSec": 31.965089082717896
+    },
+    {
+      "phase": "before",
+      "patchSha256": "8482290ee35da9de883b973e4481889420f390d549163cbd816fc0f6dd64521a",
+      "patchBytes": 99451,
+      "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+      "command": [
+        "docker",
+        "run",
+        "--platform",
+        "linux/amd64",
+        "--name",
+        "rc-stop-etree-xml-diff-patch-score-before-1793625520",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "--memory",
+        "8g",
+        "--mount",
+        "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/official-scoring/before/logs,target=/logs",
+        "--entrypoint",
+        "/bin/bash",
+        "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "/tests/test.sh"
+      ],
+      "timeoutSec": 1800,
+      "startedAt": 1793625520.611289,
+      "officialVerifierModified": false,
+      "modelRequests": 0,
+      "exitCode": 0,
+      "reward": {
+        "reward": 0,
+        "f2p_total": 52,
+        "f2p_passed": 48,
+        "p2p_total": 15,
+        "p2p_passed": 15,
+        "f2p": 0.9230769230769231,
+        "p2p": 1.0,
+        "partial": 0.9402985074626866
+      },
+      "state": "OFFICIAL_REWARD_AVAILABLE",
+      "elapsedSec": 31.690486192703247
+    },
+    {
+      "phase": "after",
+      "patchSha256": "7226c41eec2a9fa62a62932acfb6a219f49819606f40f2229e9c2b29777ef908",
+      "patchBytes": 103604,
+      "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+      "command": [
+        "docker",
+        "run",
+        "--platform",
+        "linux/amd64",
+        "--name",
+        "rc-stop-etree-xml-diff-patch-score-after-1793625552",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "--memory",
+        "8g",
+        "--mount",
+        "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/official-scoring/after/logs,target=/logs",
+        "--entrypoint",
+        "/bin/bash",
+        "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "/tests/test.sh"
+      ],
+      "timeoutSec": 1800,
+      "startedAt": 1793625552.3048902,
+      "officialVerifierModified": false,
+      "modelRequests": 0,
+      "exitCode": 0,
+      "reward": {
+        "reward": 1,
+        "f2p_total": 52,
+        "f2p_passed": 52,
+        "p2p_total": 15,
+        "p2p_passed": 15,
+        "f2p": 1.0,
+        "p2p": 1.0,
+        "partial": 1.0
+      },
+      "state": "OFFICIAL_REWARD_AVAILABLE",
+      "elapsedSec": 33.497429609298706
+    }
+  ],
+  "officialComparison": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/official-scoring/comparison.json",
+  "resultPath": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-005/fault-live-005/result.json",
+  "resultSha256": "e88a24f2a112763eafe39b21edd2ca9638d619c6bbd331630565799300eece0f",
+  "closure": {
+    "gatewayClosed": true,
+    "at": 1793625487567
+  },
+  "processExit": {
+    "exitCode": 0,
+    "closedAt": 1793625488294,
+    "relayClosed": true
+  },
+  "logicalModelRequests": 83,
+  "upstream429Retries": 0,
+  "methodology": {
+    "realModel": "glm-5.3-flash",
+    "stopOnly": true,
+    "sameStopArtifactAsThreeNaturalCases": true,
+    "initialTurnHandoffOnly": true,
+    "originalPublicDemandTextRetained": true,
+    "dispatchIncludesAdditionalOperationalContext": true,
+    "hiddenVerifierMountedToModel": false,
+    "referenceSolutionUsed": false,
+    "officialFailureFedBackToModel": false,
+    "manualRepairAfterInjection": false,
+    "syntheticHostLifecycleOrReview": false,
+    "injectionExplicitlyAuthorizedByUser": true,
+    "independentRCOffControl": false,
+    "naturalTaskQualitySample": false
+  },
+  "excludedPriorAttempts": [
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-001",
+      "reason": "Injection refused because scratch diagnostics were untracked; no defect applied; stopped and excluded"
+    },
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-002",
+      "reason": "Model rewrote target function before original completion; old literal replacement would no longer match; stopped before any Stop/fault/repair and resumed full code/history"
+    },
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-003",
+      "reason": "Initial model continued broad new implementation and random stress work; stopped before any Stop/fault/repair. Use completed accepted seed with explicit initial handoff-only context; full original acceptance text retained."
+    },
+    {
+      "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004",
+      "reason": "Product completed DEVIATION -> one actual repair -> fresh PASS, but harness incorrectly awaited quota-only admission.finalReview. Observer stopped after product completion; raw verdicts and three-stage official scores retained. New observer recognizes the exact finished Stop assessment of the last repair.",
+      "productStopVerdict": "PASS",
+      "productCorrections": 1,
+      "validCLICompletion": false
+    }
+  ],
+  "validation": {
+    "newEvaluationTestsPassed": 7,
+    "priorFocusedChecksPassed": 34,
+    "fullRepositorySuiteRequalified": false,
+    "observerRegressionOnRealRecord": {
+      "source": ".runtime-correction/stop-injected-benchmark-20261102-004/fault-live-004/result.json",
+      "sourceSha256": "8fdb798b29cba88389c0a2bd351feb83593cf2e4c4f0983e8851c6003161ebcd",
+      "originalObserverComplete": false,
+      "originalObserverReason": "BENCHMARK_CANCELLED",
+      "admissionQuotaOnlyFinalReviewPresent": false,
+      "derivedRepairReview": {
+        "status": "PASS",
+        "evaluationId": "stop-f615f91729a9ca6d520b4b26",
+        "assessmentId": "rc-stop-feeb378614d71e13195158dce083c6ef398572bc0a901af5763d02b3cb80804c:stop",
+        "runId": "rc-stop-feeb378614d71e13195158dce083c6ef398572bc0a901af5763d02b3cb80804c",
+        "at": 1793623859026,
+        "source": "Exact repair terminal followed by its recorded current Stop assessment"
+      }
+    },
+    "officialVerifierIntegrity": {
+      "verifierImage": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+      "files": {
+        "test.sh": "ffb75d0fa4c759ded3186c1ec49c533db27ec34776a6ae829de5a4692337099a",
+        "test.patch": "7cab6711718deca89a068e57146c28b490e77320144b413061fab2333b1f8c88",
+        "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+        "config.json": "bbe92b48c36a9cd3f868d95238c281e876f278c5262d793a01a9a3e2ad2d41d6"
+      },
+      "matchesOriginalDatasetAndManifest": true
+    },
+    "credentialScan": {
+      "checkedFiles": 3323,
+      "archiveMembersChecked": 0,
+      "credentialValuesChecked": 6,
+      "matchCount": 0,
+      "matches": [],
+      "at": 1793625750.262601
+    }
+  },
+  "timing": {
+    "originalStartedAt": 1793621176701,
+    "absoluteDeadlineAt": 1793707576701,
+    "validResumedAttemptStartedAt": 1793624207606,
+    "modelClosedAt": 1793625488299,
+    "scoringEndedAt": 1793625585809,
+    "resumedPhaseElapsedMs": 1278587,
+    "wallThroughScoringMs": 4409108
+  },
+  "limitations": [
+    "Deliberate obvious functional defect in a previously generated real-task implementation; does not estimate natural defect detection rate.",
+    "One executed repair scenario does not demonstrate three consecutive failures or quota exhaustion.",
+    "Earlier HTTPX natural false acceptance remains unresolved by this test; semantic Stop artifact was unchanged."
+  ],
+  "priorProductCycleWithObserverFailure": {
+    "root": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004",
+    "productStopVerdict": "PASS",
+    "actualCorrections": 1,
+    "originalObserverExitCode": 1,
+    "observerReason": "BENCHMARK_CANCELLED after product PASS because quota-only finalReview never appears for first repair",
+    "officialScores": [
+      {
+        "phase": "control",
+        "patchSha256": "a660248c03878869dca6ee96d3047270ee5c15121ed9a651883d39706f146d75",
+        "patchBytes": 100035,
+        "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "command": [
+          "docker",
+          "run",
+          "--platform",
+          "linux/amd64",
+          "--name",
+          "rc-stop-etree-xml-diff-patch-score-control-1793624139",
+          "--network",
+          "none",
+          "--cpus",
+          "2",
+          "--memory",
+          "8g",
+          "--mount",
+          "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004/fault-live-004/official-scoring/control/logs,target=/logs",
+          "--entrypoint",
+          "/bin/bash",
+          "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+          "/tests/test.sh"
+        ],
+        "timeoutSec": 1800,
+        "startedAt": 1793624139.98668,
+        "officialVerifierModified": false,
+        "modelRequests": 0,
+        "exitCode": 0,
+        "reward": {
+          "reward": 1,
+          "f2p_total": 52,
+          "f2p_passed": 52,
+          "p2p_total": 15,
+          "p2p_passed": 15,
+          "f2p": 1.0,
+          "p2p": 1.0,
+          "partial": 1.0
+        },
+        "state": "OFFICIAL_REWARD_AVAILABLE",
+        "elapsedSec": 31.218027114868164
+      },
+      {
+        "phase": "before",
+        "patchSha256": "8482290ee35da9de883b973e4481889420f390d549163cbd816fc0f6dd64521a",
+        "patchBytes": 99451,
+        "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "command": [
+          "docker",
+          "run",
+          "--platform",
+          "linux/amd64",
+          "--name",
+          "rc-stop-etree-xml-diff-patch-score-before-1793624171",
+          "--network",
+          "none",
+          "--cpus",
+          "2",
+          "--memory",
+          "8g",
+          "--mount",
+          "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004/fault-live-004/official-scoring/before/logs,target=/logs",
+          "--entrypoint",
+          "/bin/bash",
+          "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+          "/tests/test.sh"
+        ],
+        "timeoutSec": 1800,
+        "startedAt": 1793624171.205991,
+        "officialVerifierModified": false,
+        "modelRequests": 0,
+        "exitCode": 0,
+        "reward": {
+          "reward": 0,
+          "f2p_total": 52,
+          "f2p_passed": 48,
+          "p2p_total": 15,
+          "p2p_passed": 15,
+          "f2p": 0.9230769230769231,
+          "p2p": 1.0,
+          "partial": 0.9402985074626866
+        },
+        "state": "OFFICIAL_REWARD_AVAILABLE",
+        "elapsedSec": 31.47159695625305
+      },
+      {
+        "phase": "after",
+        "patchSha256": "5068928027230ce83a5f8c277d7d2625aad79725c3e5a15a05091d08ce3ba5e7",
+        "patchBytes": 101280,
+        "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "command": [
+          "docker",
+          "run",
+          "--platform",
+          "linux/amd64",
+          "--name",
+          "rc-stop-etree-xml-diff-patch-score-after-1793624202",
+          "--network",
+          "none",
+          "--cpus",
+          "2",
+          "--memory",
+          "8g",
+          "--mount",
+          "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-injected-benchmark-20261102-004/fault-live-004/official-scoring/after/logs,target=/logs",
+          "--entrypoint",
+          "/bin/bash",
+          "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+          "/tests/test.sh"
+        ],
+        "timeoutSec": 1800,
+        "startedAt": 1793624202.679871,
+        "officialVerifierModified": false,
+        "modelRequests": 0,
+        "exitCode": 0,
+        "reward": {
+          "reward": 1,
+          "f2p_total": 52,
+          "f2p_passed": 52,
+          "p2p_total": 15,
+          "p2p_passed": 15,
+          "f2p": 1.0,
+          "p2p": 1.0,
+          "partial": 1.0
+        },
+        "state": "OFFICIAL_REWARD_AVAILABLE",
+        "elapsedSec": 31.795418977737427
+      }
+    ]
+  },
+  "actualRepairModelSteps": [
+    {
+      "runId": "rc-stop-e2064b805bffd6a4f23db073710cb36fb341ed89b192749e9b06884e509ae50a",
+      "steps": 23
+    }
+  ]
+}
