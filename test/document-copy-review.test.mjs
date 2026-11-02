@@ -42,6 +42,8 @@ test('copy review exposes missing EOF newlines and passes a real repair, retaini
   const first = await f.check();
   assert.equal(first.result.status, 'failed');
   assert.match(first.result.diagnostics[0].suggestion, /EOF\/newlines/u);
+  const args = JSON.parse(first.result.diagnostics[0].evidence.find(line => line.startsWith('native edit arguments = ')).slice('native edit arguments = '.length));
+  assert.equal(f.source.slice(0, -1).replace(args.edits[0].oldText, args.edits[0].newText), f.source, 'Exact EOF repair must not lose a body character when the source/current suffix starts differ');
   assert.notEqual(first.result.metadata.documentCopy[0].expectedSha256, first.result.metadata.documentCopy[0].actualSha256);
   await fs.writeFile(path.join(f.root, 'design.md'), f.source);
   const second = await f.check();
