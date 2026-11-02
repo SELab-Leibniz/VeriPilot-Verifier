@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
+import { isolateInterruptedBenchmarkOwner } from './helpers/benchmark-resume-control.mjs';
 
 const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
 const root = path.resolve(value('--prepared-root'));
@@ -33,6 +34,7 @@ if (resumeFrom) {
   // copied into a new process; actual session history and all old evidence stay.
   for (const file of await fs.readdir(path.join(run, 'native-host'))) if (file.endsWith('.lock'))
     await fs.rm(path.join(run, 'native-host', file), { recursive: true, force: true });
+  await isolateInterruptedBenchmarkOwner(resumeFrom, run);
 }
 
 const token = `local-only-${randomBytes(32).toString('hex')}`;
