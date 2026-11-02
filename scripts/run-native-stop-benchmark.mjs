@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
+import { setTimeout as delay } from 'node:timers/promises';
 import { isolateInterruptedBenchmarkOwner } from './helpers/benchmark-resume-control.mjs';
 
 const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
@@ -60,9 +61,20 @@ const server = http.createServer(async (request, response) => {
       record.historyReasoningBlocks = thinking.length;
       record.historyReasoningChars = thinking.reduce((sum, message) => sum + message.reasoning_content.length, 0);
       record.requestBytes = size; record.requestSha256 = createHash('sha256').update(body).digest('hex');
-      const upstream = await fetch('https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', {
-        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body,
-        signal: AbortSignal.any([controller.signal, abort.signal]), redirect: 'error' });
+      let upstream;
+      const signal = AbortSignal.any([controller.signal, abort.signal]);
+      for (let retry = 0; ; retry++) {
+        upstream = await fetch('https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body,
+          signal, redirect: 'error' });
+        if (upstream.status !== 429 || retry >= 10) break;
+        const retrySeconds = Number(upstream.headers.get('retry-after'));
+        const waitMs = Math.min(60000, Math.max(5000, Number.isFinite(retrySeconds) && retrySeconds > 0 ? retrySeconds * 1000 : 60000));
+        (record.rateLimitRetries ??= []).push({ status: 429, at: Date.now(), waitMs });
+        await upstream.body?.cancel();
+        await saveRelay();
+        await delay(waitMs, undefined, { signal });
+      }
       record.status = upstream.status; response.statusCode = upstream.status;
       response.setHeader('content-type', upstream.headers.get('content-type') ?? 'application/json');
       response.setHeader('cache-control', 'no-store');
