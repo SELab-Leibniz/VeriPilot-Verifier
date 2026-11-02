@@ -213,3 +213,20 @@ test('per-role format-repair setting overrides the RC default file, including di
   await assert.rejects(n.factory({...f.input,reviewer:{timeoutMs:2000,formatRepairAttempts:repairs}}));assert.equal(calls,1+repairs);
  }
 });
+
+test('large malformed JSON gives the same native session a localized syntax diagnostic before repair',async t=>{
+ const f=await fixture(t);let calls=0;const sessions=[];
+ const valid={...completed(),summary:'Original contract. '.repeat(400)};
+ const malformed=JSON.stringify(valid).slice(0,-1)+']}';
+ const n=native(f,async p=>{
+  sessions.push(p.sessionId);
+  if(++calls===1)return output(malformed);
+  assert.match(p.prompt,/JSON syntax context/);
+  assert.match(p.prompt,/matching object braces and array brackets/);
+  assert.match(p.prompt,/metricObjectJudgements/);
+  return output(valid);
+ });
+ const h=await n.factory(f.input);
+ assert.equal(calls,2);assert.equal(new Set(sessions).size,1);
+ assert.deepEqual(h.result,valid);await h.close();
+});
