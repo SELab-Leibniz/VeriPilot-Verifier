@@ -32,7 +32,8 @@ export default {id:${JSON.stringify(id)},register(api){api.on('before_agent_fina
  if(!real.startsWith(realProject+path.sep))throw new Error('Fault target escapes benchmark workspace');
  const before=await fs.readFile(file,'utf8');
  if(before.split(spec.before).length!==2)throw new Error('Fault target does not match exactly once');
- if(git('status','--porcelain').trim())throw new Error('Original delivery must be committed before fault injection');
+ // Scratch diagnostics are retained untracked; only committed source is corrupted.
+ if(git('status','--porcelain','--untracked-files=no').trim())throw new Error('Original delivery must be committed before fault injection');
  const beforeHead=git('rev-parse','HEAD').trim(),after=before.replace(spec.before,spec.after);
  await fs.mkdir(path.join(output,'pre-injection'),{recursive:true});
  await fs.writeFile(path.join(output,'pre-injection/model.patch'),git('diff','--binary',target.baseCommit,'HEAD'));

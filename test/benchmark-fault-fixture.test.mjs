@@ -31,13 +31,16 @@ test('fault commits once at the exact original finalization and retains the good
   await f.hook({ runId: 'private-review' }, ctx);
   await f.hook({ runId: 'original' }, { workspaceDir: f.outputRoot });
   assert.equal(f.git('rev-parse', 'HEAD'), f.head);
+  await fs.mkdir(path.join(f.projectRoot, '.openclaw'));
+  await fs.writeFile(path.join(f.projectRoot, '.openclaw', 'scratch.log'), 'diagnostics');
   await f.hook({ runId: 'original' }, ctx);
   const receipt = JSON.parse(await fs.readFile(path.join(f.outputRoot, 'fault-injection.json')));
   assert.equal(receipt.beforeHead, f.head);
   assert.notEqual(receipt.afterHead, f.head);
   assert.equal(f.git('show', 'HEAD:diff.go'), 'always equal');
   assert.equal(f.git('show', `${f.head}:diff.go`), 'good comparison');
-  assert.equal(f.git('status', '--porcelain'), '');
+  assert.equal(f.git('status', '--porcelain', '--untracked-files=no'), '');
+  assert.equal(await fs.readFile(path.join(f.projectRoot, '.openclaw', 'scratch.log'), 'utf8'), 'diagnostics');
   await fs.writeFile(path.join(f.projectRoot, 'diff.go'), 'repaired comparison\n');
   await f.hook({ runId: 'original' }, ctx);
   assert.equal(await fs.readFile(path.join(f.projectRoot, 'diff.go'), 'utf8'), 'repaired comparison\n');

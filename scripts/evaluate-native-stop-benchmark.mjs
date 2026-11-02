@@ -171,6 +171,10 @@ try {
         if (['ok', 'error'].includes(terminal.status)) originalTerminal = terminal;
       }
       if (originalTerminal?.status === 'error') { reason = 'ORIGINAL_HOST_ERROR'; break; }
+      if (faultFixture && originalTerminal?.status === 'ok'
+        && !await fs.stat(path.join(outputRoot, 'fault-injection.json')).catch(() => null)) {
+        reason = 'FAULT_NOT_INJECTED'; break;
+      }
       // The production controller starts Stop only after the original host
       // terminal. Read the committed first draft before any repair is admitted.
       if (originalTerminal?.status === 'ok' && !used.length && runs.some(r => r.role === 'stop-reviewer' && r.startedAt >= startedAt)
@@ -187,6 +191,10 @@ try {
 
       const allSettled = runs.length && runs.every(r => r.status === 'SETTLED');
       const activeRepair = Object.values(ledger?.admissions ?? {}).some(a => a.accounting === 'RESERVED' || a.accounting === 'USED' && !a.endedAt);
+      if (faultFixture && originalTerminal?.status === 'ok' && currentVerification
+        && task?.verification?.status === 'PASS' && allSettled && !activeRepair && !used.length) {
+        reason = 'FAULT_NOT_DETECTED'; break;
+      }
       const faultFinalReviewSaved = !faultFixture || used.at(-1)?.finalReview?.status === 'PASS'
         && used.at(-1).finalReview.evaluationId === task?.verification?.evaluationId;
       if (originalTerminal?.status === 'ok' && currentVerification && task?.verification?.status === 'PASS' && allSettled && !activeRepair && faultFinalReviewSaved) break;
