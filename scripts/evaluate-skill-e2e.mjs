@@ -23,8 +23,11 @@ export function skillE2eOptions(args) {
     assessmentTimeoutMs: positive('--assessment-timeout-ms', 900000), wallMs: positive('--wall-ms', 1800000),
     businessTimeoutMs: positive('--business-timeout-ms', 1200000),
     hostRoot: value('--host-root') ?? '/opt/homebrew/lib/node_modules/openclaw', output: value('--output'),
-    baseUrl: value('--base-url') ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model: value('--model') ?? 'glm-5.3' };
+    baseUrl: value('--base-url') ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model: value('--model') ?? 'glm-5.3-flash',
+    maxWatchTurns: Number(value('--max-watch-turns') ?? 1) };
   if (!['repair', 'success'].includes(options.scenario)) throw new Error('Use --scenario repair or success');
+  if (!Number.isSafeInteger(options.maxWatchTurns) || options.maxWatchTurns < 1 || options.maxWatchTurns > 10000)
+    throw new Error('Invalid --max-watch-turns');
   if (options.assessmentTimeoutMs <= 30000) throw new Error('Assessment must leave 30000ms for feedback delivery');
   return options;
 }
@@ -42,7 +45,7 @@ skillCorrection:
     include: [delivery-verifier]
   skillRoots: [skills]
   completionCheckIntervalTurns: 1
-  maxWatchTurns: 50
+  maxWatchTurns: ${options.maxWatchTurns}
   maxFeedbacksPerSkill: 3
 artifactCorrection:
   groundTruthReviewEnabled: false
@@ -79,14 +82,14 @@ export async function evaluateSkillE2e(options) {
   const fixture = await prepareIntegratedFixture({ projectRoot: path.join(outputRoot, 'project'), modelRef: `openai/${options.model}`, deadlineAt,
     roleTimeoutMs: options.roleTimeoutMs, assessmentTimeoutMs: options.assessmentTimeoutMs });
   fixture.businessTimeoutMs = options.businessTimeoutMs;
-  const skill = `---\nname: delivery-verifier\ndescription: Verify the supplied numeric module before completing delivery.\n---\n\nBefore completing this task, run the exact public command below with the native exec tool and establish actual exit code 0. A failed command requires correcting app.mjs and running the command again.\n\n${fixture.command}\n\nUse workdir ${fixture.projectRoot}, timeout 10, yieldMs 10000, background false.\n`;
+  const skill = `---\nname: delivery-verifier\ndescription: Verify the supplied numeric module before completing delivery.\n---\n\nRun the exact public command below with the native exec tool. Its required result is actual exit code 0; a nonzero exit code is a failed Skill execution. Correct app.mjs and rerun verification to resolve a failure. After a correction, use the newest verification result for the current files to determine completion.\n\n${fixture.command}\n\nUse workdir ${fixture.projectRoot}, timeout 10, yieldMs 10000, background false.\n`;
   const guide = '# Usage guide\n\naccept takes a finite number and returns that number plus one: accept(2) === 3. The operation is stateless. Other input types are outside scope.\n';
   const originals = { '.runtime-corrector/config.yaml': skillE2ePolicy(options), 'skills/delivery-verifier/SKILL.md': skill };
   for (const [relative, bytes] of Object.entries({ ...originals, 'docs/guide.md': guide,
     ...(options.scenario === 'success' ? { 'app.mjs': 'export const accept = value => value + 1;\n' } : {}) }))
     await fs.writeFile(path.join(fixture.projectRoot, relative), bytes);
   for (const [relative, bytes] of Object.entries(originals)) fixture.immutableHashes[relative] = hash(bytes);
-  fixture.requirement = `Read and follow skills/delivery-verifier/SKILL.md. The supplied contract describes accept(value), which must return the finite number plus one. The guide is already correct. First run the exact Skill command against the starting files before editing anything, then report that initial result and end this initial turn without editing. This is an intentional correction-flow exercise: if Runtime Corrector supplies feedback, follow it, repair app.mjs as needed, run the public command again after the final edit and complete the task. Do not change the Skill, contract, verifier or configuration. Do not claim that a failed verification passed.`;
+  fixture.requirement = `Read and follow skills/delivery-verifier/SKILL.md. The supplied contract describes accept(value), which must return the finite number plus one. The guide is already correct. First run the exact Skill command against the starting files before editing anything. Follow any Runtime Corrector feedback, repair app.mjs as needed, run the public command again after the final edit and complete the task. Do not change the Skill, contract, verifier or configuration. Do not claim that a failed verification passed.`;
   const fixtureFile = path.join(outputRoot, 'fixture.json'), bindingFile = path.join(outputRoot, 'binding.json');
   await fs.writeFile(fixtureFile, JSON.stringify(fixture, null, 2));
   const fence = await createIntegratedFencePlugin({ outputRoot, fixtureFile, bindingFile });
@@ -126,7 +129,11 @@ export async function evaluateSkillE2e(options) {
       provider: { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model }, providerGuard: batch });
     result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile, deadlineAt, signal: batch.signal });
     const session = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-business-session.json'), 'utf8'));
-    const sessionText = JSON.stringify(session);
+    const skillFeedbackReceipts = (session.messages ?? []).map(record => record.message ?? record)
+      .filter(message => message.role === 'toolResult' && (message.content ?? []).some(block =>
+        block.type === 'text' && block.text.includes('Skill execution correction: delivery-verifier')))
+      .map(message => ({ toolCallId: message.toolCallId, toolName: message.toolName }));
+    result.skillFeedbackReceipts = skillFeedbackReceipts;
     const task = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-final-task.json'), 'utf8'));
     const watchers = Object.values(task?.watchers ?? {});
     const checks = { automaticSkillRead: result.actionEvidence.pairedSkillRead === true,
@@ -137,9 +144,9 @@ export async function evaluateSkillE2e(options) {
       authenticTerminal: result.authenticTerminals?.complete === true && result.authenticTerminals?.dispatch?.reviewStatus === 'PASS',
       privateRunsSettled: result.privateRuns.length > 0 && result.privateRuns.every(run => run.status === 'SETTLED'),
       ...(options.scenario === 'repair' ? {
-        feedbackObserved: sessionText.includes('Skill execution correction: delivery-verifier'),
+        feedbackObserved: skillFeedbackReceipts.length > 0,
         businessRepairObserved: result.actionEvidence.actualDeliveryWrites['app.mjs'] > 0,
-      } : {}) };
+      } : { noUnexpectedSkillFeedback: skillFeedbackReceipts.length === 0 }) };
     result.checks = checks;
     result.accepted = Object.values(checks).every(Boolean);
   } catch (error) { failure = { code: error.code ?? error.name, message: redact(error) }; }

@@ -26,7 +26,7 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
   if (provider?.api !== 'openai-completions'
     || !['https://open.bigmodel.cn/api/coding/paas/v4', 'https://ark.cn-beijing.volces.com/api/coding/v3'].includes(provider.baseUrl)
     || !/^[\w.:-]+$/u.test(provider.model ?? '')
-    || provider.baseUrl === 'https://open.bigmodel.cn/api/coding/paas/v4' && provider.model !== 'glm-5.3'
+    || provider.baseUrl === 'https://open.bigmodel.cn/api/coding/paas/v4' && !['glm-5.3', 'glm-5.3-flash'].includes(provider.model)
     || Object.keys(provider).some(key => !['api', 'baseUrl', 'model'].includes(key)))
     throw new Error('Unsupported explicit Gateway provider definition. Credentials belong only to the transient provider guard.');
   if (nativeModelContextWindow(contextWindow) > 128000)

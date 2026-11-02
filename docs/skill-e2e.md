@@ -4,7 +4,7 @@
 
 独立 Skill 现在允许 `dynamicGroundTruth.enabled: false`：仍从完整原始 Skill 建立和核对本地规则图，不生成虚构任务基线。原文变化、模型解释不确定、调用或结果无法归属时仍保留未验证状态。全局基线关闭时，终审仅允许明确启用 Skill、仅保留 M08 且关闭文件质量审查的配置。
 
-运行时通过环境变量 `RC_NATIVE_GATEWAY_API_KEY` 提供模型凭据，不写入项目或命令参数。默认使用 GLM Coding 的原有路由；也支持显式使用当前 Ark Coding 的 OpenAI 兼容路由。
+运行时通过环境变量 `RC_NATIVE_GATEWAY_API_KEY` 提供模型凭据，不写入项目或命令参数。默认使用 GLM Coding 的 `glm-5.3-flash`；也支持显式使用当前 Ark Coding 的 OpenAI 兼容路由。
 
 ```sh
 node scripts/evaluate-skill-e2e.mjs \
@@ -13,6 +13,7 @@ node scripts/evaluate-skill-e2e.mjs \
   --assessment-timeout-ms 900000 \
   --business-timeout-ms 1200000 \
   --wall-ms 1800000 \
+  --max-watch-turns 1 \
   --output .runtime-correction/skill-e2e-hour/repair-fresh
 ```
 
@@ -20,7 +21,7 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 
 时间项分别控制单个审阅、一次终审及反馈、原始业务任务和整轮运行；原始业务不再被入口里的固定十分钟上限截断。所有阶段仍受整轮绝对截止时间约束，增大一个参数不会自动延长其他阶段。模型提供方的等待阈值随明确配置的整轮时间设置；未知用量或鉴权失败会停止继续发请求。
 
-失败样例的初始代码固定为 `accept(value) => value`，指南已经正确。原始任务明确要求先运行验证并结束初始回合，收到 RC 反馈后再修复；这用于可重复地触发纠偏。驱动不生成规则图或判决、不代写业务修复，不把人工构造的工具结果当作真实执行。
+失败样例的初始代码固定为 `accept(value) => value`，指南已经正确。原始任务要求修改前先真实执行验证，随后修复并重新验证。看护回合上限在专项样例中设为 1，以便在首次失败工具结果返回时检查已发生的执行；生产默认值不变。Skill 明确说明非零退出是执行失败，并允许通过当前产物的新验证解决失败，不豁免首次失败。驱动不生成规则图或判决、不代写业务修复，不把人工构造的工具结果当作真实执行。
 
 每轮保留 `result.json`、实际业务会话、原生工具观察、Skill 规则图与评估、实际终审派发状态、请求和用量。`PASS` 要求实际 Skill 读取、规则抽取、Skill 审查、当前看护通过、最终产物匹配的验证成功、原生终态及私有运行结算；修复案还要求反馈实际进入业务会话和业务 Agent 的写入。历史失败目录不被覆盖。
 
