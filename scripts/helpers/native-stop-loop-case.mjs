@@ -46,7 +46,7 @@ stopCorrection:
 ${Array.from({ length: 16 }, (_, index) => `    M${String(index + 1).padStart(2, '0')}: ${index === 15}`).join('\n')}
 reviewers:
   defaults:
-    model: anthropic/${gateway.model}
+    model: ${gateway.modelRef ?? `anthropic/${gateway.model}`}
     effort: low
     timeoutMs: 180000
     maxOutputTokens: 32768

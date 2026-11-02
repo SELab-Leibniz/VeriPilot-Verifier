@@ -10,6 +10,9 @@ import { fileURLToPath } from "node:url";
 import { reviewPromptProfile } from "../lib/review-task/prompt-profile.mjs";
 import { captureFiles, registerCitation, runReviewTask, taskVerdicts, validateDecision } from "../lib/review-task/review-task.mjs";
 import { nativeTools } from "./helpers/native-task.mjs";
+const activationFor = verdict => ({ activation: verdict === 'NOT_APPLICABLE' ? 'INACTIVE_AT_CURRENT_BOUNDARY'
+  : verdict === 'NOT_YET_APPLICABLE' ? 'PENDING_REQUIRED_TRIGGER' : 'ACTIVE', evidenceKind: 'TARGET_FACTS',
+  reason: 'The complete controlled original target establishes the current task scope and stage.' });
 
 test('group submission schema exposes only original member IDs and hides the group ID as a task choice', async t=>{
   const f=await discoveryFixture(t),outputDir=`${f.root}-group`;
@@ -103,8 +106,10 @@ test("only the exact caller-owned conditional kind can authorize applicability v
       await assert.rejects(validateDecision({ ...f, task, decision: discoveryDecision(verdict, [f.candidate.citeId]) }), /Wrong task or verdict/u);
   }
   const task = { ...f.task, applicabilityKind: "CONDITIONAL" };
+  f.reads.push({ path: 'project/candidate.md', start: 2, end: 2 });
   for (const verdict of taskVerdicts(task)) {
-    const result = await validateDecision({ ...f, task, decision: discoveryDecision(verdict, verdict === "UNVERIFIED" ? [] : [f.candidate.citeId]) });
+    const result = await validateDecision({ ...f, task, decision: { ...discoveryDecision(verdict, verdict === "UNVERIFIED" ? [] : [f.candidate.citeId]),
+      ...(verdict !== 'UNVERIFIED' ? { conditionAssessment: activationFor(verdict) } : {}) } });
     assert.equal(result.verdict, verdict, "Applicability decisions must never be rewritten into PASS.");
   }
   const unknown = await validateDecision({ ...f, task, reads: [],
@@ -115,7 +120,7 @@ test("only the exact caller-owned conditional kind can authorize applicability v
 test("both conditional applicability verdicts retain full basis, target ownership, citation and stale guards", async t => {
   const f = await discoveryFixture(t), task = { ...f.task, applicabilityKind: "CONDITIONAL" };
   for (const verdict of ["NOT_APPLICABLE", "NOT_YET_APPLICABLE"]) {
-    const decision = discoveryDecision(verdict, [f.candidate.citeId]);
+    const decision = { ...discoveryDecision(verdict, [f.candidate.citeId]), conditionAssessment: activationFor(verdict) };
     await assert.rejects(validateDecision({ ...f, task, reads: f.reads.filter(r => r.path !== "project/basis.md"), decision }), /basis not fully read/u);
     await assert.rejects(validateDecision({ ...f, task, decision: { ...decision, citeIds: [] } }), /requires source evidence/u);
     for (const citation of [f.basis, f.outside])
@@ -147,17 +152,19 @@ test("conditional native tool submissions keep both applicability verdicts durab
         const tools = nativeTools(worker);
         await tools.read('project/basis.md'); const citeId = await tools.read('project/candidate.md'); turns = 2;
         if (!kind) { await assert.rejects(tools.submit(task.id, verdict, [citeId]), /Wrong task or verdict/); turns++; }
-        await tools.submit(task.id, kind ? verdict : 'UNVERIFIED', kind ? [citeId] : []); turns++;
+        await tools.submit(task.id, kind ? verdict : 'UNVERIFIED', kind ? [citeId] : [], kind ? { conditionAssessment: activationFor(verdict) } : {}); turns++;
       } });
-    assert.equal(result.completed, true);
+    assert.equal(result.completed, true, JSON.stringify(result));
     assert.equal(result.verdict, kind ? verdict : "UNVERIFIED");
     const saved = JSON.parse(await fs.readFile(path.join(outputDir, "decision.json"), "utf8"));
     assert.equal(saved.verdict, result.verdict);
     assert.equal(turns, kind ? 3 : 4);
     const prompt = await fs.readFile(path.join(outputDir, "prompt.txt"), "utf8");
     if (kind) {
-      assert.match(prompt, /Missing or incomplete trigger evidence is UNVERIFIED/u);
-      assert.match(prompt, /neither means the business obligation passed/u);
+      assert.match(prompt, /UNKNOWN\/missing activation proof is UNVERIFIED/u);
+      assert.match(prompt, /PENDING_REQUIRED_TRIGGER means a required later stage\/event remains due/u);
+      assert.equal(result.conditionAssessment.activation, activationFor(verdict).activation);
+      assert.equal(saved.conditionBinding.policy, result.conditionBinding.policy);
       assert.equal(saved.refs[0].path, "project/candidate.md");
     } else assert.doesNotMatch(prompt, /For this conditional task/u);
   }

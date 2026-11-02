@@ -10,6 +10,8 @@ import { scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
+import { createProductionTraceSchema, validateProductionTrace } from '../lib/review-task/production-trace.mjs';
+import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 
 async function fixture(t) {
   const f = await stopProtocolFixture(t, 'findings');
@@ -20,6 +22,267 @@ async function fixture(t) {
   const result = (submit, citeIds = [], verdict = 'PASS') => submit('submit_review', { taskId: 'M01:R1', verdict, reason: 'Checked the current original delivery.', citeIds });
   return { ...f, scope, result };
 }
+
+const versionlessTrace = () => ({ entryPoint: 'accept(value)', actualInput: 'Caller supplied finite number',
+  producerToConsumer: 'The numeric value flows through value + 1 and the returned primitive is consumed by the caller.',
+  stateful: false, statelessReason: 'This pure function has no stored or shared mutable state.', stateTargets: [], targetRelations: [] });
+
+async function fixedVersionFixture(t, { two = false } = {}) {
+  const f = await fixture(t), source = path.join(f.root, 'app.mjs');
+  await fs.writeFile(source, 'export const accept = value => value + 1;\n');
+  const original = f.input.request.population.metrics.M01[0];
+  f.input.request.population.metrics = { M16: (two ? ['R1', 'R2'] : ['R1']).map(id => ({ ...original,
+    objectId: `M16:${id}`, sourceId: id, metricId: 'M16', verificationTarget: 'IMPLEMENTATION' })) };
+  return { ...f, source };
+}
+
+async function checkedVersionRun(f, script) {
+  let callbackFailure;
+  try {
+    const handle = await f.run(async args => { try { await script(args); } catch (error) { callbackFailure = error; throw error; } });
+    if (callbackFailure) { await handle.close(); throw callbackFailure; }
+    return handle;
+  } catch (error) { throw callbackFailure ?? error; }
+}
+
+test('fixed-version omitted metadata persists two M16 PASS traces without mutating original calls', async t => {
+  const f = await fixedVersionFixture(t, { two: true }); let callbackFailure, originals;
+  const handle = await f.run(async ({ readAll, read, submit, tools }) => {
+    try {
+      await readAll(); await f.scope(submit);
+      const actual = await read(f.source), citeIds = [actual.details.citation.citeId];
+      originals = ['M16:R1', 'M16:R2'].map(taskId => Object.freeze({ taskId, verdict: 'PASS',
+        reason: 'Checked the actual production input to output flow.', citeIds, productionTrace: Object.freeze(versionlessTrace()) }));
+      const outcomes = await Promise.allSettled(originals.map(value => submit('submit_review', value)));
+      for (const outcome of outcomes) if (outcome.status === 'rejected') {
+        t.diagnostic(JSON.stringify({ target: 'complete trace, only fixed version absent', code: outcome.reason.code, message: outcome.reason.message }));
+        throw outcome.reason;
+      }
+      assert(outcomes.every(outcome => outcome.value.saved));
+      assert.equal(outcomes[1].value.pending, 0);
+      const wire = tools.get('submit_review').parameters.properties.productionTrace;
+      const canonical = createProductionTraceSchema();
+      assert.deepEqual(wire.properties, { ...canonical.properties, version: { const: 1 } });
+      assert.deepEqual(wire.required, canonical.required.filter(field => field !== 'version'));
+      assert.equal(canonical.properties.version.type, 'number'); assert.equal(canonical.properties.version.const, 1);
+      assert.equal(canonical.required.includes('version'), true);
+      assert.throws(() => validateProductionTrace(versionlessTrace(), citeIds), /missing fields: version/);
+      for (const value of originals) assert.equal(Object.hasOwn(value.productionTrace, 'version'), false);
+      await assert.rejects(submit('submit_review', originals[0]), /already has a saved result/);
+      await submit('finish_stop_review', { summary: 'Both actual M16 source traces are complete.' });
+    } catch (error) { callbackFailure = error; throw error; }
+  });
+  if (callbackFailure) throw callbackFailure;
+  assert.equal(f.calls.length, 1);
+  for (const value of originals) {
+    const expected = { ...value.productionTrace, version: 1 };
+    const row = handle.result.metricObjectJudgements.find(row => row.objectId === value.taskId);
+    assert.deepEqual(row.productionTrace, expected);
+    assert.deepEqual(handle.proofs[value.taskId].productionTrace, expected);
+    const persisted = JSON.parse(await fs.readFile(path.join(handle.artifacts, 'items', sha256(value.taskId) + '.json'), 'utf8'));
+    assert.deepEqual(persisted.result.productionTrace, expected);
+    assert.equal(Object.hasOwn(value.productionTrace, 'version'), false);
+  }
+  await handle.close();
+});
+
+test('fixed-version explicit invalid values and non-JSON prototypes reject while explicit one remains compatible', async t => {
+  const f = await fixedVersionFixture(t);
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit);
+    const actual = await read(f.source), base = { taskId: 'M16:R1', verdict: 'PASS', reason: 'Actual source flow.', citeIds: [actual.details.citation.citeId] };
+    for (const version of [0, 2, -1, 1.5, '1', null, undefined, {}, true]) {
+      const trace = { ...versionlessTrace(), version };
+      await assert.rejects(submit('submit_review', { ...base, productionTrace: trace }), { code: 'TASK_SUBMISSION_INVALID' });
+      assert.equal(trace.version, version);
+    }
+    const inherited = Object.assign(Object.create({ version: 1 }), versionlessTrace());
+    const ownOnPrototype = Object.assign(Object.create({ untrusted: true }), versionlessTrace(), { version: 1 });
+    const nullPrototype = Object.assign(Object.create(null), versionlessTrace(), { version: 1 });
+    for (const trace of [inherited, ownOnPrototype, nullPrototype])
+      await assert.rejects(submit('submit_review', { ...base, productionTrace: trace }), { code: 'TASK_SUBMISSION_INVALID' });
+    const inheritedTrace = Object.assign(Object.create({ productionTrace: versionlessTrace() }), base);
+    await assert.rejects(submit('submit_review', inheritedTrace), { code: 'TASK_SUBMISSION_INVALID' });
+    const correct = Object.freeze({ ...versionlessTrace(), version: 1 });
+    await submit('submit_review', { ...base, productionTrace: correct });
+    await submit('finish_stop_review', { summary: 'Explicit version one preserved.' });
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements[0].productionTrace, { ...versionlessTrace(), version: 1 }); await handle.close();
+});
+
+test('fixed-version metadata cannot repair missing semantics, unsafe resources or absent current production citations', async t => {
+  const f = await fixedVersionFixture(t), testFile = path.join(f.root, 'app.test.mjs');
+  await fs.writeFile(testFile, 'assert.equal(accept(2), 3);\n');
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit);
+    const actual = await read(f.source), test = await read(testFile), id = actual.details.citation.citeId;
+    const base = { taskId: 'M16:R1', verdict: 'PASS', reason: 'Current original source flow.', citeIds: [id] };
+    for (const field of Object.keys(versionlessTrace())) {
+      const trace = versionlessTrace(); delete trace[field];
+      await assert.rejects(submit('submit_review', { ...base, productionTrace: trace }), error => {
+        assert.equal(error.code, 'TASK_SUBMISSION_INVALID'); assert(error.message.includes(`/productionTrace/${field}`)); return true;
+      });
+    }
+    await assert.rejects(submit('submit_review', { ...base, productionTrace: { ...versionlessTrace(), invented: 'unknown' } }), /invented/);
+    await assert.rejects(submit('submit_review', base), /M16_PRODUCTION_TRACE/);
+    for (const trace of [null, []]) await assert.rejects(submit('submit_review', { ...base, productionTrace: trace }), { code: 'TASK_SUBMISSION_INVALID' });
+    await assert.rejects(submit('submit_review', { ...base, citeIds: [test.details.citation.citeId], productionTrace: versionlessTrace() }), /actually read SOURCE/);
+    await assert.rejects(submit('submit_review', { ...base, citeIds: [], productionTrace: versionlessTrace() }), /No checked|actually read SOURCE/);
+    await assert.rejects(submit('submit_review', { ...base, citeIds: ['unread-source-id'], productionTrace: versionlessTrace() }), /Unknown|unread|citation/iu);
+    const stateful = { ...versionlessTrace(), stateful: true, statelessReason: '', stateTargets: ['left', 'right'].map(name => ({
+      id: name, expression: `resolve(input.${name})`, readers: [`read(${name})`], writers: [`write(${name}, values)`], producerValue: 'values', citeIds: [id] })),
+      targetRelations: [{ left: 'left', right: 'right', identity: 'UNKNOWN', overlapAttempt: 'No supported exclusion of aliasing.',
+        effect: 'UNKNOWN', explanation: 'The required downstream flow remains unproved.', citeIds: [id] }] };
+    await assert.rejects(submit('submit_review', { ...base, productionTrace: stateful }), /M16_PRODUCTION_TRACE/);
+    await assert.rejects(submit('submit_review', { ...base, productionTrace: { ...stateful, targetRelations: [] } }), /Compare every distinct pair/);
+    await submit('submit_review', { ...base, productionTrace: versionlessTrace() });
+    await submit('finish_stop_review', { summary: 'Only the complete source-backed trace was accepted.' });
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].productionTrace.version, 1); await handle.close();
+});
+
+test('fixed-version non-M16 trace rejection and trace-free D/U behavior are unchanged', async t => {
+  const f = await fixedVersionFixture(t, { two: true }), original = f.input.request.population.metrics.M16[0];
+  f.input.request.population.metrics.M12 = [{ ...original, objectId: 'M12:R1', metricId: 'M12' }];
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit); const source = await read(f.source), id = source.details.citation.citeId;
+    const branches = [{ taskId: 'M16:R1', verdict: 'UNVERIFIED', citeIds: [] },
+      { taskId: 'M16:R2', verdict: 'DEVIATION', citeIds: [id] }, { taskId: 'M12:R1', verdict: 'PASS', citeIds: [id] }];
+    await assert.rejects(submit('submit_review', { ...branches[2], reason: 'Original branch control.', productionTrace: versionlessTrace() }), /productionTrace\/version/);
+    for (const branch of branches) await submit('submit_review', { ...branch, reason: 'Original branch control.' });
+    await submit('finish_stop_review', { summary: 'Non-M16 and trace-free negative requirements are unchanged.' });
+  });
+  assert.equal(handle.result.metricObjectJudgements.length, 3);
+  assert(handle.result.metricObjectJudgements.every(row => row.productionTrace === undefined)); await handle.close();
+});
+
+test('m16-addendum supplied versionless broken-flow DEVIATION and UNVERIFIED remain negative without fabricated trace proof', async t => {
+  const f = await fixedVersionFixture(t, { two: true }); let inputs;
+  await fs.writeFile(f.source, 'export const store = new Map();\nexport const save = input => { store.set(input.left, [input.value]); store.set(input.right, {metadata:true}); return store.get(input.left); };\n');
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit); const source = await read(f.source), id = source.details.citation.citeId;
+    const trace = { entryPoint: 'save(input)', actualInput: 'input.left=input.right="same", input.value=7',
+      producerToConsumer: 'The first write stores [7], the second aliasing metadata write replaces it, and the caller consumes a metadata object instead of the requested array.',
+      stateful: true, statelessReason: '', stateTargets: [
+        { id: 'left', expression: 'store[input.left]', readers: ['store.get(input.left)'], writers: ['store.set(input.left, [input.value])'], producerValue: '[7] before the aliasing overwrite', citeIds: [id] },
+        { id: 'right', expression: 'store[input.right]', readers: [], writers: ['store.set(input.right, {metadata:true})'], producerValue: '{metadata:true}', citeIds: [id] }],
+      targetRelations: [{ left: 'left', right: 'right', identity: 'SAME', overlapAttempt: 'Both permitted keys equal "same".', effect: 'BREAKS_REQUIRED_FLOW',
+        explanation: 'The later metadata write replaces the value actually returned to the caller.', citeIds: [id] }] };
+    assert.throws(() => validateProductionTrace({ ...trace, version: 1 }, [id]), /broken required flow/);
+    inputs = [Object.freeze({ taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'Concrete aliasing write contradicts the required produced value.', citeIds: [id], productionTrace: Object.freeze(trace) }),
+      Object.freeze({ taskId: 'M16:R2', verdict: 'UNVERIFIED', reason: 'No conclusive assessment for this separate obligation.', citeIds: [], productionTrace: Object.freeze(structuredClone(trace)) })];
+    await assert.rejects(submit('submit_review', { ...inputs[0], verdict: 'PASS' }), /broken required flow/);
+    for (const input of inputs) {
+      for (const version of [2, null, undefined]) await assert.rejects(submit('submit_review', { ...input,
+        productionTrace: { ...input.productionTrace, version } }), { code: 'TASK_SUBMISSION_INVALID' });
+      const inherited = Object.assign(Object.create({ version: 1 }), input.productionTrace);
+      await assert.rejects(submit('submit_review', { ...input, productionTrace: inherited }), { code: 'TASK_SUBMISSION_INVALID' });
+    }
+    const missing = { ...inputs[0].productionTrace }; delete missing.producerToConsumer;
+    await assert.rejects(submit('submit_review', { ...inputs[0], productionTrace: missing }), /productionTrace\/producerToConsumer/);
+    await assert.rejects(submit('submit_review', { ...inputs[0], productionTrace: { ...inputs[0].productionTrace, invented: true } }), /invented/);
+    for (const input of inputs) await submit('submit_review', input);
+    await submit('finish_stop_review', { summary: 'Only original D/U results, no synthesized PASS evidence.' });
+  });
+  for (const input of inputs) {
+    const row = handle.result.metricObjectJudgements.find(row => row.objectId === input.taskId);
+    assert.equal(row.judgement, input.verdict); assert.equal(Object.hasOwn(row, 'productionTrace'), false);
+    assert.equal(handle.proofs[input.taskId].productionTrace, undefined);
+    const saved = JSON.parse(await fs.readFile(path.join(handle.artifacts, 'items', sha256(input.taskId) + '.json'), 'utf8'));
+    assert.equal(Object.hasOwn(saved.result, 'productionTrace'), false); assert.equal(Object.hasOwn(input.productionTrace, 'version'), false);
+    if (input.verdict === 'UNVERIFIED') {
+      assert.deepEqual(row.evidence, []); assert.deepEqual(handle.proofs[input.taskId].sourceCiteIds, []); assert.deepEqual(saved.citations, []);
+    }
+  }
+  await handle.close();
+});
+
+test('m16-addendum current-item conditionAssessment stays rejected with exact field and canonical kind feedback', async t => {
+  const f = await fixedVersionFixture(t, { two: true });
+  f.input.request.population.metrics.M16[1].applicabilityKind = 'CONDITIONAL';
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit, tools }) => {
+    await readAll(); await f.scope(submit); const actual = await read(f.source), id = actual.details.citation.citeId;
+    const current = { taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'Original implementation finding, not a new external condition.', citeIds: [id],
+      productionTrace: { ...versionlessTrace(), version: 1 },
+      conditionAssessment: { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'A supplied input branch does not change the assigned CURRENT_TASK kind.' } };
+    const before = structuredClone(current);
+    await assert.rejects(submit('submit_review', current), error => {
+      assert.equal(error.code, 'REVIEW_ITEM_OWNERSHIP_INVALID'); assert.match(error.message, /\/conditionAssessment/);
+      assert(error.message.includes('M16:R1')); assert(error.message.includes('CURRENT_TASK')); assert.match(error.message, /omit/iu); return true;
+    });
+    assert.deepEqual(current, before);
+    const description = tools.get('submit_review').parameters.properties.conditionAssessment.description;
+    assert.match(description, /CONDITIONAL/); assert.match(description, /omit/iu);
+    const retry = { ...current }; delete retry.conditionAssessment;
+    await submit('submit_review', retry);
+    const conditional = { activation: 'UNKNOWN', evidenceKind: 'TARGET_FACTS', reason: 'The actual original external trigger remains unproved.' };
+    await submit('submit_review', { taskId: 'M16:R2', verdict: 'UNVERIFIED', reason: 'Original conditional uncertainty.', citeIds: [], conditionAssessment: conditional });
+    await submit('finish_stop_review', { summary: 'Explicit omission fixed only the rejected current-item field.' });
+  });
+  const current = handle.result.metricObjectJudgements.find(row => row.objectId === 'M16:R1');
+  const conditional = handle.result.metricObjectJudgements.find(row => row.objectId === 'M16:R2');
+  assert.equal(current.judgement, 'DEVIATION'); assert.equal(current.conditionAssessment, undefined);
+  assert.equal(conditional.judgement, 'UNVERIFIED'); assert.equal(conditional.conditionAssessment.activation, 'UNKNOWN');
+  assert.equal(f.input.request.population.metrics.M16[0].applicabilityKind, 'CURRENT_TASK'); await handle.close();
+});
+
+for (const mode of ['source-change', 'owner-cancel', 'deadline']) test(`fixed-version program metadata never bypasses ${mode}`, async t => {
+  const f = await fixedVersionFixture(t), controller = new AbortController(); f.input.abortSignal = controller.signal;
+  let now = Date.now();
+  if (mode === 'deadline') { t.mock.method(Date, 'now', () => now); f.input.deadlineAt = now + 20000; }
+  await assert.rejects(checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit); const actual = await read(f.source);
+    if (mode === 'source-change') await fs.writeFile(f.source, 'export const accept = value => 0;\n');
+    else if (mode === 'owner-cancel') controller.abort(new Error('fixed-version owner cancel'));
+    else now += 20001;
+    await submit('submit_review', { taskId: 'M16:R1', verdict: 'PASS', reason: 'Stale or revoked source must not save.',
+      citeIds: [actual.details.citation.citeId], productionTrace: versionlessTrace() });
+  }), /changed|stale|cancel|deadline|exhausted/iu);
+  const reviews = path.join(taskDirectory(f.root, f.task.taskId), 'workspace-reviews');
+  for (const directory of await fs.readdir(reviews)) {
+    const items = await fs.readdir(path.join(reviews, directory, 'items')).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
+    assert.equal(items.length, 0, 'revoked source scope must not gain a saved PASS from program metadata');
+  }
+});
+
+test('critical-path Stop plans independent captured process reads within the original raw byte budget', async t => {
+  const f = await fixture(t);
+  let targetFailure;
+  while (f.input.evidence.snapshot.entries.length < 14) f.input.evidence.snapshot.entries.push({ type: 'assistant', message: { content: 'Independent captured original.' } });
+  const handle = await f.run(async ({ readAll, read, submit }) => {
+    await readAll(); await f.scope(submit);
+    const checklist = await submit('review_checklist', {}), plan = checklist.processReadPlan;
+    try { assert.ok(plan, 'selected checklist has no captured process read plan'); } catch (error) { targetFailure = error; throw error; }
+    assert.equal(plan.navigationOnly, true); assert.equal(plan.maxBatchBytes, 32768); assert.equal(plan.maxBatchFiles, 16);
+    assert.equal(plan.complete, true); assert(Buffer.byteLength(JSON.stringify(plan)) <= 4096);
+    const planned = plan.batches.flatMap(batch => batch.files);
+    assert.equal(planned.length, 14); assert(plan.batches.every(batch => batch.bytes <= 32768));
+    for (const file of planned) { assert.equal(path.isAbsolute(file), false); await read(file); }
+    await assert.rejects(f.result(submit), /No checked original evidence/);
+    const current = await read(f.file); await f.result(submit, [current.details.citation.citeId]);
+    await submit('finish_stop_review', { summary: 'Original checklist and actual source proof retained.' });
+  });
+  if (targetFailure) throw targetFailure;
+  assert.equal(handle.result.metricObjectJudgements.length, 1); await handle.close();
+});
+
+test('critical-path Stop plan truncation preserves inventory recovery and never certifies unread history', async t => {
+  const f = await fixture(t); let failure;
+  while (f.input.evidence.snapshot.entries.length < 80) f.input.evidence.snapshot.entries.push({ type: 'assistant', message: { content: 'Captured process original.' } });
+  const handle = await f.run(async ({ readAll, submit }) => {
+    try {
+      await readAll(); await f.scope(submit);
+      const checklist = await submit('review_checklist', {}), plan = checklist.processReadPlan;
+      assert.equal(plan.complete, false); assert.equal(plan.totalFiles, 80); assert(Buffer.byteLength(JSON.stringify(plan)) <= 4096);
+      assert.equal(plan.recoverWith.tool, 'source_ls'); assert.equal(plan.recoverWith.arguments.offset, 0);
+      assert(plan.batches.flatMap(batch => batch.files).length < plan.totalFiles);
+      await f.result(submit, [], 'UNVERIFIED');
+      await submit('finish_stop_review', { summary: 'Unread originals remain honestly unverified.' });
+    } catch (error) { failure = error; throw error; }
+  });
+  if (failure) throw failure;
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED'); await handle.close();
+});
 
 test('one workspace reviewer reads external and linked originals, plans, saves notes and submits a complete checklist without copying source', async t => {
   const f = await fixture(t);
@@ -77,15 +340,124 @@ test('combined scope/checklist and final submission preserve original proof and 
     const actual = await read(f.file), citeIds = [actual.details.citation.citeId];
     const first = await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Checked first original obligation.', citeIds, finish: true });
     assert.equal(first.pending, 1); assert.notEqual(first.complete, true);
+    assert.deepEqual(first.pendingNavigation.pendingIds, ['M01:R2']);
+    assert.equal(first.pendingNavigation.pendingTotal, 1);
+    assert.equal(first.pendingNavigation.navigationOnly, true);
+    await assert.rejects(submit('submit_review', { taskId: 'M01:R2', verdict: 'PASS', reason: 'Still needs original proof.', citeIds: [], finish: true }), /No checked original evidence/);
     const remaining = await choose();
     assert.equal(selections, 1); assert.equal(remaining.pending, 1);
     assert.deepEqual(remaining.programEvidenceFiles, checklist.programEvidenceFiles);
     assert.equal(remaining.items[0].savedResult.judgement, 'PASS');
     const last = await submit('submit_review', { taskId: 'M01:R2', verdict: 'PASS', reason: 'Checked second original obligation.', citeIds, finish: true });
     assert.equal(last.complete, true); assert.equal(last.pending, 0);
+    assert.equal(Object.hasOwn(last, 'pendingNavigation'), false);
   });
   assert.equal(f.calls.length, 1); assert.equal(handle.result.metricObjectJudgements.length, 2);
   assert.equal(handle.collection, undefined);
+});
+
+test('receipt navigation excludes saved U/D and automatic rows, includes file quality, and preserves the full result', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0], truth = f.input.evidence.groundTruth;
+  const missing = { ...truth.claims[0], claimId: 'R3', revisionId: 'R3@1', text: 'Deliver missing.txt.',
+    applicabilityKind: 'CURRENT_TASK', expectedFiles: ['missing.txt'] };
+  truth.claims.push({ ...truth.claims[0], claimId: 'R2', revisionId: 'R2@1' }, missing);
+  truth.version = 2; truth.digest = sha256(truth.claims);
+  await fs.writeFile(f.input.request.groundTruthPath, JSON.stringify(truth));
+  f.input.request.population.metrics.M01.push({ ...original, objectId: 'M01:R2', sourceId: 'R2', sourceRevisionId: 'R2@1' });
+  f.input.request.population.metrics.M12 = [{ ...original, objectId: 'M12:R3', metricId: 'M12', sourceId: 'R3',
+    sourceRevisionId: 'R3@1', description: missing.text, expectedFiles: missing.expectedFiles }];
+  f.input.request.fileQualityReviewEnabled = true;
+  f.input.request.artifactCandidates = [{ artifactId: 'spec', files: [{ path: 'spec.md', sha256: sha256(await fs.readFile(f.file)) }] }];
+  const handle = await checkedVersionRun(f, async ({ brief, readAll, read, submit }) => {
+    await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', limit: 20 });
+    assert.equal(checklist.items.find(item => item.taskId === 'M12:R3').savedResult.judgement, 'DEVIATION');
+    const first = await f.result(submit, [], 'UNVERIFIED'), nav = first.pendingNavigation;
+    assert.equal(first.pending, 2); assert.deepEqual(nav.pendingIds, ['M01:R2', 'file:spec.md']);
+    assert.equal(nav.taskId, f.task.taskId); assert.equal(nav.reviewTaskId, brief.task.id);
+    assert.equal(nav.groundTruthVersion, 2); assert.deepEqual(nav.classification, { stopClassification: 'TASK_COMPLETE', stage: null });
+    const actual = await read(f.file);
+    const second = await submit('submit_review', { taskId: 'M01:R2', verdict: 'DEVIATION', reason: 'The delivered value is incorrect.', citeIds: [actual.details.citation.citeId] });
+    assert.deepEqual(second.pendingNavigation.pendingIds, ['file:spec.md']);
+    await assert.rejects(submit('finish_stop_review', { summary: 'File quality is still missing.' }), /incomplete/);
+    const last = await submit('submit_review', { taskId: 'file:spec.md', verdict: 'UNVERIFIED', reason: 'Quality is unresolved.', citeIds: [] });
+    assert.equal(last.pending, 0); assert.notEqual(last.complete, true);
+    assert.deepEqual(last.pendingNavigation.pendingIds, []); assert.equal(last.pendingNavigation.pendingTotal, 0);
+    await submit('finish_stop_review', { summary: 'All original U/D and file-quality results are saved.' });
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId, row.judgement]).sort(),
+    [['M01:R1', 'UNVERIFIED'], ['M01:R2', 'DEVIATION'], ['M12:R3', 'DEVIATION']]);
+  assert.equal(handle.result.fileAssessments[0].status, 'UNVERIFIED'); await handle.close();
+});
+
+test('bounded exact pending IDs retain honest omissions and original pagination without leaking another review scope', async t => {
+  let previous;
+  for (const many of [true, false]) {
+    const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+    const ids = many ? ['M01:R1', 'M01:' + '长'.repeat(1300), ...Array.from({ length: 20 }, (_, index) => `M01:remaining-${index}`)] : ['M01:R1'];
+    f.input.request.population.metrics.M01 = ids.map(objectId => ({ ...original, objectId }));
+    const handle = await checkedVersionRun(f, async ({ brief, readAll, submit }) => {
+      await readAll(); await f.scope(submit);
+      const receipt = await f.result(submit, [], 'UNVERIFIED'), nav = receipt.pendingNavigation;
+      assert.equal(nav.taskId, f.task.taskId); assert.equal(nav.reviewTaskId, brief.task.id);
+      assert.equal(nav.pendingTotal, ids.length - 1); assert(nav.pendingIds.length <= 8);
+      assert.equal(nav.omittedCount, nav.pendingTotal - nav.pendingIds.length);
+      assert(nav.pendingIds.every(id => ids.slice(1).includes(id)));
+      assert(Buffer.byteLength(JSON.stringify(nav)) <= 2048); assert(Buffer.byteLength(JSON.stringify(receipt)) <= 8192);
+      assert.deepEqual(nav.checklist, { tool: 'review_checklist', arguments: { offset: 0, limit: 20 }, followNextOffset: true });
+      if (many) {
+        assert.equal(nav.pendingIds.length, 8); assert.equal(nav.omittedCount, 13);
+        assert(!nav.pendingIds.includes(ids[1]));
+        const page = await submit(nav.checklist.tool, nav.checklist.arguments);
+        assert.equal(page.nextOffset, 20);
+        const next = await submit('review_checklist', { offset: page.nextOffset, limit: 20 });
+        assert.equal(next.nextOffset, null); assert.deepEqual(next.items.map(item => item.taskId), ids.slice(20));
+        previous = nav;
+      } else {
+        assert.notEqual(nav.taskId, previous.taskId); assert.notEqual(nav.reviewTaskId, previous.reviewTaskId);
+        assert.deepEqual(nav.pendingIds, []); assert.equal(nav.omittedCount, 0);
+      }
+      for (const taskId of ids.slice(1)) await submit('submit_review', { taskId, verdict: 'UNVERIFIED', reason: 'Original evidence remains unresolved.', citeIds: [] });
+      await submit('finish_stop_review', { summary: 'The full original collection remains unverified.' });
+    });
+    assert.equal(handle.result.metricObjectJudgements.length, ids.length); await handle.close();
+  }
+});
+
+test('navigation construction failure preserves successful save and original invalid-final rejection', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+  f.input.request.population.metrics.M01.push({ ...original, objectId: 'M01:R2' });
+  let injected = false;
+  const handle = await checkedVersionRun(f, async ({ readAll, submit }) => {
+    await readAll(); await f.scope(submit);
+    const byteLength = Buffer.byteLength;
+    try {
+      Buffer.byteLength = function (value, ...args) {
+        if (typeof value === 'string' && value.includes('"kind":"workspace-stop-pending-v1"')) { injected = true; throw new Error('Navigation-only byte accounting unavailable'); }
+        return byteLength(value, ...args);
+      };
+      assert.deepEqual(await f.result(submit, [], 'UNVERIFIED'), { saved: true, itemId: 'M01:R1', pending: 1 });
+    } finally { Buffer.byteLength = byteLength; }
+    assert.equal(injected, true);
+    await assert.rejects(submit('submit_review', { taskId: 'M01:R2', verdict: 'PASS', reason: 'No original proof.', citeIds: [], finish: true }), /No checked original evidence/);
+    assert.equal((await submit('review_checklist', {})).pending, 1);
+    const last = await submit('submit_review', { taskId: 'M01:R2', verdict: 'UNVERIFIED', reason: 'Proof remains unresolved.', citeIds: [], finish: true });
+    assert.equal(last.complete, true); assert.equal(Object.hasOwn(last, 'pendingNavigation'), false);
+  });
+  assert(handle.result.metricObjectJudgements.every(row => row.judgement === 'UNVERIFIED')); await handle.close();
+});
+
+test('navigation cannot overflow an ordinary successful receipt or truncate its original item ID', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0], longId = 'M01:' + '长'.repeat(2600);
+  f.input.request.population.metrics.M01 = [{ ...original, objectId: longId }, original];
+  const handle = await checkedVersionRun(f, async ({ readAll, submit }) => {
+    await readAll(); await f.scope(submit);
+    const receipt = await submit('submit_review', { taskId: longId, verdict: 'UNVERIFIED', reason: 'Original proof remains unresolved.', citeIds: [] });
+    assert.deepEqual(receipt, { saved: true, itemId: longId, pending: 1 });
+    assert(Buffer.byteLength(JSON.stringify(receipt)) <= 8192);
+    const last = await submit('submit_review', { taskId: 'M01:R1', verdict: 'UNVERIFIED', reason: 'Still unresolved.', citeIds: [], finish: true });
+    assert.equal(last.complete, true); assert.equal(last.pending, 0);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].objectId, longId); await handle.close();
 });
 
 test('unobserved reads, invented citations and reviewer notes cannot certify an item; honest UNVERIFIED remains available', async t => {
@@ -211,36 +583,54 @@ test('new files after a searched inventory invalidate the review instead of prov
   }));
 });
 
-test('one session reuses reads across metrics while preserving process ownership, production evidence and M16 tracing', async t => {
+test('one session reuses source reads across implementation obligations while retaining M16 tracing', async t => {
   const f = await fixture(t), source = path.join(f.root, 'app.mjs'), testFile = path.join(f.root, 'app.test.mjs');
   await fs.writeFile(source, 'export const accept = value => value;\n'); await fs.writeFile(testFile, 'assert.equal(accept(1), 1);\n');
   const original = f.input.request.population.metrics.M01[0];
   f.input.request.population.metrics = Object.fromEntries(['M09', 'M12', 'M16'].map(id => [id, [{ ...original, objectId: `${id}:R1`, metricId: id, verificationTarget: 'IMPLEMENTATION' }]]));
   f.input.evidence.snapshot.entries.push({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'verify', name: 'Bash', input: { command: 'node --test' } }] } },
     { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'verify', content: 'Exit code 0; verification passed.' }] } });
-  const handle = await f.run(async ({ readAll, read, submit, tools }) => {
+  const handle = await f.run(async ({ brief, readAll, read, submit, tools }) => {
+    assert.equal(brief.task.evidencePriority, 'CURRENT_SOURCE');
+    assert.deepEqual(brief.task.processFiles, []);
     await readAll(); const scope = await f.scope(submit);
+    assert.equal(scope.processNavigationOmitted, true);
+    assert.deepEqual(scope.processFiles, []);
+    const sourceChecklist = await submit('review_checklist', {});
+    assert.equal(sourceChecklist.total, 3);
+    assert.equal(sourceChecklist.processEvidence, undefined);
+    assert.equal(sourceChecklist.processReadPlan, undefined);
+    assert(sourceChecklist.items.every(item => item.proofOwners.length === 1 && item.proofOwners[0] === 'SOURCE'));
     assert.deepEqual(tools.get('submit_review').parameters.properties.productionTrace.required,
-      ['version', 'entryPoint', 'actualInput', 'producerToConsumer', 'stateful', 'statelessReason', 'stateTargets', 'targetRelations']);
+      ['entryPoint', 'actualInput', 'producerToConsumer', 'stateful', 'statelessReason', 'stateTargets', 'targetRelations']);
     const sourceRead = await read(source), testRead = await read(testFile), id = sourceRead.details.citation.citeId;
     const save = (metricId, ids, extra = {}) => submit('submit_review', { taskId: `${metricId}:R1`, verdict: 'PASS', reason: 'The original value flows directly to the production result.', citeIds: ids, ...extra });
     await assert.rejects(save('M16', [testRead.details.citation.citeId]), /actually read SOURCE/);
     await assert.rejects(save('M16', [id]), /M16_PRODUCTION_TRACE/);
     await assert.rejects(save('M16', [id], { productionTrace: { version: 1, entryPoint: 'accept(value)', actualInput: 'Caller supplied value',
       producerToConsumer: 'The input flows directly to the return.', stateful: false, statelessReason: 'No state.', stateTargets: [] } }), /targetRelations/);
-    await assert.rejects(save('M12', [id]), /actually read PROCESS/);
+    await assert.rejects(save('M12', [testRead.details.citation.citeId]), /actually read SOURCE/);
     await save('M09', [id]);
     await save('M16', [id], { productionTrace: { version: 1, entryPoint: 'accept(value)', actualInput: 'Caller supplied value',
       producerToConsumer: 'The input parameter flows unchanged to the arrow return.', stateful: false,
       statelessReason: 'This production function has no state reads or writes.', stateTargets: [], targetRelations: [] } });
-    await read(scope.processFiles.find(file => file.endsWith('000002-0000.txt')));
-    const process = await read(scope.processFiles.find(file => file.endsWith('000003-0000.txt')));
-    await save('M12', [process.details.citation.citeId]);
+    const restored = await submit('review_checklist', { includeProcessEvidence: true });
+    assert.equal(restored.processReadPlan.navigationOnly, true);
+    assert.equal(restored.total, sourceChecklist.total);
+    assert.equal(restored.pending, 1);
+    assert.equal(restored.processEvidence.executionResultFileCount, 1);
+    const restoredScope = await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Recover the same scope for a process-evidence investigation.', includeProcessEvidence: true });
+    assert.equal(restoredScope.reused, true);
+    assert.deepEqual(restoredScope.processFiles, restored.processFiles);
+    await read(restored.processFiles.find(file => file.endsWith('000002-0000.txt')));
+    const process = await read(restored.processFiles.find(file => file.endsWith('000003-0000.txt')));
+    await assert.rejects(save('M12', [process.details.citation.citeId]), /actually read SOURCE/);
+    await save('M12', [id]);
     await submit('finish_stop_review', { summary: 'All three original items have separate checked receipts.' });
   });
   assert.equal(f.calls.length, 1);
   assert.deepEqual(handle.result.metricObjectJudgements.map(row => row.objectId).sort(), ['M09:R1', 'M12:R1', 'M16:R1']);
-  assert.equal(handle.sourceCitations.filter(citation => citation.path === source).length, 2);
+  assert.equal(handle.sourceCitations.filter(citation => citation.path === source).length, 3);
   assert.equal(handle.proofs['M16:R1'].sourceCiteIds.length, 1);
 });
 
@@ -263,14 +653,17 @@ test('missing execution records and completion claims cannot become runtime PASS
   assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED'); assert.deepEqual(handle.result.findings, []);
 });
 
-test('long process history points directly to a late invocation and result without granting proof from the guide', async t => {
+test('a mixed checklist keeps direct late invocation/result navigation without granting proof from the guide', async t => {
   const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
   f.input.request.population.metrics = { M12: [{ ...original, objectId: 'M12:R1', metricId: 'M12', verificationTarget: 'PROCESS' }] };
+  f.input.request.population.metrics.M16 = [{ ...original, objectId: 'M16:R1', metricId: 'M16', verificationTarget: 'IMPLEMENTATION' }];
   f.input.evidence.snapshot.entries.push(...Array.from({ length: 25 }, (_, index) => ({ type: 'assistant', message: { content: `Earlier observation ${index}.` } })),
     { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'late-run', name: 'Bash', input: { command: 'node --test' } }] } },
     { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'late-run', content: 'Exit code 0; tests passed.' }] } });
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
+    assert.equal(checklist.total, 2);
+    assert.notEqual(checklist.processNavigationOmitted, true);
     assert.equal(checklist.processEvidence.executionResultFileCount, 1);
     const sample = checklist.processEvidence.executionSamples[0];
     assert(!checklist.processFiles.includes(sample.resultFile), 'The execution lies beyond the first navigation page.');
@@ -280,9 +673,12 @@ test('long process history points directly to a late invocation and result witho
     const result = await read(sample.resultFile);
     await assert.rejects(save([result.details.citation.citeId]), /attributable original execution result/);
     await read(sample.invocationFiles[0]);
+    await submit('submit_review', { taskId: 'M16:R1', verdict: 'UNVERIFIED', reason: 'Current implementation has not been reviewed yet.', citeIds: [] });
     await save([result.details.citation.citeId]);
   });
-  assert.equal(f.calls.length, 1); assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert.equal(f.calls.length, 1);
+  assert.equal(handle.result.metricObjectJudgements.find(row => row.objectId === 'M12:R1').judgement, 'PASS');
+  assert.equal(handle.result.metricObjectJudgements.find(row => row.objectId === 'M16:R1').judgement, 'UNVERIFIED');
 });
 
 test('optional file quality shares the session and requires the actual declared delivery bytes', async t => {
@@ -354,6 +750,8 @@ test('mixed Skill applicability, missing execution and real implementation keep 
   const skill = await prepareMixedSkillEvaluation({ projectRoot: f.root, taskId: f.task.taskId, skillRoots: [external] });
   const population = await buildMetricPopulation({ projectRoot: f.root, taskId: f.task.taskId, groundTruth: truth, skillDocuments: [skill] });
   f.input.request.population = { ...population, metrics: Object.fromEntries(Object.entries(population.metrics).filter(([id]) => ['M08', 'M12', 'M16'].includes(id))) };
+  const conditionAssessment = { activation: 'INACTIVE_AT_CURRENT_BOUNDARY', evidenceKind: 'PROCESS_EVENT',
+    reason: 'The complete original user input establishes a numeric-only task outside the array branch.' };
   assert.deepEqual(Object.values(f.input.request.population.metrics).flat().map(item => item.objectId).sort(), Object.keys(MIXED_SKILL_EXPECTED).sort());
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
@@ -361,28 +759,30 @@ test('mixed Skill applicability, missing execution and real implementation keep 
     const skillItem = checklist.items.find(item => item.metricId === 'M08');
     assert.deepEqual(skillItem.proofOwners, ['PROCESS']);
     assert.deepEqual(checklist.items.find(item => item.metricId === 'M16').proofOwners, ['SOURCE']);
-    assert(checklist.items.filter(item => item.metricId === 'M12').every(item => item.proofOwners.join() === 'PROCESS'));
+    assert.deepEqual(checklist.items.find(item => item.objectId === 'M12:R1').proofOwners, ['SOURCE']);
+    assert.deepEqual(checklist.items.find(item => item.objectId === 'M12:R2').proofOwners, ['PROCESS']);
     assert.equal(checklist.processEvidence.originalUserFiles[0], checklist.processFiles[0]);
     assert.equal(checklist.processEvidence.originalUserFileCount, 1);
     const process = await read(checklist.processFiles[0]), processId = process.details.citation.citeId;
     await assert.rejects(submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
-      reason: 'The original task handles numbers only.', citeIds: [processId] }), /Original Skill basis not fully read/);
+      reason: 'The original task handles numbers only.', citeIds: [processId], conditionAssessment }), /Original Skill basis not fully read/);
     for (const file of skillItem.originalSkillBasis.requiredFiles) await read(file);
     assert(skillItem.originalSkillBasis.requiredFiles.some(file => file.endsWith(`${path.sep}conditions.md`)), 'The dependent MAY condition remains mandatory source for the MUST step.');
     const actual = await read(source);
     await assert.rejects(submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
-      reason: 'A source citation cannot stand in for the original user input.', citeIds: [actual.details.citation.citeId] }), error => {
-      assert.equal(error.code, 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE');
+      reason: 'A source citation cannot stand in for the original user input.', citeIds: [actual.details.citation.citeId], conditionAssessment }), error => {
+      assert.equal(error.code, 'REVIEW_CONDITION_EVIDENCE_UNAVAILABLE');
       assert(error.message.includes(skillItem.objectId)); assert(error.message.includes('source_read'));
       assert(error.message.includes(checklist.processEvidence.originalUserFiles[0])); return true;
     });
     assert.equal((await submit('review_checklist', {})).pending, 4, 'Hints and rejected submissions cannot auto-fill the checklist.');
-    await assert.rejects(submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'Source is not execution evidence.',
+    await assert.rejects(submit('submit_review', { taskId: 'M12:R2', verdict: 'PASS', reason: 'Source is not execution evidence.',
       citeIds: [actual.details.citation.citeId] }), error => error.code === 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE'
-        && error.message.includes('M12:R1') && error.message.includes('No attributable execution-result file') && error.message.includes('UNVERIFIED'));
+        && error.message.includes('M12:R2') && error.message.includes('No attributable execution-result file') && error.message.includes('UNVERIFIED'));
     await submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
-      reason: 'The original numeric-only task does not activate the array-only Skill step; the separate user execution request remains mandatory.', citeIds: [processId] });
-    for (const item of checklist.items.filter(item => item.metricId === 'M12')) await submit('submit_review', { taskId: item.objectId, verdict: 'UNVERIFIED',
+      reason: 'The original numeric-only task does not activate the array-only Skill step; the separate user execution request remains mandatory.', citeIds: [processId], conditionAssessment });
+    await submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'The explicitly required implementation increments its numeric input without state.', citeIds: [actual.details.citation.citeId] });
+    await submit('submit_review', { taskId: 'M12:R2', verdict: 'UNVERIFIED',
       reason: 'No attributable invocation and execution result establish the requested node --test run.', citeIds: [] });
     await submit('submit_review', { taskId: 'M16:R1', verdict: 'PASS', reason: 'The exported numeric input flows through value + 1 directly to its caller without shared state.',
       citeIds: [actual.details.citation.citeId], productionTrace: { version: 1, entryPoint: 'Exported accept(value)', actualInput: 'Numeric caller input',

@@ -28,6 +28,44 @@ async function fixture(t) {
   return { root, skill, taskId: task.taskId, request, evidence, projectRoot: root };
 }
 
+test('critical-path Skill navigation separates namespace totals and actual call identities without evidence', async t => {
+  const f = await fixture(t);
+  f.evidence.snapshot.entries = Array.from({ length: 14 }, (_, i) => ({ type: 'assistant', message: { content: `record ${i}` } }));
+  f.evidence.snapshot.entries[11] = { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'actual-call', name: 'exec', input: {} }] } };
+  f.evidence.snapshot.entries[12] = { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'actual-call', content: 'exit0' }] } };
+  const care = await createSkillCare(f);
+  const page = await care.execute({ action: 'inventory', prefix: 'execution/', limit: 12 });
+  assert.equal(page.total, 14); assert.equal(page.totalScope, 'execution/');
+  assert.equal(page.nextOffset, 12); assert(page.items.every(item => item.id.startsWith('execution/')));
+  const tail = await care.execute({ action: 'inventory', prefix: 'execution/', offset: 12 });
+  assert.deepEqual(tail.items.map(item => item.id), ['execution/12', 'execution/13']); assert.equal(tail.nextOffset, null);
+  const result = await care.execute({ action: 'read', id: 'execution/12' });
+  assert.equal(result.navigation.calls[0].callId, 'actual-call');
+  assert.equal(result.navigation.calls[0].invocationId, 'execution/11');
+  assert.equal(result.navigation.navigationOnly, true);
+  assert(Buffer.byteLength(JSON.stringify(result.navigation)) <= 2048);
+  await assert.rejects(care.execute({ action: 'read', id: 'execution/14' }), error => {
+    assert.match(error.message, /SKILL_CARE_SOURCE_NOT_FOUND/); assert.match(error.message, /inventory/); assert.match(error.message, /execution\//); return true;
+  });
+  await assert.rejects(care.execute({ action: 'inventory', prefix: '../' }), /INVALID_PREFIX/);
+});
+
+test('critical-path long call navigation is honestly byte-bounded while original pages stay lossless', async t => {
+  const f = await fixture(t);
+  f.evidence.snapshot.entries = [{ type: 'assistant', uuid: '原始标识'.repeat(3000), message: { content: Array.from({ length: 30 }, (_, i) => ({
+    type: 'tool_use', id: `call-${i}-${'真实调用'.repeat(500)}`, name: 'exec', input: {} })) } }];
+  const care = await createSkillCare(f), inventory = await care.execute({ action: 'inventory' });
+  assert(Buffer.byteLength(JSON.stringify(inventory)) <= 8192);
+  let offset = 0, original = '';
+  do {
+    const page = await care.execute({ action: 'read', id: 'execution/0', offset, limit: 16000 });
+    assert.equal(page.navigation.callsTruncated, true); assert(Buffer.byteLength(JSON.stringify(page.navigation)) <= 2048);
+    assert.equal(page.originTruncated, true); assert(Buffer.byteLength(JSON.stringify({ ...page, content: undefined })) <= 8192);
+    original += page.content; offset = page.nextOffset;
+  } while (offset !== null);
+  assert.equal(original, JSON.stringify(f.evidence.snapshot.entries[0]));
+});
+
 test("source cache avoids unchanged reads, invalidates edits/deletes/adds, and reports incomplete scans accurately", async t => {
   const f = await fixture(t);
   const warm = await scanSkillDirectory(f.skill);

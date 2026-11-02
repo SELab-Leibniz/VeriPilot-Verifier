@@ -7,7 +7,7 @@ import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewe
 import { createOpenClawRuntime } from "../lib/openclaw/runtime.mjs";
 import { registerReviewerProgress } from "../lib/openclaw/reviewer-progress.mjs";
 import { STOP_CLASSIFICATION_SCHEMA, STOP_REVIEW_SCHEMA } from "../lib/runtime-v2/reviewer.mjs";
-import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
+import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { matchesEvidence } from "../lib/openclaw/evidence.mjs";
 import { collectReviewItems } from "../lib/runtime-v2/review-collector.mjs";
@@ -73,6 +73,8 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
         assert.deepEqual(params.config.tools, { ...hostConfig.tools,
           deny: [...new Set([...hostConfig.tools.deny, ...REVIEWER_NATIVE_TOOL_DENY])], codeMode: { enabled: false } });
         const agent = params.config.agents.list.find(agent => agent.id === "main");
+        assert.deepEqual(agent.memorySearch, { ...hostConfig.agents.list[0].memorySearch, enabled: false },
+          "the initial review and same-session follow-up both exclude host long-term Memory");
         assert.equal(agent.params.maxTokens, 32768);
         assert.deepEqual(agent.tools.deny, [...new Set(["exec", ...REVIEWER_NATIVE_TOOL_DENY])]);
         assert.equal(agent.tools.codeMode.enabled, false);
@@ -94,9 +96,11 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
       f.input.pluginRoot = path.resolve(".");
       f.api.config.tools = { profile: "coding", alsoAllow: ["host-global-tool"], deny: ["write"] };
       f.api.config.agents.list = [
-        { id: "main", tools: { alsoAllow: ["host-agent-tool"], deny: ["exec"] } },
-        { id: "other", tools: { allow: ["read"] } },
+        { id: "main", memorySearch: { enabled: true, provider: "local", sync: { watch: true } },
+          tools: { alsoAllow: ["host-agent-tool"], deny: ["exec"] } },
+        { id: "other", memorySearch: { enabled: true }, tools: { allow: ["read"] } },
       ];
+      f.api.config.agents.defaults.memorySearch = { enabled: true };
       f.api.config.agents.defaults.contextTokens = 48000;
       f.api.config.agents.defaults.contextPruning = { mode: "cache-ttl", ttl: "5m", keepLastAssistants: 2 };
       f.api.config.agents.defaults.compaction = { mode: "safeguard", reserveTokens: 12000, keepRecentTokens: 6000 };
@@ -123,6 +127,10 @@ test("native cache identity survives new factories and credential rotation but t
   const identity = factory.reviewCacheIdentity({ effort: "low" });
   assert.match(identity, /^[a-f0-9]{64}$/u);
   assert.equal(createOpenClawReviewerFactory(api).reviewCacheIdentity({ effort: "low" }), identity);
+  config.agents.defaults.memorySearch = { enabled: true };
+  config.agents.list = [{ id: "main", memorySearch: { enabled: true } }];
+  assert.equal(factory.reviewCacheIdentity({ effort: "low" }), identity,
+    "host Memory settings do not change the effective private no-Memory policy");
   config.models.providers.fixture.apiKey = "rotated-private-key";
   config.models.providers.fixture.headers.Authorization = "Bearer rotated-private-key";
   assert.equal(factory.reviewCacheIdentity({ effort: "low" }), identity);
@@ -157,4 +165,42 @@ test("the plugin has no custom reviewer context guard or budget error handler", 
     const source = await fs.readFile(new URL(`../lib/openclaw/${file}`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /REVIEWER_CONTEXT_BUDGET|createReviewerContextGuard|REVIEWER_CONTEXT_LIMITS/);
   }
+});
+
+// Coverage uses the real registered private adapter, unlike the host-tool
+// inheritance checks above. Its caller-supplied business cwd must not win.
+test('coverage-only SDK launch uses an owned empty workspace and copied selected-agent config', async t => {
+  const { sharedBasisFixture } = await import('./helpers/runtime-v2-shared-basis-fixture.mjs');
+  const f = await sharedBasisFixture(t), business = path.join(f.root, 'business-workspace');
+  const task = await ensureTask({ projectRoot: f.root, sessionId: 'basis-session' });
+  await withTaskState({ projectRoot: f.root, taskId: task.taskId }, state => { state.control ??= {}; });
+  await fs.mkdir(business); await fs.writeFile(path.join(business, 'AGENTS.md'), 'BUSINESS_BOOTSTRAP_PRIVATE_SENTINEL');
+  f.api.config.agents.defaults.workspace = business;
+  f.api.config.agents.list = [{ id: 'main', workspace: business, memorySearch: { enabled: true } },
+    { id: 'other', workspace: business, memorySearch: { enabled: true } }];
+  const original = structuredClone(f.api.config); let owned;
+  f.state.coverageSessionCwd = business;
+  f.state.coverageLaunch = async params => {
+    owned = params.cwd;
+    assert.notEqual(owned, business); assert.notEqual(owned, f.root);
+    assert.equal(params.workspaceDir, owned); assert.deepEqual(await fs.readdir(owned), []);
+    assert.equal(path.dirname(owned), path.dirname(params.sessionFile));
+    assert(path.basename(owned).startsWith('empty-workspace-'));
+    const selected = params.config.agents.list.find(agent => agent.id === 'main');
+    assert.equal(selected.workspace, owned); assert.equal(selected.memorySearch.enabled, false);
+    assert.deepEqual(params.config.agents.list.find(agent => agent.id === 'other'), original.agents.list[1]);
+    assert.equal(params.config.agents.defaults.workspace, business, 'Unrelated defaults retain their original copied values');
+    assert.deepEqual(params.skillsSnapshot, { prompt: '', skills: [] });
+    assert.equal(params.bootstrapContextMode, 'lightweight'); assert.equal(params.promptMode, 'minimal');
+    assert(params.toolsAllow.includes('commit_baseline_inventory'));
+    const initial = JSON.parse(params.prompt);
+    assert(initial.requiredFiles.every(file => file.startsWith('original-source-') || file.startsWith('unit-catalog-')));
+    assert(!Object.hasOwn(initial, 'sourceUnitNavigation'));
+    assert.doesNotMatch(params.prompt + params.extraSystemPrompt, /BUSINESS_BOOTSTRAP_PRIVATE_SENTINEL|requirements-[a-f0-9]{16}/u);
+    assert.deepEqual(f.api.config, original, 'Private workspace and Memory overrides never mutate the cached host selection');
+  };
+  await f.refresh(); assert(owned);
+  assert.deepEqual(f.api.config, original);
+  await assert.rejects(fs.access(owned), { code: 'ENOENT' });
+  assert.equal(await fs.readFile(path.join(business, 'AGENTS.md'), 'utf8'), 'BUSINESS_BOOTSTRAP_PRIVATE_SENTINEL');
 });

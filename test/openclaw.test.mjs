@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import test, { before, after } from "node:test";
+import { skillGraphQuoteCandidate as skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { normalizeMessages, readOpenClawTranscript, persistTranscript } from "../lib/openclaw/transcript.mjs";
 import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-store.mjs";
@@ -242,10 +243,12 @@ test("Skill discovery starts its watcher only after a successful original read",
   await fs.writeFile(file, "# Demo\nVerify before completion.\n");
   let calls = 0;
   const host = api(project);
-  const reviewerFactory = async () => {
+  const roles = [];
+  const reviewerFactory = async ({ request, evidence }) => {
     calls++;
-    return { result: { summary: "Original Skill", taskClassification: "CONTINUATION", operations: [],
-      skillGroundTruth: { constraints: [], taskOverlays: [] } }, close: async () => {} };
+    roles.push(request.skillGraphOnly ? 'graph' : 'global');
+    return { result: request.skillGraphOnly ? { summary: 'Original Skill graph.', skillGroundTruth: skillGraphCandidate(evidence.skillSource) }
+      : { summary: 'Original global basis.', taskClassification: 'CONTINUATION', operations: [] }, close: async () => {} };
   };
   const sharedState = {};
   const runtime = createRuntime(host, { pluginRoot, sharedState, reviewerFactory });
@@ -262,7 +265,11 @@ test("Skill discovery starts its watcher only after a successful original read",
   assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill"), "demo");
   await runtime.toolResult({ toolName: "read", toolCallId: "successful-skill", args: { path: file },
     result: { content: [{ type: "text", text: "# Demo\nVerify before completion." }] } }, ctx);
-  assert.equal(calls, 1, host.warnings.join("\n"));
+  assert.equal(calls, 2, host.warnings.join("\n"));
+  assert.deepEqual(roles, ['global', 'graph']);
+  const active = sharedState.states.get('main:skill-read-parent');
+  const task = await findTask({ projectRoot: project, sessionId: active.sessionId, explicitTaskId: active.scopeTaskId });
+  assert(Object.values(task.watchers).some(watcher => watcher.skillId === 'demo' && watcher.status === 'ACTIVE'));
 });
 
 test("native reviewers own read-only sessions, repair JSON, and transfer frozen evidence before cleanup", async (t) => {
@@ -825,18 +832,51 @@ test("native artifact checks retain deterministic rules, semantic review and una
     reviews++;
     assert.equal(input.role, "artifact-reviewer");
     await fs.access(input.request.semanticReviewRequestPath);
+    if ((await fs.readFile(file, "utf8")).startsWith("## Goal")) return {
+      sessionId: "native-artifact-correct", close: async () => {},
+      result: { summary: "Scripted compliant assessment; no real model.", findings: [], edits: [] },
+    };
     return { sessionId: "native-artifact", close: async () => {}, result: {
       summary: "Missing goal", findings: [{ ruleId: "AGENT-GOAL", severity: "error", path: "spec/requirements.md", message: "Goal is missing", evidence: ["# Draft"] }],
       edits: [{ target: "spec/requirements.md", operations: [{ type: "replace-line", line: 1, expect: "# Draft", replacement: "# Goal" }] }],
     } };
   } });
   await runtime.prompt({ prompt: "Write requirements", messages: [] }, ctx);
+  for (const id of ["artifact-failed", "artifact-nested-failed"]) {
+    await runtime.beforeTool({ toolName: "write", toolCallId: id, params: { path: file } }, ctx);
+    await runtime.toolResult({ toolName: "write", toolCallId: id, args: { path: file },
+      ...(id === "artifact-failed" ? { isError: true } : {}),
+      result: { isError: true, content: [{ type: "text", text: "Write failed" }] } }, { runtime: "openclaw" });
+  }
+  const unmatched = path.join(project, "unmatched.txt");
+  await runtime.beforeTool({ toolName: "write", toolCallId: "artifact-unmatched", params: { path: unmatched } }, ctx);
+  await fs.writeFile(unmatched, "Unrelated output.\n");
+  await runtime.toolResult({ toolName: "write", toolCallId: "artifact-unmatched", args: { path: unmatched },
+    result: { content: [{ type: "text", text: "Written" }] } }, { runtime: "openclaw" });
+  assert.equal(reviews, 0, "failed and unmatched writes must not start document review");
   await runtime.beforeTool({ toolName: "write", toolCallId: "artifact", params: { path: file } }, ctx);
   const result = await runtime.toolResult({ toolName: "write", toolCallId: "artifact", args: { path: file }, result: { content: [{ type: "text", text: "Written" }] } }, { runtime: "openclaw" });
   assert.equal(reviews, 1, host.warnings.join("\n"));
   assert.match(result?.result.content.at(-1).text ?? "", /REQUIRE-GOAL/u);
   assert.match(result?.result.content.at(-1).text ?? "", /AGENT-GOAL/u);
   assert.equal(await fs.readFile(file, "utf8"), "# Draft\n");
+  // D08: the same real middleware must not carry old findings into a correct write.
+  await fs.writeFile(file, "## Goal\nA precise goal.\n");
+  await runtime.beforeTool({ toolName: "write", toolCallId: "artifact-correct", params: { path: file } }, ctx);
+  const correct = await runtime.toolResult({ toolName: "write", toolCallId: "artifact-correct", args: { path: file },
+    result: { content: [{ type: "text", text: "Written" }] } }, { runtime: "openclaw" });
+  assert.equal(reviews, 2, host.warnings.join("\n"));
+  const feedback = correct?.result.content.at(-1).text ?? "";
+  assert.match(feedback, /passed/u);
+  assert.doesNotMatch(feedback, /AGENT-GOAL|REQUIRE-GOAL/u);
+  assert.equal(await fs.readFile(file, "utf8"), "## Goal\nA precise goal.\n");
+  const patch = "*** Begin Patch\n*** Update File: spec/requirements.md\n@@\n-## Goal\n+# Draft\n*** End Patch\n";
+  await runtime.beforeTool({ toolName: "functions.apply_patch", toolCallId: "artifact-patch", params: { input: patch } }, ctx);
+  await fs.writeFile(file, "# Draft\nA precise goal.\n");
+  const patched = await runtime.toolResult({ toolName: "functions.apply_patch", toolCallId: "artifact-patch", args: { input: patch },
+    result: { content: [{ type: "text", text: "Patched" }] } }, { runtime: "openclaw" });
+  assert.equal(reviews, 3, "successful patch writes must reach document review");
+  assert.match(patched?.result.content.at(-1).text ?? "", /AGENT-GOAL/u);
 });
 
 test('failed worker Read never makes an exploratory path a required deliverable', async (t) => {

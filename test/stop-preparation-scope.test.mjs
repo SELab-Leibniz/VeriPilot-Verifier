@@ -74,7 +74,7 @@ test("explicit process source declarations retain required files without walking
 });
 
 test("runtime acceptance retains verifier, implementation and original invocation/result for binding", async t => {
-  const f = await fixture(t, "M12", "IMPLEMENTATION");
+  const f = await fixture(t, "M12", "PROCESS");
   await runStopTaskReview(f.input, { runTask: async options => {
     assert.equal(options.task.scope, "RUNTIME_ACCEPTANCE");
     assert.deepEqual(options.task.targetPrefixes, ["execution/"]);
@@ -157,7 +157,7 @@ for (const proof of ["complete", "missing-basis", "wrong-basis-hash", "missing-c
       refs: [{ path: file, start: 1, end: 1, sha256: sha256(bytes), citeId }] };
   } });
   const citation = h.sourceCitations[0];
-  if (proof === "complete") assert.deepEqual(citation.readProof, { version: 1, observed: true, basisComplete: true, owner: "PROCESS" });
+  if (proof === "complete") assert.deepEqual(citation.readProof, { version: 1, observed: true, basisComplete: true, owner: "PROCESS", fullFile: false, activationFact: false });
   else assert.equal(citation.readProof, undefined, "completed alone cannot manufacture a read/basis proof");
 });
 
