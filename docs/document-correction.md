@@ -1,5 +1,29 @@
 # 文档纠偏：项目会话与按需证据
 
+## OpenClaw 自动 Hook 文档闭环
+
+`scripts/evaluate-openclaw-document-e2e.mjs` 在独立目录内启动已安装的 OpenClaw 2026.7.1-2 Gateway，加载当前源码构建的插件，通过真实 `sessions.create` / `chat.send` 发起主 Agent 任务。主 Agent 将虚构草稿写入 `design.md` 后，生产工具结果中间件自动触发文档评审，把诊断附回这次写入结果；主 Agent 根据实际收到的反馈进行修改，修改后再次自动评审。运行器不会手动调用评审、注入 Hook 事件或替换修订稿。
+
+```sh
+node scripts/evaluate-openclaw-document-e2e.mjs --live \
+  --host-root /opt/homebrew/lib/node_modules/openclaw \
+  --config examples/document-e2e/openclaw-options.json \
+  --output-root .runtime-correction/openclaw-document-new
+```
+
+输出目录必须全新。可提供完整的 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`（或 `ANTHROPIC_API_KEY`）和模型环境配置；没有提供器环境时，读取本机 `.claude/settings.json` 中已配置的同一提供器信息。`--claude-settings` 可以指定该配置文件。认证仅通过进程内普通提供器环境传入。Gateway 配置、会话和插件构建都保存在新输出目录内。
+
+| 独立预算 | JSON 字段 | 命令行覆盖 | 默认值 |
+|---|---|---|---:|
+| 每次私有评审 | `reviewTimeoutMs` | `--review-timeout-ms` | 600000 |
+| 每次自动 Hook | `hookTimeoutMs` | `--hook-timeout-ms` | 1200000 |
+| 主 Agent 运行 | `businessTimeoutMs` | `--business-timeout-ms` | 1800000 |
+| 整轮验收 | `totalTimeoutMs` | `--total-timeout-ms` | 1800000 |
+
+单位为毫秒，可配置到 3600000，使用整秒；Hook 最少 2000，其余最少 1000。各层截止时间共同约束运行，放宽私有评审时应同时给 Hook 和主 Agent 留足时间。原生定位格式修复共享同一评审截止时间，不重新计时。超出总时限会请求宿主取消当前运行，并记录失败。
+
+验收要求首轮真实发现第 2 行的遥测偏差、主会话真实消费对应工具反馈、主 Agent 至少两次写入/编辑、最新文档的原生评审返回 `passed` 且零诊断、私有评审均结算，以及需求文件保持原字节。评审输入哈希必须对应初始草稿和最终修改稿。保存的 `report.json` 包含实际生效的超时、评审记录和反馈回执；`business-session.json` 保留原生工具调用与工具结果。文档模式直接使用声明的原始需求，不依赖动态基线账本；动态基线、Skill 和 Stop 仍独立验收。
+
 ## 最小真实模型闭环（2026-11-02）
 
 独立入口 `scripts/evaluate-document-e2e.mjs` 会生成一个包含遥测偏差的虚构文档项目，构建 Claude 插件，并使用生产 `checkArtifact`、`runSemanticReview`、`finalizeArtifactCheck` 和真实 `rc_document` MCP 工具完成评审。原始需求文件直接作为声明的依据，不依赖动态基线抽取。

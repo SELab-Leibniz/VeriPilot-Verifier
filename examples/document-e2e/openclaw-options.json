@@ -1,0 +1,6 @@
+{
+  "reviewTimeoutMs": 600000,
+  "hookTimeoutMs": 1200000,
+  "businessTimeoutMs": 1800000,
+  "totalTimeoutMs": 1800000
+}

@@ -27,12 +27,16 @@ async function freePort() {
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
-  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
+  phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
+  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   if (contextWindowTokens !== undefined && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
   if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
+  for (const [name, value, minimum] of [['reviewerTimeoutMs', reviewerTimeoutMs, 1000], ['hookTimeoutMs', hookTimeoutMs, 2000], ['businessTimeoutMs', businessTimeoutMs, 1000]])
+    if (value !== null && (!Number.isSafeInteger(value) || value < minimum || value > 3600000 || value % 1000 !== 0))
+      throw new Error(`Invalid isolated ${name}.`);
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
   // This pinned host defines overrideMs=0 as its native no-timeout sentinel.
@@ -58,10 +62,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
-      ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+      ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : businessTimeoutMs ? { timeoutSeconds: businessTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
-        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
+        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_document', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
     session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
@@ -70,7 +74,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
-        ...(phaseTimeoutMs ? { config: { hookTimeoutMs: phaseTimeoutMs, reviewerTimeoutMs: phaseTimeoutMs,
+        ...(hookTimeoutMs || reviewerTimeoutMs || businessTimeoutMs ? { config: {
+          ...(hookTimeoutMs ? { hookTimeoutMs } : {}), ...(reviewerTimeoutMs ? { reviewerTimeoutMs } : {}),
+          ...(businessTimeoutMs ? { businessRunTimeoutMs: businessTimeoutMs } : {}),
           ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
     } },
   };
