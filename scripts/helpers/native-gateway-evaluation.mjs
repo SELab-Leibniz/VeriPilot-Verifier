@@ -98,7 +98,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   for (const extra of extraPluginPaths) {
     if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
     config.plugins.allow.push(extra.id); config.plugins.load.paths.push(await fs.realpath(extra.path));
-    config.plugins.entries[extra.id] = { enabled: true };
+    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
   }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));

@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { nativeStopTimeouts } from './helpers/native-stop-timeouts.mjs';
 import { waitPostRunTerminal } from '../lib/openclaw/post-run-host.mjs';
+import { createBenchmarkFaultFixture } from './helpers/benchmark-fault-fixture.mjs';
 
 const args = process.argv.slice(2);
 const value = (flag, fallback) => args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback;
@@ -18,6 +19,9 @@ const pluginRoot = path.resolve(value('--artifact'));
 const baseCommit = value('--base-commit');
 const instructionFile = path.resolve(value('--instruction'));
 const resume = args.includes('--resume');
+const seedCheckpointFile = value('--seed-checkpoint-state');
+const faultSpecFile = value('--inject-defect-spec');
+if (resume && (seedCheckpointFile || faultSpecFile)) throw new Error('Injected benchmark control requires a fresh host profile');
 if (!hostRoot || !/^[a-f0-9]{40}$/u.test(baseCommit ?? '')) throw new Error('Explicit host and benchmark base commit required');
 const timeouts = nativeStopTimeouts(Number(value('--timeout-ms', '86400000')));
 const budgets = { maxReviewSteps: Number(value('--max-review-steps', '2000')),
@@ -42,10 +46,10 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const git = (...argv) => execFileSync('git', ['-C', projectRoot, ...argv], { encoding: 'utf8', timeout: 10000, maxBuffer: 16 * 1024 * 1024 });
 const save = async (name, data) => fs.writeFile(path.join(outputRoot, name), JSON.stringify(data, null, 2) + '\n');
 const instruction = await fs.readFile(instructionFile, 'utf8');
-if (resume) {
+if (resume || seedCheckpointFile) {
   // Resume only the preserved model workspace, including uncommitted additions.
   // Verify it before rewriting harness policy or dispatching any model work.
-  const checkpoint = JSON.parse(await fs.readFile(path.join(outputRoot, 'resume-source-state.json'), 'utf8'));
+  const checkpoint = JSON.parse(await fs.readFile(seedCheckpointFile ?? path.join(outputRoot, 'resume-source-state.json'), 'utf8'));
   if (git('rev-parse', 'HEAD').trim() !== checkpoint.head
     || git('branch', '--show-current').trim() !== checkpoint.branch
     || git('status', '--porcelain') !== checkpoint.gitStatus)
@@ -110,8 +114,10 @@ if (!modules.stop || modules.skill || modules.document || modules.writeTimeImple
 await save('policy.json', modules);
 let gateway, sessionKey, runId, task, ledger, result;
 try {
+  const faultFixture = faultSpecFile ? await createBenchmarkFaultFixture({ projectRoot, outputRoot, specFile: faultSpecFile }) : null;
   gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot,
     sourceRoot: fileURLToPath(new URL('../', import.meta.url)), prebuiltPluginRoot: pluginRoot, reuseProfile: resume,
+    extraPluginPaths: faultFixture ? [faultFixture] : [],
     phaseTimeoutMs: timeouts.phaseTimeoutMs, disableMemoryFlush: true, confineBusinessFiles: true, skipBootstrap: true,
     businessToolNames: ['read', 'write', 'edit', 'exec', 'process'],
     provider: { api: 'openai-completions', baseUrl: process.env.RC_EVAL_BASE_URL ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model } });
@@ -134,6 +140,7 @@ try {
     const entry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     const sessionId = entry.sessionId;
     runId = randomUUID(); await save('target.json', { runId, sessionId, sessionKey });
+    if (faultFixture) await save('fault-target.json', { runId, baseCommit });
     const load = file => import(pathToFileURL(path.join(pluginRoot, file)).href);
     const [{ findTask }, { createStopCorrectionStore }, { listNativeRuns }] = await Promise.all([
       load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/stop-correction-store.mjs'), load('lib/openclaw/native-runs.mjs')]);
@@ -174,12 +181,15 @@ try {
         await fs.writeFile(path.join(first, 'snapshot.json'), JSON.stringify({ at: Date.now(),
           originalTerminal, head: git('rev-parse', 'HEAD').trim(), branch: git('branch', '--show-current').trim(),
           status: git('status', '--porcelain'), corrections: (ledger?.used ?? 0) - initialUsed,
-          source: 'Authenticated original completion, first Stop review observed, zero repair admissions; no injected fault' }, null, 2));
+          source: faultFixture ? 'Authenticated original completion after recorded one-time fault injection; first Stop review observed; zero repair admissions'
+            : 'Authenticated original completion, first Stop review observed, zero repair admissions; no injected fault' }, null, 2));
       }
 
       const allSettled = runs.length && runs.every(r => r.status === 'SETTLED');
       const activeRepair = Object.values(ledger?.admissions ?? {}).some(a => a.accounting === 'RESERVED' || a.accounting === 'USED' && !a.endedAt);
-      if (originalTerminal?.status === 'ok' && currentVerification && task?.verification?.status === 'PASS' && allSettled && !activeRepair) break;
+      const faultFinalReviewSaved = !faultFixture || used.at(-1)?.finalReview?.status === 'PASS'
+        && used.at(-1).finalReview.evaluationId === task?.verification?.evaluationId;
+      if (originalTerminal?.status === 'ok' && currentVerification && task?.verification?.status === 'PASS' && allSettled && !activeRepair && faultFinalReviewSaved) break;
       const exhausted = ledger?.used >= budgets.maxCorrections && (!used.length
         || used.some(a => a.finalReview?.evaluationId === task?.verification?.evaluationId));
       if (originalTerminal?.status === 'ok' && currentVerification && allSettled && !activeRepair && (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
@@ -195,12 +205,19 @@ try {
           : await waitPostRunTerminal(null, null, id, deadlineAt, controller.signal,
             (method, params, options) => gateway.request(method, params, options)));
     }
-    result = { mode: 'real-benchmark-stop-only', complete: !reason && task?.verification?.status === 'PASS'
+    const injected = faultFixture ? await fs.readFile(path.join(outputRoot, 'fault-injection.json'), 'utf8').then(JSON.parse, () => null) : null;
+    const faultCycleComplete = !faultFixture || injected?.runId === runId && used.length > 0 && used.length <= budgets.maxCorrections
+      && ledger.events.some(event => event.type === 'STOP_REVIEW_SETTLED' && event.stopId === runId && event.status === 'DEVIATION')
+      && used.at(-1)?.finalReview?.status === 'PASS'
+      && used.at(-1).finalReview.evaluationId === task?.verification?.evaluationId
+      && used.every(a => gateway.metrics().modelStarts.some(event => event.runId === `rc-stop-${a.id}` && event.sessionId === sessionId));
+    result = { mode: 'real-benchmark-stop-only', complete: !reason && faultCycleComplete && task?.verification?.status === 'PASS'
         && terminals.length === used.length + 1 && terminals.every(t => t?.status === 'ok')
         && runs.every(r => r.status === 'SETTLED'),
       reason, baseCommit, instructionSha256: hash(instruction), model, timeouts, sessionId, sessionKey, originalRunId: runId,
       taskId: task?.taskId, verification: task?.verification, status: task?.status, corrections: (ledger?.used ?? 0) - initialUsed, sessionCorrections: ledger?.used ?? 0, budgets,
       terminals, privateRuns: runs, ledger, ...gateway.metrics() };
+    if (faultFixture) Object.assign(result, { injected, faultCycleComplete });
   }
 } catch (error) {
   const message = String(error.message).split(process.env.RC_EVAL_API_KEY ?? 'never-a-key').join('[REDACTED]');

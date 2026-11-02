@@ -117,6 +117,8 @@ const command = ['run', '-i', '--platform', 'linux/amd64', '--name', name, '--cp
   '--artifact', '/opt/rc-artifact', '--base-commit', manifest.baseCommit, '--instruction', '/input/instruction.md',
   '--timeout-ms', String(runtimeMs), '--max-review-steps', String(manifest.maxReviewSteps ?? 2000),
   '--max-repair-steps', String(manifest.maxRepairSteps ?? 2000), '--max-corrections', String(manifest.correctionLimit ?? 3),
+  ...(manifest.seedCheckpoint ? ['--seed-checkpoint-state', '/input/seed-state.json'] : []),
+  ...(manifest.injectedDefect ? ['--inject-defect-spec', '/input/fault-spec.json'] : []),
   ...(resumeFrom ? ['--resume'] : [])];
 await fs.writeFile(path.join(run, 'launch.json'), JSON.stringify({ command: ['docker', ...command],
   disposableTokenPersisted: false, accountKeyPassedToContainer: false, startedAt: Date.now(), resumeFrom, runtimeMs, image }, null, 2));
