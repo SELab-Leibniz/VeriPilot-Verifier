@@ -16,14 +16,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--prepared-root', type=Path, required=True)
     parser.add_argument('--attempt', default='live-relay-001')
-    parser.add_argument('--verifier-image', default='rc-stop-gql-official-verifier:427384f')
+    parser.add_argument('--verifier-image', default='rc-stop-gql-official-verifier:427384f-amd64')
     args = parser.parse_args()
     root = args.prepared_root.resolve(strict=True)
     live = root / args.attempt
     manifest = json.loads((root / 'manifest.json').read_text())
     assert manifest['task'] == 'gql-incremental-graphql-delivery'
     assert json.loads((live / 'process-exit.json').read_text())['relayClosed'] is True
-    image_id = subprocess.check_output(['docker', 'image', 'inspect', args.verifier_image,
+    image_id = subprocess.check_output(['docker', 'image', 'inspect', '--platform', 'linux/amd64', args.verifier_image,
                                         '--format', '{{.Id}}'], text=True).strip()
     scoring = live / 'official-scoring'
     scoring.mkdir()

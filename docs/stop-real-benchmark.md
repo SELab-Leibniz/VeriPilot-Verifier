@@ -28,7 +28,15 @@ node scripts/run-native-stop-benchmark.mjs \
 
 首次原始宿主完成且 Stop 审查已出现、尚无修复使用时，保存模型真实提交得到的 `first-stop/model.patch`。结束时保存最终 `model.patch`。未提交修改仅保存在诊断文件，不会由控制器代替模型提交或混入官方预测。
 
-原始评分器运行在另一个禁用网络的全新容器中，不将评分器测试挂入业务容器：
+原始评分器运行在另一个禁用网络的全新容器中，不将评分器测试挂入业务容器。镜像由原始任务的 `tests/Dockerfile` 构建；指定单平台且关闭构建证明附件，避免本机 Docker 无法按镜像 ID 启动多平台索引的问题：
+
+```sh
+docker build --platform linux/amd64 --provenance=false \
+  --tag rc-stop-gql-official-verifier:427384f-amd64 \
+  /absolute/path/to/DeepSWE/tasks/gql-incremental-graphql-delivery/tests
+```
+
+评分前已核对镜像内四个评分文件与原始任务的摘要一致，再按不可变镜像 ID 运行：
 
 ```sh
 python3 scripts/grade-native-stop-benchmark.py \
