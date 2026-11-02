@@ -40,6 +40,6 @@ reviewers:
     model: openai/glm-5.3-flash
     effort: low
     timeoutMs: 1800000
-    formatRepairAttempts: 8
+    formatRepairAttempts: 20
 output:
   directory: .runtime-correction
