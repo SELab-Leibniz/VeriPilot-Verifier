@@ -438,7 +438,10 @@
         },
         "waitMode": {
           "type": "string",
-          "enum": ["until_pass", "assessment"],
+          "enum": [
+            "until_pass",
+            "assessment"
+          ],
           "default": "until_pass",
           "description": "Native Stop waits for correction and re-verification to PASS, or only assessment and feedback admission. Failures, cancellation, exhausted correction budget and the wait deadline release the wait with a notification."
         },
@@ -446,13 +449,27 @@
           "type": "integer",
           "minimum": 1000,
           "description": "Deprecated alias of assessmentTimeoutMs for one Stop only. Conflicts with assessmentTimeoutMs; never creates a shared repair-chain timeout."
+        },
+        "maxReviewSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 200,
+          "description": "Model response steps per Stop review and its necessary bounded extraction; larger explicit positive safe integers are supported."
+        },
+        "maxRepairSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000,
+          "description": "Trusted model-start steps per plugin-created business repair, separate from the maximum number of repairs."
         }
       },
       "additionalProperties": false
     },
     "reviewerRuntime": {
       "type": "object",
-      "required": ["executable"],
+      "required": [
+        "executable"
+      ],
       "properties": {
         "executable": {
           "type": "string",
@@ -541,9 +558,9 @@
         "semanticReviewTimeoutMs": {
           "type": "integer",
           "minimum": 1000,
-          "maximum": 43200000,
+          "maximum": 86400000,
           "default": 1200000,
-          "description": "Semantic review timeout in milliseconds. Defaults to 20 minutes; maximum 12 hours. Also supplies the fallback for reviewers.defaults.timeoutMs."
+          "description": "Semantic review timeout in milliseconds. Defaults to 20 minutes; maximum 24 hours. Also supplies the fallback for reviewers.defaults.timeoutMs."
         }
       },
       "additionalProperties": false
@@ -642,9 +659,9 @@
         "timeoutMs": {
           "type": "integer",
           "minimum": 1000,
-          "maximum": 43200000,
+          "maximum": 86400000,
           "default": 1200000,
-          "description": "Per-role review timeout in milliseconds. Precedence: role, reviewers.defaults, limits.semanticReviewTimeoutMs, 20-minute default. Maximum 12 hours; shared deadlines may end a review sooner."
+          "description": "Per-role review timeout in milliseconds. Precedence: role, reviewers.defaults, limits.semanticReviewTimeoutMs, 20-minute default. Maximum 24 hours; shared deadlines may end a review sooner."
         },
         "formatRepairAttempts": {
           "type": "integer",

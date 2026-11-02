@@ -19,7 +19,12 @@ const baseCommit = value('--base-commit');
 const instructionFile = path.resolve(value('--instruction'));
 const resume = args.includes('--resume');
 if (!hostRoot || !/^[a-f0-9]{40}$/u.test(baseCommit ?? '')) throw new Error('Explicit host and benchmark base commit required');
-const timeouts = nativeStopTimeouts(Number(value('--timeout-ms', '43200000')));
+const timeouts = nativeStopTimeouts(Number(value('--timeout-ms', '86400000')));
+const budgets = { maxReviewSteps: Number(value('--max-review-steps', '2000')),
+  maxRepairSteps: Number(value('--max-repair-steps', '2000')),
+  maxCorrections: Number(value('--max-corrections', '3')) };
+for (const [name, amount] of Object.entries(budgets))
+  if (!Number.isSafeInteger(amount) || amount < (name === 'maxCorrections' ? 0 : 1)) throw new Error(`Invalid ${name}`);
 const startedAt = Date.now(), deadlineAt = startedAt + timeouts.wallMs;
 const controller = new AbortController();
 const cancel = () => controller.abort(new Error('Benchmark cancelled'));
@@ -79,8 +84,10 @@ implementationCorrection:
 stopCorrection:
   enabled: true
   waitMode: until_pass
-  maxCorrectionsPerSession: 3
-  maxCorrectionsPerFlow: 3
+  maxCorrectionsPerSession: ${budgets.maxCorrections}
+  maxCorrectionsPerFlow: ${budgets.maxCorrections}
+  maxReviewSteps: ${budgets.maxReviewSteps}
+  maxRepairSteps: ${budgets.maxRepairSteps}
   assessmentTimeoutMs: ${timeouts.assessmentTimeoutMs}
   feedbackReserveMs: ${timeouts.feedbackReserveMs}
 reviewers:
@@ -95,7 +102,9 @@ const plan = await loadConfig({ cwd: projectRoot, pluginRoot });
 const modules = { stop: plan.runtimeV2.stopCorrection.enabled, skill: plan.runtimeV2.skillCorrection.enabled,
   document: plan.runtimeV2.artifactCorrection.groundTruthReviewEnabled,
   writeTimeImplementation: plan.runtimeV2.implementationCorrection.enabled,
-  artifacts: plan.artifacts.length, metrics: plan.runtimeV2.stopCorrection.metrics };
+  artifacts: plan.artifacts.length, metrics: plan.runtimeV2.stopCorrection.metrics,
+  budgets: { maxReviewSteps: plan.runtimeV2.stopCorrection.maxReviewSteps, maxRepairSteps: plan.runtimeV2.stopCorrection.maxRepairSteps,
+    maxCorrectionsPerSession: plan.runtimeV2.stopCorrection.maxCorrectionsPerSession, maxCorrectionsPerFlow: plan.runtimeV2.stopCorrection.maxCorrectionsPerFlow } };
 if (!modules.stop || modules.skill || modules.document || modules.writeTimeImplementation || modules.artifacts)
   throw new Error('Benchmark policy is not Stop only');
 await save('policy.json', modules);
@@ -129,6 +138,8 @@ try {
     const [{ findTask }, { createStopCorrectionStore }, { listNativeRuns }] = await Promise.all([
       load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/stop-correction-store.mjs'), load('lib/openclaw/native-runs.mjs')]);
     const store = createStopCorrectionStore({ directory: path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions') });
+    const initialLedger = await store.inspect(sessionId);
+    const initialUsed = initialLedger?.used ?? 0, initialAdmissions = new Set(Object.keys(initialLedger?.admissions ?? {}));
     const accepted = await gateway.request('agent', { message: instruction, agentId: 'main', sessionId, sessionKey,
       idempotencyKey: runId, deliver: false, thinking: 'low', timeout: Math.floor((deadlineAt - Date.now()) / 1000) },
       { timeoutMs: deadlineAt - Date.now() });
@@ -138,8 +149,11 @@ try {
     while (Date.now() < deadlineAt && !controller.signal.aborted) {
       await gateway.drain(); task = await findTask({ projectRoot, sessionId }); ledger = await store.inspect(sessionId);
       runs = task ? await listNativeRuns(projectRoot, task.taskId) : [];
+      const used = Object.values(ledger?.admissions ?? {}).filter(a => a.accounting === 'USED' && !initialAdmissions.has(a.id));
+      const currentVerification = [runId, ...used.map(a => `rc-stop-${a.id}`)]
+        .some(id => task?.verification?.assessmentId?.startsWith(`${id}:`));
       const progress = { status: task?.status, verification: task?.verification?.status,
-        corrections: ledger?.used ?? 0, modelCalls: gateway.metrics().modelStarts.length,
+        corrections: (ledger?.used ?? 0) - initialUsed, modelCalls: gateway.metrics().modelStarts.length,
         privateActive: runs.filter(r => r.status !== 'SETTLED').length };
       if (JSON.stringify(progress) !== previous) { previous = JSON.stringify(progress); console.log(previous); await save('progress.json', progress); }
       if (!originalTerminal && Date.now() >= nextTerminalPoll) {
@@ -152,26 +166,28 @@ try {
       if (originalTerminal?.status === 'error') { reason = 'ORIGINAL_HOST_ERROR'; break; }
       // The production controller starts Stop only after the original host
       // terminal. Read the committed first draft before any repair is admitted.
-      if (originalTerminal?.status === 'ok' && !ledger?.used && runs.some(r => r.role === 'stop-reviewer')
+      if (originalTerminal?.status === 'ok' && !used.length && runs.some(r => r.role === 'stop-reviewer' && r.startedAt >= startedAt)
         && !await fs.stat(path.join(outputRoot, 'first-stop/snapshot.json')).catch(() => null)) {
         const first = path.join(outputRoot, 'first-stop'); await fs.mkdir(first, { recursive: true });
         await fs.writeFile(path.join(first, 'model.patch'), git('diff', '--binary', baseCommit, 'HEAD'));
         await fs.writeFile(path.join(first, 'working-tree.patch'), git('diff', '--binary', baseCommit));
         await fs.writeFile(path.join(first, 'snapshot.json'), JSON.stringify({ at: Date.now(),
           originalTerminal, head: git('rev-parse', 'HEAD').trim(), branch: git('branch', '--show-current').trim(),
-          status: git('status', '--porcelain'), corrections: ledger?.used ?? 0,
+          status: git('status', '--porcelain'), corrections: (ledger?.used ?? 0) - initialUsed,
           source: 'Authenticated original completion, first Stop review observed, zero repair admissions; no injected fault' }, null, 2));
       }
 
       const allSettled = runs.length && runs.every(r => r.status === 'SETTLED');
       const activeRepair = Object.values(ledger?.admissions ?? {}).some(a => a.accounting === 'RESERVED' || a.accounting === 'USED' && !a.endedAt);
-      if (task?.verification?.status === 'PASS' && allSettled && !activeRepair) break;
-      if (allSettled && !activeRepair && (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
-        || task?.verification?.status === 'UNVERIFIED' || ledger?.used >= 3)) { reason = 'STOP_NOT_PASSED'; break; }
+      if (originalTerminal?.status === 'ok' && currentVerification && task?.verification?.status === 'PASS' && allSettled && !activeRepair) break;
+      const exhausted = ledger?.used >= budgets.maxCorrections && (!used.length
+        || used.some(a => a.finalReview?.evaluationId === task?.verification?.evaluationId));
+      if (originalTerminal?.status === 'ok' && currentVerification && allSettled && !activeRepair && (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
+        || task?.verification?.status === 'UNVERIFIED' || exhausted)) { reason = 'STOP_NOT_PASSED'; break; }
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     if (controller.signal.aborted || Date.now() >= deadlineAt) reason = Date.now() >= deadlineAt ? 'BENCHMARK_DEADLINE' : 'BENCHMARK_CANCELLED';
-    const used = Object.values(ledger?.admissions ?? {}).filter(a => a.accounting === 'USED');
+    const used = Object.values(ledger?.admissions ?? {}).filter(a => a.accounting === 'USED' && !initialAdmissions.has(a.id));
     const terminals = [];
     if (!reason && task?.verification?.status === 'PASS') {
       for (const id of [runId, ...used.map(a => `rc-stop-${a.id}`)])
@@ -183,7 +199,7 @@ try {
         && terminals.length === used.length + 1 && terminals.every(t => t?.status === 'ok')
         && runs.every(r => r.status === 'SETTLED'),
       reason, baseCommit, instructionSha256: hash(instruction), model, timeouts, sessionId, sessionKey, originalRunId: runId,
-      taskId: task?.taskId, verification: task?.verification, status: task?.status, corrections: ledger?.used ?? 0,
+      taskId: task?.taskId, verification: task?.verification, status: task?.status, corrections: (ledger?.used ?? 0) - initialUsed, sessionCorrections: ledger?.used ?? 0, budgets,
       terminals, privateRuns: runs, ledger, ...gateway.metrics() };
   }
 } catch (error) {

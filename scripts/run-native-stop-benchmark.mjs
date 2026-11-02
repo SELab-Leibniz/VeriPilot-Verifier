@@ -101,7 +101,9 @@ const command = ['run', '-i', '--platform', 'linux/amd64', '--name', name, '--cp
   '--entrypoint', '/root/.nvm/versions/node/v22.23.4/bin/node', image,
   '/opt/rc-source/scripts/evaluate-native-stop-benchmark.mjs', '--host-root', '/root/.nvm/versions/node/v22.23.4/lib/node_modules/openclaw',
   '--artifact', '/opt/rc-artifact', '--base-commit', manifest.baseCommit, '--instruction', '/input/instruction.md',
-  '--timeout-ms', String(runtimeMs), ...(resumeFrom ? ['--resume'] : [])];
+  '--timeout-ms', String(runtimeMs), '--max-review-steps', String(manifest.maxReviewSteps ?? 2000),
+  '--max-repair-steps', String(manifest.maxRepairSteps ?? 2000), '--max-corrections', String(manifest.correctionLimit ?? 3),
+  ...(resumeFrom ? ['--resume'] : [])];
 await fs.writeFile(path.join(run, 'launch.json'), JSON.stringify({ command: ['docker', ...command],
   disposableTokenPersisted: false, accountKeyPassedToContainer: false, startedAt: Date.now(), resumeFrom, runtimeMs, image }, null, 2));
 const child = spawn('docker', command, { stdio: ['pipe', 'pipe', 'pipe'] });

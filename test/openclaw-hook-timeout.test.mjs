@@ -3,14 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { resolveHookTimeoutMs, hookReviewBudgetMs } from "../lib/openclaw/hook-timeout.mjs";
 
-test("Hook timeout defaults to twenty minutes and is capped at twelve hours, matching the manifest", async () => {
+test("Hook timeout defaults to twenty minutes and is capped at twenty-four hours, matching the manifest", async () => {
   const manifest = JSON.parse(await readFile(new URL("../packaging/hosts/openclaw/openclaw.plugin.json", import.meta.url)));
   assert.equal(manifest.configSchema.properties.hookTimeoutMs.default, 1200000);
-  assert.equal(manifest.configSchema.properties.hookTimeoutMs.maximum, 43200000);
+  assert.equal(manifest.configSchema.properties.hookTimeoutMs.maximum, 86400000);
   for (const [configured, timeout, reviewBudget] of [
     [undefined, 1200000, 1199000], [null, 1200000, 1199000], [2000, 2000, 1000],
     [600000, 600000, 599000], [1800000, 1800000, 1799000],
-    [3600000, 3600000, 3599000], [5400000, 5400000, 5399000], [7200000, 7200000, 7199000], [43200000, 43200000, 43199000], [86400000, 43200000, 43199000],
+    [3600000, 3600000, 3599000], [5400000, 5400000, 5399000], [7200000, 7200000, 7199000], [43200000, 43200000, 43199000], [86400000, 86400000, 86399000], [172800000, 86400000, 86399000],
   ]) {
     assert.equal(resolveHookTimeoutMs(configured), timeout, `configured: ${configured}`);
     assert.equal(hookReviewBudgetMs(configured), reviewBudget, `configured: ${configured}`);

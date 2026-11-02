@@ -60,7 +60,7 @@ MatrixAssistant 内置的 OpenClaw 2026.7.1-2 使用公开 harness 取消接口�
 
 例如项目的 `reviewers.defaults.timeoutMs`、`limits.semanticReviewTimeoutMs` 与 `stopCorrection.assessmentTimeoutMs` 可继续设为 `1800000`（30 分钟），与宿主业务自然完成相互独立。Stop 的总窗口仍包含基线准备、审查与反馈预留；自动修复结束后的新 Stop 获得自己的审查窗口。
 
-所有语义评审和角色 reviewer 默认 20 分钟，最大 12 小时（1000～43200000 毫秒）。在项目 `.runtime-corrector/config.yaml` 中设置：
+所有语义评审和角色 reviewer 默认 20 分钟，最大 24 小时（1000～86400000 毫秒）。在项目 `.runtime-corrector/config.yaml` 中设置：
 
 ```yaml
 limits:
@@ -72,7 +72,7 @@ reviewers:
     timeoutMs: 5400000 # 终审角色 90 分钟
 ```
 
-优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。`hookTimeoutMs` 自身也是默认 20 分钟、最大 12 小时；它与单个 reviewer 及多阶段总预算分别配置。
+优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。`hookTimeoutMs` 自身也是默认 20 分钟、最大 24 小时；它与单个 reviewer 及多阶段总预算分别配置。
 
 `onboarding-extractor`、`onboarding-adjudicator`、`skill-reviewer`、`artifact-reviewer` 和 `implementation-reviewer` 同样不设 RC 累计字节硬中止条件，上下文窗口与压缩由宿主管理。材料扫描、内联预览、单包披露、输出捕获和原文证据边界继续保留；这些限制分别约束材料准备、传输或证据完整性，不等于按会话累计字节中止审阅。
 
@@ -143,3 +143,24 @@ MA 的终态通知使用宿主公开的按会话身份追加助手消息接口�
 ```
 
 保留原 RC 需求账本、来源验证、程序引文、逐项进度/有效部分反馈与可配置三次格式修复。没有引入新总结 LLM、业务执行器或通用调度框架。
+
+### 长任务 Stop 预算
+
+时间、审查轮次、每次修复轮次以及修复次数分别配置。以下配置最多等待 24 小时，每次终审和每次宿主业务修复各最多 2000 个模型响应步骤，最多自动续修 3 次：
+
+```yaml
+stopCorrection:
+  enabled: true
+  waitMode: until_pass
+  assessmentTimeoutMs: 86400000
+  feedbackReserveMs: 30000
+  maxReviewSteps: 2000
+  maxRepairSteps: 2000
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+reviewers:
+  defaults:
+    timeoutMs: 86370000
+```
+
+审查步骤通过项目配置传给原生 Stop worker；业务修复步骤按可信模型启动事件计数，同一事件不会重复计数。超出每次修复步骤预算时只终止插件拥有的该次修复，不得中止其他用户回合。原有时间和取消保护继续生效，较短的显式父级预算仍会约束运行。宿主任务、Hook、无进展保护和会话锁也须允许 24 小时；benchmark 入口会统一这些设置。

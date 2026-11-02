@@ -2,6 +2,8 @@
   "waitMode": "until_pass",
   "maxCorrectionsPerSession": 3,
   "maxCorrectionsPerFlow": 3,
+  "maxReviewSteps": 200,
+  "maxRepairSteps": 2000,
   "assessmentTimeoutMs": 1200000,
   "feedbackReserveMs": 180000,
   "reviewGroupSize": 3,

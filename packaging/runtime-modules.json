@@ -135,6 +135,7 @@
     "lib/openclaw/entry.mjs",
     "lib/openclaw/evidence.mjs",
     "lib/openclaw/hook-timeout.mjs",
+    "lib/openclaw/repair-step-budget.mjs",
     "lib/openclaw/host-setup.mjs",
     "lib/openclaw/interaction-router.mjs",
     "lib/openclaw/interaction-store.mjs",
