@@ -1,0 +1,139 @@
+{
+  "kind": "openclaw-automatic-document-hook-verification",
+  "state": "PASSED",
+  "sourceCommit": "163ba7257abaa7889a85d9cd12d3e00f3317f20e",
+  "branch": "codex/document-e2e-hour",
+  "hostVersion": "2026.7.1-2",
+  "startedAt": "2026-11-02T06:57:54.468Z",
+  "finishedAt": "2026-11-02T06:58:43.421Z",
+  "elapsedMs": 48953,
+  "entry": "Authenticated native sessions.create and chat.send; actual registered before-tool Hook and tool-result middleware. No manual review invocation or seeded Hook events.",
+  "sessionId": "14afd6b6-dec3-4948-bc15-d9a876d5b383",
+  "runId": "786f6855-4ff2-46d7-be7b-0deaa8681df6",
+  "taskId": "oc-scope-7e0dd948-e20e-4fc9-b4b0-b0d0c826bf76",
+  "terminalReceipt": {
+    "status": "ok"
+  },
+  "options": {
+    "reviewTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "effectiveTimeouts": {
+    "reviewerTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "hostBusinessTimeoutMs": 1800000
+  },
+  "initialReview": {
+    "status": "failed",
+    "roundId": "20261102T065812Z-e96edc2d",
+    "toolCallId": "call_00_145ffswnij0l1ckqzbzwwevl",
+    "diagnostics": [
+      {
+        "ruleId": "AGENT-GT-NO-NETWORK",
+        "severity": "error",
+        "path": "design.md",
+        "line": 2,
+        "message": "The design specifies sending import metadata to a remote telemetry endpoint, which contradicts the user-confirmed requirement that no network access, remote API, upload, or telemetry is allowed.",
+        "evidence": [
+          "design.md:2: \"After import, send import metadata to https://telemetry.example.invalid/collect.\"",
+          "requirements.md:2: \"Import documents locally on the device. No network access, remote API, upload, or telemetry is allowed.\""
+        ],
+        "suggestion": "Remove the telemetry upload sentence; keep local import, parsing, and local error reporting only.",
+        "violatedGroundTruthIds": []
+      }
+    ]
+  },
+  "businessEdits": [
+    {
+      "tool": "write",
+      "id": "call_00_145ffswnij0l1ckqzbzwwevl"
+    },
+    {
+      "tool": "write",
+      "id": "call_00_eonpr0vgnjovyan3ql6kr1l9"
+    }
+  ],
+  "feedbackReceiptCount": 2,
+  "finalReview": {
+    "status": "passed",
+    "roundId": "20261102T065828Z-654c48ff",
+    "diagnostics": [],
+    "currentDesign": "# Design\nSelect and validate a local document. Parse it on the device and show validation or parse errors locally. All import and parsing happen on the device with no network access, remote API, upload, or telemetry.\nThis design does not include login, cloud synchronization, or server deployment.\n"
+  },
+  "nativePrivateReviewRuns": [
+    {
+      "role": "artifact-reviewer",
+      "status": "SETTLED",
+      "runId": "35a6e622-595c-4647-8d4c-4e87e6680821",
+      "sessionId": "c5e0ac65-e969-4d84-96b3-e4fd9c89791a"
+    },
+    {
+      "role": "artifact-reviewer",
+      "status": "SETTLED",
+      "runId": "681ee904-3984-42dd-a772-f6f86a2658d8",
+      "sessionId": "c5e0ac65-e969-4d84-96b3-e4fd9c89791a"
+    }
+  ],
+  "sourceHashes": {
+    "scripts/evaluate-openclaw-document-e2e.mjs": "b312125a59a4a986bf9ee42752ad9bbe657c3d2fc73e6a220f49639e5e4182aa",
+    "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+    "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+    "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+    "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+    "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+    "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+    "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+    "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40"
+  },
+  "checks": {
+    "documentAndIntegrationCoverage": {
+      "tests": 75,
+      "passedAfterTargetedEnvironmentRecheck": 75,
+      "originalRun": {
+        "tests": 75,
+        "pass": 74,
+        "fail": 1,
+        "skipped": 0
+      },
+      "recheck": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "environmentIssue": "macOS /var and /private/var canonical temp-directory identity; unchanged tests pass with TMPDIR=/private/tmp",
+      "log": ".runtime-correction/document-e2e-development/native-document-checks.tap",
+      "recheckLog": ".runtime-correction/document-e2e-development/native-host-canonical-path-recheck.tap"
+    },
+    "extendedNativeCore": {
+      "tests": 33,
+      "pass": 31,
+      "fail": 2,
+      "skipped": 0
+    },
+    "preExistingStopFailures": {
+      "baseCommit": "43a973c",
+      "baselineControl": {
+        "tests": 2,
+        "pass": 0,
+        "fail": 2,
+        "skipped": 0
+      },
+      "sameFailureNamesVerified": true,
+      "testNames": [
+        "native lifecycle preserves frozen baseline, terminal budget, deduplication and session isolation",
+        "supervised completion unwraps the original Stop decision and keeps the root task budget"
+      ],
+      "observed": "REVIEW_COLLECTION_STALE returned where old Stop fixtures expect HOST_START_PROTOCOL_UNSUPPORTED; reproduced before the OpenClaw document changes.",
+      "baselineLog": ".runtime-correction/document-e2e-development/baseline-stop-comparison.tap"
+    }
+  },
+  "rawReport": ".runtime-correction/openclaw-document-live-003/report.json",
+  "businessTranscript": ".runtime-correction/openclaw-document-live-003/business-session.json",
+  "limitations": [
+    "Controlled fictional draft; the model performs the initial write and repair through the actual native Gateway.",
+    "Declared original requirements are reviewed directly; dynamic baseline, Skill and Stop are separate workflows."
+  ]
+}
