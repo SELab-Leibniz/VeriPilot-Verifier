@@ -49,6 +49,29 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
 
 2026-11-02 修复后，上述六个样例均通过全新的真实 OpenClaw 动态基线与自动 Hook 回归，单例耗时 64–121 秒。24 处受控偏差全部恢复，首轮无额外诊断，最终均为零诊断，宿主完成回执均为 `ok`。漏洞样例再次出现了限定范围内的行尾空白差异，初始和最终文档都按上述等价规则通过，其余五例逐字一致；每例的实际评审哈希、完整来源哈希、已结算私有运行和打包源码哈希均已核对。相关自动检查 66 项通过，超时配置沿用现有示例。详见 [本次回归记录](document-copy-scope-regression-results.json)；[此前五例记录](document-multicase-results.json) 的失败与额外诊断保持原样。这些结果只评价文档纠偏，不代表官方 benchmark 得分或通用准确率。
 
+### 新增长文本需求样例
+
+六个 `swe-bench-*` 样例来自 SWE-bench Verified 的完整 `problem_statement`，数据集版本固定为 `c104f840cc67f8b6eec6f759ebc8b2693d585d4a`。保留原始 UTF-8 字段为 `source-problem-statement.txt`，导入的 `requirements.md` 只统一 CRLF 为 LF；两者字节数和哈希、数据集行标识、上游仓库及 base commit 均记录在 `case.json`，来源说明保存在 `NOTICE.md`。不读取或向模型提供 hints、修复补丁或测试补丁。草稿仍仅设置四处受控偏差，运行入口和超时配置不变。
+
+| 样例目录（位于 `examples/document-e2e/`） | 完整输入 | 偏差范围 |
+|---|---:|---|
+| `swe-bench-pylint-dev__pylint-7080` | 260 行 / 24513 字节 | 递归行为、忽略路径、命令参数、预期行为 |
+| `swe-bench-pytest-dev__pytest-7490` | 378 行 / 22403 字节 | 版本行为对比、动态 marker、断言、预期失败记录 |
+| `swe-bench-matplotlib__matplotlib-22719` | 208 行 / 9971 字节 | 警告类别、复现输入、预期结果、空数据边界 |
+| `swe-bench-pydata__xarray-6721` | 237 行 / 9067 字节 | 内存行为、后端、元数据访问、环境版本 |
+| `swe-bench-django__django-11087` | 90 行 / 9262 字节 | 查询字段范围、升级版本、预期结果、字段必要性 |
+| `swe-bench-scikit-learn__scikit-learn-11578` | 176 行 / 7216 字节 | 默认分类策略、参数传递、继承规则、参数类型 |
+
+```sh
+node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
+  --benchmark-case examples/document-e2e/swe-bench-pylint-dev__pylint-7080 \
+  --host-root /opt/homebrew/lib/node_modules/openclaw \
+  --config examples/document-e2e/dynamic-benchmark-options.json \
+  --output-root .runtime-correction/document-large-pylint-new
+```
+
+这些样例重点覆盖长文本、大段复现代码、日志和版本列表中的文档保真与偏差定位，不执行问题对应的软件修复，也不作为官方 SWE-bench 得分。
+
 ## OpenClaw 自动 Hook 文档闭环
 
 `scripts/evaluate-openclaw-document-e2e.mjs` 在独立目录内启动已安装的 OpenClaw 2026.7.1-2 Gateway，加载当前源码构建的插件，通过真实 `sessions.create` / `chat.send` 发起主 Agent 任务。主 Agent 将虚构草稿写入 `design.md` 后，生产工具结果中间件自动触发文档评审，把诊断附回这次写入结果；主 Agent 根据实际收到的反馈进行修改，修改后再次自动评审。运行器不会手动调用评审、注入 Hook 事件或替换修订稿。

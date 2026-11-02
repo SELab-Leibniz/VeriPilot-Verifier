@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/scikit-learn__scikit-learn-11578",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=scikit-learn__scikit-learn-11578;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "scikit-learn__scikit-learn-11578",
+  "repository": "scikit-learn/scikit-learn",
+  "baseCommit": "dd69361a0d9c6ccde0d2353b00b86e0e7541a3e3",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "e4945959c7c914eff336d7a28037c018533b3473ef69f46f3bcf8c51560a211a",
+  "sourceRawBytes": 7387,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+  "originalBytes": 7216,
+  "originalLines": 176,
+  "faults": [
+    {
+      "original": "without a multi_class argument, and so takes the default, which is `multi_class='ovr'`.",
+      "draft": "without a multi_class argument, and so takes the default, which is `multi_class='multinomial'`.",
+      "line": 12
+    },
+    {
+      "original": "`log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class=multi_class)`",
+      "draft": "`log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class='ovr')`",
+      "line": 15
+    },
+    {
+      "original": "so that the `LogisticRegression()` instance supplied to the scoring function at line 955 inherits the `multi_class` option specified in `LogisticRegressionCV()` would be a fix, but I am not a coder and would appreciate some expert insight! Likewise, I do not know whether this issue exists for other classifiers/regressors, as I have only worked with Logistic Regression.",
+      "draft": "so that the `LogisticRegression()` instance supplied to the scoring function at line 955 must ignore the `multi_class` option specified in `LogisticRegressionCV()` would be a fix, but I am not a coder and would appreciate some expert insight! Likewise, I do not know whether this issue exists for other classifiers/regressors, as I have only worked with Logistic Regression.",
+      "line": 16
+    },
+    {
+      "original": "Also, changed intercept_scaling default value to float",
+      "draft": "Also, changed intercept_scaling default value to integer",
+      "line": 157
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

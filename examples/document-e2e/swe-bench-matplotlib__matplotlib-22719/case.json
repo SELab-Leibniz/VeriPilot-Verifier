@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/matplotlib__matplotlib-22719",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=matplotlib__matplotlib-22719;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "matplotlib__matplotlib-22719",
+  "repository": "matplotlib/matplotlib",
+  "baseCommit": "a2a1b0a11b993fe5f8fab64b6161e99243a6393c",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "2ffeda0f37f0b31f33acc4091c401b2ecdf32fe61756e07d1248ab2095cb77e0",
+  "sourceRawBytes": 10176,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+  "originalBytes": 9971,
+  "originalLines": 208,
+  "faults": [
+    {
+      "original": "I'm seeing a `MatplotlibDeprecationWarning` when using calling axes methods on empty data structures for axes that are using string unit converters. I think this is either a false alarm or a non-actionable warning.",
+      "draft": "I'm seeing a `UserWarning` when using calling axes methods on empty data structures for axes that are using string unit converters. I think this is either a false alarm or a non-actionable warning.",
+      "line": 4
+    },
+    {
+      "original": "ax.xaxis.update_units([\"a\", \"b\"])",
+      "draft": "ax.xaxis.update_units([1, 2])",
+      "line": 11
+    },
+    {
+      "original": "I would expect this to either (1) continue producing artists with no data, or (2) more accurately describe what the problem is and how to avoid it.",
+      "draft": "I would expect this to always reject empty data and never produce artists or improve the diagnostic.",
+      "line": 170
+    },
+    {
+      "original": "So it feels like maybe whatever is changing behind the scenes failed to anticipate the \"empty data\" edge case?",
+      "draft": "So it feels like maybe whatever is changing behind the scenes already handles the \"empty data\" edge case correctly?",
+      "line": 202
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

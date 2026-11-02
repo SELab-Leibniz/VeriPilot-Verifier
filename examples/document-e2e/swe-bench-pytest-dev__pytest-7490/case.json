@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/pytest-dev__pytest-7490",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=pytest-dev__pytest-7490;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "pytest-dev__pytest-7490",
+  "repository": "pytest-dev/pytest",
+  "baseCommit": "7f7a36478abe7dd1fa993b115d22606aa0e35e88",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "9a5e8c33368dc3bbe9c5f03d3136a574cebede61fea6c575d39ddf108b92d947",
+  "sourceRawBytes": 22778,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+  "originalBytes": 22403,
+  "originalLines": 378,
+  "faults": [
+    {
+      "original": "With pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises. ",
+      "draft": "With pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this raises an ordinary failure. With 6.0.0rc0 it correctly produces an expected failure. ",
+      "line": 10
+    },
+    {
+      "original": "    mark = pytest.mark.xfail(reason=\"xfail\")",
+      "draft": "    mark = pytest.mark.skip(reason=\"xfail\")",
+      "line": 326
+    },
+    {
+      "original": "    assert 0",
+      "draft": "    assert 1",
+      "line": 328
+    },
+    {
+      "original": "XFAIL test_foo.py::test_xfail_test",
+      "draft": "FAILED test_foo.py::test_xfail_test",
+      "line": 346
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

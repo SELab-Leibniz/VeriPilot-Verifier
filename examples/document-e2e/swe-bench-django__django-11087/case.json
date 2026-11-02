@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/django__django-11087",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=django__django-11087;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "django__django-11087",
+  "repository": "django/django",
+  "baseCommit": "8180ffba21bf10f4be905cb0d4890dc2bcff2788",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+  "sourceRawBytes": 9262,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+  "originalBytes": 9262,
+  "originalLines": 90,
+  "faults": [
+    {
+      "original": "Optimize .delete() to use only required fields.",
+      "draft": "Optimize .delete() to use all fields unconditionally.",
+      "line": 1
+    },
+    {
+      "original": "We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.6, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.",
+      "draft": "We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.12, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.",
+      "line": 5
+    },
+    {
+      "original": "That the cycle_data management command succeeds, like it did under Python 2.",
+      "draft": "That the cycle_data management command must fail, unlike under Python 2.",
+      "line": 13
+    },
+    {
+      "original": "the UnicodeDecodeError is occurring for a field (text_log_error.line) that is not actually needed for the .delete() (it's not a primary key etc), so Django shouldn't be fetching that field regardless when making the text_log_error SELECT query",
+      "draft": "the UnicodeDecodeError is occurring for a field (text_log_error.line) that is required as the primary key for the .delete(), so Django must always fetch that field when making the text_log_error SELECT query",
+      "line": 85
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

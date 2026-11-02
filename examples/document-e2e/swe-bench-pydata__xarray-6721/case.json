@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/pydata__xarray-6721",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=pydata__xarray-6721;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "pydata__xarray-6721",
+  "repository": "pydata/xarray",
+  "baseCommit": "cc183652bf6e1273e985e1c4b3cba79c896c1193",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "8885a8e303e07d8e74f13a24134ecd7d051a2e2ded38ac313d6667e68b93a021",
+  "sourceRawBytes": 9276,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+  "originalBytes": 9067,
+  "originalLines": 237,
+  "faults": [
+    {
+      "original": "When running the following example it appears the entire dataset is loaded into memory when accessing the `chunks` attribute:",
+      "draft": "When running the following example it appears only metadata is inspected and no array data is loaded into memory when accessing the `chunks` attribute:",
+      "line": 4
+    },
+    {
+      "original": "ds = xr.open_dataset(url, engine='zarr') # note that ds is not chunked but still uses lazy loading",
+      "draft": "ds = xr.open_dataset(url, engine='netcdf4') # note that ds is not chunked but still uses lazy loading",
+      "line": 10
+    },
+    {
+      "original": "According to @rabernat accessing the chunks attribute should simply inspect the `encoding` attribute on the underlying DataArrays.",
+      "draft": "According to @rabernat accessing the chunks attribute should simply inspect the `data` attribute and eagerly materialize all values on the underlying DataArrays.",
+      "line": 16
+    },
+    {
+      "original": "dask: 2022.04.0",
+      "draft": "dask: 2021.01.0",
+      "line": 219
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

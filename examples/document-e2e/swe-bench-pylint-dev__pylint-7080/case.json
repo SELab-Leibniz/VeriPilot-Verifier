@@ -1,0 +1,40 @@
+{
+  "name": "SWE-bench_Verified/pylint-dev__pylint-7080",
+  "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+  "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sourcePath": "data/test-00000-of-00001.parquet#instance_id=pylint-dev__pylint-7080;column=problem_statement",
+  "sourceDataset": "princeton-nlp/SWE-bench_Verified",
+  "instanceId": "pylint-dev__pylint-7080",
+  "repository": "pylint-dev/pylint",
+  "baseCommit": "3c5eca2ded3dd2b59ebaf23eb289453b5d2930f0",
+  "sourceRawFile": "source-problem-statement.txt",
+  "sourceRawSha256": "82319497af035b3cdcd4ee71b5fccd578074989dfa157dc54ecc5bf8ea76ceab",
+  "sourceRawBytes": 24770,
+  "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+  "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+  "originalBytes": 24513,
+  "originalLines": 260,
+  "faults": [
+    {
+      "original": "When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is completely ignored",
+      "draft": "When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is correctly respected",
+      "line": 4
+    },
+    {
+      "original": "  \"^src/gen/.*$\",",
+      "draft": "  \"^src/manual/.*$\",",
+      "line": 12
+    },
+    {
+      "original": "pylint --recursive=y src/",
+      "draft": "pylint --recursive=n src/",
+      "line": 20
+    },
+    {
+      "original": "src\\gen\\* should not be checked",
+      "draft": "src\\gen\\* must always be checked",
+      "line": 241
+    }
+  ],
+  "scope": "Document-only adaptation of a complete real benchmark issue; four controlled candidate deviations. No hints, solution patch or test patch is provided to the model. Not an official SWE-bench execution score."
+}

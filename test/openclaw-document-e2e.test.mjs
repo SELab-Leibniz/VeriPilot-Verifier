@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy } from '../scripts/evaluate-openclaw-document-e2e.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
@@ -101,8 +102,8 @@ test('static document evidence binds production rounds to the actual native sess
 test('all benchmark document samples preserve their original sources and only the declared candidate changes', async () => {
   const root = fileURLToPath(new URL('../examples/document-e2e/', import.meta.url));
   const directories = (await fs.readdir(root, { withFileTypes: true }))
-    .filter(entry => entry.isDirectory() && entry.name.startsWith('terminal-bench-'));
-  assert(directories.length >= 6, 'The expanded sample set must include the original and five additional tasks');
+    .filter(entry => entry.isDirectory() && /^(terminal-bench-|swe-bench-)/u.test(entry.name));
+  assert(directories.length >= 12, 'Include the six original and six new large document tasks');
   const identities = new Set();
   for (const entry of directories) {
     const item = await loadDocumentBenchmark(path.join(root, entry.name));
@@ -116,5 +117,15 @@ test('all benchmark document samples preserve their original sources and only th
       repaired = repaired.replace(fault.draft, fault.original);
     }
     assert.equal(repaired, item.requirements, entry.name + ': undeclared changes to the full original requirement');
+    if (entry.name.startsWith('swe-bench-')) {
+      const raw = await fs.readFile(path.join(root, entry.name, item.specification.sourceRawFile));
+      assert.equal(createHash('sha256').update(raw).digest('hex'), item.specification.sourceRawSha256);
+      assert.equal(raw.length, item.specification.sourceRawBytes);
+      assert.equal(raw.toString('utf8').replace(/\r\n/gu, '\n'), item.requirements,
+        'Only CRLF-to-LF import is allowed; retain the entire source issue');
+      assert.equal(item.specification.originalLines, item.requirements.split('\n').length);
+      assert(item.specification.originalBytes > 7000);
+      assert.equal(item.specification.sourceCommit, 'c104f840cc67f8b6eec6f759ebc8b2693d585d4a');
+    }
   }
 });
