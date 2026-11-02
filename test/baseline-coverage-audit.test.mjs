@@ -17,8 +17,8 @@ import { refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { STOP_TASK_LIMITS } from '../lib/review-task/stop-policy.mjs';
 
-async function sharedBasisFixture(t) {
-  const fixture = await createSharedBasisFixture(t);
+async function sharedBasisFixture(t, options) {
+  const fixture = await createSharedBasisFixture(t, options);
   const task = await ensureTask({ projectRoot: fixture.root, sessionId: 'basis-session' });
   await withTaskState({ projectRoot: fixture.root, taskId: task.taskId }, state => { state.control ??= {}; });
   return fixture;
@@ -230,6 +230,57 @@ test('zero-write path repair leaves the single semantic audit repair available i
   assert.equal(bundle.budget.auditCalls, 2); assert.equal(bundle.input.generation, 2);
   assert.equal(bundle.budget.turns, bundle.budget.consumers.extractor + bundle.budget.consumers.checker);
   assert.equal(new Set(f.state.baselinePrompts.map(prompt => prompt.identity.requestId)).size, 1);
+});
+
+test('configured 24-hour 2000-step baseline permits multiple genuine repair/audit rounds in one original budget', async t => {
+  const began = Date.now(), f = await sharedBasisFixture(t, { baselineLimits: {
+    timeoutMs: 86400000, maxSteps: 2000, maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000,
+  } });
+  const wrong = ['Write the usage guide.', 'Write the reference guide.'].map(text => ({ ...operation(), text }));
+  const corrected = wrong.map(({ implementationRole, ...row }) => ({ ...row, verificationTarget: 'ARTIFACT' }));
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: wrong.map(row => row.text).join(' ') } }) + '\n');
+  f.state.sourceFrom = true; f.state.deltaOperations = wrong; let rounds = 0;
+  f.state.coverageReport = context => {
+    const value = scriptedCoverageReport(context), row = value.sources.find(source => source.kind === 'USER_MESSAGE');
+    const bad = new Set(context.view.effectiveLedger.claims.filter(claim => claim.verificationTarget !== 'ARTIFACT').map(claim => claim.claimId));
+    if (!bad.size) return value;
+    value.verdict = 'REPAIR'; row.disposition = 'REPAIR';
+    row.issues = row.mappings.filter(mapping => mapping.claimIds.some(id => bad.has(id))).map(mapping => ({ ...mapping,
+      owner: 'ARTIFACT', issueKind: 'CANDIDATE', expectedDuty: 'Write the required document content.',
+      reason: 'The original requires document content, not delivered runtime behavior.' }));
+    row.mappings = row.mappings.filter(mapping => !mapping.claimIds.some(id => bad.has(id)));
+    f.state.deltaOperations = ++rounds === 1 ? [corrected[0], wrong[1]] : corrected; return value;
+  };
+  await f.refresh();
+  const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
+  assert.equal(bundle.budget.maxTurns, 2000); assert.equal(bundle.budget.maxRepairs, 2000);
+  assert.equal(bundle.budget.maxAuditCalls, 2000); assert.equal(bundle.budget.maxExternalRepairs, 2000);
+  assert.equal(bundle.budget.auditCalls, 3); assert.equal(bundle.budget.externalRepairs, 2); assert.equal(bundle.budget.repairs, 2);
+  assert(bundle.budget.deadlineAt - began > 23 * 3600000);
+  assert(f.state.baselineTimeouts.every(timeout => timeout > 23 * 3600000));
+  assert.equal(new Set(f.state.baselinePrompts.map(prompt => prompt.identity.requestId)).size, 1);
+});
+
+test('expanded audit allowance retains an unresolved report and retries source-first without changing the candidate or resetting counters', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 } });
+  let attempts = 0;
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    if (++attempts > 1) return report;
+    const row = report.sources.find(source => source.kind === 'USER_MESSAGE');
+    report.verdict = 'UNRESOLVED'; row.disposition = 'UNRESOLVED';
+    row.issues = row.mappings.map(mapping => ({ ...mapping, issueKind: 'SOURCE_INVENTORY', owner: 'UNKNOWN',
+      expectedDuty: 'Preserve the requested feature.', reason: 'Controlled first-auditor uncertainty; not a candidate defect or acceptance.' }));
+    row.mappings = []; return report;
+  };
+  await f.refresh();
+  const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
+  assert.equal(attempts, 2); assert.equal(bundle.budget.auditCalls, 2);
+  assert.equal(bundle.budget.repairs, 0); assert.equal(bundle.budget.externalRepairs, 0);
+  assert.equal(bundle.input.generation, 0); assert.equal(f.state.baselinePrompts.length, 1);
 });
 
 for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured limit ${limit} without publication`, async t => {
@@ -532,6 +583,24 @@ test('extractor and checker debit one original turn pool and cannot mint a third
   assert.deepEqual(worker.budget.snapshot().consumers, { extractor: 1, checker: 1 });
   assert.throws(() => worker.budget.consumeTurn('extractor'), { code: 'TURN_LIMIT' });
   assert.throws(() => worker.budget.snapshot(), { code: 'TURN_LIMIT' });
+  await worker.close();
+});
+
+test('configured 2000-step pool passes the old 200-step boundary and stops both consumers at the configured cap', async t => {
+  const root = await scratch(t), frozen = path.join(root, 'frozen'); await fs.mkdir(frozen);
+  await fs.writeFile(path.join(frozen, 'source.txt'), 'Original.');
+  const worker = await createBaselineWorker({ root: frozen, outputDir: root,
+    identity: { requestId: 'large-shared-budget', taskId: 'budget-task', protocol: BASELINE_EXTRACTION_PROTOCOL, sources: [], sourceCatalog: [] },
+    requiredFiles: ['source.txt'], schema: GROUND_TRUTH_REVIEW_SCHEMA, active() {}, assertCurrent() {},
+    maxTurns: 2000, maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000,
+    deadlineAt: Date.now() + 86400000, nativeRun: async () => {} });
+  worker.budget.beginAudit({ runId: 'checker', sessionId: 'checker' }, 'candidate');
+  for (let i = 0; i < 2000; i++) worker.budget.consumeTurn(i % 2 ? 'checker' : 'extractor',
+    i % 2 ? { runId: 'checker', sessionId: 'checker' } : { runId: 'actor', sessionId: 'actor' });
+  assert.equal(worker.budget.snapshot().turns, 2000);
+  assert.deepEqual(worker.budget.snapshot().consumers, { extractor: 1000, checker: 1000 });
+  assert.throws(() => worker.budget.consumeTurn('checker', { runId: 'checker', sessionId: 'checker' }), { code: 'TURN_LIMIT' });
+  assert.throws(() => worker.budget.consumeTurn('extractor'), { code: 'TURN_LIMIT' });
   await worker.close();
 });
 

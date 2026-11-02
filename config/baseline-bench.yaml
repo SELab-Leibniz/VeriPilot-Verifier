@@ -32,7 +32,7 @@ stopCorrection:
   enabled: true
   waitMode: until_pass
   fileQualityReviewEnabled: false
-  assessmentTimeoutMs: 1800000
+  assessmentTimeoutMs: 90000000
   maxCorrectionsPerFlow: 2
   maxCorrectionsPerSession: 4
 reviewers:

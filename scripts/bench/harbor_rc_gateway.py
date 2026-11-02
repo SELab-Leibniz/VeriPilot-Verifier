@@ -79,6 +79,7 @@ def validate_receipt(ticket: dict[str, Any], receipt: dict[str, Any]) -> dict[st
 
 
 class RcGatewayOptions(OpenClawOptions):
+    rc_baseline_limits: dict[str, int] | None = None
     rc_verifier_uv_archive: Path | None = Field(default=None, description="Optional frozen upstream uv 0.9.5 Linux archive, preinstalled before task time to tolerate verifier installer network failure")
     rc_policy_path: Path | None = None
     rc_policy_profile: Literal["full", "baseline"] = "full"
@@ -221,7 +222,7 @@ class RcGatewayOpenClaw(OpenClaw):
                 "instructionPath": remote + "/instruction.txt", "resultPath": remote + "/result.json", "artifactHashes": hashes,
                 "policyPath": remote + "/harbor-evaluation.yaml", "criteriaPath": remote + "/harbor-document-review.md",
                 "nativeTranscriptOutput": "/logs/agent/openclaw.session.jsonl",
-                "policyProfile": self.options.rc_policy_profile}
+                "policyProfile": self.options.rc_policy_profile, "baselineLimits": self.options.rc_baseline_limits}
         spec_file = self.logs_dir / "rc-public-run.json"
         spec_file.write_text(json.dumps(spec, indent=2) + "\n")
         await environment.upload_file(spec_file, remote + "/run.json")

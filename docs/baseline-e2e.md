@@ -42,12 +42,16 @@ node --env-file="$HOME/.openclaw/.env" scripts/run-baseline.mjs \
 | timeoutMs | 600000 | --timeout-ms | 提取与独立覆盖审查共享的 10 分钟窗口 |
 | assessmentTimeoutMs | 900000 | --assessment-timeout-ms | 整轮上限 15 分钟，包含宿主准备和发布 |
 | requestTimeoutMs | 600000 | --request-timeout-ms | 宿主模型请求超时配置 |
+| maxSteps | 200 | --max-steps | 提取器与审查器共享的模型步数 |
 | maxRepairs | 8 | --max-repairs | 原运行内格式和领域修复额度 |
+| maxAuditCalls | 2 | --max-audit-calls | 独立覆盖审查次数 |
+| maxExternalRepairs | 1 | --max-external-repairs | 外部语义反馈修复次数 |
 | model | glm-5.3-flash（示例） | --model | 本次使用的模型 |
 | api | openai-completions（示例） | --api | 模型接口协议 |
 | baseUrl | Coding 接口（示例） | --base-url | 模型接口地址 |
 
-时间参数支持 1000–3600000 毫秒，整轮上限不得小于提取窗口。取消、父级截止和宿主自身限制仍然生效。
+示例配置已设为提取 24 小时、2000 steps、2000 次修复/审查，整轮 25 小时。所有限制保留且可配置；修复、审查和重新翻页不重置原始计时或共享步数。
+基线时间参数支持 1000–2147423647 毫秒，整轮上限不得小于提取窗口。普通审查器的默认限制不变。取消、父级截止和宿主自身限制仍然生效。
 放宽时间不会跳过来源校验、独立审查、条件一致性或真实保存回执检查。
 
 ## 输出与失败

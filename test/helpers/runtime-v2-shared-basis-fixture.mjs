@@ -71,7 +71,7 @@ export function sharedOriginalDuties({ source, unit, fullText }) {
   throw new Error(`Declare an independent source-only expectation for ${source.kind}:${source.ref}; unknown text cannot default to CONTEXT`);
 }
 
-async function fixture(t, { generic = false, wireMode = 'full', closedMixed = false, materialAlongside = false } = {}) {
+async function fixture(t, { generic = false, wireMode = 'full', closedMixed = false, materialAlongside = false, baselineLimits } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-basis-hooks-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const skillName = closedMixed ? 'delivery-verifier' : 'demo';
@@ -104,6 +104,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
   registerTaskTools(api);
   registerReviewerProgress(api);
   const native = createOpenClawReviewerFactory(api, { stopReviewEngine: 'task', baselineWireMode: wireMode,
+    ...(baselineLimits ? { baselineLimits } : {}),
     runEmbeddedAgent: async params => {
       if (params.toolsAllow?.includes('source_read') && !params.toolsAllow.includes('finish_baseline')) {
         await state.coverageLaunch?.(params);
@@ -142,6 +143,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
       }
       const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey }, tools = registry(ctx), seen = new Map();
       state.baselinePrompts.push(JSON.parse(params.prompt));
+      (state.baselineTimeouts ??= []).push(params.runTimeoutOverrideMs);
       async function call(name, args) {
         const id = `actual-call-${++toolCall}`; params.onAssistantMessageStart();
         const result = await tools.find(tool => tool.name === name).execute(id, args);

@@ -112,6 +112,15 @@ test("native entry registers configured Hook windows up to sixty minutes", async
   }
 });
 
+test('baseline-specific long Hook window is registered without changing ordinary Hook defaults', async t => {
+  const project = await workspace(t), host = api(project);
+  host.pluginConfig = { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000 }, hookTimeoutMs: 86460000 };
+  entry.register(host);
+  for (const name of ['before_prompt_build', 'before_tool_call', 'reply_payload_sending', 'agent_end'])
+    assert.equal(host.hooks.get(name).options.timeoutMs, 86460000);
+  assert.equal(host.hooks.get('session_end').options.timeoutMs, 1000);
+});
+
 test("OpenClaw validates incompatible CLI reviewer settings before starting work", async (t) => {
   const project = await workspace(t);
   await fs.mkdir(path.join(project, ".runtime-corrector"));

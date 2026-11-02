@@ -104,7 +104,7 @@ export async function collectHarborBaselineEvidence({ projectRoot, pluginRoot, s
 
 export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot, outputRoot, ticket, rcEnabled, instruction,
   probeOnly = false, signal, artifactHashes = null, policyPath, criteriaPath, nativeTranscriptOutput,
-  policyProfile = 'full' }) {
+  policyProfile = 'full', baselineLimits = null }) {
   validateHarborRelayTicket(ticket); signal?.throwIfAborted();
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('HARBOR_HOST_VERSION_MISMATCH');
@@ -123,10 +123,14 @@ export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot,
   const operationalPolicy = await prepareHarborWorkspace({ projectRoot: project, pluginRoot: plugin, policyPath, criteriaPath, profile: policyProfile });
   await fs.mkdir(outputRoot); const root = await fs.realpath(outputRoot), port = await freePort();
   const config = harborGatewayConfig({ root, projectRoot: project, pluginRoot: plugin, ticket, port, rcEnabled });
-  if (policyProfile === 'baseline') config.plugins.entries['runtime-corrector'].config = {
-    businessRunTimeoutMs: Math.min(900000, ticket.officialWallMs),
-    hookTimeoutMs: Math.min(1800000, ticket.officialWallMs), baselineWireMode: 'full',
-  };
+  if (policyProfile === 'baseline') {
+    const limits = baselineLimits ? (await import(pathToFileURL(path.join(plugin, 'lib/review-task/baseline-limits.mjs')).href)).resolveBaselineLimits(baselineLimits) : null;
+    config.plugins.entries['runtime-corrector'].config = {
+      businessRunTimeoutMs: Math.min(900000, ticket.officialWallMs),
+      hookTimeoutMs: Math.min((limits?.timeoutMs ?? 1800000) + (limits ? 60000 : 0), ticket.officialWallMs),
+      baselineWireMode: 'full', ...(baselineLimits ? { baselineLimits } : {}),
+    };
+  }
   const savedEnv = new Map(), changedEnv = { OPENCLAW_STATE_DIR: path.join(root, 'state'), OPENCLAW_CONFIG_PATH: path.join(root, 'config.json'),
     OPENCLAW_GATEWAY_TOKEN: randomBytes(32).toString('hex'), OPENCLAW_SKIP_CRON: '1', OPENAI_API_KEY: ticket.placeholderCredential };
   // A terminal-capable task must never inherit a real provider key. The actual

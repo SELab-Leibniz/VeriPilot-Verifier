@@ -535,9 +535,12 @@ export async function installNativeStopCapture({ hostRoot, directory, projectRoo
 }
 
 export async function createNativeStopEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, legacy = false, traceTransport = false,
-  provider: selectedProvider, stateRoot, capture, fixtureFence, batch, providerCredential, providerTimeoutMs, standaloneBaseline = false }) {
-  if (providerTimeoutMs !== undefined && (!Number.isSafeInteger(providerTimeoutMs) || providerTimeoutMs < 1000 || providerTimeoutMs > 3600000))
-    throw new Error('Provider timeout must be an integer between 1000 and 3600000 ms.');
+  provider: selectedProvider, stateRoot, capture, fixtureFence, batch, providerCredential, providerTimeoutMs, standaloneBaseline = false,
+  baselineLimits }) {
+  const maximumProviderWindow = standaloneBaseline ? 2_147_423_647 : 3600000;
+  if (providerTimeoutMs !== undefined && (!Number.isSafeInteger(providerTimeoutMs) || providerTimeoutMs < 1000 || providerTimeoutMs > maximumProviderWindow))
+    throw new Error(`Provider timeout must be an integer between 1000 and ${maximumProviderWindow} ms.`);
+  if (baselineLimits && !standaloneBaseline) throw new Error('Baseline limits require an explicit standalone baseline');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('The native live probe requires installed OpenClaw 2026.7.1-2.');
   const coding = selectedProvider?.api === 'openai-completions';
@@ -549,7 +552,7 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
   if (coding && !capture && !['metered_native_stop_batch', 'metered_native_baseline_batch', 'metered_native_document_batch', 'metered_native_skill_batch'].includes(batch?.kind)
     && !(standaloneBaseline && providerTimeoutMs !== undefined && fixtureFence)) throw new Error('Native Coding Plan dispatch needs a separately frozen batch or an explicitly bounded standalone baseline');
   const providerWallMs = coding && batch ? batch.metrics().limits.wallMs : coding && standaloneBaseline ? providerTimeoutMs : null;
-  if (providerWallMs !== null && (!Number.isSafeInteger(providerWallMs) || providerWallMs < 1000 || providerWallMs > 3600000))
+  if (providerWallMs !== null && (!Number.isSafeInteger(providerWallMs) || providerWallMs < 1000 || providerWallMs > maximumProviderWindow))
     throw new Error('Native provider policy requires the existing finite batch wall limit');
   if (!coding && (!process.env.ANTHROPIC_AUTH_TOKEN || !process.env.ANTHROPIC_BASE_URL)) throw new Error('The native live probe requires the existing Anthropic-compatible provider environment.');
   const credential = coding ? providerCredential ?? process.env[selectedProvider.credentialEnv] : process.env.ANTHROPIC_AUTH_TOKEN;
@@ -580,6 +583,11 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
             supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}) }] } } },
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] },
       entries: { 'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } } } } };
+  if (standaloneBaseline && baselineLimits) {
+    config.agents.defaults.timeoutSeconds = Math.ceil(baselineLimits.timeoutMs / 1000);
+    config.diagnostics = { stuckSessionAbortMs: baselineLimits.timeoutMs };
+    config.plugins.entries['runtime-corrector'].config = { baselineLimits, hookTimeoutMs: baselineLimits.timeoutMs + 60000 };
+  }
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
   // Resolved only in this process; the saved profile contains the env name.
   config.models.providers[providerId].apiKey = credential;
@@ -609,7 +617,8 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
       return runtime.agent.runEmbeddedAgent(params);
     } } : {}),
     ...(legacyTask ? { runStopTask: legacyTask } : {}),
-    pluginRoot, onRunStart: id => { starts.push(id); }, onRunEnd: id => { ends.push(id); },
+    pluginRoot, ...(baselineLimits ? { baselineLimits } : {}),
+    onRunStart: id => { starts.push(id); }, onRunEnd: id => { ends.push(id); },
   });
   if (legacyTask) factory.supportsStopGroups = true;
   const invokeReview = async (input, handoff = false) => {

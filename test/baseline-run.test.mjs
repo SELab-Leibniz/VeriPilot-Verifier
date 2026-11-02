@@ -16,6 +16,13 @@ test('standalone baseline config permits longer finite windows and feeds the pro
 
 test('baseline windows remain finite and assessment cannot expire before the configured extraction window', () => {
   for (const settings of [{ timeoutMs: Infinity }, { assessmentTimeoutMs: 5000 }, { requestTimeoutMs: 0 },
-    { maxRepairs: -1 }, { maxRepairs: 21 }, { model: '' }])
+    { maxRepairs: -1 }, { maxRepairs: Infinity }, { model: '' }])
     assert.throws(() => baselineRunSettings(settings));
+});
+
+test('standalone baseline accepts the same finite 24-hour 2000-step configuration', () => {
+  const settings = baselineRunSettings({ timeoutMs: 86400000, assessmentTimeoutMs: 90000000,
+    requestTimeoutMs: 86400000, maxSteps: 2000, maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 });
+  assert.equal(settings.timeoutMs, 86400000); assert.equal(settings.maxSteps, 2000);
+  assert.equal(settings.maxRepairs, 2000); assert.equal(settings.maxAuditCalls, 2000);
 });

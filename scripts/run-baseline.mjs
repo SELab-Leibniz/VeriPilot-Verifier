@@ -11,21 +11,23 @@ import { ensureTask, taskStatePath } from '../lib/runtime-v2/task-store.mjs';
 import { refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
 import { loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { verifyBaselineCoverageProof } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
-import { resolveReviewTimeoutMs } from '../lib/review-timeout.mjs';
+import { resolveBaselineLimits, MAX_BASELINE_TIMEOUT_MS } from '../lib/review-task/baseline-limits.mjs';
 
 export const BASELINE_RUN_DEFAULTS = Object.freeze({
   timeoutMs: 600000, assessmentTimeoutMs: 900000, requestTimeoutMs: 600000,
-  maxRepairs: 8, model: 'glm-5.3', api: 'anthropic-messages', baseUrl: null,
+  maxSteps: 200, maxRepairs: 8, maxAuditCalls: 2, maxExternalRepairs: 1,
+  model: 'glm-5.3', api: 'anthropic-messages', baseUrl: null,
 });
 
 export function baselineRunSettings(value = {}) {
   const settings = { ...BASELINE_RUN_DEFAULTS, ...value };
   for (const key of ['timeoutMs', 'assessmentTimeoutMs', 'requestTimeoutMs'])
-    settings[key] = resolveReviewTimeoutMs(settings[key], key);
+    if (!Number.isSafeInteger(settings[key]) || settings[key] < 1000 || settings[key] > MAX_BASELINE_TIMEOUT_MS)
+      throw new Error(`Invalid finite ${key}.`);
   if (settings.assessmentTimeoutMs < settings.timeoutMs)
     throw new Error('assessmentTimeoutMs must be at least timeoutMs.');
-  if (!Number.isSafeInteger(settings.maxRepairs) || settings.maxRepairs < 0 || settings.maxRepairs > 20)
-    throw new Error('maxRepairs must be an integer between 0 and 20.');
+  resolveBaselineLimits({ timeoutMs: settings.timeoutMs, maxSteps: settings.maxSteps, maxRepairs: settings.maxRepairs,
+    maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs });
   if (typeof settings.model !== 'string' || !settings.model.trim()) throw new Error('A model is required.');
   if (!['anthropic-messages', 'openai-completions'].includes(settings.api)) throw new Error('Unsupported provider API.');
   if (settings.baseUrl !== null) {
@@ -82,12 +84,16 @@ export async function runBaseline({ input, materials = [], output, hostRoot,
     onProgress({ phase: 'host-setup', settings });
     native = await createNativeStopEvaluation({ hostRoot, sourceRoot, projectRoot, outputRoot: root,
       fixtureFence: { projectRoot }, traceTransport: true, providerTimeoutMs: settings.requestTimeoutMs, standaloneBaseline: true,
+      baselineLimits: { timeoutMs: settings.timeoutMs, maxSteps: settings.maxSteps, maxRepairs: settings.maxRepairs,
+        maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs },
       ...(settings.api === 'openai-completions' ? { provider: { api: settings.api, baseUrl: settings.baseUrl,
         model: settings.model, credentialEnv }, providerCredential: process.env[credentialEnv] } : {}) });
     const runtimeV2 = compileRuntimeV2Config({ version: 2,
       dynamicGroundTruth: { enabled: true, materialRoots },
       reviewers: { groundTruthExtractor: { session: 'detached', model: native.modelRef,
-        timeoutMs: settings.timeoutMs, formatRepairAttempts: settings.maxRepairs, maxOutputTokens: 32768 } },
+        // Ordinary reviewer schema retains its existing caps. The baseline-only
+        // factory option above owns the longer original extraction allowance.
+        timeoutMs: Math.min(settings.timeoutMs, 3600000), formatRepairAttempts: Math.min(settings.maxRepairs, 20), maxOutputTokens: 32768 } },
       skillCorrection: { enabled: false }, artifactCorrection: { groundTruthReviewEnabled: false },
       stopCorrection: { enabled: false } });
     onProgress({ phase: 'extract-audit-publish', taskId: task.taskId });
@@ -120,12 +126,14 @@ export async function runBaseline({ input, materials = [], output, hostRoot,
 
 export async function main(args = process.argv.slice(2)) {
   if (args.includes('--help')) {
-    console.log('Usage: node scripts/run-baseline.mjs --input requirements.txt --output NEW_DIRECTORY --host-root OPENCLAW_ROOT [--material PATH ...] [--config JSON] [--timeout-ms N] [--assessment-timeout-ms N] [--request-timeout-ms N] [--max-repairs N] [--model NAME] [--api NAME] [--base-url URL] [--credential-env NAME]');
+    console.log('Usage: node scripts/run-baseline.mjs --input requirements.txt --output NEW_DIRECTORY --host-root OPENCLAW_ROOT [--material PATH ...] [--config JSON] [--timeout-ms N] [--assessment-timeout-ms N] [--request-timeout-ms N] [--max-steps N] [--max-repairs N] [--max-audit-calls N] [--max-external-repairs N] [--model NAME] [--api NAME] [--base-url URL] [--credential-env NAME]');
     return;
   }
   const values = {}, materials = [], overrides = {};
   const keys = { '--timeout-ms': 'timeoutMs', '--assessment-timeout-ms': 'assessmentTimeoutMs',
-    '--request-timeout-ms': 'requestTimeoutMs', '--max-repairs': 'maxRepairs', '--model': 'model', '--api': 'api', '--base-url': 'baseUrl' };
+    '--request-timeout-ms': 'requestTimeoutMs', '--max-steps': 'maxSteps', '--max-repairs': 'maxRepairs',
+    '--max-audit-calls': 'maxAuditCalls', '--max-external-repairs': 'maxExternalRepairs',
+    '--model': 'model', '--api': 'api', '--base-url': 'baseUrl' };
   for (let index = 0; index < args.length; index++) {
     const key = args[index], value = args[++index];
     if (!value || value.startsWith('--')) throw new Error(`Missing value for ${key}`);
