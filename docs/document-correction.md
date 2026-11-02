@@ -18,6 +18,8 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
 
 GLM-5.3-Flash 使用用户配置的原生 Coding API，并显式发送支持的 `reasoning_effort`。业务复制和文档角色使用 low，基线抽取及其独立审查使用 high。该模型不支持关闭思考；原生配置的 off 映射为最轻的 low。`baselineFormatRepairAttempts` 可在同一个 JSON 配置中设置为 0–20，默认 12；它只增加有界格式修复机会，不跳过来源、权威或独立审查。
 
+模型的思考限制与强度参数见[智谱官方模型说明](https://docs.bigmodel.cn/cn/guide/models/vlm/glm-5.3-flash)。融合实验对照和验收门槛记录于 `docs/document-fusion-plan-20261102.json`；旧文档分支的历史成功记录不替代融合后的真实回归。
+
 这项测试评价真实 benchmark 原始需求在文档中的保真和纠偏效果。原始任务的实现和执行指令作为方案内容保留，本次不执行调度器、不生成 benchmark 运行产物，也不报告官方 benchmark 得分。
 
 ### 更多完整需求样例

@@ -6,9 +6,30 @@
   "documentBranchHead": "aeffc2b",
   "strategy": "Preserve the main worktree baseline/reviewer/publication improvements; merge missing document copy guard, disabled style-rule behavior, host failure containment, scoped business tool policy, configurable budgets and document benchmark fixtures. Do not overwrite the newer main reviewer with the older document branch version.",
   "experimentArms": {
-    "baseline": "Frozen actual main working tree, with shared measurement harness only; no copyFrom capability enabled.",
+    "baseline": "Frozen actual main working tree plus the identical common baseline compatibility prerequisites and measurement harness; no document feature or copyFrom capability enabled.",
     "candidate": "Same frozen main tree plus resolved document branch; copyFrom explicitly enabled only for copy-contract document tasks."
   },
+  "selectedBaselineStrategy": "For this explicit document-copy task only, materialRoots is empty: the actual user copy contract and project edit scope are independently extracted and audited. The complete immutable benchmark requirements remain declared document Ground Truth, are read natively and are compared in full by the opt-in copy guard. Ordinary design-task material defaults do not change.",
+  "commonPrerequisites": [
+    "Expose the existing owned proposal object shape and action fields to native tool serialization without coercing model values or bypassing branch validation",
+    "Omit absent optional properties from program-owned finite-JSON receipts",
+    "Explain existing full-text fallback and source-only inventory shapes without supplying semantic decisions",
+    "Retain the coverage auditor's exact original evidence paths after native settlement so publication can independently re-verify them"
+  ],
+  "providerConfiguration": {
+    "model": "glm-5.3-flash",
+    "endpoint": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "nativeApi": "openai-completions",
+    "businessAndDocumentEffort": "low",
+    "baselineExtractorAndIndependentAuditorEffort": "high",
+    "baselineFormatRepairAttempts": 12,
+    "credentials": "User-authorized process memory only; neither configuration files nor committed artifacts contain credentials"
+  },
+  "rejectedExperiments": [
+    "Re-extracting the complete large benchmark body as execution obligations was inappropriate for a copy task and delayed publication",
+    "The Anthropic-compatible off setting did not disable this model's mandatory thinking; actual long thought-only responses were retained as failures",
+    "Low effort for baseline roles exhausted bounded repair opportunities; the selected paired configuration preserves high effort for extraction and its independent audit"
+  ],
   "controls": [
     "Same original requirements and four seeded deviations per case",
     "Same actual OpenClaw host, GLM model, provider, business prompt and tool policy",
