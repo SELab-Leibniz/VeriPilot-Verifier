@@ -546,6 +546,23 @@ async function nativeAuditAttempt(params, tools, name, args, id) {
   return result;
 }
 
+test('a failed audit page read remains an owned negative transaction and cannot poison later genuine coverage', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageAfterInventory = async ({ params, tools }) => {
+    const result = await nativeAuditAttempt(params, tools, 'source_read', { path: 'candidate-0.txt', offset: 2 }, 'invalid-candidate-page');
+    assert.equal(result.isError, true); assert.equal(result.details?.citation, undefined);
+    const feedback = JSON.parse(result.content[0].text);
+    assert.equal(feedback.code, 'SOURCE_READ_RANGE_INVALID');
+  };
+  await f.refresh();
+  const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
+  const denied = bundle.disclosures.find(row => row.toolCallId === 'invalid-candidate-page');
+  assert.equal(denied.phase, 'DENIED'); assert.equal(denied.isError, true);
+  assert(bundle.citations.some(row => row.path === 'candidate-0.txt' && row.start === 1));
+  assert(!bundle.citations.some(row => row.path === 'candidate-0.txt' && row.start === 2));
+});
+
 for (const missing of ['native-append', 'genuine-persist-hook']) test(`inventory generic callback cannot unlock phase two without ${missing}`, async t => {
   const f = await sharedBasisFixture(t); let observed = false;
   if (missing === 'native-append') f.state.coveragePersistInventory = false;

@@ -73,6 +73,11 @@
         "maximum": 86400000,
         "description": "Optional RC business-correction execution window, separate from reviewer and Hook budgets. Zero disables the RC execution deadline after a trusted start; admission, reviews, cancellation and scope checks remain active. The host run timeout is configured separately."
       },
+      "baselineWireMode": {
+        "type": "string",
+        "enum": ["draft", "compact", "full"],
+        "description": "Optional existing baseline extraction encoding. All modes retain complete original reads, source binding and independent coverage audit."
+      },
       "hookTimeoutMs": {
         "type": "integer",
         "minimum": 2000,

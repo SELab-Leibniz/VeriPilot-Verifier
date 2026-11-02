@@ -18,9 +18,11 @@
 ## 配置与实验边界
 
 `config/baseline-bench.yaml` 保留动态需求基线、实现纠偏和 Stop，关闭独立 Skill/文档纠偏与多次 onboarding 抽取。
+第 7 次使用组件已有的 `baselineWireMode: full`，从完整语义提交候选；完整原文读取、原文绑定、独立覆盖审查、修复预算和正式发布检查均保留。默认工作流的编码选择不变。
 提取/审查角色窗口和单轮验收均为 30 分钟，业务纠偏窗口为 15 分钟，格式修复最多 20 次。所有步骤继续受原始总时限约束。
 提交前的结构校验修复使用这份共享次数预算；独立覆盖审查保留最多一次语义修复和两次审查，不会因前面的输出路径错误失去语义修复机会。
 宿主 `diagnostics.stuckSessionAbortMs` 和模型网络窗口随总任务时限配置，避免默认无进展恢复中断仍在输出的推理流。GLM 5.3 强制思考，宿主的 `off` 映射到提供方支持的 `low`；未发送禁用思考参数（[官方说明](https://docs.z.ai/guides/capabilities/thinking)）。
+该试验显式配置宿主 `hookTimeoutMs: 1800000`，与角色窗口一致。审查中越界翻页作为带原生调用身份的失败回执保留，不产生引用或读取证明；后续有效读取仍必须完整完成。
 前 3 次开发运行把整体业务窗口从原任务的 30 分钟放宽到 60 分钟；后续放宽到 90 分钟。原始输入、性能阈值和官方评分器保持不变。
 结果属于放宽时间预算的开发验收，不用于排行榜或 OFF/ON 收益比较。
 
@@ -40,7 +42,7 @@
 本次目录为 `.runtime-correction/baseline-bench/scheduler/`：
 
 - `public-source.json`：原始任务身份及开发时间预算调整。
-- `manifest-001.json` 至 `manifest-006.json`：逐轮冻结的输入和配置。
+- `manifest-001.json` 至 `manifest-007.json`：逐轮冻结的输入和配置。
 - `bootstrap/result.json`：容器内实际宿主的无模型启动结果。
 - `run-001/`：首轮失败原始记录。宿主无进展恢复中断原业务；当时尚无候选产物、基线或故障注入，第 6 次请求用量未知，完整保留其预留额度。
 - `run-002/`：10 分钟基线审查耗尽预算，候选未发布。反馈已区分多义务映射数量错误与实际归属错误；保留第 29 次用量未知的完整预留额度。
@@ -48,8 +50,9 @@
 - `run-004/`：发现提交前校验耗尽唯一语义修复机会，启动后在任何模型请求前停止；实际请求数为 0。
 - `run-005/`：业务产出两份计划，基线审查仍未确定；第 40 次请求收到上游 401，终审未完成。原评分器下载依赖失败，不能把 reward=0 解释为有效性能评分。
 - `verifier-preflight-006/`：使用第 5 次既有候选、原始镜像及未改动评分器的独立环境预检。5 个测试通过、1 个性能测试失败；不覆盖原试验记录。
-- `run-006/on/external-controller/`：修正配置后的全部模型请求、统一计量和原始响应。
-- `run-006/on/jobs/`：官方任务运行、原生业务轨迹和官方评分输出。
+- `run-006/`：独立审查有效提交 REPAIR，但一次越界翻页未被登记为失败回执，复验以 `Source disclosure lacks its exact owned gate transaction` 拒绝；操作员停止旧版本并修复此程序问题。
+- `run-007/on/external-controller/`：修正配置后的全部模型请求、统一计量和原始响应。
+- `run-007/on/jobs/`：官方任务运行、原生业务轨迹和官方评分输出。
 - Agent 日志中的 `rc-runtime/host-run/baseline-summary.json`：发布后的基线、当前验收和证据目录。
 - 基线未发布时，收集器也返回明确 `UNPUBLISHED`、版本 0 和当前验收状态，保留任务记录；不会以缺少 current.json 的普通文件错误掩盖未完成原因。
 
@@ -66,7 +69,7 @@ bench_root="$PWD/.runtime-correction/baseline-bench/scheduler"
 read -s 'RC_HARBOR_UPSTREAM_CREDENTIAL?GLM key: '
 export RC_HARBOR_UPSTREAM_CREDENTIAL
 node scripts/bench/run-harbor-gateway-pilot.mjs --live \
-  --manifest "$bench_root/manifest-006.json" \
+  --manifest "$bench_root/manifest-007.json" \
   --output "$bench_root/run-$(date +%Y%m%dT%H%M%S)"
 unset RC_HARBOR_UPSTREAM_CREDENTIAL
 ```

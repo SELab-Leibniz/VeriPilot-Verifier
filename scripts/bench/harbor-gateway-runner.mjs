@@ -125,6 +125,7 @@ export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot,
   const config = harborGatewayConfig({ root, projectRoot: project, pluginRoot: plugin, ticket, port, rcEnabled });
   if (policyProfile === 'baseline') config.plugins.entries['runtime-corrector'].config = {
     businessRunTimeoutMs: Math.min(900000, ticket.officialWallMs),
+    hookTimeoutMs: Math.min(1800000, ticket.officialWallMs), baselineWireMode: 'full',
   };
   const savedEnv = new Map(), changedEnv = { OPENCLAW_STATE_DIR: path.join(root, 'state'), OPENCLAW_CONFIG_PATH: path.join(root, 'config.json'),
     OPENCLAW_GATEWAY_TOKEN: randomBytes(32).toString('hex'), OPENCLAW_SKIP_CRON: '1', OPENAI_API_KEY: ticket.placeholderCredential };
