@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { pathToFileURL } from 'node:url';
+import { createBaselineBenchFault } from '../scripts/bench/baseline-bench-fault.mjs';
+
+test('declared bench fault edits one output record once and only before the owned original finalization', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baseline-bench-fault-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const projectRoot = path.join(root, 'project'); await fs.mkdir(projectRoot);
+  const row = { request_id: 'r1', batch_id: 'b1', shape: { seq_align: 64, heads_align: 32, hidden_align: 4096 } };
+  const original = JSON.stringify(row) + '\n' + JSON.stringify({ ...row, request_id: 'r2' }) + '\n';
+  const file = path.join(projectRoot, 'plan.jsonl'); await fs.writeFile(file, original);
+  const control = await createBaselineBenchFault({ root, projectRoot, fault: { kind: 'jsonl-heads-align', file: 'plan.jsonl' } });
+  await fs.writeFile(control.targetPath, JSON.stringify({ runId: 'original', sessionId: 'business' }));
+  let finalize;
+  const plugin = (await import(pathToFileURL(path.join(control.path, 'index.mjs')).href)).default;
+  plugin.register({ on(name, callback) { assert.equal(name, 'before_agent_finalize'); finalize = callback; } });
+  await finalize({ runId: 'another' }, { sessionId: 'business' });
+  assert.equal(await fs.readFile(file, 'utf8'), original);
+  await finalize({ runId: 'original' }, { sessionId: 'business' });
+  const lines = (await fs.readFile(file, 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.equal(lines[0].shape.heads_align, 16); assert.deepEqual(lines[1], { ...row, request_id: 'r2' });
+  assert.equal(JSON.parse(await fs.readFile(control.receiptPath)).applied, true);
+  await fs.writeFile(file, original);
+  await finalize({ runId: 'original' }, { sessionId: 'business' });
+  assert.equal(await fs.readFile(file, 'utf8'), original, 'A repaired output is never reinjected.');
+});

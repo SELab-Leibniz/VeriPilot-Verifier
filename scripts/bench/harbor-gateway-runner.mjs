@@ -7,9 +7,10 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { awaitHarborGatewaySettlement, harborGatewayErrorDiagnostic } from './harbor-gateway-controller.mjs';
 import { prepareHarborWorkspace } from './prepare-harbor-workspace.mjs';
+import { createBaselineBenchFault } from './baseline-bench-fault.mjs';
 
 export function validateHarborRelayTicket(ticket, now = Date.now()) {
-  if (ticket?.kind !== 'rc-harbor-relay-ticket-v1' || ticket.model !== 'openai/glm-5.3'
+  if (ticket?.kind !== 'rc-harbor-relay-ticket-v1' || !['openai/glm-5.3', 'openai/glm-5.3-flash'].includes(ticket.model)
     || !/^rc-placeholder-[a-f0-9]{64}$/u.test(ticket.placeholderCredential ?? '')
     || !Number.isSafeInteger(ticket.deadlineAt) || ticket.deadlineAt <= now
     || !Number.isSafeInteger(ticket.officialWallMs) || ticket.officialWallMs < 1000
@@ -25,6 +26,7 @@ export function validateHarborRelayTicket(ticket, now = Date.now()) {
 
 export function harborGatewayConfig({ root, projectRoot, pluginRoot, ticket, port, rcEnabled }) {
   validateHarborRelayTicket(ticket);
+  const model = ticket.model.slice('openai/'.length);
   return { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, browser: { enabled: false }, diagnostics: { enabled: true },
@@ -38,7 +40,7 @@ export function harborGatewayConfig({ root, projectRoot, pluginRoot, ticket, por
     // host still caps them by each original/private run's remaining timeout.
     models: { mode: 'replace', providers: { openai: { api: 'openai-completions', baseUrl: ticket.relayBaseUrl,
       timeoutSeconds: Math.floor(ticket.officialWallMs / 1000),
-      models: [{ id: 'glm-5.3', name: 'glm-5.3', input: ['text'], reasoning: false, contextWindow: 128000,
+      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000,
         maxTokens: ticket.tokenLimits.outputPerRequest, compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens',
           supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: false } }] } } },
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
@@ -78,7 +80,8 @@ export function harborGatewayFailureDetails(error) {
 }
 
 export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot, outputRoot, ticket, rcEnabled, instruction,
-  probeOnly = false, signal, artifactHashes = null, policyPath, criteriaPath, nativeTranscriptOutput }) {
+  probeOnly = false, signal, artifactHashes = null, policyPath, criteriaPath, nativeTranscriptOutput,
+  policyProfile = 'full', fault = null }) {
   validateHarborRelayTicket(ticket); signal?.throwIfAborted();
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('HARBOR_HOST_VERSION_MISMATCH');
@@ -94,9 +97,17 @@ export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot,
   };
   await verifyArtifact();
   if (!policyPath || !criteriaPath) throw new Error('HARBOR_FROZEN_OPERATIONAL_POLICY_REQUIRED');
-  const operationalPolicy = await prepareHarborWorkspace({ projectRoot: project, pluginRoot: plugin, policyPath, criteriaPath });
+  const operationalPolicy = await prepareHarborWorkspace({ projectRoot: project, pluginRoot: plugin, policyPath, criteriaPath, profile: policyProfile });
   await fs.mkdir(outputRoot); const root = await fs.realpath(outputRoot), port = await freePort();
   const config = harborGatewayConfig({ root, projectRoot: project, pluginRoot: plugin, ticket, port, rcEnabled });
+  if (policyProfile === 'baseline') config.plugins.entries['runtime-corrector'].config = {
+    businessRunTimeoutMs: Math.min(900000, ticket.officialWallMs),
+  };
+  const faultControl = await createBaselineBenchFault({ root, projectRoot: project, fault });
+  if (faultControl) {
+    config.plugins.allow.push(faultControl.id); config.plugins.load.paths.push(faultControl.path);
+    config.plugins.entries[faultControl.id] = { enabled: true, hooks: { allowPromptInjection: true, allowConversationAccess: true } };
+  }
   const savedEnv = new Map(), changedEnv = { OPENCLAW_STATE_DIR: path.join(root, 'state'), OPENCLAW_CONFIG_PATH: path.join(root, 'config.json'),
     OPENCLAW_GATEWAY_TOKEN: randomBytes(32).toString('hex'), OPENCLAW_SKIP_CRON: '1', OPENAI_API_KEY: ticket.placeholderCredential };
   // A terminal-capable task must never inherit a real provider key. The actual
@@ -141,6 +152,7 @@ export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot,
     }
     instructionIdentity = harborInstructionIdentity(instruction);
     runId = randomUUID();
+    if (faultControl) await fs.writeFile(faultControl.targetPath, JSON.stringify({ runId, sessionId }));
     await fs.writeFile(path.join(root, 'original-instruction-identity.json'), JSON.stringify({
       entry: 'agent', runId, sessionId, sessionKey, deadlineAt: ticket.deadlineAt, ...instructionIdentity }, null, 2));
     await dispatchHarborOriginalAgent({ request, instruction, runId, sessionId, sessionKey, deadlineAt: ticket.deadlineAt });
@@ -160,7 +172,21 @@ export async function runHarborGatewayTrial({ hostRoot, projectRoot, pluginRoot,
     if (!sessionFile.startsWith(root + path.sep)) throw new Error('HARBOR_NATIVE_TRAJECTORY_OUTSIDE_ISOLATED_PROFILE');
     const nativeTranscript = await fs.readFile(sessionFile);
     await fs.writeFile(nativeTranscriptOutput, nativeTranscript);
+    let baselineEvidence = null;
+    if (policyProfile === 'baseline') {
+      const { findTask, taskDirectory } = await import(pathToFileURL(path.join(plugin, 'lib/runtime-v2/task-store.mjs')).href);
+      const task = await findTask({ projectRoot: project, sessionId });
+      if (!task) throw new Error('BASELINE_BENCH_TASK_MISSING');
+      const taskRoot = taskDirectory(project, task.taskId), destination = path.join(root, 'baseline-evidence');
+      await fs.cp(taskRoot, destination, { recursive: true });
+      const truth = JSON.parse(await fs.readFile(path.join(taskRoot, 'ground-truth/current.json'), 'utf8'));
+      baselineEvidence = { taskId: task.taskId, baselineVersion: truth.version, claims: truth.claims,
+        verification: task.verification, evidenceRoot: destination };
+      await fs.writeFile(path.join(root, 'baseline-summary.json'), JSON.stringify(baselineEvidence, null, 2));
+    }
+    const injected = faultControl ? await fs.readFile(faultControl.receiptPath, 'utf8').then(JSON.parse, () => null) : null;
     return { state: 'HOST_AND_RC_SETTLED_REQUIRES_EXTERNAL_METERING_RECEIPT', ...settled, sessionId, sessionKey,
+      baselineEvidence, faultControl: injected,
       originalBusinessEntry: 'agent', instructionSha256: instructionIdentity.rawSha256, instructionIdentity,
       observations, modelStarts, operationalPolicy,
       nativeTranscript: { path: nativeTranscriptOutput, source: sessionFile, bytes: nativeTranscript.length,

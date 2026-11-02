@@ -75,7 +75,7 @@ export function pilotAgentImport(manifest) {
 }
 
 export async function createPilotPhaseController({ officialWallMs, rcEnabled, limits, upstream,
-  onRecord = async () => {}, onPhaseStart = async () => {}, now = Date.now, setupWaitMs = 2400000 }) {
+  onRecord = async () => {}, onPhaseStart = async () => {}, now = Date.now, setupWaitMs = 2400000, model = 'glm-5.3' }) {
   if (!Number.isSafeInteger(officialWallMs) || officialWallMs < 1000 || typeof rcEnabled !== 'boolean'
     || !Number.isSafeInteger(setupWaitMs) || setupWaitMs < 1000) throw failure('PILOT_PHASE_ARGUMENTS_INVALID');
   const capability = `rc-control-${randomBytes(32).toString('hex')}`;
@@ -121,6 +121,7 @@ export async function createPilotPhaseController({ officialWallMs, rcEnabled, li
       const remaining = start.deadlineAt - now();
       if (remaining <= 0) throw failure('PILOT_PHASE_ALREADY_EXPIRED');
       relay = await createHarborProviderRelay({ limits: { ...limits, wallMs: remaining },
+        model,
         payloadBytes: limits.payloadBytes ?? 524288, bind: '0.0.0.0', advertisedHost: 'host.docker.internal',
         upstream: args => {
           if (state !== 'ACTIVE' || now() >= start.deadlineAt) throw failure('PILOT_OFFICIAL_DEADLINE');
@@ -227,12 +228,16 @@ export async function runHarborGatewayPilot({ manifestPath, output, credential, 
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
   const agentImportPath = pilotAgentImport(manifest);
   const marked = Object.hasOwn(manifest, 'diagnosticExecution');
-  const validArms = marked
+  const baselineExperiment = manifest.baselineExperiment?.kind === 'baseline-e2e-v1'
+    && manifest.agentKwargs?.rc_policy_profile === 'baseline';
+  const validArms = baselineExperiment ? JSON.stringify(manifest.arms) === JSON.stringify(['on']) : marked
     ? (manifest.diagnosticExecution?.kind === 'selected-arm-v1' && JSON.stringify(manifest.arms) === JSON.stringify(['off']))
       || (manifest.diagnosticExecution?.kind === 'selected-on-v1' && JSON.stringify(manifest.arms) === JSON.stringify(['on']))
     : JSON.stringify(manifest.arms) === JSON.stringify(['off', 'on']);
   if (manifest.kind !== 'rc-harbor-development-pilot-v1' || manifest.qualificationAccepted !== true
-    || manifest.model !== 'openai/glm-5.3' || manifest.frameworkCommit !== '58789aad577f432a4590209a8fd901f8c894f382'
+    || !['openai/glm-5.3', ...(baselineExperiment ? ['openai/glm-5.3-flash'] : [])].includes(manifest.model)
+    || Object.hasOwn(manifest, 'baselineExperiment') && !baselineExperiment
+    || manifest.frameworkCommit !== '58789aad577f432a4590209a8fd901f8c894f382'
     || !validArms
     || !Number.isSafeInteger(manifest.officialWallMs) || manifest.officialWallMs < 1000
     || !Number.isSafeInteger(manifest.armOuterWallMs) || manifest.armOuterWallMs < manifest.officialWallMs
@@ -246,8 +251,8 @@ export async function runHarborGatewayPilot({ manifestPath, output, credential, 
   for (const target of ['/root/.nvm', '/root/.npm']) {
     const off = manifest.armInstallCacheMounts?.off?.filter(mount => mount.target === target);
     const on = manifest.armInstallCacheMounts?.on?.filter(mount => mount.target === target);
-    if (off?.length !== 1 || on?.length !== 1 || off[0].type !== 'volume' || on[0].type !== 'volume'
-      || typeof off[0].source !== 'string' || typeof on[0].source !== 'string' || off[0].source === on[0].source
+    if ((!baselineExperiment && (off?.length !== 1 || off[0].type !== 'volume' || typeof off[0].source !== 'string' || off[0].source === on?.[0]?.source))
+      || on?.length !== 1 || on[0].type !== 'volume' || typeof on[0].source !== 'string'
       || manifest.environment?.mounts?.some(mount => mount.target === target)) throw failure('PILOT_INDEPENDENT_INSTALL_CACHES_REQUIRED');
   }
   const checkPins = async () => {
@@ -280,6 +285,7 @@ export async function runHarborGatewayPilot({ manifestPath, output, credential, 
     let phase;
     try {
       phase = await createPilotPhaseController({ officialWallMs: manifest.officialWallMs, rcEnabled: arm === 'on',
+        model: manifest.model.slice('openai/'.length),
         limits: manifest.limits, upstream: recordingUpstream(credential, control), onRecord: value => write(receipt, value),
         onPhaseStart: async () => { await setupProxy?.close(); } });
     } catch (error) { await setupProxy?.close(); throw error; }

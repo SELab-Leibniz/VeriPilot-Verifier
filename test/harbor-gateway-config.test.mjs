@@ -32,3 +32,11 @@ test('tickets reject external targets, real-key-shaped auth, expired wall time a
   assert.throws(() => validateHarborRelayTicket({ ...ticket(), deadlineAt: 1 }), /TICKET_INVALID/u);
   assert.throws(() => validateHarborRelayTicket({ ...ticket(), tokenLimits: {} }), /TICKET_INVALID/u);
 });
+
+test('baseline benchmark ticket retains its explicitly selected flash model throughout host configuration', () => {
+  const selected = { ...ticket(), model: 'openai/glm-5.3-flash' };
+  const config = harborGatewayConfig({ root: '/fixture', projectRoot: '/app', pluginRoot: '/fixture/plugin',
+    port: 1234, ticket: selected, rcEnabled: true });
+  assert.equal(config.agents.defaults.model.primary, selected.model);
+  assert.equal(config.models.providers.openai.models[0].id, 'glm-5.3-flash');
+});
