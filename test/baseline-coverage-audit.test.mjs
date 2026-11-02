@@ -205,6 +205,44 @@ test('multi-target issues repair both document owners in the original shared all
     && source.mappings.some(mapping => mapping.owner === 'CONTEXT' && mapping.claimIds.length === 0)));
 });
 
+test('zero-write path repair leaves the single semantic audit repair available in the same original budget', async t => {
+  const f = await sharedBasisFixture(t);
+  const wrong = ['Write the usage guide.', 'Write the reference guide.'].map(text => ({ ...operation(), text }));
+  const corrected = wrong.map(({ implementationRole, ...row }) => ({ ...row, verificationTarget: 'ARTIFACT' }));
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: wrong.map(row => row.text).join(' ') } }) + '\n');
+  f.state.sourceFrom = true;
+  f.state.deltaOperations = [{ ...wrong[0], expectedFiles: ['not-named-in-original.txt'] }, wrong[1]];
+  f.state.afterBaseline = () => { f.state.deltaOperations = wrong; };
+  f.state.coverageReport = context => {
+    const value = scriptedCoverageReport(context), row = value.sources.find(source => source.kind === 'USER_MESSAGE');
+    if (context.view.effectiveLedger.claims.every(claim => claim.verificationTarget === 'ARTIFACT')) return value;
+    value.verdict = 'REPAIR'; row.disposition = 'REPAIR';
+    row.issues = [{ ...row.mappings[0], claimIds: row.mappings.flatMap(mapping => mapping.claimIds), owner: 'ARTIFACT',
+      obligationIds: context.inventory.sources.find(source => source.kind === 'USER_MESSAGE').units.flatMap(unit => unit.obligations.map(duty => duty.obligationId)),
+      issueKind: 'CANDIDATE', expectedDuty: 'Write both guides.', condition: '', reason: 'These originals require document contents, not program runtime behavior.' }];
+    row.mappings = []; f.state.deltaOperations = corrected; return value;
+  };
+  await f.refresh();
+  const truth = await f.truth(), proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth });
+  assert.equal(truth.version, 1); assert(truth.claims.every(claim => claim.verificationTarget === 'ARTIFACT'));
+  assert.equal(bundle.budget.repairs, 2); assert.equal(bundle.budget.externalRepairs, 1);
+  assert.equal(bundle.budget.auditCalls, 2); assert.equal(bundle.input.generation, 2);
+  assert.equal(bundle.budget.turns, bundle.budget.consumers.extractor + bundle.budget.consumers.checker);
+  assert.equal(new Set(f.state.baselinePrompts.map(prompt => prompt.identity.requestId)).size, 1);
+});
+
+for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured limit ${limit} without publication`, async t => {
+  const f = await sharedBasisFixture(t);
+  f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
+    groundTruthExtractor: { ...f.plan.runtimeV2.reviewers.groundTruthExtractor, formatRepairAttempts: limit } } };
+  f.state.sourceFrom = true;
+  f.state.deltaOperations = [{ ...operation(), expectedFiles: ['not-named-in-original.txt'] }];
+  await assert.rejects(f.refresh(), /baseline extraction failed/);
+  assert.equal((await f.truth()).version, 0); assert.equal(f.audits().length, 0);
+  assert.equal(f.state.baselinePrompts.length, limit + 1);
+});
+
 test('proof verification rejects rehashed report, source, candidate and ACK mutations without repairing raw evidence', async t => {
   const f = await twoClaimFixture(t, true); await f.refresh();
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
