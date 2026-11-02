@@ -59,7 +59,7 @@ async function providerEnvironment(settingsPath) {
   assert(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, 'An explicit configured model is required');
 }
 
-export const documentHookPolicy = (model, options, dynamicBaseline = false) => `version: 2
+export const documentHookPolicy = (model, options, dynamicBaseline = false, providerId = 'anthropic') => `version: 2
 locale: en
 groundTruth:
   - id: original-requirements
@@ -97,7 +97,7 @@ limits:
   semanticReviewTimeoutMs: ${options.reviewTimeoutMs}
 reviewers:
   defaults:
-    model: anthropic/${model}
+    model: ${providerId}/${model}
     effort: low
     timeoutMs: ${options.reviewTimeoutMs}
     maxOutputTokens: 16384
@@ -163,6 +163,8 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   const benchmark = benchmarkDirectory ? await loadDocumentBenchmark(path.resolve(benchmarkDirectory)) : null;
   const requirements = benchmark?.requirements ?? REQUIREMENTS, initialDesign = benchmark?.draft ?? INITIAL_DESIGN;
   await providerEnvironment(settingsPath);
+  const nativeModel = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
+  const codingProvider = nativeModel === 'glm-5.3-flash' ? { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: nativeModel } : null;
   outputRoot = path.resolve(outputRoot);
   await fs.mkdir(path.dirname(outputRoot), { recursive: true }); await fs.mkdir(outputRoot);
   const projectRoot = path.join(outputRoot, 'project'); await fs.mkdir(projectRoot);
@@ -170,7 +172,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(projectRoot, 'requirements.md'), requirements);
   await fs.writeFile(path.join(projectRoot, 'draft.md'), initialDesign);
   await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'Only design.md is editable.\n');
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, config, dynamicBaseline));
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(nativeModel, config, dynamicBaseline, codingProvider ? 'openai' : 'anthropic'));
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. DOCUMENT-COPY-MISMATCH diagnostics already compare literal content, including fenced whitespace and EOF newlines. Do not dismiss or duplicate these deterministic findings. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Preserve original heading levels and formatting. Report concrete current contradictions using accurate physical line numbers. Do not carry resolved findings into a new round. Return no semantic findings when compliant. Return edits: []; the main agent owns actual native edits. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
@@ -183,7 +185,8 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
       businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
       reviewerTimeoutMs: Math.max(config.reviewTimeoutMs, config.baselineTimeoutMs), hookTimeoutMs: config.hookTimeoutMs,
       businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true,
-      anthropicModelReasoning: (process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL) === 'glm-5.3-flash' });
+      ...(codingProvider ? { provider: codingProvider, providerGuard: { kind: 'authorized_native_document',
+        credential: () => process.env.ANTHROPIC_AUTH_TOKEN ?? process.env.ANTHROPIC_API_KEY } } : {}) });
     gateway.setPhase('automatic-document-hook');
     const load = name => import(pathToFileURL(path.join(gateway.pluginRoot, name)).href);
     const [store, runs] = await Promise.all([load('lib/runtime-v2/task-store.mjs'), load('lib/openclaw/native-runs.mjs')]);
@@ -198,7 +201,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
 Initialize the candidate by reading ONLY draft.md and copying ALL of it unchanged, including its defects, into design.md with the write tool. Do not read requirements.md before this write returns automatic feedback.
 Then read requirements.md, consume the automatic feedback, and use native edits to repair design.md until the latest automatic review passes with zero diagnostics. Use exact characters shown in feedback. After that pass, stop tool calls and give a brief reply.`;
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message, idempotencyKey: runId,
-      deliver: false, thinking: 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
+      deliver: false, thinking: codingProvider ? 'low' : 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
     assert(accepted.runId, 'The Gateway did not accept the actual business request');
     console.log(JSON.stringify({ state: 'native-business-started', sessionId, runId, outputRoot }));
     let previous = '';
