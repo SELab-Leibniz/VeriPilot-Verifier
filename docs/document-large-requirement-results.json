@@ -1,0 +1,1459 @@
+{
+  "kind": "six-new-large-document-requirements-live-regression",
+  "recordedAt": "2026-11-02T08:35:38.792Z",
+  "sourceCommit": "7fd055e1cf27ea9608e5e844ee4ec361b7d3759e",
+  "branch": "codex/document-e2e-hour",
+  "source": {
+    "dataset": "princeton-nlp/SWE-bench_Verified",
+    "revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+    "parquetSha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "modelMaterial": "Entire problem_statement only; no hints, solution patches or test patches.",
+    "import": "Archive exact raw field; normalize CRLF to LF only before creating the immutable requirements fixture."
+  },
+  "sourceVerification": {
+    "verifiedDatasetRevision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+    "parquetSha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "exactRawFieldMatches": [
+      "django__django-11087",
+      "matplotlib__matplotlib-22719",
+      "pydata__xarray-6721",
+      "pylint-dev__pylint-7080",
+      "pytest-dev__pytest-7490",
+      "scikit-learn__scikit-learn-11578"
+    ],
+    "count": 6,
+    "method": "Re-read only instance_id and problem_statement columns from the pinned downloaded Parquet and compare every archived raw field byte-for-byte."
+  },
+  "scope": "Real native OpenClaw Gateway, production dynamic baseline and automatic document Hook; no implementation, Skill correction, Stop, stage metrics, onboarding panel or official benchmark execution.",
+  "timeouts": {
+    "baselineTimeoutMs": 1200000,
+    "reviewTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "previousRegression": "docs/document-copy-scope-regression-results.json",
+  "totals": {
+    "newLiveCases": 6,
+    "passed": 2,
+    "failed": 4,
+    "locatedControlledDeviations": 24,
+    "restoredControlledDeviations": 24,
+    "extraUnseededDiagnostics": 5,
+    "automatedChecksPassed": 44
+  },
+  "automatedChecks": {
+    "pass": 44,
+    "fail": 0,
+    "log": ".runtime-correction/document-large-source-20261102/fixture-and-document-checks.tap"
+  },
+  "observations": [
+    {
+      "kind": "CONTROLLED_DOCUMENT_DEVIATIONS",
+      "cases": "all six",
+      "located": 24,
+      "restored": 24,
+      "detail": "All controlled mutations were located in the first automatic review and restored by the business model. Only two runs satisfy every strict end-to-end guard."
+    },
+    {
+      "kind": "NATIVE_PATCH_TOOL_NOT_COUNTED_BY_RUNNER",
+      "cases": [
+        "pytest-dev__pytest-7490"
+      ],
+      "detail": "One initial write plus one successful native apply_patch repair produced both automatic reviews. The runner counts write/edit only. This does not explain away the separate source-fidelity failures."
+    },
+    {
+      "kind": "SEMANTIC_PASS_WITH_REMAINING_COPY_DIFFERENCES",
+      "cases": [
+        "pytest-dev__pytest-7490",
+        "matplotlib__matplotlib-22719"
+      ],
+      "detail": "Semantic review returned passed while independent final comparison still found changed internal spacing/indentation in fenced blocks and a missing final newline. These runs remain FAILED."
+    },
+    {
+      "kind": "INITIAL_COPY_GUARD_REJECTS_LOST_TRAILING_NEWLINE",
+      "cases": [
+        "pydata__xarray-6721"
+      ],
+      "detail": "The first write lost one trailing newline. The model later restored the full original exactly and the final review passed, but the unchanged initial-copy guard still rejects the run."
+    },
+    {
+      "kind": "SOURCE_INHERITED_MARKDOWN_WARNING_BLOCKS_COMPLETION",
+      "cases": [
+        "scikit-learn__scikit-learn-11578"
+      ],
+      "detail": "The final document exactly matches the full source. MARKDOWN-HEADING-JUMP remains at line 149, which has the same heading in the original source, so final status remains warning. The initial copy also lost a trailing newline."
+    },
+    {
+      "kind": "NATIVE_TERMINAL_ERROR_AFTER_REVIEW_PASS",
+      "cases": [
+        "matplotlib__matplotlib-22719"
+      ],
+      "detail": "After semantic review passed, the business model issued an invalid empty apply_patch. Native completion returned error. Independent copy checks also fail."
+    },
+    {
+      "kind": "CANDIDATE_PATCH_VALIDATION_DIAGNOSTICS",
+      "cases": [
+        "django__django-11087",
+        "scikit-learn__scikit-learn-11578"
+      ],
+      "detail": "Initial diagnostics also include RUNTIME-PATCH-VALIDATION-FAILED for rejected reviewer-proposed edits. Django subsequently passes; scikit-learn retains the source-inherited heading warning."
+    },
+    {
+      "kind": "PREVIOUS_AUTHORITY_DECLARATION_ISSUE",
+      "cases": "all six",
+      "detail": "No extra source-authority/adoption declaration finding was observed in the automatic diagnostics. No diagnostic was filtered to obtain these results."
+    }
+  ],
+  "cases": [
+    {
+      "task": "SWE-bench_Verified/pylint-dev__pylint-7080",
+      "instanceId": "pylint-dev__pylint-7080",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 24770,
+      "sourceRawSha256": "82319497af035b3cdcd4ee71b5fccd578074989dfa157dc54ecc5bf8ea76ceab",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 24513,
+      "importedLines": 260,
+      "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+      "state": "PASSED",
+      "failure": null,
+      "elapsedMs": 109973,
+      "baselineVersion": 1,
+      "baselineClaims": 12,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-REQ-FIDELITY-CONTENT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 4,
+          "message": "Design contradicts the authoritative requirement's bug description: requirements.md says ignore-paths is \"completely ignored\" when running recursively, while design.md says it is \"correctly respected\", inverting the reported defect.",
+          "evidence": [
+            "design.md:4: \"When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is correctly respected\"",
+            "requirements.md:4: \"When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is completely ignored\""
+          ],
+          "suggestion": "Restore the original wording \"completely ignored\" at design.md line 4.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-e693f9def74e5f4f"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-FIDELITY-PATH",
+          "severity": "error",
+          "path": "design.md",
+          "line": 12,
+          "message": "The configured ignore-paths pattern was changed from ^src/gen/.*$ to ^src/manual/.*$, altering a literal path value the task requires to be preserved exactly.",
+          "evidence": [
+            "design.md:12: `  \"^src/manual/.*$\",`",
+            "requirements.md:12: `  \"^src/gen/.*$\",`"
+          ],
+          "suggestion": "Restore `  \"^src/gen/.*$\",` at design.md line 12.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-e693f9def74e5f4f",
+            "requirements-1a3a2b128b8585dc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-FIDELITY-COMMAND",
+          "severity": "error",
+          "path": "design.md",
+          "line": 20,
+          "message": "The reproduction command was changed from --recursive=y to --recursive=n, contradicting the requirement's command and removing the recursive behavior central to the bug.",
+          "evidence": [
+            "design.md:20: `pylint --recursive=n src/`",
+            "requirements.md:20: `pylint --recursive=y src/`"
+          ],
+          "suggestion": "Restore `pylint --recursive=y src/` at design.md line 20.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-e693f9def74e5f4f",
+            "requirements-1a3a2b128b8585dc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-FIDELITY-EXPECTATION",
+          "severity": "error",
+          "path": "design.md",
+          "line": 241,
+          "message": "Expected behavior was inverted: requirements.md states src\\gen\\* should not be checked, while design.md states src\\gen\\* must always be checked.",
+          "evidence": [
+            "design.md:241: \"src\\gen\\* must always be checked\"",
+            "requirements.md:241: \"src\\gen\\* should not be checked\""
+          ],
+          "suggestion": "Restore `src\\gen\\* should not be checked` at design.md line 241.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-e693f9def74e5f4f"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+        "actualSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+        "actualSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "finalCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": true,
+        "finalFullDocumentEquivalent": true,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": true,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": true,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": true,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [],
+      "runnerCountedWriteEditCalls": 2,
+      "successfulNativePatchRepairCalls": 0,
+      "recoveredOrTerminalBusinessToolErrors": [],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/pylint-7080-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/pylint-7080-001/native-host/8e1aa9ca-1343-41bd-a6a4-ed7bb289c8ae.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/pytest-dev__pytest-7490",
+      "instanceId": "pytest-dev__pytest-7490",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 22778,
+      "sourceRawSha256": "9a5e8c33368dc3bbe9c5f03d3136a574cebede61fea6c575d39ddf108b92d947",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 22403,
+      "importedLines": 378,
+      "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "The business model did not perform both the initial write and real repair"
+      },
+      "elapsedMs": 216756,
+      "baselineVersion": 1,
+      "baselineClaims": 12,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 5,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-SOURCE-FIDELITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 10,
+          "message": "The Description sentence asserts the opposite behavior of the authoritative requirements.md: the sample output shows 1 xfailed with pytest 5.4.3 and a FAILED test with 6.0.0rc1, so 5.x produced an expected failure and 6.0.0rc0 raised. Line 10 instead says 5.x raises and 6.0.0rc0 produces an expected failure.",
+          "evidence": [
+            "design.md:10: With pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this raises an ordinary failure. With 6.0.0rc0 it correctly produces an expected failure.",
+            "requirements.md:10: ... In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises.",
+            "requirements.md:346: XFAIL test_foo.py::test_xfail_test",
+            "requirements.md:362: test_foo.py F ... FAILURES"
+          ],
+          "suggestion": "Restore the original Description wording from requirements.md line 10 exactly.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-63de5d1533a414bc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-FENCED-BLOCK-CHARACTERS",
+          "severity": "warning",
+          "path": "design.md",
+          "line": 18,
+          "message": "Inside the fenced pip-list block, line 18 was reproduced without the trailing whitespace that exists in requirements.md line 18, so the fenced literal block is not an exact character-preserving copy.",
+          "evidence": [
+            "design.md:18: Package                       Version                         Location",
+            "requirements.md:18: Package                       Version                         Location                                                      "
+          ],
+          "suggestion": "Restore requirements.md line 18 byte-for-byte, including its trailing spaces.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "acceptanceCriteria-52978688ff3e338b",
+            "requirements-63de5d1533a414bc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-SOURCE-FIDELITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 326,
+          "message": "The reproduced example code uses pytest.mark.skip; the authoritative source uses pytest.mark.xfail, which is the behavior the issue is about.",
+          "evidence": [
+            "design.md:326:     mark = pytest.mark.skip(reason=\"xfail\")",
+            "requirements.md:326:     mark = pytest.mark.xfail(reason=\"xfail\")"
+          ],
+          "suggestion": "Restore the source line: `    mark = pytest.mark.xfail(reason=\"xfail\")`.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-63de5d1533a414bc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-SOURCE-FIDELITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 328,
+          "message": "The reproduced example asserts a passing condition (`assert 1`), while the authoritative source asserts `assert 0`, which is required to make the test fail and demonstrate the xfail behavior.",
+          "evidence": [
+            "design.md:328:     assert 1",
+            "requirements.md:328:     assert 0"
+          ],
+          "suggestion": "Restore the source line: `    assert 0`.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-63de5d1533a414bc"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-SOURCE-FIDELITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 346,
+          "message": "The summarized status line for the 5.4.3 run was changed from XFAIL to FAILED, contradicting the authoritative source and the surrounding `1 xfailed` summary.",
+          "evidence": [
+            "design.md:346: FAILED test_foo.py::test_xfail_test",
+            "requirements.md:346: XFAIL test_foo.py::test_xfail_test",
+            "requirements.md:348: ================================================================================ 1 xfailed in 0.07s ================================================================================"
+          ],
+          "suggestion": "Restore the source line: `XFAIL test_foo.py::test_xfail_test`.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-63de5d1533a414bc"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-FENCED-BLOCK-CHARACTERS",
+          "severity": "warning",
+          "path": "design.md",
+          "line": 18,
+          "message": "Inside the fenced pip-list block, line 18 was reproduced without the trailing whitespace that exists in requirements.md line 18, so the fenced literal block is not an exact character-preserving copy.",
+          "evidence": [
+            "design.md:18: Package                       Version                         Location",
+            "requirements.md:18: Package                       Version                         Location                                                      "
+          ],
+          "suggestion": "Restore requirements.md line 18 byte-for-byte, including its trailing spaces.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "acceptanceCriteria-52978688ff3e338b",
+            "requirements-63de5d1533a414bc"
+          ]
+        }
+      ],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "a078f0ea09a8f891c939997d5726db8ffa5f7db9e8458dd2a9dba969e8bd5b03",
+        "actualSha256": "779dcb61bfa65576654a6a18f462c400163285daf801d4b258e77cd8d9433d67",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+        "actualSha256": "bdfabdd58def5c48e4f669f14f4f7621d86002f8516743cbfc6f0973d43d1010",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 3,
+        "firstDifferences": [
+          {
+            "line": 18,
+            "expected": "Package                       Version                         Location                                                      ",
+            "actual": "Package                       Version                         Location"
+          },
+          {
+            "line": 261,
+            "expected": "sphinxcontrib-qthelp          1.0.3                           ",
+            "actual": "sphinxcontrib-qthelp           1.0.3                           "
+          },
+          {
+            "line": 378,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "finalCopyDifferences": {
+        "count": 2,
+        "firstDifferences": [
+          {
+            "line": 261,
+            "expected": "sphinxcontrib-qthelp          1.0.3                           ",
+            "actual": "sphinxcontrib-qthelp           1.0.3                           "
+          },
+          {
+            "line": 378,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": false,
+        "finalFullDocumentEquivalent": false,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": false,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": true,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": true,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [
+        "initialCopyEquivalent",
+        "finalFullDocumentEquivalent",
+        "realBusinessWriteAndRepair"
+      ],
+      "runnerCountedWriteEditCalls": 1,
+      "successfulNativePatchRepairCalls": 1,
+      "recoveredOrTerminalBusinessToolErrors": [
+        {
+          "tool": "read",
+          "error": "{\n  \"status\": \"error\",\n  \"tool\": \"read\",\n  \"error\": \"ENOENT: no such file or directory, access '/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-large-bench-20261102/pytest-7490-001/project/design.md'\"\n}"
+        }
+      ],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/pytest-7490-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/pytest-7490-001/native-host/ec358639-8928-42f4-8832-1f8b532f4793.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/matplotlib__matplotlib-22719",
+      "instanceId": "matplotlib__matplotlib-22719",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 10176,
+      "sourceRawSha256": "2ffeda0f37f0b31f33acc4091c401b2ecdf32fe61756e07d1248ab2095cb77e0",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 9971,
+      "importedLines": 208,
+      "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "⚠️ 🩹 Apply Patch failed\n\n'error' !== 'ok'\n"
+      },
+      "elapsedMs": 121650,
+      "baselineVersion": 1,
+      "baselineClaims": 10,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-REPRODUCTION-FIDELITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 4,
+          "message": "The warning class was changed from MatplotlibDeprecationWarning to UserWarning, contradicting the authoritative requirements text and altering the reported behavior.",
+          "evidence": [
+            "design.md:4: I'm seeing a `UserWarning` when using calling axes methods on empty data structures for axes that are using string unit converters.",
+            "requirements.md:4: I'm seeing a `MatplotlibDeprecationWarning` when using calling axes methods on empty data structures for axes that are using string unit converters."
+          ],
+          "suggestion": "Restore `MatplotlibDeprecationWarning` verbatim.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-78f04603e25b0493",
+            "requirements-797962ff8770cf75"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-REPRODUCTION-CODE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "The reproduction snippet was altered: numeric units [1, 2] replace the string categories [\"a\", \"b\"], changing the scenario the issue describes, contrary to preserving all characters of the fenced block and all documented behavior.",
+          "evidence": [
+            "design.md:11: ax.xaxis.update_units([1, 2])",
+            "requirements.md:11: ax.xaxis.update_units([\"a\", \"b\"])"
+          ],
+          "suggestion": "Restore the original literal `ax.xaxis.update_units([\"a\", \"b\"])`.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-78f04603e25b0493",
+            "requirements-797962ff8770cf75"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-REQUIREMENT-CONTENT-CHANGED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 170,
+          "message": "The Expected outcome paragraph was replaced with a different requirement than the source; the original asks for either continued artist creation with no data or a more accurate diagnosis, while design.md demands rejecting empty data, which is a contradictory acceptance expectation.",
+          "evidence": [
+            "design.md:170: I would expect this to always reject empty data and never produce artists or improve the diagnostic.",
+            "requirements.md:170: I would expect this to either (1) continue producing artists with no data, or (2) more accurately describe what the problem is and how to avoid it."
+          ],
+          "suggestion": "Restore the original Expected outcome sentence verbatim.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-78f04603e25b0493",
+            "requirements-797962ff8770cf75"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-ANALYSIS-CHANGED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 202,
+          "message": "The closing analysis sentence was rewritten, changing the source's suspicion that the empty-data case was not anticipated into a claim that it is already handled, contradicting the source conclusion.",
+          "evidence": [
+            "design.md:202: So it feels like maybe whatever is changing behind the scenes already handles the \"empty data\" edge case correctly?",
+            "requirements.md:202: So it feels like maybe whatever is changing behind the scenes failed to anticipate the \"empty data\" edge case?"
+          ],
+          "suggestion": "Restore the original sentence verbatim.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-78f04603e25b0493",
+            "requirements-797962ff8770cf75"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "519b575320d44fd791a471d11e81e5ef6f109a8b5b16e9b74d05d92568c76537",
+        "actualSha256": "dee3bf0c44c2ca9c1dc37ce7cd4e4322abc1cd99038dc7dae081abb2a12bc611",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+        "actualSha256": "8f9ac46f6b45b8e61dd6384a22d5b65b1fffaa8201ea98485f77577259157408",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 3,
+        "firstDifferences": [
+          {
+            "line": 82,
+            "expected": "   1000         return self._path",
+            "actual": "    1000         return self._path"
+          },
+          {
+            "line": 83,
+            "expected": "   1001 ",
+            "actual": "    1001 "
+          },
+          {
+            "line": 208,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "finalCopyDifferences": {
+        "count": 3,
+        "firstDifferences": [
+          {
+            "line": 82,
+            "expected": "   1000         return self._path",
+            "actual": "    1000         return self._path"
+          },
+          {
+            "line": 83,
+            "expected": "   1001 ",
+            "actual": "    1001 "
+          },
+          {
+            "line": 208,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": false,
+        "finalFullDocumentEquivalent": false,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": true,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": true,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": false,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [
+        "initialCopyEquivalent",
+        "finalFullDocumentEquivalent",
+        "nativeCompletionOk"
+      ],
+      "runnerCountedWriteEditCalls": 2,
+      "successfulNativePatchRepairCalls": 0,
+      "recoveredOrTerminalBusinessToolErrors": [
+        {
+          "tool": "apply_patch",
+          "error": "{\n  \"status\": \"error\",\n  \"tool\": \"apply_patch\",\n  \"error\": \"Invalid patch hunk at line 2: '*** Begin Patch' is not a valid hunk header. Valid hunk headers: '*** Add File: {path}', '*** Delete File: {path}', '*** Update File: {path}'\"\n}"
+        }
+      ],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "error",
+        "error": "⚠️ 🩹 Apply Patch failed"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/matplotlib-22719-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/matplotlib-22719-001/native-host/ecba7669-b45b-4dde-be5a-d9783d1627f2.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/pydata__xarray-6721",
+      "instanceId": "pydata__xarray-6721",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 9276,
+      "sourceRawSha256": "8885a8e303e07d8e74f13a24134ecd7d051a2e2ded38ac313d6667e68b93a021",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 9067,
+      "importedLines": 237,
+      "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "Initial copy changed document content beyond permitted line-end padding"
+      },
+      "elapsedMs": 122345,
+      "baselineVersion": 1,
+      "baselineClaims": 12,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 5,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-FIDELITY-BEHAVIOUR",
+          "severity": "error",
+          "path": "design.md",
+          "line": 4,
+          "message": "The problem statement reverses the reported behaviour: design.md claims nothing is loaded into memory while requirements.md:4 states the entire dataset is loaded. The required wording must be preserved exactly.",
+          "evidence": [
+            "design.md:4: When running the following example it appears only metadata is inspected and no array data is loaded into memory when accessing the `chunks` attribute:",
+            "requirements.md:4: When running the following example it appears the entire dataset is loaded into memory when accessing the `chunks` attribute:"
+          ],
+          "suggestion": "Replace line 4 with the exact requirements.md wording.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-aa628650b514b703"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-FIDELITY-CODE-BLOCK",
+          "severity": "error",
+          "path": "design.md",
+          "line": 10,
+          "message": "The fenced reproduction block was altered: the engine argument is 'netcdf4' instead of 'zarr'. Fenced literal blocks must be preserved exactly.",
+          "evidence": [
+            "design.md:10: ds = xr.open_dataset(url, engine='netcdf4') # note that ds is not chunked but still uses lazy loading",
+            "requirements.md:10: ds = xr.open_dataset(url, engine='zarr') # note that ds is not chunked but still uses lazy loading"
+          ],
+          "suggestion": "Restore engine='zarr' exactly as in requirements.md line 10.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-aa628650b514b703"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-FIDELITY-EXPECTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 16,
+          "message": "The expected-behaviour sentence was rewritten: design.md names the `data` attribute and eager materialization instead of requirements.md's `encoding` attribute inspection.",
+          "evidence": [
+            "design.md:16: According to @rabernat accessing the chunks attribute should simply inspect the `data` attribute and eagerly materialize all values on the underlying DataArrays.",
+            "requirements.md:16: According to @rabernat accessing the chunks attribute should simply inspect the `encoding` attribute on the underlying DataArrays."
+          ],
+          "suggestion": "Replace line 16 with the exact requirements.md wording.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-aa628650b514b703"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-FIDELITY-ENV-VERSION",
+          "severity": "error",
+          "path": "design.md",
+          "line": 219,
+          "message": "The environment listing reports dask 2021.01.0, while requirements.md line 219 declares dask 2022.04.0; version numbers must be reproduced faithfully.",
+          "evidence": [
+            "design.md:219: dask: 2021.01.0",
+            "requirements.md:219: dask: 2022.04.0"
+          ],
+          "suggestion": "Change line 219 to 'dask: 2022.04.0'.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-aa628650b514b703"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-TRAILING-LINES",
+          "severity": "info",
+          "path": "design.md",
+          "line": 236,
+          "message": "design.md ends after a single blank line following '</details>' (236 lines total), whereas requirements.md has two trailing blank lines (237 lines). Line-break fidelity is slightly short at the end of the file.",
+          "evidence": [
+            "design.md:235-236: </details> followed by one empty line, end of file",
+            "requirements.md:235-237: </details> followed by two empty lines, end of file"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-TRAILING-LINES",
+          "severity": "info",
+          "path": "design.md",
+          "line": 236,
+          "message": "design.md ends after a single blank line following '</details>' (236 lines total), whereas requirements.md has two trailing blank lines (237 lines). Line-break fidelity is slightly short at the end of the file.",
+          "evidence": [
+            "design.md:235-236: </details> followed by one empty line, end of file",
+            "requirements.md:235-237: </details> followed by two empty lines, end of file"
+          ]
+        }
+      ],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "6ccd8e57dc515dcfb74c4f4cb72ee6aab0f093020fa84b27da061a12a15d304d",
+        "actualSha256": "370bd4754c9a291b43ade56383d617504667c105f9440d0000351020fb3620e2",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 1,
+        "firstDifferences": [
+          {
+            "line": 237,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "finalCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": false,
+        "finalFullDocumentEquivalent": true,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": true,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": true,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": true,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [
+        "initialCopyEquivalent"
+      ],
+      "runnerCountedWriteEditCalls": 3,
+      "successfulNativePatchRepairCalls": 0,
+      "recoveredOrTerminalBusinessToolErrors": [
+        {
+          "tool": "read",
+          "error": "{\n  \"status\": \"error\",\n  \"tool\": \"read\",\n  \"error\": \"ENOENT: no such file or directory, access '/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-large-bench-20261102/xarray-6721-001/project/design.md'\"\n}"
+        }
+      ],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/xarray-6721-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/xarray-6721-001/native-host/dac5b0af-225b-43b9-bdcb-85d996f0e8f8.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/django__django-11087",
+      "instanceId": "django__django-11087",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 9262,
+      "sourceRawSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 9262,
+      "importedLines": 90,
+      "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+      "state": "PASSED",
+      "failure": null,
+      "elapsedMs": 148904,
+      "baselineVersion": 1,
+      "baselineClaims": 13,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 5,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-ANSWER-CONTRADICTS-SOURCE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 1,
+          "message": "The document title asserts the .delete() optimization should use \"all fields unconditionally\", which directly contradicts the requirement's stated goal of using \"only required fields\".",
+          "evidence": [
+            "design.md:1: Optimize .delete() to use all fields unconditionally.",
+            "requirements.md:1: Optimize .delete() to use only required fields."
+          ],
+          "suggestion": "Restore the requirement's title verbatim: \"Optimize .delete() to use only required fields.\"",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-e01732d0e584cc36"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-VERSION-ALTERED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 5,
+          "message": "The reproduced scenario changed the upgrade target from Python 3.6 to Python 3.12, altering a concrete version stated in the authoritative requirements (STR step at line 8 still says 3.6.8).",
+          "evidence": [
+            "design.md:5: We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.12, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.",
+            "requirements.md:5: We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.6, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.",
+            "design.md:8: Update to Python 3.6.8"
+          ],
+          "suggestion": "Use \"Python 3.6\" as in requirements.md line 5.",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-e01732d0e584cc36"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-EXPECTATION-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 13,
+          "message": "The expected outcome is inverted: the design says the command must fail, while the requirements state it must succeed as it did under Python 2.",
+          "evidence": [
+            "design.md:13: That the cycle_data management command must fail, unlike under Python 2.",
+            "requirements.md:13: That the cycle_data management command succeeds, like it did under Python 2."
+          ],
+          "suggestion": "Restore: \"That the cycle_data management command succeeds, like it did under Python 2.\"",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-e01732d0e584cc36"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-ANALYSIS-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 85,
+          "message": "The root-cause statement reverses the requirement: design claims text_log_error.line is required as the primary key and must always be fetched, whereas the requirements state the field is not needed for the .delete() and should not be fetched.",
+          "evidence": [
+            "design.md:85: the UnicodeDecodeError is occurring for a field (text_log_error.line) that is required as the primary key for the .delete(), so Django must always fetch that field when making the text_log_error SELECT query",
+            "requirements.md:85: the UnicodeDecodeError is occurring for a field (text_log_error.line) that is not actually needed for the .delete() (it's not a primary key etc), so Django shouldn't be fetching that field regardless when making the text_log_error SELECT query"
+          ],
+          "suggestion": "Restore the requirement's wording at line 85 verbatim.",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-e01732d0e584cc36"
+          ]
+        },
+        {
+          "ruleId": "RUNTIME-PATCH-VALIDATION-FAILED",
+          "severity": "error",
+          "path": "design.md",
+          "message": "语义审阅已完成，但候选编辑未通过补丁校验；未生成该候选补丁。",
+          "evidence": [
+            "同一目标只能出现一次：design.md"
+          ],
+          "suggestion": "依据已有诊断修复产物，或按当前文件内容重新生成候选编辑；无需把此错误归因为 API 或审阅权限故障。"
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "RUNTIME-PATCH-VALIDATION-FAILED",
+          "severity": "error",
+          "path": "design.md",
+          "message": "语义审阅已完成，但候选编辑未通过补丁校验；未生成该候选补丁。",
+          "evidence": [
+            "同一目标只能出现一次：design.md"
+          ],
+          "suggestion": "依据已有诊断修复产物，或按当前文件内容重新生成候选编辑；无需把此错误归因为 API 或审阅权限故障。"
+        }
+      ],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "b8733b6608eaab75c75b75df981bc2c5c1c3a664fa557cc75abfd83b9499c31b",
+        "actualSha256": "b8733b6608eaab75c75b75df981bc2c5c1c3a664fa557cc75abfd83b9499c31b",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+        "actualSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "finalCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": true,
+        "finalFullDocumentEquivalent": true,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": true,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": true,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": true,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [],
+      "runnerCountedWriteEditCalls": 2,
+      "successfulNativePatchRepairCalls": 0,
+      "recoveredOrTerminalBusinessToolErrors": [],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 2
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/django-11087-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/django-11087-001/native-host/4ad449ed-8a23-4757-825d-ffdaf19cac1f.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/scikit-learn__scikit-learn-11578",
+      "instanceId": "scikit-learn__scikit-learn-11578",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceDatasetCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "sourceRawBytes": 7387,
+      "sourceRawSha256": "e4945959c7c914eff336d7a28037c018533b3473ef69f46f3bcf8c51560a211a",
+      "sourceTextTransform": "CRLF -> LF only; complete problem_statement, no truncation or other whitespace/content normalization.",
+      "importedBytes": 7216,
+      "importedLines": 176,
+      "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "Final automatic document review did not pass\n+ actual - expected\n\n+ 'warning'\n- 'passed'\n"
+      },
+      "elapsedMs": 161949,
+      "baselineVersion": 1,
+      "baselineClaims": 12,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 6,
+      "initialDiagnostics": [
+        {
+          "ruleId": "MARKDOWN-HEADING-JUMP",
+          "severity": "warning",
+          "path": "design.md",
+          "line": 149,
+          "section": "Reference Issue",
+          "message": "标题层级从 H1 跳到了 H4。",
+          "evidence": [
+            "#### Reference Issue"
+          ],
+          "suggestion": "调整标题层级，避免跨级。"
+        },
+        {
+          "ruleId": "AGENT-REQUIREMENT-FIDELITY-DEFAULT-VALUE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 12,
+          "message": "design.md states the LogisticRegression default is `multi_class='multinomial'`, while requirements.md line 12 states the default is `multi_class='ovr'`. This inverts the premise of the reported bug and contradicts the authoritative source.",
+          "evidence": [
+            "design.md:12: without a multi_class argument, and so takes the default, which is `multi_class='multinomial'`.",
+            "requirements.md:12: without a multi_class argument, and so takes the default, which is `multi_class='ovr'`."
+          ],
+          "suggestion": "Restore the source wording: default is `multi_class='ovr'`.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-1b64665328aff8de",
+            "requirements-39c229e46e4e0c74"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQUIREMENT-FIDELITY-PROPOSED-FIX",
+          "severity": "error",
+          "path": "design.md",
+          "line": 15,
+          "message": "design.md gives the proposed change as `multi_class='ovr'`, but requirements.md line 15 specifies passing `multi_class=multi_class`. The altered snippet changes the proposed behavior from inheriting the CV option to hard-coding OvR.",
+          "evidence": [
+            "design.md:15: `log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class='ovr')`",
+            "requirements.md:15: `log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class=multi_class)`"
+          ],
+          "suggestion": "Restore the source snippet with `multi_class=multi_class`.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-1b64665328aff8de",
+            "requirements-39c229e46e4e0c74"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQUIREMENT-FIDELITY-EXPLANATION",
+          "severity": "error",
+          "path": "design.md",
+          "line": 16,
+          "message": "design.md says the instance must ignore the `multi_class` option, whereas requirements.md line 16 says it inherits the `multi_class` option. The clause now contradicts the fix described on the previous line.",
+          "evidence": [
+            "design.md:16: ... must ignore the `multi_class` option specified in `LogisticRegressionCV()` would be a fix ...",
+            "requirements.md:16: ... inherits the `multi_class` option specified in `LogisticRegressionCV()` would be a fix ..."
+          ],
+          "suggestion": "Replace \"must ignore\" with \"inherits\".",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-1b64665328aff8de",
+            "requirements-39c229e46e4e0c74"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQUIREMENT-FIDELITY-PARAMETER-TYPE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 157,
+          "message": "design.md reports the intercept_scaling default changed to \"integer\", while requirements.md line 157 says \"float\". The parameter type stated in the change description is altered.",
+          "evidence": [
+            "design.md:157: Also, changed intercept_scaling default value to integer",
+            "requirements.md:157: Also, changed intercept_scaling default value to float"
+          ],
+          "suggestion": "Restore \"float\".",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-1b64665328aff8de",
+            "requirements-39c229e46e4e0c74"
+          ]
+        },
+        {
+          "ruleId": "RUNTIME-PATCH-VALIDATION-FAILED",
+          "severity": "error",
+          "path": "design.md",
+          "message": "语义审阅已完成，但候选编辑未通过补丁校验；未生成该候选补丁。",
+          "evidence": [
+            "同一目标只能出现一次：design.md"
+          ],
+          "suggestion": "依据已有诊断修复产物，或按当前文件内容重新生成候选编辑；无需把此错误归因为 API 或审阅权限故障。"
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "MARKDOWN-HEADING-JUMP",
+          "severity": "warning",
+          "path": "design.md",
+          "line": 149,
+          "section": "Reference Issue",
+          "message": "标题层级从 H1 跳到了 H4。",
+          "evidence": [
+            "#### Reference Issue"
+          ],
+          "suggestion": "调整标题层级，避免跨级。"
+        },
+        {
+          "ruleId": "RUNTIME-PATCH-VALIDATION-FAILED",
+          "severity": "error",
+          "path": "design.md",
+          "message": "语义审阅已完成，但候选编辑未通过补丁校验；未生成该候选补丁。",
+          "evidence": [
+            "同一目标只能出现一次：design.md"
+          ],
+          "suggestion": "依据已有诊断修复产物，或按当前文件内容重新生成候选编辑；无需把此错误归因为 API 或审阅权限故障。"
+        }
+      ],
+      "finalReviewState": "warning",
+      "finalDiagnostics": [
+        {
+          "ruleId": "MARKDOWN-HEADING-JUMP",
+          "severity": "warning",
+          "path": "design.md",
+          "line": 149,
+          "section": "Reference Issue",
+          "message": "标题层级从 H1 跳到了 H4。",
+          "evidence": [
+            "#### Reference Issue"
+          ],
+          "suggestion": "调整标题层级，避免跨级。"
+        }
+      ],
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "28e239737338960c2c58412c1feeb32124d20b49d3d561fbb7012e27da2d9628",
+        "actualSha256": "c8c339d35dad7b52a31984faba5d61a7f97321a903beb1e14fd431cb6cae7576",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+        "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "initialCopyDifferences": {
+        "count": 1,
+        "firstDifferences": [
+          {
+            "line": 176,
+            "expected": "",
+            "actual": null
+          }
+        ]
+      },
+      "finalCopyDifferences": {
+        "count": 0,
+        "firstDifferences": []
+      },
+      "independentChecks": {
+        "originalSourceBytesUnchanged": true,
+        "archivedRawSourceAndImportedTextVerified": true,
+        "initialCopyEquivalent": false,
+        "finalFullDocumentEquivalent": true,
+        "initialReviewedHashMatchesActualWrite": true,
+        "finalReviewedHashMatchesCurrentFile": true,
+        "automaticFeedbackDelivered": true,
+        "realBusinessWriteAndRepair": true,
+        "nativeBusinessRepairIncludingPatchTool": true,
+        "noManualReviewInvocation": true,
+        "finalSemanticReviewPassedWithoutDiagnostics": false,
+        "dynamicBaselinePublished": true,
+        "documentEvaluationsBoundToPublishedBaseline": true,
+        "noStageMetricReport": true,
+        "onlyBaselineAndDocumentReviewRoles": true,
+        "realBaselineAndRepeatedNativeReview": true,
+        "allPrivateRunsSettled": true,
+        "nativeCompletionOk": true,
+        "currentSourcesMatchReportedHashes": true,
+        "packagedSourcesMatchReportedHashes": true
+      },
+      "strictChecksNotMet": [
+        "initialCopyEquivalent",
+        "finalSemanticReviewPassedWithoutDiagnostics"
+      ],
+      "runnerCountedWriteEditCalls": 3,
+      "successfulNativePatchRepairCalls": 0,
+      "recoveredOrTerminalBusinessToolErrors": [
+        {
+          "tool": "read",
+          "error": "{\n  \"status\": \"error\",\n  \"tool\": \"read\",\n  \"error\": \"ENOENT: no such file or directory, access '/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-large-bench-20261102/scikit-learn-11578-001/project/design.md'\"\n}"
+        }
+      ],
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1,
+        1
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "privateRunEvidence": "Read directly from the persisted native run ledger, including runs not copied into an early-failed raw report.",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-bench-20261102/scikit-learn-11578-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-bench-20261102/scikit-learn-11578-001/native-host/8a65111f-f076-49d2-85eb-5ecad09d83cf.jsonl",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    }
+  ],
+  "limits": [
+    "Long public issue bodies include extensive reproduction code, logs and environment listings; they are not a measure of multi-feature product PRD coverage.",
+    "Four controlled candidate mutations per case measure targeted document fidelity and repair, not general false-positive/false-negative rates or official SWE-bench scores.",
+    "The production runner and timeouts are unchanged from the preceding regression; failed raw verdicts, if any, are retained."
+  ]
+}
