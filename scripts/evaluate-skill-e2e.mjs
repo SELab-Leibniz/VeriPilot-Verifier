@@ -82,7 +82,8 @@ export async function evaluateSkillE2e(options) {
   const fixture = await prepareIntegratedFixture({ projectRoot: path.join(outputRoot, 'project'), modelRef: `openai/${options.model}`, deadlineAt,
     roleTimeoutMs: options.roleTimeoutMs, assessmentTimeoutMs: options.assessmentTimeoutMs });
   fixture.businessTimeoutMs = options.businessTimeoutMs;
-  const skill = `---\nname: delivery-verifier\ndescription: Verify the supplied numeric module before completing delivery.\n---\n\nRun the exact public command below with the native exec tool. Its required result is actual exit code 0; a nonzero exit code is a failed Skill execution. Correct app.mjs and rerun verification to resolve a failure. After a correction, use the newest verification result for the current files to determine completion.\n\n${fixture.command}\n\nUse workdir ${fixture.projectRoot}, timeout 10, yieldMs 10000, background false.\n`;
+  fixture.strictExecOptions = false;
+  const skill = `---\nname: delivery-verifier\ndescription: Verify the supplied numeric module before completing delivery.\n---\n\nRun the exact public command below with the native exec tool. Its required result is actual exit code 0; a nonzero exit code is a failed Skill execution. Correct app.mjs and rerun verification to resolve a failure. After a correction, use the newest verification result for the current files to determine completion.\n\n${fixture.command}\n`;
   const guide = '# Usage guide\n\naccept takes a finite number and returns that number plus one: accept(2) === 3. The operation is stateless. Other input types are outside scope.\n';
   const originals = { '.runtime-corrector/config.yaml': skillE2ePolicy(options), 'skills/delivery-verifier/SKILL.md': skill };
   for (const [relative, bytes] of Object.entries({ ...originals, 'docs/guide.md': guide,
@@ -114,10 +115,12 @@ export async function evaluateSkillE2e(options) {
   await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
   let batch, gateway, result, failure, boundaryMonitor;
   const cleanupErrors = [];
+  const cancel = () => batch?.abort(new Error('SKILL_E2E_OWNER_CANCELLED'));
   const redact = error => String(error?.message ?? error).replaceAll(batch?.credential() ?? 'never-a-credential', '[REDACTED_CREDENTIAL]').slice(0, 1500);
   try {
     batch = await installNativeGatewayBatch({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
       projectRoot: fixture.projectRoot, manifest });
+    process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
     boundaryMonitor = setInterval(() => {
       const status = batch.metrics();
       if (status.dispatchStopped && status.budget.inFlightRequests === 0)
@@ -151,6 +154,7 @@ export async function evaluateSkillE2e(options) {
     result.accepted = Object.values(checks).every(Boolean);
   } catch (error) { failure = { code: error.code ?? error.name, message: redact(error) }; }
   finally {
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
     clearInterval(boundaryMonitor);
     try { await gateway?.close(); } catch (error) { cleanupErrors.push(redact(error)); }
     try { await batch?.close(); } catch (error) { cleanupErrors.push(redact(error)); }

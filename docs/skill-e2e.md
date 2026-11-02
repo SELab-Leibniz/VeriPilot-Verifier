@@ -21,6 +21,8 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 
 时间项分别控制单个审阅、一次终审及反馈、原始业务任务和整轮运行；原始业务不再被入口里的固定十分钟上限截断。所有阶段仍受整轮绝对截止时间约束，增大一个参数不会自动延长其他阶段。模型提供方的等待阈值随明确配置的整轮时间设置；未知用量或鉴权失败会停止继续发请求。
 
+专项样例接受宿主默认的可选执行参数；不要求模型凑齐 `workdir/timeout/yieldMs/background` 四个字段。仍只允许原始验证命令、只读输入及两份可编辑产物，后台执行和其他工作目录仍被拒绝。原有集成评测的严格参数模式默认保持。
+
 失败样例的初始代码固定为 `accept(value) => value`，指南已经正确。原始任务要求修改前先真实执行验证，随后修复并重新验证。看护回合上限在专项样例中设为 1，以便在首次失败工具结果返回时检查已发生的执行；生产默认值不变。Skill 明确说明非零退出是执行失败，并允许通过当前产物的新验证解决失败，不豁免首次失败。驱动不生成规则图或判决、不代写业务修复，不把人工构造的工具结果当作真实执行。
 
 每轮保留 `result.json`、实际业务会话、原生工具观察、Skill 规则图与评估、实际终审派发状态、请求和用量。`PASS` 要求实际 Skill 读取、规则抽取、Skill 审查、当前看护通过、最终产物匹配的验证成功、原生终态及私有运行结算；修复案还要求反馈实际进入业务会话和业务 Agent 的写入。历史失败目录不被覆盖。
@@ -30,6 +32,7 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 ```sh
 TMPDIR=/private/tmp node --test \
   test/skill-standalone.test.mjs \
+  test/skill-e2e-budget.test.mjs \
   test/skill-source-contract.test.mjs \
   test/skill-source-quotes.test.mjs \
   test/skill-source-semantics.test.mjs \

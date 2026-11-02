@@ -85,8 +85,15 @@ export async function integratedFixtureFence({ fixture, business }, event, ctx =
       if (fixture.deadlineAt !== null && fixture.deadlineAt - Date.now() < 10000)
         return deny('insufficient shared stage time for the finite verifier');
       const keys = new Set(['command', 'workdir', 'timeout', 'yieldMs', 'background']);
+      const strictOptions = fixture.strictExecOptions !== false;
+      const invalidOptions = strictOptions
+        ? args.workdir !== fixture.projectRoot || args.timeout !== 10 || args.yieldMs !== 10000 || args.background !== false
+        : args.workdir !== undefined && args.workdir !== fixture.projectRoot
+          || args.background !== undefined && args.background !== false
+          || args.timeout !== undefined && (!Number.isFinite(args.timeout) || args.timeout <= 0 || args.timeout > 3600)
+          || args.yieldMs !== undefined && (!Number.isFinite(args.yieldMs) || args.yieldMs < 0 || args.yieldMs > 30000);
       if (Object.keys(args).some(key => !keys.has(key)) || args.command !== fixture.command
-        || args.workdir !== fixture.projectRoot || args.timeout !== 10 || args.yieldMs !== 10000 || args.background !== false)
+        || invalidOptions)
         return deny('only the exact public verifier command and finite execution options are allowed');
       for (const file of integratedDeliverables) await checkPath(fixture.projectRoot, file);
       if (await fs.realpath(fixture.nodeBinary) !== fixture.nodeBinary
