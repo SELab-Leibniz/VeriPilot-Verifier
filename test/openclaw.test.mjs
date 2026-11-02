@@ -54,7 +54,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.match((await host.commands.get("rc-setup").handler({ isAuthorizedSender: true,
     gatewayClientScopes: ["operator.admin"] })).text, /缺少安全配置写入接口/u);
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
-  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 5400000);
+  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 43200000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
   assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
@@ -97,9 +97,9 @@ test("native entry supports synchronous ESM loading on the target Node runtime",
   assert.equal(loaded.default.id, "runtime-corrector");
 });
 
-test("native entry registers configured Hook windows up to ninety minutes", async t => {
+test("native entry registers configured Hook windows up to twelve hours", async t => {
   const project = await workspace(t);
-  for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [5400000, 5400000], [7200000, 5400000]]) {
+  for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [5400000, 5400000], [7200000, 7200000], [43200000, 43200000], [86400000, 43200000]]) {
     const host = api(project);
     host.pluginConfig.hookTimeoutMs = configured;
     entry.register(host);

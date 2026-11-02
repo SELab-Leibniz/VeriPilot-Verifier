@@ -29,10 +29,16 @@ async function freePort() {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
   phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens,
+  skipBootstrap = false,
   provider = null }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
+  const localRelay = provider && (() => {
+    try { const url = new URL(provider.baseUrl); return url.protocol === 'http:'
+      && url.hostname === 'host.docker.internal' && /^[1-9]\d{0,4}$/u.test(url.port)
+      && url.pathname === '/v1' && !url.username && !url.password && !url.search && !url.hash; } catch { return false; }
+  })();
   if (provider && (provider.api !== 'openai-completions'
-    || provider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4'
+    || provider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4' && !localRelay
     || !['glm-5.3', 'glm-5.3-flash'].includes(provider.model)
     || Object.keys(provider).some(key => !['api', 'baseUrl', 'model'].includes(key))))
     throw new Error('Unsupported explicit Coding Plan provider.');
@@ -67,7 +73,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
+      // GLM 5.3 Flash requires retained interleaved thinking across tool turns.
+      ...(provider ? { thinkingDefault: 'low' } : {}),
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+      ...(skipBootstrap ? { skipBootstrap: true } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
         tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
@@ -76,9 +85,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     ...(provider || process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { [providerId]: {
       api: provider?.api ?? 'anthropic-messages', baseUrl: provider?.baseUrl ?? process.env.ANTHROPIC_BASE_URL,
       ...(phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768,
+      models: [{ id: model, name: model, input: ['text'], reasoning: Boolean(provider), contextWindow, maxTokens: 32768,
         ...(provider ? { compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
-          supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}) }],
+          supportsDeveloperRole: false, supportsReasoningEffort: false, requiresReasoningContentOnAssistantMessages: true } } : {}) }],
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
@@ -96,6 +105,12 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     if (contextWindowTokens !== undefined && config.models?.providers?.[providerId]?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
+  }
+  if (phaseTimeoutMs) {
+    config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
+    config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
+    if (reuseProfile && provider) config.models.providers[providerId] = { ...config.models.providers[providerId],
+      baseUrl: provider.baseUrl, timeoutSeconds: phaseTimeoutMs / 1000 };
   }
   if (unlimitedBusiness) {
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);

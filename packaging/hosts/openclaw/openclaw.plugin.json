@@ -76,7 +76,7 @@
       "hookTimeoutMs": {
         "type": "integer",
         "minimum": 2000,
-        "maximum": 5400000,
+        "maximum": 43200000,
         "default": 1200000
       },
       "stopReviewConcurrency": {
