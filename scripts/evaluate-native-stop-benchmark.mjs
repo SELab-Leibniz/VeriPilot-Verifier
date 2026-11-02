@@ -9,6 +9,7 @@ import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluati
 import { nativeStopTimeouts } from './helpers/native-stop-timeouts.mjs';
 import { waitPostRunTerminal } from '../lib/openclaw/post-run-host.mjs';
 import { createBenchmarkFaultFixture } from './helpers/benchmark-fault-fixture.mjs';
+import { latestBenchmarkRepairReview } from './helpers/benchmark-final-review.mjs';
 
 const args = process.argv.slice(2);
 const value = (flag, fallback) => args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback;
@@ -195,11 +196,11 @@ try {
         && task?.verification?.status === 'PASS' && allSettled && !activeRepair && !used.length) {
         reason = 'FAULT_NOT_DETECTED'; break;
       }
-      const faultFinalReviewSaved = !faultFixture || used.at(-1)?.finalReview?.status === 'PASS'
-        && used.at(-1).finalReview.evaluationId === task?.verification?.evaluationId;
-      if (originalTerminal?.status === 'ok' && currentVerification && task?.verification?.status === 'PASS' && allSettled && !activeRepair && faultFinalReviewSaved) break;
+      const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification });
+      const latestAssessmentSaved = used.length ? Boolean(finalRepairReview) : currentVerification;
+      if (originalTerminal?.status === 'ok' && latestAssessmentSaved && task?.verification?.status === 'PASS' && allSettled && !activeRepair) break;
       const exhausted = ledger?.used >= budgets.maxCorrections && (!used.length
-        || used.some(a => a.finalReview?.evaluationId === task?.verification?.evaluationId));
+        || Boolean(finalRepairReview));
       if (originalTerminal?.status === 'ok' && currentVerification && allSettled && !activeRepair && (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
         || task?.verification?.status === 'UNVERIFIED' || exhausted)) { reason = 'STOP_NOT_PASSED'; break; }
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -214,17 +215,18 @@ try {
             (method, params, options) => gateway.request(method, params, options)));
     }
     const injected = faultFixture ? await fs.readFile(path.join(outputRoot, 'fault-injection.json'), 'utf8').then(JSON.parse, () => null) : null;
+    const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification });
     const faultCycleComplete = !faultFixture || injected?.runId === runId && used.length > 0 && used.length <= budgets.maxCorrections
       && ledger.events.some(event => event.type === 'STOP_REVIEW_SETTLED' && event.stopId === runId && event.status === 'DEVIATION')
-      && used.at(-1)?.finalReview?.status === 'PASS'
-      && used.at(-1).finalReview.evaluationId === task?.verification?.evaluationId
+      && finalRepairReview?.status === 'PASS'
+      && finalRepairReview.evaluationId === task?.verification?.evaluationId
       && used.every(a => gateway.metrics().modelStarts.some(event => event.runId === `rc-stop-${a.id}` && event.sessionId === sessionId));
     result = { mode: 'real-benchmark-stop-only', complete: !reason && faultCycleComplete && task?.verification?.status === 'PASS'
         && terminals.length === used.length + 1 && terminals.every(t => t?.status === 'ok')
         && runs.every(r => r.status === 'SETTLED'),
       reason, baseCommit, instructionSha256: hash(instruction), model, timeouts, sessionId, sessionKey, originalRunId: runId,
       taskId: task?.taskId, verification: task?.verification, status: task?.status, corrections: (ledger?.used ?? 0) - initialUsed, sessionCorrections: ledger?.used ?? 0, budgets,
-      terminals, privateRuns: runs, ledger, ...gateway.metrics() };
+      terminals, privateRuns: runs, ledger, finalRepairReview, ...gateway.metrics() };
     if (faultFixture) Object.assign(result, { injected, faultCycleComplete });
   }
 } catch (error) {
