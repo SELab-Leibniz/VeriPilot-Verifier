@@ -40,3 +40,5 @@ Narwhals 原始评分镜像中的 Polars 1.39.3 默认运行库要求 AVX/AVX2�
 当前有效尝试：HTTPX `suite2-live-001`，etree `suite2-live-002`，Narwhals `suite2-live-002`。各例分别保存首稿快照、实际提交补丁、原生业务终态、私有审查回执、关闭记录及原始官方首稿/最终评分。
 
 结构化结果见 [stop-multi-benchmark-acceptance-20261102.json](stop-multi-benchmark-acceptance-20261102.json)，含完整提交、镜像与文件摘要、原生终态、审查步数、每阶段评分和兼容环境来源。正式阶段耗时不包含更早的预算迁移或失败尝试；完整时间窗口沿用最初启动时间，未因恢复重置。
+
+后续另做了 [etree 人为故障补测](stop-injected-benchmark-20261102.md)，验证实际自动续修与复审闭环。它作为故障控制单独统计，不改变本批三例的零续修记录和 HTTPX 漏检结论。
