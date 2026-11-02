@@ -1,0 +1,757 @@
+{
+  "generatedAt": "2026-11-02T12:57:21.656594+00:00",
+  "benchmark": "DeepSWE 1.1",
+  "model": "glm-5.3-flash",
+  "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+  "protocol": "Original public task verbatim inside a Skill, native read adoption wrapper; not unchanged official agent protocol or leaderboard",
+  "modules": {
+    "skill": true,
+    "terminalTransport": "M08 only",
+    "globalBaseline": false,
+    "document": false,
+    "writeTimeImplementation": false
+  },
+  "limits": {
+    "perCaseWallMs": 86400000,
+    "perCaseUpstreamSteps": 2000,
+    "finite": true,
+    "configurable": true
+  },
+  "comparison": "First completed committed patch vs final committed patch on the same trajectory, not RC-off",
+  "targetedRegression": {
+    "passed": 96,
+    "skipped": 1,
+    "failed": 0
+  },
+  "cases": [
+    {
+      "task": "sqlite-utils-safe-import-checkpoints",
+      "cohort": "skill-real-bench-20261102-003",
+      "attempt": "skill-live-002",
+      "sourceCommit": "d9369cd171c340b61202976f5c619e647dd74db9",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-skill-real-bench/runtime-corrector-toy/.runtime-correction/skill-real-bench-20261102-003/sqlite-utils-safe-import-checkpoints/skill-live-002",
+      "complete": true,
+      "originalImageId": "sha256:c79a4c2e077dbd589317a74ac7a9fd40e6a668b87a4394158739b635b380cd0c",
+      "verifierImageId": "sha256:c9a78ce0269af308d153daa39d8e9a4392ead6d8f36f93558e6ea3200ed542af",
+      "instructionSha256": "dcdf0f34992ce86f4ef516fbc4cac6daaf159ae4542a6bbebe055e37851ff7a6",
+      "skillSha256": "541f3cab67397bf2d87b2ccb51d9111cb9437be219df623da08e4ff8e8f40ca0",
+      "policySha256": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+      "baseCommit": "8d74ffc93292c604d5827e2b44fffedca0c28c19",
+      "finalHead": "a74d3816678867553f6ccfa5defdcf457ea1dabb",
+      "finalBranch": "safe-import",
+      "finalGitStatus": "",
+      "reason": null,
+      "error": null,
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-726162db647e4306bb745cbb",
+        "reasonCode": "REVIEW_PASSED",
+        "updatedAt": "2026-11-02T11:59:51.914Z",
+        "assessmentId": "8466fc01-32df-4a22-b87f-f04a070a0245:stop",
+        "rulesDigest": "0b0fcef9bc64483953731c43",
+        "evidence": {
+          "digest": "952de9eecfc2a0f3fe83cef6a8d60494274706217fb6ca47f3444ed4e25aeb3d",
+          "files": [
+            "/app/.runtime-corrector/config.yaml",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md",
+            "/app/sqlite_utils/cli.py",
+            "/app/sqlite_utils/db.py",
+            "/app/sqlite_utils/safe_import.py",
+            "/app/docs/cli-reference.rst",
+            "/app/tests/test_safe_import.py",
+            "/app/tests/test_safe_import_cli.py"
+          ],
+          "fingerprints": {
+            "/app/.runtime-corrector/config.yaml": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md": "541f3cab67397bf2d87b2ccb51d9111cb9437be219df623da08e4ff8e8f40ca0",
+            "/app/sqlite_utils/cli.py": "3297330e0bd80848e6740dfdc1c5cc22e8ed7158b642115b58b53f5a29efdc90",
+            "/app/sqlite_utils/db.py": "7beb3c16f5cd7b9235a45425ced57409819cc6c8bb3b65436267c6906c79a7ac",
+            "/app/sqlite_utils/safe_import.py": "b63e61276b14f21fa910297ceb2316c9152ac0b014f4c6661e5dbcc01615c558",
+            "/app/docs/cli-reference.rst": "4b9e7da4f03ac64a0868dc88dbf76351cd802f93cbbf65f968db08e9399d601d",
+            "/app/tests/test_safe_import.py": "8e56fc3a4205b84d27ee8a127939f4639c1bebd38059d27b5588f24fc4a4400d",
+            "/app/tests/test_safe_import_cli.py": "09ab4f83ef31cf1c8df48a239eaaefa7638bfff8eb944f865e2a608830a60474"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": [],
+          "scope": {
+            "allowed": true,
+            "reason": null
+          }
+        },
+        "requirementVersion": 0,
+        "requirementDigest": null,
+        "generation": null,
+        "cancelEpoch": 0
+      },
+      "skillChecks": {
+        "actualSkillRead": true,
+        "realGraph": true,
+        "realExtractor": true,
+        "realSkillReviewer": true,
+        "watcherPass": true,
+        "globalBaselineOff": true
+      },
+      "constraints": 11,
+      "skillEvaluationCount": 1,
+      "corrections": 0,
+      "admittedRepairs": 0,
+      "deliveredRepairReceipts": 0,
+      "authenticatedDelivery": null,
+      "upstreamSteps": 159,
+      "recoveredRateLimitRequests": 0,
+      "elapsedMs": 1807422,
+      "originalTerminal": {
+        "runId": "8466fc01-32df-4a22-b87f-f04a070a0245",
+        "status": "ok",
+        "endedAt": 1793620612293,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "completedOriginalTurn": true,
+      "completedPrediction": true,
+      "firstCompletedPatch": {
+        "bytes": 71412,
+        "sha256": "d347a443b5ea106408a3554a6ba3016af36355260a4c8fb5de878fd1f0ffd6cb"
+      },
+      "finalCommittedPatch": {
+        "bytes": 71412,
+        "sha256": "d347a443b5ea106408a3554a6ba3016af36355260a4c8fb5de878fd1f0ffd6cb"
+      },
+      "changedAfterFirstCompletion": false,
+      "firstObservedNativeTerminalPatch": {
+        "bytes": 71412,
+        "sha256": "d347a443b5ea106408a3554a6ba3016af36355260a4c8fb5de878fd1f0ffd6cb"
+      },
+      "officialScores": {
+        "before": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 60,
+            "f2p_passed": 60,
+            "p2p_total": 1038,
+            "p2p_passed": 1038,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          },
+          "patchSha256": "d347a443b5ea106408a3554a6ba3016af36355260a4c8fb5de878fd1f0ffd6cb"
+        },
+        "after": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 60,
+            "f2p_passed": 60,
+            "p2p_total": 1038,
+            "p2p_passed": 1038,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          },
+          "patchSha256": "d347a443b5ea106408a3554a6ba3016af36355260a4c8fb5de878fd1f0ffd6cb"
+        }
+      },
+      "relayClosed": true
+    },
+    {
+      "task": "kombu-virtual-queue-dead-lettering",
+      "cohort": "skill-real-bench-20261102-002",
+      "attempt": "skill-live-001",
+      "sourceCommit": "d8bfc4702c8f474717bfac450f250b9a114d0b87",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-skill-real-bench/runtime-corrector-toy/.runtime-correction/skill-real-bench-20261102-002/kombu-virtual-queue-dead-lettering/skill-live-001",
+      "complete": false,
+      "originalImageId": "sha256:5eb0511f22a9a89db4bdf19383d3a9e6c18793c17e28cbb1c4244756ff7bb483",
+      "verifierImageId": "sha256:3f6e2d1b4031485d4f711068b71eb71e55d4b6ecbd3cda6bd92d7df45a16920c",
+      "instructionSha256": "c9758bde38041c99fa9bcd8cab3611de4c25bd0389671af6b4ef9a59cc8c988d",
+      "skillSha256": "2f3f947f1e851cdd4ec858028ad9243d2207861b246b6c9ce137e4298210a1a9",
+      "policySha256": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+      "baseCommit": "3c5c1bd86376ee73d52a4cc770bdaeab15bbc2f3",
+      "finalHead": "994a148aba908134610f455e2ac005c22c106999",
+      "finalBranch": "feature/virtual-dlx-ttl-maxlen",
+      "finalGitStatus": "",
+      "reason": "STOP_NOT_PASSED",
+      "error": null,
+      "verification": {
+        "status": "UNVERIFIED",
+        "evaluationId": "stop-88cef21289fb005286de00c0",
+        "reasonCode": "STOP_REVIEW_INCOMPLETE",
+        "updatedAt": "2026-11-02T11:06:06.409Z",
+        "assessmentId": "947b2615-43c9-4b36-bb3b-6f7c3af22c31:stop",
+        "rulesDigest": "0b0fcef9bc64483953731c43",
+        "evidence": {
+          "digest": "e60f58da9c9e6d14e207dd9e060b540122755cb4adce08c91e53da0a6e903b68",
+          "files": [
+            "/app/.runtime-corrector/config.yaml",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md",
+            "/app/kombu/transport/virtual/base.py",
+            "/app/kombu/transport/virtual/exchange.py",
+            "/app/kombu/entity.py",
+            "/app/kombu/transport/memory.py",
+            "/app/kombu/transport/base.py"
+          ],
+          "fingerprints": {
+            "/app/.runtime-corrector/config.yaml": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md": "2f3f947f1e851cdd4ec858028ad9243d2207861b246b6c9ce137e4298210a1a9",
+            "/app/kombu/transport/virtual/base.py": "ec4600c1419be049aec2156eedcf4cc0bb5cd212798b06fa21df7f21dc674faf",
+            "/app/kombu/transport/virtual/exchange.py": "66aaf87de3b03dcfaf1b2f235b7f72870dae8ecefaa92de5ff0859a16202d127",
+            "/app/kombu/entity.py": "a684565f15443e32ba889632e0dde7c8d35d8a28c1e08daed3cabf8185eaf2ae",
+            "/app/kombu/transport/memory.py": "35812c53059fbf6f28469de50b21b9691422311c53c36ce329f34d6cdc3b1e1c",
+            "/app/kombu/transport/base.py": "3e5601a8799cbccc3c46c49cbd4b55ff14325660f55c462df9ba35c3e0d33e5e"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": [],
+          "scope": {
+            "allowed": true,
+            "reason": null
+          }
+        },
+        "requirementVersion": 0,
+        "requirementDigest": null,
+        "generation": null,
+        "cancelEpoch": 0
+      },
+      "skillChecks": {
+        "actualSkillRead": true,
+        "realGraph": true,
+        "realExtractor": true,
+        "realSkillReviewer": true,
+        "watcherPass": true,
+        "globalBaselineOff": true
+      },
+      "constraints": 12,
+      "skillEvaluationCount": 1,
+      "corrections": 0,
+      "admittedRepairs": 0,
+      "deliveredRepairReceipts": 0,
+      "authenticatedDelivery": null,
+      "upstreamSteps": 142,
+      "recoveredRateLimitRequests": 0,
+      "elapsedMs": 1299892,
+      "originalTerminal": {
+        "runId": "947b2615-43c9-4b36-bb3b-6f7c3af22c31",
+        "status": "ok",
+        "endedAt": 1793617321197,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "completedOriginalTurn": true,
+      "completedPrediction": true,
+      "firstCompletedPatch": {
+        "bytes": 23869,
+        "sha256": "d9eb8971c256d7f66fe92c944552f6cf053e0d12ddbef6c5405c7a996254a495"
+      },
+      "finalCommittedPatch": {
+        "bytes": 23869,
+        "sha256": "d9eb8971c256d7f66fe92c944552f6cf053e0d12ddbef6c5405c7a996254a495"
+      },
+      "changedAfterFirstCompletion": false,
+      "firstObservedNativeTerminalPatch": {
+        "bytes": 23869,
+        "sha256": "d9eb8971c256d7f66fe92c944552f6cf053e0d12ddbef6c5405c7a996254a495"
+      },
+      "officialScores": {
+        "before": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 76,
+            "f2p_passed": 73,
+            "p2p_total": 1412,
+            "p2p_passed": 1412,
+            "f2p": 0.9605263157894737,
+            "p2p": 1.0,
+            "partial": 0.9979838709677419
+          },
+          "patchSha256": "d9eb8971c256d7f66fe92c944552f6cf053e0d12ddbef6c5405c7a996254a495"
+        },
+        "after": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 76,
+            "f2p_passed": 73,
+            "p2p_total": 1412,
+            "p2p_passed": 1412,
+            "f2p": 0.9605263157894737,
+            "p2p": 1.0,
+            "partial": 0.9979838709677419
+          },
+          "patchSha256": "d9eb8971c256d7f66fe92c944552f6cf053e0d12ddbef6c5405c7a996254a495"
+        }
+      },
+      "relayClosed": true
+    },
+    {
+      "task": "ipython-session-bundle-replay",
+      "cohort": "skill-real-bench-20261102-003",
+      "attempt": "skill-live-002",
+      "sourceCommit": "d9369cd171c340b61202976f5c619e647dd74db9",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-skill-real-bench/runtime-corrector-toy/.runtime-correction/skill-real-bench-20261102-003/ipython-session-bundle-replay/skill-live-002",
+      "complete": true,
+      "originalImageId": "sha256:ba83b5e9940114642ce64dd3644b4740c6776cba16b964964703422d3cdec4e1",
+      "verifierImageId": "sha256:2160cc329c361883a141391885fee1d891afbecd2d67b2a1750054d0bfdfaef5",
+      "instructionSha256": "4f32a1ba02f7c46ccdedd09b6de17a91a89b0567980bb343508ecdfcd90388b1",
+      "skillSha256": "3db01e79ea478b40ee381e133abd1f5049c6e1631bf81408e058383eaeb17c26",
+      "policySha256": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+      "baseCommit": "0bb317d10fdcb3aa13beb1031d5f10e5b821203b",
+      "finalHead": "d027492c94dd87d355b59ae0367333556edb1393",
+      "finalBranch": "feature/session-bundle",
+      "finalGitStatus": "",
+      "reason": null,
+      "error": null,
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-c8186fee2a83d28c0001303c",
+        "reasonCode": "REVIEW_PASSED",
+        "updatedAt": "2026-11-02T11:29:26.739Z",
+        "assessmentId": "a8d2f4ec-3643-49a8-84d3-08477f596af6:stop",
+        "rulesDigest": "0b0fcef9bc64483953731c43",
+        "evidence": {
+          "digest": "92c86a6d36eaf524d13c6657fb7f2aa0746e9917d36bc26213a4e63c92a13fdb",
+          "files": [
+            "/app/.runtime-corrector/config.yaml",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md",
+            "/app/IPython/core/sessionbundle.py",
+            "/app/IPython/core/magics/sessionbundle.py",
+            "/app/IPython/core/magics/__init__.py",
+            "/app/IPython/core/interactiveshell.py",
+            "/app/IPython/core/tests/test_sessionbundle.py",
+            "/app/IPython/core/display_trap.py",
+            "/app/IPython/testing/globalipapp.py",
+            "/app/docs/source/whatsnew/pr/session-bundle.rst"
+          ],
+          "fingerprints": {
+            "/app/.runtime-corrector/config.yaml": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md": "3db01e79ea478b40ee381e133abd1f5049c6e1631bf81408e058383eaeb17c26",
+            "/app/IPython/core/sessionbundle.py": "1d6a22c89cf3644e1911b883b2070af5eea90c89afc8dd5d92fcb53296de69dd",
+            "/app/IPython/core/magics/sessionbundle.py": "cef9fefe983cfa12585a7895d5340ca003c6326fcff5d72203677996e2fd99f4",
+            "/app/IPython/core/magics/__init__.py": "b005cf27a2928aa3aaacc5c82f5ce330eb904c627bdefe9777284fde5aab3efd",
+            "/app/IPython/core/interactiveshell.py": "0726108138b3fb08de793409ce3d461acdb0eeec5877691da9ce4f7ae598da52",
+            "/app/IPython/core/tests/test_sessionbundle.py": "e91ab30850f3898706c6b5eadac5e6328cc2bbb8c46968962364a35f44e1df53",
+            "/app/IPython/core/display_trap.py": "afd01e32a9652e2709bd8f097eb19340c932c73dfb413ed7fd1c305f1364ed1d",
+            "/app/IPython/testing/globalipapp.py": "17e443eb12c52764758cd3f2700f73935d7a19f1fca93b20b1814409609e0d16",
+            "/app/docs/source/whatsnew/pr/session-bundle.rst": "203f8a9a4710a9a7936fd8d17d232d5f4e2dd319be493c809812b4e9788b9985"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": [],
+          "scope": {
+            "allowed": true,
+            "reason": null
+          }
+        },
+        "requirementVersion": 0,
+        "requirementDigest": null,
+        "generation": null,
+        "cancelEpoch": 0
+      },
+      "skillChecks": {
+        "actualSkillRead": true,
+        "realGraph": true,
+        "realExtractor": true,
+        "realSkillReviewer": true,
+        "watcherPass": true,
+        "globalBaselineOff": true
+      },
+      "constraints": 17,
+      "skillEvaluationCount": 1,
+      "corrections": 0,
+      "admittedRepairs": 0,
+      "deliveredRepairReceipts": 0,
+      "authenticatedDelivery": null,
+      "upstreamSteps": 182,
+      "recoveredRateLimitRequests": 0,
+      "elapsedMs": 1326616,
+      "originalTerminal": {
+        "runId": "a8d2f4ec-3643-49a8-84d3-08477f596af6",
+        "status": "ok",
+        "endedAt": 1793618721297,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "completedOriginalTurn": true,
+      "completedPrediction": true,
+      "firstCompletedPatch": {
+        "bytes": 49250,
+        "sha256": "64e90bbacb9683d4eb2760d7652c2699cbcb912f4c5238893d8694f16cfe7d4c"
+      },
+      "finalCommittedPatch": {
+        "bytes": 49250,
+        "sha256": "64e90bbacb9683d4eb2760d7652c2699cbcb912f4c5238893d8694f16cfe7d4c"
+      },
+      "changedAfterFirstCompletion": false,
+      "firstObservedNativeTerminalPatch": {
+        "bytes": 49250,
+        "sha256": "64e90bbacb9683d4eb2760d7652c2699cbcb912f4c5238893d8694f16cfe7d4c"
+      },
+      "officialScores": {
+        "before": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 17,
+            "f2p_passed": 16,
+            "p2p_total": 29,
+            "p2p_passed": 29,
+            "f2p": 0.9411764705882353,
+            "p2p": 1.0,
+            "partial": 0.9782608695652174
+          },
+          "patchSha256": "64e90bbacb9683d4eb2760d7652c2699cbcb912f4c5238893d8694f16cfe7d4c"
+        },
+        "after": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 17,
+            "f2p_passed": 16,
+            "p2p_total": 29,
+            "p2p_passed": 29,
+            "f2p": 0.9411764705882353,
+            "p2p": 1.0,
+            "partial": 0.9782608695652174
+          },
+          "patchSha256": "64e90bbacb9683d4eb2760d7652c2699cbcb912f4c5238893d8694f16cfe7d4c"
+        }
+      },
+      "relayClosed": true
+    },
+    {
+      "task": "narwhals-rolling-window-suite",
+      "cohort": "skill-real-bench-20261102-004",
+      "attempt": "skill-live-003",
+      "sourceCommit": "bc0eb381b6fe48e122c6bedc7d01b41844826f40",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-skill-real-bench/runtime-corrector-toy/.runtime-correction/skill-real-bench-20261102-004/narwhals-rolling-window-suite/skill-live-003",
+      "complete": false,
+      "originalImageId": "sha256:a94da0d6a13d23612acec72b399ae93baf72b875a354f05d3613ed6b552be2c1",
+      "verifierImageId": "sha256:8847bde553c48dd153b88e5e91dd8ef0ef67c0ad6b56725befc2cc74ed84a0ed",
+      "instructionSha256": "d25036c0761a9e6a2194f40bda5ae29b12487ee4f4c2045e4326ece0a80679a2",
+      "skillSha256": "cdefab7d0f2a285f7ccb1582c1d56783b44d4723eb26b5bd9acc82ddf730bedb",
+      "policySha256": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+      "baseCommit": "061c97f8a01bf9e721835978b039303c5051501c",
+      "finalHead": "061c97f8a01bf9e721835978b039303c5051501c",
+      "finalBranch": "feat/rolling-min-max-median-quantile",
+      "finalGitStatus": " M narwhals/_utils.py\n M narwhals/expr.py\n M narwhals/series.py\n",
+      "reason": "STOP_NOT_PASSED",
+      "error": null,
+      "verification": {
+        "status": "UNVERIFIED",
+        "evaluationId": "stop-d16663797e09d79c86a95671",
+        "reasonCode": "FINDINGS_ONLY_SCOPE",
+        "updatedAt": "2026-11-02T11:54:21.093Z",
+        "assessmentId": "023bdd15-8d06-4724-8596-7bc9bb7ca91b:stop",
+        "rulesDigest": "0b0fcef9bc64483953731c43",
+        "evidence": {
+          "digest": "414b17cc213964d5d6e43ecede9dda3a6a34105f90b33afe1bbd9c6c35ddb2d1",
+          "files": [
+            "/app/.runtime-corrector/config.yaml",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md",
+            "/app/narwhals/expr.py",
+            "/app/narwhals/_utils.py",
+            "/app/narwhals/series.py",
+            "/app/narwhals/_compliant/column.py"
+          ],
+          "fingerprints": {
+            "/app/.runtime-corrector/config.yaml": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md": "cdefab7d0f2a285f7ccb1582c1d56783b44d4723eb26b5bd9acc82ddf730bedb",
+            "/app/narwhals/expr.py": "d175258106e15900f9cb59d407fb6ccb0454c7dd9af1ef2b8f1a97ac49ced502",
+            "/app/narwhals/_utils.py": "63e1c14de5bd47b7296f4d8f68c085cfc0e4f16ec4719ec5691fb305fa92e442",
+            "/app/narwhals/series.py": "add8cc5328031fbcf7aa24c9e23a100fc3dca564eb768dfca1e7da4908da955e",
+            "/app/narwhals/_compliant/column.py": "779c1ab44d0d2f77fdb6c20caa910b948e4e60878a48c60aa998352401190444"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": [],
+          "scope": {
+            "allowed": true,
+            "reason": null
+          }
+        },
+        "requirementVersion": 0,
+        "requirementDigest": null,
+        "generation": null,
+        "cancelEpoch": 0
+      },
+      "skillChecks": {
+        "actualSkillRead": true,
+        "realGraph": true,
+        "realExtractor": true,
+        "realSkillReviewer": true,
+        "watcherPass": true,
+        "globalBaselineOff": true
+      },
+      "constraints": 15,
+      "skillEvaluationCount": 1,
+      "corrections": 0,
+      "admittedRepairs": 0,
+      "deliveredRepairReceipts": 0,
+      "authenticatedDelivery": null,
+      "upstreamSteps": 135,
+      "recoveredRateLimitRequests": 0,
+      "elapsedMs": 2527568,
+      "originalTerminal": {
+        "runId": "023bdd15-8d06-4724-8596-7bc9bb7ca91b",
+        "status": "ok",
+        "endedAt": 1793620358808,
+        "stopReason": "toolUse",
+        "livenessState": "working"
+      },
+      "completedOriginalTurn": false,
+      "completedPrediction": false,
+      "firstCompletedPatch": null,
+      "finalCommittedPatch": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "changedAfterFirstCompletion": null,
+      "firstObservedNativeTerminalPatch": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "officialScores": {
+        "before": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 103,
+            "f2p_passed": 0,
+            "p2p_total": 10093,
+            "p2p_passed": 0,
+            "f2p": 0.0,
+            "p2p": 0.0,
+            "partial": 0.0
+          },
+          "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "after": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 103,
+            "f2p_passed": 0,
+            "p2p_total": 10093,
+            "p2p_passed": 0,
+            "f2p": 0.0,
+            "p2p": 0.0,
+            "partial": 0.0
+          },
+          "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "relayClosed": true
+    },
+    {
+      "task": "pwntools-tube-multiplexing",
+      "cohort": "skill-real-bench-20261102-003",
+      "attempt": "skill-live-002",
+      "sourceCommit": "d9369cd171c340b61202976f5c619e647dd74db9",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-skill-real-bench/runtime-corrector-toy/.runtime-correction/skill-real-bench-20261102-003/pwntools-tube-multiplexing/skill-live-002",
+      "complete": true,
+      "originalImageId": "sha256:8d726c8e36df1fbee86df7607a3c3b4b441841455b83d806cc2f40533f7976de",
+      "verifierImageId": "sha256:2c2752dfef57ef894bf77a49b68ae62d8734b785550d7cb2ff79d18f07116421",
+      "instructionSha256": "d57d68f683be7ddebfb65a2a25dd139143ebc4409c46f09425ea4e38ef3b336a",
+      "skillSha256": "d8e155ba014a3db7a8e34cb52f67c70cc8d36f395a8ea19a892b214200548701",
+      "policySha256": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+      "baseCommit": "76894a5404a65d2800b6d0adaf3485ecba275caa",
+      "finalHead": "6c1127c0427f10d435807b860c2481c5184ba308",
+      "finalBranch": "feature/tube-mux",
+      "finalGitStatus": "?? .openclaw/\n",
+      "reason": null,
+      "error": null,
+      "verification": {
+        "status": "PASS",
+        "evaluationId": "stop-187dcd919cc59aca8cfff9ec",
+        "reasonCode": "REVIEW_PASSED",
+        "updatedAt": "2026-11-02T12:54:25.343Z",
+        "assessmentId": "460f71d8-352e-488d-8899-7c5dea773c71:stop",
+        "rulesDigest": "0b0fcef9bc64483953731c43",
+        "evidence": {
+          "digest": "b5e2bc0102dc7a1d625303b8008694ca29228ef042819248abce9e50758a8f32",
+          "files": [
+            "/app/.runtime-corrector/config.yaml",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md",
+            "/app/pwnlib/tubes/buffer.py",
+            "/app/pwnlib/tubes/mux.py",
+            "/app/pwnlib/tubes/__init__.py",
+            "/app/pwnlib/tubes/tube.py"
+          ],
+          "fingerprints": {
+            "/app/.runtime-corrector/config.yaml": "b0f0d7480e20c7ec30266463b28221db4015e1dd80ba025563ee9b74a4786fad",
+            "/app/.rc-bench/skills/bench-task-contract/SKILL.md": "d8e155ba014a3db7a8e34cb52f67c70cc8d36f395a8ea19a892b214200548701",
+            "/app/pwnlib/tubes/buffer.py": "9c972e5815cedc51474c5a5266db9c4c01861906318105b9d68fac71a36aabdd",
+            "/app/pwnlib/tubes/mux.py": "6b61f1e6abba06e324a8c09d4bfe1061829bfdd4cded57bb25ffd07cac82147c",
+            "/app/pwnlib/tubes/__init__.py": "7af970f0d13486a7e695d80c719f82d44adda1d0afc6b2c7a6e72e1f0b84e9ef",
+            "/app/pwnlib/tubes/tube.py": "7ce98d7efc31511e7be305616793bc6bc98e544f494e2f8eb12c7198fb29a11c"
+          },
+          "unstable": false,
+          "reads": [],
+          "changedPaths": [],
+          "missing": [],
+          "scope": {
+            "allowed": true,
+            "reason": null
+          }
+        },
+        "requirementVersion": 0,
+        "requirementDigest": null,
+        "generation": null,
+        "cancelEpoch": 0
+      },
+      "skillChecks": {
+        "actualSkillRead": true,
+        "realGraph": true,
+        "realExtractor": true,
+        "realSkillReviewer": true,
+        "watcherPass": true,
+        "globalBaselineOff": true
+      },
+      "constraints": 11,
+      "skillEvaluationCount": 1,
+      "corrections": 0,
+      "admittedRepairs": 0,
+      "deliveredRepairReceipts": 0,
+      "authenticatedDelivery": null,
+      "upstreamSteps": 296,
+      "recoveredRateLimitRequests": 0,
+      "elapsedMs": 3088463,
+      "originalTerminal": {
+        "runId": "460f71d8-352e-488d-8899-7c5dea773c71",
+        "status": "ok",
+        "endedAt": 1793623639369,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "completedOriginalTurn": true,
+      "completedPrediction": true,
+      "firstCompletedPatch": {
+        "bytes": 31426,
+        "sha256": "eb694e7aff874025412c41bc0716669398c8e01982a7731a362e80117ed80a81"
+      },
+      "finalCommittedPatch": {
+        "bytes": 31426,
+        "sha256": "eb694e7aff874025412c41bc0716669398c8e01982a7731a362e80117ed80a81"
+      },
+      "changedAfterFirstCompletion": false,
+      "firstObservedNativeTerminalPatch": {
+        "bytes": 31426,
+        "sha256": "eb694e7aff874025412c41bc0716669398c8e01982a7731a362e80117ed80a81"
+      },
+      "officialScores": {
+        "before": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 73,
+            "f2p_passed": 71,
+            "p2p_total": 1,
+            "p2p_passed": 1,
+            "f2p": 0.9726027397260274,
+            "p2p": 1.0,
+            "partial": 0.972972972972973
+          },
+          "patchSha256": "eb694e7aff874025412c41bc0716669398c8e01982a7731a362e80117ed80a81"
+        },
+        "after": {
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 73,
+            "f2p_passed": 71,
+            "p2p_total": 1,
+            "p2p_passed": 1,
+            "f2p": 0.9726027397260274,
+            "p2p": 1.0,
+            "partial": 0.972972972972973
+          },
+          "patchSha256": "eb694e7aff874025412c41bc0716669398c8e01982a7731a362e80117ed80a81"
+        }
+      },
+      "relayClosed": true
+    }
+  ],
+  "firstRoundHistory": [
+    {
+      "task": "sqlite-utils-safe-import-checkpoints",
+      "attempt": "skill-live-001",
+      "complete": false,
+      "reason": "ORIGINAL_HOST_ERROR",
+      "originalTerminal": {
+        "runId": "5cdbc2e3-c944-4c49-bc6e-c6d8df12feca",
+        "status": "error",
+        "endedAt": 1793617379595,
+        "error": "FailoverError: ⚠️ API rate limit reached. Please try again later."
+      },
+      "interruption": null,
+      "firstCompletionSnapshot": false
+    },
+    {
+      "task": "kombu-virtual-queue-dead-lettering",
+      "attempt": "skill-live-001",
+      "complete": false,
+      "reason": "STOP_NOT_PASSED",
+      "originalTerminal": {
+        "runId": "947b2615-43c9-4b36-bb3b-6f7c3af22c31",
+        "status": "ok",
+        "endedAt": 1793617321197,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "interruption": null,
+      "firstCompletionSnapshot": true
+    },
+    {
+      "task": "ipython-session-bundle-replay",
+      "attempt": "skill-live-001",
+      "complete": false,
+      "reason": "ORIGINAL_HOST_ERROR",
+      "originalTerminal": {
+        "runId": "b510d8b2-63b3-4dff-b5dd-b22cd5401304",
+        "status": "error",
+        "endedAt": 1793617304569,
+        "error": "FailoverError: ⚠️ API rate limit reached. Please try again later."
+      },
+      "interruption": null,
+      "firstCompletionSnapshot": false
+    },
+    {
+      "task": "narwhals-rolling-window-suite",
+      "attempt": "skill-live-001",
+      "complete": false,
+      "reason": "BENCHMARK_CANCELLED",
+      "originalTerminal": null,
+      "interruption": {
+        "at": 1793617865.3482418,
+        "reason": "Repeated malformed native Skill-extractor JSON; replace format-repair diagnostic in a new frozen attempt. Not a timeout or step-budget exhaustion.",
+        "controllerPid": 88714,
+        "observedProgress": {
+          "status": "ACTIVE",
+          "corrections": 0,
+          "modelCalls": 19,
+          "privateActive": 1
+        }
+      },
+      "firstCompletionSnapshot": false
+    },
+    {
+      "task": "pwntools-tube-multiplexing",
+      "attempt": "skill-live-001",
+      "complete": false,
+      "reason": "ORIGINAL_HOST_ERROR",
+      "originalTerminal": {
+        "runId": "22a49891-b167-4331-b383-41ad58737cdc",
+        "status": "error",
+        "endedAt": 1793617461411,
+        "error": "FailoverError: ⚠️ API rate limit reached. Please try again later."
+      },
+      "interruption": null,
+      "firstCompletionSnapshot": false
+    }
+  ]
+}

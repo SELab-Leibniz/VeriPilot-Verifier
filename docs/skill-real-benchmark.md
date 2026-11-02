@@ -5,6 +5,15 @@ review, feedback, actual business-agent repair and re-review. It uses five large
 DeepSWE 1.1 tasks: SQLite import checkpoints, Kombu dead lettering, IPython session
 bundles, Narwhals rolling windows and pwntools tube multiplexing.
 
+**Result: no actual correction benefit demonstrated.** Five distinct tasks were
+executed across nine real attempts, including the retained interrupted/failed
+rounds. There were zero admitted business repairs. Four tasks produced completed
+committed predictions; only SQLite passed its complete original verifier. IPython
+and pwntools were accepted by Skill/M08 despite original benchmark failures.
+The long-budget transport works, but detection and actual repair remain unproven.
+Machine-readable evidence is in
+[skill-real-benchmark-results-20261102.json](skill-real-benchmark-results-20261102.json).
+
 DeepSWE provides public task instructions rather than Skills. The harness places
 each original instruction verbatim below Skill frontmatter and asks the native
 agent to read that Skill and complete/commit the original task. This is a
@@ -38,6 +47,13 @@ and repair admissions. Those secondary counters are not interchangeable with
 model requests; the host relay is the overall model-request gate. No previous
 96-request, 200-turn or one-hour phase cap remains in this profile. Normal
 application defaults remain unchanged.
+
+Temporary HTTP 408/429/5xx responses wait and retry inside the same original
+request rather than immediately ending the native run. Configure the delay with
+`RC_EVAL_RETRY_BASE_MS` (default 30000) and `RC_EVAL_RETRY_MAX_MS` (default 120000).
+Every actual upstream attempt, including failed attempts, consumes the same
+2000-step case budget, and waiting consumes the original case wall time.
+`relay.json` records every transport attempt and the total `upstreamSteps`.
 
 ## Reproduce
 
@@ -101,7 +117,90 @@ correction benefit.
 
 ## Current run
 
-Prepared run: `.runtime-correction/skill-real-bench-20261102-002`, attempt
-`skill-live-001`. All five zero-model preflights passed with actual 24-hour phase
-budgets and 2000-step review budgets. The combined targeted regression suite has
-78 passes and one skip. Real benchmark results are pending.
+| Task | Skill watcher | M08 / native outcome | Original F2P before → after | Repairs |
+| --- | --- | --- | --- | ---: |
+| SQLite checkpoints | PASS | PASS | 60/60 → 60/60 | 0 |
+| Kombu dead lettering | PASS | UNVERIFIED: one unproven item | 73/76 → 73/76 | 0 |
+| IPython session bundle | PASS | PASS, false acceptance against bench | 16/17 → 16/17 | 0 |
+| Narwhals rolling windows | PASS; review says NOT_COMPLETED | UNVERIFIED: intermediate host terminal | N/A: no completed committed prediction | 0 |
+| pwntools tube multiplexing | PASS | PASS, false acceptance against bench | 71/73 → 71/73 | 0 |
+
+F2P refers to original fail-to-pass tests. A watcher PASS is distinct from a
+completed business task and from the original benchmark reward.
+
+The combined targeted regression suite has 96 passes and one skip. All prepared
+cases passed zero-model preflights with actual 24-hour phase budgets and
+2000-step review budgets. Real runs use the following frozen inputs:
+
+| Prepared run | Attempt | Cases | Source |
+| --- | --- | --- | --- |
+| `skill-real-bench-20261102-002` | `skill-live-001` | All five | `d8bfc47` |
+| `skill-real-bench-20261102-003` | `skill-live-002` | IPython, SQLite, pwntools | `d9369cd` |
+| `skill-real-bench-20261102-004` | `skill-live-003` | Narwhals | `bc0eb38` |
+
+All prepared runs are below `.runtime-correction/`. The first round retained
+three original-run failures caused by provider HTTP 429; none had committed a
+prediction, and their missing first-completion snapshots are not scored as zero
+or a successful baseline. The retry version reruns those tasks serially from
+their original pristine images.
+
+The first Narwhals round repeatedly produced malformed extractor JSON. It was
+explicitly interrupted for the syntax-diagnostic update, before its configured
+budget expired. The new diagnostic quotes a small region around the JSON parser
+error for the same private session; JSON/schema/source validation remains strict.
+The next Narwhals round starts from the original pristine image.
+
+Kombu's first completed prediction received a Skill watcher PASS, but the M08
+completion review left one obligation UNVERIFIED because its evidence was not
+established. No repair was admitted. The unchanged original verifier scored
+73/76 fail-to-pass tests and 1412/1412 pass-to-pass tests, both before and after;
+the patches were unchanged, so no correction benefit was demonstrated.
+
+IPython's retry completed the full native Skill/M08 review with PASS, zero repair
+admissions and all six Skill evidence gates satisfied. The original verifier
+scored 16/17 fail-to-pass and 29/29 pass-to-pass tests both before and after. The
+remaining failure was `test_session_bundle_magic_start_status_stop`; this is an
+observed false acceptance relative to the original benchmark. No original
+verifier output was fed back into the model. The unchanged patches demonstrate
+no correction benefit, despite the successful review transport.
+
+Narwhals's second round recovered a real 15-unit graph after the business agent
+reread the Skill. Its native host then ended with `status: ok` but
+`stopReason: toolUse`, while only three files had uncommitted edits. The Skill
+review reported NOT_COMPLETED and M08 returned UNVERIFIED/FINDINGS_ONLY_SCOPE,
+with no repair. This is an incomplete native turn, not a completed prediction.
+Its raw grader rewards were zero on empty committed patches; those zeros are
+not evidence about correction quality. The old harness incorrectly labeled its
+host-terminal snapshot as a first completion. The runner now rejects such
+intermediate terminals before taking a completion snapshot. Existing raw records
+are retained unchanged and the summary marks `completedOriginalTurn: false`.
+
+SQLite's retry completed all native evidence gates with Skill/M08 PASS, zero
+repairs, a clean committed prediction, and original verifier reward 1. Both
+snapshots passed 60/60 fail-to-pass and 1038/1038 pass-to-pass tests. It succeeded
+on the first completed prediction, so the unchanged final patch demonstrates no
+correction benefit.
+
+pwntools completed the native review with all Skill evidence gates satisfied,
+Skill/M08 PASS and zero repairs, after 296 actual upstream requests and about
+51.5 minutes. It was not cut off at the old small request/phase limits. Both
+original verifier runs passed 71/73 fail-to-pass and 1/1 pass-to-pass tests. The
+remaining failures were `test_256kb_payload` and `test_concurrent_open_close`.
+This is a second false acceptance relative to the original benchmark, with no
+change between the completed and final committed patches.
+
+All controllers and provider relays closed, and no Skill benchmark container
+remains running. All four completed committed predictions had identical before
+and after patch hashes. No score improvement or actual correction loop was
+observed. The first-round 429 failures justified the bounded relay backoff change;
+the serial retry rounds did not encounter another 429, so live recovery through
+that retry path was not exercised. The new localized JSON syntax diagnostic has
+a targeted regression test; the replacement Narwhals round did not produce the
+same syntax error, so its effect on that model failure was not established.
+
+The five-task sample uses different explicitly recorded frozen source revisions
+while repairing the benchmark transport. It is a diagnostic pilot, not a
+controlled RC-on/RC-off study. The results support investigating the missed
+IPython magic lifecycle and pwntools payload/concurrency behavior, and the native
+intermediate-terminal recovery, without claiming that larger budgets fix those
+semantic or host issues. This run makes no general Stop-policy changes.
