@@ -9,8 +9,10 @@ test('unified native Skill feedback requires the same graph, a real Skill deviat
   const payload = { tools: [{ function: { name: 'exec' } }], messages: [{ role: 'user', content: message }] };
   const input = { payload, graph, findings, admissionIds: ['actual-admission'], request: 4 };
   assert.equal(unifiedSkillFeedbackReceipts(input)[0].objectId, 'M08:demo:rule-1');
+  assert.equal(unifiedSkillFeedbackReceipts({ ...input,
+    findings: [{ expectedConstraint: 'rule-1 (SKILL.md L6): verify the current delivery.' }] })[0].objectId, 'M08:demo:rule-1');
   for (const changed of [{ findings: [] }, { admissionIds: ['foreign'] }, { graph: { ...graph, skillId: 'other' } },
-    { findings: [{ expectedConstraint: 'constraint/foreign' }] },
+    { findings: [{ expectedConstraint: 'constraint/foreign' }] }, { findings: [{ expectedConstraint: 'rule-12 (SKILL.md L6): foreign node.' }] },
     { payload: { ...payload, messages: [{ role: 'assistant', content: message }] } },
     { payload: { ...payload, tools: [{ function: { name: 'rc_skill_care' } }] } },
     { payload: { ...payload, messages: [{ role: 'user', content: message.replace('[runtime-corrector:stop-feedback]', '') }] } }])
