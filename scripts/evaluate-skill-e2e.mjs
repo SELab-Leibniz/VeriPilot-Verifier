@@ -10,7 +10,7 @@ import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluati
 import { installNativeGatewayBatch } from './helpers/native-gateway-batch.mjs';
 import { prepareIntegratedFixture, createIntegratedFencePlugin } from './helpers/native-integrated-module-case.mjs';
 import { runIntegratedOriginalCase } from './helpers/native-integrated-original-case.mjs';
-import { createSkillFaultActorPlugin } from './helpers/skill-e2e-fault-actor.mjs';
+import { installSkillFaultTransport } from './helpers/skill-e2e-fault-transport.mjs';
 
 const execute = promisify(execFile), hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function skillE2eOptions(args) {
@@ -96,7 +96,6 @@ export async function evaluateSkillE2e(options) {
   const fixtureFile = path.join(outputRoot, 'fixture.json'), bindingFile = path.join(outputRoot, 'binding.json');
   await fs.writeFile(fixtureFile, JSON.stringify(fixture, null, 2));
   const fence = await createIntegratedFencePlugin({ outputRoot, fixtureFile, bindingFile });
-  const actor = fixture.controlledFault ? await createSkillFaultActorPlugin({ outputRoot, fixtureFile, bindingFile }) : null;
   const { stdout } = await execute('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: sourceRoot, maxBuffer: 4 * 1024 * 1024 });
   const sourceHashes = {};
   for (const file of [...new Set(stdout.split('\0').filter(Boolean))].sort()) {
@@ -116,13 +115,14 @@ export async function evaluateSkillE2e(options) {
     launchClaim: path.relative(sourceRoot, path.join(outputRoot, 'launch.json')), stageDeadline: new Date(deadlineAt).toISOString(),
     limits: { requests: 96, perCase: 96, wallMs: options.wallMs, inputTokens: 532480, payloadBytes: 262144, outputTokens: 32768, usd: 160 } };
   await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  let batch, gateway, result, failure, boundaryMonitor;
+  let batch, gateway, result, failure, boundaryMonitor, faultTransport;
   const cleanupErrors = [];
   const cancel = () => batch?.abort(new Error('SKILL_E2E_OWNER_CANCELLED'));
   const redact = error => String(error?.message ?? error).replaceAll(batch?.credential() ?? 'never-a-credential', '[REDACTED_CREDENTIAL]').slice(0, 1500);
   try {
     batch = await installNativeGatewayBatch({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
       projectRoot: fixture.projectRoot, manifest });
+    if (fixture.controlledFault) faultTransport = installSkillFaultTransport({ outputRoot });
     process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
     boundaryMonitor = setInterval(() => {
       const status = batch.metrics();
@@ -130,7 +130,7 @@ export async function evaluateSkillE2e(options) {
         batch.abort(new Error(status.dispatchStopped));
     }, 1000);
     gateway = await createNativeGatewayEvaluation({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
-      projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence, ...(actor ? [actor] : [])],
+      projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence],
       businessToolNames: ['read', 'write', 'edit', 'exec'], phaseTimeoutMs: Math.ceil(options.wallMs / 1000) * 1000,
       provider: { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model }, providerGuard: batch });
     result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile, deadlineAt, signal: batch.signal });
@@ -165,7 +165,7 @@ export async function evaluateSkillE2e(options) {
       authenticTerminal: result.authenticTerminals?.complete === true && result.authenticTerminals?.dispatch?.reviewStatus === 'PASS',
       privateRunsSettled: result.privateRuns.length > 0 && result.privateRuns.every(run => run.status === 'SETTLED'),
       ...(options.scenario === 'repair' ? {
-        controlledFaultApplied: await fs.stat(path.join(outputRoot, 'fault-actor-applied.jsonl')).then(stat => stat.size > 0, () => false),
+        controlledFaultApplied: await fs.stat(path.join(outputRoot, 'fault-injection.json')).then(stat => stat.size > 0, () => false),
         skillDeviationObserved: assessments.some(item => item.findings > 0),
         feedbackObserved: skillFeedbackReceipts.length > 0,
         businessRepairObserved: result.actionEvidence.actualDeliveryWrites['app.mjs'] > 0,
@@ -177,11 +177,12 @@ export async function evaluateSkillE2e(options) {
     process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
     clearInterval(boundaryMonitor);
     try { await gateway?.close(); } catch (error) { cleanupErrors.push(redact(error)); }
+    faultTransport?.close();
     try { await batch?.close(); } catch (error) { cleanupErrors.push(redact(error)); }
   }
   const report = { scenario: options.scenario, state: result?.accepted && !failure && !cleanupErrors.length ? 'PASS' : 'INCOMPLETE',
     options, outputRoot, result, failure, cleanupErrors, transport: batch?.metrics(),
-    scope: 'One real automatic OpenClaw Skill process-verification scenario. Repair uses an explicitly controlled faulty original actor; later correction is unmodified. Global baseline, document review and other Stop metrics are disabled explicitly.' };
+    scope: 'One real automatic OpenClaw Skill process-verification scenario. Repair substitutes exactly one original business decision after an actual verifier failure, preserving the real original model response and full provider usage. Reviewers and later repair are unmodified. Global baseline, document review and other Stop metrics are disabled explicitly.' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(report, null, 2));
   return report;
 }

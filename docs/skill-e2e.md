@@ -25,7 +25,7 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 
 失败样例的初始代码固定为 `accept(value) => value`，指南已经正确。原始任务要求修改前先真实执行验证，随后修复并重新验证。看护回合上限在专项样例中设为 1，以便在首次失败工具结果返回时检查已发生的执行；生产默认值不变。Skill 明确说明非零退出是执行失败，并允许通过当前产物的新验证解决失败，不豁免首次失败。驱动不生成规则图或判决、不代写业务修复，不把人工构造的工具结果当作真实执行。
 
-为确保确实检验纠偏而非 Agent 自行修复，`repair` 通过独立、显式记录的故障角色，仅引导原始业务运行在真实验证失败后错误地声称完成。该角色不是新的用户依据，不影响私有审阅或后续纠偏运行，也不提供判决或工具结果。该案属于受控故障注入，不是自然错误率或模型成功率统计。通过还要求真实 Skill 偏差记录及进入业务模型请求或工具返回的 Skill 反馈；仅有终审反馈不算 Skill 闭环通过。
+为确保确实检验纠偏而非 Agent 自行修复，`repair` 在真实验证失败后，仅替换主 Agent 的下一次决策为错误的完成声明。实际提供方请求、原始响应及完整用量仍保留，替换后的响应另存并记录两份摘要。该注入不是新的用户依据，不影响私有审阅或后续纠偏运行，也不提供审阅判决、工具结果或业务修复。该案属于受控故障注入，不是自然错误率或模型成功率统计。通过还要求真实 Skill 偏差记录及进入业务模型请求或工具返回的 Skill 反馈；仅有终审反馈不算 Skill 闭环通过。
 
 每轮保留 `result.json`、实际业务会话、原生工具观察、Skill 规则图与评估、实际终审派发状态、请求和用量。`PASS` 要求实际 Skill 读取、规则抽取、Skill 审查、当前看护通过、最终产物匹配的验证成功、原生终态及私有运行结算；修复案还要求反馈实际进入业务会话和业务 Agent 的写入。历史失败目录不被覆盖。
 
@@ -35,7 +35,7 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 TMPDIR=/private/tmp node --test \
   test/skill-standalone.test.mjs \
   test/skill-e2e-budget.test.mjs \
-  test/skill-e2e-fault-actor.test.mjs \
+  test/skill-e2e-fault-transport.test.mjs \
   test/skill-source-contract.test.mjs \
   test/skill-source-quotes.test.mjs \
   test/skill-source-semantics.test.mjs \
