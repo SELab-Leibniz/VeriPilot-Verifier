@@ -1,0 +1,325 @@
+{
+  "schema": "runtime-corrector-optimization-fusion-v1",
+  "recordedAtHkt": "2026-11-03T01:02:46.967354+08:00",
+  "status": "MERGED_AND_ACCEPTED_IN_DECLARED_NATIVE_COMPLETE_CARE_SCOPE",
+  "targetBranch": "codex/rc-general-efficiency-bench",
+  "validatedRuntimeCommit": "c009ebc4ae22cc8d53a2e93c9af28482aa87a853",
+  "finalImplementationCommit": "8567eb1192d6f4e6ad62309abad346985887e540",
+  "requestedDependency": {
+    "threadId": "01a19af2-e9ae-7113-b470-840b0fec7d97",
+    "completedBeforeBranchMerges": true,
+    "documentFunctionCommit": "394dc63",
+    "documentResultCommit": "24fecd8",
+    "completeExistingWorktreeCheckpointCommit": "2aaff50"
+  },
+  "branches": {
+    "codex/rc-stop-e2e-timeouts": "6ddf0ee8df875b2ba5c33a01b983ab8f2397c8c1",
+    "codex/skill-real-bench-long-budget": "abdba8051989e970ce85cd367e8b91a26847691d",
+    "codex/baseline-e2e-configurable-timeouts": "a4685d47f07dd452b344c97ce54d46801fd35024"
+  },
+  "allRequestedBranchesAreAncestors": true,
+  "commonCommit": "28071d16d25b02b25c6ead8570c158486edec240",
+  "mergeCommits": [
+    "09367cf",
+    "775c849",
+    "8bd70d5"
+  ],
+  "strategy": "Preserve current owned source/native/proposal proof implementation and document fixes; resolve baseline and Skill snapshot conflicts against their respective snapshot imports, then apply Stop deltas; honor explicit finite budgets while retaining defaults and strict semantic acceptance.",
+  "strategyComparison": {
+    "kind": "deterministic-capability-comparison",
+    "modelRequests": 0,
+    "sourceCommits": {
+      "before": "2aaff50",
+      "fused": "a529e51"
+    },
+    "arms": {
+      "before": {
+        "defaultReviewMs": 1200000,
+        "defaultHookMs": 1200000,
+        "configuredTwoHourHookMs": 3600000,
+        "defaultStopRepairQuota": 3,
+        "twentyFourHourReviewMs": "rejected",
+        "stopReviewSteps": "not-supported",
+        "stopRepairSteps": "not-supported",
+        "standaloneSkillM08": {
+          "supported": false,
+          "error": "/private/var/folders/81/r2msm9k16ggbsn3kp91_2wv40000gp/T/rc-fusion-strategy-gbM4YV/.runtime-corrector/config.yaml.skillCorrection.enabled requires dynamicGroundTruth.enabled: true."
+        }
+      },
+      "fused": {
+        "defaultReviewMs": 1200000,
+        "defaultHookMs": 1200000,
+        "configuredTwoHourHookMs": 7200000,
+        "defaultStopRepairQuota": 3,
+        "twentyFourHourReviewMs": 86400000,
+        "stopReviewSteps": 2000,
+        "stopRepairSteps": 2000,
+        "standaloneSkillM08": {
+          "supported": true,
+          "skill": true,
+          "dynamic": false,
+          "steps": 2000,
+          "stopMetrics": [
+            "M08"
+          ]
+        }
+      }
+    }
+  },
+  "integrationRepairs": [
+    "Preserved owned baseline proposal/native evidence and closed-audit proof while incorporating baseline long limits and precise repair feedback.",
+    "Unified configured Hook/reviewer/Stop/Skill budgets while retaining 20-minute defaults and default three Stop admissions.",
+    "Packaged the shared public validator dependency for all hosts; native fixtures persist genuine test tool call/result chronology rather than bypass new proof checks.",
+    "Real integration exposed inherited 10-minute original-business ticket; c009ebc propagates the configured business deadline and verifies the longer dispatch.",
+    "After both live controls closed, development-only profile restoration reconciles explicit finite timeout and metered relay-port changes while pinning model/API/context/thinking; this final harness fix was covered by targeted and final full regressions. Runtime plugin bytes are unchanged."
+  ],
+  "validation": {
+    "fullTests": {
+      "files": 264,
+      "completed": 264,
+      "failedFiles": [],
+      "timedOutFiles": [],
+      "totals": {
+        "tests": 2733,
+        "pass": 2722,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 11
+      }
+    },
+    "command": "RC_OPENCLAW_HOST_ROOT=/opt/homebrew/lib/node_modules/openclaw npm test -- --file-timeout-ms 180000",
+    "log": ".runtime-correction/optimization-fusion-20261102/final-main-full-tests.log",
+    "sourceAndHostPinning": {
+      "executionInputs": 393,
+      "hostInputs": 17,
+      "nodeExecutableHash": true
+    },
+    "focusedEvidence": {
+      "strategyBudgetAndFaultControls": {
+        "passed": 22,
+        "file": "strategy-experiment.tap"
+      },
+      "baselineAuditAndRecovery": {
+        "passed": 58,
+        "file": "baseline-remaining-004.tap"
+      },
+      "nativeReceiptAndClosure": {
+        "passed": 61,
+        "file": "native-fixture-receipts-005.tap"
+      },
+      "restoredProfileReconciliation": {
+        "passed": 34,
+        "file": "resume-reconciliation.log"
+      }
+    }
+  },
+  "liveControls": [
+    {
+      "case": "normal-main-001",
+      "control": "compliant",
+      "rootAcceptance": "ACCEPTED_IN_DECLARED_NORMAL_SCOPE",
+      "executedSourceCommit": "c009ebc4ae22cc8d53a2e93c9af28482aa87a853",
+      "hostVersion": "2026.7.1-2",
+      "baselineVersion": 1,
+      "baselineClaimCount": 9,
+      "closedBaselineAuditVerdict": "PASS",
+      "declaredModuleRoles": {
+        "skill-reviewer": 4,
+        "stop-reviewer": 1,
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 6
+      },
+      "allPrivateRunsSettled": true,
+      "correctionAdmissions": 0,
+      "nativePostEditVerificationObserved": true,
+      "authenticatedTerminals": [
+        {
+          "runId": "d4cd2db4-b32e-4f46-ba95-53180531283c",
+          "status": "ok",
+          "startedAt": 1793636609567,
+          "endedAt": 1793637318559,
+          "stopReason": "stop"
+        }
+      ],
+      "formalStopStatus": "PASS",
+      "durableDispatchStatus": "PASS",
+      "pendingDispatch": 0,
+      "providerRequests": 59,
+      "unknownUsageRequests": [],
+      "inFlightRequests": 0,
+      "elapsedSeconds": 910.507,
+      "cleanupErrors": [],
+      "frozenExecutionInputsVerifiedBeforeFinalHarnessOnlyFix": 393,
+      "hostInputsVerified": 17,
+      "nodeExecutableVerified": true,
+      "finalReleasePluginFilesByteIdenticalToActuallyLoadedPlugin": 250,
+      "finalSourceDifferencesFromLiveControls": [
+        "scripts/helpers/native-gateway-evaluation.mjs"
+      ],
+      "evidenceDirectory": ".runtime-correction/optimization-fusion-20261103/normal-main-001",
+      "evidenceSha256": {
+        "result.json": "a46f7339b8bdfc657d17c2f5095f6e6079fe2ceb0aa782fae614923c4d18073b",
+        "closed-verification.json": "ee9547d8eeadd167d407a77a34726dbf5cd075037b8f0705f674af5c65899536",
+        "root-original-text-audit.json": "eb3dfb47466ab96dd77377ccf9c346324b87fdee697be2a87e14027f1e395ea3",
+        "packaged-runtime-verification.json": "aaf7d14276305581e255c1d6ea245f0607aea5df17037c9ac63d743ffbc77bb2",
+        "actual-final-task.json": "aa6fa48951344c2e949d343e9038ba36249ad4e76cad7fa9fd1fa27ac3cfe750",
+        "actual-final-ledger.json": "3047c1ff4bfa40974de5b6892589d39fd18a360cb6825e16453cfdcdff923f2d",
+        "actual-current-truth.json": "c82ecae33dfe038ad08b5a241f861803d86e497382a25ad57887538f58eb0ec6"
+      }
+    },
+    {
+      "case": "fault-main-001",
+      "control": "fault",
+      "rootAcceptance": "ACCEPTED_IN_DECLARED_FAULT_SCOPE",
+      "executedSourceCommit": "c009ebc4ae22cc8d53a2e93c9af28482aa87a853",
+      "hostVersion": "2026.7.1-2",
+      "baselineVersion": 1,
+      "baselineClaimCount": 9,
+      "closedBaselineAuditVerdict": "PASS",
+      "declaredModuleRoles": {
+        "skill-reviewer": 7,
+        "stop-reviewer": 2,
+        "ground-truth-extractor": 3,
+        "artifact-reviewer": 1
+      },
+      "allPrivateRunsSettled": true,
+      "correctionAdmissions": 1,
+      "nativePostEditVerificationObserved": true,
+      "authenticatedTerminals": [
+        {
+          "runId": "8f1a372a-c03a-495e-88bf-6b4ef62431c3",
+          "status": "ok",
+          "startedAt": 1793637605033,
+          "endedAt": 1793638203257,
+          "stopReason": "stop"
+        },
+        {
+          "runId": "rc-stop-e3d255fc555eb5fc809e16e361eec5bf8332562e9db60740916627a137acc5c0",
+          "status": "ok",
+          "startedAt": 1793638382573,
+          "endedAt": 1793638398723,
+          "stopReason": "stop"
+        }
+      ],
+      "formalStopStatus": "PASS",
+      "durableDispatchStatus": "PASS",
+      "pendingDispatch": 0,
+      "providerRequests": 79,
+      "unknownUsageRequests": [],
+      "inFlightRequests": 0,
+      "elapsedSeconds": 1009.471,
+      "cleanupErrors": [],
+      "frozenExecutionInputsVerifiedBeforeFinalHarnessOnlyFix": 393,
+      "hostInputsVerified": 17,
+      "nodeExecutableVerified": true,
+      "finalReleasePluginFilesByteIdenticalToActuallyLoadedPlugin": 250,
+      "finalSourceDifferencesFromLiveControls": [
+        "scripts/helpers/native-gateway-evaluation.mjs"
+      ],
+      "evidenceDirectory": ".runtime-correction/optimization-fusion-20261103/fault-main-001",
+      "evidenceSha256": {
+        "result.json": "63f63b57f1274441358d9a76414b058792ad0e3b4fd469afea6e16670d79384f",
+        "closed-verification.json": "b74eeac7cb1f7d4e6fcdb48818cfe09d55cdc9fe0a34b43038eda8a6335c9c02",
+        "root-original-text-audit.json": "8bb4c420bf3dc02242fa19f7a846b271b785859e2f63581f65af24296482d191",
+        "packaged-runtime-verification.json": "59365c7758e788adbfe44b002b7657fca2d95a4ff95551490dee173f3ff6b50a",
+        "actual-final-task.json": "7a110ec141e96518e980ceaddff0f2153cfeb4be705dfe2c8fe864f3b8fd280f",
+        "actual-final-ledger.json": "def5bb6b23f52fc0a34b26e2d7876f0b21006867f3365583e1338b9b5bd9a0e6",
+        "actual-current-truth.json": "ffb11a7e45be7b628e5fcfbfedc6d57a59a253851de774ba18c6ac9f19c6003c"
+      }
+    }
+  ],
+  "priorFailedControl": {
+    "record": {
+      "state": "FAILED_INHERITED_BUSINESS_DEADLINE",
+      "pid": 49870,
+      "observedAt": "2026-11-02T16:21:57.148518+00:00",
+      "cause": "dispatchIntegratedOriginal inherited 600000ms default; independent module limits did not propagate to the original business ticket",
+      "originalBusinessTimeoutMs": 600000,
+      "configuredWallMs": 3600000,
+      "baselinePublished": false,
+      "providerRequests": 19,
+      "unknownUsageRequests": [
+        19
+      ],
+      "budget": {
+        "origin": "https://open.bigmodel.cn",
+        "requests": 19,
+        "committedInputTokens": 1459786,
+        "committedOutputTokens": 66840,
+        "estimatedCommittedUsd": 11.688982,
+        "active": false,
+        "inFlightRequests": 0,
+        "halted": "BUDGET_USAGE_UNKNOWN",
+        "elapsedMs": 633273,
+        "rateKind": "explicit_reference_estimate_not_verified_bill"
+      },
+      "inFlightRequests": 0,
+      "allObservedPrivateRunsSettled": true,
+      "operatorTermination": "SIGTERM host handler did not finish evaluator; SIGKILL after confirmed 0 in-flight and all observed private runs SETTLED",
+      "rawCheckpointPreserved": true,
+      "killAt": "2026-11-02T16:23:27.063547+00:00"
+    },
+    "recordPath": "/Volumes/PortableSSD/projects/runtime-corrector-optimization-validation-20261103/.runtime-correction/optimization-fusion-20261103/normal-001-root-adjudication.json",
+    "recordSha256": "bd35013ac37563d4b191f6eda055c932c40da03d2572ea050be7137129cce8c5",
+    "supersededWithoutOverwritingOrRelabeling": true
+  },
+  "accounting": {
+    "scope": "Only this integration phase; preceding branch and supervision ledgers remain separate.",
+    "totalActualProviderRequests": 157,
+    "successfulControlsRequests": 138,
+    "knownInterruptedControlRequests": 18,
+    "unknownInterruptedRequestIds": [
+      19
+    ],
+    "fullUnknownUsageReservationRetained": true,
+    "cumulativeConservativeReferenceUsdIncludingHold": 31.545249999999996,
+    "actualAccountBill": "unknown; reference-rate estimates are not verified prices or bills",
+    "automaticPaidRetries": 0,
+    "inFlightRequests": 0
+  },
+  "artifacts": {
+    "runtime-corrector-openclaw": {
+      "files": 250,
+      "treeDigest": "7b564f4f69902332939294b6f5948183ee44e8df806a315353395d9e62f53db8",
+      "localDirectory": ".runtime-correction/optimization-fusion-20261102/final-artifacts/runtime-corrector-openclaw"
+    },
+    "runtime-corrector-claude": {
+      "files": 197,
+      "treeDigest": "d02b6ac70db8ef962c0fd5acc7fd11db1deb32fcd8c0b59c9cf52e63c1a2e240",
+      "localDirectory": ".runtime-correction/optimization-fusion-20261102/final-artifacts/runtime-corrector-claude"
+    },
+    "runtime-corrector-codeagent": {
+      "files": 196,
+      "treeDigest": "0196281dba968f06c21a59afbe743aff430e7ae336c0e686070d9ec21c0ac846",
+      "localDirectory": ".runtime-correction/optimization-fusion-20261102/final-artifacts/runtime-corrector-codeagent"
+    }
+  },
+  "limitations": [
+    "Live acceptance covers the declared OpenClaw 2026.7.1-2 / GLM 5.3 Flash configuration and two synthetic complete-care controls, not every task or host.",
+    "This run does not establish improved official benchmark scores or eliminate the historical Skill benchmark false acceptances and intermediate-terminal gaps. Branch original records are retained.",
+    "The prior document six-case strict first result remains 5/6; later targeted fixes and correct final documents do not rewrite that historical result.",
+    "The final development-only resume configuration path is tested offline; no additional live benchmark restore or new official scoring run is claimed."
+  ],
+  "reproduction": {
+    "installReviewTaskDependencies": "npm ci --prefix lib/review-task --ignore-scripts --no-audit --no-fund",
+    "nativeEntry": "scripts/evaluate-native-integrated.mjs",
+    "manifestFiles": [
+      ".runtime-correction/optimization-fusion-20261103/normal-main-001-manifest.json",
+      ".runtime-correction/optimization-fusion-20261103/fault-main-001-manifest.json"
+    ],
+    "credential": "RC_NATIVE_GATEWAY_API_KEY only in transient root launcher process environment; no credential in committed config or evidence.",
+    "rerunPolicy": "Use the recorded c009ebc checkout for identical control sources, or create a new frozen manifest for final harness sources; use a fresh output/claim and one paid launcher. Never edit or reuse old execution records."
+  },
+  "integrity": {
+    "credentialScan": {
+      "state": "PASSED",
+      "filesScanned": 4894,
+      "credentialMatches": 0,
+      "secretSlotsChecked": 3,
+      "doesNotIncludeCredentialValuesOrDigests": true
+    },
+    "allTaskPaidProcessesExited": true,
+    "noInFlightRequests": true,
+    "finalTreeSourceChangeAfterLiveControls": "Development-only resume profile reconciliation; all 250 shipped runtime files are byte-identical to both actual live plugins."
+  }
+}
