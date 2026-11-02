@@ -298,6 +298,26 @@ test('grouped same-owner duties get count feedback and can map separately to the
   f.check(f.report);
 });
 
+test('cross-unit and unknown duty references identify the exact rejected report entry without mutating evidence', () => {
+  const f = fixture('Read the original. '.repeat(200));
+  assert(f.units.length > 1);
+  const entry = f.report.sources[0].mappings[1], own = entry.obligationIds[0];
+  entry.obligationIds = f.report.sources[0].mappings[0].obligationIds;
+  const report = JSON.stringify(f.report), inventory = JSON.stringify(f.inventory);
+  assert.throws(() => f.check(f.report), error => {
+    const v = error.auditValidation;
+    assert.equal(v.reason, 'SOURCE_OBLIGATION_MISMATCH');
+    assert.equal(v.section, 'mappings'); assert.equal(v.entryIndex, 1);
+    assert.equal(v.unitId, f.units[1].unitId); assert.equal(v.committed.unitId, f.units[0].unitId);
+    assert.match(v.recovery, /UNRESOLVED\/SOURCE_INVENTORY/);
+    assert(Buffer.byteLength(JSON.stringify(v)) < 2048); return true;
+  });
+  assert.equal(JSON.stringify(f.report), report); assert.equal(JSON.stringify(f.inventory), inventory);
+  entry.obligationIds = ['uncommitted'];
+  assert.throws(() => f.check(f.report), error => error.auditValidation.committed === null);
+  entry.obligationIds = [own]; f.check(f.report);
+});
+
 test('every committed duty needs correspondence and a faulty inventory remains UNRESOLVED, never automatic REPAIR', () => {
   const f = fixture('Read the original contract and run verification.');
   f.inventory.sources[0].units[0].obligations.push({ obligationId: 'other-original-duty', statement: 'Read the original contract.',
