@@ -7,8 +7,11 @@ export async function createBenchmarkFaultFixture({ projectRoot, outputRoot, spe
   const spec = JSON.parse(await fs.readFile(specFile, 'utf8'));
   if (!spec || typeof spec.path !== 'string' || path.isAbsolute(spec.path)
     || !path.resolve(projectRoot, spec.path).startsWith(path.resolve(projectRoot) + path.sep)
-    || typeof spec.before !== 'string' || !spec.before.length || typeof spec.after !== 'string'
-    || spec.before === spec.after) throw new Error('Invalid benchmark fault specification');
+    || typeof spec.after !== 'string'
+    || (typeof spec.before === 'string' && spec.before.length ? spec.before === spec.after
+      || spec.beforePattern !== undefined : typeof spec.beforePattern !== 'string' || !spec.beforePattern.length))
+    throw new Error('Invalid benchmark fault specification');
+  if (spec.beforePattern) new RegExp(spec.beforePattern, 'gm');
   const root = path.join(outputRoot, 'benchmark-fault-fixture');
   await fs.mkdir(root, { recursive: true });
   const id = 'rc-benchmark-fault-fixture';
@@ -31,10 +34,11 @@ export default {id:${JSON.stringify(id)},register(api){api.on('before_agent_fina
  const file=path.join(project,spec.path),real=await fs.realpath(file),realProject=await fs.realpath(project);
  if(!real.startsWith(realProject+path.sep))throw new Error('Fault target escapes benchmark workspace');
  const before=await fs.readFile(file,'utf8');
- if(before.split(spec.before).length!==2)throw new Error('Fault target does not match exactly once');
+ const matches=spec.beforePattern?[...before.matchAll(new RegExp(spec.beforePattern,'gm'))].map(match=>match[0]):before.split(spec.before).length===2?[spec.before]:[];
+ if(matches.length!==1||!matches[0].length)throw new Error('Fault target does not match exactly once');
  // Scratch diagnostics are retained untracked; only committed source is corrupted.
  if(git('status','--porcelain','--untracked-files=no').trim())throw new Error('Original delivery must be committed before fault injection');
- const beforeHead=git('rev-parse','HEAD').trim(),after=before.replace(spec.before,spec.after);
+ const beforeHead=git('rev-parse','HEAD').trim(),after=before.replace(matches[0],()=>spec.after);
  await fs.mkdir(path.join(output,'pre-injection'),{recursive:true});
  await fs.writeFile(path.join(output,'pre-injection/model.patch'),git('diff','--binary',target.baseCommit,'HEAD'));
  await fs.writeFile(file,after);git('add','--',spec.path);git('commit','-m','test: inject structural comparison defect for Stop evaluation');

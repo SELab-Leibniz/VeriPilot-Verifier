@@ -95,16 +95,17 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
           ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
     } },
   };
-  for (const extra of extraPluginPaths) {
-    if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
-    config.plugins.allow.push(extra.id); config.plugins.load.paths.push(await fs.realpath(extra.path));
-    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
-  }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
     if (contextWindowTokens !== undefined && config.models?.providers?.[providerId]?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
+  }
+  for (const extra of extraPluginPaths) {
+    if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
+    config.plugins.allow = [...new Set([...config.plugins.allow, extra.id])];
+    config.plugins.load.paths = [...new Set([...config.plugins.load.paths, await fs.realpath(extra.path)])];
+    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
   }
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };

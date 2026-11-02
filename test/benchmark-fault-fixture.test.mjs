@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { createBenchmarkFaultFixture } from '../scripts/helpers/benchmark-fault-fixture.mjs';
 
-async function fixture(t) {
+async function fixture(t, spec = { path: 'diff.go', before: 'good comparison', after: 'always equal' }) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'benchmark-fault-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project'), outputRoot = path.join(root, 'output');
@@ -17,7 +17,7 @@ async function fixture(t) {
   await fs.writeFile(path.join(projectRoot, 'diff.go'), 'good comparison\n');
   git('add', '.'); git('commit', '-qm', 'completed real delivery');
   const head = git('rev-parse', 'HEAD'), specFile = path.join(root, 'spec.json');
-  await fs.writeFile(specFile, JSON.stringify({ path: 'diff.go', before: 'good comparison', after: 'always equal' }));
+  await fs.writeFile(specFile, JSON.stringify(spec));
   const extra = await createBenchmarkFaultFixture({ projectRoot, outputRoot, specFile });
   const plugin = (await import(pathToFileURL(path.join(extra.path, 'index.mjs')).href)).default;
   let hook;
@@ -65,4 +65,16 @@ test('fault cannot escape the isolated benchmark through traversal or a symlink'
   await fs.symlink(outside, path.join(f.projectRoot, 'diff.go'));
   await assert.rejects(f.hook({ runId: 'original' }, { workspaceDir: f.projectRoot }), /escapes/);
   assert.equal(await fs.readFile(outside, 'utf8'), 'good comparison\n');
+});
+
+test('a declaration pattern accepts a changed committed implementation but rejects ambiguity', async t => {
+  const f = await fixture(t, { path: 'diff.go', beforePattern: '^good [^\\n]+', after: 'always equal' });
+  const file = path.join(f.projectRoot, 'diff.go');
+  await fs.writeFile(file, 'good newer comparison\ngood another comparison\n');
+  f.git('add', '.'); f.git('commit', '-qm', 'ambiguous declarations');
+  await assert.rejects(f.hook({ runId: 'original' }, { workspaceDir: f.projectRoot }), /exactly once/);
+  await fs.writeFile(file, 'good newer comparison\n');
+  f.git('add', '.'); f.git('commit', '-qm', 'new implementation');
+  await f.hook({ runId: 'original' }, { workspaceDir: f.projectRoot });
+  assert.equal(await fs.readFile(file, 'utf8'), 'always equal\n');
 });

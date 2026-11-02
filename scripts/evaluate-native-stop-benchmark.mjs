@@ -21,7 +21,7 @@ const instructionFile = path.resolve(value('--instruction'));
 const resume = args.includes('--resume');
 const seedCheckpointFile = value('--seed-checkpoint-state');
 const faultSpecFile = value('--inject-defect-spec');
-if (resume && (seedCheckpointFile || faultSpecFile)) throw new Error('Injected benchmark control requires a fresh host profile');
+if (resume && seedCheckpointFile) throw new Error('Choose preserved session resume or a fresh checkpoint profile');
 if (!hostRoot || !/^[a-f0-9]{40}$/u.test(baseCommit ?? '')) throw new Error('Explicit host and benchmark base commit required');
 const timeouts = nativeStopTimeouts(Number(value('--timeout-ms', '86400000')));
 const budgets = { maxReviewSteps: Number(value('--max-review-steps', '2000')),
