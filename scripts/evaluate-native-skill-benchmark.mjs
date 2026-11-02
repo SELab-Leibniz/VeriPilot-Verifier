@@ -139,6 +139,9 @@ try {
         if (['ok', 'error'].includes(terminal.status)) originalTerminal = terminal;
       }
       if (originalTerminal?.status === 'error') { reason = 'ORIGINAL_HOST_ERROR'; break; }
+      if (originalTerminal?.status === 'ok' && originalTerminal.stopReason !== 'stop') {
+        reason = 'ORIGINAL_HOST_INTERMEDIATE_TERMINAL'; break;
+      }
       // Capture the authenticated original completion before any repair,
       // including failures in Stop's prerequisite extraction.
       if (originalTerminal?.status === 'ok' && !ledger?.used
