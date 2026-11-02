@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
+import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
 
@@ -27,11 +28,19 @@ async function freePort() {
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
-  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
+  phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens,
+  provider = null }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
-  if (contextWindowTokens !== undefined && !process.env.ANTHROPIC_BASE_URL)
+  if (provider && (provider.api !== 'openai-completions'
+    || provider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4'
+    || !['glm-5.3', 'glm-5.3-flash'].includes(provider.model)
+    || Object.keys(provider).some(key => !['api', 'baseUrl', 'model'].includes(key))))
+    throw new Error('Unsupported explicit Coding Plan provider.');
+  if (provider && !process.env.RC_EVAL_API_KEY?.trim()) throw new Error('Missing RC_EVAL_API_KEY');
+  const providerId = provider ? 'openai' : 'anthropic';
+  if (contextWindowTokens !== undefined && !provider && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
-  if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
+  if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > MAX_REVIEW_TIMEOUT_MS
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
@@ -41,7 +50,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   const noTimeoutMs = unlimitedBusiness ? (await import(pathToFileURL(path.join(hostRoot, 'dist/timeout-0Cw4kcol.js')).href)).n({ overrideMs: 0 }) : null;
   const root = path.join(outputRoot, 'native-host');
   await fs.mkdir(root, { recursive: true }); await fs.mkdir(projectRoot, { recursive: true });
-  const port = await freePort(), model = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
+  const port = await freePort(), model = provider?.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
   process.env.OPENCLAW_STATE_DIR = path.join(root, 'state');
   process.env.OPENCLAW_CONFIG_PATH = path.join(root, 'config.json');
   process.env.OPENCLAW_GATEWAY_TOKEN = randomBytes(32).toString('hex');
@@ -57,16 +66,19 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   let config = { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
-    agents: { defaults: { workspace: projectRoot, model: { primary: `anthropic/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
+    agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
         tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
     session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
-    ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
-      api: 'anthropic-messages', baseUrl: process.env.ANTHROPIC_BASE_URL,
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768 }],
+    ...(provider || process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { [providerId]: {
+      api: provider?.api ?? 'anthropic-messages', baseUrl: provider?.baseUrl ?? process.env.ANTHROPIC_BASE_URL,
+      ...(phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768,
+        ...(provider ? { compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
+          supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}) }],
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
@@ -81,7 +93,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   }
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
-    if (contextWindowTokens !== undefined && config.models?.providers?.anthropic?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
+    if (contextWindowTokens !== undefined && config.models?.providers?.[providerId]?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
   }
@@ -117,12 +129,18 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   // The random loopback Gateway token lives in this process only. Existing
   // provider credentials are inherited, not embedded in this saved config.
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
-  const timing = process.env.ANTHROPIC_BASE_URL ? await installProviderFetchTiming({
-    file: path.join(root, reuseProfile ? 'restart-provider-fetch-timing.jsonl' : 'provider-fetch-timing.jsonl'), origin: new URL(process.env.ANTHROPIC_BASE_URL).origin,
+  const providerBaseUrl = provider?.baseUrl ?? process.env.ANTHROPIC_BASE_URL;
+  const timing = providerBaseUrl ? await installProviderFetchTiming({
+    file: path.join(root, reuseProfile ? 'restart-provider-fetch-timing.jsonl' : 'provider-fetch-timing.jsonl'), origin: new URL(providerBaseUrl).origin,
   }) : null;
   let gateway, unsubscribe;
   const modelStarts = [];
+  const previousOpenAIKey = process.env.OPENAI_API_KEY;
+  const restoreCredential = () => {
+    if (previousOpenAIKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previousOpenAIKey;
+  };
   try {
+    if (provider) process.env.OPENAI_API_KEY = process.env.RC_EVAL_API_KEY;
     const load = relative => import(pathToFileURL(path.join(hostRoot, relative)).href);
     const { startGatewayServer } = await load('dist/server-BnSQQ3Aa.js');
     gateway = await startGatewayServer(port, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false });
@@ -140,11 +158,11 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     unsubscribe = diagnostics.onInternalDiagnosticEvent(event => {
       if (event.type === 'model.call.started') modelStarts.push({ runId: event.runId, sessionId: event.sessionId, sessionKey: event.sessionKey, ts: event.ts, seq: event.seq });
     });
-    return { runtime, hooks: getGlobalHookRunner(), registry, config, model, pluginRoot, root, port, faultInjection: injectDefect,
-      async request(method, params) {
+    return { runtime, hooks: getGlobalHookRunner(), registry, config, model, modelRef: `${providerId}/${model}`, pluginRoot, root, port, faultInjection: injectDefect,
+      async request(method, params, options = {}) {
         const { callGateway } = await load('dist/call-BZWJ3eG1.js');
         return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,
-          config, method, params, timeoutMs: 30000,
+          config, method, params, timeoutMs: options.timeoutMs ?? 30000,
           // Each request has a new connection. The isolated controller must
           // authenticate its exact-run abort as admin rather than its creator.
           ...(method === 'chat.abort' ? { scopes: ['operator.admin'] } : {}) });
@@ -152,7 +170,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
       setPhase: value => timing?.setPhase(value),
       async drain() { await diagnostics.waitForDiagnosticEventsDrained(); },
       metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts), pluginStatus: plugin.status, isolatedState: root }),
-      async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); await timing?.close(); } },
+      async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } },
     };
-  } catch (error) { try { await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); await timing?.close(); } throw error; }
+  } catch (error) { try { await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }
 }

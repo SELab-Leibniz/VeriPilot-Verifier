@@ -2,11 +2,15 @@
 // No user/assistant transcript records, lifecycle callbacks or GT are injected.
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { waitPostRunTerminal } from '../../lib/openclaw/post-run-host.mjs';
+import { nativeStopTimeouts } from './native-stop-timeouts.mjs';
 import { prepareNativeLoopProject } from './native-stop-loop-case.mjs';
 
-export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }) {
+export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot, signal,
+  deadlineAt = Date.now() + (gateway.stopTimeouts ?? nativeStopTimeouts()).wallMs }) {
+  if (deadlineAt <= Date.now()) throw new Error('Original request deadline expired');
   const { file, requirement } = await prepareNativeLoopProject({ gateway, projectRoot, outputRoot });
   await fs.writeFile(file, 'export const accept = value => value;\n');
   const key = `agent:main:rc-initial-${randomUUID()}`;
@@ -19,7 +23,7 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
   const sessionId = saved.sessionId, runId = randomUUID();
   if (gateway.faultInjection) await fs.writeFile(path.join(gateway.root, 'fault-target.json'), JSON.stringify({ runId }));
   const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message: requirement,
-    idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: 180000 });
+    idempotencyKey: runId, deliver: false, thinking: 'off', timeoutMs: Math.max(1, deadlineAt - Date.now()) });
   console.log(JSON.stringify({ state: 'actual-chat-request', sessionId, runId, acceptedRunId: accepted.runId, outputRoot }));
   const load = relative => import(pathToFileURL(path.join(gateway.pluginRoot, relative)).href);
   const [{ findTask }, { createStopCorrectionStore }, { readReport }, { listNativeRuns }, { normalizeMessages }] = await Promise.all([
@@ -27,14 +31,30 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
     load('lib/openclaw/native-runs.mjs'), load('lib/openclaw/transcript.mjs'),
   ]);
   const store = createStopCorrectionStore({ directory: path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions') });
-  const deadline = Date.now() + 540000; let last, task, ledger, earlyTermination;
-  while (Date.now() < deadline) {
+  const deadline = deadlineAt; let last, task, ledger, earlyTermination, originalTerminal, lastTerminalCheck = 0;
+  while (Date.now() < deadline && !signal?.aborted) {
     await gateway.drain(); task = await findTask({ projectRoot, sessionId }); ledger = await store.inspect(sessionId);
     const progress = { status: task?.status, verification: task?.verification?.status, used: ledger?.used, modelCalls: gateway.metrics().modelStarts.length };
     if (JSON.stringify(progress) !== last) { last = JSON.stringify(progress); console.log(last); }
     const finalReceipt = Object.values(ledger?.admissions ?? {}).find(item => item.accounting === 'USED')?.finalReview;
-    if (task?.verification?.status === 'PASS' && (!gateway.faultInjection || finalReceipt?.status === 'PASS')
-      || ['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR'].includes(task?.status)) break;
+    if (task?.verification?.status === 'PASS' && (!gateway.faultInjection || finalReceipt?.status === 'PASS')) {
+      const privateRuns = await listNativeRuns(projectRoot, task.taskId);
+      if (privateRuns.length && privateRuns.every(run => run.status === 'SETTLED')) break;
+    }
+    if ((['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
+      || task?.status === 'COMPLETED_WITH_ISSUES' && task?.verification?.status === 'UNVERIFIED')) break;
+    if (!originalTerminal && Date.now() - lastTerminalCheck >= 1000) {
+      lastTerminalCheck = Date.now();
+      const response = await gateway.request('agent.wait', { runId, timeoutMs: 1 }, { timeoutMs: 2000 });
+      const terminal = response?.result ?? response;
+      if (terminal?.runId !== runId) throw new Error('Original terminal identity mismatch');
+      if (['ok', 'error'].includes(terminal.status)) {
+        originalTerminal = terminal;
+        if (terminal.status === 'error' || !task) {
+          earlyTermination = `Original host ended with ${terminal.status}${task ? '' : ' before creating an RC task'}`; break;
+        }
+      }
+    }
     if (!gateway.metrics().modelStarts.length) {
       const snapshot = await gateway.runtime.subagent.getSession({ sessionKey });
       const terminal = (snapshot.messages ?? []).map(record => record.message ?? record).at(-1);
@@ -44,6 +64,12 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
       }
     }
     await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  if (signal?.aborted || Date.now() >= deadline) {
+    await gateway.request('chat.abort', { sessionKey, runId }).catch(() => {});
+    for (const item of Object.values(ledger?.admissions ?? {}).filter(item => item.accounting === 'USED' && !item.endedAt))
+      await gateway.request('chat.abort', { sessionKey, runId: `rc-stop-${item.id}` }).catch(() => {});
+    earlyTermination = signal?.aborted ? 'Evaluation cancelled' : 'Evaluation deadline expired';
   }
   const session = await gateway.runtime.subagent.getSession({ sessionKey }), records = session.messages ?? [];
   const entries = normalizeMessages(records);
@@ -61,7 +87,12 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
   const runs = task ? await listNativeRuns(projectRoot, task.taskId) : [];
   const roles = Object.fromEntries(['ground-truth-extractor', 'stop-reviewer'].map(role => [role, new Set(runs.filter(run => run.role === role).map(run => run.sessionId)).size]));
   let deliveryChecks = false;
-  if (task?.verification?.status === 'PASS') { const module = await import(pathToFileURL(file).href); deliveryChecks = [0, 7, -2].every(value => module.accept(value) === value + 1); }
+  if (task?.verification?.status === 'PASS') {
+    const url = pathToFileURL(file);
+    url.searchParams.set('sha256', createHash('sha256').update(await fs.readFile(file)).digest('hex'));
+    const module = await import(url.href);
+    deliveryChecks = [0, 7, -2].every(value => module.accept(value) === value + 1);
+  }
   const actualMainStart = gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId);
   const expectedUsed = gateway.faultInjection ? 1 : 0;
   const used = Object.values(ledger?.admissions ?? {}).filter(item => item.accounting === 'USED');
@@ -70,10 +101,20 @@ export async function runNativeOriginalTurn({ gateway, projectRoot, outputRoot }
     && used[0].finalReview?.status === 'PASS' && used[0].finalReview.evaluationId === task?.verification?.evaluationId
     && ledger.events.some(event => event.type === 'STOP_REVIEW_SETTLED' && event.stopId === used[0].stopId && event.status === 'DEVIATION')
     && gateway.metrics().modelStarts.some(event => event.runId === `rc-stop-${used[0].id}` && event.sessionId === sessionId);
-  const complete = report.verification === 'PASS' && ledger?.used === expectedUsed && Object.keys(ledger?.admissions ?? {}).length === expectedUsed
+  const terminals = [];
+  if (report.verification === 'PASS') {
+    for (const terminalRunId of [runId, ...used.map(item => `rc-stop-${item.id}`)]) {
+      terminals.push(terminalRunId === runId && originalTerminal ? originalTerminal
+        : await waitPostRunTerminal(null, null, terminalRunId, deadlineAt, signal,
+          (method, params, options) => gateway.request(method, params, options)));
+    }
+  } else if (originalTerminal) terminals.push(originalTerminal);
+  const complete = !signal?.aborted && Date.now() < deadlineAt
+    && terminals.length === expectedUsed + 1 && terminals.every(item => item?.status === 'ok')
+    && task?.verification?.status === 'PASS' && report.verification === 'PASS' && ledger?.used === expectedUsed && Object.keys(ledger?.admissions ?? {}).length === expectedUsed
     && originalUserObserved && actualMainStart && writes.length > 0 && deliveryChecks
     && roles['ground-truth-extractor'] === 1 && roles['stop-reviewer'] === expectedUsed + 1 && runs.every(run => run.status === 'SETTLED') && faultCycleComplete;
-  return { mode: 'original-turn', complete, gatewayEntry: 'authenticated sessions.create + chat.send; no seeded lifecycle',
+  return { mode: 'original-turn', complete, terminals, deadlineExceeded: Date.now() >= deadlineAt, gatewayEntry: 'authenticated sessions.create + chat.send; no seeded lifecycle',
     sessionId, sessionKey, originalRunId: runId, taskId: task?.taskId, verification: report.verification, status: task?.status,
     evaluationId: task?.verification?.evaluationId, used: ledger?.used, earlyTermination, admissionCount: Object.keys(ledger?.admissions ?? {}).length,
     originalUserObserved, actualMainStart, actualDeliveryWriteCalls: writes.length, deliveryChecks, roles,
