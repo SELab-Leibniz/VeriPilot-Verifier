@@ -29,7 +29,7 @@ test('rules.enabled false disables baseline style rules while explicit copy fide
   assert.equal(prepared.result.status, 'failed');
   assert.equal(prepared.result.diagnostics[0].ruleId, 'DOCUMENT-COPY-MISMATCH');
   assert.equal(prepared.result.diagnostics[0].line, 4);
-  assert.match(prepared.result.diagnostics[0].evidence[0], /  keep literal  /u);
+  assert.equal(JSON.parse(prepared.result.diagnostics[0].evidence[0].split(' = ')[1]), '  keep literal  ');
   assert(!prepared.result.diagnostics.some(item => item.ruleId === 'MARKDOWN-HEADING-JUMP'));
   const finalized = await finalizeArtifactCheck(prepared, { status: 'completed', findings: [], diffs: [], edits: [], summary: 'Model says passed.' });
   assert.equal(finalized.result.status, 'failed', 'A semantic PASS must not erase deterministic copy errors');
@@ -58,7 +58,9 @@ test('literal trailing whitespace keeps strict failure and directs native repair
   assert.equal(prepared.result.status, 'failed');
   assert.equal(finding.line, 3);
   assert(finding.evidence.some(line => line.includes('source 27, current 26')));
-  assert.match(finding.suggestion, /native write tool/u);
+  assert.match(finding.suggestion, /native apply_patch/u);
+  const patch = JSON.parse(finding.evidence.find(line => line.startsWith('native apply_patch arguments = ')).slice('native apply_patch arguments = '.length));
+  assert(patch.input.includes('-hvplot                        0.5.2                          \n+hvplot                        0.5.2                           \n'));
   assert.equal(await fs.readFile(path.join(f.root, 'design.md'), 'utf8'), actual);
   assert.equal((await finalizeArtifactCheck(prepared, { status: 'completed', findings: [], diffs: [], edits: [] })).result.status, 'failed');
 });
