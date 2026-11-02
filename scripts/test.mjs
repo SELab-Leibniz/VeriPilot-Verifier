@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readdirSync } from "node:fs";
+import { readdirSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -59,6 +60,11 @@ export async function runTestFiles({ files, cwd, timeoutMs = DEFAULT_FILE_TIMEOU
 
 async function main() {
   const root = fileURLToPath(new URL("../", import.meta.url));
+  // Runtime scopes use physical filesystem identities. Keep implicit fixture
+  // roots canonical too; explicit symlink tests still exercise alias handling.
+  const temporaryRoot = realpathSync(tmpdir());
+  if (process.platform === "win32") process.env.TEMP = process.env.TMP = temporaryRoot;
+  else process.env.TMPDIR = temporaryRoot;
   let timeoutMs = DEFAULT_FILE_TIMEOUT_MS;
   const nodeArgs = [], args = process.argv.slice(2);
   for (let index = 0; index < args.length; index++) {

@@ -131,7 +131,7 @@ test("CURRENT_TASK preserves the original command scope, text and source through
 
 test("typed conditional routing preserves its full condition while future and unknown scopes stay native without removing objects", async t => {
   const originals = {
-    CONDITIONAL: ["If the authorized verifier fails, fix kitchen.py, preserve all baseline files, then rerun the original verifier.",
+    CONDITIONAL: ["If the authorized verifier fails, rerun the unchanged original verifier in its original workdir and preserve all baseline files.",
       "if the authorized verifier fails; retain the original workdir and source revision"],
     FUTURE: ["Online recipe synchronization is explicitly deferred to the next release and is outside this offline delivery.",
       "next release only; excluded from the current offline app"],
@@ -141,6 +141,7 @@ test("typed conditional routing preserves its full condition while future and un
   for (const kind of ["CONDITIONAL", "FUTURE", "UNKNOWN"]) await t.test(kind, async t => {
     const [text, applicability] = originals[kind];
     const original = operation({ applicabilityKind: kind, text, applicability,
+      verificationTarget: kind === 'CONDITIONAL' ? 'PROCESS' : 'IMPLEMENTATION',
       source: { ...source, excerpt: text } });
     const f = await fixture(t, original), saved = f.truth.claims[0], object = f.population.metrics.M12[0];
     assert.equal(saved.text, text);
@@ -178,7 +179,8 @@ test("natural legacy labels are not upgraded to current-task scope merely by the
 });
 
 test("a CURRENT_TASK routing tag alone cannot close a runtime obligation without captured execution evidence", async t => {
-  const f = await fixture(t), input = f.inputFor("M12");
+  const text = 'Actually run the bundled verifier against kitchen.py and establish a successful exit before completion.';
+  const f = await fixture(t, operation({ text, verificationTarget: 'PROCESS', source: { ...source, excerpt: text } })), input = f.inputFor("M12");
   assert.equal(canUseStopTaskReview(input), true);
   let workerCalls = 0;
   const handle = await runStopTaskReview(input, { runTask: async () => { workerCalls++; throw new Error("No runtime proof was supplied."); } });

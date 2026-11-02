@@ -1,0 +1,471 @@
+{
+  "schema": "rc-diagnostic-screening-v1",
+  "state": "FIRST_FROZEN_E2E_SOURCE022_QUALIFICATION_REVIEW_PENDING_FIXED_BANK_NO_NEW_SCREENING",
+  "createdUtc": "2026-11-01T01:45:14.970438+00:00",
+  "authority": "User asks to prioritize samples distinguishing RC_OFF from RC_ON; old full-score cases cannot establish solve-rate gains.",
+  "candidatePreregistration": {
+    "path": ".runtime-correction/rc-supervision/validation-assistant-20261101/diagnostic-public-candidate-preregistration-001.json",
+    "sha256": "986b5fb35e39623e16227f417c4dbf8a0fa1cb6a29d15d741ec2d4673c2d45c7"
+  },
+  "dataset": {
+    "name": "SWE-bench/SWE-bench_Lite",
+    "revision": "b0dde1093fe417d83b7184254edf8199c1f0dff5",
+    "split": "test",
+    "population": 300,
+    "sourceParquetHashMatchesExistingFrozenSampleRecord": true,
+    "publicProjectionColumnsDecoded": [
+      "instance_id",
+      "base_commit",
+      "problem_statement",
+      "difficulty"
+    ],
+    "forbiddenColumnsNotDecoded": [
+      "patch",
+      "test_patch",
+      "eval_script",
+      "hints_text",
+      "FAIL_TO_PASS",
+      "PASS_TO_PASS"
+    ]
+  },
+  "selection": {
+    "seed": "rc-diagnostic-public-candidates-20261101-v1",
+    "hashAlgorithm": "SHA-256",
+    "hashEncoding": "UTF-8",
+    "hashInputExact": "seed + LF + tier + LF + instance_id; no trailing LF",
+    "sort": "Ascending full lowercase hexadecimal digest, then ascending exact instance_id",
+    "publicLabels": {
+      "medium": "15 min - 1 hour",
+      "hard": "1-4 hours"
+    },
+    "perTier": 2,
+    "seedRerolled": false,
+    "newCandidateOutcomeFieldsConsulted": false,
+    "candidatePatchOrHiddenTestFieldsRead": false,
+    "originalLite3Excluded": [
+      "django__django-12708",
+      "pytest-dev__pytest-7432",
+      "sympy__sympy-12419"
+    ],
+    "priorContaminationExclusionPreserved": [
+      "sympy__sympy-20590"
+    ],
+    "priorExclusionReason": "Official evaluation guide incidentally exposed an example model patch for sympy20590 before sampling; exclude to avoid repair-content contamination.",
+    "repositoryDiversityFilterAdded": false,
+    "imageReadinessOrRuntimeOutcomeFiltersAdded": false,
+    "unlabeledNotAssignedInventedDifficulty": true,
+    "eligibleFrames": {
+      "medium": {
+        "publicDifficulty": "15 min - 1 hour",
+        "beforeExclusions": 45,
+        "eligibleAfterExclusions": 43,
+        "eligibleSortedIdsSha256": "ddf17a4b16979c1436d6c0877c723f435781b724a7b32623886dc156e7bd4716"
+      },
+      "hard": {
+        "publicDifficulty": "1-4 hours",
+        "beforeExclusions": 3,
+        "eligibleAfterExclusions": 2,
+        "eligibleSortedIdsSha256": "d3c14346e0d8c417f271a8e4cc9f47f2ae3d221b6b826fc5698202e4f3eab776"
+      }
+    }
+  },
+  "candidates": [
+    {
+      "slot": "M1",
+      "tier": "medium",
+      "rankWithinTier": 1,
+      "instanceId": "sympy__sympy-24213",
+      "repo": "sympy/sympy",
+      "publicDifficulty": "15 min - 1 hour",
+      "baseCommit": "e8c22f6eac7314be8d92590bfff92ced79ee03e2",
+      "imageRefPublicMetadata": "swebench/sweb.eval.x86_64.sympy_1776_sympy-24213:latest",
+      "rawProblemStatementSha256": "643ce391df54dc5676bb5ccb2bc1f1a1963be8b0f54cee9bc816a1fe1ca2310b",
+      "rawProblemStatementUtf8Bytes": 1023,
+      "problemHashNormalization": "none; original UTF-8 string, preserve newline and whitespace",
+      "selectionSha256": "005c2eb580488ce05423b7befe2122d8767f7232f8129c60d057e76884e8499b",
+      "rawPublicFieldsMatchFrozenHfProjection": true,
+      "offStatus": "VALID_OFF_RESOLVED",
+      "onStatus": "NOT_RUN_NOT_SELECTED",
+      "diagnosticQualification": "NOT_ELIGIBLE_OFF_RESOLVED",
+      "environment": {
+        "localImageId": "sha256:d7dcc98726305ebee4f41ff14ef1509838acae5ebc83d2ba6139cc0344adba7c",
+        "imageAndPublicBaseQualified": true,
+        "commonLinuxExecutionQualified": false,
+        "evidence": ".runtime-correction/rc-supervision/diagnostic-image-preparation-20261101/M1-public-workspace-probe-001.json"
+      },
+      "offAttempt": 1,
+      "offManifest": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M1/off-manifest-001.json",
+      "offQualification": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M1/root-off-qualification-001.json",
+      "offSourceImmutable": true,
+      "offSettlement": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M1/off-settlement-001.json",
+      "officialScore": {
+        "resolved": true,
+        "patch_is_None": false,
+        "patch_exists": true,
+        "patch_successfully_applied": true,
+        "infra_failure": false,
+        "testBuckets": {
+          "FAIL_TO_PASS": {
+            "status": "scored",
+            "success": 1,
+            "failure": 0,
+            "denominator": 1,
+            "rate": 1.0
+          },
+          "PASS_TO_PASS": {
+            "status": "scored",
+            "success": 31,
+            "failure": 0,
+            "denominator": 31,
+            "rate": 1.0
+          }
+        },
+        "testNamesExposed": false
+      },
+      "offAcceptance": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M1/root-off-official-acceptance-001.json"
+    },
+    {
+      "slot": "H1",
+      "tier": "hard",
+      "rankWithinTier": 1,
+      "instanceId": "sympy__sympy-18199",
+      "repo": "sympy/sympy",
+      "publicDifficulty": "1-4 hours",
+      "baseCommit": "ba80d1e493f21431b4bf729b3e0452cd47eb9566",
+      "imageRefPublicMetadata": "swebench/sweb.eval.x86_64.sympy_1776_sympy-18199:latest",
+      "rawProblemStatementSha256": "fb429ef2a603c20980fa2ed7dc66d00cc148ca8103d92b69662bb6c687f2e162",
+      "rawProblemStatementUtf8Bytes": 300,
+      "problemHashNormalization": "none; original UTF-8 string, preserve newline and whitespace",
+      "selectionSha256": "338471c178389f63053300e36601651d36304a28591edf6e027aa916ef46cab5",
+      "rawPublicFieldsMatchFrozenHfProjection": true,
+      "offStatus": "VALID_OFF_UNRESOLVED",
+      "onStatus": "NOT_RUN_GLOBAL_MEMBERSHIP_NOT_FROZEN",
+      "diagnosticQualification": "ROOT_QUALIFIED_HARD_MEMBER_AWAITING_GLOBAL_FREEZE",
+      "environment": {
+        "localImageId": "sha256:932d138dc4ed5e499f0b99eb7e28d2b4cd9f46d456cd27784ac6019771878f44",
+        "imageAndPublicBaseQualified": true,
+        "commonLinuxExecutionQualified": false,
+        "evidence": ".runtime-correction/rc-supervision/diagnostic-image-preparation-20261101/H1-public-workspace-probe-001.json"
+      },
+      "offAttempt": 1,
+      "offManifest": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/H1/off-manifest-001.json",
+      "offQualification": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/H1/root-off-qualification-001.json",
+      "offSourceImmutable": true,
+      "offSettlement": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/H1/off-settlement-001.json",
+      "officialScore": {
+        "resolved": false,
+        "patch_is_None": false,
+        "patch_exists": true,
+        "patch_successfully_applied": true,
+        "infra_failure": false,
+        "testBuckets": {
+          "FAIL_TO_PASS": {
+            "status": "scored",
+            "success": 0,
+            "failure": 1,
+            "denominator": 1,
+            "rate": 0.0
+          },
+          "PASS_TO_PASS": {
+            "status": "scored",
+            "success": 113,
+            "failure": 0,
+            "denominator": 113,
+            "rate": 1.0
+          }
+        },
+        "testNamesExposed": false
+      },
+      "offAcceptance": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/H1/root-off-official-acceptance-001.json",
+      "currentStageRole": "HARD_DIAGNOSTIC_CORE"
+    },
+    {
+      "slot": "M2",
+      "tier": "medium",
+      "rankWithinTier": 2,
+      "instanceId": "sympy__sympy-16792",
+      "repo": "sympy/sympy",
+      "publicDifficulty": "15 min - 1 hour",
+      "baseCommit": "09786a173e7a0a488f46dd6000177c23e5d24eed",
+      "imageRefPublicMetadata": "swebench/sweb.eval.x86_64.sympy_1776_sympy-16792:latest",
+      "rawProblemStatementSha256": "48b3d6d8e3ddfc9a78b57d8f79cf5ca78ba55a990f1eba937b998fd9160a77a8",
+      "rawProblemStatementUtf8Bytes": 1930,
+      "problemHashNormalization": "none; original UTF-8 string, preserve newline and whitespace",
+      "selectionSha256": "071049ced56f57caa1923f961e20dba2bb648682e9a1a591fc263fc4bb3db24f",
+      "rawPublicFieldsMatchFrozenHfProjection": true,
+      "offStatus": "VALID_OFF_RESOLVED_NOT_SELECTED",
+      "onStatus": "NOT_RUN",
+      "diagnosticQualification": "UNQUALIFIED_CANDIDATE_ONLY",
+      "environmentPreparation": "IMMUTABLE_IMAGE_AND_PRISTINE_CACHES_READY_NATIVE_SETUP_PENDING",
+      "offManifest": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M2/off-manifest-001.json",
+      "offSettlement": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M2/off-settlement-001.json",
+      "officialAcceptance": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M2/root-off-official-acceptance-001.json",
+      "offResolved": true,
+      "diagnosticMember": false,
+      "currentStageRole": "MEDIUM_REGRESSION_NOT_DIAGNOSTIC"
+    },
+    {
+      "slot": "H2",
+      "tier": "hard",
+      "rankWithinTier": 2,
+      "instanceId": "sympy__sympy-17630",
+      "repo": "sympy/sympy",
+      "publicDifficulty": "1-4 hours",
+      "baseCommit": "58e78209c8577b9890e957b624466e5beed7eb08",
+      "imageRefPublicMetadata": "swebench/sweb.eval.x86_64.sympy_1776_sympy-17630:latest",
+      "rawProblemStatementSha256": "1edfd6e1183bb765b9186e8d8fdfe541d80ef44766baf7b722b7626235719599",
+      "rawProblemStatementUtf8Bytes": 3430,
+      "problemHashNormalization": "none; original UTF-8 string, preserve newline and whitespace",
+      "selectionSha256": "8bfb097155af5b98ac2d25bfacdae086dc8f2ea7563fcd9cb13163300de49340",
+      "rawPublicFieldsMatchFrozenHfProjection": true,
+      "offStatus": "NOT_RUN",
+      "onStatus": "NOT_RUN",
+      "diagnosticQualification": "UNQUALIFIED_CANDIDATE_ONLY"
+    }
+  ],
+  "offOrder": [
+    "M1",
+    "H1",
+    "M2",
+    "H2"
+  ],
+  "maximumOffAttempts": 4,
+  "automaticPaidRetries": 0,
+  "chooseMembershipOnlyUsingValidOffOutcomes": true,
+  "freezeMembersBeforeAnyCandidateOn": true,
+  "members": {
+    "medium": null,
+    "hard": "sympy__sympy-18199"
+  },
+  "qualifiedMemberCount": 1,
+  "dailyRegressionAnchor": "pytest-dev__pytest-7432",
+  "original21AndOriginalLite3Unchanged": true,
+  "purpose": "Development diagnosis only; all four candidates are Sympy, not broad repository or held-out generalization.",
+  "noEffectClaimBeforeActualQualifiedPairedRuns": true,
+  "runtimeDispatchReady": false,
+  "preconditions": [
+    "same-artifact Linux execution qualification",
+    "new image digests and environment readiness",
+    "fixed common model/host/transport/budget binding",
+    "all prior real calls genuinely closed with unknown holds retained",
+    "root single launcher and capacity slot available"
+  ],
+  "referenceBudgetPerArm": {
+    "wallMs": 1800000,
+    "requests": 256,
+    "payloadBytes": 524288,
+    "inputPerRequest": 532480,
+    "outputPerRequest": 32768,
+    "totalInput": 16000000,
+    "totalOutput": 524288,
+    "usd": 128,
+    "maxConcurrent": 4
+  },
+  "newProviderRequests": 160,
+  "updatedUtc": "2026-11-01T22:09:35.564688+00:00",
+  "environmentPreparation": {
+    "state": "FIRST_PUBLIC_CANDIDATE_IMAGES_AND_DECLARED_BASE_WORKSPACES_PREPARED",
+    "evidence": ".runtime-correction/rc-supervision/diagnostic-image-preparation-20261101/root-first-candidate-preparation-001.json",
+    "runtimeDispatchReady": false
+  },
+  "pairedOutcomeInterpretation": {
+    "offUnresolvedOnResolved": "Observed exploratory diagnostic improvement on this selected task; a single screening-OFF to ON difference does not by itself identify the causal RC effect.",
+    "offResolvedOnUnresolved": "New regression; never hide behind diagnostic wins.",
+    "bothResolved": "No solve-rate improvement; stability and equal-completeness token/time comparison only.",
+    "bothUnresolved": "Residual failure, no solve-rate gain.",
+    "environmentAuthenticationNetworkOrGraderFailure": "Invalid quality evidence; report separately without paid automatic replay.",
+    "selectionConditionedEstimate": "Development diagnostic result only, not a population or unseen generalization estimate.",
+    "p2pCeiling": "Report P2P headroom separately; unchanged full P2P is no regression, not strict P2P improvement.",
+    "selectionAndModelVariance": "Selection conditions on an OFF failure. Freeze members, do not reselect using ON, and use fresh preregistered RC-OFF/ON confirmation on the frozen bank before attributing robust quality or efficiency gains to RC. Screening outputs remain preserved development evidence.",
+    "timeoutPartialArtifact": "Official scoring of a timeout residual patch is partial-artifact evidence only, not a valid completed ON, a successful task closure or an efficiency result."
+  },
+  "offDoesNotRequireRcFaultAcceptance": true,
+  "onStillRequiresAcceptedRcQualificationAndFrozenMembership": true,
+  "activeDispatch": null,
+  "offAttemptsStarted": 3,
+  "lastClosedDispatch": {
+    "slot": "M2",
+    "state": "VALID_OFF_RESOLVED_NOT_ELIGIBLE_FOR_DIAGNOSTIC_HEADROOM",
+    "officialAcceptance": ".runtime-correction/rc-supervision/diagnostic-business-execution-20261101/M2/root-off-official-acceptance-001.json",
+    "closedRequests": 1460
+  },
+  "nextOffSlot": null,
+  "wholeMembershipFrozen": false,
+  "screeningIsNotConfirmatoryEfficacyEvidence": true,
+  "confirmatoryPolicy": {
+    "state": "PLANNING_ONLY_NO_ADDITIONAL_MODEL_REQUESTS_AUTHORIZED_BY_THIS_FILE",
+    "membershipUnchangedAfterViewingOn": true,
+    "freshMatchedOffOnRequiredForRobustBenefitClaim": true,
+    "preregisterReplicationCountAndEffectiveConditionsBeforeConfirmation": true,
+    "selectionRunNotCountedAsAnIndependentConfirmatoryOff": true,
+    "reportAllRunsIncludingRegressionsAndInvalidInfrastructureSeparately": true,
+    "doNotAutomaticallyRetryPaidFailures": true
+  },
+  "mediumPoolExhaustedWithoutUnresolvedMember": true,
+  "additionalPaidScreeningPendingNewPreregistrationAndCapacityDecision": true,
+  "stageBankAmendment": {
+    "path": ".runtime-correction/rc-supervision/skill-review-canonical-targets-design-20261101/phase-e2e-bank-amendment-001.json",
+    "sha256": "c3c5115af0c4c8050bde8f37402fc3ed670a1abd4579cb6074bc7163ae6c88dc",
+    "mode": "ONE_HARD_DIAGNOSTIC_TWO_REGRESSIONS",
+    "identitiesFixedBeforeAnyOn": true,
+    "fixedOrder": [
+      "pytest-dev__pytest-7432",
+      "sympy__sympy-16792",
+      "sympy__sympy-18199"
+    ],
+    "originalMediumDiagnosticSatisfied": false,
+    "wholeComparisonBankFrozen": false,
+    "onAuthorized": false
+  },
+  "furtherMediumScreeningStoppedForCurrentStage": true,
+  "currentStageDiagnosticCore": "sympy__sympy-18199",
+  "bothResolvedCannotEstablishSolveGain": true,
+  "currentAnchorOff": {
+    "state": "INDEPENDENT_VALID_OFF_RESOLVED_ACCEPTED_REGRESSION_ONLY",
+    "instanceId": "pytest-dev__pytest-7432",
+    "pid": 89162,
+    "execSessionId": 25784,
+    "directory": ".runtime-correction/rc-supervision/stable-anchor-off-preparation-20261101/anchor/off-live-001",
+    "manifest": ".runtime-correction/rc-supervision/stable-anchor-off-preparation-20261101/anchor/off-manifest-001.json",
+    "officialScorePending": false,
+    "notAReselection": true,
+    "onAuthorized": false,
+    "rootOfficialAcceptance": ".runtime-correction/rc-supervision/stable-anchor-off-preparation-20261101/anchor/root-off-official-acceptance-001.json",
+    "score": {
+      "f2p": "1/1",
+      "p2p": "77/77"
+    },
+    "solveGainHeadroom": false,
+    "independentReview": ".runtime-correction/rc-supervision/validation-assistant-20261101/anchor-current-off-validity-review-001.json",
+    "rootIndependentAcceptance": ".runtime-correction/rc-supervision/stable-anchor-off-preparation-20261101/anchor/root-independent-off-validity-acceptance-001.json"
+  },
+  "sampleDiscriminationReadout": {
+    "primary": "Fixed H1 OFF unresolved offers 1 F2P test of exploratory diagnostic headroom.",
+    "regressions": "pytest7432 and sympy16792 both passed OFF: report regressions and equal-completeness costs; both-pass does not establish solve improvement.",
+    "p2pCeiling": "Fixed OFF bank244/244: retaining this is not strict P2P improvement.",
+    "noOutcomeFishing": true,
+    "confirmatoryAttributionRequiresFreshPreregisteredMatchedRuns": true,
+    "fixedOffMembers": [
+      {
+        "instanceId": "sympy__sympy-18199",
+        "role": "HARD_EXPLORATORY_DIAGNOSTIC_CORE",
+        "off": {
+          "f2pPassed": 0,
+          "f2pTotal": 1,
+          "p2pPassed": 113,
+          "p2pTotal": 113
+        },
+        "f2pHeadroom": true,
+        "p2pHeadroom": false,
+        "currentSource022On": "NOT_RUN"
+      },
+      {
+        "instanceId": "pytest-dev__pytest-7432",
+        "role": "STABLE_REGRESSION_ANCHOR",
+        "off": {
+          "f2pPassed": 1,
+          "f2pTotal": 1,
+          "p2pPassed": 77,
+          "p2pTotal": 77
+        },
+        "f2pHeadroom": false,
+        "p2pHeadroom": false,
+        "currentSource022On": "NOT_RUN"
+      },
+      {
+        "instanceId": "sympy__sympy-16792",
+        "role": "MEDIUM_REGRESSION_NOT_UNRESOLVED_DIAGNOSTIC",
+        "off": {
+          "f2pPassed": 1,
+          "f2pTotal": 1,
+          "p2pPassed": 54,
+          "p2pTotal": 54
+        },
+        "f2pHeadroom": false,
+        "p2pHeadroom": false,
+        "currentSource022On": "NOT_RUN"
+      }
+    ],
+    "fixedOffP2pAggregate": {
+      "passed": 244,
+      "total": 244
+    },
+    "strictP2pImprovementPossibleOnCurrentBank": false,
+    "bothPassQualityGainClaimAllowed": false,
+    "futureDiscriminativeSelection": {
+      "preregisterBeforeAnyOn": true,
+      "preserveNaturalOffFailuresAndRegressionHeadroomWhenAvailable": true,
+      "neverReselectAfterOn": true,
+      "neverWeakenOff": true,
+      "noNewPaidOffScreeningForCurrentFirstDelivery": true,
+      "notANewFirstDeliveryGate": true
+    }
+  },
+  "diagnosticFirstOrderAmendment": ".runtime-correction/rc-supervision/daily-delivery-setup-20261101/diagnostic-first-order-amendment-001.json",
+  "currentStageDispatchOrder": [
+    "sympy__sympy-18199",
+    "pytest-dev__pytest-7432",
+    "sympy__sympy-16792"
+  ],
+  "historicalStateBeforeFirstE2ESource022Sync": "STAGE_ONE_DIAGNOSTIC_TWO_REGRESSIONS_IDENTITIES_FIXED_BINDINGS_AND_ON_PENDING",
+  "firstFrozenE2EStatus": {
+    "priority": "config/rc-e2e-delivery-priority-20261102.json",
+    "candidate": "source022",
+    "candidateMap": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/source-full-input-pins-022.json",
+    "candidateMapSha256": "d9e07f34e4afe399f10a58dc62066123a9dc69309ca1673ea6360ff3ddb0d712",
+    "payloadInputs": 2148,
+    "qualificationInputsIncludingDocClosure": 2934,
+    "full008": {
+      "files": 247,
+      "tests": 2614,
+      "pass": 2583,
+      "historicalSkipped": 31,
+      "fail": 0,
+      "timeout": 0,
+      "acceptance": ".runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-full-acceptance-001.json"
+    },
+    "baselineActualSdk008": {
+      "originalTwoCasesAndGap": true,
+      "fakeRequests": 17,
+      "realProviderRequests": 0,
+      "actualArtifactFiles": 247,
+      "actualOwnedPromises": 6,
+      "acceptance": ".runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-baseline-native-gap-acceptance-001.json"
+    },
+    "linuxQualification": {
+      "state": "ACTUAL_EXIT_ZERO_SUPERVISOR_REVIEW_PENDING",
+      "exitCode": 0,
+      "accepted": false,
+      "provenance": "Supervisor delegation reports actual completed Linux qualification; final root review not yet supplied to this session."
+    },
+    "normalFaultPrepared": ".runtime-correction/rc-supervision/integrated-source022-prepared-20261102/preparation-freeze-001.json",
+    "currentFirstBlocker": "Same-artifact host/environment qualification review and actual normal/fault/single-benchmark closure evidence.",
+    "normalAccepted": false,
+    "faultAccepted": false,
+    "benchmarkAccepted": false,
+    "releaseAccepted": false,
+    "firstDeliveryRequiresQualityOrEfficiencyGain": false,
+    "newPaidOffScreeningAuthorized": false,
+    "newProviderRequestsByThisSync": 0,
+    "broader21GoalDeferredNotDeleted": true
+  },
+  "source017H1HistoricalOn": {
+    "state": "INVALID_COMPLETED_RUNTIME_PARTIAL_ARTIFACT_SCORED_ONLY",
+    "instanceId": "sympy__sympy-18199",
+    "candidateSource": "source017",
+    "validCompletedOn": false,
+    "originalDeadlineTimedOut": true,
+    "officialPartialArtifactScore": {
+      "f2pPassed": 0,
+      "f2pTotal": 1,
+      "p2pPassed": 113,
+      "p2pTotal": 113
+    },
+    "f2pGainObserved": false,
+    "p2pGainObserved": false,
+    "controlledEfficiencyClaimAllowed": false,
+    "acceptance": ".runtime-correction/rc-supervision/source017-H1-research-20261102/root-official-partial-on-acceptance-001.json",
+    "otherTwoOn": "NOT_RUN_REQUIRED_FOR_LATER_FULL_THREE_CASE_GOAL",
+    "closedNightRestarted": false
+  }
+}

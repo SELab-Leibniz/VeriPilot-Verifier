@@ -1,4 +1,5 @@
 import test, { before, after } from "node:test";
+import { skillGraphQuoteCandidate as skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -112,8 +113,9 @@ test("native workspace Skill read creates a watcher in the bound business projec
   const calls = [];
   const reviewerFactory = async input => {
     calls.push(input);
-    return { result: { summary: "Skill constraints", taskClassification: "CONTINUATION", operations: [],
-      skillGroundTruth: { constraints: [{ constraintId: "verify", kind: "STEP", modality: "MUST", statement: "Run the verifier before delivery." }], taskOverlays: [] } },
+    return { result: input.request.skillGraphOnly ? { summary: "Skill constraints",
+      skillGroundTruth: skillGraphCandidate(input.evidence.skillSource) }
+      : { summary: 'Global alignment.', taskClassification: 'CONTINUATION', operations: [] },
       close: async () => {} };
   };
   const f = await fixture(t, "2026.7.1-2", reviewerFactory), ctx = await f.session("native-skill");
@@ -125,8 +127,13 @@ test("native workspace Skill read creates a watcher in the bound business projec
   assert.equal(calls.length, 0, "an attempted discovery read is not yet a Skill invocation");
   await f.runtime.toolResult({ toolName: "read", toolCallId: "host-skill-read", args: { path: skill },
     result: { content: [{ type: "text", text: await fs.readFile(skill, "utf8") }] } }, ctx);
-  assert.equal(calls.length, 1, f.warnings.join("\n"));
-  assert.equal(path.resolve(calls[0].request.skill.directory), path.dirname(skill));
+  assert.equal(calls.length, 2, f.warnings.join("\n"));
+  const [global, graph] = calls;
+  assert.equal(global.request.reviewScope.boundedBasis, true);
+  assert.equal(global.request.skill, null);
+  assert(global.request.sourceCatalog.some(source => path.resolve(source.ref) === skill));
+  assert.equal(graph.request.skillGraphOnly, true);
+  assert.equal(path.resolve(graph.request.skill.directory), path.dirname(skill));
   const state = f.sharedState.states.get("main:native-skill");
   const task = JSON.parse(await fs.readFile(path.join(f.a, ".runtime-correction/tasks", state.scopeTaskId, "task.json")));
   const watchers = Object.values(task.watchers);

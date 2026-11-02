@@ -12,7 +12,7 @@ import { characterApplicabilityCases } from './fixtures/character-applicability.
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 async function workspace(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-character-facts-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-character-facts-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   return root;
 }

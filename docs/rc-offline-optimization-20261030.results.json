@@ -1,0 +1,1236 @@
+{
+  "date": "2026-10-30",
+  "phase": "offline_delivery_complete",
+  "referenceCommit": "28071d16d25b02b25c6ead8570c158486edec240",
+  "authorization": {
+    "planning": true,
+    "implementationAuthorized": "offline_rc_only",
+    "realModelRunsAuthorized": false,
+    "paidExperimentsAuthorized": false,
+    "externalChangesAuthorized": false,
+    "implementationStarted": true,
+    "recurringAutomationCreated": false,
+    "offlineVerificationAuthorized": true,
+    "source": "user offline-only authorization relayed by delegated planning reviewer on 2026-10-30"
+  },
+  "environment": {
+    "node": "v26.0.0",
+    "platform": "darwin",
+    "tmpdir": "/private/tmp",
+    "localLoopbackPermission": "enabled only for model-free fixtures",
+    "OpenClawVersion": "2026.7.1-2"
+  },
+  "firstFullRegression": {
+    "files": 184,
+    "completed": 184,
+    "failedFiles": [
+      "test/cli-workspace-review.test.mjs",
+      "test/feedback-delivery-bounds.test.mjs",
+      "test/provider-fetch-timing.test.mjs",
+      "test/reviewer-deadline.test.mjs"
+    ],
+    "timedOutFiles": [],
+    "totals": {
+      "tests": 1946,
+      "pass": 1905,
+      "fail": 16,
+      "cancelled": 0,
+      "skipped": 25
+    }
+  },
+  "qualifiedFullRegression": {
+    "files": 184,
+    "completed": 184,
+    "failedFiles": [],
+    "timedOutFiles": [],
+    "totals": {
+      "tests": 1946,
+      "pass": 1921,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 25
+    }
+  },
+  "supplementalInstalledHostContracts": {
+    "tests": 70,
+    "pass": 70,
+    "fail": 0,
+    "skipped": 0,
+    "realModelRequests": 0
+  },
+  "finalDocumentTriggerControl": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "note": "Additional assertions verified separately after full-suite pass; scripted reviewer, actual middleware and file I/O."
+  },
+  "coverage": {
+    "totalCases": 30,
+    "offlineContractsVerified": 18,
+    "offlinePartial": 12,
+    "fullRealModelCasesPassed": 0
+  },
+  "moduleCases": [
+    {
+      "id": "B01",
+      "module": "baseline",
+      "category": "positive",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 24,
+        "testNameContains": "span batches copy exact originals"
+      },
+      "verifiedScope": "原文、来源及发布契约；未验证模型提取语义",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B02",
+      "module": "baseline",
+      "category": "negative",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/lazy-correction-barrier.test.mjs",
+        "line": 246,
+        "testNameContains": "a greeting turn remains taskless"
+      },
+      "verifiedScope": "问候及无关生命周期不会启动 reviewer",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B03",
+      "module": "baseline",
+      "category": "not_applicable",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 757,
+        "testNameContains": "a complete empty delta"
+      },
+      "verifiedScope": "空增量及权威过滤；条件适用性语义待真实判断",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B04",
+      "module": "baseline",
+      "category": "missing_evidence",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 620,
+        "testNameContains": "missing or synthetic read receipts"
+      },
+      "verifiedScope": "缺失与合成读取不能取得完成资格",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B05",
+      "module": "baseline",
+      "category": "duplicate",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 675,
+        "testNameContains": "formal delta, commit receipt and source cursor publish once"
+      },
+      "verifiedScope": "丢确认后发布幂等",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B06",
+      "module": "baseline",
+      "category": "cancel_recover",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 395,
+        "testNameContains": "a cancelled non-cooperative extractor"
+      },
+      "verifiedScope": "取消后旧身份不重叠；恢复资格不来自笔记",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "B07",
+      "module": "baseline",
+      "category": "source_change",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-baseline-task.test.mjs",
+        "line": 449,
+        "testNameContains": "a completed baseline still rejects source changes"
+      },
+      "verifiedScope": "发布前来源变化拒绝陈旧提交",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D01",
+      "module": "document",
+      "category": "positive",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/openclaw.test.mjs",
+        "line": 810,
+        "testNameContains": "native artifact checks retain deterministic rules"
+      },
+      "verifiedScope": "实际文件与 middleware，语义审阅使用受控替身",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log",
+        ".runtime-correction/offline-optimization-20261030/document-trigger-controls-final.tap"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D02",
+      "module": "document",
+      "category": "negative",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/openclaw.test.mjs",
+        "line": 810,
+        "testNameContains": "native artifact checks retain deterministic rules"
+      },
+      "verifiedScope": "失败及未匹配写入零审阅，已识别 patch 可达；普通 exec 无可识别文件变更的即时文档审查为当前能力边界，非单纯真实语义待验。",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log",
+        ".runtime-correction/offline-optimization-20261030/document-trigger-controls-final.tap"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false,
+      "capabilityBoundary": {
+        "kind": "current_tool_coverage_boundary",
+        "supported": "Recognized Write/Edit events and OpenClaw recognized patch-to-file projection.",
+        "unsupported": "Ordinary exec side effects without identifiable file changes do not trigger immediate document review.",
+        "notMerelyRealModelPending": true,
+        "qualificationRequirement": "Check actual benchmark-agent edit methods against supported file events before claiming document-module coverage.",
+        "noFallbackClaim": "Do not claim Stop has completely validated these documents.",
+        "noExpansionInThisIteration": [
+          "generic shell parsing",
+          "whole-repository scanning"
+        ],
+        "references": [
+          {
+            "path": "docs/how-it-works.md",
+            "line": 9
+          },
+          {
+            "path": "docs/interfaces.md",
+            "line": 97
+          },
+          {
+            "path": "docs/interfaces.md",
+            "line": 360
+          },
+          {
+            "path": "lib/openclaw/tools.mjs",
+            "line": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "D03",
+      "module": "document",
+      "category": "not_applicable",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/workflow-runtime.test.mjs",
+        "line": 460,
+        "testNameContains": "a disabled target does not trigger"
+      },
+      "verifiedScope": "禁用目标不启动节点及入边，不新增对象",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D04",
+      "module": "document",
+      "category": "missing_evidence",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/workflow-runtime.test.mjs",
+        "line": 218,
+        "testNameContains": "missing sources append pending diagnostics"
+      },
+      "verifiedScope": "前序缺失保留 pending，错误优先级保留",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D05",
+      "module": "document",
+      "category": "duplicate",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/document-agent.test.mjs",
+        "line": 71,
+        "testNameContains": "native factory reuses project identity"
+      },
+      "verifiedScope": "相同依据复用结果、额外证据禁用缓存",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D06",
+      "module": "document",
+      "category": "cancel_recover",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/document-agent-lifecycle.test.mjs",
+        "line": 18,
+        "testNameContains": "a process crash releases project admission"
+      },
+      "verifiedScope": "死进程释放与身份更新；私有工具过期，新增取消读不赋予笔记资格",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D07",
+      "module": "document",
+      "category": "source_change",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/document-agent.test.mjs",
+        "line": 42,
+        "testNameContains": "notes recover after reconstruction"
+      },
+      "verifiedScope": "依据或权威变化后笔记失效，文件变化拒绝结果",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S01",
+      "module": "skill",
+      "category": "positive",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/runtime-v2.test.mjs",
+        "line": 619,
+        "testNameContains": "PostToolUse refreshes a Skill watcher"
+      },
+      "verifiedScope": "触发与反馈额度程序链；真实判断与送达后业务修复待模型",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S02",
+      "module": "skill",
+      "category": "negative",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/openclaw.test.mjs",
+        "line": 235,
+        "testNameContains": "Skill discovery starts its watcher only after a successful original read"
+      },
+      "verifiedScope": "失败读取不准入；截断与内部运行隔离另由既有回归验证",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S03",
+      "module": "skill",
+      "category": "not_applicable",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/stop-workspace-review.test.mjs",
+        "line": 339,
+        "testNameContains": "mixed Skill applicability"
+      },
+      "verifiedScope": "条件、缺执行与实现对象分别结算；N/A 语义由替身提供",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S04",
+      "module": "skill",
+      "category": "missing_evidence",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/runtime-v2.test.mjs",
+        "line": 950,
+        "testNameContains": "Skill checker faults preserve uncertainty"
+      },
+      "verifiedScope": "明确 checkerError 保持未验证且不花反馈；缺证据的真实语义识别待模型",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S05",
+      "module": "skill",
+      "category": "duplicate",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/runtime-v2.test.mjs",
+        "line": 685,
+        "testNameContains": "unchanged Skill checks reuse a NOT_COMPLETED"
+      },
+      "verifiedScope": "同依据调度零重复审阅，源变化及 Stop 强制重查",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S06",
+      "module": "skill",
+      "category": "cancel_recover",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/skill-care.test.mjs",
+        "line": 82,
+        "testNameContains": "notes survive session recreation"
+      },
+      "verifiedScope": "笔记任务隔离、重建与失效；私有工具撤销由相邻测试验证",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S07",
+      "module": "skill",
+      "category": "source_change",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/skill-care.test.mjs",
+        "line": 31,
+        "testNameContains": "source cache avoids unchanged reads"
+      },
+      "verifiedScope": "增删改刷新与截断；变化触发重查",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F01",
+      "module": "stop",
+      "category": "positive",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/post-run-dispatch.test.mjs",
+        "line": 84,
+        "testNameContains": "normal host terminal precedes review"
+      },
+      "verifiedScope": "可信终态、审阅及派发程序链；真实模型纠偏闭环待验证",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F02",
+      "module": "stop",
+      "category": "negative",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/post-run-dispatch.test.mjs",
+        "line": 187,
+        "testNameContains": "unknown host terminal holds later tasks"
+      },
+      "verifiedScope": "未知终态不提前推进，禁用和零额度另有生产入口回归",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F03",
+      "module": "stop",
+      "category": "not_applicable",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/stop-workspace-review.test.mjs",
+        "line": 339,
+        "testNameContains": "mixed Skill applicability"
+      },
+      "verifiedScope": "保留原分母及独立对象结论；条件 N/A 判断仍待模型",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F04",
+      "module": "stop",
+      "category": "missing_evidence",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/stop-workspace-review.test.mjs",
+        "line": 247,
+        "testNameContains": "missing execution records and completion claims"
+      },
+      "verifiedScope": "缺执行证据不能形成运行 PASS/DEVIATION；错误范围判别仍需真实语义对照",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F05",
+      "module": "stop",
+      "category": "duplicate",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/post-run-dispatch.test.mjs",
+        "line": 119,
+        "testNameContains": "duplicate terminal and incoming events"
+      },
+      "verifiedScope": "重复终态幂等；未知派发不重发由 recovery 用例覆盖",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F06",
+      "module": "stop",
+      "category": "cancel_recover",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-owner-recovery.test.mjs",
+        "line": 32,
+        "testNameContains": "a dead assessment owner releases"
+      },
+      "verifiedScope": "死 owner 与活 owner 分别处理，保留回执及取消隔离",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "F07",
+      "module": "stop",
+      "category": "source_change",
+      "status": "contract_verified",
+      "assertionReference": {
+        "path": "test/stop-workspace-review.test.mjs",
+        "line": 108,
+        "testNameContains": "a changed read dependency invalidates"
+      },
+      "verifiedScope": "依赖变化失效、无关变化不误伤；新增清单文件另有用例",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "D08",
+      "module": "document",
+      "category": "compliant_completion",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/openclaw.test.mjs",
+        "line": 810,
+        "testNameContains": "native artifact checks retain deterministic rules"
+      },
+      "verifiedScope": "正确 H2 文档和受控无 findings 结果不携带旧偏差；仍保留正常状态报告",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log",
+        ".runtime-correction/offline-optimization-20261030/document-trigger-controls-final.tap"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    },
+    {
+      "id": "S08",
+      "module": "skill",
+      "category": "compliant_completion",
+      "status": "partial",
+      "assertionReference": {
+        "path": "test/runtime-v2.test.mjs",
+        "line": 922,
+        "testNameContains": "completed Skill with a successful real verification"
+      },
+      "verifiedScope": "实际 node 验证与转录，受控 COMPLETED/空 findings 消费后 PASS、零反馈/偏差/修复额度",
+      "evidence": [
+        ".runtime-correction/offline-optimization-20261030/full-regression-qualified.log",
+        ".runtime-correction/offline-optimization-20261030/dependency-and-compliant-controls-corrected.tap"
+      ],
+      "realModelStatus": "not_run_not_authorized",
+      "fullNativeEndToEndPassed": false
+    }
+  ],
+  "cost": {
+    "node": "v26.0.0",
+    "platform": "darwin",
+    "referenceCommit": "28071d16d25b02b25c6ead8570c158486edec240",
+    "referenceSourceSha256": "263201f5500f33f46904eec0e948e9ef7917ca0e7291a341b11fb87a620ff5c6",
+    "summary": [
+      {
+        "case": "frozen-arkts",
+        "originalBytes": 237779,
+        "callsPerSample": 40,
+        "samplesPerArm": 5,
+        "before": {
+          "elapsedMs": 87.01779199999993,
+          "cpuMs": 87.588,
+          "reads": 40,
+          "readBytes": 9511160,
+          "decodedBytes": 9511160,
+          "responseBytes": 323732
+        },
+        "after": {
+          "elapsedMs": 16.548583000000008,
+          "cpuMs": 19.439,
+          "reads": 40,
+          "readBytes": 9511160,
+          "decodedBytes": 237779,
+          "responseBytes": 323732
+        },
+        "outputIdentical": true
+      },
+      {
+        "case": "live-python",
+        "originalBytes": 298889,
+        "callsPerSample": 40,
+        "samplesPerArm": 5,
+        "before": {
+          "elapsedMs": 89.32883400000003,
+          "cpuMs": 89.884,
+          "reads": 40,
+          "readBytes": 11955560,
+          "decodedBytes": 11955560,
+          "responseBytes": 397792
+        },
+        "after": {
+          "elapsedMs": 19.147875,
+          "cpuMs": 19.601,
+          "reads": 40,
+          "readBytes": 11955560,
+          "decodedBytes": 298889,
+          "responseBytes": 397792
+        },
+        "outputIdentical": true
+      },
+      {
+        "case": "document",
+        "originalBytes": 222888,
+        "callsPerSample": 40,
+        "samplesPerArm": 5,
+        "before": {
+          "elapsedMs": 14.96920799999998,
+          "cpuMs": 16.715,
+          "reads": 41,
+          "readBytes": 9138408,
+          "decodedBytes": 9361296,
+          "responseBytes": 312550
+        },
+        "after": {
+          "elapsedMs": 15.115166000000045,
+          "cpuMs": 15.844,
+          "reads": 41,
+          "readBytes": 9138408,
+          "decodedBytes": 9361296,
+          "responseBytes": 312550
+        },
+        "outputIdentical": true
+      }
+    ],
+    "rows": [
+      {
+        "case": "frozen-arkts",
+        "arm": "before",
+        "sample": 0,
+        "elapsedMs": 117.38733300000001,
+        "cpuMs": 142.141,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 9511160,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "after",
+        "sample": 0,
+        "elapsedMs": 22.745875000000012,
+        "cpuMs": 35.709,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 237779,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "after",
+        "sample": 1,
+        "elapsedMs": 15.757834000000003,
+        "cpuMs": 17.831,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 237779,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "before",
+        "sample": 1,
+        "elapsedMs": 88.08304199999998,
+        "cpuMs": 94.557,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 9511160,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "before",
+        "sample": 2,
+        "elapsedMs": 86.42316700000003,
+        "cpuMs": 87.303,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 9511160,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "after",
+        "sample": 2,
+        "elapsedMs": 16.548583000000008,
+        "cpuMs": 17.209,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 237779,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "after",
+        "sample": 3,
+        "elapsedMs": 19.227125,
+        "cpuMs": 20.075,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 237779,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "before",
+        "sample": 3,
+        "elapsedMs": 87.01779199999993,
+        "cpuMs": 87.245,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 9511160,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "before",
+        "sample": 4,
+        "elapsedMs": 85.91712500000006,
+        "cpuMs": 87.588,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 9511160,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "frozen-arkts",
+        "arm": "after",
+        "sample": 4,
+        "elapsedMs": 16.493333000000007,
+        "cpuMs": 19.439,
+        "reads": 40,
+        "readBytes": 9511160,
+        "decodedBytes": 237779,
+        "responseBytes": 323732,
+        "outputSha256": "b19264bba203e948bbac8d3cd2b3a97e0da0a3ac11aca37e1cc2a6ca7b9bd31c"
+      },
+      {
+        "case": "live-python",
+        "arm": "before",
+        "sample": 0,
+        "elapsedMs": 91.48037499999998,
+        "cpuMs": 92.601,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 11955560,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "after",
+        "sample": 0,
+        "elapsedMs": 24.21108300000003,
+        "cpuMs": 24.313,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 298889,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "after",
+        "sample": 1,
+        "elapsedMs": 19.569208000000003,
+        "cpuMs": 21.033,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 298889,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "before",
+        "sample": 1,
+        "elapsedMs": 102.90387499999997,
+        "cpuMs": 103.605,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 11955560,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "before",
+        "sample": 2,
+        "elapsedMs": 89.32883400000003,
+        "cpuMs": 89.884,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 11955560,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "after",
+        "sample": 2,
+        "elapsedMs": 19.147875,
+        "cpuMs": 19.601,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 298889,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "after",
+        "sample": 3,
+        "elapsedMs": 18.835290999999984,
+        "cpuMs": 19.585,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 298889,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "before",
+        "sample": 3,
+        "elapsedMs": 86.02879100000007,
+        "cpuMs": 86.646,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 11955560,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "before",
+        "sample": 4,
+        "elapsedMs": 86.61320799999999,
+        "cpuMs": 87.087,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 11955560,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "live-python",
+        "arm": "after",
+        "sample": 4,
+        "elapsedMs": 19.000999999999976,
+        "cpuMs": 19.483,
+        "reads": 40,
+        "readBytes": 11955560,
+        "decodedBytes": 298889,
+        "responseBytes": 397792,
+        "outputSha256": "cfccb94873deda12ed88df372f1b15c414e971f6ae31a4649c9811d97cad2487"
+      },
+      {
+        "case": "document",
+        "arm": "before",
+        "sample": 0,
+        "elapsedMs": 16.15608300000008,
+        "cpuMs": 17.09,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "after",
+        "sample": 0,
+        "elapsedMs": 15.331709000000046,
+        "cpuMs": 16.017,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "after",
+        "sample": 1,
+        "elapsedMs": 15.148916999999983,
+        "cpuMs": 15.84,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "before",
+        "sample": 1,
+        "elapsedMs": 14.56899999999996,
+        "cpuMs": 15.083,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "before",
+        "sample": 2,
+        "elapsedMs": 14.848000000000184,
+        "cpuMs": 15.168,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "after",
+        "sample": 2,
+        "elapsedMs": 14.84479199999987,
+        "cpuMs": 15.262,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "after",
+        "sample": 3,
+        "elapsedMs": 15.014333999999963,
+        "cpuMs": 16.021,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "before",
+        "sample": 3,
+        "elapsedMs": 18.29341599999998,
+        "cpuMs": 22.164,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "before",
+        "sample": 4,
+        "elapsedMs": 14.96920799999998,
+        "cpuMs": 16.715,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      },
+      {
+        "case": "document",
+        "arm": "after",
+        "sample": 4,
+        "elapsedMs": 15.115166000000045,
+        "cpuMs": 15.844,
+        "reads": 41,
+        "readBytes": 9138408,
+        "decodedBytes": 9361296,
+        "responseBytes": 312550,
+        "outputSha256": "2dd3fa1b4c42d753900c6a386ece16ed1737d053476438b67102c195edcc89fe"
+      }
+    ],
+    "limitations": "Local synthetic fixture, real file I/O and production tool calls; same-process alternating arms. Measures CPU/wall time/decoding/I/O/response bytes, not model tokens, model correctness or F2P/P2P."
+  },
+  "artifacts": {
+    "hosts": [
+      {
+        "host": "openclaw",
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/offline-optimization-20261030/artifacts/runtime-corrector-openclaw",
+        "files": 245,
+        "moduleLoaded": true
+      },
+      {
+        "host": "claude",
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/offline-optimization-20261030/artifacts/runtime-corrector-claude",
+        "files": 189,
+        "moduleLoaded": true
+      },
+      {
+        "host": "codeagent",
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/offline-optimization-20261030/artifacts/runtime-corrector-codeagent",
+        "files": 188,
+        "moduleLoaded": true
+      }
+    ],
+    "distFrozenFilesUnchanged": 1040
+  },
+  "preflight": {
+    "source": "read-only metadata and interface inspection; no datasets downloaded or hidden answers opened",
+    "sweSweepNamedRoots": [],
+    "harborMetadata": {
+      "path": "/Users/id02271616/.local/share/uv/tools/harbor/lib/python3.13/site-packages/harbor-0.22.0.dist-info/METADATA",
+      "version": "0.22.0"
+    },
+    "installedHarborAgentFiles": [
+      "/Users/id02271616/.local/share/uv/tools/harbor/lib/python3.13/site-packages/harbor/agents/installed/openclaw.py",
+      "/Users/id02271616/.local/share/uv/tools/harbor/lib/python3.13/site-packages/harbor/agents/installed/claude_code.py"
+    ],
+    "openclaw": {
+      "root": "/opt/homebrew/lib/node_modules/openclaw",
+      "version": "2026.7.1-2",
+      "offlineContractTests": "installed-host-offline-contracts.tap",
+      "tests": 70,
+      "pass": 70,
+      "fail": 0,
+      "realModelRequests": 0
+    },
+    "benchmarks": {
+      "Terminal-Bench": {
+        "confirmed": "Existing HarnessFixToy wrapper restricts agents to terminus-2 and mini-swe-agent; installed Harbor has supported host adapters.",
+        "missing": "Existing adapter has not demonstrated RC plugin loading, cumulative budgets and delivery after correction.",
+        "readiness": "not_established",
+        "externalChanges": "not_authorized; use another existing compatible entry or record out-of-scope prerequisite",
+        "documentToolCoverageBoundary": {
+          "kind": "current_tool_coverage_boundary",
+          "supported": "Recognized Write/Edit events and OpenClaw recognized patch-to-file projection.",
+          "unsupported": "Ordinary exec side effects without identifiable file changes do not trigger immediate document review.",
+          "notMerelyRealModelPending": true,
+          "qualificationRequirement": "Check actual benchmark-agent edit methods against supported file events before claiming document-module coverage.",
+          "noFallbackClaim": "Do not claim Stop has completely validated these documents.",
+          "noExpansionInThisIteration": [
+            "generic shell parsing",
+            "whole-repository scanning"
+          ],
+          "references": [
+            {
+              "path": "docs/how-it-works.md",
+              "line": 9
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 97
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 360
+            },
+            {
+              "path": "lib/openclaw/tools.mjs",
+              "line": 14
+            }
+          ]
+        }
+      },
+      "DeepSWE": {
+        "confirmed": "Local README advertises existing Claude Code/Pier support; installed Harbor also has OpenClaw adapter.",
+        "missing": "No verified complete RC/OpenClaw task-to-patch-to-official-grading execution.",
+        "readiness": "not_established",
+        "externalChanges": "not_authorized; existing parameters/configuration must suffice",
+        "documentToolCoverageBoundary": {
+          "kind": "current_tool_coverage_boundary",
+          "supported": "Recognized Write/Edit events and OpenClaw recognized patch-to-file projection.",
+          "unsupported": "Ordinary exec side effects without identifiable file changes do not trigger immediate document review.",
+          "notMerelyRealModelPending": true,
+          "qualificationRequirement": "Check actual benchmark-agent edit methods against supported file events before claiming document-module coverage.",
+          "noFallbackClaim": "Do not claim Stop has completely validated these documents.",
+          "noExpansionInThisIteration": [
+            "generic shell parsing",
+            "whole-repository scanning"
+          ],
+          "references": [
+            {
+              "path": "docs/how-it-works.md",
+              "line": 9
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 97
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 360
+            },
+            {
+              "path": "lib/openclaw/tools.mjs",
+              "line": 14
+            }
+          ]
+        }
+      },
+      "SWE-sweep": {
+        "confirmed": "Official task/scoring protocol was inspected in planning; no named local root found in the targeted sibling checks.",
+        "missing": "Local fixed dataset/verifier compatibility and existing RC-capable entry have not been established.",
+        "readiness": "not_established",
+        "externalChanges": "do not install or modify external evaluator; preserve readiness gap",
+        "documentToolCoverageBoundary": {
+          "kind": "current_tool_coverage_boundary",
+          "supported": "Recognized Write/Edit events and OpenClaw recognized patch-to-file projection.",
+          "unsupported": "Ordinary exec side effects without identifiable file changes do not trigger immediate document review.",
+          "notMerelyRealModelPending": true,
+          "qualificationRequirement": "Check actual benchmark-agent edit methods against supported file events before claiming document-module coverage.",
+          "noFallbackClaim": "Do not claim Stop has completely validated these documents.",
+          "noExpansionInThisIteration": [
+            "generic shell parsing",
+            "whole-repository scanning"
+          ],
+          "references": [
+            {
+              "path": "docs/how-it-works.md",
+              "line": 9
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 97
+            },
+            {
+              "path": "docs/interfaces.md",
+              "line": 360
+            },
+            {
+              "path": "lib/openclaw/tools.mjs",
+              "line": 14
+            }
+          ]
+        }
+      }
+    }
+  },
+  "sourceHashes": {
+    "lib/review-task/source-tools.mjs": "be9d4eb5aeba8a19bc6728dcfba1c98352f9df7917f996517f42f78b2ff43e38",
+    "lib/review-task/live-source-tools.mjs": "207c0ee9c3f4f86363acba9497fefc02a788b8a58d7d16fa02a6905b0d081099",
+    "test/source-reader-lifecycle.test.mjs": "fb3dfeca5f1dc2269a188ae4123030aec6cb6039a90f902d21adee1b6a1dcf33",
+    "test/openclaw.test.mjs": "cbb83a0fd4a9a1dac6edc31a31ffc47e773f8df8f0ec153384232355046ed77f",
+    "test/runtime-v2.test.mjs": "5331df52ff4b05849b370c7a05a5aa9bbe7f38bf37d0f0e4d9ec851cc1d7ef1b",
+    "test/reviewer-deadline.test.mjs": "d42ec9a6cb2964ce46e3a629fe355be0d6b7b1c29934925e96de2f37a048048b",
+    "test/feedback-delivery-bounds.test.mjs": "5373c26ab19fea969981a0bac2bee08bf0efb37db49d24275bd57c6949511a3c"
+  },
+  "remaining": [
+    "Real-model semantic and complete native correction-cycle validation not authorized.",
+    "New benchmark RC entry/official score qualification is not established; do not modify external harnesses.",
+    "Current capability boundary: ordinary exec side effects without identifiable changed files do not trigger immediate document review; this is not merely pending real-model validation, and no complete Stop-document coverage is claimed.",
+    "MA desktop and platform-specific conditional tests remain separate; 25 full-suite skips are retained.",
+    "No model-token or F2P/P2P improvement claim."
+  ],
+  "fixtureAndEnvironmentTriage": [
+    "First new-test fixture used aliased /var temporary root; corrected fixture uses canonical realpath; original log retained.",
+    "Original source cancellation reproduces at frozen and live read completion; document control already rejected correctly.",
+    "Three initial module files could not load missing pinned typebox 1.3.27; installed locally from existing lock with scripts disabled; no dependency version or lock changes.",
+    "First complete regression: four failing files, sixteen failed cases; local EPERM plus pre-existing invalid 500ms timeout and overlong macOS fixture path.",
+    "Corrected fixtures retain original >768-byte index, <=768-byte items, all twenty objects and child-process termination assertions."
+  ]
+}

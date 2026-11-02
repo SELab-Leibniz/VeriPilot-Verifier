@@ -1,0 +1,965 @@
+{
+  "kind": "rc-swe-bench-lite-pilot-config-v1",
+  "status": "official_three_case_pilot_complete_with_runtime_failures",
+  "priority": 1,
+  "readyForModelDispatch": false,
+  "benchmark": "SWE-bench Lite",
+  "dataset": "SWE-bench/SWE-bench_Lite",
+  "datasetRevision": "b0dde1093fe417d83b7184254edf8199c1f0dff5",
+  "split": "test",
+  "harnessCommit": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+  "harnessSource": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-harness-source",
+  "frozenGraderDataset": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/test.parquet",
+  "sampleManifest": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/samples-v1.json",
+  "samplingProtocol": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/sampling-protocol-v1.json",
+  "publicMetadata": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/public-metadata-only.json",
+  "globalSampleManifest": ".runtime-correction/rc-supervision/bench-metadata-20261031/sampling-v2.json",
+  "sampleRole": "fixed_pilot_not_held_out",
+  "sameFrozenCandidateAcrossFirstThreeCases": true,
+  "samples": [
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "repo": "pytest-dev/pytest",
+      "base_commit": "e6e300e729dd33956e5448d8be9a0b1540b4e53a",
+      "image": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-7432:latest",
+      "difficulty": "<15 min fix",
+      "tier": "easy",
+      "problemStatementSha256": "f8453cfb1e017be81d0fd5ac8fc5b6faeff6045f71763c81e7fd51537a81ef31"
+    },
+    {
+      "instance_id": "sympy__sympy-12419",
+      "repo": "sympy/sympy",
+      "base_commit": "479939f8c65c8c2908bbedc959549a257a7c0b0b",
+      "image": "swebench/sweb.eval.x86_64.sympy_1776_sympy-12419:latest",
+      "difficulty": "15 min - 1 hour",
+      "tier": "medium",
+      "problemStatementSha256": "48b311ac971aa2fe020b8dd89cd7d2aac3278d4b668921c6b07a29cb914ed4a5"
+    },
+    {
+      "instance_id": "django__django-12708",
+      "repo": "django/django",
+      "base_commit": "447980e72ac01da1594dd3373a03ba40b7ee6f80",
+      "image": "swebench/sweb.eval.x86_64.django_1776_django-12708:latest",
+      "difficulty": "1-4 hours",
+      "tier": "hard",
+      "problemStatementSha256": "773681998993eff75a3b69f04821e4e8683f89cfffdee38f19fe11cb3c7a98be"
+    }
+  ],
+  "host": {
+    "name": "OpenClaw",
+    "version": "2026.7.1-2",
+    "mainModel": "openai/glm-5.3",
+    "reviewerModel": "openai/glm-5.3",
+    "rcPolicy": "config/harbor-evaluation.yaml",
+    "documentCriteria": "config/harbor-document-review.md",
+    "benchmarkSpecificHostChanges": false,
+    "projectPython": "Actual conda run -n testbed facts; Node child interpreter and project import path checked by image qualification."
+  },
+  "execution": {
+    "owner": "supervisor_only",
+    "concurrency": 1,
+    "armOrderPerCase": [
+      "off",
+      "on"
+    ],
+    "agentWallMs": 1800000,
+    "allRoleModelLimitsPerArm": {
+      "wallMs": 1800000,
+      "requests": 256,
+      "payloadBytes": 524288,
+      "inputPerRequest": 532480,
+      "outputPerRequest": 32768,
+      "totalInput": 16000000,
+      "totalOutput": 524288,
+      "usd": 128,
+      "maxConcurrent": 4
+    },
+    "resourcesPerAgent": {
+      "cpus": 2,
+      "memoryMb": 4096
+    },
+    "imageDigestPins": [
+      {
+        "instanceId": "pytest-dev__pytest-7432",
+        "officialRef": "swebench/sweb.eval.x86_64.pytest-dev_1776_pytest-7432:latest",
+        "indexDigest": "sha256:5ec7065f9477542610ea5137247539d8f1c9762112803b0690d5ccb2e64d2f07",
+        "platformDigest": "sha256:0e556e33eec3eb68e7737ea264268a758197718006336b84bb5f0c99187cf066",
+        "platform": "linux/amd64",
+        "localImageId": "sha256:042718fd1241908dd87b83fa2f078fea07be83b6ffbab8d505a1f0af9771d634",
+        "localVerification": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/images/pytest-7432.loaded.json"
+      },
+      {
+        "instanceId": "sympy__sympy-12419",
+        "officialRef": "swebench/sweb.eval.x86_64.sympy_1776_sympy-12419:latest",
+        "indexDigest": "sha256:f78a02916b66645a5325eb515192081890cfc77a103202d5b611d3b2d4b77893",
+        "platformDigest": "sha256:d72d802ea46a9a328017406f4e6c83ce7d014cdae537276807f0cdf05bb0f3be",
+        "platform": "linux/amd64",
+        "localImageId": "sha256:dda3cfe54488925b01d7aa0fdd803411a9fe6aec8c6ae33d6e5ea56769dbd417",
+        "localVerification": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/images/sympy-12419.loaded.json"
+      },
+      {
+        "instanceId": "django__django-12708",
+        "officialRef": "swebench/sweb.eval.x86_64.django_1776_django-12708:latest",
+        "indexDigest": "sha256:3722a130f618602e5636c8c7ddd821550e2c2462b569907c4140fc162e24671e",
+        "platformDigest": "sha256:5f920ccf13410e9fbc43b9e3a83e2b876f5a28d6b0db5369b428552320567b7d",
+        "platform": "linux/amd64",
+        "localImageId": "sha256:bc02f7eeed4abdb486282dba14d348a9af08f0e72aea00c9536f8a84082d9c65",
+        "localVerification": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/images/django-12708.loaded.json"
+      }
+    ],
+    "setupProxy": true,
+    "setupProxyMustCloseBeforeModelTicket": true,
+    "independentEqualStartArmCaches": true,
+    "unknownUsage": "retain_reservation_halt_new_dispatch",
+    "newTerminalPaidPairsAllowed": false,
+    "newDeepSwePaidRunsAllowedUntilLitePilotCompletes": false,
+    "wallPolicy": "Operator-selected30minute shared inference/business/private/correction deadline, not an official benchmark agent limit. Post-stop artifact collection and official grading are separate.",
+    "totalInputNotation": "16M interpreted as decimal16000000tokens, explicit frozen cap for both arms.",
+    "referenceUsdGuardIsNotActualBillOrUserTotalBudget": true,
+    "agentNetwork": {
+      "mode": "allowlist",
+      "allowedHosts": [
+        "host.docker.internal"
+      ],
+      "setupProxyClosesBeforeModelTicket": true
+    },
+    "wrapperWallMs": 1920000,
+    "readonlyArtifactAllowanceMs": 120000,
+    "caseOrder": [
+      "django__django-12708",
+      "pytest-dev__pytest-7432",
+      "sympy__sympy-12419"
+    ],
+    "setupNetwork": {
+      "mode": "public",
+      "scope": "unchanged inherited installer only, with scoped authenticated proxy",
+      "finallyRestore": {
+        "mode": "allowlist",
+        "allowedHosts": [
+          "host.docker.internal"
+        ]
+      },
+      "sameForBothArms": true
+    },
+    "retainStoppedContainersForPartialRecovery": true,
+    "harborEnvironment": {
+      "delete": false,
+      "kwargs": {
+        "keep_containers": true
+      }
+    },
+    "totalSetupAllowanceSec": 1200,
+    "setupAllowanceScope": "RC custom-agent class total setup; distinct from original installer command timeout. Both arms resolved by unchanged official Trial API.",
+    "modelRequestConcurrencyPerArm": 4,
+    "concurrencySemantics": "One paid trial at a time; up to four original/private/correction requests share the same per-arm ledger and deadline.",
+    "snapshot": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005",
+    "maxConcurrentProviderRequestsPerArm": 4,
+    "responseHeaderTimeoutSec": 1800,
+    "sidecarCompose": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005/config/gost-agent-response-timeout.compose.json",
+    "gostResponseReadTimeoutSec": 1800,
+    "originalBusinessEntry": "agent",
+    "instructionNormalization": "Standard host String.trim(); raw and effective identities recorded separately",
+    "inputIdentities": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005/evidence/model-input-identities-005.json",
+    "originalBusinessRpc": "agent"
+  },
+  "agentInput": {
+    "instructionColumn": "problem_statement",
+    "workspace": "/testbed",
+    "expectedHead": "base_commit",
+    "protectedColumnsNeverUploaded": [
+      "patch",
+      "test_patch",
+      "eval_script",
+      "FAIL_TO_PASS",
+      "PASS_TO_PASS",
+      "image_assets"
+    ],
+    "existingModelOutcomesRead": false,
+    "gitExposure": "Require clean initial image HEAD/index; controlled checkout of public base without reading future diff; verify working/index equal base, then fresh depth1 Git object store. OverlayFS metadata backup is opaque and removed before any model.",
+    "knownPrivateGraderArtifacts": "Presence-only rejection before model, plus separate actual-image qualification.",
+    "pythonEnvironment": "Actual conda run -n testbed activation facts propagated identically to original/private/correction Gateway subprocesses; no base-Python fallback.",
+    "instructionTransport": "Optional frozen host-only rc_original_instruction_path restores only Harbor universal-newline conversion; raw problemStatementSha256 remains mandatory.",
+    "hostInstructionNormalization": "Standard agent RPC String.trim(); preserve raw/effective input SHA and byte counts separately.",
+    "modelInputIdentityEvidence": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/model-input-identities-005.json"
+  },
+  "patchDelivery": {
+    "format": "official_prediction_jsonl",
+    "requiredKeys": [
+      "instance_id",
+      "model_name_or_path",
+      "model_patch"
+    ],
+    "base": "frozen base_commit",
+    "includeNewBusinessFiles": true,
+    "preserveBinaryAndModeChanges": true,
+    "temporaryCollectorIndexOnly": true,
+    "automaticBusinessCommit": false,
+    "excludeOnlyPredeclaredRcOwnedMetadata": true,
+    "implementationStatus": "All six canonical exports verified; four native-complete results and two runtime-failed partial results retained. Sympy on is an actual zero-byte patch, not a missing export.",
+    "collectorHelper": "scripts/bench/swebench-lite-workspace.mjs",
+    "nativeBridge": "scripts/bench/swebench_lite_gateway.py",
+    "partialPolicy": "Both failed Sympy arms retained actual stopped-workspace outputs through the frozen Linux canonical export; off639B passed official grading, on0B classified empty_patch. Preserve runtime exceptions and operator-censored off timing; never rerun inference to recover output.",
+    "artifactPhase": "Bounded read-only post-inference collection; does not extend inference deadline or grant correction work."
+  },
+  "grader": {
+    "implementation": "unchanged_official_harness",
+    "entrypoint": "python -m swebench.harness.run_evaluation",
+    "datasetSource": "fixed absolute local parquet path, not remote latest",
+    "split": "test",
+    "maxWorkers": 1,
+    "testTimeoutSec": 1800,
+    "agentWallIsSeparate": true,
+    "uniqueRunIdAndOutputPerArm": true,
+    "exposeToModel": false,
+    "reportProjection": [
+      "resolved",
+      "FAIL_TO_PASS success/failure counts",
+      "PASS_TO_PASS success/failure counts",
+      "denominators",
+      "scoringCoverage",
+      "infrastructureFailure"
+    ],
+    "keepOfficialRawReportsUnchanged": true,
+    "rawTestNamesToModel": false,
+    "emptyBucketStudyStatus": "Sympy on has an empty patch, not an empty test bucket: official aggregate empty_patch, resolved0, no tests executed and no per-instance report; F2P/P2P remain unavailable."
+  },
+  "preconditions": [
+    "Completed: same three public samples, model/host, frozen245-file candidate and fixed six-arm limits.",
+    "Completed: native image/workspace/headless entry qualification and all six controlled operational inputs and canonical exports verified.",
+    "Completed: three off/on pairs and unchanged official grader dispositions, including two honestly retained runtime-failed partial results.",
+    "No new dispatch is ready. Follow-up real component validation and SDK abort investigation require a separately frozen supervisor-owned bounded run; no TB/DeepSWE launch now."
+  ],
+  "overallOptimizationGoalComplete": false,
+  "nativeAgentImportPath": "scripts.bench.swebench_lite_gateway:SweBenchLiteGatewayOpenClaw",
+  "nativeAgentOptions": [
+    "rc_instance_id",
+    "rc_base_commit",
+    "rc_problem_statement_sha256",
+    "rc_conda_environment=testbed",
+    "all inherited fixed RC Gateway options"
+  ],
+  "nativeImageQualificationProbe": "scripts/probe-swebench-lite-gateway.py",
+  "readonlyWorkspaceHelperMount": {
+    "source": "scripts/bench/swebench-lite-workspace.mjs",
+    "target": "/opt/rc-lite/swebench-lite-workspace.mjs",
+    "readOnly": true
+  },
+  "currentBridgeFreeze": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/native-bridge-freeze-004.json",
+  "actualWorkspaceProof": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/workspace-images-001/result.json",
+  "publicTaskGenerator": "scripts/bench/prepare-swebench-lite-harbor.py",
+  "plannedPublicTaskBundle": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/public-harbor-inputs-003/result.json",
+  "officialGraderDriver": "scripts/bench/run-swebench-lite-grader.py",
+  "graderInterfaceReview": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/grader-interface-review-001.json",
+  "dispatchReadinessScope": "Completed epoch005 only. readyForModelDispatch=false; no relaunch or new paid benchmark dispatch from this config.",
+  "activeExecution": {
+    "state": "OFFICIAL_THREE_CASE_PILOT_COMPLETE_WITH_RUNTIME_FAILURES",
+    "recordedUtc": "2026-10-31T05:11:20.074159+00:00",
+    "provenance": "Supervisor launch notice and sealed qualification/accounting metadata; synchronization only, no new execution or live ledger reads.",
+    "batch": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/live-pairs-005/batch.json",
+    "snapshot": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005/snapshot.json",
+    "snapshotSha256": "0cb3668424ea29adc0316a1562a5ae7cce87e2da127d36aebb057552879bb706",
+    "pinnedInputFilesPerManifest": 313,
+    "candidateArtifactFiles": 245,
+    "candidateArtifactDigest": "87011f7f0f80ca35f2ded7afa71064c04f3be2212816f15e7ec05041465e49d9",
+    "runnerSha256": "77125cf0eff4caca662e1c7c6383dcb6e236a944204834afba6c3e38c24505a5",
+    "headlessQualification": [
+      {
+        "artifact": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/headless-native-tools-001.json",
+        "sha256": "202fbb83b72ba8213c0babac444164987e59937f7b3bf03279bf57df4a1a4e0b",
+        "state": "PINNED_HEADLESS_NATIVE_63_REAL_TOOLS_AND_AUTHENTIC_TERMINAL_QUALIFIED",
+        "syntheticProviderRequests": 64,
+        "realFixtureReads": 32,
+        "realHarmlessExecs": 31,
+        "realProviderRequests": 0
+      },
+      {
+        "artifact": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/headless-docker-tools-001.json",
+        "sha256": "adddadb9746a9a83845fd60bfafda69f87d852575e7b4404a00f3239df35c97c",
+        "state": "PINNED_HEADLESS_NATIVE_63_REAL_TOOLS_AND_AUTHENTIC_TERMINAL_QUALIFIED",
+        "syntheticProviderRequests": 64,
+        "realFixtureReads": 32,
+        "realHarmlessExecs": 31,
+        "realProviderRequests": 0
+      }
+    ],
+    "regressions": {
+      "evidence": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/epoch005-regressions-002.tap",
+      "sha256": "0daeb4e8d0a28fe73cb6cfb2ae09a720eedf8e354ef7096f99e3bd085818b940",
+      "pass": 48,
+      "fail": 0
+    },
+    "modelInputIdentities": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/model-input-identities-005.json",
+    "modelInputIdentitiesSha256": "85d61cf6d9d4e9126bf08dc98e63ca8034f19a365c11b7981beae63af807ea80",
+    "inputNormalization": "Standard agent RPC JavaScript String.trim(); each selected case loses only one final newline, equal in both arms. Raw/effective SHAs remain separate.",
+    "rootPaidOwnerPtyAtNotice": 93703,
+    "originalBusinessRpc": "agent",
+    "trialConcurrency": 1,
+    "maxConcurrentProviderRequestsPerArm": 4,
+    "allRoleOriginalDeadlineMs": 1800000,
+    "requestsPerArm": 256,
+    "gostReadTimeoutSec": 1800,
+    "priorSettlement": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/pre-epoch005-settlement.json",
+    "prelaunchWireAttempts": 358,
+    "prelaunchReferenceUsdIncludingHistoricalHold": 39.862371,
+    "actualInvoice": "unknown",
+    "historicalHoldsPreserved": true,
+    "currentLiveUsageRead": false,
+    "currentLiveCounts": null,
+    "officialScoreAvailableAtLaunch": false,
+    "overallGoalComplete": false,
+    "newReviewerModelOrContainerOrGatewayStarts": 0,
+    "completedUtc": "2026-10-31T07:34:21.579164+00:00",
+    "results": {
+      "path": "config/swe-bench-lite-pilot-results.json",
+      "sha256": "a955ef0737d0d01ee50114f92a6c28c0fccfd1be4df1e8730a06e16e15d2c7af",
+      "completedUtc": "2026-10-31T07:34:21.579164+00:00",
+      "sourceArtifacts": {
+        "analysis": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/paired-analysis-005.json",
+        "dispositions": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-dispositions-005.json",
+        "inputAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/controlled-input-audit-005.json",
+        "closureAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/live-pairs-005/root-postinference-closure-audit.json"
+      }
+    },
+    "active": false,
+    "newDispatchAllowed": false,
+    "officialScoreAvailable": true,
+    "runtimeCompletedArms": 4,
+    "runtimeFailedPartialArms": 2,
+    "accounting": {
+      "currentPrimaryWireAttempts": 383,
+      "currentPrimaryKnownInputTokens": 8561257,
+      "currentPrimaryKnownOutputTokens": 260952,
+      "currentPrimaryUnknownRequests": 1,
+      "currentPrimaryConservativeReferenceUsdIncludingUnknownHold": 70.117999,
+      "allSessionWireAttemptsIncludingPriorWork": 741,
+      "allSessionConservativeReferenceUsdIncludingHistoricalHolds": 109.98037,
+      "actualInvoice": "unknown",
+      "referenceEstimateIsNotBill": true,
+      "priorFailedAttemptsPreserved": true
+    },
+    "privateRcSettledReceiptsFullyVerified": false
+  },
+  "plannedPublicTaskBundleRole": "Historical public transport template only; completed epoch005 used frozen copied inputs. No new dispatch is implied.",
+  "postinferenceReview": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/postinference-scripts-review-004.json",
+  "postinferenceCodeReviewStatus": "closed_and_exercised_by_all_six_canonical_exports_and_official_dispositions_005",
+  "postinferenceContractEvidence": [
+    ".runtime-correction/rc-supervision/swe-bench-lite-20261031/post-review-identity-and-runtime-contracts-001.json",
+    ".runtime-correction/rc-supervision/swe-bench-lite-20261031/post-review-timeout-contracts-001.json"
+  ],
+  "latestAttemptStopNotice": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/epoch003-instrumentation-stop-notice-001.json",
+  "postExportReview": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/post-export-pipeline-review-002.json",
+  "priorInvalidAttempt": {
+    "batch": "live-pairs-004",
+    "reason": "chat ingress has no authentic terminal after final assistant text",
+    "wireAttempts": 56,
+    "qualityComparisonValid": false
+  },
+  "currentExecutionSourcePinAuthority": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005/snapshot.json",
+  "historicalImageQualificationFreeze": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/native-bridge-freeze-004.json",
+  "postExportFindingStatus": "LPOST-EXPORT-R1_closed_four_synthetic_guards",
+  "currentBridgeFreezeScope": "Historical native-image qualification; current epoch005 uses313 immutable source/input pins and the two actual headless tool-loop qualifications.",
+  "gostTimeoutOverlayReview": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/gost-timeout-overlay-review-002.json",
+  "headlessOriginalEntryPreparation": {
+    "evidence": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/headless-agent-entry-implementation-001.json",
+    "runnerSha256": "77125cf0eff4caca662e1c7c6383dcb6e236a944204834afba6c3e38c24505a5",
+    "offlineContracts": 13,
+    "newEntryContracts": 6,
+    "originalBusinessRpc": "agent",
+    "realGatewayQualificationPending": false,
+    "bothArmsSameEntry": true,
+    "rawAndTrimIdentityRecorded": true,
+    "rootActualQualificationAtNotice": "native_and_same_image_Docker63real_fixture_tools_plus_authterminal_passed_zero_realprovider",
+    "realQualificationEvidence": [
+      ".runtime-correction/rc-supervision/swe-bench-lite-20261031/headless-native-tools-001.json",
+      ".runtime-correction/rc-supervision/swe-bench-lite-20261031/headless-docker-tools-001.json"
+    ]
+  },
+  "results": {
+    "path": "config/swe-bench-lite-pilot-results.json",
+    "sha256": "a955ef0737d0d01ee50114f92a6c28c0fccfd1be4df1e8730a06e16e15d2c7af",
+    "completedUtc": "2026-10-31T07:34:21.579164+00:00",
+    "sourceArtifacts": {
+      "analysis": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/paired-analysis-005.json",
+      "dispositions": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-dispositions-005.json",
+      "inputAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/controlled-input-audit-005.json",
+      "closureAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/live-pairs-005/root-postinference-closure-audit.json"
+    }
+  },
+  "pilotComplete": true,
+  "officialGradingComplete": true,
+  "pilotAssessment": {
+    "officialResolved": {
+      "off": 3,
+      "on": 2,
+      "denominatorEach": 3
+    },
+    "officialEmptyPatch": {
+      "off": 0,
+      "on": 1
+    },
+    "nativeRuntimeCompleted": {
+      "off": 2,
+      "on": 2,
+      "denominatorEach": 3
+    },
+    "matchedScoredCases": {
+      "ids": [
+        "django__django-12708",
+        "pytest-dev__pytest-7432"
+      ],
+      "F2P": {
+        "offSuccess": 2,
+        "onSuccess": 2,
+        "denominatorEach": 2
+      },
+      "P2P": {
+        "offSuccess": 178,
+        "onSuccess": 178,
+        "denominatorEach": 178
+      }
+    },
+    "allOffF2P": {
+      "success": 3,
+      "denominator": 3
+    },
+    "allOffP2P": {
+      "success": 203,
+      "denominator": 203
+    },
+    "allOnF2PAndP2PRates": null,
+    "allOnRateUnavailableReason": "Sympy on empty patch: official evaluator did not execute tests; no synthetic counts assigned.",
+    "apiWireAttempts": {
+      "off": 138,
+      "on": 245
+    },
+    "tokens": {
+      "offExact": 3078529,
+      "onKnownLowerBound": 5743680,
+      "onReservationCeiling": 6308928,
+      "unknownRequestsOn": 1,
+      "unknownHoldInput": 532480,
+      "unknownHoldOutput": 32768,
+      "knownLowerBoundIncreasePercent": 86.57222329235815
+    },
+    "speedGainClaimAllowed": false,
+    "speedLimitation": "Sympy both runtimes failed; off timing includes operator recovery of an aborted hung task. Do not interpret failed/censored runs as faster success.",
+    "strictBothF2PAndP2PImproved": false,
+    "overallOptimizationGoalAchieved": false
+  },
+  "workingTreeBaselineCandidate": {
+    "protocol": "stop-baseline-task-v6-batch-feedback",
+    "state": "SCOPED_NATIVE_COMPONENTS_ACCEPTED",
+    "acceptance": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/component-acceptance-001.json",
+    "patchReview": ".runtime-correction/rc-supervision/baseline-protocol-v6-20261031/root-review-001.json",
+    "scope": "Explicit initial mixed-owner refresh and user revision; automatic original-agent baseline plus actual M16 repair loop. Full-module and benchmark outcomes remain unproven.",
+    "legacyBoundary": "Persisted historical ledgers still read unchanged. Every new full/compact/draft save needs an explicit target; only IMPLEMENTATION carries an explicit chosen role. No inferred metadata or historical migration.",
+    "realRequests": 34,
+    "inputTokens": 415164,
+    "outputTokens": 9304,
+    "persistedRcReceiptsSettled": 7,
+    "gatewayAudit": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/run-independent-audit-001.json",
+    "explicitRefreshAudit": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/baseline-independent-audit-001.json",
+    "fullModeAndAggregateFeedbackObserved": true,
+    "semanticReview": "All original conditions/exclusions/locality and separate successful-verifier duty preserved; user-only upper9-to19 revision; no assistant strings-only or extra input-code artifact duty.",
+    "wholePluginAccepted": false
+  },
+  "nextSteps": [
+    "Guided session submits one concrete integrated design and before pins for Skill exact identifiers/window navigation, bounded independent Stop read planning, recoverable baseline owner review/revision and scoped cancellation observation; root performs adversarial scope review.",
+    "Guided session implements only approved scope, failure-first and affected checks. Root verifies the frozen candidate, one necessary full and same-artifact qualification, then launches the original normal control; no extra all-green micro gate.",
+    "After normal no-harm and complete source-faithful acceptance, one real fault feedback/repair/current recheck; Linux qualification then fixed Lite3 off/on and original TB9/DeepSWE9."
+  ],
+  "closingResourceAndIntegrityAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/closing-resource-and-integrity-audit-005.json",
+  "developmentProgress": "config/rc-development-progress-20261031.json",
+  "workingTreeV5Candidate": {
+    "state": "FULL_SUITE_PASSED_REAL_SEMANTIC_ACCEPTANCE_FAILED",
+    "workDirectory": ".runtime-correction/rc-supervision/baseline-navigation-v5-20261031",
+    "integration": ".runtime-correction/rc-supervision/baseline-navigation-v5-20261031/combined-integration-002.json",
+    "targetedTests": {
+      "total": 137,
+      "passed": 136,
+      "skipped": 1,
+      "failed": 0
+    },
+    "fullSuite": {
+      "files": 213,
+      "tests": 2141,
+      "passed": 2110,
+      "skipped": 31,
+      "failed": 0
+    },
+    "realStage": ".runtime-correction/rc-supervision/v5-live-validation-20261031",
+    "sourceEpoch": "source-001",
+    "qualification": ".runtime-correction/rc-supervision/v5-live-validation-20261031/qualification-001.json",
+    "finding": "BASELINE_OWNER_AND_SCOPE_DRIFT: scope exclusion became PROCESS/SUPPORT; draft label did not match top-level-semicolon selection.",
+    "changes": [
+      "Bounded complete canonical source-kind and clause navigation from already frozen text; ambiguous or oversized inputs fall back without partial tables.",
+      "Every newly saved claim needs an explicit verification target; only implementation claims carry explicit roles."
+    ],
+    "semanticAcceptance": false,
+    "officialLiteScoresChanged": false,
+    "next": "Root owns sequential actual M16 loop and unchanged explicit-refresh fixtures, then independent semantic audit.",
+    "actualGatewayState": "INCOMPLETE",
+    "actualExplicitRefreshState": "SETTLED_PUBLISHED_SEMANTIC_REJECTED",
+    "acceptanceAudit": ".runtime-correction/rc-supervision/v5-live-validation-20261031/semantic-acceptance-001.json",
+    "settlement": ".runtime-correction/rc-supervision/v5-live-validation-20261031/settlement-001.json"
+  },
+  "workingTreeV6Candidate": {
+    "state": "SCOPED_REAL_BASELINE_AND_M16_ACCEPTED",
+    "directory": ".runtime-correction/rc-supervision/baseline-protocol-v6-20261031",
+    "review": ".runtime-correction/rc-supervision/baseline-protocol-v6-20261031/root-review-001.json",
+    "integration": ".runtime-correction/rc-supervision/baseline-protocol-v6-20261031/combined-integration-001.json",
+    "protocol": "stop-baseline-task-v6-batch-feedback",
+    "promptSha256": "96fa40e179470702ae94dca97dca3bc4518746bcf198ae2ec32f5139bd879f97",
+    "fullSuite": {
+      "files": 213,
+      "tests": 2146,
+      "passed": 2115,
+      "skipped": 31,
+      "failed": 0
+    },
+    "targetedPackaging": {
+      "tests": 142,
+      "passed": 141,
+      "skipped": 1,
+      "failed": 0
+    },
+    "realStage": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031",
+    "sourceEpoch": "source-002",
+    "sourceFiles": 1821,
+    "qualification": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/qualification-002.json",
+    "semanticAcceptance": "SCOPED_COMPONENTS_ONLY",
+    "priorV5FailuresPreserved": true,
+    "newOfficialScores": false,
+    "scope": "Next unsaved batch state, bounded aggregate full-metadata feedback, source provenance vs actual proof owner. No inferred fields, weaker evidence guards, extra repairs or deadline extension.",
+    "gatewayIndependentAudit": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/run-independent-audit-001.json",
+    "gatewayScopedAccepted": true,
+    "explicitRefreshMechanicalComplete": true,
+    "explicitRefreshSemanticAccepted": true,
+    "settlement": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/settlement-001.json",
+    "paidProcessesRunning": false,
+    "baselineIndependentAudit": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/baseline-independent-audit-001.json",
+    "acceptance": ".runtime-correction/rc-supervision/v6-protocol-validation-20261031/component-acceptance-001.json",
+    "wholePluginAccepted": false
+  },
+  "historicalWorkingTreeBaselineV4": {
+    "protocol": "stop-baseline-task-v4-explicit-implementation-role",
+    "state": "SCOPED_REAL_COMPONENT_ACCEPTED",
+    "acceptance": ".runtime-correction/rc-supervision/baseline-protocol-validation-20261031/role-consistent-component-acceptance-001.json",
+    "patchReview": ".runtime-correction/rc-supervision/baseline-protocol-validation-20261031/consistent-role-candidate-002/review.json",
+    "scope": "Explicit production refresh initial extraction and later user revision only. Full/compact/draft reject explicit IMPLEMENTATION without a chosen role; no inferred metadata.",
+    "legacyBoundary": "Absent-target legacy full behavior unchanged; no historical baseline migration claimed.",
+    "realRequests": 14,
+    "inputTokens": 221779,
+    "outputTokens": 3691,
+    "elapsedMs": 101907,
+    "persistedRcReceiptsSettled": 4,
+    "semanticReview": "Initial and revised function/purity/range/exclusion, local-only PROCESS, separate verifier execution/exit0 PROCESS preserved. No extra document obligation or assistant strings-only rule.",
+    "wholePluginAccepted": false
+  },
+  "integratedModuleStage": {
+    "state": "COMPLIANT_FAILED_CAUSALLY_AUDITED_SHARED_BASIS_FIX_DESIGN",
+    "directory": ".runtime-correction/rc-supervision/integrated-native-validation-20261031",
+    "sourceEpoch": "source-001",
+    "sourceFiles": 1825,
+    "hostPins": 14,
+    "qualification": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/qualification-001.json",
+    "manifest": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/compliant-manifest-001.json",
+    "output": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/compliant-live-001",
+    "paidOwner": "root",
+    "faultControlDispatched": false,
+    "closedPriorProviderRequests": 871,
+    "newUsagePendingFinalSettlement": false,
+    "settlement": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/compliant-settlement-001.json",
+    "postCloseNativeReceipts": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/post-close-native-receipts-001.json",
+    "newProviderRequests": 39,
+    "knownUsageRequests": 38,
+    "unknownUsageRequests": 1,
+    "knownInputTokens": 453899,
+    "knownOutputTokens": 13072,
+    "heldInputTokens": 532480,
+    "heldOutputTokens": 32768,
+    "allUnknownHoldsRetained": true,
+    "paidProcessesRunning": false,
+    "inFlightRequests": 0,
+    "nativePrivateReceiptsSettled": 8,
+    "automaticModuleAcceptance": false,
+    "semanticAcceptance": false,
+    "newOfficialScores": false,
+    "diagnosis": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/compliant-run-independent-audit-001.json",
+    "rootDiagnosisReview": ".runtime-correction/rc-supervision/integrated-native-validation-20261031/root-diagnosis-review-002.json",
+    "nextAction": "Design minimal reuse of complete unchanged original baseline inputs across hook scopes. Keep Skill/document checks and atomic freshness/deadline guards."
+  },
+  "workingTreeSharedBasisCandidate": {
+    "state": "ENGINEERING_QUALIFIED_REAL_CONTROL_FAILED_STOP_DEADLINE",
+    "review": ".runtime-correction/rc-supervision/baseline-shared-basis-fix-20261031/root-design-review-001.json",
+    "officialPilotUnchanged": true,
+    "readyForModelDispatch": false,
+    "progress": "config/rc-development-progress-20261031.json",
+    "rootFullReview": ".runtime-correction/rc-supervision/baseline-shared-basis-fix-20261031/root-full-integration-review-002.json",
+    "firstPrinciplesAdversarialReview": ".runtime-correction/rc-supervision/baseline-shared-basis-fix-20261031/root-first-principles-adversarial-review-001.json",
+    "candidate002Sealed": true,
+    "decisionScopeSeamReview": ".runtime-correction/rc-supervision/baseline-shared-basis-fix-20261031/root-decision-scope-seam-review-001.json",
+    "nativeStage": ".runtime-correction/rc-supervision/integrated-shared-basis-validation-20261031",
+    "latestRealControlSettlement": ".runtime-correction/rc-supervision/integrated-shared-basis-validation-20261031/compliant-settlement-001.json"
+  },
+  "workingTreeStopRoundCandidate": {
+    "state": "ENGINEERING_QUALIFIED_REAL_MECHANICAL_PASS_SCOPE_NOT_ACCEPTED",
+    "rootFullReview": ".runtime-correction/rc-supervision/stop-round-efficiency-fix-20261031/root-full-integration-review-001.json",
+    "nativeStage": ".runtime-correction/rc-supervision/integrated-stop-round-validation-20261101",
+    "readyForModelDispatch": false,
+    "officialPilotUnchanged": true,
+    "latestSettlement": ".runtime-correction/rc-supervision/integrated-stop-round-validation-20261101/compliant-settlement-001.json",
+    "scopeConcern": ".runtime-correction/rc-supervision/integrated-stop-round-validation-20261101/root-population-provenance-probe-001.json"
+  },
+  "sourceContextPopulationRepair": {
+    "state": "STRUCTURAL_REPAIR_ACCEPTED_FULL_SCOPE_CONTROL_FAILED_SEMANTIC_CONTRACT",
+    "at": "2026-10-31T17:38:15.072679+00:00",
+    "directory": ".runtime-correction/rc-supervision/source-context-population-fix-20261101",
+    "independentAudit": ".runtime-correction/rc-supervision/integrated-stop-round-validation-20261101/stop-round-compliant-independent-audit-001.json",
+    "rootAuditReview": ".runtime-correction/rc-supervision/integrated-stop-round-validation-20261101/root-independent-audit-review-001.json",
+    "rootCriteria": ".runtime-correction/rc-supervision/source-context-population-fix-20261101/root-adversarial-criteria-001.json",
+    "observedAssignedObjects": 8,
+    "expectedObjectsForThisExactLedger": 12,
+    "acceptCurrentPass": false,
+    "readyForPaidDispatch": false,
+    "newProviderRequests": 38,
+    "closedRequests": 1025,
+    "fixedSamplesUnchanged": true,
+    "officialScoresUnchanged": true,
+    "next": "Next minimal conditional/Skill source-fidelity contract and separate observer repair under newstage; old fullscope failed control immutable.",
+    "design": ".runtime-correction/rc-supervision/source-context-population-fix-20261101/design-001.md",
+    "rootDesignReview": ".runtime-correction/rc-supervision/source-context-population-fix-20261101/root-concrete-design-review-001.json",
+    "rootFullReview": ".runtime-correction/rc-supervision/source-context-population-fix-20261101/root-full-integration-review-001.json",
+    "fullSuite": {
+      "files": 223,
+      "tests": 2282,
+      "pass": 2251,
+      "existingSkips": 31,
+      "fail": 0,
+      "timeouts": 0
+    },
+    "stableRepositoryFiles": 731,
+    "stableDependencyFiles": 1386,
+    "candidatePins": 28,
+    "realFrozenLedgerOfflineCounts": {
+      "M08": 6,
+      "M12": 5,
+      "M16": 1
+    },
+    "restoredObjects": 4,
+    "originalRawEvidenceFilesUnchanged": 550,
+    "engineeringQualified": true,
+    "sourceAndTestsFrozen": true,
+    "nativeStage": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101",
+    "nativeQualification": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/qualification-001.json",
+    "nativeToolChecksPassed": 23,
+    "actualBuiltRepairFilesVerified": 5,
+    "singleRootPaidOwner": true,
+    "liveObservation": {
+      "at": "2026-10-31T17:38:15.072679+00:00",
+      "admittedRequests": 38,
+      "completedKnownUsage": 38,
+      "inFlightRequests": 0,
+      "processPid": 38963,
+      "processConfirmedLive": false,
+      "paidRunNotSettled": false,
+      "closedThrough": 1025
+    },
+    "actualSelectedObjects": 14,
+    "actualVerdicts": {
+      "NOT_YET_APPLICABLE": 1,
+      "PASS": 13
+    },
+    "actualFormalStatus": "UNVERIFIED",
+    "actualTaskStatus": "COMPLETED_WITH_ISSUES",
+    "actualPrivateSettled": 6,
+    "actualDispatchPhase": "IDLE",
+    "provisionalTerminalEvidence": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/root-provisional-terminal-observation-001.json",
+    "semanticAcceptance": false,
+    "latestSettlement": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/compliant-settlement-001.json",
+    "closureIntegrity": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/root-closure-integrity-001.json",
+    "closedReferenceUsdIncludingAllHistoricalHolds": 149.633729,
+    "inFlightRequests": 0,
+    "allPaidProcessesClosed": true,
+    "finalIndependentAudit": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/source-context-compliant-independent-audit-001.json",
+    "rootIndependentAuditReview": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/root-independent-audit-review-001.json",
+    "sourceContextStructuralRepairAccepted": true,
+    "fullModuleAcceptance": false
+  },
+  "conditionalReviewContractRepair": {
+    "state": "ENGINEERING_QUALIFIED_REAL_COMPONENT_USABILITY_GAPS_IDENTIFIED",
+    "at": "2026-10-31T18:18:03.497623+00:00",
+    "directory": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101",
+    "causalRootReview": ".runtime-correction/rc-supervision/integrated-source-context-validation-20261101/root-independent-audit-review-001.json",
+    "criteria": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-adversarial-criteria-001.json",
+    "rootObserverLoopReplay": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-observer-loop-replay-001.json",
+    "issues": [
+      "Current-scope conditional verdict semantic/tool/aggregate/Skill consistency",
+      "Unsupported strict order in derived Skill graph",
+      "Separate eval observer missed unsuccessful terminal before authenticated audit"
+    ],
+    "sourceContextStructuralRepairAccepted": true,
+    "fullModuleControlAccepted": false,
+    "expectedFilesActualDutyLossProven": false,
+    "newProviderRequests": 0,
+    "closedProviderRequests": 1049,
+    "referenceUsdIncludingAllHistoricalHolds": 151.787085,
+    "inFlightRequests": 0,
+    "paidProcessesRunning": false,
+    "providerDispatchReady": false,
+    "fixedSamplesHostModelBudgetsAndScorerUnchanged": true,
+    "next": "Review minimal explicit existing-claim retention, deterministic source quote binding, and owning-context component followUp fix. No provider until engineering qualification.",
+    "design": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/design-001.md",
+    "rootDesignReview": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-design-review-001.json",
+    "beforeSnapshotFilesVerified": 36,
+    "approvedProductionFiles": 14,
+    "sourceAndTestEditsAuthorizedWithinScope": true,
+    "additionalNativeReceiptSeam": "lib/openclaw/reviewer-progress.mjs",
+    "scopeAddendum": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-scope-addendum-001.json",
+    "receiptRequirement": "Actual issued page and original native non-synthetic matching tool-result-persist acknowledgment, scoped/current; no source path/hash/self-tag substituted for disclosure.",
+    "firstPrinciplesAdversarialReview": {
+      "path": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-first-principles-adversarial-review-001.json",
+      "state": "REVIEW_COMPLETE_CURRENT_IMPLEMENTATION_NOT_ACCEPTED_FOR_REAL_VALIDATION",
+      "newProviderRequests": 0,
+      "criticalFindings": [
+        "Heuristic normative force changes original duties",
+        "All-current Skill binding bypasses conditional guard"
+      ],
+      "metricPolicyChanged": false,
+      "next": "Close independent source/activation counterexamples and classify targeted regressions before candidate freeze."
+    },
+    "semanticInterpretationRevision": {
+      "state": "ROOT_DIRECTION_APPROVED_IMPLEMENTATION_IN_PROGRESS",
+      "design": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/semantic-interpretation-design-002.md",
+      "rootReview": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-semantic-design-review-002.json",
+      "rootInstalledHostPrewriteProbe": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-installed-host-prewrite-preview-002.json",
+      "actualArtifactQualified": false,
+      "providerDispatchReady": false,
+      "newProviderRequests": 0
+    },
+    "additionalFindingPropagationSeam": {
+      "file": "lib/runtime-v2/review-collector.mjs",
+      "rootApproval": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-scope-addendum-002.json",
+      "scope": "Only pass already-validated accepted judgements to existing finding validator."
+    },
+    "rootConditionalBoundaryCounterexample": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-conditional-boundary-preview-001.json",
+    "latestRootCommonBoundaryReplay": {
+      "path": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-conditional-boundary-preview-002.json",
+      "checks": 9,
+      "passed": 9,
+      "scope": "Common API boundary only; no full module acceptance."
+    },
+    "conditionalWindowPropagationReview": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-scope-addendum-003.json",
+    "latestRootSkillFulfillmentReplay": {
+      "path": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-skill-fulfillment-preview-001.json",
+      "checks": 8,
+      "passed": 8,
+      "scope": "Per-branch conditional activation/fulfillment separation; checked-proof-shaped boundary inputs, not actual model or full watcher qualification."
+    },
+    "rootMarkdownSourceCoverageReplay": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-markdown-source-coverage-preview-002.json",
+    "nextRootSemanticCalibrationPreparation": ".runtime-correction/rc-supervision/skill-interpretation-calibration-20261101/driver-preparation-001.json",
+    "nativeSkillConditionalSubjectLimitation": {
+      "state": "EXPLICITLY_UNVERIFIED_NOT_QUALIFIED_FOR_SOURCE_ARTIFACT_FULFILLMENT",
+      "reason": "Current native Skill-care tools disclose original basis and process records; they do not fabricate SOURCE/ARTIFACT owner proof for these conditional branches. PROCESS scoped verification does not close this limitation."
+    },
+    "rootMarkdownCoverageChecks": {
+      "passed": 4,
+      "total": 4,
+      "scope": "Structural retention only; mandatory versus context still needs actual semantic review."
+    },
+    "rootReusedStopCurrentStateCounterexample": {
+      "path": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-reused-stop-skill-state-preview-002.json",
+      "state": "SCOPED_FIX_VERIFIED_BY_ROOT_TWO_SCENARIOS_AND_UNCHANGED_CACHE_CONTROL",
+      "sourceStable": true,
+      "newProviderRequests": 0,
+      "freshVerifyOnlyRecoveryConfirmed": true,
+      "rootAcceptance": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-reused-stop-currentness-review-001.json"
+    },
+    "additionalDerivedValidationSeam": {
+      "file": "lib/runtime-v2/review-evidence-validation.mjs",
+      "approval": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-scope-addendum-004.json",
+      "purpose": "Explicit checked conditional window context reaches production derived row/finding validation."
+    },
+    "rootFullRegression": {
+      "path": ".runtime-correction/rc-supervision/conditional-review-contract-fix-20261101/root-full-integration-review-001.json",
+      "files": 229,
+      "tests": 2331,
+      "pass": 2300,
+      "skip": 31,
+      "fail": 0,
+      "sourceStable": true,
+      "dependencySupplementExplicit": true
+    },
+    "latestRealCalibration": ".runtime-correction/rc-supervision/skill-interpretation-calibration-20261101/settlement-002.json"
+  },
+  "latestLiteEnvironmentRecheck": {
+    "record": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/readiness-recheck-007.json",
+    "cachedImages": 3,
+    "idsMatchPreviousRecheck": true,
+    "inputIdentityStable": true,
+    "futureCandidateQualificationStillRequired": true,
+    "paidBenchmarkReady": false
+  },
+  "currentDevelopment": {
+    "state": "NORMAL_CAUSAL_REVIEW_ACCEPTED_INTEGRATED_REPAIR_DESIGN_ACTIVE",
+    "updatedUtc": "2026-11-01T00:39:46.526076+00:00",
+    "runtimeSourceAndTestsFrozen": true,
+    "progressMetadataUpdatedSeparately": true,
+    "qualifiedSnapshotImmutable": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/source-005",
+    "rootFullRegression": {
+      "path": ".runtime-correction/rc-supervision/baseline-classification-source-admission-design-20261101/root-full-integration-review-001.json",
+      "files": 230,
+      "tests": 2421,
+      "pass": 2390,
+      "skip": 31,
+      "fail": 0,
+      "timeout": 0,
+      "sourceFiles": 739,
+      "embeddedDependencies": 1386,
+      "allRuntimeAndTestInputsUnchangedSinceFull": true,
+      "laterProgressOnlyMetadataChangesExplicit": true
+    },
+    "actualArtifactNativeQualification": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/root-native-qualification-005.json",
+    "latestRealCalibration": {
+      "result": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/live-006/result.json",
+      "settlement": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/settlement-006.json",
+      "cases": 3,
+      "requests": 34,
+      "knownInputTokens": 394469,
+      "knownOutputTokens": 9555,
+      "referenceUsd": 2.971493,
+      "globalBaselineSemanticAcceptance": false,
+      "independentAudit": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/independent-four-axis-audit-006.json",
+      "rootFormalPublicationAudit": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/root-formal-publication-audit-006.json",
+      "actualPrivateRunsSettled": 10,
+      "initialAcceptedClaimsPerCase": 3,
+      "retainedClaimsPerCase": 3,
+      "formalBaselineVersions": [
+        2,
+        1,
+        2
+      ],
+      "formalMaterialClaimCounts": [
+        2,
+        0,
+        1
+      ],
+      "englishConditionalRouting": "Formal Cancel publishing claim explicitly CONDITIONAL; no temporal runtime fulfillment proven.",
+      "englishOwnerFinding": "New MATERIAL Create app.mjs and a short usage guide claim is IMPLEMENTATION/PRODUCTION; initial USER owners are separately correct.",
+      "mixedPublicationFinding": "Local two MATERIAL candidates classified NEW_TASK; current.version>0 NEW_TASK filter removed them, formal baseline-applied changed:false and source cursor advanced; current remains v1.",
+      "firstAttemptsPerfect": false,
+      "rootReview": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/root-independent-audit-review-006.json"
+    },
+    "priorRealCalibration": {
+      "result": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/live-003/result.json",
+      "settlement": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/settlement-003.json",
+      "requests": 14,
+      "referenceUsd": 1.716107,
+      "outcome": "Initial3 accepted; missing pluginRoot argument changed policy, so retention missed and baseline repair exhausted before graph; old failure unchanged",
+      "causalReplay": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/root-policy-retention-replay-003.json",
+      "driverFix": ".runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/root-driver-glue-fix-004.json"
+    },
+    "accounting": {
+      "closedRequests": 1200,
+      "inFlight": 0,
+      "paidProcessesRunning": false,
+      "cumulativeReferenceUsdIncludingAllHistoricalHolds": 170.218472,
+      "actualInvoice": "UNKNOWN",
+      "thisStageRequests": 36,
+      "thisStageKnownInput": 478985,
+      "thisStageKnownOutput": 16908,
+      "thisStageReferenceUsd": 8.173127,
+      "newUnknownRequests": 1,
+      "oldUnknownHoldsRetained": true,
+      "thisStageUnknownRequests": 1,
+      "thisStageUnknownInputHold": 532480,
+      "thisStageUnknownOutputHold": 32768
+    },
+    "latestKnownGap": "Accepted audit: real normal business and document behavior verified within scope; USER mixed owner remains a semantic defect. Skill call-id/window repair and navigation use shared reading time; Stop saved9/11 with2M16 pending. Scoped provider cancellation propagated to case observation, limiting negative terminal/feedback evidence. Normal/full-plugin/official benefit unaccepted.",
+    "nextSteps": [
+      "Guided session submits one concrete integrated design and before pins for Skill exact identifiers/window navigation, bounded independent Stop read planning, recoverable baseline owner review/revision and scoped cancellation observation; root performs adversarial scope review.",
+      "Guided session implements only approved scope, failure-first and affected checks. Root verifies the frozen candidate, one necessary full and same-artifact qualification, then launches the original normal control; no extra all-green micro gate.",
+      "After normal no-harm and complete source-faithful acceptance, one real fault feedback/repair/current recheck; Linux qualification then fixed Lite3 off/on and original TB9/DeepSWE9."
+    ],
+    "officialScoresChanged": false,
+    "f2pP2pImprovementProven": false,
+    "tokenTimeBenefitProven": false,
+    "wholePluginAcceptance": false,
+    "goalComplete": false,
+    "activeControl": {
+      "state": "CLOSED_INCOMPLETE",
+      "pid": 94240,
+      "control": "compliant",
+      "directory": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/compliant-live-001",
+      "manifest": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/compliant-manifest-001.json",
+      "qualification": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/qualification-001.json",
+      "observedAt": "2026-11-01T00:16:56.836924+00:00",
+      "observedProviderRequests": 36,
+      "observedInFlight": 0,
+      "observedProvisionalCumulativeRequests": 1200,
+      "observedProvisionalCumulativeReferenceUsdIncludingHolds": 170.218472,
+      "closedThrough": 1200,
+      "closedReferenceUsdIncludingHistoricalHolds": 170.218472,
+      "usageAndReceiptsPendingClosure": false,
+      "semanticAcceptance": null,
+      "expectedAdmissions": 0,
+      "unknownUsageFullHoldRetained": true,
+      "settlement": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/compliant-settlement-001.json",
+      "notSettled": false
+    },
+    "latestRealControl": {
+      "control": "compliant",
+      "result": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/compliant-live-001/result.json",
+      "settlement": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/compliant-settlement-001.json",
+      "closure": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/root-closure-integrity-001.json",
+      "state": "INCOMPLETE",
+      "terminalError": {
+        "code": 20,
+        "message": "This operation was aborted"
+      },
+      "requests": 36,
+      "knownRequests": 35,
+      "knownInputTokens": 478985,
+      "knownOutputTokens": 16908,
+      "unknownRequests": [
+        36
+      ],
+      "unknownInputHold": 532480,
+      "unknownOutputHold": 32768,
+      "referenceUsdIncludingUnknownHold": 8.173127,
+      "actualInvoice": "UNKNOWN",
+      "afterCloseActualPrivateRunsSettled": 7,
+      "originalResultSnapshotAndFalseMechanicalChecksPreserved": true,
+      "actualPostEditVerifierObserved": true,
+      "observedCorrectionAdmissions": 0,
+      "authenticBusinessAndFormalDispatchCompletionProven": false,
+      "semanticAcceptance": false,
+      "independentAudit": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/independent-normal-causal-audit-001.json",
+      "rootReview": ".runtime-correction/rc-supervision/integrated-v10-validation-20261101/root-independent-audit-review-001.json",
+      "actualAssignedObjects": 11,
+      "historicalSavedObjects": 9,
+      "pendingM16Objects": 2,
+      "sharedReadingWindowMs": 180000,
+      "feedbackReserveMs": 30000,
+      "skillFirstMs": 46307,
+      "skillRepairMs": 33209,
+      "stopRemainingAtStartMs": 100317
+    },
+    "supervision": {
+      "supervisor": "root",
+      "guidedThreadId": "01a18b5c-e45e-73f3-96e6-e40eacac0b9e",
+      "responsibility": "Plan and supervise efficient completion of the full user requirements; review evidence, challenge design, authorize precise implementation and verify acceptance. Guided session owns implementation and self-checks.",
+      "realPaidLauncher": "root_only",
+      "userConfirmationNeededForRoutineTechnicalDecisions": false,
+      "currentGuidedWork": "One integrated minimal repair design based on accepted normal causal evidence; no repeated raw audit or paid run."
+    }
+  },
+  "latestDevelopmentAccounting": {
+    "closedProviderRequests": 1049,
+    "cumulativeReferenceUsdIncludingAllHistoricalHolds": 151.787085,
+    "actualInvoice": "UNKNOWN",
+    "allHistoricalUnknownHoldsRetained": true,
+    "inFlightRequests": 0,
+    "paidProcessesRunning": false
+  }
+}

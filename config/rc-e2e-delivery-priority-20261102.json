@@ -1,0 +1,104 @@
+{
+  "schema": "rc-e2e-delivery-priority-v1",
+  "priorityId": "2026-11-02-first-frozen-e2e",
+  "recordedAtHkt": "2026-11-02T05:46:26+08:00",
+  "status": "ACTIVE_AWAITING_ACCEPTED_FROZEN_DELIVERY",
+  "humanAuthorization": "就按这个方案推进，把优先级同步给导师、实现和评测会话，先交付一个端到端跑通、反馈可信、正常退出的冻结版本，提分和效率优化放到后续迭代。",
+  "goal": "先交付明确支持范围内端到端跑通、反馈可信、正常退出且可复现的冻结版本。",
+  "currentDeliveryTarget": {
+    "requestedAtHkt": "2026-11-02T09:16:44+08:00",
+    "targetHkt": "2026-11-02T14:00:00+08:00",
+    "humanInstruction": "让导师明确正常任务、故障闭环和单例 benchmark 的实际启动安排及交付时间，争取今天14点前完成首包。有阻断及时说明，继续只处理交付阻断，不扩大范围。",
+    "targetIsBestEffortNotAnAcceptedDeliveryOrActiveRunDeadline": true,
+    "scheduleOwner": "supervisor",
+    "scheduleStatus": "SOURCE031_CONTROLLER_STOPPED_DESIGN028_NO_IMPLEMENTATION_OR_NEW_PAID",
+    "requiredScheduleFields": [
+      "exact qualified candidate",
+      "normal actual or planned start and closure",
+      "fault actual or planned start and closure",
+      "single benchmark actual or planned start and official scoring closure",
+      "independent review and frozen delivery time",
+      "next checkpoint and remaining blockers"
+    ],
+    "blockerReporting": "Promptly state evidence, smallest in-scope repair, effect on the14:00target and next concrete checkpoint; distinguish actual starts from estimates.",
+    "noScopeExpansion": true,
+    "doesNotExtendOriginalBudgetsOrAutomaticallyRetryFailedRuns": true,
+    "schedulePath": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/rc-supervision/root-first-e2e-start-plan-20261102-0919.json",
+    "nextCheckpointHkt": "2026-11-02T12:38:18+08:00",
+    "latestClosedControl": "source027 normal NOT_ACCEPTED,1878requests",
+    "conditionalConservativeSealForecastHkt": null,
+    "user14TargetRetainedLikelyMissedWithFullOriginalWindows": true,
+    "forecastWithdrawn": "15:05 depended on A success, contradicted by031 actual failure; replan after12:50concrete design"
+  },
+  "roles": {
+    "supervisorThreadId": "01a18c06-6550-70d0-aa9c-08ac57cedf4f",
+    "implementationThreadId": "01a18b5c-e45e-73f3-96e6-e40eacac0b9e",
+    "validationThreadId": "01a1948f-b42e-7e41-bd57-15358e7c587e"
+  },
+  "scopePolicy": {
+    "pinBeforeExecution": [
+      "host and configuration",
+      "candidate bytes",
+      "public task inputs",
+      "original obligations",
+      "model and original budgets",
+      "official scorer"
+    ],
+    "currentBlockers": [
+      "source admission feedback before save/finish",
+      "private review Memory resource lifetime",
+      "directly caused regressions"
+    ],
+    "onlyDeliveryBlockersEnterCurrentCandidate": true,
+    "relevantOriginalRequirementsAndApplicableModulesRemainRequired": true,
+    "sourceAuthorityEvidenceAndAcceptanceAreNotWeakened": true,
+    "runtimeFailureMeans": "Known blocking hangs, crashes, misleading PASS or unfinished process closure in the declared scope; legitimate defect feedback is expected behavior."
+  },
+  "acceptance": {
+    "normal": "One real normal task completes all applicable original checks without clear false findings, false PASS or abnormal process closure.",
+    "fault": "One real fault control produces source-grounded actionable feedback, actually delivers it to the business agent, observes repair and freshly verifies the current artifact.",
+    "benchmark": "At least one fixed benchmark case on the same frozen candidate actually exits normally, produces a frozen prediction and completes unchanged official scoring. An unresolved task may still be a valid completed run; timeout partial artifacts do not satisfy this gate.",
+    "integrity": "Necessary engineering and actual host/environment checks apply to the exact evaluated artifact; source snapshot, hashes, commands, raw evidence, limitations and independent verdict are delivered together.",
+    "claimedScope": "Only the declared host/configuration and exercised scenarios; no blanket claim that all plugin scenarios are proven.",
+    "accepted": false
+  },
+  "deferredUntilAfterFirstAcceptedFrozenDelivery": [
+    "F2P/P2P improvement requirements",
+    "token/time/cost optimization changes",
+    "expanded sample screening or benchmark coverage",
+    "unrelated refactoring and new features"
+  ],
+  "historicalAndBroaderGoals": {
+    "fixedBenchmarkScope": {
+      "terminalBench": 9,
+      "deepSweBench": 9,
+      "sweBenchLite": 3,
+      "total": 21
+    },
+    "remainingThreeCaseAndBroaderEvaluationDeferredNotDeleted": true,
+    "scoresFailuresUnknownUsageAndSealedDeliveriesRemainImmutable": true,
+    "broaderOptimizationGoalComplete": false
+  },
+  "freezePolicy": {
+    "freezeImmediatelyAfterAcceptance": true,
+    "subsequentChangesUseNewVersion": true,
+    "deliverableIncludes": [
+      "immutable runnable artifact",
+      "source identity",
+      "reproduction commands",
+      "normal and fault raw evidence",
+      "official single-case result",
+      "independent acceptance",
+      "known limitations"
+    ],
+    "doNotAddOptimizationTargetsToCurrentAcceptance": true
+  },
+  "executionControls": {
+    "supervisorOwnsSingleRealLauncher": true,
+    "implementationDoesNotLaunchPaidRunsIndependently": true,
+    "validationRemainsIndependent": true,
+    "existingBudgetsDeadlinesNoAutomaticPaidRetriesAndAccountingRetained": true,
+    "doesNotRestartClosedNightBatchOrChangeAutomationSchedules": true,
+    "nextBenchmarkBatchRequiresSupervisorToRecordCandidateBindingAndActualStartPlan": true
+  }
+}

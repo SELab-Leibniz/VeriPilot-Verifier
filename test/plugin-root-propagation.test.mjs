@@ -113,15 +113,27 @@ test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the ca
   const outputRoot = await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-artifact-"));
   t.after(() => fs.rm(outputRoot, { recursive: true, force: true }));
   const pluginRoot = await buildPlugin({ host: "codeagent", sourceRoot: PLUGIN_ROOT, outputRoot });
+  await fs.writeFile(path.join(pluginRoot, 'skills/runtime-corrector-control/SKILL.md'), '# Controlled Skill\n\nRead the task before reviewing.\n');
   const reviewerCapture = path.join(root, "reviewer-argv.json");
   const reviewerPreload = path.join(root, "fake-reviewer-preload.cjs");
   await fs.writeFile(reviewerPreload, String.raw`
 const fs = require("node:fs");
 if (process.argv.includes("--json-schema")) {
   fs.writeFileSync(process.env.FAKE_REVIEWER_CAPTURE, JSON.stringify(process.argv.slice(1)), "utf8");
+  const schema = JSON.parse(process.argv[process.argv.indexOf('--json-schema') + 1]);
+  const graphOnly = !schema.properties.operations && Boolean(schema.properties.skillGroundTruth);
+  const prompt = process.argv[process.argv.indexOf('--json-schema') - 1];
+  const requestPath = process.argv.join(' ').match(/--request "([^"]+)"/)?.[1]
+    ?? process.argv.join(' ').match(/Read the request at (.+)\.\n/)?.[1];
+  const request = requestPath ? JSON.parse(fs.readFileSync(requestPath, 'utf8')) : null;
+  fs.appendFileSync(process.env.FAKE_REVIEWER_CAPTURE + '.calls.jsonl', JSON.stringify({ graphOnly, args: process.argv.slice(1) }) + '\n');
   process.stdout.write(JSON.stringify({
     session_id: "codeagent3-reviewer",
-    structured_output: {
+    structured_output: graphOnly ? { summary: 'Original Skill graph.', skillGroundTruth: { constraints: request.sourceUnits.map((unit, index) => ({ constraintId: 'read-task-' + index, sourceUnitIds: [unit.id],
+      interpretation: { normativity: unit.sourceOwnership.kind === 'HEADING_SCOPE' ? 'DESCRIPTION' : 'MANDATORY', scope: 'CURRENT_TASK',
+        reason: 'Explicit scripted descriptive heading and original body reading duty.',
+        currentDuties: unit.sourceOwnership.kind === 'HEADING_SCOPE' ? [] : [{ quote: 'Read the task before reviewing.' }], externalConditions: [],
+        remainderDisposition: 'CONTEXT_ONLY', remainderReason: 'Original heading context belongs to its unique owner; no other independent duty in this controlled fixture.' } })), taskOverlays: [] } } : {
       summary: "No new Ground Truth operations.",
       taskClassification: "CONTINUATION",
       operations: [],
@@ -151,6 +163,9 @@ if (process.argv.includes("--json-schema")) {
   assert.equal(watchers.length, 1);
   assert.equal(watchers[0].skillId, "runtime-corrector-control");
   assert.equal(watchers[0].status, "ACTIVE");
+  const calls = (await fs.readFile(reviewerCapture + '.calls.jsonl', 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.deepEqual(calls.map(call => call.graphOnly), [false, true], 'one global alignment and one graph, with no schema-repair subprocess');
+  for (const call of calls) assert.equal(call.args[call.args.indexOf('--plugin-dir') + 1], await fs.realpath(pluginRoot));
   const reviewerArgs = JSON.parse(await fs.readFile(reviewerCapture, "utf8"));
   const pluginDirIndex = reviewerArgs.indexOf("--plugin-dir");
   assert.notEqual(pluginDirIndex, -1, reviewerArgs.join(" "));

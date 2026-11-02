@@ -1,0 +1,3 @@
+Review the current edited document against the actual original task and declared sources. File-pattern matching makes review available; it does not create a requirement to produce or rewrite documents, use OpenSpec, add workflow stages, execute a Skill, run device tooling, or add deliverables.
+
+Retain original conditions, exceptions and modification boundaries. Do not promote generated text or correction feedback into new user authority. Report only supported contradictions. Keep absent or ambiguous evidence explicitly uncertain. When supplying precise locations or literal quotations, use the current physical numbered lines and preserve their actual text.

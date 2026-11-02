@@ -73,7 +73,12 @@ test('a delayed new user requirement at Stop is accepted, while an old-source sw
   f.entries.push({ type: 'user', uuid: 'user-3', message: { role: 'user', content: 'Continue the existing work.' } },
     { type: 'assistant', uuid: 'progress', message: { role: 'assistant', content: 'More progress.' } }); await f.persist();
   f.setDelta({ taskClassification: 'NEW_TASK', operations: [operation('Invented requirement.', 'user-1')] });
-  await f.event('Stop'); assert.equal((await f.truth()).claims.length, 2);
+  const rejected = await f.event('Stop');
+  assert.equal(rejected.stop.status, 'UNVERIFIED');
+  assert.equal(rejected.stop.reasonCode, 'GROUND_TRUTH_INPUT_UNVERIFIED');
+  assert.equal((await f.truth()).claims.length, 2);
+  assert.equal((await f.truth()).version, 2);
+  assert(!((await f.truth()).userSourceRefs ?? []).includes('transcript:user-3'), 'a rejected old-source delta does not consume the new real input');
   assert.match(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), 'journal/events.jsonl'), 'utf8'), /TASK_SWITCH_SUPPRESSED/);
 });
 

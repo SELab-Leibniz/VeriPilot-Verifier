@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 import { createSupervisedHarness, completionStatus } from "../lib/openclaw/supervised.mjs";
 import { withController, controllerDirectory, privateJson, isPersistedWorker } from "../lib/openclaw/controller-store.mjs";
@@ -11,6 +12,7 @@ import { ensureTask, withTaskState, taskDirectory } from "../lib/runtime-v2/task
 import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { runInternalExecution, runManagedExecution, runBackgroundExecution, isInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createEvidenceLedger } from "../lib/openclaw/evidence.mjs";
+import { loadPublicToolArgumentsValidator } from "../lib/openclaw/compat-2026.7.1-2.mjs";
 
 function waitForAbort(signal, reject = false) {
   return new Promise((resolve, fail) => {
@@ -690,4 +692,124 @@ test('cancelling during overload backoff prevents redispatch', async (t) => {
   const result = await f.harness.runAttempt(f.params);
   assert.equal(result.aborted, true);
   assert.equal(f.counts().rounds, 1);
+});
+
+// Controlled public-package fixtures only: these do not qualify a real host,
+// native validator behavior, dependency closure or an actual SDK transaction.
+async function publicValidatorFixture(t, options = {}) {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "oc-public-validator-"));
+  t.after(() => fs.rm(temporary, { recursive: true, force: true }));
+  const root = await fs.realpath(temporary);
+  const hostRoot = path.join(root, "selected-host");
+  const aiRoot = path.join(hostRoot, "node_modules", "@openclaw", "ai");
+  await fs.mkdir(path.join(aiRoot, "dist"), { recursive: true });
+  const hostPackagePath = path.join(hostRoot, "package.json");
+  const aiPackagePath = path.join(aiRoot, "package.json");
+  const entry = path.join(aiRoot, "dist", "validation.mjs");
+  const hostPackage = { name: "openclaw", version: "2026.7.1-2", type: "module",
+    dependencies: { "@openclaw/ai": "2026.7.1-2" }, ...options.hostPackage };
+  const aiPackage = { name: "@openclaw/ai", version: "2026.7.1-2", type: "module",
+    exports: { ".": "./dist/index.mjs", "./validation": { import: "./dist/validation.mjs", default: "./dist/validation.mjs" } },
+    ...options.aiPackage };
+  await fs.writeFile(hostPackagePath, JSON.stringify(hostPackage));
+  await fs.writeFile(aiPackagePath, JSON.stringify(aiPackage));
+  // Resolving the public root must not evaluate that root module.
+  await fs.writeFile(path.join(aiRoot, "dist", "index.mjs"), 'throw new Error("fixture public root was evaluated");\n');
+  await fs.writeFile(entry, options.entrySource ??
+    'export function validateToolArguments(_tool, call) { return { ...call.arguments, fixtureReturn: true }; }\n');
+  const hashFile = async file => createHash("sha256").update(await fs.readFile(file)).digest("hex");
+  const expectedIdentity = {
+    hostPackagePath, hostPackageName: hostPackage.name, hostPackageVersion: hostPackage.version,
+    hostPackageSha256: await hashFile(hostPackagePath),
+    aiPackagePath, aiPackageName: aiPackage.name, aiPackageVersion: aiPackage.version,
+    aiPackageSha256: await hashFile(aiPackagePath),
+    publicSpecifier: "@openclaw/ai/validation", resolvedPublicEntryPath: entry,
+    resolvedPublicEntrySha256: await hashFile(entry), identityScope: "package-manifests-and-public-entry-only",
+  };
+  return { root, hostRoot, aiRoot, hostPackagePath, aiPackagePath, entry, expectedIdentity };
+}
+
+test("public validator loader uses the selected host's public export and preserves its actual function", async (t) => {
+  const f = await publicValidatorFixture(t);
+  const loaded = await loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot, expectedIdentity: f.expectedIdentity });
+  const publicModule = await import(pathToFileURL(f.entry).href);
+  assert.strictEqual(loaded.validateToolArguments, publicModule.validateToolArguments);
+  assert.deepEqual(loaded.identity, f.expectedIdentity);
+  assert.equal(Object.isFrozen(loaded), true);
+  assert.equal(Object.isFrozen(loaded.identity), true);
+  const args = { amount: "2" };
+  assert.deepEqual(loaded.validateToolArguments({}, { arguments: args }), { amount: "2", fixtureReturn: true });
+  assert.deepEqual(args, { amount: "2" });
+  assert.strictEqual((await loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot })).validateToolArguments,
+    publicModule.validateToolArguments);
+});
+
+test("public validator loader canonicalizes a trusted host symlink", async (t) => {
+  const f = await publicValidatorFixture(t);
+  const alias = path.join(f.root, "host-alias");
+  await fs.symlink(f.hostRoot, alias, process.platform === "win32" ? "junction" : "dir");
+  const loaded = await loadPublicToolArgumentsValidator({ hostRoot: alias, expectedIdentity: f.expectedIdentity });
+  assert.equal(loaded.identity.hostPackagePath, f.hostPackagePath);
+  assert.equal(loaded.identity.resolvedPublicEntryPath, f.entry);
+});
+
+test("public validator loader rejects unsupported host and dependency identities before module evaluation", async (t) => {
+  for (const options of [
+    { hostPackage: { name: "other-host" } },
+    { hostPackage: { version: "2026.10.3" } },
+    { hostPackage: { dependencies: {} } },
+    { aiPackage: { name: "other-ai" } },
+    { aiPackage: { version: "unqualified" } },
+  ]) {
+    const f = await publicValidatorFixture(t, { ...options,
+      entrySource: 'throw new Error("fixture validator was evaluated before package identity checks");\n' });
+    await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot }),
+      /requires the installed OpenClaw|name\/version does not match/u);
+  }
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: "relative-host" }), /trusted absolute/u);
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: null }), /trusted absolute/u);
+});
+
+test("public validator loader never bypasses a missing public export or substitutes a missing capability", async (t) => {
+  const hidden = await publicValidatorFixture(t, { aiPackage: { exports: { ".": "./dist/index.mjs" } } });
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: hidden.hostRoot }), /public .* export cannot be resolved/u);
+  for (const entrySource of ['export const validateToolArguments = 1;\n', 'export default function validator() {}\n']) {
+    const f = await publicValidatorFixture(t, { entrySource });
+    await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot }), /capability is missing/u);
+  }
+});
+
+test("public validator loader rejects every mismatched or incomplete expected identity before import", async (t) => {
+  const f = await publicValidatorFixture(t, {
+    entrySource: 'throw new Error("fixture validator was evaluated before expected identity checks");\n',
+  });
+  for (const key of Object.keys(f.expectedIdentity)) {
+    await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot,
+      expectedIdentity: { ...f.expectedIdentity, [key]: `${f.expectedIdentity[key]}-changed` } }), /expectedIdentity/u);
+  }
+  for (const expectedIdentity of [null, [], {}, { hostPackageVersion: "2026.7.1-2" },
+    { ...f.expectedIdentity, extra: true }]) {
+    await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot, expectedIdentity }), /expectedIdentity/u);
+  }
+  const accessor = { ...f.expectedIdentity };
+  Object.defineProperty(accessor, "hostPackagePath", { enumerable: true,
+    get() { assert.fail("identity accessor must not run"); } });
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot, expectedIdentity: accessor }), /expectedIdentity/u);
+});
+
+test("public validator loader refuses a changed entry instead of endorsing a cached old function", async (t) => {
+  const f = await publicValidatorFixture(t);
+  await loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot });
+  await fs.appendFile(f.entry, "\n// replacement bytes with unchanged package version\n");
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot }), /identity changed after an import attempt/u);
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot, expectedIdentity: f.expectedIdentity }), /expectedIdentity/u);
+});
+
+test("public validator loader rejects public-entry symlinks escaping the selected AI package", async (t) => {
+  const f = await publicValidatorFixture(t);
+  const external = path.join(f.root, "outside-validator.mjs");
+  await fs.writeFile(external, 'throw new Error("outside package fixture evaluated");\n');
+  await fs.rm(f.entry);
+  await fs.symlink(external, f.entry, "file");
+  await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot }), /selected package's public validation entry/u);
 });

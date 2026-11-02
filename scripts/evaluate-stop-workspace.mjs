@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { startRoleReviewer, STOP_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { runStopTaskReview } from '../lib/runtime-v2/stop-task-review.mjs';
 import { createCliTaskSession } from '../lib/review-task/cli-task-session.mjs';
@@ -19,19 +20,26 @@ import { processOrderCases } from './helpers/process-order-fixtures.mjs';
 import * as hostAdapter from '../lib/hosts/claude.mjs';
 
 const args = process.argv.slice(2);
-if (!args.includes('--live')) throw new Error('This experiment calls a real model. Run explicitly with --live; optional --case <id> --engine <workspace|legacy> --transport <cli|native> --host-root <installed OpenClaw> --production --trace-transport.');
+const captureNative = args.includes('--capture-native');
+if (!args.includes('--live') && !captureNative) throw new Error('Use --live for explicit real-model execution, or --capture-native for the isolated network-disabled production payload capture.');
 const value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : null;
+const pairBatch = value('--case') === 'toy-pair';
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const runtimeIdentity = sha256(await Promise.all(['lib/runtime-v2/stop-workspace-review.mjs', 'lib/runtime-v2/orchestrator.mjs',
   'lib/runtime-v2/production-stop.mjs', 'lib/runtime-v2/reviewer.mjs', 'lib/openclaw/reviewer.mjs']
   .map(async file => [file, sha256(await fs.readFile(path.join(sourceRoot, file)))])));
-const outputRoot = path.join(sourceRoot, '.runtime-correction', 'live-stop-evaluation', new Date().toISOString().replaceAll(/[:.]/gu, '-'));
-await fs.mkdir(outputRoot, { recursive: true });
+const outputRoot = value('--output-root') ? path.resolve(value('--output-root'))
+  : path.join(sourceRoot, '.runtime-correction', 'live-stop-evaluation', new Date().toISOString().replaceAll(/[:.]/gu, '-'));
+await fs.mkdir(path.dirname(outputRoot), { recursive: true });
+await fs.mkdir(outputRoot, { recursive: !pairBatch });
 const executable = process.env.RUNTIME_CORRECTOR_AGENT_EXECUTABLE ?? (process.platform === 'win32'
   ? 'C:\\Users\\user\\AppData\\Roaming\\npm\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe'
   : await hostAdapter.resolveDefaultReviewerExecutable());
 const model = process.env.RC_EVAL_MODEL ?? 'sonnet';
 const cases = [
+  ...['toy-a', 'toy-b'].filter(id => pairBatch || value('--case') === id).map(id => ({ id, syntheticPair: true, allMetrics: true,
+    expected: id === 'toy-a' ? 'PASS' : 'DEVIATION',
+    code: id === 'toy-a' ? 'export const next = value => value + 1;\n' : 'export const next = value => value;\n' })),
   ...failureEffectCases,
   ...exceptionalFlowCases,
   ...processOrderCases,
@@ -53,7 +61,7 @@ const cases = [
   { id: 'six-functions', expected: 'PASS', metricId: 'M16',
     code: Array.from({ length: 6 }, (_, index) => `export const accept${index + 1} = value => value + ${index + 1};`).join('\n') + '\n',
     requirements: Array.from({ length: 6 }, (_, index) => `Implement accept${index + 1}(value) in app.mjs: return the input number plus ${index + 1} without storing state.`) },
-].filter(item => !value('--case') || item.id === value('--case'));
+].filter(item => !value('--case') || item.id === value('--case') || pairBatch && item.syntheticPair);
 const engines = value('--engine') ? [value('--engine')] : ['legacy', 'workspace'];
 const transport = value('--transport') ?? 'cli';
 if (args.includes('--trace-transport') && transport !== 'native') throw new Error('--trace-transport requires the isolated native transport.');
@@ -65,11 +73,22 @@ if (requestedMetrics?.some(id => !/^M(?:0[1-9]|1[0-6])$/u.test(id))) throw new E
 if (!cases.length) throw new Error('Unknown --case.');
 if (!['cli', 'native'].includes(transport) || engines.some(engine => !['legacy', 'workspace'].includes(engine))) throw new Error('Unknown evaluation transport or engine.');
 if (transport === 'native' && !value('--host-root')) throw new Error('Native evaluation needs --host-root.');
+if (captureNative && (args.includes('--live') || transport !== 'native' || !production || engines[0] !== 'workspace'
+  || engines.length !== 1 || cases.length !== (pairBatch ? 2 : 1) || !cases[0].syntheticPair || requestedMetrics || repair || automatic))
+  throw new Error('Offline native capture requires one toy-a/toy-b case, native transport, workspace engine and --production, without live/metrics/repair/automatic.');
+if (cases.some(spec => spec.syntheticPair) && (!value('--case') || transport !== 'native' || !production || requestedMetrics))
+  throw new Error('Synthetic pair cases require explicit single-case production native execution with all default metrics.');
+if (cases.some(spec => spec.syntheticPair) && !captureNative && !pairBatch)
+  throw new Error('Synthetic native pair dispatch remains disabled until its measured payload and batch manifest are frozen. Use --capture-native.');
+if (pairBatch && (!value('--native-pair-manifest') || repair || automatic)) throw new Error('A native toy-pair needs its frozen --native-pair-manifest, without repair or automatic.');
 if (production && engines.some(engine => engine !== 'workspace')) throw new Error('Legacy production orchestration has been retired. Use --engine workspace --production; retained old full-flow records remain available for offline comparison. --engine legacy now tests a development component only.');
 if (transport === 'native' && engines.length !== 1) throw new Error('Use an explicit --engine for native evaluation; run each engine in a fresh process to isolate host singletons.');
 if (repair && (!production || transport !== 'native' || automatic || engines[0] !== 'workspace' || cases.length !== 1 || cases[0].id !== 'external-bug'))
   throw new Error('--repair requires --production --transport native --engine workspace --case external-bug, without --automatic. It tests real repair between two verification-only Stops.');
 const records = [];
+const nativeBatch = pairBatch ? await (await import('./helpers/native-stop-evaluation.mjs')).installNativeStopBatch({
+  hostRoot: value('--host-root'), sourceRoot, outputRoot,
+  manifest: JSON.parse(await fs.readFile(value('--native-pair-manifest'), 'utf8')), offline: captureNative }) : null;
 async function transportMetrics(directory) {
   if (!directory) return null;
   const files = [];
@@ -88,23 +107,28 @@ async function transportMetrics(directory) {
   return { actualModels: [...models], cliInvocations: files.length, assistantMessages: messages.size, toolCalls: calls.size,
     toolNames: [...calls.values()], observedUsage: [...messages.values()], usageSource: 'CLI supplied message counters; not independently verified billing' };
 }
-for (const spec of cases) {
-  const parent = path.join(outputRoot, spec.id), projectRoot = path.join(parent, 'project');
+try { for (const spec of cases) {
+  // Only results retain the case-to-oracle mapping. Paths and task identity
+  // seen by the reviewer never contain correct/bug/PASS/expected labels.
+  const parent = path.join(outputRoot, `sample-${randomUUID()}`), projectRoot = path.join(parent, 'project');
   await fs.mkdir(projectRoot, { recursive: true });
   const contract = path.join(parent, 'original-contract.md');
-  await fs.writeFile(contract, 'The production accept(value) function must return the input number plus one. It must not store state.\n');
-  const requirement = spec.requirement ?? `Implement accept(value) in app.mjs according to the complete original contract at ${contract}. Preserve all its conditions. This referenced file is outside the project directory and is part of the original user request.`;
+  await fs.writeFile(contract, spec.syntheticPair
+    ? 'Implement next(value) in app.mjs for integers 0 through 9. Return value + 1 without storing state. No other input behavior is required.\n'
+    : 'The production accept(value) function must return the input number plus one. It must not store state.\n');
+  const requirement = spec.requirement ?? `Implement ${spec.syntheticPair ? 'next' : 'accept'}(value) in app.mjs according to the complete original contract at ${contract}. Preserve all its conditions. This referenced file is outside the project directory and is part of the original user request.`;
   const file = path.join(projectRoot, 'app.mjs');
-  await fs.writeFile(file, 'export const accept = value => value + 1;\n');
+  await fs.writeFile(file, spec.syntheticPair ? 'export const next = value => value + 1;\n' : 'export const accept = value => value + 1;\n');
   for (const [relative, contents] of Object.entries(spec.files ?? {})) {
     const target = path.join(projectRoot, relative); await fs.mkdir(path.dirname(target), { recursive: true }); await fs.writeFile(target, contents);
   }
-  execFileSync('git', ['init', '--quiet', projectRoot], { windowsHide: true });
+  execFileSync('git', ['init', '--quiet', '--template=', projectRoot], { windowsHide: true });
   execFileSync('git', ['-C', projectRoot, 'add', 'app.mjs'], { windowsHide: true });
   execFileSync('git', ['-C', projectRoot, '-c', 'user.name=RC Local Evaluation', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '-m', 'original'], { windowsHide: true });
   await fs.writeFile(file, spec.code);
   for (const engine of engines.filter(engine => !spec.expectedRows || engine === 'workspace')) {
-    const task = await ensureTask({ projectRoot, sessionId: `${spec.id}-${engine}` });
+    const sessionIdentity = randomUUID();
+    const task = await ensureTask({ projectRoot, sessionId: sessionIdentity });
     const statements = spec.requirements ?? [requirement, ...(spec.extraRequirements ?? []).map(claim => claim.text)];
     const claims = statements.map((text, index) => ({ claimId: `R${index + 1}`, revisionId: `R${index + 1}@1`, text, category: spec.category ?? 'requirements', status: 'ACTIVE', severity: 'HARD', authority: 'USER_EXPLICIT',
       applicabilityKind: 'CURRENT_TASK', verificationTarget: spec.extraRequirements?.[index - 1]?.verificationTarget ?? spec.target ?? 'IMPLEMENTATION' }));
@@ -112,10 +136,11 @@ for (const spec of cases) {
     const truthPath = path.join(taskDirectory(projectRoot, task.taskId), 'ground-truth/current.json');
     await fs.mkdir(path.dirname(truthPath), { recursive: true }); await fs.writeFile(truthPath, JSON.stringify(truth, null, 2));
     await withTaskState({ projectRoot, taskId: task.taskId }, state => { state.groundTruth.version = 1; state.groundTruth.digest = truth.digest; });
-    const metricIds = requestedMetrics ?? spec.metricIds ?? [spec.metricId];
+    const metricIds = spec.allMetrics ? Object.entries(compileRuntimeV2Config({ version: 2 }).stopCorrection.metrics).filter(([, enabled]) => enabled).map(([id]) => id)
+      : requestedMetrics ?? spec.metricIds ?? [spec.metricId];
     const skillRoots = spec.expectedRows ? [path.join(parent, 'original-skills')] : [];
     const skillDocuments = spec.expectedRows ? [await prepareMixedSkillEvaluation({ projectRoot, taskId: task.taskId, skillRoots })] : [];
-    const preparedPopulation = spec.expectedRows ? await buildMetricPopulation({ projectRoot, taskId: task.taskId, groundTruth: truth, skillDocuments }) : null;
+    const preparedPopulation = spec.expectedRows || spec.allMetrics ? await buildMetricPopulation({ projectRoot, taskId: task.taskId, groundTruth: truth, skillDocuments }) : null;
     const population = preparedPopulation ? { ...preparedPopulation, metrics: Object.fromEntries(Object.entries(preparedPopulation.metrics).filter(([id]) => metricIds.includes(id))) }
       : { metrics: { [spec.metricId]: claims.map(claim => ({ objectId: `${spec.metricId}:${claim.claimId}`, metricId: spec.metricId, sourceId: claim.claimId, sourceRevisionId: claim.revisionId, hard: true, evidenceRequired: true,
       authority: 'USER_EXPLICIT', description: claim.text, applicabilityKind: 'CURRENT_TASK', verificationTarget: claim.verificationTarget })) } };
@@ -131,12 +156,24 @@ for (const spec of cases) {
         population, sourceManifest: [{ path: 'app.mjs', sha256: sha256(await fs.readFile(file)) }],
         fixedStopClassification: { stopClassification: 'TASK_COMPLETE', stage: null },
         reviewScope: { kind: engine === 'workspace' ? 'workspace-stop' : 'metric', objectIds: objects.map(object => object.objectId), sourceIds: claims.map(claim => claim.claimId) } } };
-    const startedAt = Date.now(); let handle, session, lease, error, native, outcome, repairCycle;
-    console.log(JSON.stringify({ case: spec.id, engine, transport, production, state: 'started', model: transport === 'native' ? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL : model }));
+    const startedAt = Date.now(); let handle, session, lease, error, native, outcome, repairCycle, capture, batchCapture;
+    console.log(JSON.stringify({ case: spec.id, engine, transport, production, state: 'started', model: nativeBatch || captureNative ? 'glm-5.3' : transport === 'native' ? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL : model }));
     try {
       if (transport === 'native') {
-        const { createNativeStopEvaluation } = await import('./helpers/native-stop-evaluation.mjs');
-        native = await createNativeStopEvaluation({ hostRoot: value('--host-root'), projectRoot, outputRoot: parent, sourceRoot, legacy: engine === 'legacy', traceTransport: args.includes('--trace-transport') });
+        const { createNativeStopEvaluation, installNativeStopCapture } = await import('./helpers/native-stop-evaluation.mjs');
+        if (nativeBatch) batchCapture = await nativeBatch.beginCase({ projectRoot, contract });
+        else if (captureNative) {
+          process.env.RC_NATIVE_EVAL_CAPTURE_KEY = 'offline-native-dummy-not-an-authentication-key';
+          capture = await installNativeStopCapture({ hostRoot: value('--host-root'), directory: path.join(outputRoot, 'payloads'), projectRoot, externalFiles: [contract] });
+        }
+        const provider = nativeBatch ? { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3', credentialEnv: 'RC_NATIVE_STOP_API_KEY' }
+          : captureNative ? { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3', credentialEnv: 'RC_NATIVE_EVAL_CAPTURE_KEY' }
+          : value('--native-protocol') ? { api: value('--native-protocol'), baseUrl: value('--native-base'), model: value('--native-model'), credentialEnv: value('--native-key-env') } : undefined;
+        native = await createNativeStopEvaluation({ hostRoot: value('--host-root'), projectRoot, outputRoot: parent, sourceRoot,
+          stateRoot: spec.syntheticPair ? path.join(outputRoot, 'profiles', randomUUID()) : undefined,
+          capture: batchCapture ?? capture, batch: nativeBatch, providerCredential: nativeBatch?.credential(),
+          fixtureFence: spec.syntheticPair ? { projectRoot, externalFiles: [contract] } : undefined,
+          provider, legacy: engine === 'legacy', traceTransport: args.includes('--trace-transport') });
       }
       if (production) {
         const transcript = path.join(projectRoot, 'parent-transcript.jsonl');
@@ -152,12 +189,12 @@ for (const spec of cases) {
         const { maxBudgetUsd, ...nativeReviewer } = reviewer;
         const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false }, skillCorrection: { enabled: false, skillRoots },
           artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false, platform: null },
-          reviewers: { stopReviewer: native ? { ...nativeReviewer, model: `anthropic/${native.model}` } : reviewer },
+          reviewers: { stopReviewer: native ? { ...nativeReviewer, model: native.modelRef } : reviewer },
           stopCorrection: { enabled: true, assessmentTimeoutMs: 210000, feedbackReserveMs: 30000,
-            metrics: Object.fromEntries(Array.from({ length: 16 }, (_, index) => [`M${String(index + 1).padStart(2, '0')}`, metricIds.includes(`M${String(index + 1).padStart(2, '0')}`)])) } });
+            ...(!spec.allMetrics ? { metrics: Object.fromEntries(Array.from({ length: 16 }, (_, index) => [`M${String(index + 1).padStart(2, '0')}`, metricIds.includes(`M${String(index + 1).padStart(2, '0')}`)])) } : {}) } });
         const options = { projectRoot, plan: { runtimeV2, artifacts: [], configuredArtifacts: [], ...(!native ? { reviewerRuntime: { executable } } : {}) },
           reviewerFactory: factory, stopHost: { directory: path.join(projectRoot, '.runtime-correction', 'host-state') } };
-        const identity = { session_id: `${spec.id}-${engine}`, cwd: projectRoot, transcript_path: transcript };
+        const identity = { session_id: sessionIdentity, cwd: projectRoot, transcript_path: transcript };
         await handleRuntimeV2Event({ ...options, input: { ...identity, hook_event_name: 'SessionStart', source: 'startup' } });
         if (automatic) await handleRuntimeV2Event({ ...options, input: { ...identity, hook_event_name: 'UserPromptSubmit', hook_event_id: 'original-user', prompt: statements.join('\n') } });
         outcome = await handleRuntimeV2Event({ ...options, assessmentContext: { mode: automatic ? 'execute_and_correct' : 'verify_only', assessmentId: 'original-stop' },
@@ -197,7 +234,8 @@ for (const spec of cases) {
           nativeRun: worker => session.run({ ...worker, cwd: projectRoot }) }) });
       }
     } catch (cause) { error = { code: cause.code ?? 'EVALUATION_FAILED', message: cause.message }; }
-    finally { await session?.close(); if (lease) await releaseInternalRunLease(lease); await handle?.close(); await native?.close(); }
+    finally { await session?.close(); if (lease) await releaseInternalRunLease(lease); await handle?.close(); await native?.close(); await capture?.close();
+      if (captureNative) delete process.env.RC_NATIVE_EVAL_CAPTURE_KEY; }
     // A failed production recheck has no current verdict. Never fill that gap
     // with the first Stop's successful handle and stale pre-repair evidence.
     const judgements = production ? outcome?.stop?.review?.metricObjectJudgements ?? [] : handle?.result.metricObjectJudgements ?? [];
@@ -207,6 +245,9 @@ for (const spec of cases) {
     const matchesExpected = objects.length > 0 && judgements.length === objects.length
       && objects.every(object => judgements.some(row => row.objectId === object.objectId && row.judgement === expectedRows[object.objectId]));
     const record = { case: spec.id, engine, production, automatic, metrics: metricIds, expectedObjectIds: objects.map(object => object.objectId), expectedRows, matchesExpected, productionStatus: outcome?.stop?.status ?? null,
+      ...(capture ? { capture: capture.metrics(), modelVerdictObtained: false, baselineSource: 'controlled fixture, not extraction acceptance' } : {}),
+      ...(nativeBatch ? { batch: { requestsSoFar: nativeBatch.metrics().budget.requests, deadlineAt: nativeBatch.metrics().deadlineAt,
+        offline: captureNative }, baselineSource: 'controlled fixture, not extraction acceptance' } : {}),
       judgements, productionReason: outcome?.stop?.reasonCode ?? outcome?.reason ?? null,
       productionError: outcome?.stop?.error ?? null, evaluationArtifacts: handle?.evaluationArtifacts ?? [],
       transportKind: transport, model: native?.model ?? model, expected, repairCycle,
@@ -215,10 +256,22 @@ for (const spec of cases) {
       elapsedMs: Date.now() - startedAt, error, artifacts: handle?.artifacts ?? null, sourcePaths: [...new Set((handle?.sourceCitations ?? []).map(citation => citation.path))],
       transport: native?.metrics() ?? await transportMetrics(handle?.artifacts), legacyTransportCwd: engine === 'legacy' ? 'original project; copied evidence tools unchanged' : null,
       runtimeIdentity };
-    records.push(record); await fs.writeFile(path.join(outputRoot, 'results.json'), JSON.stringify({ model, generatedAt: new Date().toISOString(), records }, null, 2));
+    records.push(record); await fs.writeFile(path.join(outputRoot, 'results.json'), JSON.stringify({ model: nativeBatch || captureNative ? 'glm-5.3' : model, generatedAt: new Date().toISOString(), records }, null, 2));
     console.log(JSON.stringify(record));
   }
-}
+} } finally { await nativeBatch?.close(); }
 if (!records.length) throw new Error('No supported cases selected. The mixed Skill case requires --engine workspace.');
 console.log(JSON.stringify({ outputRoot, cases: records.length, workspaceMatches: records.filter(record => record.engine === 'workspace' && record.matchesExpected).length }));
-if (records.some(record => record.error || (record.engine === 'workspace' || record.production) && !record.matchesExpected)) process.exitCode = 1;
+if (captureNative && !nativeBatch ? records.some(record => record.capture?.payloadCount !== 2 || record.capture?.socketAttempts !== 0
+  || record.capture?.toolResultsInFollowup.length !== 3 || record.capture.toolResultsInFollowup.some(message => message.content.includes('NATIVE_FIXTURE_PATH_DENIED')))
+  : captureNative && nativeBatch ? nativeBatch.metrics().wireDispatches !== 4 || nativeBatch.metrics().budget.halted !== null
+  : records.some(record => record.error || (record.engine === 'workspace' || record.production) && !record.matchesExpected)) process.exitCode = 1;
+// The installed host leaves profile/watch timers alive. This explicit offline
+// CLI owns its process; exit only after all native and simulated fetch work
+// has settled. No active invocation is discarded to manufacture completion.
+if (captureNative || nativeBatch) {
+  if (records.some(record => record.transport?.nativeInvocations !== record.transport?.settledInvocations
+    || record.capture && record.capture.simulatedBudget.inFlightRequests !== 0)
+    || nativeBatch && nativeBatch.metrics().budget.inFlightRequests !== 0) throw new Error('Native work remains in flight');
+  process.exit(process.exitCode ?? 0);
+}
