@@ -109,6 +109,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
     config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
+    config.agents.defaults.timeoutSeconds = phaseTimeoutMs / 1000;
+    const settings = config.plugins.entries['runtime-corrector'];
+    settings.config = { ...settings.config, hookTimeoutMs: phaseTimeoutMs, reviewerTimeoutMs: phaseTimeoutMs };
     if (reuseProfile && provider) config.models.providers[providerId] = { ...config.models.providers[providerId],
       baseUrl: provider.baseUrl, timeoutSeconds: phaseTimeoutMs / 1000 };
   }
