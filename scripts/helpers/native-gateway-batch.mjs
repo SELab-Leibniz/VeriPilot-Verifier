@@ -15,11 +15,11 @@ const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const local = host => ['127.0.0.1', '::1', '[::1]', 'localhost'].includes(host);
 const metadata = new Set(['https://openrouter.ai', 'https://raw.githubusercontent.com', 'https://registry.npmjs.org']);
 
-export function gatewayBatchDestination(input, init) {
+export function gatewayBatchDestination(input, init, providerUrl = 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions') {
   const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
   const method = init?.method ?? input?.method ?? 'GET';
   if (local(url.hostname)) return 'loopback';
-  if (url.href === 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions' && method === 'POST') return 'provider';
+  if (url.href === providerUrl && method === 'POST') return 'provider';
   if (method === 'GET' && metadata.has(url.origin)) return 'blocked-startup-metadata';
   throw new Error('GATEWAY_EXTERNAL_DESTINATION_DENIED');
 }
@@ -27,6 +27,11 @@ export function gatewayBatchDestination(input, init) {
 export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRoot, projectRoot, manifest, offline = false }) {
   assert.equal(manifest.kind, 'native-gateway-original-loop-v1');
   assert.equal(manifest.credentialEnv, 'RC_NATIVE_GATEWAY_API_KEY');
+  const provider = manifest.provider ?? { baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' };
+  const providerUrl = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
+  const providerOrigin = new URL(providerUrl).origin;
+  assert(['https://open.bigmodel.cn/api/coding/paas/v4/chat/completions',
+    'https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions'].includes(providerUrl), 'Unsupported metered provider route');
   const limits = validateNativeStopBatchLimits(manifest.limits);
   for (const [file, sha] of Object.entries(manifest.sourceHashes))
     assert.equal(digest(await fs.readFile(path.join(sourceRoot, file))), sha, `Unfrozen source: ${file}`);
@@ -44,7 +49,7 @@ export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRo
   if (!offline) await fs.writeFile(path.join(sourceRoot, manifest.launchClaim), JSON.stringify({
     outputRoot, startedAt: new Date().toISOString(), deadlineAt: new Date(deadlineAt).toISOString(),
   }, null, 2), { flag: 'wx', mode: 0o600 });
-  const budget = createProviderRequestBudget({ origin: 'https://open.bigmodel.cn',
+  const budget = createProviderRequestBudget({ origin: providerOrigin,
     limits: { usd: limits.usd, requests: limits.requests, wallMs: deadlineAt - Date.now(),
       inputPerRequest: limits.inputTokens, outputPerRequest: limits.outputTokens,
       totalInput: limits.requests * limits.inputTokens, totalOutput: limits.requests * limits.outputTokens },
@@ -70,7 +75,8 @@ export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRo
     // This phase covers the existing authoritative request/auth/envelope/source
     // checks, before budget admission. It is never inferred from error text.
     let boundaryPending = false, requestSignal;
-    const provider = createNativeStopProviderFetch({ budget, maxPayloadBytes: limits.payloadBytes,
+    const fetchProvider = createNativeStopProviderFetch({ budget, maxPayloadBytes: limits.payloadBytes,
+      providerUrl, expectedModel: provider.model,
       inputTokensUpperBound: limits.inputTokens, maxOutputTokens: limits.outputTokens,
       validateRequest(input, init) {
         controller.signal.throwIfAborted();
@@ -119,7 +125,7 @@ export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRo
       } });
     return async (input, init) => {
       let destination;
-      try { destination = gatewayBatchDestination(input, init); }
+      try { destination = gatewayBatchDestination(input, init, providerUrl); }
       catch (error) { denied.push({ kind: 'external-fetch' }); throw stopCase(error); }
       if (destination === 'loopback') return original(input, init);
       if (destination === 'blocked-startup-metadata') {
@@ -131,7 +137,7 @@ export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRo
         try {
           controller.signal.throwIfAborted(); dispatchController.signal.throwIfAborted(); init?.signal?.throwIfAborted();
           boundaryPending = true;
-          return await provider(input, init);
+          return await fetchProvider(input, init);
         }
         catch (error) {
           dispatchController.abort(error);

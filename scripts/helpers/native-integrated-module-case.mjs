@@ -180,6 +180,9 @@ export async function dispatchIntegratedOriginal({ gateway, fixture, bindingFile
   if (!Number.isSafeInteger(deadlineAt) || deadlineAt - Date.now() < 1000
     || !Number.isSafeInteger(fixture.deadlineAt) || deadlineAt > fixture.deadlineAt)
     throw new Error('Integrated stage deadline missing, expired or extended');
+  const businessTimeoutMs = fixture.businessTimeoutMs ?? 600000;
+  if (!Number.isSafeInteger(businessTimeoutMs) || businessTimeoutMs < 1000 || businessTimeoutMs > 3600000)
+    throw new Error('Invalid original business timeout');
   const key = `agent:main:rc-integrated-${randomUUID()}`;
   const created = await gateway.request('sessions.create', { key, agentId: 'main', label: 'Isolated integrated original business' });
   if (!created.ok || !created.key) throw new Error('Actual isolated session creation failed');
@@ -193,6 +196,6 @@ export async function dispatchIntegratedOriginal({ gateway, fixture, bindingFile
   signal?.throwIfAborted();
   const accepted = await dispatchHarborOriginalAgent({ request: (...args) => gateway.request(...args), instruction: fixture.requirement,
     runId: business.originalRunId, sessionId: business.sessionId, sessionKey: business.sessionKey,
-    deadlineAt: Math.min(deadlineAt, Date.now() + 600000) });
+    deadlineAt: Math.min(deadlineAt, Date.now() + businessTimeoutMs) });
   return { ...business, accepted };
 }
