@@ -55,7 +55,7 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.match((await host.commands.get("rc-setup").handler({ isAuthorizedSender: true,
     gatewayClientScopes: ["operator.admin"] })).text, /缺少安全配置写入接口/u);
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
-  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 86400000);
+  assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
   assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");

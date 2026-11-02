@@ -201,6 +201,6 @@ test('coverage-only SDK launch uses an owned empty workspace and copied selected
   };
   await f.refresh(); assert(owned);
   assert.deepEqual(f.api.config, original);
-  await assert.rejects(fs.access(owned), { code: 'ENOENT' });
+  assert.deepEqual(await fs.readdir(owned), [], 'Retained audit evidence includes only an empty isolated workspace');
   assert.equal(await fs.readFile(path.join(business, 'AGENTS.md'), 'utf8'), 'BUSINESS_BOOTSTRAP_PRIVATE_SENTINEL');
 });

@@ -214,16 +214,18 @@ test('baseline exposes the non-closing barrier and followUp reuses its actor, re
   registerTaskTools(api);
   const nativeRunner = async params => {
     captures.push(params);
+    await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId }) + '\n'));
     const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey, runId: params.runId };
     const tools = registry(ctx), prompt = JSON.parse(params.prompt);
     const call = async (name, args) => {
       params.onAssistantMessageStart();
-      const id = `settlement${++callId}`, result = await tools.find(tool => tool.name === name).execute(id, args);
-      if (name === 'source_read') {
-        hooks.get('tool_result_persist')({ toolName: name, toolCallId: id, isSynthetic: false,
-          message: { role: 'toolResult', toolName: name, toolCallId: id, content: result.content,
-            details: result.details, isError: false } }, ctx);
-      }
+      const id = `settlement${++callId}`;
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [{ type: 'toolCall', id, name, arguments: args }] } }) + '\n');
+      const result = await tools.find(tool => tool.name === name).execute(id, args);
+      const message = { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: Boolean(result.isError) };
+      hooks.get('tool_result_persist')({ toolName: name, toolCallId: id, isSynthetic: false, message }, ctx);
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
+
       params.onAgentToolResult({ toolName: name, result, isError: false });
       return result;
     };

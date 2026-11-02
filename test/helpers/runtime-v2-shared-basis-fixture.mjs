@@ -120,7 +120,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
       if (!params.toolsAllow?.includes('finish_baseline')) {
         if (params.toolsAllow) assert(params.toolsAllow.includes('rc_skill_care'));
         const ctx = { agentId: params.agentId, sessionId: params.sessionId, sessionKey: params.sessionKey };
-        await fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n');
+        await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n'));
         const args = { action: 'read', id: 'skill/SKILL.md' }, id = `original-care-${++toolCall}`;
         await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [{ type: 'toolCall', id, name: 'rc_skill_care', arguments: args }] } }) + '\n');
         const page = await careRegistry(ctx).execute(id, args);
@@ -142,7 +142,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
           result = await state.graphNativeScript({ params, result });
         return { payloads: [{ text: JSON.stringify(result) }], meta: {} };
       }
-      await fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n');
+      await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n'));
       const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey }, tools = registry(ctx), seen = new Map();
       state.baselinePrompts.push(JSON.parse(params.prompt));
       (state.baselineTimeouts ??= []).push(params.runTimeoutOverrideMs);

@@ -155,7 +155,7 @@ for (const wireMode of ['draft', 'full']) for (const invalid of ['missing-kind',
       assert.match(saveTool.description, /IMPLEMENTATION also requires its own implementationRole; PROCESS\/ARTIFACT omit it/u);
       assert.match(saveTool.description, /Defaults omit all three fields/u);
       const operationSchema = saveTool.parameters.properties.operations.items;
-      assert.equal(saveTool.parameters.additionalProperties, false);
+      assert.equal(saveTool.parameters.anyOf.find(branch => branch.properties?.operations).additionalProperties, false);
       assert.deepEqual(operationSchema.properties.sourceFrom.required, ['unitId']);
       assert.deepEqual(operationSchema.properties.applicabilityKind.enum, GROUND_TRUTH_REVIEW_SCHEMA.properties.operations.items.properties.applicabilityKind.enum);
       if (wireMode === 'draft') assert(operationSchema.required.includes('applicabilityKind') && operationSchema.required.includes('verificationTarget'));
@@ -1186,7 +1186,7 @@ test('draft literal preview preserves boundaries but grants neither reads nor ma
     await call('save_baseline_batch', value); await finish([1]);
   });
   const request = await readJson(path.join(handle.requestDirectory, 'request.json'));
-  assert.match(request.identity.protocol.version, /^stop-baseline-task-v17-/);
+  assert.match(request.identity.protocol.version, /^stop-baseline-task-v18-/);
   const { requestId, protocol, ...rest } = request.identity;
   assert.equal(requestId, sha256({ protocol, taskId: request.taskId, request: f.input.request,
     baseline: [f.truth.version, f.truth.digest], sources: rest.sources }));
@@ -1657,9 +1657,13 @@ async function fixture(t, { large = false, materialText, materialRelativePath = 
   const ctx = () => ({ sessionId: params.sessionId, sessionKey: params.sessionKey });
   async function call(name, args, { persist = true, synthetic = false, notify = true } = {}) {
     const id = `call-${++callId}`; params.onAssistantMessageStart();
+    await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [{ type: 'toolCall', id, name, arguments: args }] } }) + '\n');
     const result = await tools.find(tool => tool.name === name).execute(id, args);
-    if (name === 'source_read' && persist) hooks.get('tool_result_persist')({ toolName: name, toolCallId: id, isSynthetic: synthetic,
-      message: { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: false } }, ctx());
+    const message = { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: Boolean(result.isError) };
+    if (persist) {
+      hooks.get('tool_result_persist')({ toolName: name, toolCallId: id, isSynthetic: synthetic, message }, ctx());
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
+    }
     if (notify) params.onAgentToolResult({ toolName: name, result, isError: false });
     return result;
   }
@@ -1689,6 +1693,7 @@ async function fixture(t, { large = false, materialText, materialRelativePath = 
               { declaredMaterial: text, auditOrdinal: ordinal, ownerTransitionTarget }))) });
         }
         params = value; captures.push(value); tools = registry(ctx());
+        await fs.access(value.sessionFile).catch(() => fs.writeFile(value.sessionFile, JSON.stringify({ type: 'session', version: 3, id: value.sessionId }) + '\n'));
         assert.equal(value.config.agents.defaults.models['fixture/model'].params.maxTokens, 32768);
         assert.deepEqual(value.toolsAllow, BASELINE_TOOL_NAMES); assert.equal(value.config.agents.defaults.compaction.mode, 'safeguard');
         assert(REVIEWER_NATIVE_TOOL_DENY.every(name => value.config.tools.deny.includes(name)));

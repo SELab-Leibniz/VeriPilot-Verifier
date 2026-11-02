@@ -34,13 +34,13 @@ test('expired or unsupported original entry cannot dispatch a model request', as
   assert.equal(calls, 0);
 });
 
-test('legacy original callers retain their existing chat request and original timeout', async () => {
+test('chat callers pass their remaining configured deadline to the original request', async () => {
   const calls = [];
   await dispatchNativeOriginalTurn({ gateway: { request: async (...args) => { calls.push(args); return {}; } },
-    requirement: 'Original', runId: 'original', sessionId: 'session-id', sessionKey: 'session-key', deadlineAt: 999999 });
+    requirement: 'Original', runId: 'original', sessionId: 'session-id', sessionKey: 'session-key', deadlineAt: 999999, now: () => 1000 });
   assert.equal(calls.length, 1);
   assert.equal(calls[0][0], 'chat.send');
-  assert.equal(calls[0][1].timeoutMs, 180000);
+  assert.equal(calls[0][1].timeoutMs, 998999);
 });
 
 async function fixture(t) {

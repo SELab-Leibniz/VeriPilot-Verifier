@@ -17,7 +17,7 @@ test('document budgets accept wider explicit settings and reject invalid or miss
   const config = documentRunOptions({ reviewTimeoutMs: 1200000, repairTimeoutMs: 900000, totalTimeoutMs: 3600000 });
   assert.equal(config.reviewTimeoutMs, 1200000); assert.equal(config.repairTimeoutMs, 900000);
   assert.equal(config.totalTimeoutMs, 3600000);
-  for (const value of [0, -1, 999, 3600001, '600000', NaN])
+  for (const value of [0, -1, 999, 86400001, '600000', NaN])
     assert.throws(() => documentRunOptions({ reviewTimeoutMs: value }), /reviewTimeoutMs/);
   assert.throws(() => documentRunOptions({ reviewTimoutMs: 600000 }), /Unknown/);
 });

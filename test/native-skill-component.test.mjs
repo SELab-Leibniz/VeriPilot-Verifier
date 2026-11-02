@@ -252,6 +252,19 @@ for (const terminal of ['cancel', 'deadline', 'close']) test(`retained native se
   assert.equal(f.batch.metrics().realProviderRequests, 0);
 });
 
+async function nativeFixtureTool(params, tools, persist, ctx, name, id, args) {
+  await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile,
+    JSON.stringify({ type: 'session', version: 3, id: params.sessionId }) + '\n'));
+  await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant',
+    content: [{ type: 'toolCall', id, name, arguments: args }] } }) + '\n');
+  const result = await tools.find(tool => tool.name === name).execute(id, args);
+  const message = { role: 'toolResult', toolCallId: id, toolName: name, content: result.content,
+    details: result.details, isError: Boolean(result.isError) };
+  persist({ toolName: name, toolCallId: id, isSynthetic: false, message }, ctx);
+  await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
+  return result;
+}
+
 test('actual baseline factory may prepare a new request in its settled project session without reusing old prepared context', { skip: !hostAvailable }, async t => {
   const f = await skillBatchFixture(t), task = await ensureTask({ projectRoot: f.sample, sessionId: 'business-baseline' });
   const truth = await loadCurrentGroundTruth(f.sample, task.taskId), truthPath = path.join(taskDirectory(f.sample, task.taskId), 'ground-truth/current.json');
@@ -266,11 +279,9 @@ test('actual baseline factory may prepare a new request in its settled project s
     return f.batch.runNative(params, async () => {
       captures.push(params); const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey }, tools = toolsFor(ctx);
       for (const file of JSON.parse(params.prompt).requiredFiles) {
-        const id = `actual-baseline-read-${++calls}`, value = await tools.find(tool => tool.name === 'source_read').execute(id, { path: file });
-        persist({ toolName: 'source_read', toolCallId: id, isSynthetic: false, message: { role: 'toolResult', toolName: 'source_read',
-          toolCallId: id, isError: false, content: value.content, details: value.details } }, ctx);
+        const id = `actual-baseline-read-${++calls}`, value = await nativeFixtureTool(params, tools, persist, ctx, 'source_read', id, { path: file });
       }
-      const value = await tools.find(tool => tool.name === 'finish_baseline').execute('actual-finish', {
+      const value = await nativeFixtureTool(params, tools, persist, ctx, 'finish_baseline', `actual-finish-${calls}`, {
         batchIds: [], taskClassification: 'NO_CHANGE', summary: 'Ownership/receipt protocol only; no semantic or formal acceptance claimed.' });
       params.onAgentToolResult({ toolName: 'finish_baseline', result: value, isError: false });
       return { payloads: [], meta: {} };
@@ -312,11 +323,9 @@ async function baselineContinuationFixture(t, { now = Date.now, beforeNative, du
       state.tools.push(tools);
       const finish = async () => {
         for (const file of JSON.parse(params.prompt).requiredFiles) {
-          const id = `domain-read-${++calls}`, value = await tools.find(tool => tool.name === 'source_read').execute(id, { path: file });
-          persist({ toolName: 'source_read', toolCallId: id, isSynthetic: false, message: { role: 'toolResult', toolName: 'source_read',
-            toolCallId: id, isError: false, content: value.content, details: value.details } }, ctx);
+          const id = `domain-read-${++calls}`, value = await nativeFixtureTool(params, tools, persist, ctx, 'source_read', id, { path: file });
         }
-        const value = await tools.find(tool => tool.name === 'finish_baseline').execute(`domain-finish-${calls}`, {
+        const value = await nativeFixtureTool(params, tools, persist, ctx, 'finish_baseline', `domain-finish-${calls}`, {
           batchIds: [], taskClassification: 'NO_CHANGE', summary: 'Controlled domain lifecycle only; no semantic or formal acceptance claimed.' });
         params.onAgentToolResult({ toolName: 'finish_baseline', result: value, isError: false });
         return { payloads: [], meta: {} };

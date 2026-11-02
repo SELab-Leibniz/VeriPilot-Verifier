@@ -302,7 +302,7 @@ artifacts:
     review:
       enabled: true
 limits:
-  semanticReviewTimeoutMs: 3600001
+  semanticReviewTimeoutMs: 86400001
 `);
   await assert.rejects(
     loadSimpleProjectConfig(cwd),
