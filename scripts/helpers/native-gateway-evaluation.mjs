@@ -10,7 +10,6 @@ import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
 import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
-import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 
 export function nativeModelContextWindow(value = 128000) {
   const tokens = Number(value);
@@ -70,7 +69,7 @@ export function createNativeGatewayRequest({ load, port, config }) {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, skipBootstrap = false, provider, providerGuard }) {
+  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' }) : null;
   const authorizedDocument = provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
@@ -123,7 +122,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
-        ...(hookTimeoutMs || reviewerTimeoutMs || businessTimeoutMs ? { config: {
+        ...(hookTimeoutMs || reviewerTimeoutMs || businessTimeoutMs || baselineLimits || baselineWireMode ? { config: {
+          ...(baselineLimits ? { baselineLimits } : {}), ...(baselineWireMode ? { baselineWireMode } : {}),
           ...(hookTimeoutMs ? { hookTimeoutMs } : {}), ...(reviewerTimeoutMs ? { reviewerTimeoutMs } : {}),
           ...(businessTimeoutMs ? { businessRunTimeoutMs: businessTimeoutMs } : {}),
           ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
@@ -190,10 +190,6 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   let gateway, unsubscribe;
   let restoreCredential = () => {};
   const modelStarts = [];
-  const previousOpenAIKey = process.env.OPENAI_API_KEY;
-  const restoreCredential = () => {
-    if (previousOpenAIKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previousOpenAIKey;
-  };
   try {
     if (coding) {
       const credential = providerGuard.credential?.();

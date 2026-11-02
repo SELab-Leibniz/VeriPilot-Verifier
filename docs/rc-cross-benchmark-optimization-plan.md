@@ -2,13 +2,13 @@
 
 ## 最新执行检查点（2026-11-02 13:48 香港时间）
 
-source031/revision027工程资格已通过，但真实normal已闭合为 **NOT_ACCEPTED**，没有正式baseline／终审PASS／新鲜验证。原共享180秒耗尽，全部失败及unknown保留；累计1932请求／含全部hold参考315.707891，0在途／0付费进程，非实际账单。[原最终判定](../.runtime-correction/rc-supervision/integrated-source031-prepared-20261102/root-original-normal-final-adjudication-001.json)。
+source031/revision027工程资格已通过，但真实normal已闭合为 **NOT_ACCEPTED**，没有正式baseline／终审PASS／新鲜验证。原共享180秒耗尽，全部失败及unknown保留；累计1932请求／含全部hold参考315.707891，0在途／0付费进程，非实际账单。原最终判定（本机证据：`../.runtime-correction/rc-supervision/integrated-source031-prepared-20261102/root-original-normal-final-adjudication-001.json`）。
 
-028设计经具体接口补充及有限反审后，导师已授权**028b工程实现**：主session独占剩余8产品及9既有测试，接入同一owned proposal helper、模型显式字段补改、完整旧公开native校验与全部语义守卫、原counter唯一扣账、原子提交及proof验证。未授权新付费实验。接口不依赖persist缺失的sessionId/runId；绑定可信运行记录、真实typed call、预登记确切receipt及真正追加。前缀失配／compaction丢失证据必须拒绝，不能重设窗口或预算。[精确授权](../.runtime-correction/rc-supervision/baseline-audit-unit-range-design-20261102/root-implementation-authorization-028b-integrated-owned-proposal.json)。
+028设计经具体接口补充及有限反审后，导师已授权**028b工程实现**：主session独占剩余8产品及9既有测试，接入同一owned proposal helper、模型显式字段补改、完整旧公开native校验与全部语义守卫、原counter唯一扣账、原子提交及proof验证。未授权新付费实验。接口不依赖persist缺失的sessionId/runId；绑定可信运行记录、真实typed call、预登记确切receipt及真正追加。前缀失配／compaction丢失证据必须拒绝，不能重设窗口或预算。精确授权（本机证据：`../.runtime-correction/rc-supervision/baseline-audit-unit-range-design-20261102/root-implementation-authorization-028b-integrated-owned-proposal.json`）。
 
-独立028a公开validator加载模块已冻结并经root离线窄测44/44及真实宿主公开API通过，2934源输入／17宿主pins稳定、0网络；native函数可coerce，未来调用方仍须比较完整原值。[有限验收](../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-loader-028a-limited-acceptance-001.json)。旧协议实际SDK观测覆盖extractor15及audit27次execute／returned／persist：ID与原call参数相符、返回slot在persist前可见且内容相等；这只是宿主平台事实，不证明新wire、最终append或compaction恢复。[两入口观测](../.runtime-correction/rc-supervision/root-native-two-entry-return-slot-diagnostic-20261102/root-observed-two-entry-slot-order-001.json)。
+独立028a公开validator加载模块已冻结并经root离线窄测44/44及真实宿主公开API通过，2934源输入／17宿主pins稳定、0网络；native函数可coerce，未来调用方仍须比较完整原值。有限验收（本机证据：`../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-loader-028a-limited-acceptance-001.json`）。旧协议实际SDK观测覆盖extractor15及audit27次execute／returned／persist：ID与原call参数相符、返回slot在persist前可见且内容相等；这只是宿主平台事实，不证明新wire、最终append或compaction恢复。两入口观测（本机证据：`../.runtime-correction/rc-supervision/root-native-two-entry-return-slot-diagnostic-20261102/root-observed-two-entry-slot-order-001.json`）。
 
-**14:00首包未交付**，15:05旧预测仍撤回，不编造替代交付时间。下一检查点14:10核对具体helper／native接口、实际代码进度和冻结估计。完整新候选尚未冻结或执行资格；normal／fault／H1／原官方评分和独立首包验收继续等待真实前置接纳。只认同一产物的正常结束与完整原证据。[主执行计划](../.runtime-correction/rc-supervision/root-first-e2e-start-plan-20261102-0919.json)。
+**14:00首包未交付**，15:05旧预测仍撤回，不编造替代交付时间。下一检查点14:10核对具体helper／native接口、实际代码进度和冻结估计。完整新候选尚未冻结或执行资格；normal／fault／H1／原官方评分和独立首包验收继续等待真实前置接纳。只认同一产物的正常结束与完整原证据。主执行计划（本机证据：`../.runtime-correction/rc-supervision/root-first-e2e-start-plan-20261102-0919.json`）。
 
 Lite3保持H1→pytest7432→sympy16792：仅H1已知OFF F2P0/1，其余双pass只作回归／同完成度成本；OFF P2P244/244已达天花板，不能声称严格提高。不按ON结果换样；未来新组在ON前预注册OFF筛选并保留全部计数。原21例及整体F2P/P2P、效率目标继续开放。
 
@@ -28,15 +28,15 @@ source025三项夹具失败及所有旧normal／bench失败和原始证据均保
 
 本轮唯一交付目标是：在预先固定的 OpenClaw、配置、公开输入、同一候选和原预算下，交付**端到端跑通、反馈可信、正常退出**的可复现冻结版。验收为一例真实正常任务、一例既有真实故障的反馈送达／修复／当前产物复验，以及同一候选至少一例固定 benchmark 正常退出、保存预测并完成原官方评分；任务未解决也可有效结算。提分、效率、扩样与无关重构后置，原始义务和证据标准不降低。统一指令见[首包优先级](../config/rc-e2e-delivery-priority-20261102.json)。旧21例目标保留，不作为本轮首包新增门槛。
 
-当时的冻结候选为 **source022（016＋017＋018，历史快照）**；来源准入反馈、私有审查 Memory 隔离及直接回归已交接，停止扩大生产修改。[候选清单](../.runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/source-full-input-pins-022.json) SHA256 为 `d9e07f34e4afe399f10a58dc62066123a9dc69309ca1673ea6360ff3ddb0d712`，2148 payload 加786文档闭包，共2934输入 pins。
+当时的冻结候选为 **source022（016＋017＋018，历史快照）**；来源准入反馈、私有审查 Memory 隔离及直接回归已交接，停止扩大生产修改。候选清单（本机证据：`../.runtime-correction/rc-supervision/protocol-usability-native-validation-20261101/source-full-input-pins-022.json`） SHA256 为 `d9e07f34e4afe399f10a58dc62066123a9dc69309ca1673ea6360ff3ddb0d712`，2148 payload 加786文档闭包，共2934输入 pins。
 
 | 当前检查 | 实际结果与适用范围 |
 | --- | --- |
-| source022 full008 | 247文件、2614项：2583通过、31项历史跳过、0失败／超时；2934 pins与Node稳定。[导师工程验收](../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-full-acceptance-001.json) |
-| source022 基线实际 SDK008 | 原两场景及同运行 gap 修复路径通过；17次模拟、0真实请求，6个实际SDK promise与私有回执闭合，实际插件产物247文件。仅授机制资格，不替代自然语义验收。[导师SDK验收](../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-baseline-native-gap-acceptance-001.json) |
+| source022 full008 | 247文件、2614项：2583通过、31项历史跳过、0失败／超时；2934 pins与Node稳定。导师工程验收（本机证据：`../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-full-acceptance-001.json`） |
+| source022 基线实际 SDK008 | 原两场景及同运行 gap 修复路径通过；17次模拟、0真实请求，6个实际SDK promise与私有回执闭合，实际插件产物247文件。仅授机制资格，不替代自然语义验收。导师SDK验收（本机证据：`../.runtime-correction/rc-supervision/baseline-coverage-diagnostic-20261101/implementation-003/operational/root-current-source022-baseline-native-gap-acceptance-001.json`） |
 | 当前 Linux／私有 Memory SDK | 导师已验收当前产物 Linux 开关启动、验后6168宿主 pins；实际 SDK003 fake2／real0、5.841秒自然exit0，独立有限审查通过。未知工具只证宿主记录，不证模型收到；不替代真实任务验收 |
-| source022 normal／fault | 导师已唯一实际运行原 normal，实际build247与SDK008相同；基线审查原180秒超时且最后finish缺unitId被拒绝，normal不接纳，原进程已于原20分钟截止闭合、exit1、0在途；fault未运行。准备 session 仍0执行。[实际阻塞证据](../.runtime-correction/rc-supervision/integrated-source022-prepared-20261102/root-original-normal-audit-blocker-observation-001.json) |
-| source017 H1 历史探索 ON | 原截止超时；只对停止后残留补丁作官方评分 F2P0/1、P2P113/113，**不是有效完成ON**，无质量收益或效率结论。[原判定](../.runtime-correction/rc-supervision/source017-H1-research-20261102/root-official-partial-on-acceptance-001.json) |
+| source022 normal／fault | 导师已唯一实际运行原 normal，实际build247与SDK008相同；基线审查原180秒超时且最后finish缺unitId被拒绝，normal不接纳，原进程已于原20分钟截止闭合、exit1、0在途；fault未运行。准备 session 仍0执行。实际阻塞证据（本机证据：`../.runtime-correction/rc-supervision/integrated-source022-prepared-20261102/root-original-normal-audit-blocker-observation-001.json`） |
+| source017 H1 历史探索 ON | 原截止超时；只对停止后残留补丁作官方评分 F2P0/1、P2P113/113，**不是有效完成ON**，无质量收益或效率结论。原判定（本机证据：`../.runtime-correction/rc-supervision/source017-H1-research-20261102/root-official-partial-on-acceptance-001.json`） |
 
 当前第一阻断是实际 normal 中的原文审查表示／格式负担耗尽原时限；只设计直接交付修复，不加时、不删原文或弱化独立审查。原进程已闭合结算，累计1837请求，最后中止请求的未知用量保留；工程与模拟通过不算首包验收。导师闭合资格并绑定最新账本后，按原 normal→既有 fault→固定H1新批次推进，保留单真实launcher、原预算／截止、0自动付费重试及全部未知预留。旧night不重启、不调整日程；首包条件满足立即冻结交付，之后修改另起版本。
 

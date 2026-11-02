@@ -72,7 +72,7 @@ reviewers:
     timeoutMs: 5400000 # 终审角色 90 分钟
 ```
 
-优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。未配置基线专用预算时，基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。普通 `hookTimeoutMs` 默认 20 分钟、最大 60 分钟；它与单个 reviewer 及多阶段总预算分别配置。
+优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。未配置基线专用预算时，基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。普通 `hookTimeoutMs` 默认 20 分钟、最大 24 小时；它与单个 reviewer 及多阶段总预算分别配置。
 
 大型基线可在插件 `config.baselineLimits` 中单独配置 `timeoutMs`、`maxSteps`、`maxRepairs`、`maxAuditCalls`、`maxExternalRepairs`。例如设置 `timeoutMs: 86400000`、`maxSteps: 2000`，并把三项修复/审查额度设为 `2000`；它覆盖基线角色的普通时限和共享步数，修复与独立审查不重置预算。相应把 `hookTimeoutMs` 设为 `86460000`，Stop 的 `assessmentTimeoutMs` 至少留出完整基线窗口及返回时间；宿主任务和模型网络时限也需足够大。显式设置的更短 `reviewerTimeoutMs`、父级截止和取消继续有效。普通角色默认不变，组件流程见 [Stop 基线任务](stop-baseline-task.md)。
 

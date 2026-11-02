@@ -126,7 +126,8 @@
     "lib/simple-yaml.mjs",
     "lib/stage-specification.mjs",
     "lib/stages/catalog.mjs",
-    "lib/unified-diff.mjs"
+    "lib/unified-diff.mjs",
+    "lib/openclaw/compat-2026.7.1-2.mjs"
   ],
   "claude": [
     "lib/claude-executable.mjs"
@@ -134,7 +135,6 @@
   "codeagent": [],
   "openclaw": [
     "lib/openclaw/compat-2026.10.3.mjs",
-    "lib/openclaw/compat-2026.7.1-2.mjs",
     "lib/openclaw/control-entry.mjs",
     "lib/openclaw/control-service.mjs",
     "lib/openclaw/controller-store.mjs",

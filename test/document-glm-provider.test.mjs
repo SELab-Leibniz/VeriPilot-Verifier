@@ -14,5 +14,5 @@ test('document authorization cannot weaken the existing metered boundary for oth
  await assert.rejects(createNativeGatewayEvaluation({provider:{...flash,model:'glm-5.3'},providerGuard:{kind:'authorized_native_document'}}),/offline network guard or a metered batch/);
  await assert.rejects(createNativeGatewayEvaluation({provider:flash,providerGuard:{kind:'unlimited'}}),/offline network guard or a metered batch/);
  const old=nativeGatewayCodingProvider({...flash,model:'glm-5.3'}).definition.models[0];
- assert.equal(old.reasoning,false);assert.equal(old.compat.supportsReasoningEffort,false);assert.equal(Object.hasOwn(old,'thinkingLevelMap'),false);
+ assert.equal(old.reasoning,true);assert.equal(old.compat.supportsReasoningEffort,false);assert.equal(Object.hasOwn(old,'thinkingLevelMap'),false);
 });

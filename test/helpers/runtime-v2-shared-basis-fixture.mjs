@@ -142,15 +142,18 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
           result = await state.graphNativeScript({ params, result });
         return { payloads: [{ text: JSON.stringify(result) }], meta: {} };
       }
+      await fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n');
       const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey }, tools = registry(ctx), seen = new Map();
       state.baselinePrompts.push(JSON.parse(params.prompt));
       (state.baselineTimeouts ??= []).push(params.runTimeoutOverrideMs);
       async function call(name, args) {
         const id = `actual-call-${++toolCall}`; params.onAssistantMessageStart();
+        await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [{ type: 'toolCall', id, name, arguments: args }] } }) + '\n');
         const result = await tools.find(tool => tool.name === name).execute(id, args);
+        const message = { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: Boolean(result.isError) };
+        for (const hook of hooks.get('tool_result_persist') ?? []) hook({ toolName: name, toolCallId: id, isSynthetic: false, message }, ctx);
+        await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
         if (name === 'source_read') {
-          for (const hook of hooks.get('tool_result_persist') ?? []) hook({ toolName: name, toolCallId: id, isSynthetic: false,
-            message: { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: false } }, ctx);
           seen.set(args.path, [...(seen.get(args.path) ?? []), result.details.citation.citeId]);
         }
         params.onAgentToolResult({ toolName: name, result, isError: false }); return result;

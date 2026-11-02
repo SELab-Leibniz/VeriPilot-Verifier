@@ -24,6 +24,10 @@ assert.equal(manifest.component, 'native-integrated-module-control-v1');
 assert(['compliant', 'fault'].includes(manifest.control), 'A declared integrated control is required');
 assert.equal(manifest.originalBusinessEntry, 'agent');
 const limits = validateNativeStopBatchLimits(manifest.limits);
+const model = manifest.model ?? 'glm-5.3';
+assert(['glm-5.3', 'glm-5.3-flash'].includes(model));
+const roleTimeoutMs = manifest.roleTimeoutMs ?? 180000;
+const assessmentTimeoutMs = manifest.assessmentTimeoutMs ?? 210000;
 const approvedDeadline = Date.parse(manifest.stageDeadline);
 assert(Number.isFinite(approvedDeadline) && approvedDeadline > Date.now(), 'Integrated launch window expired');
 await fs.mkdir(path.dirname(outputRoot), { recursive: true });
@@ -34,7 +38,7 @@ const redact = error => String(error?.message ?? error).replaceAll(batch?.creden
 try {
   const deadlineAt = Math.min(approvedDeadline, Date.now() + limits.wallMs);
   const fixture = await prepareIntegratedFixture({ projectRoot: path.join(outputRoot, 'project'),
-    modelRef: 'openai/glm-5.3', deadlineAt, roleTimeoutMs: 180000, assessmentTimeoutMs: 210000 });
+    modelRef: `openai/${model}`, deadlineAt, roleTimeoutMs, assessmentTimeoutMs });
   const fixtureFile = path.join(outputRoot, 'fixture.json'), bindingFile = path.join(outputRoot, 'binding.json');
   await fs.writeFile(fixtureFile, JSON.stringify(fixture, null, 2), { flag: 'wx' });
   const fence = await createIntegratedFencePlugin({ outputRoot, fixtureFile, bindingFile });
@@ -48,7 +52,8 @@ try {
     outputRoot, projectRoot: fixture.projectRoot, confineBusinessFiles: true,
     extraPluginPaths: [fence], businessToolNames: ['read', 'write', 'edit', 'exec'],
     injectDefect: manifest.control === 'fault', phaseTimeoutMs,
-    provider: { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' }, providerGuard: batch });
+    baselineLimits: manifest.baselineLimits, baselineWireMode: manifest.baselineWireMode,
+    provider: { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model }, providerGuard: batch });
   gateway.setPhase(offline ? 'offline-integrated-original-payload' : `real-integrated-${manifest.control}`);
   result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile,
     deadlineAt: Math.min(fixture.deadlineAt, Date.parse(batch.metrics().deadlineAt)), signal: batch.signal });

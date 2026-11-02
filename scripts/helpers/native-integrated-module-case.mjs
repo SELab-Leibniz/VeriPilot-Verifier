@@ -72,6 +72,9 @@ reviewers:
     effort: low
     timeoutMs: ${roleTimeoutMs}
     maxOutputTokens: 32768
+    formatRepairAttempts: 12
+  groundTruthExtractor:
+    effort: high
 output:
   persist: true
   mode: centralized
