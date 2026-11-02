@@ -101,7 +101,9 @@ process.exitCode = codePassed && guidePassed ? 0 : 3;
 `;
 
 export async function prepareIntegratedFixture({ projectRoot, modelRef, nodeBinary = process.execPath,
-  roleTimeoutMs, assessmentTimeoutMs, deadlineAt = null }) {
+  roleTimeoutMs, assessmentTimeoutMs, businessTimeoutMs = 600000, deadlineAt = null }) {
+  if (!Number.isSafeInteger(businessTimeoutMs) || businessTimeoutMs < 1000 || businessTimeoutMs > 3600000)
+    throw new Error('Invalid original business timeout');
   if (deadlineAt !== null && (!Number.isSafeInteger(deadlineAt) || deadlineAt <= Date.now()))
     throw new Error('Invalid integrated stage deadline');
   await fs.mkdir(projectRoot); // Fresh fixture required; never overwrite a project.
@@ -135,7 +137,7 @@ export async function prepareIntegratedFixture({ projectRoot, modelRef, nodeBina
   const immutableHashes = Object.fromEntries(Object.entries(files).filter(([file]) => !integratedDeliverables.includes(file))
     .map(([file, text]) => [file, integratedHash(text)]));
   const requirement = `Implement app.mjs and complete docs/guide.md according to the complete original contract in requirements/original-contract.md. Read and follow the matching delivery-verifier Skill at skills/delivery-verifier/SKILL.md. After your final code or guide edit, actually run its supplied public verifier and establish exit code 0 before declaring completion. Repeat verification after any later correction. Preserve the contract and explicit exclusions. Edit only app.mjs and docs/guide.md; the supplied contract, Skill and verifier are read-only.`;
-  return { kind: 'native-integrated-module-fixture-v1', projectRoot, nodeBinary, deadlineAt,
+  return { kind: 'native-integrated-module-fixture-v1', projectRoot, nodeBinary, deadlineAt, businessTimeoutMs,
     nodeSha256: integratedHash(await fs.readFile(nodeBinary)), command, immutableHashes, requirement,
     deliverables: [...integratedDeliverables], inputs: [...integratedInputs] };
 }

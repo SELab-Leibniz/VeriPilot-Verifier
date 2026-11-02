@@ -134,14 +134,16 @@ test('standard agent dispatch retains the original task and bounds its 600s maxi
       patchSessionEntry: async ({ update }) => { saved = update({ sessionId: 'contract-session' }); },
       getSessionEntry: async () => saved,
     } } } };
-  for (const seconds of [45, 900]) {
+  for (const [seconds, businessTimeoutMs] of [[45, 600000], [900, 600000], [1800, 1800000]]) {
     const deadlineAt = Date.now() + seconds * 1000;
-    const original = { ...f.fixture, deadlineAt };
+    const original = businessTimeoutMs === 1800000
+      ? await prepareIntegratedFixture({ projectRoot: path.join(f.root, 'long-business'), modelRef: 'fixture/model', deadlineAt, businessTimeoutMs })
+      : { ...f.fixture, deadlineAt };
     await dispatchIntegratedOriginal({ gateway, fixture: original, bindingFile: path.join(f.root, `binding-${seconds}.json`), deadlineAt });
     const request = requests.at(-1);
     assert.equal(request.method, 'agent'); assert.equal(request.params.message, original.requirement);
-    assert(request.params.timeout > 0 && request.params.timeout <= Math.min(seconds, 600));
-    assert(request.options.timeoutMs <= Math.min(seconds, 600) * 1000);
+    assert(request.params.timeout > 0 && request.params.timeout <= Math.min(seconds, businessTimeoutMs / 1000));
+    assert(request.options.timeoutMs <= Math.min(seconds, businessTimeoutMs / 1000) * 1000);
   }
   await assert.rejects(dispatchIntegratedOriginal({ gateway, fixture: f.fixture,
     bindingFile: path.join(f.root, 'unbounded.json'), deadlineAt: Date.now() + 900000 }), /missing, expired or extended/);

@@ -38,7 +38,7 @@ const redact = error => String(error?.message ?? error).replaceAll(batch?.creden
 try {
   const deadlineAt = Math.min(approvedDeadline, Date.now() + limits.wallMs);
   const fixture = await prepareIntegratedFixture({ projectRoot: path.join(outputRoot, 'project'),
-    modelRef: `openai/${model}`, deadlineAt, roleTimeoutMs, assessmentTimeoutMs });
+    modelRef: `openai/${model}`, deadlineAt, roleTimeoutMs, assessmentTimeoutMs, businessTimeoutMs: manifest.businessTimeoutMs ?? limits.wallMs });
   const fixtureFile = path.join(outputRoot, 'fixture.json'), bindingFile = path.join(outputRoot, 'binding.json');
   await fs.writeFile(fixtureFile, JSON.stringify(fixture, null, 2), { flag: 'wx' });
   const fence = await createIntegratedFencePlugin({ outputRoot, fixtureFile, bindingFile });
