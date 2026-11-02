@@ -3,5 +3,6 @@
   "reviewTimeoutMs": 1200000,
   "hookTimeoutMs": 1800000,
   "businessTimeoutMs": 1800000,
-  "totalTimeoutMs": 2400000
+  "totalTimeoutMs": 2400000,
+  "baselineFormatRepairAttempts": 12
 }

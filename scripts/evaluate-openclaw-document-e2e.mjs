@@ -33,10 +33,11 @@ export function locateDocumentFaults(faults, actualText) {
   });
 }
 export function openclawDocumentOptions(input = {}) {
-  const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
+  const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000, baselineFormatRepairAttempts: 12 };
   for (const key of Object.keys(input)) assert(Object.hasOwn(defaults, key), `Unknown OpenClaw document option: ${key}`);
   const result = { ...defaults, ...input };
-  for (const [key, value] of Object.entries(result)) {
+  assert(Number.isInteger(result.baselineFormatRepairAttempts) && result.baselineFormatRepairAttempts >= 0 && result.baselineFormatRepairAttempts <= 20, 'baselineFormatRepairAttempts must be an integer from 0 to 20');
+  for (const [key, value] of Object.entries(result).filter(([key]) => key.endsWith('TimeoutMs'))) {
     resolveReviewTimeoutMs(value, key);
     assert(value % 1000 === 0 && (key !== 'hookTimeoutMs' || value >= 2000), `${key} must use whole seconds`);
   }
@@ -102,9 +103,10 @@ reviewers:
     timeoutMs: ${options.reviewTimeoutMs}
     maxOutputTokens: 16384
   groundTruthExtractor:
+    effort: high
     timeoutMs: ${options.baselineTimeoutMs}
     maxOutputTokens: 32768
-    formatRepairAttempts: 6
+    formatRepairAttempts: ${options.baselineFormatRepairAttempts ?? 12}
 output:
   persist: true
   mode: centralized

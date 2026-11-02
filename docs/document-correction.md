@@ -16,6 +16,8 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
 
 `baselineTimeoutMs` / `--baseline-timeout-ms` 独立设置需求抽取的时限，默认 1200000 毫秒。示例配置为基线 20 分钟、文档评审 20 分钟、Hook 30 分钟、主运行 30 分钟、整轮 40 分钟，均可调整到 60 分钟；较短的外层截止仍会先结束调用。输出额外保存 `dynamic-baseline.json`，报告中包含正式基线、原生抽取记录、两轮 artifact evaluation 及其绑定版本。
 
+GLM-5.3-Flash 使用用户配置的原生 Coding API，并显式发送支持的 `reasoning_effort`。业务复制和文档角色使用 low，基线抽取及其独立审查使用 high。该模型不支持关闭思考；原生配置的 off 映射为最轻的 low。`baselineFormatRepairAttempts` 可在同一个 JSON 配置中设置为 0–20，默认 12；它只增加有界格式修复机会，不跳过来源、权威或独立审查。
+
 这项测试评价真实 benchmark 原始需求在文档中的保真和纠偏效果。原始任务的实现和执行指令作为方案内容保留，本次不执行调度器、不生成 benchmark 运行产物，也不报告官方 benchmark 得分。
 
 ### 更多完整需求样例

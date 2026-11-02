@@ -11,11 +11,14 @@ import { fileURLToPath } from 'node:url';
 test('OpenClaw document Hook, review and business budgets remain separately configurable', () => {
   const options = openclawDocumentOptions({ reviewTimeoutMs: 900000, hookTimeoutMs: 1200000,
     businessTimeoutMs: 1800000, totalTimeoutMs: 3600000 });
-  assert.deepEqual(options, { reviewTimeoutMs: 900000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 3600000 });
+  assert.deepEqual(options, { reviewTimeoutMs: 900000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 3600000, baselineFormatRepairAttempts: 12 });
   assert.throws(() => openclawDocumentOptions({ hookTimeoutMs: 1000 }), /whole seconds/);
   assert.throws(() => openclawDocumentOptions({ reviewTimeoutMs: 1200001 }), /whole seconds/);
   assert.throws(() => openclawDocumentOptions({ totalTimeoutMs: 3600001 }), /totalTimeoutMs/);
   assert.throws(() => openclawDocumentOptions({ timeout: 1200000 }), /Unknown/);
+  assert.equal(openclawDocumentOptions({ baselineFormatRepairAttempts: 8 }).baselineFormatRepairAttempts, 8);
+  for (const baselineFormatRepairAttempts of [-1, 21, 1.5, '12'])
+    assert.throws(() => openclawDocumentOptions({ baselineFormatRepairAttempts }), /baselineFormatRepairAttempts/);
 });
 
 test('document copy allows only line-end padding outside literal fences and keeps actual byte identities', () => {
