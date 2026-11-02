@@ -1,0 +1,32 @@
+{
+  "name": "terminal-bench-2.1/nginx-request-logging",
+  "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/nginx-request-logging/instruction.md",
+  "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "sourcePath": "tasks/nginx-request-logging/instruction.md",
+  "originalSha256": "26a7ac98aced6107f147206790ada77bbf8ed3c25fb360cf323d5fc6889edf99",
+  "originalBytes": 1882,
+  "originalLines": 24,
+  "faults": [
+    {
+      "original": "Listen on port 8080",
+      "draft": "Listen on port 9090",
+      "line": 5
+    },
+    {
+      "original": "user agents ($http_user_agent, double-quote the user agent in logs)",
+      "draft": "user agents ($http_user_agent, do not quote the user agent in logs)",
+      "line": 7
+    },
+    {
+      "original": "allow only 10 requests per second per IP address with a burst capacity of 10 requests using a 10MB memory zone.",
+      "draft": "allow 100 requests per second per IP address with a burst capacity of 100 requests using a 100MB memory zone.",
+      "line": 9
+    },
+    {
+      "original": "Test the Nginx configuration for syntax errors before starting",
+      "draft": "Test the Nginx configuration for syntax errors only after starting",
+      "line": 20
+    }
+  ],
+  "scope": "Document-only adaptation of the complete real benchmark requirement; four controlled candidate deviations, not an official benchmark execution score."
+}

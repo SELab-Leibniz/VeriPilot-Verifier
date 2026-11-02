@@ -78,3 +78,24 @@ test('static document evidence binds production rounds to the actual native sess
   const missing = await collectAutomaticDocumentEvidence(root, { messages: [] }, 'current-session');
   assert(missing.reviews.every(item => item.toolCallId === undefined), 'Persisting a result cannot invent feedback delivery');
 });
+
+test('all benchmark document samples preserve their original sources and only the declared candidate changes', async () => {
+  const root = fileURLToPath(new URL('../examples/document-e2e/', import.meta.url));
+  const directories = (await fs.readdir(root, { withFileTypes: true }))
+    .filter(entry => entry.isDirectory() && entry.name.startsWith('terminal-bench-'));
+  assert(directories.length >= 6, 'The expanded sample set must include the original and five additional tasks');
+  const identities = new Set();
+  for (const entry of directories) {
+    const item = await loadDocumentBenchmark(path.join(root, entry.name));
+    assert(!identities.has(item.specification.name), 'Benchmark task identity must be unique');
+    identities.add(item.specification.name);
+    assert.equal(item.specification.originalBytes, Buffer.byteLength(item.requirements));
+    assert.equal(item.specification.faults.length, 4);
+    let repaired = item.draft;
+    for (const fault of item.specification.faults) {
+      assert.equal(item.draft.slice(0, item.draft.indexOf(fault.draft)).split('\n').length, fault.line);
+      repaired = repaired.replace(fault.draft, fault.original);
+    }
+    assert.equal(repaired, item.requirements, entry.name + ': undeclared changes to the full original requirement');
+  }
+});

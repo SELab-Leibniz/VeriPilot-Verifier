@@ -1,0 +1,32 @@
+{
+  "name": "terminal-bench-2.1/financial-document-processor",
+  "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/financial-document-processor/instruction.md",
+  "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "sourcePath": "tasks/financial-document-processor/instruction.md",
+  "originalSha256": "b21cf2af1891922732327bf586d14b250d36d96de7867479c15bd1c58ef0db58",
+  "originalBytes": 1055,
+  "originalLines": 13,
+  "faults": [
+    {
+      "original": "if VAT is not present, set it to 0 or empty string",
+      "draft": "if VAT is not present, set it to 20 percent of total_amount",
+      "line": 9
+    },
+    {
+      "original": "use only the \"Total\" amount",
+      "draft": "use only the \"Amount Due\" amount",
+      "line": 10
+    },
+    {
+      "original": "exactly these columns: filename, total_amount, vat_amount",
+      "draft": "exactly these columns: filename, vat_amount, total_amount",
+      "line": 11
+    },
+    {
+      "original": "add a final row with the filename 'total' and the calculated total of total_amount and vat_amount columns from the individual invoices.",
+      "draft": "add a final row with the filename 'total' and the average of total_amount and vat_amount columns from the individual invoices.",
+      "line": 12
+    }
+  ],
+  "scope": "Document-only adaptation of the complete real benchmark requirement; four controlled candidate deviations, not an official benchmark execution score."
+}

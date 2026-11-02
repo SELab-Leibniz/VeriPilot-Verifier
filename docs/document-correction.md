@@ -18,6 +18,31 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
 
 这项测试评价真实 benchmark 原始需求在文档中的保真和纠偏效果。原始任务的实现和执行指令作为方案内容保留，本次不执行调度器、不生成 benchmark 运行产物，也不报告官方 benchmark 得分。
 
+### 更多完整需求样例
+
+以下样例沿用相同的生产动态基线和文档自动 Hook 入口，每个保留原始 benchmark 需求、许可证、来源提交和哈希。独立草稿各设置四处受控偏差，期望清单留在模型工作区之外。
+
+| 样例目录（位于 `examples/document-e2e/`） | 原始需求 | 偏差类型 |
+|---|---:|---|
+| `terminal-bench-batching` | 78 行 / 4365 字节 | 对齐粒度、跨桶上限、阈值、输入保护 |
+| `terminal-bench-multi-source-data-merger` | 62 行 / 1912 字节 | 来源优先级、字段类型、日期格式、统计口径 |
+| `terminal-bench-constraints-scheduling` | 30 行 / 2415 字节 | 硬时间边界、缓冲方向、UTC 格式、偏好作用 |
+| `terminal-bench-nginx-request-logging` | 24 行 / 1882 字节 | 端口、日志引号、限流参数、验证顺序 |
+| `terminal-bench-fix-code-vulnerability` | 52 行 / 3873 字节 | 输出路径、字段类型、错误处理、修改权限 |
+| `terminal-bench-financial-document-processor` | 13 行 / 1055 字节 | 缺省值、特殊分支、列顺序、聚合口径 |
+
+通过替换 `--benchmark-case` 选择样例，并为每次运行指定新的输出目录：
+
+```sh
+node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
+  --benchmark-case examples/document-e2e/terminal-bench-constraints-scheduling \
+  --host-root /opt/homebrew/lib/node_modules/openclaw \
+  --config examples/document-e2e/dynamic-benchmark-options.json \
+  --output-root .runtime-correction/document-scheduling-new
+```
+
+每例的验收都要求实际模型写入、自动反馈、实际模型修复、当前文档复审、正式动态基线绑定和宿主完成回执。原始需求的所有字节及其余未设置偏差的内容仍需保留；脚本不会代替模型修改业务文档。
+
 ## OpenClaw 自动 Hook 文档闭环
 
 `scripts/evaluate-openclaw-document-e2e.mjs` 在独立目录内启动已安装的 OpenClaw 2026.7.1-2 Gateway，加载当前源码构建的插件，通过真实 `sessions.create` / `chat.send` 发起主 Agent 任务。主 Agent 将虚构草稿写入 `design.md` 后，生产工具结果中间件自动触发文档评审，把诊断附回这次写入结果；主 Agent 根据实际收到的反馈进行修改，修改后再次自动评审。运行器不会手动调用评审、注入 Hook 事件或替换修订稿。

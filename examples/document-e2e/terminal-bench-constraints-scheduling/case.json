@@ -1,0 +1,32 @@
+{
+  "name": "terminal-bench-2.1/constraints-scheduling",
+  "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/constraints-scheduling/instruction.md",
+  "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "sourcePath": "tasks/constraints-scheduling/instruction.md",
+  "originalSha256": "342def78177f9bc41bea4d11af679bc385a9dda2ac8a1e425be384a5b7f937b6",
+  "originalBytes": 2415,
+  "originalLines": 30,
+  "faults": [
+    {
+      "original": "Absolutely no meetings after 2 PM or before 9 AM.",
+      "draft": "Absolutely no meetings after 3 PM or before 8 AM.",
+      "line": 4
+    },
+    {
+      "original": "Needs 15-min buffer after meetings ending at 4:45 PM or later.",
+      "draft": "Needs 15-min buffer before meetings ending at 4:45 PM or later.",
+      "line": 6
+    },
+    {
+      "original": "All times must be in UTC format (YYYYMMDDTHHMMSSZ)",
+      "draft": "All times must be in local-time format without the UTC Z suffix",
+      "line": 25
+    },
+    {
+      "original": "Bob's afternoon preference is informational only and is not used as a tie-breaker",
+      "draft": "Bob's afternoon preference is the first tie-breaker and overrides the other preferences",
+      "line": 30
+    }
+  ],
+  "scope": "Document-only adaptation of the complete real benchmark requirement; four controlled candidate deviations, not an official benchmark execution score."
+}

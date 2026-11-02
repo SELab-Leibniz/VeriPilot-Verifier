@@ -1,0 +1,32 @@
+{
+  "name": "terminal-bench-2.1/multi-source-data-merger",
+  "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/multi-source-data-merger/instruction.md",
+  "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "sourcePath": "tasks/multi-source-data-merger/instruction.md",
+  "originalSha256": "d1d28bb6e37f7a255a1b7f78aae8591f35c0494f33e4913392424ad954aab944",
+  "originalBytes": 1912,
+  "originalLines": 62,
+  "faults": [
+    {
+      "original": "4. Handle conflicts using source priority (source_a > source_b > source_c)",
+      "draft": "4. Handle conflicts using source priority (source_c > source_b > source_a)",
+      "line": 18
+    },
+    {
+      "original": "- user_id (integer)",
+      "draft": "- user_id (string)",
+      "line": 24
+    },
+    {
+      "original": "- Date format is YYYY-MM-DD",
+      "draft": "- Date format is DD/MM/YYYY",
+      "line": 60
+    },
+    {
+      "original": "The total_conflicts should match the number of conflicts in the list.",
+      "draft": "The total_conflicts should count distinct users rather than the number of conflicts in the list.",
+      "line": 53
+    }
+  ],
+  "scope": "Document-only adaptation of the complete real benchmark requirement; four controlled candidate deviations, not an official benchmark execution score."
+}
