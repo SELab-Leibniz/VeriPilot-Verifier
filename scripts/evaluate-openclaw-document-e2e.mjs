@@ -167,7 +167,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null;
   try {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
-      businessToolNames: ['read', 'write', 'edit'], confineBusinessFiles: true,
+      businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
       reviewerTimeoutMs: Math.max(config.reviewTimeoutMs, config.baselineTimeoutMs), hookTimeoutMs: config.hookTimeoutMs,
       businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true });
     gateway.setPhase('automatic-document-hook');

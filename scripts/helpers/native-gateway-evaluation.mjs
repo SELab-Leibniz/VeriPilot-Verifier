@@ -26,7 +26,7 @@ async function freePort() {
 }
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
-  prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], confineBusinessFiles = false,
+  prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
@@ -65,7 +65,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : businessTimeoutMs ? { timeoutSeconds: businessTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
-        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_document', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])] } }] },
+        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_document', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])],
+          ...(businessToolDeny.length ? { deny: businessToolDeny } : {}) } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
     session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
