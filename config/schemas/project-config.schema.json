@@ -438,7 +438,10 @@
         },
         "waitMode": {
           "type": "string",
-          "enum": ["until_pass", "assessment"],
+          "enum": [
+            "until_pass",
+            "assessment"
+          ],
           "default": "until_pass",
           "description": "Native Stop waits for correction and re-verification to PASS, or only assessment and feedback admission. Failures, cancellation, exhausted correction budget and the wait deadline release the wait with a notification."
         },
@@ -452,7 +455,9 @@
     },
     "reviewerRuntime": {
       "type": "object",
-      "required": ["executable"],
+      "required": [
+        "executable"
+      ],
       "properties": {
         "executable": {
           "type": "string",
@@ -541,9 +546,9 @@
         "semanticReviewTimeoutMs": {
           "type": "integer",
           "minimum": 1000,
-          "maximum": 3600000,
+          "maximum": 86400000,
           "default": 1200000,
-          "description": "Semantic review timeout in milliseconds. Defaults to 20 minutes; maximum 60 minutes. Also supplies the fallback for reviewers.defaults.timeoutMs."
+          "description": "Semantic review timeout in milliseconds. Defaults to 20 minutes; maximum 24 hours. Also supplies the fallback for reviewers.defaults.timeoutMs."
         }
       },
       "additionalProperties": false
@@ -642,9 +647,9 @@
         "timeoutMs": {
           "type": "integer",
           "minimum": 1000,
-          "maximum": 3600000,
+          "maximum": 86400000,
           "default": 1200000,
-          "description": "Per-role review timeout in milliseconds. Precedence: role, reviewers.defaults, limits.semanticReviewTimeoutMs, 20-minute default. Maximum 60 minutes; shared deadlines may end a review sooner."
+          "description": "Per-role review timeout in milliseconds. Precedence: role, reviewers.defaults, limits.semanticReviewTimeoutMs, 20-minute default. Maximum 24 hours; shared deadlines may end a review sooner."
         },
         "formatRepairAttempts": {
           "type": "integer",
@@ -666,6 +671,18 @@
         },
         "provider": {
           "$ref": "#/$defs/provider"
+        },
+        "maxSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Optional finite reviewer model response step budget."
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Optional finite reviewer attempt budget. Defaults remain when omitted."
         }
       },
       "additionalProperties": false

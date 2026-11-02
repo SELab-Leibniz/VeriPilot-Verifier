@@ -9,6 +9,7 @@ import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
+import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 
 export function nativeModelContextWindow(value = 128000) {
   const tokens = Number(value);
@@ -18,15 +19,16 @@ export function nativeModelContextWindow(value = 128000) {
 }
 
 function validatePhaseTimeoutMs(phaseTimeoutMs) {
-  if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > 3600000
+  if (phaseTimeoutMs !== null && (!Number.isSafeInteger(phaseTimeoutMs) || phaseTimeoutMs < 1000 || phaseTimeoutMs > MAX_REVIEW_TIMEOUT_MS
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
 }
 
-export function nativeGatewayCodingProvider(provider, contextWindow = 128000, phaseTimeoutMs = null) {
+export function nativeGatewayCodingProvider(provider, contextWindow = 128000, phaseTimeoutMs = null, { allowLocalRelay = false } = {}) {
+  const relay = allowLocalRelay && (() => { try { const u = new URL(provider.baseUrl); return u.protocol === "http:" && u.hostname === "host.docker.internal" && /^[1-9]\d{0,4}$/u.test(u.port) && u.pathname === "/v1" && !u.username && !u.password && !u.search && !u.hash; } catch { return false; } })();
   if (provider?.api !== 'openai-completions'
-    || !['https://open.bigmodel.cn/api/coding/paas/v4', 'https://ark.cn-beijing.volces.com/api/coding/v3'].includes(provider.baseUrl)
+    || !['https://open.bigmodel.cn/api/coding/paas/v4', 'https://ark.cn-beijing.volces.com/api/coding/v3'].includes(provider.baseUrl) && !relay
     || !/^[\w.:-]+$/u.test(provider.model ?? '')
-    || provider.baseUrl === 'https://open.bigmodel.cn/api/coding/paas/v4' && !['glm-5.3', 'glm-5.3-flash'].includes(provider.model)
+    || (provider.baseUrl === 'https://open.bigmodel.cn/api/coding/paas/v4' || relay) && !['glm-5.3', 'glm-5.3-flash'].includes(provider.model)
     || Object.keys(provider).some(key => !['api', 'baseUrl', 'model'].includes(key)))
     throw new Error('Unsupported explicit Gateway provider definition. Credentials belong only to the transient provider guard.');
   if (nativeModelContextWindow(contextWindow) > 128000)
@@ -36,10 +38,10 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
     api: provider.api, baseUrl: provider.baseUrl,
     // The host caps this public idle/first-event policy by each run's remainder.
     ...(phaseTimeoutMs !== null ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
-    models: [{ id: provider.model, name: provider.model, input: ['text'], reasoning: false,
+    models: [{ id: provider.model, name: provider.model, input: ['text'], reasoning: provider.model.startsWith('glm-'),
       contextWindow: nativeModelContextWindow(contextWindow), maxTokens: 32768,
       compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
-        supportsDeveloperRole: false, supportsReasoningEffort: false } }],
+        supportsDeveloperRole: false, supportsReasoningEffort: provider.model.startsWith('glm-') } }],
   } };
 }
 
@@ -67,8 +69,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   phaseTimeoutMs = null, unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens,
   provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
-  const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs) : null;
-  if (coding && !['offline_native_gateway_guard', 'metered_native_gateway_batch'].includes(providerGuard?.kind))
+  const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' }) : null;
+  if (coding && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch'].includes(providerGuard?.kind))
     throw new Error('The explicit Gateway provider requires an offline network guard or a metered batch.');
   if (contextWindowTokens !== undefined && !coding && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
@@ -99,7 +101,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
-      ...(coding ? { skipBootstrap: true, skills: ['runtime-corrector', 'runtime-corrector-control',
+      ...(coding ? { thinkingDefault: 'low', skipBootstrap: true, skills: ['runtime-corrector', 'runtime-corrector-control',
         'runtime-corrector-init', 'runtime-corrector-workflow', 'semantic-review', 'document-corrector'] } : {}),
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : phaseTimeoutMs ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
@@ -113,7 +115,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
-        ...(phaseTimeoutMs ? { config: { hookTimeoutMs: phaseTimeoutMs, reviewerTimeoutMs: phaseTimeoutMs,
+        ...(phaseTimeoutMs ? { config: { hookTimeoutMs: phaseTimeoutMs, reviewerTimeoutMs: phaseTimeoutMs, businessRunTimeoutMs: phaseTimeoutMs,
           ...(unlimitedBusiness ? { businessRunTimeoutMs: 0 } : {}) } } : {}) },
     } },
   };
@@ -129,6 +131,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     if (contextWindowTokens !== undefined && config.models?.providers?.[providerId]?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };
+  }
+  if (phaseTimeoutMs) {
+    config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
+    config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
   }
   if (unlimitedBusiness) {
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
