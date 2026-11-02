@@ -1,0 +1,744 @@
+{
+  "kind": "five-additional-real-benchmark-document-correction-tests",
+  "state": "COMPLETED_WITH_FINDINGS",
+  "sourceCommit": "5f003deb0b0f4335ab71f5b580fe61ad06bbc8d8",
+  "branch": "codex/document-e2e-hour",
+  "benchmarkCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "newTaskCount": 5,
+  "attemptCount": 5,
+  "strictPassed": 4,
+  "strictFailed": 1,
+  "finalDocumentReviewPassed": 5,
+  "controlledDeviations": 20,
+  "controlledDeviationsRestored": 20,
+  "unseededAdditionalDiagnostics": 2,
+  "scope": "Real benchmark original requirements with controlled candidate deviations; only dynamic baseline and automatic document Hooks, not official task execution or benchmark scores.",
+  "findings": [
+    {
+      "kind": "MODEL_COPY_FIDELITY_FAILURE",
+      "task": "fix-code-vulnerability",
+      "observed": "The initial copy and final document add trailing spaces to 42 lines. Text matches after removing trailing spaces; raw byte identity does not. The strict FAILED result is retained, although all four controlled deviations were repaired and the final document reviewer passed."
+    },
+    {
+      "kind": "UNSEEDED_AUTHORITY_STATEMENT_REQUIREMENTS",
+      "tasks": [
+        "nginx-request-logging",
+        "financial-document-processor"
+      ],
+      "observed": "Initial reviews additionally requested an explicit requirements-authority/adoption statement. These are absent from the benchmark originals and originate from the test wrapper wording. Treat as potential instruction-to-artifact scope leakage, not seeded benchmark fault detection."
+    }
+  ],
+  "checks": {
+    "tests": 43,
+    "pass": 43,
+    "fail": 0,
+    "skip": 0,
+    "log": ".runtime-correction/document-e2e-development/multicase-focused-checks.tap"
+  },
+  "cases": [
+    {
+      "task": "terminal-bench-2.1/multi-source-data-merger",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/multi-source-data-merger/instruction.md",
+      "originalBytes": 1912,
+      "originalLines": 62,
+      "originalSha256": "d1d28bb6e37f7a255a1b7f78aae8591f35c0494f33e4913392424ad954aab944",
+      "strictState": "PASSED",
+      "failure": null,
+      "elapsedMs": 83000,
+      "baselineVersion": 1,
+      "baselineClaims": 19,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-GT-CONFLICT-PRIORITY-REVERSED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 18,
+          "message": "design.md reverses the required conflict priority order, stating source_c > source_b > source_a, whereas requirements.md requires source_a > source_b > source_c (primary source_a highest). This also contradicts the document's own success criterion on line 58, which is written as source_a > source_b > source_c, so the document is internally inconsistent.",
+          "evidence": [
+            "design.md:18: 4. Handle conflicts using source priority (source_c > source_b > source_a)",
+            "requirements.md:18: 4. Handle conflicts using source priority (source_a > source_b > source_c)",
+            "design.md:58: - Conflicts are resolved by priority (source_a > source_b > source_c)",
+            "requirements.md:58: - Conflicts are resolved by priority (source_a > source_b > source_c)"
+          ],
+          "suggestion": "Restore the requirement's priority order: 4. Handle conflicts using source priority (source_a > source_b > source_c)",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c14",
+            "c19"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-USER-ID-TYPE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 24,
+          "message": "The output schema declares user_id as string, but requirements.md specifies user_id (integer). The success-criterion line 61 in design.md even states 'user_id as integer', so the schema row contradicts both the source requirement and the document's own criteria.",
+          "evidence": [
+            "design.md:24: - user_id (string)",
+            "requirements.md:24: - user_id (integer)",
+            "requirements.md:61: - Data types are correct (user_id as integer)"
+          ],
+          "suggestion": "Change the schema line to: - user_id (integer)",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c16",
+            "c19"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-CONFLICT-COUNT-SEMANTICS",
+          "severity": "error",
+          "path": "design.md",
+          "line": 53,
+          "message": "design.md changes the total_conflicts definition to counting distinct users, while requirements.md requires total_conflicts to match the number of conflicts in the list.",
+          "evidence": [
+            "design.md:53: The total_conflicts should count distinct users rather than the number of conflicts in the list.",
+            "requirements.md:53: The total_conflicts should match the number of conflicts in the list."
+          ],
+          "suggestion": "Restore: The total_conflicts should match the number of conflicts in the list.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c18"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-DATE-FORMAT-CRITERION",
+          "severity": "error",
+          "path": "design.md",
+          "line": 60,
+          "message": "The success criteria in design.md state the date format as DD/MM/YYYY, while requirements.md requires YYYY-MM-DD; line 27 of the same document also specifies YYYY-MM-DD, so the criterion line is both a source deviation and internally inconsistent.",
+          "evidence": [
+            "design.md:60: - Date format is DD/MM/YYYY",
+            "requirements.md:60: - Date format is YYYY-MM-DD",
+            "design.md:27: - created_date (string in YYYY-MM-DD format)",
+            "requirements.md:19: 5. Generate merged dataset to /app/merged_users.parquet"
+          ],
+          "suggestion": "Change the criterion to: - Date format is YYYY-MM-DD",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c19",
+            "c16"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopyExactlyMatchesDraft": true,
+      "finalDocumentExactlyMatchesOriginal": true,
+      "fullOriginalPresentVerbatim": true,
+      "trailingWhitespaceOnlyDifference": false,
+      "seedByteDifference": 0,
+      "finalByteDifference": 0,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "recoveredValidationErrors": [],
+      "recoveredBusinessToolErrors": [
+        {
+          "tool": "read",
+          "callId": "call_00_qob9pmim6m6emfx43wl8kcaa",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"status\": \"error\",\n  \"tool\": \"read\",\n  \"error\": \"EISDIR: illegal operation on a directory, read\"\n}"
+            }
+          ]
+        }
+      ],
+      "rawReport": ".runtime-correction/document-multicase-20261102/multi-source-data-merger-001/report.json",
+      "businessTranscript": ".runtime-correction/document-multicase-20261102/multi-source-data-merger-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/constraints-scheduling",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/constraints-scheduling/instruction.md",
+      "originalBytes": 2415,
+      "originalLines": 30,
+      "originalSha256": "342def78177f9bc41bea4d11af679bc385a9dda2ac8a1e425be384a5b7f937b6",
+      "strictState": "PASSED",
+      "failure": null,
+      "elapsedMs": 86782,
+      "baselineVersion": 1,
+      "baselineClaims": 15,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-ALICE-HARD-LIMITS",
+          "severity": "error",
+          "path": "design.md",
+          "line": 4,
+          "message": "Alice's absolute availability limits contradict the requirement: requirements.md states no meetings after 2 PM or before 9 AM, while design.md loosens them to after 3 PM or before 8 AM, expanding the set of admissible slots.",
+          "evidence": [
+            "design.md:4: \"- Alice: Prefers mornings (9 AM - 12 PM), can do early afternoons (12-2 PM) if needed. Absolutely no meetings after 3 PM or before 8 AM.\"",
+            "requirements.md:4: \"- Alice: Prefers mornings (9 AM - 12 PM), can do early afternoons (12-2 PM) if needed. Absolutely no meetings after 2 PM or before 9 AM.\""
+          ],
+          "suggestion": "Restore the requirement's limits: \"Absolutely no meetings after 2 PM or before 9 AM.\"",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-e6f4737680b05895"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-CAROL-BUFFER-DIRECTION",
+          "severity": "error",
+          "path": "design.md",
+          "line": 6,
+          "message": "Carol's buffer rule is inverted: the requirement places a 15-minute buffer after a meeting that ends at 4:45 PM or later, but the design places it before such a meeting, changing the scheduling semantics.",
+          "evidence": [
+            "design.md:6: \"- Carol: Available 9 AM-5 PM, lunch break 12:00-12:30 PM (unavailable). Prefers not to meet on Mondays. Needs 15-min buffer before meetings ending at 4:45 PM or later.\"",
+            "requirements.md:6: \"- Carol: Available 9 AM-5 PM, lunch break 12:00-12:30 PM (unavailable). Prefers not to meet on Mondays. Needs 15-min buffer after meetings ending at 4:45 PM or later.\""
+          ],
+          "suggestion": "Change \"before\" to \"after\" in Carol's buffer rule.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-e6f4737680b05895"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-ICS-TIME-FORMAT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 25,
+          "message": "The ICS time-format rule is contradicted: the design requires local-time values without the UTC Z suffix, while the requirement mandates UTC format YYYYMMDDTHHMMSSZ.",
+          "evidence": [
+            "design.md:25: \"- All times must be in local-time format without the UTC Z suffix\"",
+            "requirements.md:25: \"- All times must be in UTC format (YYYYMMDDTHHMMSSZ)\""
+          ],
+          "suggestion": "Replace with \"- All times must be in UTC format (YYYYMMDDTHHMMSSZ)\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-6f08ecc50a9576ed"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-BOB-PREFERENCE-RANKING",
+          "severity": "error",
+          "path": "design.md",
+          "line": 30,
+          "message": "Bob's afternoon preference is given the wrong role: the design makes it the first tie-breaker that overrides other preferences, whereas the requirement marks it informational only and explicitly excludes it from tie-breaking.",
+          "evidence": [
+            "design.md:30: \"- Bob's afternoon preference is the first tie-breaker and overrides the other preferences\"",
+            "requirements.md:30: \"- Bob's afternoon preference is informational only and is not used as a tie-breaker\""
+          ],
+          "suggestion": "Replace with \"- Bob's afternoon preference is informational only and is not used as a tie-breaker\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-504a4ede889bf8f6"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopyExactlyMatchesDraft": true,
+      "finalDocumentExactlyMatchesOriginal": true,
+      "fullOriginalPresentVerbatim": true,
+      "trailingWhitespaceOnlyDifference": false,
+      "seedByteDifference": 0,
+      "finalByteDifference": 0,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 2,
+        "artifact-reviewer": 3
+      },
+      "recoveredValidationErrors": [
+        {
+          "role": "ground-truth-extractor",
+          "failureCode": "SOURCE_BINDING_INVALID",
+          "reason": "stderr: SOURCE_BINDING_INVALID: [{\"index\":2,\"reason\":\"NON_USER_AUTHORITY\",\"ref\":\"/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-multicase-20261102/constraints-scheduling-001/project/requirements.md\",\"authority\":\"USER_EXPLICIT\"},{\"index\":3,\"reason\":\"NON_USER_AUTHORITY\",\"ref\":\"/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-multicase-20261102/constraints-scheduling-001/project/requirements.md\",\"authority\":\"USER_EXPLICIT\"},{\"index\":4,\"reason\":\"NON_USER_AUTHORITY\",\"ref\":\"/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-multicase-20261102/constraints-scheduling-001/project/requirements.md\",\"authority\":\"USER_EXPLICIT\"},{\"index\":5,\"reason\":\"NON_USER_AUTHORITY\",\"ref\":\"/Users/id02271616/.codex/worktrees/document-e2e-hour/runtime-corrector-toy/.runtime-correction/document-multicase-20261102/constraints-scheduling-001/project/requirements.md\",\"authority\":\"USER_EXPLICIT\"}]"
+        },
+        {
+          "role": "artifact-reviewer",
+          "failureCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+          "reason": "stderr: DOCUMENT_FINDING_LOCATION_INVALID: [{\"index\":0,\"path\":\"requirements.md\",\"line\":4,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"4: - Alice: Prefers mornings (9 AM - 12 PM), can do early afternoons (12-2 PM) if needed. Absolutely no meetings after 2 PM or before 9 AM.\"}]. Re-read the CURRENT numbered rc_document lines. Use physical 1-based lines, not sentence numbers or display wrapping. Return a corrected assessment preserving the grounded diagnosis and all valid findings; do not delete an issue merely to escape a location error. Only claim line precision and verbatim quotations supported by current reads. Paraphrases/document-level or absence findings need not invent a quote or line. The program never relocates your finding."
+        }
+      ],
+      "recoveredBusinessToolErrors": [],
+      "rawReport": ".runtime-correction/document-multicase-20261102/constraints-scheduling-001/report.json",
+      "businessTranscript": ".runtime-correction/document-multicase-20261102/constraints-scheduling-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/nginx-request-logging",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/nginx-request-logging/instruction.md",
+      "originalBytes": 1882,
+      "originalLines": 24,
+      "originalSha256": "26a7ac98aced6107f147206790ada77bbf8ed3c25fb360cf323d5fc6889edf99",
+      "strictState": "PASSED",
+      "failure": null,
+      "elapsedMs": 121085,
+      "baselineVersion": 1,
+      "baselineClaims": 26,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 5,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-PORT-MISMATCH",
+          "severity": "error",
+          "path": "design.md",
+          "line": 5,
+          "message": "Design specifies listening on port 9090, but the authoritative requirements demand port 8080, and the same document later requires verification through localhost:8080 — an internal contradiction as well as a deviation from requirements.md.",
+          "evidence": [
+            "design.md:5: \"Listen on port 9090\"",
+            "requirements.md:5: \"Listen on port 8080\"",
+            "design.md:21: \"verify it's running properly by testing localhost:8080\""
+          ],
+          "suggestion": "Change the listen port to 8080.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-ed6bc2e7455d5902",
+            "requirements-f684feea52f8d638"
+          ]
+        },
+        {
+          "ruleId": "AGENT-USER-AGENT-QUOTING",
+          "severity": "error",
+          "path": "design.md",
+          "line": 7,
+          "message": "Design states the user agent must not be quoted in logs, directly contradicting the requirement that $http_user_agent be double-quoted in the log format.",
+          "evidence": [
+            "design.md:7: \"do not quote the user agent in logs\"",
+            "requirements.md:7: \"double-quote the user agent in logs\""
+          ],
+          "suggestion": "Replace \"do not quote the user agent in logs\" with \"double-quote the user agent in logs\".",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-bcb9ba83547b0175"
+          ]
+        },
+        {
+          "ruleId": "AGENT-RATE-LIMIT-VALUES",
+          "severity": "error",
+          "path": "design.md",
+          "line": 9,
+          "message": "Rate limiting is documented as 100 requests per second with burst 100 and a 100MB zone, but requirements specify 10 requests per second, burst 10, and a 10MB zone.",
+          "evidence": [
+            "design.md:9: \"allow 100 requests per second per IP address with a burst capacity of 100 requests using a 100MB memory zone\"",
+            "requirements.md:9: \"allow only 10 requests per second per IP address with a burst capacity of 10 requests using a 10MB memory zone\""
+          ],
+          "suggestion": "Use 10 requests per second, burst capacity 10, and a 10MB zone.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-10a745fdb6e291ba"
+          ]
+        },
+        {
+          "ruleId": "AGENT-TEST-ORDER",
+          "severity": "error",
+          "path": "design.md",
+          "line": 20,
+          "message": "Design tests the configuration for syntax errors only after starting Nginx, contradicting the requirement to test before starting.",
+          "evidence": [
+            "design.md:20: \"Test the Nginx configuration for syntax errors only after starting\"",
+            "requirements.md:20: \"Test the Nginx configuration for syntax errors before starting\""
+          ],
+          "suggestion": "State that the syntax test happens before starting Nginx.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-c6caed435880bd83"
+          ]
+        },
+        {
+          "ruleId": "AGENT-MISSING-REQUIREMENTS-ADOPTION",
+          "severity": "error",
+          "path": "design.md",
+          "message": "The document never explicitly adopts the complete original requirements.md as authoritative for its contents, and never states that the setup steps describe only the planned system, with no implementation, benchmark execution, runtime output files, or runtime scores in this document-only task.",
+          "evidence": [
+            "A search of design.md for \"adopt\" returns no matches; the file contains only the copied draft text.",
+            "transcript:89224e25: \"Explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition.\"",
+            "transcript:89224e25: \"do not implement code, execute the benchmark, produce its runtime output files or claim runtime scores in this document-only task\""
+          ],
+          "suggestion": "Add a short explicit adoption and scope statement at the top of design.md while preserving all original content and formatting below it.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-88b05fce67a96b01",
+            "constraints-4a43875aa16b12ca"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "AGENT-MISSING-REQUIREMENTS-ADOPTION",
+          "severity": "error",
+          "path": "design.md",
+          "message": "The document never explicitly adopts the complete original requirements.md as authoritative for its contents, and never states that the setup steps describe only the planned system, with no implementation, benchmark execution, runtime output files, or runtime scores in this document-only task.",
+          "evidence": [
+            "A search of design.md for \"adopt\" returns no matches; the file contains only the copied draft text.",
+            "transcript:89224e25: \"Explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition.\"",
+            "transcript:89224e25: \"do not implement code, execute the benchmark, produce its runtime output files or claim runtime scores in this document-only task\""
+          ],
+          "suggestion": "Add a short explicit adoption and scope statement at the top of design.md while preserving all original content and formatting below it.",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-88b05fce67a96b01",
+            "constraints-4a43875aa16b12ca"
+          ]
+        }
+      ],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopyExactlyMatchesDraft": true,
+      "finalDocumentExactlyMatchesOriginal": false,
+      "fullOriginalPresentVerbatim": true,
+      "trailingWhitespaceOnlyDifference": false,
+      "seedByteDifference": 0,
+      "finalByteDifference": 362,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "recoveredValidationErrors": [
+        {
+          "role": "artifact-reviewer",
+          "failureCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+          "reason": "stderr: DOCUMENT_FINDING_LOCATION_INVALID: [{\"index\":0,\"path\":\"design.md\",\"line\":24,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"24: The solution should minimize the number of commands while ensuring all requirements are met. The web server should be accessible on localhost:8080 after the setup is complete.\"},{\"index\":1,\"path\":\"design.md\",\"line\":7,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"7:    - Implement detailed request logging that logs timestamps ($time_local), request methods ($request_method), response status codes ($status), and user agents ($http_user_agent, do not quote the user agent in logs), save to `/var/log/nginx\"},{\"index\":1,\"path\":\"requirements.md\",\"line\":7,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"7:    - Implement detailed request logging that logs timestamps ($time_local), request methods ($request_method), response status codes ($status), and user agents ($http_user_agent, double-quote the user agent in logs), save to `/var/log/nginx\"}]. Re-read the CURRENT numbered rc_document lines. Use physical 1-based lines, not sentence numbers or display wrapping. Return a corrected assessment preserving the grounded diagnosis and all valid findings; do not delete an issue merely to escape a location error. Only claim line precision and verbatim quotations supported by current reads. Paraphrases/document-level or absence findings need not invent a quote or line. The program never relocates your finding."
+        }
+      ],
+      "recoveredBusinessToolErrors": [],
+      "rawReport": ".runtime-correction/document-multicase-20261102/nginx-request-logging-001/report.json",
+      "businessTranscript": ".runtime-correction/document-multicase-20261102/nginx-request-logging-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/fix-code-vulnerability",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/fix-code-vulnerability/instruction.md",
+      "originalBytes": 3873,
+      "originalLines": 52,
+      "originalSha256": "89b1abdf0af19399f720233b5cdf6b2e8e0ff7b6e3fe3e2a3af0d4d298a8641a",
+      "strictState": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "Initial review did not inspect the exact draft\n+ actual - expected\n\n+ '817ff9c44081bb3874771a7de9ca0852825d993c121ffc859d0efcc6a19519af'\n- '731357740e4ff8976d21bd92744494ab8ac6afb20288544cebc595d47777fcc4'\n"
+      },
+      "elapsedMs": 95368,
+      "baselineVersion": 1,
+      "baselineClaims": 11,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 3,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-OUTPUT-CONTRACT-MISMATCH",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "The deliverable path and cwe_id type contradict requirements.md line 11: design.md names /app/report.json and specifies cwe_id as a comma-separated string, while the authoritative requirement is /app/report.jsonl with cwe_id as a list. design.md line 18 even contradicts this same file by referring to /app/report.jsonl.",
+          "evidence": [
+            "design.md:11:  4. create a /app/report.json file in /app folder and report the code vulnerability. It should contain vulnerable items. And each vulnerable item should contain three keys: file_path (a string, path of the vulnerable file) and cwe_id (a string, comma-separated IDs of common weakness enumeration).",
+            "requirements.md:11:  4. create a /app/report.jsonl file in /app folder and report the code vulnerability. It should contain vulnerable items. And each vulnerable item should contain three keys: file_path (a string, path of the vulnerable file) and cwe_id (a list, IDs of common weakness enumeration).",
+            "design.md:18:   - The exact files and that exact CWE-ids must appear in the /app/report.jsonl file."
+          ],
+          "suggestion": "Restore the original wording: \"/app/report.jsonl\" and \"cwe_id (a list, IDs of common weakness enumeration)\".",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-3c62d29cdf170c8f",
+            "constraints-53c87ee7115fba73"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQUIREMENT-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 13,
+          "message": "The required error-handling behavior is inverted. requirements.md requires the function to raise the correct specific error type for invalid inputs instead of silently ignoring them or raising a generic exception; design.md instead states the function may silently ignore invalid inputs or raise a generic exception instead of the specific error type.",
+          "evidence": [
+            "design.md:13:  5. fix the code vulnerability by modify the code file accordingly and ensure that the function may silently ignore invalid inputs or raise a generic exception instead of the specific error type.",
+            "requirements.md:13:  5. fix the code vulnerability by modify the code file accordingly and ensure that the function raises the correct type of error when encountering invalid inputs instead of silently ignoring them or raising a generic exception."
+          ],
+          "suggestion": "Restore the original obligation verbatim: \"ensure that the function raises the correct type of error when encountering invalid inputs instead of silently ignoring them or raising a generic exception.\"",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-3c62d29cdf170c8f",
+            "constraints-53c87ee7115fba73"
+          ]
+        },
+        {
+          "ruleId": "AGENT-PROHIBITION-REVERSED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 19,
+          "message": "The permission regarding the original code file is reversed. requirements.md states \"You can overwrite the original code file\", while design.md states \"You must not modify the original code file\", turning an allowed action into a prohibition and changing the document's constraints.",
+          "evidence": [
+            "design.md:19:   - You must not modify the original code file.",
+            "requirements.md:19:   - You can overwrite the original code file."
+          ],
+          "suggestion": "Restore the original hint: \"You can overwrite the original code file.\"",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-3c62d29cdf170c8f",
+            "constraints-53c87ee7115fba73"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopyExactlyMatchesDraft": false,
+      "finalDocumentExactlyMatchesOriginal": false,
+      "fullOriginalPresentVerbatim": false,
+      "trailingWhitespaceOnlyDifference": true,
+      "seedByteDifference": 42,
+      "finalByteDifference": 42,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 3
+      },
+      "recoveredValidationErrors": [
+        {
+          "role": "ground-truth-extractor",
+          "failureCode": null,
+          "reason": "stderr: /operations/0/appliesKind: 不允许字段 appliesKind。"
+        }
+      ],
+      "recoveredBusinessToolErrors": [],
+      "rawReport": ".runtime-correction/document-multicase-20261102/fix-code-vulnerability-001/report.json",
+      "businessTranscript": ".runtime-correction/document-multicase-20261102/fix-code-vulnerability-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/financial-document-processor",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/financial-document-processor/instruction.md",
+      "originalBytes": 1055,
+      "originalLines": 13,
+      "originalSha256": "b21cf2af1891922732327bf586d14b250d36d96de7867479c15bd1c58ef0db58",
+      "strictState": "PASSED",
+      "failure": null,
+      "elapsedMs": 89288,
+      "baselineVersion": 1,
+      "baselineClaims": 15,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 5,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-REQ-VAT-DEFAULT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 9,
+          "message": "design.md contradicts the requirements obligation for a missing VAT value: it instructs deriving VAT as 20 percent of total_amount, whereas requirements.md requires setting it to 0 or an empty string.",
+          "evidence": [
+            "design.md:9: - Extract vat_amount (look for terms like \"VAT\", \"Tax\", \"GST\") - if VAT is not present, set it to 20 percent of total_amount",
+            "requirements.md:9: - Extract vat_amount (look for terms like \"VAT\", \"Tax\", \"GST\") - if VAT is not present, set it to 0 or empty string"
+          ],
+          "suggestion": "Replace the 20-percent fallback with the requirements wording: set it to 0 or empty string.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-04b95d8fe5718fd2"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-TOTAL-PRECEDENCE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 10,
+          "message": "design.md reverses the Total and Amount Due precedence rule stated in requirements.md: it says to use the Amount Due amount when both labels differ, while the requirement says to use only the Total amount.",
+          "evidence": [
+            "design.md:10: - Special case: If both \"Total\" and \"Amount Due\" are present with different values, use only the \"Amount Due\" amount",
+            "requirements.md:10: - Special case: If both \"Total\" and \"Amount Due\" are present with different values, use only the \"Total\" amount"
+          ],
+          "suggestion": "Use only the \"Total\" amount in the special case.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-058aa5159f20126d"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-CSV-COLUMNS",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "design.md specifies the wrong column order for summary.csv: the requirement mandates exactly filename, total_amount, vat_amount, but the design lists filename, vat_amount, total_amount.",
+          "evidence": [
+            "design.md:11: - Create a CSV file called '/app/invoices/summary.csv' with exactly these columns: filename, vat_amount, total_amount",
+            "requirements.md:11: - Create a CSV file called '/app/invoices/summary.csv' with exactly these columns: filename, total_amount, vat_amount"
+          ],
+          "suggestion": "Reorder the columns to filename, total_amount, vat_amount.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-6b1cd3960e2e2f2d"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-SUMMARY-TOTAL",
+          "severity": "error",
+          "path": "design.md",
+          "line": 12,
+          "message": "design.md specifies an average for the final total row, but the requirement is a calculated total of the total_amount and vat_amount columns across the individual invoices.",
+          "evidence": [
+            "design.md:12: - In the summary.csv file, add a final row with the filename 'total' and the average of total_amount and vat_amount columns from the individual invoices.",
+            "requirements.md:12: - In the summary.csv file, add a final row with the filename 'total' and the calculated total of total_amount and vat_amount columns from the individual invoices."
+          ],
+          "suggestion": "Replace the average of with the calculated total of.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "requirements-bb5afb33b4898274"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-AUTHORITY-NOT-STATED",
+          "severity": "warning",
+          "path": "design.md",
+          "message": "The task requires design.md to explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition. The current document restates only the checklist and never references requirements.md or declares it authoritative, so the adoption obligation is unfulfilled.",
+          "evidence": [
+            "design.md lines 1-13 contain only checklist items; no statement adopts requirements.md as the authority.",
+            "requirements.md is declared as a ready, user-authority ground-truth input for this node."
+          ],
+          "suggestion": "Add an explicit statement that requirements.md is the authoritative source for all behaviors, numbers, paths, exceptions and prohibitions, and that no item may be weakened or extended."
+        }
+      ],
+      "extraUnseededDiagnostics": [
+        {
+          "ruleId": "AGENT-REQ-AUTHORITY-NOT-STATED",
+          "severity": "warning",
+          "path": "design.md",
+          "message": "The task requires design.md to explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition. The current document restates only the checklist and never references requirements.md or declares it authoritative, so the adoption obligation is unfulfilled.",
+          "evidence": [
+            "design.md lines 1-13 contain only checklist items; no statement adopts requirements.md as the authority.",
+            "requirements.md is declared as a ready, user-authority ground-truth input for this node."
+          ],
+          "suggestion": "Add an explicit statement that requirements.md is the authoritative source for all behaviors, numbers, paths, exceptions and prohibitions, and that no item may be weakened or extended."
+        }
+      ],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopyExactlyMatchesDraft": true,
+      "finalDocumentExactlyMatchesOriginal": false,
+      "fullOriginalPresentVerbatim": true,
+      "trailingWhitespaceOnlyDifference": false,
+      "seedByteDifference": 0,
+      "finalByteDifference": 428,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "recoveredValidationErrors": [
+        {
+          "role": "artifact-reviewer",
+          "failureCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+          "reason": "stderr: DOCUMENT_FINDING_LOCATION_INVALID: [{\"index\":0,\"path\":\"design.md\",\"line\":9,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"9:     - Extract vat_amount (look for terms like \\\"VAT\\\", \\\"Tax\\\", \\\"GST\\\") - if VAT is not present, set it to 20 percent of total_amount\"},{\"index\":0,\"path\":\"requirements.md\",\"line\":9,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"9:     - Extract vat_amount (look for terms like \\\"VAT\\\", \\\"Tax\\\", \\\"GST\\\") - if VAT is not present, set it to 0 or empty string\"},{\"index\":1,\"path\":\"design.md\",\"line\":10,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"10:     - Special case: If both \\\"Total\\\" and \\\"Amount Due\\\" are present with different values, use only the \\\"Amount Due\\\" amount\"},{\"index\":1,\"path\":\"requirements.md\",\"line\":10,\"reason\":\"The literal quotation is absent from its declared current line/range; do not move it automatically.\",\"currentLine\":\"10:     - Special case: If both \\\"Total\\\" and \\\"Amount Due\\\" are present with different values, use only the \\\"Total\\\" amount\"}]. Re-read the CURRENT numbered rc_document lines. Use physical 1-based lines, not sentence numbers or display wrapping. Return a corrected assessment preserving the grounded diagnosis and all valid findings; do not delete an issue merely to escape a location error. Only claim line precision and verbatim quotations supported by current reads. Paraphrases/document-level or absence findings need not invent a quote or line. The program never relocates your finding."
+        }
+      ],
+      "recoveredBusinessToolErrors": [],
+      "rawReport": ".runtime-correction/document-multicase-20261102/financial-document-processor-001/report.json",
+      "businessTranscript": ".runtime-correction/document-multicase-20261102/financial-document-processor-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    }
+  ],
+  "priorPassingTask": "docs/dynamic-document-benchmark-results.json",
+  "limits": [
+    "Five targeted document cases with controlled mutations are not a general accuracy estimate.",
+    "A final document PASS does not override failed strict source-copy checks or validate every additional finding."
+  ]
+}
