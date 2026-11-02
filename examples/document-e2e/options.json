@@ -1,0 +1,8 @@
+{
+  "reviewTimeoutMs": 600000,
+  "repairTimeoutMs": 600000,
+  "totalTimeoutMs": 1800000,
+  "maxRepairRounds": 2,
+  "locationRepairAttempts": 2,
+  "killGraceMs": 1500
+}

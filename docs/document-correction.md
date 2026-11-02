@@ -1,5 +1,44 @@
 # 文档纠偏：项目会话与按需证据
 
+## 最小真实模型闭环（2026-11-02）
+
+独立入口 `scripts/evaluate-document-e2e.mjs` 会生成一个包含遥测偏差的虚构文档项目，构建 Claude 插件，并使用生产 `checkArtifact`、`runSemanticReview`、`finalizeArtifactCheck` 和真实 `rc_document` MCP 工具完成评审。原始需求文件直接作为声明的依据，不依赖动态基线抽取。
+
+首轮必须发现设计第 2 行的实际偏差。程序将本轮生产反馈交给业务 Agent，要求它读取原始需求、当前设计和反馈，并真实调用 Edit/Write 修改设计。随后重新读取当前文件进行第二轮评审；只有当前文档通过、存在成功编辑回执、原始需求保持原字节，整轮才返回 `PASSED` 和退出码 0。不会由测试程序替换修订稿。该入口是显式 CLI 协调的文档闭环；OpenClaw/Gateway 自动 Hook、动态基线、Skill 和 Stop 属于其他接入范围。
+
+使用本机已配置且可正常调用的 Claude Code：
+
+```sh
+node scripts/evaluate-document-e2e.mjs --live \
+  --config examples/document-e2e/options.json \
+  --output-root .runtime-correction/document-e2e-live-new
+```
+
+输出目录必须全新。`--live` 会调用真实模型并产生相应费用。`RC_DOCUMENT_CLAUDE` 可指定 Claude 可执行文件；默认使用宿主的 Claude 路径解析，不修改全局模型或认证配置。
+
+时间阈值可以通过 JSON 或以下参数调整（毫秒），命令行参数优先：
+
+```sh
+node scripts/evaluate-document-e2e.mjs --live \
+  --output-root .runtime-correction/document-e2e-live-wide \
+  --review-timeout-ms 1200000 \
+  --repair-timeout-ms 1200000 \
+  --total-timeout-ms 3600000
+```
+
+| 配置 | 默认值 | 用途 |
+|---|---:|---|
+| `reviewTimeoutMs` | 600000 | 每轮评审，包含模型启动、工具读取和定位错误修复 |
+| `repairTimeoutMs` | 600000 | 每轮业务 Agent 编辑 |
+| `totalTimeoutMs` | 1800000 | 所有评审和编辑共享的总时限 |
+| `maxRepairRounds` | 2 | 最多允许的业务修复轮数 |
+| `locationRepairAttempts` | 2 | 每轮允许修复定位错误的次数 |
+| `killGraceMs` | 1500 | 超时后终止整个调用进程组前的宽限 |
+
+三个时间预算接受 1000–3600000 毫秒。重试不会重置本轮或总截止时间；超时记录失败并返回非零，不能当作 PASS。输出保留 `options.json`、构建后的插件、原始及当前文档、每轮反馈、完整 CLI 工具调用/回执流和 `report.json`。模型用量及费用按 CLI 的报告值保存。
+
+定位校验覆盖当前声明文件的物理行号和逐字引用，支持 `path:line: 'quote'`、双引号和行范围。定位错误要求模型重新读取并提交，程序不会悄悄挪动发现。修订后的检查必须使用当前哈希对应的完整文档，不能复用之前的 PASS。
+
 ## 目标与范围
 
 本方案优化 MatrixAssistant / OpenClaw 的 artifacts、bundle、workflow 节点和入边文档评审。实现放在 runtime-corrector 插件中，不修改宿主。开发使用从当前分支建立的外部 Git worktree，共享原仓库对象；运行时直接读取项目原文件，不克隆或复制代码仓。
