@@ -1,0 +1,3904 @@
+{
+  "kind": "document-correction-main-worktree-integration-validation",
+  "recordedAt": "2026-11-02T15:35:10.251Z",
+  "status": "POST_MERGE_FUNCTIONAL_GATE_PASSED_WITH_STRICT_COVERAGE_LIMIT",
+  "mainWorktree": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+  "mainBranch": "codex/rc-general-efficiency-bench",
+  "integration": {
+    "state": "PASSED",
+    "mainBranch": "codex/rc-general-efficiency-bench",
+    "featureCommit": "394dc63d408950525c5c05c9716e594c8c943f10",
+    "testedCandidateCommit": "5731c8e19a2fb166350c66584ac780bfbb2e5a9d",
+    "actualWorkingTree": "9d765c852b943292fec4f04d45d16b811577e761",
+    "matchesTestedCandidateTree": true,
+    "unaffectedOriginalFilesVerified": 748,
+    "unaffectedOriginalFilesChanged": 0,
+    "stagedChanges": 0,
+    "recoveryStash": "ab343e71b34f06fb2e5d68f5b95ffd40f019f096",
+    "originalSnapshotCommit": "79c8ca53320bb7315fad8e1046183f7a4510bf19",
+    "initialCandidateCommit": "44df5445ee77436e3ad65a805e9369663eee08c1",
+    "sixCaseCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+    "focusedEofCandidateCommit": "5731c8e19a2fb166350c66584ac780bfbb2e5a9d"
+  },
+  "selectedPlan": {
+    "scope": "Only document correction, real dynamic baseline and automatic document Hook. Implementation, Skill, Stop, stage metrics and official benchmark execution stay disabled.",
+    "copyContract": "Opt-in review.copyFrom compares the complete declared source. Only trailing spaces/tabs outside fenced blocks may differ; body, indentation, literals and EOF remain enforced.",
+    "baseline": "For copy tasks only, extract and independently audit the actual current user copy contract and project file scope. Complete immutable benchmark body remains declared document Ground Truth and is read natively. Ordinary material defaults are unchanged.",
+    "commonPrerequisites": "Identical native tool-envelope navigation, finite-JSON receipt and post-close coverage-proof retention fixes were used in both pre-merge arms; not counted as document-only gains.",
+    "repair": "Visible whitespace counts and exact native apply_patch arguments for short unique literal lines. For a sole EOF newline difference, exact native edit arguments share one body suffix to preserve every body character. Review itself never rewrites business documents or overrides host termination."
+  },
+  "provider": {
+    "model": "glm-5.3-flash",
+    "endpoint": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "api": "openai-completions",
+    "businessAndDocumentEffort": "low",
+    "baselineAndIndependentAuditEffort": "high",
+    "baselineFormatRepairAttempts": 12,
+    "credentials": "User-authorized process memory only"
+  },
+  "evidence": {
+    "beforeMergeNative": [
+      {
+        "case": "scikit",
+        "arm": "baseline",
+        "label": "scikit-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/baseline/scikit-contract-009",
+        "fixture": "scikit-learn__scikit-learn-11578",
+        "state": "FAILED",
+        "failure": {
+          "code": "ERR_ASSERTION",
+          "message": "Initial automatic review did not locate the controlled deviation at line 16"
+        },
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 449743,
+        "providerRequests": 32,
+        "modelStarts": 32,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "warning",
+          "warning"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 3,
+        "initialDiagnostics": [
+          {
+            "ruleId": "MARKDOWN-HEADING-JUMP",
+            "severity": "warning",
+            "line": 149
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-DEFAULT-MULTICLASS",
+            "severity": "error",
+            "line": 12
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-FIX-SEMANTICS",
+            "severity": "error",
+            "line": 15
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-INTERCEPT-SCALING-TYPE",
+            "severity": "error",
+            "line": 157
+          }
+        ],
+        "finalDiagnostics": [
+          {
+            "ruleId": "MARKDOWN-HEADING-JUMP",
+            "severity": "warning",
+            "line": 149
+          }
+        ],
+        "feedbackReceipts": 3,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "actualSha256": "1d7adb3519116651fc02972c0225d0baf2cee85166c1100af35a3930990a9592",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "2ba1ca005ffc4394a3a96ff5c5cb2ec17a90b27aaf7f3c70c60e4c6a940e47fc",
+          "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+          "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+          "lib/rules/engine.mjs": "a4ab7b0d33093be338e9c8b638ad081c0c787e57147d53be590f5d37090cbddb",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "baseline",
+          "label": "scikit-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-baseline-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 1,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:12:00.230Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T13:12:00.230Z",
+          "finishedAt": "2026-11-02T13:19:30.141Z"
+        }
+      },
+      {
+        "case": "scikit",
+        "arm": "candidate",
+        "label": "scikit-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/candidate/scikit-contract-009",
+        "fixture": "scikit-learn__scikit-learn-11578",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 360847,
+        "providerRequests": 27,
+        "modelStarts": 27,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 12
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 15
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 16
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 157
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 175
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 5,
+        "artifactBaselineVersions": [
+          1,
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "candidate",
+          "label": "scikit-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 1,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:12:00.226Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T13:12:00.226Z",
+          "finishedAt": "2026-11-02T13:18:01.236Z"
+        }
+      },
+      {
+        "case": "pytest",
+        "arm": "baseline",
+        "label": "pytest-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/baseline/pytest-contract-009",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "FAILED",
+        "failure": {
+          "code": "ERR_ASSERTION",
+          "message": "Initial automatic review did not locate the controlled deviation at line 328"
+        },
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 480940,
+        "providerRequests": 33,
+        "modelStarts": 33,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 3,
+        "initialDiagnostics": [
+          {
+            "ruleId": "AGENT-CONCLUSION-REVERSED",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "AGENT-EXAMPLE-CODE-DEVIATION",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "AGENT-OUTPUT-SUMMARY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "731de35e081ad576d5b1fb2e3b2b2fa75b69a2a1ca7287e311baf8a7a8e1c289",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "2ba1ca005ffc4394a3a96ff5c5cb2ec17a90b27aaf7f3c70c60e4c6a940e47fc",
+          "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+          "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+          "lib/rules/engine.mjs": "a4ab7b0d33093be338e9c8b638ad081c0c787e57147d53be590f5d37090cbddb",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "baseline",
+          "label": "pytest-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-baseline-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:19:30.143Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T13:19:30.143Z",
+          "finishedAt": "2026-11-02T13:27:31.248Z"
+        }
+      },
+      {
+        "case": "pytest",
+        "arm": "candidate",
+        "label": "pytest-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/candidate/pytest-contract-009",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 480492,
+        "providerRequests": 31,
+        "modelStarts": 31,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 328
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 377
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "candidate",
+          "label": "pytest-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:18:01.238Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T13:18:01.238Z",
+          "finishedAt": "2026-11-02T13:26:01.888Z"
+        }
+      },
+      {
+        "case": "django",
+        "arm": "baseline",
+        "label": "django-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/baseline/django-contract-009",
+        "fixture": "django__django-11087",
+        "state": "FAILED",
+        "failure": {
+          "code": "ERR_ASSERTION",
+          "message": "Initial automatic review did not locate the controlled deviation at line 5"
+        },
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 351399,
+        "providerRequests": 25,
+        "modelStarts": 25,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 3,
+        "initialDiagnostics": [
+          {
+            "ruleId": "AGENT-GOAL-INVERTED",
+            "severity": "error",
+            "line": 1
+          },
+          {
+            "ruleId": "AGENT-EXPECTED-OUTCOME-INVERTED",
+            "severity": "error",
+            "line": 13
+          },
+          {
+            "ruleId": "AGENT-ANALYSIS-CONTRADICTED",
+            "severity": "error",
+            "line": 85
+          },
+          {
+            "ruleId": "AGENT-FACT-DRIFT-PYTHON-VERSION",
+            "severity": "warning",
+            "line": 5
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "actualSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 4,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "2ba1ca005ffc4394a3a96ff5c5cb2ec17a90b27aaf7f3c70c60e4c6a940e47fc",
+          "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+          "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+          "lib/rules/engine.mjs": "a4ab7b0d33093be338e9c8b638ad081c0c787e57147d53be590f5d37090cbddb",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "baseline",
+          "label": "django-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-baseline-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 3,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:27:31.249Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T13:27:31.249Z",
+          "finishedAt": "2026-11-02T13:33:22.804Z"
+        }
+      },
+      {
+        "case": "django",
+        "arm": "candidate",
+        "label": "django-contract-009",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/candidate/django-contract-009",
+        "fixture": "django__django-11087",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 333281,
+        "providerRequests": 25,
+        "modelStarts": 25,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 1
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 5
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 13
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 85
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 7,
+        "artifactBaselineVersions": [
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "actualSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 4,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "candidate",
+          "label": "django-contract-009",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 3,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:26:01.890Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T13:26:01.890Z",
+          "finishedAt": "2026-11-02T13:31:35.342Z"
+        }
+      }
+    ],
+    "firstMainSix": [
+      {
+        "case": "scikit",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "scikit-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/scikit-main-002",
+        "fixture": "scikit-learn__scikit-learn-11578",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 464747,
+        "providerRequests": 41,
+        "modelStarts": 41,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 12
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 15
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 16
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 157
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 175
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 4,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 6,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "scikit-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 1,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:30:46.618Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:30:46.618Z",
+          "finishedAt": "2026-11-02T14:38:31.523Z",
+          "controllerStopReason": null
+        },
+        "functionalState": "PASSED"
+      },
+      {
+        "case": "pytest",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "pytest-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/pytest-main-002",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 448078,
+        "providerRequests": 27,
+        "modelStarts": 27,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 18
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 87
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 231
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 328
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 377
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 3,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "pytest-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:23:18.384Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:23:18.384Z",
+          "finishedAt": "2026-11-02T14:30:46.617Z",
+          "controllerStopReason": null
+        },
+        "functionalState": "PASSED"
+      },
+      {
+        "case": "django",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "django-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/django-main-002",
+        "fixture": "django__django-11087",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 355695,
+        "providerRequests": 28,
+        "modelStarts": 28,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 1
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 5
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 13
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 85
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-TITLE",
+            "severity": "error",
+            "line": 1
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-PYVERSION",
+            "severity": "error",
+            "line": 5
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-EXPECTED",
+            "severity": "error",
+            "line": 13
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-ISSUE2",
+            "severity": "error",
+            "line": 85
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "actualSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "django-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 3,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:32:24.797Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:32:24.797Z",
+          "finishedAt": "2026-11-02T14:38:20.640Z",
+          "controllerStopReason": null
+        },
+        "functionalState": "PASSED"
+      },
+      {
+        "case": "pylint",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "pylint-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/pylint-main-002",
+        "fixture": "pylint-dev__pylint-7080",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 546253,
+        "providerRequests": 28,
+        "modelStarts": 28,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 4
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 12
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 20
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 241
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 2,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+          "actualSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 4,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "pylint-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 1,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:23:18.386Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:23:18.386Z",
+          "finishedAt": "2026-11-02T14:32:24.797Z",
+          "controllerStopReason": null
+        },
+        "functionalState": "PASSED"
+      },
+      {
+        "case": "matplotlib",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "matplotlib-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/matplotlib-main-002",
+        "fixture": "matplotlib__matplotlib-22719",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 545368,
+        "providerRequests": 60,
+        "modelStarts": 60,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed",
+          "failed",
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 4,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 4
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 11
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 97
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 98
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 99
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 100
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 101
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 102
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-CONTRADICTION",
+            "severity": "error",
+            "line": 172
+          },
+          {
+            "ruleId": "AGENT-GROUNDTRUTH-CONTRADICTION",
+            "severity": "error",
+            "line": 205
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 5,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+          "actualSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 9,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "matplotlib-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:38:20.640Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:38:20.640Z",
+          "finishedAt": "2026-11-02T14:47:26.158Z",
+          "controllerStopReason": null
+        },
+        "functionalState": "PASSED"
+      },
+      {
+        "case": "xarray",
+        "testedFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+        "testedCandidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+        "label": "xarray-main-002",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/xarray-main-002",
+        "fixture": "pydata__xarray-6721",
+        "state": "FAILED",
+        "failure": {
+          "code": "ERR_ASSERTION",
+          "message": "Initial automatic review did not locate the controlled deviation at line 218"
+        },
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 544649,
+        "providerRequests": 45,
+        "modelStarts": 45,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 4,
+        "initialSeededFaultsLocated": 3,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 4
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 16
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 111
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 168
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 169
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 170
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 171
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 4,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+          "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 6,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "xarray-main-002",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 3,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:38:31.524Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T14:38:31.524Z",
+          "finishedAt": "2026-11-02T14:47:36.325Z",
+          "controllerStopReason": null
+        },
+        "functionalVerification": {
+          "functionalState": "PASSED",
+          "originalStrictState": "FAILED",
+          "originalStrictFailure": {
+            "code": "ERR_ASSERTION",
+            "message": "Initial automatic review did not locate the controlled deviation at line 218"
+          },
+          "originalReportSha256": "7008f1e2a5fbc39fa716047a8fd80bbedde7312411940b1b3b118319462e8804",
+          "rawReportUnchanged": true,
+          "initialSeededFaultsPreserved": 4,
+          "firstReviewFaultsLocated": 3,
+          "firstReviewDiagnostics": 8,
+          "actualSuccessfulMutations": 4,
+          "finalExactSource": true,
+          "initialAndFinalReviewedBytesBound": true,
+          "formalBaselineVersion": 1,
+          "artifactEvaluations": 4,
+          "artifactVersions": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "nativeStatus": "ok",
+          "allPrivateRunsSettled": true,
+          "closedProofVerified": true,
+          "packagedRuntimeVerified": true,
+          "method": "Independent post-run verification of all production E2E completion assertions after the early strict first-diagnostic-coverage assertion. The original strict FAILED report remains unchanged; no model request, file correction or acceptance relabeling."
+        },
+        "functionalState": "PASSED"
+      }
+    ],
+    "syntheticBoundary": {
+      "baseline": {
+        "arm": "baseline",
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-baseline-20261102",
+        "modelRequests": 0,
+        "method": "Production checkArtifact + finalizeArtifactCheck, with deliberately empty injected semantic findings. This measures deterministic guard coverage and clean controls, not real model accuracy.",
+        "totals": {
+          "probes": 10,
+          "correct": 4,
+          "falsePass": 5,
+          "falseBlock": 1
+        },
+        "rows": [
+          {
+            "name": "exact",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "inherited-heading",
+            "expected": "passed",
+            "actual": "warning",
+            "correct": false,
+            "diagnostics": [
+              {
+                "ruleId": "MARKDOWN-HEADING-JUMP",
+                "line": 2,
+                "severity": "warning"
+              }
+            ],
+            "sourceSha256": "63fafebd132631a0c05c2f5c34df4f71c1e81dcba3442b7bb503dd97e94d674b",
+            "targetSha256": "63fafebd132631a0c05c2f5c34df4f71c1e81dcba3442b7bb503dd97e94d674b",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "changed-meaning",
+            "expected": "failed",
+            "actual": "passed",
+            "correct": false,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "50509fb756ec6698a9aa5495e5536862adfbe3bbc6b720a5140346fd7f1798dd",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "literal-indent",
+            "expected": "failed",
+            "actual": "passed",
+            "correct": false,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "7754f0e51a8036385256a3029e0efcb796a4928faff3838c3786fbb5cc76738f",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "literal-internal-space",
+            "expected": "failed",
+            "actual": "passed",
+            "correct": false,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "46a50f51b1ae5748fed8e6c0844e73b4fce166b59f8498efa26cebe14454f2dc",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "missing-final-newline",
+            "expected": "failed",
+            "actual": "passed",
+            "correct": false,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "e010038de213a189a079e405b51b90f0abbf48c65a9ce201611891aa81e031d1",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "added-authority",
+            "expected": "failed",
+            "actual": "passed",
+            "correct": false,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "7ba5ca7c4c04511d8a3e29b6c66e3b22e169f4150091962e76ac27d6fd49bb3b",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "permitted-padding",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "2788ffe3401d8ca2706b768eb0f8a7a92325df21c8e6629eff3da8fa689989af",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "missing-source",
+            "expected": "pending",
+            "actual": "pending",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "GROUND-TRUTH-SOURCE-MISSING",
+                "severity": "pending"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "ordinary-design",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "8ce89fed20139abb48264514bbbab707220ca806a5f11bae48c821d9821a2377",
+            "businessFileUntouched": true
+          }
+        ]
+      },
+      "candidate": {
+        "arm": "candidate",
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+        "modelRequests": 0,
+        "method": "Production checkArtifact + finalizeArtifactCheck, with deliberately empty injected semantic findings. This measures deterministic guard coverage and clean controls, not real model accuracy.",
+        "totals": {
+          "probes": 10,
+          "correct": 10,
+          "falsePass": 0,
+          "falseBlock": 0
+        },
+        "rows": [
+          {
+            "name": "exact",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "inherited-heading",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "63fafebd132631a0c05c2f5c34df4f71c1e81dcba3442b7bb503dd97e94d674b",
+            "targetSha256": "63fafebd132631a0c05c2f5c34df4f71c1e81dcba3442b7bb503dd97e94d674b",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "changed-meaning",
+            "expected": "failed",
+            "actual": "failed",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 2,
+                "severity": "error"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "50509fb756ec6698a9aa5495e5536862adfbe3bbc6b720a5140346fd7f1798dd",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "literal-indent",
+            "expected": "failed",
+            "actual": "failed",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "7754f0e51a8036385256a3029e0efcb796a4928faff3838c3786fbb5cc76738f",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "literal-internal-space",
+            "expected": "failed",
+            "actual": "failed",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "46a50f51b1ae5748fed8e6c0844e73b4fce166b59f8498efa26cebe14454f2dc",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "missing-final-newline",
+            "expected": "failed",
+            "actual": "failed",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 6,
+                "severity": "error"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "e010038de213a189a079e405b51b90f0abbf48c65a9ce201611891aa81e031d1",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "added-authority",
+            "expected": "failed",
+            "actual": "failed",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 1,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 2,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 3,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 5,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 6,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 8,
+                "severity": "error"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "7ba5ca7c4c04511d8a3e29b6c66e3b22e169f4150091962e76ac27d6fd49bb3b",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "permitted-padding",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "2788ffe3401d8ca2706b768eb0f8a7a92325df21c8e6629eff3da8fa689989af",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "missing-source",
+            "expected": "pending",
+            "actual": "pending",
+            "correct": true,
+            "diagnostics": [
+              {
+                "ruleId": "GROUND-TRUTH-SOURCE-MISSING",
+                "severity": "pending"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-SOURCE-UNRESOLVED",
+                "severity": "pending"
+              }
+            ],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "businessFileUntouched": true
+          },
+          {
+            "name": "ordinary-design",
+            "expected": "passed",
+            "actual": "passed",
+            "correct": true,
+            "diagnostics": [],
+            "sourceSha256": "83a4729a5aef8b488a4e9bb5c2f09ac6f3ed077ba4518cce1d181285097da546",
+            "targetSha256": "8ce89fed20139abb48264514bbbab707220ca806a5f11bae48c821d9821a2377",
+            "businessFileUntouched": true
+          }
+        ]
+      }
+    },
+    "largeRequirementBoundaries": {
+      "baseline": {
+        "arm": "baseline",
+        "kind": "six-real-large-requirement-production-boundaries",
+        "modelRequests": 0,
+        "method": "Actual production artifact checks on all six complete pinned SWE-bench sources and their four-fault drafts, with empty injected semantic findings. Measures deterministic enforcement only, not model accuracy or official benchmark execution.",
+        "totals": {
+          "cases": 12,
+          "correct": 5,
+          "seededFaultsLocated": 0,
+          "cleanPasses": 5
+        },
+        "rows": [
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "clean",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "failed",
+            "status": "passed",
+            "correct": false,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": 0,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "clean",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "failed",
+            "status": "passed",
+            "correct": false,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": 0,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "clean",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "failed",
+            "status": "passed",
+            "correct": false,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": 0,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "clean",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "failed",
+            "status": "passed",
+            "correct": false,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": 0,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "clean",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "failed",
+            "status": "passed",
+            "correct": false,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": 0,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "clean",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "passed",
+            "status": "warning",
+            "correct": false,
+            "errors": 0,
+            "warnings": 1,
+            "seededFaultsLocated": null,
+            "diagnostics": [
+              {
+                "ruleId": "MARKDOWN-HEADING-JUMP",
+                "line": 149,
+                "severity": "warning"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "failed",
+            "status": "warning",
+            "correct": false,
+            "errors": 0,
+            "warnings": 1,
+            "seededFaultsLocated": 0,
+            "diagnostics": [
+              {
+                "ruleId": "MARKDOWN-HEADING-JUMP",
+                "line": 149,
+                "severity": "warning"
+              }
+            ],
+            "businessFileUntouched": true
+          }
+        ]
+      },
+      "candidate": {
+        "arm": "candidate",
+        "kind": "six-real-large-requirement-production-boundaries",
+        "modelRequests": 0,
+        "method": "Actual production artifact checks on all six complete pinned SWE-bench sources and their four-fault drafts, with empty injected semantic findings. Measures deterministic enforcement only, not model accuracy or official benchmark execution.",
+        "totals": {
+          "cases": 12,
+          "correct": 12,
+          "seededFaultsLocated": 24,
+          "cleanPasses": 6
+        },
+        "rows": [
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "clean",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 1,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 5,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 13,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 85,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "clean",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 11,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 170,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 202,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "clean",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 10,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 16,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 219,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "clean",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 12,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 20,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 241,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "clean",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 10,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 326,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 328,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 346,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "clean",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 12,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 15,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 16,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 157,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          }
+        ]
+      },
+      "finalMain": {
+        "arm": "main",
+        "kind": "six-real-large-requirement-production-boundaries",
+        "modelRequests": 0,
+        "method": "Actual production artifact checks on all six complete pinned SWE-bench sources and their four-fault drafts, with empty injected semantic findings. Measures deterministic enforcement only, not model accuracy or official benchmark execution.",
+        "totals": {
+          "cases": 12,
+          "correct": 12,
+          "seededFaultsLocated": 24,
+          "cleanPasses": 6
+        },
+        "rows": [
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "clean",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-django__django-11087",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+            "bytes": 9262,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 1,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 5,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 13,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 85,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "clean",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-matplotlib__matplotlib-22719",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+            "bytes": 9971,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 11,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 170,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 202,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "clean",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pydata__xarray-6721",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+            "bytes": 9067,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 10,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 16,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 219,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "clean",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pylint-dev__pylint-7080",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+            "bytes": 24513,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 4,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 12,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 20,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 241,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "clean",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-pytest-dev__pytest-7490",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+            "bytes": 22403,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 10,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 326,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 328,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 346,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "clean",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "passed",
+            "status": "passed",
+            "correct": true,
+            "errors": 0,
+            "warnings": 0,
+            "seededFaultsLocated": null,
+            "diagnostics": [],
+            "businessFileUntouched": true
+          },
+          {
+            "fixture": "swe-bench-scikit-learn__scikit-learn-11578",
+            "variant": "seeded-four-deviations",
+            "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+            "bytes": 7216,
+            "expected": "failed",
+            "status": "failed",
+            "correct": true,
+            "errors": 4,
+            "warnings": 0,
+            "seededFaultsLocated": 4,
+            "diagnostics": [
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 12,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 15,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 16,
+                "severity": "error"
+              },
+              {
+                "ruleId": "DOCUMENT-COPY-MISMATCH",
+                "line": 157,
+                "severity": "error"
+              }
+            ],
+            "businessFileUntouched": true
+          }
+        ]
+      }
+    },
+    "literalWhitespaceRepair": {
+      "state": "PASSED",
+      "recordedAt": "2026-11-02T14:21:53.401Z",
+      "candidateCommit": "6c3c0ef82b2ac9c8344a6f906e71f6e4f6b7902f",
+      "featureCommit": "2215bd6",
+      "sameCompleteOriginal": true,
+      "controlledFaults": 5,
+      "initialFaultsLocated": 5,
+      "actualSuccessfulNativePatchCalls": 1,
+      "noOpResults": 0,
+      "nativeWriteOrPatchOwnedByBusinessAgent": true,
+      "comparisonUnchanged": true,
+      "hostTerminationNotOverridden": true,
+      "summary": {
+        "output": ".runtime-correction/document-fusion-20261102/native-pre/candidate/pytest-whitespace-repair-011",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "PASSED",
+        "failure": null,
+        "nativeTerminal": {
+          "status": "ok"
+        },
+        "elapsedMs": 382987,
+        "providerRequests": 33,
+        "modelStarts": 33,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "passed"
+        ],
+        "initialSeededFaults": 5,
+        "initialSeededFaultsLocated": 5,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 73
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 83
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 104
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 328
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 377
+          }
+        ],
+        "finalDiagnostics": [],
+        "feedbackReceipts": 3,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [
+          1,
+          1,
+          1
+        ],
+        "independentFinalOracle": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 5,
+        "allPrivateRunsSettled": true,
+        "closedAudit": {
+          "state": "PASSED",
+          "baselineVersion": 1,
+          "auditorVerdict": "PASS",
+          "ownedProposalVerified": true,
+          "originalEvidenceDirectoryRetained": true,
+          "nativeStatus": "SETTLED",
+          "modelRequests": 0,
+          "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+        },
+        "packagedRuntime": {
+          "state": "PASSED",
+          "modules": 179,
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102"
+        },
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "candidate",
+          "label": "pytest-whitespace-repair-011",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:14:04.105Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 0,
+          "signal": null,
+          "startedAt": "2026-11-02T14:14:04.105Z",
+          "finishedAt": "2026-11-02T14:20:27.272Z",
+          "controllerStopReason": null
+        }
+      }
+    },
+    "nativeToolOfflineEof": {
+      "state": "PASSED",
+      "hostVersion": "2026.7.1-2",
+      "networkCalls": 0,
+      "actualInstalledHostTool": true,
+      "argumentsFromProductionFeedback": true,
+      "reviewWasReadOnly": true,
+      "fullRealSourceBytes": 9067,
+      "sourceNewlines": 2,
+      "currentNewlines": 1,
+      "identicalBodyPreserved": true,
+      "exactEofRestored": true,
+      "hostTerminated": false
+    },
+    "eofCandidate": {
+      "state": "PASSED",
+      "strictDriverState": "PASSED",
+      "functionalState": "PASSED",
+      "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+      "realCompleteBenchmarkSource": true,
+      "controlledDraftEofFault": true,
+      "actualSuccessfulNativeEofEditCalls": 1,
+      "generatedExactEofHints": 1,
+      "noOpResults": 0,
+      "fullSourceExact": true,
+      "bodyPreserved": true,
+      "formalBaselineVersion": 1,
+      "allPrivateRunsSettled": true,
+      "hostStatus": "ok",
+      "closedAuditVerified": true,
+      "allPackagedRuntimeModulesVerified": true,
+      "elapsedMs": 371652,
+      "modelRequests": 38,
+      "rawStrictReportUnchanged": true
+    },
+    "eofMain": {
+      "state": "PASSED",
+      "strictDriverState": "PASSED",
+      "functionalState": "PASSED",
+      "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+      "realCompleteBenchmarkSource": true,
+      "controlledDraftEofFault": true,
+      "actualSuccessfulNativeEofEditCalls": 1,
+      "generatedExactEofHints": 1,
+      "noOpResults": 0,
+      "fullSourceExact": true,
+      "bodyPreserved": true,
+      "formalBaselineVersion": 1,
+      "allPrivateRunsSettled": true,
+      "hostStatus": "ok",
+      "closedAuditVerified": true,
+      "allPackagedRuntimeModulesVerified": true,
+      "elapsedMs": 529937,
+      "modelRequests": 41,
+      "rawStrictReportUnchanged": true
+    },
+    "eofCandidateNative": {
+      "label": "xarray-eof-repair-012",
+      "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/candidate/xarray-eof-repair-012",
+      "fixture": "pydata__xarray-6721",
+      "state": "PASSED",
+      "failure": null,
+      "nativeTerminal": {
+        "status": "ok"
+      },
+      "elapsedMs": 371652,
+      "providerRequests": 38,
+      "modelStarts": 38,
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000,
+        "baselineFormatRepairAttempts": 12
+      },
+      "reviewStates": [
+        "failed",
+        "failed",
+        "failed",
+        "passed"
+      ],
+      "initialSeededFaults": 4,
+      "initialSeededFaultsLocated": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 4
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 10
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 16
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 64
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 111
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 219
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 235
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 235
+        }
+      ],
+      "finalDiagnostics": [],
+      "feedbackReceipts": 4,
+      "baselineVersion": 1,
+      "claimCount": 4,
+      "artifactBaselineVersions": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "independentFinalOracle": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "originalSourceHashIntact": true,
+      "privateRunCount": 6,
+      "allPrivateRunsSettled": true,
+      "closedAudit": {
+        "state": "PASSED",
+        "baselineVersion": 1,
+        "auditorVerdict": "PASS",
+        "ownedProposalVerified": true,
+        "originalEvidenceDirectoryRetained": true,
+        "nativeStatus": "SETTLED",
+        "modelRequests": 0,
+        "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+      },
+      "packagedRuntime": {
+        "state": "PASSED",
+        "modules": 179,
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102"
+      },
+      "sourceHashes": {
+        "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+        "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+        "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+        "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+      },
+      "launch": {
+        "arm": "candidate",
+        "label": "xarray-eof-repair-012",
+        "phase": "pre",
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+        "baselineSourceMode": "contract",
+        "credentialSlot": 3,
+        "launchHashes": {
+          "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+          "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "startedAt": "2026-11-02T15:13:24.853Z"
+      },
+      "controller": {
+        "state": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "startedAt": "2026-11-02T15:13:24.853Z",
+        "finishedAt": "2026-11-02T15:19:36.652Z",
+        "controllerStopReason": null
+      }
+    },
+    "eofMainNative": {
+      "label": "xarray-eof-main-004",
+      "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/xarray-eof-main-004",
+      "fixture": "pydata__xarray-6721",
+      "state": "PASSED",
+      "failure": null,
+      "nativeTerminal": {
+        "status": "ok"
+      },
+      "elapsedMs": 529937,
+      "providerRequests": 41,
+      "modelStarts": 41,
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000,
+        "baselineFormatRepairAttempts": 12
+      },
+      "reviewStates": [
+        "failed",
+        "failed",
+        "passed"
+      ],
+      "initialSeededFaults": 4,
+      "initialSeededFaultsLocated": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 4
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 10
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 16
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 64
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 111
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 171
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 172
+        },
+        {
+          "ruleId": "DOCUMENT-COPY-MISMATCH",
+          "severity": "error",
+          "line": 219
+        }
+      ],
+      "finalDiagnostics": [],
+      "feedbackReceipts": 3,
+      "baselineVersion": 1,
+      "claimCount": 4,
+      "artifactBaselineVersions": [
+        1,
+        1,
+        1
+      ],
+      "independentFinalOracle": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "originalSourceHashIntact": true,
+      "privateRunCount": 5,
+      "allPrivateRunsSettled": true,
+      "closedAudit": {
+        "state": "PASSED",
+        "baselineVersion": 1,
+        "auditorVerdict": "PASS",
+        "ownedProposalVerified": true,
+        "originalEvidenceDirectoryRetained": true,
+        "nativeStatus": "SETTLED",
+        "modelRequests": 0,
+        "method": "Re-read and verify the actual immutable original source, inventory, owned proposal chain, native call/result sequence and original budget proof after the entire Gateway has closed."
+      },
+      "packagedRuntime": {
+        "state": "PASSED",
+        "modules": 179,
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy"
+      },
+      "sourceHashes": {
+        "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+        "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+        "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+        "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+      },
+      "launch": {
+        "arm": "main",
+        "label": "xarray-eof-main-004",
+        "phase": "post",
+        "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+        "baselineSourceMode": "contract",
+        "credentialSlot": 3,
+        "launchHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+          "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "startedAt": "2026-11-02T15:22:41.659Z"
+      },
+      "controller": {
+        "state": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "startedAt": "2026-11-02T15:22:41.659Z",
+        "finishedAt": "2026-11-02T15:31:31.741Z",
+        "controllerStopReason": null
+      }
+    },
+    "runtimeDelta": {
+      "state": "PASSED",
+      "oldFeatureCommit": "2215bd6640bf25a6923b642e651ad98e8acfdb07",
+      "newFeatureCommit": "394dc63d408950525c5c05c9716e594c8c943f10",
+      "runtimeModules": 179,
+      "unchangedRuntimeModules": 178,
+      "changedRuntimeModules": [
+        "lib/document-copy.mjs"
+      ],
+      "documentComparisonPrefixUnchanged": true,
+      "comparisonPrefixSha256": "293f6a17b1c7512813bef97bfb675cdd80cb1a5de84bbae877f306464563c118",
+      "scope": "Only deterministic EOF repair feedback was extended. Existing six-case results are recorded against version2215; candidate and main focused EOF runs separately verify version394. No claim that old runs loaded a newer file."
+    },
+    "localChecks": {
+      "state": "PASSED",
+      "counts": {
+        "tests": 72,
+        "pass": 72,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "log": ".runtime-correction/document-fusion-20261102/main-final-eof-selected.tap",
+      "sha256": "c5ca3b748639ea33e3161fb8f86648cf7625e743a25b79f7c08a5a72d37a7695",
+      "scope": "Selected document fidelity, native whitespace and EOF argument correctness, literal finding location, bounded navigation, native provider/document integration, policy/timeouts and private-session settlement. Not full-repository green."
+    },
+    "retainedFailedRepairAttempts": [
+      {
+        "label": "pytest-main-001",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/pytest-main-001",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "FAILED",
+        "failure": {
+          "code": "DOCUMENT_EVALUATION_CANCELLED",
+          "message": "Experiment controller requested cancellation"
+        },
+        "elapsedMs": 905576,
+        "providerRequests": 30,
+        "modelStarts": 30,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed"
+        ],
+        "initialSeededFaults": 0,
+        "initialSeededFaultsLocated": 0,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 75
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 104
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 328
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 377
+          }
+        ],
+        "finalDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 104
+          }
+        ],
+        "feedbackReceipts": 3,
+        "baselineVersion": 1,
+        "claimCount": 5,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "a399f89c04430a9597c40c649c748caeb5187c3d9fbe036fed17dcae28c73425",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 0,
+        "allPrivateRunsSettled": false,
+        "closedAudit": null,
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "pytest-main-001",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:37:02.988Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T13:37:02.988Z",
+          "finishedAt": "2026-11-02T13:52:08.831Z"
+        }
+      },
+      {
+        "label": "pytest-whitespace-repair-010",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-pre/candidate/pytest-whitespace-repair-010",
+        "fixture": "pytest-dev__pytest-7490",
+        "state": "FAILED",
+        "failure": {
+          "code": "DOCUMENT_EVALUATION_CANCELLED",
+          "message": "Experiment controller requested cancellation"
+        },
+        "elapsedMs": 1111706,
+        "providerRequests": 44,
+        "modelStarts": 44,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed",
+          "failed"
+        ],
+        "initialSeededFaults": 0,
+        "initialSeededFaultsLocated": 0,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 104
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 238
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 258
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 326
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 328
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 346
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 377
+          }
+        ],
+        "finalDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 104
+          }
+        ],
+        "feedbackReceipts": 4,
+        "baselineVersion": 1,
+        "claimCount": 4,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "a399f89c04430a9597c40c649c748caeb5187c3d9fbe036fed17dcae28c73425",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 0,
+        "allPrivateRunsSettled": false,
+        "closedAudit": null,
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "candidate",
+          "label": "pytest-whitespace-repair-010",
+          "phase": "pre",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 2,
+          "launchHashes": {
+            "scripts/evaluate-document-fusion-case.mjs": "d9213f26ba9691145f42b10d9dc54dd9c24f8dd5738d363fbd71ab930f93833d",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T13:54:07.044Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T13:54:07.044Z",
+          "finishedAt": "2026-11-02T14:12:39.005Z",
+          "controllerStopReason": "Write-only feedback was insufficient: model wrote a 26-space line again then used native edit, which returned fuzzy no-op terminate:true. Preserve failed attempt; next experiment uses actual host-verified exact apply_patch arguments."
+        }
+      },
+      {
+        "label": "xarray-main-003",
+        "output": "/Volumes/PortableSSD/projects/runtime-corrector-toy/.runtime-correction/document-fusion-20261102/native-post/main/xarray-main-003",
+        "fixture": "pydata__xarray-6721",
+        "state": "FAILED",
+        "failure": {
+          "code": "DOCUMENT_EVALUATION_CANCELLED",
+          "message": "Experiment controller requested cancellation"
+        },
+        "elapsedMs": 1031463,
+        "providerRequests": 33,
+        "modelStarts": 33,
+        "options": {
+          "reviewTimeoutMs": 1200000,
+          "baselineTimeoutMs": 1200000,
+          "hookTimeoutMs": 1800000,
+          "businessTimeoutMs": 1800000,
+          "totalTimeoutMs": 2400000,
+          "baselineFormatRepairAttempts": 12
+        },
+        "reviewStates": [
+          "failed",
+          "failed",
+          "failed",
+          "failed"
+        ],
+        "initialSeededFaults": 0,
+        "initialSeededFaultsLocated": 0,
+        "initialDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 4
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 10
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 16
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 111
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 170
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 171
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 172
+          },
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 219
+          }
+        ],
+        "finalDiagnostics": [
+          {
+            "ruleId": "DOCUMENT-COPY-MISMATCH",
+            "severity": "error",
+            "line": 236
+          }
+        ],
+        "feedbackReceipts": 4,
+        "baselineVersion": 1,
+        "claimCount": 5,
+        "artifactBaselineVersions": [],
+        "independentFinalOracle": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+          "actualSha256": "ad0f3bcbf3e9b915e8c436903d6d06434a994261ece6f99f4337bbc8a762438c",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "originalSourceHashIntact": true,
+        "privateRunCount": 0,
+        "allPrivateRunsSettled": false,
+        "closedAudit": null,
+        "packagedRuntime": null,
+        "sourceHashes": {
+          "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+          "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+          "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+          "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+        },
+        "launch": {
+          "arm": "main",
+          "label": "xarray-main-003",
+          "phase": "post",
+          "sourceRoot": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+          "baselineSourceMode": "contract",
+          "credentialSlot": 3,
+          "launchHashes": {
+            "scripts/evaluate-openclaw-document-e2e.mjs": "4b26424d55445de198da67c588da82aa9f7e6c453124ea7df84f279f3e059c70",
+            "scripts/helpers/native-gateway-evaluation.mjs": "8a811f7fe10e6f0a9ae37751e877fca41c84720a79443d54173fec69f3f67a25",
+            "lib/review-task/task-evidence.mjs": "67c7591832ce94fbb93980c52c7127f278d3c6ff415bc6075b4e200eb5ff29e3",
+            "lib/review-task/baseline-task.mjs": "9ab11087b5234fdc5110938f523c0207d74b03fc7f724cae080b730aa078da36",
+            "lib/runtime-v2/baseline-task.mjs": "62edd5f19c5df07f4c328238f408e8430990bf04960567501bdb8cb56580e7b8",
+            "lib/openclaw/reviewer.mjs": "c9c8133f470d6df5841fef3a2f240ac74645e8d45d3c371470e950f49daa6968",
+            "lib/runtime-v2/orchestrator.mjs": "4e22603171c39f5e9f2fea01d4a4f6c587217d6ff66fc1faa2ba1542beeaeaf6"
+          },
+          "startedAt": "2026-11-02T14:53:30.368Z"
+        },
+        "controller": {
+          "state": "exited",
+          "exitCode": 1,
+          "signal": null,
+          "startedAt": "2026-11-02T14:53:30.368Z",
+          "finishedAt": "2026-11-02T15:10:42.013Z",
+          "controllerStopReason": "Bounded unchanged-code retry hit native apply_patch EOF-newline no-op terminate:true; preserve failed retry. First cohort xarray002 functional loop already independently verified. Next work is a distinct targeted EOF feedback correction, not another unchanged-code retry."
+        }
+      }
+    ],
+    "unchangedCodeRetryPlan": {
+      "recordedAt": "2026-11-02T14:53:29.499222+00:00",
+      "kind": "one-bounded-unchanged-configuration-replication",
+      "case": "xarray",
+      "originalDirectory": "native-post/main/xarray-main-002",
+      "originalStrictState": "FAILED",
+      "originalFunctionalEvidence": "Final original source bytes exact, final automatic review passed with zero diagnostics, formal baseline1, nativeok, allprivateSETTLED, closedproofPASS, all179packagedmodulesmatchmain. Initialcopylostaline and more differences used the eight-diagnostic cap; initialseededcoverage3/4.",
+      "nextDirectory": "native-post/main/xarray-main-003",
+      "allowedAdditionalAttempts": 1,
+      "changesToProductionCode": false,
+      "changesToPromptSourceModelOrBudgets": false,
+      "changesToAcceptance": false,
+      "reporting": "Preserve initialFAILED, report initialcohortstrict5/6 and finalselected outcome separately; do not call this a first-attempt six-case pass."
+    }
+  },
+  "scorecard": {
+    "before": {
+      "casesPerArm": 3,
+      "baselineFinalSourceCorrect": 1,
+      "candidateFinalSourceCorrect": 3,
+      "baselineInitialSeededFaultsLocated": 9,
+      "candidateInitialSeededFaultsLocated": 12
+    },
+    "after": {
+      "firstCohortCases": 6,
+      "functionalClosedLoops": 6,
+      "strictDriverPasses": 5,
+      "finalSourceCorrect": 6,
+      "initialSeededFaultsLocated": 23,
+      "seededFaultsRestored": 24,
+      "focusedEofBeforeAndAfterPassed": true
+    }
+  },
+  "limits": {
+    "strictCoverage": "First main cohort strict driver result is 5/6, not 6/6. xarray002 copied an extra line omission; the first eight-diagnostic page covered 3/4 seeds. Its actual automatic loop nevertheless recovered every source byte, zero diagnostics, normal host completion and all formal evidence; all later completion assertions were independently checked without changing its original FAILED report. The single unchanged-code xarray003 retry also failed on a native EOF patch no-op and remains failed.",
+    "versioning": "The six-case cohort used feature2215. The later EOF-only feedback delta394 changed one of179runtime modules; the other178modules and comparison-function prefix are unchanged. The delta has separate actual model-before/main-after focused validation. Historical runs are never represented as loading a later module.",
+    "accuracy": "Synthetic and large production boundary probes inject empty semantic findings and make zero model calls; they measure deterministic enforcement, not model accuracy. Small real native samples are not statistical superiority or official SWE-bench scores.",
+    "latency": "Elapsed time and model requests are observations only; no general speed or cost improvement is claimed. Failed/rejected/cancelled experiments remain available.",
+    "localTests": "Existing unrelated non-OpenClaw package import failures and stale public-SDK/mock fixtures reproduce in both pre-merge arms. Only the72selected related checks are claimed green.",
+    "workingTree": "Document feature commits were fast-forwarded into the requested main branch. Existing newer baseline/reviewer WIP and its incremental compatibility fixes remain in the working tree; unrelated local work was not committed."
+  },
+  "evidenceDigests": [
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/baseline/scikit-contract-009",
+      "files": {
+        "report.json": "14ccfca4cae2bb880b91783ded12746cc9a104aff0a9818a5121fb247d36aff4",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "launch-manifest.json": "5780dec145d39b9d7dadb3d3f9688ab57b94504c1cda13503d85032237d2c674"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/candidate/scikit-contract-009",
+      "files": {
+        "report.json": "56440bf0dc8eb01f1baee4c59447b664e12a5de3c72dd1701309916a987cc90d",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "2925a2256a531cfd9a8981c9ca92cb73bd986aeae3056f8c31a8ff2668474b89",
+        "launch-manifest.json": "ea02d0f90c1a8612abc6318d239c87630e447ccb07dde092847f934e76206710"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/baseline/pytest-contract-009",
+      "files": {
+        "report.json": "1891e53a6fc733b5722275569bc4ceb84ea555201bb13f38f2b9bd2f5b5206fc",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "launch-manifest.json": "13705aff113f37045474a455689d587398c1c48c1751b38ad6112fe91b22626a"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/candidate/pytest-contract-009",
+      "files": {
+        "report.json": "e432b9e7213019e5567bd6afb222758987e38f245d6ccc7a9386b092ddadce68",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "78138564e4f89c937fdf78a72a283c3402ba6a13cf2e50d22bb41de1677ac6a5",
+        "launch-manifest.json": "f840ec2a9461e23afb12b9f8bb5d8a180847e30fa4f4a72e25560c9f5c911f5a"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/baseline/django-contract-009",
+      "files": {
+        "report.json": "70e2c7afb123bb625d592035275074d953533076e241303318627627f8b8aa6e",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "launch-manifest.json": "013e595dbedfff029e449d1be1a8f8627c9276732577068ddd052f4ac418678c"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/candidate/django-contract-009",
+      "files": {
+        "report.json": "ecadc252e674ee42279d4afdf7e9c906b476855cd54e89a35951d1a65775ff76",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "8efb61b6ef2abd29d92c0f74a025e3887c2221355051fae1bd6e4c1619d2a6d9",
+        "launch-manifest.json": "6c9b94e1b6ada32cb61aef620d86a805c8dd809e67d5c12fe198705abc341859"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/scikit-main-002",
+      "files": {
+        "report.json": "fa7cc0a70aca400574d9f610b11d37f32bc7208d221b6284e1730bde70fe9d3d",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "173baea18d083d8bfa46e7e2b8be56eacf7168d5d0f751f6ea75ca1513f32976",
+        "launch-manifest.json": "79b046478bda1dfb326ce68bf429e0bc7dba8ac12643bc81c9e49a6ae5a0238e"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/pytest-main-002",
+      "files": {
+        "report.json": "34bb8e8164a9c9a367d39e4ca080d84ae30622afe5d83b5d868460265c531eba",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "f67cd06bda2f288141172ff59e64e5ed766725242dbff70d615348f7a79e54a0",
+        "launch-manifest.json": "1cd6d6026c7cd851057c4e0088e8b22888fccc3216d7cef0c43cdc61d9e63556"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/django-main-002",
+      "files": {
+        "report.json": "c5cb22007dce3089682a1dfd45a91f1dc7008756008b2fdcab071900905aaeef",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "e8fd0bc0dae09ead66004f9f4fce321e61e73746a80057e7c4610f14d59f5af3",
+        "launch-manifest.json": "9245e4a574944f0c9565f5090353e1829ccf9b612057c9eafc969bc3ebbe8d21"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/pylint-main-002",
+      "files": {
+        "report.json": "dc0473d1c2a2628a87efd6364660df4a2b9be966ac18298aa8aec8d471efb487",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "255fe89a2d5df6708d99225c7f5e01c31106957e838c210ddee7b6fdfe652ac4",
+        "launch-manifest.json": "ac5aa03bcd05215ec055133c8ce02640936cb061e487d9cc24b8125b2c15226f"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/matplotlib-main-002",
+      "files": {
+        "report.json": "188fb9ec6a56963af8c33a153c281117ab5815114c6904871b20af708ca2d094",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "bc36f06d188abee4b10e96c9d43f9530f81495689f1774487c4a3b88eb8ec8c9",
+        "launch-manifest.json": "18cc922f8b9e7d41078dba8d6f37baba2c51b95562cb6e58630475172f717c9c"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/xarray-main-002",
+      "files": {
+        "report.json": "7008f1e2a5fbc39fa716047a8fd80bbedde7312411940b1b3b118319462e8804",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "a4112881796705a124ecd1b70fbe7fe8f3d93c4ac8b5da15b05f7462bbb312a8",
+        "functional-loop-verification.json": "0ab781f3091fcb51395e0cf97dd958054228ea2e1a3375a47d0546d041b43c61",
+        "launch-manifest.json": "15c25641ccbe36475838573c277fb34b50203267c6005d9281ebaa0faa16c39d"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/candidate/xarray-eof-repair-012",
+      "files": {
+        "report.json": "8e5f9e72ec4c27620853afde074d5ea437dccb94e4c25c80da475373332e0724",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "4f1e5898dce140f20130ced2c1da54f7d712b9bf549c051bf08821ee59a64c90",
+        "functional-loop-verification.json": "d1cc85c32cdc2bcfdc256394897b8ce1c8918deca2c5ed05286d150759a6a73d",
+        "eof-model-verification.json": "12e0f5c7c64a5818399a3b52481b5f0b1a5a9c0540fd512b45686dacca371fff",
+        "launch-manifest.json": "b51747084edc798ddfc2912eff4201fcdcd1e21f03dc8107e81b1d11726f9fc1"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/xarray-eof-main-004",
+      "files": {
+        "report.json": "0dc25a9a4f08e1c796dec37c77b97df799397f655cadcf23f8277767d6fd525a",
+        "closed-audit-verification.json": "31c8e72575321952b9ec9a9b270fd1c288774d9e63c2dce0d824aba1d1fe6bfd",
+        "packaged-runtime-verification.json": "31f6a1b704d96ad416e77d574dbb07e2b5081eaa2e069d72fa5b94b89a74b82e",
+        "functional-loop-verification.json": "b0bf3a3acff6af2ab34d0edf86928dd5bb8d5173facad0624b715229d682b3df",
+        "eof-model-verification.json": "764ef8202516c5ba9059210b52d77d643d99060650594c6a2ab60899f375dff4",
+        "launch-manifest.json": "e6fb2fd196d559b18843046b9e8a4f46f399e1405b15f0c4493f1342e5b32ca5"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/pytest-main-001",
+      "files": {
+        "report.json": "8bb0b2f9e2f07d564aeb14b28b682e231d10ceb6a9d4463e8d025c5d2d26119d",
+        "launch-manifest.json": "f90c5751c7a956a0265ea31cbd88c30b26378b9ba9c1cf6df499fa559cd0d9ea"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-pre/candidate/pytest-whitespace-repair-010",
+      "files": {
+        "report.json": "e0111cca5ae47d6dbd41ba217ff62f865883e186339156d70e6640a459ef38e1",
+        "launch-manifest.json": "055850ca36e34ead2f1bbf4a5d7d79e65369623bc108943ec993cf932f0838b3"
+      }
+    },
+    {
+      "directory": ".runtime-correction/document-fusion-20261102/native-post/main/xarray-main-003",
+      "files": {
+        "report.json": "5b615966a52dd470ed32d6ed1e82d2aa83e5971adee216674a445d85734fe3a2",
+        "launch-manifest.json": "f70d9111f9f60832c7d96c948ab122e06c393ef7f3790696d48353f254f6f2f6"
+      }
+    }
+  ],
+  "credentialCheck": {
+    "state": "PASSED",
+    "checkedAt": "2026-11-02T15:35:58.568Z",
+    "knownCredentialsChecked": 3,
+    "audit": {
+      "files": 23836,
+      "bytes": 420260443,
+      "credentialMatches": []
+    },
+    "gitVisibleWorktrees": [
+      {
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-toy",
+        "files": 837,
+        "bytes": 9825162,
+        "credentialMatches": []
+      },
+      {
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-candidate-20261102",
+        "files": 848,
+        "bytes": 9953078,
+        "credentialMatches": []
+      },
+      {
+        "root": "/Volumes/PortableSSD/projects/runtime-corrector-document-fusion-feature-20261102",
+        "files": 702,
+        "bytes": 7269351,
+        "credentialMatches": []
+      }
+    ],
+    "credentialsPersisted": false
+  },
+  "incrementalCompatibilityPatch": {
+    "file": "docs/document-fusion-shared-baseline-compat-20261102.patch",
+    "baseWorkingTreeSnapshot": "79c8ca53320bb7315fad8e1046183f7a4510bf19",
+    "note": "Delta against the original dirty main snapshot, not the older committed main HEAD. Existing newer baseline WIP and its incremental fixes are intentionally left uncommitted in the main working tree."
+  }
+}
