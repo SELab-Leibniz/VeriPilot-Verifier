@@ -50,6 +50,19 @@ test('copy review exposes missing EOF newlines and passes a real repair, retaini
   assert.notEqual(first.result.metadata.inputDigest, second.result.metadata.inputDigest);
 });
 
+test('literal trailing whitespace keeps strict failure and directs native repair away from fuzzy no-op edit', async t => {
+  const f = await fixture(t, '# Scope\n```text\nhvplot                        0.5.2                           \n```\n');
+  const actual = f.source.replace('0.5.2                           ', '0.5.2                          ');
+  await fs.writeFile(path.join(f.root, 'design.md'), actual);
+  const prepared = await f.check(), finding = prepared.result.diagnostics[0];
+  assert.equal(prepared.result.status, 'failed');
+  assert.equal(finding.line, 3);
+  assert(finding.evidence.some(line => line.includes('source 27, current 26')));
+  assert.match(finding.suggestion, /native write tool/u);
+  assert.equal(await fs.readFile(path.join(f.root, 'design.md'), 'utf8'), actual);
+  assert.equal((await finalizeArtifactCheck(prepared, { status: 'completed', findings: [], diffs: [], edits: [] })).result.status, 'failed');
+});
+
 test('ordinary style checks stay enabled when requested and a copy source cannot escape declared authority', async t => {
   const f = await fixture(t);
   await fs.writeFile(path.join(f.root, '.runtime-corrector/empty.yaml'), 'version: 1\nrules: []\n');
