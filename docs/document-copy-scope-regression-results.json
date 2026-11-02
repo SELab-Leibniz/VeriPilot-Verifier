@@ -1,0 +1,858 @@
+{
+  "kind": "document-copy-and-authority-scope-regression",
+  "recordedAt": "2026-11-02T08:11:42.731Z",
+  "sourceCommit": "7dc16dcf5a55a394277bdc00a5895164052f6f3c",
+  "branch": "codex/document-e2e-hour",
+  "previousFiveCaseReport": "docs/document-multicase-results.json",
+  "fixes": [
+    "Document fixture acceptance permits only trailing spaces/tabs outside fenced literal blocks to differ. No document is rewritten by the driver; source bytes and actual reviewed-byte hashes remain exact.",
+    "The business request and document review skill distinguish author execution controls from required artifact content. Source adoption does not create an extra authority declaration; an explicitly requested declaration remains required.",
+    "Final benchmark documents must match the entire original requirements under the limited copy equivalence rule, so added declarations cannot hide behind a semantic PASS."
+  ],
+  "timeouts": {
+    "baselineTimeoutMs": 1200000,
+    "reviewTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "historicalCopyRecheck": {
+    "historicalRawState": "FAILED",
+    "historicalRawReport": ".runtime-correction/document-multicase-20261102/fix-code-vulnerability-001/report.json",
+    "initialCopy": {
+      "equivalent": true,
+      "exact": false,
+      "expectedSha256": "731357740e4ff8976d21bd92744494ab8ac6afb20288544cebc595d47777fcc4",
+      "actualSha256": "817ff9c44081bb3874771a7de9ca0852825d993c121ffc859d0efcc6a19519af",
+      "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+    },
+    "finalCopy": {
+      "equivalent": true,
+      "exact": false,
+      "expectedSha256": "89b1abdf0af19399f720233b5cdf6b2e8e0ff7b6e3fe3e2a3af0d4d298a8641a",
+      "actualSha256": "9c22f6f305a1e70d78cec7d278f239abc135255b23d2dcdf20210f4cdd1453f7",
+      "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+    },
+    "actualReviewedHashMatchesWrittenBytes": true
+  },
+  "totals": {
+    "liveCases": 6,
+    "passed": 6,
+    "restoredControlledDeviations": 24,
+    "extraUnseededDiagnostics": 0,
+    "automatedChecksPassed": 66
+  },
+  "checks": [
+    {
+      "name": "document, dynamic-baseline identity and timeout checks",
+      "pass": 44,
+      "fail": 0,
+      "log": ".runtime-correction/document-e2e-development/document-copy-scope-fix-final-checks.tap"
+    },
+    {
+      "name": "plugin packaging, native context and standalone document loop checks",
+      "pass": 22,
+      "fail": 0,
+      "log": ".runtime-correction/document-e2e-development/document-copy-scope-package-checks.tap"
+    }
+  ],
+  "cases": [
+    {
+      "task": "terminal-bench-2.1/multi-source-data-merger",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/multi-source-data-merger/instruction.md",
+      "originalSha256": "d1d28bb6e37f7a255a1b7f78aae8591f35c0494f33e4913392424ad954aab944",
+      "state": "PASSED",
+      "elapsedMs": 89222,
+      "baselineVersion": 1,
+      "baselineClaims": 11,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-PRIORITY-ORDER-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 18,
+          "message": "design.md inverts the authoritative conflict-resolution priority. requirements.md requires «4. Handle conflicts using source priority (source_a > source_b > source_c)», while design.md states source_c > source_b > source_a. This also contradicts design.md's own success criterion at line 58 (source_a > source_b > source_c) and its input list at line 5, which names source_a as the highest priority source.",
+          "evidence": [
+            "requirements.md:18: 4. Handle conflicts using source priority (source_a > source_b > source_c)",
+            "design.md:18: 4. Handle conflicts using source priority (source_c > source_b > source_a)",
+            "design.md:5: - /data/source_a/users.json - Primary source (highest priority)",
+            "design.md:58: - Conflicts are resolved by priority (source_a > source_b > source_c)"
+          ],
+          "suggestion": "Restore the authoritative order: source_a > source_b > source_c.",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-4b81e5caa89f4bad",
+            "requirements-7b4c3a2e4c489c52"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-USER-ID-TYPE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 24,
+          "message": "design.md declares the output column type of user_id as string, but the authoritative requirements specify integer. The document is also internally inconsistent: line 61 keeps the requirement «Data types are correct (user_id as integer)».",
+          "evidence": [
+            "requirements.md:24: - user_id (integer)",
+            "design.md:24: - user_id (string)",
+            "design.md:61: - Data types are correct (user_id as integer)"
+          ],
+          "suggestion": "Change line 24 to «- user_id (integer)».",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-4b81e5caa89f4bad",
+            "requirements-7b4c3a2e4c489c52"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-TOTAL-CONFLICTS-SEMANTICS",
+          "severity": "error",
+          "path": "design.md",
+          "line": 53,
+          "message": "design.md redefines total_conflicts. The authoritative statement requires total_conflicts to equal the number of entries in the conflicts list; design.md instead says it counts distinct users, which changes the documented behavior of the conflict report.",
+          "evidence": [
+            "requirements.md:53: The total_conflicts should match the number of conflicts in the list.",
+            "design.md:53: The total_conflicts should count distinct users rather than the number of conflicts in the list."
+          ],
+          "suggestion": "Restore: «The total_conflicts should match the number of conflicts in the list.»",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-4b81e5caa89f4bad",
+            "requirements-7b4c3a2e4c489c52"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-DATE-FORMAT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 60,
+          "message": "design.md states the date format success criterion as DD/MM/YYYY, contradicting the authoritative YYYY-MM-DD requirement. design.md's own column definition at line 27 still says «created_date (string in YYYY-MM-DD format)», so the document is self-contradictory.",
+          "evidence": [
+            "requirements.md:60: - Date format is YYYY-MM-DD",
+            "design.md:60: - Date format is DD/MM/YYYY",
+            "design.md:27: - created_date (string in YYYY-MM-DD format)"
+          ],
+          "suggestion": "Restore: «- Date format is YYYY-MM-DD».",
+          "rootCauseId": "OTHER",
+          "violatedGroundTruthIds": [
+            "requirements-4b81e5caa89f4bad",
+            "requirements-7b4c3a2e4c489c52"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "6bde5173201967e76542988c8b8eb3f0a654670e9a73af0128496ca4eb1386b4",
+        "actualSha256": "6bde5173201967e76542988c8b8eb3f0a654670e9a73af0128496ca4eb1386b4",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "d1d28bb6e37f7a255a1b7f78aae8591f35c0494f33e4913392424ad954aab944",
+        "actualSha256": "d1d28bb6e37f7a255a1b7f78aae8591f35c0494f33e4913392424ad954aab944",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/multi-source-data-merger-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/multi-source-data-merger-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/constraints-scheduling",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/constraints-scheduling/instruction.md",
+      "originalSha256": "342def78177f9bc41bea4d11af679bc385a9dda2ac8a1e425be384a5b7f937b6",
+      "state": "PASSED",
+      "elapsedMs": 64234,
+      "baselineVersion": 1,
+      "baselineClaims": 14,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-DESIGN-CONTRADICTS-SOURCE-AVAILABILITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 4,
+          "message": "Alice's hard availability limits were altered from the authoritative requirements.md, which forbids meetings after 2 PM and before 9 AM.",
+          "evidence": [
+            "design.md:4: \"- Alice: Prefers mornings (9 AM - 12 PM), can do early afternoons (12-2 PM) if needed. Absolutely no meetings after 3 PM or before 8 AM.\"",
+            "requirements.md:4: \"- Alice: Prefers mornings (9 AM - 12 PM), can do early afternoons (12-2 PM) if needed. Absolutely no meetings after 2 PM or before 9 AM.\""
+          ],
+          "suggestion": "Restore the original limits: \"after 2 PM or before 9 AM\".",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c1",
+            "c4"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-CONTRADICTS-SOURCE-CAROL-BUFFER",
+          "severity": "error",
+          "path": "design.md",
+          "line": 6,
+          "message": "Carol's buffer constraint direction was inverted: requirements.md requires a 15-minute buffer after meetings ending at 4:45 PM or later, not before.",
+          "evidence": [
+            "design.md:6: \"Needs 15-min buffer before meetings ending at 4:45 PM or later.\"",
+            "requirements.md:6: \"Needs 15-min buffer after meetings ending at 4:45 PM or later.\""
+          ],
+          "suggestion": "Replace \"before\" with \"after\" to match requirements.md.",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c1",
+            "c4"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-CONTRADICTS-SOURCE-ICS-FORMAT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 25,
+          "message": "The ICS time-format requirement was replaced with its opposite. requirements.md mandates UTC format with the Z suffix; design.md requires local time without Z.",
+          "evidence": [
+            "design.md:25: \"- All times must be in local-time format without the UTC Z suffix\"",
+            "requirements.md:25: \"- All times must be in UTC format (YYYYMMDDTHHMMSSZ)\""
+          ],
+          "suggestion": "Restore line to \"- All times must be in UTC format (YYYYMMDDTHHMMSSZ)\".",
+          "rootCauseId": "IMPLEMENTATION_BEHAVIOR_MISMATCH",
+          "violatedGroundTruthIds": [
+            "c1",
+            "c4"
+          ]
+        },
+        {
+          "ruleId": "AGENT-DESIGN-CONTRADICTS-SOURCE-TIEBREAKER",
+          "severity": "error",
+          "path": "design.md",
+          "line": 30,
+          "message": "Bob's afternoon preference was upgraded into an overriding first tie-breaker, contradicting requirements.md, which states it is informational only and not used as a tie-breaker.",
+          "evidence": [
+            "design.md:30: \"- Bob's afternoon preference is the first tie-breaker and overrides the other preferences\"",
+            "requirements.md:30: \"- Bob's afternoon preference is informational only and is not used as a tie-breaker\""
+          ],
+          "suggestion": "Restore the original wording from requirements.md line 30.",
+          "rootCauseId": "UNSUPPORTED_SCOPE_EXPANSION",
+          "violatedGroundTruthIds": [
+            "c1",
+            "c4"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "15672b79a23355f7d7f36eff132abc1cbe1e002e9ae236701e3cf7cef3e72415",
+        "actualSha256": "15672b79a23355f7d7f36eff132abc1cbe1e002e9ae236701e3cf7cef3e72415",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "342def78177f9bc41bea4d11af679bc385a9dda2ac8a1e425be384a5b7f937b6",
+        "actualSha256": "342def78177f9bc41bea4d11af679bc385a9dda2ac8a1e425be384a5b7f937b6",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 2
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/constraints-scheduling-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/constraints-scheduling-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/nginx-request-logging",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/nginx-request-logging/instruction.md",
+      "originalSha256": "26a7ac98aced6107f147206790ada77bbf8ed3c25fb360cf323d5fc6889edf99",
+      "state": "PASSED",
+      "elapsedMs": 86584,
+      "baselineVersion": 1,
+      "baselineClaims": 17,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-GT-LISTEN-PORT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 5,
+          "message": "Design states port 9090 while requirements.md specifies port 8080, contradicting the declared server-listening obligation.",
+          "evidence": [
+            "design.md:5: \"   - Listen on port 9090\"",
+            "requirements.md:5: \"   - Listen on port 8080\""
+          ],
+          "suggestion": "Restore \"   - Listen on port 8080\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-45315a62b5513b4d",
+            "requirements-7eeb64c182fb8058"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-USER-AGENT-QUOTING",
+          "severity": "error",
+          "path": "design.md",
+          "line": 7,
+          "message": "Design inverts the required log format: it instructs not to quote the user agent, whereas requirements.md requires the user agent to be double-quoted in logs.",
+          "evidence": [
+            "design.md:7: \"and user agents ($http_user_agent, do not quote the user agent in logs)\"",
+            "requirements.md:7: \"and user agents ($http_user_agent, double-quote the user agent in logs)\""
+          ],
+          "suggestion": "Restore \"double-quote the user agent in logs\" in place of \"do not quote the user agent in logs\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-d98ae7e3bff8cfcc",
+            "requirements-7eeb64c182fb8058"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-RATE-LIMIT-VALUES",
+          "severity": "error",
+          "path": "design.md",
+          "line": 9,
+          "message": "Design inflates the rate limiting parameters to 100 r/s, burst 100 and 100MB, contradicting the required 10 r/s, burst 10 and 10MB.",
+          "evidence": [
+            "design.md:9: \"  - Set up rate limiting to allow 100 requests per second per IP address with a burst capacity of 100 requests using a 100MB memory zone.\"",
+            "requirements.md:9: \"  - Set up rate limiting to allow only 10 requests per second per IP address with a burst capacity of 10 requests using a 10MB memory zone.\""
+          ],
+          "suggestion": "Restore the exact requirement line with \"only 10\", \"burst capacity of 10\" and \"10MB memory zone\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-0566cc57b8b58e0d",
+            "requirements-7eeb64c182fb8058"
+          ]
+        },
+        {
+          "ruleId": "AGENT-GT-CONFIG-TEST-ORDER",
+          "severity": "error",
+          "path": "design.md",
+          "line": 20,
+          "message": "Design reverses the required verification order, testing the Nginx configuration only after starting instead of before starting.",
+          "evidence": [
+            "design.md:20: \"7. Test the Nginx configuration for syntax errors only after starting\"",
+            "requirements.md:20: \"7. Test the Nginx configuration for syntax errors before starting\""
+          ],
+          "suggestion": "Restore \"7. Test the Nginx configuration for syntax errors before starting\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-ece296c7d1acbc1f",
+            "requirements-7eeb64c182fb8058"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "8c0a83c4b97c26049c54545c115042c8c8633741ca3e2a846729a89af50b80ff",
+        "actualSha256": "8c0a83c4b97c26049c54545c115042c8c8633741ca3e2a846729a89af50b80ff",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "26a7ac98aced6107f147206790ada77bbf8ed3c25fb360cf323d5fc6889edf99",
+        "actualSha256": "26a7ac98aced6107f147206790ada77bbf8ed3c25fb360cf323d5fc6889edf99",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 3
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/nginx-request-logging-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/nginx-request-logging-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/fix-code-vulnerability",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/fix-code-vulnerability/instruction.md",
+      "originalSha256": "89b1abdf0af19399f720233b5cdf6b2e8e0ff7b6e3fe3e2a3af0d4d298a8641a",
+      "state": "PASSED",
+      "elapsedMs": 120545,
+      "baselineVersion": 1,
+      "baselineClaims": 16,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-REPRO-REPORT-PATH",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "副本改动了报告路径：design.md 写的是 /app/report.json，而 requirements.md 中每个地方写的都是 /app/report.jsonl。",
+          "evidence": [
+            "design.md:11: \"create a /app/report.json file in /app folder\"",
+            "requirements.md:11: \"create a /app/report.jsonl file in /app folder\"",
+            "requirements.md:18: \"The exact files and that exact CWE-ids must appear in the /app/report.jsonl file.\""
+          ],
+          "suggestion": "把 design.md 第 11 行里的 /app/report.json 改成 /app/report.jsonl，其余内容保持不变。",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-cdd6e2b9772a41aa"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REPRO-CWE-ID-TYPE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "副本把 cwe_id 键的类型说成逗号分隔的字符串，而源要求把它定义为 CWE ID 的列表。",
+          "evidence": [
+            "design.md:11: \"cwe_id (a string, comma-separated IDs of common weakness enumeration)\"",
+            "requirements.md:11: \"cwe_id (a list, IDs of common weakness enumeration)\""
+          ],
+          "suggestion": "把第 11 行恢复为源措辞：\"and cwe_id (a list, IDs of common weakness enumeration).\"",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-db03c4a44ca86c49"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REPRO-ERROR-TYPE-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 13,
+          "message": "第 5 步被反转了：它现在声称函数可以静默忽略无效输入或抛出泛化异常，而源要求的是必须抛出正确类型的错误，而不是静默忽略或抛出泛化异常。",
+          "evidence": [
+            "design.md:13: \"ensure that the function may silently ignore invalid inputs or raise a generic exception instead of the specific error type\"",
+            "requirements.md:13: \"ensure that the function raises the correct type of error when encountering invalid inputs instead of silently ignoring them or raising a generic exception.\""
+          ],
+          "suggestion": "恢复 requirements.md 第 13 行中第 5 步的句子。",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-cb5d3c3b090aa4d6"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REPRO-OVERWRITE-HINT-INVERTED",
+          "severity": "error",
+          "path": "design.md",
+          "line": 19,
+          "message": "关于修改原始代码的提示被反转了：源允许覆盖原始代码文件，而副本禁止这样做。",
+          "evidence": [
+            "design.md:19: \"You must not modify the original code file.\"",
+            "requirements.md:19: \"You can overwrite the original code file.\""
+          ],
+          "suggestion": "把第 19 行恢复为 \"  - You can overwrite the original code file.\"。",
+          "rootCauseId": "REQUIREMENT_OMITTED",
+          "violatedGroundTruthIds": [
+            "requirements-66d6c423b0eaedb1"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": false,
+        "expectedSha256": "731357740e4ff8976d21bd92744494ab8ac6afb20288544cebc595d47777fcc4",
+        "actualSha256": "b79960da8c8957f1c2eb3b516fbcb1ca3f47baa3f8c2af2a77bc46c69ce86624",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": false,
+        "expectedSha256": "89b1abdf0af19399f720233b5cdf6b2e8e0ff7b6e3fe3e2a3af0d4d298a8641a",
+        "actualSha256": "fcdd966bfdabbb962963f9da4238016a083c95c8ddf3f599d3cd7ff67f38d4e1",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 2,
+        "artifact-reviewer": 3
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/fix-code-vulnerability-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/fix-code-vulnerability-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/financial-document-processor",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/financial-document-processor/instruction.md",
+      "originalSha256": "b21cf2af1891922732327bf586d14b250d36d96de7867479c15bd1c58ef0db58",
+      "state": "PASSED",
+      "elapsedMs": 65281,
+      "baselineVersion": 1,
+      "baselineClaims": 12,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-REQ-DEVIATION-VAT-FALLBACK",
+          "severity": "error",
+          "path": "design.md",
+          "line": 9,
+          "message": "VAT fallback rule contradicts requirements.md line 9: design sets missing VAT to \"20 percent of total_amount\", whereas the requirement sets it to \"0 or empty string\".",
+          "evidence": [
+            "design.md:9:     - Extract vat_amount (look for terms like \"VAT\", \"Tax\", \"GST\") - if VAT is not present, set it to 20 percent of total_amount",
+            "requirements.md:9:     - Extract vat_amount (look for terms like \"VAT\", \"Tax\", \"GST\") - if VAT is not present, set it to 0 or empty string"
+          ],
+          "suggestion": "Replace line 9 text with the exact requirements.md line 9 wording.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-386cd33249dae8b4",
+            "requirements-a6b1a8e2fa347e4c",
+            "requirements-b1a21e8b49a3cb43"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-DEVIATION-AMOUNT-PRECEDENCE",
+          "severity": "error",
+          "path": "design.md",
+          "line": 10,
+          "message": "The special case rule is inverted: design says to use the \"Amount Due\" amount when both values differ, while requirements.md line 10 says to use the \"Total\" amount.",
+          "evidence": [
+            "design.md:10:     - Special case: If both \"Total\" and \"Amount Due\" are present with different values, use only the \"Amount Due\" amount",
+            "requirements.md:10:     - Special case: If both \"Total\" and \"Amount Due\" are present with different values, use only the \"Total\" amount"
+          ],
+          "suggestion": "Restore the requirements.md wording that selects the \"Total\" amount.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-386cd33249dae8b4",
+            "requirements-a6b1a8e2fa347e4c",
+            "requirements-b1a21e8b49a3cb43"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-DEVIATION-CSV-COLUMN-ORDER",
+          "severity": "error",
+          "path": "design.md",
+          "line": 11,
+          "message": "CSV column order differs from the requirement: design specifies \"filename, vat_amount, total_amount\" but requirements.md line 11 requires \"filename, total_amount, vat_amount\".",
+          "evidence": [
+            "design.md:11:     - Create a CSV file called '/app/invoices/summary.csv' with exactly these columns: filename, vat_amount, total_amount",
+            "requirements.md:11:     - Create a CSV file called '/app/invoices/summary.csv' with exactly these columns: filename, total_amount, vat_amount"
+          ],
+          "suggestion": "Reorder the columns to filename, total_amount, vat_amount exactly as in requirements.md.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-386cd33249dae8b4",
+            "requirements-a6b1a8e2fa347e4c",
+            "requirements-b1a21e8b49a3cb43"
+          ]
+        },
+        {
+          "ruleId": "AGENT-REQ-DEVIATION-TOTAL-ROW-SEMANTICS",
+          "severity": "error",
+          "path": "design.md",
+          "line": 12,
+          "message": "The final 'total' row semantics contradict the requirement: design specifies an average, while requirements.md line 12 specifies the calculated total of the two columns.",
+          "evidence": [
+            "design.md:12:     - In the summary.csv file, add a final row with the filename 'total' and the average of total_amount and vat_amount columns from the individual invoices.",
+            "requirements.md:12:     - In the summary.csv file, add a final row with the filename 'total' and the calculated total of total_amount and vat_amount columns from the individual invoices."
+          ],
+          "suggestion": "Restore \"the calculated total of total_amount and vat_amount columns\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "requirements-386cd33249dae8b4",
+            "requirements-a6b1a8e2fa347e4c",
+            "requirements-b1a21e8b49a3cb43"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "8621bbecafbc7cf3bf84ac9be47bda8c18c2e7aa01dba3a78faf63b900f86f4f",
+        "actualSha256": "8621bbecafbc7cf3bf84ac9be47bda8c18c2e7aa01dba3a78faf63b900f86f4f",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "b21cf2af1891922732327bf586d14b250d36d96de7867479c15bd1c58ef0db58",
+        "actualSha256": "b21cf2af1891922732327bf586d14b250d36d96de7867479c15bd1c58ef0db58",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/financial-document-processor-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/financial-document-processor-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "terminal-bench-2.1/llm-inference-batching-scheduler",
+      "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/llm-inference-batching-scheduler/instruction.md",
+      "originalSha256": "0817374767533fbf51bb93345ee1bba266263c216c6cc55c096e71b4a1d37dfc",
+      "state": "PASSED",
+      "elapsedMs": 92579,
+      "baselineVersion": 1,
+      "baselineClaims": 13,
+      "expectedControlledDeviations": 4,
+      "restoredControlledDeviations": 4,
+      "initialDiagnosticCount": 4,
+      "initialDiagnostics": [
+        {
+          "ruleId": "AGENT-FAITHFUL-COPY-ALIGNMENT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 31,
+          "message": "The alignment rule was changed from the source's 64-token granularity to 32 tokens, altering a numeric constraint rather than reproducing it.",
+          "evidence": [
+            "design.md:31: \"  * Each batch uses shape (seq_align, heads_align=32, hidden_align=4096) where seq_align >= ceil(prompt_len/32)*32. I.e., seq_align is a multiple of 32.\"",
+            "requirements.md:31: \"  * Each batch uses shape (seq_align, heads_align=32, hidden_align=4096) where seq_align >= ceil(prompt_len/64)*64. I.e., seq_align is a multiple of 64.\"",
+            "Search for \"64\" in design.md returns no matches, confirming the source granularity is absent."
+          ],
+          "suggestion": "Restore the source wording exactly: \"seq_align >= ceil(prompt_len/64)*64. I.e., seq_align is a multiple of 64.\"",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "gt-001",
+            "gt-006"
+          ]
+        },
+        {
+          "ruleId": "AGENT-FAITHFUL-COPY-SHAPE-LIMIT",
+          "severity": "error",
+          "path": "design.md",
+          "line": 32,
+          "message": "The MAX_SHAPES constraint was changed in both value (16 vs 8) and scope (independently in each bucket vs across both buckets), a materially different throttling constraint.",
+          "evidence": [
+            "design.md:32: \"  * Max 16 unique shapes (seq_align, heads_align, hidden_align) independently in each bucket (MAX_SHAPES=16)\"",
+            "requirements.md:32: \"  * Max 8 unique shapes (seq_align, heads_align, hidden_align) across both buckets (MAX_SHAPES=8)\""
+          ],
+          "suggestion": "Replace with the source line verbatim: \"Max 8 unique shapes (seq_align, heads_align, hidden_align) across both buckets (MAX_SHAPES=8)\".",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "gt-001",
+            "gt-006"
+          ]
+        },
+        {
+          "ruleId": "AGENT-FAITHFUL-COPY-THRESHOLD",
+          "severity": "error",
+          "path": "design.md",
+          "line": 62,
+          "message": "The bucket-2 Cost threshold is off by an order of magnitude (4.8e11 instead of 4.8e10), weakening the stated performance target.",
+          "evidence": [
+            "design.md:62: \"| ``requests_bucket_2.jsonl`` | ``4.8e11`` | ``0.15`` | ``2.1e5`` | ``3.2e7`` |\"",
+            "requirements.md:62: \"| ``requests_bucket_2.jsonl`` | ``4.8e10`` | ``0.15`` | ``2.1e5`` | ``3.2e7`` |\""
+          ],
+          "suggestion": "Replace 4.8e11 with the source value 4.8e10 on this table row.",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "gt-001",
+            "gt-006"
+          ]
+        },
+        {
+          "ruleId": "AGENT-FAITHFUL-COPY-INPUT-IMMUTABILITY",
+          "severity": "error",
+          "path": "design.md",
+          "line": 69,
+          "message": "The source's constraint to keep input_data files unchanged was replaced by a permission to normalize them in place, reversing an explicit prohibition.",
+          "evidence": [
+            "design.md:69: \"The output files must satisfy the performance thresholds above, and you may normalize the input_data files in place. Example output format:\"",
+            "requirements.md:69: \"The output files must satisfy the performance thresholds above, and you should also keep the input_data files unchanged. Example output format:\""
+          ],
+          "suggestion": "Restore the source clause: \"and you should also keep the input_data files unchanged.\"",
+          "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+          "violatedGroundTruthIds": [
+            "gt-001",
+            "gt-006"
+          ]
+        }
+      ],
+      "extraUnseededDiagnostics": [],
+      "finalReviewState": "passed",
+      "finalDiagnostics": [],
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "f90a9ad8db4962095532f116b5cb22739410a912998e5742e343b1d9e5e63b9e",
+        "actualSha256": "f90a9ad8db4962095532f116b5cb22739410a912998e5742e343b1d9e5e63b9e",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "0817374767533fbf51bb93345ee1bba266263c216c6cc55c096e71b4a1d37dfc",
+        "actualSha256": "0817374767533fbf51bb93345ee1bba266263c216c6cc55c096e71b4a1d37dfc",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "actualReviewedHashesMatchWrittenAndCurrentBytes": true,
+      "originalSourceBytesUnchanged": true,
+      "currentAndPackagedSourcesMatchReportedHashes": true,
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 2
+      },
+      "allPrivateRunsSettled": true,
+      "rawReport": ".runtime-correction/document-copy-scope-regression-20261102/llm-inference-batching-scheduler-001/report.json",
+      "businessTranscript": ".runtime-correction/document-copy-scope-regression-20261102/llm-inference-batching-scheduler-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "e35b9c3ff6c0dd539cbe1562ef1ff80c6b42558c7dbec04f9c94a87178d4b809",
+        "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "6c35f904889cdaff7c0ddec58d1dcff1534d9a34690f6db610af61db34811a7c",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    }
+  ],
+  "limits": [
+    "These are document-only adaptations of complete pinned benchmark instructions with controlled draft mutations, not official benchmark execution scores or a general accuracy estimate.",
+    "The original failed report is preserved. A successful historical equivalence recheck is distinct from the six fresh native end-to-end runs.",
+    "Only dynamic baseline and automatic document correction were exercised; Skill correction, implementation correction, Stop, stage metrics and onboarding panels remain disabled."
+  ]
+}
