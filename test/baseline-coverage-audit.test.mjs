@@ -365,6 +365,35 @@ test('an abbreviated inventory digest gets the complete owned identity without a
   });
 });
 
+test('unsupported candidate feedback grants no original-duty coverage and only an explicit extractor revision removes the extra claim', async t => {
+  const f = await sharedBasisFixture(t); f.state.sourceFrom = true;
+  const real = operation(), extra = { ...operation(), text: 'Deliver an unrequested sample report.', verificationTarget: 'ARTIFACT' };
+  delete extra.implementationRole; f.state.deltaOperations = [real, extra];
+  let completeRepair, rejectedMissingDuty = 0;
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context), row = report.sources.find(source => source.kind === 'USER_MESSAGE');
+    const bad = context.view.effectiveLedger.claims.find(claim => claim.text === extra.text);
+    if (!bad) return report;
+    const mapping = row.mappings.find(item => item.claimIds.includes(bad.claimId));
+    report.verdict = 'REPAIR'; row.disposition = 'REPAIR';
+    row.mappings = row.mappings.filter(item => !item.claimIds.includes(bad.claimId));
+    row.issues = [{ ...mapping, owner: 'CONTEXT', obligationIds: [], claimIds: [bad.claimId], issueKind: 'CANDIDATE',
+      expectedDuty: 'Remove the unrequested sample report claim and preserve the original requested feature.',
+      reason: 'The complete original requests only the feature; it does not adopt an extra report deliverable.' }];
+    completeRepair = structuredClone(report); row.mappings = []; // Unsupported feedback cannot account for the real duty.
+    f.state.deltaOperations = [real]; return report;
+  };
+  f.state.coverageRepairReport = context => {
+    assert.equal(JSON.parse(context.result.content[0].text).validation.reason, 'COMMITTED_DUTY_UNACCOUNTED');
+    assert.equal(f.state.baselinePrompts.length, 1); rejectedMissingDuty++;
+    return structuredClone(completeRepair);
+  };
+  await f.refresh(); assert.equal(rejectedMissingDuty, 1);
+  const truth = await f.truth(), bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth });
+  assert.equal(truth.claims.length, 1); assert.equal(truth.claims[0].text, real.text);
+  assert.equal(bundle.budget.externalRepairs, 1); assert.equal(bundle.budget.auditCalls, 2); assert.equal(bundle.input.generation, 1);
+});
+
 for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured limit ${limit} without publication`, async t => {
   const f = await sharedBasisFixture(t);
   f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
