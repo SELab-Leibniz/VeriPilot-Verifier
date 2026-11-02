@@ -48,7 +48,7 @@
 本次目录为 `.runtime-correction/baseline-bench/scheduler/`：
 
 - `public-source.json`：原始任务身份及开发时间预算调整。
-- `manifest-001.json` 至 `manifest-012.json`：逐轮冻结的输入和配置。
+- `manifest-001.json` 至 `manifest-013.json`：逐轮冻结的输入和配置。
 - `bootstrap/result.json`：容器内实际宿主的无模型启动结果。
 - `run-001/`：首轮失败原始记录。宿主无进展恢复中断原业务；当时尚无候选产物、基线或故障注入，第 6 次请求用量未知，完整保留其预留额度。
 - `run-002/`：10 分钟基线审查耗尽预算，候选未发布。反馈已区分多义务映射数量错误与实际归属错误；保留第 29 次用量未知的完整预留额度。
@@ -63,9 +63,11 @@
 - `run-010/`：长审查重复漏读候选末尾文件，并缩短清单身份值；固定版本只有通用反馈，最终仍未发布。中止后保留原生记录，并增加具体缺失范围、身份核对和多余条目修复支持；业务未产出计划文件。
 - `run-011/`：未发出模型请求即遇到 Docker 网络池耗尽。只释放本任务已停止容器的私有网络，保留容器文件及卷。
 - `run-011-retry/`：完成一次真实 REPAIR；随后多个原文清单把后半段阈值/交付义务误归为 CONTEXT，仍未发布。为将原文单元从 2KB 调到可配置的 16KB 而中止。
-- `bootstrap-012/result.json`：当前版本在实际容器/OpenClaw 中的无模型启动结果。
-- `run-012/on/external-controller/`：24 小时 / 2000 steps、16KB 原文单元配置下的全部模型请求、统一计量和原始响应。
-- `run-012/on/jobs/`：官方任务运行、原生业务轨迹和官方评分输出；启动不代表已经通过。
+- `run-012/`：16KB 原文单元已生效，但完整模式仍把导航计数误当逐段决策门槛，模型为背景补入 SOFT 条目。中止后纠正按模式返回的导航提示。
+- `bootstrap-013/result.json`：当前版本在实际容器/OpenClaw 中的无模型启动结果。
+- `run-013/on/external-controller/`：24 小时 / 2000 steps、16KB 原文单元配置下的全部模型请求、统一计量和原始响应。
+- `run-013/on/jobs/`：官方任务运行、原生业务轨迹和官方评分输出；启动不代表已经通过。
+- `full-regression-013.json`：当前版本全量回归，2637 通过、31 跳过、0 失败。
 - Agent 日志中的 `rc-runtime/host-run/baseline-summary.json`：发布后的基线、当前验收和证据目录。
 - 基线未发布时，收集器也返回明确 `UNPUBLISHED`、版本 0 和当前验收状态，保留任务记录；不会以缺少 current.json 的普通文件错误掩盖未完成原因。
 
@@ -82,7 +84,7 @@ bench_root="$PWD/.runtime-correction/baseline-bench/scheduler"
 read -s 'RC_HARBOR_UPSTREAM_CREDENTIAL?GLM key: '
 export RC_HARBOR_UPSTREAM_CREDENTIAL
 node scripts/bench/run-harbor-gateway-pilot.mjs --live \
-  --manifest "$bench_root/manifest-012.json" \
+  --manifest "$bench_root/manifest-013.json" \
   --output "$bench_root/run-$(date +%Y%m%dT%H%M%S)"
 unset RC_HARBOR_UPSTREAM_CREDENTIAL
 ```
