@@ -6,7 +6,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { sharedBasisFixture as createSharedBasisFixture, operation, user } from './helpers/runtime-v2-shared-basis-fixture.mjs';
 import { scriptedCoverageReport } from './helpers/baseline-coverage-native.mjs';
-import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
+import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
 import { planGroundTruthDelta, groundTruthPlanDigest, applyGroundTruthDelta } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { ObservationJournal } from '../lib/review-task/observation-journal.mjs';
 import { createBaselineWorker, BASELINE_EXTRACTION_PROTOCOL } from '../lib/review-task/baseline-task.mjs';
@@ -16,6 +16,7 @@ import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { STOP_TASK_LIMITS } from '../lib/review-task/stop-policy.mjs';
+import { listNativeRuns } from '../lib/openclaw/native-runs.mjs';
 
 async function sharedBasisFixture(t, options) {
   const fixture = await createSharedBasisFixture(t, options);
@@ -281,6 +282,60 @@ test('expanded audit allowance retains an unresolved report and retries source-f
   assert.equal(attempts, 2); assert.equal(bundle.budget.auditCalls, 2);
   assert.equal(bundle.budget.repairs, 0); assert.equal(bundle.budget.externalRepairs, 0);
   assert.equal(bundle.input.generation, 0); assert.equal(f.state.baselinePrompts.length, 1);
+});
+
+test('expanded audit allowance retries an exactly settled native return without a final ACK, without repairing or accepting it', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 } });
+  let attempts = 0;
+  f.state.coverageReturnWithoutFinish = () => ++attempts === 1;
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  assert.equal(attempts, 2); assert.equal(bundle.budget.auditCalls, 2);
+  assert.equal(bundle.budget.repairs, 0); assert.equal(bundle.budget.externalRepairs, 0);
+  assert.equal(bundle.input.generation, 0); assert.equal(f.state.baselinePrompts.length, 1);
+  const records = await listNativeRuns(f.root, bundle.input.identity.taskId);
+  const auditors = records.filter(row => row.sessionId !== bundle.input.extractorSettlement.sessionId);
+  assert.equal(auditors.length, 2); assert(auditors.every(row => row.status === 'SETTLED'));
+});
+
+test('incomplete native audit retries still stop at their configured finite audit allowance without publication', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 3, maxExternalRepairs: 2000 } });
+  let attempts = 0; f.state.coverageReturnWithoutFinish = () => { attempts++; return true; };
+  await assert.rejects(f.refresh()); assert.equal(attempts, 3);
+  assert.equal((await f.truth()).version, 0); assert.equal(f.state.baselinePrompts.length, 1);
+});
+
+test('an accepted audit submission with missing persistence proof fails closed even with a large retry allowance', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 } });
+  let launches = 0; f.state.coverageLaunch = () => { launches++; }; f.state.coverageObserveFinish = false;
+  await assert.rejects(f.refresh()); assert.equal(launches, 1); assert.equal((await f.truth()).version, 0);
+});
+
+test('native runtime failures are not retried as incomplete semantic audits under a large allowance', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 } });
+  let launches = 0; f.state.coverageLaunch = () => { launches++; };
+  f.state.coverageReturnWithoutFinish = () => ({ payloads: [{ text: 'Transient provider failure', isError: true }], meta: { stopReason: 'error' } });
+  await assert.rejects(f.refresh()); assert.equal(launches, 1); assert.equal((await f.truth()).version, 0);
+});
+
+test('original citation rejection identifies the unit and catalog citation without granting an original read or changing the inventory', async t => {
+  const f = await sharedBasisFixture(t); await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
+  const inventory = structuredClone(bundle.inventory.record.inventory), unit = inventory.sources[0].units[0];
+  const catalog = bundle.citations.find(cite => cite.path.startsWith('unit-catalog-'));
+  unit.citeIds.push(catalog.citeId);
+  assert.throws(() => validateBaselineSourceInventory(inventory, bundle.input, bundle.files, bundle.citations), error => {
+    assert.equal(error.auditValidation.reason, 'ORIGINAL_CITATION_SOURCE_MISMATCH');
+    assert.equal(error.auditValidation.unitId, unit.unitId);
+    const bad = error.auditValidation.submitted.find(row => row.citeId === catalog.citeId);
+    assert.equal(bad.path, catalog.path); assert.equal(bad.acceptedOriginalPath, false);
+    assert(error.auditValidation.originalPaths.every(name => name.startsWith('original-source-')));
+    return true;
+  });
 });
 
 for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured limit ${limit} without publication`, async t => {

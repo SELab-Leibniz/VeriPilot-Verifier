@@ -73,7 +73,7 @@ export function scriptedCoverageReport({ view, files, citations, identityDigest,
 export async function runNativeCoverageFixture({ params, registry, hooks, report = scriptedCoverageReport, mutateResult = null, formatReport = JSON.stringify,
   repairReport = null, onSubmission = null, persistFinish = true, observeFinish = true,
   inventory: inventoryOracle = scriptedSourceInventory, persistInventory = true, observeInventory = true,
-  onInventory = null, beforeInventory = null, afterInventory = null }) {
+  onInventory = null, beforeInventory = null, afterInventory = null, returnWithoutFinish = null }) {
   const request = JSON.parse(params.prompt), ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey, runId: params.runId };
   const tools = registry(ctx), root = path.join(path.dirname(params.sessionFile), 'coverage-source');
   const citations = [], files = new Map(); let id = 0;
@@ -125,6 +125,9 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
   const view = decodeBaselineAuditView(JSON.parse([...files].filter(([name]) => name.startsWith('candidate-'))
     .sort(([a], [b]) => Number(a.slice(10, -4)) - Number(b.slice(10, -4))).map(([, text]) => text).join('')));
   const context = { view, files, citations, inventory, identityDigest: request.identityDigest };
+  const unfinished = await returnWithoutFinish?.(context);
+  if (unfinished) return typeof unfinished === 'object' ? unfinished
+    : { payloads: [{ text: 'No confirmed audit finish; this is an incomplete native return.' }], meta: {} };
   let value = await report(context);
   await mutateResult?.({ value, params, view, files, citations });
   let attempt = 0, formatted;
