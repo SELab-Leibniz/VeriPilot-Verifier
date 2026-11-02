@@ -1,0 +1,80 @@
+{
+  "kind": "document-correction-real-cli-e2e-verification",
+  "state": "PASSED",
+  "sourceCommit": "4226c8d28b8541ac9ded8de067b5ee601a736c92",
+  "branch": "codex/document-e2e-hour",
+  "startedAt": "2026-11-02T06:46:44.595Z",
+  "finishedAt": "2026-11-02T06:47:12.007Z",
+  "elapsedMs": 27412,
+  "options": {
+    "reviewTimeoutMs": 1200000,
+    "repairTimeoutMs": 1200000,
+    "totalTimeoutMs": 3600000,
+    "maxRepairRounds": 2,
+    "locationRepairAttempts": 2,
+    "killGraceMs": 1500
+  },
+  "initialResult": {
+    "status": "failed",
+    "findings": [
+      {
+        "ruleId": "AGENT-GROUND-TRUTH-CONFLICT",
+        "severity": "error",
+        "path": "design.md",
+        "line": 2,
+        "message": "The design sends import metadata to the external URL https://telemetry.example.invalid/collect, but the user-confirmed requirements explicitly forbid all network access, remote API use, uploads, and telemetry. The design must keep import metadata and any reporting strictly local.",
+        "evidence": [
+          "design.md:2: Select and validate a local document. Parse it on the device and show validation or parse errors locally. After import, send import metadata to https://telemetry.example.invalid/collect.",
+          "requirements.md:2: Import documents locally on the device. No network access, remote API, upload, or telemetry is allowed."
+        ],
+        "suggestion": "Remove the external telemetry call and describe any import metadata handling as local-only, consistent with device-local parsing and local error reporting.",
+        "violatedGroundTruthIds": [
+          "requirements"
+        ]
+      }
+    ]
+  },
+  "businessRepair": {
+    "realModelEdit": true,
+    "feedbackConsumedByActualRead": true,
+    "toolNames": [
+      "Edit"
+    ],
+    "beforeSha256": "5ed8ef2992269064e76dd0c886ca9f773b26aaa42353d72ea6126e7766c6cdcc",
+    "afterSha256": "3e937d0a6f6aba223ba604f423d5a28d1374ecd27e74cdf28a655d00ae09c7ba"
+  },
+  "finalResult": {
+    "status": "passed",
+    "findings": [],
+    "currentDesign": "# Design\nSelect and validate a local document. Parse it on the device and show validation or parse errors locally. After import, keep import metadata on the device for local use only.\nThis design does not include login, cloud synchronization, or server deployment.\n"
+  },
+  "modelInvocations": 3,
+  "exitCodes": [
+    0,
+    0,
+    0
+  ],
+  "requirementsSha256": "1f8b0a15f19054392bb06829ad193264ada7b28c774dc7eade95aaffbe9ae72a",
+  "sourceHashes": {
+    "scripts/evaluate-document-e2e.mjs": "a2aba87c3cf06e544969be6d02a8bcbb3935d5d6cd7347f1cf8139bb15fe3b16",
+    "scripts/helpers/document-cli.mjs": "dc35149e9501b340ada63908f937ea3d2ed39a190505749a343562f7faa0f653",
+    "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+    "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+    "lib/runtime-corrector.mjs": "d8d58d8499a18531e763566f4c9ee097539569a9942d4199408ce17dab9fa674",
+    "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+    "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40"
+  },
+  "checks": {
+    "tests": 53,
+    "passed": 53,
+    "failed": 0,
+    "skipped": 0,
+    "log": ".runtime-correction/document-e2e-development/checks.tap"
+  },
+  "rawReport": ".runtime-correction/document-e2e-live-final/report.json",
+  "limitations": [
+    "Standalone explicit CLI coordinator; automatic OpenClaw/Gateway hooks are outside this run.",
+    "Uses declared original requirements directly; dynamic baseline extraction, Skill and Stop are separate workflows.",
+    "One fictional document case establishes this loop, not broad semantic accuracy or benchmark improvement."
+  ]
+}
