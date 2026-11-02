@@ -14,6 +14,7 @@ node scripts/evaluate-skill-e2e.mjs \
   --business-timeout-ms 1200000 \
   --wall-ms 1800000 \
   --max-watch-turns 1 \
+  --check-interval-turns 1 \
   --output .runtime-correction/skill-e2e-hour/repair-fresh
 ```
 
@@ -25,7 +26,11 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 
 失败样例的初始代码固定为 `accept(value) => value`，指南已经正确。原始任务要求修改前先真实执行验证，随后修复并重新验证。看护回合上限在专项样例中设为 1，以便在首次失败工具结果返回时检查已发生的执行；生产默认值不变。Skill 明确说明非零退出是执行失败，并允许通过当前产物的新验证解决失败，不豁免首次失败。驱动不生成规则图或判决、不代写业务修复，不把人工构造的工具结果当作真实执行。
 
-为确保确实检验纠偏而非 Agent 自行修复，`repair` 在真实验证失败后，仅替换主 Agent 的下一次决策为错误的完成声明。实际提供方请求、原始响应及完整用量仍保留，替换后的响应另存并记录两份摘要。该注入不是新的用户依据，不影响私有审阅或后续纠偏运行，也不提供审阅判决、工具结果或业务修复。该案属于受控故障注入，不是自然错误率或模型成功率统计。通过还要求真实 Skill 偏差记录及进入业务模型请求或工具返回的 Skill 反馈；仅有终审反馈不算 Skill 闭环通过。
+为确保确实检验纠偏而非 Agent 自行修复，`repair` 在真实验证失败后，仅替换主 Agent 的下一次决策为错误的完成声明。实际提供方请求、原始响应及完整用量仍保留，替换后的响应另存并记录两份摘要。该注入不是新的用户依据，不影响私有审阅或后续纠偏运行，也不提供审阅判决、工具结果或业务修复。该案属于受控故障注入，不是自然错误率或模型成功率统计。
+
+反馈可通过工具返回或宿主现有 M08 统一反馈通道送达。后者必须同时具备真实 Skill 偏差、同一规则图节点、实际消耗的原生准入 ID，以及真实成功返回的业务模型请求；仅有通用终审文本、没有 Skill 判决或引用其他 Skill 都不通过。旧版评测器只认独立 Skill 文本前缀，会漏认这个既有通道，旧原始失败结果保留。
+
+修复后复查区分历史事实与当前待修问题：只有原文允许修复或以最新结果验收、旧错误已被承认或撤回、且当前产物有真实的新验证时，已解决的旧完成声明才不再作为新的阻断项。原始历史和旧评估保留；不可逆的原始禁止、顺序违规及其他未解决问题不因此豁免。`--check-interval-turns 50 --max-watch-turns 50` 可将这个短样例的中途抽查后移，Stop 仍强制检查。
 
 每轮保留 `result.json`、实际业务会话、原生工具观察、Skill 规则图与评估、实际终审派发状态、请求和用量。`PASS` 要求实际 Skill 读取、规则抽取、Skill 审查、当前看护通过、最终产物匹配的验证成功、原生终态及私有运行结算；修复案还要求反馈实际进入业务会话和业务 Agent 的写入。历史失败目录不被覆盖。
 
@@ -36,6 +41,7 @@ TMPDIR=/private/tmp node --test \
   test/skill-standalone.test.mjs \
   test/skill-e2e-budget.test.mjs \
   test/skill-e2e-fault-transport.test.mjs \
+  test/skill-e2e-feedback.test.mjs \
   test/skill-source-contract.test.mjs \
   test/skill-source-quotes.test.mjs \
   test/skill-source-semantics.test.mjs \

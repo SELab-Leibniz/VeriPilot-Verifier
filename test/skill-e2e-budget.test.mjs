@@ -38,6 +38,7 @@ test('GLM Flash uses the explicit configured model and does not admit embedded c
   assert.equal(skillE2eOptions([]).model, 'glm-5.3-flash');
   assert.equal(skillE2eOptions([]).maxWatchTurns, 1);
   assert.throws(() => skillE2eOptions(['--max-watch-turns', '0']));
+  assert.throws(() => skillE2eOptions(['--check-interval-turns', '0']));
 });
 
 test('Skill fixture accepts native optional execution defaults while preserving the exact command and original strict mode', async t => {

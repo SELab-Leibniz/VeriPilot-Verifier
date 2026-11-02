@@ -11,6 +11,7 @@ import { installNativeGatewayBatch } from './helpers/native-gateway-batch.mjs';
 import { prepareIntegratedFixture, createIntegratedFencePlugin } from './helpers/native-integrated-module-case.mjs';
 import { runIntegratedOriginalCase } from './helpers/native-integrated-original-case.mjs';
 import { installSkillFaultTransport } from './helpers/skill-e2e-fault-transport.mjs';
+import { unifiedSkillFeedbackReceipts } from './helpers/skill-e2e-feedback.mjs';
 
 const execute = promisify(execFile), hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function skillE2eOptions(args) {
@@ -25,10 +26,12 @@ export function skillE2eOptions(args) {
     businessTimeoutMs: positive('--business-timeout-ms', 1200000),
     hostRoot: value('--host-root') ?? '/opt/homebrew/lib/node_modules/openclaw', output: value('--output'),
     baseUrl: value('--base-url') ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model: value('--model') ?? 'glm-5.3-flash',
-    maxWatchTurns: Number(value('--max-watch-turns') ?? 1) };
+    maxWatchTurns: Number(value('--max-watch-turns') ?? 1), intervalTurns: Number(value('--check-interval-turns') ?? 1) };
   if (!['repair', 'success'].includes(options.scenario)) throw new Error('Use --scenario repair or success');
   if (!Number.isSafeInteger(options.maxWatchTurns) || options.maxWatchTurns < 1 || options.maxWatchTurns > 10000)
     throw new Error('Invalid --max-watch-turns');
+  if (!Number.isSafeInteger(options.intervalTurns) || options.intervalTurns < 1 || options.intervalTurns > 10000)
+    throw new Error('Invalid --check-interval-turns');
   if (options.assessmentTimeoutMs <= 30000) throw new Error('Assessment must leave 30000ms for feedback delivery');
   return options;
 }
@@ -45,7 +48,7 @@ skillCorrection:
     mode: include
     include: [delivery-verifier]
   skillRoots: [skills]
-  completionCheckIntervalTurns: 1
+  completionCheckIntervalTurns: ${options.intervalTurns}
   maxWatchTurns: ${options.maxWatchTurns}
   maxFeedbacksPerSkill: 3
 artifactCorrection:
@@ -149,14 +152,25 @@ export async function evaluateSkillE2e(options) {
     result.skillFeedbackReceipts = skillFeedbackReceipts;
     const task = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-final-task.json'), 'utf8'));
     const watchers = Object.values(task?.watchers ?? {});
-    const assessments = [];
+    const assessments = [], observedFindings = [];
     const evaluationRoot = result.taskEvidenceRoot && path.join(result.taskEvidenceRoot, 'skills/delivery-verifier/evaluations');
     for (const file of evaluationRoot ? await fs.readdir(evaluationRoot).catch(() => []) : []) {
       const value = JSON.parse(await fs.readFile(path.join(evaluationRoot, file), 'utf8'));
+      observedFindings.push(...(value.review?.findings ?? []));
       assessments.push({ file, status: value.status ?? (value.review?.findings?.length ? 'DEVIATION' : value.review?.checkerError ? 'UNVERIFIED' : value.review?.completionStatus),
         findings: value.review?.findings?.length ?? 0, summary: value.review?.summary });
     }
     result.skillAssessments = assessments;
+    const graph = result.taskEvidenceRoot && await fs.readFile(path.join(result.taskEvidenceRoot,
+      'skills/delivery-verifier/skill-ground-truth.json'), 'utf8').then(JSON.parse, () => null);
+    const ledger = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-final-ledger.json'), 'utf8'));
+    const admissionIds = Object.keys(ledger?.admissions ?? {}).filter(id => ledger.admissions[id].accounting === 'USED');
+    for (const receipt of batch.metrics().requests) {
+      if (receipt.status !== 200) continue;
+      const payload = JSON.parse(await fs.readFile(path.join(outputRoot, `request-${receipt.request}.json`), 'utf8'));
+      skillFeedbackReceipts.push(...unifiedSkillFeedbackReceipts({ payload, graph, findings: observedFindings,
+        admissionIds, request: receipt.request }));
+    }
     const checks = { automaticSkillRead: result.actionEvidence.pairedSkillRead === true,
       realGraphExtraction: result.actualPrivateRoles['ground-truth-extractor'] > 0,
       realSkillReviewer: result.actualPrivateRoles['skill-reviewer'] > 0,
