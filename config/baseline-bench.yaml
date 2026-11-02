@@ -32,14 +32,14 @@ stopCorrection:
   enabled: true
   waitMode: until_pass
   fileQualityReviewEnabled: false
-  assessmentTimeoutMs: 900000
+  assessmentTimeoutMs: 1800000
   maxCorrectionsPerFlow: 2
   maxCorrectionsPerSession: 4
 reviewers:
   defaults:
     model: openai/glm-5.3-flash
     effort: low
-    timeoutMs: 600000
+    timeoutMs: 1800000
     formatRepairAttempts: 8
 output:
   directory: .runtime-correction

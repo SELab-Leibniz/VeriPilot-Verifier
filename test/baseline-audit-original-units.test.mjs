@@ -278,6 +278,26 @@ test('natural source condition is independent from target applicability identity
   assert.notEqual(f.inventory.sources[0].units[0].obligations[0].condition, f.report.sources[0].mappings[0].condition);
 });
 
+test('grouped same-owner duties get count feedback and can map separately to the same faithful compound claim', () => {
+  const f = fixture('Read the contract and run verification.');
+  const duties = f.inventory.sources[0].units[0].obligations;
+  duties.push({ ...duties[0], obligationId: 'second-duty', statement: 'Run verification.' });
+  f.report.inventoryDigest = sha256(f.inventory);
+  const entry = f.report.sources[0].mappings[0];
+  entry.obligationIds = duties.map(duty => duty.obligationId);
+  const original = JSON.stringify(f.report), inventory = JSON.stringify(f.inventory);
+  assert.throws(() => f.check(f.report), error => {
+    assert.equal(error.auditValidation.reason, 'OBLIGATION_COUNT_MISMATCH');
+    assert.equal(error.auditValidation.obligationCount, 2);
+    assert.match(error.auditValidation.recovery, /separate mappings/);
+    assert.match(error.auditValidation.recovery, /does not establish a semantic owner defect/);
+    return true;
+  });
+  assert.equal(JSON.stringify(f.report), original); assert.equal(JSON.stringify(f.inventory), inventory);
+  f.report.sources[0].mappings = duties.map(duty => ({ ...entry, obligationIds: [duty.obligationId] }));
+  f.check(f.report);
+});
+
 test('every committed duty needs correspondence and a faulty inventory remains UNRESOLVED, never automatic REPAIR', () => {
   const f = fixture('Read the original contract and run verification.');
   f.inventory.sources[0].units[0].obligations.push({ obligationId: 'other-original-duty', statement: 'Read the original contract.',
