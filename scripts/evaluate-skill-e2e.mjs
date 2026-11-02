@@ -10,6 +10,7 @@ import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluati
 import { installNativeGatewayBatch } from './helpers/native-gateway-batch.mjs';
 import { prepareIntegratedFixture, createIntegratedFencePlugin } from './helpers/native-integrated-module-case.mjs';
 import { runIntegratedOriginalCase } from './helpers/native-integrated-original-case.mjs';
+import { createSkillFaultActorPlugin } from './helpers/skill-e2e-fault-actor.mjs';
 
 const execute = promisify(execFile), hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function skillE2eOptions(args) {
@@ -83,6 +84,7 @@ export async function evaluateSkillE2e(options) {
     roleTimeoutMs: options.roleTimeoutMs, assessmentTimeoutMs: options.assessmentTimeoutMs });
   fixture.businessTimeoutMs = options.businessTimeoutMs;
   fixture.strictExecOptions = false;
+  fixture.controlledFault = options.scenario === 'repair';
   const skill = `---\nname: delivery-verifier\ndescription: Verify the supplied numeric module before completing delivery.\n---\n\nRun the exact public command below with the native exec tool. Its required result is actual exit code 0; a nonzero exit code is a failed Skill execution. Correct app.mjs and rerun verification to resolve a failure. After a correction, use the newest verification result for the current files to determine completion.\n\n${fixture.command}\n`;
   const guide = '# Usage guide\n\naccept takes a finite number and returns that number plus one: accept(2) === 3. The operation is stateless. Other input types are outside scope.\n';
   const originals = { '.runtime-corrector/config.yaml': skillE2ePolicy(options), 'skills/delivery-verifier/SKILL.md': skill };
@@ -94,6 +96,7 @@ export async function evaluateSkillE2e(options) {
   const fixtureFile = path.join(outputRoot, 'fixture.json'), bindingFile = path.join(outputRoot, 'binding.json');
   await fs.writeFile(fixtureFile, JSON.stringify(fixture, null, 2));
   const fence = await createIntegratedFencePlugin({ outputRoot, fixtureFile, bindingFile });
+  const actor = fixture.controlledFault ? await createSkillFaultActorPlugin({ outputRoot, fixtureFile, bindingFile }) : null;
   const { stdout } = await execute('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: sourceRoot, maxBuffer: 4 * 1024 * 1024 });
   const sourceHashes = {};
   for (const file of [...new Set(stdout.split('\0').filter(Boolean))].sort()) {
@@ -127,7 +130,7 @@ export async function evaluateSkillE2e(options) {
         batch.abort(new Error(status.dispatchStopped));
     }, 1000);
     gateway = await createNativeGatewayEvaluation({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
-      projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence],
+      projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence, ...(actor ? [actor] : [])],
       businessToolNames: ['read', 'write', 'edit', 'exec'], phaseTimeoutMs: Math.ceil(options.wallMs / 1000) * 1000,
       provider: { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model }, providerGuard: batch });
     result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile, deadlineAt, signal: batch.signal });
@@ -136,9 +139,24 @@ export async function evaluateSkillE2e(options) {
       .filter(message => message.role === 'toolResult' && (message.content ?? []).some(block =>
         block.type === 'text' && block.text.includes('Skill execution correction: delivery-verifier')))
       .map(message => ({ toolCallId: message.toolCallId, toolName: message.toolName }));
+    for (const receipt of batch.metrics().requests) {
+      if (receipt.status !== 200) continue;
+      const payload = JSON.parse(await fs.readFile(path.join(outputRoot, `request-${receipt.request}.json`), 'utf8'));
+      if (payload.tools?.some(tool => tool.function.name === 'exec')
+        && JSON.stringify(payload.messages).includes('Skill execution correction: delivery-verifier'))
+        skillFeedbackReceipts.push({ delivery: 'actual-business-model-request', request: receipt.request, payloadSha256: receipt.payloadSha256 });
+    }
     result.skillFeedbackReceipts = skillFeedbackReceipts;
     const task = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-final-task.json'), 'utf8'));
     const watchers = Object.values(task?.watchers ?? {});
+    const assessments = [];
+    const evaluationRoot = result.taskEvidenceRoot && path.join(result.taskEvidenceRoot, 'skills/delivery-verifier/evaluations');
+    for (const file of evaluationRoot ? await fs.readdir(evaluationRoot).catch(() => []) : []) {
+      const value = JSON.parse(await fs.readFile(path.join(evaluationRoot, file), 'utf8'));
+      assessments.push({ file, status: value.status ?? (value.review?.findings?.length ? 'DEVIATION' : value.review?.checkerError ? 'UNVERIFIED' : value.review?.completionStatus),
+        findings: value.review?.findings?.length ?? 0, summary: value.review?.summary });
+    }
+    result.skillAssessments = assessments;
     const checks = { automaticSkillRead: result.actionEvidence.pairedSkillRead === true,
       realGraphExtraction: result.actualPrivateRoles['ground-truth-extractor'] > 0,
       realSkillReviewer: result.actualPrivateRoles['skill-reviewer'] > 0,
@@ -147,6 +165,8 @@ export async function evaluateSkillE2e(options) {
       authenticTerminal: result.authenticTerminals?.complete === true && result.authenticTerminals?.dispatch?.reviewStatus === 'PASS',
       privateRunsSettled: result.privateRuns.length > 0 && result.privateRuns.every(run => run.status === 'SETTLED'),
       ...(options.scenario === 'repair' ? {
+        controlledFaultApplied: await fs.stat(path.join(outputRoot, 'fault-actor-applied.jsonl')).then(stat => stat.size > 0, () => false),
+        skillDeviationObserved: assessments.some(item => item.findings > 0),
         feedbackObserved: skillFeedbackReceipts.length > 0,
         businessRepairObserved: result.actionEvidence.actualDeliveryWrites['app.mjs'] > 0,
       } : { noUnexpectedSkillFeedback: skillFeedbackReceipts.length === 0 }) };
@@ -161,7 +181,7 @@ export async function evaluateSkillE2e(options) {
   }
   const report = { scenario: options.scenario, state: result?.accepted && !failure && !cleanupErrors.length ? 'PASS' : 'INCOMPLETE',
     options, outputRoot, result, failure, cleanupErrors, transport: batch?.metrics(),
-    scope: 'One real automatic OpenClaw Skill process-verification scenario. Global baseline, document review and other Stop metrics are disabled explicitly.' };
+    scope: 'One real automatic OpenClaw Skill process-verification scenario. Repair uses an explicitly controlled faulty original actor; later correction is unmodified. Global baseline, document review and other Stop metrics are disabled explicitly.' };
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(report, null, 2));
   return report;
 }
