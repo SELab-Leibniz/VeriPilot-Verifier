@@ -44,6 +44,17 @@ function fixture(text, partBytes = Infinity) {
   return { input, files, units, citations, inventory, report, check: value => validateBaselineAuditReport(value, input, files, citations, inventory) };
 }
 
+test('a configured 16 KiB neutral layout preserves all multipart original bytes and is bound to the audit identity', () => {
+  const text = '读原合同🧪。\r\n' + 'x'.repeat(5000) + '\r\nKeep the original condition.';
+  const f = fixture(text, 1700), input = { ...f.input, unitLayout: { ...BASELINE_AUDIT_UNIT_LAYOUT, maxBytes: 16384 } };
+  const units = baselineAuditSourceUnits(input, f.files);
+  assert.equal(units.length, 1); assert.equal(units[0].text, text);
+  assert.equal(units[0].endByte, Buffer.byteLength(text)); assert(f.units.length > 1);
+  assert.deepEqual(coverageIdentity(input).unitLayout, input.unitLayout);
+  assert.notEqual(sha256(coverageIdentity(input)), sha256(coverageIdentity(f.input)));
+  assert.throws(() => baselineAuditSourceUnits({ ...input, unitLayout: { ...input.unitLayout, maxBytes: 16385 } }, f.files));
+});
+
 test('complete new-schema tail-only report fails for a real original range gap', () => {
   const f = fixture('Read the original contract. After the final edit, run verification.');
   const report = structuredClone(f.report); report.sources[0].mappings[0].quote = 'After the final edit, run verification.';
@@ -276,6 +287,46 @@ test('natural source condition is independent from target applicability identity
   f.report.sources[0].mappings[0].condition = 'CURRENT_TASK';
   f.check(f.report);
   assert.notEqual(f.inventory.sources[0].units[0].obligations[0].condition, f.report.sources[0].mappings[0].condition);
+});
+
+test('grouped same-owner duties get count feedback and can map separately to the same faithful compound claim', () => {
+  const f = fixture('Read the contract and run verification.');
+  const duties = f.inventory.sources[0].units[0].obligations;
+  duties.push({ ...duties[0], obligationId: 'second-duty', statement: 'Run verification.' });
+  f.report.inventoryDigest = sha256(f.inventory);
+  const entry = f.report.sources[0].mappings[0];
+  entry.obligationIds = duties.map(duty => duty.obligationId);
+  const original = JSON.stringify(f.report), inventory = JSON.stringify(f.inventory);
+  assert.throws(() => f.check(f.report), error => {
+    assert.equal(error.auditValidation.reason, 'OBLIGATION_COUNT_MISMATCH');
+    assert.equal(error.auditValidation.obligationCount, 2);
+    assert.match(error.auditValidation.recovery, /separate mappings/);
+    assert.match(error.auditValidation.recovery, /does not establish a semantic owner defect/);
+    return true;
+  });
+  assert.equal(JSON.stringify(f.report), original); assert.equal(JSON.stringify(f.inventory), inventory);
+  f.report.sources[0].mappings = duties.map(duty => ({ ...entry, obligationIds: [duty.obligationId] }));
+  f.check(f.report);
+});
+
+test('cross-unit and unknown duty references identify the exact rejected report entry without mutating evidence', () => {
+  const f = fixture('Read the original. '.repeat(200));
+  assert(f.units.length > 1);
+  const entry = f.report.sources[0].mappings[1], own = entry.obligationIds[0];
+  entry.obligationIds = f.report.sources[0].mappings[0].obligationIds;
+  const report = JSON.stringify(f.report), inventory = JSON.stringify(f.inventory);
+  assert.throws(() => f.check(f.report), error => {
+    const v = error.auditValidation;
+    assert.equal(v.reason, 'SOURCE_OBLIGATION_MISMATCH');
+    assert.equal(v.section, 'mappings'); assert.equal(v.entryIndex, 1);
+    assert.equal(v.unitId, f.units[1].unitId); assert.equal(v.committed.unitId, f.units[0].unitId);
+    assert.match(v.recovery, /UNRESOLVED\/SOURCE_INVENTORY/);
+    assert(Buffer.byteLength(JSON.stringify(v)) < 2048); return true;
+  });
+  assert.equal(JSON.stringify(f.report), report); assert.equal(JSON.stringify(f.inventory), inventory);
+  entry.obligationIds = ['uncommitted'];
+  assert.throws(() => f.check(f.report), error => error.auditValidation.committed === null);
+  entry.obligationIds = [own]; f.check(f.report);
 });
 
 test('every committed duty needs correspondence and a faulty inventory remains UNRESOLVED, never automatic REPAIR', () => {

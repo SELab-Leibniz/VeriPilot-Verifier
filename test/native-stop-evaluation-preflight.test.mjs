@@ -35,6 +35,29 @@ test('native fixture fence permits generated basis and the exact external contra
   } finally { bindings.delete('neutral-key'); await fs.rm(root, { recursive: true, force: true }); }
 });
 
+test('audit fixture resolves captured sources separately from its intentionally empty workspace', async t => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'native-audit-source-')));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const request = path.join(root, 'private-request'), cwd = path.join(request, 'empty-workspace');
+  const sourceRoot = path.join(request, 'coverage-source');
+  await fs.mkdir(cwd, { recursive: true }); await fs.mkdir(sourceRoot);
+  await fs.writeFile(path.join(sourceRoot, 'original-source-0000-0000.txt'), 'Original task requirement.');
+  const key = 'isolated-audit-path-key', bindings = globalThis[Symbol.for('runtime-corrector.openclaw.task-tools.v1')];
+  let calls = 0;
+  const binding = { sessionId: 'isolated-audit-path', tools: [
+    { name: 'source_read', execute: async () => { calls++; return 'actual bound source tool'; } },
+    { name: 'commit_baseline_inventory' }, { name: 'finish_baseline_audit' },
+  ] };
+  bindings.set(key, binding); t.after(() => bindings.delete(key));
+  const params = { sessionId: binding.sessionId, sessionKey: key, cwd, sessionFile: path.join(request, 'session.jsonl') };
+  await prepareNativeEvaluationTools(params, { fixtureFence: { projectRoot: root } });
+  assert.equal(await binding.tools[0].execute('read-original', { path: 'original-source-0000-0000.txt' }), 'actual bound source tool');
+  assert.equal(calls, 1);
+  await assert.rejects(binding.tools[0].execute('outside', { path: '/etc/passwd' }), /NATIVE_FIXTURE_PATH_DENIED/u);
+  assert.equal(calls, 1);
+  assert.deepEqual(await fs.readdir(cwd), [], 'The auditor workspace remains empty.');
+});
+
 const budget = () => createProviderRequestBudget({ origin: 'https://open.bigmodel.cn',
   limits: { usd: 4, requests: 2, wallMs: 10000, inputPerRequest: 131072, outputPerRequest: 32768,
     totalInput: 262144, totalOutput: 65536 }, prices: { input: 7, output: 22, cacheRead: 7, cacheWrite: 7 } });

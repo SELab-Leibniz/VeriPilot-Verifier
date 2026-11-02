@@ -8,6 +8,8 @@
     "runtime-corrector": "./scripts/cli.mjs"
   },
   "scripts": {
+    "baseline": "node ./scripts/run-baseline.mjs",
+    "test:baseline": "node --test test/baseline-run.test.mjs test/native-baseline-component.test.mjs test/baseline-coverage-audit.test.mjs test/stop-baseline-task.test.mjs",
     "check": "node ./scripts/cli.mjs",
     "build:plugin": "node ./scripts/build-plugin.mjs",
     "build:plugins": "node ./scripts/build-plugin.mjs --all",

@@ -1186,7 +1186,7 @@ test('draft literal preview preserves boundaries but grants neither reads nor ma
     await call('save_baseline_batch', value); await finish([1]);
   });
   const request = await readJson(path.join(handle.requestDirectory, 'request.json'));
-  assert.match(request.identity.protocol.version, /^stop-baseline-task-v16-/);
+  assert.match(request.identity.protocol.version, /^stop-baseline-task-v17-/);
   const { requestId, protocol, ...rest } = request.identity;
   assert.equal(requestId, sha256({ protocol, taskId: request.taskId, request: f.input.request,
     baseline: [f.truth.version, f.truth.digest], sources: rest.sources }));
@@ -1734,6 +1734,24 @@ async function checkedCriticalRun(f, script) {
     return handle;
   } catch (error) { throw scriptFailure ?? error; }
 }
+
+test('full-mode nonempty completion treats unselected source locations as navigation while still requiring complete original reads', async t => {
+  const f = await fixture(t, { wireMode: 'full', originalText: 'Preserve the requested feature.\n# Background heading\nInformative example only.' });
+  const handle = await checkedCriticalRun(f, async ({ call, readAll, batch, finish, params }) => {
+    assert.match(params.extraSystemPrompt, /including NONEMPTY deltas/);
+    await assert.rejects(finish([]));
+    await readAll();
+    const receipt = JSON.parse(toolText(await call('save_baseline_batch', batch())));
+    assert.equal(receipt.decisionCoverageRequired, false); assert(receipt.pendingUnitCount > 0);
+    assert.equal(receipt.pendingNavigation.decisionCoverageRequired, false);
+    assert.match(receipt.pendingNavigation.instruction, /NOT missing duties or a completion gate/);
+    const state = JSON.parse(toolText(await call('review_history', { mode: 'state' }))).taskState;
+    assert.equal(state.decisionCoverageRequired, false); assert.equal(state.pendingCount, 0);
+    await finish([1]);
+  });
+  assert.equal(handle.result.operations.length, 1); assert.equal(handle.result.operations[0].text, operation().text);
+  await handle.close();
+});
 
 test('ordinary draft pending guidance permits explicit revision without changing its reads or allowance', async t => {
   const f = await fixture(t, { wireMode: 'draft' }); let revised = false, prior;

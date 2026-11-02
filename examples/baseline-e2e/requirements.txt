@@ -1,0 +1,2 @@
+Implement a stateless numeric validator in app.mjs, following the supplied contract.
+Read the original supplied contract before reporting completion.

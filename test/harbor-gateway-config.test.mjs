@@ -23,6 +23,7 @@ test('provider silence policy is finite and never exceeds the original ticket wi
     assert(Number.isSafeInteger(value) && value > 0);
     assert.equal(value, Math.floor(officialWallMs / 1000));
     assert(value * 1000 <= officialWallMs);
+    assert.equal(config.diagnostics.stuckSessionAbortMs, officialWallMs);
     assert.equal(original.officialWallMs, officialWallMs);
   }
 });
@@ -31,4 +32,17 @@ test('tickets reject external targets, real-key-shaped auth, expired wall time a
   assert.throws(() => validateHarborRelayTicket({ ...ticket(), placeholderCredential: 'not-a-disposable-cap' }), /TICKET_INVALID/u);
   assert.throws(() => validateHarborRelayTicket({ ...ticket(), deadlineAt: 1 }), /TICKET_INVALID/u);
   assert.throws(() => validateHarborRelayTicket({ ...ticket(), tokenLimits: {} }), /TICKET_INVALID/u);
+});
+
+test('baseline benchmark ticket retains its explicitly selected flash model throughout host configuration', () => {
+  const selected = { ...ticket(), model: 'openai/glm-5.3-flash' };
+  const config = harborGatewayConfig({ root: '/fixture', projectRoot: '/app', pluginRoot: '/fixture/plugin',
+    port: 1234, ticket: selected, rcEnabled: true });
+  assert.equal(config.agents.defaults.model.primary, selected.model);
+  assert.equal(config.models.providers.openai.models[0].id, 'glm-5.3-flash');
+  const model = config.models.providers.openai.models[0];
+  assert.equal(model.reasoning, true);
+  assert.equal(model.thinkingLevelMap.off, 'low');
+  assert.equal(model.compat.supportsReasoningEffort, true);
+  assert.equal(model.compat.thinkingFormat, 'openai');
 });

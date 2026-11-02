@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { resolveHookTimeoutMs, hookReviewBudgetMs } from "../lib/openclaw/hook-timeout.mjs";
 
-test("Hook timeout defaults to twenty minutes and is capped at sixty, matching the manifest", async () => {
+test("ordinary Hook timeout defaults to twenty minutes and is capped at sixty; manifest also permits explicit baseline windows", async () => {
   const manifest = JSON.parse(await readFile(new URL("../packaging/hosts/openclaw/openclaw.plugin.json", import.meta.url)));
   assert.equal(manifest.configSchema.properties.hookTimeoutMs.default, 1200000);
-  assert.equal(manifest.configSchema.properties.hookTimeoutMs.maximum, 3600000);
+  assert.equal(manifest.configSchema.properties.hookTimeoutMs.maximum, 2147483647);
+  assert(manifest.configSchema.properties.baselineLimits.properties.timeoutMs.maximum + 60000 <= 2147483647);
   for (const [configured, timeout, reviewBudget] of [
     [undefined, 1200000, 1199000], [null, 1200000, 1199000], [2000, 2000, 1000],
     [600000, 600000, 599000], [1800000, 1800000, 1799000],

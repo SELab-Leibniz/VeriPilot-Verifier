@@ -8,7 +8,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const execute = promisify(execFile), hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
-export async function prepareHarborWorkspace({ projectRoot, pluginRoot, policyPath, criteriaPath }) {
+export async function prepareHarborWorkspace({ projectRoot, pluginRoot, policyPath, criteriaPath, profile = 'full' }) {
   const project = await fs.realpath(projectRoot), policy = await fs.readFile(policyPath), criteria = await fs.readFile(criteriaPath);
   const directory = path.join(project, '.runtime-corrector'); await fs.mkdir(directory, { recursive: true });
   const existing = await fs.lstat(directory);
@@ -42,11 +42,15 @@ export async function prepareHarborWorkspace({ projectRoot, pluginRoot, policyPa
   }
   const { loadConfig } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-corrector.mjs')));
   const plan = await loadConfig({ cwd: project, pluginRoot }), runtime = plan.runtimeV2;
-  if (plan.enabled !== true || plan.sessionDefaults?.enabled !== true || !runtime.dynamicGroundTruth.enabled
-    || !runtime.skillCorrection.enabled || !runtime.artifactCorrection.groundTruthReviewEnabled || !runtime.implementationCorrection.enabled
-    || runtime.implementationCorrection.platform !== null || !runtime.stopCorrection.enabled
-    || Object.values(runtime.stopCorrection.metrics).filter(Boolean).length !== 16) throw new Error('HARBOR_FULL_RC_POLICY_NOT_ACTIVE');
-  return { policySha256: hash(policy), criteriaSha256: hash(criteria), projectEnabled: plan.enabled,
+  const common = plan.enabled === true && plan.sessionDefaults?.enabled === true && runtime.dynamicGroundTruth.enabled
+    && runtime.implementationCorrection.enabled && runtime.implementationCorrection.platform === null && runtime.stopCorrection.enabled;
+  const full = profile === 'full' && runtime.skillCorrection.enabled && runtime.artifactCorrection.groundTruthReviewEnabled
+    && Object.values(runtime.stopCorrection.metrics).filter(Boolean).length === 16;
+  const baseline = profile === 'baseline' && runtime.dynamicGroundTruth.panel.size === 0
+    && !runtime.skillCorrection.enabled && !runtime.artifactCorrection.groundTruthReviewEnabled
+    && runtime.stopCorrection.metrics.M16 === true;
+  if (!common || !(full || baseline)) throw new Error('HARBOR_FULL_RC_POLICY_NOT_ACTIVE');
+  return { profile, policySha256: hash(policy), criteriaSha256: hash(criteria), projectEnabled: plan.enabled,
     firstSessionEnabled: plan.sessionDefaults.enabled, activeMetrics: runtime.stopCorrection.metrics,
     dynamicGroundTruth: runtime.dynamicGroundTruth.enabled, skillCorrection: runtime.skillCorrection.enabled,
     artifactCorrection: runtime.artifactCorrection.groundTruthReviewEnabled, implementationCorrection: runtime.implementationCorrection.enabled,

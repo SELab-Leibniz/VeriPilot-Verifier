@@ -39,6 +39,7 @@
     "lib/review-graph.mjs",
     "lib/review-task/cli-mcp-bridge.mjs",
     "lib/review-task/baseline-task.mjs",
+    "lib/review-task/baseline-limits.mjs",
     "lib/review-task/baseline-selection.mjs",
     "lib/review-task/baseline-notes.mjs",
     "lib/review-task/cli-task-session.mjs",

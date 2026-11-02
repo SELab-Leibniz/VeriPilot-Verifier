@@ -35,7 +35,8 @@ function jsonUsage(bytes) {
 
 export async function createHarborProviderRelay({ upstream, limits, prices = { input: 7, output: 22, cacheRead: 7, cacheWrite: 7 },
   payloadBytes = 131072, responseBytes = 16 * 1024 * 1024, bind = '127.0.0.1', advertisedHost = '127.0.0.1',
-  now = Date.now, onRecord = async () => {} }) {
+  now = Date.now, onRecord = async () => {}, model = 'glm-5.3' }) {
+  if (!['glm-5.3', 'glm-5.3-flash'].includes(model)) throw fail('RELAY_MODEL_INVALID');
   if (typeof upstream !== 'function') throw fail('RELAY_EXPLICIT_UPSTREAM_REQUIRED');
   if (!integer(payloadBytes) || !integer(responseBytes) || !limits || !integer(limits.wallMs)
     || !integer(limits.inputPerRequest) || limits.inputPerRequest < payloadBytes + 8192)
@@ -64,7 +65,7 @@ export async function createHarborProviderRelay({ upstream, limits, prices = { i
   const snapshot = () => ({ startedAt, deadlineAt, queued, running, maxConcurrent, preAdmissionCancelled, closed, budget: budget.snapshot(),
     scope: hash(placeholder), admittedRequests: budget.snapshot().requests, upstreamInvocations, wireDispatchAttempts, records: structuredClone(records),
     dispatchCounting: 'Admission is not API traffic. wireDispatchAttempts counts the explicit trusted fetch boundary, not confirmed provider receipt or billing.',
-    credentialKind: 'disposable_container_placeholder_only', actualAccountBill: 'unknown', model: 'openai/glm-5.3' });
+    credentialKind: 'disposable_container_placeholder_only', actualAccountBill: 'unknown', model: `openai/${model}` });
   const server = http.createServer(async (request, response) => {
     if (closed || controller.signal.aborted) { response.writeHead(503); response.end(); return; }
     const authorization = request.headers.authorization ?? '';
@@ -81,7 +82,7 @@ export async function createHarborProviderRelay({ upstream, limits, prices = { i
         bytes += chunk.length; if (bytes > payloadBytes) throw fail('RELAY_BODY_LIMIT'); chunks.push(chunk);
       }
       body = Buffer.concat(chunks); const payload = JSON.parse(body.toString('utf8'));
-      if (!Buffer.from(body.toString('utf8')).equals(body) || payload.model !== 'glm-5.3'
+      if (!Buffer.from(body.toString('utf8')).equals(body) || payload.model !== model
         || !Array.isArray(payload.messages) || !payload.messages.length
         || !integer(payload.max_tokens) || payload.max_tokens > limits.outputPerRequest
         || Object.hasOwn(payload, 'max_completion_tokens')
@@ -143,7 +144,7 @@ export async function createHarborProviderRelay({ upstream, limits, prices = { i
   server.on('connection', socket => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, bind, resolve); });
   const port = server.address().port;
-  return { ticket: () => ({ kind: 'rc-harbor-relay-ticket-v1', model: 'openai/glm-5.3',
+  return { ticket: () => ({ kind: 'rc-harbor-relay-ticket-v1', model: `openai/${model}`,
     relayBaseUrl: `http://${advertisedHost}:${port}/v1`, placeholderCredential: placeholder, deadlineAt, officialWallMs: limits.wallMs,
     tokenLimits: { inputPerRequest: limits.inputPerRequest, outputPerRequest: limits.outputPerRequest,
       totalInput: limits.totalInput, totalOutput: limits.totalOutput, requests: limits.requests } }), snapshot,

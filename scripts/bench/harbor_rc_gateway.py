@@ -13,7 +13,7 @@ import re
 import shlex
 import time
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Literal
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -50,7 +50,7 @@ def setup_proxy_env(value: Any) -> dict[str, str]:
 def validate_ticket(ticket: dict[str, Any], now_ms: int | None = None) -> None:
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
     if (ticket.get("kind") != "rc-harbor-relay-ticket-v1"
-            or ticket.get("model") != "openai/glm-5.3"
+            or ticket.get("model") not in {"openai/glm-5.3", "openai/glm-5.3-flash"}
             or not re.fullmatch(r"rc-placeholder-[a-f0-9]{64}", ticket.get("placeholderCredential", ""))
             or not isinstance(ticket.get("deadlineAt"), int) or ticket["deadlineAt"] <= now_ms
             or not isinstance(ticket.get("officialWallMs"), int) or ticket["officialWallMs"] < 1000):
@@ -79,6 +79,10 @@ def validate_receipt(ticket: dict[str, Any], receipt: dict[str, Any]) -> dict[st
 
 
 class RcGatewayOptions(OpenClawOptions):
+    rc_baseline_limits: dict[str, int] | None = None
+    rc_verifier_uv_archive: Path | None = Field(default=None, description="Optional frozen upstream uv 0.9.5 Linux archive, preinstalled before task time to tolerate verifier installer network failure")
+    rc_policy_path: Path | None = None
+    rc_policy_profile: Literal["full", "baseline"] = "full"
     rc_artifact_path: Path = Field(description="Frozen local OpenClaw RC artifact, supplied through public upload ports")
     rc_relay_ticket: Path | None = Field(default=None, description="Static public ticket for offline probes; mutually exclusive with controller descriptor")
     rc_controller_descriptor: Path | None = Field(default=None, description="Host-only /start endpoint, control token and optional disposable setupProxyUrl; never uploaded")
@@ -112,7 +116,7 @@ class RcGatewayOpenClaw(OpenClaw):
         super().__init__(*args, **kwargs)
         if (self.options.rc_relay_ticket is None) == (self.options.rc_controller_descriptor is None):
             raise ValueError("Supply exactly one controller descriptor or static offline ticket")
-        if self.version() != PINNED_HOST or self.model_name != "openai/glm-5.3":
+        if self.version() != PINNED_HOST or self.model_name not in {"openai/glm-5.3", "openai/glm-5.3-flash"}:
             raise ValueError("This prototype pins OpenClaw 2026.7.1-2 and openai/glm-5.3")
         if (self.options.openclaw_config or self.options.config or self.options.thinking not in {None, "off"}
                 or self.options.prompt_template_path or self.options.timeout or self.options.failover_retries is not None
@@ -137,6 +141,20 @@ class RcGatewayOpenClaw(OpenClaw):
         else:
             with environment.scoped_exec_env(proxy_env):
                 await super().setup(environment)
+        if self.options.rc_verifier_uv_archive is not None:
+            archive = self.options.rc_verifier_uv_archive.resolve(strict=True)
+            await environment.upload_file(archive, "/tmp/rc-verifier-uv.tar.gz")
+            await self.exec_as_agent(environment,
+                'mkdir -p /tmp/rc-verifier-uv /root/.local/bin && '
+                'tar -xzf /tmp/rc-verifier-uv.tar.gz -C /tmp/rc-verifier-uv && '
+                'install -m755 /tmp/rc-verifier-uv/uv-x86_64-unknown-linux-gnu/uv /root/.local/bin/uv && '
+                'install -m755 /tmp/rc-verifier-uv/uv-x86_64-unknown-linux-gnu/uvx /root/.local/bin/uvx && '
+                'printf \'%s\\n\' \'export PATH="/root/.local/bin:$PATH"\' > /root/.local/bin/env && '
+                '/root/.local/bin/uv --version', timeout_sec=60)
+            (self.logs_dir / "rc-verifier-dependency.json").write_text(json.dumps({
+                "dependency": "uv", "version": "0.9.5", "sourceSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                "officialTestScriptChanged": False,
+            }, indent=2))
 
     async def run(self, instruction: str, environment: BaseEnvironment, context: AgentContext) -> None:
         phase_started_at = int(time.time() * 1000)
@@ -163,6 +181,8 @@ class RcGatewayOpenClaw(OpenClaw):
         else:
             ticket = json.loads(self.options.rc_relay_ticket.read_text())
         validate_ticket(ticket)
+        if ticket["model"] != self.model_name:
+            raise ValueError("Model ticket differs from the selected model")
         artifact = self.options.rc_artifact_path.resolve(strict=True)
         package = json.loads((artifact / "package.json").read_text())
         if package.get("name") != "runtime-corrector-openclaw":
@@ -192,7 +212,8 @@ class RcGatewayOpenClaw(OpenClaw):
             await environment.upload_file(Path(__file__).with_name(name), remote + "/" + name)
         source_root = Path(__file__).resolve().parents[2]
         for name in ("harbor-evaluation.yaml", "harbor-document-review.md"):
-            await environment.upload_file(source_root / "config" / name, remote + "/" + name)
+            selected = self.options.rc_policy_path if name == "harbor-evaluation.yaml" and self.options.rc_policy_path else source_root / "config" / name
+            await environment.upload_file(selected, remote + "/" + name)
         instruction_file = self.logs_dir / "rc-original-instruction.txt"
         instruction_file.write_text(instruction)
         await environment.upload_file(instruction_file, remote + "/instruction.txt")
@@ -200,7 +221,8 @@ class RcGatewayOpenClaw(OpenClaw):
                 "outputRoot": remote + "/host-run", "ticket": ticket, "rcEnabled": self.options.rc_enabled,
                 "instructionPath": remote + "/instruction.txt", "resultPath": remote + "/result.json", "artifactHashes": hashes,
                 "policyPath": remote + "/harbor-evaluation.yaml", "criteriaPath": remote + "/harbor-document-review.md",
-                "nativeTranscriptOutput": "/logs/agent/openclaw.session.jsonl"}
+                "nativeTranscriptOutput": "/logs/agent/openclaw.session.jsonl",
+                "policyProfile": self.options.rc_policy_profile, "baselineLimits": self.options.rc_baseline_limits}
         spec_file = self.logs_dir / "rc-public-run.json"
         spec_file.write_text(json.dumps(spec, indent=2) + "\n")
         await environment.upload_file(spec_file, remote + "/run.json")

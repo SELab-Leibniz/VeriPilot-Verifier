@@ -1,0 +1,45 @@
+version: 2
+enabled: true
+sessionDefaults:
+  enabled: true
+locale: en
+maxOutputTokens: 32768
+artifacts:
+  - name: observed-benchmark-files
+    stage: implementation
+    type: document
+    format: auto
+    patterns: ["**/*.py", "**/*.jsonl"]
+    editable: true
+    rules:
+      enabled: false
+    review:
+      enabled: false
+dynamicGroundTruth:
+  enabled: true
+  materialRoots: []
+  panel:
+    size: 0
+artifactCorrection:
+  groundTruthReviewEnabled: false
+  stageMetricsEnabled: false
+skillCorrection:
+  enabled: false
+implementationCorrection:
+  enabled: true
+  platform: null
+stopCorrection:
+  enabled: true
+  waitMode: until_pass
+  fileQualityReviewEnabled: false
+  assessmentTimeoutMs: 90000000
+  maxCorrectionsPerFlow: 2
+  maxCorrectionsPerSession: 4
+reviewers:
+  defaults:
+    model: openai/glm-5.3-flash
+    effort: low
+    timeoutMs: 1800000
+    formatRepairAttempts: 20
+output:
+  directory: .runtime-correction
