@@ -78,12 +78,18 @@ fs.appendFileSync(process.env.HOOK_REVIEWER_CAPTURE, JSON.stringify({
     ? fs.existsSync(path.dirname(priorGroundTruth.requestPath))
     : null,
 }) + "\n");
-const result = schema.properties.operations
+const result = request?.skillGraphOnly
+  ? { summary: 'Original Skill graph.', skillGroundTruth: { constraints: request.sourceUnits.map((unit, index) => ({ constraintId: 'read-task-' + index, sourceUnitIds: [unit.id],
+      interpretation: { normativity: unit.sourceOwnership.kind === 'HEADING_SCOPE' ? 'DESCRIPTION' : 'MANDATORY', scope: 'CURRENT_TASK',
+        reason: 'Explicit scripted descriptive heading and original body reading duty.',
+        currentDuties: unit.sourceOwnership.kind === 'HEADING_SCOPE' ? [] : [{ quote: 'Read the task before reviewing.' }], externalConditions: [],
+        remainderDisposition: 'CONTEXT_ONLY', remainderReason: 'Complete controlled original context; no additional independent duty.' } })), taskOverlays: [] } }
+  : schema.properties.operations
   ? { summary: "No new claims.", taskClassification: "CONTINUATION", operations: [], ...(request?.skill ? {
     skillGroundTruth: { constraints: [{ constraintId: "read-task", kind: "STEP", modality: "MUST", statement: "Read the task before reviewing.", applicabilityKind: "CURRENT_TASK", condition: null }], taskOverlays: [] },
   } : {}) }
   : schema.properties.completionStatus
-    ? { summary: "Skill completed.", completionStatus: "COMPLETED", findings: [] }
+    ? { summary: "Skill launch handoff fixture.", completionStatus: "COMPLETED", findings: [], checkerError: 'This CLI fixture supplies no acknowledged original-page reading; semantic acceptance remains unverified.' }
     : { summary: "Hook fixture review.", findings: [], edits: [], metricObjectJudgements: [] };
 process.stdout.write(JSON.stringify({ session_id: runId ?? "hook-reviewer-session", structured_output: result }));
 `);
@@ -326,14 +332,15 @@ test("declared v2 PostToolUse hands off to the configured artifact provider with
   assert.equal(targetReview.originDirectoryExists, false);
   await assertTargetEvidence(f, targetReview);
 
-  // Unchanged user/material evidence needs no Ground Truth subprocess, so the
-  // second event exercises the artifact reviewer factory without a GT handle.
+  // This scripted generic CLI returns JSON without acknowledged bounded read
+  // proof. It cannot grant global reuse, even for unchanged original inputs.
   const second = await runPostToolUse(f, target, "toolu-v2-reviewer-runtime-second");
   assert.equal(second.code, 0, second.stderr);
   const allCalls = await captures(f);
   const freshCalls = allCalls.slice(firstCalls.length);
-  assert.equal(freshCalls.length, 1, `expected one fresh artifact reviewer; stdout=${second.stdout}; stderr=${second.stderr}`);
-  const fresh = freshCalls[0];
+  assert.deepEqual(freshCalls.map(call => call.role), ['ground-truth-extractor', 'artifact-reviewer']);
+  assert.equal(freshCalls[0].request.reviewScope.boundedBasis, true);
+  const fresh = freshCalls[1];
   await assertInvocation(f, fresh, "runtime-owner");
   assert.equal(fresh.role, "artifact-reviewer");
   assert.notEqual(fresh.runId, targetReview.runId);
@@ -349,7 +356,9 @@ test("declared v2 PostToolUse hands off to the configured artifact provider with
   await assertTargetEvidence(f, fresh);
   const journal = await fs.readFile(path.join(f.root, ".runtime-correction/tasks", tasks[0], "journal/events.jsonl"), "utf8");
   const envelopes = journal.trim().split(/\r?\n/u).map(JSON.parse).filter((event) => event.type === "REVIEWER_ENVELOPE");
-  assert.deepEqual(envelopes.map((event) => event.role), ["ground-truth-extractor", "artifact-reviewer", "artifact-reviewer"]);
+  assert.deepEqual(envelopes.map((event) => event.role), ["ground-truth-extractor", "artifact-reviewer", "ground-truth-extractor", "artifact-reviewer"]);
+  const taskState = JSON.parse(await fs.readFile(path.join(f.root, '.runtime-correction/tasks', tasks[0], 'task.json'), 'utf8'));
+  assert.equal(taskState.groundTruth.sharedBasis, undefined, 'generic success cannot invent acknowledged coverage');
   assert.ok(!journal.includes(TARGET_TOKEN));
   assert.ok(!journal.includes(AMBIENT_TOKEN));
   await assert.rejects(fs.access(path.join(f.artifactRoot, ".runtime-correction/tasks")), { code: "ENOENT" });
@@ -359,6 +368,7 @@ test("declared v2 PostToolUse hands off to the configured artifact provider with
 
 test("declared Skill hooks hand off refreshed Ground Truth to a new configured Skill reviewer", async (t) => {
   const f = await fixture(t);
+  await write(f.pluginRoot, 'skills/runtime-corrector-control/SKILL.md', '# Controlled Skill\n\nRead the task before reviewing.\n');
   await write(f.root, ".runtime-corrector/config.yaml", [
     "version: 2",
     "artifacts: []",
@@ -396,7 +406,10 @@ test("declared Skill hooks hand off refreshed Ground Truth to a new configured S
     toolInput: { skill: "runtime-corrector-control" },
   });
   assert.equal(start.code, 0, start.stderr);
-  assert.equal((await captures(f)).length, 1, `Skill start extracts Ground Truth once: ${start.stdout}`);
+  const initialCalls = await captures(f);
+  assert.equal(initialCalls.length, 2, `one global alignment and one local graph: ${start.stdout}`);
+  assert.equal(initialCalls[0].request.reviewScope.boundedBasis, true);
+  assert.equal(initialCalls[1].request.skillGraphOnly, true);
   const nextEntries = [...f.transcriptEntries, {
     type: "user", uuid: "hook-skill-follow-up", message: { content: "The Skill has completed; assess its required steps." },
   }];
@@ -405,9 +418,11 @@ test("declared Skill hooks hand off refreshed Ground Truth to a new configured S
   const completed = await runPostToolUse(f, f.transcript, "toolu-assess-skill", { toolName: "Read" });
   assert.equal(completed.code, 0, completed.stderr);
   const calls = await captures(f);
-  assert.equal(calls.length, 3, `one initial GT, one refreshed GT, one Skill review; stdout=${completed.stdout}; stderr=${completed.stderr}`);
-  const [initial, origin, target] = calls;
-  assert.deepEqual(calls.map((call) => call.role), ["ground-truth-extractor", "ground-truth-extractor", "skill-reviewer"]);
+  assert.equal(calls.length, 5, `two global alignments, two graph extractions and one Skill review; stdout=${completed.stdout}; stderr=${completed.stderr}`);
+  const [initial, initialGraph, origin, graph, target] = calls;
+  assert.deepEqual(calls.map((call) => call.role), ["ground-truth-extractor", "ground-truth-extractor", "ground-truth-extractor", "ground-truth-extractor", "skill-reviewer"]);
+  assert.deepEqual([initial, initialGraph, origin, graph].map(call => call.request.skillGraphOnly === true), [false, true, false, true]);
+  assert.equal(origin.request.reviewScope.boundedBasis, true);
   for (const call of calls) await assertInvocation(f, call, "runtime-owner");
   assert.notEqual(target.runId, origin.runId);
   assert.notEqual(target.runId, initial.runId);
@@ -421,7 +436,8 @@ test("declared Skill hooks hand off refreshed Ground Truth to a new configured S
   assert.deepEqual(target.frozen.transcript.entries, nextEntries);
   assert.equal(target.request.transcript.digest, createHash("sha256").update(nextTranscript).digest("hex"));
   assert.equal(target.request.transcript.cursor, "hook-skill-follow-up");
-  assert.equal(target.frozen.skill.constraints[0].statement, "Read the task before reviewing.");
+  assert.match(target.frozen.skill.constraints[0].statement, /Read the task before reviewing\./);
+  assert.equal(target.frozen.skill.constraints[0].sourceUnitIds.length, 1);
   for (const evidencePath of [target.request.transcript.path, target.request.groundTruthPath, target.request.skillGroundTruthPath]) {
     assert.equal(
       path.normalize(path.dirname(evidencePath)),
@@ -433,5 +449,5 @@ test("declared Skill hooks hand off refreshed Ground Truth to a new configured S
   assert.ok(!serialized.includes(TARGET_TOKEN));
   assert.ok(!serialized.includes(AMBIENT_TOKEN));
   const task = JSON.parse(await fs.readFile(path.join(f.root, ".runtime-correction/tasks", target.lease.taskId, "task.json"), "utf8"));
-  assert.deepEqual(Object.values(task.watchers).map((watcher) => watcher.status), ["PASS"]);
+  assert.deepEqual(Object.values(task.watchers).map((watcher) => watcher.status), ['ACTIVE'], 'launch/handoff succeeded; a CLI fixture without original-page proof cannot certify semantic PASS');
 });

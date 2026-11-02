@@ -21,7 +21,9 @@
     "review_plan",
     "review_notes",
     "submit_finding",
-    "finish_stop_review"
+    "finish_stop_review",
+    "commit_baseline_inventory",
+    "finish_baseline_audit"
   ],
   "baseline": [
     "source_read",

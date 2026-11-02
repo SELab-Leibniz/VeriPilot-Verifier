@@ -7,7 +7,7 @@ import { persistSkillGroundTruth } from '../../lib/runtime-v2/ground-truth-ledge
 export const MIXED_SKILL_ID = 'numeric-conditional-check';
 export const MIXED_SKILL_EXPECTED = Object.freeze({
   [`M08:${MIXED_SKILL_ID}:array-check`]: 'NOT_APPLICABLE',
-  'M12:R1': 'UNVERIFIED',
+  'M12:R1': 'PASS',
   'M12:R2': 'UNVERIFIED',
   'M16:R1': 'PASS',
 });

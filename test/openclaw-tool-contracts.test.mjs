@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {OPENCLAW_TOOL_NAMES,BASELINE_TOOL_NAMES,configureOpenClawToolContract,assertOpenClawToolContract} from '../lib/openclaw/tool-contracts.mjs';
+import {OPENCLAW_TOOL_NAMES,TASK_TOOL_NAMES,BASELINE_TOOL_NAMES,configureOpenClawToolContract,assertOpenClawToolContract} from '../lib/openclaw/tool-contracts.mjs';
 import {registerTaskTools,bindTaskTools} from '../lib/openclaw/task-tools.mjs';
 import {assertRequiredReviewerTools,withNativeTaskToolPolicy} from '../lib/openclaw/native-config.mjs';
 import entry from '../lib/openclaw/entry.mjs';
@@ -25,13 +25,36 @@ test('packaged Skill metadata parses with the installed host YAML parser before 
 });
 
 test('the full registration contract includes every actual factory even without an installed-host fixture',async()=>{
- const names=new Set(),manifest=configureOpenClawToolContract(await sourceManifest());
+ const names=new Set(),hooks=new Map(),manifest=configureOpenClawToolContract(await sourceManifest());
  entry.register({rootDir:process.cwd(),config:{},pluginConfig:{},logger:{info(){},warn(){},error(){}},
   runtime:{version:'2026.7.1-2',agent:{runEmbeddedAgent:async()=>assert.fail('contract inspection must not call a model')}},
   registerTool(_factory,metadata){for(const name of metadata.names)names.add(name);},
-  registerCommand(){},registerGatewayMethod(){},registerHttpRoute(){},registerAgentToolResultMiddleware(){},on(){}});
+  registerCommand(){},registerGatewayMethod(){},registerHttpRoute(){},registerAgentToolResultMiddleware(){},on(name,hook){hooks.set(name,hook);}});
  assert(names.has('rc_skill_care'));
  assert.deepEqual([...names].sort(),[...manifest.contracts.tools].sort());
+ assert(TASK_TOOL_NAMES.includes('finish_baseline_audit'));
+ assert(TASK_TOOL_NAMES.includes('commit_baseline_inventory'));
+ assert(!BASELINE_TOOL_NAMES.includes('commit_baseline_inventory'));
+ const groups=JSON.parse(await fs.readFile(new URL('../config/openclaw-tool-contracts.json',import.meta.url),'utf8'));
+ assert.deepEqual(groups.public,['runtime_corrector','rc_document','rc_skill_care','rc_progress']);
+ assert.deepEqual(BASELINE_TOOL_NAMES,['source_read','source_grep','source_find','source_ls','review_history','baseline_notes','save_baseline_batch','finish_baseline']);
+ const sessionId=randomUUID(),sessionKey=`agent:main:runtime-corrector:${sessionId}`,runId=randomUUID(),observed=[];
+ const close=bindTaskTools({sessionId,sessionKey,runId,active(){},tools:[],observeReceipt:event=>observed.push(event)});
+ try{
+  const persist=hooks.get('tool_result_persist'),ctx={sessionId,sessionKey,runId};
+  const finish={toolName:'finish_baseline_audit',toolCallId:'owned-finish',isSynthetic:false};
+  assert.equal(persist({...finish,isSynthetic:true},ctx),undefined);
+  persist(finish,{...ctx,runId:'foreign'});persist(finish,{...ctx,sessionId:'foreign'});
+  persist({...finish,toolName:'finish_baseline'},ctx);
+  assert.equal(observed.length,0);
+  assert.equal(persist(finish,ctx),undefined); // Synchronous bridge never rewrites a host message.
+  persist({...finish,toolName:'source_read'},ctx);
+  const inventory={...finish,toolName:'commit_baseline_inventory'};
+  persist({...inventory,isSynthetic:true},ctx);persist(inventory,{...ctx,runId:'foreign'});
+  assert.equal(observed.length,2);
+  assert.equal(persist(inventory,ctx),undefined);
+  assert.deepEqual(observed.map(event=>event.toolName),['finish_baseline_audit','source_read','commit_baseline_inventory']);
+ }finally{close();}
 });
 
 test('tool contract configuration repairs missing declarations without operator tool-name edits',async()=>{

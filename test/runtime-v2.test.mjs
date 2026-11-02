@@ -2,10 +2,12 @@ import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-hos
 import assert from "node:assert/strict";
 import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import { isDeepStrictEqual } from "node:util";
+import { execFileSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { skillGraphQuoteCandidate as skillGraphCandidate, observeScriptedSkillSourceReview } from './helpers/skill-source-interpretation.mjs';
 
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { runSemanticReview } from "../lib/semantic-review.mjs";
@@ -34,6 +36,7 @@ import {
   atomicWrite,
   cleanupStaleAtomicWrites,
   readJson,
+  sha256,
 } from "../lib/runtime-v2/utils.mjs";
 import {
   GROUND_TRUTH_REVIEW_SCHEMA,
@@ -42,6 +45,7 @@ import {
   STOP_REVIEW_SCHEMA,
 } from "../lib/runtime-v2/reviewer.mjs";
 import { ensureTask, findTask, taskStatePath, withTaskState } from "../lib/runtime-v2/task-store.mjs";
+import { outsideDecision } from "../lib/runtime-v2/decision-scope.mjs";
 import { readTranscriptSnapshot, reconcileTurnState } from "../lib/runtime-v2/transcript.mjs";
 
 
@@ -198,7 +202,11 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
     await fs.mkdir(requestDirectory, { recursive: true });
     calls.push({ role, request, schema });
     let result;
-    if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || isDeepStrictEqual(schema, SKILL_GROUND_TRUTH_REVIEW_SCHEMA)
+    if (request.skillGraphOnly) {
+      const candidate = skillGraphCandidate(options.evidence.skillSource);
+      candidate.constraints.find(c => c.interpretation.currentDuties.length).constraintId = 'demo-verify';
+      result = { summary: 'Original Skill graph.', skillGroundTruth: candidate };
+    } else if (isDeepStrictEqual(schema, GROUND_TRUTH_REVIEW_SCHEMA) || isDeepStrictEqual(schema, SKILL_GROUND_TRUTH_REVIEW_SCHEMA)
       || request.reviewScope?.kind === "baseline") {
       result = {
         summary: "Ground Truth refreshed.",
@@ -228,7 +236,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
     } else {
       throw new Error(`Unexpected fake reviewer role: ${role}`);
     }
-    return observedLegacyStop(options, {
+    const handle = await observedLegacyStop(options, {
       result,
       requestDirectory,
       async followUp({ nextSchema }) {
@@ -245,6 +253,7 @@ function fakeReviewerFactory({ stopAssessment = stopReview, skillAssessment = sk
       },
       async close() {},
     });
+    return role === 'skill-reviewer' ? observeScriptedSkillSourceReview(options, handle) : handle;
   };
   factory.calls = calls;
   return factory;
@@ -660,7 +669,7 @@ test("PostToolUse refreshes a Skill watcher at the due turn and emits one correc
     plan,
     reviewerFactory,
   });
-  assert.equal(retriggered.watcher.status, "SKIPPED_FEEDBACK_BUDGET");
+  assert.equal(retriggered.watcher.status, "ACTIVE", 'feedback exhaustion caps delivery, never original-source semantic coverage');
   const state = JSON.parse(await fs.readFile(taskStatePath(root, started.taskId), "utf8"));
   assert.equal(Object.values(state.deviations).length, 1);
   assert.ok(reviewerFactory.calls.filter((call) => call.role === "ground-truth-extractor").length >= 2);
@@ -709,17 +718,25 @@ test("unchanged Skill checks reuse a NOT_COMPLETED assessment but changed source
 
 test("Skill admission rejects omitted contracts without successful cursor or watcher, and retries the same source", async t => {
   const root = await workspace(t);
-  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");
+  const skillFile = await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nVerify before completion.\n");
   const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
   const plan = v2Plan(root), healthyFactory = fakeReviewerFactory();
-  let broken = true, calls = 0;
+  let broken = true, calls = 0, acceptedBeforeSkillGraph;
   const factory = async options => {
-    if (options.role === "ground-truth-extractor") {
+    if (options.request.skillGraphOnly) {
       calls++;
       assert.equal(options.schema.required.includes("skillGroundTruth"), true);
+      if (broken && acceptedBeforeSkillGraph === undefined) acceptedBeforeSkillGraph = await outsideDecision(async () => {
+        const physical = await findTask({ projectRoot: root, sessionId: "skill-admission", explicitTaskId: options.taskId });
+        assert(physical);
+        return { truth: await loadCurrentGroundTruth(root, options.taskId),
+          sharedBasis: structuredClone(physical.groundTruth.sharedBasis),
+          sourceCursors: structuredClone(physical.groundTruth.sourceCursors),
+          graph: await readJson(path.join(path.dirname(taskStatePath(root, options.taskId)), "skills/demo/skill-ground-truth.json")) };
+      });
     }
     const handle = await healthyFactory(options);
-    if (broken && options.role === "ground-truth-extractor") delete handle.result.skillGroundTruth;
+    if (broken && options.request.skillGraphOnly) delete handle.result.skillGroundTruth;
     return handle;
   };
   const invoke = id => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
@@ -728,20 +745,48 @@ test("Skill admission rejects omitted contracts without successful cursor or wat
   const rejected = await invoke("missing-contract");
   assert.equal(rejected.reason, "SKILL_WATCH_NOT_ESTABLISHED");
   let state = JSON.parse(await fs.readFile(taskStatePath(root, rejected.taskId), "utf8"));
-  assert.deepEqual(state.watchers, {});
+  const pending = Object.values(state.watchers);
+  assert.equal(pending.length, 1);
+  const original = pending[0], selection = original.pendingSelection;
+  assert.equal(original.skillId, "demo"); assert.equal(original.status, "UNVERIFIED_RECOVERY");
+  assert.equal(original.sourceInterpretationChecked, false); assert.equal(original.verificationIncomplete, true);
+  assert(selection); assert.equal(selection.taskId, state.taskId); assert.equal(selection.rootSessionId, state.rootSessionId);
+  assert(original.invocationIds.includes("missing-contract")); assert.equal(selection.invocationId, "missing-contract");
+  const bytes = await fs.readFile(selection.pointer.path), origin = JSON.parse(bytes.toString("utf8"));
+  assert.equal(sha256(bytes), selection.pointer.bytesDigest); assert.equal(sha256(origin), selection.pointer.digest);
+  assert.equal(origin.taskId, state.taskId); assert.equal(origin.rootSessionId, state.rootSessionId);
+  assert.equal(origin.invocationId, selection.invocationId); assert.equal(origin.skillId, original.skillId);
+  assert.equal(origin.source.digest, original.skillDigest);
+  assert.equal(origin.source.files.find(file => file.path === "SKILL.md").content, await fs.readFile(skillFile, "utf8"));
+  assert(acceptedBeforeSkillGraph, "Capture the actual formally accepted head before the first failed graph dispatch");
+  assert.deepEqual(await loadCurrentGroundTruth(root, rejected.taskId), acceptedBeforeSkillGraph.truth,
+    "The failed Skill attempt cannot alter truth already legitimately accepted by the independent barrier");
+  assert.deepEqual(state.groundTruth.sharedBasis, acceptedBeforeSkillGraph.sharedBasis,
+    "The failed Skill attempt cannot replace the accepted basis or source certificate");
+  assert.deepEqual(state.groundTruth.sourceCursors, acceptedBeforeSkillGraph.sourceCursors);
+  const file = path.join(path.dirname(taskStatePath(root, rejected.taskId)), "skills/demo/skill-ground-truth.json");
+  assert.equal(acceptedBeforeSkillGraph.graph, null);
+  assert.deepEqual(await readJson(file), acceptedBeforeSkillGraph.graph, "A retained invocation is not a published Skill graph");
   assert.equal(Object.keys(state.groundTruth.sourceCursors).filter(key => key.startsWith("skill:")).length, 0);
   assert.equal(state.stop.correctionAttempts, 0);
   broken = false;
   const accepted = await invoke("valid-contract");
   assert.equal(accepted.watcher.status, "ACTIVE");
+  assert.equal(accepted.watcher.watcherId, original.watcherId); assert.equal(accepted.watcher.skillDigest, original.skillDigest);
+  assert.equal(accepted.watcher.startedAt, original.startedAt); assert.equal(accepted.watcher.startedTurn, original.startedTurn);
+  assert.equal(accepted.watcher.maxTurn, original.maxTurn); assert.equal(accepted.watcher.pendingSelection, undefined);
+  assert(accepted.watcher.invocationIds.includes("missing-contract")); assert(accepted.watcher.invocationIds.includes("valid-contract"));
+  assert(accepted.watcher.selectionOrigins.some(pointer => pointer.digest === selection.pointer.digest));
+  state = JSON.parse(await fs.readFile(taskStatePath(root, accepted.taskId), "utf8"));
+  assert.deepEqual(Object.keys(state.watchers), [original.watcherId]);
   assert.equal(calls, 2);
-  const file = path.join(path.dirname(taskStatePath(root, accepted.taskId)), "skills/demo/skill-ground-truth.json");
   const good = JSON.parse(await fs.readFile(file, "utf8"));
   for (const damage of ["missing", "stale", "corrupt"]) {
     if (damage === "missing") await fs.rm(file);
     else await fs.writeFile(file, JSON.stringify({ ...good, skillDigest: damage === "stale" ? "old-source" : good.skillDigest, digest: "invalid" }));
     const repaired = await invoke(`cache-${damage}`);
     assert.equal(repaired.watcher.status, "ACTIVE");
+    assert.equal(repaired.watcher.watcherId, original.watcherId); assert.equal(repaired.watcher.maxTurn, original.maxTurn);
     assert.equal(JSON.parse(await fs.readFile(file, "utf8")).skillDigest, good.skillDigest);
   }
   assert.equal(calls, 5, "a cursor alone cannot bypass reconstruction of missing or stale contracts");
@@ -876,7 +921,12 @@ test("Stop checks an active Skill watcher even before its first interval", async
     },
     stopCorrection: { enabled: false },
   });
-  const reviewerFactory = fakeReviewerFactory();
+  const reviewerFactory = fakeReviewerFactory({ skillAssessment: () => ({
+    ...skillReview(), summary: "Scripted assessment of the attributable failed verification; no real model.",
+    findings: [{ ...skillReview().findings[0], reason: "The required verification returned exit code 3 before the completion claim.",
+      actualEvidence: ["transcript:short-verify-call tool:short-verify -> transcript:short-verify-result exitCode=3"],
+      suggestedNextAction: "Inspect the actual failed verification and correct its cause." }],
+  }) });
   const base = { cwd: root, session_id: "session-short-skill", transcript_path: transcript };
   await handleRuntimeV2Event({
     input: {
@@ -890,6 +940,18 @@ test("Stop checks an active Skill watcher even before its first interval", async
     plan,
     reviewerFactory,
   });
+  let verification;
+  try { execFileSync(process.execPath, ["-e", "console.log('verification failed'); process.exit(3)"], { cwd: root, encoding: "utf8", stdio: "pipe" }); }
+  catch (error) { verification = error; }
+  assert.equal(verification.status, 3);
+  await fs.appendFile(transcript, "\n" + [
+    { type: "assistant", uuid: "short-verify-call", message: { content: [{ type: "tool_use", id: "short-verify", name: "Bash",
+      input: { command: 'node -e "console.log(\'verification failed\'); process.exit(3)"', executable: process.execPath,
+        args: ["-e", "console.log('verification failed'); process.exit(3)"] } }] } },
+    { type: "user", isMeta: true, uuid: "short-verify-result", message: { content: [{ type: "tool_result", tool_use_id: "short-verify", is_error: true,
+      content: `Exit code ${verification.status}\n${verification.stdout}` }] } },
+    { type: "assistant", uuid: "short-verify-done", message: { content: "The delivery is complete." } },
+  ].map(row => JSON.stringify(row)).join("\n"));
   const stopped = await handleRuntimeV2Event({
     input: { ...base, hook_event_name: "Stop", hook_event_id: "stop-before-interval" },
     projectRoot: root,
@@ -915,8 +977,41 @@ test("Stop checks an active Skill watcher even before its first interval", async
     "utf8",
   ));
   assert.equal(skillEvaluation.forcePartial, true);
+  const submitted = reviewerFactory.calls.find(call => call.role === "skill-reviewer");
+  assert.equal(submitted.request.processToolEvidence.find(row => row.toolUseId === "short-verify").status, "ERROR");
 });
 
+
+test("completed Skill with a successful real verification and no findings spends no correction feedback", async t => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nBefore claiming completion, run node --test and obtain exitCode=0.\n");
+  await write(root, "app.mjs", "export const accept = value => value + 1;\n");
+  await write(root, "verify.test.mjs", "import assert from 'node:assert/strict'; import { accept } from './app.mjs'; assert.equal(accept(1), 2); console.log('VERIFIER_EXECUTED accept(1)=2');\n");
+  const verifierEnv = { ...process.env }; delete verifierEnv.NODE_TEST_CONTEXT;
+  const output = execFileSync(process.execPath, ["--test", "verify.test.mjs"], { cwd: root, encoding: "utf8", env: verifierEnv });
+  assert.match(output, /VERIFIER_EXECUTED accept\(1\)=2/u);
+  assert.match(output, /\btests 1\b/u); assert.match(output, /\bpass 1\b/u); assert.match(output, /\bskipped 0\b/u);
+  const entries = transcriptEntries(1) + "\n" + [
+    { type: "assistant", uuid: "verify-call", message: { content: [{ type: "tool_use", id: "verify", name: "Bash", input: { command: "node --test verify.test.mjs" } }] } },
+    { type: "user", uuid: "verify-result", message: { content: [{ type: "tool_result", tool_use_id: "verify", content: output, is_error: false }] } },
+    { type: "assistant", uuid: "verified-done", message: { content: "Verification succeeded; done." } },
+  ].map(row => JSON.stringify(row)).join("\n");
+  const transcript = await write(root, "transcript.jsonl", entries);
+  const factory = fakeReviewerFactory({ skillAssessment: () => ({ summary: "Scripted compliant assessment; no real model.", completionStatus: "COMPLETED", findings: [] }) });
+  const plan = v2Plan(root, { stopCorrection: { enabled: false } });
+  const base = { cwd: root, session_id: "skill-compliant", transcript_path: transcript };
+  const started = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
+    input: { ...base, hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: "skill-compliant", tool_input: { skill: "demo" } } });
+  const stopped = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory: factory,
+    input: { ...base, hook_event_name: "Stop", hook_event_id: "compliant-stop" } });
+  const state = await readJson(taskStatePath(root, started.taskId));
+  assert.equal(factory.calls.filter(call => call.role === "skill-reviewer").length, 1);
+  assert.equal(Object.values(state.watchers)[0].status, "PASS");
+  assert.equal(stopped.feedback, null);
+  assert.deepEqual(state.skillFeedbacks, {});
+  assert.deepEqual(state.deviations, {});
+  assert.equal(state.stop.correctionAttempts, 0);
+});
 
 test("Skill checker faults preserve uncertainty without PASS, business findings or Skill feedback spending", async (t) => {
   const root = await workspace(t);
@@ -942,6 +1037,85 @@ test("Skill checker faults preserve uncertainty without PASS, business findings 
   const stored = await readJson(path.join(evaluations, file));
   assert.equal(stored.status, "UNVERIFIED");
   assert.equal(stored.review.checkerError, "No attributable reversed event pair.");
+});
+
+for (const completionStatus of ["COMPLETED", "NOT_COMPLETED"]) test(`orphan successful result at Stop preserves Skill uncertainty (${completionStatus}) and cannot spend business correction`, async t => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nBefore declaring completion, actually run node verify.mjs and obtain exit code 0.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { stopCorrection: { enabled: false } });
+  const checkerError = "The exit-0 tool_result is unpaired; no attributable verifier invocation establishes success, nonexecution, or reversed order.";
+  const reviewerFactory = fakeReviewerFactory({ skillAssessment: () => ({
+    summary: "Scripted insufficient-evidence response; real semantic inference requires the frozen native rerun.",
+    completionStatus, findings: [], checkerError,
+  }) });
+  const base = { cwd: root, session_id: `orphan-verifier-${completionStatus}`, transcript_path: transcript };
+  const started = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: "skill", tool_input: { skill: "demo" } } });
+  await fs.appendFile(transcript, "\n" + [
+    { type: "user", isMeta: true, uuid: "orphan-exit-zero", message: { content: [{ type: "tool_result", tool_use_id: "missing-verifier-call",
+      content: 'Exit code 0\n{"checks":2,"passed":true}' }] } },
+    { type: "assistant", uuid: "orphan-completion-claim", message: { content: "The delivery is complete." } },
+  ].map(row => JSON.stringify(row)).join("\n"));
+  const original = await fs.readFile(transcript, "utf8");
+  const stopped = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "Stop", hook_event_id: "orphan-stop", last_assistant_message: "The delivery is complete." } });
+  const state = await readJson(taskStatePath(root, started.taskId));
+  const calls = reviewerFactory.calls.filter(call => call.role === "skill-reviewer");
+  assert.equal(calls.length, 1); assert.equal(calls[0].request.forcePartial, true);
+  assert.deepEqual(calls[0].request.processToolEvidence, []);
+  assert.equal(calls[0].request.terminationAttempt.attempted, true);
+  assert.equal(Object.values(state.watchers)[0].status, "UNVERIFIED");
+  assert.equal(stopped.feedback, null); assert.notEqual(stopped.decision, "block");
+  assert.deepEqual(state.skillFeedbacks, {}); assert.deepEqual(state.deviations, {}); assert.equal(state.stop.correctionAttempts, 0);
+  const directory = path.join(root, ".runtime-correction/tasks", started.taskId, "skills/demo/evaluations");
+  const names = await fs.readdir(directory); assert.equal(names.length, 1);
+  const stored = await readJson(path.join(directory, names[0]));
+  assert.equal(stored.status, "UNVERIFIED"); assert.equal(stored.review.checkerError, checkerError);
+  assert.deepEqual(stored.review.findings, []); assert.equal(await fs.readFile(transcript, "utf8"), original);
+});
+
+test("Skill preserves an independently supported reversed order finding alongside an unresolved sibling obligation", async t => {
+  const root = await workspace(t);
+  await write(root, ".claude/skills/demo/SKILL.md", "# Demo\nRead contract.md before writing delivery.md. Also obtain a successful verifier result before reporting completion.\n");
+  await write(root, "contract.md", "The required delivery stays local.\n");
+  const transcript = await write(root, "transcript.jsonl", transcriptEntries(1));
+  const plan = v2Plan(root, { stopCorrection: { enabled: false } });
+  const reliable = { ...skillReview().findings[0], deviationKey: "demo:read-before-write", rootCauseId: "OTHER",
+    reason: "The attributed write of delivery.md completed before the required read of contract.md began.",
+    actualEvidence: ["transcript:delivery-write-call tool:delivery-write -> transcript:delivery-write-result",
+      "transcript:contract-read-call tool:contract-read -> transcript:contract-read-result"],
+    expectedConstraint: "Read contract.md before writing delivery.md.", suggestedNextAction: "Assess the supported ordering violation without rewriting history." };
+  const checkerError = "The separate verifier obligation has no attributable invocation or result.";
+  const reviewerFactory = fakeReviewerFactory({ skillAssessment: () => ({
+    summary: "Scripted mixed review: observed reversed order and unresolved verifier; no real model.",
+    completionStatus: "COMPLETED", findings: [reliable], checkerError,
+  }) });
+  const base = { cwd: root, session_id: "mixed-skill-evidence", transcript_path: transcript };
+  const started = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "PreToolUse", tool_name: "Skill", tool_use_id: "skill", tool_input: { skill: "demo" } } });
+  await write(root, "delivery.md", "Controlled unit write before contract read.\n");
+  const contract = await fs.readFile(path.join(root, "contract.md"), "utf8");
+  await fs.appendFile(transcript, "\n" + [
+    { type: "assistant", uuid: "delivery-write-call", message: { content: [{ type: "tool_use", id: "delivery-write", name: "Write", input: { file_path: "delivery.md", content: "Controlled unit write before contract read.\n" } }] } },
+    { type: "user", isMeta: true, uuid: "delivery-write-result", message: { content: [{ type: "tool_result", tool_use_id: "delivery-write", content: "The controlled unit write succeeded." }] } },
+    { type: "assistant", uuid: "contract-read-call", message: { content: [{ type: "tool_use", id: "contract-read", name: "Read", input: { file_path: "contract.md" } }] } },
+    { type: "user", isMeta: true, uuid: "contract-read-result", message: { content: [{ type: "tool_result", tool_use_id: "contract-read", content: contract }] } },
+    { type: "assistant", uuid: "mixed-completion", message: { content: "The delivery is complete." } },
+  ].map(row => JSON.stringify(row)).join("\n"));
+  const stopped = await handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    input: { ...base, hook_event_name: "Stop", hook_event_id: "mixed-stop", last_assistant_message: "The delivery is complete." } });
+  const state = await readJson(taskStatePath(root, started.taskId));
+  assert.equal(Object.values(state.watchers)[0].status, "DEVIATION");
+  assert.equal(stopped.decision, "block"); assert.match(stopped.feedback, /write of delivery.md/u);
+  assert(stopped.feedback.includes(checkerError)); assert.equal(state.skillFeedbacks.demo.count, 1);
+  const submitted = reviewerFactory.calls.find(call => call.role === "skill-reviewer").request.processToolEvidence;
+  assert.equal(submitted[0].toolUseId, "delivery-write"); assert.equal(submitted[0].status, "RETURNED");
+  assert(submitted[0].resultIndex < submitted[1].invocationIndex); assert.equal(submitted[1].toolUseId, "contract-read");
+  const directory = path.join(root, ".runtime-correction/tasks", started.taskId, "skills/demo/evaluations");
+  const [file] = await fs.readdir(directory), stored = await readJson(path.join(directory, file));
+  assert.equal(stored.status, "DEVIATION"); assert.equal(stored.verificationIncomplete, true);
+  assert.equal(stored.review.checkerError, checkerError); assert.deepEqual(stored.review.findings, [reliable]);
 });
 
 test("Stop reviewer failure terminates unverified without consuming correction budget", async (t) => {
@@ -1457,7 +1631,7 @@ test("a verified Skill deviation keeps Stop blocked without exposing release-onl
     plan,
     reviewerFactory,
   });
-  assert.equal(combined.decision, "block");
+  assert.equal(combined.decision, "block", JSON.stringify(combined));
   assert.equal(combined.stop.verificationUnavailable, true);
   assert.match(combined.feedback, /Skill execution correction: demo/u);
   assert.doesNotMatch(combined.feedback, /stopCorrection|turn off|关闭|停用/iu);

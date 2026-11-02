@@ -37,6 +37,9 @@
     "lib/result-store.mjs",
     "lib/review-graph.mjs",
     "lib/review-task/cli-mcp-bridge.mjs",
+    "lib/review-task/baseline-task.mjs",
+    "lib/review-task/baseline-selection.mjs",
+    "lib/review-task/baseline-notes.mjs",
     "lib/review-task/cli-task-session.mjs",
     "lib/review-task/evidence-utils.mjs",
     "lib/review-task/history-memory.mjs",
@@ -63,6 +66,8 @@
     "lib/runtime-plan.mjs",
     "lib/runtime-service.mjs",
     "lib/runtime-v2/artifact-candidates.mjs",
+    "lib/runtime-v2/baseline-shared-basis.mjs",
+    "lib/runtime-v2/baseline-coverage-audit.mjs",
     "lib/runtime-v2/cli-review-read-events.mjs",
     "lib/runtime-v2/config.mjs",
     "lib/runtime-v2/decision-scope.mjs",
@@ -179,9 +184,6 @@
     "lib/openclaw/transcript.mjs",
     "lib/openclaw/transient-model.mjs",
     "lib/openclaw/ui-progress.mjs",
-    "lib/review-task/baseline-task.mjs",
-    "lib/review-task/baseline-selection.mjs",
-    "lib/review-task/baseline-notes.mjs",
     "lib/runtime-v2/baseline-task.mjs"
   ]
 }

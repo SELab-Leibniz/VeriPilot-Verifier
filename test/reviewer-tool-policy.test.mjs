@@ -3,11 +3,38 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { withNativeReviewerTools, withReadOnlyReviewerTools } from "../lib/openclaw/native-config.mjs";
+import { withNativeReviewerTools, withReadOnlyReviewerTools, withPrivateReviewMemoryPolicy } from "../lib/openclaw/native-config.mjs";
 import { buildArguments } from "../lib/runtime-v2/reviewer.mjs";
 import * as claude from "../lib/hosts/claude.mjs";
 import * as codeagent from "../lib/hosts/codeagent.mjs";
 import { HOST_TOOL_REVIEWER_ROLES, blockReviewerToolCall } from "../lib/reviewer-tools.mjs";
+
+test("private Memory policy overrides only the selected agent and retains explicit source reads", () => {
+  const memory = { enabled: true, provider: "local", sources: ["memory"],
+    cache: { enabled: true }, sync: { watch: true, onSessionStart: true } };
+  for (const agents of [undefined, { defaults: { memorySearch: memory } },
+    { defaults: { memorySearch: memory }, list: [{ id: "other", memorySearch: memory }] },
+    ...[undefined, true, false].map(enabled => ({ defaults: { memorySearch: memory }, list: [
+      { id: "reviewer", model: "fixture/model", tools: { allow: ["read", "memory_search"] },
+        ...(enabled === undefined ? {} : { memorySearch: { ...memory, enabled } }) },
+      { id: "other", memorySearch: memory },
+    ] }))]) {
+    const host = { tools: { allow: ["read", "memory_search", "memory_get"] }, ...(agents ? { agents } : {}) };
+    const before = structuredClone(host);
+    const actual = withPrivateReviewMemoryPolicy(host, "reviewer");
+    assert.deepEqual(host, before);
+    assert.deepEqual(actual.tools, before.tools, "ordinary reads of explicitly adopted Memory files remain allowed");
+    assert.deepEqual(actual.agents.defaults, before.agents?.defaults);
+    assert.deepEqual(actual.agents.list.filter(agent => agent.id !== "reviewer"),
+      before.agents?.list?.filter(agent => agent.id !== "reviewer") ?? []);
+    const original = before.agents?.list?.find(agent => agent.id === "reviewer") ?? { id: "reviewer" };
+    assert.deepEqual(actual.agents.list.find(agent => agent.id === "reviewer"), {
+      ...original, memorySearch: { ...original.memorySearch, enabled: false },
+    });
+    assert.deepEqual(withPrivateReviewMemoryPolicy(actual, "reviewer"), actual);
+  }
+  assert.equal(withPrivateReviewMemoryPolicy().agents.list[0].id, "main");
+});
 
 test("private grants retain host tools, explicit denies and unrelated agent policies without mutating the host", () => {
   for (const tools of [{ alsoAllow: ["host-agent-tool"], deny: ["exec"] }, { allow: ["read", "exec"], deny: ["rc_progress"] }]) {

@@ -221,7 +221,9 @@ test("large unstructured checker failures retain their original terminal release
 
 test("deep workspace paths keep every item within 768 bytes using exact published index ordinals", async t => {
   const context = await fixture(t);
-  const deepRoot = path.join(context.projectRoot, ...Array.from({ length: 16 }, (_, index) => `${index}-${"nested-project-".repeat(4)}`));
+  // Keep the physical files below macOS PATH_MAX while still requiring the
+  // unchanged >768-byte published-index and per-item fallback assertions.
+  const deepRoot = path.join(context.projectRoot, ...Array.from({ length: 11 }, (_, index) => `${index}-${"nested-project-".repeat(4)}`));
   await fs.mkdir(deepRoot, { recursive: true });
   const objects = Array.from({ length: 20 }, (_, index) => ({ objectId: `M12:deep-${index}`, sourceId: `deep-${index}`,
     judgement: "DEVIATION", reason: `Original deep-workspace defect ${index}: ` + "中文🌻".repeat(1000),

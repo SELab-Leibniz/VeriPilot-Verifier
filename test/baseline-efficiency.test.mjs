@@ -9,11 +9,12 @@ import { createSourceTools, toolText, PAGE_BYTES } from '../lib/review-task/sour
 import { captureFiles } from '../lib/review-task/review-task.mjs';
 import { pendingReadRanges } from '../lib/review-task/baseline-task.mjs';
 import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
-import { sourceClauses, sourceUnits, expandDraftBatch, draftBaselineSchema } from '../lib/review-task/baseline-selection.mjs';
+import { sourceClauses, sourceUnits, sourceUnitNavigation, expandDraftBatch, draftBaselineSchema } from '../lib/review-task/baseline-selection.mjs';
 import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { createNativeTaskSession } from '../lib/openclaw/task-session.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-baseline-efficiency-'));
@@ -60,6 +61,53 @@ test('source clause navigation preserves semicolons inside quotations/brackets a
   assert.throws(() => sourceClauses('未知）边界；不能猜测'), /Unbalanced/);
 });
 
+test('bounded draft maps expose literal clause indices and source kinds without deciding metadata', () => {
+  const original = 'Keep ordering stable. Preserve ties within each group; 外部输入不在范围内。';
+  const material = '示例“字段A；字段B”仅是材料（不授权；不执行）；保留范围。';
+  const identity = { sourceCatalog: [{ ref: 'U', kind: 'USER_MESSAGE' }, { ref: 'M', kind: 'MATERIAL' }],
+    sources: [original, material].map((text, index) => ({ ref: index ? 'M' : 'U', kind: index ? 'MATERIAL' : 'USER_MESSAGE',
+      sha256: sha256(text), parts: [{}], clauseCounts: { 1: sourceClauses(text).length }, clauseIndexPartial: false })) };
+  const texts = new Map([['U', Buffer.from(original)], ['M', Buffer.from(material)]]);
+  const mapped = sourceUnitNavigation(identity, texts);
+  assert.deepEqual(mapped.sourceUnitNavigation, { navigationOnly: true, complete: true });
+  assert(Buffer.byteLength(JSON.stringify(mapped)) <= 2048);
+  assert.deepEqual(mapped.sourceUnits[0].clauseMap, [
+    { index: 0, text: 'Keep ordering stable. Preserve ties within each group;' },
+    { index: 1, text: ' 外部输入不在范围内。' },
+  ]);
+  assert.deepEqual(mapped.sourceUnits[1].clauseMap.map(item => item.text), sourceClauses(material));
+  assert.deepEqual(mapped.sourceUnits.map(item => item.kind), ['USER_MESSAGE', 'MATERIAL']);
+  for (const unit of mapped.sourceUnits) for (const key of ['authority', 'verificationTarget', 'implementationRole', 'citeId'])
+    assert.equal(Object.hasOwn(unit, key), false);
+  const different = '材料“条件甲；条件乙”不可当授权（也不执行；也不提升）；保留例外。';
+  assert.equal(sourceClauses(different).length, sourceClauses(material).length);
+  const stale = sourceUnitNavigation(identity, new Map([...texts, ['M', Buffer.from(different)]]));
+  assert.deepEqual(stale.sourceUnitNavigation, { navigationOnly: true, complete: false, reason: 'frozen_text_mismatch' });
+  assert(stale.sourceUnits.every(unit => !Object.hasOwn(unit, 'clauseMap')), 'a prior fitting unit must not leak a partial map after a hash mismatch');
+});
+
+test('draft maps never publish a truncated or partial literal map when budget or source indices fail', () => {
+  const identity = { sourceCatalog: [{ ref: 'U', kind: 'USER_MESSAGE' }],
+    sources: [{ ref: 'U', kind: 'USER_MESSAGE', parts: [{}], clauseCounts: { 1: 1, 2: 1 }, clauseIndexPartial: false }] };
+  const texts = new Map([['U', Buffer.from('Small first unit.\n' + '界'.repeat(700))]]);
+  identity.sources[0].sha256 = sha256(texts.get('U'));
+  const bare = sourceUnits(identity).map(({ id, clauses }) => ({ id, clauses }));
+  const over = sourceUnitNavigation(identity, texts);
+  assert.deepEqual(over.sourceUnits, bare, 'even the first fitting map must not appear to be complete');
+  assert.deepEqual(over.sourceUnitNavigation, { navigationOnly: true, complete: false, reason: 'budget' });
+  for (const [value, reason] of [
+    [new Map(), 'frozen_text_unavailable'],
+    [new Map([['U', Buffer.from('One; two\nNext')]]), 'clause_index_mismatch'],
+    [new Map([['U', Buffer.from('未闭合“；不能猜测\nNext')]]), 'ambiguous_clauses'],
+  ]) {
+    const current = { ...identity, sources: [{ ...identity.sources[0], sha256: value.has('U') ? sha256(value.get('U')) : identity.sources[0].sha256 }] };
+    const unavailable = sourceUnitNavigation(current, value);
+    assert.deepEqual(unavailable.sourceUnits, bare);
+    assert.equal(unavailable.sourceUnitNavigation.complete, false);
+    assert.equal(unavailable.sourceUnitNavigation.reason, reason);
+  }
+});
+
 test('draft source decisions reject duplicate/unknown units and preserve ordered merge boundaries', () => {
   const identity = { sourceCatalog: [{ ref: 'U1' }], sources: [{ ref: 'U1', parts: [{}], clauseCounts: { 1: 2, 2: 1, 3: 0, 4: null }, clauseIndexPartial: false }] };
   const units = sourceUnits(identity), defaults = { authority: 'USER_EXPLICIT', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' };
@@ -75,8 +123,11 @@ test('draft source decisions reject duplicate/unknown units and preserve ordered
   assert.throws(() => expandDraftBatch({ merge: [{ name: 'Mixed owners', units: ['S0L1', 'S0L2'] }], defaults,
     overrides: [{ unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units), /identical effective metadata/);
   assert.throws(() => expandDraftBatch({ keep: ['S0L1'], defaults: { verificationTarget: 'IMPLEMENTATION' } }, units), /implementationRole/);
-  const declared = expandDraftBatch({ keep: ['S0L1'], defaults, overrides: [{ unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units);
+  const { implementationRole, ...mixedDefaults } = defaults;
+  const declared = expandDraftBatch({ keep: ['S0L1'], defaults: mixedDefaults,
+    overrides: [{ unit: 'S0L1', metadata: { implementationRole } }, { unit: 'S0L2', metadata: { verificationTarget: 'PROCESS' } }] }, units);
   assert.equal(declared.operations.length, 2); assert.equal(declared.operations[1].verificationTarget, 'PROCESS');
+  assert.equal(declared.operations[1].implementationRole, undefined);
   assert.throws(() => expandDraftBatch({ split: [{ unit: 'S0L4', groups: [] }], defaults }, units), /ambiguous/);
   assert.deepEqual(sourceUnits({ ...identity, sources: [{ ...identity.sources[0], clauseIndexPartial: true }] }), []);
 });

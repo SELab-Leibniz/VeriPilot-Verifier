@@ -163,6 +163,9 @@ test('a negative receipt cannot prove PASS, a different obligation, an undeclare
   const handle = await f.run(async ({ readAll, submit }) => { await f.start(readAll, submit); await f.finish(submit); });
   const object = f.input.request.population.metrics.M12[0], citations = handle.sourceCitations;
   for (const change of [{ sourceId: 'other' }, { sourceRevisionId: 'R1@2' }, { expectedFiles: ['other.md'] }, { applicabilityKind: 'CONDITIONAL' }, { hard: false }])
-    assert.throws(() => validateReviewJudgement({ row: { judgement: 'DEVIATION' }, object: { ...object, ...change }, citations }), /actually read/);
+    assert.throws(() => validateReviewJudgement({ row: { judgement: 'DEVIATION' }, object: { ...object, ...change }, citations }),
+      change.applicabilityKind === 'CONDITIONAL' ? /REVIEW_CONDITION_ASSESSMENT_REQUIRED/ : /actually read/);
+  assert.throws(() => validateReviewJudgement({ row: { judgement: 'DEVIATION', conditionAssessment: { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'A missing-output receipt is not an activation witness.' } },
+    object: { ...object, applicabilityKind: 'CONDITIONAL' }, citations }), /REVIEW_CONDITION_EVIDENCE_UNAVAILABLE/);
   assert.throws(() => validateReviewJudgement({ row: { judgement: 'PASS' }, object, citations }), /actually read/);
 });

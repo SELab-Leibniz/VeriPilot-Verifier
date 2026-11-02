@@ -1,0 +1,61 @@
+# Generic predeclared evaluation policy. File patterns route existing edits;
+# they do not require a new document, OpenSpec workflow, Skill, or device run.
+version: 2
+enabled: true
+sessionDefaults:
+  enabled: true
+locale: en
+maxOutputTokens: 32768
+artifacts:
+  - name: edited-document
+    stage: design
+    type: document
+    format: auto
+    patterns: ["**/*.md", "**/*.rst", "**/*.tex"]
+    editable: true
+    rules:
+      enabled: false
+    review:
+      enabled: true
+      criteria: harbor-document-review.md
+dynamicGroundTruth:
+  enabled: true
+  panel:
+    size: 2
+    adjudicator: true
+artifactCorrection:
+  groundTruthReviewEnabled: true
+  stageMetricsEnabled: true
+skillCorrection:
+  enabled: true
+  selection:
+    mode: all
+implementationCorrection:
+  enabled: true
+  platform: null
+stopCorrection:
+  enabled: true
+  waitMode: until_pass
+  metrics:
+    M01: true
+    M02: true
+    M03: true
+    M04: true
+    M05: true
+    M06: true
+    M07: true
+    M08: true
+    M09: true
+    M10: true
+    M11: true
+    M12: true
+    M13: true
+    M14: true
+    M15: true
+    M16: true
+reviewers:
+  defaults:
+    model: openai/glm-5.3
+    effort: low
+output:
+  directory: .runtime-correction

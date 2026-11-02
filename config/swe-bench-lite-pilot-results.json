@@ -1,0 +1,408 @@
+{
+  "schema": "rc-swe-bench-lite-paired-results-v1",
+  "status": "OFFICIAL_THREE_CASE_PILOT_COMPLETE_WITH_RUNTIME_FAILURES",
+  "completedUtc": "2026-10-31T07:34:21.579164+00:00",
+  "benchmark": "SWE-bench Lite",
+  "sampleCount": 3,
+  "sampleRole": "fixed_pilot_not_held_out",
+  "SWE-sweepReplaced": true,
+  "globalPlannedSamples": 21,
+  "sampleIds": [
+    "pytest-dev__pytest-7432",
+    "sympy__sympy-12419",
+    "django__django-12708"
+  ],
+  "evaluatedCandidate": {
+    "snapshot": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/execution-snapshot-005",
+    "artifactSha256": "87011f7f0f80ca35f2ded7afa71064c04f3be2212816f15e7ec05041465e49d9",
+    "files": 245,
+    "sameAcrossAllCases": true,
+    "includesNewWorkingTreeBaselineFix": false
+  },
+  "controls": {
+    "host": "OpenClaw2026.7.1-2",
+    "model": "openai/glm-5.3",
+    "originalBusinessEntry": "agent",
+    "perArmInferenceMs": 1800000,
+    "perArmCpu": 2,
+    "perArmMemoryMiB": 4096,
+    "sharedLedgerRequestLimit": 256,
+    "modelRequestConcurrency": 4,
+    "trialConcurrency": 1,
+    "harnessCommit": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+    "datasetRevision": "b0dde1093fe417d83b7184254edf8199c1f0dff5",
+    "allSixCanonicalExportsAndNativeInputsVerified": true
+  },
+  "rows": [
+    {
+      "instance_id": "django__django-12708",
+      "arm": "off",
+      "officialDisposition": "resolved",
+      "officialTestsExecuted": true,
+      "officialCounts": {
+        "resolved_instances": 1,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 0,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "scored",
+          "success": 1,
+          "failure": 0,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "PASS_TO_PASS": {
+          "status": "scored",
+          "success": 101,
+          "failure": 0,
+          "denominator": 101,
+          "rate": 1.0
+        }
+      },
+      "nativeRuntimeCompleted": true,
+      "runtimeException": null,
+      "internalRcReview": null,
+      "patchBytes": 3044,
+      "wireAttempts": 70,
+      "knownInputTokens": 1786055,
+      "knownOutputTokens": 59667,
+      "unknownUsageRequests": 0,
+      "heldInputTokenReservation": 0,
+      "heldOutputTokenReservation": 0,
+      "setupSeconds": 398.563728,
+      "executionSeconds": 918.723356,
+      "operatorRecoveryCensoredTiming": false,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/django__django-12708/off/logs/evaluation/rc-lite-off-8ef3c89f327644ecb736e5aa710ff205/results.json",
+      "officialAggregateSha256": "537ea71631812c9c37ceaf9791a646e3f72363df091bd0c2e073317b0e7d20f9"
+    },
+    {
+      "instance_id": "django__django-12708",
+      "arm": "on",
+      "officialDisposition": "resolved",
+      "officialTestsExecuted": true,
+      "officialCounts": {
+        "resolved_instances": 1,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 0,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "scored",
+          "success": 1,
+          "failure": 0,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "PASS_TO_PASS": {
+          "status": "scored",
+          "success": 101,
+          "failure": 0,
+          "denominator": 101,
+          "rate": 1.0
+        }
+      },
+      "nativeRuntimeCompleted": true,
+      "runtimeException": null,
+      "internalRcReview": "UNVERIFIED",
+      "patchBytes": 2842,
+      "wireAttempts": 102,
+      "knownInputTokens": 2407506,
+      "knownOutputTokens": 71758,
+      "unknownUsageRequests": 0,
+      "heldInputTokenReservation": 0,
+      "heldOutputTokenReservation": 0,
+      "setupSeconds": 166.590274,
+      "executionSeconds": 1308.34931,
+      "operatorRecoveryCensoredTiming": false,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/django__django-12708/on/logs/evaluation/rc-lite-on-7743d0c39ad34a778e60a5a955924a1e/results.json",
+      "officialAggregateSha256": "537ea71631812c9c37ceaf9791a646e3f72363df091bd0c2e073317b0e7d20f9"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "arm": "off",
+      "officialDisposition": "resolved",
+      "officialTestsExecuted": true,
+      "officialCounts": {
+        "resolved_instances": 1,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 0,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "scored",
+          "success": 1,
+          "failure": 0,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "PASS_TO_PASS": {
+          "status": "scored",
+          "success": 77,
+          "failure": 0,
+          "denominator": 77,
+          "rate": 1.0
+        }
+      },
+      "nativeRuntimeCompleted": true,
+      "runtimeException": null,
+      "internalRcReview": null,
+      "patchBytes": 2619,
+      "wireAttempts": 41,
+      "knownInputTokens": 770230,
+      "knownOutputTokens": 21116,
+      "unknownUsageRequests": 0,
+      "heldInputTokenReservation": 0,
+      "heldOutputTokenReservation": 0,
+      "setupSeconds": 88.510244,
+      "executionSeconds": 425.836458,
+      "operatorRecoveryCensoredTiming": false,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/pytest-dev__pytest-7432/off/logs/evaluation/rc-lite-off-4a012332bb794681a62bd5b027e74491/results.json",
+      "officialAggregateSha256": "b834093fba5998d7fc0399715a46f3f868f47f2a82a174613c737a83db893bf4"
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "arm": "on",
+      "officialDisposition": "resolved",
+      "officialTestsExecuted": true,
+      "officialCounts": {
+        "resolved_instances": 1,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 0,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "scored",
+          "success": 1,
+          "failure": 0,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "PASS_TO_PASS": {
+          "status": "scored",
+          "success": 77,
+          "failure": 0,
+          "denominator": 77,
+          "rate": 1.0
+        }
+      },
+      "nativeRuntimeCompleted": true,
+      "runtimeException": null,
+      "internalRcReview": "PASS",
+      "patchBytes": 2488,
+      "wireAttempts": 61,
+      "knownInputTokens": 1240714,
+      "knownOutputTokens": 25072,
+      "unknownUsageRequests": 0,
+      "heldInputTokenReservation": 0,
+      "heldOutputTokenReservation": 0,
+      "setupSeconds": 91.428277,
+      "executionSeconds": 526.403476,
+      "operatorRecoveryCensoredTiming": false,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/pytest-dev__pytest-7432/on/logs/evaluation/rc-lite-on-9ecfccdef96a46d6bfd67d8445f81a8d/results.json",
+      "officialAggregateSha256": "b834093fba5998d7fc0399715a46f3f868f47f2a82a174613c737a83db893bf4"
+    },
+    {
+      "instance_id": "sympy__sympy-12419",
+      "arm": "off",
+      "officialDisposition": "resolved",
+      "officialTestsExecuted": true,
+      "officialCounts": {
+        "resolved_instances": 1,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 0,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "scored",
+          "success": 1,
+          "failure": 0,
+          "denominator": 1,
+          "rate": 1.0
+        },
+        "PASS_TO_PASS": {
+          "status": "scored",
+          "success": 25,
+          "failure": 0,
+          "denominator": 25,
+          "rate": 1.0
+        }
+      },
+      "nativeRuntimeCompleted": false,
+      "runtimeException": "NetworkConnectionError",
+      "internalRcReview": null,
+      "patchBytes": 639,
+      "wireAttempts": 27,
+      "knownInputTokens": 423593,
+      "knownOutputTokens": 17868,
+      "unknownUsageRequests": 0,
+      "heldInputTokenReservation": 0,
+      "heldOutputTokenReservation": 0,
+      "setupSeconds": 691.581121,
+      "executionSeconds": 993.516163,
+      "operatorRecoveryCensoredTiming": true,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/sympy__sympy-12419/off/logs/evaluation/rc-lite-off-3965d18da43d4fd7b8bfb2c15a88194b/results.json",
+      "officialAggregateSha256": "60193113e4d7ef31a9903c20335e9bbb7a2a252d53f6bb9b027a7230b170045a"
+    },
+    {
+      "instance_id": "sympy__sympy-12419",
+      "arm": "on",
+      "officialDisposition": "empty_patch",
+      "officialTestsExecuted": false,
+      "officialCounts": {
+        "resolved_instances": 0,
+        "unresolved_instances": 0,
+        "empty_patch_instances": 1,
+        "infra_failure_instances": 0,
+        "error_instances": 0
+      },
+      "testBuckets": {
+        "FAIL_TO_PASS": {
+          "status": "not_executed_empty_patch",
+          "rate": null
+        },
+        "PASS_TO_PASS": {
+          "status": "not_executed_empty_patch",
+          "rate": null
+        }
+      },
+      "nativeRuntimeCompleted": false,
+      "runtimeException": "NonZeroAgentExitCodeError",
+      "internalRcReview": null,
+      "patchBytes": 0,
+      "wireAttempts": 82,
+      "knownInputTokens": 1933159,
+      "knownOutputTokens": 65471,
+      "unknownUsageRequests": 1,
+      "heldInputTokenReservation": 532480,
+      "heldOutputTokenReservation": 32768,
+      "setupSeconds": 202.139377,
+      "executionSeconds": 1214.539243,
+      "operatorRecoveryCensoredTiming": false,
+      "officialAggregateReport": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-grades-005/sympy__sympy-12419/on/logs/evaluation/rc-lite-on-cc68288ce00e426a898297ee9d535f78/results.json",
+      "officialAggregateSha256": "d9797fba85b001ef24d59aa14fb77186d3fb20e7a28b52c7b937ab480331bd19"
+    }
+  ],
+  "summary": {
+    "officialResolved": {
+      "off": 3,
+      "on": 2,
+      "denominatorEach": 3
+    },
+    "officialEmptyPatch": {
+      "off": 0,
+      "on": 1
+    },
+    "nativeRuntimeCompleted": {
+      "off": 2,
+      "on": 2,
+      "denominatorEach": 3
+    },
+    "matchedScoredCases": {
+      "ids": [
+        "django__django-12708",
+        "pytest-dev__pytest-7432"
+      ],
+      "F2P": {
+        "offSuccess": 2,
+        "onSuccess": 2,
+        "denominatorEach": 2
+      },
+      "P2P": {
+        "offSuccess": 178,
+        "onSuccess": 178,
+        "denominatorEach": 178
+      }
+    },
+    "allOffF2P": {
+      "success": 3,
+      "denominator": 3
+    },
+    "allOffP2P": {
+      "success": 203,
+      "denominator": 203
+    },
+    "allOnF2PAndP2PRates": null,
+    "allOnRateUnavailableReason": "Sympy on empty patch: official evaluator did not execute tests; no synthetic counts assigned.",
+    "apiWireAttempts": {
+      "off": 138,
+      "on": 245
+    },
+    "tokens": {
+      "offExact": 3078529,
+      "onKnownLowerBound": 5743680,
+      "onReservationCeiling": 6308928,
+      "unknownRequestsOn": 1,
+      "unknownHoldInput": 532480,
+      "unknownHoldOutput": 32768,
+      "knownLowerBoundIncreasePercent": 86.57222329235815
+    },
+    "speedGainClaimAllowed": false,
+    "speedLimitation": "Sympy both runtimes failed; off timing includes operator recovery of an aborted hung task. Do not interpret failed/censored runs as faster success.",
+    "strictBothF2PAndP2PImproved": false,
+    "overallOptimizationGoalAchieved": false
+  },
+  "findings": [
+    {
+      "kind": "BASELINE_REPAIR_LIMIT",
+      "case": "django__django-12708",
+      "effect": "Stop reviewedObjectCount0; no correction scheduled; internal UNVERIFIED despite official patch pass."
+    },
+    {
+      "kind": "INTERNAL_PASS",
+      "case": "pytest-dev__pytest-7432",
+      "effect": "Internal Stop PASS; official patch pass."
+    },
+    {
+      "kind": "INFERENCE_ABORT",
+      "case": "sympy__sympy-12419",
+      "effect": "Both runtimes failed. Off actual partial patch passed official tests; on actual patch empty, officially classified empty_patch."
+    }
+  ],
+  "newWorkingTreeCandidate": {
+    "state": "OFFLINE_ONLY_REAL_VALIDATION_PENDING",
+    "scope": "Clearer baseline proof-owner and exact-original-exclusion repair guidance; guards and budgets unchanged.",
+    "targetedTests": {
+      "passed": 67,
+      "skipped": 1,
+      "failed": 0
+    },
+    "broaderPreexistingFailuresReported": 3,
+    "report": ".runtime-correction/rc-supervision/harbor-lite-entry-readonly-001/baseline-protocol-fix-001/candidate-review.json"
+  },
+  "sourceArtifacts": {
+    "analysis": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/paired-analysis-005.json",
+    "dispositions": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/official-dispositions-005.json",
+    "inputAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/controlled-input-audit-005.json",
+    "closureAudit": ".runtime-correction/rc-supervision/swe-bench-lite-20261031/live-pairs-005/root-postinference-closure-audit.json"
+  },
+  "accounting": {
+    "currentPrimaryWireAttempts": 383,
+    "currentPrimaryKnownInputTokens": 8561257,
+    "currentPrimaryKnownOutputTokens": 260952,
+    "currentPrimaryUnknownRequests": 1,
+    "currentPrimaryConservativeReferenceUsdIncludingUnknownHold": 70.117999,
+    "allSessionWireAttemptsIncludingPriorWork": 741,
+    "allSessionConservativeReferenceUsdIncludingHistoricalHolds": 109.98037,
+    "actualInvoice": "unknown",
+    "referenceEstimateIsNotBill": true,
+    "priorFailedAttemptsPreserved": true
+  },
+  "limitations": [
+    "Three fixed pilot cases; not held out or statistically conclusive.",
+    "Two Sympy inference aborts confound causal claims about plugin quality.",
+    "P2P control is already100%; strict increase is impossible on these selected measured tests.",
+    "An empty patch is official empty_patch disposition, not fabricated per-test failures or P2P successes.",
+    "New baseline fix is outside the evaluated frozen candidate and remains unverified by real models."
+  ]
+}

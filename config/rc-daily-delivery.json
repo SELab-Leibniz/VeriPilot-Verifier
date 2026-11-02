@@ -1,0 +1,212 @@
+{
+  "schema": "rc-daily-delivery-v1",
+  "status": "SCHEDULED_WITH_EARLY_FREEZE_AND_MORNING_REPORT",
+  "timezone": "Asia/Hong_Kong",
+  "deadlineLocal": "24:00",
+  "firstDeadline": "2026-11-02T00:00:00+08:00",
+  "cadence": "daily",
+  "automation": {
+    "deadlineAudit": {
+      "id": "rc",
+      "localTime": "00:00",
+      "status": "ACTIVE"
+    },
+    "convergenceAndNightEvaluation": {
+      "id": "rc-18",
+      "localTime": "18:00",
+      "status": "ACTIVE"
+    },
+    "morningReport": {
+      "id": "rc-2",
+      "localTime": "08:00",
+      "status": "ACTIVE"
+    },
+    "kind": "heartbeat",
+    "localMachineTimezoneVerified": "HKT +0800",
+    "requiresLocalProjectAndAppRunning": true
+  },
+  "roles": {
+    "supervisorThreadId": "01a18c06-6550-70d0-aa9c-08ac57cedf4f",
+    "implementationThreadId": "01a18b5c-e45e-73f3-96e6-e40eacac0b9e",
+    "validationThreadId": "01a1948f-b42e-7e41-bd57-15358e7c587e"
+  },
+  "milestonesLocal": {
+    "capacityDecision": "18:00",
+    "scopeCutoffAndSelfChecks": "18:30",
+    "candidateSourceFreeze": "19:00",
+    "qualifiedPackageReady": "20:00",
+    "latestEvaluationStart": "20:30",
+    "handoffHardDeadline": "24:00",
+    "evaluationBatchDeadlineNextDay": "07:30",
+    "reportWorkStartsNextDay": "08:00",
+    "reportReadyNextDay": "08:30",
+    "priorityResultsTargetNextDay": "09:00"
+  },
+  "contract": "docs/rc-daily-delivery.md",
+  "deliveryRoot": ".runtime-correction/rc-supervision/daily-deliveries",
+  "packagePolicy": "immutable_source_snapshot_and_evidence_manifest",
+  "dailyDeliveryDoesNotImplyAcceptance": true,
+  "realPaidLauncher": "supervisor_coordinated_single_launcher",
+  "validationPaidExecutionLeaseGranted": false,
+  "fixedSamples": {
+    "terminalBench": 9,
+    "deepSweBench": 9,
+    "sweBenchLite": 3,
+    "total": 21,
+    "priority": "sweBenchLite"
+  },
+  "latestDelivery": {
+    "deliveryId": "2026-11-01-v15-source012-001",
+    "path": ".runtime-correction/rc-supervision/daily-deliveries/2026-11-01/v15-source012-001",
+    "frozenUtc": "2026-11-01T11:07:02.448481+00:00",
+    "actualHandoffUtc": "2026-11-01T11:07:57.770272+00:00",
+    "sealSha256": "d31cbaff5790e77b0294d115b3397cff42cb648281f228c6128fa2e74ff8d70b",
+    "candidateStatus": "NOT_ACCEPTED_INCOMPLETE",
+    "packageIndependentReview": "ACCEPTED_VALID_FROZEN_INCOMPLETE_DELIVERY",
+    "validationThreadId": "01a1948f-b42e-7e41-bd57-15358e7c587e",
+    "reviewPath": ".runtime-correction/rc-supervision/validation-assistant-20261101/daily-delivery20261101-v15-review-001.json",
+    "reviewSha256": "de0560b7a9681a313322090c6a6115e5642126ca375846e50277353bc0da9014",
+    "rootReviewReceipt": ".runtime-correction/rc-supervision/daily-deliveries/2026-11-01/root-v15-package-review-receipt-001.json"
+  },
+  "firstAssignment": "P0 baseline coverage repair design after actual source012 normal rejection. Preserve original source012 daily delivery and all failures; no unchanged fault/ON launch. New qualified candidates require separate freeze and binding.",
+  "updatedUtc": "2026-11-01T11:20:52.818334+00:00",
+  "nightlyEvaluation": {
+    "mandatoryPlannedOnCases": 3,
+    "selectionBasis": "Pre-ON stage amendment: one valid unresolved hard diagnostic core H1 plus medium M2 and pytest regression. Original medium diagnostic requirement remains unmet; stop additional paid failure search for this stage. Broader benchmark scope remains.",
+    "requiredReadiness": [
+      "immutable source and exact runtime bindings",
+      "accepted normal and fault module controls",
+      "same-artifact native and Linux qualification",
+      "matched baseline reuse decision or explicitly unpaired result",
+      "image digests and cold environment preparation qualified before nightly slot"
+    ],
+    "perArmMinutes": {
+      "setup": 20,
+      "originalSharedInference": 30,
+      "originalReadonlyWrapperAllowance": 2,
+      "graderOperationalReserve": 45,
+      "artifactClosureAndQueueReserve": 5,
+      "perArm": 102,
+      "normalDailyOn3": 306,
+      "oneTimeOff3PlusOn3": 612
+    },
+    "normalDailyArms": 3,
+    "maxArmsIncludingOneTimeAffectedBaselineRebuild": 6,
+    "maxActiveVersionBatches": 1,
+    "maxPendingVersionBatches": 1,
+    "latestStartLocal": "20:30",
+    "batchAbsoluteEndLocalNextDay": "07:30",
+    "defaultPaidAttemptsPerCasePerVersion": 1,
+    "automaticPaidRetries": 0,
+    "largerBenchNightlyRuns": 0,
+    "largerCoverage": "TB9/DeepSWE9 remain required overall; plan separately after Lite readiness and actual timing calibration.",
+    "capacityEvidence": ".runtime-correction/rc-supervision/daily-delivery-setup-20261101/capacity-evidence-002.json",
+    "gradingReserveIsSeparateFromUnchangedOfficialTestTimeoutSec": 1800,
+    "originalFixedLite3RegressionIds": [
+      "django__django-12708",
+      "pytest-dev__pytest-7432",
+      "sympy__sympy-12419"
+    ],
+    "instanceIdsInFrozenOrder": [
+      "sympy__sympy-18199",
+      "pytest-dev__pytest-7432",
+      "sympy__sympy-16792"
+    ],
+    "composition": {
+      "regressionAnchor": "pytest-dev__pytest-7432",
+      "regressionMedium": "sympy__sympy-16792",
+      "diagnosticMedium": null,
+      "diagnosticHard": "sympy__sympy-18199",
+      "diagnosticStatus": "ONE_HARD_CORE_ORIGINAL_MEDIUM_DIAGNOSTIC_UNFULFILLED",
+      "finalOrder": "hard-diagnostic,regression-anchor,medium-regression; prospective order amendment before any ON, unchanged members and pending bindings"
+    },
+    "candidatePoolRequest": {
+      "medium": 2,
+      "hard": 2,
+      "total": 4,
+      "excludeExistingLite3": true,
+      "selection": "Public metadata and fixed seed SHA256 ordering; no hidden tests or solutions",
+      "maxPoolScreeningArms": 4,
+      "screenBeforeNightWherePossible": true,
+      "nightMaxArmsIncludingScreeningAndOnStill": 6,
+      "poolIdsManifest": "config/rc-diagnostic-screening-20261101.json",
+      "poolPreregistered": true
+    },
+    "unqualifiedDiagnosticSlots": "Report NOT_RUN or UNAVAILABLE; do not fill with all-pass cases and call this quality gain.",
+    "interpretation": "Current three-slot nightly plan is a development diagnosis and regression plan. Confirmatory repetitions require their own preregistration and capacity decision; current slots do not silently imply confirmatory causal evidence.",
+    "comparisonBindingsFrozenForDispatch": false,
+    "stageAmendment": ".runtime-correction/rc-supervision/skill-review-canonical-targets-design-20261101/phase-e2e-bank-amendment-001.json",
+    "onAuthorized": false,
+    "currentNightCapacity": {
+      "state": "PROSPECTIVE_UNSTARTED_THREE_ON_CAPACITY_ONLY_READINESS_AND_MATCHED_OFF_PENDING",
+      "evidence": ".runtime-correction/rc-supervision/daily-delivery-setup-20261101/conditional-three-on-late-capacity-amendment-001.json",
+      "conditionalLatestStartLocalNextDay": "02:00",
+      "maxArms": 3,
+      "onAuthorized": false,
+      "automaticLateCatchup": false,
+      "requiresAllThreeMatchedOffReuse": true,
+      "oldDefaultCutoffRecord": ".runtime-correction/rc-supervision/daily-delivery-setup-20261101/capacity-cutoff-status-2030-001.json"
+    }
+  },
+  "baselineReuse": {
+    "arm": "RC_OFF",
+    "strategy": "freeze_once_per_comparable_condition_binding",
+    "reuseApproval": "OLD005_TRANSPORT_MISMATCH_NEW_COMMON_BINDING_REQUIRES_ONCE_ONLY_OFF",
+    "neverDailyRepeatMatchedBaseline": true,
+    "bindingFields": [
+      "instance and exact public input",
+      "base commit and image digest",
+      "model and effective provider configuration",
+      "host and business entry/transport",
+      "same effective inference/request/token/resource limits",
+      "equal-start environment seed",
+      "official dataset and grader"
+    ],
+    "changedRcOnlyDoesNotAutomaticallyInvalidateOff": true,
+    "onlyRebuildAffectedBindings": true,
+    "oldScoresRemainHistoricalUntilCompatibilityProven": true,
+    "censoredTimingNotUsableForEfficiency": true,
+    "knownHistoricalOffScore": {
+      "F2P": "3/3",
+      "P2P": "203/203"
+    },
+    "strictIncreaseAtCeilingUnattainable": true,
+    "independentAudit": ".runtime-correction/rc-supervision/validation-assistant-20261101/lite-baseline-reuse-timing-audit-001.json",
+    "newBindingStrategy": "Rebuild stable anchor off once under current transport; newly screened diagnostics supply their own once-only matched off. Original full-score off remain historical.",
+    "scope": "Operational development diagnosis and routine daily regression reuse under verified equal effective conditions; not an unbiased confirmatory efficacy estimate.",
+    "preRegisteredConfirmationException": "Fresh OFF is justified only for an explicitly preregistered confirmatory comparison, independently of the failed screening run. This is a distinct trial, not an automatic paid retry or routine daily baseline rebuild."
+  },
+  "queueAndTimeoutPolicy": {
+    "uniqueKey": "deliveryId + snapshotDigest + instanceId + arm + conditionBindingDigest",
+    "requireExclusiveExistingLaunchClaim": true,
+    "paidLauncher": "supervisor_only_root_launches_for_validation",
+    "checkActualProcessAndToolHandleBeforeRestart": true,
+    "developmentDuringOldEvaluation": "next version may change working tree; evaluated source snapshot and run outputs remain isolated and immutable",
+    "latestStartUsesFullRemainingBound": true,
+    "maxPerArmPlanningMinutes": 102,
+    "doNotLaunchIfWorstCaseSlotCannotFitBeforeBatchDeadline": true,
+    "noLateNightTbOrDeepSweExpansion": true,
+    "onUnsettledOrUnknown": "Stop subsequent paid dispatch, retain full unknown reservations, close against actual handles; no automatic paid retry. Root may schedule next case only after genuine closure with old holds inherited.",
+    "onCapacityShortfall": "At18:00 declare exact IDs and fit all screening/on slots within six arms and07:30. Unfilled diagnostic slots stay unavailable. Report completed cases, missing slots and ETA by09:00.",
+    "morningCutoff": "No new paid run from the08:00 report task; report partial/failed/unavailable honestly by08:30 with09:00 priority target.",
+    "noCrossDayBacklog": "At most one active and one pending version. Never auto-replay overdue nightly jobs; retain their reports. Newer pending snapshot may supersede only an unstarted queue entry, never running work or historical evidence.",
+    "officialGraderTimeoutUnchanged": true,
+    "wholeBatchDeadlineDoesNotTurnCancellationIntoOfficialTestFailure": true
+  },
+  "diagnosticPolicy": {
+    "purpose": "Development diagnosis with RC_OFF quality headroom",
+    "eligibility": "Valid official unresolved baseline under fixed conditions; distinguish task failure or budget exhaustion from authentication, transport, environment or grading failures.",
+    "membershipUsesOnlyOffResults": true,
+    "freezeMembershipBeforeAnyCandidateOn": true,
+    "keepOriginal21AndHistoricalScores": true,
+    "notHeldOutOrUnbiasedGeneralization": true,
+    "recordF2pAndP2pHeadroomSeparately": true,
+    "fullScoreP2pDoesNotPermitStrictGainClaim": true,
+    "baselineOncePerConditionBinding": true,
+    "poolExpansionRequiresNewPreregisteredBatchAndCapacityDecision": true,
+    "selectionOffIsNotIndependentConfirmatoryControl": true,
+    "screeningOffFailOnPassAttribution": "Exploratory selected-case observation only. Robust RC benefit requires fresh preregistered matched OFF/ON confirmation on unchanged frozen members, with all trials reported.",
+    "confirmatoryPolicySource": "config/rc-diagnostic-screening-20261101.json#confirmatoryPolicy"
+  },
+  "diagnosticFirstOrderAmendment": ".runtime-correction/rc-supervision/daily-delivery-setup-20261101/diagnostic-first-order-amendment-001.json"
+}

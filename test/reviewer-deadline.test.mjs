@@ -167,7 +167,9 @@ Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60000);
     taskId: task.taskId,
     parentSessionId: "process-group-session",
     role: "ground-truth-extractor",
-    reviewer: reviewer(500),
+    // Use the public minimum so this exercises process-tree termination,
+    // rather than being rejected by timeout configuration validation.
+    reviewer: reviewer(1000),
     schema: RESULT_SCHEMA,
     request: { test: true },
     env: {
