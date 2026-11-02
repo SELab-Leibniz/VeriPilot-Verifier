@@ -78,6 +78,23 @@ try {
     businessToolNames: ['read', 'write', 'edit', 'exec', 'process'],
     provider: { api: 'openai-completions', baseUrl: process.env.RC_EVAL_BASE_URL ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model },
     providerGuard: { kind: 'relay_native_gateway_batch', credential: () => process.env.RC_EVAL_API_KEY } });
+  const effectiveBudgets = {
+    businessMs: gateway.config.agents.defaults.timeoutSeconds * 1000,
+    providerMs: gateway.config.models.providers.openai.timeoutSeconds * 1000,
+    hookMs: gateway.config.plugins.entries['runtime-corrector'].config.hookTimeoutMs,
+    correctionMs: gateway.config.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs,
+    reviewerMs: plan.runtimeV2.reviewers.skillReviewer.timeoutMs,
+    skillFinalMs: plan.runtimeV2.reviewers.stopReviewer.timeoutMs,
+    assessmentMs: plan.runtimeV2.stopCorrection.assessmentTimeoutMs,
+    noProgressMs: gateway.config.diagnostics.stuckSessionAbortMs,
+    skillSteps: plan.runtimeV2.reviewers.skillReviewer.maxSteps,
+    finalSteps: plan.runtimeV2.reviewers.stopReviewer.maxSteps,
+    configuredWallMs: timeouts.wallMs, configuredSteps: timeouts.maxSteps,
+  };
+  await save('effective-budgets.json', effectiveBudgets);
+  if (Object.entries(effectiveBudgets).some(([key,value]) => key.endsWith('Ms') && value < timeouts.wallMs)
+    || effectiveBudgets.skillSteps !== timeouts.maxSteps || effectiveBudgets.finalSteps !== timeouts.maxSteps)
+    throw new Error('A loaded Skill phase has a shorter hidden budget');
   if (args.includes('--transport-check')) {
     const health = await gateway.request('health', {});
     if (!health.ok || gateway.metrics().modelStarts.length) throw new Error('Zero-model benchmark preflight failed');
