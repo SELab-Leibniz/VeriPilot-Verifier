@@ -12,7 +12,7 @@ import { resolveReviewTimeoutMs } from '../lib/review-timeout.mjs';
 const SOURCE_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 export function openclawDocumentOptions(input = {}) {
-  const defaults = { reviewTimeoutMs: 600000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
+  const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
   for (const key of Object.keys(input)) assert(Object.hasOwn(defaults, key), `Unknown OpenClaw document option: ${key}`);
   const result = { ...defaults, ...input };
   for (const [key, value] of Object.entries(result)) {
@@ -38,7 +38,7 @@ async function providerEnvironment(settingsPath) {
   assert(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, 'An explicit configured model is required');
 }
 
-const policy = (model, options) => `version: 2
+export const documentHookPolicy = (model, options, dynamicBaseline = false) => `version: 2
 locale: en
 groundTruth:
   - id: original-requirements
@@ -58,7 +58,10 @@ artifacts:
       enabled: true
       criteria: document-review.md
 dynamicGroundTruth:
-  enabled: false
+  enabled: ${dynamicBaseline}
+  materialRoots: [requirements.md]
+  panel:
+    size: 0
 skillCorrection:
   enabled: false
 implementationCorrection:
@@ -66,7 +69,7 @@ implementationCorrection:
 stopCorrection:
   enabled: false
 artifactCorrection:
-  groundTruthReviewEnabled: false
+  groundTruthReviewEnabled: ${dynamicBaseline}
   stageMetricsEnabled: false
 limits:
   semanticReviewTimeoutMs: ${options.reviewTimeoutMs}
@@ -76,6 +79,10 @@ reviewers:
     effort: low
     timeoutMs: ${options.reviewTimeoutMs}
     maxOutputTokens: 16384
+  groundTruthExtractor:
+    timeoutMs: ${options.baselineTimeoutMs}
+    maxOutputTokens: 32768
+    formatRepairAttempts: 6
 output:
   persist: true
   mode: centralized
@@ -119,25 +126,37 @@ export async function collectAutomaticDocumentEvidence(projectRoot, snapshot, se
   return { reviews, receipts };
 }
 
-export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {}, settingsPath }) {
+export async function loadDocumentBenchmark(directory) {
+  const specification = JSON.parse(await fs.readFile(path.join(directory, 'case.json'), 'utf8'));
+  const requirements = await fs.readFile(path.join(directory, 'requirements.md'), 'utf8');
+  const draft = await fs.readFile(path.join(directory, 'draft.md'), 'utf8');
+  assert.equal(hash(requirements), specification.originalSha256, 'Benchmark original source identity changed');
+  for (const fault of specification.faults)
+    assert(requirements.includes(fault.original) && draft.includes(fault.draft), 'Benchmark fault does not match its frozen source');
+  return { specification, requirements, draft };
+}
+
+export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {}, settingsPath, dynamicBaseline = false, benchmarkDirectory }) {
   const config = openclawDocumentOptions(options), started = Date.now(), deadlineAt = started + config.totalTimeoutMs;
+  const benchmark = benchmarkDirectory ? await loadDocumentBenchmark(path.resolve(benchmarkDirectory)) : null;
+  const requirements = benchmark?.requirements ?? REQUIREMENTS, initialDesign = benchmark?.draft ?? INITIAL_DESIGN;
   await providerEnvironment(settingsPath);
   outputRoot = path.resolve(outputRoot);
   await fs.mkdir(path.dirname(outputRoot), { recursive: true }); await fs.mkdir(outputRoot);
   const projectRoot = path.join(outputRoot, 'project'); await fs.mkdir(projectRoot);
   await fs.mkdir(path.join(projectRoot, '.runtime-corrector'));
-  await fs.writeFile(path.join(projectRoot, 'requirements.md'), REQUIREMENTS);
-  await fs.writeFile(path.join(projectRoot, 'draft.md'), INITIAL_DESIGN);
+  await fs.writeFile(path.join(projectRoot, 'requirements.md'), requirements);
+  await fs.writeFile(path.join(projectRoot, 'draft.md'), initialDesign);
   await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'This is an isolated document review fixture. Only design.md is editable. Treat requirements.md as authoritative. Read all Runtime Corrector feedback attached to write/edit results and resolve concrete findings before finishing.\n');
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), policy(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, config));
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, config, dynamicBaseline));
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design against every declared requirements.md obligation. Report concrete current contradictions, using accurate physical line numbers and path:line: quoted evidence. Do not carry resolved findings into a new round. Return no findings when compliant. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
-  let evidence = { reviews: [], receipts: [] }, terminalReceipt;
+  let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [];
   try {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
       businessToolNames: ['read', 'write', 'edit'], confineBusinessFiles: true,
-      reviewerTimeoutMs: config.reviewTimeoutMs, hookTimeoutMs: config.hookTimeoutMs,
+      reviewerTimeoutMs: Math.max(config.reviewTimeoutMs, config.baselineTimeoutMs), hookTimeoutMs: config.hookTimeoutMs,
       businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true });
     gateway.setPhase('automatic-document-hook');
     const load = name => import(pathToFileURL(path.join(gateway.pluginRoot, name)).href);
@@ -149,7 +168,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     await gateway.runtime.agent.session.patchSessionEntry({ ...scope, update: entry => ({ ...entry, spawnedCwd: projectRoot }) });
     const saved = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     sessionId = saved.sessionId; runId = randomUUID();
-    const message = `Work only in ${projectRoot}. requirements.md is the complete original user-confirmed requirement. This is an automatic document-review exercise: first read draft.md and copy its bytes VERBATIM into design.md using write, so the configured automatic reviewer can inspect the initial draft. Then read the feedback attached to the actual write result and make the smallest required corrections in design.md. Continue until the automatic current-document reviewer reports no deviations. Preserve every original requirement, including local validation/errors and explicit exclusions. Only design.md may be changed. Do not edit requirements.md, draft.md, AGENTS.md or .runtime-corrector. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement.`;
+    const message = `Work only in ${projectRoot}. The only deliverable for THIS task is design.md, a faithful requirements/design document. Explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition. Benchmark implementation/execution instructions describe the planned system in the document; do not implement code, execute the benchmark, produce its runtime output files or claim runtime scores in this document-only task. First read draft.md and copy its bytes VERBATIM into design.md using write, so the automatic reviewer can inspect the initial candidate. Then consume the feedback attached to the actual write result and make the smallest corrections in design.md until the automatic CURRENT document reviewer passes. Preserve all other original content and formatting; do not rewrite the document into a summary. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement.`;
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message, idempotencyKey: runId,
       deliver: false, thinking: 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
     assert(accepted.runId, 'The Gateway did not accept the actual business request');
@@ -164,7 +183,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
       const last = messages.at(-1);
       terminal = last?.role === 'assistant' && ['stop', 'error', 'aborted'].includes(last.stopReason);
       const reviews = evidence.reviews;
-      const progress = JSON.stringify({ reviews: reviews.map(item => item.result.status), terminal, modelStarts: gateway.metrics().modelStarts.length });
+      const progress = JSON.stringify({ baselineVersion: task?.groundTruth?.version ?? 0, reviews: reviews.map(item => item.result.status), terminal, modelStarts: gateway.metrics().modelStarts.length });
       if (progress !== previous) { console.log(progress); previous = progress; }
       if (terminal) break;
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -188,7 +207,9 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
       path.resolve(projectRoot, (call.arguments ?? call.input).path ?? (call.arguments ?? call.input).file_path ?? '') === path.join(projectRoot, 'design.md'));
     const finalDesign = await fs.readFile(path.join(projectRoot, 'design.md'), 'utf8');
     assert(reviews.length >= 2, 'Fewer than two automatic artifact reviews were recorded');
-    assert(reviews[0].result.diagnostics.some(item => item.severity === 'error' && item.path === 'design.md' && item.line === 2), 'Initial automatic review did not locate the real telemetry deviation');
+    const expectedLines = benchmark ? benchmark.specification.faults.map(item => item.line) : [2];
+    for (const line of expectedLines)
+      assert(reviews[0].result.diagnostics.some(item => item.severity === 'error' && item.path === 'design.md' && item.line === line), `Initial automatic review did not locate the controlled deviation at line ${line}`);
     assert.equal(reviews.at(-1).result.status, 'passed', 'Final automatic document review did not pass');
     assert.equal(reviews.at(-1).result.diagnostics.length, 0, 'Final automatic review retained findings');
     assert(writes.length >= 2, 'The business model did not perform both the initial write and real repair');
@@ -196,12 +217,26 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     assert(!calls.some(call => call.name === 'runtime_corrector'), 'A manual check replaced the required automatic Hook');
     assert(JSON.stringify(snapshot).includes('[runtime-corrector:feedback]'), 'Native business transcript omitted automatic review feedback');
     assert(privateRuns.length >= 2 && privateRuns.every(item => item.status === 'SETTLED'), 'Private native reviews did not settle');
-    assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(INITIAL_DESIGN), 'Initial review did not inspect the exact draft');
+    assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(initialDesign), 'Initial review did not inspect the exact draft');
     assert.equal(reviews.at(-1).result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(finalDesign), 'Final review did not inspect the current repaired bytes');
     assert(gateway.metrics().modelStarts.some(item => item.runId === runId && item.sessionId === sessionId), 'No actual original business model start was observed');
-    assert.equal(await fs.readFile(path.join(projectRoot, 'requirements.md'), 'utf8'), REQUIREMENTS, 'Original requirements changed');
-    assert(!finalDesign.includes('https://telemetry.example.invalid/collect') && /local|device/iu.test(finalDesign)
+    assert.equal(await fs.readFile(path.join(projectRoot, 'requirements.md'), 'utf8'), requirements, 'Original requirements changed');
+    if (benchmark) {
+      for (const fault of benchmark.specification.faults)
+        assert(finalDesign.includes(fault.original) && !finalDesign.includes(fault.draft), `Benchmark document constraint was not restored: ${fault.original}`);
+    } else assert(!finalDesign.includes('https://telemetry.example.invalid/collect') && /local|device/iu.test(finalDesign)
       && /validat/iu.test(finalDesign) && /pars/iu.test(finalDesign) && /error/iu.test(finalDesign), 'Independent current-document fixture check failed');
+    if (dynamicBaseline) {
+      const id = task?.taskId ?? evidence.reviews[0].scopeTaskId;
+      baseline = await (await load('lib/runtime-v2/ground-truth-ledger.mjs')).loadCurrentGroundTruth(projectRoot, id);
+      assert(baseline.version > 0 && baseline.claims.length > 0, 'No model-extracted dynamic baseline was formally published');
+      assert(privateRuns.some(item => item.role === 'ground-truth-extractor'), 'No real native baseline extraction occurred');
+      const directory = path.join(store.taskDirectory(projectRoot, id), 'evaluations');
+      for (const name of await fs.readdir(directory)) if (name.startsWith('artifact-') && name.endsWith('.json'))
+        artifactEvaluations.push(JSON.parse(await fs.readFile(path.join(directory, name), 'utf8')));
+      assert(artifactEvaluations.length >= 2 && artifactEvaluations.every(item => item.groundTruthVersion > 0), 'Automatic document reviews were not bound to the published dynamic baseline');
+      await fs.writeFile(path.join(outputRoot, 'dynamic-baseline.json'), JSON.stringify(baseline, null, 2));
+    }
     state = 'PASSED';
   } catch (error) {
     let message = String(error.message);
@@ -214,18 +249,22 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   const report = { kind: 'openclaw-automatic-document-hook-live-e2e', state, startedAt: new Date(started).toISOString(),
     finishedAt: new Date().toISOString(), elapsedMs: Date.now() - started, options: config,
     sessionKey, sessionId, runId, taskId: task?.taskId ?? evidence.reviews[0]?.scopeTaskId, terminal, terminalReceipt, failure, projectRoot,
-    gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews,
+    gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews, dynamicBaseline, baseline, artifactEvaluations,
+    benchmark: benchmark?.specification ?? null,
     feedbackReceipts: evidence.receipts,
     effectiveTimeouts: gateway ? { reviewerTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.reviewerTimeoutMs,
       hookTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.hookTimeoutMs,
       hostBusinessTimeoutMs: gateway.config.agents.defaults.timeoutSeconds * 1000 } : null,
     finalDesign: await fs.readFile(path.join(projectRoot, 'design.md'), 'utf8').catch(() => null),
     limitations: ['Controlled fictional draft; the model performs the initial write and repair through the actual native Gateway.',
-      'Declared original requirements are reviewed directly; dynamic baseline, Skill and Stop are separate workflows.'] };
+      dynamicBaseline ? 'Real dynamically extracted baseline plus automatic document review; Skill, implementation checking, Stop and official benchmark execution are disabled.'
+        : 'Declared original requirements are reviewed directly; dynamic baseline, Skill and Stop are separate workflows.'] };
   report.sourceHashes = Object.fromEntries(await Promise.all([
     'scripts/evaluate-openclaw-document-e2e.mjs', 'scripts/helpers/native-gateway-evaluation.mjs',
     'lib/openclaw/entry.mjs', 'lib/openclaw/runtime.mjs', 'lib/openclaw/reviewer.mjs', 'lib/document-tools.mjs',
     'lib/semantic-review.mjs', 'lib/review-timeout.mjs', 'skills/document-corrector/SKILL.md',
+    'lib/runtime-v2/orchestrator.mjs', 'lib/runtime-v2/ground-truth-ledger.mjs',
+    'lib/runtime-v2/baseline-task.mjs', 'lib/openclaw/task-session.mjs',
   ].map(async name => [name, hash(await fs.readFile(path.join(SOURCE_ROOT, name)))])));
   await fs.writeFile(path.join(outputRoot, 'report.json'), JSON.stringify(report, null, 2));
   return report;
@@ -234,11 +273,12 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
   if (!args.includes('--live') || !value('--host-root') || !value('--output-root'))
-    throw new Error('Use --live --host-root <installed-openclaw> --output-root <fresh-directory> [--config <json>] [--review-timeout-ms N] [--hook-timeout-ms N] [--business-timeout-ms N] [--total-timeout-ms N]');
+    throw new Error('Use --live --host-root <installed-openclaw> --output-root <fresh-directory> [--dynamic-baseline] [--benchmark-case <directory>] [--config <json>] [--baseline-timeout-ms N] [--review-timeout-ms N] [--hook-timeout-ms N] [--business-timeout-ms N] [--total-timeout-ms N]');
   const options = value('--config') ? JSON.parse(await fs.readFile(value('--config'), 'utf8')) : {};
-  for (const name of ['review', 'hook', 'business', 'total']) if (value(`--${name}-timeout-ms`) !== undefined)
+  for (const name of ['review', 'baseline', 'hook', 'business', 'total']) if (value(`--${name}-timeout-ms`) !== undefined)
     options[`${name}TimeoutMs`] = Number(value(`--${name}-timeout-ms`));
-  const result = await runOpenClawDocumentE2E({ hostRoot: value('--host-root'), outputRoot: value('--output-root'), options, settingsPath: value('--claude-settings') });
+  const result = await runOpenClawDocumentE2E({ hostRoot: value('--host-root'), outputRoot: value('--output-root'), options, settingsPath: value('--claude-settings'),
+    dynamicBaseline: args.includes('--dynamic-baseline'), benchmarkDirectory: value('--benchmark-case') });
   console.log(JSON.stringify({ state: result.state, elapsedMs: result.elapsedMs, reviews: result.reviews.length,
     feedbackReceipts: result.feedbackReceipts.length, failure: result.failure, outputRoot: path.resolve(value('--output-root')) }));
   // The pinned host retains internal observers after awaited Gateway shutdown.

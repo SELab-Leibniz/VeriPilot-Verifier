@@ -1,0 +1,32 @@
+{
+  "name": "terminal-bench-2.1/llm-inference-batching-scheduler",
+  "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/llm-inference-batching-scheduler/instruction.md",
+  "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+  "sourcePath": "tasks/llm-inference-batching-scheduler/instruction.md",
+  "originalSha256": "0817374767533fbf51bb93345ee1bba266263c216c6cc55c096e71b4a1d37dfc",
+  "originalBytes": 4365,
+  "originalLines": 78,
+  "faults": [
+    {
+      "original": "seq_align >= ceil(prompt_len/64)*64. I.e., seq_align is a multiple of 64.",
+      "draft": "seq_align >= ceil(prompt_len/32)*32. I.e., seq_align is a multiple of 32.",
+      "line": 31
+    },
+    {
+      "original": "Max 8 unique shapes (seq_align, heads_align, hidden_align) across both buckets (MAX_SHAPES=8)",
+      "draft": "Max 16 unique shapes (seq_align, heads_align, hidden_align) independently in each bucket (MAX_SHAPES=16)",
+      "line": 32
+    },
+    {
+      "original": "``requests_bucket_2.jsonl`` | ``4.8e10``",
+      "draft": "``requests_bucket_2.jsonl`` | ``4.8e11``",
+      "line": 62
+    },
+    {
+      "original": "you should also keep the input_data files unchanged.",
+      "draft": "you may normalize the input_data files in place.",
+      "line": 69
+    }
+  ],
+  "scope": "Document-only adaptation of the complete real benchmark requirement; controlled candidate deviations, not an official benchmark execution score."
+}

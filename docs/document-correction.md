@@ -1,5 +1,23 @@
 # 文档纠偏：项目会话与按需证据
 
+## 动态基线与真实 benchmark 需求文档
+
+同一入口增加 `--dynamic-baseline`，启用生产动态需求抽取和文档 Ground Truth 评审。模型从原始用户任务及完整需求材料抽取并发布正式基线；文档自动 Hook 的两轮评审均绑定已发布的基线版本。只启用基线和文档，Skill、实现检查、Stop、额外指标和 onboarding 小组全部关闭。
+
+固定案例位于 `examples/document-e2e/terminal-bench-batching/`，采用 Terminal-Bench 2.1 的 `llm-inference-batching-scheduler` 原始完整需求（78 行、4365 字节）。来源仓库固定到 `7131e4375048a0e408a8fb404b5f499d726b695b`；`case.json` 保存来源 URL、原始文件哈希和独立检查点，原始 Apache 2.0 许可证随文件保留。`requirements.md` 保持 benchmark 原字节；独立 `draft.md` 仅在对齐粒度、形状预算、性能表和输入保护四处设置受控偏差。期望结果和偏差清单不会写进模型工作区。
+
+```sh
+node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
+  --benchmark-case examples/document-e2e/terminal-bench-batching \
+  --host-root /opt/homebrew/lib/node_modules/openclaw \
+  --config examples/document-e2e/dynamic-benchmark-options.json \
+  --output-root .runtime-correction/openclaw-dynamic-benchmark-new
+```
+
+`baselineTimeoutMs` / `--baseline-timeout-ms` 独立设置需求抽取的时限，默认 1200000 毫秒。示例配置为基线 20 分钟、文档评审 20 分钟、Hook 30 分钟、主运行 30 分钟、整轮 40 分钟，均可调整到 60 分钟；较短的外层截止仍会先结束调用。输出额外保存 `dynamic-baseline.json`，报告中包含正式基线、原生抽取记录、两轮 artifact evaluation 及其绑定版本。
+
+这项测试评价真实 benchmark 原始需求在文档中的保真和纠偏效果。原始任务的实现和执行指令作为方案内容保留，本次不执行调度器、不生成 benchmark 运行产物，也不报告官方 benchmark 得分。
+
 ## OpenClaw 自动 Hook 文档闭环
 
 `scripts/evaluate-openclaw-document-e2e.mjs` 在独立目录内启动已安装的 OpenClaw 2026.7.1-2 Gateway，加载当前源码构建的插件，通过真实 `sessions.create` / `chat.send` 发起主 Agent 任务。主 Agent 将虚构草稿写入 `design.md` 后，生产工具结果中间件自动触发文档评审，把诊断附回这次写入结果；主 Agent 根据实际收到的反馈进行修改，修改后再次自动评审。运行器不会手动调用评审、注入 Hook 事件或替换修订稿。
