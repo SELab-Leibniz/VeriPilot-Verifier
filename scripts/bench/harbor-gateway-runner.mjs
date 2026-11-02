@@ -29,7 +29,10 @@ export function harborGatewayConfig({ root, projectRoot, pluginRoot, ticket, por
   const model = ticket.model.slice('openai/'.length);
   return { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
-    discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, browser: { enabled: false }, diagnostics: { enabled: true },
+    discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, browser: { enabled: false },
+    // The host's default no-progress recovery can abort a live reasoning stream.
+    // Keep recovery finite but let the externally owned task deadline settle it.
+    diagnostics: { enabled: true, stuckSessionAbortMs: ticket.officialWallMs },
     agents: { defaults: { workspace: projectRoot, model: { primary: ticket.model }, sandbox: { mode: 'off' }, skipBootstrap: true,
       heartbeat: { every: '0m' }, timeoutSeconds: Math.max(1, Math.ceil(ticket.officialWallMs / 1000)) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent') }] },
@@ -40,9 +43,12 @@ export function harborGatewayConfig({ root, projectRoot, pluginRoot, ticket, por
     // host still caps them by each original/private run's remaining timeout.
     models: { mode: 'replace', providers: { openai: { api: 'openai-completions', baseUrl: ticket.relayBaseUrl,
       timeoutSeconds: Math.floor(ticket.officialWallMs / 1000),
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000,
+      // GLM-5.3 forces thinking; map the host's "off" request to supported low
+      // effort rather than silently leaving the provider's default max effort.
+      // https://docs.z.ai/guides/capabilities/thinking
+      models: [{ id: model, name: model, input: ['text'], reasoning: true, thinkingLevelMap: { off: 'low' }, contextWindow: 128000,
         maxTokens: ticket.tokenLimits.outputPerRequest, compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens',
-          supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: false } }] } } },
+          supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: true, thinkingFormat: 'openai' } }] } } },
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: rcEnabled, hooks: { allowConversationAccess: true, allowPromptInjection: true } } } } };
 }
