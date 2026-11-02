@@ -1,0 +1,163 @@
+{
+  "accepted": true,
+  "scope": "Real large benchmark, Stop only; natural task completion without injected defects",
+  "benchmark": {
+    "name": "DeepSWE 1.1",
+    "task": "gql-incremental-graphql-delivery",
+    "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+    "baseCommit": "f07c89f8f065010a36b4263eded209b2b1d37063",
+    "instructionSha256": "0d14a5dac7fa2d6fe2e9d9d9a113fb02cfb2495f63f8b7edcaa18ba73dd16edf",
+    "model": "glm-5.3-flash",
+    "host": "OpenClaw 2026.7.1-2",
+    "runtime": "Linux amd64, Node 22.23.4",
+    "resources": {
+      "cpus": 2,
+      "memory": "8g",
+      "platform": "linux/amd64"
+    },
+    "businessModelCommit": "0e399cd7a80516f4762250c064046f004a4369d6",
+    "businessBranch": "incremental-delivery",
+    "filesChanged": 19,
+    "insertions": 2663,
+    "deletions": 26
+  },
+  "runtime": {
+    "complete": true,
+    "verification": "PASS",
+    "reasonCode": "REVIEW_PASSED",
+    "corrections": 0,
+    "authenticTerminals": [
+      {
+        "runId": "ce5fc91d-9a9c-4aef-bd41-2a665593f58d",
+        "status": "ok",
+        "endedAt": 1793611761481,
+        "stopReason": "stop",
+        "livenessState": "working"
+      }
+    ],
+    "privateRuns": [
+      {
+        "role": "stop-reviewer",
+        "status": "SETTLED"
+      },
+      {
+        "role": "ground-truth-extractor",
+        "status": "SETTLED"
+      }
+    ],
+    "gatewayClosed": true,
+    "relayClosed": true,
+    "exitCode": 0,
+    "firstAndFinalPatchIdentical": true,
+    "patchSha256": "f281e094d10c01131a57607853b0e8a74edd27971dbbdeba9d0dd5a513f776db",
+    "workingTreeRemainder": "?? .openclaw/\n"
+  },
+  "timing": {
+    "outerMaximumMs": 43200000,
+    "originalAbsoluteDeadlineAt": 1793651381933,
+    "firstRunElapsedMs": 2886804,
+    "resumedRunElapsedMs": 945005,
+    "wallFromFirstLaunchToCleanExitMs": 4187885,
+    "stopFromOriginalTerminalToPassMs": 606467,
+    "resumePreservedOriginalDeadline": true
+  },
+  "official": {
+    "verifierImageId": "sha256:7c154ab8c2931fe48c7c8aea4523e48552f2d988a66be768490af2c9d1318a26",
+    "originalVerifierHashesMatched": true,
+    "hiddenTestsMountedInBusinessAgent": false,
+    "before": {
+      "reward": 1,
+      "f2p_total": 17,
+      "f2p_passed": 17,
+      "p2p_total": 811,
+      "p2p_passed": 811,
+      "f2p": 1.0,
+      "p2p": 1.0,
+      "partial": 1.0
+    },
+    "after": {
+      "reward": 1,
+      "f2p_total": 17,
+      "f2p_passed": 17,
+      "p2p_total": 811,
+      "p2p_passed": 811,
+      "f2p": 1.0,
+      "p2p": 1.0,
+      "partial": 1.0
+    },
+    "scoringExitCodes": [
+      0,
+      0
+    ],
+    "beforeAfterComparison": "Same first completed draft and final commit; no independent RC-off comparison",
+    "scoringScriptSha256": "6beeaa567f999be8bf316e822b9b4dcdf5b94d76cf4b4ebb96921cbd3742a33c"
+  },
+  "interruption": {
+    "reason": "Upstream 401 after 198 successful requests, before original completion and before Stop",
+    "priorAttempt": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-003/live-reasoning-005",
+    "replacementCredential": "User-provided replacement via process environment only",
+    "resumedSameSession": true,
+    "uncommittedSourceFilesPreserved": 20,
+    "controllerCreatedBusinessCommit": false
+  },
+  "providerAccounting": {
+    "scope": "Actual solve plus authenticated continuation; excludes earlier infrastructure probes and credential checks",
+    "requests": 260,
+    "http200": 259,
+    "http401": 1,
+    "usage": {
+      "prompt_tokens": 12623327,
+      "completion_tokens": 132015,
+      "total_tokens": 12755342
+    }
+  },
+  "checks": {
+    "timeoutSchemaAndProfileTestsPassed": 8,
+    "focusedNativeRegistrationAndDeadlineTestsPassed": 3,
+    "modelReportedPublicTests": {
+      "passed": 871,
+      "skipped": 30
+    },
+    "stopReviewToolCalls": 64,
+    "stopReviewToolValidationRetries": 8,
+    "fullFrameworkSuiteRequalified": false,
+    "chatWaitTwelveHourTimerAndShorterHostLimitVerified": true
+  },
+  "identities": {
+    "artifactTreeSha256": "2bc994fb50b94f41175c5169da790cee28ac856db4810c34672954c735856036",
+    "artifactFiles": 245,
+    "runnerSourceTreeSha256": "32debd37f070945f204886474494db08fa7108ad12dd54a0e0ec08e2c72567c3",
+    "frameworkCommitBeforeReport": "4db513fee2c929fe0f0d61aa936dbf857f901641",
+    "finalArtifactTreeSha256": "3c173c0904ee8c1f545d7f9afb265c443c1445c19b3d0995e1cd64e38d1ee316",
+    "finalArtifactFiles": 245,
+    "finalCodeCommit": "c441614e91e466a739f5925d54fbc0c010aa109f"
+  },
+  "limitations": [
+    "This large task passed on its first completed draft and did not exercise Stop repair dispatch.",
+    "No injected fault, hidden-test feedback, reference solution or RC-off rerun was used.",
+    "The authenticated solve trajectory resumed after a provider credential failure; it was not uninterrupted.",
+    "The temporary untracked .openclaw directory was excluded from the actual committed prediction."
+  ],
+  "evidence": {
+    "root": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004",
+    "run": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006",
+    "stopResult": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006/result.json",
+    "scoring": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006/official-scoring/comparison.json",
+    "firstSnapshot": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006/first-stop/snapshot.json",
+    "finalPatch": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006/model.patch",
+    "reviewEvidence": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006/project-runtime-correction",
+    "sourceIdentity": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-benchmark-gql-20261102-004/source-identity.json"
+  },
+  "diagnosticHistory": [
+    "stop-benchmark-gql-20261102-001: direct container transport failure, bootstrap-noise cancellation, stalled-host abort, reasoning-profile cancellation",
+    "stop-benchmark-gql-20261102-002: controlled protocol probe caught filtered reasoning before business edits",
+    "stop-benchmark-gql-20261102-003: actual implementation, 198 successful provider requests then upstream 401",
+    "stop-benchmark-gql-20261102-004: preserved-source continuation, Stop PASS and both official scores 1.0"
+  ],
+  "afterBenchmarkAdjustment": {
+    "change": "Remove a separate fixed 3599000 ms chat reply wait ceiling; use the configured Hook deadline.",
+    "reason": "Headless benchmark does not traverse this chat wait entry; ordinary chat must also allow twelve hours.",
+    "validation": "Invoke the actually registered reply_dispatch handler and observe a twelve-hour timer plus a shorter explicit host policy; three focused native tests pass.",
+    "benchmarkArtifactUnchanged": true
+  }
+}
