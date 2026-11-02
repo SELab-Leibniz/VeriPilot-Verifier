@@ -79,9 +79,9 @@ def validate_receipt(ticket: dict[str, Any], receipt: dict[str, Any]) -> dict[st
 
 
 class RcGatewayOptions(OpenClawOptions):
+    rc_verifier_uv_archive: Path | None = Field(default=None, description="Optional frozen upstream uv 0.9.5 Linux archive, preinstalled before task time to tolerate verifier installer network failure")
     rc_policy_path: Path | None = None
     rc_policy_profile: Literal["full", "baseline"] = "full"
-    rc_fault: dict[str, Any] | None = None
     rc_artifact_path: Path = Field(description="Frozen local OpenClaw RC artifact, supplied through public upload ports")
     rc_relay_ticket: Path | None = Field(default=None, description="Static public ticket for offline probes; mutually exclusive with controller descriptor")
     rc_controller_descriptor: Path | None = Field(default=None, description="Host-only /start endpoint, control token and optional disposable setupProxyUrl; never uploaded")
@@ -140,6 +140,20 @@ class RcGatewayOpenClaw(OpenClaw):
         else:
             with environment.scoped_exec_env(proxy_env):
                 await super().setup(environment)
+        if self.options.rc_verifier_uv_archive is not None:
+            archive = self.options.rc_verifier_uv_archive.resolve(strict=True)
+            await environment.upload_file(archive, "/tmp/rc-verifier-uv.tar.gz")
+            await self.exec_as_agent(environment,
+                'mkdir -p /tmp/rc-verifier-uv /root/.local/bin && '
+                'tar -xzf /tmp/rc-verifier-uv.tar.gz -C /tmp/rc-verifier-uv && '
+                'install -m755 /tmp/rc-verifier-uv/uv-x86_64-unknown-linux-gnu/uv /root/.local/bin/uv && '
+                'install -m755 /tmp/rc-verifier-uv/uv-x86_64-unknown-linux-gnu/uvx /root/.local/bin/uvx && '
+                'printf \'%s\\n\' \'export PATH="/root/.local/bin:$PATH"\' > /root/.local/bin/env && '
+                '/root/.local/bin/uv --version', timeout_sec=60)
+            (self.logs_dir / "rc-verifier-dependency.json").write_text(json.dumps({
+                "dependency": "uv", "version": "0.9.5", "sourceSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                "officialTestScriptChanged": False,
+            }, indent=2))
 
     async def run(self, instruction: str, environment: BaseEnvironment, context: AgentContext) -> None:
         phase_started_at = int(time.time() * 1000)
@@ -193,7 +207,7 @@ class RcGatewayOpenClaw(OpenClaw):
             raise ValueError("Invalid read-only artifact mount target")
         if self.options.rc_artifact_remote_path is None:
             await environment.upload_dir(artifact, remote_plugin)
-        for name in ("harbor-gateway-runner.mjs", "harbor-gateway-controller.mjs", "prepare-harbor-workspace.mjs", "baseline-bench-fault.mjs"):
+        for name in ("harbor-gateway-runner.mjs", "harbor-gateway-controller.mjs", "prepare-harbor-workspace.mjs"):
             await environment.upload_file(Path(__file__).with_name(name), remote + "/" + name)
         source_root = Path(__file__).resolve().parents[2]
         for name in ("harbor-evaluation.yaml", "harbor-document-review.md"):
@@ -207,7 +221,7 @@ class RcGatewayOpenClaw(OpenClaw):
                 "instructionPath": remote + "/instruction.txt", "resultPath": remote + "/result.json", "artifactHashes": hashes,
                 "policyPath": remote + "/harbor-evaluation.yaml", "criteriaPath": remote + "/harbor-document-review.md",
                 "nativeTranscriptOutput": "/logs/agent/openclaw.session.jsonl",
-                "policyProfile": self.options.rc_policy_profile, "fault": self.options.rc_fault}
+                "policyProfile": self.options.rc_policy_profile}
         spec_file = self.logs_dir / "rc-public-run.json"
         spec_file.write_text(json.dumps(spec, indent=2) + "\n")
         await environment.upload_file(spec_file, remote + "/run.json")
