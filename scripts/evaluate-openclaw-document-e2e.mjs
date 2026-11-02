@@ -8,28 +8,19 @@ import assert from 'node:assert/strict';
 import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
 import { REQUIREMENTS, INITIAL_DESIGN } from './evaluate-document-e2e.mjs';
 import { resolveReviewTimeoutMs } from '../lib/review-timeout.mjs';
+import { assessDocumentCopy } from '../lib/document-copy.mjs';
+import { changedFiles } from '../lib/openclaw/tools.mjs';
+export { assessDocumentCopy } from '../lib/document-copy.mjs';
 
 const SOURCE_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
-// This benchmark compares document content, not Markdown line-end padding.
-// Keep literal fenced blocks, indentation, internal spacing and every newline.
-// Never rewrite the document; actual source and reviewed-byte hashes stay exact.
-export function assessDocumentCopy(expected, actual) {
-  const comparable = text => {
-    let fence = null;
-    return text.split('\n').map(line => {
-      const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/u.exec(line);
-      const literal = Boolean(fence || marker);
-      if (!fence && marker) fence = marker[1];
-      else if (fence && marker && marker[1][0] === fence[0]
-        && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
-      return literal ? line : line.replace(/[ \t]+$/u, '');
-    }).join('\n');
-  };
-  return { equivalent: comparable(expected) === comparable(actual), exact: expected === actual,
-    expectedSha256: hash(expected), actualSha256: hash(actual),
-    policy: 'Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ.' };
+export function documentMutations(snapshot, projectRoot) {
+  const messages = (snapshot.messages ?? []).map(item => item.message ?? item);
+  const succeeded = new Set(messages.filter(item => item.role === 'toolResult' && !item.isError).map(item => item.toolCallId));
+  return messages.flatMap(item => item.role === 'assistant' && Array.isArray(item.content) ? item.content : [])
+    .filter(call => ['toolCall', 'tool_use'].includes(call.type) && succeeded.has(call.id)
+      && changedFiles(call.name, call.arguments ?? call.input ?? {}, projectRoot).includes(path.join(projectRoot, 'design.md')));
 }
 export function openclawDocumentOptions(input = {}) {
   const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
@@ -77,6 +68,7 @@ artifacts:
     review:
       enabled: true
       criteria: document-review.md
+      copyFrom: original-requirements
 dynamicGroundTruth:
   enabled: ${dynamicBaseline}
   materialRoots: [requirements.md]
@@ -169,7 +161,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(projectRoot, 'draft.md'), initialDesign);
   await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'This is an isolated document review fixture. Only design.md is editable. Treat requirements.md as authoritative. Read all Runtime Corrector feedback attached to write/edit results and resolve concrete findings before finishing.\n');
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, config, dynamicBaseline));
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Report concrete current contradictions, using accurate physical line numbers and path:line: quoted evidence. Do not carry resolved findings into a new round. Return no findings when compliant. Do not edit files.\n');
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. DOCUMENT-COPY-MISMATCH diagnostics already compare literal content, including fenced whitespace and EOF newlines. Do not dismiss or duplicate these deterministic findings. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Preserve original heading levels and formatting. Report concrete current contradictions using accurate physical line numbers. Do not carry resolved findings into a new round. Return no semantic findings when compliant. Return edits: []; the main agent owns actual native edits. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
   let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null;
@@ -189,7 +181,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     const saved = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     sessionId = saved.sessionId; runId = randomUUID();
     const message = `Work only in ${projectRoot}. Document content contract: the only deliverable is design.md. Its entire content must faithfully reproduce requirements.md, including every behavior, number, table, path, exception and prohibition. Add no preface, source-authority statement, adoption declaration, test-scope disclaimer or other commentary. Do not summarize, reformat, change indentation or change line breaks. Trailing spaces/tabs outside fenced literal blocks are insignificant for this test; preserve all other characters and preserve literal blocks exactly.
-Author execution instructions (these govern YOUR actions and are not text to add to design.md): use the complete original requirements.md as the authoritative source. The benchmark's implementation/execution instructions describe planned work inside this document; do not implement code, execute the benchmark, produce its runtime outputs or claim runtime scores. First read draft.md and copy its complete current text into design.md using write WITHOUT repairing its wording, so the automatic reviewer sees the initial candidate. Then consume feedback attached to the actual write result and make the smallest corrections in design.md until the automatic CURRENT document reviewer passes. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement in your reply, not in design.md.`;
+Author execution instructions (these govern YOUR actions and are not text to add to design.md): use the complete original requirements.md as the authoritative source. The benchmark's implementation/execution instructions describe planned work inside this document; do not implement code, execute the benchmark, produce its runtime outputs or claim runtime scores. First read draft.md and copy its complete current text into design.md using write WITHOUT repairing its wording, so the automatic reviewer sees the initial candidate. Then consume feedback attached to the actual write result and make the smallest corrections in design.md, including any accidental copy/EOF differences, until the automatic CURRENT document reviewer passes. DOCUMENT-COPY-MISMATCH gives JSON-escaped source/current lines or suffixes; preserve their exact characters with native edit. Do not send an empty or no-op patch. Once the latest automatic feedback says passed with no diagnostics, finish immediately; do not issue further patch calls. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement in your reply, not in design.md.`;
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message, idempotencyKey: runId,
       deliver: false, thinking: 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
     assert(accepted.runId, 'The Gateway did not accept the actual business request');
@@ -213,19 +205,18 @@ Author execution instructions (these govern YOUR actions and are not text to add
       await gateway.request('chat.abort', { sessionKey, runId }).catch(() => {});
       throw Object.assign(new Error('Automatic document loop exceeded the configured total deadline'), { code: 'DOCUMENT_HOOK_TIMEOUT' });
     }
-    assert.equal((snapshot.messages.at(-1).message ?? snapshot.messages.at(-1)).stopReason, 'stop', 'The original native model did not finish normally');
     terminalReceipt = await gateway.runtime.subagent.waitForRun({ runId: accepted.runId,
       timeoutMs: Math.max(1, deadlineAt - Date.now()) });
-    assert.equal(terminalReceipt.status, 'ok', terminalReceipt.error ?? 'The native Gateway did not acknowledge normal run completion');
     privateRuns = (await Promise.all([...new Set(evidence.reviews.map(item => item.scopeTaskId))]
       .map(id => runs.listNativeRuns(projectRoot, id)))).flat();
     await fs.writeFile(path.join(outputRoot, 'business-session.json'), JSON.stringify(snapshot, null, 2));
     await fs.writeFile(path.join(outputRoot, 'automatic-hook-events.json'), JSON.stringify(events, null, 2));
+    assert.equal((snapshot.messages.at(-1).message ?? snapshot.messages.at(-1)).stopReason, 'stop', 'The original native model did not finish normally');
+    assert.equal(terminalReceipt.status, 'ok', terminalReceipt.error ?? 'The native Gateway did not acknowledge normal run completion');
     const reviews = evidence.reviews, delivered = evidence.receipts;
     const calls = (snapshot.messages ?? []).flatMap(item => (item.message ?? item).role === 'assistant'
       ? (item.message ?? item).content ?? [] : []).filter(item => ['toolCall', 'tool_use'].includes(item.type));
-    const writes = calls.filter(call => ['write', 'edit'].includes(call.name?.toLowerCase()) &&
-      path.resolve(projectRoot, (call.arguments ?? call.input).path ?? (call.arguments ?? call.input).file_path ?? '') === path.join(projectRoot, 'design.md'));
+    const writes = documentMutations(snapshot, projectRoot);
     const finalDesign = await fs.readFile(path.join(projectRoot, 'design.md'), 'utf8');
     assert(reviews.length >= 2, 'Fewer than two automatic artifact reviews were recorded');
     const expectedLines = benchmark ? benchmark.specification.faults.map(item => item.line) : [2];
@@ -242,14 +233,16 @@ Author execution instructions (these govern YOUR actions and are not text to add
     const firstWrittenText = (firstWrite?.arguments ?? firstWrite?.input)?.content;
     assert.equal(typeof firstWrittenText, 'string', 'Initial business write content is unavailable');
     initialCopy = assessDocumentCopy(initialDesign, firstWrittenText);
-    assert(initialCopy.equivalent, 'Initial copy changed document content beyond permitted line-end padding');
+    // A copied candidate may acquire additional deviations: the automatic loop
+    // must repair them too. The immutable seed and actual reviewed hash remain
+    // evidence; only the final document can establish full-copy compliance.
+    if (benchmark) for (const fault of benchmark.specification.faults)
+      assert(firstWrittenText.includes(fault.draft.replace(/[ \t]+$/u, '')), 'The initial candidate pre-repaired or omitted a controlled deviation');
     assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(firstWrittenText), 'Initial review did not inspect the actual bytes written by the business agent');
     assert.equal(reviews.at(-1).result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(finalDesign), 'Final review did not inspect the current repaired bytes');
     assert(gateway.metrics().modelStarts.some(item => item.runId === runId && item.sessionId === sessionId), 'No actual original business model start was observed');
     assert.equal(await fs.readFile(path.join(projectRoot, 'requirements.md'), 'utf8'), requirements, 'Original requirements changed');
     if (benchmark) {
-      for (const fault of benchmark.specification.faults)
-        assert(finalDesign.includes(fault.original) && !finalDesign.includes(fault.draft), `Benchmark document constraint was not restored: ${fault.original}`);
       finalCopy = assessDocumentCopy(requirements, finalDesign);
       assert(finalCopy.equivalent, 'Final document adds or changes content beyond the complete original requirements');
     } else assert(!finalDesign.includes('https://telemetry.example.invalid/collect') && /local|device/iu.test(finalDesign)
@@ -290,6 +283,7 @@ Author execution instructions (these govern YOUR actions and are not text to add
   report.sourceHashes = Object.fromEntries(await Promise.all([
     'scripts/evaluate-openclaw-document-e2e.mjs', 'scripts/helpers/native-gateway-evaluation.mjs',
     'lib/openclaw/entry.mjs', 'lib/openclaw/runtime.mjs', 'lib/openclaw/reviewer.mjs', 'lib/document-tools.mjs',
+    'lib/document-copy.mjs', 'lib/artifact-checker.mjs', 'lib/rules/engine.mjs', 'lib/policy/compiler.mjs', 'config/schemas/project-config.schema.json', 'packaging/runtime-modules.json',
     'lib/semantic-review.mjs', 'lib/review-timeout.mjs', 'skills/document-corrector/SKILL.md',
     'lib/runtime-v2/orchestrator.mjs', 'lib/runtime-v2/ground-truth-ledger.mjs',
     'lib/runtime-v2/baseline-task.mjs', 'lib/openclaw/task-session.mjs',

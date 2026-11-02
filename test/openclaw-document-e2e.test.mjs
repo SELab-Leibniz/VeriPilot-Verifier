@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy } from '../scripts/evaluate-openclaw-document-e2e.mjs';
+import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy, documentMutations } from '../scripts/evaluate-openclaw-document-e2e.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
 
@@ -35,6 +35,21 @@ test('document copy allows only line-end padding outside literal fences and keep
     assert.equal(assessDocumentCopy(literal, literal.replace('keep literal  ', 'keep literal ')).equivalent, false);
     assert.equal(assessDocumentCopy(literal, literal.replace('# Scope\n', '# Scope \n')).equivalent, true);
   }
+});
+
+test('native patch repairs count only after successful tool receipts and only for the target document', () => {
+  const root = path.resolve('/tmp/doc-target');
+  const calls = [
+    { id: 'write', name: 'write', arguments: { path: 'design.md', content: 'draft' } },
+    { id: 'patch', name: 'apply_patch', arguments: { input: '*** Begin Patch\n*** Update File: design.md\n@@\n-old\n+new\n*** End Patch\n' } },
+    { id: 'failed', name: 'edit', arguments: { path: 'design.md' } },
+    { id: 'other', name: 'write', arguments: { path: 'other.md' } },
+    { id: 'empty', name: 'apply_patch', arguments: { input: '*** Begin Patch\n*** End Patch\n' } },
+    { id: 'unacknowledged', name: 'edit', arguments: { path: 'design.md' } },
+  ].map(call => ({ type: 'toolCall', ...call }));
+  const snapshot = { messages: [{ role: 'assistant', content: calls }, ...calls.filter(call => call.id !== 'unacknowledged')
+    .map(call => ({ role: 'toolResult', toolCallId: call.id, isError: call.id === 'failed', content: [] }))] };
+  assert.deepEqual(documentMutations(snapshot, root).map(call => call.id), ['write', 'patch']);
 });
 
 test('dynamic baseline is wired to document review without enabling implementation, Skill or Stop', async t => {

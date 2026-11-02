@@ -311,6 +311,10 @@ review:
 - `review.enabled: true` 且省略 `criteria`：只执行插件通用语义审阅基线；
 - `enabled: true` 且配置的 `criteria` 文件为空：明确报错；使用 `enabled: false` 关闭。
 
+仅当文档明确要求复制一份已声明的原始材料时，可设置 `review.copyFrom: <Ground Truth 来源 ID>`。该 ID 必须已列在当前 artifact 的 `groundTruth` 中，并且只能解析到一个可读源文件。`review.enabled: true` 时，生产文档检查会比较当前目标和该来源，返回 `DOCUMENT-COPY-MISMATCH` 及 JSON 转义后的当前行、来源行或 EOF 后缀；即使模型复审通过，仍有字符差异也不能通过。正文、缩进、行内空格、围栏代码块及所有换行严格保留，仅容许围栏代码块外的行尾空格/制表符不同。比较不改写文件，来源缺失时返回 pending。
+
+该选项默认不启用，普通方案文档无需与需求原文相同。`rules.enabled: false` 同时关闭该节点的默认 Markdown 标题和锚点规则；显式启用的复制内容检查独立于这些风格规则。
+
 ### Glob 语义
 
 - `*`：匹配单个路径段内任意字符；
