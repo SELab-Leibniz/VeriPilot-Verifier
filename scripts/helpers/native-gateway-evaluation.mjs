@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import net from 'node:net';
 import { randomBytes } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
@@ -23,8 +24,28 @@ function validatePhaseTimeoutMs(phaseTimeoutMs) {
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
 }
 
+function localRelayUrl(value) {
+  try { const u = new URL(value); return u.protocol === 'http:' && u.hostname === 'host.docker.internal'
+    && /^[1-9]\d{0,4}$/u.test(u.port) && u.pathname === '/v1' && !u.username && !u.password && !u.search && !u.hash; }
+  catch { return false; }
+}
+
+// A restored task may reconnect its disposable metered relay and adopt a new
+// explicit finite silence budget. Model, API, context and thinking stay pinned.
+export function nativeGatewayResumeProvider(captured, requested, { allowLocalRelayRebind = false } = {}) {
+  const fail = () => { throw new Error('The explicit Gateway provider differs from the captured profile.'); };
+  if (!captured || !requested) fail();
+  const { baseUrl: oldUrl, timeoutSeconds: _oldTimeout, ...oldIdentity } = captured;
+  const { baseUrl: newUrl, timeoutSeconds, ...newIdentity } = requested;
+  if (!isDeepStrictEqual(oldIdentity, newIdentity)) fail();
+  if (oldUrl !== newUrl && !(allowLocalRelayRebind && localRelayUrl(oldUrl) && localRelayUrl(newUrl))) fail();
+  if (timeoutSeconds !== undefined && (!Number.isSafeInteger(timeoutSeconds) || timeoutSeconds < 1
+    || timeoutSeconds > MAX_REVIEW_TIMEOUT_MS / 1000)) fail();
+  return { ...captured, ...requested };
+}
+
 export function nativeGatewayCodingProvider(provider, contextWindow = 128000, phaseTimeoutMs = null, { allowLocalRelay = false } = {}) {
-  const relay = allowLocalRelay && (() => { try { const u = new URL(provider.baseUrl); return u.protocol === "http:" && u.hostname === "host.docker.internal" && /^[1-9]\d{0,4}$/u.test(u.port) && u.pathname === "/v1" && !u.username && !u.password && !u.search && !u.hash; } catch { return false; } })();
+  const relay = allowLocalRelay && localRelayUrl(provider?.baseUrl);
   if (provider?.api !== 'openai-completions'
     || !['https://open.bigmodel.cn/api/coding/paas/v4', 'https://ark.cn-beijing.volces.com/api/coding/v3'].includes(provider.baseUrl) && !relay
     || !/^[\w.:-]+$/u.test(provider.model ?? '')
@@ -131,8 +152,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   };
   if (reuseProfile) {
     config = JSON.parse(await fs.readFile(process.env.OPENCLAW_CONFIG_PATH, 'utf8'));
-    if (coding && JSON.stringify(config.models?.providers?.[providerId]) !== JSON.stringify(coding.definition))
-      throw new Error('The explicit Gateway provider differs from the captured profile.');
+    if (coding) config.models.providers[providerId] = nativeGatewayResumeProvider(config.models?.providers?.[providerId], coding.definition,
+      { allowLocalRelayRebind: providerGuard?.kind === 'relay_native_gateway_batch' });
     if (contextWindowTokens !== undefined && config.models?.providers?.[providerId]?.models?.find(item => item.id === model)?.contextWindow !== contextWindow)
       throw new Error('Explicit model context capacity differs from the captured profile.');
     config.gateway = { ...config.gateway, port, bind: 'loopback', auth: { mode: 'token' } };

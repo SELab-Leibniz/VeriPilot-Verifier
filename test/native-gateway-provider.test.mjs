@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { nativeGatewayCodingProvider, createNativeGatewayEvaluation, createNativeGatewayRequest } from '../scripts/helpers/native-gateway-evaluation.mjs';
+import { nativeGatewayCodingProvider, createNativeGatewayEvaluation, createNativeGatewayRequest, nativeGatewayResumeProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
 
 const provider = { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' };
 
@@ -94,4 +94,27 @@ test('the pinned SDK resolves the standard OpenAI credential from process memory
     if (previous === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previous;
   }
+});
+
+
+test('restored profiles update finite budgets and owned relay ports while retaining provider identity', () => {
+  const old = nativeGatewayCodingProvider(provider, 128000, 600000).definition;
+  const next = nativeGatewayCodingProvider(provider, 128000, 86400000).definition;
+  const before = structuredClone(old);
+  assert.equal(nativeGatewayResumeProvider(old, next).timeoutSeconds, 86400);
+  assert.deepEqual(old, before, 'The captured profile is never mutated');
+  const oldRelay = { ...old, baseUrl: 'http://host.docker.internal:30123/v1' };
+  const newRelay = { ...next, baseUrl: 'http://host.docker.internal:30124/v1' };
+  assert.throws(() => nativeGatewayResumeProvider(oldRelay, newRelay), /captured profile/);
+  assert.equal(nativeGatewayResumeProvider(oldRelay, newRelay, { allowLocalRelayRebind: true }).baseUrl, newRelay.baseUrl);
+  for (const changed of [
+    { ...next, api: 'anthropic-messages' },
+    { ...next, models: [{ ...next.models[0], id: 'other-model' }] },
+    { ...next, models: [{ ...next.models[0], contextWindow: 64000 }] },
+    { ...next, models: [{ ...next.models[0], reasoning: false }] },
+    { ...next, baseUrl: 'https://example.invalid/v1' },
+    { ...next, timeoutSeconds: Infinity },
+    { ...next, timeoutSeconds: 86401 },
+  ]) assert.throws(() => nativeGatewayResumeProvider(old, changed, { allowLocalRelayRebind: true }), /captured profile/);
+  assert.throws(() => nativeGatewayResumeProvider(old, newRelay, { allowLocalRelayRebind: true }), /captured profile/);
 });
