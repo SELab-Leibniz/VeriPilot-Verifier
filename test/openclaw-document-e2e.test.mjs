@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy, documentMutations, locateDocumentFaults } from '../scripts/evaluate-openclaw-document-e2e.mjs';
-import { loadConfig } from '../lib/runtime-corrector.mjs';
+import { loadConfig, checkArtifact, finalizeArtifactCheck } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
 
 test('OpenClaw document Hook, review and business budgets remain separately configurable', () => {
@@ -77,6 +77,25 @@ test('dynamic baseline is wired to document review without enabling implementati
   assert.equal(plan.runtimeV2.stopCorrection.enabled, false);
   assert.equal(plan.runtimeV2.reviewers.groundTruthExtractor.timeoutMs, 1800000);
   assert.equal(plan.runtimeV2.reviewers.artifactReviewer.timeoutMs, 900000);
+});
+
+test('copy-contract baseline retains complete declared source enforcement without re-extracting the issue body', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'document-contract-basis-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.mkdir(path.join(root, '.runtime-corrector'));
+  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), documentHookPolicy('fixture', openclawDocumentOptions(), true));
+  await fs.writeFile(path.join(root, '.runtime-corrector/document-review.md'), 'Preserve the complete original.');
+  await fs.writeFile(path.join(root, 'requirements.md'), '# Scope\nKeep data local.\n');
+  await fs.writeFile(path.join(root, 'design.md'), '# Scope\nUpload data remotely.\n');
+  const config = await loadConfig({ cwd: root });
+  assert.deepEqual(config.runtimeV2.dynamicGroundTruth.materialRoots, []);
+  assert.equal(config.runtimeV2.artifactCorrection.groundTruthReviewEnabled, true);
+  const prepared = await checkArtifact({ cwd: root, filePath: 'design.md', deferPersistence: true });
+  const checked = await finalizeArtifactCheck(prepared, { status: 'completed', findings: [], diffs: [], edits: [], summary: 'Injected PASS cannot replace the complete original.' });
+  assert.equal(checked.result.status, 'failed');
+  assert(checked.result.diagnostics.some(item => item.ruleId === 'DOCUMENT-COPY-MISMATCH' && item.line === 2));
+  await fs.unlink(path.join(root, 'requirements.md'));
+  assert.equal((await checkArtifact({ cwd: root, filePath: 'design.md', deferPersistence: true })).result.status, 'pending');
 });
 
 test('real benchmark source is pinned and candidate faults leave the complete original available', async t => {

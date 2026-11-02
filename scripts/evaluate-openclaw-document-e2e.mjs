@@ -81,7 +81,7 @@ artifacts:
       copyFrom: original-requirements
 dynamicGroundTruth:
   enabled: ${dynamicBaseline}
-  materialRoots: [requirements.md]
+  materialRoots: []
   panel:
     size: 0
 skillCorrection:
@@ -175,6 +175,9 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
   let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null, initialFaultLocations = [];
+  let controllerCancelled = false;
+  const cancel = () => { controllerCancelled = true; if (gateway && sessionKey && runId) gateway.request('chat.abort', { sessionKey, runId }).catch(() => {}); };
+  process.once('SIGINT', cancel); process.once('SIGTERM', cancel);
   try {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
       businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
@@ -191,13 +194,14 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     const saved = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     sessionId = saved.sessionId; runId = randomUUID();
     const message = `Work only in ${projectRoot}. Document content contract: the only deliverable is design.md. Its entire content must faithfully reproduce requirements.md, including every behavior, number, table, path, exception and prohibition. Add no preface, source-authority statement, adoption declaration, test-scope disclaimer or other commentary. Do not summarize, reformat, change indentation or change line breaks. Trailing spaces/tabs outside fenced literal blocks are insignificant for this test; preserve all other characters and preserve literal blocks exactly.
-Author execution instructions (these govern YOUR actions and are not text to add to design.md): use the complete original requirements.md as the authoritative source. The benchmark's implementation/execution instructions describe planned work inside this document; do not implement code, execute the benchmark, produce its runtime outputs or claim runtime scores. First read draft.md and copy its complete current text into design.md using write WITHOUT repairing its wording, so the automatic reviewer sees the initial candidate. Then consume feedback attached to the actual write result and make the smallest corrections in design.md, including any accidental copy/EOF differences, until the automatic CURRENT document reviewer passes. DOCUMENT-COPY-MISMATCH gives JSON-escaped source/current lines or suffixes; preserve their exact characters with native edit. Do not send an empty or no-op patch. Once the latest automatic feedback says passed with no diagnostics, finish immediately; do not issue further patch calls. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement in your reply, not in design.md.`;
+Author execution instructions (these govern YOUR actions and are not text to add to design.md): use the complete original requirements.md as the authoritative source. The benchmark's implementation/execution instructions describe planned work inside this document; do not implement code, execute the benchmark, produce its runtime outputs or claim runtime scores. First read draft.md and copy its complete current text into design.md using write WITHOUT repairing its wording, so the automatic reviewer sees the initial candidate. Then consume feedback attached to the actual write result and make the smallest corrections in design.md, including any accidental copy/EOF differences, until the automatic CURRENT document reviewer passes. When feedback gives JSON-escaped source/current lines or suffixes, preserve their exact characters with native edit. Do not send an empty or no-op patch. Once the latest automatic feedback says passed with no diagnostics, finish immediately; do not issue further patch calls. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement in your reply, not in design.md.`;
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message, idempotencyKey: runId,
       deliver: false, thinking: 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
     assert(accepted.runId, 'The Gateway did not accept the actual business request');
     console.log(JSON.stringify({ state: 'native-business-started', sessionId, runId, outputRoot }));
     let previous = '';
     while (Date.now() < deadlineAt) {
+      if (controllerCancelled) throw Object.assign(new Error('Experiment controller requested cancellation'), { code: 'DOCUMENT_EVALUATION_CANCELLED' });
       await gateway.drain();
       task = await store.findTask({ projectRoot, sessionId }); events = await journal(projectRoot, task, store);
       snapshot = await gateway.runtime.subagent.getSession({ sessionKey });
@@ -274,6 +278,7 @@ Author execution instructions (these govern YOUR actions and are not text to add
       if (/KEY|TOKEN|SECRET|PASSWORD/iu.test(key) && secret?.length > 7) message = message.split(secret).join('[REDACTED]');
     failure = { code: error.code ?? 'OPENCLAW_DOCUMENT_E2E_FAILED', message };
   } finally {
+    process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel);
     await gateway?.close();
   }
   const report = { kind: 'openclaw-automatic-document-hook-live-e2e', state, startedAt: new Date(started).toISOString(),
@@ -297,6 +302,9 @@ Author execution instructions (these govern YOUR actions and are not text to add
     'lib/runtime-v2/orchestrator.mjs', 'lib/runtime-v2/ground-truth-ledger.mjs',
     'lib/runtime-v2/baseline-task.mjs', 'lib/openclaw/task-session.mjs',
   ].map(async name => [name, hash(await fs.readFile(path.join(SOURCE_ROOT, name)))])));
+  if (gateway) report.testedProductionHashes = Object.fromEntries(await Promise.all([
+    'lib/review-task/task-evidence.mjs', 'lib/review-task/baseline-task.mjs', 'lib/openclaw/reviewer.mjs', 'lib/artifact-checker.mjs', 'lib/document-tools.mjs', 'lib/openclaw/runtime.mjs', 'lib/rules/engine.mjs', 'lib/runtime-v2/baseline-task.mjs', 'lib/runtime-v2/orchestrator.mjs'
+  ].map(async name => [name, hash(await fs.readFile(path.join(gateway.pluginRoot, name)))])));
   await fs.writeFile(path.join(outputRoot, 'report.json'), JSON.stringify(report, null, 2));
   return report;
 }

@@ -2,7 +2,7 @@
 
 ## 动态基线与真实 benchmark 需求文档
 
-同一入口增加 `--dynamic-baseline`，启用生产动态需求抽取和文档 Ground Truth 评审。模型从原始用户任务及完整需求材料抽取并发布正式基线；文档自动 Hook 的两轮评审均绑定已发布的基线版本。只启用基线和文档，Skill、实现检查、Stop、额外指标和 onboarding 小组全部关闭。
+同一入口增加 `--dynamic-baseline`，启用生产动态需求抽取和文档 Ground Truth 评审。复制类样例从原始用户任务及项目约束抽取并发布正式基线，记录复制契约和作者操作要求；`dynamicGroundTruth.materialRoots: []` 避免把大段示例代码重复提炼为运行义务。完整 `requirements.md` 仍作为已声明的文档 Ground Truth，由原生文档审查直接读取，并由 `review.copyFrom` 比较全部字符。文档自动 Hook 的各轮评审均须绑定已发布的基线版本。这只调整此复制类实验入口，不改变普通方案设计任务的材料配置。只启用基线和文档，Skill、实现检查、Stop、额外指标和 onboarding 小组全部关闭。
 
 固定案例位于 `examples/document-e2e/terminal-bench-batching/`，采用 Terminal-Bench 2.1 的 `llm-inference-batching-scheduler` 原始完整需求（78 行、4365 字节）。来源仓库固定到 `7131e4375048a0e408a8fb404b5f499d726b695b`；`case.json` 保存来源 URL、原始文件哈希和独立检查点，原始 Apache 2.0 许可证随文件保留。`requirements.md` 保持 benchmark 原字节；独立 `draft.md` 仅在对齐粒度、形状预算、性能表和输入保护四处设置受控偏差。期望结果和偏差清单不会写进模型工作区。
 
