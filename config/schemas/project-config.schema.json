@@ -438,10 +438,7 @@
         },
         "waitMode": {
           "type": "string",
-          "enum": [
-            "until_pass",
-            "assessment"
-          ],
+          "enum": ["until_pass", "assessment"],
           "default": "until_pass",
           "description": "Native Stop waits for correction and re-verification to PASS, or only assessment and feedback admission. Failures, cancellation, exhausted correction budget and the wait deadline release the wait with a notification."
         },
@@ -455,9 +452,7 @@
     },
     "reviewerRuntime": {
       "type": "object",
-      "required": [
-        "executable"
-      ],
+      "required": ["executable"],
       "properties": {
         "executable": {
           "type": "string",

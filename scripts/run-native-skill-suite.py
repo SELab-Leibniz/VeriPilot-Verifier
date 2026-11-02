@@ -1,4 +1,4 @@
-"""Run the frozen Stop-only cases and then their separate original verifiers."""
+"""Run the frozen Skill-only cases and then their separate original verifiers."""
 import argparse
 import getpass
 import json

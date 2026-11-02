@@ -1,4 +1,4 @@
-// A real benchmark workspace, original public instruction, and Stop only.
+// A real benchmark workspace, original public instruction, and Skill only.
 // The benchmark verifier and its tests are never mounted into this process.
 import fs from 'node:fs/promises';
 import path from 'node:path';

@@ -1,4 +1,4 @@
-"""Score actual pre/post-Stop commits with the original separate verifier."""
+"""Score commits before/after Skill correction with the separate original verifier."""
 import argparse
 import hashlib
 import json
@@ -73,7 +73,7 @@ def main():
         print(json.dumps({'phase': label, 'state': record['state'], 'exitCode': record['exitCode'],
                           'reward': record['reward'], 'elapsedSec': record['elapsedSec']}), flush=True)
     result = {'benchmark': manifest['benchmark'], 'task': manifest['task'], 'attempt': args.attempt,
-              'stopRun': str(live / 'result.json'), 'rows': rows,
+              'skillRun': str(live / 'result.json'), 'rows': rows,
               'comparison': 'Same trajectory: first completed commits versus final commits; not an RC-off comparison'}
     (scoring / 'comparison.json').write_text(json.dumps(result, indent=2))
     return 0 if len(rows) == 2 and all(r['state'] == 'OFFICIAL_REWARD_AVAILABLE' for r in rows) else 1

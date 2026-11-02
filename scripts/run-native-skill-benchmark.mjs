@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
+import { setTimeout as delay } from 'node:timers/promises';
 import { unifiedSkillFeedbackReceipts } from './helpers/skill-e2e-feedback.mjs';
 
 const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
@@ -23,6 +24,11 @@ const resumeFrom = args.includes('--resume-from') ? path.resolve(value('--resume
 const runtimeMs = args.includes('--timeout-ms') ? Number(value('--timeout-ms')) : manifest.maxRuntimeMs;
 if (!Number.isSafeInteger(runtimeMs) || runtimeMs < 2000 || runtimeMs > manifest.maxRuntimeMs || runtimeMs % 1000)
   throw new Error('Invalid remaining benchmark window');
+const relayDeadlineAt = Date.now() + runtimeMs;
+const retryBaseMs = Number(process.env.RC_EVAL_RETRY_BASE_MS ?? 30000);
+const retryMaxMs = Number(process.env.RC_EVAL_RETRY_MAX_MS ?? 120000);
+if (![retryBaseMs, retryMaxMs].every(n => Number.isSafeInteger(n) && n >= 1) || retryMaxMs < retryBaseMs)
+  throw new Error('Invalid configurable relay retry delays');
 const image = args.includes('--checkpoint-image')
   ? execFileSync('docker', ['image', 'inspect', value('--checkpoint-image'), '--format', '{{.Id}}'], { encoding: 'utf8' }).trim()
   : manifest.imageId;
@@ -43,7 +49,9 @@ if (resumeFrom) {
 const hostRequests = path.join(root, `host-requests-${attempt}`); await fs.mkdir(hostRequests);
 const token = `local-only-${randomBytes(32).toString('hex')}`;
 const controller = new AbortController(), records = [], sockets = new Set(), jobs = new Set();
+let upstreamSteps = 0;
 const saveRelay = () => fs.writeFile(path.join(run, 'relay.json'), JSON.stringify({ configuredWallMs: runtimeMs, maxSteps: manifest.maxSteps,
+  upstreamSteps, retryBaseMs, retryMaxMs,
   actualModel: model, upstream: 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions',
   credentialsSaved: false, requests: records }, null, 2));
 const server = http.createServer(async (request, response) => {
@@ -63,13 +71,31 @@ const server = http.createServer(async (request, response) => {
       const thinking = (payload.messages ?? []).filter(message => typeof message.reasoning_content === 'string' && message.reasoning_content.length);
       record.historyReasoningBlocks = thinking.length;
       record.historyReasoningChars = thinking.reduce((sum, message) => sum + message.reasoning_content.length, 0);
-      if (id > manifest.maxSteps) { record.denied = 'CONFIGURED_STEP_LIMIT'; throw new Error('Configured Skill model-step budget exhausted'); }
       record.reasoningEffort = payload.reasoning_effort ?? null;
       await fs.writeFile(path.join(hostRequests, `request-${id}.json`), body);
       record.requestBytes = size; record.requestSha256 = createHash('sha256').update(body).digest('hex');
-      const upstream = await fetch('https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', {
-        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body,
-        signal: AbortSignal.any([controller.signal, abort.signal]), redirect: 'error' });
+      record.attempts = [];
+      let upstream;
+      while (true) {
+        if (upstreamSteps >= manifest.maxSteps) { record.denied = 'CONFIGURED_STEP_LIMIT'; throw new Error('Configured Skill model-step budget exhausted'); }
+        if (Date.now() >= relayDeadlineAt) throw new Error('Configured Skill wall budget exhausted');
+        const transport = { step: ++upstreamSteps, startedAt: Date.now() }; record.attempts.push(transport);
+        upstream = await fetch('https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body,
+          signal: AbortSignal.any([controller.signal, abort.signal, AbortSignal.timeout(Math.max(1, relayDeadlineAt - Date.now()))]), redirect: 'error' });
+        transport.status = upstream.status; transport.endedAt = Date.now();
+        record.status = upstream.status;
+        if (![408, 429, 500, 502, 503, 504].includes(upstream.status) || upstreamSteps >= manifest.maxSteps) break;
+        const retryAfter = upstream.headers.get('retry-after');
+        const advertisedMs = /^\d+(\.\d+)?$/u.test(retryAfter ?? '') ? Number(retryAfter) * 1000
+          : Math.max(0, Date.parse(retryAfter ?? '') - Date.now()) || 0;
+        const waitMs = Math.min(retryMaxMs, Math.max(advertisedMs, retryBaseMs * 2 ** Math.min(record.attempts.length - 1, 20)));
+        if (Date.now() + waitMs >= relayDeadlineAt) break;
+        await upstream.arrayBuffer();
+        transport.retryDelayMs = waitMs; await saveRelay();
+        console.log(JSON.stringify({ state: 'MODEL_RELAY_RETRY', request: id, step: transport.step, status: transport.status, waitMs }));
+        await delay(waitMs, undefined, { signal: AbortSignal.any([controller.signal, abort.signal]) });
+      }
       record.status = upstream.status; response.statusCode = upstream.status;
       response.setHeader('content-type', upstream.headers.get('content-type') ?? 'application/json');
       response.setHeader('cache-control', 'no-store');

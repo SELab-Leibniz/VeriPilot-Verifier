@@ -44,6 +44,10 @@ def main():
         'run-native-skill-suite.py']]
     hashes = {}
     for name in sorted(set(names)):
+        # Runtime code is sufficient inside the agent container. Keep prior
+        # reports, fixtures and example solutions out of future case mounts.
+        if Path(name).parts[0] in {'docs', 'test', 'examples'}:
+            continue
         item = source / name
         if not item.is_file():
             continue
