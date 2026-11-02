@@ -12,7 +12,9 @@ GLM 接入声明 `reasoning: true`、原生 `thinking: low` 和 `requiresReasoni
 
 ## 固定输入与运行
 
-本轮准备目录为 `.runtime-correction/stop-benchmark-gql-20261102-003`，内含冻结的插件、运行源码、公开需求及 manifest。输入和产物的逐文件摘要见 `source-identity.json`。`live-reasoning-005` 为正确回传思考字段后的真实轨迹；之前目录保留接入、宿主保护和协议探测的失败及主动终止记录，不作为 Stop 成功证据。
+本轮原始轨迹为 `.runtime-correction/stop-benchmark-gql-20261102-003/live-reasoning-005`。它在 198 次成功请求后遇到提供方 401，约 48 分钟时中断，尚未进入 Stop。用户更换凭据后，在 `.runtime-correction/stop-benchmark-gql-20261102-004/live-auth-resume-006` 保留代码和会话续跑；没有重做业务实现或代替模型提交。原始 12 小时截止时间继续生效，续跑只分配剩余窗口。
+
+各准备目录包含冻结插件、运行源码、公开需求及 manifest；逐文件摘要见 `source-identity.json`。恢复前核对 HEAD、分支、工作区状态和全部变更文件摘要；`checkpoint.json`、`uncommitted-source.json` 及源码归档保留中断现场。之前目录保留接入、宿主保护和协议探测的失败及主动终止记录，不作为 Stop 成功证据。
 
 使用已准备目录启动新的独立案例（认证值由当前进程环境提供）：
 

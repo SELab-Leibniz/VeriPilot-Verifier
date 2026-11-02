@@ -37,7 +37,22 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const git = (...argv) => execFileSync('git', ['-C', projectRoot, ...argv], { encoding: 'utf8', timeout: 10000, maxBuffer: 16 * 1024 * 1024 });
 const save = async (name, data) => fs.writeFile(path.join(outputRoot, name), JSON.stringify(data, null, 2) + '\n');
 const instruction = await fs.readFile(instructionFile, 'utf8');
-if (git('rev-parse', 'HEAD').trim() !== baseCommit || git('status', '--porcelain').trim()) throw new Error('Benchmark workspace is not pristine at its declared base');
+if (resume) {
+  // Resume only the preserved model workspace, including uncommitted additions.
+  // Verify it before rewriting harness policy or dispatching any model work.
+  const checkpoint = JSON.parse(await fs.readFile(path.join(outputRoot, 'resume-source-state.json'), 'utf8'));
+  if (git('rev-parse', 'HEAD').trim() !== checkpoint.head
+    || git('branch', '--show-current').trim() !== checkpoint.branch
+    || git('status', '--porcelain') !== checkpoint.gitStatus)
+    throw new Error('Checkpoint Git state does not match the preserved model workspace');
+  git('merge-base', '--is-ancestor', baseCommit, 'HEAD');
+  for (const file of checkpoint.files) {
+    const absolute = path.resolve(projectRoot, file.path);
+    if (!absolute.startsWith(projectRoot + path.sep) || hash(await fs.readFile(absolute)) !== file.sha256)
+      throw new Error('Checkpoint source file differs from the preserved model workspace');
+  }
+} else if (git('rev-parse', 'HEAD').trim() !== baseCommit || git('status', '--porcelain').trim())
+  throw new Error('Benchmark workspace is not pristine at its declared base');
 await fs.mkdir(outputRoot, { recursive: true });
 await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
 await fs.appendFile(path.join(projectRoot, '.git/info/exclude'), '\n.runtime-corrector/\n.runtime-correction/\n');

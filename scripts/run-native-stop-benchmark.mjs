@@ -25,6 +25,7 @@ const run = path.join(root, attempt); await fs.mkdir(run);
 if (resumeFrom) {
   await fs.cp(path.join(resumeFrom, 'native-host'), path.join(run, 'native-host'), { recursive: true });
   await fs.copyFile(path.join(resumeFrom, 'target.json'), path.join(run, 'resume-source-target.json'));
+  await fs.copyFile(path.join(resumeFrom, 'uncommitted-source.json'), path.join(run, 'resume-source-state.json'));
   // The prior container has stopped. Ephemeral write-lock ownership cannot be
   // copied into a new process; actual session history and all old evidence stay.
   for (const file of await fs.readdir(path.join(run, 'native-host'))) if (file.endsWith('.lock'))
