@@ -14,7 +14,10 @@ const key = process.env.RC_EVAL_API_KEY;
 delete process.env.RC_EVAL_API_KEY;
 if (!key?.trim()) throw new Error('Provide RC_EVAL_API_KEY only in the host process environment');
 const manifest = JSON.parse(await fs.readFile(path.join(root, 'manifest.json')));
-if (manifest.task !== 'gql-incremental-graphql-delivery') throw new Error('Unexpected prepared task');
+if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(manifest.task ?? '')
+  || !/^[a-f0-9]{40}$/u.test(manifest.baseCommit ?? '')
+  || createHash('sha256').update(await fs.readFile(path.join(root, 'public/instruction.md'))).digest('hex') !== manifest.instructionSha256)
+  throw new Error('Prepared benchmark identity does not match its public input');
 const model = manifest.model;
 const resumeFrom = args.includes('--resume-from') ? path.resolve(value('--resume-from')) : null;
 const runtimeMs = args.includes('--timeout-ms') ? Number(value('--timeout-ms')) : manifest.maxRuntimeMs;
@@ -88,7 +91,7 @@ const probe = spawn('docker', ['run', '--rm', 'python:3.11-slim', 'python3', '-c
 const probeExit = await new Promise((resolve, reject) => { probe.once('error', reject); probe.once('exit', resolve); });
 if (probeExit !== 0) { await new Promise(resolve => server.close(resolve)); throw new Error('Container cannot reach the local model relay'); }
 console.log(JSON.stringify({ state: 'MODEL_RELAY_REACHABLE', paidRequests: 0 }));
-const name = `rc-stop-gql-${attempt}`;
+const name = `rc-stop-${manifest.task}-${attempt}`;
 const command = ['run', '-i', '--platform', 'linux/amd64', '--name', name, '--cpus', '2', '--memory', '8g',
   '--mount', 'type=volume,source=rc-harbor-pilot-20261031-d9e5e15a04-nvm,target=/root/.nvm,readonly',
   '--mount', `type=bind,source=${root}/runner-source,target=/opt/rc-source,readonly`,

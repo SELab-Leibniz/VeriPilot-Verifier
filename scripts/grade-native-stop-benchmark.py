@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import time
@@ -16,14 +17,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--prepared-root', type=Path, required=True)
     parser.add_argument('--attempt', default='live-relay-001')
-    parser.add_argument('--verifier-image', default='rc-stop-gql-official-verifier:427384f-amd64')
+    parser.add_argument('--verifier-image')
     args = parser.parse_args()
     root = args.prepared_root.resolve(strict=True)
     live = root / args.attempt
     manifest = json.loads((root / 'manifest.json').read_text())
-    assert manifest['task'] == 'gql-incremental-graphql-delivery'
+    assert re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', manifest['task'])
+    verifier_image = args.verifier_image or manifest.get('verifierImage')
+    if not verifier_image and manifest['task'] == 'gql-incremental-graphql-delivery':
+        verifier_image = 'rc-stop-gql-official-verifier:427384f-amd64'
+    assert verifier_image, 'Explicit original verifier image required'
     assert json.loads((live / 'process-exit.json').read_text())['relayClosed'] is True
-    image_id = subprocess.check_output(['docker', 'image', 'inspect', '--platform', 'linux/amd64', args.verifier_image,
+    image_id = subprocess.check_output(['docker', 'image', 'inspect', '--platform', 'linux/amd64', verifier_image,
                                         '--format', '{{.Id}}'], text=True).strip()
     scoring = live / 'official-scoring'
     scoring.mkdir()
@@ -38,7 +43,7 @@ def main():
         patch = artifacts / 'model.patch'
         shutil.copy2(source, patch)
         original_hash = sha(source)
-        name = 'rc-stop-gql-score-' + label + '-' + str(int(time.time()))
+        name = 'rc-stop-' + manifest['task'] + '-score-' + label + '-' + str(int(time.time()))
         command = ['docker', 'run', '--platform', 'linux/amd64', '--name', name,
                    '--network', 'none', '--cpus', '2', '--memory', '8g',
                    '--mount', f'type=bind,source={destination}/logs,target=/logs',
