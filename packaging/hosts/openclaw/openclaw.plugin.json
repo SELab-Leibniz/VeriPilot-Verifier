@@ -86,7 +86,8 @@
           "maxSteps": { "type": "integer", "minimum": 1 },
           "maxRepairs": { "type": "integer", "minimum": 0 },
           "maxAuditCalls": { "type": "integer", "minimum": 1 },
-          "maxExternalRepairs": { "type": "integer", "minimum": 0 }
+          "maxExternalRepairs": { "type": "integer", "minimum": 0 },
+          "auditUnitBytes": { "type": "integer", "minimum": 256, "maximum": 16384 }
         },
         "description": "Finite baseline-only time, shared extractor/auditor model steps, repair and audit limits. Every limit remains bound to the original persistent journal."
       },

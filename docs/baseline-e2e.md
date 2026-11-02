@@ -46,6 +46,7 @@ node --env-file="$HOME/.openclaw/.env" scripts/run-baseline.mjs \
 | maxRepairs | 8 | --max-repairs | 原运行内格式和领域修复额度 |
 | maxAuditCalls | 2 | --max-audit-calls | 独立覆盖审查次数 |
 | maxExternalRepairs | 1 | --max-external-repairs | 外部语义反馈修复次数 |
+| auditUnitBytes | 2048 | --audit-unit-bytes | 审查原文单元大小，256–16384 字节；示例为 16384，不限制原文总长 |
 | model | glm-5.3-flash（示例） | --model | 本次使用的模型 |
 | api | openai-completions（示例） | --api | 模型接口协议 |
 | baseUrl | Coding 接口（示例） | --base-url | 模型接口地址 |

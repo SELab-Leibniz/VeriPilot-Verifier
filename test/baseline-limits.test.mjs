@@ -14,4 +14,7 @@ test('baseline-only 24-hour 2000-step limits remain finite without changing ordi
   assert.equal(resolveHookTimeoutMs(86460000, limits.timeoutMs + 60000), 86460000);
   assert(hookReviewBudgetMs(86460000, Infinity, limits.timeoutMs + 60000) >= limits.timeoutMs);
   for (const value of [0, null, Infinity, -1, 1.5]) assert.throws(() => resolveBaselineLimits({ maxSteps: value }));
+  assert.equal(resolveBaselineLimits().auditUnitBytes, 2048);
+  assert.equal(resolveBaselineLimits({ auditUnitBytes: 16384 }).auditUnitBytes, 16384);
+  for (const auditUnitBytes of [0, 255, 16385, Infinity]) assert.throws(() => resolveBaselineLimits({ auditUnitBytes }));
 });

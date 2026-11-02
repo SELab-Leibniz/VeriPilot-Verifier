@@ -15,7 +15,7 @@ import { resolveBaselineLimits, MAX_BASELINE_TIMEOUT_MS } from '../lib/review-ta
 
 export const BASELINE_RUN_DEFAULTS = Object.freeze({
   timeoutMs: 600000, assessmentTimeoutMs: 900000, requestTimeoutMs: 600000,
-  maxSteps: 200, maxRepairs: 8, maxAuditCalls: 2, maxExternalRepairs: 1,
+  maxSteps: 200, maxRepairs: 8, maxAuditCalls: 2, maxExternalRepairs: 1, auditUnitBytes: 2048,
   model: 'glm-5.3', api: 'anthropic-messages', baseUrl: null,
 });
 
@@ -27,7 +27,7 @@ export function baselineRunSettings(value = {}) {
   if (settings.assessmentTimeoutMs < settings.timeoutMs)
     throw new Error('assessmentTimeoutMs must be at least timeoutMs.');
   resolveBaselineLimits({ timeoutMs: settings.timeoutMs, maxSteps: settings.maxSteps, maxRepairs: settings.maxRepairs,
-    maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs });
+    maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs, auditUnitBytes: settings.auditUnitBytes });
   if (typeof settings.model !== 'string' || !settings.model.trim()) throw new Error('A model is required.');
   if (!['anthropic-messages', 'openai-completions'].includes(settings.api)) throw new Error('Unsupported provider API.');
   if (settings.baseUrl !== null) {
@@ -85,7 +85,7 @@ export async function runBaseline({ input, materials = [], output, hostRoot,
     native = await createNativeStopEvaluation({ hostRoot, sourceRoot, projectRoot, outputRoot: root,
       fixtureFence: { projectRoot }, traceTransport: true, providerTimeoutMs: settings.requestTimeoutMs, standaloneBaseline: true,
       baselineLimits: { timeoutMs: settings.timeoutMs, maxSteps: settings.maxSteps, maxRepairs: settings.maxRepairs,
-        maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs },
+        maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs, auditUnitBytes: settings.auditUnitBytes },
       ...(settings.api === 'openai-completions' ? { provider: { api: settings.api, baseUrl: settings.baseUrl,
         model: settings.model, credentialEnv }, providerCredential: process.env[credentialEnv] } : {}) });
     const runtimeV2 = compileRuntimeV2Config({ version: 2,
@@ -126,13 +126,14 @@ export async function runBaseline({ input, materials = [], output, hostRoot,
 
 export async function main(args = process.argv.slice(2)) {
   if (args.includes('--help')) {
-    console.log('Usage: node scripts/run-baseline.mjs --input requirements.txt --output NEW_DIRECTORY --host-root OPENCLAW_ROOT [--material PATH ...] [--config JSON] [--timeout-ms N] [--assessment-timeout-ms N] [--request-timeout-ms N] [--max-steps N] [--max-repairs N] [--max-audit-calls N] [--max-external-repairs N] [--model NAME] [--api NAME] [--base-url URL] [--credential-env NAME]');
+    console.log('Usage: node scripts/run-baseline.mjs --input requirements.txt --output NEW_DIRECTORY --host-root OPENCLAW_ROOT [--material PATH ...] [--config JSON] [--timeout-ms N] [--assessment-timeout-ms N] [--request-timeout-ms N] [--max-steps N] [--max-repairs N] [--max-audit-calls N] [--max-external-repairs N] [--audit-unit-bytes N] [--model NAME] [--api NAME] [--base-url URL] [--credential-env NAME]');
     return;
   }
   const values = {}, materials = [], overrides = {};
   const keys = { '--timeout-ms': 'timeoutMs', '--assessment-timeout-ms': 'assessmentTimeoutMs',
     '--request-timeout-ms': 'requestTimeoutMs', '--max-steps': 'maxSteps', '--max-repairs': 'maxRepairs',
     '--max-audit-calls': 'maxAuditCalls', '--max-external-repairs': 'maxExternalRepairs',
+    '--audit-unit-bytes': 'auditUnitBytes',
     '--model': 'model', '--api': 'api', '--base-url': 'baseUrl' };
   for (let index = 0; index < args.length; index++) {
     const key = args[index], value = args[++index];

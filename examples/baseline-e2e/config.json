@@ -6,6 +6,7 @@
   "maxRepairs": 2000,
   "maxAuditCalls": 2000,
   "maxExternalRepairs": 2000,
+  "auditUnitBytes": 16384,
   "model": "glm-5.3-flash",
   "api": "openai-completions",
   "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"

@@ -44,6 +44,17 @@ function fixture(text, partBytes = Infinity) {
   return { input, files, units, citations, inventory, report, check: value => validateBaselineAuditReport(value, input, files, citations, inventory) };
 }
 
+test('a configured 16 KiB neutral layout preserves all multipart original bytes and is bound to the audit identity', () => {
+  const text = '读原合同🧪。\r\n' + 'x'.repeat(5000) + '\r\nKeep the original condition.';
+  const f = fixture(text, 1700), input = { ...f.input, unitLayout: { ...BASELINE_AUDIT_UNIT_LAYOUT, maxBytes: 16384 } };
+  const units = baselineAuditSourceUnits(input, f.files);
+  assert.equal(units.length, 1); assert.equal(units[0].text, text);
+  assert.equal(units[0].endByte, Buffer.byteLength(text)); assert(f.units.length > 1);
+  assert.deepEqual(coverageIdentity(input).unitLayout, input.unitLayout);
+  assert.notEqual(sha256(coverageIdentity(input)), sha256(coverageIdentity(f.input)));
+  assert.throws(() => baselineAuditSourceUnits({ ...input, unitLayout: { ...input.unitLayout, maxBytes: 16385 } }, f.files));
+});
+
 test('complete new-schema tail-only report fails for a real original range gap', () => {
   const f = fixture('Read the original contract. After the final edit, run verification.');
   const report = structuredClone(f.report); report.sources[0].mappings[0].quote = 'After the final edit, run verification.';

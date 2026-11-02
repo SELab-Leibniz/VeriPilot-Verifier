@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { sharedBasisFixture as createSharedBasisFixture, operation, user } from './helpers/runtime-v2-shared-basis-fixture.mjs';
-import { scriptedCoverageReport } from './helpers/baseline-coverage-native.mjs';
+import { scriptedCoverageReport, scriptedSourceInventory } from './helpers/baseline-coverage-native.mjs';
 import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
 import { planGroundTruthDelta, groundTruthPlanDigest, applyGroundTruthDelta } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { ObservationJournal } from '../lib/review-task/observation-journal.mjs';
@@ -261,6 +261,51 @@ test('configured 24-hour 2000-step baseline permits multiple genuine repair/audi
   assert(bundle.budget.deadlineAt - began > 23 * 3600000);
   assert(f.state.baselineTimeouts.every(timeout => timeout > 23 * 3600000));
   assert.equal(new Set(f.state.baselinePrompts.map(prompt => prompt.identity.requestId)).size, 1);
+});
+
+test('configured 16 KiB audit units carry one complete long original through native source-only inventory and guarded publication', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000, auditUnitBytes: 16384 } });
+  const text = 'Preserve the requested feature. ' + 'x'.repeat(7000);
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: text } }) + '\n');
+  f.state.sourceFrom = true;
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    for (const source of report.sources) for (const mapping of source.mappings) { mapping.rangeMode = 'UNIT'; delete mapping.quote; }
+    return report;
+  };
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  assert.equal(bundle.input.unitLayout.maxBytes, 16384); assert.equal(bundle.identity.unitLayout.maxBytes, 16384);
+  const inventory = bundle.inventory.record.inventory.sources.find(row => row.kind === 'USER_MESSAGE');
+  assert.equal(inventory.units.length, 1); assert.equal(bundle.input.identity.sources[0].bytes, Buffer.byteLength(text));
+  assert(bundle.initialContext.prompt.includes('at most 16384 bytes'));
+  assert.equal(bundle.report.verdict, 'PASS');
+});
+
+test('one configured large original unit preserves independently authored runtime and artifact duties before candidate exposure', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000, auditUnitBytes: 16384 } });
+  const text = 'Preserve the requested feature. Write the usage guide. ' + 'Background context. '.repeat(250);
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: text } }) + '\n');
+  const guide = { ...operation(), text: 'Write the usage guide.', verificationTarget: 'ARTIFACT' }; delete guide.implementationRole;
+  f.state.sourceFrom = true; f.state.deltaOperations = [operation(), guide];
+  f.state.coverageInventory = context => scriptedSourceInventory(context, ({ source, fullText }) => {
+    if (source.kind !== 'USER_MESSAGE') return [];
+    assert.equal(fullText, text);
+    return [{ statement: 'Preserve the requested feature.', owner: 'IMPLEMENTATION', condition: 'During this task.' },
+      { statement: 'Write the usage guide.', owner: 'ARTIFACT', condition: 'During this task.' }];
+  });
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    for (const source of report.sources) for (const mapping of source.mappings) { mapping.rangeMode = 'UNIT'; delete mapping.quote; }
+    return report;
+  };
+  await f.refresh();
+  const truth = await f.truth(), bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth });
+  assert.equal(truth.claims.length, 2);
+  const original = bundle.inventory.record.inventory.sources.find(row => row.kind === 'USER_MESSAGE');
+  assert.equal(original.units.length, 1); assert.deepEqual(new Set(original.units[0].obligations.map(row => row.owner)), new Set(['IMPLEMENTATION', 'ARTIFACT']));
 });
 
 test('expanded audit allowance retains an unresolved report and retries source-first without changing the candidate or resetting counters', async t => {
