@@ -1,0 +1,920 @@
+{
+  "scope": "Stop-only live-model evaluation on three unchanged original DeepSWE 1.1 large tasks",
+  "branch": "codex/rc-stop-e2e-timeouts",
+  "worktree": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy",
+  "controllerCommit": "7765372ca3d5bb233976d8dfc4d8def5f23d34b7",
+  "frozenFrameworkCommit": "7d1409d5b5e436ec9cc7cc2636be18adf8b046e7",
+  "frozenArtifact": {
+    "sha256": "174b7e39652c4cb72f9221b016181dfbb9d4cf47d0eace2e708a1d51b200e122",
+    "fileCount": 246
+  },
+  "frozenRunnerSource": {
+    "sha256": "08ad610831036b2bf071f793ca36344082737c7bd6c2d388ed7b6a345b374bb5",
+    "fileCount": 314
+  },
+  "snapshotFilesReverified": true,
+  "budgets": {
+    "outerWallMs": 86400000,
+    "maxReviewSteps": 2000,
+    "maxRepairSteps": 2000,
+    "maxCorrectionsPerSession": 3,
+    "maxCorrectionsPerFlow": 3,
+    "resumeUsesOriginalRemainingWindow": true
+  },
+  "isolation": {
+    "requirements": "original public instruction, unchanged",
+    "hiddenTestsMountedToModel": false,
+    "referenceSolutionReadOrMounted": false,
+    "hiddenFailureFedBackToModel": false,
+    "manualBusinessEdits": false,
+    "defectInjection": false,
+    "semanticPolicyChangedAfterScoring": false,
+    "independentRCOffControl": false,
+    "artifactSharedAcrossCases": true,
+    "activeMetrics": [
+      "M08",
+      "M09",
+      "M12",
+      "M13",
+      "M15",
+      "M16"
+    ],
+    "requirementExtractor": "necessary existing single extractor; panel off",
+    "otherCorrectionModules": false
+  },
+  "suiteRoot": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002",
+  "sourceIdentity": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/source-identity.json",
+  "cases": [
+    {
+      "task": "httpx-multipart-response-parsing",
+      "attempt": "suite2-live-001",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/httpx-multipart-response-parsing/suite2-live-001",
+      "manifest": {
+        "benchmark": "DeepSWE 1.1",
+        "task": "httpx-multipart-response-parsing",
+        "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+        "baseCommit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
+        "repository": "https://github.com/encode/httpx",
+        "image": "sha256:47d0af14d988caa7d22b14312be2c3ee4e9ac799a5679bd83d19f298d346749d",
+        "originalImageReference": "public.ecr.aws/d3j8x8q7/swe-bench-202605:kh7fr6f1yw1289ye5ttsfvaqen8319dq-v1.1",
+        "imageId": "sha256:47d0af14d988caa7d22b14312be2c3ee4e9ac799a5679bd83d19f298d346749d",
+        "instructionSha256": "6a9c3400a23ad61f43c6e6f5b2dfbe8f5a5af81061cc063fd9440f327c5a0fb5",
+        "sourceCommit": "7d1409d5b5e436ec9cc7cc2636be18adf8b046e7",
+        "model": "glm-5.3-flash",
+        "maxRuntimeMs": 86400000,
+        "correctionLimit": 3,
+        "modules": {
+          "stop": true,
+          "document": false,
+          "skill": false,
+          "writeTimeImplementationCorrection": false,
+          "requirements": "Necessary existing single extractor; panel off"
+        },
+        "hiddenVerifierMountedInAgent": false,
+        "injectedDefect": false,
+        "beforeAfter": "Same natural trajectory first completed model commit versus final model commit; no RC-off run",
+        "verifierImage": "sha256:3a956707bb0e020a167597fa029d1d650f49ac721b0cf3e67b9b73a309091b58",
+        "officialVerifierFiles": {
+          "test.sh": "e39706afa8974f3a9949f2aa77012b37399578a647136bd065000f3273cbe719",
+          "test.patch": "a6b6512793b4102041ea3cb835efbc8ba61cba800e07453dffd66703e123262e",
+          "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+          "config.json": "33734c0f6a77183d0c59aa5fc68f92c07fa9382846f968e284e82bba2f465b89"
+        },
+        "officialVerifierUnchanged": true,
+        "resources": {
+          "cpus": 2,
+          "memory": "8g",
+          "platform": "linux/amd64"
+        },
+        "readiness": "FROZEN_24H_2000_STEPS_3_REPAIRS",
+        "credentialSaved": false,
+        "maxReviewSteps": 2000,
+        "maxRepairSteps": 2000,
+        "resumeFrom": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-001/httpx-multipart-response-parsing/suite1-live-001",
+        "checkpointImage": "sha256:24be01771330021d2659f0d814113ba2314429751935ebba09902935592b13c5"
+      },
+      "sourceCommit": "4352686e714bb8dcb742130ccf905d0898cbbae3",
+      "sourceBranch": "multipart-response-parsing",
+      "gitStatus": "",
+      "stopVerdict": "PASS",
+      "corrections": 0,
+      "authenticatedOriginalTerminal": {
+        "runId": "a64a6ebc-2575-48c3-93e4-c921da2d9f02",
+        "status": "ok",
+        "endedAt": 1793615410381,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "privateRuns": [
+        {
+          "taskId": "oc-scope-9d9017e7-d1bf-4fc4-88b8-08b26978ccdc",
+          "runId": "50b174a5-db0c-4999-a2c3-9c6fd97e2ed3",
+          "sessionId": "e40753cb-a187-4b0c-9e8a-3b3f28721158",
+          "role": "stop-reviewer",
+          "ownerPid": 1,
+          "startedAt": 1793615516950,
+          "sessionFile": "/app/.runtime-correction/tasks/oc-scope-9d9017e7-d1bf-4fc4-88b8-08b26978ccdc/workspace-reviews/ea190e60-7c45-4d7b-acc9-28baac71e229/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793616041311
+        },
+        {
+          "taskId": "oc-scope-9d9017e7-d1bf-4fc4-88b8-08b26978ccdc",
+          "runId": "816bd04d-fde7-49c2-88e3-00e143fa898b",
+          "sessionId": "aa3ed5a2-9316-4fcd-9900-0b3fe18fa178",
+          "role": "ground-truth-extractor",
+          "ownerPid": 1,
+          "startedAt": 1793615411089,
+          "sessionFile": "/app/.runtime-correction/baseline-agent/aa3ed5a2-9316-4fcd-9900-0b3fe18fa178/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793615516792
+        }
+      ],
+      "closure": {
+        "gatewayClosed": true,
+        "at": 1793616045205
+      },
+      "processExit": {
+        "exitCode": 0,
+        "closedAt": 1793616046038,
+        "relayClosed": true
+      },
+      "resumedPhaseElapsedMs": 822009,
+      "stopElapsedMs": 633369,
+      "remainingPhaseTimeouts": {
+        "wallMs": 84652000,
+        "phaseTimeoutMs": 84652000,
+        "assessmentTimeoutMs": 84652000,
+        "feedbackReserveMs": 30000,
+        "reviewerTimeoutMs": 84622000
+      },
+      "workerResults": [
+        {
+          "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/httpx-multipart-response-parsing/suite2-live-001/project-runtime-correction/tasks/oc-scope-9d9017e7-d1bf-4fc4-88b8-08b26978ccdc/workspace-reviews/ea190e60-7c45-4d7b-acc9-28baac71e229/result.json",
+          "sha256": "17105ec31ffbc5c4b7601fff46248df9761ce2340b494765b74c401b84771377",
+          "turns": 26,
+          "attempts": 1,
+          "limits": {
+            "maxTurns": 2000,
+            "maxTokens": 32768,
+            "maxAttempts": 2
+          }
+        }
+      ],
+      "patchSha256": "85093c0aa6bec5fde5d094511b42e18579f434bf498aa3b3e630260ea97b8f53",
+      "patchBytes": 29387,
+      "firstFinalCommitsAndPatchesEqual": true,
+      "originalVerifierScores": [
+        {
+          "phase": "before",
+          "patchSha256": "85093c0aa6bec5fde5d094511b42e18579f434bf498aa3b3e630260ea97b8f53",
+          "patchBytes": 29387,
+          "verifierImageId": "sha256:3a956707bb0e020a167597fa029d1d650f49ac721b0cf3e67b9b73a309091b58",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-httpx-multipart-response-parsing-score-before-1793616046",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/httpx-multipart-response-parsing/suite2-live-001/official-scoring/before/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:3a956707bb0e020a167597fa029d1d650f49ac721b0cf3e67b9b73a309091b58",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793616046.503573,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 0,
+            "f2p_total": 122,
+            "f2p_passed": 121,
+            "p2p_total": 1272,
+            "p2p_passed": 1272,
+            "f2p": 0.9918032786885246,
+            "p2p": 1.0,
+            "partial": 0.9992826398852224
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 10.691861152648926
+        },
+        {
+          "phase": "after",
+          "patchSha256": "85093c0aa6bec5fde5d094511b42e18579f434bf498aa3b3e630260ea97b8f53",
+          "patchBytes": 29387,
+          "verifierImageId": "sha256:3a956707bb0e020a167597fa029d1d650f49ac721b0cf3e67b9b73a309091b58",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-httpx-multipart-response-parsing-score-after-1793616057",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/httpx-multipart-response-parsing/suite2-live-001/official-scoring/after/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:3a956707bb0e020a167597fa029d1d650f49ac721b0cf3e67b9b73a309091b58",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793616057.197406,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 0,
+            "f2p_total": 122,
+            "f2p_passed": 121,
+            "p2p_total": 1272,
+            "p2p_passed": 1272,
+            "f2p": 0.9918032786885246,
+            "p2p": 1.0,
+            "partial": 0.9992826398852224
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 9.6074800491333
+        }
+      ],
+      "originalVerifierScoringUsable": true,
+      "logicalProviderRequests": 50,
+      "upstream429Retries": 0,
+      "reportedScoreBasis": "original-verifier-image",
+      "reportedScores": [
+        {
+          "phase": "before",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 122,
+            "f2p_passed": 121,
+            "p2p_total": 1272,
+            "p2p_passed": 1272,
+            "f2p": 0.9918032786885246,
+            "p2p": 1.0,
+            "partial": 0.9992826398852224
+          }
+        },
+        {
+          "phase": "after",
+          "reward": {
+            "reward": 0,
+            "f2p_total": 122,
+            "f2p_passed": 121,
+            "p2p_total": 1272,
+            "p2p_passed": 1272,
+            "f2p": 0.9918032786885246,
+            "p2p": 1.0,
+            "partial": 0.9992826398852224
+          }
+        }
+      ]
+    },
+    {
+      "task": "etree-xml-diff-patch",
+      "attempt": "suite2-live-002",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-002",
+      "manifest": {
+        "benchmark": "DeepSWE 1.1",
+        "task": "etree-xml-diff-patch",
+        "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+        "baseCommit": "4032e04c8f2e2f35e43ce5d772fcef14a5df4d74",
+        "repository": "https://github.com/beevik/etree",
+        "image": "sha256:e057fb0080708ee7a527b9c2d1d55351f602126d35eecb595d506b1aa52581d3",
+        "originalImageReference": "public.ecr.aws/d3j8x8q7/swe-bench-202605:kh7e0e2z02keqh6j7db6bcg1c9822140-v1.1",
+        "imageId": "sha256:e057fb0080708ee7a527b9c2d1d55351f602126d35eecb595d506b1aa52581d3",
+        "instructionSha256": "4f4d384d226a49687890fffedc17242d5261c7a214c7bf247e3e505331698130",
+        "sourceCommit": "7d1409d5b5e436ec9cc7cc2636be18adf8b046e7",
+        "model": "glm-5.3-flash",
+        "maxRuntimeMs": 86400000,
+        "correctionLimit": 3,
+        "modules": {
+          "stop": true,
+          "document": false,
+          "skill": false,
+          "writeTimeImplementationCorrection": false,
+          "requirements": "Necessary existing single extractor; panel off"
+        },
+        "hiddenVerifierMountedInAgent": false,
+        "injectedDefect": false,
+        "beforeAfter": "Same natural trajectory first completed model commit versus final model commit; no RC-off run",
+        "verifierImage": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+        "officialVerifierFiles": {
+          "test.sh": "ffb75d0fa4c759ded3186c1ec49c533db27ec34776a6ae829de5a4692337099a",
+          "test.patch": "7cab6711718deca89a068e57146c28b490e77320144b413061fab2333b1f8c88",
+          "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+          "config.json": "bbe92b48c36a9cd3f868d95238c281e876f278c5262d793a01a9a3e2ad2d41d6"
+        },
+        "officialVerifierUnchanged": true,
+        "resources": {
+          "cpus": 2,
+          "memory": "8g",
+          "platform": "linux/amd64"
+        },
+        "readiness": "FROZEN_24H_2000_STEPS_3_REPAIRS",
+        "credentialSaved": false,
+        "maxReviewSteps": 2000,
+        "maxRepairSteps": 2000,
+        "resumeFrom": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-001/etree-xml-diff-patch/suite1-live-001",
+        "checkpointImage": "sha256:9264c56b473a93db48dcc4fc0c0f99bc3d7e86bd6db36142d50769b67d7b3b78"
+      },
+      "sourceCommit": "c8c0dbb107d1a34eb4033349ed18a09fa3cd439d",
+      "sourceBranch": "feature/xml-diff-patch-merge",
+      "gitStatus": "",
+      "stopVerdict": "PASS",
+      "corrections": 0,
+      "authenticatedOriginalTerminal": {
+        "runId": "b4fd85e9-dde5-42a7-b192-bf189488a618",
+        "status": "ok",
+        "endedAt": 1793615830549,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "privateRuns": [
+        {
+          "taskId": "oc-scope-51ddc40c-48e7-4eb3-8f2f-1e8e32080b01",
+          "runId": "9490e457-0c8a-44ed-ab09-98df9bf57c2a",
+          "sessionId": "5fe5bfde-795f-4672-a4cb-2aaa580fc15d",
+          "role": "stop-reviewer",
+          "ownerPid": 1,
+          "startedAt": 1793615884639,
+          "sessionFile": "/app/.runtime-correction/tasks/oc-scope-51ddc40c-48e7-4eb3-8f2f-1e8e32080b01/workspace-reviews/a29517e4-bb6e-4915-a388-e411fb4bf9cb/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793616202185
+        },
+        {
+          "taskId": "oc-scope-51ddc40c-48e7-4eb3-8f2f-1e8e32080b01",
+          "runId": "9ea01458-7c38-4184-9337-42cf6d6d7e45",
+          "sessionId": "7c28528c-bbea-4f83-83dd-b2135a0ffaea",
+          "role": "ground-truth-extractor",
+          "ownerPid": 1,
+          "startedAt": 1793615831001,
+          "sessionFile": "/app/.runtime-correction/baseline-agent/7c28528c-bbea-4f83-83dd-b2135a0ffaea/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793615884502
+        }
+      ],
+      "closure": {
+        "gatewayClosed": true,
+        "at": 1793616207434
+      },
+      "processExit": {
+        "exitCode": 0,
+        "closedAt": 1793616208110,
+        "relayClosed": true
+      },
+      "resumedPhaseElapsedMs": 581320,
+      "stopElapsedMs": 375616,
+      "remainingPhaseTimeouts": {
+        "wallMs": 84250000,
+        "phaseTimeoutMs": 84250000,
+        "assessmentTimeoutMs": 84250000,
+        "feedbackReserveMs": 30000,
+        "reviewerTimeoutMs": 84220000
+      },
+      "workerResults": [
+        {
+          "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-002/project-runtime-correction/tasks/oc-scope-51ddc40c-48e7-4eb3-8f2f-1e8e32080b01/workspace-reviews/a29517e4-bb6e-4915-a388-e411fb4bf9cb/result.json",
+          "sha256": "259c0069ed67f120ee21574b505ada84eb0512fd3ded9de5b91f3d26b30bf588",
+          "turns": 26,
+          "attempts": 1,
+          "limits": {
+            "maxTurns": 2000,
+            "maxTokens": 32768,
+            "maxAttempts": 2
+          }
+        }
+      ],
+      "patchSha256": "a660248c03878869dca6ee96d3047270ee5c15121ed9a651883d39706f146d75",
+      "patchBytes": 100035,
+      "firstFinalCommitsAndPatchesEqual": true,
+      "originalVerifierScores": [
+        {
+          "phase": "before",
+          "patchSha256": "a660248c03878869dca6ee96d3047270ee5c15121ed9a651883d39706f146d75",
+          "patchBytes": 100035,
+          "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-etree-xml-diff-patch-score-before-1793616208",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-002/official-scoring/before/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793616208.6210392,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 1,
+            "f2p_total": 52,
+            "f2p_passed": 52,
+            "p2p_total": 15,
+            "p2p_passed": 15,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 33.586485862731934
+        },
+        {
+          "phase": "after",
+          "patchSha256": "a660248c03878869dca6ee96d3047270ee5c15121ed9a651883d39706f146d75",
+          "patchBytes": 100035,
+          "verifierImageId": "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-etree-xml-diff-patch-score-after-1793616242",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-002/official-scoring/after/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:9b11572a288a4147ac886a80cb8c7ba5c2f637d313c26eb8a2f49ff35309df37",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793616242.21042,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 1,
+            "f2p_total": 52,
+            "f2p_passed": 52,
+            "p2p_total": 15,
+            "p2p_passed": 15,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 40.533496141433716
+        }
+      ],
+      "originalVerifierScoringUsable": true,
+      "logicalProviderRequests": 40,
+      "upstream429Retries": 0,
+      "reportedScoreBasis": "original-verifier-image",
+      "reportedScores": [
+        {
+          "phase": "before",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 52,
+            "f2p_passed": 52,
+            "p2p_total": 15,
+            "p2p_passed": 15,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          }
+        },
+        {
+          "phase": "after",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 52,
+            "f2p_passed": 52,
+            "p2p_total": 15,
+            "p2p_passed": 15,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "task": "narwhals-rolling-window-suite",
+      "attempt": "suite2-live-002",
+      "evidence": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-002",
+      "manifest": {
+        "benchmark": "DeepSWE 1.1",
+        "task": "narwhals-rolling-window-suite",
+        "datasetCommit": "427384f43d8001f2b14a82e99ace940cc234045a",
+        "baseCommit": "061c97f8a01bf9e721835978b039303c5051501c",
+        "repository": "https://github.com/narwhals-dev/narwhals",
+        "image": "sha256:a94da0d6a13d23612acec72b399ae93baf72b875a354f05d3613ed6b552be2c1",
+        "originalImageReference": "public.ecr.aws/d3j8x8q7/swe-bench-202605:kh7987m8hz4g19ngkk2zfe3v4n82y0e2-v1.1",
+        "imageId": "sha256:a94da0d6a13d23612acec72b399ae93baf72b875a354f05d3613ed6b552be2c1",
+        "instructionSha256": "d25036c0761a9e6a2194f40bda5ae29b12487ee4f4c2045e4326ece0a80679a2",
+        "sourceCommit": "7d1409d5b5e436ec9cc7cc2636be18adf8b046e7",
+        "model": "glm-5.3-flash",
+        "maxRuntimeMs": 86400000,
+        "correctionLimit": 3,
+        "modules": {
+          "stop": true,
+          "document": false,
+          "skill": false,
+          "writeTimeImplementationCorrection": false,
+          "requirements": "Necessary existing single extractor; panel off"
+        },
+        "hiddenVerifierMountedInAgent": false,
+        "injectedDefect": false,
+        "beforeAfter": "Same natural trajectory first completed model commit versus final model commit; no RC-off run",
+        "verifierImage": "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+        "officialVerifierFiles": {
+          "test.sh": "04e46fc9e42527bb5e72c971da3ebc71d49c6ae73c249d2290d8bbed59b4e66e",
+          "test.patch": "4a63f38ce6e17c87c27db085c4e4146601be990e17141a1c0fdea25a607fc0cc",
+          "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+          "config.json": "8137378ce50c0b4ba10c51b41fbfeee36be20b80de8237ecdeba0e41c2747b9b"
+        },
+        "officialVerifierUnchanged": true,
+        "resources": {
+          "cpus": 2,
+          "memory": "8g",
+          "platform": "linux/amd64"
+        },
+        "readiness": "FROZEN_24H_2000_STEPS_3_REPAIRS",
+        "credentialSaved": false,
+        "maxReviewSteps": 2000,
+        "maxRepairSteps": 2000
+      },
+      "sourceCommit": "6de2907a7c989faf51a804c0d0a423332606a516",
+      "sourceBranch": "feat/rolling-min-max-median-quantile",
+      "gitStatus": "?? .openclaw/\n",
+      "stopVerdict": "PASS",
+      "corrections": 0,
+      "authenticatedOriginalTerminal": {
+        "runId": "2a405b52-79a2-4d27-9f1b-29bef47e7371",
+        "status": "ok",
+        "endedAt": 1793619638241,
+        "stopReason": "stop",
+        "livenessState": "working"
+      },
+      "privateRuns": [
+        {
+          "taskId": "oc-scope-d6f09f6e-2f14-42f6-8187-44edcfd5a013",
+          "runId": "9e2fee59-7d55-4069-9713-525c9ddfb06a",
+          "sessionId": "39f1b0eb-2e42-4938-8145-51c288343f24",
+          "role": "stop-reviewer",
+          "ownerPid": 1,
+          "startedAt": 1793619703881,
+          "sessionFile": "/app/.runtime-correction/tasks/oc-scope-d6f09f6e-2f14-42f6-8187-44edcfd5a013/workspace-reviews/3bf4125f-4643-454f-ada7-cc6c8a7e2719/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793620198744
+        },
+        {
+          "taskId": "oc-scope-d6f09f6e-2f14-42f6-8187-44edcfd5a013",
+          "runId": "a63480a7-3114-40a0-a810-548a3a909c97",
+          "sessionId": "3c4f5fbc-a989-4930-a361-11203ac7b735",
+          "role": "ground-truth-extractor",
+          "ownerPid": 1,
+          "startedAt": 1793619638575,
+          "sessionFile": "/app/.runtime-correction/baseline-agent/3c4f5fbc-a989-4930-a361-11203ac7b735/host-session.jsonl",
+          "status": "SETTLED",
+          "settledAt": 1793619703675
+        }
+      ],
+      "closure": {
+        "gatewayClosed": true,
+        "at": 1793620212004
+      },
+      "processExit": {
+        "exitCode": 0,
+        "closedAt": 1793620212794,
+        "relayClosed": true
+      },
+      "resumedPhaseElapsedMs": 3807284,
+      "stopElapsedMs": 572226,
+      "remainingPhaseTimeouts": {
+        "wallMs": 83470000,
+        "phaseTimeoutMs": 83470000,
+        "assessmentTimeoutMs": 83470000,
+        "feedbackReserveMs": 30000,
+        "reviewerTimeoutMs": 83440000
+      },
+      "workerResults": [
+        {
+          "path": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-002/project-runtime-correction/tasks/oc-scope-d6f09f6e-2f14-42f6-8187-44edcfd5a013/workspace-reviews/3bf4125f-4643-454f-ada7-cc6c8a7e2719/result.json",
+          "sha256": "06c07b08a0bb8064210c200f79860e690040d1e026fc02ccf311e0c206cd726d",
+          "turns": 37,
+          "attempts": 1,
+          "limits": {
+            "maxTurns": 2000,
+            "maxTokens": 32768,
+            "maxAttempts": 2
+          }
+        }
+      ],
+      "patchSha256": "751a89b37cb28c3a02f7ed9db019708fa0f89973b0ff52253a2f82405eae4a49",
+      "patchBytes": 78008,
+      "firstFinalCommitsAndPatchesEqual": true,
+      "originalVerifierScores": [
+        {
+          "phase": "before",
+          "patchSha256": "751a89b37cb28c3a02f7ed9db019708fa0f89973b0ff52253a2f82405eae4a49",
+          "patchBytes": 78008,
+          "verifierImageId": "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-narwhals-rolling-window-suite-score-before-1793620213",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-002/official-scoring/before/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793620213.470046,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 0,
+            "f2p_total": 103,
+            "f2p_passed": 0,
+            "p2p_total": 10093,
+            "p2p_passed": 0,
+            "f2p": 0.0,
+            "p2p": 0.0,
+            "partial": 0.0
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 4.9382240772247314
+        },
+        {
+          "phase": "after",
+          "patchSha256": "751a89b37cb28c3a02f7ed9db019708fa0f89973b0ff52253a2f82405eae4a49",
+          "patchBytes": 78008,
+          "verifierImageId": "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+          "command": [
+            "docker",
+            "run",
+            "--platform",
+            "linux/amd64",
+            "--name",
+            "rc-stop-narwhals-rolling-window-suite-score-after-1793620218",
+            "--network",
+            "none",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--mount",
+            "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-002/official-scoring/after/logs,target=/logs",
+            "--entrypoint",
+            "/bin/bash",
+            "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+            "/tests/test.sh"
+          ],
+          "timeoutSec": 1800,
+          "startedAt": 1793620218.410057,
+          "officialVerifierModified": false,
+          "modelRequests": 0,
+          "exitCode": 0,
+          "reward": {
+            "reward": 0,
+            "f2p_total": 103,
+            "f2p_passed": 0,
+            "p2p_total": 10093,
+            "p2p_passed": 0,
+            "f2p": 0.0,
+            "p2p": 0.0,
+            "partial": 0.0
+          },
+          "state": "OFFICIAL_REWARD_AVAILABLE",
+          "elapsedSec": 5.084936857223511
+        }
+      ],
+      "originalVerifierScoringUsable": false,
+      "logicalProviderRequests": 231,
+      "upstream429Retries": 4,
+      "originalVerifierLimitation": "Both original verifier runs failed during conftest import before collecting tests: x86 emulation lacks AVX/AVX2 required by polars-runtime-32. All tests marked missing, so raw zeros are not a measured implementation score.",
+      "sameVersionCompatVerifier": {
+        "provenance": {
+          "baseVerifierImage": "sha256:e2e12381efcb46326b92a0f4c45c8ed612bc262054b2c174b56a44465088aec7",
+          "compatVerifierImage": "sha256:bc06069582daf4edc11bcbd2d7949a37969c237c0c14916130944e9ce02e84f0",
+          "adaptation": "Add same-version polars-runtime-compat==1.39.3, POLARS_FORCE_PKG=compat; original task/tests/grader unchanged",
+          "originalAttempt": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-002",
+          "scoringInput": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/polars-compat-scoring-input/same-commits",
+          "networkDuringScoring": "none",
+          "polarsVersion": "1.39.3",
+          "compatVersion": "1.39.3",
+          "verifierFiles": {
+            "test.sh": "04e46fc9e42527bb5e72c971da3ebc71d49c6ae73c249d2290d8bbed59b4e66e",
+            "test.patch": "4a63f38ce6e17c87c27db085c4e4146601be990e17141a1c0fdea25a607fc0cc",
+            "grader.py": "47cc9eaadf21e636323c360ec4fa786f0733ec9fd1d21ea5a5717ff9f8c4077c",
+            "config.json": "8137378ce50c0b4ba10c51b41fbfeee36be20b80de8237ecdeba0e41c2747b9b"
+          }
+        },
+        "scores": [
+          {
+            "phase": "before",
+            "patchSha256": "751a89b37cb28c3a02f7ed9db019708fa0f89973b0ff52253a2f82405eae4a49",
+            "patchBytes": 78008,
+            "verifierImageId": "sha256:bc06069582daf4edc11bcbd2d7949a37969c237c0c14916130944e9ce02e84f0",
+            "command": [
+              "docker",
+              "run",
+              "--platform",
+              "linux/amd64",
+              "--name",
+              "rc-stop-narwhals-rolling-window-suite-score-before-1793620534",
+              "--network",
+              "none",
+              "--cpus",
+              "2",
+              "--memory",
+              "8g",
+              "--mount",
+              "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/polars-compat-scoring-input/same-commits/official-scoring/before/logs,target=/logs",
+              "--entrypoint",
+              "/bin/bash",
+              "sha256:bc06069582daf4edc11bcbd2d7949a37969c237c0c14916130944e9ce02e84f0",
+              "/tests/test.sh"
+            ],
+            "timeoutSec": 1800,
+            "startedAt": 1793620534.792734,
+            "officialVerifierModified": false,
+            "modelRequests": 0,
+            "exitCode": 0,
+            "reward": {
+              "reward": 1,
+              "f2p_total": 103,
+              "f2p_passed": 103,
+              "p2p_total": 10093,
+              "p2p_passed": 10093,
+              "f2p": 1.0,
+              "p2p": 1.0,
+              "partial": 1.0
+            },
+            "state": "OFFICIAL_REWARD_AVAILABLE",
+            "elapsedSec": 73.57119631767273
+          },
+          {
+            "phase": "after",
+            "patchSha256": "751a89b37cb28c3a02f7ed9db019708fa0f89973b0ff52253a2f82405eae4a49",
+            "patchBytes": 78008,
+            "verifierImageId": "sha256:bc06069582daf4edc11bcbd2d7949a37969c237c0c14916130944e9ce02e84f0",
+            "command": [
+              "docker",
+              "run",
+              "--platform",
+              "linux/amd64",
+              "--name",
+              "rc-stop-narwhals-rolling-window-suite-score-after-1793620608",
+              "--network",
+              "none",
+              "--cpus",
+              "2",
+              "--memory",
+              "8g",
+              "--mount",
+              "type=bind,source=/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/polars-compat-scoring-input/same-commits/official-scoring/after/logs,target=/logs",
+              "--entrypoint",
+              "/bin/bash",
+              "sha256:bc06069582daf4edc11bcbd2d7949a37969c237c0c14916130944e9ce02e84f0",
+              "/tests/test.sh"
+            ],
+            "timeoutSec": 1800,
+            "startedAt": 1793620608.3699882,
+            "officialVerifierModified": false,
+            "modelRequests": 0,
+            "exitCode": 0,
+            "reward": {
+              "reward": 1,
+              "f2p_total": 103,
+              "f2p_passed": 103,
+              "p2p_total": 10093,
+              "p2p_passed": 10093,
+              "f2p": 1.0,
+              "p2p": 1.0,
+              "partial": 1.0
+            },
+            "state": "OFFICIAL_REWARD_AVAILABLE",
+            "elapsedSec": 72.18114995956421
+          }
+        ],
+        "comparison": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/polars-compat-scoring-input/same-commits/official-scoring/comparison.json",
+        "qualification": "Same official tests and grader, same Polars 1.39.3, added CPU-compatible runtime. Supplementary score with changed dependency runtime; original zero records retained."
+      },
+      "reportedScoreBasis": "same-version-polars-compat-runtime",
+      "reportedScores": [
+        {
+          "phase": "before",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 103,
+            "f2p_passed": 103,
+            "p2p_total": 10093,
+            "p2p_passed": 10093,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          }
+        },
+        {
+          "phase": "after",
+          "reward": {
+            "reward": 1,
+            "f2p_total": 103,
+            "f2p_passed": 103,
+            "p2p_total": 10093,
+            "p2p_passed": 10093,
+            "f2p": 1.0,
+            "p2p": 1.0,
+            "partial": 1.0
+          }
+        }
+      ]
+    }
+  ],
+  "excludedIncompleteAttempts": [
+    {
+      "root": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-001",
+      "reason": "Interrupted before any Stop work when user expanded budgets; source and history checkpointed; not Stop corrections"
+    },
+    {
+      "root": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/etree-xml-diff-patch/suite2-live-001",
+      "reason": "Stale restored original-run owner blocked host before Stop; not a completed Stop sample; baseline scores excluded"
+    },
+    {
+      "root": "/Users/id02271616/.codex/worktrees/rc-stop-e2e-timeouts/runtime-corrector-toy/.runtime-correction/stop-suite-20261102-002/narwhals-rolling-window-suite/suite2-live-001",
+      "reason": "Upstream 429 before original completion and before Stop; not a completed Stop sample; baseline scores excluded"
+    }
+  ],
+  "validation": {
+    "focusedFrameworkChecksPassed": 34,
+    "fullRepositorySuiteRequalified": false,
+    "credentialScan": {
+      "checkedFiles": 3808,
+      "archiveMembersChecked": 13,
+      "credentialValuesChecked": 6,
+      "matchCount": 0,
+      "matches": [],
+      "at": 1793620716.8542268
+    }
+  },
+  "conclusion": {
+    "completedLiveStopSamples": 3,
+    "stopPassCount": 3,
+    "totalAutomaticCorrections": 0,
+    "largeTaskAutomaticRepairExercised": false,
+    "officialHTTPXFalseAcceptance": true,
+    "httpxGap": "One malformed quoted boundary accepted without required DecodingError",
+    "limitations": [
+      "All final commits equal first completed commits; this batch does not measure correction-driven improvement.",
+      "Narwhals original verifier is CPU-incompatible on this host; report its unchanged-test supplementary compatible-runtime score separately.",
+      "Earlier minimum normal/fault loop and GQL reports remain separate historical evidence."
+    ]
+  },
+  "timing": {
+    "originalSuiteStartedAt": 1793613473576,
+    "stopRunsClosedAt": 1793620212794,
+    "supplementaryScoringFinishedAt": 1793620686663,
+    "originalAbsoluteDeadlineAt": 1793699873576,
+    "wallThroughScoringMs": 7213087,
+    "phaseTimesExcludeEarlierPreMigrationOrFailedAttempts": true
+  }
+}
