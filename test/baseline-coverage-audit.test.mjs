@@ -338,6 +338,33 @@ test('original citation rejection identifies the unit and catalog citation witho
   });
 });
 
+test('an audit disclosure gap identifies the actual unread file and requires its native receipt before the same audit finishes', async t => {
+  const f = await sharedBasisFixture(t); let repairs = 0;
+  f.state.coverageSkipRead = file => file === 'original-baseline-0000.txt';
+  f.state.coverageRepairReport = async context => {
+    const feedback = JSON.parse(context.result.content[0].text);
+    assert.equal(feedback.validation.reason, 'AUDIT_DISCLOSURE_GAP');
+    assert.deepEqual(feedback.validation.recoverWith, [{ tool: 'source_read', path: 'original-baseline-0000.txt', offset: 1 }]);
+    await context.readFile(feedback.validation.recoverWith[0].path); repairs++;
+    return scriptedCoverageReport(context);
+  };
+  await f.refresh(); assert.equal(repairs, 1);
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
+  assert.equal(bundle.budget.auditCalls, 1);
+  assert(bundle.citations.some(cite => cite.path === 'original-baseline-0000.txt'));
+});
+
+test('an abbreviated inventory digest gets the complete owned identity without automatic report repair', async t => {
+  const f = await sharedBasisFixture(t); await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
+  const report = structuredClone(bundle.report), completeDigest = report.inventoryDigest; report.inventoryDigest = completeDigest.slice(0, 8);
+  assert.throws(() => validateBaselineAuditReport(report, bundle.input, bundle.files, bundle.citations, bundle.inventory.record.inventory), error => {
+    assert.equal(error.auditValidation.reason, 'INVENTORY_DIGEST_MISMATCH');
+    assert.equal(error.auditValidation.expectedInventoryDigest, completeDigest);
+    assert.equal(report.inventoryDigest.length, 8); return true;
+  });
+});
+
 for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured limit ${limit} without publication`, async t => {
   const f = await sharedBasisFixture(t);
   f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
@@ -670,13 +697,18 @@ async function nativeAuditAttempt(params, tools, name, args, id) {
   return result;
 }
 
-test('a failed audit page read remains an owned negative transaction and cannot poison later genuine coverage', async t => {
+for (const nativeIsError of [true, false]) test(`a failed audit page read remains an owned negative transaction with native isError=${nativeIsError}`, async t => {
   const f = await sharedBasisFixture(t);
   f.state.coverageAfterInventory = async ({ params, tools }) => {
     const result = await nativeAuditAttempt(params, tools, 'source_read', { path: 'candidate-0.txt', offset: 2 }, 'invalid-candidate-page');
     assert.equal(result.isError, true); assert.equal(result.details?.citation, undefined);
     const feedback = JSON.parse(result.content[0].text);
     assert.equal(feedback.code, 'SOURCE_READ_RANGE_INVALID');
+    if (!nativeIsError) {
+      const rows = (await fs.readFile(params.sessionFile, 'utf8')).split('\n').filter(Boolean).map(line => JSON.parse(line));
+      rows.find(row => row.message?.toolCallId === 'invalid-candidate-page').message.isError = false;
+      await fs.writeFile(params.sessionFile, rows.map(row => JSON.stringify(row)).join('\n') + '\n');
+    }
   };
   await f.refresh();
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
@@ -685,6 +717,18 @@ test('a failed audit page read remains an owned negative transaction and cannot 
   assert.equal(denied.phase, 'DENIED'); assert.equal(denied.isError, true);
   assert(bundle.citations.some(row => row.path === 'candidate-0.txt' && row.start === 1));
   assert(!bundle.citations.some(row => row.path === 'candidate-0.txt' && row.start === 2));
+});
+
+test('a native success flag cannot hide candidate content behind an owned denial', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageBeforeInventory = async ({ params, tools }) => {
+    await nativeAuditAttempt(params, tools, 'source_read', { path: 'candidate-0.txt' }, 'tampered-early-read');
+    const rows = (await fs.readFile(params.sessionFile, 'utf8')).split('\n').filter(Boolean).map(line => JSON.parse(line));
+    const message = rows.find(row => row.message?.toolCallId === 'tampered-early-read').message;
+    message.isError = false; message.content = [{ type: 'text', text: '{"accepted":true,"text":"unexpected candidate content"}' }];
+    await fs.writeFile(params.sessionFile, rows.map(row => JSON.stringify(row)).join('\n') + '\n');
+  };
+  await assert.rejects(f.refresh()); assert.equal((await f.truth()).version, 0);
 });
 
 for (const missing of ['native-append', 'genuine-persist-hook']) test(`inventory generic callback cannot unlock phase two without ${missing}`, async t => {

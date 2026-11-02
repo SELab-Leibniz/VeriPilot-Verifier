@@ -73,7 +73,7 @@ export function scriptedCoverageReport({ view, files, citations, identityDigest,
 export async function runNativeCoverageFixture({ params, registry, hooks, report = scriptedCoverageReport, mutateResult = null, formatReport = JSON.stringify,
   repairReport = null, onSubmission = null, persistFinish = true, observeFinish = true,
   inventory: inventoryOracle = scriptedSourceInventory, persistInventory = true, observeInventory = true,
-  onInventory = null, beforeInventory = null, afterInventory = null, returnWithoutFinish = null }) {
+  onInventory = null, beforeInventory = null, afterInventory = null, returnWithoutFinish = null, skipRead = null }) {
   const request = JSON.parse(params.prompt), ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey, runId: params.runId };
   const tools = registry(ctx), root = path.join(path.dirname(params.sessionFile), 'coverage-source');
   const citations = [], files = new Map(); let id = 0;
@@ -121,7 +121,7 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
   // Candidate bytes are first loaded only after an actual later gated tool read.
   await readFile(request.phaseTwoManifest);
   const phaseTwo = JSON.parse(files.get(request.phaseTwoManifest));
-  for (const file of phaseTwo.requiredFiles) if (!files.has(file)) await readFile(file);
+  for (const file of phaseTwo.requiredFiles) if (!files.has(file) && !skipRead?.(file)) await readFile(file);
   const view = decodeBaselineAuditView(JSON.parse([...files].filter(([name]) => name.startsWith('candidate-'))
     .sort(([a], [b]) => Number(a.slice(10, -4)) - Number(b.slice(10, -4))).map(([, text]) => text).join('')));
   const context = { view, files, citations, inventory, identityDigest: request.identityDigest };
@@ -163,7 +163,7 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
     params.onAgentToolResult?.({ toolName: message.toolName, result, isError: message.isError });
     await onSubmission?.({ params, value, result, attempt: ++attempt });
     if (!result.isError) break;
-    const next = await repairReport?.({ ...context, params, value, result, attempt });
+    const next = await repairReport?.({ ...context, params, value, result, attempt, readFile });
     if (!next) break;
     value = next; // Explicit scripted next turn; no independent retry allowance.
   }

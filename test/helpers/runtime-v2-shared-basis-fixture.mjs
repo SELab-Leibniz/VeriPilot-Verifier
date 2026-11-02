@@ -115,7 +115,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
           inventory: state.coverageInventory ?? (context => scriptedSourceInventory(context, sharedOriginalDuties)),
           persistInventory: state.coveragePersistInventory !== false, observeInventory: state.coverageObserveInventory !== false,
           beforeInventory: state.coverageBeforeInventory, onInventory: state.coverageOnInventory, afterInventory: state.coverageAfterInventory,
-          returnWithoutFinish: state.coverageReturnWithoutFinish });
+          returnWithoutFinish: state.coverageReturnWithoutFinish, skipRead: state.coverageSkipRead });
       }
       if (!params.toolsAllow?.includes('finish_baseline')) {
         if (params.toolsAllow) assert(params.toolsAllow.includes('rc_skill_care'));
