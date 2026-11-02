@@ -372,7 +372,7 @@ async function installNativeEvaluationBatch({ hostRoot, sourceRoot, outputRoot, 
 
 // Development data isolation, not a restriction or optimization of RC itself.
 // Bindings are the same session-scoped objects used by the installed plugin.
-export async function fenceNativeStopTools(params, { projectRoot, externalFiles = [] }) {
+export async function fenceNativeStopTools(params, { projectRoot, externalFiles = [], sourceRoot }) {
   const roots = [await fs.realpath(projectRoot)];
   const originals = new Set(await Promise.all(externalFiles.map(file => fs.realpath(file))));
   const inside = (root, file) => file === root || file.startsWith(root + path.sep);
@@ -400,9 +400,11 @@ export async function fenceNativeStopTools(params, { projectRoot, externalFiles 
   };
   const binding = globalThis[Symbol.for('runtime-corrector.openclaw.task-tools.v1')]?.get(params.sessionKey);
   if (!binding || binding.sessionId !== params.sessionId) throw new Error('Native fixture fence needs the actual owning task binding');
+  const evidenceRoot = sourceRoot ?? params.cwd ?? projectRoot;
+  await check(path.resolve(evidenceRoot));
   binding.tools = binding.tools.map(tool => ({ ...tool, async execute(id, args, signal) {
     if (/^source_(?:read|grep|find|ls)$/u.test(tool.name)) {
-      const selected = path.resolve(params.cwd ?? projectRoot, args.path ?? '.');
+      const selected = path.resolve(evidenceRoot, args.path ?? '.');
       await check(selected);
       if (tool.name !== 'source_read' && (await fs.stat(selected)).isDirectory()) await tree(selected);
     }
@@ -411,10 +413,18 @@ export async function fenceNativeStopTools(params, { projectRoot, externalFiles 
 }
 
 export async function prepareNativeEvaluationTools(params, { fixtureFence, baseline = false, document = false, skill = false, role, batch }) {
-  const bounded = globalThis[Symbol.for('runtime-corrector.openclaw.task-tools.v1')]?.has(params.sessionKey);
+  const binding = globalThis[Symbol.for('runtime-corrector.openclaw.task-tools.v1')]?.get(params.sessionKey);
+  const bounded = Boolean(binding);
   // Stop always needs its owning task binding. Only the baseline factory's
   // unbounded reader roles may use the host's workspace-only read tool.
-  if (fixtureFence && (bounded || !(baseline || document || skill))) await fenceNativeStopTools(params, fixtureFence);
+  if (fixtureFence && (bounded || !(baseline || document || skill))) {
+    // An audit deliberately runs in an empty workspace. Its existing private
+    // source tools resolve names against the adjacent captured evidence tree.
+    const audit = binding?.tools.some(tool => tool.name === 'commit_baseline_inventory')
+      && binding.tools.some(tool => tool.name === 'finish_baseline_audit');
+    await fenceNativeStopTools(params, { ...fixtureFence,
+      ...(audit ? { sourceRoot: path.join(path.dirname(params.sessionFile), 'coverage-source') } : {}) });
+  }
   if (!(baseline || document || skill)) return params;
   role ??= batch?.reviewRole?.(params.sessionId, params);
   const toolsAllow = ['read'];
@@ -525,16 +535,20 @@ export async function installNativeStopCapture({ hostRoot, directory, projectRoo
 }
 
 export async function createNativeStopEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, legacy = false, traceTransport = false,
-  provider: selectedProvider, stateRoot, capture, fixtureFence, batch, providerCredential }) {
+  provider: selectedProvider, stateRoot, capture, fixtureFence, batch, providerCredential, providerTimeoutMs, standaloneBaseline = false }) {
+  if (providerTimeoutMs !== undefined && (!Number.isSafeInteger(providerTimeoutMs) || providerTimeoutMs < 1000 || providerTimeoutMs > 3600000))
+    throw new Error('Provider timeout must be an integer between 1000 and 3600000 ms.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('The native live probe requires installed OpenClaw 2026.7.1-2.');
   const coding = selectedProvider?.api === 'openai-completions';
   if (selectedProvider && (!coding || selectedProvider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4'
-    || selectedProvider.model !== 'glm-5.3' || !/^[A-Z][A-Z0-9_]*$/u.test(selectedProvider.credentialEnv ?? '')))
+    || !['glm-5.3', ...(standaloneBaseline ? ['glm-5.3-flash'] : [])].includes(selectedProvider.model)
+    || !/^[A-Z][A-Z0-9_]*$/u.test(selectedProvider.credentialEnv ?? '')))
     throw new Error('Unapproved explicit native provider configuration');
   const component = ['metered_native_baseline_batch', 'metered_native_document_batch', 'metered_native_skill_batch'].includes(batch?.kind);
-  if (coding && !capture && !['metered_native_stop_batch', 'metered_native_baseline_batch', 'metered_native_document_batch', 'metered_native_skill_batch'].includes(batch?.kind)) throw new Error('Native Coding Plan dispatch needs a separately frozen batch');
-  const providerWallMs = coding && batch ? batch.metrics().limits.wallMs : null;
+  if (coding && !capture && !['metered_native_stop_batch', 'metered_native_baseline_batch', 'metered_native_document_batch', 'metered_native_skill_batch'].includes(batch?.kind)
+    && !(standaloneBaseline && providerTimeoutMs !== undefined && fixtureFence)) throw new Error('Native Coding Plan dispatch needs a separately frozen batch or an explicitly bounded standalone baseline');
+  const providerWallMs = coding && batch ? batch.metrics().limits.wallMs : coding && standaloneBaseline ? providerTimeoutMs : null;
   if (providerWallMs !== null && (!Number.isSafeInteger(providerWallMs) || providerWallMs < 1000 || providerWallMs > 3600000))
     throw new Error('Native provider policy requires the existing finite batch wall limit');
   if (!coding && (!process.env.ANTHROPIC_AUTH_TOKEN || !process.env.ANTHROPIC_BASE_URL)) throw new Error('The native live probe requires the existing Anthropic-compatible provider environment.');
@@ -558,18 +572,19 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
     models: { mode: 'replace', providers: { [providerId]: { api: coding ? selectedProvider.api : 'anthropic-messages',
       baseUrl: coding ? selectedProvider.baseUrl : process.env.ANTHROPIC_BASE_URL,
       ...(providerWallMs !== null ? { timeoutSeconds: Math.floor(providerWallMs / 1000) } : {}),
-      ...(coding ? { apiKey: '${' + selectedProvider.credentialEnv + '}' } : {}),
+      ...(!coding && providerTimeoutMs !== undefined ? { timeoutSeconds: Math.ceil(providerTimeoutMs / 1000) } : {}),
+      apiKey: '${' + (coding ? selectedProvider.credentialEnv : 'ANTHROPIC_AUTH_TOKEN') + '}',
       models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000, maxTokens: 32768,
-        ...(coding ? { cost: { input: 7, output: 22, cacheRead: 7, cacheWrite: 7 },
+        ...(coding ? { ...(model === 'glm-5.3' ? { cost: { input: 7, output: 22, cacheRead: 7, cacheWrite: 7 } } : {}),
           compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
             supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}) }] } } },
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] },
       entries: { 'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } } } } };
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
   // Resolved only in this process; the saved profile contains the env name.
-  if (coding) config.models.providers[providerId].apiKey = credential;
+  config.models.providers[providerId].apiKey = credential;
   const timing = traceTransport ? await installProviderFetchTiming({ file: path.join(root, 'provider-fetch-timing.jsonl'),
-    origin: new URL(process.env.ANTHROPIC_BASE_URL).origin }) : null;
+    origin: new URL(coding ? selectedProvider.baseUrl : process.env.ANTHROPIC_BASE_URL).origin }) : null;
   try {
   const load = relative => import(pathToFileURL(path.join(hostRoot, relative)).href);
   const { createPluginRuntime } = await load('dist/plugins/runtime/index.js');

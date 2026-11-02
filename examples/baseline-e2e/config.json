@@ -1,0 +1,9 @@
+{
+  "timeoutMs": 600000,
+  "assessmentTimeoutMs": 900000,
+  "requestTimeoutMs": 600000,
+  "maxRepairs": 8,
+  "model": "glm-5.3-flash",
+  "api": "openai-completions",
+  "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
+}

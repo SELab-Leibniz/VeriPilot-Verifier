@@ -107,6 +107,31 @@ test('new-format range-gap feedback is repaired inside the same auditor invocati
   assert.equal(bundle.budget.maxTurns, STOP_TASK_LIMITS.maxTurns);
 });
 
+test('condition mismatch feedback locates the exact field and permits an explicit same-run correction', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageSubmissions = [];
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    report.sources.find(source => source.kind === 'USER_MESSAGE').mappings[0].condition = 'invented trigger';
+    return report;
+  };
+  f.state.coverageRepairReport = context => {
+    assert.equal(context.attempt, 1);
+    const feedback = JSON.parse(context.result.content[0].text).validation;
+    assert.equal(feedback.reason, 'CONDITION_IDENTITY_MISMATCH');
+    assert.equal(feedback.mappingIndex, 0);
+    assert.deepEqual(feedback.submittedCondition, { value: 'invented trigger' });
+    assert.deepEqual(feedback.targets[0].expectedCondition, { value: 'CURRENT_TASK' });
+    assert.equal(feedback.recoverWith.path, 'phase-two-manifest.json');
+    return scriptedCoverageReport(context);
+  };
+  await f.refresh();
+  assert.equal((await f.truth()).version, 1);
+  assert.equal(f.audits().length, 1);
+  assert.equal(f.state.coverageSubmissions.length, 2);
+  assert.equal(new Set(f.state.coverageSubmissions.map(row => row.params.runId)).size, 1);
+});
+
 for (const missing of ['native-append', 'genuine-persist-hook']) test(`successful generic callback cannot replace missing finish ${missing}`, async t => {
   const f = await sharedBasisFixture(t); f.state.coverageSubmissions = [];
   if (missing === 'native-append') f.state.coveragePersistFinish = false;
