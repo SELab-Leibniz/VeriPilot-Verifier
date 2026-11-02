@@ -1,0 +1,1670 @@
+{
+  "kind": "six-large-document-requirements-glm-live-regression",
+  "recordedAt": "2026-11-02T09:51:29.774Z",
+  "sourceCommit": "88b995dc207df93abc3ab2c696dfa07f62a411a0",
+  "branch": "codex/document-e2e-hour",
+  "previousFailedRegression": "docs/document-large-requirement-results.json",
+  "previousQuotaBlock": "docs/document-large-fix-progress-results.json",
+  "restoredProviderQuotaAttempts": "Historical quota failures remain in .runtime-correction/document-large-fixed-final-20261102; this GLM run uses fresh directories and does not relabel them.",
+  "provider": {
+    "service": "GLM Coding Plan",
+    "model": "glm-5.3-flash",
+    "requestedOpenAIBaseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "nativeCompatibleBaseUrl": "https://open.bigmodel.cn/api/anthropic",
+    "api": "anthropic-messages",
+    "credentials": "Memory and child process environment only; no credentials in this report."
+  },
+  "fixes": [
+    "Explicit review.copyFrom binds one declared Ground Truth source and adds read-only character comparison to the production artifact check. A semantic PASS cannot erase literal-block or EOF differences.",
+    "rules.enabled:false disables default style rules as documented. Original source headings remain unchanged.",
+    "Successful native apply_patch repairs count alongside write/edit. Failed, empty, unacknowledged and unrelated-file calls are excluded.",
+    "The actual initial write must retain all seeded faults and its reviewed-byte hash must match. Additional initial copy errors remain recorded and can be repaired; final full-copy equality, zero final diagnostics and native completion stay required.",
+    "Business instructions stop after final PASS and prohibit empty/no-op patches. Copy-only reviewers return findings without generating candidate patches.",
+    "Hook failure cleanup rejections and navigation checkpoint exceptions are contained; non-Error thrown values cannot break the host-facing exception boundary.",
+    "The isolated native business tool policy disables runtime_corrector manual checking, so document acceptance uses automatic Hooks only. Global host tool policy and general manual commands are unchanged."
+  ],
+  "hostIsolationValidation": {
+    "testFile": "test/document-copy-review.test.mjs",
+    "injectedFailures": [
+      "review entry throws null",
+      "plugin cleanup rejects",
+      "logger throws",
+      "navigation checkpoint rejects"
+    ],
+    "verified": [
+      "native invocation does not reject",
+      "host cancellation signal remains live",
+      "only plugin-owned review is aborted",
+      "no unhandled cleanup rejection",
+      "host compaction callbacks do not reject"
+    ],
+    "liveRuns": "All six isolated Gateway runs finish normally with status ok; no patch/edit calls follow the successful final review."
+  },
+  "timeouts": {
+    "baselineTimeoutMs": 1200000,
+    "reviewTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "runnerOnlyCorrection": {
+    "commit": "88b995d",
+    "detail": "Benchmark expectation lines follow the actual first native write, not frozen draft positions. Production plugin, business prompt, transport and timeout behavior are unchanged. Five passing native cases retain the exact earlier runner hash and were independently rechecked with the current locator; Django was rerun in a fresh directory.",
+    "firstDjangoAttempt": {
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "Initial automatic review did not locate the controlled deviation at line 85"
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/django-11087-001/report.json",
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "reviewStates": [
+        "failed",
+        "failed",
+        "failed",
+        "failed",
+        "passed"
+      ]
+    }
+  },
+  "intermediateNativeAttempts": [
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pylint-7080-001/report.json",
+      "state": "PASSED",
+      "failure": null,
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pytest-7490-002/report.json",
+      "state": "PASSED",
+      "failure": null,
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/matplotlib-22719-002/report.json",
+      "state": "PASSED",
+      "failure": null,
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/xarray-6721-001/report.json",
+      "state": "FAILED",
+      "failure": {
+        "code": "ERR_ASSERTION",
+        "message": "A manual check replaced the required automatic Hook"
+      },
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/django-11087-001/report.json",
+      "state": "PASSED",
+      "failure": null,
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/scikit-learn-11578-001/report.json",
+      "state": "PASSED",
+      "failure": null,
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "note": "Earlier fix run retained. xarray additionally called a manual checker after the automatic PASS; the final six runs use the same native tool policy that disables the manual entry."
+    }
+  ],
+  "totals": {
+    "liveCases": 6,
+    "passed": 6,
+    "locatedControlledDeviations": 24,
+    "restoredControlledDeviations": 24,
+    "exactFinalDocuments": 5,
+    "repairedInitialCopyDifferences": 5,
+    "automatedChecksPassed": 144
+  },
+  "automatedChecks": {
+    "pass": 144,
+    "fail": 0,
+    "suites": [
+      {
+        "pass": 139,
+        "fail": 0,
+        "log": ".runtime-correction/document-large-glm-20261102/final-checks.tap"
+      },
+      {
+        "pass": 5,
+        "fail": 0,
+        "log": ".runtime-correction/document-large-source-20261102/large-fix-native-policy.tap"
+      }
+    ]
+  },
+  "preflightFailures": [
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pytest-7490-001/report.json",
+      "state": "FAILED",
+      "failure": {
+        "code": "OPENCLAW_DOCUMENT_E2E_FAILED",
+        "message": "The actual Gateway did not load the built RC plugin."
+      },
+      "businessModelStarted": false,
+      "note": "Development packaging preflight failed before any business request. The missing module was then added to the explicit runtime allowlist; the next attempt uses a fresh directory."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/matplotlib-22719-001/report.json",
+      "state": "FAILED",
+      "failure": {
+        "code": "OPENCLAW_DOCUMENT_E2E_FAILED",
+        "message": "The actual Gateway did not load the built RC plugin."
+      },
+      "businessModelStarted": false,
+      "note": "Development packaging preflight failed before any business request. The missing module was then added to the explicit runtime allowlist; the next attempt uses a fresh directory."
+    }
+  ],
+  "cases": [
+    {
+      "task": "SWE-bench_Verified/pylint-dev__pylint-7080",
+      "instanceId": "pylint-dev__pylint-7080",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 24513,
+      "importedLines": 260,
+      "originalSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+      "state": "PASSED",
+      "elapsedMs": 303257,
+      "baselineVersion": 1,
+      "baselineClaims": 15,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 4,
+          "actualLine": 4
+        },
+        {
+          "sourceLine": 12,
+          "actualLine": 12
+        },
+        {
+          "sourceLine": 20,
+          "actualLine": 20
+        },
+        {
+          "sourceLine": 241,
+          "actualLine": 241
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+        "actualSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+        "actualSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 4,
+              "message": "Document differs from declared copy source requirements.md at physical line 4.",
+              "evidence": [
+                "source line 4 = \"When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is completely ignored\"",
+                "current line 4 = \"When running recursively, it seems `ignore-paths` in my settings in pyproject.toml is correctly respected\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 12,
+              "message": "Document differs from declared copy source requirements.md at physical line 12.",
+              "evidence": [
+                "source line 12 = \"  \\\"^src/gen/.*$\\\",\"",
+                "current line 12 = \"  \\\"^src/manual/.*$\\\",\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 20,
+              "message": "Document differs from declared copy source requirements.md at physical line 20.",
+              "evidence": [
+                "source line 20 = \"pylint --recursive=y src/\"",
+                "current line 20 = \"pylint --recursive=n src/\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 241,
+              "message": "Document differs from declared copy source requirements.md at physical line 241.",
+              "evidence": [
+                "source line 241 = \"src\\\\gen\\\\* should not be checked\"",
+                "current line 241 = \"src\\\\gen\\\\* must always be checked\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+              "actualSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_a6af7a48a19147548535311a"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": true,
+              "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+              "actualSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_6dd5d2d7566b44e79542f8c5"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_a6af7a48a19147548535311a"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_6dd5d2d7566b44e79542f8c5"
+        }
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/pylint-7080-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/pylint-7080-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "90d52a9e021babed9008d09282d29b9418eb7d04e6b00926223f117094121ed1",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/pytest-dev__pytest-7490",
+      "instanceId": "pytest-dev__pytest-7490",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 22403,
+      "importedLines": 378,
+      "originalSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+      "state": "PASSED",
+      "elapsedMs": 321886,
+      "baselineVersion": 1,
+      "baselineClaims": 14,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 10,
+          "actualLine": 10
+        },
+        {
+          "sourceLine": 326,
+          "actualLine": 326
+        },
+        {
+          "sourceLine": 328,
+          "actualLine": 328
+        },
+        {
+          "sourceLine": 346,
+          "actualLine": 346
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "a078f0ea09a8f891c939997d5726db8ffa5f7db9e8458dd2a9dba969e8bd5b03",
+        "actualSha256": "ff921708fab3ed73e86bf2ffc0efd7e2a584835a6bc383a84bb4078616416f8d",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+        "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 10,
+              "message": "Document differs from declared copy source requirements.md at physical line 10.",
+              "evidence": [
+                "source line 10 = \"With pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this treated the failing test like a a test marked statically with an `xfail`. With 6.0.0rc0 it raises. \"",
+                "current line 10 = \"With pytest 5.x, we can dynamically add an xfail to a test `request` object using `request.node.add_marker(mark)` (see example below). In 5.x this raises an ordinary failure. With 6.0.0rc0 it correctly produces an expected failure. \""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 326,
+              "message": "Document differs from declared copy source requirements.md at physical line 326.",
+              "evidence": [
+                "source line 326 = \"    mark = pytest.mark.xfail(reason=\\\"xfail\\\")\"",
+                "current line 326 = \"    mark = pytest.mark.skip(reason=\\\"xfail\\\")\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 328,
+              "message": "Document differs from declared copy source requirements.md at physical line 328.",
+              "evidence": [
+                "source line 328 = \"    assert 0\"",
+                "current line 328 = \"    assert 1\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 346,
+              "message": "Document differs from declared copy source requirements.md at physical line 346.",
+              "evidence": [
+                "source line 346 = \"XFAIL test_foo.py::test_xfail_test\"",
+                "current line 346 = \"FAILED test_foo.py::test_xfail_test\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 377,
+              "message": "Document differs from declared copy source requirements.md at physical line 378.",
+              "evidence": [
+                "source line 378 = \"\"",
+                "current line 378 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \"son=\\\"xfail\\\")\\n        request.node.add_marker(mark)\\n>       assert 0\\nE       assert 0\\n\\ntest_foo.py:7: AssertionError\\n```\\n\"; source suffix \"on=\\\"xfail\\\")\\n        request.node.add_marker(mark)\\n>       assert 0\\nE       assert 0\\n\\ntest_foo.py:7: AssertionError\\n```\\n\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+              "actualSha256": "ff921708fab3ed73e86bf2ffc0efd7e2a584835a6bc383a84bb4078616416f8d",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_1e07c4fd095b4e5b855d5391"
+        },
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 377,
+              "message": "Document differs from declared copy source requirements.md at physical line 378.",
+              "evidence": [
+                "source line 378 = \"\"",
+                "current line 378 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \"son=\\\"xfail\\\")\\n        request.node.add_marker(mark)\\n>       assert 0\\nE       assert 0\\n\\ntest_foo.py:7: AssertionError\\n```\\n\"; source suffix \"on=\\\"xfail\\\")\\n        request.node.add_marker(mark)\\n>       assert 0\\nE       assert 0\\n\\ntest_foo.py:7: AssertionError\\n```\\n\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+              "actualSha256": "cfaad33c0bdc5e94b83ced977b1bb7bdf9f33d19f5d462f777989613da8e68cd",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_53c24b0538f94561a504da6c"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": true,
+              "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+              "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_4800a504151048238c8316c5"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_1e07c4fd095b4e5b855d5391"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_53c24b0538f94561a504da6c"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_4800a504151048238c8316c5"
+        }
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 3,
+        "ground-truth-extractor": 1
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/pytest-7490-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/pytest-7490-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "90d52a9e021babed9008d09282d29b9418eb7d04e6b00926223f117094121ed1",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/matplotlib__matplotlib-22719",
+      "instanceId": "matplotlib__matplotlib-22719",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 9971,
+      "importedLines": 208,
+      "originalSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+      "state": "PASSED",
+      "elapsedMs": 248034,
+      "baselineVersion": 1,
+      "baselineClaims": 14,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 4,
+          "actualLine": 4
+        },
+        {
+          "sourceLine": 11,
+          "actualLine": 11
+        },
+        {
+          "sourceLine": 170,
+          "actualLine": 170
+        },
+        {
+          "sourceLine": 202,
+          "actualLine": 202
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "519b575320d44fd791a471d11e81e5ef6f109a8b5b16e9b74d05d92568c76537",
+        "actualSha256": "5f911e69ece2fc4a70d492d415bd26bfdf34b86b2136f23a98e5e254800c6674",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+        "actualSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 4,
+              "message": "Document differs from declared copy source requirements.md at physical line 4.",
+              "evidence": [
+                "source line 4 = \"I'm seeing a `MatplotlibDeprecationWarning` when using calling axes methods on empty data structures for axes that are using string unit converters. I think this is either a false alarm or a non-actionable warning.\"",
+                "current line 4 = \"I'm seeing a `UserWarning` when using calling axes methods on empty data structures for axes that are using string unit converters. I think this is either a false alarm or a non-actionable warning.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 11,
+              "message": "Document differs from declared copy source requirements.md at physical line 11.",
+              "evidence": [
+                "source line 11 = \"ax.xaxis.update_units([\\\"a\\\", \\\"b\\\"])\"",
+                "current line 11 = \"ax.xaxis.update_units([1, 2])\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 170,
+              "message": "Document differs from declared copy source requirements.md at physical line 170.",
+              "evidence": [
+                "source line 170 = \"I would expect this to either (1) continue producing artists with no data, or (2) more accurately describe what the problem is and how to avoid it.\"",
+                "current line 170 = \"I would expect this to always reject empty data and never produce artists or improve the diagnostic.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 202,
+              "message": "Document differs from declared copy source requirements.md at physical line 202.",
+              "evidence": [
+                "source line 202 = \"So it feels like maybe whatever is changing behind the scenes failed to anticipate the \\\"empty data\\\" edge case?\"",
+                "current line 202 = \"So it feels like maybe whatever is changing behind the scenes already handles the \\\"empty data\\\" edge case correctly?\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 207,
+              "message": "Document differs from declared copy source requirements.md at physical line 208.",
+              "evidence": [
+                "source line 208 = \"\"",
+                "current line 208 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \"ever is changing behind the scenes already handles the \\\"empty data\\\" edge case correctly?\\n\\n### Matplotlib Version\\n\\n3.5.1\\n\"; source suffix \"whatever is changing behind the scenes failed to anticipate the \\\"empty data\\\" edge case?\\n\\n### Matplotlib Version\\n\\n3.5.1\\n\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+              "actualSha256": "5f911e69ece2fc4a70d492d415bd26bfdf34b86b2136f23a98e5e254800c6674",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_dfc4b0d2e03d47a0b2d4c9c4"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": true,
+              "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+              "actualSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_e65428196a0e4143ba7727fb"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_dfc4b0d2e03d47a0b2d4c9c4"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_e65428196a0e4143ba7727fb"
+        }
+      ],
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 2
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/matplotlib-22719-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/matplotlib-22719-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "90d52a9e021babed9008d09282d29b9418eb7d04e6b00926223f117094121ed1",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/pydata__xarray-6721",
+      "instanceId": "pydata__xarray-6721",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 9067,
+      "importedLines": 237,
+      "originalSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+      "state": "PASSED",
+      "elapsedMs": 267524,
+      "baselineVersion": 1,
+      "baselineClaims": 14,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 4,
+          "actualLine": 4
+        },
+        {
+          "sourceLine": 10,
+          "actualLine": 10
+        },
+        {
+          "sourceLine": 16,
+          "actualLine": 16
+        },
+        {
+          "sourceLine": 219,
+          "actualLine": 219
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "6ccd8e57dc515dcfb74c4f4cb72ee6aab0f093020fa84b27da061a12a15d304d",
+        "actualSha256": "b0dc51bbff713ef147b11b6a805a227f889c8d0d07b9d34c98d9ade313882779",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 4,
+              "message": "Document differs from declared copy source requirements.md at physical line 4.",
+              "evidence": [
+                "source line 4 = \"When running the following example it appears the entire dataset is loaded into memory when accessing the `chunks` attribute:\"",
+                "current line 4 = \"When running the following example it appears only metadata is inspected and no array data is loaded into memory when accessing the `chunks` attribute:\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 10,
+              "message": "Document differs from declared copy source requirements.md at physical line 10.",
+              "evidence": [
+                "source line 10 = \"ds = xr.open_dataset(url, engine='zarr') # note that ds is not chunked but still uses lazy loading\"",
+                "current line 10 = \"ds = xr.open_dataset(url, engine='netcdf4') # note that ds is not chunked but still uses lazy loading\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 16,
+              "message": "Document differs from declared copy source requirements.md at physical line 16.",
+              "evidence": [
+                "source line 16 = \"According to @rabernat accessing the chunks attribute should simply inspect the `encoding` attribute on the underlying DataArrays.\"",
+                "current line 16 = \"According to @rabernat accessing the chunks attribute should simply inspect the `data` attribute and eagerly materialize all values on the underlying DataArrays.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 111,
+              "message": "Document differs from declared copy source requirements.md at physical line 111.",
+              "evidence": [
+                "source line 111 = \"File ~/Downloads/minicondam1/envs/dev3.9/lib/python3.9/site-packages/zarr/core.py:830, in Array._get_basic_selection_nd(self, selection, out, fields)\"",
+                "current line 111 = \"File ~/Downloads/minicondam1/envs/dev3.9/lib/python3.9/site-packages/zarr/core.py:830, in Array._get_basic_selection_nd(self, selection, out, fields=None):\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 219,
+              "message": "Document differs from declared copy source requirements.md at physical line 219.",
+              "evidence": [
+                "source line 219 = \"dask: 2022.04.0\"",
+                "current line 219 = \"dask: 2021.01.0\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 236,
+              "message": "Document differs from declared copy source requirements.md at physical line 237.",
+              "evidence": [
+                "source line 237 = \"\"",
+                "current line 237 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \"pint: None\\nsparse: None\\nsetuptools: 62.0.0\\npip: 22.0.4\\nconda: None\\npytest: 7.1.1\\nIPython: 8.2.0\\nsphinx: None\\n</details>\\n\"; source suffix \"int: None\\nsparse: None\\nsetuptools: 62.0.0\\npip: 22.0.4\\nconda: None\\npytest: 7.1.1\\nIPython: 8.2.0\\nsphinx: None\\n</details>\\n\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+              "actualSha256": "b0dc51bbff713ef147b11b6a805a227f889c8d0d07b9d34c98d9ade313882779",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_766e99991159474ab687a697"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": true,
+              "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+              "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_dfb53d93c49749a6aceae438"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_766e99991159474ab687a697"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_dfb53d93c49749a6aceae438"
+        }
+      ],
+      "nativeRoleCounts": {
+        "artifact-reviewer": 2,
+        "ground-truth-extractor": 1
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/xarray-6721-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/xarray-6721-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "90d52a9e021babed9008d09282d29b9418eb7d04e6b00926223f117094121ed1",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/django__django-11087",
+      "instanceId": "django__django-11087",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 9262,
+      "importedLines": 90,
+      "originalSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+      "state": "PASSED",
+      "elapsedMs": 340328,
+      "baselineVersion": 1,
+      "baselineClaims": 15,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 1,
+          "actualLine": 1
+        },
+        {
+          "sourceLine": 5,
+          "actualLine": 5
+        },
+        {
+          "sourceLine": 13,
+          "actualLine": 13
+        },
+        {
+          "sourceLine": 85,
+          "actualLine": 85
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "b8733b6608eaab75c75b75df981bc2c5c1c3a664fa557cc75abfd83b9499c31b",
+        "actualSha256": "00d099dd1a6f218869b4eaab082f394ab9bce3c6e0f7669287e8bd53116db264",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": false,
+        "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+        "actualSha256": "9e4de1c89965cb33d4ef1006fc429b163f4ab31421cde2d0232e018e26cc6903",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 1,
+              "message": "Document differs from declared copy source requirements.md at physical line 1.",
+              "evidence": [
+                "source line 1 = \"Optimize .delete() to use only required fields.\"",
+                "current line 1 = \"Optimize .delete() to use all fields unconditionally.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 5,
+              "message": "Document differs from declared copy source requirements.md at physical line 5.",
+              "evidence": [
+                "source line 5 = \"We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.6, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.\"",
+                "current line 5 = \"We're in the process of upgrading our Django 1.11 installation from Python 2.7 to Python 3.12, however are hitting an unexpected UnicodeDecodeError during a .delete() run by our daily data purging management command.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 13,
+              "message": "Document differs from declared copy source requirements.md at physical line 13.",
+              "evidence": [
+                "source line 13 = \"That the cycle_data management command succeeds, like it did under Python 2.\"",
+                "current line 13 = \"That the cycle_data management command must fail, unlike under Python 2.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 85,
+              "message": "Document differs from declared copy source requirements.md at physical line 85.",
+              "evidence": [
+                "source line 85 = \"the UnicodeDecodeError is occurring for a field (text_log_error.line) that is not actually needed for the .delete() (it's not a primary key etc), so Django shouldn't be fetching that field regardless when making the text_log_error SELECT query\"",
+                "current line 85 = \"the UnicodeDecodeError is occurring for a field (text_log_error.line) that is required as the primary key for the .delete(), so Django must always fetch that field when making the text_log_error SELECT query\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 89,
+              "message": "Document differs from declared copy source requirements.md at physical line 90.",
+              "evidence": [
+                "source line 90 = \"\"",
+                "current line 90 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \" would presumably also improve .delete() performance.\\nRelated:\\n​https://github.com/PyMySQL/mysqlclient-python/issues/258\"; source suffix \"would presumably also improve .delete() performance.\\nRelated:\\n​https://github.com/PyMySQL/mysqlclient-python/issues/258\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+              "actualSha256": "00d099dd1a6f218869b4eaab082f394ab9bce3c6e0f7669287e8bd53116db264",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_dd35e551e6994e7fbdc52b15"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": false,
+              "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+              "actualSha256": "9e4de1c89965cb33d4ef1006fc429b163f4ab31421cde2d0232e018e26cc6903",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_90d990290801403db9a94d1d"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_dd35e551e6994e7fbdc52b15"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_90d990290801403db9a94d1d"
+        }
+      ],
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 1,
+        "artifact-reviewer": 2
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/django-11087-002/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/django-11087-002/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "4cfd5c1685539cc3c125a88ce54c56cc42693f1ced01bcdb8968dde45ef0e69e",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      },
+      "permittedFinalPaddingDifferences": {
+        "physicalLines": [
+          3,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          82,
+          84
+        ],
+        "detail": "Only non-fenced line-end spaces/tabs differ under the existing comparison policy; full contents and newline structure remain equivalent."
+      }
+    },
+    {
+      "task": "SWE-bench_Verified/scikit-learn__scikit-learn-11578",
+      "instanceId": "scikit-learn__scikit-learn-11578",
+      "sourceUrl": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/blob/c104f840cc67f8b6eec6f759ebc8b2693d585d4a/data/test-00000-of-00001.parquet",
+      "sourceCommit": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+      "importedBytes": 7216,
+      "importedLines": 176,
+      "originalSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+      "state": "PASSED",
+      "elapsedMs": 278901,
+      "baselineVersion": 1,
+      "baselineClaims": 16,
+      "expectedControlledDeviations": 4,
+      "locatedControlledDeviations": 4,
+      "initialFaultLocations": [
+        {
+          "sourceLine": 12,
+          "actualLine": 12
+        },
+        {
+          "sourceLine": 15,
+          "actualLine": 15
+        },
+        {
+          "sourceLine": 16,
+          "actualLine": 16
+        },
+        {
+          "sourceLine": 157,
+          "actualLine": 157
+        }
+      ],
+      "restoredControlledDeviations": 4,
+      "initialCopy": {
+        "equivalent": false,
+        "exact": false,
+        "expectedSha256": "28e239737338960c2c58412c1feeb32124d20b49d3d561fbb7012e27da2d9628",
+        "actualSha256": "c8c339d35dad7b52a31984faba5d61a7f97321a903beb1e14fd431cb6cae7576",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "finalCopy": {
+        "equivalent": true,
+        "exact": true,
+        "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+        "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+        "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+      },
+      "automaticReviewRounds": [
+        {
+          "status": "failed",
+          "diagnostics": [
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 12,
+              "message": "Document differs from declared copy source requirements.md at physical line 12.",
+              "evidence": [
+                "source line 12 = \"without a multi_class argument, and so takes the default, which is `multi_class='ovr'`.\"",
+                "current line 12 = \"without a multi_class argument, and so takes the default, which is `multi_class='multinomial'`.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 15,
+              "message": "Document differs from declared copy source requirements.md at physical line 15.",
+              "evidence": [
+                "source line 15 = \"`log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class=multi_class)`\"",
+                "current line 15 = \"`log_reg = LogisticRegression(fit_intercept=fit_intercept, multi_class='ovr')`\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 16,
+              "message": "Document differs from declared copy source requirements.md at physical line 16.",
+              "evidence": [
+                "source line 16 = \"so that the `LogisticRegression()` instance supplied to the scoring function at line 955 inherits the `multi_class` option specified in `LogisticRegressionCV()` would be a fix, but I am not a coder and would appreciate some expert insight! Likewise, I do not know whether this issue exists for other classifiers/regressors, as I have only worked with Logistic Regression.\"",
+                "current line 16 = \"so that the `LogisticRegression()` instance supplied to the scoring function at line 955 must ignore the `multi_class` option specified in `LogisticRegressionCV()` would be a fix, but I am not a coder and would appreciate some expert insight! Likewise, I do not know whether this issue exists for other classifiers/regressors, as I have only worked with Logistic Regression.\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 157,
+              "message": "Document differs from declared copy source requirements.md at physical line 157.",
+              "evidence": [
+                "source line 157 = \"Also, changed intercept_scaling default value to float\"",
+                "current line 157 = \"Also, changed intercept_scaling default value to integer\""
+              ],
+              "suggestion": "Use native edit to replace the current line with the source line exactly, including indentation and literal-block whitespace. Read requirements.md and design.md if more context is needed."
+            },
+            {
+              "ruleId": "DOCUMENT-COPY-MISMATCH",
+              "severity": "error",
+              "path": "design.md",
+              "line": 175,
+              "message": "Document differs from declared copy source requirements.md at physical line 176.",
+              "evidence": [
+                "source line 176 = \"\"",
+                "current line 176 = <EOF>"
+              ],
+              "suggestion": "Preserve EOF/newlines exactly. Native edit: current suffix \"c:\\nhttp://scikit-learn.org/dev/faq.html#why-is-my-pull-request-not-getting-any-attention.\\n\\nThanks for contributing!\\n-->\\n\"; source suffix \":\\nhttp://scikit-learn.org/dev/faq.html#why-is-my-pull-request-not-getting-any-attention.\\n\\nThanks for contributing!\\n-->\\n\\n\"."
+            }
+          ],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": false,
+              "exact": false,
+              "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+              "actualSha256": "c8c339d35dad7b52a31984faba5d61a7f97321a903beb1e14fd431cb6cae7576",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_0fb7a9922d7142a88d2be3fa"
+        },
+        {
+          "status": "passed",
+          "diagnostics": [],
+          "documentCopy": [
+            {
+              "source": "requirements.md",
+              "target": "design.md",
+              "equivalent": true,
+              "exact": true,
+              "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+              "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+              "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+            }
+          ],
+          "actualNativeToolCallId": "call_3c45e3f23a7448ab8b62774d"
+        }
+      ],
+      "successfulBusinessMutationTools": [
+        {
+          "name": "write",
+          "toolCallId": "call_0fb7a9922d7142a88d2be3fa"
+        },
+        {
+          "name": "edit",
+          "toolCallId": "call_3c45e3f23a7448ab8b62774d"
+        }
+      ],
+      "nativeRoleCounts": {
+        "ground-truth-extractor": 2,
+        "artifact-reviewer": 2
+      },
+      "artifactEvaluationBaselineVersions": [
+        1,
+        1
+      ],
+      "observedModels": [
+        "glm-5.3-flash"
+      ],
+      "terminalReceipt": {
+        "status": "ok"
+      },
+      "checks": {
+        "actualInitialAndFinalReviewedHashesVerified": true,
+        "sourceRawAndImportedBytesVerified": true,
+        "currentProductionAndPackagedSourceHashesVerified": true,
+        "exactRunnerRevisionAndCurrentFaultLocationRecheckVerified": true,
+        "allSeededDeviationsPresentInActualInitialWrite": true,
+        "initialCopyDifferencesMayBeRepairedInTheSameLoop": true,
+        "finalFullDocumentEquivalent": true,
+        "productionFidelityGuardAgreesWithIndependentFinalComparison": true,
+        "nativeAutomaticFeedbackActuallyDelivered": true,
+        "realNativeBusinessRepair": true,
+        "nativeToolPolicyDisablesManualCorrection": true,
+        "allPrivateRunsSettled": true,
+        "dynamicBaselineBoundToEveryDocumentEvaluation": true,
+        "noManualRuntimeCorrectorCall": true,
+        "noPatchCallsAfterFinalPass": true,
+        "nativeCompletionOk": true
+      },
+      "options": {
+        "reviewTimeoutMs": 1200000,
+        "baselineTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "businessTimeoutMs": 1800000,
+        "totalTimeoutMs": 2400000
+      },
+      "effectiveTimeouts": {
+        "reviewerTimeoutMs": 1200000,
+        "hookTimeoutMs": 1800000,
+        "hostBusinessTimeoutMs": 1800000
+      },
+      "rawReport": ".runtime-correction/document-large-glm-20261102/scikit-learn-11578-001/report.json",
+      "businessTranscript": ".runtime-correction/document-large-glm-20261102/scikit-learn-11578-001/business-session.json",
+      "sourceHashes": {
+        "scripts/evaluate-openclaw-document-e2e.mjs": "90d52a9e021babed9008d09282d29b9418eb7d04e6b00926223f117094121ed1",
+        "scripts/helpers/native-gateway-evaluation.mjs": "49b37a14a61dd3844665a737233551ecdba17561e0fa1cc159d48c2fe50974e7",
+        "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+        "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+        "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+        "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+        "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+        "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+        "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+        "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+        "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+        "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+        "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+        "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+        "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+        "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+        "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+        "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+        "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+      }
+    }
+  ],
+  "limits": [
+    "Only dynamic baseline and automatic document correction are enabled; implementation, Skill correction, Stop, stage metrics and onboarding panels remain disabled.",
+    "These are complete pinned public issue bodies with four controlled document mutations each, not official SWE-bench execution scores or a general accuracy estimate.",
+    "The initial-copy acceptance change is explicit: initial copy errors may be corrected by the actual business model. Final equality and actual snapshot hashes are not relaxed, and the previous 2/6 raw results remain unchanged.",
+    "Host fault isolation tests cover the listed injected failure paths and these six live runs; they do not guarantee every external host failure is impossible."
+  ],
+  "isolatedProcessCleanupCheck": [
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/django-11087-001/report.json",
+      "state": "FAILED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/django-11087-002/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/matplotlib-22719-001/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/pylint-7080-001/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/pytest-7490-001/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/scikit-learn-11578-001/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-glm-20261102/xarray-6721-001/report.json",
+      "state": "PASSED",
+      "nativeCompletion": {
+        "status": "ok"
+      },
+      "processStillAlive": false
+    }
+  ],
+  "credentialHandlingVerification": {
+    "scannedArtifactFiles": 2761,
+    "artifactCredentialMatches": 0,
+    "reportCredentialMatches": 0,
+    "credentialsPersistedByTask": false,
+    "processEnvironmentOnly": true
+  }
+}
