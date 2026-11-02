@@ -38,7 +38,7 @@ test('finite phase timeout becomes the public provider silence policy without ch
 });
 
 test('invalid or unbounded phase values fail before any native host setup', async () => {
-  for (const phaseTimeoutMs of [0, -1000, 999, 1001, 3601000, Infinity, NaN, '240000']) {
+  for (const phaseTimeoutMs of [0, -1000, 999, 1001, 86401000, Infinity, NaN, '240000']) {
     assert.throws(() => nativeGatewayCodingProvider(provider, 128000, phaseTimeoutMs), /Invalid isolated phase timeout/);
     await assert.rejects(createNativeGatewayEvaluation({ provider, phaseTimeoutMs,
       providerGuard: { kind: 'offline_native_gateway_guard' } }), /Invalid isolated phase timeout/);

@@ -446,10 +446,11 @@ export async function prepareNativeEvaluationTools(params, { fixtureFence, basel
 // Actual native fetch boundary, shared by offline qualification and a later
 // explicitly frozen batch. No SDK retry or compaction can bypass admission.
 export function createNativeStopProviderFetch({ fetchImpl, budget, maxPayloadBytes, inputTokensUpperBound,
+  providerUrl = 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', expectedModel = 'glm-5.3',
   maxOutputTokens = 32768, validateRequest = () => {}, validatePayload = async () => {}, onRequest = async () => {}, onResponse = async () => {} }) {
   return async (input, init) => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
-    if (url.href !== 'https://open.bigmodel.cn/api/coding/paas/v4/chat/completions'
+    if (url.href !== providerUrl
       || init?.method !== 'POST' || typeof init.body !== 'string') throw new Error('NATIVE_PROVIDER_REQUEST_DENIED');
     validateRequest(input, init);
     const payload = JSON.parse(init.body);
@@ -458,7 +459,7 @@ export function createNativeStopProviderFetch({ fetchImpl, budget, maxPayloadByt
     for (const message of payload.messages ?? []) if (message.role === 'system' && typeof message.content === 'string')
       message.content = message.content.replace(/(\nRuntime: [^\n]*?\| host=)[^|\n]+(?= \| repo=)/gu, '$1fixture-host');
     const wireBody = JSON.stringify(payload);
-    if (payload.model !== 'glm-5.3' || payload.stream !== true || payload.stream_options?.include_usage !== true
+    if (payload.model !== expectedModel || payload.stream !== true || payload.stream_options?.include_usage !== true
       || Object.hasOwn(payload, 'max_completion_tokens') || payload.max_tokens !== maxOutputTokens
       || Buffer.byteLength(wireBody) > maxPayloadBytes) throw new Error('NATIVE_PROVIDER_ENVELOPE_DENIED');
     await validatePayload(payload);

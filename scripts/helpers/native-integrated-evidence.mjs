@@ -20,8 +20,11 @@ export function summarizeIntegratedNativeEvidence({ observations, fixture, busin
   const successfulVerifications = [];
   for (const call of calls) {
     const args = call.before.event.params ?? {}, result = call.result?.event.result;
+    const strictOptions = fixture.strictExecOptions !== false;
+    const wrongOptions = strictOptions ? args.workdir !== fixture.projectRoot || args.timeout !== 10 || args.background !== false
+      : args.workdir !== undefined && args.workdir !== fixture.projectRoot || args.background === true;
     if (call.before.event.toolName !== 'exec' || args.command !== fixture.command || !okay(call)
-      || args.workdir !== fixture.projectRoot || args.timeout !== 10 || args.background !== false
+      || wrongOptions
       || result.details?.status !== 'completed' || result.details.exitCode !== 0) continue;
     const text = result.details.aggregated ?? result.content?.filter(block => block.type === 'text').map(block => block.text).join('\n') ?? '';
     for (const line of text.split('\n')) {
