@@ -182,7 +182,8 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
       businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
       reviewerTimeoutMs: Math.max(config.reviewTimeoutMs, config.baselineTimeoutMs), hookTimeoutMs: config.hookTimeoutMs,
-      businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true });
+      businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true,
+      anthropicModelReasoning: (process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL) === 'glm-5.3-flash' });
     gateway.setPhase('automatic-document-hook');
     const load = name => import(pathToFileURL(path.join(gateway.pluginRoot, name)).href);
     const [store, runs] = await Promise.all([load('lib/runtime-v2/task-store.mjs'), load('lib/openclaw/native-runs.mjs')]);

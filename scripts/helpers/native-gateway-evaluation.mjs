@@ -28,7 +28,7 @@ async function freePort() {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens }) {
+  unlimitedBusiness = false, disableMemoryFlush = false, anthropicModelReasoning = false, preserveSessionHistory = false, contextWindowTokens }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   if (contextWindowTokens !== undefined && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
@@ -37,6 +37,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   for (const [name, value, minimum] of [['reviewerTimeoutMs', reviewerTimeoutMs, 1000], ['hookTimeoutMs', hookTimeoutMs, 2000], ['businessTimeoutMs', businessTimeoutMs, 1000]])
     if (value !== null && (!Number.isSafeInteger(value) || value < minimum || value > 3600000 || value % 1000 !== 0))
       throw new Error(`Invalid isolated ${name}.`);
+  if (typeof anthropicModelReasoning !== 'boolean') throw new Error('Invalid isolated Anthropic model capability.');
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('This gateway probe requires installed OpenClaw 2026.7.1-2.');
   // This pinned host defines overrideMs=0 as its native no-timeout sentinel.
@@ -71,7 +72,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
     ...(process.env.ANTHROPIC_BASE_URL ? { models: { mode: 'replace', providers: { anthropic: {
       api: 'anthropic-messages', baseUrl: process.env.ANTHROPIC_BASE_URL,
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768 }],
+      models: [{ id: model, name: model, input: ['text'], reasoning: anthropicModelReasoning, contextWindow, maxTokens: 32768 }],
     } } } } : {}),
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
