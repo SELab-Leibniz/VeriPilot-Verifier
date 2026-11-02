@@ -1,0 +1,678 @@
+{
+  "kind": "large-document-fix-validation-incomplete-provider-quota",
+  "recordedAt": "2026-11-02T09:02:53.024Z",
+  "status": "AWAITING_PROVIDER_QUOTA_FOR_UNIFIED_SIX_CASE_REGRESSION",
+  "branch": "codex/document-e2e-hour",
+  "productionFixCommit": "1e0aaf3",
+  "finalToolScopeCommit": "a2d750d",
+  "currentCommit": "a2d750df47560f177d90f95196532a427ca2e344",
+  "previousReport": "docs/document-large-requirement-results.json",
+  "changes": [
+    "Opt-in production review.copyFrom compares only a bound declared source and current target, with exact literal-block and EOF diagnostics; no target files are programmatically rewritten.",
+    "Disabled deterministic rules now also disable default Markdown style checks.",
+    "Successful native apply_patch repairs count as document mutations with real success receipts.",
+    "Initial candidate must retain controlled faults and its actual reviewed-byte hash; initial copy imperfections can be repaired, while final full-document comparison and zero diagnostics stay required.",
+    "Business prompt ends after successful automatic review and prohibits empty/no-op patches.",
+    "Plugin failure cleanup and navigation checkpoint failures are contained; only plugin-owned work may be cancelled.",
+    "Isolated native tool policy excludes the manual runtime_corrector entry; global host configuration is unchanged."
+  ],
+  "localChecks": {
+    "passed": 143,
+    "failed": 0,
+    "suites": [
+      {
+        "log": ".runtime-correction/document-large-source-20261102/large-fix-all-with-tool-scope.tap",
+        "pass": 138,
+        "fail": 0
+      },
+      {
+        "log": ".runtime-correction/document-large-source-20261102/large-fix-native-policy.tap",
+        "pass": 5,
+        "fail": 0
+      }
+    ]
+  },
+  "hostFaultIsolation": {
+    "test": "test/document-copy-review.test.mjs",
+    "injected": [
+      "review scope throws null",
+      "background cleanup rejects",
+      "logger throws",
+      "navigation checkpoint rejects"
+    ],
+    "verified": [
+      "host-facing call does not reject",
+      "host abort signal stays live",
+      "only plugin review signal is cancelled",
+      "no unhandled cleanup rejection",
+      "host compaction callback does not reject"
+    ]
+  },
+  "nativeToolPolicyProbe": {
+    "hostVersion": "2026.7.1-2",
+    "method": "Actual installed native effective policy and tool-filter pipeline on the final isolated config; no model request.",
+    "availableToolsFromProbe": [
+      "read",
+      "write",
+      "edit",
+      "apply_patch",
+      "rc_document",
+      "rc_progress"
+    ],
+    "manualCorrectionExcluded": true,
+    "businessDocumentReadWriteEditRetained": true,
+    "globalHostConfigurationChanged": false
+  },
+  "historicalPatchCounterRecheck": {
+    "historicalRawState": "FAILED",
+    "rawReport": ".runtime-correction/document-large-bench-20261102/pytest-7490-001/report.json",
+    "successfulTargetMutations": [
+      {
+        "name": "write",
+        "toolCallId": "call_00_s0wvb24n8aeut1l3dcqt6be7"
+      },
+      {
+        "name": "apply_patch",
+        "toolCallId": "call_00_x2r72syry4pwxqbktkv5qqot"
+      }
+    ],
+    "note": "Counter recheck only: the old FAILED verdict and its independent content-copy failures remain unchanged."
+  },
+  "firstLiveRegression": {
+    "passed": 5,
+    "failed": 1,
+    "controlledDeviationsRestored": 24,
+    "finalDocumentsExact": 6,
+    "note": "Same repaired production plugin. xarray completed automatic repair and final review but additionally used a manual checker, so its FAILED raw verdict is retained. The subsequent tool-policy fix is not claimed as a completed six-case native regression.",
+    "cases": [
+      {
+        "case": "pylint-dev__pylint-7080",
+        "state": "PASSED",
+        "failure": null,
+        "elapsedMs": 89520,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/pylint-7080-001/report.json",
+        "initialCopy": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "30a4c36701d097ea6c88ffc505a832ff1767912a7ad227ebe80dedf8dd4bce6e",
+          "actualSha256": "6a1e95221d45d0bde1d4778371f2f494971ac2b2469748b954320a309a45e1eb",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+          "actualSha256": "6e833f56c83591e3634be3866c6cc83bbe537ab65d91072a30a6afc1f092cc72",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 2,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit"
+        ],
+        "manualCheckerCalls": 0,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      },
+      {
+        "case": "pytest-dev__pytest-7490",
+        "state": "PASSED",
+        "failure": null,
+        "elapsedMs": 94908,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/pytest-7490-002/report.json",
+        "initialCopy": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "a078f0ea09a8f891c939997d5726db8ffa5f7db9e8458dd2a9dba969e8bd5b03",
+          "actualSha256": "ff921708fab3ed73e86bf2ffc0efd7e2a584835a6bc383a84bb4078616416f8d",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "actualSha256": "eb0c4e887d5991517241aea078dc3b1e2ebd1c752e245490c065135d2765924e",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 2,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit"
+        ],
+        "manualCheckerCalls": 0,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      },
+      {
+        "case": "matplotlib__matplotlib-22719",
+        "state": "PASSED",
+        "failure": null,
+        "elapsedMs": 94669,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/matplotlib-22719-002/report.json",
+        "initialCopy": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "519b575320d44fd791a471d11e81e5ef6f109a8b5b16e9b74d05d92568c76537",
+          "actualSha256": "5f911e69ece2fc4a70d492d415bd26bfdf34b86b2136f23a98e5e254800c6674",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+          "actualSha256": "5adad531db2f56400ae0a4adfecd1705d33b86e38a95a71049e239586345f334",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 3,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit",
+          "edit"
+        ],
+        "manualCheckerCalls": 0,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      },
+      {
+        "case": "pydata__xarray-6721",
+        "state": "FAILED",
+        "failure": {
+          "code": "ERR_ASSERTION",
+          "message": "A manual check replaced the required automatic Hook"
+        },
+        "elapsedMs": 101346,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/xarray-6721-001/report.json",
+        "initialCopy": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "6ccd8e57dc515dcfb74c4f4cb72ee6aab0f093020fa84b27da061a12a15d304d",
+          "actualSha256": "370bd4754c9a291b43ade56383d617504667c105f9440d0000351020fb3620e2",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+          "actualSha256": "9685057a2d8d77a586ac8da83a3e77f507ba119c68f420525338ddab070919fd",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 3,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit"
+        ],
+        "manualCheckerCalls": 1,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      },
+      {
+        "case": "django__django-11087",
+        "state": "PASSED",
+        "failure": null,
+        "elapsedMs": 101822,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/django-11087-001/report.json",
+        "initialCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "b8733b6608eaab75c75b75df981bc2c5c1c3a664fa557cc75abfd83b9499c31b",
+          "actualSha256": "b8733b6608eaab75c75b75df981bc2c5c1c3a664fa557cc75abfd83b9499c31b",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "actualSha256": "9bd93972a91db1ad0e44e65720dd0f36f000de6264e770ffdaaeb06996a338f3",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 2,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit"
+        ],
+        "manualCheckerCalls": 0,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      },
+      {
+        "case": "scikit-learn__scikit-learn-11578",
+        "state": "PASSED",
+        "failure": null,
+        "elapsedMs": 77117,
+        "sourceCommit": "1e0aaf3",
+        "rawReport": ".runtime-correction/document-large-fixed-20261102/scikit-learn-11578-001/report.json",
+        "initialCopy": {
+          "equivalent": false,
+          "exact": false,
+          "expectedSha256": "28e239737338960c2c58412c1feeb32124d20b49d3d561fbb7012e27da2d9628",
+          "actualSha256": "c8c339d35dad7b52a31984faba5d61a7f97321a903beb1e14fd431cb6cae7576",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalCopy": {
+          "equivalent": true,
+          "exact": true,
+          "expectedSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "actualSha256": "e7e4f5cd2afa3ca4395cd5920397afb10c6ba670ceff6c941cd8055ffb7594d7",
+          "policy": "Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ."
+        },
+        "finalReviewState": "passed",
+        "finalDiagnostics": [],
+        "controlledDeviationsRestored": 4,
+        "automaticReviewRounds": 2,
+        "actualReviewedHashesVerified": true,
+        "currentProductionAndPackagedModulesVerified": [
+          "lib/openclaw/entry.mjs",
+          "lib/openclaw/runtime.mjs",
+          "lib/openclaw/reviewer.mjs",
+          "lib/document-tools.mjs",
+          "lib/document-copy.mjs",
+          "lib/artifact-checker.mjs",
+          "lib/rules/engine.mjs",
+          "lib/policy/compiler.mjs",
+          "config/schemas/project-config.schema.json",
+          "lib/semantic-review.mjs",
+          "lib/review-timeout.mjs",
+          "skills/document-corrector/SKILL.md",
+          "lib/runtime-v2/orchestrator.mjs",
+          "lib/runtime-v2/ground-truth-ledger.mjs",
+          "lib/runtime-v2/baseline-task.mjs",
+          "lib/openclaw/task-session.mjs"
+        ],
+        "mutationTools": [
+          "write",
+          "edit"
+        ],
+        "manualCheckerCalls": 0,
+        "allPrivateRunsSettled": true,
+        "terminalReceipt": {
+          "status": "ok"
+        },
+        "sourceHashes": {
+          "scripts/evaluate-openclaw-document-e2e.mjs": "5d302ce48ba5db9fa65fb107901416708d23ca6eb4012700820c5075bd840e00",
+          "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+          "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+          "lib/openclaw/runtime.mjs": "fa19343479508e313d0ea96b52b580fb7c42e4cedc92c6634a3aff16dabeb74f",
+          "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+          "lib/document-tools.mjs": "44f13eb8110bcb35c9f670f11f177c2bd7272b511172c834a9facafe66a63ae5",
+          "lib/document-copy.mjs": "50bdaebfb0788beb761c203e7d38a24984e8476357002c202cd8cb4433942c54",
+          "lib/artifact-checker.mjs": "245c72fc516dc6f5370213a904e9c59ef93f11406d7bc53a45712f24fd42a14e",
+          "lib/rules/engine.mjs": "1a7ba39e0364c3702291418441037eef2fa3b3a3a9b4691458ce3029801d124f",
+          "lib/policy/compiler.mjs": "96aacaa6ee9daac45ae736f6db4e27a5265f29ffb99cdd6a337b9923c3bb4f4a",
+          "config/schemas/project-config.schema.json": "2afe185acb16dced0038d26a8727b4106cb8a321d9d7046e46176029f8821b9d",
+          "packaging/runtime-modules.json": "11d2c3411fd72c385f1550fe6efba11847df84d049ced3e9d0edb9b4e957ff26",
+          "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+          "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+          "skills/document-corrector/SKILL.md": "2a118998e1941538d38ecbbf1f47bd088981d0ecd0018053edf8737243cd5fd8",
+          "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+          "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+          "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+          "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+        }
+      }
+    ]
+  },
+  "finalUnifiedRegression": {
+    "completedPassingCases": 0,
+    "blockedAttempts": [
+      {
+        "case": "pydata__xarray-6721",
+        "state": "FAILED",
+        "rawReport": ".runtime-correction/document-large-fixed-final-20261102/xarray-6721-001/report.json",
+        "providerFailureCode": "AccountQuotaExceeded",
+        "providerResetAt": "2026-11-02T19:40:46+08:00",
+        "nativeReceipt": {
+          "status": "error",
+          "error": "LLM request failed."
+        },
+        "reviewRounds": 0,
+        "gatewayClosedNormallyAndReportSaved": true
+      },
+      {
+        "case": "pytest-dev__pytest-7490",
+        "state": "FAILED",
+        "rawReport": ".runtime-correction/document-large-fixed-final-20261102/pytest-7490-001/report.json",
+        "providerFailureCode": "AccountQuotaExceeded",
+        "providerResetAt": "2026-11-02T19:40:46+08:00",
+        "nativeReceipt": {
+          "status": "error",
+          "error": "LLM request failed."
+        },
+        "reviewRounds": 0,
+        "gatewayClosedNormallyAndReportSaved": true
+      },
+      {
+        "case": "matplotlib__matplotlib-22719",
+        "state": "FAILED",
+        "rawReport": ".runtime-correction/document-large-fixed-final-20261102/matplotlib-22719-001/report.json",
+        "providerFailureCode": "AccountQuotaExceeded",
+        "providerResetAt": "2026-11-02T19:40:46+08:00",
+        "nativeReceipt": {
+          "status": "error",
+          "error": "LLM request failed."
+        },
+        "reviewRounds": 0,
+        "gatewayClosedNormallyAndReportSaved": true
+      }
+    ],
+    "remainingCasesNotStarted": [
+      "pylint-dev__pylint-7080",
+      "django__django-11087",
+      "scikit-learn__scikit-learn-11578"
+    ],
+    "blocker": "Configured model provider returned AccountQuotaExceeded before document review; no further billable retries are being made.",
+    "providerResetAt": "2026-11-02T19:40:46+08:00",
+    "requiredNextStep": "Rerun all six cases in fresh output directories with the final isolated tool policy, using restored quota or another explicitly authorized complete provider configuration."
+  },
+  "developmentPreflightFailures": [
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pytest-7490-001/report.json",
+      "state": "FAILED",
+      "failure": {
+        "code": "OPENCLAW_DOCUMENT_E2E_FAILED",
+        "message": "The actual Gateway did not load the built RC plugin."
+      },
+      "reviews": 0,
+      "note": "Development packaging preflight failed before business model execution; corrected by adding the comparison module to the explicit runtime allowlist."
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/matplotlib-22719-001/report.json",
+      "state": "FAILED",
+      "failure": {
+        "code": "OPENCLAW_DOCUMENT_E2E_FAILED",
+        "message": "The actual Gateway did not load the built RC plugin."
+      },
+      "reviews": 0,
+      "note": "Development packaging preflight failed before business model execution; corrected by adding the comparison module to the explicit runtime allowlist."
+    }
+  ],
+  "timeLimits": {
+    "baselineTimeoutMs": 1200000,
+    "reviewTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "limitations": [
+    "Final unified six-case native regression remains incomplete. No success is inferred from local tests or replayed transcripts.",
+    "Complete public issue bodies with four controlled document mutations are document-only adaptations, not official SWE-bench execution scores.",
+    "Scope stays dynamic baseline plus document correction; Skill, implementation, Stop, metrics and onboarding panels remain disabled.",
+    "Host fault isolation validation covers the listed paths and observed runs, not every possible external host fault."
+  ],
+  "isolatedProcessCleanupCheck": [
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/django-11087-001/report.json",
+      "pid": 19420,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/scikit-learn-11578-001/report.json",
+      "pid": 18845,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/xarray-6721-001/report.json",
+      "pid": 19418,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/matplotlib-22719-002/report.json",
+      "pid": 18847,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pylint-7080-001/report.json",
+      "pid": 19419,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-20261102/pytest-7490-002/report.json",
+      "pid": 18846,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-final-20261102/matplotlib-22719-001/report.json",
+      "pid": 20570,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-final-20261102/pytest-7490-001/report.json",
+      "pid": 20568,
+      "processStillAlive": false
+    },
+    {
+      "rawReport": ".runtime-correction/document-large-fixed-final-20261102/xarray-6721-001/report.json",
+      "pid": 20569,
+      "processStillAlive": false
+    }
+  ]
+}

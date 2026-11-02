@@ -97,6 +97,10 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --dynamic-baseline \
 
 插件异常边界会取消插件自己的评审，不取消宿主业务信号；后台清理失败被捕获，导航 checkpoint 失败不会传播到宿主压缩流程。故障注入检查覆盖评审入口抛出异常、日志/清理不可用和导航记录不可用，检查宿主调用继续返回、宿主取消信号未被触发。超时配置与之前相同，仍分别控制基线、评审、Hook、主运行和整轮预算。
 
+2026-11-02 修复后的首轮真实回归为 5 例通过、1 例未通过：六例最终文档均逐字恢复，24 处受控偏差全部修复；xarray 在自动通过后又调用手工检查，因此仍保留 FAILED。收紧隔离工具授权后，实际安装的宿主工具过滤流程已验证手工入口被排除，文档读写和补丁工具仍保留。本地相关检查共 143 项通过。
+
+**最终统一工具配置的六例真实回归尚未完成。** xarray、pytest、Matplotlib 的新运行在文档评审前被模型提供方 `AccountQuotaExceeded` 拒绝，提供方提示恢复时间为香港时间 2026-11-02 19:40:46；其余三例未继续消耗调用。三个隔离 Gateway 均保存记录并正常关闭。待额度恢复或指定其他已授权的完整提供方配置后，需要在全新输出目录重新跑完六例。当前代码、首轮结果、外部阻塞与待验证项记录在仓库文件 `docs/document-large-fix-progress-results.json`，没有将未完成回归标为通过。
+
 ## OpenClaw 自动 Hook 文档闭环
 
 `scripts/evaluate-openclaw-document-e2e.mjs` 在独立目录内启动已安装的 OpenClaw 2026.7.1-2 Gateway，加载当前源码构建的插件，通过真实 `sessions.create` / `chat.send` 发起主 Agent 任务。主 Agent 将虚构草稿写入 `design.md` 后，生产工具结果中间件自动触发文档评审，把诊断附回这次写入结果；主 Agent 根据实际收到的反馈进行修改，修改后再次自动评审。运行器不会手动调用评审、注入 Hook 事件或替换修订稿。
