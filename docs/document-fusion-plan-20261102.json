@@ -1,0 +1,42 @@
+{
+  "scope": "Merge document correction into the actual dirty main worktree only after isolated experiments; keep other local work uncommitted.",
+  "mainBranch": "codex/rc-general-efficiency-bench",
+  "mainHead": "28071d16d25b02b25c6ead8570c158486edec240",
+  "mainWorkingTreeSnapshot": "79c8ca53320bb7315fad8e1046183f7a4510bf19",
+  "documentBranchHead": "aeffc2b",
+  "strategy": "Preserve the main worktree baseline/reviewer/publication improvements; merge missing document copy guard, disabled style-rule behavior, host failure containment, scoped business tool policy, configurable budgets and document benchmark fixtures. Do not overwrite the newer main reviewer with the older document branch version.",
+  "experimentArms": {
+    "baseline": "Frozen actual main working tree, with shared measurement harness only; no copyFrom capability enabled.",
+    "candidate": "Same frozen main tree plus resolved document branch; copyFrom explicitly enabled only for copy-contract document tasks."
+  },
+  "controls": [
+    "Same original requirements and four seeded deviations per case",
+    "Same actual OpenClaw host, GLM model, provider, business prompt and tool policy",
+    "Same baseline/document/Hook/business/total deadlines",
+    "Same independent full-document oracle and actual snapshot hashes",
+    "No implementation, Skill correction, Stop or stage metrics in document cases",
+    "No driver-written corrected drafts or manual Hook injection"
+  ],
+  "beforeMerge": [
+    "Run deterministic production artifact counterexamples and clean controls in both arms, explicitly marking the injected semantic-PASS probe as offline",
+    "Run representative paired native cases: pytest-7490, django-11087, scikit-learn-11578",
+    "Compare success, retained deviations, source-equivalent formatting false alarms, native completion, latency, review rounds and usage when available"
+  ],
+  "acceptance": [
+    "Candidate introduces no new relevant local test failures relative to baseline",
+    "Candidate reduces false passes/false blocks in the fixed counterexample set, with no regression on clean controls",
+    "All three candidate paired native cases complete the automatic loop and preserve authoritative sources",
+    "No uncontained plugin failure or host crash is observed; resource changes are reported, not assumed to be speedups"
+  ],
+  "mainIntegration": [
+    "Verify current main files still match the tested snapshot or refresh the candidate against any concurrent edits",
+    "Preserve local changes with a recoverable snapshot/stash",
+    "Fast-forward only document-feature commits into the requested main branch",
+    "Restore the exact experimentally validated merged working tree, leaving unrelated main changes uncommitted"
+  ],
+  "afterMerge": [
+    "Run the six large requirement cases from the real main worktree with the selected plan",
+    "Verify byte hashes, automatic feedback, real model edits, baseline binding, native completion and process cleanup",
+    "Record measured gains and any latency or token tradeoffs; do not claim general benchmark scores"
+  ]
+}
