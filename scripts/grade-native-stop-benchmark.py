@@ -33,7 +33,10 @@ def main():
     scoring = live / 'official-scoring'
     scoring.mkdir()
     rows = []
-    for label, source in [('before', live / 'first-stop/model.patch'), ('after', live / 'model.patch')]:
+    phases = [('before', live / 'first-stop/model.patch'), ('after', live / 'model.patch')]
+    if manifest.get('injectedDefect'):
+        phases.insert(0, ('control', live / 'pre-injection/model.patch'))
+    for label, source in phases:
         if not source.exists():
             rows.append({'phase': label, 'state': 'NO_PATCH_SNAPSHOT', 'score': None})
             continue
@@ -73,9 +76,10 @@ def main():
                           'reward': record['reward'], 'elapsedSec': record['elapsedSec']}), flush=True)
     result = {'benchmark': manifest['benchmark'], 'task': manifest['task'], 'attempt': args.attempt,
               'stopRun': str(live / 'result.json'), 'rows': rows,
-              'comparison': 'Same trajectory: first completed commits versus final commits; not an RC-off comparison'}
+              'comparison': ('Same seeded trajectory: pre-injection control, injected first Stop candidate, and model-repaired final commit; not a natural-task quality sample or RC-off comparison'
+                             if manifest.get('injectedDefect') else 'Same trajectory: first completed commits versus final commits; not an RC-off comparison')}
     (scoring / 'comparison.json').write_text(json.dumps(result, indent=2))
-    return 0 if len(rows) == 2 and all(r['state'] == 'OFFICIAL_REWARD_AVAILABLE' for r in rows) else 1
+    return 0 if len(rows) == len(phases) and all(r['state'] == 'OFFICIAL_REWARD_AVAILABLE' for r in rows) else 1
 
 
 if __name__ == '__main__':
