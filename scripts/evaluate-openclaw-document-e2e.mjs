@@ -11,6 +11,26 @@ import { resolveReviewTimeoutMs } from '../lib/review-timeout.mjs';
 
 const SOURCE_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+
+// This benchmark compares document content, not Markdown line-end padding.
+// Keep literal fenced blocks, indentation, internal spacing and every newline.
+// Never rewrite the document; actual source and reviewed-byte hashes stay exact.
+export function assessDocumentCopy(expected, actual) {
+  const comparable = text => {
+    let fence = null;
+    return text.split('\n').map(line => {
+      const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/u.exec(line);
+      const literal = Boolean(fence || marker);
+      if (!fence && marker) fence = marker[1];
+      else if (fence && marker && marker[1][0] === fence[0]
+        && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+      return literal ? line : line.replace(/[ \t]+$/u, '');
+    }).join('\n');
+  };
+  return { equivalent: comparable(expected) === comparable(actual), exact: expected === actual,
+    expectedSha256: hash(expected), actualSha256: hash(actual),
+    policy: 'Exact document content and newlines; trailing spaces/tabs outside fenced literal blocks may differ.' };
+}
 export function openclawDocumentOptions(input = {}) {
   const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
   for (const key of Object.keys(input)) assert(Object.hasOwn(defaults, key), `Unknown OpenClaw document option: ${key}`);
@@ -149,10 +169,10 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(projectRoot, 'draft.md'), initialDesign);
   await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'This is an isolated document review fixture. Only design.md is editable. Treat requirements.md as authoritative. Read all Runtime Corrector feedback attached to write/edit results and resolve concrete findings before finishing.\n');
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, config, dynamicBaseline));
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design against every declared requirements.md obligation. Report concrete current contradictions, using accurate physical line numbers and path:line: quoted evidence. Do not carry resolved findings into a new round. Return no findings when compliant. Do not edit files.\n');
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Report concrete current contradictions, using accurate physical line numbers and path:line: quoted evidence. Do not carry resolved findings into a new round. Return no findings when compliant. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
-  let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [];
+  let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null;
   try {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
       businessToolNames: ['read', 'write', 'edit'], confineBusinessFiles: true,
@@ -168,7 +188,8 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     await gateway.runtime.agent.session.patchSessionEntry({ ...scope, update: entry => ({ ...entry, spawnedCwd: projectRoot }) });
     const saved = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     sessionId = saved.sessionId; runId = randomUUID();
-    const message = `Work only in ${projectRoot}. The only deliverable for THIS task is design.md, a faithful requirements/design document. Explicitly adopt the COMPLETE original requirements.md as authoritative for its document contents, including every behavior, number, table, path, exception and prohibition. Benchmark implementation/execution instructions describe the planned system in the document; do not implement code, execute the benchmark, produce its runtime output files or claim runtime scores in this document-only task. First read draft.md and copy its bytes VERBATIM into design.md using write, so the automatic reviewer can inspect the initial candidate. Then consume the feedback attached to the actual write result and make the smallest corrections in design.md until the automatic CURRENT document reviewer passes. Preserve all other original content and formatting; do not rewrite the document into a summary. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement.`;
+    const message = `Work only in ${projectRoot}. Document content contract: the only deliverable is design.md. Its entire content must faithfully reproduce requirements.md, including every behavior, number, table, path, exception and prohibition. Add no preface, source-authority statement, adoption declaration, test-scope disclaimer or other commentary. Do not summarize, reformat, change indentation or change line breaks. Trailing spaces/tabs outside fenced literal blocks are insignificant for this test; preserve all other characters and preserve literal blocks exactly.
+Author execution instructions (these govern YOUR actions and are not text to add to design.md): use the complete original requirements.md as the authoritative source. The benchmark's implementation/execution instructions describe planned work inside this document; do not implement code, execute the benchmark, produce its runtime outputs or claim runtime scores. First read draft.md and copy its complete current text into design.md using write WITHOUT repairing its wording, so the automatic reviewer sees the initial candidate. Then consume feedback attached to the actual write result and make the smallest corrections in design.md until the automatic CURRENT document reviewer passes. Only design.md may be changed. requirements.md, draft.md, AGENTS.md and .runtime-corrector are read-only. Do not invoke runtime_corrector manually; automatic write/edit hooks own the review. Finish with a concise completion statement in your reply, not in design.md.`;
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message, idempotencyKey: runId,
       deliver: false, thinking: 'off', timeoutMs: Math.min(config.businessTimeoutMs, deadlineAt - Date.now()) });
     assert(accepted.runId, 'The Gateway did not accept the actual business request');
@@ -217,13 +238,20 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     assert(!calls.some(call => call.name === 'runtime_corrector'), 'A manual check replaced the required automatic Hook');
     assert(JSON.stringify(snapshot).includes('[runtime-corrector:feedback]'), 'Native business transcript omitted automatic review feedback');
     assert(privateRuns.length >= 2 && privateRuns.every(item => item.status === 'SETTLED'), 'Private native reviews did not settle');
-    assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(initialDesign), 'Initial review did not inspect the exact draft');
+    const firstWrite = writes.find(call => call.name.toLowerCase() === 'write');
+    const firstWrittenText = (firstWrite?.arguments ?? firstWrite?.input)?.content;
+    assert.equal(typeof firstWrittenText, 'string', 'Initial business write content is unavailable');
+    initialCopy = assessDocumentCopy(initialDesign, firstWrittenText);
+    assert(initialCopy.equivalent, 'Initial copy changed document content beyond permitted line-end padding');
+    assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(firstWrittenText), 'Initial review did not inspect the actual bytes written by the business agent');
     assert.equal(reviews.at(-1).result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(finalDesign), 'Final review did not inspect the current repaired bytes');
     assert(gateway.metrics().modelStarts.some(item => item.runId === runId && item.sessionId === sessionId), 'No actual original business model start was observed');
     assert.equal(await fs.readFile(path.join(projectRoot, 'requirements.md'), 'utf8'), requirements, 'Original requirements changed');
     if (benchmark) {
       for (const fault of benchmark.specification.faults)
         assert(finalDesign.includes(fault.original) && !finalDesign.includes(fault.draft), `Benchmark document constraint was not restored: ${fault.original}`);
+      finalCopy = assessDocumentCopy(requirements, finalDesign);
+      assert(finalCopy.equivalent, 'Final document adds or changes content beyond the complete original requirements');
     } else assert(!finalDesign.includes('https://telemetry.example.invalid/collect') && /local|device/iu.test(finalDesign)
       && /validat/iu.test(finalDesign) && /pars/iu.test(finalDesign) && /error/iu.test(finalDesign), 'Independent current-document fixture check failed');
     if (dynamicBaseline) {
@@ -250,7 +278,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
     finishedAt: new Date().toISOString(), elapsedMs: Date.now() - started, options: config,
     sessionKey, sessionId, runId, taskId: task?.taskId ?? evidence.reviews[0]?.scopeTaskId, terminal, terminalReceipt, failure, projectRoot,
     gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews, dynamicBaseline, baseline, artifactEvaluations,
-    benchmark: benchmark?.specification ?? null,
+    benchmark: benchmark?.specification ?? null, initialCopy, finalCopy,
     feedbackReceipts: evidence.receipts,
     effectiveTimeouts: gateway ? { reviewerTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.reviewerTimeoutMs,
       hookTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.hookTimeoutMs,

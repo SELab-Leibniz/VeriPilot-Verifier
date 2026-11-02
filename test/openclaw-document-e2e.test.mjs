@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark } from '../scripts/evaluate-openclaw-document-e2e.mjs';
+import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy } from '../scripts/evaluate-openclaw-document-e2e.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +15,25 @@ test('OpenClaw document Hook, review and business budgets remain separately conf
   assert.throws(() => openclawDocumentOptions({ reviewTimeoutMs: 1200001 }), /whole seconds/);
   assert.throws(() => openclawDocumentOptions({ totalTimeoutMs: 3600001 }), /totalTimeoutMs/);
   assert.throws(() => openclawDocumentOptions({ timeout: 1200000 }), /Unknown/);
+});
+
+test('document copy allows only line-end padding outside literal fences and keeps actual byte identities', () => {
+  const original = '# Scope\n- Keep exact wording.\n  - Preserve indentation.\n';
+  const padded = '# Scope \n- Keep exact wording.\t\n  - Preserve indentation. \n';
+  const result = assessDocumentCopy(original, padded);
+  assert.equal(result.equivalent, true); assert.equal(result.exact, false);
+  assert.notEqual(result.expectedSha256, result.actualSha256);
+  const explicitDeclaration = 'Source authority: requirements.md\n' + original;
+  assert.equal(assessDocumentCopy(explicitDeclaration, explicitDeclaration).equivalent, true);
+  for (const changed of [original.replace('exact', 'different'), original.replace('  -', ' -'),
+    original.replace('Keep exact', 'Keep  exact'), original.slice(0, -1),
+    'Source authority: requirements.md\n' + original])
+    assert.equal(assessDocumentCopy(original, changed).equivalent, false);
+  for (const marker of ['```', '~~~']) {
+    const literal = '# Scope\n' + marker + 'text\nkeep literal  \n' + marker + '\n';
+    assert.equal(assessDocumentCopy(literal, literal.replace('keep literal  ', 'keep literal ')).equivalent, false);
+    assert.equal(assessDocumentCopy(literal, literal.replace('# Scope\n', '# Scope \n')).equivalent, true);
+  }
 });
 
 test('dynamic baseline is wired to document review without enabling implementation, Skill or Stop', async t => {
