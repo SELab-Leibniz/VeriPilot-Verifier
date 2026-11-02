@@ -1,0 +1,206 @@
+{
+  "kind": "real-benchmark-dynamic-baseline-and-automatic-document-hook-verification",
+  "state": "PASSED",
+  "sourceCommit": "6e6cac7823f5f6baca3db89deb41f4f355382ae0",
+  "branch": "codex/document-e2e-hour",
+  "scope": "Only dynamic requirements extraction and document correction. Skill, implementation checking, Stop, metric populations and official benchmark execution disabled.",
+  "benchmark": {
+    "name": "terminal-bench-2.1/llm-inference-batching-scheduler",
+    "sourceUrl": "https://github.com/harbor-framework/terminal-bench-2-1/blob/7131e4375048a0e408a8fb404b5f499d726b695b/tasks/llm-inference-batching-scheduler/instruction.md",
+    "sourceCommit": "7131e4375048a0e408a8fb404b5f499d726b695b",
+    "sourcePath": "tasks/llm-inference-batching-scheduler/instruction.md",
+    "originalSha256": "0817374767533fbf51bb93345ee1bba266263c216c6cc55c096e71b4a1d37dfc",
+    "originalBytes": 4365,
+    "originalLines": 78
+  },
+  "candidate": "Complete original benchmark instruction with exactly four controlled document deviations. Original benchmark file unchanged; expected fault list stays outside the model workspace.",
+  "liveRuns": [
+    {
+      "report": ".runtime-correction/openclaw-dynamic-benchmark-001/report.json",
+      "elapsedMs": 77503,
+      "state": "PASSED",
+      "baselineClaims": 22
+    },
+    {
+      "report": ".runtime-correction/openclaw-dynamic-benchmark-final/report.json",
+      "elapsedMs": 109271,
+      "state": "PASSED",
+      "baselineClaims": 26
+    }
+  ],
+  "startedAt": "2026-11-02T07:32:18.332Z",
+  "finishedAt": "2026-11-02T07:34:07.603Z",
+  "elapsedMs": 109271,
+  "options": {
+    "reviewTimeoutMs": 1200000,
+    "baselineTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "businessTimeoutMs": 1800000,
+    "totalTimeoutMs": 2400000
+  },
+  "effectiveTimeouts": {
+    "reviewerTimeoutMs": 1200000,
+    "hookTimeoutMs": 1800000,
+    "hostBusinessTimeoutMs": 1800000
+  },
+  "baseline": {
+    "version": 1,
+    "claimCount": 26,
+    "digest": "95f40064d40357faf02dfd5770319695d9596b349303fd80a587765fd7c62312",
+    "authorityCounts": {
+      "USER_EXPLICIT": 12,
+      "MATERIAL_DERIVED": 14
+    },
+    "modelExtracted": true,
+    "handSeededClaims": false
+  },
+  "initialFindings": [
+    {
+      "ruleId": "AGENT-ALIGN-GRANULARITY-MISMATCH",
+      "severity": "error",
+      "path": "design.md",
+      "line": 31,
+      "message": "The design states a 32-token padding granularity, but the authoritative requirements specify seq_align >= ceil(prompt_len/64)*64 with seq_align a multiple of 64.",
+      "evidence": [
+        "design.md:31: quoted \"where seq_align >= ceil(prompt_len/32)*32. I.e., seq_align is a multiple of 32.\"",
+        "requirements.md:31: quoted \"where seq_align >= ceil(prompt_len/64)*64. I.e., seq_align is a multiple of 64.\"",
+        "frozen ground truth requirements-b316e3d2d4e89e2d requires ceil(prompt_len/64)*64"
+      ],
+      "suggestion": "Restate the alignment rule as ceil(prompt_len/64)*64 and \"multiple of 64\".",
+      "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+      "violatedGroundTruthIds": [
+        "requirements-b316e3d2d4e89e2d"
+      ]
+    },
+    {
+      "ruleId": "AGENT-SHAPE-BUDGET-EXPANSION",
+      "severity": "error",
+      "path": "design.md",
+      "line": 32,
+      "message": "The design allows 16 unique shapes independently per bucket, while the authoritative requirements cap the plan at 8 unique shapes across both buckets.",
+      "evidence": [
+        "design.md:32: quoted \"Max 16 unique shapes (seq_align, heads_align, hidden_align) independently in each bucket (MAX_SHAPES=16)\"",
+        "requirements.md:32: quoted \"Max 8 unique shapes (seq_align, heads_align, hidden_align) across both buckets (MAX_SHAPES=8)\"",
+        "frozen ground truth requirements-0f6bcb87215a7e10 requires MAX_SHAPES=8 across both buckets"
+      ],
+      "suggestion": "State \"Max 8 unique shapes ... across both buckets (MAX_SHAPES=8)\".",
+      "rootCauseId": "UNSUPPORTED_SCOPE_EXPANSION",
+      "violatedGroundTruthIds": [
+        "requirements-0f6bcb87215a7e10"
+      ]
+    },
+    {
+      "ruleId": "AGENT-THRESHOLD-VALUE-MISMATCH",
+      "severity": "error",
+      "path": "design.md",
+      "line": 62,
+      "message": "The bucket-2 cost threshold is written as 4.8e11, an order of magnitude looser than the authoritative 4.8e10.",
+      "evidence": [
+        "design.md:62: quoted \"| ``requests_bucket_2.jsonl`` | ``4.8e11`` | ``0.15`` | ``2.1e5`` | ``3.2e7`` |\"",
+        "requirements.md:62: quoted \"| ``requests_bucket_2.jsonl`` | ``4.8e10`` | ``0.15`` | ``2.1e5`` | ``3.2e7`` |\"",
+        "frozen ground truth milestoneTargets-866ecd78d0ece185 requires Cost 4.8e10 for requests_bucket_2.jsonl"
+      ],
+      "suggestion": "Restore the threshold value 4.8e10 in the bucket-2 row.",
+      "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+      "violatedGroundTruthIds": [
+        "milestoneTargets-866ecd78d0ece185"
+      ]
+    },
+    {
+      "ruleId": "AGENT-INPUT-DATA-RULE-CONTRADICTION",
+      "severity": "error",
+      "path": "design.md",
+      "line": 69,
+      "message": "The design permits normalizing the input_data files in place, which contradicts the authoritative requirement that the input_data files be kept unchanged.",
+      "evidence": [
+        "design.md:69: quoted \"you may normalize the input_data files in place. Example output format:\"",
+        "requirements.md:69: quoted \"and you should also keep the input_data files unchanged. Example output format:\"",
+        "frozen ground truth constraints-d72e29f98503bc99 requires input_data files unchanged"
+      ],
+      "suggestion": "Replace the normalization permission with the requirement to keep input_data unchanged.",
+      "rootCauseId": "EVIDENCE_CLAIM_CONTRADICTS_ARTIFACT",
+      "violatedGroundTruthIds": [
+        "constraints-d72e29f98503bc99"
+      ]
+    }
+  ],
+  "finalStatus": "passed",
+  "finalFindings": [],
+  "finalDocumentExactlyRestoresCompleteOriginal": true,
+  "artifactEvaluationBaselineVersions": [
+    1,
+    1
+  ],
+  "actualBusinessMutationTools": [
+    "write",
+    "edit"
+  ],
+  "actualFeedbackReceipts": 2,
+  "terminalReceipt": {
+    "status": "ok"
+  },
+  "nativeRuns": [
+    {
+      "role": "artifact-reviewer",
+      "status": "SETTLED",
+      "sessionId": "e062ffc9-1a62-44f7-975b-8422c3e235f3",
+      "runId": "2b76a39e-3c98-4927-811d-5e136f4d75c8"
+    },
+    {
+      "role": "ground-truth-extractor",
+      "status": "SETTLED",
+      "sessionId": "a04866e4-1da7-4153-bd61-f44645f4b1e4",
+      "runId": "3157c157-d17a-425d-a492-e1e4ab880c80"
+    },
+    {
+      "role": "artifact-reviewer",
+      "status": "SETTLED",
+      "sessionId": "e062ffc9-1a62-44f7-975b-8422c3e235f3",
+      "runId": "749d6c82-28c2-4cfb-b470-b32bf3de43a9"
+    }
+  ],
+  "sourceHashes": {
+    "scripts/evaluate-openclaw-document-e2e.mjs": "62bc557983914eab7492ac8a2ddd4a0e286b072ebb9aeb2908af32a82675b7c4",
+    "scripts/helpers/native-gateway-evaluation.mjs": "68998b03983a23b0665e38fa81ea7281d8b5def457a626a6a0deea04ae5927b8",
+    "lib/openclaw/entry.mjs": "3b1e11606b20baa4ac4886df0611d6e0a48235bf5f86e59dde8b18aeb248d0f9",
+    "lib/openclaw/runtime.mjs": "8ace78e6cfd9196870b75164178effff56e7ef33227c969f20ec3d7d94f0d13f",
+    "lib/openclaw/reviewer.mjs": "6fb8ef27b9f18ec1d0aa6efdee4df1cd41c765c9c51fc37dd5874bd9a2b652b3",
+    "lib/document-tools.mjs": "a109e57d29a685f61ea6be15c0327dddbdde60e5f47536de608d80771ba399f9",
+    "lib/semantic-review.mjs": "010f612d35a477b37f28fa1e8c53dd0dccc25cd668f5f51a4b8b95416e2c6f01",
+    "lib/review-timeout.mjs": "b944a24d8864c9f71a467e2a1bba553e2a392b17db953c0a3c09e4f60b498898",
+    "skills/document-corrector/SKILL.md": "cb2d864aa3d02b906b68109d4f4ef41a427419243164b3b0f0493f1999534c40",
+    "lib/runtime-v2/orchestrator.mjs": "aea8703e043a9b47765763b23e27c508f44b10d5a6b378358d3549888a04c206",
+    "lib/runtime-v2/ground-truth-ledger.mjs": "cc9f383c1ca12774512f8b2abea18e53ff0a1b28145e639437f714fb38ba2ea6",
+    "lib/runtime-v2/baseline-task.mjs": "14a715e557e54883d0d0d390b77d11064a3880220ad1ed3dbd1af6290eb7971d",
+    "lib/openclaw/task-session.mjs": "b7ddfaec244ab1b801de24cb2c952c27847ff9b61bd6b13b9bd684a61e964bbc"
+  },
+  "checks": {
+    "focused": {
+      "tests": 42,
+      "pass": 42,
+      "fail": 0,
+      "skip": 0,
+      "log": ".runtime-correction/document-e2e-development/dynamic-document-focused-checks.tap"
+    },
+    "unrelatedExpandedStopChecks": {
+      "failures": 6,
+      "reproducedBeforeChanges": true,
+      "comparisonCommit": "eef39fb",
+      "sameFailureNamesVerified": true,
+      "testNames": [
+        "OpenClaw verify_only INTERMEDIATE records blockers without debiting and authorizes once",
+        "OpenClaw verify_only TASK_COMPLETE records blockers without debiting and authorizes once",
+        "Stop blocks hard findings even when the reviewer classifies the attempted completion as intermediate",
+        "Stop blocks three terminal deviations, then records and allows the fourth",
+        "Stop feedback names checker issues outside the frozen population",
+        "the infrastructure-failure ceiling counts CONSECUTIVE failures, not failures ever seen"
+      ],
+      "comparisonLog": ".runtime-correction/document-e2e-development/before-dynamic-stop-comparison.tap",
+      "productionLibraryFilesChangedInThisIncrement": []
+    }
+  },
+  "rawReport": ".runtime-correction/openclaw-dynamic-benchmark-final/report.json",
+  "baselineFile": ".runtime-correction/openclaw-dynamic-benchmark-final/dynamic-baseline.json",
+  "businessTranscript": ".runtime-correction/openclaw-dynamic-benchmark-final/business-session.json",
+  "officialBenchmarkScore": null
+}
