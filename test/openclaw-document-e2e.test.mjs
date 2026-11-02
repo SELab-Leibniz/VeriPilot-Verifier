@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy, documentMutations } from '../scripts/evaluate-openclaw-document-e2e.mjs';
+import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy, documentMutations, locateDocumentFaults } from '../scripts/evaluate-openclaw-document-e2e.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
 
@@ -50,6 +50,15 @@ test('native patch repairs count only after successful tool receipts and only fo
   const snapshot = { messages: [{ role: 'assistant', content: calls }, ...calls.filter(call => call.id !== 'unacknowledged')
     .map(call => ({ role: 'toolResult', toolCallId: call.id, isError: call.id === 'failed', content: [] }))] };
   assert.deepEqual(documentMutations(snapshot, root).map(call => call.id), ['write', 'patch']);
+});
+
+test('controlled fault locations follow the actual copied candidate without moving a reviewer finding', () => {
+  const faults = [{ line: 2, draft: 'Wrong requirement. ' }, { line: 4, draft: 'Another deviation.' }];
+  assert.deepEqual(locateDocumentFaults(faults, '# Draft\nWrong requirement.\n\nAnother deviation.\n'),
+    [{ sourceLine: 2, actualLine: 2 }, { sourceLine: 4, actualLine: 4 }]);
+  assert.deepEqual(locateDocumentFaults(faults, '# Draft\nWrong requirement.\n\n\nAnother deviation.\n'),
+    [{ sourceLine: 2, actualLine: 2 }, { sourceLine: 4, actualLine: 5 }]);
+  assert.throws(() => locateDocumentFaults(faults, 'The seed was repaired before the first review.'), /pre-repaired or omitted/u);
 });
 
 test('dynamic baseline is wired to document review without enabling implementation, Skill or Stop', async t => {

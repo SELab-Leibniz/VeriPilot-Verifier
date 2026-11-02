@@ -22,6 +22,16 @@ export function documentMutations(snapshot, projectRoot) {
     .filter(call => ['toolCall', 'tool_use'].includes(call.type) && succeeded.has(call.id)
       && changedFiles(call.name, call.arguments ?? call.input ?? {}, projectRoot).includes(path.join(projectRoot, 'design.md')));
 }
+
+export function locateDocumentFaults(faults, actualText) {
+  return faults.map(fault => {
+    const needle = fault.draft.replace(/[ \t]+$/u, '');
+    assert(needle.trim(), 'A controlled deviation must contain text');
+    const offset = actualText.indexOf(needle);
+    assert(offset >= 0, 'The initial candidate pre-repaired or omitted a controlled deviation');
+    return { sourceLine: fault.line, actualLine: actualText.slice(0, offset).split('\n').length };
+  });
+}
 export function openclawDocumentOptions(input = {}) {
   const defaults = { reviewTimeoutMs: 600000, baselineTimeoutMs: 1200000, hookTimeoutMs: 1200000, businessTimeoutMs: 1800000, totalTimeoutMs: 1800000 };
   for (const key of Object.keys(input)) assert(Object.hasOwn(defaults, key), `Unknown OpenClaw document option: ${key}`);
@@ -164,7 +174,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. DOCUMENT-COPY-MISMATCH diagnostics already compare literal content, including fenced whitespace and EOF newlines. Do not dismiss or duplicate these deterministic findings. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Preserve original heading levels and formatting. Report concrete current contradictions using accurate physical line numbers. Do not carry resolved findings into a new round. Return no semantic findings when compliant. Return edits: []; the main agent owns actual native edits. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
-  let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null;
+  let evidence = { reviews: [], receipts: [] }, terminalReceipt, baseline = null, artifactEvaluations = [], initialCopy = null, finalCopy = null, initialFaultLocations = [];
   try {
     gateway = await createNativeGatewayEvaluation({ hostRoot, sourceRoot: SOURCE_ROOT, projectRoot, outputRoot,
       businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
@@ -218,8 +228,12 @@ Author execution instructions (these govern YOUR actions and are not text to add
       ? (item.message ?? item).content ?? [] : []).filter(item => ['toolCall', 'tool_use'].includes(item.type));
     const writes = documentMutations(snapshot, projectRoot);
     const finalDesign = await fs.readFile(path.join(projectRoot, 'design.md'), 'utf8');
+    const firstWrite = writes.find(call => call.name.toLowerCase() === 'write');
+    const firstWrittenText = (firstWrite?.arguments ?? firstWrite?.input)?.content;
+    assert.equal(typeof firstWrittenText, 'string', 'Initial business write content is unavailable');
+    initialFaultLocations = benchmark ? locateDocumentFaults(benchmark.specification.faults, firstWrittenText) : [];
     assert(reviews.length >= 2, 'Fewer than two automatic artifact reviews were recorded');
-    const expectedLines = benchmark ? benchmark.specification.faults.map(item => item.line) : [2];
+    const expectedLines = benchmark ? initialFaultLocations.map(item => item.actualLine) : [2];
     for (const line of expectedLines)
       assert(reviews[0].result.diagnostics.some(item => item.severity === 'error' && item.path === 'design.md' && item.line === line), `Initial automatic review did not locate the controlled deviation at line ${line}`);
     assert.equal(reviews.at(-1).result.status, 'passed', 'Final automatic document review did not pass');
@@ -229,15 +243,10 @@ Author execution instructions (these govern YOUR actions and are not text to add
     assert(!calls.some(call => call.name === 'runtime_corrector'), 'A manual check replaced the required automatic Hook');
     assert(JSON.stringify(snapshot).includes('[runtime-corrector:feedback]'), 'Native business transcript omitted automatic review feedback');
     assert(privateRuns.length >= 2 && privateRuns.every(item => item.status === 'SETTLED'), 'Private native reviews did not settle');
-    const firstWrite = writes.find(call => call.name.toLowerCase() === 'write');
-    const firstWrittenText = (firstWrite?.arguments ?? firstWrite?.input)?.content;
-    assert.equal(typeof firstWrittenText, 'string', 'Initial business write content is unavailable');
     initialCopy = assessDocumentCopy(initialDesign, firstWrittenText);
     // A copied candidate may acquire additional deviations: the automatic loop
     // must repair them too. The immutable seed and actual reviewed hash remain
     // evidence; only the final document can establish full-copy compliance.
-    if (benchmark) for (const fault of benchmark.specification.faults)
-      assert(firstWrittenText.includes(fault.draft.replace(/[ \t]+$/u, '')), 'The initial candidate pre-repaired or omitted a controlled deviation');
     assert.equal(reviews[0].result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(firstWrittenText), 'Initial review did not inspect the actual bytes written by the business agent');
     assert.equal(reviews.at(-1).result.metadata.inputs.find(item => item.path === 'design.md')?.sha256, hash(finalDesign), 'Final review did not inspect the current repaired bytes');
     assert(gateway.metrics().modelStarts.some(item => item.runId === runId && item.sessionId === sessionId), 'No actual original business model start was observed');
@@ -271,7 +280,7 @@ Author execution instructions (these govern YOUR actions and are not text to add
     finishedAt: new Date().toISOString(), elapsedMs: Date.now() - started, options: config,
     sessionKey, sessionId, runId, taskId: task?.taskId ?? evidence.reviews[0]?.scopeTaskId, terminal, terminalReceipt, failure, projectRoot,
     gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews, dynamicBaseline, baseline, artifactEvaluations,
-    benchmark: benchmark?.specification ?? null, initialCopy, finalCopy,
+    benchmark: benchmark?.specification ?? null, initialCopy, finalCopy, initialFaultLocations,
     feedbackReceipts: evidence.receipts,
     effectiveTimeouts: gateway ? { reviewerTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.reviewerTimeoutMs,
       hookTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.hookTimeoutMs,
