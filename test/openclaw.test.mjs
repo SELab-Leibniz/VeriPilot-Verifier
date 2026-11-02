@@ -111,6 +111,25 @@ test("native entry registers configured Hook windows up to twelve hours", async 
   }
 });
 
+test("native reply wait arms the full twelve-hour window and honors a shorter host limit", async t => {
+  const project = await workspace(t), timers = [], realSetTimeout = globalThis.setTimeout;
+  const mock = t.mock.method(globalThis, "setTimeout", (callback, delay, ...args) => {
+    timers.push(delay);
+    return realSetTimeout(callback, delay, ...args);
+  });
+  try {
+    for (const [policy, expected] of [[undefined, 43199000], [600000, 599000]]) {
+      const host = api(project);
+      host.pluginConfig.hookTimeoutMs = 43200000;
+      if (policy !== undefined) host.config.plugins = { entries: { "runtime-corrector": { hooks: { timeoutMs: policy } } } };
+      entry.register(host);
+      timers.length = 0;
+      await host.hooks.get("reply_dispatch").handler({}, {});
+      assert(timers.some(delay => delay >= expected - 1000 && delay <= expected), JSON.stringify({ policy, timers }));
+    }
+  } finally { mock.mock.restore(); }
+});
+
 test("OpenClaw validates incompatible CLI reviewer settings before starting work", async (t) => {
   const project = await workspace(t);
   await fs.mkdir(path.join(project, ".runtime-corrector"));
