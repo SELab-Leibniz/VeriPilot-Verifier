@@ -224,6 +224,45 @@ test("transcripts preserve real users, tool pairing and only the active native b
   assert.match(await fs.readFile(state.transcriptPath, "utf8"), /Implement a.js/u);
 });
 
+test("a transient transcript rename EPERM preserves the old snapshot until the complete replacement is published", async t => {
+  const project = await workspace(t), state = { projectRoot: project, agentId: "main", sessionId: "rename-transient" };
+  await persistTranscript(state, { messages: [{ id: "old-user", message: { role: "user", content: "The original user request." } }] });
+  const previous = await fs.readFile(state.transcriptPath, "utf8"), rename = fs.rename;
+  let attempts = 0;
+  t.mock.method(fs, "rename", async (source, target) => {
+    if (target === state.transcriptPath && attempts++ === 0) {
+      assert.equal(await fs.readFile(target, "utf8"), previous);
+      throw Object.assign(new Error("Temporary Windows sharing violation"), { code: "EPERM" });
+    }
+    return rename(source, target);
+  });
+  const content = "A complete replacement with the original message identity intact.\n".repeat(100);
+  await persistTranscript(state, { messages: [{ id: "new-user", message: { role: "user", content } }] });
+  assert(attempts > 1);
+  const saved = (await fs.readFile(state.transcriptPath, "utf8")).trimEnd().split("\n").map(JSON.parse);
+  assert.equal(saved.length, 1); assert.equal(saved[0].uuid, "new-user"); assert.equal(saved[0].message.content[0].text, content);
+  assert.deepEqual(await fs.readdir(path.dirname(state.transcriptPath)), ["transcript.jsonl"]);
+});
+
+test("persistent transcript rename refusal rejects honestly while retaining the old snapshot and removing temporary bytes", async t => {
+  const project = await workspace(t), state = { projectRoot: project, agentId: "main", sessionId: "rename-persistent" };
+  await persistTranscript(state, { messages: [{ id: "old-user", message: { role: "user", content: "The preserved original request." } }] });
+  const previous = await fs.readFile(state.transcriptPath, "utf8"), rename = fs.rename;
+  let attempts = 0;
+  t.mock.method(fs, "rename", async (source, target) => {
+    if (target === state.transcriptPath) {
+      attempts++;
+      throw Object.assign(new Error("Persistent Windows sharing violation"), { code: "EPERM" });
+    }
+    return rename(source, target);
+  });
+  await assert.rejects(persistTranscript(state, { messages: [
+    { id: "new-user", message: { role: "user", content: "This snapshot must remain unpublished." } },
+  ] }), { code: "EPERM" });
+  assert(attempts > 1); assert.equal(await fs.readFile(state.transcriptPath, "utf8"), previous);
+  assert.deepEqual(await fs.readdir(path.dirname(state.transcriptPath)), ["transcript.jsonl"]);
+});
+
 test("native snapshots and restarts preserve source ids, including repeated user text", async (t) => {
   const project = await workspace(t);
   let state = { projectRoot: project, agentId: "main", sessionId: "s", entries: [] };

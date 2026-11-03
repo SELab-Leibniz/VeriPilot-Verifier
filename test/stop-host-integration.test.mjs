@@ -17,7 +17,6 @@ async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitM
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "native-new-stop-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const configDir = path.join(root, ".runtime-corrector");
   await fs.mkdir(configDir);
   await fs.writeFile(path.join(configDir, "config.yaml"), `version: 2
@@ -87,7 +86,11 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     nativeHooks: true, sharedState, projectScopes, compatibility, postRunTerminal: terminal,
     ...(startProtocol ? { stopStartCompatibility: async () => ({ version: 1,
       onStart: callback => { starts.add(callback); return () => starts.delete(callback); }, drain: async () => {}, diagnosticsEnabled: () => true }) } : {}) });
-  t.after(() => runtime.dispose());
+  t.after(async () => {
+    await runtime.dispose();
+    await runtime.waitForBackgroundReviews();
+    await fs.rm(root, { recursive: true, force: true });
+  });
   const ctx = { agentId: "main", sessionId: "session", sessionKey: "agent:main:test", workspaceDir: root, runId: "business-run" };
   const start = async fields => runtime.sessionStart({ sessionId: "session", ...fields }, ctx);
   const stop = async () => {
@@ -121,7 +124,9 @@ test('an unpublished native assessment closes honestly with a reason and an actu
   const notices=[];f.api.runtime.gateway={request:async(method,params)=>{notices.push({method,params});return {id:'notice'};}};
   await f.start();
   await f.runtime.beforeTool({toolName:'read',toolCallId:'read-source',params:{path:'app.py'}},f.ctx);
-  const stopping=f.stop();await ready;
+  const stopping=f.stop();
+  const opening=await Promise.race([ready.then(()=>({started:true})),stopping.then(record=>({record}))]);
+  assert.equal(opening.started,true,JSON.stringify({record:opening.record,warnings:f.warnings}));
   await fs.writeFile(path.join(f.root,'app.py'),'def convert(value): return int(value) + 1\n');release();
   await stopping;await f.runtime.waitForNativeReviews({drain:true,settle:true});
   const task=await findTask({projectRoot:f.root,sessionId:'session'});
