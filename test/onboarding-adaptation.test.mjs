@@ -25,19 +25,19 @@ async function fixture(t, response) {
   const snapshot = { entries: [{ type: 'user', uuid: 'u1', message: { content: 'Deliver app.mjs and docs/guide.md.' } }] };
   const transcript = path.join(root, 'conversation.jsonl');
   await fs.writeFile(transcript, snapshot.entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
-  const calls = [], roles = [];
+  const calls = [], roles = [], requests = [];
   const api = { config: {}, runtime: { version: '2026.7.1-2', agent: { runEmbeddedAgent: async params => {
     calls.push(params); return { payloads: [{ text: JSON.stringify(await response({ params, calls, root, task })) }], meta: {} };
   } } }, logger: { warn() {} } };
   const native = createOpenClawReviewerFactory(api, { provider: 'fixture', model: 'fixture-model' });
-  const factory = Object.assign(options => { roles.push(options.role); return native(options); }, native);
+  const factory = Object.assign(options => { roles.push(options.role); requests.push(structuredClone(options.request)); return native(options); }, native);
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: true, materialRoots: [], panel: { size: 1, adjudicator: false } },
     skillCorrection: { enabled: false }, artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
     implementationCorrection: { enabled: false }, stopCorrection: { enabled: true },
     reviewers: { groundTruthExtractor: { timeoutMs: 5000, formatRepairAttempts: 1 } } }, { policyRoot: path.join(root, '.runtime-corrector') });
   const input = { cwd: root, session_id: 'onboarding-parent', hook_event_name: 'PreToolUse', tool_name: 'Write', tool_use_id: 'write',
     transcript_path: transcript, hook_event_id: 'onboard-adaptation' };
-  return { root, task, snapshot, input, runtimeV2, reviewerFactory: factory, calls, roles };
+  return { root, task, snapshot, input, runtimeV2, reviewerFactory: factory, calls, roles, requests };
 }
 
 test('expectedFiles errors repair in the native role session before any ledger write, within its existing budget', async t => {
@@ -97,6 +97,101 @@ test('a later bounded retry can repair pending metadata and freeze the complete 
   assert.equal(current.claims.length, 2); assert.equal(current.frozenAtVersion, current.version);
 });
 
+test('fresh panels cannot omit a pending original across all retries or restart and cannot permit Stop PASS', async t => {
+  const valid = operation('Deliver app.mjs.', ['app.mjs']), invalid = operation('Deliver docs/guide.md.', ['wrong.md']);
+  valid.claimId = 'retained-valid-app';
+  let attempt = 0;
+  const f = await fixture(t, () => report(attempt === 0 ? [valid, invalid] : [valid]));
+  let pendingId;
+  for (; attempt < 3; attempt++) {
+    // Rehydrate from disk between attempts. The originally captured task object
+    // is deliberately stale, exactly as a restarted controller may receive it.
+    if (attempt) assert((await findTask({ projectRoot: f.root, sessionId: f.input.session_id })).groundTruth.onboardingPending.length);
+    const outcome = await maybeRunTaskOnboarding({ ...f, projectRoot: f.root });
+    assert.equal(outcome.status, attempt < 2 ? 'DEFERRED' : 'UNVERIFIED', JSON.stringify(outcome));
+    assert.equal(outcome.pendingOperations.length, 1);
+    pendingId ??= outcome.pendingOperations[0].operationId;
+    assert.equal(outcome.pendingOperations[0].operationId, pendingId);
+    assert.deepEqual(outcome.pendingOperations[0].operation, { ...invalid, panelConfirmed: true });
+    const current = await loadCurrentGroundTruth(f.root, f.task.taskId);
+    assert.equal(current.claims.length, 1); assert.equal(current.claims[0].claimId, valid.claimId); assert.equal(current.frozenAtVersion, null);
+  }
+  assert.equal(f.requests.length, 3); assert.deepEqual(f.requests[0].pendingOperations, []);
+  for (const request of f.requests.slice(1)) {
+    assert.equal(request.pendingOperations[0].operationId, pendingId);
+    assert.deepEqual(request.pendingOperations[0].operation, { ...invalid, panelConfirmed: true });
+    assert(request.instructions.some(instruction => instruction.includes('omission')));
+  }
+  const calls = f.calls.length;
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'UNVERIFIED');
+  assert.equal(f.calls.length, calls, 'a restart cannot reset the bounded retry ladder');
+  const task = await findTask({ projectRoot: f.root, sessionId: f.input.session_id });
+  const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: f.runtimeV2 }, reviewerFactory: f.reviewerFactory,
+    input: { ...f.input, hook_event_name: 'Stop', hook_event_id: 'omitted-pending-stop', last_assistant_message: 'Complete.' },
+    assessmentContext: { mode: 'verify_only', assessmentId: 'omitted-onboarding', guard: decisionGuard(task), deadlineAt: Date.now() + 10000 } });
+  assert.equal(result.stop.status, 'UNVERIFIED', JSON.stringify(result));
+  assert.match(JSON.stringify(result), /ONBOARDING_OPERATIONS_UNVERIFIED/);
+  assert.equal(f.roles.filter(role => role === 'stop-reviewer').length, 0);
+});
+
+test('explicit same-duty repair after an omitted retry clears only that original once without duplicating valid siblings', async t => {
+  const valid = operation('Deliver app.mjs.', ['app.mjs']), invalid = operation('Deliver docs/guide.md.', ['wrong.md']);
+  valid.claimId = 'same-valid-app';
+  let attempt = 0;
+  const f = await fixture(t, () => report(attempt === 0 ? [valid, invalid] : attempt === 1 ? [valid]
+    : [valid, { ...invalid, expectedFiles: ['docs/guide.md'] }]));
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'DEFERRED');
+  const pending = (await findTask({ projectRoot: f.root, sessionId: f.input.session_id })).groundTruth.onboardingPending[0];
+  attempt = 1;
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'DEFERRED');
+  attempt = 2;
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'COMPLETED');
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'COMPLETED');
+  const task = await findTask({ projectRoot: f.root, sessionId: f.input.session_id }), current = await loadCurrentGroundTruth(f.root, task.taskId);
+  assert.deepEqual(task.groundTruth.onboardingPending, []); assert.equal(current.frozenAtVersion, current.version);
+  assert.equal(current.claims.length, 2); assert.equal(current.claims.filter(claim => claim.claimId === valid.claimId).length, 1);
+  assert.deepEqual(current.claims.find(claim => claim.text === invalid.text).expectedFiles, ['docs/guide.md']);
+  const events = (await fs.readFile(path.join(taskDirectory(f.root, task.taskId), 'journal/events.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.equal(events.filter(event => event.type === 'ONBOARDING_OPERATION_RECONCILED' && event.operationId === pending.operationId).length, 1);
+});
+
+test('restart before the outer onboarding receipt cannot turn retained pending originals into an existing-ledger skip', async t => {
+  const valid = operation('Deliver app.mjs.', ['app.mjs']), invalid = operation('Deliver docs/guide.md.', ['wrong.md']);
+  let attempt = 0;
+  const f = await fixture(t, () => report(attempt === 0 ? [valid, invalid] : attempt === 1 ? [valid]
+    : [valid, { ...invalid, expectedFiles: ['docs/guide.md'] }]));
+  // runTaskOnboarding persists the delta and pending originals before its
+  // caller commits the outer receipt: this is the durable crash checkpoint.
+  assert.equal((await runTaskOnboarding({ ...f, projectRoot: f.root })).status, 'UNVERIFIED');
+  const saved = await findTask({ projectRoot: f.root, sessionId: f.input.session_id });
+  assert.equal(saved.onboarding, undefined); assert(saved.groundTruth.onboardingPending.length);
+  attempt = 1;
+  const resumed = await maybeRunTaskOnboarding({ ...f, projectRoot: f.root });
+  assert.equal(resumed.status, 'DEFERRED'); assert.equal(resumed.pendingOperations.length, 1);
+  assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).frozenAtVersion, null);
+  attempt = 2;
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'COMPLETED');
+  assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).claims.length, 2);
+});
+
+test('dropping invalid delivery metadata or weakening duty semantics never reconciles its retained original', async t => {
+  const valid = operation('Deliver app.mjs.', ['app.mjs']), invalid = { ...operation('Deliver docs/guide.md.', ['wrong.md']),
+    applicability: 'Before publishing, including recovery from an interrupted write.' };
+  let replacement = invalid;
+  const f = await fixture(t, () => report([valid, replacement]));
+  assert.equal((await runTaskOnboarding({ ...f, projectRoot: f.root })).status, 'UNVERIFIED');
+  const original = (await findTask({ projectRoot: f.root, sessionId: f.input.session_id })).groundTruth.onboardingPending[0];
+  for (const changed of [{ expectedFiles: [] }, { expectedFiles: undefined }, { severity: 'SOFT', expectedFiles: ['docs/guide.md'] },
+    { applicability: 'Only after publication.', expectedFiles: ['docs/guide.md'] }, { verificationTarget: 'PROCESS', expectedFiles: ['docs/guide.md'] }]) {
+    replacement = { ...invalid, ...changed };
+    const outcome = await runTaskOnboarding({ ...f, projectRoot: f.root });
+    assert.equal(outcome.status, 'UNVERIFIED', JSON.stringify({ changed, outcome }));
+    assert(outcome.pendingOperations.some(pending => pending.operationId === original.operationId));
+    assert.deepEqual(outcome.pendingOperations.find(pending => pending.operationId === original.operationId).operation, original.operation);
+    assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).frozenAtVersion, null);
+  }
+});
+
 test('exhausted native source repair isolates its invalid original while valid siblings still apply', async t => {
   const bad = operation('Deliver docs/guide.md.', ['docs/guide.md']); bad.source.ref = 'transcript:unknown';
   const f = await fixture(t, ({ calls }) => calls.length === 1 ? report([operation('Deliver app.mjs.', ['app.mjs']), bad])
@@ -108,6 +203,26 @@ test('exhausted native source repair isolates its invalid original while valid s
   assert.equal(current.claims.length, 1); assert.equal(current.frozenAtVersion, null);
   assert.equal(result.pendingOperations[0].operation.text, bad.text);
   assert.equal(result.pendingOperations[0].operation.source.ref, 'transcript:unknown');
+});
+
+test('an explicit validated source-ref repair reconciles a persisted original while retaining its duty and proof owner', async t => {
+  const valid = operation('Deliver app.mjs.', ['app.mjs']), invalid = operation('Deliver docs/guide.md.', ['docs/guide.md']);
+  invalid.source.ref = 'transcript:unknown';
+  let repairing = false;
+  const f = await fixture(t, ({ calls }) => repairing ? report([valid, { ...invalid, source: { ...invalid.source, ref: 'transcript:u1' } }])
+    : calls.length === 1 ? report([valid, invalid]) : { sourceRepairs: [{ index: 1, source: invalid.source }] });
+  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'DEFERRED');
+  const original = (await findTask({ projectRoot: f.root, sessionId: f.input.session_id })).groundTruth.onboardingPending[0];
+  assert.equal(original.reasonCode, 'SOURCE_BINDING_INVALID');
+  repairing = true;
+  const outcome = await maybeRunTaskOnboarding({ ...f, projectRoot: f.root });
+  assert.equal(outcome.status, 'COMPLETED', JSON.stringify(outcome));
+  const task = await findTask({ projectRoot: f.root, sessionId: f.input.session_id }), current = await loadCurrentGroundTruth(f.root, task.taskId);
+  assert.deepEqual(task.groundTruth.onboardingPending, []); assert.equal(current.claims.length, 2);
+  const repaired = current.claims.find(claim => claim.text === invalid.text);
+  assert.equal(repaired.source.ref, 'transcript:u1'); assert.equal(repaired.source.kind, invalid.source.kind);
+  assert.equal(repaired.source.subject, invalid.source.subject); assert.equal(repaired.verificationTarget, invalid.verificationTarget);
+  assert.deepEqual(repaired.expectedFiles, invalid.expectedFiles);
 });
 
 test('nested and individual material roots use the same relative codepoint order on Windows and POSIX', () => {
