@@ -6,7 +6,7 @@ Runtime Corrector 提供插件命令、Skill/自然语言、CLI，以及宿主�
 
 安装产物中的 `openclaw.plugin.json` 将 `main` 指向 `lib/openclaw/entry.mjs`。插件加载时注册原生接口；OpenClaw 不通过下文的 Claude/CodeAgent JSON-stdio Hook 启动这些能力。支持版本和安装方式见[宿主指南](openclaw.md)。
 
-- **宿主初始化**：管理员命令 `/rc-setup`，不接受参数。补齐 RC 的 Hook 权限、默认 Reviewer 模型和 Hook 超时，识别主 Agent 并追加 `runtime_corrector` 工具授权，保留其他配置。通过宿主配置写入接口保存并请求自动重载；不创建项目配置或改变 Session 开关。行为和前提见[宿主初始化](openclaw.md#在-session-中初始化宿主设置)。
+- **宿主初始化**：管理员命令 `/rc-setup`，不接受参数。补齐 RC 的 Hook 权限、默认 Reviewer 模型和审查预算，识别主 Agent 并追加 `runtime_corrector` 工具授权，保留其他配置。已配置上下文插件时，先备份原文，再追加 RC 内部会话排除规则。通过宿主配置写入接口保存并请求自动重载；不创建项目配置或改变 Session 开关。行为和前提见[宿主初始化](openclaw.md#在-session-中初始化宿主设置)。
 
 - **项目初始化与开关**：用户命令 `/rc-project init|on|off|status`。`init` 复制默认模板并填入当前 RC 模型，两个默认开关为 `false`，已有目录不覆盖；`on/off` 只改项目根级 `enabled`，并检查该项目全部活动会话的实际状态。项目目录沿用宿主 Session 解析，不能通过这些命令指定其他路径。
 - **会话默认开关**：用户命令 `/rc-session-default on|off|status`，修改当前项目 `sessionDefaults.enabled`，不覆盖已登记会话。状态包含 `sessionDefaultEnabled`；修改需要可信用户及宿主写入权限，查询需要读取权限。这两个新增入口均为用户命令，没有新增模型工具或 Gateway 写入 RPC，见[命令说明](session-control.md#在-session-中初始化和开关)。

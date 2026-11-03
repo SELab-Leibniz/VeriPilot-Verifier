@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { registerHostSetup } from "../lib/openclaw/host-setup.mjs";
+import { registerHostSetup, initializeHostConfig, INTERNAL_SESSION_BYPASS_PATTERN } from "../lib/openclaw/host-setup.mjs";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { runInternalExecution, runManagedExecution } from "../lib/openclaw/internal-context.mjs";
 
 const owner = { isAuthorizedSender: true, gatewayClientScopes: ["operator.admin"], agentId: "conversation-agent" };
-function fixture(config, { beforeCommit, restart, defaults } = {}) {
+function fixture(config, { beforeCommit, restart, defaults, snapshot } = {}) {
   let source = structuredClone(config), writes = 0, calls = 0, command;
   const api = { runtime: { agent: { defaults }, config: {
     current() { throw new Error("Must use a fresh source draft, not cached runtime config."); },
@@ -13,7 +16,7 @@ function fixture(config, { beforeCommit, restart, defaults } = {}) {
       assert.equal(options.base, "source");
       assert.deepEqual(options.afterWrite, { mode: "auto" });
       const draft = structuredClone(source);
-      const result = await options.mutate(draft, { snapshot: { path: "/isolated/profile/openclaw.json" } });
+      const result = await options.mutate(draft, { snapshot: snapshot ?? { path: "/isolated/profile/openclaw.json" } });
       await beforeCommit?.(draft);
       source = draft;
       writes++;
@@ -49,6 +52,45 @@ test("setup uses the default agent and global model, preserves other host policy
   assert.deepEqual(f.config.plugins.allow, ["other", "runtime-corrector"]);
   assert.match((await f.run()).text, /无需修改/u);
   assert.equal(f.writes, 1);
+});
+
+test("explicit setup backs up the exact source before appending the internal-session bypass and is idempotent", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-host-setup-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const configPath = path.join(root, "openclaw.json");
+  const config = { agents: { defaults: { model: "p/m" } }, plugins: { entries: {
+    "matrix-context-controller": { enabled: true, config: { existing: "keep", bypassSessionPatterns: ["agent:main:personal:*"] } },
+  } } };
+  const original = "// preserved source formatting\r\n" + JSON.stringify(config, null, 2) + "\r\n";
+  await fs.writeFile(configPath, original);
+  const f = fixture(config, { snapshot: { path: configPath, raw: original }, async beforeCommit() {
+    const backups = (await fs.readdir(root)).filter(file => file.endsWith(".bak"));
+    assert.equal(backups.length, 1);
+    assert.equal(await fs.readFile(path.join(root, backups[0]), "utf8"), original);
+    assert.equal(await fs.readFile(configPath, "utf8"), original);
+  } });
+  assert.match((await f.run()).text, /备份文件/u);
+  assert.deepEqual(f.config.plugins.entries["matrix-context-controller"].config,
+    { existing: "keep", bypassSessionPatterns: ["agent:main:personal:*", INTERNAL_SESSION_BYPASS_PATTERN] });
+  assert.match((await f.run()).text, /无需修改/u); assert.equal(f.writes, 1);
+  assert.equal((await fs.readdir(root)).filter(file => file.endsWith(".bak")).length, 1);
+  const ready = structuredClone(f.config), result = initializeHostConfig(ready);
+  assert.equal(result.changed, false); assert.deepEqual(result.changedPaths, []);
+});
+
+test("context bypass follows the host colon-aware wildcard grammar and malformed rules never write", async () => {
+  const compile = pattern => new RegExp("^" + pattern.replace(/[.+^${}()|[\]\\]/gu, "\\$&")
+    .replace(/\*\*/gu, "\u0000").replace(/\*/gu, "[^:]*").replace(/\u0000/gu, ".*") + "$");
+  const pattern = compile(INTERNAL_SESSION_BYPASS_PATTERN);
+  for (const key of ["agent:main:runtime-corrector:reviewer", "agent:other:runtime-corrector:worker:child"])
+    assert.equal(pattern.test(key), true);
+  for (const key of ["agent:main:main", "agent:main:runtime-corrector-other:reviewer", "agent:main:ordinary:runtime-corrector:child"])
+    assert.equal(pattern.test(key), false);
+  const config = { agents: { defaults: { model: "p/m" } }, plugins: { entries: {
+    "matrix-context-controller": { config: { bypassSessionPatterns: "invalid" } },
+  } } };
+  const f = fixture(config); assert.match((await f.run()).text, /必须是字符串列表/u);
+  assert.equal(f.writes, 0); assert.deepEqual(f.config, config);
 });
 
 test("explicit RC model/timeouts and the agent's own tool scope remain intact", async () => {
