@@ -29,6 +29,11 @@ async function fixture(t) {
       fixedStopClassification: { stopClassification: "TASK_COMPLETE", stage: null }, reviewScope: { kind: "stop-group", objectIds: objects.map(object => object.objectId) } } } };
 }
 
+test("retired grouped execution requires an explicitly injected task runner", async t => {
+  const f = await fixture(t);
+  await assert.rejects(runStopTaskGroup(f.input), { code: "STOP_TASK_RUNNER_REQUIRED" });
+});
+
 test("Stop SDK group shares source once and maps each original member's independent proof and receipt", async t => {
   const f = await fixture(t), receipts = [];
   f.input.reviewer.maxOutputTokens = 49152;
