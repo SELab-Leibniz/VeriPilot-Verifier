@@ -57,7 +57,8 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
   assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
-  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
+  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 10000);
+  assert.equal(host.hooks.get("before_tool_call").options.priority, 5);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
   assert.equal(host.harness, undefined, "native entry must not register a business harness");
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
@@ -98,27 +99,42 @@ test("native entry supports synchronous ESM loading on the target Node runtime",
   assert.equal(loaded.default.id, "runtime-corrector");
 });
 
-test("native entry registers configured Hook windows up to twenty-four hours", async t => {
+test("native entry caps hot Hook windows independently of the configured review budget", async t => {
   const project = await workspace(t);
   for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [5400000, 5400000], [7200000, 7200000], [43200000, 43200000], [86400000, 86400000], [172800000, 86400000]]) {
     const host = api(project);
     host.pluginConfig.hookTimeoutMs = configured;
     entry.register(host);
     for (const name of ["before_prompt_build", "before_tool_call", "reply_payload_sending", "agent_end"]) {
-      assert.equal(host.hooks.get(name).options.timeoutMs, expected, `${name}: ${configured}`);
+      assert.equal(host.hooks.get(name).options.timeoutMs, Math.min(expected, 10000), `${name}: ${configured}`);
     }
     assert.equal(host.hooks.get("session_start").options.timeoutMs, 30000);
     assert.equal(host.hooks.get("session_end").options.timeoutMs, 1000);
   }
 });
 
-test('baseline-specific long Hook window is registered without changing ordinary Hook defaults', async t => {
+test('baseline-specific long review window cannot extend hot hooks', async t => {
   const project = await workspace(t), host = api(project);
   host.pluginConfig = { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000 }, hookTimeoutMs: 86460000 };
   entry.register(host);
   for (const name of ['before_prompt_build', 'before_tool_call', 'reply_payload_sending', 'agent_end'])
-    assert.equal(host.hooks.get(name).options.timeoutMs, 86460000);
+    assert.equal(host.hooks.get(name).options.timeoutMs, 10000);
   assert.equal(host.hooks.get('session_end').options.timeoutMs, 1000);
+});
+
+test("the native command observer runs after host policy plugins and before RTK rewrites", async t => {
+  const host = api(await workspace(t)); entry.register(host);
+  const calls = [], command = { toolName: "exec", params: { command: "original" } };
+  const hooks = [
+    ...[["register-gateway-method", 12], ["dynamic-workflows", 11], ["autopilot", 10], ["matrixassistant-audit", 9]].map(([name, priority]) =>
+      ({ name, priority, handler() { calls.push(name); } })),
+    { name: "rc", priority: host.hooks.get("before_tool_call").options.priority,
+      handler() { calls.push("rc"); assert.equal(command.params.command, "original"); } },
+    { name: "rtk", priority: 1, handler() { calls.push("rtk"); command.params.command = "rewritten"; } },
+  ];
+  for (const hook of hooks.sort((a, b) => b.priority - a.priority)) hook.handler(command);
+  assert.deepEqual(calls, ["register-gateway-method", "dynamic-workflows", "autopilot", "matrixassistant-audit", "rc", "rtk"]);
+  assert.equal(command.params.command, "rewritten");
 });
 
 test("native reply wait arms the full twenty-four-hour window and honors a shorter host limit", async t => {

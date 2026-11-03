@@ -95,7 +95,8 @@
         "type": "integer",
         "minimum": 2000,
         "maximum": 2147483647,
-        "default": 1200000
+        "default": 1200000,
+        "description": "Independent RC review and reply-wait budget. Hot lifecycle hooks are capped at 10 seconds; native model review runs outside those hooks."
       },
       "stopReviewConcurrency": {
         "type": "integer",
