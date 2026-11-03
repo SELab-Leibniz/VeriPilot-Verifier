@@ -79,6 +79,71 @@ test('an unknown predecessor never calls the successor provider or releases its 
   assert.equal(f.current().candidate.terminalConfirmedAt, undefined); assert.equal(f.current().promotion, undefined); assert.equal(f.sent.length, 0);
 });
 
+test('an UNKNOWN finalizing predecessor later confirmed error retains proof and resumes its successor without queued business work', async t => {
+  let status = 'UNKNOWN', probes = 0, f; const waited = [], reviewed = [];
+  f = await fixture(t, { waitTerminal: async (_record, runId) => {
+    waited.push(runId); return { status: runId === 'old' ? status : 'ok' };
+  }, beforeReview: async record => {
+    probes++; assert.equal(status, 'error');
+    if (record.runId === 'old') {
+      assert.equal(record.lastTerminal.runId, 'old'); assert.equal(record.lastTerminal.terminalRunId, 'old');
+      assert.equal(record.lastTerminal.status, 'error'); assert(Number.isFinite(record.lastTerminal.confirmedAt));
+    }
+    return { coexistence: { status: 'IDLE' }, successorCandidate: record.runId === 'old' ? successor(f.identity) : undefined,
+      isSuccessorCurrent: () => true };
+  }, review: async record => { reviewed.push(record.runId); return { reviewStatus: 'PASS' }; } });
+  await f.manager.started(f.identity, 'old'); await f.manager.candidate(f.identity, { runId: 'old', text: 'Old', reviewBudgetMs: 1000 });
+  await f.manager.drain(); assert.equal(probes, 0); assert.equal(f.current().reconciliation.status, 'UNKNOWN');
+  assert.equal(f.current().pending.length, 0); status = 'error';
+  await f.manager.recheck(f.identity, recovery(f.current())); await f.manager.drain();
+  assert.equal(f.current().runId, 'new'); assert.equal(f.current().promotion.terminalStatus, 'error');
+  assert.equal(f.current().promotion.terminalRunId, 'old'); assert.deepEqual(reviewed, ['new']);
+  assert.deepEqual(waited, ['old', 'old', 'new']); assert.equal(f.current().phase, 'IDLE'); assert.equal(f.sent.length, 0);
+});
+
+for (const status of ['ok', 'error']) test(`a recovered RUNNING predecessor confirmed ${status} resumes its successor from retained terminal proof`, async t => {
+  const f = await fixture(t); await f.manager.started(f.identity, 'old'); await f.manager.dispose();
+  const reviewed = [], waited = [];
+  const recovered = f.create({ waitTerminal: async (_record, runId) => {
+    waited.push(runId); return { status: runId === 'old' ? status : 'ok' };
+  }, beforeReview: async record => {
+    if (record.runId === 'old') {
+      assert.equal(record.lastTerminal.runId, 'old'); assert.equal(record.lastTerminal.terminalRunId, 'old');
+      assert.equal(record.lastTerminal.status, status); assert.equal(record.reconciliation, null);
+    }
+    return { coexistence: { status: 'IDLE' }, successorCandidate: record.runId === 'old' ? successor(f.identity) : undefined,
+      isSuccessorCurrent: () => true };
+  }, review: async record => { reviewed.push(record.runId); return { reviewStatus: 'PASS' }; } });
+  await recovered.load(); await recovered.drain(); const current = recovered.snapshot(f.identity);
+  assert.equal(current.runId, 'new'); assert.equal(current.phase, 'IDLE'); assert.equal(current.promotion.terminalStatus, status);
+  assert.equal(current.promotion.terminalRunId, 'old'); assert.deepEqual(waited, ['old', 'new']);
+  assert.deepEqual(reviewed, ['new']); assert.equal(f.sent.length, 0);
+});
+
+test('a releasing correction confirmed after UNKNOWN preserves the actual correction terminal identity in successor provenance', async t => {
+  let correctionStatus = 'UNKNOWN', offer = false, f; const waited = [], reviewed = [];
+  f = await fixture(t, { waitTerminal: async (_record, runId) => {
+    waited.push(runId); return { status: runId === 'repair' ? correctionStatus : 'ok' };
+  }, beforeReview: async record => ({ coexistence: { status: 'IDLE' },
+    successorCandidate: offer && record.runId === 'old' ? successor(f.identity) : undefined, isSuccessorCurrent: () => true }),
+  review: async record => {
+    reviewed.push(record.runId);
+    if (record.runId === 'old') {
+      await f.manager.correction(f.identity, 'repair', Date.now() + 60000, 'old-stop', 'old');
+      return { reviewStatus: 'DEVIATION' };
+    }
+    return { reviewStatus: 'PASS' };
+  } });
+  await f.manager.started(f.identity, 'old'); await f.manager.candidate(f.identity, { runId: 'old', text: 'Old', reviewBudgetMs: 10000 });
+  await f.manager.drain(); assert.equal(f.current().phase, 'WAIT_CORRECTION');
+  await f.manager.release(f.identity, 'POST_RUN_EXECUTION_TIMEOUT');
+  assert.equal(f.current().phase, 'RELEASING'); assert.equal(f.current().reconciliation.status, 'UNKNOWN');
+  offer = true; correctionStatus = 'error'; await f.manager.recheck(f.identity, recovery(f.current())); await f.manager.drain();
+  assert.equal(f.current().runId, 'new'); assert.equal(f.current().promotion.terminalRunId, 'repair');
+  assert.equal(f.current().promotion.terminalStatus, 'error'); assert.deepEqual(reviewed, ['old', 'new']);
+  assert.deepEqual(waited, ['old', 'repair', 'repair', 'new']); assert.equal(f.sent.length, 0);
+});
+
 test('held predecessor restart and crash after atomic adoption recover the complete successor without business replay', async t => {
   const f = await fixture(t, { beforeReview: async () => ({ hold: true, coexistence: { status: 'RUNNING' } }) });
   await f.manager.started(f.identity, 'old'); await f.manager.candidate(f.identity, { runId: 'old', text: 'Old', reviewBudgetMs: 1000 });
@@ -120,6 +185,18 @@ test('a promoted review returning a late PASS cannot overwrite the next owner af
   await f.manager.started(f.identity, 'third'); await f.manager.candidate(f.identity, { runId: 'third', text: 'Third', reviewBudgetMs: 1000 });
   late.resolve({ reviewStatus: 'PASS', reviewSummary: { marker: 'late-promoted-owner' } }); await f.manager.drain();
   assert.equal(f.current().runId, 'third'); assert.equal(f.current().reviewSummary.marker, 'third-owner'); assert.equal(f.sent.length, 0);
+});
+
+test('an audited cancellation ignores a late PASS summary even when the same owner remains IDLE', async t => {
+  const late = deferred(); let reviewing = false, summaryReads = 0;
+  const f = await fixture(t, { review: async () => { reviewing = true; return late.promise; } });
+  await f.manager.started(f.identity, 'old'); await f.manager.candidate(f.identity, { runId: 'old', text: 'Old', reviewBudgetMs: 10000 });
+  await until(() => reviewing); await f.manager.confirmCancel(f.identity, recovery(f.current())); await f.manager.drain();
+  assert.equal(f.current().runId, 'old'); assert.equal(f.current().phase, 'IDLE'); assert.equal(f.current().reviewStatus, 'UNVERIFIED');
+  late.resolve({ reviewStatus: 'PASS', get reviewSummary() { summaryReads++; return { marker: 'cancelled-late-pass' }; } });
+  await late.promise; await new Promise(resolve => setImmediate(resolve));
+  assert.equal(summaryReads, 0, 'a cancelled owner must not inspect or publish its obsolete result');
+  assert.equal(f.current().reviewSummary, undefined); assert.equal(f.current().reviewStatus, 'UNVERIFIED');
 });
 
 test('a version change during provider work retains the wakeup and requires a fresh proposal before promotion', async t => {
