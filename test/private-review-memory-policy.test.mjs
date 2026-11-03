@@ -31,6 +31,8 @@ test('private baseline policy isolates old-capability context before pooling and
     assert.deepEqual(params.config.agents.defaults, { ...before.agents.defaults,
       models: { 'fixture/model': { params: { maxTokens: 32768 } } } });
     assert.deepEqual(params.config.agents.list[1], before.agents.list[1]);
+    await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', id: params.sessionId, cwd: params.cwd }) + '\n'));
+    await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [] } }) + '\n');
     return { payloads: [], meta: {} };
   };
   const input = { projectRoot: root, taskId: 'private-memory-policy', role: 'ground-truth-extractor',

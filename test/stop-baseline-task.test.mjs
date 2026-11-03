@@ -485,9 +485,10 @@ test('split sources capture exact original lines and retain the full-text fallba
 });
 
 test('UTF-8 split-line selections require every genuine part receipt and retain source authority', async t => {
-  const selected = '条件：不得改写源文，例外须保留。'.repeat(8) + '\r';
+  const selected = '条件：不得改写源文，例外须保留。'.repeat(400) + '\r';
   const materialText = '# Context\r\n' + 'x'.repeat(16280) + '\r\n' + selected + '\n尾行';
   const f = await fixture(t, { materialText });
+  f.input.reviewer.formatRepairAttempts = 5;
   const handle = await f.run(async ({ call, readAll, finish, params }) => {
     const prompt = JSON.parse(params.prompt);
     assert(prompt.selectableSourceIndices.includes(1));
@@ -496,12 +497,13 @@ test('UTF-8 split-line selections require every genuine part receipt and retain 
     const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'MATERIAL_DERIVED', severity: 'HARD', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
       operations: [{ outcome: '保留条件与例外', textFrom: { sourceIndex: 1, start: 3, end: 3 } }] };
     const files = prompt.requiredFiles.filter(file => file.startsWith('source-0001'));
-    assert.equal(files.length, 2);
+    assert.equal(files.length, 3);
     await call('source_read', { path: files[0] });
     await assert.rejects(call('save_baseline_batch', value), /not fully disclosed/);
     await call('source_read', { path: files[1] }, { persist: false });
     await assert.rejects(call('save_baseline_batch', value), /not fully disclosed/);
     await readAll();
+    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '不完整原始行', textFrom: { file: files[1], start: 1, end: 1 } }] }), /partial original line/u);
     await assert.rejects(call('save_baseline_batch', { ...value, defaults: { ...value.defaults, authority: 'USER_EXPLICIT' } }), /SOURCE_BINDING_INVALID|NON_USER_AUTHORITY/);
     await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ ...value.operations[0], text: '替换原文' }] }), /captured original/);
     await call('save_baseline_batch', value); await finish([1]);
@@ -510,7 +512,7 @@ test('UTF-8 split-line selections require every genuine part receipt and retain 
   const request = await readJson(path.join(handle.requestDirectory, 'request.json'));
   const source = request.identity.sources.find(item => item.kind === 'MATERIAL');
   assert.equal(source.lineCount, 4);
-  assert.deepEqual(source.parts.map(({ startLine, endLine }) => [startLine, endLine]), [[1, 3], [3, 4]]);
+  assert.deepEqual(source.parts.map(({ startLine, endLine }) => [startLine, endLine]), [[1, 2], [3, 2], [3, 4]]);
   await handle.close();
 });
 
@@ -529,7 +531,8 @@ test('frozen part-local selectors capture canonical originals without rereads or
     await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '混合坐标', textFrom: { ...value.operations[0].textFrom, sourceIndex: 1 } }] }), /exactly one/);
     await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '未知来源', textFrom: { file: '../foreign.txt', start: 1, end: 1 } }] }), /current frozen original source/);
     await assert.rejects(call('save_baseline_batch', { ...value, defaults: { ...value.defaults, authority: 'USER_EXPLICIT' } }), /SOURCE_BINDING_INVALID|NON_USER_AUTHORITY/);
-    await assert.rejects(call('save_baseline_batch', { ...value, operations: [{ outcome: '边界须用原始坐标', textFrom: { file: part.file, start: 1, end: 1 } }] }), /partial original line/);
+    assert.equal(part.startsMidLine, false, 'ordinary chunks begin at a complete original line');
+    assert.equal(source.parts[0].endLine + 1, part.startLine);
     await call('save_baseline_batch', value); await finish([1]);
   });
   assert.equal(handle.result.operations[0].text, expected);
@@ -927,7 +930,7 @@ test('a cancelled non-cooperative extractor cannot overlap the next project refr
   const second = f.run(async ({ readAll, finish }) => { await readAll(); await finish([]); });
   await new Promise(resolve => setTimeout(resolve, 20)); assert.equal(f.captures.length, 1);
   unblock(); const handle = await second;
-  assert.equal(f.captures.length, 2); assert.equal(f.captures[0].sessionId, f.captures[1].sessionId);
+  assert.equal(f.captures.length, 2); assert.notEqual(f.captures[0].sessionId, f.captures[1].sessionId, 'a run cancelled before any assistant message retires its identity');
   await handle.close();
 });
 
@@ -1008,7 +1011,8 @@ test('missing implementation metadata gives a recoverable diagnostic without cho
       assert.equal(error.baselineValidation.reason, 'PROOF_OWNER_REQUIRED');
       assert.equal(error.baselineValidation.unitId, 'S0L1');
       assert.deepEqual(error.baselineValidation.fields, ['implementationRole']);
-      assert.match(error.message, /resubmit this unsaved batchId/);
+      assert.match(error.message, /plain unsaved batchId only when no owned proposal exists/u);
+      assert.match(error.message, /correct_and_submit/u);
       return true;
     });
     assert.equal(value.defaults.implementationRole, undefined, 'no role is assigned by the tool');
@@ -1048,7 +1052,8 @@ for (const encoding of ['synthesis', 'selection', 'compact']) test(`${encoding} 
       assert.equal(error.code, 'BASELINE_SCOPE_INVALID');
       assert.equal(error.baselineValidation.reason, 'PROOF_OWNER_REQUIRED');
       assert.deepEqual(error.baselineValidation.fields, ['implementationRole']);
-      assert.match(error.message, /resubmit this unsaved batchId/);
+      assert.match(error.message, /plain unsaved batchId only when no owned proposal exists/u);
+      assert.match(error.message, /correct_and_submit/u);
       rejected = true; return true;
     });
     const after = JSON.parse(toolText(await call('review_history', { mode: 'state' }))).taskState;
@@ -1150,11 +1155,15 @@ test('repair exhaustion preserves the last validation cause through the native b
   assert.equal(checkpoint.taskState.lastValidationError.reason, 'PROOF_OWNER_REQUIRED');
 });
 
-test('baseline native transport still redacts unrelated host failures', async t => {
+test('baseline native transport preserves sanitized host failure cause and identity', async t => {
   const f = await fixture(t, { wireMode: 'draft' });
-  await assert.rejects(f.run(async () => { throw Object.assign(new Error('private-host-error-detail'), { code: 'HOST_FIXTURE_FAILURE' }); }), error => {
+  await assert.rejects(f.run(async () => { throw Object.assign(new Error('api_key=private-host-error-detail; upstream failed'), { code: 'HOST_FIXTURE_FAILURE' }); }), error => {
     assert.equal(error.code, 'HOST_FIXTURE_FAILURE');
-    assert.equal(error.message, 'Native task execution failed');
+    assert.match(error.message, /upstream failed/u);
+    assert.doesNotMatch(error.message, /private-host-error-detail/u);
+    assert.equal(error.nativeFailure.stage, 'NATIVE_EXECUTION');
+    assert.equal(error.nativeFailure.taskId, f.task.taskId);
+    assert.equal(error.nativeFailure.runId, f.captures[0].runId);
     assert.equal(error.baselineValidation, undefined);
     return true;
   });
@@ -1223,7 +1232,7 @@ test('mixed-source authority feedback names actual inherited defaults and preser
       assert.deepEqual(error.sourceBindingIssues.map(issue => issue.index), [1]);
       const facts = JSON.parse(error.message.split('\nSource authority navigation: ')[1]);
       assert.equal(facts.saved, false); assert.equal(facts.nextBatchId, 1); assert.equal(facts.generation, 0);
-      assert.deepEqual(facts.issues, [{ operationIndex: 1, reason: 'NON_USER_AUTHORITY', ref: `${f.material}#L1-L1`,
+      assert.deepEqual(facts.issues, [{ operationIndex: 1, reason: 'NON_USER_AUTHORITY', ref: `${f.material.replaceAll('\\', '/')}#L1-L1`,
         sourceKind: 'MATERIAL', authority: 'USER_EXPLICIT', authorityOrigin: 'defaults', defaultAuthority: 'USER_EXPLICIT' }]);
       return true;
     });
