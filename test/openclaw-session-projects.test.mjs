@@ -19,7 +19,13 @@ after(() => fs.rm(build, { recursive: true, force: true }));
 const config = "version: 2\nartifacts:\n  - name: draft\n    stage: drafting\n    patterns: [draft.md]\n    rules:\n      enabled: false\n    review:\n      enabled: false\ndynamicGroundTruth:\n  enabled: true\n  materialRoots: []\n  panel:\n    size: 0\nstopCorrection:\n  enabled: false\n";
 async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-session-projects-")));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const ownedRuntimes = new Set(), gatewayStops = new Set();
+  t.after(async () => {
+    await Promise.all([...gatewayStops].map(stop => stop()));
+    await Promise.all([...ownedRuntimes].map(runtime => runtime.dispose()));
+    await Promise.all([...ownedRuntimes].map(runtime => runtime.waitForBackgroundReviews()));
+    await fs.rm(root, { recursive: true, force: true });
+  });
   const a = path.join(root, "a"), b = path.join(root, "b"), off = path.join(root, "off"), stateDir = path.join(root, "host-state");
   for (const dir of [a, b, off]) await fs.mkdir(dir);
   for (const dir of [a, b]) { await fs.mkdir(path.join(dir, ".runtime-corrector")); await fs.writeFile(path.join(dir, ".runtime-corrector/config.yaml"), config); }
@@ -29,7 +35,8 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
       resolveAgentWorkspaceDir: () => off, runEmbeddedAgent: async () => { calls.push(1); throw new Error("unexpected model"); },
       session: { getSessionEntry: ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(stateDir, "sessions.json"),
         resolveSessionFilePath: (_id, record) => record.sessionFile, runWithWorkAdmission: async (params, callback) => callback(params.signal) },
-    } }, registerCommand(command) { this.projectCommand = command; }, registerTool() {}, on() {}, registerAgentToolResultMiddleware() {} };
+    } }, registerCommand(command) { this.projectCommand = command; }, registerTool() {},
+    on(name, handler) { if (name === "gateway_stop") gatewayStops.add(handler); }, registerAgentToolResultMiddleware() {} };
   async function session(id, cwd = off) {
     const ctx = { agentId: "main", sessionId: id, sessionKey: `agent:main:${id}`, workspaceDir: cwd, runId: `${id}-run` };
     const file = path.join(root, `${id}.jsonl`);
@@ -41,7 +48,11 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
   }
   const compatibility = async () => ({ loadTranscriptEvents: ({ sessionKey }) => transcripts.get(sessionKey) });
   const projects = createProjects(api, { pluginRoot, compatibility });
-  const runtime = createRuntime(api, { pluginRoot, sharedState, nativeHooks: true, projectScopes: projects, compatibility, reviewerFactory });
+  const ownRuntime = options => {
+    const runtime = createRuntime(api, { pluginRoot, nativeHooks: true, ...options });
+    ownedRuntimes.add(runtime); return runtime;
+  };
+  const runtime = ownRuntime({ sharedState, projectScopes: projects, compatibility, reviewerFactory });
   async function command(ctx, args, scopes = ["operator.admin"]) { return projects.command({ ...ctx, args, isAuthorizedSender: true, gatewayClientScopes: scopes }); }
   async function user(ctx, text) {
     const records = transcripts.get(ctx.sessionKey), id = `${ctx.sessionId}-u${records.length}`;
@@ -49,7 +60,7 @@ async function fixture(t, version = "2026.7.1-2", reviewerFactory) {
     await fs.writeFile(entries.get(ctx.sessionKey).sessionFile, records.map(JSON.stringify).join("\n"));
     await runtime.prompt({ prompt: text }, ctx);
   }
-  return { root, a, b, off, stateDir, api, entries, transcripts, warnings, infos, sharedState, calls, projects, runtime, command, user, session };
+  return { root, a, b, off, stateDir, api, entries, transcripts, warnings, infos, sharedState, calls, projects, runtime, command, user, session, ownRuntime };
 }
 
 test("verified versions detect the backported directory without changing other host capabilities", () => {
@@ -104,7 +115,7 @@ test("same-project sessions have distinct task budgets and requirement state; re
   await f.user(a, "A requirement"); await f.user(b, "B requirement");
   const sa = f.sharedState.states.get("main:A"), sb = f.sharedState.states.get("main:B");
   assert.notEqual(sa.scopeTaskId, sb.scopeTaskId);
-  const reopened = createRuntime(f.api, { pluginRoot, nativeHooks: true });
+  const reopened = f.ownRuntime();
   await reopened.prompt({ prompt: "A requirement" }, a);
   assert.equal((await reopened.projects.activate(await reopened.projects.resolve({}, a))).taskId, sa.scopeTaskId);
 });

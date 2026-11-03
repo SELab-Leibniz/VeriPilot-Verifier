@@ -112,7 +112,7 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText } = {}) {
+async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write" } = {}) {
   const params = await basic(t), root = params.projectRoot;
   const materialFile = materialText === undefined ? null : path.join(root, "requirements.md");
   if (materialFile) await fs.writeFile(materialFile, materialText);
@@ -209,8 +209,9 @@ reviewers:
   const ctx = { agentId: "main", sessionId: "host", sessionKey: params.sessionKey, runId: params.runId, workspaceDir: root, trigger: "user", abortSignal: hostAbort.signal };
   params.cleanup.dispose = () => runtime.dispose();
   await runtime.sessionStart({ sessionId: "host" }, ctx);
-  await runtime.prompt({ prompt: "Write a draft." }, ctx);
-  await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
+  if (initialPrompt) await runtime.prompt({ prompt: "Write a draft." }, ctx);
+  else assert.equal(await findTask({ projectRoot: root, sessionId: "host" }), null, "the first tool must establish its own task before material capture");
+  await runtime.beforeTool({ toolName: initialToolName, toolCallId: "w", params: { path: "draft.md" } }, ctx);
   if (awaitInitialReview) await state.states.get("main:host")?.hotReviewWork?.promise;
   assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
   calls = 0; fail = failures;
@@ -440,6 +441,21 @@ test("reset cancels background extraction before it can publish to the old task"
   assert.equal(f.state.reviewController.signal.aborted, true);
 });
 
+test("dispose cancels without waiting for an uncooperative background reviewer and explicit drain settles its metadata", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "uncooperative background reviewer");
+  await within(f.runtime.dispose(), "bounded runtime disposal", 1000);
+  let drained = false;
+  const draining = f.runtime.waitForBackgroundReviews().then(() => { drained = true; });
+  await pause(20); assert.equal(drained, false);
+  finish.resolve(); await within(draining, "cancelled background metadata drain");
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0); assert.equal(f.state.reviewController.signal.aborted, true);
+  assert.equal(f.sharedState.hotReviewTasks.size, 0);
+});
+
 test("a waiting old tool result cannot enter a replacement run after background extraction settles", async t => {
   const started = deferred(t), finish = deferred(t);
   const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
@@ -480,6 +496,36 @@ test("first business overwrite cannot replace the original MATERIAL basis during
   task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(task.groundTruth.version, 0); assert.equal(task.verification.status, "UNVERIFIED");
   assert.match(task.materialBasis.reason, /^MATERIAL_BASIS_/u);
+});
+
+test("first mutation aliases establish original MATERIAL before execution without a preceding prompt or task", async t => {
+  for (const initialToolName of ["PowerShell", "functions.powershell", "write_file", "functions.write_file", "exec_command",
+    "functions.exec_command", "edit_file", "functions.notebook_edit", "Skill", "process"]) await t.test(initialToolName, async t => {
+    const started = deferred(t), finish = deferred(t), original = "Preserve the original first-tool acceptance gate.\r\n";
+    const f = await lifecycle(t, { initialPrompt: false, initialToolName, awaitInitialReview: false,
+      panelSize: 1, materialText: original, baselineReview: async () => { started.resolve(); await finish.promise; } });
+    const before = await findTask({ projectRoot: f.root, sessionId: "host" });
+    assert.equal((await readMaterialBasis(f.root, before.taskId)).status, "CAPTURED", JSON.stringify(f.warnings));
+    assert.equal(f.state.nativeNeedsStop, true, "all correction entry tools must arm Stop");
+    await within(started.promise, "first-tool detached extraction");
+    await fs.writeFile(f.materialFile, "The first mutation replaced the original gate.\n");
+    const pending = f.state.hotReviewWork.promise; finish.resolve(); await within(pending, "first-tool freshness failure");
+    await f.runtime.toolResult({ toolName: initialToolName, toolCallId: "w", args: { path: "draft.md" },
+      result: { content: [{ type: "text", text: "mutation completed" }] } }, f.ctx);
+    const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+    assert.equal(task.groundTruth.version, 0); assert.equal(task.verification.status, "UNVERIFIED");
+    assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "UNVERIFIED");
+  });
+});
+
+test("an unchanged first qualified PowerShell tool establishes and publishes the original MATERIAL normally", async t => {
+  const original = "Preserve the original qualified command requirement.\r\n";
+  const f = await lifecycle(t, { initialPrompt: false, initialToolName: "functions.PowerShell", panelSize: 1, materialText: original });
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 1, JSON.stringify(f.warnings));
+  assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "CAPTURED");
+  const truth = JSON.parse(await fs.readFile(path.join(f.root, ".runtime-correction/tasks", task.taskId, "ground-truth/current.json"), "utf8"));
+  assert(truth.claims.some(claim => claim.text === original.trim() && claim.authority === "MATERIAL_DERIVED"));
 });
 
 test("unchanged materials initialize normally and temporary replacement cannot enter inline source authority", async t => {
