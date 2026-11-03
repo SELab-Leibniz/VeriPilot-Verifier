@@ -68,6 +68,8 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
   };
   const warnings = [];
   const starts = new Set(), dispatches = [], aborts = [];
+  let observeDispatch;
+  const dispatched = new Promise(resolve => { observeDispatch = resolve; });
   const sharedState = {};
   const api = { id: "runtime-corrector", config: {}, pluginConfig: { finalizeReviewWaitMs }, logger: { warn: text => warnings.push(text) }, runtime: {
     state: { resolveStateDir: () => path.join(root, "host-state") },
@@ -77,7 +79,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     ...(startProtocol || gatewayRequest ? { gateway: { request: gatewayRequest ?? (async (method, params) => { aborts.push({ method, params }); return { aborted: true }; }) } } : {}),
     subagent: { run: async request => {
       assert(startProtocol, "No old-protocol business continuation is allowed");
-      dispatches.push(request); return { runId: request.idempotencyKey, status: "accepted" };
+      dispatches.push(request); observeDispatch(request); return { runId: request.idempotencyKey, status: "accepted" };
     } },
   } };
   const projectScopes = admittedProjectScopes(api);
@@ -95,7 +97,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
   };
   const store = createStopCorrectionStore({ directory: path.join(root, "host-state/runtime-corrector-stop-sessions") });
   return { root, ctx, task, start, stop, calls, warnings, store, sharedState, runtime, transcript, dispatches, aborts, api, projectScopes,
-    setVerdict: value => { currentVerdict = value; }, emitStart: (event, metadata = { trusted: true }) => {
+    dispatched, setVerdict: value => { currentVerdict = value; }, emitStart: (event, metadata = { trusted: true }) => {
       for (const callback of starts) callback({ type: "model.call.started", sessionId: "session", sessionKey: ctx.sessionKey, agentId: "main", seq: 1, ...event }, metadata);
     } };
 }
@@ -240,7 +242,10 @@ test("assessment waits for checked feedback delivery rather than API queue accep
   await f.start();
   let settled = false;
   const stopping = f.stop().then(record => { settled = true; return record; });
-  for (let tries = 0; !f.dispatches.length && tries < 100; tries++) await pause(20);
+  let timer;
+  try { await Promise.race([f.dispatched, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Assessment did not dispatch within its review budget.")), 10000);
+  })]); } finally { clearTimeout(timer); }
   assert.equal(f.dispatches.length, 1);
   await pause(50);
   assert.equal(settled, false);
