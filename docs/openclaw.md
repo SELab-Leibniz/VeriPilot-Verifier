@@ -72,7 +72,9 @@ reviewers:
     timeoutMs: 5400000 # 终审角色 90 分钟
 ```
 
-优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。未配置基线专用预算时，基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口、宿主取消及较短的 Hook 预算仍然生效。普通 `hookTimeoutMs` 默认 20 分钟、最大 24 小时；它与单个 reviewer 及多阶段总预算分别配置。
+优先级：角色配置 > reviewers.defaults > limits.semanticReviewTimeoutMs > 20 分钟。未配置基线专用预算时，基线抽取和裁决同样遵守配置。格式修复与续问共用同一个角色截止时间；总评审窗口和宿主取消继续生效。`hookTimeoutMs` 保留为独立审查及外层回复等待预算，默认 20 分钟、普通上限 24 小时；它与单个 reviewer 及多阶段总预算分别配置。`before_tool_call`、`before_prompt_build`、`reply_payload_sending` 和 `agent_end` 的实际超时最多 10 秒。提示与工具进入时的模型审查在后台按序运行，在工具结果或独立 Stop 审查前核对完成；重置和作用域替换会取消旧任务。工具进入钩子优先级为 5，在 MA 策略插件之后、RTK 命令改写之前记录原始调用。
+
+原生模式在提示或工具进入钩子返回前，对已声明的 MATERIAL 范围保存最初原文字节与哈希；模型等待仍在后台。捕获上限为 16 个根、100 个文本文件、1,000 个目录项、合计 4 MiB 和 2 秒，并受当前钩子的剩余时间与取消约束。超限、缺失、中断或后续材料/范围变化会持久保留 `UNVERIFIED`；工具结果、Stop 和重启不能把替换后的材料重新认作初始依据。内联材料、确定性解析、来源引文和原生冻结副本均复用捕获的原文，发布前再次核对新鲜度；控制页显示对应诊断。需要重新界定原始材料时，应检查材料后显式开启新任务。
 
 大型基线可在插件 `config.baselineLimits` 中单独配置 `timeoutMs`、`maxSteps`、`maxRepairs`、`maxAuditCalls`、`maxExternalRepairs`。例如设置 `timeoutMs: 86400000`、`maxSteps: 2000`，并把三项修复/审查额度设为 `2000`；它覆盖基线角色的普通时限和共享步数，修复与独立审查不重置预算。相应把 `hookTimeoutMs` 设为 `86460000`，Stop 的 `assessmentTimeoutMs` 至少留出完整基线窗口及返回时间；宿主任务和模型网络时限也需足够大。显式设置的更短 `reviewerTimeoutMs`、父级截止和取消继续有效。普通角色默认不变，组件流程见 [Stop 基线任务](stop-baseline-task.md)。
 
@@ -97,6 +99,12 @@ OpenClaw 产物的运行环境要求与安装后的配置方式如下。
 ```
 
 命令启用 RC 及 `allowConversationAccess`、`allowPromptInjection` 两个 Hook 权限；缺少 `reviewerModel` 时读取 OpenClaw 全局默认模型（兼容字符串、`primary` 和已配置的模型别名），缺少 `hookTimeoutMs` 时设置为 `3600000`。已有明确的 RC 模型、超时及其他参数保留。主 Agent 优先选择 `agents.list` 中第一个默认 Agent，否则第一个 Agent；没有列表时使用宿主隐式 `main`。只给该 Agent 追加业务工具 `runtime_corrector`，保留其工具范围和 deny；全局工具配置、其他 Agent 和私有评审工具授权不变。已有非空插件白名单会补入 RC，空或缺省白名单仍保持不限制插件的语义。
+
+显式执行 `/rc-setup` 时，如果已配置 `matrix-context-controller`，默认向其 `bypassSessionPatterns` 追加 `agent:*:runtime-corrector:**`，避免内部审查会话进入业务记忆。使用该插件的冒号分段匹配语法；保留已有规则，重复执行不重复追加。写入前在配置文件旁保存独占创建的 `.rc-setup-*.bak` 原文备份；备份失败不写配置。返回结果包含 `changed`、`changedPaths` 和 `warnings`，未配置该插件时明确提示。
+
+检测到同一会话的 autopilot 正在运行时，RC Stop 等待其停止自动续作后继续，等待期间不消耗本次审查窗口。已确认终态的旧候选可由宿主准入的新轮次替换，始终重新核对新轮次的终态。未知宿主终态或纠偏预留不能被覆盖。autopilot 的状态读取使用公开的 `autopilot.status` 和确切会话标识；不可用或返回无法核实的状态时，只在控制页提示可能互斥，保留原有 RC 行为，不推断 autopilot 已结束。RC 自己的续修仍须通过原有启动准入。
+
+如果新轮次已完成而旧运行尚未进入可安全交接的状态，RC 保存最新候选身份、文本和预算并标为 `UNVERIFIED`，不声称已经登记，也不覆盖旧宿主终态。候选文本最多保存 200,000 字符，截断会明确标记；控制页提示需要重新发起验收。
 
 命令不接受路径或模型参数，使用宿主 `runtime.config.mutateConfigFile` 的新鲜源配置和 `afterWrite: auto` 写入；宿主负责配置校验、并发保护、备份和重载。重复执行且配置无变化时不再写入。若宿主没有此接口，命令报错，不另行猜测配置文件路径或绕过宿主写文件。
 

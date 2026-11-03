@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { resolveHookTimeoutMs, hookReviewBudgetMs } from "../lib/openclaw/hook-timeout.mjs";
+import { resolveHookTimeoutMs, hookReviewBudgetMs, hotHookTimeoutMs, isHotHook } from "../lib/openclaw/hook-timeout.mjs";
 
 test("ordinary Hook timeout defaults to twenty minutes and is capped at twenty-four hours; manifest also permits explicit baseline windows", async () => {
   const manifest = JSON.parse(await readFile(new URL("../packaging/hosts/openclaw/openclaw.plugin.json", import.meta.url)));
@@ -24,4 +24,14 @@ test("Hook review retains the cleanup margin and honors a shorter host policy", 
   assert.equal(hookReviewBudgetMs(1800000, 3600000), 1799000);
   assert.equal(hookReviewBudgetMs(7200000, 7200000), 7199000);
   assert.equal(hookReviewBudgetMs(2000, 500), 1);
+});
+
+test("hot hooks stay in seconds while independent review budgets retain explicit long windows", () => {
+  for (const configured of [undefined, 600000, 86400000, 86460000])
+    assert.equal(hotHookTimeoutMs(configured), 10000);
+  assert.equal(hotHookTimeoutMs(2000), 2000);
+  assert.equal(hookReviewBudgetMs(86400000), 86399000);
+  for (const name of ["before_tool_call", "before_prompt_build", "reply_payload_sending", "agent_end"])
+    assert.equal(isHotHook(name), true);
+  assert.equal(isHotHook("reply_dispatch"), false);
 });

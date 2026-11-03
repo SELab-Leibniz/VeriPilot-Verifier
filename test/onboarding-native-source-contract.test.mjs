@@ -88,16 +88,17 @@ test('fresh onboarding delivers a readable frozen empty ledger without a nonexis
   }
 });
 
-test('native merge with one bad authoritative binding does not apply or freeze a shortened ledger',async t=>{
+test('native merge isolates a bad authoritative binding without freezing away its original obligation',async t=>{
   const f=await fixture(t),factory=factoryFor(f,{sourceChecking:true,adjudicate:request=>[
     ...request.majorityOperations,operation('Tail requirement with wrong identity.','transcript:unknown')
   ]});
   const outcome=await runTaskOnboarding({input:f.input,projectRoot:f.root,task:f.task,runtimeV2:f.runtimeV2,snapshot:f.snapshot,reviewerFactory:factory});
-  assert.equal(outcome.status,'DEGRADED');assert.equal(outcome.reason,'APPLY_FAILED');
-  assert.match(outcome.error,/SOURCE_BINDING_INVALID/);
+  assert.equal(outcome.status,'UNVERIFIED');assert.equal(outcome.reason,'OPERATIONS_PENDING');
+  assert.match(outcome.pendingOperations[0].reason,/SOURCE_BINDING_INVALID/);
   const current=await loadCurrentGroundTruth(f.root,f.task.taskId);
-  assert.equal(current.version,0);assert.equal(current.frozenAtVersion,null);assert.deepEqual(current.claims,[]);
-  assert.equal(factory.validations.length,1);
+  assert.equal(current.version,1);assert.equal(current.frozenAtVersion,null);assert.equal(current.claims.length,1);
+  assert.equal(outcome.pendingOperations[0].operation.text,'Tail requirement with wrong identity.');
+  assert.equal(factory.validations.length,4);
 });
 
 test('legacy reviewers without the native source capability keep their original deterministic fallback',async t=>{
@@ -147,12 +148,13 @@ test('incremental refresh retains the later full user supplement beyond the lega
 });
 
 
-test('a legacy validation marker without nativeSourceDelivery does not change fail-soft source filtering',async t=>{
+test('a legacy marker cannot grant native authority and rejected operations remain explicitly pending',async t=>{
   const f=await fixture(t),factory=factoryFor(f,{sourceChecking:true,adjudicate:request=>[
     ...request.majorityOperations,operation('Legacy unknown-source noise.','transcript:unknown')
   ]});
   delete factory.nativeSourceDelivery;
   const outcome=await runTaskOnboarding({input:f.input,projectRoot:f.root,task:f.task,runtimeV2:f.runtimeV2,snapshot:f.snapshot,reviewerFactory:factory});
-  assert.equal(outcome.status,'COMPLETED');assert.equal(factory.validations.length,0);
+  assert.equal(outcome.status,'UNVERIFIED');assert.equal(factory.validations.length,0);
+  assert.equal(outcome.pendingOperations[0].operation.text,'Legacy unknown-source noise.');
   const current=await loadCurrentGroundTruth(f.root,f.task.taskId);assert.equal(current.claims.length,1);
 });

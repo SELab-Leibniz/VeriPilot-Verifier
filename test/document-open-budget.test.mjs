@@ -49,7 +49,7 @@ for (const [name, original] of [
   assert(page.lines?.length > 0, 'normal lines must not cause the complete first page to be dropped');
   assert(Buffer.byteLength(JSON.stringify(opened)) <= 8192);
   const restored = page.lines.map(line => line.replace(/^\d+: /u, ''));
-  assert.deepEqual(restored, original.split('\n').slice(0, restored.length));
+  assert.deepEqual(restored, original.split(/\r?\n/u).slice(0, restored.length));
   assert.equal(page.nextLine, restored.length + 1);
   let next = page.nextLine;
   while (next !== null) {
@@ -57,7 +57,7 @@ for (const [name, original] of [
     restored.push(...rest.lines.map(line => line.replace(/^\d+: /u, '')));
     next = rest.nextLine;
   }
-  assert.equal(restored.join('\n'), original);
+  assert.equal(restored.join('\n'), original.replaceAll('\r\n', '\n'));
 });
 
 test('open preserves earlier explicit read qualification without qualifying omitted or verify-only sources', async t => {

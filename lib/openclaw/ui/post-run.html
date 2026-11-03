@@ -8,6 +8,8 @@
 <div class="layout"><aside><label>查找会话<input id="search" type="search" placeholder="会话或项目"></label><label>状态<select id="filter"><option value="all">全部会话</option><option value="active">执行或审查中</option><option value="pending">有待执行任务</option></select></label><div id="sessions" aria-label="会话列表"></div><div class="pagination"><button id="previous">上一页</button><span id="page"></span><button id="next">下一页</button></div></aside>
 <section id="detail" aria-label="选中会话"><p id="empty">连接后选择一个会话。切换 MA 会话时，请在这里选择对应会话。</p><div id="selected" hidden><h2 id="name"></h2><p id="project"></p><p id="identity" class="muted"></p>
 <div class="phase-line"><strong id="phase"></strong><p id="reason" class="muted"></p></div>
+<p id="coexistence" class="muted" role="status" hidden></p>
+<section id="recovery" hidden><h3>运行状态核对</h3><p id="recovery-status" role="status"></p><div class="actions"><button id="recheck" class="secondary">重新核对</button><button id="cancel-run" class="secondary">确认取消</button><button id="release-run" class="secondary">安全解除</button></div><p class="muted">安全解除需再次确认，只解除 RC 的调度占用，不表示宿主已结束或已取消；不会重发未确认的任务和待办。</p><ol id="recovery-audit"></ol></section>
 <section id="observability" aria-label="纠偏运行记录">
 <div class="section-heading"><h3>纠偏运行概览</h3><button id="obs-refresh" class="secondary">刷新记录</button></div>
 <p id="obs-status" class="muted" role="status">正在读取运行证据…</p><p id="obs-error" role="alert" hidden></p><div id="obs-overview" class="overview"></div>

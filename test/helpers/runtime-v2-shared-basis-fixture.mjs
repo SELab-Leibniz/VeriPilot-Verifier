@@ -89,7 +89,7 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
     stopCorrection: { enabled: true, fileQualityReviewEnabled: false },
     reviewers: { defaults: { model: 'fixture/model', timeoutMs: 20000 } },
   }, { policyRoot: path.join(root, '.runtime-corrector') }) };
-  let registry, careRegistry, request, toolCall = 0, event = 0; const hooks = new Map(), calls = [];
+  let registry, careRegistry, request, toolCall = 0, event = 0; const hooks = new Map(), calls = [], baselineRequests = new Map();
   const state = { beforeGraph: null, afterBaseline: null, graphError: null, classification: null, forceOperations: false,
     deltaOperation: null, useNativeGraph: false, graphInputs: [], nativeInput: null, interpret: null, semanticDisposition: 'CONFIRMED',
     sourceFrom: false, baselinePrompts: [], draftActual: false, skipCurrentUserRead: false, replayBaseline: null, overrideBaseline: null,
@@ -144,7 +144,8 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
       }
       await fs.access(params.sessionFile).catch(() => fs.writeFile(params.sessionFile, JSON.stringify({ type: 'session', version: 3, id: params.sessionId, cwd: root }) + '\n'));
       const ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey }, tools = registry(ctx), seen = new Map();
-      state.baselinePrompts.push(JSON.parse(params.prompt));
+      const baselinePrompt = JSON.parse(params.prompt);
+      state.baselinePrompts.push(baselinePrompt);
       (state.baselineTimeouts ??= []).push(params.runTimeoutOverrideMs);
       async function call(name, args) {
         const id = `actual-call-${++toolCall}`; params.onAssistantMessageStart();
@@ -164,7 +165,11 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
         do { const result = await call('source_read', { path: file, offset }); offset = result.details.page.nextOffset; } while (offset);
       } };
       if (state.replayBaseline) {
-        try { await state.replayBaseline({ call, readAll, request, params }); }
+        const prepared = baselineRequests.get(baselinePrompt.identity.requestId);
+        assert(prepared, 'Native baseline replay requires its current prepared request identity');
+        const sourceRoot = path.join(path.dirname(prepared.requestDirectory), 'frozen-source');
+        try { await state.replayBaseline({ call, readAll, request, params, sourceRoot,
+          requestDirectory: prepared.requestDirectory, requestIdentity: prepared.identity }); }
         catch (error) { t.diagnostic(`${error.code}: ${error.message}`); throw error; }
         return { payloads: [], meta: {} };
       }
@@ -248,7 +253,11 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
         operations: req.currentGroundTruth.version === 0 ? [operation()] : [], ...(req.skill ? { skillGroundTruth: graph() } : {}) },
         requestDirectory, async close() {} };
       request = req;
-      const handle = await native({ ...options, abortSignal: factory.reviewAbortSignal });
+      const handle = await native({ ...options, abortSignal: factory.reviewAbortSignal, onPrepared: async prepared => {
+        baselineRequests.set(prepared.request.identity.requestId,
+          { requestDirectory: prepared.requestDirectory, identity: prepared.request.identity });
+        await options.onPrepared?.(prepared);
+      } });
       try { await state.afterBaseline?.(handle); return handle; }
       catch (error) { await handle.close(); throw error; }
     }

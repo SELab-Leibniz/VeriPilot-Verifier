@@ -1,46 +1,14 @@
-import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
-import test, { before, after } from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
+import { readMaterialBasis } from "../lib/openclaw/material-basis.mjs";
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
-import { buildPlugin } from "../lib/plugin-builder.mjs";
-import { withTestReviewProof } from "./helpers/review-proof.mjs";
 import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
-let output, pluginRoot, createRuntime, findTask, withTaskState, readReport;
-before(async () => {
-  output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
-  pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
-  ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
-  createRuntime = correctionFixtureRuntime(createRuntime);
-  ({ findTask, withTaskState } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
-  ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
-});
-after(() => fs.rm(output, { recursive: true, force: true }));
-const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function within(promise, description, timeoutMs = 10000) {
-  let timer;
-  try { return await Promise.race([promise, new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}`)), timeoutMs);
-  })]); } finally { clearTimeout(timer); }
-}
-async function until(predicate, description) {
-  const deadlineAt = Date.now() + 5000;
-  while (!predicate()) {
-    assert(Date.now() < deadlineAt, `Timed out waiting for ${description}`);
-    await pause(2);
-  }
-}
-async function basic(t) {
-  const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-"));
-  const cleanup = {};
-  t.after(async () => { await cleanup.dispose?.(); await fs.rm(projectRoot, { recursive: true, force: true }); });
-  return { cleanup, projectRoot, sessionId: "host", sessionKey: "agent:main:budget", runId: "business-run",
-    signal: new AbortController().signal, budgetMs: 10000 };
-}
+import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
+
+const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
   const params = await basic(t), manager = createNativeStopReviews();
   let finish, started = 0, markStarted;
@@ -111,103 +79,6 @@ test("recovery retains a committed assessment without replaying uncertain contin
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
-async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal } = {}) {
-  const params = await basic(t), root = params.projectRoot;
-  await fs.mkdir(path.join(root, ".runtime-corrector"));
-  await fs.writeFile(path.join(root, ".runtime-corrector/config.yaml"), `version: 2
-artifacts:
-  - name: draft
-    stage: proposal
-    patterns: [draft.md]
-    rules:
-      enabled: false
-    review:
-      enabled: false
-dynamicGroundTruth:
-  enabled: true
-  materialRoots: []
-  panel:
-    size: 0
-stopCorrection:
-  enabled: true
-  metrics:
-${Object.entries({...Object.fromEntries(Array.from({length:16},(_,i)=>[`M${String(i+1).padStart(2,'0')}`,false])),M01:true,...metrics??{}}).map(([id,enabled])=>`    ${id}: ${enabled}`).join('\n')}
-  fileQualityReviewEnabled: ${quality !== null}
-  waitMode: ${waitMode}
-  assessmentTimeoutMs: ${waitTimeoutMs ?? (waitMode === "until_pass" ? 30000 : 11000)}
-  feedbackReserveMs: 1000
-implementationCorrection:
-  enabled: false
-reviewers:
-  defaults:
-    timeoutMs: 5000
-`);
-  await fs.writeFile(path.join(root, "draft.md"), "A delivered draft.\n");
-  const transcript = path.join(root, "native.jsonl");
-  await fs.writeFile(transcript, [{ type: "session", id: "host" }, { type: "message", id: "u", parentId: null,
-    message: { role: "user", content: "Write a draft." } }].map(JSON.stringify).join("\n"));
-  let calls = 0, fail = 0;
-  const factory = async params => {
-    const { request, schema } = params;
-    await api.runtime.agent.reviewAdmission?.();
-    calls++;
-    if (fail-- > 0) throw new Error("transient checker failure");
-    let result;
-    if (schema.properties.operations) result = { summary: "No change", taskClassification: "CONTINUATION", operations:
-      request.currentGroundTruth?.version === 0 ? [{ operation: "ADD", category: "requirements", text: "Deliver a draft with verified acceptance.",
-        verificationTarget: "ARTIFACT",
-        authority: "USER_EXPLICIT", severity: "HARD", source: { ref: request.sourceCatalog.find(s => s.kind === "USER_MESSAGE").ref,
-          subject: "MAIN_TASK", kind: "USER_MESSAGE" } }] : [] };
-    else if(request.reviewScope?.kind==='classification')result={summary:'Completion scope only',stopClassification:'TASK_COMPLETE',stage:null,findings:[],metricObjectJudgements:[]};
-    else {
-      await params.onScope?.({ stopClassification: 'TASK_COMPLETE', stage: null });
-      const verdict = await review?.();
-      await pause(50);
-      result = { summary: "Done", stopClassification: "TASK_COMPLETE", findings: [], ...(quality ? { fileAssessments: quality } : {}),
-        metricObjectJudgements: Object.values(request.population?.metrics ?? {}).flat().map(object => ({
-          objectId: object.objectId, judgement: (verdict ?? deviation) ? "DEVIATION" : "PASS", reason: "Current source", evidence: ["draft.md:1"] })) };
-    }
-    return withTestReviewProof(params, { result, sessionId: "review", close: async () => {} });
-  };
-  factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
-  const warnings = [];
-  const state = {}, hostAbort = new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs }, config: {}, logger: { warn(message) { warnings.push(message); } },
-    runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
-      resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
-      runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };
-  const listeners=new Set();let startSequence=0;
-  api.runtime.gateway={request:async()=>({id:'fixture-notice',aborted:true})};
-  const startCompatibility=async()=>({version:1,onStart:callback=>{listeners.add(callback);return()=>listeners.delete(callback);},drain:async()=>{},diagnosticsEnabled:()=>true});
-  const statusCompatibility=async()=>({emitAgentEvent(){},markDiagnosticSessionProgress(){},...(compatibility?await compatibility():{})});
-  const runtime = createRuntime(api, { pluginRoot, sharedState: state, reviewerFactory: factory, nativeHooks: true, compatibility:statusCompatibility,stopStartCompatibility:startCompatibility,
-    ...(postRunTerminal ? { postRunTerminal } : {}) });
-  const prompt=runtime.prompt.bind(runtime);
-  runtime.prompt=async(event,context)=>{
-    const result=await prompt(event,context);
-    if(String(context.runId).startsWith('rc-stop-')&&result?.prependContext){
-      const gate=await runtime.beforeAgentRun({prompt:`${result.prependContext}\n${event.prompt}`},context);
-      assert.equal(gate?.outcome,'pass',JSON.stringify({gate,warnings}));
-      const configuredTimeout = api.pluginConfig.hookTimeoutMs;
-      if (executionTimeoutMs) api.pluginConfig.hookTimeoutMs = executionTimeoutMs;
-      try {
-        for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
-          runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
-        await state.stopStartProtocol.drain();
-      } finally { api.pluginConfig.hookTimeoutMs = configuredTimeout; }
-    }
-    return result;
-  };
-  const ctx = { agentId: "main", sessionId: "host", sessionKey: params.sessionKey, runId: params.runId, workspaceDir: root, trigger: "user", abortSignal: hostAbort.signal };
-  params.cleanup.dispose = () => runtime.dispose();
-  await runtime.sessionStart({ sessionId: "host" }, ctx);
-  await runtime.prompt({ prompt: "Write a draft." }, ctx);
-  await runtime.beforeTool({ toolName: "write", toolCallId: "w", params: { path: "draft.md" } }, ctx);
-  assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
-  calls = 0; fail = failures;
-  return { api, runtime, ctx, warnings, sharedState: state, state: state.states.get("main:host"), root, hostAbort, calls: () => calls,
-    post: () => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id),
-    restart: () => createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true,stopStartCompatibility:startCompatibility }) };
-}
 test("native reply preserves payload and finishes RC terminal work in its independent window", async t => {
   const f = await lifecycle(t), payload = { text: "Delivered.", mediaUrl: "fixture://media" }, original = structuredClone(payload);
   const response = await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload }, f.ctx);
@@ -391,12 +262,190 @@ test("a continuation starting before admission returns cannot erase the committe
   assert(record.evaluationId);
 });
 
-const deferred = t => {
-  let resolve;
-  const promise = new Promise(done => { resolve = done; });
-  t?.after(() => resolve());
-  return { promise, resolve };
-};
+test("hot tool entry returns while extraction runs independently and result review waits for its guarded publication", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await within(lifecycle(t, { awaitInitialReview: false, hookTimeoutMs: 86400000, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } }), "hot tool admission");
+  await within(started.promise, "background extraction").catch(error => {
+    error.message += JSON.stringify({ warnings: f.warnings, pending: Boolean(f.state.hotReviewWork),
+      task: f.state.scopeTaskId, aborted: f.state.reviewController.signal.aborted }); throw error;
+  });
+  assert(f.state.hotReviewWork, "the pending model work remains outside the completed hot hook");
+  let completed = false;
+  const result = f.runtime.toolResult({ toolName: "write", toolCallId: "w", args: { path: "draft.md" },
+    result: { content: [{ type: "text", text: "written" }] } }, f.ctx).then(value => { completed = true; return value; });
+  await pause(25); assert.equal(completed, false);
+  finish.resolve(); await within(result, "ordered result review");
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 1, JSON.stringify(f.warnings));
+  assert.equal(f.warnings.some(message => /DECISION_ATTEMPT_CLOSED/u.test(message)), false);
+});
+
+test("reset cancels background extraction before it can publish to the old task", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "background extraction");
+  const pending = f.state.hotReviewWork.promise;
+  await f.runtime.reset({ sessionId: "host" }, f.ctx);
+  finish.resolve(); await within(pending, "cancelled background cleanup");
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0);
+  assert.equal(f.state.reviewController.signal.aborted, true);
+});
+
+test("dispose cancels without waiting for an uncooperative background reviewer and explicit drain settles its metadata", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "uncooperative background reviewer");
+  await within(f.runtime.dispose(), "bounded runtime disposal", 1000);
+  let drained = false;
+  const draining = f.runtime.waitForBackgroundReviews().then(() => { drained = true; });
+  await pause(20); assert.equal(drained, false);
+  finish.resolve(); await within(draining, "cancelled background metadata drain");
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0); assert.equal(f.state.reviewController.signal.aborted, true);
+  assert.equal(f.sharedState.hotReviewTasks.size, 0);
+});
+
+test("a waiting old tool result cannot enter a replacement run after background extraction settles", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "old background extraction");
+  const oldController = f.state.reviewController;
+  const oldResult = f.runtime.toolResult({ toolName: "write", toolCallId: "w", args: { path: "draft.md" },
+    result: { content: [{ type: "text", text: "old result" }] } }, f.ctx);
+  await pause(25);
+  const next = { ...f.ctx, runId: "replacement-business" };
+  const nextPrompt = f.runtime.prompt({ prompt: "Continue in the new run." }, next);
+  await until(() => f.state.nativeRunId === next.runId, "replacement admission");
+  assert.notEqual(f.state.reviewController, oldController);
+  finish.resolve(); assert.equal(await within(oldResult, "stale result settlement"), undefined);
+  await within(nextPrompt, "replacement prompt"); await f.state.hotReviewWork?.promise;
+  assert.equal(f.state.seen.has("post:w"), false);
+  assert.equal(f.state.hookRunId, next.runId);
+  assert.equal(f.state.nativeNeedsStop, false);
+  assert.equal(f.state.reviewController.signal.aborted, false);
+});
+
+test("first business overwrite cannot replace the original MATERIAL basis during detached extraction or restart", async t => {
+  const started = deferred(t), finish = deferred(t), original = "Keep the original mandatory acceptance gate.\r\n";
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1, materialText: original,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "material extraction started outside the hot hook");
+  assert.equal((await readMaterialBasis(f.root, f.state.materialBasisTaskId)).status, "CAPTURED");
+  await fs.writeFile(f.materialFile, "The business exec silently removed the original gate.\n");
+  const pending = f.state.hotReviewWork.promise; finish.resolve(); await within(pending, "material freshness failure");
+  await f.runtime.toolResult({ toolName: "write", toolCallId: "w", args: { path: "draft.md" },
+    result: { content: [{ type: "text", text: "written" }] } }, f.ctx);
+  let task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0); assert.equal(task.verification.status, "UNVERIFIED");
+  assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "UNVERIFIED");
+  await fs.writeFile(f.materialFile, original);
+  const restarted = f.restart(); t.after(() => restarted.dispose());
+  await restarted.prompt({ prompt: "Continue the same task after restart." }, { ...f.ctx, runId: "after-material-restart" });
+  task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0); assert.equal(task.verification.status, "UNVERIFIED");
+  assert.match(task.materialBasis.reason, /^MATERIAL_BASIS_/u);
+});
+
+test("first mutation aliases establish original MATERIAL before execution without a preceding prompt or task", async t => {
+  for (const initialToolName of ["PowerShell", "functions.powershell", "write_file", "functions.write_file", "exec_command",
+    "functions.exec_command", "edit_file", "functions.notebook_edit", "Skill", "process"]) await t.test(initialToolName, async t => {
+    const started = deferred(t), finish = deferred(t), original = "Preserve the original first-tool acceptance gate.\r\n";
+    const f = await lifecycle(t, { initialPrompt: false, initialToolName, awaitInitialReview: false,
+      panelSize: 1, materialText: original, baselineReview: async () => { started.resolve(); await finish.promise; } });
+    const before = await findTask({ projectRoot: f.root, sessionId: "host" });
+    assert.equal((await readMaterialBasis(f.root, before.taskId)).status, "CAPTURED", JSON.stringify(f.warnings));
+    assert.equal(f.state.nativeNeedsStop, true, "all correction entry tools must arm Stop");
+    await within(started.promise, "first-tool detached extraction");
+    await fs.writeFile(f.materialFile, "The first mutation replaced the original gate.\n");
+    const pending = f.state.hotReviewWork.promise; finish.resolve(); await within(pending, "first-tool freshness failure");
+    await f.runtime.toolResult({ toolName: initialToolName, toolCallId: "w", args: { path: "draft.md" },
+      result: { content: [{ type: "text", text: "mutation completed" }] } }, f.ctx);
+    const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+    assert.equal(task.groundTruth.version, 0); assert.equal(task.verification.status, "UNVERIFIED");
+    assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "UNVERIFIED");
+  });
+});
+
+test("an unchanged first qualified PowerShell tool establishes and publishes the original MATERIAL normally", async t => {
+  const original = "Preserve the original qualified command requirement.\r\n";
+  const f = await lifecycle(t, { initialPrompt: false, initialToolName: "functions.PowerShell", panelSize: 1, materialText: original });
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 1, JSON.stringify(f.warnings));
+  assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "CAPTURED");
+  const truth = JSON.parse(await fs.readFile(path.join(f.root, ".runtime-correction/tasks", task.taskId, "ground-truth/current.json"), "utf8"));
+  assert(truth.claims.some(claim => claim.text === original.trim() && claim.authority === "MATERIAL_DERIVED"));
+});
+
+test("unchanged materials initialize normally and temporary replacement cannot enter inline source authority", async t => {
+  const original = "Keep the complete original acceptance gate.\r\n";
+  let observed = 0;
+  const f = await lifecycle(t, { panelSize: 1, materialText: original, baselineReview: async params => {
+    const entry = params.request.materials.entries[0], file = path.join(entry.root, entry.path);
+    assert.equal(entry.text, original);
+    await fs.writeFile(file, "A temporary weaker source that must never become original authority.\n");
+    assert.equal((await params.readOriginalMaterial(file)).toString("utf8"), original);
+    await fs.writeFile(file, original); observed++;
+  } });
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert(observed > 0); assert.equal(task.groundTruth.version, 1, JSON.stringify(f.warnings));
+  const truth = JSON.parse(await fs.readFile(path.join(f.root, ".runtime-correction/tasks", task.taskId, "ground-truth/current.json"), "utf8"));
+  assert(truth.claims.some(claim => claim.text === original.trim() && claim.authority === "MATERIAL_DERIVED"));
+  assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "CAPTURED");
+});
+
+test("reset fences detached material publication while keeping the captured unchanged originals", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1, materialText: "Preserve the original requirement.\n",
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "material review before cancellation"); const pending = f.state.hotReviewWork.promise;
+  await f.runtime.reset({ sessionId: "host" }, f.ctx); finish.resolve(); await within(pending, "cancelled material review");
+  const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+  assert.equal(task.groundTruth.version, 0); assert.equal((await readMaterialBasis(f.root, task.taskId)).status, "CAPTURED");
+});
+
+test("an idle dispatcher adopts the next autopilot run in both wait modes instead of silently losing its candidate", async t => {
+  for (const waitMode of ["assessment", "until_pass"]) await t.test(waitMode, async t => {
+    const f = await lifecycle(t, { waitMode, postRunTerminal: async () => ({ status: "ok" }) });
+    const identity = { agentId: f.ctx.agentId, sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey, projectRoot: f.root,
+      scopeFingerprint: f.state.projectScope.fingerprint, scopeTaskId: f.state.scopeTaskId, controlRevision: f.state.enabledRevision };
+    await f.runtime.postRuns.started(identity, f.ctx.runId); await f.runtime.postRuns.release(identity, "INITIAL_RUN_ENDED");
+    assert.equal(f.runtime.postRuns.snapshot(identity).phase, "IDLE");
+    let externalCalls = 0;
+    f.runtime.postRuns.externalStarted = async () => { externalCalls++; throw new Error("IDLE must use normal started admission"); };
+    f.api.config.plugins = { entries: { autopilot: { enabled: true } } };
+    const request = f.api.runtime.gateway.request;
+    f.api.runtime.gateway.request = (method, ...args) => method === "autopilot.status" ? { projection: { status: "running" } } : request(method, ...args);
+    const next = { ...f.ctx, runId: `autopilot-next-${waitMode}` };
+    await f.runtime.prompt({ prompt: "Trusted host continuation." }, next);
+    await f.runtime.beforeTool({ toolName: "write", toolCallId: "next-write", params: { path: "draft.md" } }, next);
+    await f.state.hotReviewWork?.promise;
+    await f.runtime.beforeFinalize({ sessionId: next.sessionId, lastAssistantMessage: "Latest candidate." }, next);
+    const record = f.runtime.postRuns.snapshot(identity);
+    assert.equal(record.runId, next.runId); assert.equal(externalCalls, 0);
+    await f.runtime.postRuns.drain();
+  });
+});
+
+test("an old post-run review waiting on background work cannot replace a newer host controller", async t => {
+  const f = await lifecycle(t, { waitMode: "until_pass", postRunTerminal: async () => ({ status: "ok" }) });
+  const finish = deferred(t), oldController = f.state.reviewController;
+  f.state.hotReviewWork = { controller: oldController, promise: finish.promise };
+  await f.runtime.postRuns.candidate(f.post(), { runId: f.ctx.runId, text: "Old candidate.", reviewBudgetMs: 10000 });
+  await until(() => f.post().phase === "REVIEWING", "old post-run review waiting");
+  f.api.config.plugins = { entries: { autopilot: { enabled: true } } };
+  const request = f.api.runtime.gateway.request;
+  f.api.runtime.gateway.request = (method, ...args) => method === "autopilot.status" ? { projection: { status: "running" } } : request(method, ...args);
+  const next = { ...f.ctx, runId: "newer-host-run" };
+  await f.runtime.prompt({ prompt: "New trusted host run." }, next);
+  const current = f.state.reviewController;
+  assert.notEqual(current, oldController); finish.resolve(); await f.runtime.postRuns.drain();
+  assert.equal(f.state.reviewController, current); assert.equal(f.state.nativeRunId, next.runId); assert.equal(current.signal.aborted, false);
+});
 
 test("a queued business turn waits before replacing the old run, while UI status never enters model history", async t => {
   const started = deferred(t), finish = deferred(t), events = [];

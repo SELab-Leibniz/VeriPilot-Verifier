@@ -153,6 +153,7 @@
     "lib/openclaw/native-query.mjs",
     "lib/openclaw/native-runs.mjs",
     "lib/openclaw/native-stop-review.mjs",
+    "lib/openclaw/material-basis.mjs",
     "lib/openclaw/native-summary.mjs",
     "lib/openclaw/native-transcript.mjs",
     "lib/openclaw/post-run-dispatch.mjs",

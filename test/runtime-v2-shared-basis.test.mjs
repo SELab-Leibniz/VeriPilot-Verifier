@@ -66,15 +66,20 @@ async function publicationDiagnostic(t, f) {
 test('closed live006 Mixed NEW_TASK repairs its field before formal publication without consuming an empty delta', async t => {
   const f = await closedMixedFixture(t), original = await f.truth();
   let rejected = false;
-  f.state.replayBaseline = async ({ call, readAll, params }) => {
+  f.state.replayBaseline = async ({ call, readAll, params, sourceRoot, requestDirectory, requestIdentity }) => {
+    assert.notEqual(sourceRoot, params.cwd, 'The reused native cwd must remain anchored to the first task');
+    const promptIdentity = JSON.parse(params.prompt).identity;
+    assert.equal(requestIdentity.requestId, promptIdentity.requestId);
+    assert.equal((await readJson(path.join(requestDirectory, 'request.json'))).identity.requestId, promptIdentity.requestId);
     await readAll(); await call('save_baseline_batch', structuredClone(closedMixedSave));
     const state = async () => JSON.parse((await call('review_history', { mode: 'state' })).content[0].text).taskState;
-    const before = await state(), candidate = path.resolve(params.cwd, '../candidates-0/batch-1.json'), bytes = await fs.readFile(candidate);
+    const before = await state(), candidateDirectory = path.join(path.dirname(sourceRoot), `candidates-${before.generation}`),
+      candidate = path.join(candidateDirectory, 'batch-1.json'), bytes = await fs.readFile(candidate);
     try { await call('finish_baseline', structuredClone(closedMixedFinish)); }
     catch (error) {
       assert.equal(error.code, 'BASELINE_CLASSIFICATION_INVALID'); rejected = true;
       assert.match(error.message, /taskClassification.*NEW_TASK.*new.*user/iu);
-      await assert.rejects(fs.access(path.resolve(params.cwd, '../candidates-0/finish.json')), { code: 'ENOENT' });
+      await assert.rejects(fs.access(path.join(candidateDirectory, 'finish.json')), { code: 'ENOENT' });
       const after = await state();
       for (const key of ['generation', 'deadlineAt', 'maxRepairs', 'nextBatchId', 'batches']) assert.deepEqual(after[key], before[key]);
       assert.equal(after.repairs, before.repairs + 1); assert.equal(after.metrics.readBytes, before.metrics.readBytes);

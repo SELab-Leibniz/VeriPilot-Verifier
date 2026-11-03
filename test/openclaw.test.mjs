@@ -57,7 +57,8 @@ test("OpenClaw artifact loads the native entry, retains skills and rejects anoth
   assert.equal(host.hooks.has("before_dispatch"), false, "the early hook lacks a live request identity");
   assert.equal(host.hooks.get("reply_dispatch").options.timeoutMs, 3600000);
   assert.equal(host.hooks.has("before_agent_finalize"), true, "the registered terminal gate uses the explicit zero-wait default");
-  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 1200000);
+  assert.equal(host.hooks.get("reply_payload_sending").options.timeoutMs, 10000);
+  assert.equal(host.hooks.get("before_tool_call").options.priority, 5);
   assert.equal(host.middleware.options.runtimes[0], "openclaw");
   assert.equal(host.harness, undefined, "native entry must not register a business harness");
   const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, "openclaw.plugin.json")));
@@ -98,27 +99,42 @@ test("native entry supports synchronous ESM loading on the target Node runtime",
   assert.equal(loaded.default.id, "runtime-corrector");
 });
 
-test("native entry registers configured Hook windows up to twenty-four hours", async t => {
+test("native entry caps hot Hook windows independently of the configured review budget", async t => {
   const project = await workspace(t);
   for (const [configured, expected] of [[600000, 600000], [1800000, 1800000], [3600000, 3600000], [5400000, 5400000], [7200000, 7200000], [43200000, 43200000], [86400000, 86400000], [172800000, 86400000]]) {
     const host = api(project);
     host.pluginConfig.hookTimeoutMs = configured;
     entry.register(host);
     for (const name of ["before_prompt_build", "before_tool_call", "reply_payload_sending", "agent_end"]) {
-      assert.equal(host.hooks.get(name).options.timeoutMs, expected, `${name}: ${configured}`);
+      assert.equal(host.hooks.get(name).options.timeoutMs, Math.min(expected, 10000), `${name}: ${configured}`);
     }
     assert.equal(host.hooks.get("session_start").options.timeoutMs, 30000);
     assert.equal(host.hooks.get("session_end").options.timeoutMs, 1000);
   }
 });
 
-test('baseline-specific long Hook window is registered without changing ordinary Hook defaults', async t => {
+test('baseline-specific long review window cannot extend hot hooks', async t => {
   const project = await workspace(t), host = api(project);
   host.pluginConfig = { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000 }, hookTimeoutMs: 86460000 };
   entry.register(host);
   for (const name of ['before_prompt_build', 'before_tool_call', 'reply_payload_sending', 'agent_end'])
-    assert.equal(host.hooks.get(name).options.timeoutMs, 86460000);
+    assert.equal(host.hooks.get(name).options.timeoutMs, 10000);
   assert.equal(host.hooks.get('session_end').options.timeoutMs, 1000);
+});
+
+test("the native command observer runs after host policy plugins and before RTK rewrites", async t => {
+  const host = api(await workspace(t)); entry.register(host);
+  const calls = [], command = { toolName: "exec", params: { command: "original" } };
+  const hooks = [
+    ...[["register-gateway-method", 12], ["dynamic-workflows", 11], ["autopilot", 10], ["matrixassistant-audit", 9]].map(([name, priority]) =>
+      ({ name, priority, handler() { calls.push(name); } })),
+    { name: "rc", priority: host.hooks.get("before_tool_call").options.priority,
+      handler() { calls.push("rc"); assert.equal(command.params.command, "original"); } },
+    { name: "rtk", priority: 1, handler() { calls.push("rtk"); command.params.command = "rewritten"; } },
+  ];
+  for (const hook of hooks.sort((a, b) => b.priority - a.priority)) hook.handler(command);
+  assert.deepEqual(calls, ["register-gateway-method", "dynamic-workflows", "autopilot", "matrixassistant-audit", "rc", "rtk"]);
+  assert.equal(command.params.command, "rewritten");
 });
 
 test("native reply wait arms the full twenty-four-hour window and honors a shorter host limit", async t => {
@@ -208,6 +224,45 @@ test("transcripts preserve real users, tool pairing and only the active native b
   assert.match(await fs.readFile(state.transcriptPath, "utf8"), /Implement a.js/u);
 });
 
+test("a transient transcript rename EPERM preserves the old snapshot until the complete replacement is published", async t => {
+  const project = await workspace(t), state = { projectRoot: project, agentId: "main", sessionId: "rename-transient" };
+  await persistTranscript(state, { messages: [{ id: "old-user", message: { role: "user", content: "The original user request." } }] });
+  const previous = await fs.readFile(state.transcriptPath, "utf8"), rename = fs.rename;
+  let attempts = 0;
+  t.mock.method(fs, "rename", async (source, target) => {
+    if (target === state.transcriptPath && attempts++ === 0) {
+      assert.equal(await fs.readFile(target, "utf8"), previous);
+      throw Object.assign(new Error("Temporary Windows sharing violation"), { code: "EPERM" });
+    }
+    return rename(source, target);
+  });
+  const content = "A complete replacement with the original message identity intact.\n".repeat(100);
+  await persistTranscript(state, { messages: [{ id: "new-user", message: { role: "user", content } }] });
+  assert(attempts > 1);
+  const saved = (await fs.readFile(state.transcriptPath, "utf8")).trimEnd().split("\n").map(JSON.parse);
+  assert.equal(saved.length, 1); assert.equal(saved[0].uuid, "new-user"); assert.equal(saved[0].message.content[0].text, content);
+  assert.deepEqual(await fs.readdir(path.dirname(state.transcriptPath)), ["transcript.jsonl"]);
+});
+
+test("persistent transcript rename refusal rejects honestly while retaining the old snapshot and removing temporary bytes", async t => {
+  const project = await workspace(t), state = { projectRoot: project, agentId: "main", sessionId: "rename-persistent" };
+  await persistTranscript(state, { messages: [{ id: "old-user", message: { role: "user", content: "The preserved original request." } }] });
+  const previous = await fs.readFile(state.transcriptPath, "utf8"), rename = fs.rename;
+  let attempts = 0;
+  t.mock.method(fs, "rename", async (source, target) => {
+    if (target === state.transcriptPath) {
+      attempts++;
+      throw Object.assign(new Error("Persistent Windows sharing violation"), { code: "EPERM" });
+    }
+    return rename(source, target);
+  });
+  await assert.rejects(persistTranscript(state, { messages: [
+    { id: "new-user", message: { role: "user", content: "This snapshot must remain unpublished." } },
+  ] }), { code: "EPERM" });
+  assert(attempts > 1); assert.equal(await fs.readFile(state.transcriptPath, "utf8"), previous);
+  assert.deepEqual(await fs.readdir(path.dirname(state.transcriptPath)), ["transcript.jsonl"]);
+});
+
 test("native snapshots and restarts preserve source ids, including repeated user text", async (t) => {
   const project = await workspace(t);
   let state = { projectRoot: project, agentId: "main", sessionId: "s", entries: [] };
@@ -239,7 +294,7 @@ test("Skill boundaries require an actual read inside a discovered skill root", a
   await fs.mkdir(path.join(project, "skills/example"), { recursive: true });
   await fs.writeFile(path.join(project, "skills/example/SKILL.md"), "# Example");
   await fs.writeFile(path.join(project, "SKILL.md"), "# Unregistered");
-  assert.equal(await selectedSkillRead("read", { path: "skills/example/SKILL.md" }, { projectRoot: project }, pluginRoot), "example");
+  assert.equal((await selectedSkillRead("read", { path: "skills/example/SKILL.md" }, { projectRoot: project }, pluginRoot)).skillId, "example");
   assert.equal(await selectedSkillRead("read", { path: "SKILL.md" }, { projectRoot: project }, pluginRoot), null);
 });
 
@@ -249,9 +304,9 @@ test("RC-only binding discovers the host workspace Skill without guessing a busi
   await fs.mkdir(path.dirname(file), { recursive: true }); await fs.writeFile(file, "# Native workspace skill");
   const state = { projectRoot: project, executionDirectory: execution, projectScope: {} };
   const original = { runtimeV2: { skillCorrection: { enabled: true, skillRoots: [] } } };
-  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot), null, "regression: project roots alone miss this native read");
+  assert.equal((await selectedSkillRead("read", { path: file }, state, pluginRoot)).skillId, "workspace-note");
   const effective = sessionSkillPlan(original, execution);
-  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot, effective.runtimeV2.skillCorrection.skillRoots), "workspace-note");
+  assert.equal((await selectedSkillRead("read", { path: file }, state, pluginRoot, effective.runtimeV2.skillCorrection.skillRoots)).skillId, "workspace-note");
   const { resolveSkillDirectory } = await import("../lib/runtime-v2/skill-source.mjs");
   assert.equal(await resolveSkillDirectory({ skillId: "workspace-note", projectRoot: project, pluginRoot,
     configuredRoots: effective.runtimeV2.skillCorrection.skillRoots }), path.dirname(file));
@@ -266,11 +321,14 @@ test("Skill discovery starts its watcher only after a successful original read",
   await fs.mkdir(path.join(project, ".runtime-corrector"));
   await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"),
     "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\n  panel:\n    size: 0\nskillCorrection:\n  enabled: true\n  selection:\n    mode: all\nstopCorrection:\n  enabled: false\n");
-  const file = path.join(project, "skills", "demo", "SKILL.md");
+  const file = path.join(project, "extra", "demo", "SKILL.md");
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, "# Demo\nVerify before completion.\n");
+  await fs.mkdir(path.join(project, 'skills/demo'), { recursive: true });
+  await fs.writeFile(path.join(project, 'skills/demo/SKILL.md'), '# Other original\nFollow the workspace copy.\n');
   let calls = 0;
   const host = api(project);
+  host.config.skills = { load: { extraDirs: [path.join(project, 'extra')] } };
   const roles = [];
   const reviewerFactory = async ({ request, evidence }) => {
     calls++;
@@ -289,8 +347,14 @@ test("Skill discovery starts its watcher only after a successful original read",
   await runtime.toolResult({ toolName: "read", toolCallId: "failed-skill", args: { path: file },
     isError: true, result: { isError: true, content: [{ type: "text", text: "Read denied" }] } }, ctx);
   assert.equal(calls, 0, "a failed read must not start an extractor");
+  await runtime.beforeTool({ ...before, toolCallId: 'stale-skill' }, ctx);
+  await fs.writeFile(file, '# Replaced after the read started\n');
+  await runtime.toolResult({ toolName: 'read', toolCallId: 'stale-skill', args: { path: file },
+    result: { content: [{ type: 'text', text: '# Demo\nVerify before completion.' }] } }, ctx);
+  assert.equal(calls, 0, 'a changed source cannot fall back to the same-name workspace copy');
+  await fs.writeFile(file, '# Demo\nVerify before completion.\n');
   await runtime.beforeTool({ ...before, toolCallId: "successful-skill" }, ctx);
-  assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill"), "demo");
+  assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill").skillId, "demo");
   await runtime.toolResult({ toolName: "read", toolCallId: "successful-skill", args: { path: file },
     result: { content: [{ type: "text", text: "# Demo\nVerify before completion." }] } }, ctx);
   assert.equal(calls, 2, host.warnings.join("\n"));
@@ -298,6 +362,12 @@ test("Skill discovery starts its watcher only after a successful original read",
   const active = sharedState.states.get('main:skill-read-parent');
   const task = await findTask({ projectRoot: project, sessionId: active.sessionId, explicitTaskId: active.scopeTaskId });
   assert(Object.values(task.watchers).some(watcher => watcher.skillId === 'demo' && watcher.status === 'ACTIVE'));
+  const watcher = Object.values(task.watchers).find(watcher => watcher.skillId === 'demo');
+  assert.equal(watcher.sourceIdentity.path, await fs.realpath(file));
+  const graph = JSON.parse(await fs.readFile(path.join(taskDirectory(project, task.taskId), 'skills/demo/skill-ground-truth.json'), 'utf8'));
+  assert.deepEqual(graph.sourceContract.sourceIdentity, watcher.sourceIdentity);
+  assert(graph.constraints.some(constraint => constraint.statement.includes('Verify before completion.')));
+  assert(!graph.constraints.some(constraint => constraint.statement.includes('Follow the workspace copy.')));
 });
 
 test("native reviewers own read-only sessions, repair JSON, and transfer frozen evidence before cleanup", async (t) => {

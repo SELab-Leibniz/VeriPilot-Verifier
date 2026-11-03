@@ -17,7 +17,6 @@ async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitM
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "native-new-stop-"));
-  t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const configDir = path.join(root, ".runtime-corrector");
   await fs.mkdir(configDir);
   await fs.writeFile(path.join(configDir, "config.yaml"), `version: 2
@@ -68,6 +67,8 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
   };
   const warnings = [];
   const starts = new Set(), dispatches = [], aborts = [];
+  let observeDispatch;
+  const dispatched = new Promise(resolve => { observeDispatch = resolve; });
   const sharedState = {};
   const api = { id: "runtime-corrector", config: {}, pluginConfig: { finalizeReviewWaitMs }, logger: { warn: text => warnings.push(text) }, runtime: {
     state: { resolveStateDir: () => path.join(root, "host-state") },
@@ -77,7 +78,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     ...(startProtocol || gatewayRequest ? { gateway: { request: gatewayRequest ?? (async (method, params) => { aborts.push({ method, params }); return { aborted: true }; }) } } : {}),
     subagent: { run: async request => {
       assert(startProtocol, "No old-protocol business continuation is allowed");
-      dispatches.push(request); return { runId: request.idempotencyKey, status: "accepted" };
+      dispatches.push(request); observeDispatch(request); return { runId: request.idempotencyKey, status: "accepted" };
     } },
   } };
   const projectScopes = admittedProjectScopes(api);
@@ -85,7 +86,11 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
     nativeHooks: true, sharedState, projectScopes, compatibility, postRunTerminal: terminal,
     ...(startProtocol ? { stopStartCompatibility: async () => ({ version: 1,
       onStart: callback => { starts.add(callback); return () => starts.delete(callback); }, drain: async () => {}, diagnosticsEnabled: () => true }) } : {}) });
-  t.after(() => runtime.dispose());
+  t.after(async () => {
+    await runtime.dispose();
+    await runtime.waitForBackgroundReviews();
+    await fs.rm(root, { recursive: true, force: true });
+  });
   const ctx = { agentId: "main", sessionId: "session", sessionKey: "agent:main:test", workspaceDir: root, runId: "business-run" };
   const start = async fields => runtime.sessionStart({ sessionId: "session", ...fields }, ctx);
   const stop = async () => {
@@ -95,7 +100,7 @@ ${Array.from({ length: 16 }, (_, i) => `    M${String(i + 1).padStart(2, "0")}: 
   };
   const store = createStopCorrectionStore({ directory: path.join(root, "host-state/runtime-corrector-stop-sessions") });
   return { root, ctx, task, start, stop, calls, warnings, store, sharedState, runtime, transcript, dispatches, aborts, api, projectScopes,
-    setVerdict: value => { currentVerdict = value; }, emitStart: (event, metadata = { trusted: true }) => {
+    dispatched, setVerdict: value => { currentVerdict = value; }, emitStart: (event, metadata = { trusted: true }) => {
       for (const callback of starts) callback({ type: "model.call.started", sessionId: "session", sessionKey: ctx.sessionKey, agentId: "main", seq: 1, ...event }, metadata);
     } };
 }
@@ -119,7 +124,9 @@ test('an unpublished native assessment closes honestly with a reason and an actu
   const notices=[];f.api.runtime.gateway={request:async(method,params)=>{notices.push({method,params});return {id:'notice'};}};
   await f.start();
   await f.runtime.beforeTool({toolName:'read',toolCallId:'read-source',params:{path:'app.py'}},f.ctx);
-  const stopping=f.stop();await ready;
+  const stopping=f.stop();
+  const opening=await Promise.race([ready.then(()=>({started:true})),stopping.then(record=>({record}))]);
+  assert.equal(opening.started,true,JSON.stringify({record:opening.record,warnings:f.warnings}));
   await fs.writeFile(path.join(f.root,'app.py'),'def convert(value): return int(value) + 1\n');release();
   await stopping;await f.runtime.waitForNativeReviews({drain:true,settle:true});
   const task=await findTask({projectRoot:f.root,sessionId:'session'});
@@ -240,7 +247,10 @@ test("assessment waits for checked feedback delivery rather than API queue accep
   await f.start();
   let settled = false;
   const stopping = f.stop().then(record => { settled = true; return record; });
-  for (let tries = 0; !f.dispatches.length && tries < 100; tries++) await pause(20);
+  let timer;
+  try { await Promise.race([f.dispatched, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Assessment did not dispatch within its review budget.")), 10000);
+  })]); } finally { clearTimeout(timer); }
   assert.equal(f.dispatches.length, 1);
   await pause(50);
   assert.equal(settled, false);
