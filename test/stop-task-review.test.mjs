@@ -65,6 +65,24 @@ async function scriptedResult(options, verdict = "PASS", reason = "The checked c
 
 const judgement = handle => handle.result.metricObjectJudgements[0];
 
+test("retired single-item execution requires an explicitly injected task runner", async t => {
+  const f = await fixture(t);
+  await assert.rejects(runStopTaskReview(f.input), { code: "STOP_TASK_RUNNER_REQUIRED" });
+});
+
+test("original file casing stays usable while ancestor links remain unavailable", async t => {
+  const f = await fixture(t);
+  if (process.platform === "win32") await fs.rename(f.source, path.join(f.root, "Spec.md"));
+  const accepted = await runStopTaskReview(f.input, { runTask: options => scriptedResult(options) });
+  assert.equal(judgement(accepted).judgement, "PASS");
+  const directory = path.join(f.root, "actual"), link = path.join(f.root, "linked");
+  await fs.mkdir(directory); await fs.writeFile(path.join(directory, "spec.md"), await fs.readFile(f.source));
+  await fs.symlink(directory, link, process.platform === "win32" ? "junction" : "dir");
+  f.input.request.artifactCandidates[0].files[0].path = "linked/spec.md";
+  const unavailable = await runStopTaskReview(f.input, { runTask: () => assert.fail("A linked original must never reach the worker.") });
+  assert.equal(judgement(unavailable).judgement, "UNVERIFIED");
+});
+
 test("eligibility admits all current single-object metrics with explicit stage support and rejecting unsupported scope", () => {
   const input = (metric, role = "stop-reviewer", target = "ARTIFACT") => {
     const row = object("R1", metric, target);

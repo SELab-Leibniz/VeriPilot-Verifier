@@ -134,9 +134,12 @@ test('all runtime artifacts exclude legacy Stop workers and external dependency 
     assert.equal(pkg.dependencies, undefined); assert.equal(pkg.optionalDependencies, undefined);
     assert.equal(pkg.runtimeCorrector, undefined); assert.equal(pkg.overrides, undefined);
     if (host === 'openclaw') {
+      await assert.rejects(fs.access(path.join(artifact, 'docs/stop-task-review.md')), { code: 'ENOENT' });
+      for (const name of ['README.md', 'README.en.md', 'docs/README.md'])
+        assert.doesNotMatch(await fs.readFile(path.join(artifact, name), 'utf8'), /stop-task-review\.md/u);
       assert.equal(pkg.version, (await read(path.join(artifact, 'openclaw.plugin.json'))).version);
       assert.equal(pkg.peerDependenciesMeta.openclaw.optional, true);
-    }
+    } else await fs.access(path.join(artifact, 'docs/stop-task-review.md'));
   }
 });
 
