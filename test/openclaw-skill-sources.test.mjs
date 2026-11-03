@@ -82,6 +82,14 @@ test('grouped Skills preserve their name and an execution workspace supplies its
     f.pluginRoot, [], f.hostOptions)).skillId, 'host-name');
 });
 
+test('Skill reads respect the filesystem case policy without changing the exact source identity', async t => {
+  const f = await fixture(t), file = await f.write(path.join(f.projectRoot, 'skills/demo'));
+  const selected = await selectedSkillRead('read', { path: file }, { projectRoot: f.projectRoot }, f.pluginRoot, [], f.hostOptions);
+  const alias = await selectedSkillRead('read', { path: path.join(path.dirname(file), 'skill.md') },
+    { projectRoot: f.projectRoot }, f.pluginRoot, [], f.hostOptions);
+  assert.deepEqual(alias, process.platform === 'win32' ? selected : null);
+});
+
 test('a successful actual read binds the lower-priority original through graph and rejects later replacement', async t => {
   const f = await fixture(t), primary = await f.write(path.join(f.projectRoot, 'skills/demo'), 'Follow the workspace instructions.\n');
   const original = await f.write(path.join(f.root, 'extra/demo'), 'Follow the selected plugin instructions.\n');
