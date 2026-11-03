@@ -149,10 +149,11 @@ test('missing execution coverage is visible and survives restart to prevent an o
   const plan = await loadConfig({ cwd: f.root, pluginRoot });
   plan.runtimeV2 = { ...plan.runtimeV2, enabled: true, shadowMode: false };
   const stop = await handleEvent({ projectRoot: f.root, pluginRoot, plan, input: { session_id: f.ctx.sessionId,
-    hook_event_name: 'Stop', last_assistant_message: 'Completed.' }, reviewerFactory: () => assert.fail('unknown coverage cannot return cached PASS') });
-  assert.equal(stop.stop?.status, 'UNVERIFIED', JSON.stringify(stop)); assert.equal(stop.reasonCode, 'DOCUMENT_EXECUTION_UNVERIFIED');
+    hook_event_name: 'Stop', last_assistant_message: 'Completed.' }, reviewerFactory: () => assert.fail('disabled reviews must not start a model') });
+  assert.notEqual(stop.stop?.status, 'PASS', JSON.stringify(stop)); assert.deepEqual(stop.stop.unverifiedBasis, ['DOCUMENT_EXECUTION_UNVERIFIED']);
+  assert.match(stop.feedback, /UNVERIFIED \(DOCUMENT_EXECUTION_UNVERIFIED\)/u);
   const persisted = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-  assert.equal(persisted.verification.status, 'UNVERIFIED');
+  assert.notEqual(persisted.verification.status, 'PASS');
   const page = await readConsoleObservations({ projectRoot: f.root, sessionId: f.ctx.sessionId }, persisted);
   assert.equal(page.baseline.documentCoverage.status, 'UNVERIFIED');
   assert(page.metrics.every(metric => metric.status !== 'PASS'));

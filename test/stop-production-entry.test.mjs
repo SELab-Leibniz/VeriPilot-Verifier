@@ -125,6 +125,54 @@ test('pending onboarding obligations invalidate an otherwise reusable completed 
   assert.equal((await findTask({ projectRoot: f.root, sessionId: 'session' })).verification.status, 'UNVERIFIED');
 });
 
+test('pending onboarding obligations still run the Stop review, are listed separately and cap its PASS', async t => {
+  const f = await fixture(t);
+  await f.event('SessionStart', { source: 'startup' });
+  await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
+    state.groundTruth.onboardingPending = [{ status: 'UNVERIFIED', operationId: 'unwritten-output', reasonCode: 'GROUND_TRUTH_EXPECTED_FILES_INVALID',
+      operation: { operation: 'ADD', text: 'Deliver docs/guide.md.', expectedFiles: ['wrong.md'] } }];
+  });
+  const result = await f.event('Stop');
+  assert.equal(f.calls.filter(value => value === 'workspace-stop').length, 1);
+  assert.equal(result.stop.status, 'UNVERIFIED', JSON.stringify(result.stop));
+  assert.equal(result.stop.reasonCode, 'ONBOARDING_OPERATIONS_UNVERIFIED');
+  assert.equal(result.decision, 'allow');
+  assert.equal(result.stop.review.metricObjectJudgements.length, 2, 'the completed review remains visible');
+  assert.deepEqual(result.stop.unverifiedObligations, [{ operationId: 'unwritten-output', status: 'UNVERIFIED',
+    reasonCode: 'GROUND_TRUTH_EXPECTED_FILES_INVALID', text: 'Deliver docs/guide.md.' }]);
+  assert.match(result.feedback, /unwritten-output \[GROUND_TRUTH_EXPECTED_FILES_INVALID\]: Deliver docs\/guide\.md\./u);
+  const task = await findTask({ projectRoot: f.root, sessionId: 'session' });
+  assert.equal(task.verification.status, 'UNVERIFIED'); assert.equal(task.verification.reasonCode, 'ONBOARDING_OPERATIONS_UNVERIFIED');
+  assert.notEqual(task.status, 'COMPLETED');
+  const replay = await f.event('Stop');
+  assert.equal(replay.stop.status, 'UNVERIFIED');
+  assert.equal(f.calls.filter(value => value === 'workspace-stop').length, 1, 'the capped review cannot be replayed as PASS');
+});
+
+test('unverified script document coverage rejects an older PASS and caps a fresh review to UNVERIFIED', async t => {
+  const f = await fixture(t);
+  await f.event('SessionStart', { source: 'startup' });
+  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
+    state.documentCoverage = { status: 'UNVERIFIED', unverified: ['DOCUMENT_DECLARATION_UNRESOLVED'] };
+  });
+  const replay = await f.event('Stop');
+  assert.equal(replay.stop.status, 'UNVERIFIED'); assert.equal(replay.stop.reasonCode, 'STOP_REVIEW_STALE');
+  assert.equal(f.calls.filter(value => value === 'workspace-stop').length, 1);
+  await fs.appendFile(f.transcript, [
+    { type: 'user', uuid: 'user-2', message: { role: 'user', content: 'Regenerate the documents with the script.' } },
+    { type: 'assistant', uuid: 'assistant-2', message: { id: 'assistant-2', role: 'assistant', content: 'The documents are complete.' } },
+  ].map(value => JSON.stringify(value)).join('\n') + '\n');
+  const fresh = await f.event('Stop', { last_assistant_message: 'The documents are complete.' });
+  assert.equal(f.calls.filter(value => value === 'workspace-stop').length, 2, 'the review still runs');
+  assert.equal(fresh.stop.status, 'UNVERIFIED', JSON.stringify(fresh.stop));
+  assert.equal(fresh.stop.reasonCode, 'DOCUMENT_EXECUTION_UNVERIFIED');
+  assert.deepEqual(fresh.stop.unverifiedBasis, ['DOCUMENT_EXECUTION_UNVERIFIED']);
+  assert.match(fresh.feedback, /UNVERIFIED \(DOCUMENT_EXECUTION_UNVERIFIED\)/u);
+  const task = await findTask({ projectRoot: f.root, sessionId: 'session' });
+  assert.equal(task.verification.status, 'UNVERIFIED'); assert.equal(task.verification.reasonCode, 'DOCUMENT_EXECUTION_UNVERIFIED');
+});
+
 test("a failed baseline remains UNVERIFIED and delivers a checker notice without corrective admission",async t=>{
   const f=await fixture(t,{baselineFailure:{code:"REVIEWER_RUN_FAILED",message:"No callable tools"}});
   await f.event("SessionStart",{source:"startup"});

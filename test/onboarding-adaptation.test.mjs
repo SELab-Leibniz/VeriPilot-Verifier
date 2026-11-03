@@ -75,12 +75,15 @@ test('exhausted metadata repair retains an invalid duty, writes valid siblings, 
   const data = await readConsoleObservations({ projectRoot: f.root, sessionId: f.input.session_id }, task);
   assert.equal(data.baseline.pending, true); assert.equal(data.baseline.pendingOperations.length, 1);
   assert(data.records.some(row => row.kind === 'baseline' && row.status === 'UNVERIFIED'));
+  const roles = f.roles.length;
   const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: f.runtimeV2 }, reviewerFactory: f.reviewerFactory,
     input: { ...f.input, hook_event_name: 'Stop', hook_event_id: 'pending-stop', last_assistant_message: 'All requested work is complete.' },
     assessmentContext: { mode: 'verify_only', assessmentId: 'pending-onboarding', guard: decisionGuard(task), deadlineAt: Date.now() + 10000 } });
   assert.equal(result.stop.status, 'UNVERIFIED', JSON.stringify(result));
-  assert.match(JSON.stringify(result), /ONBOARDING_OPERATIONS_UNVERIFIED/);
-  assert.equal(f.roles.filter(role => role === 'stop-reviewer').length, 0);
+  assert(f.roles.slice(roles).includes('ground-truth-extractor'), 'pending onboarding must not prevent Stop review preparation');
+  assert.deepEqual(result.stop.unverifiedBasis, ['ONBOARDING_OPERATIONS_UNVERIFIED']);
+  assert.deepEqual(result.stop.unverifiedObligations.map(item => [item.operationId, item.status, item.text]),
+    task.groundTruth.onboardingPending.map(item => [item.operationId, 'UNVERIFIED', item.operation.text]));
   const journal = await fs.readFile(path.join(taskDirectory(f.root, task.taskId), 'journal/events.jsonl'), 'utf8');
   assert.match(journal, /ONBOARDING_OPERATION_UNVERIFIED/);
 });
@@ -125,13 +128,14 @@ test('fresh panels cannot omit a pending original across all retries or restart 
   const calls = f.calls.length;
   assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'UNVERIFIED');
   assert.equal(f.calls.length, calls, 'a restart cannot reset the bounded retry ladder');
-  const task = await findTask({ projectRoot: f.root, sessionId: f.input.session_id });
+  const task = await findTask({ projectRoot: f.root, sessionId: f.input.session_id }), roles = f.roles.length;
   const result = await handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2: f.runtimeV2 }, reviewerFactory: f.reviewerFactory,
     input: { ...f.input, hook_event_name: 'Stop', hook_event_id: 'omitted-pending-stop', last_assistant_message: 'Complete.' },
     assessmentContext: { mode: 'verify_only', assessmentId: 'omitted-onboarding', guard: decisionGuard(task), deadlineAt: Date.now() + 10000 } });
   assert.equal(result.stop.status, 'UNVERIFIED', JSON.stringify(result));
-  assert.match(JSON.stringify(result), /ONBOARDING_OPERATIONS_UNVERIFIED/);
-  assert.equal(f.roles.filter(role => role === 'stop-reviewer').length, 0);
+  assert(f.roles.slice(roles).includes('ground-truth-extractor'), 'pending onboarding must not prevent Stop review preparation');
+  assert.deepEqual(result.stop.unverifiedObligations.map(item => item.operationId), [pendingId]);
+  assert.match(result.feedback, new RegExp(`ONBOARDING_OPERATIONS_UNVERIFIED[\\s\\S]*${pendingId}`, 'u'));
 });
 
 test('explicit same-duty repair after an omitted retry clears only that original once without duplicating valid siblings', async t => {

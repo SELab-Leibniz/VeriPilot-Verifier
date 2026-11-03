@@ -15,7 +15,7 @@
 
 ## 地基：E1、E2、X1
 
-原工作区已设置仓库级 `core.longpaths=true` 并执行 `git add --renormalize .`。`4e09317` 通过 `.gitattributes` 固定测试/夹具 LF，保留二进制和原始问题陈述的逐字节内容；`lib/path-utils.mjs` 新增 `isSameFile` 与逐级 lstat 的 `hasLinkedPath`，后续各分支替换自己的调用点。Windows 文件别名与真实链接分别判断，不能用相同 stat 身份放行符号链接/Junction。
+原工作区已设置仓库级 `core.longpaths=true` 并执行 `git add --renormalize .`。`4e09317` 通过 `.gitattributes` 固定测试/夹具 LF，保留二进制和原始问题陈述的逐字节内容（当时遗漏 `examples/`，见审查后补修）；`lib/path-utils.mjs` 新增 `isSameFile` 与逐级 lstat 的 `hasLinkedPath`，后续各分支替换自己的调用点。Windows 文件别名与真实链接分别判断，不能用相同 stat 身份放行符号链接/Junction。
 
 `scripts/test.mjs` 在缺少源码测试依赖 TypeBox 时显示准确安装命令并保留失败，README 补充 `npm ci --prefix lib/review-task --ignore-scripts`。新增 `test/path-utils.test.mjs` 3 项及 `test/test-dependencies.test.mjs` 1 项，均通过；Windows 使用目录 Junction，POSIX 夹具保留文件符号链接分支。三端构建与产物 17/17 通过。
 
@@ -31,7 +31,7 @@
 
 ### skill：S1、S2、S3、N2、X1
 
-- **实现与文件**：补齐宿主根和优先级、分组嵌套、按条目解析插件 Junction、Windows `skill.md` 大小写别名。实际读取文件的真实路径和原始字节摘要一路绑定到选择、watcher、规则图、共享基线、M08 和工作区 Stop，拒绝同名替换。涉及 `lib/hosts/openclaw.mjs`、`lib/openclaw/{tools,runtime}.mjs`、`lib/runtime-v2/{skill-source,orchestrator,baseline-shared-basis,metrics,stop-workspace-review}.mjs`。
+- **实现与文件**：补齐宿主根和优先级、分组嵌套、按条目解析插件 Junction、Windows `skill.md` 大小写别名（原实现只在选择环节接受，磁盘上实际为小写的文件到身份解析即失败，见审查后补修）。实际读取文件的真实路径和原始字节摘要一路绑定到选择、watcher、规则图、共享基线、M08 和工作区 Stop，拒绝同名替换。涉及 `lib/hosts/openclaw.mjs`、`lib/openclaw/{tools,runtime}.mjs`、`lib/runtime-v2/{skill-source,orchestrator,baseline-shared-basis,metrics,stop-workspace-review}.mjs`。
 - **新增测试与结果**：新增 `openclaw-skill-sources.test.mjs`，并扩展 OpenClaw 与 workspace Stop 测试。初轮 123 项中 108 通过、15 项既有 macOS 宿主可用性跳过；文件名补修 7/7，最新来源与工作区 Stop 41/41。来源提交 `5020705 → 5fbcc96 → 883e6d0`。
 - **风险边界**：每根最多 2000 个目录、6 层；实际原文读取失败、摘要变化或图身份不一致拒绝发布。只读安装目录识别与实际 MA 模型运行是不同验证层次，见后文。
 
@@ -39,11 +39,11 @@
 
 - **实现与文件**：真实链接拒绝、Windows 大小写别名、CRLF 展示与原始字节哈希分离；exec/PowerShell 仅对声明文档作有界执行前后快照，失败命令的部分写入也复核。涉及 `lib/document-tools.mjs`、`lib/openclaw/{tools,runtime,console-observations}.mjs`、`ui/observations.mjs`、`lib/runtime-v2/orchestrator.mjs`。
 - **新增测试与结果**：新增 `ma-document-adaptation.test.mjs`，原 13 场景加 5 个所有权回归；更新 `document-open-budget`。文档/观测 46/46；相关原生/文档 59 通过、1 个 CLI 启动时序断言失败，停止并发工作后该文件独跑 6/6，未改其实现/断言。变基专项 26/26；纯配置函数夹具 9/9、实际 dispatch 事件测试 1/1。来源 `666fd92 → e2e4356`，变基 `73e2d1d/c84c038`；测试补修 `af3d002/093d98b`。
-- **风险边界**：首个无 owner 调用只在已准入 callback 绑定 controller 一次；重复钩子保留原始快照及空值，外来 run/旧 controller 不得消费。快照最多 128 文件、单文件 4 MiB、合计 16 MiB、1 秒；通配/模板未解析范围、缺少前快照或超限保持 UNVERIFIED，阻断旧 PASS 缓存。后台 writer 只有匹配已绑定 process poll 的真实结构化终态后，才可经完整声明文档复核解除；无关稳定命令不能证明它结束。
+- **风险边界**：首个无 owner 调用只在已准入 callback 绑定 controller 一次；重复钩子保留原始快照及空值，外来 run/旧 controller 不得消费。快照最多 128 文件、单文件 4 MiB、合计 16 MiB、1 秒；通配/模板未解析范围、缺少前快照或超限保持 UNVERIFIED，阻断旧 PASS 缓存；Stop 仍照常审查，但结论最高为 UNVERIFIED（见审查后补修）。后台 writer 只有匹配已绑定 process poll 的真实结构化终态后，才可经完整声明文档复核解除；无关稳定命令不能证明它结束。
 
 ### baseline-onboard：B3、N3、N6、E3
 
-- **实现与文件**：写入前采用同等 expectedFiles/来源校验，沿原会话和预算修复。不合格原义务逐条持久化 UNVERIFIED，有效兄弟义务照常入账，部分基线不得冻结。跨重试/重启保留原待处理操作，省略或弱化不能解除；只有同一原义务的有效元数据修复并入账后清除。统一相对 `/` 路径和字符码排序。涉及 `lib/runtime-v2/{onboarding,orchestrator,production-stop}.mjs`、`lib/openclaw/{reviewer,console-observations}.mjs`、`ui/observations.mjs`。
+- **实现与文件**：写入前采用同等 expectedFiles/来源校验，沿原会话和预算修复。不合格原义务逐条持久化 UNVERIFIED，有效兄弟义务照常入账，部分基线不得冻结。跨重试/重启保留原待处理操作，省略或弱化不能解除；只有同一原义务的有效元数据修复并入账后清除；待定期间 Stop 照常审查，待定义务单列 UNVERIFIED，整体不得为 PASS（见审查后补修）。统一相对 `/` 路径和字符码排序。涉及 `lib/runtime-v2/{onboarding,orchestrator,production-stop}.mjs`、`lib/openclaw/{reviewer,console-observations}.mjs`、`ui/observations.mjs`。
 - **新增测试与结果**：新增 `onboarding-adaptation.test.mjs`（最终 12 项），更新 native source、观测、生产 Stop、baseline 测试；5 项补修专测遗漏/重启、入账幂等、回执前中断、元数据删除/语义弱化及来源修复。初轮 80/80，后续不同选集 75/75，变基 44/44。来源 `0298fd8 → 7cf9d5b`，变基 `9a7529c/b576945`。
 - **风险边界**：缺少 `RC_OPENCLAW_HOST_ROOT` 的 E3 关键路径明确跳过；提供实际宿主校验器时，既有 `Unknown source unit S1L2` 仍单独保留，没有绕过或记为通过。
 
@@ -193,8 +193,8 @@ host 首次 3 项为两个未排空后台运行的 ENOTEMPTY 清理失败和一�
 | `test/failed-skill-selection-recovery.test.mjs` | failed selected read survives document alignment and Stop runs the same Skill independent checker | TypeError：读取 undefined 的 `sources`；对象缺失根因未知，不直接归为缺输入 fixture。 | F:140 / A:146 |
 | 同上 | a genuine later read of changed original recovers the pending identity without resetting its window | 期望 ACTIVE，实际 UNVERIFIED；`BASELINE_AUDIT_INCOMPLETE / SKILL_WATCH_NOT_ESTABLISHED`。原因未确认。 | F:191 / A:197 |
 | `test/native-integrated-entry.test.mjs` | actual integrated CLI retains its provider boundary when startup loses an unclosed host handle | ENOENT：生成的 `trace.jsonl` 不存在；启动/生成原因未知，非直接的输入 fixture 缺失证据。 | F:243 / A:236 |
-| `test/openclaw-document-e2e.test.mjs` | real benchmark source is pinned and candidate faults leave the complete original available | `Benchmark original source identity changed`，实际/期望 SHA-256 不同；哈希差异与旧日志相同。文件内容变化原因未知，不直接归因 CRLF。 | F:456 / A:448 |
-| 同上 | all benchmark document samples preserve their original sources and only the declared candidate changes | 同类固定源 SHA-256 断言不符，另一原样本；同样不猜变化原因。 | F:487 / A:479 |
+| `test/openclaw-document-e2e.test.mjs` | real benchmark source is pinned and candidate faults leave the complete original available | `Benchmark original source identity changed`，实际/期望 SHA-256 不同；哈希差异与旧日志相同。后经核实为 CRLF：`examples/` 未纳入 LF 规则，Windows `core.autocrlf=true` 检出的 12 个 `requirements.md` 均为 CRLF，转 LF 后摘要全部吻合。已在审查后补修中修正。 | F:456 / A:448 |
+| 同上 | all benchmark document samples preserve their original sources and only the declared candidate changes | 同类固定源 SHA-256 断言不符，另一原样本；原因同上。 | F:487 / A:479 |
 | `test/runtime-v2-shared-basis-publication-guards.test.mjs` | hit material | ENOENT：缺少生成的 `skills/demo/skill-ground-truth.json`；生成失败原因未知。 | F:1002 / A:992 |
 | 同上 | hit user | 同上。 | F:1012 / A:1002 |
 | 同上 | hit cancel | 同上。 | F:1022 / A:1012 |
@@ -216,6 +216,25 @@ host 首次 3 项为两个未排空后台运行的 ENOTEMPTY 清理失败和一�
 | 文件 | 完整测试名 | 上一轮 R 的事实 | 修正与最终确认 |
 | --- | --- | --- | --- |
 | `test/runtime-v2-shared-basis.test.mjs` | closed live006 Mixed NEW_TASK repairs its field before formal publication without consuming an empty delta | R:1243，期望实际原候选进入 formal admission 的数量 2，实际 0；紧邻诊断 `Missing expected rejection`。上一轮 comparison 将其列为唯一新增失败。 | B1 复用原生会话后 cwd 保持首任务；旧夹具却用 `params.cwd/../candidates-0` 读取当前候选。`1feca20` **只改测试夹具**：用 onPrepared 的当前 requestId 映射绑定 requestDirectory/sourceRoot，再按当前 generation 检查候选/finish；仍断言 reused cwd 与当前 sourceRoot 不同、requestId 一致，未回滚生产复用行为。Q 为 18 项中 16 通过、仅两个原有失败；F 的本用例也实际通过，最终 comparison `added: []`，新增失败确认消除。 |
+
+## 审查后补修
+
+对 `1d19d9b` 的审查确认了两项实际缺陷，另有两项 UNVERIFIED 行为按用户决定调整。这些改动都不涉及 MA、OpenClaw 安装目录或个人配置。
+
+- **Windows 小写 `skill.md`**：原实现只有 `selectedSkillRead` 接受这个别名。磁盘上实际为小写的文件，在 `resolveSkillDirectory` 校验身份时就因文件名不等于 `SKILL.md` 返回 null，之后又被扫描阶段要求精确 `SKILL.md` 的检查拒绝。结果是该 Skill 读取事件得到 `SKILL_SOURCE_UNRESOLVED`，原文无法进入 watcher 和 Stop。现在由 `skill-source.mjs` 的 `isSkillFileName` 统一判断文件名（win32 不区分大小写，POSIX 仍要求精确 `SKILL.md`），扫描结果把根目录下的别名记为规范名 `SKILL.md`，因此规则图、M08 和工作区 Stop 按原名引用即可。`sourceIdentity.path` 仍保存磁盘上的真实路径，内容变化依旧报 `SKILL_SOURCE_STALE`。目录中同时存在精确名和别名时，优先采用精确名。新增 `openclaw-skill-sources` 用例，覆盖识别、身份解析、带身份扫描和图绑定；POSIX 上只做文件名判断，其余部分跳过并注明原因。
+- **E2 遗漏 `examples/`**：`.gitattributes` 新增 `examples/** text eol=lf`，并保留 5 个原始问题陈述的 `-text` 逐字节规则。重新规范化后，索引内容不变，工作区重新检出为 LF。`openclaw-document-e2e` 从 7/9 恢复为 9/9。
+- **D2 文档覆盖 UNVERIFIED**：Stop 不再提前短路，审查照常执行。结束后若覆盖仍为 UNVERIFIED，PASS 会被撤销为 UNVERIFIED（`DOCUMENT_EXECUTION_UNVERIFIED`，并写入 `STOP_VERIFICATION_INVALIDATED` 审计）；其他结论保持原状，另附一条 UNVERIFIED 说明。`production-stop` 的整次评估复用仍要求覆盖已核实；本次被降级的 PASS 记录的复用依据为空，以后也无法被复用。逐项 PASS 缓存本来就绑定审查员读取文件的内容指纹，脚本改过的文件不会命中。
+- **Onboarding 待定义务**：Stop 不再在准备阶段抛出 `ONBOARDING_OPERATIONS_UNVERIFIED`，审查照常执行。结果中的 `unverifiedObligations` 完整列出待定原义务，反馈中最多逐条展示 20 条；整体结论不得为 PASS，PASS 按 D2 同样方式撤销。两项同时存在时，`unverifiedBasis` 会同时列出。
+- **测试调整**：`stop-production-entry` 新增两项，用脚本化审查员实际产出 PASS，验证审查仍运行、PASS 被封顶、旧 PASS 不复用。`ma-document-adaptation` 中关闭 Stop 审查的用例，改为断言不得出现 PASS 并附带单列说明。`onboarding-adaptation` 的两项改为断言 Stop 进入审查准备并逐条列出待定义务；该夹具没有 OpenClaw 宿主，原生审查员会在宿主定位处失败，因此仍为 UNVERIFIED。
+
+| 补修验证（工作区未提交改动，基于 `1d19d9b`） | 日志 | 总 / 通过 / 失败 / 跳过 / 超时及相对新增 |
+| --- | --- | --- |
+| 默认全量 | `regression-review-fix-default-en.log` | **2899 / 2563 / 277 / 59 / 0；相对 `final-default-verified` 新增 0，消失 2** |
+| 宿主全量 | `regression-review-fix-host.log` | **2899 / 2835 / 27 / 37 / 0；相对 `final-host-verified` 新增 0，消失 2** |
+
+消失的两项都是 `openclaw-document-e2e` 的原始来源 SHA-256 断言。两次全量都设置了 `LANG=en_US.UTF-8`，与原门禁的语言环境一致。宿主全量的 `RC_OPENCLAW_HOST_ROOT` 指向 MA 内置的 `resources/openclaw`，运行前后其文件数和最新修改时间不变。三端构建和产物测试 17/17 通过。
+
+不设置 `LANG`、`LC_ALL`、`LC_MESSAGES` 时，RC 默认输出中文提示。此时 `shadow-fail-open` 的 1 项和 `stop-gate-escape` 的 2 项会因为按英文匹配而失败，HEAD 代码也同样失败，与本次补修无关。这次运行结果保留在 `regression-review-fix-default.log`（2899 / 2560 / 280 / 59）。
 
 ## 覆盖与用户验收边界
 

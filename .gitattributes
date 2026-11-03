@@ -1,6 +1,7 @@
 .gitattributes text eol=lf
 test/** text eol=lf
 **/fixtures/** text eol=lf
+examples/** text eol=lf
 examples/document-e2e/**/source-problem-statement.txt -text
 *.png -text
 *.jpg -text

@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import * as openclaw from '../lib/hosts/openclaw.mjs';
 import { selectedSkillRead } from '../lib/openclaw/tools.mjs';
-import { bindSkillGraph, resolveSkillDirectory, retainedSkillSourceIdentity, scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
+import { bindSkillGraph, isSkillFileName, resolveSkillDirectory, retainedSkillSourceIdentity, scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
@@ -88,6 +88,28 @@ test('Skill reads respect the filesystem case policy without changing the exact 
   const alias = await selectedSkillRead('read', { path: path.join(path.dirname(file), 'skill.md') },
     { projectRoot: f.projectRoot }, f.pluginRoot, [], f.hostOptions);
   assert.deepEqual(alias, process.platform === 'win32' ? selected : null);
+});
+
+test('an on-disk lowercase skill.md keeps its exact identity through resolution, scan and graph binding on Windows', async t => {
+  assert.equal(isSkillFileName('skill.md', 'win32'), true);
+  assert.equal(isSkillFileName('skill.md', 'linux'), false);
+  if (process.platform !== 'win32') return t.skip('Only Windows hosts load a lowercase skill.md as SKILL.md.');
+  const f = await fixture(t), directory = path.join(f.projectRoot, 'skills/demo');
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(directory, 'skill.md'), '---\nname: demo\n---\nVerify the current delivery.\n');
+  const file = await fs.realpath(path.join(directory, 'skill.md'));
+  const selected = await selectedSkillRead('read', { path: path.join(directory, 'SKILL.md') }, { projectRoot: f.projectRoot }, f.pluginRoot, [], f.hostOptions);
+  assert.deepEqual(selected, { skillId: 'demo', sourceIdentity: { path: file, sha256: sha256(await fs.readFile(file)) } });
+  assert.equal(path.basename(selected.sourceIdentity.path), 'skill.md');
+  const options = { skillId: 'demo', projectRoot: f.projectRoot, pluginRoot: f.pluginRoot, hostAdapter: openclaw, hostOptions: f.hostOptions };
+  assert.equal(await resolveSkillDirectory({ ...options, sourceIdentity: selected.sourceIdentity }), path.dirname(file));
+  const source = await scanSkillDirectory(path.dirname(file), { sourceIdentity: selected.sourceIdentity, cache: false });
+  assert.deepEqual(source.identity, selected.sourceIdentity);
+  assert.deepEqual(source.files.map(entry => [entry.path, entry.sha256]), [['SKILL.md', selected.sourceIdentity.sha256]]);
+  assert.deepEqual(bindSkillGraph(skillGraphCandidate(source), source).sourceContract.sourceIdentity, selected.sourceIdentity);
+  await fs.writeFile(file, 'Changed after the host read.\n');
+  assert.equal(await resolveSkillDirectory({ ...options, sourceIdentity: selected.sourceIdentity }), null);
+  await assert.rejects(scanSkillDirectory(path.dirname(file), { sourceIdentity: selected.sourceIdentity, cache: false }), { code: 'SKILL_SOURCE_STALE' });
 });
 
 test('a successful actual read binds the lower-priority original through graph and rejects later replacement', async t => {
