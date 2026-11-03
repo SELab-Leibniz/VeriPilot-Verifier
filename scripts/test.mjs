@@ -4,8 +4,19 @@ import { tmpdir } from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 
 export const DEFAULT_FILE_TIMEOUT_MS = 90_000;
+
+export function testDependencyWarnings(root) {
+  try {
+    createRequire(path.join(root, "lib", "review-task", "package.json")).resolve("typebox");
+    return [];
+  } catch (error) {
+    if (error.code !== "MODULE_NOT_FOUND") throw error;
+    return ["Review-task test dependency typebox is missing. Run: npm ci --prefix lib/review-task --ignore-scripts. Dependent tests will still run and report failures."];
+  }
+}
 
 function terminateTree(child) {
   if (process.platform === "win32") {
@@ -60,6 +71,7 @@ export async function runTestFiles({ files, cwd, timeoutMs = DEFAULT_FILE_TIMEOU
 
 async function main() {
   const root = fileURLToPath(new URL("../", import.meta.url));
+  for (const warning of testDependencyWarnings(root)) console.warn(warning);
   // Runtime scopes use physical filesystem identities. Keep implicit fixture
   // roots canonical too; explicit symlink tests still exercise alias handling.
   const temporaryRoot = realpathSync(tmpdir());

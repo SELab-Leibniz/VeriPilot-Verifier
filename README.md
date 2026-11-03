@@ -150,3 +150,5 @@ const saved = await gateway.request("runtime-corrector.session.set", {
 - [MatrixAssistant / OpenClaw](docs/openclaw.md)
 
 验证与维护命令见文档导航中的维护说明。所有自动测试使用本地受控输入；构建和测试不会启动真实模型评测。
+
+首次运行测试前执行 `npm ci --prefix lib/review-task --ignore-scripts`，安装源码测试使用的独立依赖。缺少 `typebox` 时，`npm test` 会提示此命令，并保留相关测试的失败结果。
