@@ -255,7 +255,7 @@ test("Skill boundaries require an actual read inside a discovered skill root", a
   await fs.mkdir(path.join(project, "skills/example"), { recursive: true });
   await fs.writeFile(path.join(project, "skills/example/SKILL.md"), "# Example");
   await fs.writeFile(path.join(project, "SKILL.md"), "# Unregistered");
-  assert.equal(await selectedSkillRead("read", { path: "skills/example/SKILL.md" }, { projectRoot: project }, pluginRoot), "example");
+  assert.equal((await selectedSkillRead("read", { path: "skills/example/SKILL.md" }, { projectRoot: project }, pluginRoot)).skillId, "example");
   assert.equal(await selectedSkillRead("read", { path: "SKILL.md" }, { projectRoot: project }, pluginRoot), null);
 });
 
@@ -265,9 +265,9 @@ test("RC-only binding discovers the host workspace Skill without guessing a busi
   await fs.mkdir(path.dirname(file), { recursive: true }); await fs.writeFile(file, "# Native workspace skill");
   const state = { projectRoot: project, executionDirectory: execution, projectScope: {} };
   const original = { runtimeV2: { skillCorrection: { enabled: true, skillRoots: [] } } };
-  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot), null, "regression: project roots alone miss this native read");
+  assert.equal((await selectedSkillRead("read", { path: file }, state, pluginRoot)).skillId, "workspace-note");
   const effective = sessionSkillPlan(original, execution);
-  assert.equal(await selectedSkillRead("read", { path: file }, state, pluginRoot, effective.runtimeV2.skillCorrection.skillRoots), "workspace-note");
+  assert.equal((await selectedSkillRead("read", { path: file }, state, pluginRoot, effective.runtimeV2.skillCorrection.skillRoots)).skillId, "workspace-note");
   const { resolveSkillDirectory } = await import("../lib/runtime-v2/skill-source.mjs");
   assert.equal(await resolveSkillDirectory({ skillId: "workspace-note", projectRoot: project, pluginRoot,
     configuredRoots: effective.runtimeV2.skillCorrection.skillRoots }), path.dirname(file));
@@ -282,11 +282,14 @@ test("Skill discovery starts its watcher only after a successful original read",
   await fs.mkdir(path.join(project, ".runtime-corrector"));
   await fs.writeFile(path.join(project, ".runtime-corrector/config.yaml"),
     "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\n  panel:\n    size: 0\nskillCorrection:\n  enabled: true\n  selection:\n    mode: all\nstopCorrection:\n  enabled: false\n");
-  const file = path.join(project, "skills", "demo", "SKILL.md");
+  const file = path.join(project, "extra", "demo", "SKILL.md");
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, "# Demo\nVerify before completion.\n");
+  await fs.mkdir(path.join(project, 'skills/demo'), { recursive: true });
+  await fs.writeFile(path.join(project, 'skills/demo/SKILL.md'), '# Other original\nFollow the workspace copy.\n');
   let calls = 0;
   const host = api(project);
+  host.config.skills = { load: { extraDirs: [path.join(project, 'extra')] } };
   const roles = [];
   const reviewerFactory = async ({ request, evidence }) => {
     calls++;
@@ -305,8 +308,14 @@ test("Skill discovery starts its watcher only after a successful original read",
   await runtime.toolResult({ toolName: "read", toolCallId: "failed-skill", args: { path: file },
     isError: true, result: { isError: true, content: [{ type: "text", text: "Read denied" }] } }, ctx);
   assert.equal(calls, 0, "a failed read must not start an extractor");
+  await runtime.beforeTool({ ...before, toolCallId: 'stale-skill' }, ctx);
+  await fs.writeFile(file, '# Replaced after the read started\n');
+  await runtime.toolResult({ toolName: 'read', toolCallId: 'stale-skill', args: { path: file },
+    result: { content: [{ type: 'text', text: '# Demo\nVerify before completion.' }] } }, ctx);
+  assert.equal(calls, 0, 'a changed source cannot fall back to the same-name workspace copy');
+  await fs.writeFile(file, '# Demo\nVerify before completion.\n');
   await runtime.beforeTool({ ...before, toolCallId: "successful-skill" }, ctx);
-  assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill"), "demo");
+  assert.equal(sharedState.states.get("main:skill-read-parent").seen.get("skill-read:successful-skill").skillId, "demo");
   await runtime.toolResult({ toolName: "read", toolCallId: "successful-skill", args: { path: file },
     result: { content: [{ type: "text", text: "# Demo\nVerify before completion." }] } }, ctx);
   assert.equal(calls, 2, host.warnings.join("\n"));
@@ -314,6 +323,12 @@ test("Skill discovery starts its watcher only after a successful original read",
   const active = sharedState.states.get('main:skill-read-parent');
   const task = await findTask({ projectRoot: project, sessionId: active.sessionId, explicitTaskId: active.scopeTaskId });
   assert(Object.values(task.watchers).some(watcher => watcher.skillId === 'demo' && watcher.status === 'ACTIVE'));
+  const watcher = Object.values(task.watchers).find(watcher => watcher.skillId === 'demo');
+  assert.equal(watcher.sourceIdentity.path, await fs.realpath(file));
+  const graph = JSON.parse(await fs.readFile(path.join(taskDirectory(project, task.taskId), 'skills/demo/skill-ground-truth.json'), 'utf8'));
+  assert.deepEqual(graph.sourceContract.sourceIdentity, watcher.sourceIdentity);
+  assert(graph.constraints.some(constraint => constraint.statement.includes('Verify before completion.')));
+  assert(!graph.constraints.some(constraint => constraint.statement.includes('Follow the workspace copy.')));
 });
 
 test("native reviewers own read-only sessions, repair JSON, and transfer frozen evidence before cleanup", async (t) => {
