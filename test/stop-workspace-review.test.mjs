@@ -6,7 +6,9 @@ import { execFileSync } from 'node:child_process';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
-import { scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
+import { scanSkillDirectory, bindSkillGraph } from '../lib/runtime-v2/skill-source.mjs';
+import * as openclawHost from '../lib/hosts/openclaw.mjs';
+import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
@@ -730,6 +732,40 @@ test('M08 keeps original Skill conditions and dependencies mandatory within the 
     await submit('finish_stop_review', { summary: 'Both original Skill obligations were separately checked in one session.' });
   });
   assert.equal(f.calls.length, 1); assert.equal(handle.result.metricObjectJudgements.length, 2);
+});
+
+test('M08 workspace Stop reads the exact adopted duplicate source instead of a higher-priority short name', async t => {
+  const f = await fixture(t), skillId = 'duplicate-skill', workspace = path.join(f.root, 'skills', skillId);
+  const extra = path.join(f.root, 'extra-skills'), selected = path.join(extra, skillId);
+  await fs.mkdir(workspace, { recursive: true }); await fs.mkdir(selected, { recursive: true });
+  await fs.writeFile(path.join(workspace, 'SKILL.md'), 'Follow the different workspace instructions.\n');
+  await fs.writeFile(path.join(selected, 'SKILL.md'), 'Verify the selected original delivery.\n');
+  const file = await fs.realpath(path.join(selected, 'SKILL.md'));
+  const sourceIdentity = { path: file, sha256: sha256(await fs.readFile(file)) };
+  const source = await scanSkillDirectory(selected, { sourceIdentity });
+  const graph = bindSkillGraph(skillGraphCandidate(source), source);
+  const saved = await persistSkillGroundTruth({ projectRoot: f.root, taskId: f.task.taskId, skillId,
+    skillDigest: source.digest, ...graph });
+  const population = await buildMetricPopulation({ projectRoot: f.root, taskId: f.task.taskId,
+    groundTruth: { version: 0, claims: [] }, skillDocuments: [saved.document] });
+  assert(population.metrics.M08.length);
+  f.input.request.population.metrics = { M08: population.metrics.M08 };
+  f.input.skillRoots = [extra]; f.input.hostAdapter = openclawHost;
+  const handle = await f.run(async ({ readAll, read, submit }) => {
+    await readAll(); const scope = await f.scope(submit), process = await read(scope.processFiles[0]);
+    const checklist = await submit('review_checklist', {}), disclosed = new Set();
+    for (const item of checklist.items) {
+      assert.equal(item.originalSkillBasis.error, undefined);
+      assert(item.originalSkillBasis.requiredFiles.includes(file));
+      assert.equal(item.originalSkillBasis.requiredFiles.includes(path.join(workspace, 'SKILL.md')), false);
+      for (const path of item.originalSkillBasis.requiredFiles) if (!disclosed.has(path)) { await read(path); disclosed.add(path); }
+      await submit('submit_review', { taskId: item.objectId, verdict: 'PASS',
+        reason: 'The exact selected original and its attributed execution were checked.', citeIds: [process.details.citation.citeId] });
+    }
+    await submit('finish_stop_review', { summary: 'The selected original stayed bound through M08 Stop.' });
+  });
+  assert.equal(handle.result.metricObjectJudgements.length, population.metrics.M08.length);
+  await handle.close();
 });
 
 test('mixed Skill applicability, missing execution and real implementation keep independent verdicts and the full denominator', async t => {
