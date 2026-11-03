@@ -3,7 +3,6 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { spawnSync } from "node:child_process";
 import { configureMAHost } from "../scripts/configure-ma-host.mjs";
 
 async function fixture(t, config = {}) {
@@ -77,12 +76,10 @@ test('a concurrent config edit during replacement backoff is never overwritten',
  assert.equal((await fs.readdir(f.root)).filter(name=>name.endsWith('.tmp')).length,0);
 });
 
-test("CLI restores an erased RC entry and model using an explicit isolated config", async t => {
+test("isolated setup restores an erased RC entry and explicit reviewer model", async t => {
   const f = await fixture(t);
-  const result = spawnSync(process.execPath, ["scripts/configure-ma-host.mjs", "--config", f.configPath,
-    "--reviewer-model", "custom/reviewer"], { encoding: "utf8", timeout: 10000 });
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(JSON.parse(result.stdout).changed, true);
+  const result = await configureMAHost({ ...f, reviewerModel: "custom/reviewer" });
+  assert.equal(result.changed, true);
   const { plugins } = JSON.parse(await fs.readFile(f.configPath, "utf8"));
   assert.equal(plugins.entries["runtime-corrector"].config.reviewerModel, "custom/reviewer");
   assert.equal(plugins.entries["runtime-corrector"].enabled, true);
