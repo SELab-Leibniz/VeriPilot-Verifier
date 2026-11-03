@@ -115,6 +115,12 @@ test('current baseline extraction phase is visible but never establishes publica
   await fs.writeFile(file, JSON.stringify({ ...status, deadlineAt: 1 }));
   data = await readConsoleObservations(f.record, f.task);
   assert.equal(data.baseline.extraction.phase, 'UNVERIFIED');
+  const failure = { taskId: f.task.taskId, runId: status.runId, code: 'AUTH_FAILED', stage: 'NATIVE_EXECUTION',
+    reason: 'provider unavailable', causes: [{ code: 'ECONNRESET', reason: 'connection reset' }] };
+  await fs.writeFile(file, JSON.stringify({ ...status, phase: 'INTERRUPTED', failure }));
+  data = await readConsoleObservations(f.record, f.task);
+  assert.deepEqual(data.baseline.extraction.failure, failure);
+  assert.equal(data.baseline.available, true, 'failure diagnostics do not change the committed baseline');
   await fs.writeFile(file, JSON.stringify({ ...status, taskId: 'another-task' }));
   assert.equal((await readConsoleObservations(f.record, f.task)).baseline.extraction, undefined);
 });
