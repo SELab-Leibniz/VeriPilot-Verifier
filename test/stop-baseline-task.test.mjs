@@ -2398,7 +2398,8 @@ function criticalPathCoverageReport({ view, inventory, identityDigest }) {
   }) };
 }
 
-test('critical-path MATERIAL revision replays original live006 arguments and publishes guarded ledger and certificate', async t => {
+test('critical-path MATERIAL revision replays original live006 arguments and publishes guarded ledger and certificate',
+  { skip: !process.env.RC_OPENCLAW_HOST_ROOT && 'Requires RC_OPENCLAW_HOST_ROOT for the installed host argument validator.' }, async t => {
   const f = await closedOwnerFixture(t, 'draft', 'material', {
     inventoryInterpretation: criticalPathOriginalDuties, coverageReport: criticalPathCoverageReport });
   const transcript = path.join(f.root, 'original-user.jsonl');
@@ -2451,8 +2452,11 @@ test('critical-path MATERIAL revision replays original live006 arguments and pub
       plan: { runtimeV2 }, reviewerFactory: factory,
       assessmentContext: { assessmentId: `material-revision-${stage}`, guard: decisionGuard(task), deadlineAt: Date.now() + 20000 } }); }
     catch (error) {
-      const checkpoint = await readJson(path.resolve(lastWorkspace, '../review-checkpoint.json'));
-      t.diagnostic(JSON.stringify({ stage, invocations, lastValidationError: checkpoint?.taskState?.lastValidationError, pendingUnits: checkpoint?.taskState?.pendingUnits })); throw error;
+      const checkpoint = lastWorkspace ? await readJson(path.resolve(lastWorkspace, '../review-checkpoint.json')).catch(checkpointError => {
+        t.diagnostic(JSON.stringify({ checkpointError: checkpointError.message })); return null;
+      }) : null;
+      t.diagnostic(JSON.stringify({ stage, invocations, lastWorkspace: lastWorkspace ?? null, code: error.code, error: error.message,
+        lastValidationError: checkpoint?.taskState?.lastValidationError, pendingUnits: checkpoint?.taskState?.pendingUnits })); throw error;
     }
   };
   // The policy stays identical; only actual new source files appear. Changing
