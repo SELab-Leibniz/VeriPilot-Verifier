@@ -41,6 +41,13 @@ test("a bounded failed status probe remains UNKNOWN", async () => {
   assert.equal(result.status, "UNKNOWN"); assert.equal(parent.signal.aborted, false);
 });
 
+test("host configuration failure is an UNKNOWN activity warning and never invokes a guessed status request", async () => {
+  const api = apiFor(() => assert.fail("unavailable host configuration cannot authorize a status request"));
+  api.runtime.config = { current() { throw new Error("configuration unavailable"); } };
+  const status = await readAutopilotStatus(api, { sessionKey: "exact-session" });
+  assert.equal(status.status, "UNKNOWN"); assert.equal(status.reason, "AUTOPILOT_STATUS_UNAVAILABLE");
+});
+
 test("held confirmed terminals yield for final or unknown autopilot activity without releasing unknown host reservations", async () => {
   for (const { status, held = false, unknownTerminal = false, allowed } of [
     { status: "running", allowed: true }, { allowed: false },
