@@ -109,6 +109,22 @@ test("the production Stop entry dispatches a real workspace task adapter and nev
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 0);
 });
 
+test('pending onboarding obligations invalidate an otherwise reusable completed Stop', async t => {
+  const f = await fixture(t);
+  await f.event('SessionStart', { source: 'startup' });
+  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  const reviews = f.calls.filter(value => value === 'workspace-stop').length;
+  await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
+    state.groundTruth.onboardingPending = [{ status: 'UNVERIFIED', operationId: 'unwritten-output',
+      operation: { operation: 'ADD', text: 'Deliver docs/guide.md.', expectedFiles: ['wrong.md'] } }];
+  });
+  const replay = await f.event('Stop');
+  assert.equal(replay.stop.status, 'UNVERIFIED');
+  assert.equal(replay.stop.reasonCode, 'STOP_REVIEW_STALE');
+  assert.equal(f.calls.filter(value => value === 'workspace-stop').length, reviews);
+  assert.equal((await findTask({ projectRoot: f.root, sessionId: 'session' })).verification.status, 'UNVERIFIED');
+});
+
 test("a failed baseline remains UNVERIFIED and delivers a checker notice without corrective admission",async t=>{
   const f=await fixture(t,{baselineFailure:{code:"REVIEWER_RUN_FAILED",message:"No callable tools"}});
   await f.event("SessionStart",{source:"startup"});

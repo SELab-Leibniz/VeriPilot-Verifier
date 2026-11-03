@@ -9,6 +9,20 @@ import { consoleFixture } from './support/console-fixture.mjs';
 
 async function fixture(t, options) { const f = await consoleFixture(options); t.after(f.cleanup); return f; }
 
+test('pending onboarding obligations stay visible and prevent historical metrics from appearing passed', async t => {
+  const f = await fixture(t), pending = { operationId: 'pending-output', index: 1, status: 'UNVERIFIED',
+    reasonCode: 'GROUND_TRUTH_EXPECTED_FILES_INVALID', reason: 'The output path is not named in the original obligation.',
+    operation: { operation: 'ADD', text: 'Deliver docs/guide.md.', expectedFiles: ['wrong.md'] } };
+  f.task.groundTruth.onboardingPending = [pending];
+  await fs.appendFile(path.join(f.dir, 'journal/events.jsonl'), JSON.stringify({ type: 'ONBOARDING_OPERATION_UNVERIFIED',
+    eventId: 'pending-output-event', sessionId: f.record.sessionId, ...pending }) + '\n');
+  const data = await readConsoleObservations(f.record, f.task, { kind: 'baseline', attention: true });
+  assert.equal(data.baseline.pending, true);
+  assert.deepEqual(data.baseline.pendingOperations, [pending]);
+  assert(data.metrics.every(metric => metric.status !== 'PASS'));
+  assert.deepEqual(data.records.find(row => row.source === 'ONBOARDING_OPERATION_UNVERIFIED')?.review.operation, pending.operation);
+});
+
 test('observations join explicit identities and distinguish computed, passed, returned and delivered', async t => {
   const f = await fixture(t), data = await readConsoleObservations(f.record, f.task, { limit: 100 });
   const artifact = data.records.find(r => r.id === 'artifact-demo'), stop = data.records.find(r => r.kind === 'stop');
