@@ -102,7 +102,7 @@ test('document snapshot file/byte bounds and actual links cannot produce verifie
   assert.equal(limited.entries.length, 128); assert(limited.unverified.includes('DOCUMENT_DECLARATION_LIMIT'));
 });
 
-async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.md']) {
+async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.md'], { initialize = true } = {}) {
   let runtime;
   const root = await workspace(t, () => runtime?.dispose());
   await fs.mkdir(path.join(root, '.runtime-corrector'));
@@ -111,17 +111,19 @@ async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.
   const warnings = [], host = { config: {}, pluginConfig: {}, runtime: { version: '2026.7.1-2', state: { resolveStateDir: () => path.join(root, 'host-state') },
     agent: { resolveAgentWorkspaceDir: () => root } }, logger: { warn: value => warnings.push(value), info() {} } };
   const scopes = admittedProjectScopes(host);
-  runtime = createRuntime(host, { pluginRoot, projectScopes: scopes, reviewerFactory: () => assert.fail('disabled reviews must not start a model') });
+  const sharedState = {};
+  runtime = createRuntime(host, { pluginRoot, projectScopes: scopes, sharedState,
+    reviewerFactory: () => assert.fail('disabled reviews must not start a model') });
   const ctx = { sessionId: 'document-session', sessionKey: 'agent:main:document', runId: 'run-one', agentId: 'main', workspaceDir: root,
     sessionFile: path.join(root, 'native.jsonl'),
     provider: 'offline', modelId: 'fixture', prompt: 'Maintain the declared documents.' };
-  const state = await runtime.beginSupervised(ctx, new AbortController().signal);
+  const state = initialize ? await runtime.beginSupervised(ctx, new AbortController().signal) : null;
   const journal = async () => {
     const task = await findTask({ projectRoot: root, sessionId: ctx.sessionId });
     const text = await fs.readFile(path.join(taskDirectory(root, task.taskId), 'journal/events.jsonl'), 'utf8');
     return { task, events: text.trim().split('\n').map(JSON.parse) };
   };
-  return { root, runtime, ctx, state, journal, warnings, scopes };
+  return { root, runtime, ctx, state, journal, warnings, scopes, sharedState };
 }
 
 test('runtime uses the pre-execution binding despite rewritten args and reviews partial writes from failed scripts', async t => {
@@ -240,4 +242,77 @@ test('a replaced review controller cannot consume an earlier document capture', 
   await fs.writeFile(path.join(f.root, 'document.md'), '# Late previous-controller edit\n');
   await f.runtime.toolResult({ toolName: 'exec', toolCallId: 'cancelled', args: {}, result: { content: [] } }, f.ctx);
   assert.equal((await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId }))?.documentCoverage, undefined);
+});
+
+for (const toolName of ['exec', 'process']) test(`the first ${toolName} call binds its document receipt before a same-run controller replacement`, async t => {
+  const f = await runtimeFixture(t, ['document.md'], { initialize: false });
+  assert.equal(f.sharedState.states.size, 0);
+  const event = { toolName, toolCallId: 'first-call', params: toolName === 'process' ? { action: 'poll', sessionId: 'writer' } : {} };
+  await f.runtime.beforeTool(event, f.ctx);
+  const state = f.sharedState.states.get('main:document-session');
+  assert(state, f.warnings.join('\n'));
+  const binding = [...f.sharedState.toolBindings.get(event.toolCallId).values()][0];
+  const receipt = toolName === 'process' ? binding.runtimeCorrectorDocumentProcess : binding.runtimeCorrectorDocumentSnapshot;
+  assert.equal(receipt.controller, state.reviewController);
+  assert.equal(receipt.runId, f.ctx.runId);
+  const admittedController = state.reviewController;
+  state.reviewController = new AbortController(); state.abortSignal = state.reviewController.signal;
+  assert.equal(admittedController.signal.aborted, false, 'replacement does not rely on an aborted host signal');
+  await fs.writeFile(path.join(f.root, 'document.md'), '# Previous-controller write\n');
+  await f.runtime.beforeTool(event, f.ctx);
+  const repeated = [...f.sharedState.toolBindings.get(event.toolCallId).values()][0];
+  assert.equal((toolName === 'process' ? repeated.runtimeCorrectorDocumentProcess : repeated.runtimeCorrectorDocumentSnapshot).controller,
+    admittedController, 'repeated admission cannot transfer an existing receipt to the new controller');
+  await f.runtime.toolResult({ ...event, args: {}, result: { content: [], details: { status: 'completed', sessionId: 'writer', exitCode: 0 } } }, f.ctx);
+  assert.equal((await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId }))?.documentCoverage, undefined);
+});
+
+test('an execution snapshot without before-hook admission remains explicitly unverified', async t => {
+  const f = await runtimeFixture(t, ['document.md'], { initialize: false }), original = f.scopes.resolve;
+  let calls = 0;
+  t.mock.method(f.scopes, 'resolve', async (...args) => {
+    const scope = await original(...args);
+    return ++calls === 2 ? { ...scope, enabled: false } : scope;
+  });
+  await f.runtime.beforeTool({ toolName: 'exec', toolCallId: 'unadmitted', params: {} }, f.ctx);
+  assert.equal(f.sharedState.states.size, 0);
+  await fs.writeFile(path.join(f.root, 'document.md'), '# Executed without admission\n');
+  await f.runtime.toolResult({ toolName: 'exec', toolCallId: 'unadmitted', args: {}, result: { content: [] } }, f.ctx);
+  const { task } = await f.journal();
+  assert.equal(task.documentCoverage.status, 'UNVERIFIED', f.warnings.join('\n'));
+  assert(task.documentCoverage.unverified.includes('DOCUMENT_INVOCATION_UNADMITTED'));
+});
+
+test('a duplicate before-hook cannot replace the original document pre-image', async t => {
+  const f = await runtimeFixture(t, ['document.md']);
+  const event = { toolName: 'exec', toolCallId: 'duplicate', params: {} };
+  await f.runtime.beforeTool(event, f.ctx);
+  const binding = [...f.sharedState.toolBindings.get(event.toolCallId).values()][0], original = binding.runtimeCorrectorDocumentSnapshot;
+  await fs.writeFile(path.join(f.root, 'document.md'), '# Updated between hook deliveries\n');
+  await f.runtime.beforeTool(event, f.ctx);
+  assert.equal([...f.sharedState.toolBindings.get(event.toolCallId).values()][0].runtimeCorrectorDocumentSnapshot, original);
+  await f.runtime.toolResult({ ...event, args: {}, result: { content: [] } }, f.ctx);
+  const { events } = await f.journal();
+  assert(events.some(row => row.type === 'OPENCLAW_ARTIFACT_REVIEW' && row.toolCallId === event.toolCallId));
+});
+
+test('a duplicate before-hook preserves an original missing snapshot instead of certifying a late capture', async t => {
+  const f = await runtimeFixture(t, ['document.md'], { initialize: false }), original = f.scopes.resolve;
+  let calls = 0;
+  t.mock.method(f.scopes, 'resolve', async (...args) => {
+    const scope = await original(...args);
+    return ++calls <= 2 ? { ...scope, enabled: false } : scope;
+  });
+  const event = { toolName: 'exec', toolCallId: 'missing-original', params: {} };
+  await f.runtime.beforeTool(event, f.ctx);
+  assert.equal([...f.sharedState.toolBindings.get(event.toolCallId).values()][0].runtimeCorrectorDocumentSnapshot, null);
+  await fs.writeFile(path.join(f.root, 'document.md'), '# Written before a duplicate receipt\n');
+  await f.runtime.beforeTool(event, f.ctx);
+  const binding = [...f.sharedState.toolBindings.get(event.toolCallId).values()][0];
+  assert.equal(binding.runtimeCorrectorDocumentSnapshot, null);
+  assert.equal(binding.runtimeCorrectorDocumentProcess, null);
+  await f.runtime.toolResult({ ...event, args: {}, result: { content: [] } }, f.ctx);
+  const { task } = await f.journal();
+  assert.equal(task.documentCoverage.status, 'UNVERIFIED');
+  assert(task.documentCoverage.unverified.includes('DOCUMENT_PRE_SNAPSHOT_MISSING'));
 });
