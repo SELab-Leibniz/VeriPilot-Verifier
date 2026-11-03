@@ -6,6 +6,33 @@ import { createNativeStopFixture, deferred, until, within } from "./support/open
 
 const { lifecycle, findTask, withTaskState, taskDirectory } = createNativeStopFixture();
 
+test('an UNKNOWN autopilot handoff conflict reports only the known retained RC owner', async t => {
+  const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => ({ runId, status: 'ok' }) });
+  let activity = 'running';
+  f.api.config.plugins = { entries: { autopilot: { enabled: true } } };
+  const request = f.api.runtime.gateway.request;
+  f.api.runtime.gateway.request = (method, ...args) => method === 'autopilot.status'
+    ? { projection: activity === 'unknown' ? {} : { status: activity } } : request(method, ...args);
+  await f.runtime.postRuns.candidate(f.post(), { runId: f.ctx.runId, text: 'Terminal-confirmed retained candidate.', reviewBudgetMs: 10000 });
+  await f.runtime.postRuns.drain();
+  const before = f.post();
+  assert.equal(before.phase, 'COEXIST_WAIT'); assert(Number.isFinite(before.candidate.terminalConfirmedAt));
+  assert.equal(before.candidate.terminalStatus, 'ok');
+  let handoffs = 0;
+  f.runtime.postRuns.externalStarted = async () => { handoffs++;
+    throw Object.assign(new Error('Controlled owner conflict'), { code: 'CONFLICT' }); };
+  activity = 'unknown';
+  await f.runtime.prompt({ prompt: 'Trusted new native continuation.' }, { ...f.ctx, runId: 'unknown-conflicted-handoff' });
+  assert.equal(handoffs, 1); assert.equal(f.state.coexistence.status, 'UNKNOWN');
+  assert.match(f.state.coexistence.message, /旧 RC 运行尚未安全解除/u);
+  assert.doesNotMatch(f.state.coexistence.message, /正在运行|已结束/u);
+  const after = f.post();
+  assert.equal(after.coexistence.status, 'UNKNOWN'); assert.equal(after.coexistence.message, f.state.coexistence.message);
+  assert.equal(after.runId, before.runId); assert.equal(after.phase, before.phase);
+  assert.deepEqual(after.candidate, before.candidate); assert.deepEqual(after.completedRuns, before.completedRuns);
+  assert.equal(after.deadlineAt, before.deadlineAt);
+});
+
 const postRecord = runtime => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id);
 async function lateCandidate(t, { waitMode = 'until_pass', terminalStatus = 'ok', review, nextTerminal } = {}) {
   const terminal = deferred(t), reviewed = [], businessSends = [];
