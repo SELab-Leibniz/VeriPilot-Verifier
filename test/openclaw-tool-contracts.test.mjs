@@ -54,9 +54,8 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     await assert.rejects(runWorkspaceStopReview(input, { session }), error =>
       error.code === 'TASK_NO_VALID_SUBMISSION' && error.cause === captured);
     assert.equal(tools.includes('set_original_checklist'), originalRequirementsBasis);
-    assert.equal(systemPrompt.includes('breaks existing behavior that the request did not ask to change'), originalRequirementsBasis);
-    assert.equal(systemPrompt.includes('the existing behavior it breaks'), originalRequirementsBasis);
-    if (originalRequirementsBasis) assert.match(systemPrompt, /source_read of pre-existing code or tests/u);
+    assert.equal(systemPrompt.includes('breaks existing behavior that the request did not ask to change'), false);
+    assert.equal(systemPrompt.includes('standing REGRESSION item'), false, 'regression guidance follows the program standing item, absent without source changes');
     assertDeclared(arm, tools);
     if (originalRequirementsBasis) assert(source.contracts.tools.includes('set_original_checklist'));
   });
