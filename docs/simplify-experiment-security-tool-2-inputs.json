@@ -1,0 +1,131 @@
+{
+  "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+  "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+  "approvedCases": [
+    "security_tool_2"
+  ],
+  "promoted": [
+    "B2",
+    "B12"
+  ],
+  "calibration": {
+    "case": "security_tool_2",
+    "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2\\results.json",
+    "sha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+    "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+    "environment": {
+      "requestedSdk": "api-24",
+      "actualSdk": "API24 / 6.1.1.125",
+      "hvigor": "6.24.2",
+      "adapted": false,
+      "changes": [
+        "build-profile signing configuration removed",
+        "target/compatible SDK API24"
+      ],
+      "originalProfileSha256": "9770cabce21dd054bbc8dec48cad68a3d35b36ccde1e95e46d8a20eb66d78fdc",
+      "adaptedProfileSha256": "297dcdacd78966cb160fb3a49cf7ff27ada7a6563dccd2744c597431dcd00f25",
+      "testPatchSha256": "f0cf5c9d5b335eaa2ba3a39d6aae8dfaed5ea259d852795f538ae3f3a3926180",
+      "datasetDigest": "271615a131fcea4d7d3cc75a2aede53df25459e7f26ea33997afff692df14549"
+    },
+    "results": [
+      {
+        "phase": "base",
+        "executed": true,
+        "f2p": [
+          0,
+          2
+        ],
+        "p2p": [
+          746,
+          746
+        ]
+      },
+      {
+        "phase": "gold",
+        "executed": true,
+        "f2p": [
+          2,
+          2
+        ],
+        "p2p": [
+          746,
+          746
+        ]
+      }
+    ]
+  },
+  "s0": [
+    {
+      "case": "security_tool_2",
+      "state": "candidate-compile-error",
+      "sourceRun": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-s0\\st2",
+      "grade": null,
+      "gradeError": {
+        "message": "Property 'loadApplications' does not exist on type 'typeof PermissionService'.",
+        "diagnosticCount": 8,
+        "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\candidate-test.log",
+        "logSha256": "9cd2b24915598a08a30b3236ec8c95196fe31f38a81323ea722a51e658a1d68a",
+        "execution": {
+          "code": 1,
+          "timedOut": false,
+          "compileSucceeded": false,
+          "freshReport": false,
+          "durationMs": 24785
+        }
+      },
+      "commit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+      "commitSha256": "10915611e3f300974a9c9e4ddcf0e37a7f812ee44be77f676fd980350af92625",
+      "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+      "patchSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+      "freezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+      "terminal": {
+        "source": "agent.wait",
+        "requestedRunId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+        "runId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+        "status": "ok",
+        "endedAt": 1793811906987
+      },
+      "modelRequests": 39,
+      "usage": {
+        "observedCalls": 39,
+        "completeCalls": 38,
+        "tokens": 3492011
+      },
+      "elapsedMs": 699868,
+      "correction": "disabled at the isolated Gateway"
+    }
+  ],
+  "samples": [
+    {
+      "id": "security_tool_2-natural",
+      "case": "security_tool_2",
+      "kind": "defect",
+      "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\freeze",
+      "freezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+      "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2",
+      "calibrationSha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+      "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\results.json",
+      "gradeSha256": "40cb18476638f5f1919b05c08cb772ceae187bcb33b5641b866eb5866e6f4c09",
+      "before": null,
+      "initialGradeState": "candidate-compile-error",
+      "initialGradeError": {
+        "message": "Property 'loadApplications' does not exist on type 'typeof PermissionService'.",
+        "diagnosticCount": 8,
+        "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\candidate-test.log",
+        "logSha256": "9cd2b24915598a08a30b3236ec8c95196fe31f38a81323ea722a51e658a1d68a",
+        "execution": {
+          "code": 1,
+          "timedOut": false,
+          "compileSucceeded": false,
+          "freshReport": false,
+          "durationMs": 24785
+        }
+      },
+      "commit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+      "commitSha256": "10915611e3f300974a9c9e4ddcf0e37a7f812ee44be77f676fd980350af92625",
+      "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+      "patchSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb"
+    }
+  ],
+  "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520"
+}

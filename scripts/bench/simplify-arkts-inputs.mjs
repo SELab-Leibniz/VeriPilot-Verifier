@@ -16,21 +16,32 @@ export async function readArktsComparisonInputs({ file, sha256, planSha256, arti
   if (digest(bytes) !== sha256 || inputs.planSha256 !== planSha256 || inputs.artifactSha256 !== artifactSha256 || !inputs.samples?.length)
     throw new Error('ArkTS input list differs from the committed plan or package.');
   const samples = await Promise.all(inputs.samples.map(async input => {
-    if (input.case !== 'security_tool_1') throw new Error('The approved second round uses only security_tool_1.');
+    if (!/^security_tool_[12]$/u.test(input.case) || !inputs.approvedCases?.includes(input.case)
+      || !input.id?.startsWith(input.case + '-'))
+      throw new Error('Round 2 requires an approved ArkTS case with a matching object ID.');
     const { datasetDigest } = await loadArktsTask(dataset, input.case);
     const freeze = await fs.readFile(path.join(input.frozenRoot, 'freeze.json'));
     const manifest = JSON.parse(freeze);
     const calibration = await fs.readFile(path.join(input.calibrationDir, 'results.json'));
     const checked = JSON.parse(calibration);
     const grade = await fs.readFile(input.gradeFile);
-    const before = arktsHiddenReward(JSON.parse(grade), manifest.patchSha256, input.case, datasetDigest);
+    const candidate = JSON.parse(grade);
+    const before = arktsHiddenReward(candidate, manifest.patchSha256, input.case, datasetDigest);
+    // Keep an attributable compile failure in the comparison without inventing a test score.
+    const execution = candidate.results?.find(row => row.phase === 'candidate')?.execution;
+    const uncompilable = input.initialGradeState === 'candidate-compile-error' && input.id === input.case + '-natural'
+      && input.kind === 'defect' && before === null && input.before === null
+      && candidate.instanceId === input.case && candidate.environment?.datasetDigest === datasetDigest
+      && candidate.candidateSha256 === manifest.patchSha256 && Number.isInteger(execution?.code) && execution.code !== 0
+      && execution.timedOut === false && execution.compileSucceeded === false && execution.freshReport === false;
     if (digest(freeze) !== input.freezeSha256 || manifest.planSha256 !== planSha256
       || manifest.artifactSha256 !== (inputs.frozenSourceArtifactSha256 ?? artifactSha256)
       || manifest.instanceId !== input.case || manifest.datasetDigest !== datasetDigest
       || digest(calibration) !== input.calibrationSha256 || checked.instanceId !== input.case || checked.environment?.datasetDigest !== datasetDigest
       || !checked.results?.find(row => row.phase === 'base')?.validFailToPassBase || !checked.results?.find(row => row.phase === 'gold')?.resolved
-      || digest(grade) !== input.gradeSha256 || !before || JSON.stringify(input.before) !== JSON.stringify(before)
-      || (before.f2p_passed < before.f2p_total) !== (input.kind === 'defect'))
+      || digest(grade) !== input.gradeSha256
+      || !uncompilable && (!before || JSON.stringify(input.before) !== JSON.stringify(before)
+        || (before.f2p_passed < before.f2p_total) !== (input.kind === 'defect')))
       throw new Error(`Pinned ArkTS freeze or hidden score differs for ${input.id}.`);
     return { ...input, datasetDigest };
   }));
