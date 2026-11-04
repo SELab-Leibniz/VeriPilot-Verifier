@@ -1,0 +1,132 @@
+{
+  "kind": "openclaw-document-original-requirements-live-comparison",
+  "recordedAt": "2026-11-04",
+  "host": "MatrixAssistant built-in OpenClaw 2026.7.1-2 (read-only), isolated gateway profile per run",
+  "model": "custom/deepseek-v4-flash from the MatrixAssistant OpenClaw profile (openai-completions)",
+  "platform": "Windows 10.0.26200, Node v26.13.0",
+  "options": "examples/document-e2e/dynamic-benchmark-options.json",
+  "command": "node scripts/evaluate-openclaw-document-e2e.mjs --live (--original-requirements | --dynamic-baseline) --benchmark-case <case> --host-root <MA openclaw> --openclaw-profile <openclaw.json> --config examples/document-e2e/dynamic-benchmark-options.json --output-root <fresh>",
+  "series": [
+    {
+      "base": "c11be88",
+      "branch": "exp/doc-original-basis-c11be88 (before efb0577 stabilized baseline extraction)",
+      "outputRoot": ".runtime-correction/doc-original-live-20261104",
+      "cases": [
+        { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 78304, "firstFeedbackS": 19,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 267256, "firstFeedbackS": 217,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 32, "extractorRuns": 3, "extractorS": 195, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true,
+          "baselineEvents": ["GROUND_TRUTH_DELTA_REPAIRED"] },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 102543, "firstFeedbackS": 35,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 57, "extractorRuns": 0, "extractorS": 0, "providerRequests": 16, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "FAILED", "elapsedMs": 665036, "firstFeedbackS": 485,
+          "failure": "Automatic document reviews were not bound to the published dynamic baseline",
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 45, "extractorRuns": 5, "extractorS": 574, "baselineClaims": 4, "providerRequests": 37, "finalCopyEquivalent": true,
+          "baselineEvents": ["GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 169808, "firstFeedbackS": 49,
+          "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 90, "extractorRuns": 0, "extractorS": 0, "providerRequests": 24, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 441483, "firstFeedbackS": 307,
+          "reviewRounds": ["failed:6", "failed:1", "passed:0"], "reviewerRuns": 6, "reviewerS": 176, "extractorRuns": 2, "extractorS": 196, "baselineClaims": 4, "providerRequests": 38, "finalCopyEquivalent": true }
+      ],
+      "totals": {
+        "original": { "passed": 3, "of": 3, "elapsedS": 351, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 53 },
+        "ledger": { "passed": 2, "of": 3, "elapsedS": 1374, "privateRuns": 20, "extractorRuns": 10, "providerRequests": 99 }
+      }
+    },
+    {
+      "base": "efb0577",
+      "branch": "exp/doc-original-basis (rebased onto efb0577 fix(rc): stabilize baseline extraction and Stop review)",
+      "outputRoot": ".runtime-correction/doc-original-live-20261104-efb0577",
+      "cases": [
+        { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 63486, "firstFeedbackS": 17,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 271583, "firstFeedbackS": 220,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 3, "reviewerS": 39, "extractorRuns": 2, "extractorS": 198, "baselineClaims": 4, "providerRequests": 23, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 78424, "firstFeedbackS": 24,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 40, "extractorRuns": 0, "extractorS": 0, "providerRequests": 15, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "PASSED", "elapsedMs": 263464, "firstFeedbackS": 208,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 56, "extractorRuns": 2, "extractorS": 173, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 146837, "firstFeedbackS": 54,
+          "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 91, "extractorRuns": 0, "extractorS": 0, "providerRequests": 27, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 341953, "firstFeedbackS": 262,
+          "reviewRounds": ["failed:10", "passed:0"], "reviewerRuns": 5, "reviewerS": 84, "extractorRuns": 2, "extractorS": 198, "baselineClaims": 4, "providerRequests": 28, "finalCopyEquivalent": true }
+      ],
+      "totals": {
+        "original": { "passed": 3, "of": 3, "elapsedS": 289, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 55 },
+        "ledger": { "passed": 3, "of": 3, "elapsedS": 877, "privateRuns": 18, "extractorRuns": 6, "providerRequests": 75 }
+      }
+    }
+  ],
+  "semantic": {
+    "base": "efb0577",
+    "branch": "exp/doc-original-basis",
+    "case": "examples/document-e2e/semantic-ledgerlite-export (fictional; 8 requirements only in the first user message, 5 semantic deviations in draft.md)",
+    "command": "node scripts/evaluate-openclaw-semantic-document-e2e.mjs --live --case examples/document-e2e/semantic-ledgerlite-export --compaction (summary | truncate) --mode (original | ledger) --host-root <MA openclaw> --openclaw-profile <openclaw.json> --config examples/document-e2e/dynamic-benchmark-options.json --output-root <fresh>",
+    "outputRoot": ".runtime-correction/doc-semantic-live-20261104",
+    "compaction": {
+      "summary": "sessions.compact { key }: host model summary with the profile's safeguard settings; keepRecentTokens 1 and recentTurnsPreserve 0 so the first turn leaves the business context",
+      "truncate": "sessions.compact { key, maxLines: 2 }: host keeps the header and last line and archives the original file"
+    },
+    "runs": [
+      { "compaction": "summary", "mode": "original", "state": "PASSED", "elapsedMs": 168033, "firstFeedbackS": 49, "compactionMs": 41152,
+        "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+        "reviewerRuns": 4, "reviewerS": 69, "extractorRuns": 0, "providerRequests": 21, "finalCheckSatisfied": true,
+        "userMessageLogAfterCompaction": 0, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true } },
+      { "compaction": "summary", "mode": "ledger", "state": "FAILED", "elapsedMs": 1889158, "firstFeedbackS": 1070, "compactionMs": 38562,
+        "failure": "Business run hit the host command lane timeout (1830000 ms) while the second review waited on baseline extraction",
+        "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5"],
+        "reviewerRuns": 5, "reviewerS": 83, "extractorRuns": 9, "extractorS": 1714, "baselineVersion": 0, "providerRequests": 68, "finalCheckSatisfied": true,
+        "baselineEvents": ["BASELINE_AUDIT_REPAIR_STARTED:BASELINE_COVERAGE_REPAIR", "GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
+      { "compaction": "truncate", "mode": "original", "state": "FAILED", "elapsedMs": 258607, "firstFeedbackS": 103, "compactionMs": 198,
+        "failure": "Final document still violates F1, F2, F3, F4 although the final review passed",
+        "firstRound": { "detected": ["F4", "F5"], "missed": ["F1", "F2", "F3"], "extra": 0 }, "reviewRounds": ["failed:2", "passed:0"],
+        "reviewerRuns": 5, "reviewerS": 136, "extractorRuns": 0, "providerRequests": 20, "finalCheckSatisfied": false,
+        "userMessageLogAfterCompaction": 0, "userMessageLogAtEnd": { "messages": 1, "requirementMessage": false } },
+      { "compaction": "truncate", "mode": "ledger", "state": "FAILED", "elapsedMs": 336570, "firstFeedbackS": 282, "compactionMs": 217,
+        "failure": "First review passed with no findings; the business run then ended with an apply_patch error",
+        "firstRound": { "detected": [], "missed": ["F1", "F2", "F3", "F4", "F5"], "extra": 0 }, "reviewRounds": ["passed:0"],
+        "reviewerRuns": 2, "reviewerS": 46, "extractorRuns": 2, "extractorS": 234, "baselineVersion": 1, "baselineClaims": 6, "baselineClaimsFromRequirements": 0,
+        "providerRequests": 22, "finalCheckSatisfied": false }
+    ],
+    "hostHookFailures": "Every summary compaction (3 of 3 including the harness attempt) logged '[hooks] before_compaction handler from runtime-corrector failed: timed out after 30000ms'. sessions.compact runs inside the session lifecycle lock and the RC hook waits on runWithWorkAdmission for the same session.",
+    "notes": [
+      "A first attempt (harness-attempt-summary-original) stopped after compaction because the harness misread the sessions.compact response; it is not counted.",
+      "In both summary runs the host summary itself retained all 8 requirements.",
+      "One run per combination; one fictional case."
+    ],
+    "afterFix": {
+      "change": "lib/openclaw/runtime.mjs: recordNativeUserMessages reads the host branch without work admission and logs user messages at agent_end and before_compaction (original mode only); a manual compaction hook (no runId) runs its admitted PreCompact checkpoint in the background instead of awaiting it.",
+      "outputRoot": ".runtime-correction/doc-semantic-live-20261104-fix",
+      "probe": { "outputRoot": ".runtime-correction/doc-semantic-probe-20261104",
+        "before": { "turn1PromptHookObservation": "STALE HOST_TRANSCRIPT_SESSION_MISMATCH", "userMessageLogAfterTurn1": false, "summaryCompactionMs": 39672, "rcHookTimeout": true },
+        "after": { "userMessageLogAfterTurn1": true, "summaryCompactionMs": 12168, "rcHookTimeout": false } },
+      "runs": [
+        { "compaction": "summary", "mode": "original", "state": "PASSED", "elapsedMs": 114531, "firstFeedbackS": 40, "compactionMs": 9291,
+          "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+          "reviewerRuns": 3, "reviewerS": 57, "extractorRuns": 0, "providerRequests": 15, "finalCheckSatisfied": true,
+          "userMessageLogAfterCompaction": 1, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true }, "rcHookFailures": 0 },
+        { "compaction": "truncate", "mode": "original", "state": "PASSED", "elapsedMs": 134081, "firstFeedbackS": 41, "compactionMs": 233,
+          "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+          "reviewerRuns": 4, "reviewerS": 64, "extractorRuns": 0, "providerRequests": 18, "finalCheckSatisfied": true,
+          "userMessageLogAfterCompaction": 1, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true }, "rcHookFailures": 0 },
+        { "compaction": "truncate", "mode": "ledger", "state": "FAILED", "elapsedMs": 577558, "firstFeedbackS": 473, "compactionMs": 219,
+          "failure": "The final document still violates F1, F2, F3, F4, F5 and lost R8 (exit code 2) although the second review passed",
+          "firstRound": { "detected": ["F5"], "missed": ["F1", "F2", "F3", "F4"], "extra": 1 }, "reviewRounds": ["failed:2", "passed:0"],
+          "reviewerRuns": 4, "reviewerS": 89, "extractorRuns": 4, "extractorS": 407, "baselineVersion": 1, "baselineClaims": 7, "baselineClaimsFromRequirements": 0,
+          "providerRequests": 41, "finalCheckSatisfied": false, "rcHookFailures": 0 }
+      ],
+      "notes": [
+        "The truncate/ledger extra finding (line 43) is the exit-code-2 versus overwrite contradiction, reported in the exit code section rather than the F4 section.",
+        "In the truncate/ledger run the business model resolved both internal-contradiction findings against the requirements (removed exit code 2, reworded the network check as independent of reading data), and the second review passed.",
+        "One run per combination; one fictional case."
+      ]
+    }
+  },
+  "notes": [
+    "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 3-12 s each).",
+    "With efb0577 every ledger run made exactly one extraction and one independent coverage audit and published version 1 with 4 claims; no repairs or retries.",
+    "In the efb0577 matplotlib ledger run the reviewer added five AGENT-COPY findings alongside the five deterministic DOCUMENT-COPY-MISMATCH findings, and the business model fixed all of them in one round. In the original run the EOF mismatch at line 208 survived the first repair. Both modes needed three rounds on this case at c11be88.",
+    "Apart from those AGENT findings and one AGENT-GT-DEVIATION in the c11be88 matplotlib ledger run, every first-round finding is a deterministic DOCUMENT-COPY-MISMATCH; these cases do not measure semantic review quality.",
+    "One run per case, mode and base; elapsed times include provider latency on a shared cloud endpoint."
+  ]
+}
