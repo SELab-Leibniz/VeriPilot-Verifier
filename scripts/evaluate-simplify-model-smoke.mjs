@@ -3,8 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { waitPostRunTerminal } from '../lib/openclaw/post-run-host.mjs';
-import { createSimplifyGateway, redactEvaluationText, readProviderTiming, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
+import { createSimplifyGateway, redactEvaluationText, readProviderTiming, summarizeProviderUsage, waitSimplifyRunTerminal } from './helpers/simplify-native-evaluation.mjs';
 
 async function main() {
   const { values } = parseArgs({ options: { output: { type: 'string' }, artifact: { type: 'string' },
@@ -15,7 +14,7 @@ async function main() {
   const projectRoot = path.join(output, 'project');
   const started = Date.now();
   const result = { state: 'failed' };
-  let gateway, sessionKey, runId, assistant;
+  let gateway, sessionKey, runId, assistant, dispatchedAt;
   try {
     gateway = await createSimplifyGateway({ hostRoot: values['host-root'], projectRoot, outputRoot: output,
       sourceRoot: fileURLToPath(new URL('../', import.meta.url)), prebuiltPluginRoot: values.artifact,
@@ -30,12 +29,13 @@ async function main() {
     await sessions.patchSessionEntry({ ...scope, update: entry => ({ ...entry, spawnedCwd: projectRoot }) });
     const { sessionId } = await sessions.getSessionEntry(scope);
     gateway.setPhase('model-smoke');
-    const dispatchedAt = Date.now();
+    dispatchedAt = Date.now();
     const accepted = await gateway.request('chat.send', { sessionKey, sessionId, message: 'Reply exactly: OK', idempotencyKey: randomUUID(),
       deliver: false, thinking: 'low', timeoutMs: 60000 });
     runId = accepted.runId;
     if (!runId) throw new Error('The Gateway did not accept the smoke request.');
-    const terminal = await waitPostRunTerminal(null, null, runId, dispatchedAt + 60000, AbortSignal.timeout(60000), (...args) => gateway.request(...args));
+    const terminal = await waitSimplifyRunTerminal(gateway, runId, dispatchedAt + 60000);
+    if (!terminal) { result.state = 'timed-out'; throw new Error('The smoke run exceeded its total deadline.'); }
     result.responseMs = Date.now() - dispatchedAt;
     if (terminal?.status !== 'ok') throw new Error('The smoke model turn did not finish normally.');
     runId = null;
@@ -56,6 +56,9 @@ async function main() {
     if (gateway) await gateway.close();
   }
   const timing = gateway ? await readProviderTiming(gateway.root) : [];
+  const firstRequest = timing.find(row => row.event === 'request' && row.phase === 'model-smoke');
+  result.firstProviderRequestMs = firstRequest && dispatchedAt !== undefined ? Date.parse(firstRequest.startedAt) - dispatchedAt : null;
+  result.upstreamStatuses = timing.filter(row => row.event === 'response').map(row => row.status);
   const providerStatus = gateway?.providerStatus?.();
   result.usage = summarizeProviderUsage(providerStatus?.requests ?? 0, [assistant?.usage]);
   result.elapsedMs = Date.now() - started;
@@ -63,7 +66,7 @@ async function main() {
     result.state = providerStatus.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'failed';
     result.reason = providerStatus.failure;
   } else if (result.state === 'completed' && (!result.usage.completeCalls || result.usage.completeCalls !== result.usage.observedCalls
-    || !timing.some(row => row.event === 'response' && row.status === 200))) {
+    || !Number.isFinite(result.firstProviderRequestMs) || result.firstProviderRequestMs < 0 || !result.upstreamStatuses.includes(200))) {
     result.state = 'failed'; result.reason = 'Smoke response or complete provider usage could not be verified.';
   }
   await fs.writeFile(path.join(output, 'result.json'), JSON.stringify(result, null, 2), { flag: 'wx' });

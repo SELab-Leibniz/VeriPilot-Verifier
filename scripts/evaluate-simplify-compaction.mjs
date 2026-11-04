@@ -4,8 +4,8 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { waitPostRunTerminal } from '../lib/openclaw/post-run-host.mjs';
-import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, resolveSimplifyProvider, supportsSimplifyModel, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
+import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, resolveSimplifyProvider, supportsSimplifyModel,
+  summarizeProviderUsage, waitSimplifyRunTerminal } from './helpers/simplify-native-evaluation.mjs';
 
 const requirementsSha256 = '5b59fab560565602276a94485899c073dc3b8a2f973bd743be2de91ece7988fd';
 const wallMs = 30 * 60_000;
@@ -126,7 +126,7 @@ async function main() {
         idempotencyKey: runId, deliver: false, thinking: 'low', timeout: Math.max(1, Math.floor(remaining / 1000)),
         ...(extraSystemPrompt ? { extraSystemPrompt } : {}) }, { timeoutMs: remaining });
       if (response.runId !== runId || response.sessionKey !== sessionKey) throw new Error('Compaction turn identity mismatch.');
-      const terminal = await waitPostRunTerminal(null, null, runId, deadlineAt, signal, (...args) => gateway.request(...args));
+      const terminal = await waitSimplifyRunTerminal(gateway, runId, deadlineAt, signal);
       if (terminal?.status !== 'ok') throw new Error('Compaction turn did not complete.');
       await gateway.drain();
       const entry = await sessions.getSessionEntry(scope);
@@ -161,7 +161,7 @@ async function main() {
     }
     result.state = 'completed';
   } catch (error) {
-    result.state = signal.aborted ? 'timed-out' : 'failed';
+    result.state = signal.aborted || Date.now() >= deadlineAt ? 'timed-out' : 'failed';
     result.reason = redactEvaluationText(error.message);
   } finally {
     if (runId && gateway) await gateway.request('chat.abort', { sessionKey, runId }).catch(() => {});

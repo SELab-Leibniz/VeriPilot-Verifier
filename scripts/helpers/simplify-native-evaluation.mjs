@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 import { createNativeGatewayEvaluation } from './native-gateway-evaluation.mjs';
 
@@ -129,6 +130,30 @@ export async function readProviderTiming(root, name = 'provider-fetch-timing.jso
     throw error;
   });
   return text.split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
+}
+
+export async function waitSimplifyRunTerminal(gateway, runId, deadlineAt, signal) {
+  if (!runId) throw new Error('Missing evaluation run identity.');
+  while (Date.now() < deadlineAt && !signal?.aborted) {
+    let response;
+    try {
+      response = await gateway.request('agent.wait', { runId, timeoutMs: 1 },
+        { timeoutMs: Math.min(5000, Math.max(1, deadlineAt - Date.now())) });
+    } catch (error) {
+      // The public client establishes a fresh authenticated connection per poll.
+      if (!/^gateway timeout after \d+ms(?:\r?\n|$)/u.test(error?.message ?? '')) throw error;
+    }
+    if (Date.now() >= deadlineAt || signal?.aborted) break;
+    if (response) {
+      const terminal = response.result ?? response;
+      if (terminal?.runId !== runId) throw new Error('Evaluation terminal run identity mismatch.');
+      if (terminal.status === 'ok' || terminal.status === 'error') return terminal;
+      if (terminal.status !== 'timeout') throw new Error('Unexpected evaluation terminal status.');
+    }
+    try { await delay(Math.min(500, Math.max(0, deadlineAt - Date.now())), undefined, { signal }); }
+    catch (error) { if (!signal?.aborted) throw error; }
+  }
+  return null;
 }
 
 export function simplifyProviderIdentity(provider, model, env = process.env) {

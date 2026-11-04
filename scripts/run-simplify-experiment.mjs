@@ -272,10 +272,15 @@ async function main() {
     catch (error) { result = { state: 'failed', evidence: directory, reason: redactEvaluationText(error.message), completedInBudget: false, frameworkError: true }; }
     if (credential) {
       const evaluation = path.join(directory, 'evaluation');
-      const readOptional = file => readJson(path.join(evaluation, file)).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+      // The Stop evaluator keeps each sample's native Gateway in a neutral subdirectory.
+      const samples = values.round === '1' ? (await fs.readdir(evaluation, { withFileTypes: true })
+        .catch(error => { if (error.code === 'ENOENT') return []; throw error; }))
+        .filter(entry => entry.isDirectory() && entry.name.startsWith('sample-')) : [];
+      const nativeRun = samples.length === 1 ? path.join(evaluation, samples[0].name) : evaluation;
+      const readOptional = file => readJson(path.join(nativeRun, file)).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
       const boundary = await readOptional('provider-boundary.json');
       result.gatewayStarts = (await readOptional('gateway-start.json'))?.starts ?? 0;
-      result.modelRequests = boundary?.requests ?? (await readProviderTiming(path.join(evaluation, 'native-host'))).filter(row => row.event === 'request').length;
+      result.modelRequests = boundary?.requests ?? (await readProviderTiming(path.join(nativeRun, 'native-host'))).filter(row => row.event === 'request').length;
       if (boundary?.failure) Object.assign(result, { state: boundary.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'failed',
         reason: boundary.failure, completedInBudget: false, frameworkError: true });
     }
