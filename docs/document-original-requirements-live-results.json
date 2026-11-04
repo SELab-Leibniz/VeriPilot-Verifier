@@ -4,33 +4,64 @@
   "host": "MatrixAssistant built-in OpenClaw 2026.7.1-2 (read-only), isolated gateway profile per run",
   "model": "custom/deepseek-v4-flash from the MatrixAssistant OpenClaw profile (openai-completions)",
   "platform": "Windows 10.0.26200, Node v26.13.0",
-  "branch": "exp/doc-original-basis (base c11be88; excludes efb0577, which changes baseline extraction)",
   "options": "examples/document-e2e/dynamic-benchmark-options.json",
   "command": "node scripts/evaluate-openclaw-document-e2e.mjs --live (--original-requirements | --dynamic-baseline) --benchmark-case <case> --host-root <MA openclaw> --openclaw-profile <openclaw.json> --config examples/document-e2e/dynamic-benchmark-options.json --output-root <fresh>",
-  "cases": [
-    { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 78304, "firstFeedbackS": 19,
-      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
-    { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 267256, "firstFeedbackS": 217,
-      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 32, "extractorRuns": 3, "extractorS": 195, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true,
-      "baselineEvents": ["GROUND_TRUTH_DELTA_REPAIRED"] },
-    { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 102543, "firstFeedbackS": 35,
-      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 57, "extractorRuns": 0, "extractorS": 0, "providerRequests": 16, "finalCopyEquivalent": true },
-    { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "FAILED", "elapsedMs": 665036, "firstFeedbackS": 485,
-      "failure": "Automatic document reviews were not bound to the published dynamic baseline",
-      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 45, "extractorRuns": 5, "extractorS": 574, "baselineClaims": 4, "providerRequests": 37, "finalCopyEquivalent": true,
-      "baselineEvents": ["GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
-    { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 169808, "firstFeedbackS": 49,
-      "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 90, "extractorRuns": 0, "extractorS": 0, "providerRequests": 24, "finalCopyEquivalent": true },
-    { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 441483, "firstFeedbackS": 307,
-      "reviewRounds": ["failed:6", "failed:1", "passed:0"], "reviewerRuns": 6, "reviewerS": 176, "extractorRuns": 2, "extractorS": 196, "baselineClaims": 4, "providerRequests": 38, "finalCopyEquivalent": true }
+  "series": [
+    {
+      "base": "c11be88",
+      "branch": "exp/doc-original-basis-c11be88 (before efb0577 stabilized baseline extraction)",
+      "outputRoot": ".runtime-correction/doc-original-live-20261104",
+      "cases": [
+        { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 78304, "firstFeedbackS": 19,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 267256, "firstFeedbackS": 217,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 32, "extractorRuns": 3, "extractorS": 195, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true,
+          "baselineEvents": ["GROUND_TRUTH_DELTA_REPAIRED"] },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 102543, "firstFeedbackS": 35,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 57, "extractorRuns": 0, "extractorS": 0, "providerRequests": 16, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "FAILED", "elapsedMs": 665036, "firstFeedbackS": 485,
+          "failure": "Automatic document reviews were not bound to the published dynamic baseline",
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 45, "extractorRuns": 5, "extractorS": 574, "baselineClaims": 4, "providerRequests": 37, "finalCopyEquivalent": true,
+          "baselineEvents": ["GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 169808, "firstFeedbackS": 49,
+          "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 90, "extractorRuns": 0, "extractorS": 0, "providerRequests": 24, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 441483, "firstFeedbackS": 307,
+          "reviewRounds": ["failed:6", "failed:1", "passed:0"], "reviewerRuns": 6, "reviewerS": 176, "extractorRuns": 2, "extractorS": 196, "baselineClaims": 4, "providerRequests": 38, "finalCopyEquivalent": true }
+      ],
+      "totals": {
+        "original": { "passed": 3, "of": 3, "elapsedS": 351, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 53 },
+        "ledger": { "passed": 2, "of": 3, "elapsedS": 1374, "privateRuns": 20, "extractorRuns": 10, "providerRequests": 99 }
+      }
+    },
+    {
+      "base": "efb0577",
+      "branch": "exp/doc-original-basis (rebased onto efb0577 fix(rc): stabilize baseline extraction and Stop review)",
+      "outputRoot": ".runtime-correction/doc-original-live-20261104-efb0577",
+      "cases": [
+        { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 63486, "firstFeedbackS": 17,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 271583, "firstFeedbackS": 220,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 3, "reviewerS": 39, "extractorRuns": 2, "extractorS": 198, "baselineClaims": 4, "providerRequests": 23, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 78424, "firstFeedbackS": 24,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 40, "extractorRuns": 0, "extractorS": 0, "providerRequests": 15, "finalCopyEquivalent": true },
+        { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "PASSED", "elapsedMs": 263464, "firstFeedbackS": 208,
+          "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 56, "extractorRuns": 2, "extractorS": 173, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 146837, "firstFeedbackS": 54,
+          "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 91, "extractorRuns": 0, "extractorS": 0, "providerRequests": 27, "finalCopyEquivalent": true },
+        { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 341953, "firstFeedbackS": 262,
+          "reviewRounds": ["failed:10", "passed:0"], "reviewerRuns": 5, "reviewerS": 84, "extractorRuns": 2, "extractorS": 198, "baselineClaims": 4, "providerRequests": 28, "finalCopyEquivalent": true }
+      ],
+      "totals": {
+        "original": { "passed": 3, "of": 3, "elapsedS": 289, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 55 },
+        "ledger": { "passed": 3, "of": 3, "elapsedS": 877, "privateRuns": 18, "extractorRuns": 6, "providerRequests": 75 }
+      }
+    }
   ],
-  "totals": {
-    "original": { "passed": 3, "of": 3, "elapsedS": 351, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 53 },
-    "ledger": { "passed": 2, "of": 3, "elapsedS": 1374, "privateRuns": 20, "extractorRuns": 10, "providerRequests": 99 }
-  },
   "notes": [
-    "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 5-11 s each).",
-    "Every first-round finding except one ledger AGENT-GT-DEVIATION is a deterministic DOCUMENT-COPY-MISMATCH; these cases do not measure semantic review quality.",
-    "One run per case and mode; elapsed times include provider latency on a shared cloud endpoint."
+    "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 3-12 s each).",
+    "With efb0577 every ledger run made exactly one extraction and one independent coverage audit and published version 1 with 4 claims; no repairs or retries.",
+    "In the efb0577 matplotlib ledger run the reviewer added five AGENT-COPY findings alongside the five deterministic DOCUMENT-COPY-MISMATCH findings, and the business model fixed all of them in one round. In the original run the EOF mismatch at line 208 survived the first repair. Both modes needed three rounds on this case at c11be88.",
+    "Apart from those AGENT findings and one AGENT-GT-DEVIATION in the c11be88 matplotlib ledger run, every first-round finding is a deterministic DOCUMENT-COPY-MISMATCH; these cases do not measure semantic review quality.",
+    "One run per case, mode and base; elapsed times include provider latency on a shared cloud endpoint."
   ]
 }

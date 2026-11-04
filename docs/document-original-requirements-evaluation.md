@@ -1,12 +1,14 @@
 # 文档纠偏脱离动态基线：原型与评估（2026-11-04）
 
-分支 `exp/doc-original-basis`，基于 `c11be88`。主工作区与 MatrixAssistant 均未改动。离线部分使用脚本化 reviewer；真实运行部分使用 MatrixAssistant 内置 OpenClaw 与其已配置的 `custom/deepseek-v4-flash`，见“真实模型对比”。
+分支 `exp/doc-original-basis`，已变基到 `efb0577`（`fix(rc): stabilize baseline extraction and Stop review`）；变基前基于 `c11be88` 的版本保留在 `exp/doc-original-basis-c11be88`。主工作区与 MatrixAssistant 均未改动。离线部分使用脚本化 reviewer；真实运行部分使用 MatrixAssistant 内置 OpenClaw 与其已配置的 `custom/deepseek-v4-flash`，见“真实模型对比”。
 
 ## 结论
 
 文档纠偏可以直接对照原始需求审阅，不需要先提取基线。改动量约 220 行生产代码和提示词，外加 336 行测试，在 OpenClaw 与 Claude Code 两个入口都验证通过。
 
-真实模型下，3 个样例两种模式各跑一次。原始需求模式 3/3 通过，总耗时 351 秒；基线模式 2/3 通过，总耗时 1374 秒，前者少约 74%。基线模式多出的时间几乎全部是基线提取：10 次提取共 965 秒，而且都发生在首轮反馈之前。业务模型写完初稿后等待首轮反馈的时间，原始需求模式为 19–49 秒，基线模式为 217–485 秒。基线模式唯一的失败就是历史上反复修的那类问题：提取的覆盖核验没通过，首轮审阅只能在没有基线的情况下进行。
+真实模型下做了两轮对比，3 个样例两种模式各跑一次。在 `efb0577` 上，两种模式都是 3/3 通过：原始需求模式总耗时 289 秒，基线模式 877 秒，前者少约 67%。业务模型写完初稿后等待首轮反馈的时间，原始需求模式为 17–54 秒，基线模式为 208–262 秒。
+
+`efb0577` 让基线提取稳定了：每个样例只做一次提取和一次独立覆盖审计，一次发布成功，没有修补和重试；变基前同样 3 个样例共做了 10 次提取，constraints 样例因覆盖核验没通过而失败（总耗时 351 秒对 1374 秒）。但稳定之后，这两步每次仍要 173–198 秒，全部排在首轮反馈之前。两轮里两种模式发现的偏差相同，最终文档都与需求一致，所以基线模式多花的时间没有换来更多发现。
 
 动态基线的设计初衷之一是“上下文压缩后仍能看到需求原文”。新模式用一份只保存用户原话的会话日志覆盖了这个目标，不存项目副本。宿主把 transcript 截短重写时，旧需求仍然可见，这一点有测试证明。
 
@@ -57,7 +59,8 @@ dynamicGroundTruth:
 ### 回归
 
 - 文档相关 18 个测试文件（199 项）全部通过。
-- 最终全量：277 个文件、2909 项，30 个文件共 280 项失败。在未改动的 HEAD 副本（`rc-wt/head-baseline`）上逐一复跑，这 30 个文件同样失败，失败用例数一致（280 = 280），属于既有问题；主工作区的未提交改动涉及其中多数测试文件。
+- 变基到 `efb0577` 后的全量：280 个文件、2972 项，20 个文件共 297 项失败。未改动的 `efb0577` 副本（`rc-wt/head-baseline`）同时跑全量：279 个文件、2961 项，失败的 20 个文件完全相同，失败用例数一致（297 = 297），属于既有问题。本分支多出的唯一文件是新增测试，11 项全部通过。
+- 变基前（`c11be88`）的全量：277 个文件、2909 项，30 个文件共 280 项失败，与当时的 HEAD 副本一致。
 - 首轮全量曾多出一个由本改动引入的失败：`document-agent.test.mjs` 的 “额外源文件读取应禁用精确缓存”。原因是缓存资格判断把请求文件所在目录整体视为本轮请求范围，现已收窄到 `user-sources/` 子目录，复跑通过。
 
 ## 与基线模式的对比
@@ -74,9 +77,31 @@ dynamicGroundTruth:
 
 ## 真实模型对比（2026-11-04）
 
-环境：Windows，MatrixAssistant 内置 OpenClaw 2026.7.1-2（只读，每次运行使用独立的 gateway 配置），模型为 MatrixAssistant `openclaw.json` 中的默认模型 `custom/deepseek-v4-flash`，选项文件 `examples/document-e2e/dynamic-benchmark-options.json`。同一机器、同一代码，两种模式依次运行，每个样例每种模式各 1 次。结果数据在 `docs/document-original-requirements-live-results.json`。
+环境：Windows，MatrixAssistant 内置 OpenClaw 2026.7.1-2（只读，每次运行使用独立的 gateway 配置），模型为 MatrixAssistant `openclaw.json` 中的默认模型 `custom/deepseek-v4-flash`，选项文件 `examples/document-e2e/dynamic-benchmark-options.json`。同一机器、同一代码，两种模式依次运行，每个样例每种模式各 1 次。共两轮：先在 `c11be88` 上，再在变基到 `efb0577` 后重跑。结果数据在 `docs/document-original-requirements-live-results.json`。
 
 任务是复制型文档任务：业务模型先把含 4 处受控偏差的 `draft.md` 原样写成 `design.md`，再根据自动反馈修复，直到与 `requirements.md` 一致。
+
+### 第二轮：`efb0577`（稳定后的基线提取）
+
+| 样例 | 模式 | 结果 | 总耗时 | 首轮反馈等待 | 审阅轮次 | 审阅运行 | 基线提取 | 模型请求 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| financial-document-processor | 原始需求 | 通过 | 63 s | 17 s | 2 | 2（31 s） | 0 | 13 |
+| financial-document-processor | 基线 | 通过 | 272 s | 220 s | 2 | 3（39 s） | 2（198 s） | 23 |
+| constraints-scheduling | 原始需求 | 通过 | 78 s | 24 s | 2 | 4（40 s） | 0 | 15 |
+| constraints-scheduling | 基线 | 通过 | 263 s | 208 s | 2 | 4（56 s） | 2（173 s） | 24 |
+| matplotlib-22719 | 原始需求 | 通过 | 147 s | 54 s | 3 | 5（91 s） | 0 | 27 |
+| matplotlib-22719 | 基线 | 通过 | 342 s | 262 s | 2 | 5（84 s） | 2（198 s） | 28 |
+| 合计 | 原始需求 | 3/3 | 289 s | | | 11 | 0 | 55 |
+| 合计 | 基线 | 3/3 | 877 s | | | 12 | 6 | 75 |
+
+观察：
+
+1. 基线模式每个样例的 2 次提取运行，分别是一次提取和一次独立覆盖审计，都一次发布 4 条 claim，没有修补或重试。这和第一轮的 2–5 次、含一次失败相比，是 `efb0577` 的实际改进。
+2. 改进的是稳定性，不是开销。两步合计 173–198 秒，与第一轮的成功样例（195–196 秒）相当，仍全部排在首轮反馈之前。
+3. matplotlib 上轮次不同：基线模式的 reviewer 在 5 条确定性 `DOCUMENT-COPY-MISMATCH` 之外又给了 5 条 `AGENT-COPY-*` 说明，其中一条讲清了文件末尾缺少空行，业务模型一轮全部修好；原始需求模式只有确定性发现，第 208 行的文件末尾差异第一轮没修好，多了一轮（约 18 秒）。第一轮对比时两种模式在这个样例上都是 3 轮，所以单次运行不能把这一轮归因于基线。
+4. 额外的审阅运行仍是 `first-repair` 阶段的输出格式修补，每次 3–12 秒，两种模式都有。
+
+### 第一轮：`c11be88`（变基前）
 
 | 样例 | 模式 | 结果 | 总耗时 | 首轮反馈等待 | 审阅轮次 | 审阅运行 | 基线提取 | 模型请求 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -96,11 +121,13 @@ dynamicGroundTruth:
 3. 两种模式都会出现额外的审阅运行，阶段为 `first-repair`，是 reviewer 输出格式修补，每次 5–11 秒，与是否使用基线无关。
 4. 基线模式的审阅在 matplotlib 样例上也更慢（176 s 对 90 s），首轮单次审阅 89 s 对 44 s，审阅请求里多了 claim 账本。
 
-代码版本：两种模式都运行本分支代码，基于 `c11be88`。主工作区在评测期间（11-04 11:59）提交了 `efb0577 fix(rc): stabilize baseline extraction and Stop review`，改动了基线提取，也涉及 `orchestrator.mjs`、`runtime.mjs`、`reviewer.mjs`。上表的基线模式数据不包含该提交的改进。
+代码版本：这一轮两种模式都运行本分支基于 `c11be88` 的代码，不包含 `efb0577` 对基线提取的改动。
 
-这组样例的局限：除基线模式中的 1 条 `AGENT-GT-DEVIATION` 外，所有首轮发现都是确定性的 `DOCUMENT-COPY-MISMATCH`，因此它衡量的是流程开销和稳定性，不衡量语义审阅能力。每种组合只跑了 1 次，耗时包含共享云端接口的波动。
+### 两轮共同的局限与安全检查
 
-运行前后对 MatrixAssistant 的 `resources/openclaw` 做了快照（文件数 22207、总字节 248556049、最新修改时间 2026-10-19），两次完全一致。模型凭据只在进程内存中使用，并以只读方式从 OpenClaw 的 agent 鉴权库读取；运行后扫描全部 2549 个输出文件，均不含该密钥。
+这组样例的局限：除基线模式中的 `AGENT-*` 发现（第一轮 1 条 `AGENT-GT-DEVIATION`，第二轮 matplotlib 的 5 条 `AGENT-COPY-*`）外，所有首轮发现都是确定性的 `DOCUMENT-COPY-MISMATCH`，因此它衡量的是流程开销和稳定性，不衡量语义审阅能力。每种组合每轮只跑了 1 次，耗时包含共享云端接口的波动。
+
+每轮运行前后都对 MatrixAssistant 的 `resources/openclaw` 做了快照（文件数 22207、总字节 248556049、最新修改时间 2026-10-19），前后完全一致。模型凭据只在进程内存中使用，并以只读方式从 OpenClaw 的 agent 鉴权库读取；运行后扫描输出文件（第一轮 2549 个，第二轮 2447 个），均不含该密钥。
 
 ## 已知限制
 
@@ -109,13 +136,12 @@ dynamicGroundTruth:
 3. OpenClaw 通过 `prependContext` 注入到用户消息里的纠偏反馈只做了标记（`containsCorrectorFeedback`），没有剥离。提示词要求 reviewer 不把标记后的文字当作用户权威。
 4. 请求里的消息路径按轮次变化，因此原始需求模式下，文档审阅的精确输入缓存预计不会命中。
 5. 真实模型对比只覆盖复制型样例，语义偏差的准确率、漏报和误报仍没有数据。
-6. 本分支基于 `c11be88`。主工作区的改动已提交为 `efb0577`，与本分支在 `orchestrator.mjs`、`runtime.mjs`、`reviewer.mjs` 上可能有小冲突。本分支在这三个文件中的改动共 27 行。
+6. 本分支已变基到 `efb0577`，无冲突。与 `efb0577` 重叠的文件是 `orchestrator.mjs`、`runtime.mjs`、`reviewer.mjs` 和 `packaging/runtime-modules.json`，本分支在其中的改动共 28 行，变基后逐处核对过仍然完整。
 
 ## 后续建议
 
 1. 补一组语义样例：需求只出现在对话中，中途强制压缩，草稿含语义偏差而非逐字差异，检验压缩后能否仍然发现偏差。这是两种模式真正可能拉开差距的地方。
-2. 把本分支变基到 `efb0577`，用其稳定后的基线提取重跑基线模式，再与原始需求模式比较。
-3. 每个组合重复 3 次，确认耗时差距不是单次波动。
+2. 每个组合重复 3 次，确认耗时差距不是单次波动，也确认 matplotlib 上 `AGENT-COPY-*` 说明省掉一轮修复是否可重复。如果可重复，可以考虑在原始需求模式下让 reviewer 对确定性差异也给出说明，而不需要基线。
 
 ## 复现
 
@@ -130,7 +156,7 @@ node scripts/evaluate-openclaw-document-e2e.mjs --live --original-requirements `
   --host-root C:\Users\user\workspace\program_workspace\MatrixAssistant\resources\openclaw `
   --openclaw-profile C:\Users\user\.openclaw\openclaw.json `
   --config examples/document-e2e/dynamic-benchmark-options.json `
-  --output-root .runtime-correction/doc-original-live-<日期>/<样例>-original-001
+  --output-root .runtime-correction/doc-original-live-<日期>-<基线提交>/<样例>-original-001
 # 基线模式把 --original-requirements 换成 --dynamic-baseline
 ```
 
