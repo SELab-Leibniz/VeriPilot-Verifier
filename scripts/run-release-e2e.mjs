@@ -191,7 +191,16 @@ try {
     const state = gateway.runtime.state.resolveStateDir();
     const postRoot = path.join(state,'runtime-corrector-stop-sessions/post-run');
     const store = createStopCorrectionStore({directory:path.join(state,'runtime-corrector-stop-sessions')});
-    const turns = [];
+    const turns = [], documentAttempts = new Map();
+    async function observeDocumentRequests() {
+      const files = await findFiles(path.join(projectRoot,'.runtime-correction','.semantic-review'),
+        file=>path.basename(file)==='request.json');
+      for (const file of files) if (!documentAttempts.has(file)) try {
+        const request = await read(file);
+        documentAttempts.set(file,{roundId:path.basename(path.dirname(file)),triggerFile:request.triggerFile,
+          stage:request.stage,observedAt:Date.now(),originalSourceCount:request.originalRequirements?.userMessages?.length??0});
+      } catch (error) { if (error.code!=='ENOENT' && !(error instanceof SyntaxError)) throw error; }
+    }
     const stages = ['proposal','codeing'];
     const docNames = ['proposal.md','design.md','tasks.md'];
     const change = path.join(projectRoot,'openspec','changes',changeName);
@@ -206,6 +215,7 @@ try {
       const original = createBusinessTerminalObserver();
       while (Date.now() < deadline && !gateway.providerStatus().failure) {
         await gateway.drain();
+        await observeDocumentRequests();
         const latest = await gateway.runtime.agent.session.getSessionEntry({ ...scope,readConsistency:'latest' });
         assertBusinessSessionIdentity({sessionId,sessionKey,runId},latest,gateway.metrics().modelStarts);
         const posts = await findFiles(postRoot,file=>file.endsWith('.json'));
@@ -266,12 +276,19 @@ try {
       : firstStop.reviewStatus==='NO_DEVIATION_FOUND' || firstStop.reviewStatus==='PASS');
     const docs = Object.fromEntries(await Promise.all(docNames.map(async file=>[file,
       await fs.readFile(path.join(change,file)).then(data=>({sha256:digest(data),bytes:data.length}),error=>{if(error.code==='ENOENT')return null;throw error;})])));
-    const reviews=documents.reviews.map(item=>{
+    const reviews=documents.reviews.map((item,index)=>{
       const meta=item.result.metadata;
-      const relative=(item.result.artifact?.path ?? meta.inputs?.find(input=>input.path?.endsWith('.md'))?.path ?? null);
+      const relative=meta.triggerFile;
       const receipt=documents.receipts.find(row=>row.toolCallId===item.toolCallId);
+      const native=docRuns.find(run=>run.sessionId===meta.semanticReview?.forkSessionId);
+      const firstHash=meta.inputs?.find(input=>input.path===relative)?.sha256;
+      const next=documents.reviews.slice(index+1).find(row=>row.result.metadata.triggerFile===relative
+        && row.result.metadata.inputs?.some(input=>input.path===relative&&input.sha256!==firstHash));
+      const changedAfterFeedback=receipt && firstHash ? Boolean(next || docs[path.basename(relative)]?.sha256!==firstHash) : null;
       return {result:item.result,relative,file:item.file,toolCallId:item.toolCallId,
-        feedback:receipt ? redactEvaluationText(receipt.text) : null};
+        semanticMs:native?.startedAt&&native?.settledAt ? native.settledAt-native.startedAt : null,
+        feedback:receipt ? redactEvaluationText(receipt.text) : null,changedAfterFeedback,
+        laterRound:next?.result.metadata.roundId??null,laterStatus:next?.result.status??null};
     });
     const businessNatural = turns.length===2 && turns.every(turn=>businessCompleted(turn.terminal,turn.finalRunId));
     const frameworkError = Boolean(boundary.failure && boundary.failure!=='PROFILE_RATE_LIMIT' && boundary.failure!=='PROFILE_PAIR_RATE_LIMIT');
@@ -279,7 +296,7 @@ try {
     await write(path.join(outputRoot,'result.json'),{
       state:boundary.failure?.includes('RATE_LIMIT')?'rate-limited':frameworkError?'framework-error':Date.now()>=deadline?'timed-out':'finished',
       reason:boundary.failure ?? final?.post?.reason ?? null,frameworkError,instance,projectRoot,sessionId,sessionKey,
-      elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:reviews,documentCost,
+      elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:reviews,documentAttempts:[...documentAttempts.values()],documentCost,
       firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,
       stopFeedback:admission?.hostRequest?.gate ? redactEvaluationText((admission.currentDeviations??[]).map(item=>
         [item.result?.reason,...(item.result?.evidence??[])].join('\n')).join('\n\n')) : null,
