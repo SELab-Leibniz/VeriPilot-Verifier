@@ -119,6 +119,7 @@
     "lib/runtime-v2/stop-review-store.mjs",
     "lib/runtime-v2/stop-workspace-review.mjs",
     "lib/runtime-v2/stop-classification.mjs",
+    "lib/runtime-v2/task-changes.mjs",
     "lib/runtime-v2/task-store.mjs",
     "lib/runtime-v2/transaction-journal.mjs",
     "lib/runtime-v2/transcript.mjs",
