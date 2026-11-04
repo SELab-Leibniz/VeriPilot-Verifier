@@ -110,9 +110,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
-  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard }) {
+  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard, onGatewayStart }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
-  const hostProfile = providerGuard?.kind === 'host_profile_native_document';
+  const hostProfile = providerGuard?.kind === 'host_profile_native_document'
+    || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
   const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs)
     : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
   const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
@@ -248,6 +249,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const load = relative => import(pathToFileURL(path.join(hostRoot, relative)).href);
     const { startGatewayServer } = await load('dist/server-BnSQQ3Aa.js');
     gateway = await startGatewayServer(port, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false });
+    await onGatewayStart?.();
     const { createPluginRuntime } = await load('dist/plugins/runtime/index.js');
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
     const registry = getGlobalPluginRegistry(), plugin = registry.plugins.find(item => item.id === 'runtime-corrector');

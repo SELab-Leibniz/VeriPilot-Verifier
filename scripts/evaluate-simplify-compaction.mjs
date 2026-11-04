@@ -5,7 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { waitPostRunTerminal } from '../lib/openclaw/post-run-host.mjs';
-import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, simplifyProviderIdentity, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
+import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, resolveSimplifyProvider, supportsSimplifyModel, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 
 const requirementsSha256 = '5b59fab560565602276a94485899c073dc3b8a2f973bd743be2de91ece7988fd';
 const wallMs = 30 * 60_000;
@@ -57,17 +57,17 @@ async function main() {
   const { values } = parseArgs({ options: {
     arm: { type: 'string' }, requirements: { type: 'string' }, settings: { type: 'string' }, output: { type: 'string' },
     artifact: { type: 'string' }, 'artifact-sha256': { type: 'string' }, 'host-root': { type: 'string' }, model: { type: 'string' },
-    provider: { type: 'string', default: 'coding-plan' }, live: { type: 'boolean' }, help: { type: 'boolean' },
+    provider: { type: 'string', default: 'coding-plan' }, 'openclaw-profile': { type: 'string' }, live: { type: 'boolean' }, help: { type: 'boolean' },
   } });
   if (values.help) {
     console.log('Usage: node scripts/evaluate-simplify-compaction.mjs --live --arm <calibration|C-off|C-on> --requirements <kitchen/requirements.md> --settings <json> --output <new directory> --artifact <unpacked package> --artifact-sha256 <integration package SHA256> --host-root <OpenClaw> --model <model> [--provider <coding-plan|anthropic-environment>]');
     return;
   }
   if (!values.live || !['calibration', 'C-off', 'C-on'].includes(values.arm)
-    || !['glm-5.3', 'glm-5.3-flash'].includes(values.model) || !/^[a-f0-9]{64}$/u.test(values['artifact-sha256'] ?? '')
+    || !supportsSimplifyModel(values.provider, values.model, values['openclaw-profile']) || !/^[a-f0-9]{64}$/u.test(values['artifact-sha256'] ?? '')
     || ['requirements', 'settings', 'output', 'artifact', 'host-root'].some(key => !values[key])) throw new Error('Explicit isolated live compaction inputs required.');
   const startedAt = Date.now(), deadlineAt = startedAt + wallMs, signal = AbortSignal.timeout(wallMs);
-  const providerIdentity = simplifyProviderIdentity(values.provider, values.model);
+  const { identity: providerIdentity } = await resolveSimplifyProvider(values.provider, values.model, values['openclaw-profile']);
   const bytes = await fs.readFile(values.requirements);
   if (sha(bytes) !== requirementsSha256) throw new Error('Kitchen requirements SHA256 differs from the approved plan.');
   const instruction = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
@@ -102,6 +102,7 @@ async function main() {
   try {
     gateway = await createSimplifyGateway({ hostRoot: values['host-root'], projectRoot, outputRoot: output,
       sourceRoot: fileURLToPath(new URL('../', import.meta.url)), prebuiltPluginRoot: packageRoot, model: values.model, providerKind: values.provider,
+      openclawProfile: values['openclaw-profile'],
       ...settings, preserveSessionHistory: true, disableMemoryFlush: true, phaseTimeoutMs: wallMs, logLevel: 'info',
       businessToolNames: ['read', 'write', 'edit'] });
     const created = await gateway.request('sessions.create', { key: `agent:main:rc-compaction-${randomUUID()}`, agentId: 'main' });
@@ -167,7 +168,10 @@ async function main() {
     if (gateway) await gateway.close();
   }
   const timing = gateway ? await readProviderTiming(gateway.root) : [];
-  if (result.state === 'failed' && timing.some(row => row.event === 'response' && row.status === 429)) result.state = 'rate-limited';
+  const profileStatus = gateway?.providerStatus?.();
+  if ((result.state === 'failed' || values.provider === 'host-profile') && timing.some(row => row.event === 'response' && row.status === 429)
+    || profileStatus?.failure === 'PROFILE_RATE_LIMIT') result.state = 'rate-limited';
+  else if (profileStatus?.failure) { result.state = 'failed'; result.reason = profileStatus.failure; }
   const log = gateway ? await fs.readFile(path.join(gateway.root, 'host.log'), 'utf8').catch(() => '') : '';
   const injections = parseRestoreObservations(log);
   const compactionEvents = records.filter(record => record.type === 'compaction').map(record => Date.parse(record.timestamp));

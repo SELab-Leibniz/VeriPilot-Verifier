@@ -29,14 +29,14 @@ const simplify = simplifyArm ? (await import('./simplify-experiment-schedule.mjs
 const simplifyRoot = value('--simplify-plugin-root');
 const simplifyModel = value('--simplify-model');
 const simplifyProvider = value('--simplify-provider') ?? 'coding-plan';
+const openclawProfile = value('--openclaw-profile');
 const simplifySha = value('--simplify-package-sha256');
-if ((args.includes('--simplify-arm') || simplifyPrepare || simplifyRoot || simplifyModel || simplifySha || args.includes('--simplify-provider'))
+const simplifyNative = simplify ? await import('./helpers/simplify-native-evaluation.mjs') : null;
+if ((args.includes('--simplify-arm') || simplifyPrepare || simplifyRoot || simplifyModel || simplifySha || args.includes('--simplify-provider') || openclawProfile)
   && (!Object.hasOwn((await import('./simplify-experiment-schedule.mjs')).STOP_ARMS, simplifyArm) || !simplifyRoot
-    || !/^[a-f0-9]{64}$/u.test(simplifySha ?? '') || !['glm-5.3', 'glm-5.3-flash'].includes(simplifyModel)
-    || !['coding-plan', 'anthropic-environment'].includes(simplifyProvider)
+    || !/^[a-f0-9]{64}$/u.test(simplifySha ?? '') || !simplifyNative?.supportsSimplifyModel(simplifyProvider, simplifyModel, openclawProfile)
     || !value('--output-root') || simplifyPrepare === args.includes('--live') || captureNative))
   throw new Error('Simplify evaluation needs an explicit arm, prebuilt package root, package SHA256, model and fresh output; choose --live or --simplify-prepare.');
-const simplifyNative = simplify ? await import('./helpers/simplify-native-evaluation.mjs') : null;
 const packageRoot = simplify ? await fs.realpath(simplifyRoot) : null;
 const pairBatch = value('--case') === 'toy-pair';
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -202,7 +202,7 @@ try { for (const spec of cases) {
     try {
       if (simplify) {
         native = await simplifyNative.createSimplifyStopNative({ hostRoot: value('--host-root'), projectRoot, outputRoot: parent, sourceRoot,
-          prebuiltPluginRoot: packageRoot, model: simplifyModel, providerKind: simplifyProvider, phaseTimeoutMs: 210000 });
+          prebuiltPluginRoot: packageRoot, model: simplifyModel, providerKind: simplifyProvider, openclawProfile, phaseTimeoutMs: 210000 });
       } else if (transport === 'native') {
         const { createNativeStopEvaluation, installNativeStopCapture } = await import('./helpers/native-stop-evaluation.mjs');
         if (nativeBatch) batchCapture = await nativeBatch.beginCase({ projectRoot, contract });
@@ -305,9 +305,13 @@ try { for (const spec of cases) {
       const repairFeedback = outcome?.stop ? outcome.stop.decision === 'block' && /\[runtime-corrector:stop-feedback\]/u.test(outcome.stop.feedback ?? '') : null;
       const reason = error?.code ?? outcome?.stop?.reasonCode ?? outcome?.reason ?? null;
       const completedInBudget = outcome?.stop?.review?.collection?.complete === true && Number.isFinite(stopElapsedMs) && stopElapsedMs <= 210000;
-      const rateLimited = !completedInBudget && timing.some(event => event.event === 'response' && event.status === 429);
-      const state = completedInBudget ? 'completed' : rateLimited ? 'rate-limited' : /DEADLINE|TIMEOUT/u.test(reason ?? '') || stopElapsedMs > 210000 ? 'timed-out' : 'failed';
-      observation = { arm: simplifyArm, artifactSha256: simplifySha, repairFeedback, completedInBudget, state,
+      const profileStatus = native?.providerStatus?.();
+      const rateLimited = (simplifyProvider === 'host-profile' || !completedInBudget)
+        && timing.some(event => event.event === 'response' && event.status === 429) || profileStatus?.failure === 'PROFILE_RATE_LIMIT';
+      const frameworkError = simplifyProvider === 'host-profile' && Boolean(error || !outcome?.stop || profileStatus?.failure);
+      const state = rateLimited ? 'rate-limited' : frameworkError ? 'failed' : completedInBudget ? 'completed'
+        : /DEADLINE|TIMEOUT/u.test(reason ?? '') || stopElapsedMs > 210000 ? 'timed-out' : 'failed';
+      observation = { arm: simplifyArm, artifactSha256: simplifySha, repairFeedback, completedInBudget, state, frameworkError,
         rcElapsedMs: stopElapsedMs ?? null, reason, baselineSource: simplify.baseline ? 'controlled fixture' : 'original-user-message',
         providerIdentity: native?.providerIdentity ?? null,
         feedback: repairFeedback ? simplifyNative.redactEvaluationText(outcome.stop.feedback) : null,
