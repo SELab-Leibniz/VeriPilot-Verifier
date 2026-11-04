@@ -784,6 +784,8 @@ reviewers:
 
 `panel.size: 0` 关闭 onboarding 小组，保留增量抽取。角色 `session: fork` 复用父上下文的隔离分叉，`detached` 使用环境身份新建会话，`independent` 使用指定提供器新建会话。OpenClaw 使用原生 reviewer 路径，模型须按宿主注册配置。角色级设置优先于 `reviewers.defaults`，再回退到 `limits.semanticReviewTimeoutMs` 和 20 分钟默认值；格式修复共享该角色绝对截止。
 
+`compactionRestore.enabled` 默认为 `false`，开启后 OpenClaw 在压缩后的首次提示构建中从原文存档恢复需求，最多注入 24 KiB。
+
 `reviewers.modelPolicy` 可使用 `off`、`critical-gates`、`all` 预设；critical-gates 仅覆盖 onboardingAdjudicator 与 stopReviewer。显式角色配置优先。写出配置时预设展开为角色字段。缺失密钥环境变量时记录 `REVIEWER_PROVIDER_DEGRADED` 并按实现回退，独立身份不会把父凭据送往第三方。抽取降级状态如 `DERIVED_CONFIG`、`ONBOARDING_DEGRADED` 可在任务日志中核对。
 
 配置 Schema 是字段校验来源：`config/schemas/project-config.schema.json`；运行时仍须通过统一策略编译器的语义约束。

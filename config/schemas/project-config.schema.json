@@ -322,6 +322,13 @@
       },
       "additionalProperties": false
     },
+    "compactionRestore": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
     "stopCorrection": {
       "type": "object",
       "required": [
