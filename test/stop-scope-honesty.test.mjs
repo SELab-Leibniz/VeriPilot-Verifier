@@ -1,0 +1,270 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
+import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
+import { loadConfig } from '../lib/runtime-corrector.mjs';
+import { ensureTask, taskDirectory, withTaskState, findTask } from '../lib/runtime-v2/task-store.mjs';
+import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
+import { selectStopPopulation } from '../lib/runtime-v2/review-routing.mjs';
+import { captureTaskStart, changeOwner, nonArtifactChanges, taskStartManifestPath } from '../lib/runtime-v2/task-changes.mjs';
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
+
+const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.email=rc@example.invalid', '-c', 'user.name=rc', '-c', 'commit.gpgsign=false',
+  '-c', 'core.autocrlf=false', '-c', 'core.hooksPath=nonexistent', ...args], { cwd, encoding: 'utf8', windowsHide: true });
+const WAITING = { stopClassification: 'WAITING_FOR_USER', requiredUserInput: 'Choose how to handle the missing JAVA_HOME.' };
+const DOCUMENTS = { 'openspec/changes/demo/proposal.md': '# Proposal\n', 'openspec/changes/demo/design.md': '# Design\n',
+  'openspec/changes/demo/.openspec.yaml': 'schema: spec-driven\n', 'openspec/changes/demo/specs/convert/spec.md': '# Convert\n' };
+
+async function writeFiles(root, files) {
+  for (const [file, text] of Object.entries(files)) {
+    await fs.mkdir(path.dirname(path.join(root, file)), { recursive: true });
+    await fs.writeFile(path.join(root, file), text);
+  }
+}
+
+// The project uses the shipped OpenSpec template. Host state and the
+// transcript stay outside it, as they do for a real Gateway.
+async function fixture(t, { repository = true, capture = true, deviationOnly = true, metrics = ['M16'], classification, verdict = () => null } = {}) {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-scope-'));
+  t.after(() => fs.rm(base, { recursive: true, force: true }));
+  const root = path.join(base, 'project');
+  await fs.mkdir(root);
+  await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+  await fs.writeFile(path.join(root, 'app.py'), 'def convert(value): return int(value)\n');
+  if (repository) { git(root, 'init', '-q'); git(root, 'add', 'app.py'); git(root, 'commit', '-q', '-m', 'Start'); }
+  const template = await loadConfig({ cwd: root });
+  const transcript = path.join(base, 'host-transcript.jsonl');
+  await fs.writeFile(transcript, [
+    { type: 'user', uuid: 'user-1', message: { role: 'user', content: 'Implement both frozen conversion obligations.' } },
+    { type: 'assistant', uuid: 'assistant-1', message: { id: 'assistant-1', role: 'assistant', content: 'Implementation complete.' } },
+  ].map(value => JSON.stringify(value)).join('\n') + '\n');
+  const task = await ensureTask({ projectRoot: root, sessionId: 'session' });
+  const truth = { taskId: task.taskId, version: 1, digest: 'frozen', claims: ['A', 'B'].map(id => ({ claimId: id, revisionId: `${id}@1`,
+    category: 'requirements', text: `Frozen original conversion obligation ${id}`, authority: 'USER_EXPLICIT', severity: 'HARD', status: 'ACTIVE',
+    applicability: 'CURRENT_TASK', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION' })) };
+  const truthPath = path.join(taskDirectory(root, task.taskId), 'ground-truth/current.json');
+  await fs.mkdir(path.dirname(truthPath), { recursive: true });
+  await fs.writeFile(truthPath, JSON.stringify(truth));
+  await withTaskState({ projectRoot: root, taskId: task.taskId }, state => { state.groundTruth.version = 1; state.groundTruth.digest = 'frozen'; });
+  if (capture) await captureTaskStart({ projectRoot: root, taskId: task.taskId });
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, artifacts: [], dynamicGroundTruth: { enabled: true, panel: { size: 0 } },
+    implementationCorrection: { enabled: false, platform: null },
+    stopCorrection: { enabled: true, deviationOnly, fileQualityReviewEnabled: false,
+      metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metrics.includes(id)])) } });
+  const calls = [];
+  const reviewerFactory = async input => {
+    calls.push(input.role === 'ground-truth-extractor' ? 'baseline' : input.request.reviewScope.kind);
+    if (input.role === 'ground-truth-extractor') return { result: { summary: 'Frozen requirements unchanged.', taskClassification: 'NO_CHANGE', operations: [] }, close: async () => {} };
+    return scriptedWorkspaceReview(input, { file: path.join(root, 'app.py'), verdict, classification });
+  };
+  reviewerFactory.supportsReviewCollection = true;
+  const directory = path.join(base, 'host-state');
+  const plan = { runtimeV2, artifacts: template.artifacts, workflowCorrelation: template.workflowCorrelation, output: template.output };
+  const event = (hook, extras = {}, stopId) => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
+    stopHost: { directory, startProtocol: { version: 1 }, ...(stopId ? { stopId } : {}) },
+    input: { session_id: 'session', cwd: root, transcript_path: transcript, hook_event_name: hook, last_assistant_message: 'Implementation complete.', ...extras } });
+  await event('SessionStart', { source: 'startup' });
+  const ledger = () => createStopCorrectionStore({ directory }).inspect('session');
+  const current = () => findTask({ projectRoot: root, sessionId: 'session' });
+  const evaluation = async stop => JSON.parse(await fs.readFile(path.join(taskDirectory(root, task.taskId), 'evaluations', `${stop.evaluationId}.json`), 'utf8'));
+  const journal = async () => (await fs.readFile(path.join(taskDirectory(root, task.taskId), 'journal/events.jsonl'), 'utf8'))
+    .split('\n').filter(Boolean).map(line => JSON.parse(line));
+  return { base, root, task, calls, plan, stop: stopId => event('Stop', {}, stopId), event, ledger, current, evaluation, journal, transcript };
+}
+
+test('a deviation-only intermediate Stop reviews delivered work and finds no deviation only after a real scan', async t => {
+  for (const { label, verdict, status, decision } of [
+    { label: 'scan', verdict: () => null, status: 'NO_DEVIATION_FOUND', decision: 'allow' },
+    { label: 'deviation', verdict: (item, index) => index === 0 ? 'DEVIATION' : null, status: 'DEVIATION', decision: 'block' },
+  ]) await t.test(label, async subtest => {
+    const f = await fixture(subtest, { classification: WAITING, verdict });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const result = await f.stop();
+    assert.equal(result.stop.status, status, result.stop.reasonCode);
+    assert.equal(result.decision, decision);
+    assert.deepEqual(f.calls.filter(call => call !== 'baseline'), ['workspace-stop']);
+    assert.deepEqual(result.stop.coverage, { fullObjectCount: 2, selectedObjectCount: 2, fileTargetCount: 0, scanCompleted: true,
+      classification: 'WAITING_FOR_USER', stage: null, scopeReasonCode: 'DELIVERED_WORK_SCOPE' });
+    assert.equal(result.stop.review.collection.totalObjects, 2);
+    assert.deepEqual((await f.current()).verification.coverage, result.stop.coverage);
+    if (decision === 'block') {
+      assert.match(result.stop.feedback, /\[runtime-corrector:stop-feedback\]/u);
+      assert(result.stop.admission);
+    } else assert.equal(result.stop.admission, null);
+  });
+});
+
+test('a deviation-only Stop with an empty selected scope is UNVERIFIED, persists its coverage and dispatches no repair', async t => {
+  const f = await fixture(t, { metrics: ['M13'] });
+  await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+  const result = await f.stop();
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.equal(result.stop.reasonCode, 'STOP_NO_REVIEW_SCOPE');
+  assert.equal(result.decision, 'allow');
+  assert.equal(result.stop.admission, null);
+  assert.match(result.stop.feedback, /^\[runtime-corrector:status\] UNVERIFIED/u);
+  assert.doesNotMatch(result.stop.feedback, /stop-feedback/u);
+  const coverage = { fullObjectCount: 0, selectedObjectCount: 0, fileTargetCount: 0, scanCompleted: true,
+    classification: 'TASK_COMPLETE', stage: null, scopeReasonCode: 'NO_APPLICABLE_METRIC_OBJECTS' };
+  assert.deepEqual(result.stop.coverage, coverage);
+  const evaluation = await f.evaluation(result.stop);
+  assert.deepEqual(evaluation.coverage, coverage);
+  assert.deepEqual(evaluation.outcome.coverage, coverage);
+  const task = await f.current();
+  assert.equal(task.verification.status, 'UNVERIFIED');
+  assert.equal(task.verification.reasonCode, 'STOP_NO_REVIEW_SCOPE');
+  assert.deepEqual(task.verification.coverage, coverage);
+  const ledger = await f.ledger(), recorded = ledger.stops[result.stop.stopCorrection.stopId];
+  assert.equal(recorded.reviewStatus, 'UNVERIFIED');
+  assert.equal(recorded.progress.scopeReasonCode, 'NO_APPLICABLE_METRIC_OBJECTS');
+  assert.equal(result.stop.correctionAttempt, 0);
+});
+
+test('a Stop after document-only changes is skipped quietly without a reviewer or budget, and a later code edit gets a full Stop', async t => {
+  const f = await fixture(t);
+  await writeFiles(f.root, DOCUMENTS);
+  const skipped = await f.stop('docs-only');
+  assert.equal(skipped.decision, 'allow');
+  assert.equal(skipped.stop.status, 'SKIPPED');
+  assert.equal(skipped.stop.reasonCode, 'STOP_DOCUMENT_ONLY_CHANGES');
+  assert.deepEqual(f.calls, []);
+  assert.match(skipped.feedback, /^\[runtime-corrector:status\] SKIPPED \(STOP_DOCUMENT_ONLY_CHANGES\)/u);
+  assert.doesNotMatch(skipped.feedback, /stop-feedback/u);
+  assert.equal(skipped.feedback.split('\n').length, 1);
+  assert.deepEqual(skipped.stop.changes.map(change => [change.path, change.owner]), Object.keys(DOCUMENTS).sort()
+    .map(file => [file, 'DOCUMENT_CORRECTION']));
+  assert.deepEqual(Object.keys((await f.ledger()).stops ?? {}), []);
+  const task = await f.current();
+  assert.equal(task.verification.status, 'SKIPPED');
+  assert.equal(task.stop.lastAssessmentId, skipped.stop.evaluationId);
+  assert.deepEqual((await f.evaluation(skipped.stop)).changes, skipped.stop.changes);
+  assert((await f.journal()).some(event => event.type === 'STOP_CORRECTION_SKIPPED' && event.evaluationId === skipped.stop.evaluationId));
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: f.task.taskId, plan: f.plan }), []);
+
+  await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: f.task.taskId, plan: f.plan }), [{ path: 'app.py', status: 'MODIFIED' }]);
+  const reviewed = await f.stop('after-code');
+  assert.deepEqual(f.calls.filter(call => call !== 'baseline'), ['workspace-stop']);
+  assert.equal(reviewed.stop.status, 'NO_DEVIATION_FOUND', reviewed.stop.reasonCode);
+  assert.equal(reviewed.stop.coverage.selectedObjectCount, 2);
+  assert.equal(reviewed.stop.correctionAttempt, 0);
+});
+
+test('a business commit counts as a change while a committed workflow document does not', async t => {
+  const f = await fixture(t);
+  await writeFiles(f.root, DOCUMENTS);
+  git(f.root, 'add', 'openspec'); git(f.root, 'commit', '-q', '-m', 'Docs');
+  const skipped = await f.stop('docs-committed');
+  assert.equal(skipped.stop.status, 'SKIPPED');
+  assert(skipped.stop.changes.every(change => change.status === 'COMMITTED'));
+  await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+  git(f.root, 'add', 'app.py'); git(f.root, 'commit', '-q', '-m', 'Code');
+  assert.equal(git(f.root, 'status', '--porcelain', '--', 'app.py'), '');
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: f.task.taskId, plan: f.plan }), [{ path: 'app.py', status: 'COMMITTED' }]);
+  const reviewed = await f.stop('code-committed');
+  assert.equal(reviewed.stop.status, 'NO_DEVIATION_FOUND', reviewed.stop.reasonCode);
+  assert.deepEqual(f.calls.filter(call => call !== 'baseline'), ['workspace-stop']);
+});
+
+test('without a trustworthy task-start manifest a document-only Stop is still reviewed', async t => {
+  const previous = process.env.GIT_CEILING_DIRECTORIES;
+  t.after(() => { if (previous === undefined) delete process.env.GIT_CEILING_DIRECTORIES; else process.env.GIT_CEILING_DIRECTORIES = previous; });
+  for (const { label, repository, capture } of [
+    { label: 'non-git project', repository: false, capture: true },
+    { label: 'missing manifest', repository: true, capture: false },
+  ]) await t.test(label, async subtest => {
+    process.env.GIT_CEILING_DIRECTORIES = os.tmpdir();
+    const f = await fixture(subtest, { repository, capture });
+    const manifest = await fs.readFile(taskStartManifestPath(f.root, f.task.taskId), 'utf8').then(JSON.parse, () => null);
+    if (repository) assert.equal(manifest, null);
+    else assert.deepEqual([manifest.complete, manifest.reasonCode], [false, 'TASK_CHANGES_GIT_UNAVAILABLE']);
+    await writeFiles(f.root, DOCUMENTS);
+    assert.equal(await nonArtifactChanges({ projectRoot: f.root, taskId: f.task.taskId, plan: f.plan }), null);
+    const result = await f.stop();
+    assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', result.stop.reasonCode);
+    assert.deepEqual(f.calls.filter(call => call !== 'baseline'), ['workspace-stop']);
+  });
+});
+
+test('ownership follows the shipped OpenSpec template and keeps RC-private paths out of task changes', async t => {
+  const f = await fixture(t);
+  for (const [file, owner] of [
+    ['openspec/changes/demo/proposal.md', 'DOCUMENT_CORRECTION'], ['openspec/changes/demo/.openspec.yaml', 'DOCUMENT_CORRECTION'],
+    ['openspec/changes/demo/specs/convert/spec.md', 'DOCUMENT_CORRECTION'], ['openspec/specs/convert/spec.md', 'STOP'],
+    ['openspec/changes/proposal.md', 'STOP'], ['app.py', 'STOP'], ['.runtime-corrector/config.yaml', 'RUNTIME_CORRECTOR'],
+    ['.runtime-correction/tasks/x/state.json', 'RUNTIME_CORRECTOR'],
+  ]) assert.equal(changeOwner(file, f.plan), owner, file);
+  await fs.writeFile(path.join(f.root, 'notes.txt'), 'untracked before the task\n');
+  const second = await ensureTask({ projectRoot: f.root, sessionId: 'second' });
+  assert.equal(await captureTaskStart({ projectRoot: f.root, taskId: second.taskId }), true);
+  assert.equal(await captureTaskStart({ projectRoot: f.root, taskId: second.taskId }), false, 'the first task-start state is kept');
+  await fs.writeFile(path.join(f.root, '.runtime-corrector/extra.md'), 'private\n');
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: second.taskId, plan: f.plan }), []);
+  await fs.writeFile(path.join(f.root, 'notes.txt'), 'edited during the task\n');
+  await fs.rm(path.join(f.root, 'app.py'));
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: second.taskId, plan: f.plan }),
+    [{ path: 'app.py', status: 'DELETED' }, { path: 'notes.txt', status: 'UNTRACKED' }]);
+});
+
+test('the first pre-mutation hook event of a task captures its start state once', async t => {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-scope-hook-'));
+  t.after(() => fs.rm(base, { recursive: true, force: true }));
+  const root = path.join(base, 'project');
+  await fs.mkdir(root);
+  await fs.writeFile(path.join(root, 'app.py'), 'print(1)\n');
+  git(root, 'init', '-q'); git(root, 'add', 'app.py'); git(root, 'commit', '-q', '-m', 'Start');
+  const transcript = path.join(base, 'transcript.jsonl');
+  await fs.writeFile(transcript, JSON.stringify({ type: 'user', uuid: 'user-1', message: { role: 'user', content: 'Edit app.py.' } }) + '\n');
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, artifacts: [], dynamicGroundTruth: { enabled: false },
+    implementationCorrection: { enabled: false, platform: null }, stopCorrection: { enabled: true } });
+  const write = id => handleRuntimeV2Event({ projectRoot: root, plan: { runtimeV2, artifacts: [] },
+    reviewerFactory: async () => assert.fail('No reviewer is needed before the first edit'),
+    input: { session_id: 'session', cwd: root, transcript_path: transcript, hook_event_name: 'PreToolUse', tool_name: 'Write',
+      tool_input: { file_path: path.join(root, 'app.py'), content: 'print(2)\n' }, tool_use_id: id } });
+  await write('tool-1');
+  const task = await findTask({ projectRoot: root, sessionId: 'session' });
+  const file = taskStartManifestPath(root, task.taskId), first = await fs.readFile(file, 'utf8');
+  const manifest = JSON.parse(first);
+  assert.equal(manifest.complete, true);
+  assert.equal(manifest.head, git(root, 'rev-parse', 'HEAD').trim());
+  assert.deepEqual(manifest.entries, {});
+  await fs.writeFile(path.join(root, 'app.py'), 'print(2)\n');
+  await write('tool-2');
+  assert.equal(await fs.readFile(file, 'utf8'), first);
+});
+
+test('non-deviation-only Stop scope is unchanged', async t => {
+  const population = { metrics: { M01: [{ objectId: 'M01:A' }], M16: [{ objectId: 'M16:A' }, { objectId: 'M16:B' }] } };
+  for (const stopClassification of ['WAITING_FOR_USER', 'BLOCKED_EXTERNAL', 'INTERMEDIATE']) {
+    const plain = selectStopPopulation(population, { stopClassification });
+    assert.deepEqual([plain.scopeSelection.reasonCode, plain.scopeSelection.selectedObjectCount], ['FINDINGS_ONLY_SCOPE', 0]);
+    const delivered = selectStopPopulation({ ...population, reviewPolicy: { metrics: {}, deviationOnly: true } }, { stopClassification });
+    assert.deepEqual([delivered.scopeSelection.reasonCode, delivered.scopeSelection.selectedObjectCount], ['DELIVERED_WORK_SCOPE', 3]);
+  }
+  const undeclared = { stopClassification: 'STAGE_COMPLETE', stage: 'tasks' }, declarations = [{ stage: 'tasks', metrics: [] }];
+  assert.equal(selectStopPopulation(population, undeclared, declarations).scopeSelection.reasonCode, 'STOP_STAGE_METRICS_UNDECLARED');
+  assert.equal(selectStopPopulation({ ...population, reviewPolicy: { deviationOnly: true } }, undeclared, declarations).scopeSelection.reasonCode, 'DELIVERED_WORK_SCOPE');
+  assert.throws(() => selectStopPopulation(population, { stopClassification: 'STAGE_COMPLETE', stage: 'unknown' }), { code: 'STOP_STAGE_SCOPE_INVALID' });
+
+  await t.test('intermediate Stop selects nothing', async subtest => {
+    const f = await fixture(subtest, { deviationOnly: false, classification: WAITING, verdict: 'PASS' });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const result = await f.stop();
+    assert.equal(result.stop.status, 'UNVERIFIED');
+    assert.equal(result.decision, 'allow');
+    assert.notEqual(result.stop.reasonCode, 'STOP_NO_REVIEW_SCOPE');
+    assert.deepEqual([result.stop.coverage.scopeReasonCode, result.stop.coverage.selectedObjectCount], ['FINDINGS_ONLY_SCOPE', 0]);
+  });
+  await t.test('an empty completed scope keeps its own reason', async subtest => {
+    const f = await fixture(subtest, { deviationOnly: false, metrics: ['M13'], verdict: 'PASS' });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const result = await f.stop();
+    assert.equal(result.stop.status, 'UNVERIFIED');
+    assert.notEqual(result.stop.reasonCode, 'STOP_NO_REVIEW_SCOPE');
+    assert.equal(result.stop.coverage.scopeReasonCode, 'NO_APPLICABLE_METRIC_OBJECTS');
+  });
+});
