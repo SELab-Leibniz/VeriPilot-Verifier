@@ -129,7 +129,9 @@ try {
     const runId = randomUUID(), toolCallId = randomUUID();
     await gateway.runtime.agent.session.upsertSessionEntry({ ...scope,
       entry: { ...entry, sessionFile: transcriptFile, spawnedCwd: projectRoot, updatedAt: Date.now() } });
-    await fs.writeFile(transcriptFile, JSON.stringify({ type:'session',version:3,id:sessionId,cwd:projectRoot })+'\n', { flag:'wx' });
+    const seed = jsonl(await fs.readFile(transcriptFile, 'utf8'));
+    assert(seed.length === 1 && seed[0].type === 'session' && seed[0].id === sessionId);
+    await fs.writeFile(transcriptFile, JSON.stringify({ ...seed[0], cwd: projectRoot })+'\n');
     let parentId = null;
     const append = async message => {
       const id = randomUUID().slice(0,8);
