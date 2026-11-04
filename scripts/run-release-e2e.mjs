@@ -309,3 +309,6 @@ try {
 } finally {
   await gateway?.close();
 }
+
+// The isolated host may retain singleton timers after its close and provider teardown.
+process.exit(0);
