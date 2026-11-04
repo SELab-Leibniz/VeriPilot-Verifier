@@ -101,15 +101,15 @@ export function createNativeGatewayRequest({ load, port, config }) {
     return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,
       config, method, params, timeoutMs: options.timeoutMs ?? 30000,
       // Each request has a new connection. The isolated controller must
-      // authenticate its exact-run abort as admin rather than its creator.
-      ...(method === 'chat.abort' ? { scopes: ['operator.admin'] } : {}) });
+      // authenticate its exact-run abort and manual compaction as admin.
+      ...(['chat.abort', 'sessions.compact'].includes(method) ? { scopes: ['operator.admin'] } : {}) });
   };
 }
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, provider, providerGuard }) {
+  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, compaction = null, provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document';
   const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs)
@@ -198,6 +198,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
     config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
   }
+  if (compaction) config.agents.defaults.compaction = { ...config.agents.defaults.compaction, ...structuredClone(compaction) };
   if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,
     memoryFlush: { ...config.agents.defaults.compaction?.memoryFlush, enabled: false } };
   if (injectDefect && !reuseProfile) {

@@ -1,0 +1,28 @@
+{
+  "name": "semantic/ledgerlite-export",
+  "kind": "semantic-conversation",
+  "scope": "Fictional design note. The requirements exist only in the first user message; the draft contains five controlled semantic deviations and otherwise restates the requirements in different words. Not an external benchmark.",
+  "requirementsMessage": "requirements-message.md",
+  "faults": [
+    { "id": "F1", "requirement": 2, "section": "Columns", "line": 18,
+      "draft": "| amount | Amount converted to floating-point dollars, for example `12.5` |",
+      "mustMatch": ["cents"], "mustNotMatch": ["floating[- ]point dollars", "`12\\.5`"] },
+    { "id": "F2", "requirement": 7, "section": "Notes field", "line": 23,
+      "draft": "The personal `note` field is included by default as the last column; pass `--exclude-notes` to leave it out.",
+      "mustMatch": ["--include-notes", "exclud|not included|omitted|left out"], "mustNotMatch": ["--exclude-notes", "(?<!not )included by default"] },
+    { "id": "F3", "requirement": 6, "section": "Ordering", "line": 27,
+      "draft": "Rows are sorted by amount, largest first.",
+      "mustMatch": ["date", "\\bid\\b", "ascending"], "mustNotMatch": ["largest"] },
+    { "id": "F4", "requirement": 5, "section": "Existing output files", "line": 31,
+      "draft": "If the output file already exists, it is overwritten without asking.",
+      "mustMatch": ["--force", "\\b2\\b"], "mustNotMatch": ["without asking"] },
+    { "id": "F5", "requirement": 4, "section": "Network behaviour", "line": 35,
+      "draft": "On startup the command checks https://updates.ledgerlite.invalid for a newer version and sends an anonymous usage count.",
+      "mustMatch": ["offline|no network"], "mustNotMatch": ["https?://", "sends an anonymous usage count"] }
+  ],
+  "keep": [
+    { "requirement": 1, "section": "Output format", "mustMatch": ["CSV"], "mustNotMatch": [] },
+    { "requirement": 3, "section": "Columns", "mustMatch": ["YYYY-MM-DD", "UTC"], "mustNotMatch": [] },
+    { "requirement": 8, "section": "Exit codes", "mustMatch": ["\\|\\s*0\\s*\\|", "\\|\\s*1\\s*\\|", "\\|\\s*2\\s*\\|"], "mustNotMatch": [] }
+  ]
+}

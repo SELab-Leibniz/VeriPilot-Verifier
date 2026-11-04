@@ -57,6 +57,44 @@
       }
     }
   ],
+  "semantic": {
+    "base": "efb0577",
+    "branch": "exp/doc-original-basis",
+    "case": "examples/document-e2e/semantic-ledgerlite-export (fictional; 8 requirements only in the first user message, 5 semantic deviations in draft.md)",
+    "command": "node scripts/evaluate-openclaw-semantic-document-e2e.mjs --live --case examples/document-e2e/semantic-ledgerlite-export --compaction (summary | truncate) --mode (original | ledger) --host-root <MA openclaw> --openclaw-profile <openclaw.json> --config examples/document-e2e/dynamic-benchmark-options.json --output-root <fresh>",
+    "outputRoot": ".runtime-correction/doc-semantic-live-20261104",
+    "compaction": {
+      "summary": "sessions.compact { key }: host model summary with the profile's safeguard settings; keepRecentTokens 1 and recentTurnsPreserve 0 so the first turn leaves the business context",
+      "truncate": "sessions.compact { key, maxLines: 2 }: host keeps the header and last line and archives the original file"
+    },
+    "runs": [
+      { "compaction": "summary", "mode": "original", "state": "PASSED", "elapsedMs": 168033, "firstFeedbackS": 49, "compactionMs": 41152,
+        "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+        "reviewerRuns": 4, "reviewerS": 69, "extractorRuns": 0, "providerRequests": 21, "finalCheckSatisfied": true,
+        "userMessageLogAfterCompaction": 0, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true } },
+      { "compaction": "summary", "mode": "ledger", "state": "FAILED", "elapsedMs": 1889158, "firstFeedbackS": 1070, "compactionMs": 38562,
+        "failure": "Business run hit the host command lane timeout (1830000 ms) while the second review waited on baseline extraction",
+        "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5"],
+        "reviewerRuns": 5, "reviewerS": 83, "extractorRuns": 9, "extractorS": 1714, "baselineVersion": 0, "providerRequests": 68, "finalCheckSatisfied": true,
+        "baselineEvents": ["BASELINE_AUDIT_REPAIR_STARTED:BASELINE_COVERAGE_REPAIR", "GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
+      { "compaction": "truncate", "mode": "original", "state": "FAILED", "elapsedMs": 258607, "firstFeedbackS": 103, "compactionMs": 198,
+        "failure": "Final document still violates F1, F2, F3, F4 although the final review passed",
+        "firstRound": { "detected": ["F4", "F5"], "missed": ["F1", "F2", "F3"], "extra": 0 }, "reviewRounds": ["failed:2", "passed:0"],
+        "reviewerRuns": 5, "reviewerS": 136, "extractorRuns": 0, "providerRequests": 20, "finalCheckSatisfied": false,
+        "userMessageLogAfterCompaction": 0, "userMessageLogAtEnd": { "messages": 1, "requirementMessage": false } },
+      { "compaction": "truncate", "mode": "ledger", "state": "FAILED", "elapsedMs": 336570, "firstFeedbackS": 282, "compactionMs": 217,
+        "failure": "First review passed with no findings; the business run then ended with an apply_patch error",
+        "firstRound": { "detected": [], "missed": ["F1", "F2", "F3", "F4", "F5"], "extra": 0 }, "reviewRounds": ["passed:0"],
+        "reviewerRuns": 2, "reviewerS": 46, "extractorRuns": 2, "extractorS": 234, "baselineVersion": 1, "baselineClaims": 6, "baselineClaimsFromRequirements": 0,
+        "providerRequests": 22, "finalCheckSatisfied": false }
+    ],
+    "hostHookFailures": "Every summary compaction (3 of 3 including the harness attempt) logged '[hooks] before_compaction handler from runtime-corrector failed: timed out after 30000ms'. sessions.compact runs inside the session lifecycle lock and the RC hook waits on runWithWorkAdmission for the same session.",
+    "notes": [
+      "A first attempt (harness-attempt-summary-original) stopped after compaction because the harness misread the sessions.compact response; it is not counted.",
+      "In both summary runs the host summary itself retained all 8 requirements.",
+      "One run per combination; one fictional case."
+    ]
+  },
   "notes": [
     "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 3-12 s each).",
     "With efb0577 every ledger run made exactly one extraction and one independent coverage audit and published version 1 with 4 claims; no repairs or retries.",
