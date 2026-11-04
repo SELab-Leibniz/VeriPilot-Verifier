@@ -4,6 +4,9 @@ import { createStopWaitStatus, stopWaitText } from "../lib/openclaw/stop-wait-st
 
 test("Stop status distinguishes verified acceptance, dispatch refusal and incomplete reviews", () => {
   assert.match(stopWaitText({ reviewStatus: "PASS" }), /验收通过/u);
+  const deviationOnly = stopWaitText({ reviewStatus: "NO_DEVIATION_FOUND", reasonCode: "CORRECTION_BUDGET_EXHAUSTED" });
+  assert.match(deviationOnly, /未发现偏差，已解除等待/u);
+  assert.doesNotMatch(deviationOnly, /验收通过/u);
   assert.match(stopWaitText({ reviewStatus: "DEVIATION", followupStatus: "ADMITTED" }), /反馈已交给宿主/u);
   assert.match(stopWaitText({ reviewStatus: "DEVIATION", followupStatus: "REJECTED" }), /宿主拒绝/u);
   for (const record of [{ reviewStatus: "UNVERIFIED" }, { reviewStatus: "CANCELLED" },

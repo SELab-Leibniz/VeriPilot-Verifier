@@ -11,6 +11,7 @@ import * as openclawHost from '../lib/hosts/openclaw.mjs';
 import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
+import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
 import { createProductionTraceSchema, validateProductionTrace } from '../lib/review-task/production-trace.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
@@ -46,6 +47,26 @@ async function checkedVersionRun(f, script) {
     return handle;
   } catch (error) { throw callbackFailure ?? error; }
 }
+
+test('deviation-only Stop accepts a cited counterexample without requiring other item results', async t => {
+  const f = await fixedVersionFixture(t, { two: true });
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true });
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    const finish = () => submit('finish_stop_review', { summary: 'Scanned the original requirements.' });
+    await readAll();
+    await assert.rejects(finish(), { code: 'REVIEW_ITEM_INCOMPLETE' });
+    await f.scope(submit);
+    const citation = (await read(f.source)).details.citation.citeId;
+    const row = { taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'The implementation adds one.', citeIds: [citation] };
+    await assert.rejects(submit('submit_review', { ...row, verdict: 'PASS' }), { code: 'TASK_SUBMISSION_INVALID' });
+    await assert.rejects(submit('submit_review', { ...row, citeIds: [] }), { code: 'TASK_SUBMISSION_INVALID' });
+    await assert.rejects(submit('submit_review', { ...row, citeIds: ['unread'] }), { code: 'TASK_CITATION_INVALID' });
+    assert.equal((await submit('submit_review', row)).saved, true);
+    assert.equal((await finish()).complete, true);
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId, row.judgement]), [['M16:R1', 'DEVIATION']]);
+  await handle.close();
+});
 
 test('fixed-version omitted metadata persists two M16 PASS traces without mutating original calls', async t => {
   const f = await fixedVersionFixture(t, { two: true }); let callbackFailure, originals;

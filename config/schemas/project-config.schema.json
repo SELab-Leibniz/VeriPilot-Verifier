@@ -404,6 +404,11 @@
           "default": false,
           "description": "Independent unnumbered deliverable-file quality review at Stop. Disabled by default; does not enable any M metric."
         },
+        "deviationOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report only evidence-backed Stop deviations and release completed scans without a PASS verdict."
+        },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
           "minimum": 0,
