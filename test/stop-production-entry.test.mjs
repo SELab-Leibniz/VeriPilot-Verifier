@@ -12,7 +12,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { stopFeedbackCurrent } from '../lib/runtime-v2/production-stop.mjs';
 import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 
-async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null } = {}) {
+async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null, startProtocol = null } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "stop-entry-"));
@@ -49,11 +49,47 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null,
   };
   reviewerFactory.supportsReviewCollection = true;
   const directory = path.join(root, "stable-host-state");
-  const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory, stopHost: { directory } };
+  const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+    stopHost: { directory, ...(startProtocol ? { startProtocol } : {}) } };
   const event = (hook, extras = {}) => handleRuntimeV2Event({ ...options, input: { session_id: "session", cwd: root,
     transcript_path: transcript, hook_event_name: hook, last_assistant_message: "Implementation complete.", ...extras } });
   return { root, directory, task, calls, event, document, runtimeV2, reviewerFactory, transcript };
 }
+
+test('deviation-only Stop allows an empty scan and keeps existing repair feedback for cited deviations', async t => {
+  for (const { enabled, verdict, status, decision } of [
+    { enabled: false, verdict: () => null, status: 'UNVERIFIED', decision: 'allow' },
+    { enabled: true, verdict: () => null, status: 'NO_DEVIATION_FOUND', decision: 'allow' },
+    { enabled: true, verdict: (item, index) => index === 0 ? 'DEVIATION' : null, status: 'DEVIATION', decision: 'block' },
+  ]) await t.test(`${enabled}: ${status}`, async subtest => {
+    const f = await fixture(subtest, { verdict, stop: { deviationOnly: enabled }, startProtocol: { version: 1 } });
+    validateProjectConfig(f.document, 'config.yaml');
+    await f.event('SessionStart', { source: 'startup' });
+    const result = await f.event('Stop');
+    assert.equal(result.stop.status, status, result.stop.reasonCode);
+    assert.equal(result.decision, decision);
+    if (!enabled) return;
+    assert.equal(result.stop.report.status, status);
+    assert.equal(result.stop.review.collection.complete, true);
+    assert.equal(result.stop.review.collection.totalObjects, 2);
+    assert.equal(result.stop.review.metricObjectJudgements.length, decision === 'block' ? 1 : 0);
+    const task = await findTask({ projectRoot: f.root, sessionId: 'session' });
+    assert.equal(task.verification.status, status);
+    const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect('session');
+    const recorded = ledger.stops[result.stop.stopCorrection.stopId];
+    assert.equal(recorded.reviewStatus, status);
+    if (decision === 'block') {
+      assert.match(result.stop.feedback, /\[runtime-corrector:stop-feedback\]/u);
+      assert(result.stop.admission);
+      assert.equal((await stopFeedbackCurrent({ directory: f.directory, sessionId: 'session', projectRoot: f.root,
+        taskId: f.task.taskId, deviations: recorded.currentDeviations })).length, 1);
+    } else {
+      assert.equal(result.stop.feedback, null);
+      assert.equal(result.stop.admission, null);
+      assert.equal(result.stop.verificationIncomplete, true);
+    }
+  });
+});
 
 test('missing output enters the production correction gate, then creation invalidates old feedback and a new Stop reviews the delivered file', async t => {
   const f = await fixture(t, { expectedFile: 'docs/report.md' });

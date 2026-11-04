@@ -47,6 +47,7 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
           if (offset + page.items.indexOf(item) === failAt) throw Object.assign(new Error('The scripted context overflow preserves already saved items.'), { code: 'CONTEXT_OVERFLOW' });
           const citeId = await read(file);
           const judgement = typeof verdict === 'function' ? verdict(item, offset + page.items.indexOf(item)) : verdict;
+          if (judgement === null) continue;
           await call('submit_review', { taskId: item.taskId, verdict: judgement,
             reason, citeIds: [citeId],
             ...(item.metricId === 'M16' && judgement === 'PASS' ? { productionTrace: {
