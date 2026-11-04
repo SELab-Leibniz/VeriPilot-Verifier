@@ -6,7 +6,7 @@ Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；�
 
 `stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。
 
-`stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。
+`stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。用户消息取自 `.runtime-correction/original-requirements/` 下按会话记录的日志（与 `artifactCorrection.originalRequirementsEnabled` 共用），宿主压缩上下文删掉的早期消息仍保留在清单来源中。
 
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 

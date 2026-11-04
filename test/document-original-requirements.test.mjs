@@ -43,7 +43,7 @@ artifacts:
       enabled: true
       criteria: document-review.md
 dynamicGroundTruth:
-  enabled: ${mode !== 'original-only'}
+  enabled: ${mode !== 'original-only' && mode !== 'stop-original'}
 ${materialRoots ? `  materialRoots: ${materialRoots}\n` : ''}  panel:
     size: 0
 skillCorrection:
@@ -54,8 +54,8 @@ artifactCorrection:
 ${originalKey ? `  originalRequirementsEnabled: ${mode === 'original' || mode === 'original-only'}\n` : ''}implementationCorrection:
   enabled: false
 stopCorrection:
-  enabled: false
-reviewers:
+  enabled: ${mode === 'stop-original'}
+${mode === 'stop-original' ? '  originalRequirementsBasis: true\n' : ''}reviewers:
   defaults:
     timeoutMs: 15000
 `;
@@ -335,6 +335,19 @@ test('a manual host compaction neither waits for withheld work admission nor los
   assert.deepEqual(review.messages.map(message => [message.full, message.retainedAfterCompaction ?? false]),
     [[REQUIREMENTS_ONLY, true], ['Now write docs/design.md.', false]]);
   assert.match(result.feedback, /AGENT-OFFLINE-IMPORT/u);
+});
+
+test('with only the Stop original basis enabled, the host still logs a user message before a manual compaction drops it', async t => {
+  const f = await documentFixture(t, 'stop-original');
+  const { runtimeV2 } = await loadRuntimePlan({ cwd: f.root });
+  assert.equal(runtimeV2.artifactCorrection.originalRequirementsEnabled, false);
+  assert.equal(runtimeV2.stopCorrection.originalRequirementsBasis, true);
+  const first = await f.ask('requirements-only', REQUIREMENTS_ONLY, { persistAfterPrompt: true });
+  const release = f.holdAdmission();
+  await f.compact(first, 'Truncated.', { truncate: true, manual: true });
+  await release();
+  const archived = (await fs.readFile(userMessageLogPath(f.root, f.sessionId), 'utf8')).trim().split('\n').map(line => JSON.parse(line).text);
+  assert.deepEqual(archived, [REQUIREMENTS_ONLY]);
 });
 
 test('the Claude Code PostToolUse hook delivers the same original requirements to its review fork', async t => {

@@ -41,17 +41,19 @@ dynamicGroundTruth:
 
 `readOpenClawTranscript` 沿父链读取，宿主只追加压缩记录时，旧消息本来就在。若宿主把文件截短重写，`persistTranscript` 会丢掉旧消息。为此新增 `.runtime-correction/original-requirements/<会话哈希>.jsonl`，只追加用户原话。写入时机：`UserPromptSubmit`、`PreCompact`、每次文档审阅，以及 OpenClaw 原生钩子下的每轮结束（`agent_end`）和压缩前（`before_compaction`）。即使任务尚未创建也会记录。已不在 transcript 中的消息标记为 `retainedAfterCompaction: true`，仍然有效。
 
+开启 `artifactCorrection.originalRequirementsEnabled` 或 `stopCorrection.originalRequirementsBasis` 中任一开关都会写这份日志。B1 的 Stop 原文清单从同一份日志读取用户消息，每次 Stop 也会追加当时 transcript 里的消息；Stop 反馈消息仍不作为需求。两个开关都关闭时不写日志。
+
 最后两个时机是在真实宿主里补上的。MatrixAssistant 原生钩子下原来只有前三个时机，真实运行中都没写进第一轮：
 
 - 宿主在 `before_prompt_build` 之后才把本轮用户消息写进会话文件（探针实测晚约 0.1 秒，此时 RC 读到 `HOST_TRANSCRIPT_SESSION_MISMATCH`）。第一轮只回复 “Noted”、没有工具调用时，之后再没有经过工作许可的钩子能看到这条消息。`agent_end` 会触发，但原来不记录。
 - 手动压缩（`sessions.compact`）在宿主登记为 `compaction` 类的会话生命周期变更，变更期间新的工作许可一律等待。RC 的 `before_compaction` 原来也走 `runWithWorkAdmission`，只能等到压缩结束，于是被宿主以 30 秒超时中断，每次手动压缩都多等 30 秒。
 - 截断式压缩（`sessions.compact` 带 `maxLines`）本身不触发钩子，所以第一轮需求在截断后无法找回。
 
-修复（`lib/openclaw/runtime.mjs`，约 30 行）：新增 `recordNativeUserMessages`，只在开启原始需求模式且项目作用域仍有效时，用只读方式读取宿主会话的当前分支并记录用户消息，不申请工作许可。`agent_end` 和 `before_compaction` 都先调用它。手动压缩的钩子没有 `runId`，原来的压缩检查点（`PreCompact`）改为在后台申请许可，等宿主压缩结束后执行，钩子本身立即返回。修复前它同样要等压缩结束才拿到许可（探针中在压缩记录写入后才执行），所以执行时间不变，只是宿主不再为它等 30 秒。运行中的自动压缩带 `runId`，行为不变。
+修复（`lib/openclaw/runtime.mjs`，约 30 行）：新增 `recordNativeUserMessages`，只在开启上述任一原文开关且项目作用域仍有效时，用只读方式读取宿主会话的当前分支并记录用户消息，不申请工作许可。`agent_end` 和 `before_compaction` 都先调用它。手动压缩的钩子没有 `runId`，原来的压缩检查点（`PreCompact`）改为在后台申请许可，等宿主压缩结束后执行，钩子本身立即返回。修复前它同样要等压缩结束才拿到许可（探针中在压缩记录写入后才执行），所以执行时间不变，只是宿主不再为它等 30 秒。运行中的自动压缩带 `runId`，行为不变。
 
 ## 测试结果
 
-### 新增测试（`test/document-original-requirements.test.mjs`，15 项全部通过）
+### 新增测试（`test/document-original-requirements.test.mjs`，16 项全部通过）
 
 | 场景 | 结果 |
 | --- | --- |
@@ -63,6 +65,7 @@ dynamicGroundTruth:
 | OpenClaw 压缩：只追加型压缩；截短型压缩；截短发生在首次写文档之前 | 3 项通过 |
 | 按宿主顺序（用户消息在 `before_prompt_build` 之后才落盘）：无工具调用的一轮在 `agent_end` 记下需求，之后不触发钩子的截断不丢需求 | 通过 |
 | 宿主扣住工作许可时的手动压缩：钩子 2 秒内返回并记下需求，截断后的审阅仍引用这条需求 | 通过 |
+| 只开 Stop 原文开关（文档原文开关关闭）：手动截断式压缩前，宿主同样记下用户消息 | 通过 |
 | Claude Code `PostToolUse` 钩子：fork 收到相同的需求包，包括被点名文件 | 通过 |
 | 评测脚本的策略生成：`--original-requirements` 打开新开关且不开基线审阅 | 通过 |
 | 对照：基线模式先提取并发布基线再审阅 | 通过 |

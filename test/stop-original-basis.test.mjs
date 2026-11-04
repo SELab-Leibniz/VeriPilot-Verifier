@@ -9,6 +9,7 @@ import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { buildMetricPopulation, buildOriginalStopPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { loadStopOriginalRequirements, stopFeedbackCurrent } from '../lib/runtime-v2/production-stop.mjs';
+import { userMessageLogPath } from '../lib/runtime-v2/original-requirements.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 
@@ -60,19 +61,38 @@ test('Stop originals preserve source identities and retain Skill graph items', a
   await assert.rejects(fs.access(path.join(projectRoot, '.runtime-correction')), { code: 'ENOENT' });
 });
 
-for (const deviationOnly of [false, true]) test(deviationOnly
-  ? 'B12 admits a receipt-bound deviation from original requirements with the baseline disabled'
-  : 'one production Stop reviewer builds a receipt-bound checklist and delivers a current deviation without a ledger', async t => {
+test('Stop originals keep a user message that a host compaction removed, but never Stop feedback', async t => {
+  const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-stop-log-'));
+  t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
+  const request = 'Implement compare(value) in app.mjs.\nReturn value plus one.';
+  const load = entries => loadStopOriginalRequirements({ projectRoot, sessionId: 'compacted', snapshot: { entries } });
+  const before = await load([{ type: 'user', uuid: 'user-original', message: { content: request } },
+    { type: 'user', uuid: 'stop-feedback', message: { content: '[runtime-corrector:stop-feedback] compare still returns the input.' } }]);
+  assert.deepEqual(before.userMessages.map(message => message.ref), ['transcript:user-original']);
+  const after = await load([{ type: 'assistant', uuid: 'summary', message: { content: 'Summary: compare is in progress.' } },
+    { type: 'user', uuid: 'user-continue', message: { content: 'Continue.' } }]);
+  assert.deepEqual(after.userMessages.map(({ order, ref, sha256: hash, retainedAfterCompaction = false }) => [order, ref, hash, retainedAfterCompaction]),
+    [[1, 'transcript:user-original', sha256(request), true], [2, 'transcript:user-continue', sha256('Continue.'), false]]);
+  assert.equal(after.digest, (await load([])).digest, 'once logged, the sources no longer depend on the live transcript');
+  const changed = [{ type: 'user', uuid: 'user-original', message: { content: 'Return the value unchanged.' } }];
+  for (let attempt = 0; attempt < 2; attempt++) await assert.rejects(load(changed), { code: 'STOP_TASK_BASIS_UNAVAILABLE' });
+});
+
+for (const [name, { deviationOnly = false, compacted = false }] of [
+  ['one production Stop reviewer builds a receipt-bound checklist and delivers a current deviation without a ledger', {}],
+  ['B12 admits a receipt-bound deviation from original requirements with the baseline disabled', { deviationOnly: true }],
+  ['after a host compaction removes the request, the production Stop still builds its checklist from the session log', { compacted: true }],
+]) test(name, async t => {
   const f = await stopProtocolFixture(t, 'findings');
   const ledgerPath = f.input.request.groundTruthPath;
   await fs.unlink(ledgerPath);
   const source = path.join(f.root, 'app.mjs'), transcript = path.join(f.root, 'session.jsonl');
   const requirement = 'Implement compare(value) in app.mjs.\nReturn value plus one.';
   await fs.writeFile(source, 'export const compare = value => value;\n');
-  const entries = [{ type: 'user', uuid: 'user-original', message: { content: requirement } },
-    { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }];
-  await fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
-  const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !deviationOnly },
+  const writeTranscript = entries => fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
+  await writeTranscript([{ type: 'user', uuid: 'user-original', message: { content: requirement } },
+    { type: 'assistant', uuid: compacted ? 'progress' : 'completion', message: { content: compacted ? 'Working on compare.' : 'Task complete.' } }]);
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !deviationOnly && !compacted },
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly } });
   const roles = [], scope = { stopClassification: 'TASK_COMPLETE', completionClaim: true };
   let callbackFailure;
@@ -106,8 +126,16 @@ for (const deviationOnly of [false, true]) test(deviationOnly
     stopHost: { directory, stopId, startProtocol: { version: 1 } }, input: { session_id: sessionId, cwd: f.root,
       transcript_path: transcript, hook_event_name: name, last_assistant_message: 'Task complete.', ...extra } });
   await event('SessionStart', { source: 'startup' });
+  if (compacted) {
+    await event('PreCompact', { trigger: 'auto', custom_instructions: null });
+    await writeTranscript([{ type: 'assistant', uuid: 'compaction-summary', message: { content: 'Summary: compare is in progress.' } },
+      { type: 'user', uuid: 'user-continue', message: { content: 'Continue.' } },
+      { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }]);
+  }
   const result = await event('Stop');
   if (callbackFailure) throw callbackFailure;
+  if (compacted) assert.deepEqual((await fs.readFile(userMessageLogPath(f.root, sessionId), 'utf8')).trim().split('\n')
+    .map(line => JSON.parse(line).text), [requirement, 'Continue.']);
   assert.deepEqual(roles, ['stop-reviewer']);
   assert.equal(result.stop.status, 'DEVIATION', JSON.stringify(result.stop));
   assert.equal(result.decision, 'block');
