@@ -1,5 +1,7 @@
 # RC Stop 简化对照实验计划
 
+模型：custom/deepseek-v4-flash
+
 ## 臂与重复次数
 
 | 臂 | Stop | 需求基线 | `originalRequirementsBasis` | `deviationOnly` |
@@ -33,7 +35,11 @@
 
 ## C 检查点
 
-需求 SHA256 为 `5b59fab560565602276a94485899c073dc3b8a2f973bd743be2de91ece7988fd`。全文原样作为第一条用户消息，下一条消息给出裁剪范围。隔离项目内无需求文件。两臂均启用 F 的原文存档并关闭 Stop、Skill、文档纠偏。仅 C 开关不同。正式运行前在隔离 Gateway 做一次不计分校准，确认降低后的阈值能在几轮内触发真实压缩。将校准验证的 `agents.defaults.compaction` 设定及模型上下文窗口写入本节，再固定用于两臂。校准候选固定为模型上下文窗口及 `agents.defaults.contextTokens` 均为 65536，`reserveTokens` 和 `reserveTokensFloor` 均为 49000，`keepRecentTokens` 为 1000，关闭 `memoryFlush` 和 `truncateAfterCompaction`。宿主预检的名义阈值为 12536 token，实际触发情况由校准记录。首次确认压缩后继续一轮，然后发送固定提问并结束。压缩未发生或单次超时计未完成。
+需求 SHA256 为 `5b59fab560565602276a94485899c073dc3b8a2f973bd743be2de91ece7988fd`。全文原样作为第一条用户消息，下一条消息给出裁剪范围。隔离项目内无需求文件。两臂均启用 F 的原文存档并关闭 Stop、Skill、文档纠偏。仅 C 开关不同。
+
+`custom/deepseek-v4-flash` 已在隔离 Gateway 完成一次不计分校准。实际生效的模型上下文窗口与 `agents.defaults.contextTokens` 均为 65536，`agents.defaults.compaction.reserveTokens` 和 `reserveTokensFloor` 均为 49000，`keepRecentTokens` 为 1000，`memoryFlush.enabled` 和 `truncateAfterCompaction` 均为 `false`。宿主预检的名义阈值为 12536 token，首次真实压缩在第 2 轮（范围轮）发生，上海时间 2026-11-04 17:37:06.250。两臂固定使用这些设定。
+
+首次确认压缩后继续一轮，然后发送固定提问并结束。压缩未发生或单次超时计未完成。
 
 > 列出本任务关于菜谱编号、食材单位与数量、数据删除和导入导出必须遵守的规则。请一并说明数据库已损坏时应怎样处理。
 
