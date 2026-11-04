@@ -28,10 +28,12 @@ if (!args.includes('--live') && !captureNative && !simplifyPrepare) throw new Er
 const simplify = simplifyArm ? (await import('./simplify-experiment-schedule.mjs')).STOP_ARMS[simplifyArm] : null;
 const simplifyRoot = value('--simplify-plugin-root');
 const simplifyModel = value('--simplify-model');
+const simplifyProvider = value('--simplify-provider') ?? 'coding-plan';
 const simplifySha = value('--simplify-package-sha256');
-if ((args.includes('--simplify-arm') || simplifyPrepare || simplifyRoot || simplifyModel || simplifySha)
+if ((args.includes('--simplify-arm') || simplifyPrepare || simplifyRoot || simplifyModel || simplifySha || args.includes('--simplify-provider'))
   && (!Object.hasOwn((await import('./simplify-experiment-schedule.mjs')).STOP_ARMS, simplifyArm) || !simplifyRoot
     || !/^[a-f0-9]{64}$/u.test(simplifySha ?? '') || !['glm-5.3', 'glm-5.3-flash'].includes(simplifyModel)
+    || !['coding-plan', 'anthropic-environment'].includes(simplifyProvider)
     || !value('--output-root') || simplifyPrepare === args.includes('--live') || captureNative))
   throw new Error('Simplify evaluation needs an explicit arm, prebuilt package root, package SHA256, model and fresh output; choose --live or --simplify-prepare.');
 const simplifyNative = simplify ? await import('./helpers/simplify-native-evaluation.mjs') : null;
@@ -108,11 +110,12 @@ const runtimeV2Api = packageRoot ? {
 } : { compileRuntimeV2Config, handleRuntimeV2Event };
 const taskStoreApi = packageRoot ? await simplifyNative.loadPackaged(packageRoot, 'lib/runtime-v2/task-store.mjs') : { ensureTask, taskDirectory, withTaskState };
 if (simplify) {
+  simplifyNative.requireSimplifyStopSwitches(runtimeV2Api.compileRuntimeV2Config);
   const config = runtimeV2Api.compileRuntimeV2Config({ version: 2, stopCorrection: {
     enabled: true, originalRequirementsBasis: simplify.originalRequirementsBasis, deviationOnly: simplify.deviationOnly,
   } });
-  if (config.stopCorrection.originalRequirementsBasis !== simplify.originalRequirementsBasis
-    || config.stopCorrection.deviationOnly !== simplify.deviationOnly) throw new Error('Prebuilt package does not expose both approved Stop switches.');
+  if ((config.stopCorrection.originalRequirementsBasis === true) !== simplify.originalRequirementsBasis
+    || (config.stopCorrection.deviationOnly === true) !== simplify.deviationOnly) throw new Error('Prebuilt package did not apply the requested Stop arm.');
 }
 const nativeBatch = pairBatch ? await (await import('./helpers/native-stop-evaluation.mjs')).installNativeStopBatch({
   hostRoot: value('--host-root'), sourceRoot, outputRoot,
@@ -199,7 +202,7 @@ try { for (const spec of cases) {
     try {
       if (simplify) {
         native = await simplifyNative.createSimplifyStopNative({ hostRoot: value('--host-root'), projectRoot, outputRoot: parent, sourceRoot,
-          prebuiltPluginRoot: packageRoot, model: simplifyModel, phaseTimeoutMs: 210000 });
+          prebuiltPluginRoot: packageRoot, model: simplifyModel, providerKind: simplifyProvider, phaseTimeoutMs: 210000 });
       } else if (transport === 'native') {
         const { createNativeStopEvaluation, installNativeStopCapture } = await import('./helpers/native-stop-evaluation.mjs');
         if (nativeBatch) batchCapture = await nativeBatch.beginCase({ projectRoot, contract });
@@ -306,9 +309,11 @@ try { for (const spec of cases) {
       const state = completedInBudget ? 'completed' : rateLimited ? 'rate-limited' : /DEADLINE|TIMEOUT/u.test(reason ?? '') || stopElapsedMs > 210000 ? 'timed-out' : 'failed';
       observation = { arm: simplifyArm, artifactSha256: simplifySha, repairFeedback, completedInBudget, state,
         rcElapsedMs: stopElapsedMs ?? null, reason, baselineSource: simplify.baseline ? 'controlled fixture' : 'original-user-message',
+        providerIdentity: native?.providerIdentity ?? null,
         feedback: repairFeedback ? simplifyNative.redactEvaluationText(outcome.stop.feedback) : null,
         usage: simplifyNative.summarizeProviderUsage(timing.filter(event => event.event === 'request').length, transcriptMetrics.observations.map(row => row.usage)),
-        configurationSummary: JSON.stringify({ ...simplify, model: simplifyModel, metricIds, transport: 'isolated-openclaw-gateway', budgetMs: 210000,
+        configurationSummary: JSON.stringify({ ...simplify, model: simplifyModel, provider: native?.providerIdentity ?? simplifyProvider,
+          metricIds, transport: 'isolated-openclaw-gateway', budgetMs: 210000,
           feedbackReserveMs: 30000, fixedBaselineFixture: simplify.baseline, compactionRestore: false }) };
     }
     const record = { case: spec.id, engine, production, automatic, metrics: metricIds, expectedObjectIds: objects.map(object => object.objectId), expectedRows, matchesExpected, productionStatus: outcome?.stop?.status ?? null,

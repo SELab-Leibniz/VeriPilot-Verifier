@@ -1,11 +1,21 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { createNativeGatewayEvaluation } from './native-gateway-evaluation.mjs';
 
 export const simplifyProviderUrl = 'https://open.bigmodel.cn/api/coding/paas/v4';
+const arkAnthropicUrl = 'https://ark.cn-beijing.volces.com/api/coding';
 
 export const loadPackaged = (root, file) => import(pathToFileURL(path.join(root, file)).href);
+
+export function requireSimplifyStopSwitches(compileRuntimeV2Config) {
+  const { stopCorrection } = compileRuntimeV2Config({ version: 2, stopCorrection: {
+    enabled: true, originalRequirementsBasis: true, deviationOnly: true,
+  } });
+  if (stopCorrection.originalRequirementsBasis !== true || stopCorrection.deviationOnly !== true)
+    throw new Error('Prebuilt package does not expose both approved Stop switches.');
+}
 
 export function redactEvaluationText(value) {
   let text = String(value ?? '');
@@ -33,11 +43,26 @@ export async function readProviderTiming(root, name = 'provider-fetch-timing.jso
   return text.split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
 }
 
-export async function createSimplifyGateway({ model, ...options }) {
-  if (!process.env.RC_EVAL_API_KEY?.trim()) throw new Error('Set RC_EVAL_API_KEY in the evaluation process environment.');
-  return createNativeGatewayEvaluation({ ...options, skipBootstrap: true, confineBusinessFiles: true,
-    provider: { api: 'openai-completions', baseUrl: simplifyProviderUrl, model },
-    providerGuard: { kind: 'authorized_simplify_experiment', credential: () => process.env.RC_EVAL_API_KEY } });
+export function simplifyProviderIdentity(provider, model, env = process.env) {
+  let endpoint;
+  if (provider === 'coding-plan') {
+    if (!env.RC_EVAL_API_KEY?.trim()) throw new Error('Set RC_EVAL_API_KEY in the evaluation process environment.');
+    endpoint = simplifyProviderUrl;
+  } else if (provider === 'anthropic-environment') {
+    if (!env.ANTHROPIC_AUTH_TOKEN?.trim() || ![arkAnthropicUrl, `${arkAnthropicUrl}/`].includes(env.ANTHROPIC_BASE_URL)
+      || env.ANTHROPIC_MODEL !== model || env.RC_EVAL_NATIVE_MODEL && env.RC_EVAL_NATIVE_MODEL !== model)
+      throw new Error('Use the existing Ark Anthropic-compatible endpoint, its process credential and matching configured model.');
+    endpoint = env.ANTHROPIC_BASE_URL;
+  } else throw new Error('Choose coding-plan or anthropic-environment.');
+  return { kind: provider, origin: new URL(endpoint).origin, endpointSha256: createHash('sha256').update(endpoint).digest('hex'), model };
+}
+
+export async function createSimplifyGateway({ model, providerKind = 'coding-plan', ...options }) {
+  const providerIdentity = simplifyProviderIdentity(providerKind, model);
+  const gateway = await createNativeGatewayEvaluation({ ...options, skipBootstrap: true, confineBusinessFiles: true,
+    ...(providerKind === 'coding-plan' ? { provider: { api: 'openai-completions', baseUrl: simplifyProviderUrl, model },
+      providerGuard: { kind: 'authorized_simplify_experiment', credential: () => process.env.RC_EVAL_API_KEY } } : {}) });
+  return { ...gateway, providerIdentity };
 }
 
 export async function createSimplifyStopNative(options) {
@@ -48,7 +73,7 @@ export async function createSimplifyStopNative(options) {
     const api = { id: 'runtime-corrector', runtime: gateway.runtime, config: gateway.config, logger: { warn() {} } };
     const run = createOpenClawReviewerFactory(api, { pluginRoot: gateway.pluginRoot,
       runEmbeddedAgent: params => gateway.runtime.agent.runEmbeddedAgent(params) });
-    return { model: gateway.model, modelRef: gateway.modelRef, run, close: gateway.close,
+    return { model: gateway.model, modelRef: gateway.modelRef, providerIdentity: gateway.providerIdentity, run, close: gateway.close,
       metrics: () => gateway.metrics(), root: gateway.root, projectRoot };
   } catch (error) {
     await gateway.close();

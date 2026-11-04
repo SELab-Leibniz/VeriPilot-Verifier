@@ -126,9 +126,12 @@ const modules = { stop: plan.runtimeV2.stopCorrection.enabled, skill: plan.runti
 if (!modules.stop || modules.skill || modules.document || modules.writeTimeImplementation || modules.artifacts)
   throw new Error('Benchmark policy is not Stop only');
 if (simplify) {
+  const { compileRuntimeV2Config } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-v2/config.mjs')).href);
+  const { requireSimplifyStopSwitches } = await import('./helpers/simplify-native-evaluation.mjs');
+  requireSimplifyStopSwitches(compileRuntimeV2Config);
   const runtime = plan.runtimeV2;
-  if (runtime.stopCorrection.originalRequirementsBasis !== simplify.originalRequirementsBasis
-    || runtime.stopCorrection.deviationOnly !== simplify.deviationOnly || runtime.dynamicGroundTruth.enabled !== simplify.baseline)
+  if ((runtime.stopCorrection.originalRequirementsBasis === true) !== simplify.originalRequirementsBasis
+    || (runtime.stopCorrection.deviationOnly === true) !== simplify.deviationOnly || runtime.dynamicGroundTruth.enabled !== simplify.baseline)
     throw new Error('The prebuilt plugin did not apply the requested Stop arm.');
   modules.simplify = simplify;
 }

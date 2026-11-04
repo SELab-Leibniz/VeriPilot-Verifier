@@ -6,7 +6,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { simplifySchedule } from './simplify-experiment-schedule.mjs';
-import { loadPackaged, redactEvaluationText } from './helpers/simplify-native-evaluation.mjs';
+import { loadPackaged, redactEvaluationText, simplifyProviderIdentity } from './helpers/simplify-native-evaluation.mjs';
 import { validateCompactionSettings } from './evaluate-simplify-compaction.mjs';
 import { summarizeSimplifyExperiment } from './summarize-simplify-experiment.mjs';
 
@@ -43,32 +43,35 @@ function verifyArchive(file) {
 }
 
 async function runScreening(slot, context) {
-  const { hostRoot, model, packageRoot, artifactSha256, directory } = context;
+  const { hostRoot, model, packageRoot, artifactSha256, directory, providerIdentity } = context;
   const output = path.join(directory, 'evaluation');
   const process = await runProcess(slot.entrypoints[0], ['--live', '--transport', 'native', '--engine', 'workspace', '--production',
     '--case', slot.sample, '--host-root', hostRoot, '--output-root', output, '--simplify-arm', slot.arm,
-    '--simplify-model', model, '--simplify-plugin-root', packageRoot, '--simplify-package-sha256', artifactSha256]);
+    '--simplify-model', model, '--simplify-provider', providerIdentity.kind, '--simplify-plugin-root', packageRoot, '--simplify-package-sha256', artifactSha256]);
   const evidence = path.join(output, 'results.json');
   const result = await readJson(evidence).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   const raw = result?.records?.[0];
   if (!raw) return { state: 'failed', evidence: directory, reason: process.reason ?? `Evaluator exited with ${process.code}.`, completedInBudget: false };
-  if (raw.case !== slot.sample || raw.simplify?.arm !== slot.arm || raw.simplify.artifactSha256 !== artifactSha256)
+  if (raw.case !== slot.sample || raw.simplify?.arm !== slot.arm || raw.simplify.artifactSha256 !== artifactSha256
+    || raw.simplify.providerIdentity && JSON.stringify(raw.simplify.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`Evaluator identity mismatch for ${slot.id}.`);
   const { state, repairFeedback, completedInBudget, rcElapsedMs, reason, usage, configurationSummary } = raw.simplify;
   return { state, repairFeedback, completedInBudget, elapsedMs: raw.elapsedMs, rcElapsedMs, reason, usage, configurationSummary, evidence };
 }
 
 async function runCompaction(slot, context) {
-  const { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile } = context;
+  const { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity } = context;
   const output = path.join(directory, 'evaluation');
   const child = await runProcess('scripts/evaluate-simplify-compaction.mjs', ['--live', '--arm', slot.arm,
     '--requirements', requirements, '--settings', settingsFile, '--output', output,
-    '--artifact', packageRoot, '--artifact-sha256', artifactSha256, '--host-root', hostRoot, '--model', model], { timeoutMs: 30 * 60_000 });
+    '--artifact', packageRoot, '--artifact-sha256', artifactSha256, '--host-root', hostRoot, '--model', model,
+    '--provider', providerIdentity.kind], { timeoutMs: 30 * 60_000 });
   const evidence = path.join(output, 'result.json');
   const raw = await readJson(evidence).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   if (!raw) return { state: child.timedOut ? 'timed-out' : 'failed', evidence: directory,
     reason: child.reason ?? `Compaction evaluator exited with ${child.code}.`, completedInBudget: false };
-  if (raw.arm !== slot.arm || raw.artifactSha256 !== artifactSha256 || raw.model !== model)
+  if (raw.arm !== slot.arm || raw.artifactSha256 !== artifactSha256 || raw.model !== model
+    || JSON.stringify(raw.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`Compaction evaluator identity mismatch for ${slot.id}.`);
   const { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction } = raw;
   return { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction, evidence };
@@ -155,20 +158,22 @@ async function main() {
     round: { type: 'string' }, 'plan-sha256': { type: 'string' }, package: { type: 'string' }, 'package-sha256': { type: 'string' },
     'host-root': { type: 'string' }, 'output-root': { type: 'string' }, model: { type: 'string' }, help: { type: 'boolean' },
     requirements: { type: 'string' }, settings: { type: 'string' }, calibration: { type: 'string' },
-    'round-one': { type: 'string' }, 'round-two-inputs': { type: 'string' },
+    'round-one': { type: 'string' }, 'round-two-inputs': { type: 'string' }, provider: { type: 'string', default: 'coding-plan' },
   } });
   if (values.help) {
     console.log('Usage: node scripts/run-simplify-experiment.mjs --round <1|2|C-calibration|C> --plan-sha256 <approved plan SHA256> --package <integration tgz> --package-sha256 <SHA256> --host-root <installed OpenClaw> --model <glm-5.3|glm-5.3-flash> --output-root <new directory>');
     console.log('Both C modes also need --requirements <kitchen/requirements.md> and --settings <isolated compaction JSON>. Formal C requires --calibration <completed calibration result.json>.');
     console.log('Round 2 needs --round-one <graded observations JSON> and --round-two-inputs <JSON mapping each fixed sample to { preparedRoot, manifestSha256, officialResult?, officialResultSha256? }>.');
-    console.log('Runs the fixed round in isolation. Use RC_EVAL_API_KEY in the process environment. Each attempt is immutable. Grade actual repair feedback from the evidence file before summarizing.');
+    console.log('Use RC_EVAL_API_KEY in the process environment for the default Coding Plan. Round 1 and C can instead use --provider anthropic-environment with the configured Ark endpoint and model.');
+    console.log('Each isolated attempt is immutable. Grade actual repair feedback from the evidence file before summarizing.');
     return;
   }
   if (!['1', '2', 'C-calibration', 'C'].includes(values.round) || !values.package || !values['host-root'] || !values['output-root']
     || !['glm-5.3', 'glm-5.3-flash'].includes(values.model)) throw new Error('Choose the round and provide package, host root, model and fresh output root.');
   if (sha256(await fs.readFile(path.join(root, 'docs/simplify-experiment-plan.md'))) !== values['plan-sha256'])
     throw new Error('The approved plan SHA256 differs from the current plan.');
-  if (!process.env.RC_EVAL_API_KEY?.trim()) throw new Error('Set RC_EVAL_API_KEY in the evaluation process environment.');
+  if (values.round === '2' && values.provider !== 'coding-plan') throw new Error('Round 2 uses the existing Coding Plan benchmark relay.');
+  const providerIdentity = simplifyProviderIdentity(values.provider, values.model);
   const archive = await fs.realpath(values.package), archiveBytes = await fs.readFile(archive);
   const artifactSha256 = sha256(archiveBytes);
   if (artifactSha256 !== values['package-sha256']) throw new Error('Integration package SHA256 mismatch.');
@@ -202,7 +207,8 @@ async function main() {
       calibration = await readJson(values.calibration);
       if (calibration.state !== 'completed' || calibration.arm !== 'calibration' || calibration.model !== values.model
         || calibration.artifactSha256 !== artifactSha256 || !Number.isFinite(calibration.compaction?.firstCompactedAt)
-        || JSON.stringify(calibration.settings) !== JSON.stringify(settings)) throw new Error('Formal C inputs differ from the successful calibration.');
+        || JSON.stringify(calibration.settings) !== JSON.stringify(settings)
+        || JSON.stringify(calibration.providerIdentity) !== JSON.stringify(providerIdentity)) throw new Error('Formal C inputs differ from the successful calibration.');
     }
   }
   const output = path.resolve(values['output-root']);
@@ -222,18 +228,18 @@ async function main() {
   if (cMode) await writeJson(settingsFile, settings);
   const schedule = values.round === 'C-calibration' ? [{ id: 'calibration', arm: 'calibration', sample: 'kitchen-compaction',
     timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: false, scored: false } }] : simplifySchedule(values.round, promoted);
-  await writeJson(path.join(output, 'batch.json'), { planSha256: values['plan-sha256'], artifactSha256, model, hostVersion: host.version, schedule });
+  await writeJson(path.join(output, 'batch.json'), { planSha256: values['plan-sha256'], artifactSha256, model, providerIdentity, hostVersion: host.version, schedule });
   const records = [];
   for (const slot of schedule) {
     const directory = path.join(output, slot.id);
     await fs.mkdir(directory);
     await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256 });
     let result;
-    const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, benchmark: benchmarkInputs?.[slot.sample] };
+    const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity, benchmark: benchmarkInputs?.[slot.sample] };
     const run = cMode ? runCompaction : benchmarkInputs ? runBenchmark : runScreening;
     try { result = await run(slot, context); }
     catch (error) { result = { state: 'failed', evidence: directory, reason: redactEvaluationText(error.message), completedInBudget: false }; }
-    const record = { id: slot.id, artifactSha256, configurationSummary: JSON.stringify({ ...slot.config, model }), ...result };
+    const record = { id: slot.id, artifactSha256, configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity }), ...result };
     await writeJson(path.join(directory, 'observation.json'), record);
     records.push(record);
     console.log(JSON.stringify({ id: slot.id, state: record.state }));
