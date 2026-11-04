@@ -49,7 +49,7 @@ if (cached.code) {
 // same tree repeatedly. These refs never enter business-agent tools.
 const retained = await run('git', ['--git-dir', cache, 'update-ref', `refs/rc-bench/base/${task.base_commit}`, task.base_commit], output, 'retain-base');
 if (retained.code) throw new Error('Could not retain shared base objects');
-const source = shortArktsWorkspace(output, 'grd', arg('--workspace-base') ? path.resolve(arg('--workspace-base')) : process.cwd());
+const source = shortArktsWorkspace(output, 'grd', arg('--workspace-base'), arg('--workspace-root'));
 await fs.mkdir(path.dirname(source), { recursive: true });
 const checkout = await run('git', ['-c', 'core.longpaths=true', '--git-dir', cache, 'worktree', 'add', '--detach', source, task.base_commit], output, 'checkout');
 if (checkout.code) throw new Error('Shared source worktree creation failed');

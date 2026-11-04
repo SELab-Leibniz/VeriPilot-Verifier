@@ -163,6 +163,8 @@ async function main() {
   } catch (error) {
     result.state = signal.aborted || Date.now() >= deadlineAt ? 'timed-out' : 'failed';
     result.reason = redactEvaluationText(error.message);
+    result.frameworkError = result.state === 'failed' && !['Compaction turn did not complete.',
+      'No real native compaction was recorded within the bounded turns.', 'The fixed checkpoint answer is missing.'].includes(result.reason);
   } finally {
     if (runId && gateway) await gateway.request('chat.abort', { sessionKey, runId }).catch(() => {});
     if (gateway) await gateway.close();

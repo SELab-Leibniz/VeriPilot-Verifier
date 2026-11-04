@@ -8,9 +8,6 @@ import { scoreCompaction } from './score-simplify-compaction.mjs';
 
 const metricOrder = ['completion', 'elapsedMs', 'tokens'];
 const simplicity = ['B12', 'B1', 'B2', 'A'];
-const naturalSamples = { 'httpx-frozen': [122, 1272], 'etree-frozen': [52, 15], 'narwhals-frozen': [103, 10093] };
-const baseline = { arm: 'S0', sample: 'etree-deepequal-injected', official: { f2p_passed: 48, f2p_total: 52, p2p_passed: 15, p2p_total: 15 },
-  source: 'docs/stop-injected-benchmark-acceptance-20261102.json', historical: true };
 const number = value => Number.isFinite(value) && value >= 0;
 const integer = value => Number.isSafeInteger(value) && value >= 0;
 const known = value => value !== null && value !== undefined;
@@ -33,7 +30,11 @@ function officialReward(value, id) {
   if (![f2p_passed, f2p_total, p2p_passed, p2p_total].every(integer)
     || f2p_total === 0 || p2p_total === 0 || f2p_passed > f2p_total || p2p_passed > p2p_total)
     throw new Error(`Invalid official test counts for ${id}.`);
-  return { f2p_passed, f2p_total, p2p_passed, p2p_total };
+  for (const [key, count] of [['f2p_not_passed', f2p_total - f2p_passed], ['p2p_not_passed', p2p_total - p2p_passed]]) {
+    if (value[key] != null && (!Array.isArray(value[key]) || value[key].length !== count || new Set(value[key]).size !== count
+      || value[key].some(test => typeof test !== 'string'))) throw new Error(`Invalid ${key} for ${id}.`);
+  }
+  return { f2p_passed, f2p_total, p2p_passed, p2p_total, f2p_not_passed: value.f2p_not_passed ?? null, p2p_not_passed: value.p2p_not_passed ?? null };
 }
 
 function recordRun(slot, raw) {
@@ -46,6 +47,7 @@ function recordRun(slot, raw) {
     || typeof evidence !== 'string' || !evidence.trim() || reason != null && typeof reason !== 'string')
     throw new Error(`Invalid run state, timing, package SHA256, configuration or evidence for ${id}.`);
   const record = { ...slot, state, completedInBudget, elapsedMs, rcElapsedMs, artifactSha256, configurationSummary, evidence, reason,
+    wallMs: raw.wallMs ?? null, modelRequests: raw.modelRequests ?? null, planSha256: raw.planSha256 ?? null,
     usage: usageRecord(raw.usage, id) };
   if (slot.round === 'C') {
     const { firstCompactedAt = null, injections = [], compactionEvents = [], answer = null, assessment } = raw.compaction ?? {};
@@ -57,10 +59,8 @@ function recordRun(slot, raw) {
     if (state === 'completed' && (!firstCompactedAt || !(answer ?? assessment?.answer)?.trim() || !number(elapsedMs) || elapsedMs > slot.timeoutMs))
       throw new Error(`Completed C run ${id} needs a real compaction, verbatim answer and duration within the cap.`);
     const injectionProtocol = !firstCompactedAt ? null : slot.arm === 'C-off' ? injections.length === 0
-      : compactionEvents.length ? injections.some(item => item.compactedAt === firstCompactedAt)
-        && new Set(injections.map(item => item.compactedAt)).size === injections.length
-        && injections.every(item => compactionEvents.includes(item.compactedAt) && item.at >= item.compactedAt && item.length > 0 && item.length <= 24 * 1024)
-        : injections.length === 1 && injections[0].at >= firstCompactedAt && injections[0].length > 0 && injections[0].length <= 24 * 1024;
+      : injections.length === 1 && (injections[0].compactedAt ?? firstCompactedAt) === firstCompactedAt
+        && injections[0].at >= firstCompactedAt && injections[0].length > 0 && injections[0].length <= 24 * 1024;
     return { ...record, compaction: { firstCompactedAt, injections, compactionEvents, injectionProtocol, answer: answer ?? assessment?.answer ?? null,
       grading: assessment ? scoreCompaction(assessment) : null } };
   }
@@ -76,8 +76,10 @@ function recordRun(slot, raw) {
     || number(baselineCost.tokens) && number(record.usage.tokens) && baselineCost.tokens > record.usage.tokens)
     throw new Error(`Invalid baseline cost for ${id}.`);
   const feedback = { sent: repairFeedback, matchesDefect: repairFeedback === false ? false : matchesDefect,
-    ungrounded: repairFeedback === false ? false : ungroundedFeedback };
-  return { ...record, feedback, official, baselineCost: slot.round === '2' && slot.arm === 'A' ? {
+    ungrounded: repairFeedback === false ? false : ungroundedFeedback, text: raw.feedback ?? null,
+    rationale: raw.gradingRationale ?? null, evidenceRequest: raw.evidenceRequest ?? null };
+  return { ...record, feedback, official, gradingEvidence: raw.gradingEvidence ?? null, gradingError: raw.gradingError ?? null,
+    baselineCost: slot.round === '2' && slot.arm === 'A' ? {
     elapsedMs: baselineCost.elapsedMs ?? null, tokens: baselineCost.tokens ?? null,
     elapsedShare: ratio(baselineCost.elapsedMs, rcElapsedMs), tokenShare: record.usage.coverage === 1 ? ratio(baselineCost.tokens, record.usage.tokens) : null,
   } : null };
@@ -141,52 +143,55 @@ function screen(rows) {
   return { arms, ready, promotions: ready ? sorted.slice(0, 2).map(row => row.arm) : null, rankingOmissions };
 }
 
-function finalComparison(rows, screened, promoted) {
+function finalComparison(rows, screened, promoted, samples) {
   const ready = rows.length > 0 && rows.every(row => row.state !== 'not-run');
+  const defects = samples.filter(sample => sample.kind === 'defect');
+  const correct = new Set(samples.filter(sample => sample.kind === 'correct').map(sample => sample.id));
   const arms = ['A', ...promoted].map(arm => {
     const selected = rows.filter(row => row.arm === arm);
-    const injected = selected.filter(row => row.sample === 'etree-deepequal-injected');
-    const frozen = selected.filter(row => Object.hasOwn(naturalSamples, row.sample));
-    const detected = knownMean(injected.map(row => known(row.feedback?.matchesDefect) ? Number(row.feedback.matchesDefect) : null));
-    const officialValid = injected.length === 2 && injected.every(row => row.official?.after?.f2p_total === baseline.official.f2p_total
-      && row.official.after.p2p_total === baseline.official.p2p_total);
-    const frozenScored = frozen.length === Object.keys(naturalSamples).length * 2 && frozen.every(row => {
-      const [added, regressions] = naturalSamples[row.sample];
-      return row.official?.before?.f2p_total === added && row.official.before.p2p_total === regressions
-        && known(row.feedback?.matchesDefect) && known(row.feedback?.ungrounded);
+    const hits = selected.filter(row => !correct.has(row.sample)).map(row => known(row.feedback?.matchesDefect) ? Number(row.feedback.matchesDefect) : null);
+    const falseAlarms = subset => subset.every(row => known(row.feedback?.ungrounded)) ? subset.filter(row => row.feedback.ungrounded).length : null;
+    const byDefect = defects.map(({ id }) => {
+      const pairs = selected.filter(row => row.sample === id).map(row => {
+        const { before, after } = row.official ?? {};
+        if (!before || !after || before.f2p_total !== after.f2p_total || before.p2p_total !== after.p2p_total) return null;
+        return { f2p: after.f2p_passed, p2p: after.p2p_passed,
+          newRegressions: after.p2p_not_passed && before.p2p_not_passed
+            ? after.p2p_not_passed.filter(test => !before.p2p_not_passed.includes(test)) : null };
+      });
+      return { sample: id, pairs, f2pMean: pairs.length === 2 ? knownMean(pairs.map(pair => pair?.f2p)) : null,
+        p2pMean: pairs.length === 2 ? knownMean(pairs.map(pair => pair?.p2p)) : null,
+        nonRegression: pairs.length === 2 && pairs.every(pair => Array.isArray(pair?.newRegressions))
+          ? pairs.every(pair => !pair.newRegressions.length) : null };
     });
-    const frozenCorrectFalseAlarms = frozenScored ? frozen.filter(row => {
-      const result = row.official.before;
-      return result.f2p_passed === result.f2p_total && result.p2p_passed === result.p2p_total && row.feedback.ungrounded;
-    }).length : null;
-    return { arm, detected, frozenCorrectFalseAlarms,
-      frozenDetections: frozenScored ? frozen.filter(row => row.feedback.matchesDefect).length : null,
-      frozenFalseAlarms: frozenScored ? frozen.filter(row => row.feedback.ungrounded).length : null,
-      finalOfficialAddedMean: officialValid ? mean(injected.map(row => row.official.after.f2p_passed)) : null,
-      secondary: secondary(rows, arm) };
+    return { arm, detected: knownMean(hits), falseAlarms: falseAlarms(selected),
+      frozenCorrectFalseAlarms: falseAlarms(selected.filter(row => correct.has(row.sample))),
+      byDefect, secondary: secondary(rows, arm) };
   });
   const control = arms[0];
   for (const arm of arms) {
     const first = screened.arms.find(row => row.arm === arm.arm);
-    arm.primary = arm.arm === 'A' ? 'control'
-      : [arm.detected, control.detected, arm.frozenCorrectFalseAlarms, control.frozenCorrectFalseAlarms,
-        arm.finalOfficialAddedMean, control.finalOfficialAddedMean].some(value => value === null) ? 'unscored'
-        : first.strictFalseAlarms > screened.arms[0].strictFalseAlarms || arm.detected < control.detected
-          || arm.frozenCorrectFalseAlarms > control.frozenCorrectFalseAlarms || arm.finalOfficialAddedMean < control.finalOfficialAddedMean
-          ? 'inferior' : 'meets-control';
+    const incomplete = [arm.detected, control.detected, arm.frozenCorrectFalseAlarms, control.frozenCorrectFalseAlarms].some(value => value === null)
+      || !arm.byDefect.length || [...arm.byDefect, ...control.byDefect].some(row => row.f2pMean === null || row.nonRegression === null);
+    const regressed = arm.byDefect.some((row, index) => row.nonRegression === false
+      || row.f2pMean < control.byDefect[index].f2pMean || row.p2pMean < control.byDefect[index].p2pMean);
+    arm.primary = arm.arm === 'A' ? 'control' : incomplete ? 'unscored'
+      : first.strictFalseAlarms > screened.arms[0].strictFalseAlarms || arm.detected < control.detected
+        || arm.frozenCorrectFalseAlarms > control.frozenCorrectFalseAlarms || regressed ? 'inferior' : 'meets-control';
   }
-  if (!screened.ready) return { arms, recommendation: null, reason: 'round-1-incomplete' };
+  if (!screened.ready) return { arms, recommendation: 'A', reason: 'round-1-incomplete' };
   if (!screened.promotions.length) return { arms, recommendation: 'A', reason: 'no-candidate-survived-round-1' };
-  if (!ready || arms.some(arm => arm.primary === 'unscored')) return { arms, recommendation: null, reason: 'round-2-unscored' };
+  if (!ready || arms.some(arm => arm.primary === 'unscored')) return { arms, recommendation: 'A', reason: 'round-2-unscored' };
   const { sorted, rankingOmissions } = rankArms(arms.filter(arm => ['control', 'meets-control'].includes(arm.primary)));
   const incomparable = sorted.length > 1 && rankingOmissions.length > 0;
-  return { arms, recommendation: incomparable ? null : sorted[0].arm, rankingOmissions,
+  return { arms, recommendation: incomparable ? 'A' : sorted[0].arm, rankingOmissions,
     reason: incomparable ? 'secondary-metrics-incomparable' : 'ranked-by-preregistered-metrics' };
 }
 
-export function summarizeSimplifyExperiment({ records, promoted = [] }) {
+export function summarizeSimplifyExperiment({ records, promoted = [], roundTwoInputs = {}, audit = {} }) {
   if (!Array.isArray(records) || !Array.isArray(promoted)) throw new Error('Provide records and optional promoted arms.');
-  const schedule = [...simplifySchedule('1'), ...(promoted.length ? simplifySchedule('2', promoted) : []), ...simplifySchedule('C')];
+  const samples = roundTwoInputs.samples ?? [];
+  const schedule = [...simplifySchedule('1'), ...(promoted.length && samples.length ? simplifySchedule('2', promoted, samples) : []), ...simplifySchedule('C')];
   const expected = new Set(schedule.map(row => row.id)), byId = new Map();
   for (const record of records) {
     if (!expected.has(record.id) || byId.has(record.id)) throw new Error(`Unexpected or repeated run ID ${record.id}.`);
@@ -200,7 +205,7 @@ export function summarizeSimplifyExperiment({ records, promoted = [] }) {
   const round1 = screen(runs.filter(row => row.round === '1'));
   if (promoted.length && JSON.stringify(promoted) !== JSON.stringify(round1.promotions))
     throw new Error('Round 2 promotions do not match the scored round 1 selection.');
-  const round2 = finalComparison(runs.filter(row => row.round === '2'), round1, promoted);
+  const round2 = finalComparison(runs.filter(row => row.round === '2'), round1, promoted, samples);
   const baselineRuns = runs.filter(row => row.round === '2' && row.arm === 'A');
   const baselineShare = (key, total) => baselineRuns.length && baselineRuns.every(row => number(row.baselineCost?.[key]) && number(total(row)))
     ? ratio(baselineRuns.reduce((sum, row) => sum + row.baselineCost[key], 0), baselineRuns.reduce((sum, row) => sum + total(row), 0)) : null;
@@ -217,7 +222,7 @@ export function summarizeSimplifyExperiment({ records, promoted = [] }) {
   const protocolValid = [control, restored].every(arm => arm.injectionProtocol.every(value => value === true));
   const compactionComparison = { delta, noise: control.noise, protocolValid,
     change: delta === null || !protocolValid ? 'inconclusive' : Math.abs(delta) <= control.noise ? 'tied' : delta > 0 ? 'improved' : 'regressed' };
-  return { historical: [baseline], runs, round1, round2, baselineUpperBound, compaction, compactionComparison,
+  return { roundTwoInputs, audit, observations: records, runs, round1, round2, baselineUpperBound, compaction, compactionComparison,
     baselineRemoval: round2.recommendation && STOP_ARMS[round2.recommendation].originalRequirementsBasis
       ? 'consider-separate-review' : 'retain', generatedAt: new Date().toISOString() };
 }
@@ -231,14 +236,34 @@ function markdown(report) {
   const table = (headers, rows) => [row(...headers), row(...headers.map(() => '---')), ...rows];
   const secondaryRows = (round, arms) => arms.filter(arm => arm.arm !== 'A').flatMap(arm => metricOrder.flatMap(metric =>
     arm.secondary[metric].bySample.map(item => row(round, arm.arm, item.sample, metric, item.controlMean, item.candidateMean, item.noise, item.delta, item.change))));
-  return ['# RC Stop 简化对照实验结果', '', `推荐臂 ${report.round2.recommendation ?? '未能判定'}。基线代码建议 ${report.baselineRemoval === 'retain' ? '保留' : '另行审议是否删除'}。`, '',
-    'S0 引用既有 etree 注入后首稿，官方新增项 48/52、回归项 15/15。', '',
+  const reasons = { 'round-1-incomplete': '第一轮证据不足，按计划保留 A。', 'no-candidate-survived-round-1': '第一轮无入围臂，第二轮跳过。',
+    'round-2-unscored': '第二轮主指标未能判定，按计划保留 A。', 'secondary-metrics-incomparable': '次指标无法完整比较，按计划保留 A。',
+    'ranked-by-preregistered-metrics': '按计划的主指标门槛和次指标顺序选择。' };
+  const quote = value => value.replace(/\r\n/gu, '\n').split('\n').map(line => `> ${line}`);
+  const audit = report.audit;
+  const totals = audit.totals ?? {};
+  return ['# RC Stop 简化对照实验结果', '', `推荐臂 ${report.round2.recommendation}。基线代码建议${report.baselineRemoval === 'retain' ? '保留' : '单独审议删除范围'}。${reasons[report.round2.reason]}`, '',
+    '## 完成情况和运行边界', '',
+    ...table(['阶段', '保留的运行数', '计划数', '完成', '失败', '超时'], ['1', 'C', '2'].map(round => {
+      const selected = report.runs.filter(run => run.round === round);
+      return row(round, selected.filter(run => run.state !== 'not-run').length, selected.length,
+        ...['completed', 'failed', 'timed-out'].map(state => selected.filter(run => run.state === state).length));
+    })), '',
+    ...(audit.events ?? []).map(item => `- ${item}`), '',
+    `总墙钟 ${format(totals.wallMinutes)} 分钟，模型请求 ${format(totals.requests)} 次，记录到 ${format(totals.tokens)} token，用量覆盖 ${format(totals.completeCalls)}/${format(totals.observedCalls)}。`, '',
     '## 第一轮', '', ...table(['臂', '检出率', '正确实现误报', '缺运行证据误报', '总误报', '预算内完成率', '判定'],
       report.round1.arms.map(arm => row(arm.arm, arm.detectRate, arm.strictFalseAlarms, arm.processFalseAlarms, arm.falseAlarms, arm.completeRate, arm.disposition))), '',
     `入围臂 ${report.round1.promotions?.join('、') || (report.round1.ready ? '无' : '待判定')}。`,
     ...(report.round1.rankingOmissions.length ? [`次指标缺少可比用量或观测 ${report.round1.rankingOmissions.join('、')}。`] : []), '',
-    '## 第二轮', '', ...table(['臂', '注入检出率', '冻结首稿检出', '冻结首稿误报', '正确首稿误报', 'etree 官方新增项均值', '主指标判定'],
-      report.round2.arms.map(arm => row(arm.arm, arm.detected, arm.frozenDetections, arm.frozenFalseAlarms, arm.frozenCorrectFalseAlarms, arm.finalOfficialAddedMean, arm.primary))), '',
+    '## 第二轮', '',
+    ...table(['样例', '首稿隐藏评分 F2P；P2P', '冻结工作区提交', '会话 SHA256', '补丁 SHA256', '状态'],
+      (report.roundTwoInputs.s0 ?? []).map(item => row(item.case, official(item.grade), item.commit, item.sessionSha256, item.patchSha256, item.state))), '',
+    ...table(['审查对象', '类别', '初始隐藏评分 F2P；P2P', '变体撤回'],
+      (report.roundTwoInputs.samples ?? []).map(item => row(item.id, item.kind, official(item.before), item.rollback))), '',
+    ...table(['臂', '首次 Stop 缺陷检出率', '全部误报', '正确首稿误报', '主指标判定'],
+      report.round2.arms.map(arm => row(arm.arm, arm.detected, arm.falseAlarms, arm.frozenCorrectFalseAlarms, arm.primary))), '',
+    ...table(['臂', '缺陷对象', 'F2P 两次均值', 'P2P 两次均值', 'P2P 无新增失败'],
+      report.round2.arms.flatMap(arm => arm.byDefect.map(item => row(arm.arm, item.sample, item.f2pMean, item.p2pMean, yesNo(item.nonRegression))))), '',
     '## 次指标与噪声', '', ...table(['轮次', '臂', '样例', '指标', 'A 均值', '候选均值', 'A 极差', '候选减 A', '方向'], [
       ...secondaryRows('1', report.round1.arms), ...secondaryRows('2', report.round2.arms),
     ]), '',
@@ -253,10 +278,17 @@ function markdown(report) {
     ...table(['臂', '序号', '首次压缩时间', '注入次数', '注入长度', '得分'], report.runs.filter(run => run.round === 'C').map(run => row(run.arm,
       run.repeat, run.compaction?.firstCompactedAt, run.compaction?.injections.length,
       run.compaction?.injections.map(item => item.length).join(' / '), run.compaction?.grading?.score))), '',
-    '## 逐次记录', '', ...table(['臂', '样例', '序号', '状态', '修复反馈', '命中', '误报', '预算内', '耗时 ms', 'RC ms', 'token', '用量覆盖', '官方首稿', '官方最终', '安装包 SHA256', '配置', '证据', '原因'],
+    ...report.runs.filter(run => run.round === 'C' && run.compaction?.answer).flatMap(run => [
+      `### ${run.id}`, '', ...quote(run.compaction.answer), '',
+      ...table(['规则', '分数', '依据'], (run.compaction.grading?.items ?? []).map(item => row(item.id, item.points, item.rationale))), '',
+    ]),
+    '## 逐次记录', '', 'Stop 轮 token 为可归属的 RC 用量。C 的 token 和耗时来自整个隔离会话。覆盖不足的 token 是观测小计。', '',
+    ...table(['臂', '样例', '序号', '状态', '修复反馈', '命中', '误报', '预算内', '耗时 ms', 'RC ms', 'token', '用量覆盖', '隐藏首稿', '隐藏最终', '盲评依据', '证据', '原因'],
       report.runs.map(run => row(run.arm, run.sample, run.repeat, run.state, yesNo(run.feedback?.sent), yesNo(run.feedback?.matchesDefect),
         yesNo(run.feedback?.ungrounded), yesNo(run.completedInBudget), run.elapsedMs, run.rcElapsedMs, run.usage?.tokens, cost(run.usage),
-        official(run.official?.before), official(run.official?.after), run.artifactSha256, run.configurationSummary, run.evidence, run.reason))), '',
+        official(run.official?.before), official(run.official?.after), run.feedback?.rationale, run.evidence, run.reason ?? run.gradingError))), '',
+    '### 实际修复反馈', '', ...report.runs.filter(run => run.feedback?.text).flatMap(run => [`#### ${run.id}`, '', ...quote(run.feedback.text), '']),
+    '## 局限和不确定性', '', ...(audit.limitations ?? []).map(item => `- ${item}`), '',
   ].join('\n');
 }
 

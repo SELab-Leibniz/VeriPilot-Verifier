@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -20,9 +21,7 @@ export const SCREENING_SAMPLES = Object.freeze({
   'mixed-skill': 'no-feedback',
 });
 
-const benchmarkSamples = ['etree-deepequal-injected', 'httpx-frozen', 'etree-frozen', 'narwhals-frozen'];
-
-export function simplifySchedule(round, promoted = []) {
+export function simplifySchedule(round, promoted = [], objects = []) {
   if (round !== '2' && promoted.length) throw new Error('Promotions are only used for round 2.');
   if (round === 'C') return [1, 2, 3].flatMap(repeat => ['C-off', 'C-on'].map(arm => ({
     id: `${arm.toLowerCase()}-${repeat}`, round, sample: 'kitchen-compaction', repeat, arm,
@@ -32,30 +31,32 @@ export function simplifySchedule(round, promoted = []) {
   if (round === '2' && (!promoted.length || promoted.length > 2 || new Set(promoted).size !== promoted.length
     || promoted.some(arm => !['B1', 'B2', 'B12'].includes(arm)))) throw new Error('Round 2 requires one or two distinct promoted candidate arms.');
   const screening = round === '1';
-  const samples = screening ? Object.keys(SCREENING_SAMPLES) : benchmarkSamples;
+  if (!screening && (!objects.length || new Set(objects.map(object => object.id)).size !== objects.length
+    || objects.some(object => !/^security_tool_[12]-(natural|correct|injected)$/u.test(object.id) || !['defect', 'correct'].includes(object.kind))))
+    throw new Error('Round 2 requires distinct frozen ArkTS objects.');
+  const samples = screening ? Object.keys(SCREENING_SAMPLES) : objects.map(object => object.id);
   const arms = screening ? Object.keys(STOP_ARMS) : ['A', ...promoted];
-  return (screening ? [1, 2, 3] : [1, 2]).flatMap(repeat => samples.flatMap(sample => [
-    ...arms.slice(repeat - 1), ...arms.slice(0, repeat - 1),
-  ].map(arm => {
+  const order = screening ? [1, 2, 3].flatMap(repeat => samples.map(sample => ({ repeat, sample })))
+    : samples.flatMap(sample => [1, 2].map(repeat => ({ repeat, sample })));
+  return order.flatMap(({ repeat, sample }) => [...arms.slice(repeat - 1), ...arms.slice(0, repeat - 1)].map(arm => {
     const config = STOP_ARMS[arm];
     return { id: `r${round}-${sample}-${repeat}-${arm.toLowerCase()}`, round, sample, repeat, arm, config,
-      entrypoints: screening ? ['scripts/evaluate-stop-workspace.mjs'] : [
-        'scripts/run-native-stop-benchmark.mjs', 'scripts/evaluate-native-stop-benchmark.mjs',
-      ],
-      mode: screening ? 'native-workspace-stop' : sample === 'etree-deepequal-injected' ? 'native-repair-loop' : 'native-frozen-stop',
+      entrypoints: screening ? ['scripts/evaluate-stop-workspace.mjs'] : ['scripts/run-arkts-rc-case.mjs', 'scripts/calibrate-arkts-bench.mjs'],
+      mode: screening ? 'native-workspace-stop' : 'native-arkts-frozen-stop',
       requirements: config.baseline ? (screening ? 'fixed-baseline-fixture' : 'live-baseline') : 'original-user-message',
     };
-  })));
+  }));
 }
 
 async function main() {
-  const { values } = parseArgs({ options: { round: { type: 'string' }, promoted: { type: 'string' }, help: { type: 'boolean' } } });
+  const { values } = parseArgs({ options: { round: { type: 'string' }, promoted: { type: 'string' }, inputs: { type: 'string' }, help: { type: 'boolean' } } });
   if (values.help) {
-    console.log('Usage: node scripts/simplify-experiment-schedule.mjs --round <1|2|C> [--promoted <B1,B2,B12 subset>]');
+    console.log('Usage: node scripts/simplify-experiment-schedule.mjs --round <1|2|C> [--promoted <B1,B2,B12 subset> --inputs <round-two-inputs.json>]');
     console.log('Prints the proposed run order as JSON. Round 2 requires the approved round 1 promotions. No evaluator is launched.');
     return;
   }
-  console.log(JSON.stringify(simplifySchedule(values.round, values.promoted?.split(',') ?? []), null, 2));
+  const objects = values.inputs ? JSON.parse(await fs.readFile(values.inputs, 'utf8')).samples : [];
+  console.log(JSON.stringify(simplifySchedule(values.round, values.promoted?.split(',') ?? [], objects), null, 2));
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url)

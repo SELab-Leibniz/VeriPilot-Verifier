@@ -10,14 +10,15 @@ import { countProfileCredentialMatches, loadPackaged, readProviderTiming, redact
   supportsSimplifyModel } from './helpers/simplify-native-evaluation.mjs';
 import { validateCompactionSettings } from './evaluate-simplify-compaction.mjs';
 import { summarizeSimplifyExperiment } from './summarize-simplify-experiment.mjs';
+import { arktsHiddenReward, readArktsComparisonInputs } from './bench/simplify-arkts-inputs.mjs';
+import { runBoundedProcess } from './bench/bounded-process.mjs';
+import { shortArktsWorkspace } from './bench/short-workspace.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const writeJson = (file, data) => fs.writeFile(file, JSON.stringify(data, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
 const readJson = file => fs.readFile(file, 'utf8').then(JSON.parse);
 let scanStage;
-const benchmarkTasks = { 'etree-deepequal-injected': 'etree-xml-diff-patch', 'httpx-frozen': 'httpx-multipart-response-parsing',
-  'etree-frozen': 'etree-xml-diff-patch', 'narwhals-frozen': 'narwhals-rolling-window-suite' };
 
 const needsRetry = record => record.state === 'rate-limited' || record.frameworkError === true;
 const optionalJson = file => readJson(file).catch(error => {
@@ -126,12 +127,12 @@ async function runCompaction(slot, context) {
   const evidence = path.join(output, 'result.json');
   const raw = await readJson(evidence).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   if (!raw) return { state: child.timedOut ? 'timed-out' : 'failed', evidence: directory,
-    reason: child.reason ?? `Compaction evaluator exited with ${child.code}.`, completedInBudget: false };
+    reason: child.reason ?? `Compaction evaluator exited with ${child.code}.`, completedInBudget: false, frameworkError: !child.timedOut };
   if (raw.arm !== slot.arm || raw.artifactSha256 !== artifactSha256 || raw.model !== model
     || JSON.stringify(raw.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`Compaction evaluator identity mismatch for ${slot.id}.`);
-  const { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction } = raw;
-  return { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction, turns: raw.turns, evidence };
+  const { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction, frameworkError } = raw;
+  return { state, completedInBudget, elapsedMs, reason, usage, configurationSummary, compaction, frameworkError, turns: raw.turns, evidence };
 }
 
 async function runSmoke(_slot, { directory, packageRoot, hostRoot, model, profileArgs, providerIdentity }) {
@@ -146,80 +147,41 @@ async function runSmoke(_slot, { directory, packageRoot, hostRoot, model, profil
   return { ...raw, evidence };
 }
 
-async function readRoundTwoInputs(file, model) {
-  const provided = await readJson(file);
-  const entries = await Promise.all(Object.entries(benchmarkTasks).map(async ([sample, task]) => {
-    const input = provided[sample];
-    if (!input?.preparedRoot || !/^[a-f0-9]{64}$/u.test(input.manifestSha256 ?? '')) throw new Error(`Missing pinned benchmark input ${sample}.`);
-    const preparedRoot = await fs.realpath(input.preparedRoot);
-    const bytes = await fs.readFile(path.join(preparedRoot, 'manifest.json'));
-    const manifest = JSON.parse(bytes);
-    const injected = sample === 'etree-deepequal-injected';
-    if (sha256(bytes) !== input.manifestSha256 || manifest.task !== task || manifest.model !== model
-      || !/^sha256:[a-f0-9]{64}$/u.test(manifest.image ?? '') || !manifest.seedCheckpoint || Boolean(manifest.injectedDefect) !== injected)
-      throw new Error(`Prepared benchmark identity differs for ${sample}.`);
-    const verifyInput = async (relative, expected) => {
-      if (sha256(await fs.readFile(path.join(preparedRoot, 'public', relative))) !== expected)
-        throw new Error(`Pinned ${relative} differs for ${sample}.`);
-    };
-    await verifyInput('instruction.md', manifest.instructionSha256);
-    await fs.access(path.join(preparedRoot, 'public/seed-state.json'));
-    let official = null;
-    if (!injected) {
-      if (!input.officialResult || !/^[a-f0-9]{64}$/u.test(input.officialResultSha256 ?? '')
-        || !/^[a-f0-9]{64}$/u.test(manifest.frozenTranscriptSha256 ?? '') || !/^[a-f0-9]{64}$/u.test(manifest.frozenPatchSha256 ?? ''))
-        throw new Error(`Missing frozen transcript, draft or original official grade for ${sample}.`);
-      await verifyInput('frozen-transcript.jsonl', manifest.frozenTranscriptSha256);
-      const grade = await fs.readFile(input.officialResult);
-      const { reward, patchSha256, officialVerifierModified, exitCode } = JSON.parse(grade);
-      if (sha256(grade) !== input.officialResultSha256 || patchSha256 !== manifest.frozenPatchSha256 || !reward
-        || officialVerifierModified !== false || exitCode !== 0)
-        throw new Error(`Frozen official grade does not match the draft for ${sample}.`);
-      official = { before: reward, after: null };
-    } else if (!/^sha256:[a-f0-9]{64}$/u.test(manifest.verifierImage ?? '')) {
-      throw new Error('Pin the original injected-sample verifier image by SHA256.');
-    } else {
-      await fs.access(path.join(preparedRoot, 'public/fault-spec.json'));
-    }
-    return [sample, { preparedRoot, manifest, manifestSha256: input.manifestSha256, injected, official }];
-  }));
-  return Object.fromEntries(entries);
-}
-
 async function runBenchmark(slot, context) {
-  const { packageRoot, directory, benchmark } = context;
+  const { hostRoot, model, archive, directory, benchmark, arkts, openclawProfile, providerIdentity } = context;
   const output = path.join(directory, 'evaluation');
-  const controller = await runProcess(slot.entrypoints[0], ['--prepared-root', benchmark.preparedRoot, '--attempt', slot.id,
-    '--simplify-arm', slot.arm, '--artifact-root', packageRoot, '--runner-source', root, '--run-root', output,
-    ...(!benchmark.injected ? ['--verify-frozen'] : [])]);
+  const options = { case: benchmark.case, output, 'host-root': hostRoot, package: archive, 'simplify-arm': slot.arm,
+    provider: 'host-profile', model, 'openclaw-profile': openclawProfile, 'plan-sha256': arkts.planSha256,
+    frozen: benchmark.frozenRoot, 'freeze-sha256': benchmark.freezeSha256, ...arkts.cli };
+  const cli = values => Object.entries(values).map(([key, value]) => `--${key}=${value}`);
+  const controller = await runBoundedProcess(process.execPath, [path.join(root, slot.entrypoints[0]), '--live', ...cli(options)],
+    { cwd: root, timeoutMs: 65 * 60_000 });
   const evidence = path.join(output, 'result.json');
-  const raw = await readJson(evidence).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
-  const relay = await readJson(path.join(output, 'relay.json')).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
-  const blockedByRateLimit = !raw?.complete && relay?.requests?.some(row => row.status === 429);
-  if (!raw) return { state: blockedByRateLimit ? 'rate-limited' : 'failed', evidence: directory,
-    reason: controller.reason ?? `Benchmark controller exited with ${controller.code}.`, completedInBudget: false };
-  if (raw.simplify?.arm !== slot.arm || (!benchmark.injected && raw.mode !== 'frozen-draft-verify-only'))
-    throw new Error(`Benchmark identity mismatch for ${slot.id}.`);
-  let official = benchmark.official;
-  if (benchmark.injected && !blockedByRateLimit) {
-    const scorer = await runProcess('scripts/grade-native-stop-benchmark.py', ['--prepared-root', benchmark.preparedRoot, '--attempt', slot.id,
-      '--run-root', output, '--verifier-image', benchmark.manifest.verifierImage], { executable: process.platform === 'win32' ? 'python' : 'python3' });
-    const comparison = await readJson(path.join(output, 'official-scoring/comparison.json')).catch(error => {
-      if (error.code === 'ENOENT') return null;
-      throw error;
-    });
-    official = Object.fromEntries(['before', 'after'].map(phase => {
-      const score = comparison?.rows?.find(row => row.phase === phase);
-      return [phase, score?.exitCode === 0 && score.officialVerifierModified === false ? score.reward : null];
-    }));
-    await writeJson(path.join(directory, 'official-grading-process.json'), scorer);
+  const raw = await optionalJson(evidence);
+  if (!raw) {
+    const timedOut = controller.reason === 'deadline';
+    return { state: timedOut ? 'timed-out' : 'failed', evidence: directory, frameworkError: !timedOut, repairFeedback: null,
+      reason: timedOut ? 'ARKTS_WALL_DEADLINE' : redactEvaluationText(controller.tail || controller.reason), completedInBudget: false };
   }
-  const { state, repairFeedback, completedInBudget, rcElapsedMs, usage, baselineCost } = raw.simplify;
-  return { state: blockedByRateLimit ? 'rate-limited' : state, repairFeedback, completedInBudget, elapsedMs: raw.elapsedMs, rcElapsedMs,
-    reason: raw.reason ?? raw.error?.code ?? null, usage, baselineCost, official, evidence,
-    configurationSummary: JSON.stringify({ ...slot.config, model: context.model, inputManifestSha256: benchmark.manifestSha256,
-      timeoutMs: benchmark.manifest.maxRuntimeMs, maxReviewSteps: benchmark.manifest.maxReviewSteps ?? 2000,
-      maxRepairSteps: benchmark.manifest.maxRepairSteps ?? 2000, maxCorrections: benchmark.manifest.correctionLimit ?? 3, compactionRestore: false }) };
+  if (raw.simplifyArm !== slot.arm || raw.instanceId !== benchmark.case || raw.datasetDigest !== benchmark.datasetDigest
+    || raw.freezeSha256 !== benchmark.freezeSha256 || raw.artifactSha256 !== context.artifactSha256 || raw.planSha256 !== arkts.planSha256
+    || JSON.stringify(raw.providerIdentity) !== JSON.stringify(providerIdentity))
+    throw new Error(`ArkTS Stop identity differs for ${slot.id}.`);
+  const { state, repairFeedback, feedback, completedInBudget, elapsedMs, rcElapsedMs, reason, usage, totalUsage, baselineCost, frameworkError } = raw;
+  let after = null, gradingEvidence = null, gradingError = null;
+  if (!frameworkError && state !== 'rate-limited') {
+    const candidate = path.join(output, 'candidate.patch');
+    const gradeRoot = path.join(directory, 'grading');
+    const grader = await runProcess(slot.entrypoints[1], cli({ ...arkts.cli, case: benchmark.case, output: gradeRoot,
+      candidate, 'calibration-dir': benchmark.calibrationDir }));
+    gradingEvidence = path.join(gradeRoot, 'results.json');
+    after = arktsHiddenReward(await optionalJson(gradingEvidence), sha256(await fs.readFile(candidate)), benchmark.case, benchmark.datasetDigest);
+    if (!after) gradingError = grader.reason ?? 'No complete, attributable hidden score.';
+  }
+  return { state, repairFeedback, feedback, completedInBudget, elapsedMs, rcElapsedMs, reason, usage, totalUsage, baselineCost, frameworkError,
+    official: { before: benchmark.before, after }, evidence, gradingEvidence, gradingError,
+    configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity, freezeSha256: benchmark.freezeSha256,
+      phaseTimeoutMs: raw.limits.phaseTimeoutMs, maxCorrections: raw.limits.correctionAdmissions, compactionRestore: false }) };
 }
 
 async function main() {
@@ -230,11 +192,13 @@ async function main() {
     'round-one': { type: 'string' }, 'round-two-inputs': { type: 'string' }, provider: { type: 'string', default: 'coding-plan' },
     'openclaw-profile': { type: 'string' }, limit: { type: 'string' },
     'resume-from': { type: 'string' }, 'progress-file': { type: 'string' },
+    'round-two-inputs-sha256': { type: 'string' }, dataset: { type: 'string' }, 'tool-root': { type: 'string' },
+    cache: { type: 'string' }, 'workspace-root': { type: 'string' }, 'json5-package': { type: 'string' },
   } });
   if (values.help) {
     console.log('Usage: node scripts/run-simplify-experiment.mjs --round <1|2|C-calibration|C|model-smoke> --plan-sha256 <approved plan SHA256> --package <integration tgz> --package-sha256 <SHA256> --host-root <installed OpenClaw> --model <glm-5.3|glm-5.3-flash|deepseek-v4-flash> --output-root <new directory>');
     console.log('Both C modes also need --requirements <kitchen/requirements.md> and --settings <isolated compaction JSON>. Formal C requires --calibration <completed calibration result.json>.');
-    console.log('Round 2 needs --round-one <graded observations JSON> and --round-two-inputs <JSON mapping each fixed sample to { preparedRoot, manifestSha256, officialResult?, officialResultSha256? }>.');
+    console.log('Round 2 needs --round-one, --round-two-inputs, --round-two-inputs-sha256, --dataset, --tool-root, --cache, --workspace-root and --json5-package.');
     console.log('Use RC_EVAL_API_KEY in the process environment for the default Coding Plan. Round 1 and C can instead use --provider anthropic-environment with the configured Ark endpoint and model.');
     console.log('Each isolated attempt is immutable. Grade actual repair feedback from the evidence file before summarizing.');
     console.log('DeepSeek uses --provider host-profile --openclaw-profile <openclaw.json>. Round 1 accepts --limit <first N scheduled runs>.');
@@ -247,11 +211,11 @@ async function main() {
   if (limit !== undefined && (values.round !== '1' || !Number.isSafeInteger(limit) || limit < 1 || limit > simplifySchedule('1').length))
     throw new Error('A positive scheduled prefix is only supported for round 1.');
   if (values.round === 'model-smoke' && values.provider !== 'host-profile') throw new Error('Model smoke uses the custom DeepSeek route.');
-  if (values['resume-from'] && (!['1', 'C'].includes(values.round) || values.provider !== 'host-profile'))
-    throw new Error('Resume requires a scored DeepSeek screening or compaction batch.');
+  if (values['resume-from'] && (!['1', '2', 'C'].includes(values.round) || values.provider !== 'host-profile'))
+    throw new Error('Resume requires a scored DeepSeek batch.');
   if (sha256(await fs.readFile(path.join(root, 'docs/simplify-experiment-plan.md'))) !== values['plan-sha256'])
     throw new Error('The approved plan SHA256 differs from the current plan.');
-  if (values.round === '2' && values.provider !== 'coding-plan') throw new Error('Round 2 uses the existing Coding Plan benchmark relay.');
+  if (values.round === '2' && values.provider !== 'host-profile') throw new Error('Round 2 uses the pinned DeepSeek host profile.');
   const { identity: providerIdentity, credential } = await resolveSimplifyProvider(values.provider, values.model, values['openclaw-profile']);
   const profileArgs = values['openclaw-profile'] ? ['--openclaw-profile', path.resolve(values['openclaw-profile'])] : [];
   const archive = await fs.realpath(values.package), archiveBytes = await fs.readFile(archive);
@@ -261,21 +225,22 @@ async function main() {
   const host = await readJson(path.join(hostRoot, 'package.json'));
   if (host.name !== 'openclaw' || host.version !== '2026.7.1-2') throw new Error('Use the pinned OpenClaw 2026.7.1-2 host.');
   const cMode = values.round.startsWith('C');
-  let roundOne, promoted, benchmarkInputs;
+  let roundOne, promoted, arkts;
   if (values.round === '2') {
-    if (!values['round-one'] || !values['round-two-inputs']) throw new Error('Round 2 needs the graded first round and pinned fixture inputs.');
+    const localOptions = ['dataset', 'tool-root', 'cache', 'workspace-root', 'json5-package'];
+    if (['round-one', 'round-two-inputs', 'round-two-inputs-sha256', ...localOptions].some(key => !values[key]))
+      throw new Error('Round 2 needs graded first-round records, pinned frozen inputs and explicit local paths.');
     roundOne = await readJson(values['round-one']);
     const screening = summarizeSimplifyExperiment(roundOne).round1;
     if (!screening.ready || !screening.promotions?.length) throw new Error('Round 1 has not produced a scored candidate for round 2.');
-    if (roundOne.records.some(record => record.artifactSha256.toLowerCase() !== artifactSha256))
-      throw new Error('Round 2 requires the same package as all four first-round arms.');
+    if (roundOne.records.some(record => record.artifactSha256.toLowerCase() !== artifactSha256
+      || record.planSha256 && record.planSha256 !== values['plan-sha256']))
+      throw new Error('Round 2 requires the same package and plan as all four first-round arms.');
     promoted = screening.promotions;
-    benchmarkInputs = await readRoundTwoInputs(values['round-two-inputs'], values.model);
-    execFileSync('docker', ['info', '--format', '{{.ServerVersion}}'], { timeout: 10000, windowsHide: true, stdio: 'pipe' });
-    for (const { manifest } of Object.values(benchmarkInputs)) {
-      for (const image of [manifest.image, manifest.verifierImage].filter(Boolean))
-        execFileSync('docker', ['image', 'inspect', '--platform', 'linux/amd64', image], { timeout: 10000, windowsHide: true, stdio: 'pipe' });
-    }
+    const inputs = await readArktsComparisonInputs({ file: values['round-two-inputs'], sha256: values['round-two-inputs-sha256'],
+      planSha256: values['plan-sha256'], artifactSha256, dataset: values.dataset });
+    const cli = { ...Object.fromEntries(localOptions.map(key => [key, path.resolve(values[key])])), 'phase-timeout-ms': 600_000 };
+    arkts = { ...inputs, cli };
   }
   let requirements, settings, calibration;
   if (cMode) {
@@ -291,21 +256,26 @@ async function main() {
         || JSON.stringify(calibration.providerIdentity) !== JSON.stringify(providerIdentity)) throw new Error('Formal C inputs differ from the successful calibration.');
     }
   }
-  const identity = { planSha256: values['plan-sha256'], artifactSha256, model: values.model, providerIdentity, hostVersion: host.version };
+  const identity = { planSha256: values['plan-sha256'], artifactSha256, model: values.model, providerIdentity, hostVersion: host.version,
+    ...(arkts ? { roundTwoInputsSha256: values['round-two-inputs-sha256'], arktsCli: arkts.cli } : {}),
+    ...(values.round === 'C' ? { requirementsSha256: sha256(await fs.readFile(requirements)), compactionSettings: settings } : {}) };
   const resumeFrom = values['resume-from'] ? await fs.realpath(values['resume-from']) : null;
   const fullSchedule = values.round === 'model-smoke' ? [{ id: 'smoke', scored: false, config: {} }]
     : values.round === 'C-calibration' ? [{ id: 'calibration', arm: 'calibration', sample: 'kitchen-compaction',
       timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: false, scored: false } }]
-      : simplifySchedule(values.round, promoted);
+      : simplifySchedule(values.round, promoted, arkts?.samples);
   const records = resumeFrom ? await readResume(resumeFrom, fullSchedule, identity) : [];
   const schedule = fullSchedule.slice(records.length, limit);
   if (!schedule.length) throw new Error('No remaining scheduled runs in this batch.');
   const output = path.resolve(values['output-root']);
   await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.mkdir(output);
+  const businessRoots = [];
   if (credential) scanStage = async () => {
     scanStage = undefined;
-    const matches = await countProfileCredentialMatches(output, credential);
+    let matches = await countProfileCredentialMatches(output, credential);
+    for (const directory of businessRoots) matches += await countProfileCredentialMatches(directory, credential)
+      .catch(error => { if (error.code === 'ENOENT') return 0; throw error; });
     await writeJson(path.join(output, 'leak-scan.json'), { matches });
     if (matches) throw new Error(`Credential scan matches: ${matches}.`);
   };
@@ -328,10 +298,12 @@ async function main() {
     const directory = path.join(output, slot.id);
     await fs.mkdir(directory);
     await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256, planSha256: identity.planSha256 });
+    const businessRoot = arkts ? shortArktsWorkspace(path.join(directory, 'evaluation'), 'biz', undefined, arkts.cli['workspace-root']) : null;
+    if (businessRoot) businessRoots.push(businessRoot);
     let result;
     const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity,
-      profileArgs, benchmark: benchmarkInputs?.[slot.sample] };
-    const run = values.round === 'model-smoke' ? runSmoke : cMode ? runCompaction : benchmarkInputs ? runBenchmark : runScreening;
+      profileArgs, archive, openclawProfile: values['openclaw-profile'], arkts, benchmark: arkts?.samples.find(sample => sample.id === slot.sample) };
+    const run = values.round === 'model-smoke' ? runSmoke : cMode ? runCompaction : arkts ? runBenchmark : runScreening;
     try { result = await run(slot, context); }
     catch (error) { result = { state: 'failed', evidence: directory, reason: redactEvaluationText(error.message), completedInBudget: false, frameworkError: true }; }
     if (credential) {
@@ -354,7 +326,8 @@ async function main() {
     attempted++;
     if (!needsRetry(record)) records.push(record);
     console.log(JSON.stringify({ id: slot.id, state: record.state }));
-    if (credential && await countProfileCredentialMatches(directory, credential)) break;
+    if (credential && (await countProfileCredentialMatches(directory, credential) || businessRoot
+      && await countProfileCredentialMatches(businessRoot, credential).catch(error => { if (error.code === 'ENOENT') return 0; throw error; }))) break;
     await writeProgress(values['progress-file'], values.round, records, fullSchedule.length, record);
     if (needsRetry(record)) break;
   }
@@ -365,7 +338,7 @@ async function main() {
     await writeJson(path.join(output, 'answers-index.json'), blind.map(({ blindId, runId }) => ({ blindId, runId })));
   }
   if (values.round !== 'C-calibration' && values.round !== 'model-smoke')
-    await writeJson(path.join(output, 'observations.json'), roundOne ? { promoted, records: [...roundOne.records, ...records] } : { records });
+    await writeJson(path.join(output, 'observations.json'), { records, ...(arkts ? { promoted, roundTwoInputs: { s0: arkts.s0, samples: arkts.samples } } : {}) });
   await scanStage?.();
   if (values.round === 'C-calibration' || values.round === 'model-smoke') {
     if (records[0]?.state !== 'completed') process.exitCode = 1;

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { randomUUID, createHash } from 'node:crypto';
-import { loadArktsTask, arktsAgentInput } from './bench/arkts-dataset.mjs';
+import { loadArktsTask, arktsAgentInput, digest } from './bench/arkts-dataset.mjs';
 import { prepareArktsModelWorkspace } from './bench/prepare-arkts-model-workspace.mjs';
 import { createArktsBenchTools } from './bench/native-arkts-tools.mjs';
 import { createNativeGatewayEvaluation, nativeModelContextWindow } from './helpers/native-gateway-evaluation.mjs';
@@ -19,14 +19,37 @@ import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
 import { assertBusinessSessionIdentity, EXPERIMENT_SESSION_RESET } from './bench/session-continuity.mjs';
+import { createSimplifyGateway, redactEvaluationText, resolveSimplifyProvider, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
+import { STOP_ARMS } from './simplify-experiment-schedule.mjs';
+import { prepareFrozenArktsWorkspace, reviewFrozenArktsDraft } from './bench/simplify-arkts-frozen.mjs';
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
+const simplifyArm = arg('--simplify-arm');
+const s0 = simplifyArm === 'S0';
+const frozenRoot = arg('--frozen');
+const packageSha256 = 'ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a';
+const planSha256 = arg('--plan-sha256');
+const arm = s0 ? { enabled: false, baseline: false, originalRequirementsBasis: false, deviationOnly: false }
+  : simplifyArm ? { ...STOP_ARMS[simplifyArm], enabled: true } : null;
 const contextWindowTokens = nativeModelContextWindow(arg('--context-window-tokens'));
 const pagedReads = process.argv.includes('--paged-reads');
 const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 'apply_patch', 'bench_nav', 'bench_check'];
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
+const hostRoot = arg('--host-root');
+const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
+let providerIdentity, archive;
+if (simplifyArm) {
+  if (!s0 && !Object.hasOwn(STOP_ARMS, simplifyArm) || Boolean(frozenRoot) === s0 || profile.hostNoTimeout !== s0
+    || arg('--resume-run') || arg('--artifact') || !hostRoot || !arg('--output') || !arg('--cache') || !arg('--workspace-root')
+    || !arg('--dataset') || !arg('--tool-root') || !arg('--package') || !profile.explicit || arg('--provider') !== 'host-profile'
+    || digest(await fs.readFile(path.join(sourceRoot, 'docs/simplify-experiment-plan.md'))) !== planSha256)
+    throw new Error('Supply pinned ArkTS plan, local paths, DeepSeek provider, and the appropriate S0 or frozen Stop mode.');
+  if (digest(await fs.readFile(archive = await fs.realpath(arg('--package')))) !== packageSha256)
+    throw new Error('Pinned ArkTS integration package SHA256 changed.');
+  ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile')));
+}
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
 const dataset = arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/Experiments/swe-arkts-bench';
 const { task, datasetDigest } = await loadArktsTask(dataset, arg('--case') ?? 'happyword_12');
@@ -56,32 +79,40 @@ if (resumeRoot) {
   await fs.mkdir(outputRoot, { recursive: false });
 }
 const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
-  baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot } : await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable,
+  baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot }
+  : frozenRoot ? await prepareFrozenArktsWorkspace({ frozenRoot, freezeSha256: arg('--freeze-sha256'), task, datasetDigest,
+    artifactSha256: packageSha256, planSha256, git: gitExecutable, cacheRoot, outputRoot, workspaceRoot: arg('--workspace-root') })
+  : await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable,
   ...(arg('--workspace-base') ? { workspaceBase: path.resolve(arg('--workspace-base')) } : {}),
+  workspaceRoot: arg('--workspace-root'), json5Package: arg('--json5-package'),
   ...(profile.explicit ? { preparationTimeoutMs: profile.setupTimeoutMs } : {}) });
 const input = arktsAgentInput(task), projectRoot = prepared.projectRoot;
 const inheritedScope = resumeRoot ? await inheritedBusinessMutationScope(resumeRoot, projectRoot)
   : { mutationPaths: [], sourceRun: null, skippedStartupRuns: [] };
 await fs.writeFile(path.join(outputRoot, 'inherited-business-scope.json'), JSON.stringify(inheritedScope, null, 2));
 await fs.writeFile(path.join(outputRoot, 'public-input.json'), JSON.stringify(input, null, 2));
-const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
 const setupScript = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
 if (!resumeRoot) try {
   const installed = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
     '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'install'], { windowsHide: true, timeout: profile.setupTimeoutMs, maxBuffer: 2 * 1024 * 1024 });
-  await fs.writeFile(path.join(outputRoot, 'install.log'), installed);
+  await fs.writeFile(path.join(outputRoot, 'install.log'), simplifyArm ? redactEvaluationText(installed) : installed);
 } catch (error) {
   await fs.writeFile(path.join(outputRoot, 'install.log'), String(error.stdout ?? '') + String(error.stderr ?? ''));
   throw new Error('Business-workspace dependency preparation failed; no model should start');
 }
 const lockfiles = ['oh-package-lock.json5', 'entry/oh-package-lock.json5'];
-for (const file of resumeRoot ? [] : lockfiles) if (await fs.stat(path.join(projectRoot, file)).catch(() => null))
+for (const file of resumeRoot || frozenRoot ? [] : lockfiles) if (await fs.stat(path.join(projectRoot, file)).catch(() => null))
   execFileSync(gitExecutable, ['-C', projectRoot, 'add', '--force', '--', file], { windowsHide: true });
-if (!resumeRoot) execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent',
+if (!resumeRoot && !frozenRoot) execFileSync(gitExecutable, ['-C', projectRoot, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent',
   'commit', '--quiet', '--allow-empty', '-m', 'Common benchmark dependency preparation'], { windowsHide: true });
-prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-const artifact = arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
-const baselineRef = arg('--baseline-ref') ?? 'c33bae6';
+if (frozenRoot) {
+  const changed = execFileSync(gitExecutable, ['-C', projectRoot, 'diff', '--name-only', '-z', 'HEAD']).toString().split('\0').filter(Boolean);
+  if (changed.some(file => !lockfiles.includes(file))) throw new Error('Dependency setup changed the frozen implementation.');
+  if (changed.length) execFileSync(gitExecutable, ['-C', projectRoot, 'restore', '--source=HEAD', '--', ...changed], { windowsHide: true });
+} else prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+if (archive) execFileSync('tar', ['-xf', archive, '-C', outputRoot], { windowsHide: true, stdio: 'pipe' });
+const artifact = archive ? path.join(outputRoot, 'package') : arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
+const baselineRef = simplifyArm ? 'b6700c1f2f056949d35b5bacb763334ebe7a15cf' : arg('--baseline-ref') ?? 'c33bae6';
 let verifiedRcCommit = execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 if (artifact) {
   const validatedSkills = await validateArtifactSkills(artifact, arg('--host-root') ?? 'C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw');
@@ -90,14 +121,21 @@ if (artifact) {
   verifiedRcCommit = validation.baselineCommit;
   await fs.writeFile(path.join(outputRoot, 'baseline-artifact-validation.json'), JSON.stringify(validation, null, 2));
 }
-const model = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
+const model = simplifyArm ? arg('--model') : process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
 if (!model) throw new Error('Configured native model is required');
 await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
-await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(model, profile));
+await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(simplifyArm ? `openai/${model}` : model, profile, arm));
 await fs.copyFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), path.join(outputRoot, 'project-config.yaml'));
 // Validate actual generated policy before starting the native Gateway/model.
 const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
-await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
+const effective = await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
+if (arm) {
+  const { stopCorrection, dynamicGroundTruth, skillCorrection, artifactCorrection } = effective.runtimeV2;
+  if (stopCorrection.enabled !== arm.enabled || dynamicGroundTruth.enabled !== arm.baseline
+    || Boolean(stopCorrection.originalRequirementsBasis) !== arm.originalRequirementsBasis || Boolean(stopCorrection.deviationOnly) !== arm.deviationOnly
+    || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled)
+    throw new Error('Effective ArkTS correction policy differs from the assigned arm.');
+}
 // Freeze common business navigation to the baseline artifact in both arms.
 const stableNavigationRoot = path.resolve(arg('--navigation-artifact') ?? artifact ?? 'dist/runtime-corrector-openclaw');
 let baselineLocalTests = resumeRoot ? await fs.readFile(path.join(resumeRoot, 'baseline-local-tests.json'), 'utf8').then(JSON.parse, error => {
@@ -118,14 +156,17 @@ if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
 }
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
 const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads });
-const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...prepared,
+const { transcript: _frozenTranscript, frozen: _frozen, ...preparedSummary } = prepared;
+const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...preparedSummary,
+  ...(arm ? { simplifyArm, planSha256, artifactSha256: packageSha256, providerIdentity,
+    ...(frozenRoot ? { freezeSha256: arg('--freeze-sha256') } : {}) } : {}),
   rcSource: verifiedRcCommit,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
     'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/session-continuity.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
     'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
-  businessModel: `anthropic/${model}`, privateModel: `anthropic/${model}`, businessTools: businessToolNames,
+  businessModel: providerIdentity?.modelRef ?? `anthropic/${model}`, privateModel: providerIdentity?.modelRef ?? `anthropic/${model}`, businessTools: businessToolNames,
   businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
   modelCapacity: { contextWindowTokens, maximumOutputTokens: 32768, appliedToCustomProvider: Boolean(process.env.ANTHROPIC_BASE_URL),
     source: arg('--context-window-tokens') ? 'explicit CLI declaration' : 'legacy benchmark default' },
@@ -141,13 +182,18 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
   state: 'PREPARED', ownerPid: process.pid };
 await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
 if (!process.argv.includes('--live')) { console.log(JSON.stringify({ state: 'PREPARED_NO_MODEL', outputRoot, baselineArtifactVerified: Boolean(artifact) })); process.exit(0); }
-const hostRoot = arg('--host-root'); if (!hostRoot) throw new Error('--host-root=<read-only-openclaw> required for --live');
+if (!hostRoot) throw new Error('--host-root=<read-only-openclaw> required for --live');
 let gateway, result, restoredRecordCount = 0;
 try {
-  gateway = await createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
+  const options = { hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
-    phaseTimeoutMs: profile.explicit ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
-    disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) });
+    phaseTimeoutMs: profile.explicit && !s0 ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
+    disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
+  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model })
+    : await createNativeGatewayEvaluation(options);
+  if (frozenRoot) {
+    result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot });
+  } else {
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
   if (resumeEntry) {
     const original = resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`);
@@ -182,9 +228,9 @@ try {
   const runId = randomUUID(), startedAt = Date.now();
   const businessRun = createBusinessRunTracker(runId, sessionId);
   const businessTerminalObserver = createBusinessTerminalObserver();
-  async function observeBusinessTerminal(force = false) {
+  async function observeBusinessTerminal(force = false, phase = post?.phase) {
     const terminal = await businessTerminalObserver.poll(gateway.request, businessRun.runId,
-      () => gateway.metrics().modelStarts, post?.phase, { force });
+      () => gateway.metrics().modelStarts, phase, { force });
     for (const event of businessTerminalObserver.drainEvents()) await fs.appendFile(path.join(outputRoot, 'business-terminal-observations.jsonl'), JSON.stringify(event) + '\n');
     return terminal;
   }
@@ -201,6 +247,7 @@ try {
   const postDirectory = path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions/post-run');
   let currentTask, post, runs = [], last, businessBudgetAbortRequested = false, officialBusinessTerminal;
   while (manifest.limits.totalTimeoutMs === null || Date.now() - startedAt < manifest.limits.totalTimeoutMs) {
+    if (gateway.providerStatus?.()?.failure) break;
     await gateway.drain();
     const admittedEntry = await gateway.runtime.agent.session.getSessionEntry({ ...scope, readConsistency: 'latest' });
     assertBusinessSessionIdentity({ sessionId, sessionKey, runId }, admittedEntry, gateway.metrics().modelStarts);
@@ -212,7 +259,7 @@ try {
     }
     runs = currentTask ? await listNativeRuns(projectRoot, currentTask.taskId) : [];
     businessRun.observe(post);
-    officialBusinessTerminal = await observeBusinessTerminal();
+    officialBusinessTerminal = await observeBusinessTerminal(false, s0 ? 'OBSERVE' : post?.phase);
     const state = { state: 'RUNNING', ownerPid: process.pid, sessionId, sessionKey, runId, startedAt,
       selectedBusinessRunId: businessRun.runId,
       actualBusinessStart: gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId),
@@ -225,6 +272,7 @@ try {
       await fs.writeFile(path.join(outputRoot, 'business-budget-abort.json'), JSON.stringify({ runId, sessionKey, requestedAt: Date.now(), ...aborted }, null, 2));
     }
     const activeBusinessRunId = businessRun.runId;
+    if (s0 && knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId)) break;
     if (['IDLE', 'CLOSED'].includes(post?.phase) && gateway.metrics().modelStarts.some(event => event.runId === runId && event.sessionId === sessionId)
       && runs.every(run => run.status === 'SETTLED')) {
       if (knownBusinessTerminal(officialBusinessTerminal, activeBusinessRunId) || !profile.hostNoTimeout) break;
@@ -256,7 +304,7 @@ try {
   await fs.writeFile(path.join(outputRoot, 'candidate.patch'), patch);
   await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths, inheritedScope, restoredRecordCount,
     basis: 'Captured business write/edit/apply_patch receipts plus prior genuine business scope. Maintenance-only startup attempts excluded; full workspace.patch and notes retained.' }, null, 2));
-  const infrastructureComplete = ['IDLE', 'CLOSED'].includes(post?.phase) && runs.every(run => run.status === 'SETTLED')
+  const infrastructureComplete = (s0 || ['IDLE', 'CLOSED'].includes(post?.phase)) && runs.every(run => run.status === 'SETTLED')
     && knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId);
   result = { ...manifest, state: infrastructureComplete ? 'SETTLED' : 'INCOMPLETE', sessionId, sessionKey, originalRunId: runId, elapsedMs: Date.now() - startedAt,
     verification: currentTask?.verification?.status, taskId: currentTask?.taskId, postPhase: post?.phase,
@@ -269,9 +317,17 @@ try {
     businessCompleted: businessCompleted(officialBusinessTerminal, finalBusinessRunId),
     runtimeReason: currentTask?.verification?.reasonCode ?? post?.reason ?? null,
     score: 'NOT_YET_GRADED: evaluate candidate.patch with hidden tests in an independent evaluator worktree' };
+  if (s0) {
+    const boundary = gateway.providerStatus();
+    result.modelRequests = boundary.requests;
+    result.usage = summarizeProviderUsage(boundary.requests, receiptRecords.filter(row => row.message?.role === 'assistant').map(row => row.message.usage));
+    result.frameworkError = Boolean(boundary.failure);
+    if (boundary.failure) Object.assign(result, { state: boundary.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'INCOMPLETE', endReason: boundary.failure });
+  }
   await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2));
   await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ state: result.state, ownerPid: process.pid, sessionId,
-    businessCompleted: result.businessCompleted, infrastructureComplete, officialBusinessStatus: officialBusinessTerminal.status, endedAt: Date.now() }));
+    businessCompleted: result.businessCompleted, infrastructureComplete, officialBusinessStatus: officialBusinessTerminal?.status, endedAt: Date.now() }));
+  }
 } catch (error) {
   if (error.code === 'ARKTS_SESSION_IDENTITY_DRIFT') {
     const evidence = { kind: 'native-business-session-identity-failure', observedAt: new Date().toISOString(), ...error.evidence };
@@ -282,10 +338,10 @@ try {
     await fs.writeFile(path.join(outputRoot, 'result.json'), JSON.stringify(result, null, 2), { flag: 'wx' });
     await fs.writeFile(path.join(outputRoot, 'progress.json'), JSON.stringify({ ...result, endedAt: Date.now() }, null, 2));
   }
-  throw error;
+  throw simplifyArm ? new Error(redactEvaluationText(error.message)) : error;
 } finally { await gateway?.close(); }
 // Native host singletons may retain observers; only awaited settled runs are
 // eligible for a normal result. This development process owns no desktop host.
 console.log(JSON.stringify({ state: result.state, actualBusinessStart: result.actualBusinessStart, verification: result.verification,
   infrastructureComplete: result.infrastructureComplete, patchBytes: result.patchBytes, outputRoot }));
-process.exit(result.infrastructureComplete && result.actualBusinessStart ? 0 : 1);
+process.exit((frozenRoot ? result.completedInBudget : result.infrastructureComplete && result.actualBusinessStart) ? 0 : 1);
