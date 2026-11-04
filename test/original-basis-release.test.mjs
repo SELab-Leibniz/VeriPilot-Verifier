@@ -22,6 +22,7 @@ test('new project template enables original document review and B12 behind the t
   assert.equal(runtime.stopCorrection.waitMode, 'until_pass');
   assert.equal(runtime.stopCorrection.assessmentTimeoutMs, 1_800_000);
   assert.equal(runtime.stopCorrection.maxCorrectionsPerSession, 2);
+  assert.deepEqual(runtime.stopCorrection.regressionCheck, { enabled: false, cwd: '.', timeoutMs: 600_000, maxOutputBytes: 65_536 });
   assert.equal(runtime.dynamicGroundTruth.enabled, false);
   assert.equal(runtime.skillCorrection.enabled, false);
   assert.equal(runtime.implementationCorrection.enabled, false);

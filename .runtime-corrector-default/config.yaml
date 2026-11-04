@@ -123,6 +123,9 @@ stopCorrection:
 
   fileQualityReviewEnabled: false
 
+  regressionCheck:
+    enabled: false
+
 deviationLoop:
   maxDeliveriesPerFamily: 5
 
