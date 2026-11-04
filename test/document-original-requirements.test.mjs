@@ -31,7 +31,7 @@ async function project(t) {
   return root;
 }
 
-const policy = (mode, { materialRoots = '[docs/requirements]', originalKey = true } = {}) => `version: 2
+const policy = (mode, { materialRoots = '[docs/requirements]', originalKey = true, compactionRestore = false } = {}) => `version: 2
 artifacts:
   - name: design
     stage: design
@@ -55,7 +55,7 @@ ${originalKey ? `  originalRequirementsEnabled: ${mode === 'original' || mode ==
   enabled: false
 stopCorrection:
   enabled: ${mode === 'stop-original'}
-${mode === 'stop-original' ? '  originalRequirementsBasis: true\n' : ''}reviewers:
+${mode === 'stop-original' ? '  originalRequirementsBasis: true\n' : ''}${compactionRestore ? 'compactionRestore:\n  enabled: true\n' : ''}reviewers:
   defaults:
     timeoutMs: 15000
 `;
@@ -231,6 +231,7 @@ async function documentFixture(t, mode, policyOptions = {}) {
   await runtime.postRunReady;
   const context = runId => ({ agentId: 'main', sessionId, sessionKey, runId, workspaceDir: root, trigger: 'user',
     provider: 'offline', modelId: 'scripted', abortSignal: new AbortController().signal });
+  let promptResult;
   // The MA host persists the user message only after before_prompt_build.
   const ask = async (runId, prompt, { persistAfterPrompt = false } = {}) => {
     if (!persistAfterPrompt) await append({ message: { role: 'user', content: prompt } });
@@ -238,7 +239,7 @@ async function documentFixture(t, mode, policyOptions = {}) {
     await runtime.sessionStart({ sessionId, source: 'startup' }, ctx);
     const gate = await runtime.beforeAgentRun({ sessionId, sessionKey, prompt }, ctx);
     assert(!gate || gate.outcome === 'pass', JSON.stringify({ gate, calls }));
-    await runtime.prompt({ prompt }, ctx);
+    promptResult = await runtime.prompt({ prompt }, ctx);
     if (persistAfterPrompt) await append({ message: { role: 'user', content: prompt } });
     return ctx;
   };
@@ -271,7 +272,8 @@ async function documentFixture(t, mode, policyOptions = {}) {
     else await fs.appendFile(transcript, JSON.stringify(record) + '\n');
     leaf = id;
   };
-  return { root, sessionId, ask, write, finish, compact, holdAdmission, calls };
+  return { root, sessionId, ask, write, finish, compact, holdAdmission, calls,
+    get promptResult() { return promptResult; } };
 }
 
 test('original mode reviews a document write against the user messages without refreshing the baseline', async t => {
@@ -308,6 +310,34 @@ for (const [truncate, writeFirst] of [[false, true], [true, true], [true, false]
 });
 
 const REQUIREMENTS_ONLY = 'Requirements for docs/design.md: keep imports offline. Reply only with "Noted".';
+
+test('C restores a late-persisted user message once after manual truncating compaction', async t => {
+  for (const captureAtTurnEnd of [true, false]) {
+    const f = await documentFixture(t, 'original-only', { compactionRestore: true });
+    const first = await f.ask('requirements-only', REQUIREMENTS_ONLY, { persistAfterPrompt: true });
+    if (captureAtTurnEnd) {
+      await f.finish(first, 'Noted');
+      const archived = await recordUserMessages({ projectRoot: f.root, sessionId: f.sessionId });
+      assert.deepEqual(archived.map(message => message.text), [REQUIREMENTS_ONLY], 'agentEnd must capture the late-persisted user message');
+    }
+    // An admitted PreCompact callback cannot see the old transcript once the
+    // manual host mutation releases admission.
+    const release = f.holdAdmission();
+    try {
+      await f.compact(first, 'Truncated.', { truncate: true, manual: true });
+    } finally {
+      await release();
+    }
+    if (!captureAtTurnEnd) await f.finish(first, 'Noted');
+    const second = await f.ask('after-compaction', 'Now write docs/design.md.', { persistAfterPrompt: true });
+    const restored = f.promptResult?.prependContext ?? '';
+    assert.match(restored, /\[runtime-corrector:internal\]/u, 'manual compaction must preserve the original when it precedes agentEnd');
+    assert.equal(restored.split(REQUIREMENTS_ONLY).length, 2);
+    await f.finish(second, 'Noted');
+    await f.ask('after-restore', 'Continue.', { persistAfterPrompt: true });
+    assert.equal(f.promptResult?.prependContext, undefined);
+  }
+});
 
 test('a turn without tools logs its user message at turn end, so a hookless truncation loses nothing', async t => {
   const f = await documentFixture(t, 'original');
