@@ -19,6 +19,61 @@ let scanStage;
 const benchmarkTasks = { 'etree-deepequal-injected': 'etree-xml-diff-patch', 'httpx-frozen': 'httpx-multipart-response-parsing',
   'etree-frozen': 'etree-xml-diff-patch', 'narwhals-frozen': 'narwhals-rolling-window-suite' };
 
+const needsRetry = record => record.state === 'rate-limited' || record.frameworkError === true;
+const optionalJson = file => readJson(file).catch(error => {
+  if (error.code === 'ENOENT') return null;
+  throw error;
+});
+
+async function readResume(directory, schedule, identity) {
+  const batches = [], seen = new Set();
+  while (directory) {
+    directory = await fs.realpath(directory);
+    if (seen.has(directory)) throw new Error('Repeated resume batch directory.');
+    seen.add(directory);
+    const manifest = await readJson(path.join(directory, 'batch.json'));
+    if (Object.entries(identity).some(([key, value]) => JSON.stringify(manifest[key]) !== JSON.stringify(value))
+      || sha256(await fs.readFile(path.join(directory, 'integration.tgz'))) !== identity.artifactSha256)
+      throw new Error('Resume batch identity differs from the plan, package, provider or host.');
+    const scan = await readJson(path.join(directory, 'leak-scan.json'));
+    if (scan.matches !== 0) throw new Error(`Credential scan matches: ${scan.matches}.`);
+    batches.unshift({ directory, manifest });
+    directory = manifest.resumeFrom;
+  }
+  const records = [], retries = new Map();
+  for (const { directory, manifest } of batches) {
+    if (!manifest.schedule?.length || manifest.schedule.some((slot, index) =>
+      JSON.stringify(slot) !== JSON.stringify(schedule[records.length + index]))) throw new Error('Resume schedule does not match the planned run order.');
+    let interrupted = false;
+    for (const slot of manifest.schedule) {
+      const attemptRoot = path.join(directory, slot.id);
+      const attempt = await optionalJson(path.join(attemptRoot, 'attempt.json'));
+      const record = await optionalJson(path.join(attemptRoot, 'observation.json'));
+      if (!attempt && !record) { interrupted = true; continue; }
+      if (interrupted || !attempt || !record || [attempt, record].some(row => row.id !== slot.id || row.arm !== slot.arm
+        || row.sample !== slot.sample || row.repeat !== slot.repeat || row.artifactSha256 !== identity.artifactSha256
+        || (row.planSha256 !== undefined && row.planSha256 !== identity.planSha256)))
+        throw new Error(`Resume evidence is incomplete or inconsistent for ${slot.id}.`);
+      if (needsRetry(record)) {
+        if (record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
+        interrupted = true;
+      } else records.push(record);
+    }
+  }
+  if (retries.get(schedule[records.length]?.id) >= 3) throw new Error('Infrastructure retry cap reached for the next scheduled run.');
+  return records;
+}
+
+async function writeProgress(file, round, records, total, latest) {
+  if (!file) return;
+  const average = records.length ? records.reduce((sum, row) => sum + row.wallMs, 0) / records.length : null;
+  const minutes = average === null ? null : Math.ceil(average * (total - records.length) / 60_000);
+  const details = latest.reason ? redactEvaluationText(latest.reason).replace(/\s+/gu, ' ').slice(0, 250) : '无';
+  await fs.writeFile(file, ['# RC Stop 对照进度', '', `- 当前步骤　${round === '1' ? '第一轮' : round === 'C' ? 'C 正式对照' : round}`,
+    `- 已完成序号　${records.length}/${total}`, `- 最近一次　${latest.id} / ${latest.state}`, `- 限流或错误　${details}`,
+    `- 本阶段剩余墙钟粗估　${minutes === null ? '待估' : `约 ${minutes} 分钟`}`, ''].join('\n'));
+}
+
 async function runProcess(script, args, { executable = process.execPath, timeoutMs } = {}) {
   const child = spawn(executable, [path.join(root, script), ...args], { cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   // Persist the original evaluator files; only bounded, redacted progress is relayed.
@@ -174,6 +229,7 @@ async function main() {
     requirements: { type: 'string' }, settings: { type: 'string' }, calibration: { type: 'string' },
     'round-one': { type: 'string' }, 'round-two-inputs': { type: 'string' }, provider: { type: 'string', default: 'coding-plan' },
     'openclaw-profile': { type: 'string' }, limit: { type: 'string' },
+    'resume-from': { type: 'string' }, 'progress-file': { type: 'string' },
   } });
   if (values.help) {
     console.log('Usage: node scripts/run-simplify-experiment.mjs --round <1|2|C-calibration|C|model-smoke> --plan-sha256 <approved plan SHA256> --package <integration tgz> --package-sha256 <SHA256> --host-root <installed OpenClaw> --model <glm-5.3|glm-5.3-flash|deepseek-v4-flash> --output-root <new directory>');
@@ -182,6 +238,7 @@ async function main() {
     console.log('Use RC_EVAL_API_KEY in the process environment for the default Coding Plan. Round 1 and C can instead use --provider anthropic-environment with the configured Ark endpoint and model.');
     console.log('Each isolated attempt is immutable. Grade actual repair feedback from the evidence file before summarizing.');
     console.log('DeepSeek uses --provider host-profile --openclaw-profile <openclaw.json>. Round 1 accepts --limit <first N scheduled runs>.');
+    console.log('Use --resume-from <previous batch directory> and --progress-file <progress.md> for scored DeepSeek runs.');
     return;
   }
   if (!['1', '2', 'C-calibration', 'C', 'model-smoke'].includes(values.round) || !values.package || !values['host-root'] || !values['output-root']
@@ -190,6 +247,8 @@ async function main() {
   if (limit !== undefined && (values.round !== '1' || !Number.isSafeInteger(limit) || limit < 1 || limit > simplifySchedule('1').length))
     throw new Error('A positive scheduled prefix is only supported for round 1.');
   if (values.round === 'model-smoke' && values.provider !== 'host-profile') throw new Error('Model smoke uses the custom DeepSeek route.');
+  if (values['resume-from'] && (!['1', 'C'].includes(values.round) || values.provider !== 'host-profile'))
+    throw new Error('Resume requires a scored DeepSeek screening or compaction batch.');
   if (sha256(await fs.readFile(path.join(root, 'docs/simplify-experiment-plan.md'))) !== values['plan-sha256'])
     throw new Error('The approved plan SHA256 differs from the current plan.');
   if (values.round === '2' && values.provider !== 'coding-plan') throw new Error('Round 2 uses the existing Coding Plan benchmark relay.');
@@ -232,6 +291,15 @@ async function main() {
         || JSON.stringify(calibration.providerIdentity) !== JSON.stringify(providerIdentity)) throw new Error('Formal C inputs differ from the successful calibration.');
     }
   }
+  const identity = { planSha256: values['plan-sha256'], artifactSha256, model: values.model, providerIdentity, hostVersion: host.version };
+  const resumeFrom = values['resume-from'] ? await fs.realpath(values['resume-from']) : null;
+  const fullSchedule = values.round === 'model-smoke' ? [{ id: 'smoke', scored: false, config: {} }]
+    : values.round === 'C-calibration' ? [{ id: 'calibration', arm: 'calibration', sample: 'kitchen-compaction',
+      timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: false, scored: false } }]
+      : simplifySchedule(values.round, promoted);
+  const records = resumeFrom ? await readResume(resumeFrom, fullSchedule, identity) : [];
+  const schedule = fullSchedule.slice(records.length, limit);
+  if (!schedule.length) throw new Error('No remaining scheduled runs in this batch.');
   const output = path.resolve(values['output-root']);
   await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.mkdir(output);
@@ -253,17 +321,13 @@ async function main() {
     throw new Error('Use the integration package containing all three approved switches.');
   const settingsFile = cMode ? path.join(output, 'compaction-settings.json') : null;
   if (cMode) await writeJson(settingsFile, settings);
-  const schedule = values.round === 'model-smoke' ? [{ id: 'smoke', scored: false, config: {} }]
-    : values.round === 'C-calibration' ? [{ id: 'calibration', arm: 'calibration', sample: 'kitchen-compaction',
-      timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: false, scored: false } }]
-      : simplifySchedule(values.round, promoted).slice(0, limit);
-  await writeJson(path.join(output, 'batch.json'), { planSha256: values['plan-sha256'], artifactSha256, model, providerIdentity, hostVersion: host.version, schedule });
-  const records = [];
+  await writeJson(path.join(output, 'batch.json'), { ...identity, schedule, ...(resumeFrom ? { resumeFrom } : {}) });
+  let attempted = 0;
   for (const slot of schedule) {
     const startedAt = Date.now();
     const directory = path.join(output, slot.id);
     await fs.mkdir(directory);
-    await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256 });
+    await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256, planSha256: identity.planSha256 });
     let result;
     const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity,
       profileArgs, benchmark: benchmarkInputs?.[slot.sample] };
@@ -284,13 +348,15 @@ async function main() {
       if (boundary?.failure) Object.assign(result, { state: boundary.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'failed',
         reason: boundary.failure, completedInBudget: false, frameworkError: true });
     }
-    const record = { id: slot.id, arm: slot.arm, sample: slot.sample, repeat: slot.repeat, artifactSha256,
+    const record = { id: slot.id, arm: slot.arm, sample: slot.sample, repeat: slot.repeat, artifactSha256, planSha256: identity.planSha256,
       configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity }), ...result, wallMs: Date.now() - startedAt };
     await writeJson(path.join(directory, 'observation.json'), record);
-    records.push(record);
+    attempted++;
+    if (!needsRetry(record)) records.push(record);
     console.log(JSON.stringify({ id: slot.id, state: record.state }));
     if (credential && await countProfileCredentialMatches(directory, credential)) break;
-    if (record.state === 'rate-limited' || credential && record.frameworkError) break;
+    await writeProgress(values['progress-file'], values.round, records, fullSchedule.length, record);
+    if (needsRetry(record)) break;
   }
   if (values.round === 'C') {
     const blind = records.filter(record => record.compaction?.answer).map(record => ({ blindId: randomUUID(), runId: record.id,
@@ -305,7 +371,7 @@ async function main() {
     if (records[0]?.state !== 'completed') process.exitCode = 1;
     return;
   }
-  if (records.length < schedule.length || records.some(record => record.state !== 'completed')) process.exitCode = 1;
+  if (attempted < schedule.length || records.length < (limit ?? fullSchedule.length) || records.some(record => record.state !== 'completed')) process.exitCode = 1;
 }
 
 await main().catch(async error => {
