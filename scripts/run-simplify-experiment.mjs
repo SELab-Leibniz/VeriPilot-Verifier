@@ -41,28 +41,33 @@ async function readResume(directory, schedule, identity) {
     batches.unshift({ directory, manifest });
     directory = manifest.resumeFrom;
   }
-  const records = [], retries = new Map();
+  const records = new Map(), retries = new Map();
+  let fallback = null;
+  const pending = () => schedule.filter(slot => !records.has(slot.id));
+  const group = slot => identity.arktsCli ? `${slot.sample}/${slot.repeat}` : slot.id;
   for (const { directory, manifest } of batches) {
+    fallback ??= await optionalJson(path.join(directory, 'serial-fallback.json'));
+    const expected = pending();
     if (!manifest.schedule?.length || manifest.schedule.some((slot, index) =>
-      JSON.stringify(slot) !== JSON.stringify(schedule[records.length + index]))) throw new Error('Resume schedule does not match the planned run order.');
-    let interrupted = false;
+      JSON.stringify(slot) !== JSON.stringify(expected[index]))) throw new Error('Resume schedule does not match the planned run order.');
+    let interruptedGroup = null;
     for (const slot of manifest.schedule) {
       const attemptRoot = path.join(directory, slot.id);
       const attempt = await optionalJson(path.join(attemptRoot, 'attempt.json'));
       const record = await optionalJson(path.join(attemptRoot, 'observation.json'));
-      if (!attempt && !record) { interrupted = true; continue; }
-      if (interrupted || !attempt || !record || [attempt, record].some(row => row.id !== slot.id || row.arm !== slot.arm
+      if (!attempt && !record) { interruptedGroup ??= 'not-started'; continue; }
+      if (interruptedGroup && interruptedGroup !== group(slot) || !attempt || !record || [attempt, record].some(row => row.id !== slot.id || row.arm !== slot.arm
         || row.sample !== slot.sample || row.repeat !== slot.repeat || row.artifactSha256 !== identity.artifactSha256
         || (row.planSha256 !== undefined && row.planSha256 !== identity.planSha256)))
         throw new Error(`Resume evidence is incomplete or inconsistent for ${slot.id}.`);
       if (needsRetry(record)) {
         if (record.frameworkError && record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
-        interrupted = true;
-      } else records.push(record);
+        interruptedGroup = group(slot);
+      } else records.set(slot.id, record);
     }
   }
-  if (retries.get(schedule[records.length]?.id) >= 3) throw new Error('Infrastructure retry cap reached for the next scheduled run.');
-  return records;
+  if (pending().some(slot => retries.get(slot.id) >= 3)) throw new Error('Infrastructure retry cap reached for the next scheduled run.');
+  return { records: schedule.filter(slot => records.has(slot.id)).map(slot => records.get(slot.id)), fallback };
 }
 
 async function writeProgress(file, round, records, total, latest) {
@@ -148,11 +153,12 @@ async function runSmoke(_slot, { directory, packageRoot, hostRoot, model, profil
 }
 
 async function runBenchmark(slot, context) {
-  const { hostRoot, model, archive, directory, benchmark, arkts, openclawProfile, providerIdentity } = context;
+  const { hostRoot, model, archive, directory, benchmark, arkts, openclawProfile, providerIdentity, pairRateLimitFile } = context;
   const output = path.join(directory, 'evaluation');
   const options = { case: benchmark.case, output, 'host-root': hostRoot, package: archive, 'simplify-arm': slot.arm,
     provider: 'host-profile', model, 'openclaw-profile': openclawProfile, 'plan-sha256': arkts.planSha256,
-    frozen: benchmark.frozenRoot, 'freeze-sha256': benchmark.freezeSha256, ...arkts.cli };
+    frozen: benchmark.frozenRoot, 'freeze-sha256': benchmark.freezeSha256, ...arkts.cli,
+    ...(pairRateLimitFile ? { 'pair-rate-limit-file': pairRateLimitFile } : {}) };
   const cli = values => Object.entries(values).map(([key, value]) => `--${key}=${value}`);
   const controller = await runBoundedProcess(process.execPath, [path.join(root, slot.entrypoints[0]), '--live', ...cli(options)],
     { cwd: root, timeoutMs: 65 * 60_000 });
@@ -168,17 +174,36 @@ async function runBenchmark(slot, context) {
     || JSON.stringify(raw.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`ArkTS Stop identity differs for ${slot.id}.`);
   const { state, repairFeedback, feedback, completedInBudget, elapsedMs, rcElapsedMs, reason, usage, totalUsage, baselineCost, frameworkError } = raw;
-  let after = null, gradingEvidence = null, gradingError = null;
+  const logs = [];
+  const collectLog = async (label, file) => {
+    const value = await fs.readFile(file, 'utf8').catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (value !== null) logs.push({ label, file, value });
+  };
+  await collectLog('business-install', path.join(output, 'install.log'));
+  const checks = path.join(raw.projectRoot, '.runtime-correction', 'bench-checks');
+  for (const name of await fs.readdir(checks).catch(error => { if (error.code === 'ENOENT') return []; throw error; })) {
+    if (/-test\.log$|-build\.log$/u.test(name)) await collectLog('business-check', path.join(checks, name));
+  }
+  let after = null, gradingEvidence = null, gradingError = null, graderFailure = false;
   if (!frameworkError && state !== 'rate-limited') {
     const candidate = path.join(output, 'candidate.patch');
     const gradeRoot = path.join(directory, 'grading');
     const grader = await runProcess(slot.entrypoints[1], cli({ ...arkts.cli, case: benchmark.case, output: gradeRoot,
       candidate, 'calibration-dir': benchmark.calibrationDir }));
     gradingEvidence = path.join(gradeRoot, 'results.json');
-    after = arktsHiddenReward(await optionalJson(gradingEvidence), sha256(await fs.readFile(candidate)), benchmark.case, benchmark.datasetDigest);
+    const grade = await optionalJson(gradingEvidence);
+    graderFailure = !grade;
+    after = arktsHiddenReward(grade, sha256(await fs.readFile(candidate)), benchmark.case, benchmark.datasetDigest);
     if (!after) gradingError = grader.reason ?? 'No complete, attributable hidden score.';
+    for (const name of ['install.log', 'test.log', 'candidate-test.log']) await collectLog('hidden-grading', path.join(gradeRoot, name));
   }
-  return { state, repairFeedback, feedback, completedInBudget, elapsedMs, rcElapsedMs, reason, usage, totalUsage, baselineCost, frameworkError,
+  const toolchainLocks = logs.flatMap(({ label, file, value }) => [...value.matchAll(/^\[RC_ARKTS_LOCK\] (\{[^\r\n]*\})/gmu)]
+    .map(match => ({ label, file, ...JSON.parse(match[1]) })));
+  const portConflict = logs.some(({ value }) => /EADDRINUSE|Address already in use|Previewer[^\r\n]{0,160}(?:port.{0,40}(?:occupied|in use|conflict)|端口.{0,20}(?:占用|冲突))/iu.test(value));
+  return { state: portConflict || graderFailure ? 'failed' : state, repairFeedback, feedback,
+    completedInBudget: !portConflict && !graderFailure && completedInBudget,
+    elapsedMs, rcElapsedMs, reason: portConflict ? 'PREVIEWER_PORT_CONFLICT' : graderFailure ? 'ARKTS_HIDDEN_GRADER_FAILED' : reason, usage, totalUsage, baselineCost,
+    frameworkError: portConflict || graderFailure || frameworkError, gatewayPort: raw.gatewayPort ?? null, toolchainLocks,
     official: { before: benchmark.before, after }, evidence, gradingEvidence, gradingError,
     configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity, freezeSha256: benchmark.freezeSha256,
       phaseTimeoutMs: raw.limits.phaseTimeoutMs, maxCorrections: raw.limits.correctionAdmissions, compactionRestore: false }) };
@@ -237,6 +262,7 @@ async function main() {
       || record.planSha256 && record.planSha256 !== values['plan-sha256']))
       throw new Error('Round 2 requires the same package and plan as all four first-round arms.');
     promoted = screening.promotions;
+    if (promoted.length !== 1 || promoted[0] !== 'B2') throw new Error('The approved paired ArkTS comparison is A versus B2.');
     const inputs = await readArktsComparisonInputs({ file: values['round-two-inputs'], sha256: values['round-two-inputs-sha256'],
       planSha256: values['plan-sha256'], artifactSha256, dataset: values.dataset });
     const cli = { ...Object.fromEntries(localOptions.map(key => [key, path.resolve(values[key])])), 'phase-timeout-ms': 600_000 };
@@ -264,8 +290,9 @@ async function main() {
     : values.round === 'C-calibration' ? [{ id: 'calibration', arm: 'calibration', sample: 'kitchen-compaction',
       timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: false, scored: false } }]
       : simplifySchedule(values.round, promoted, arkts?.samples);
-  const records = resumeFrom ? await readResume(resumeFrom, fullSchedule, identity) : [];
-  const schedule = fullSchedule.slice(records.length, limit);
+  const prior = resumeFrom ? await readResume(resumeFrom, fullSchedule, identity) : { records: [], fallback: null };
+  const records = prior.records, retained = new Set(records.map(record => record.id));
+  const schedule = fullSchedule.slice(0, limit).filter(slot => !retained.has(slot.id));
   if (!schedule.length) throw new Error('No remaining scheduled runs in this batch.');
   const output = path.resolve(values['output-root']);
   await fs.mkdir(path.dirname(output), { recursive: true });
@@ -292,17 +319,16 @@ async function main() {
   const settingsFile = cMode ? path.join(output, 'compaction-settings.json') : null;
   if (cMode) await writeJson(settingsFile, settings);
   await writeJson(path.join(output, 'batch.json'), { ...identity, schedule, ...(resumeFrom ? { resumeFrom } : {}) });
-  let attempted = 0;
-  for (const slot of schedule) {
+  async function runSlot(slot, pair) {
     const startedAt = Date.now();
     const directory = path.join(output, slot.id);
     await fs.mkdir(directory);
-    await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256, planSha256: identity.planSha256 });
+    await writeJson(path.join(directory, 'attempt.json'), { ...slot, startedAt: new Date().toISOString(), artifactSha256, planSha256: identity.planSha256, ...(pair ? { pairId: pair.id } : {}) });
     const businessRoot = arkts ? shortArktsWorkspace(path.join(directory, 'evaluation'), 'biz', undefined, arkts.cli['workspace-root']) : null;
     if (businessRoot) businessRoots.push(businessRoot);
     let result;
     const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity,
-      profileArgs, archive, openclawProfile: values['openclaw-profile'], arkts, benchmark: arkts?.samples.find(sample => sample.id === slot.sample) };
+      profileArgs, archive, pairRateLimitFile: pair?.rateLimitFile, openclawProfile: values['openclaw-profile'], arkts, benchmark: arkts?.samples.find(sample => sample.id === slot.sample) };
     const run = values.round === 'model-smoke' ? runSmoke : cMode ? runCompaction : arkts ? runBenchmark : runScreening;
     try { result = await run(slot, context); }
     catch (error) { result = { state: 'failed', evidence: directory, reason: redactEvaluationText(error.message), completedInBudget: false, frameworkError: true }; }
@@ -317,19 +343,51 @@ async function main() {
       const boundary = await readOptional('provider-boundary.json');
       result.gatewayStarts = (await readOptional('gateway-start.json'))?.starts ?? 0;
       result.modelRequests = boundary?.requests ?? (await readProviderTiming(path.join(nativeRun, 'native-host'))).filter(row => row.event === 'request').length;
-      if (boundary?.failure) Object.assign(result, { state: boundary.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'failed',
-        reason: boundary.failure, completedInBudget: false, frameworkError: true });
+      if (boundary?.failure) {
+        const peerPaused = boundary.failure === 'PROFILE_PAIR_RATE_LIMIT';
+        Object.assign(result, { state: peerPaused ? 'interrupted' : boundary.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : 'failed',
+          reason: boundary.failure, completedInBudget: false, frameworkError: !peerPaused, ...(peerPaused ? { operatorInterrupted: true } : {}) });
+      }
     }
     const record = { id: slot.id, arm: slot.arm, sample: slot.sample, repeat: slot.repeat, artifactSha256, planSha256: identity.planSha256,
       configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity }), ...result, wallMs: Date.now() - startedAt };
-    await writeJson(path.join(directory, 'observation.json'), record);
-    attempted++;
-    if (!needsRetry(record)) records.push(record);
-    console.log(JSON.stringify({ id: slot.id, state: record.state }));
-    if (credential && (await countProfileCredentialMatches(directory, credential) || businessRoot
-      && await countProfileCredentialMatches(businessRoot, credential).catch(error => { if (error.code === 'ENOENT') return 0; throw error; }))) break;
-    await writeProgress(values['progress-file'], values.round, records, fullSchedule.length, record);
-    if (needsRetry(record)) break;
+    if (arkts) Object.assign(record, { concurrency: pair ? 2 : 1, pairId: pair?.id ?? null,
+      startedAt: new Date(startedAt).toISOString() });
+    return { record, directory, businessRoot };
+  }
+
+  let attempted = 0, fallback = prior.fallback;
+  for (let index = 0; index < schedule.length;) {
+    const first = schedule[index], next = schedule[index + 1];
+    const paired = arkts && !fallback && next?.sample === first.sample && next.repeat === first.repeat;
+    const slots = paired ? [first, next] : [first];
+    const pair = paired ? { id: randomUUID(), rateLimitFile: path.join(output, `pair-${first.sample}-${first.repeat}-rate-limit.txt`) } : null;
+    const results = await Promise.all(slots.map(slot => runSlot(slot, pair)));
+    const ports = results.map(({ record }) => record.gatewayPort);
+    if (paired && ports[0] && ports[0] === ports[1]) for (const { record } of results) Object.assign(record, {
+      state: 'failed', completedInBudget: false, frameworkError: true, reason: 'PAIRED_GATEWAY_PORT_REUSED',
+    });
+    let foundLeak = false;
+    for (const { record, directory, businessRoot } of results) {
+      await writeJson(path.join(directory, 'observation.json'), record);
+      attempted++;
+      if (!needsRetry(record)) records.push(record);
+      console.log(JSON.stringify({ id: record.id, state: record.state }));
+      if (credential && (await countProfileCredentialMatches(directory, credential) || businessRoot
+        && await countProfileCredentialMatches(businessRoot, credential).catch(error => { if (error.code === 'ENOENT') return 0; throw error; }))) {
+        foundLeak = true;
+        break;
+      }
+      await writeProgress(values['progress-file'], values.round, records, fullSchedule.length, record);
+    }
+    if (foundLeak) break;
+    const failures = results.map(item => item.record).filter(needsRetry);
+    if (failures.length && paired) {
+      fallback = { at: new Date().toISOString(), pairId: pair.id, affected: failures.map(({ id, state, reason }) => ({ id, state, reason })) };
+      await writeJson(path.join(output, 'serial-fallback.json'), fallback);
+    }
+    if (failures.length) break;
+    index += slots.length;
   }
   if (values.round === 'C') {
     const blind = records.filter(record => record.compaction?.answer).map(record => ({ blindId: randomUUID(), runId: record.id,
@@ -338,7 +396,7 @@ async function main() {
     await writeJson(path.join(output, 'answers-index.json'), blind.map(({ blindId, runId }) => ({ blindId, runId })));
   }
   if (values.round !== 'C-calibration' && values.round !== 'model-smoke')
-    await writeJson(path.join(output, 'observations.json'), { records, ...(arkts ? { promoted, roundTwoInputs: { s0: arkts.s0, samples: arkts.samples } } : {}) });
+    await writeJson(path.join(output, 'observations.json'), { records, ...(arkts ? { promoted, roundTwoInputs: { s0: arkts.s0, samples: arkts.samples }, serialFallback: fallback } : {}) });
   await scanStage?.();
   if (values.round === 'C-calibration' || values.round === 'model-smoke') {
     if (records[0]?.state !== 'completed') process.exitCode = 1;

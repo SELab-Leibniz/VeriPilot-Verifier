@@ -48,6 +48,8 @@ function recordRun(slot, raw) {
     throw new Error(`Invalid run state, timing, package SHA256, configuration or evidence for ${id}.`);
   const record = { ...slot, state, completedInBudget, elapsedMs, rcElapsedMs, artifactSha256, configurationSummary, evidence, reason,
     wallMs: raw.wallMs ?? null, modelRequests: raw.modelRequests ?? null, planSha256: raw.planSha256 ?? null,
+    ...(slot.round === '2' ? { pairId: raw.pairId ?? null, concurrency: raw.concurrency ?? null, startedAt: raw.startedAt ?? null,
+      gatewayPort: raw.gatewayPort ?? null, toolchainLocks: raw.toolchainLocks ?? [] } : {}),
     usage: usageRecord(raw.usage, id) };
   if (slot.round === 'C') {
     const { firstCompactedAt = null, injections = [], compactionEvents = [], answer = null, assessment } = raw.compaction ?? {};
@@ -94,13 +96,23 @@ function secondary(rows, arm) {
   const samples = [...new Set(rows.map(row => row.sample))];
   return Object.fromEntries(Object.entries(metrics).map(([metric, { read, direction }]) => {
     const bySample = samples.map(sample => {
-      const control = rows.filter(row => row.sample === sample && row.arm === 'A').map(read);
-      const candidate = rows.filter(row => row.sample === sample && row.arm === arm).map(read);
+      const controls = rows.filter(row => row.sample === sample && row.arm === 'A');
+      const candidates = rows.filter(row => row.sample === sample && row.arm === arm);
+      const pairElapsed = metric === 'elapsedMs' && rows[0]?.round === '2';
+      const pairs = pairElapsed ? controls.map(control => {
+        const candidate = candidates.find(row => row.repeat === control.repeat);
+        const matched = control.concurrency === 2 && candidate?.concurrency === 2 && control.pairId && control.pairId === candidate.pairId;
+        const a = matched ? read(control) : null, b = matched ? read(candidate) : null;
+        return { repeat: control.repeat, pairId: matched ? control.pairId : null, controlMs: a, candidateMs: b,
+          deltaMs: number(a) && number(b) ? b - a : null };
+      }) : null;
+      const control = pairs ? pairs.map(pair => pair.controlMs) : controls.map(read);
+      const candidate = pairs ? pairs.map(pair => pair.candidateMs) : candidates.map(read);
       const controlMean = knownMean(control), candidateMean = knownMean(candidate);
       const noise = controlMean === null ? null : range(control);
       const delta = controlMean === null || candidateMean === null ? null : candidateMean - controlMean;
       const change = delta === null ? 'incomparable' : Math.abs(delta) <= noise ? 'tied' : delta * direction > 0 ? 'improved' : 'regressed';
-      return { sample, control, candidate, controlMean, candidateMean, noise, delta, change };
+      return { sample, control, candidate, controlMean, candidateMean, noise, delta, change, ...(pairs ? { pairs } : {}) };
     });
     const wins = bySample.filter(row => row.change === 'improved').length;
     const losses = bySample.filter(row => row.change === 'regressed').length;
@@ -264,6 +276,12 @@ function markdown(report) {
       report.round2.arms.map(arm => row(arm.arm, arm.detected, arm.falseAlarms, arm.frozenCorrectFalseAlarms, arm.primary))), '',
     ...table(['臂', '缺陷对象', 'F2P 两次均值', 'P2P 两次均值', 'P2P 无新增失败'],
       report.round2.arms.flatMap(arm => arm.byDefect.map(item => row(arm.arm, item.sample, item.f2pMean, item.p2pMean, yesNo(item.nonRegression))))), '',
+    '第二轮的 RC 耗时只在同一并发对内比较。token 使用各隔离会话的调用计数。', '',
+    ...table(['对象', '序号', '对照组 ID', 'A RC ms', 'B2 RC ms', 'B2 减 A ms'], report.round2.arms.filter(arm => arm.arm !== 'A')
+      .flatMap(arm => arm.secondary.elapsedMs.bySample.flatMap(sample => (sample.pairs ?? []).map(pair =>
+        row(sample.sample, pair.repeat, pair.pairId, pair.controlMs, pair.candidateMs, pair.deltaMs))))), '',
+    ...table(['运行', '并发', 'Gateway 端口', '工具链锁等待 ms', '调用数'], report.runs.filter(run => run.round === '2')
+      .map(run => row(run.id, run.concurrency, run.gatewayPort, run.toolchainLocks?.reduce((total, lock) => total + lock.waitMs, 0), run.toolchainLocks?.length))), '',
     '## 次指标与噪声', '', ...table(['轮次', '臂', '样例', '指标', 'A 均值', '候选均值', 'A 极差', '候选减 A', '方向'], [
       ...secondaryRows('1', report.round1.arms), ...secondaryRows('2', report.round2.arms),
     ]), '',

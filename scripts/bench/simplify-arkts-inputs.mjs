@@ -16,6 +16,7 @@ export async function readArktsComparisonInputs({ file, sha256, planSha256, arti
   if (digest(bytes) !== sha256 || inputs.planSha256 !== planSha256 || inputs.artifactSha256 !== artifactSha256 || !inputs.samples?.length)
     throw new Error('ArkTS input list differs from the committed plan or package.');
   const samples = await Promise.all(inputs.samples.map(async input => {
+    if (input.case !== 'security_tool_1') throw new Error('The approved second round uses only security_tool_1.');
     const { datasetDigest } = await loadArktsTask(dataset, input.case);
     const freeze = await fs.readFile(path.join(input.frozenRoot, 'freeze.json'));
     const manifest = JSON.parse(freeze);

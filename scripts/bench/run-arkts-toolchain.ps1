@@ -21,11 +21,10 @@ try {
   $wait.Stop()
   Write-Output ('[RC_ARKTS_LOCK] ' + (@{ phase = $Phase; waitMs = $wait.ElapsedMilliseconds; acquiredAt = [DateTimeOffset]::UtcNow.ToString('o') } | ConvertTo-Json -Compress))
   if ($Phase -eq 'build') {
-    devecocli build --modules entry
+    & (Join-Path $toolPath 'bin/hvigorw.bat') --mode module -p module=entry@default -p product=default -p buildMode=debug assembleHap --no-daemon
   } elseif ($Phase -eq 'install') {
     & (Join-Path $nodeDir 'node.exe') (Join-Path $toolPath 'ohpm/bin/pm-cli.js') install
   } else {
-    # devecocli has no Local Test command. Use the specified CLT native wrapper.
     & (Join-Path $toolPath 'bin/hvigorw.bat') test -p module=entry -p coverage=false --no-daemon
   }
   $code = $LASTEXITCODE

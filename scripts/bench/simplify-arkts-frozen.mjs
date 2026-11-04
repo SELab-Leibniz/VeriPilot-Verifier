@@ -107,6 +107,10 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   // hooks. The mutation itself is already in the verified frozen Git tree.
   for (const file of mutationPaths) await gateway.hooks.runBeforeToolCall({ toolName: 'write', toolCallId: `frozen-${randomUUID()}`,
     params: { path: path.join(projectRoot, file) } }, context);
+  const registered = globalThis[Symbol.for('runtime-corrector.openclaw.session-project-state')];
+  const active = [...(registered?.values() ?? [])].flatMap(value => [...(value.states?.values() ?? [])])
+    .find(value => value.sessionId === sessionId && path.relative(value.projectRoot, projectRoot) === '');
+  if (!active?.projectScope.enabled || !active.nativeNeedsStop) throw new Error('The isolated native hooks did not arm the frozen Stop.');
   await gateway.hooks.runBeforeAgentFinalize({ sessionId, runId: originalRunId, lastAssistantMessage: text(last) }, context);
   await gateway.hooks.runAgentEnd({ sessionId, runId: originalRunId, success: true, messages }, context);
   let task, ledger, initial, admission, runs = [], terminal;
@@ -156,7 +160,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     reason: boundary?.failure ?? initial?.reasonCode ?? (!initial ? 'FROZEN_STOP_NOT_REGISTERED' : null), rcElapsedMs, usage, totalUsage, baselineCost, repairFeedback, feedback,
     elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0,
     actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
-    modelRequests: boundary?.requests ?? null, metrics: gateway.metrics() };
+    modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };
   await save(path.join(outputRoot, 'result.json'), result);
   return result;
 }

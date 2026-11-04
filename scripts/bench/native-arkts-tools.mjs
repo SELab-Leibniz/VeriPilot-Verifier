@@ -45,7 +45,7 @@ export default {id:'rc-arkts-bench-tools',name:'Controlled ArkTS tools',register
   return response;
  }}, {names:['bench_nav']});
  api.registerTool(ctx=>ctx.sessionKey?.includes(':runtime-corrector:')?null:{name:'bench_check',label:'Project check',
- description:'Run a fixed project check with the installed HarmonyOS toolchain. build uses devecocli; test returns actual runtime pass/fail counts and bounded assertion diagnostics for the available original local tests. Full command output is saved at outputPath; each fresh runtime report is archived at localTests.reportPath. No arbitrary commands.',
+ description:'Run a fixed project check with the installed HarmonyOS toolchain. build assembles the entry HAP; test returns actual runtime pass/fail counts and bounded assertion diagnostics for the available original local tests. Full command output is saved at outputPath; each fresh runtime report is archived at localTests.reportPath. No arbitrary commands.',
  parameters:{type:'object',additionalProperties:false,required:['action'],properties:{action:{type:'string',enum:['build','test']}}},
  async execute(id,args,signal){
   if(!['build','test'].includes(args.action))throw Error('Unknown check');

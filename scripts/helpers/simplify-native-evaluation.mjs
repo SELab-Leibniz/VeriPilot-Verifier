@@ -55,7 +55,7 @@ export async function countProfileCredentialMatches(directory, credential) {
 
 // Count provider dispatches before they reach the network and fence SDK retries
 // after an upstream failure. The SDK and the process fetch share this boundary.
-export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity }) {
+export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile }) {
   const target = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
   const origin = new URL(target).origin, runtimeKey = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
   const previousFetch = globalThis.fetch, previousRuntime = globalThis[runtimeKey];
@@ -68,6 +68,10 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
     const authorized = headers.get('authorization') === `Bearer ${credential()}`;
     if (url.origin !== origin && !authorized) return fetch(input, init);
     if (stats.failure) throw fail(stats.failure);
+    if (pairRateLimitFile && await fs.stat(pairRateLimitFile).then(() => true, error => {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    })) throw fail('PROFILE_PAIR_RATE_LIMIT');
     if (url.href !== target || String(init?.method ?? input?.method).toUpperCase() !== 'POST' || !authorized) throw fail('PROFILE_REQUEST_BOUNDARY');
     if (stats.requests >= maxRequests) throw fail('PROFILE_REQUEST_LIMIT');
     const body = typeof init?.body === 'string' ? init.body : await input.clone?.().text();
@@ -82,6 +86,8 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
       throw fail('PROFILE_TRANSPORT_FAILURE');
     }
     if (response.status >= 400) {
+      if (response.status === 429 && pairRateLimitFile) await fs.writeFile(pairRateLimitFile, `${Date.now()}\n`, { flag: 'wx' })
+        .catch(error => { if (error.code !== 'EEXIST') throw error; });
       await response.body?.cancel().catch(() => {});
       throw fail(response.status === 429 ? 'PROFILE_RATE_LIMIT' : `PROFILE_HTTP_${response.status}`);
     }
@@ -170,9 +176,9 @@ export function simplifyProviderIdentity(provider, model, env = process.env) {
   return { kind: provider, origin: new URL(endpoint).origin, endpointSha256: createHash('sha256').update(endpoint).digest('hex'), model };
 }
 
-export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, ...options }) {
+export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, ...options }) {
   const { identity: providerIdentity, provider, credential } = await resolveSimplifyProvider(providerKind, model, openclawProfile);
-  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests });
+  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile });
   let gateway;
   const finish = async () => {
     if (!boundary) return;

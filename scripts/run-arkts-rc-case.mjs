@@ -189,7 +189,8 @@ try {
     extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit && !s0 ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
-  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model })
+  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model,
+    pairRateLimitFile: arg('--pair-rate-limit-file') })
     : await createNativeGatewayEvaluation(options);
   if (frozenRoot) {
     result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot });
