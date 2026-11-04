@@ -31,7 +31,7 @@ async function project(t) {
   return root;
 }
 
-const policy = (mode, { materialRoots = '[docs/requirements]' } = {}) => `version: 2
+const policy = (mode, { materialRoots = '[docs/requirements]', originalKey = true } = {}) => `version: 2
 artifacts:
   - name: design
     stage: design
@@ -51,8 +51,7 @@ skillCorrection:
 artifactCorrection:
   groundTruthReviewEnabled: ${mode === 'ledger'}
   stageMetricsEnabled: false
-  originalRequirementsEnabled: ${mode === 'original' || mode === 'original-only'}
-implementationCorrection:
+${originalKey ? `  originalRequirementsEnabled: ${mode === 'original' || mode === 'original-only'}\n` : ''}implementationCorrection:
   enabled: false
 stopCorrection:
   enabled: false
@@ -157,13 +156,13 @@ test('the live document harness policy selects the original requirements review'
   assert.equal(plan.runtimeV2.dynamicGroundTruth.enabled, false);
 });
 
-async function documentFixture(t, mode) {
+async function documentFixture(t, mode, policyOptions = {}) {
   const root = await project(t);
   let runtime;
   t.after(async () => { await runtime?.dispose(); await runtime?.waitForBackgroundReviews(); });
   await fs.mkdir(path.join(root, '.runtime-corrector'));
   await fs.mkdir(path.join(root, 'docs/requirements'), { recursive: true });
-  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), policy(mode));
+  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), policy(mode, policyOptions));
   await fs.writeFile(path.join(root, '.runtime-corrector/document-review.md'), 'Check the design against the original requirements.\n');
   await fs.writeFile(path.join(root, 'docs/requirements/constraints.md'), '# Constraints\nAll imports run offline on the device.\n');
   const sessionId = `doc-${mode}`, sessionKey = `agent:main:doc-${mode}`, transcript = path.join(root, 'native.jsonl');
@@ -272,7 +271,7 @@ async function documentFixture(t, mode) {
     else await fs.appendFile(transcript, JSON.stringify(record) + '\n');
     leaf = id;
   };
-  return { root, ask, write, finish, compact, holdAdmission, calls };
+  return { root, sessionId, ask, write, finish, compact, holdAdmission, calls };
 }
 
 test('original mode reviews a document write against the user messages without refreshing the baseline', async t => {
@@ -304,6 +303,8 @@ for (const [truncate, writeFirst] of [[false, true], [true, true], [true, false]
   assert.deepEqual(review.messages.map(message => [message.full, message.retainedAfterCompaction ?? false]),
     [['Write docs/design.md. Keep imports offline.', truncate], ['Add a section about CSV export.', false]]);
   assert.match(result.feedback, /AGENT-OFFLINE-IMPORT/u, 'the pre-compaction requirement must still govern the review');
+  const archived = (await fs.readFile(userMessageLogPath(f.root, f.sessionId), 'utf8')).trim().split('\n').map(line => JSON.parse(line).text);
+  assert.deepEqual(archived, ['Write docs/design.md. Keep imports offline.', 'Add a section about CSV export.']);
 });
 
 const REQUIREMENTS_ONLY = 'Requirements for docs/design.md: keep imports offline. Reply only with "Noted".';
@@ -377,20 +378,31 @@ if (prompt.includes("runtime-corrector:semantic-review --request ") && match) {
   assert.equal(request.runtimeV2, undefined);
 });
 
-test('ledger mode publishes an extracted baseline before its first review; transcript-only mode never extracts', async t => {
+const publishedClaims = async root => {
+  const [taskId] = await fs.readdir(path.join(root, '.runtime-correction/tasks'));
+  const published = JSON.parse(await fs.readFile(path.join(root, '.runtime-correction/tasks', taskId, 'ground-truth/current.json'), 'utf8'));
+  return published.claims.map(claim => claim.text);
+};
+
+test('ledger mode publishes an extracted baseline before its first review', async t => {
   const ledger = await documentFixture(t, 'ledger');
   const ctx = await ledger.ask('ledger-run', 'Write docs/design.md. Keep imports offline.');
   const reviewed = await ledger.write(ctx, '# Importer\nUpload every import to the cloud.\n');
   assert.deepEqual(reviewed.calls.map(call => call.role), ['ground-truth-extractor', 'artifact-reviewer']);
   assert.equal(reviewed.calls[1].ledger, true);
   assert.equal(reviewed.calls[1].semantic.originalRequirements, undefined);
-  const [taskId] = await fs.readdir(path.join(ledger.root, '.runtime-correction/tasks'));
-  const published = JSON.parse(await fs.readFile(path.join(ledger.root, '.runtime-correction/tasks', taskId, 'ground-truth/current.json'), 'utf8'));
-  assert.deepEqual(published.claims.map(claim => claim.text), ['docs/design.md keeps imports offline.']);
-  const transcriptOnly = await documentFixture(t, 'transcript');
-  const plain = await transcriptOnly.write(await transcriptOnly.ask('transcript-run', 'Write docs/design.md. Keep imports offline.'),
+  assert.deepEqual(await publishedClaims(ledger.root), ['docs/design.md keeps imports offline.']);
+});
+
+for (const [label, policyOptions] of [['absent', { originalKey: false }], ['false', {}]]) test(`with originalRequirementsEnabled ${label}, a document write refreshes the dynamic baseline before its review`, async t => {
+  const f = await documentFixture(t, 'transcript', policyOptions);
+  const config = await fs.readFile(path.join(f.root, '.runtime-corrector/config.yaml'), 'utf8');
+  assert.equal(/originalRequirementsEnabled/u.test(config), label === 'false');
+  assert.equal((await loadRuntimePlan({ cwd: f.root })).runtimeV2.artifactCorrection.originalRequirementsEnabled, false);
+  const reviewed = await f.write(await f.ask('transcript-run', 'Write docs/design.md. Keep imports offline.'),
     '# Importer\nUpload every import to the cloud.\n');
-  assert.deepEqual(plain.calls.map(call => call.role), ['artifact-reviewer'],
-    'a document review that does not use the baseline no longer refreshes it on every write');
-  assert.equal(plain.calls[0].semantic.originalRequirements, undefined);
+  assert.deepEqual(reviewed.calls.map(call => call.role), ['ground-truth-extractor', 'artifact-reviewer']);
+  assert.equal(reviewed.calls[1].ledger, false, 'the review itself still does not use the baseline');
+  assert.equal(reviewed.calls[1].semantic.originalRequirements, undefined);
+  assert.deepEqual(await publishedClaims(f.root), ['docs/design.md keeps imports offline.']);
 });
