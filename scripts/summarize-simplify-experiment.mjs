@@ -186,7 +186,7 @@ export function summarizeSimplifyExperiment({ records, promoted = [] }) {
     byId.set(record.id, record);
   }
   const runs = schedule.map(slot => recordRun(slot, byId.get(slot.id)));
-  for (const group of [['A'], ['B1', 'B2', 'B12'], ['C-off', 'C-on']]) {
+  for (const group of [Object.keys(STOP_ARMS), ['C-off', 'C-on']]) {
     const hashes = new Set(runs.filter(row => group.includes(row.arm) && row.artifactSha256).map(row => row.artifactSha256.toLowerCase()));
     if (hashes.size > 1) throw new Error(`Package changed within ${group.join('/')}.`);
   }
@@ -258,7 +258,7 @@ async function main() {
   if (values.help) {
     console.log('Usage: node scripts/summarize-simplify-experiment.mjs --input <json> --output-dir <existing directory>');
     console.log('Input: { promoted?: string[], records: Array<{ id, state, artifactSha256, configurationSummary, evidence, reason?, completedInBudget?, elapsedMs?, rcElapsedMs?, usage?: { tokens, completeCalls, observedCalls }, repairFeedback?, matchesDefect?, ungroundedFeedback?, official?: { before, after }, baselineCost?: { elapsedMs, tokens }, compaction?: { firstCompactedAt, injections: [{ at, length }], assessment } }> }.');
-    console.log('Use the scheduled IDs. Evidence points to the original record. Stop grades apply to repair feedback and official reward, not verdict labels. Use null for missing measurements. Writes fresh Markdown and JSON only.');
+    console.log('Use the scheduled IDs and one integration package across all four Stop arms. Leave C calibration outside the scored records. Evidence points to the original record. Stop grades apply to repair feedback and official reward. Use null for missing measurements. Writes fresh Markdown and JSON only.');
     return;
   }
   if (!values.input || !values['output-dir']) throw new Error('--input and --output-dir are required.');
