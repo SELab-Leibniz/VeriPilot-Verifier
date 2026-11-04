@@ -154,17 +154,26 @@ try {
     await append({role:'toolResult',toolName:'write',toolCallId,isError:false,content:result.content});
     const middleware = gateway.registry.agentToolResultMiddlewares.find(item=>item.pluginId==='runtime-corrector');
     assert(middleware);
-    await middleware.handler({toolName:'write',toolCallId,args:params,result},ctx);
-    const requests = await findFiles(path.join(projectRoot,'.runtime-correction'), file => /(?:semantic-request|review-request|request)\.json$/u.test(path.basename(file)));
     const bound = [];
-    for (const file of requests) {
-      const request = await read(file);
-      for (const reference of request.originalRequirements?.userMessages ?? []) {
-        const text = await fs.readFile(reference.path,'utf8');
-        if (text === messages.proposal) bound.push({ file, userMessageSha256: digest(text), artifact:params.path });
-      }
-      assert(!/(test_patch|evaluator-gold|f2p_passed|rollback)/u.test(JSON.stringify(request)));
+    let settled = false;
+    const deliver = middleware.handler({toolName:'write',toolCallId,args:params,result},ctx).finally(()=>{settled=true;});
+    while (!settled && !bound.length) {
+      const files = await findFiles(path.join(projectRoot,'.runtime-correction','.semantic-review'),
+        file => path.basename(file)==='request.json');
+      for (const file of files) try {
+        const request = await read(file);
+        assert(!/(test_patch|evaluator-gold|f2p_passed|rollback)/u.test(JSON.stringify(request)));
+        for (const reference of request.originalRequirements?.userMessages ?? []) {
+          const text = await fs.readFile(reference.path,'utf8');
+          if (text !== messages.proposal) continue;
+          await write(path.join(outputRoot,'proposal-review-request.json'),request);
+          bound.push({file,userMessageSha256:digest(text),artifact:params.path});
+          break;
+        }
+      } catch (error) { if (error.code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
+      if (!settled && !bound.length) await sleep(40);
     }
+    await deliver;
     assert(bound.length, 'No proposal review request binds the original user message.');
     assert.equal(gateway.providerStatus().requests,0);
     assert.equal(gateway.providerStatus().failure,'PROFILE_REQUEST_LIMIT');
