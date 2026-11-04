@@ -34,7 +34,7 @@ export function simplifySchedule(round, promoted = [], objects = []) {
     || promoted.some(arm => !['B1', 'B2', 'B12'].includes(arm)))) throw new Error('Round 2 requires one or two distinct promoted candidate arms.');
   const screening = round === '1';
   if (!screening && (!objects.length || new Set(objects.map(object => object.id)).size !== objects.length
-    || objects.some(object => !/^security_tool_[12]-(natural|correct|injected)$/u.test(object.id) || !['defect', 'correct'].includes(object.kind))))
+    || objects.some(object => !/^security_tool_(?:[12]-(?:natural|correct|injected)|2-compat-natural)$/u.test(object.id) || !['defect', 'correct'].includes(object.kind))))
     throw new Error('Round 2 requires distinct frozen ArkTS objects.');
   const samples = screening ? Object.keys(SCREENING_SAMPLES) : objects.map(object => object.id);
   const arms = screening ? Object.keys(STOP_ARMS) : ['A', ...promoted];
