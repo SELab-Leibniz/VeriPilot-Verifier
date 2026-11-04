@@ -161,6 +161,7 @@ try { for (const spec of cases) {
     const target = path.join(projectRoot, relative); await fs.mkdir(path.dirname(target), { recursive: true }); await fs.writeFile(target, contents);
   }
   execFileSync('git', ['init', '--quiet', '--template=', projectRoot], { windowsHide: true });
+  if (process.platform === 'win32') execFileSync('git', ['-C', projectRoot, 'config', '--local', 'core.longpaths', 'true'], { windowsHide: true });
   execFileSync('git', ['-C', projectRoot, 'add', 'app.mjs'], { windowsHide: true });
   execFileSync('git', ['-C', projectRoot, '-c', 'user.name=RC Local Evaluation', '-c', 'user.email=rc@example.invalid', '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '-m', 'original'], { windowsHide: true });
   await fs.writeFile(file, spec.code);
