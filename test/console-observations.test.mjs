@@ -5,6 +5,7 @@ import path from 'node:path';
 import { readConsoleObservations, metricVerdict, validateObservationQuery } from '../lib/openclaw/console-observations.mjs';
 import { recordRuntimeResponse } from '../lib/runtime-v2/response-record.mjs';
 import { findTask } from '../lib/runtime-v2/task-store.mjs';
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { consoleFixture } from './support/console-fixture.mjs';
 
 async function fixture(t, options) { const f = await consoleFixture(options); t.after(f.cleanup); return f; }
@@ -21,6 +22,21 @@ test('pending onboarding obligations stay visible and prevent historical metrics
   assert.deepEqual(data.baseline.pendingOperations, [pending]);
   assert(data.metrics.every(metric => metric.status !== 'PASS'));
   assert.deepEqual(data.records.find(row => row.source === 'ONBOARDING_OPERATION_UNVERIFIED')?.review.operation, pending.operation);
+});
+
+test('Stop implementation progress is separate from baseline and session-bound', async t => {
+  const f = await fixture(t), directory = path.join(f.dir, 'stop-review-progress');
+  await fs.mkdir(directory, { recursive: true });
+  const file = path.join(directory, `${sha256(f.record.sessionId)}.json`);
+  const progress = { taskId: f.task.taskId, sessionId: f.record.sessionId, phase: 'BLOCKED',
+    reasonCode: 'BASELINE_COVERAGE_UNVERIFIED', updatedAt: Date.now() };
+  await fs.writeFile(file, JSON.stringify(progress));
+  let data = await readConsoleObservations(f.record, f.task);
+  assert.equal(data.baseline.implementation.phase, 'BLOCKED');
+  assert.equal(data.baseline.audit, undefined);
+  await fs.writeFile(file, JSON.stringify({ ...progress, sessionId: 'another-session' }));
+  data = await readConsoleObservations(f.record, f.task);
+  assert.equal(data.baseline.implementation, undefined);
 });
 
 test('observations join explicit identities and distinguish computed, passed, returned and delivered', async t => {
@@ -123,4 +139,32 @@ test('current baseline extraction phase is visible but never establishes publica
   assert.equal(data.baseline.available, true, 'failure diagnostics do not change the committed baseline');
   await fs.writeFile(file, JSON.stringify({ ...status, taskId: 'another-task' }));
   assert.equal((await readConsoleObservations(f.record, f.task)).baseline.extraction, undefined);
+});
+
+test('independent audit progress is tied to the current extractor and only a committed basis establishes publication', async t => {
+  const f = await fixture(t), directory = path.join(f.dir, 'baseline-audit-progress');
+  const extractorRunId = 'extractor-run', requestId = 'pending-audit';
+  const status = { taskId: f.task.taskId, extractorRunId, requestId, generation: 0,
+    deadlineAt: Date.now() + 30000, updatedAt: Date.now(), navigationOnly: true };
+  await fs.mkdir(directory);
+  const audit = path.join(directory, `${extractorRunId}.json`);
+  await fs.writeFile(path.join(f.dir, 'baseline-extraction-status.json'), JSON.stringify({ taskId: f.task.taskId,
+    runId: extractorRunId, phase: 'CANDIDATE_COMPLETE', updatedAt: status.updatedAt }));
+  for (const [phase, deadlineAt, visible] of [
+    ['CHECKING', status.deadlineAt, 'CHECKING'], ['CHECKING', 0, 'EXPIRED'], ['PASSED', status.deadlineAt, 'PASSED'],
+    ['PUBLISHED', status.deadlineAt, undefined],
+  ]) {
+    await fs.writeFile(audit, JSON.stringify({ ...status, phase, deadlineAt }));
+    assert.equal((await readConsoleObservations(f.record, f.task)).baseline.audit?.phase, visible);
+  }
+  await fs.writeFile(audit, JSON.stringify({ ...status, phase: 'PASSED' }));
+  f.task.groundTruth.sharedBasis = { baselineVersion: f.task.groundTruth.version, baselineDigest: f.task.groundTruth.digest,
+    proof: { requestId, generation: 1 } };
+  assert.equal((await readConsoleObservations(f.record, f.task)).baseline.audit.phase, 'PASSED');
+  f.task.groundTruth.sharedBasis.proof.generation = 0;
+  assert.equal((await readConsoleObservations(f.record, f.task)).baseline.audit.phase, 'PASSED');
+  f.task.groundTruth.sharedBasis.coverageAudit = { identity: { requestId, generation: 0 } };
+  assert.equal((await readConsoleObservations(f.record, f.task)).baseline.audit.phase, 'PUBLISHED');
+  await fs.writeFile(audit, JSON.stringify({ ...status, phase: 'PASSED', extractorRunId: 'older-run' }));
+  assert.equal((await readConsoleObservations(f.record, f.task)).baseline.audit, undefined);
 });

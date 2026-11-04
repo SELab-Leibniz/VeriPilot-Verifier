@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { baselineAuditSourceUnits, coverageIdentity, validateBaselineAuditReport, encodeBaselineAuditView, decodeBaselineAuditView,
+import { baselineAuditSourceUnits, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, encodeBaselineAuditView, decodeBaselineAuditView,
   prepareBaselineCoverageAudit, verifyBaselineCoverageProof, BASELINE_COVERAGE_PROTOCOL, BASELINE_AUDIT_UNIT_LAYOUT,
   BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_COVERAGE_SCHEMA, BASELINE_INVENTORY_SCHEMA, BASELINE_AUDIT_VIEW_PROTOCOL, BASELINE_COVERAGE_POLICY } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
 import { groundTruthPlanDigest } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { disclosedRange, registerCitation } from '../lib/review-task/evidence-utils.mjs';
+import { sourcePage } from '../lib/review-task/source-tools.mjs';
 
 function fixture(text, partBytes = Infinity) {
   const bytes = Buffer.from(text), files = [], parts = [];
@@ -26,7 +28,7 @@ function fixture(text, partBytes = Infinity) {
     finish: { requestId: 'unit-test', delta, digest: sha256(delta),
       hash: sha256({ batchIds: [], taskClassification: delta.taskClassification, summary: delta.summary }),
       receipt: { requestId: 'unit-test', generation: 0, complete: true, status: 'NO_CHANGE', deltaDigest: sha256(delta) } },
-    plan: { digest: 'controlled-plan', current: { claims: text ? [{ claimId: 'verify', status: 'ACTIVE', verificationTarget: 'PROCESS' }] : [] } } };
+    plan: { digest: 'controlled-plan', operationDispositions: [], current: { claims: text ? [{ claimId: 'verify', status: 'ACTIVE', verificationTarget: 'PROCESS' }] : [] } } };
   const units = baselineAuditSourceUnits(input, files), citations = files.map((file, index) => ({
     citeId: `cite-${index}`, path: file.path, sha256: file.sha256, start: 1, end: file.text.split('\n').length }));
   // Authored structural expectation: nonempty synthetic units are PROCESS in
@@ -82,12 +84,62 @@ test('empty original has one explicit unit and cannot become a zero-unit denomin
   assert.throws(() => f.check(missing), { code: 'BASELINE_COVERAGE_UNVERIFIED' });
 });
 
+test('duty reasons suffice without a duplicate unit reason, but context still needs an explanation', () => {
+  const duties = fixture('Verify before publishing.');
+  delete duties.inventory.sources[0].units[0].reason;
+  duties.report.inventoryDigest = sha256(duties.inventory);
+  duties.check(duties.report);
+  delete duties.inventory.sources[0].units[0].obligations[0].reason;
+  duties.report.inventoryDigest = sha256(duties.inventory);
+  assert.throws(() => duties.check(duties.report), { code: 'BASELINE_COVERAGE_UNVERIFIED' });
+
+  const context = fixture('');
+  delete context.inventory.sources[0].units[0].obligations;
+  context.report.inventoryDigest = sha256(context.inventory);
+  context.check(context.report);
+  delete context.inventory.sources[0].units[0].reason;
+  context.report.inventoryDigest = sha256(context.inventory);
+  assert.throws(() => context.check(context.report), error =>
+    error.auditValidation?.reason === 'INVENTORY_UNIT_REASON_REQUIRED');
+
+  const missing = fixture('Verify before publishing.');
+  delete missing.inventory.sources[0].units[0].obligations;
+  missing.report.inventoryDigest = sha256(missing.inventory);
+  assert.throws(() => missing.check(missing.report), /disagrees with its explicit duties/u);
+});
+
+test('inventory ranges bind genuine reads across original parts without model-copied receipt IDs', () => {
+  const f = fixture('Verify each entry before publishing.', 13);
+  const unit = f.inventory.sources[0].units[0];
+  delete unit.citeIds;
+  assert.equal(validateBaselineSourceInventory(f.inventory, f.input, f.files, f.citations).size, 1);
+  assert.equal(Object.hasOwn(unit, 'citeIds'), false);
+  assert.throws(() => validateBaselineSourceInventory(f.inventory, f.input, f.files, f.citations.slice(0, -1)), error =>
+    error.auditValidation?.reason === 'ORIGINAL_CITATION_RANGE_GAP');
+});
+
+test('following the audit page cursor discloses the separator instead of treating it as read by adjacency', () => {
+  const bytes = Buffer.from('甲\r\n乙\r\n丙\r\n丁');
+  const registry = new Map();
+  const read = (offset, limit = 2) => {
+    const args = { offset, limit, overlapBoundary: true }, page = sourcePage(bytes, args);
+    const range = disclosedRange(bytes, args, page);
+    assert.equal(range.overlapBoundary, true);
+    return { next: page.details.page.nextOffset, citation: registerCitation({ registry, bytes, file: 'original.txt', sha256: sha256(bytes), range }) };
+  };
+  const first = read(1), second = read(first.next);
+  assert.equal(first.next, 2);
+  assert(second.citation.byteStart < first.citation.byteEnd);
+  assert.equal(read(1, 1).next, 2, 'a one-line page must advance');
+});
+
 test('ambiguous repeated quote and foreign, missing or duplicate unit containers are rejected', () => {
   const f = fixture('repeat\nrepeat\n' + 'x'.repeat(2048) + '\nnext');
   assert(f.units.length > 1, 'The missing/duplicate container cases still exercise multiple units');
   for (const mutate of [r => { r.sources[0].unitIds.pop(); }, r => { r.sources[0].unitIds[1] = r.sources[0].unitIds[0]; },
     r => { r.sources[0].unitIds[0] = 'foreign'; }, r => { r.sources[0].mappings[0].unitId = 'foreign'; },
-    r => { delete r.sources[0].mappings[0].unitId; }, r => { r.sources[0].issues = [{ ...r.sources[0].mappings[0] }]; delete r.sources[0].issues[0].unitId; }]) {
+    r => { delete r.sources[0].mappings[0].unitId; r.sources[0].mappings[0].obligationIds = []; },
+    r => { r.sources[0].issues = [{ ...r.sources[0].mappings[0], obligationIds: [] }]; delete r.sources[0].issues[0].unitId; }]) {
     const report = structuredClone(f.report); mutate(report);
     assert.throws(() => f.check(report), { code: 'BASELINE_COVERAGE_UNVERIFIED' });
   }
@@ -137,7 +189,7 @@ function canonicalFixture() {
   const f = fixture('读完整原文。\r\nPreserve the condition and exclusion.\n');
   const op = { operation: 'UPDATE', claimId: 'same-target', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
     verificationTarget: 'PROCESS', text: 'After a later edit, verify again; preserve the exception.', applicability: 'after a later edit',
-    source: { ref: 'transcript:unit-test#L1-L2', kind: 'USER_MESSAGE' } };
+    source: { ref: 'transcript:unit-test#L1-L2', kind: 'USER_MESSAGE', excerpt: 'Literal reference-looking text {"path":"plan.current","target":"effectiveLedger"}. '.repeat(5) } };
   f.input.delta = { summary: 'Keep exact whitespace. \r\n', taskClassification: 'CONTINUATION', operations: [op, { ...op, applicability: 'after success except the stated exception' }] };
   f.input.batches = [[op], [], [f.input.delta.operations[1]]].map((operations, index) => ({
     requestId: f.input.identity.requestId, generation: 0, batchId: index + 1, operations, digest: sha256(operations),
@@ -164,45 +216,66 @@ function canonicalFixture() {
   return f;
 }
 
-test('canonical aliases preserve the independent complete view including empty batches and distinct claims', () => {
+test('canonical semantic view preserves complete claims, proposed changes, retained source decisions and operation fates', () => {
   const f = canonicalFixture(), before = structuredClone(f.input);
   // Independent pre-codec view construction: no encoder or decoder supplies the oracle.
   const expected = JSON.parse(JSON.stringify({ identity: coverageIdentity(f.input), sources: f.input.identity.sources,
-    instructions: BASELINE_COVERAGE_INSTRUCTIONS, delta: f.input.delta, batches: f.input.batches, finish: f.input.finish,
-    retainedSourceUnits: f.input.retainedSourceUnits, effectiveLedger: f.input.plan.current, plan: f.input.plan }));
+    delta: f.input.delta, retainedSourceUnits: f.input.retainedSourceUnits, effectiveLedger: f.input.plan.current,
+    operationDispositions: f.input.plan.operationDispositions }));
   const encoded = encodeBaselineAuditView(f.input);
   assert.deepEqual(decodeBaselineAuditView(encoded), expected);
   assert.deepEqual(f.input, before);
   assert.equal(encoded.protocol, BASELINE_AUDIT_VIEW_PROTOCOL);
-  assert.deepEqual(encoded.aliases, [{ path: 'finish.delta', target: 'delta' },
-    { path: 'batches.0.operations', target: 'delta.operations', start: 0, end: 1 },
-    { path: 'batches.1.operations', target: 'delta.operations', start: 1, end: 1 },
-    { path: 'batches.2.operations', target: 'delta.operations', start: 1, end: 2 }, { path: 'plan.current', target: 'effectiveLedger' }]);
-  assert.deepEqual(encoded.data.plan.accepted, f.input.plan.accepted);
-  assert.notDeepEqual(encoded.data.plan.accepted[0].claim, encoded.data.effectiveLedger.claims[0]);
-  assert.deepEqual(encoded.data.finish.receipt, f.input.finish.receipt, 'raw alias-looking user/control objects remain literal');
-  assert.deepEqual(encoded.data.retainedSourceUnits, f.input.retainedSourceUnits);
+  for (const key of ['finish', 'batches', 'instructions', 'plan']) assert(!Object.hasOwn(encoded.data, key));
+  assert.deepEqual(decodeBaselineAuditView(encoded).retainedSourceUnits, f.input.retainedSourceUnits);
+  assert.deepEqual(f.input.batches.map(batch => batch.operations.length), [1, 0, 1], 'Program-only raw batches remain unchanged');
+  assert.deepEqual(f.input.finish.receipt.literalAliasLookalike, { path: 'plan.current', target: 'effectiveLedger' });
   const empty = fixture('').input, emptyView = encodeBaselineAuditView(empty);
-  assert.equal(emptyView.aliases.length, 2);
   assert.deepEqual(decodeBaselineAuditView(emptyView).delta.operations, []);
 });
 
-test('canonical aliases reject extra or foreign paths, coerced slices and missing definitions', () => {
+test('audit view shares equal large claims without losing Unicode, literal reference-looking values or rejected changes', () => {
+  const f = canonicalFixture(), body = '完整条件和例外 😀\r\n'.repeat(100);
+  const claims = Array.from({ length: 40 }, (_, i) => ({ claimId: `claim-${i}`, text: body + i,
+    verificationTarget: i % 2 ? 'PROCESS' : 'ARTIFACT', applicability: `Explicit branch ${i}`,
+    source: { ref: 'transcript:unit-test', kind: 'USER_MESSAGE', excerpt: body + i + '\r\n' } }));
+  f.input.plan.current.claims = claims;
+  f.input.plan.accepted = claims.map(claim => ({ operation: 'ADD', claim: { ...claim } }));
+  f.input.finish.receipt.literal = { '/not/a/reference': { path: '/effectiveLedger/claims/0', target: '/delta' } };
+  const before = structuredClone(f.input), encoded = encodeBaselineAuditView(f.input), decoded = decodeBaselineAuditView(encoded);
+  assert.deepEqual(decoded.effectiveLedger.claims, claims);
+  assert(!Object.hasOwn(decoded, 'plan')); assert(!Object.hasOwn(decoded, 'finish'));
+  assert(encoded.duplicates.aliases.some(alias => alias.append === '\r\n'));
+  assert.deepEqual(decoded.delta, f.input.delta);
+  assert.deepEqual(f.input, before);
+  assert(Buffer.byteLength(JSON.stringify(encoded)) < Buffer.byteLength(JSON.stringify(decoded)) * 0.6);
+  for (const mutate of [
+    view => view.duplicates.aliases.pop(),
+    view => view.duplicates.aliases.push(view.duplicates.aliases[0]),
+    view => { view.duplicates.aliases[0].target = '/__proto__/constructor'; },
+    view => { view.duplicates.aliases[0].target = '/effectiveLedger/claims/00'; },
+    view => { view.duplicates.aliases[0].path += '/missing'; },
+    view => { view.duplicates.digest = '0'.repeat(64); },
+  ]) {
+    const changed = structuredClone(encoded); mutate(changed);
+    assert.throws(() => decodeBaselineAuditView(changed), { code: 'BASELINE_COVERAGE_UNVERIFIED' });
+  }
+});
+
+test('canonical semantic aliases reject foreign paths, coerced indices and missing definitions', () => {
   const original = encodeBaselineAuditView(canonicalFixture().input);
   for (const mutate of [
     value => { value.extra = true; }, value => { delete value.protocol; }, value => { value.protocol = 'old'; },
     value => { value.data.extra = true; }, value => { delete value.data.delta; }, value => { delete value.data.effectiveLedger; },
-    value => { value.data.delta.operations = null; }, value => { value.data.finish = []; }, value => { value.data.plan = null; },
-    value => { value.data.batches[0] = null; }, value => { value.data.finish.delta = {}; }, value => { value.data.plan.current = {}; },
-    value => { value.data.batches[0].operations = []; }, value => { value.aliases.pop(); }, value => { value.aliases.push(value.aliases[0]); },
-    value => { value.aliases[0].extra = true; }, value => { delete value.aliases[0].target; },
-    value => { value.aliases[0].target = ['delta']; }, value => { value.aliases[0].path = 'data.finish.delta'; },
-    value => { value.aliases[1] = { ...value.aliases[0] }; }, value => { value.aliases[1].path = 'batches.00.operations'; },
-    value => { value.aliases[1].target = 'plan.accepted'; }, value => { value.aliases[1].end = '1'; },
-    value => { value.aliases[1].start = -1; }, value => { value.aliases[1].end = 0.5; },
-    value => { value.aliases[1].end = 3; }, value => { value.aliases[2].start = 0; },
-    value => { value.aliases[2].end = 0; }, value => { value.aliases[3].end = 1; },
-    value => { [value.aliases[1], value.aliases[2]] = [value.aliases[2], value.aliases[1]]; },
+    value => { value.data.delta.operations = null; }, value => { value.data.operationDispositions = null; },
+    value => { value.data.retainedSourceUnits = null; }, value => { value.data.effectiveLedger.claims = null; },
+    value => { value.duplicates.aliases.pop(); }, value => { value.duplicates.aliases.push(value.duplicates.aliases[0]); },
+    value => { value.duplicates.aliases[0].extra = true; }, value => { delete value.duplicates.aliases[0].target; },
+    value => { value.duplicates.aliases[0].target = ['delta']; }, value => { value.duplicates.aliases[0].path = 'data.finish.delta'; },
+    value => { value.duplicates.aliases[0].target = '/delta/operations/00'; },
+    value => { value.duplicates.aliases[0].target = '/missing'; },
+    value => { value.duplicates.aliases[0].append = 'silently changed meaning'; },
+    value => { value.duplicates.aliases[0] = null; },
   ]) {
     const value = structuredClone(original); mutate(value);
     assert.throws(() => decodeBaselineAuditView(value), { code: 'BASELINE_COVERAGE_UNVERIFIED' });
@@ -212,7 +285,7 @@ test('canonical aliases reject extra or foreign paths, coerced slices and missin
 test('prepared canonical parts keep numeric UTF8 order beyond nine and navigation cannot submit defaults', async t => {
   const f = canonicalFixture(), root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-audit-parts-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  f.input.finish.receipt.completeLiteralControl = '🧪\r\n'.repeat(30000);
+  f.input.plan.current.claims[0].text = '🧪\r\n'.repeat(30000);
   f.input.directory = path.join(root, 'extractor');
   f.input.requiredFiles = f.files.map(file => file.path.slice(9)); f.input.fileHashes = {};
   await fs.mkdir(path.join(f.input.directory, 'frozen-source'), { recursive: true });
@@ -226,7 +299,8 @@ test('prepared canonical parts keep numeric UTF8 order beyond nine and navigatio
     budget: { snapshot: () => ({}), active() {} }, active() {} });
   const initial = JSON.parse(adapter.prompt);
   assert(initial.requiredFiles.every(name => name.startsWith('original-source-') || name.startsWith('unit-catalog-')));
-  assert.deepEqual(initial.schema, BASELINE_INVENTORY_SCHEMA);
+  assert(!Object.hasOwn(initial, 'schema'));
+  assert.deepEqual(adapter.tools.find(tool => tool.name === 'commit_baseline_inventory').parameters.properties.inventory, BASELINE_INVENTORY_SCHEMA);
   assert.equal(initial.phase, 'SOURCE_ONLY');
   const prompt = JSON.parse(await fs.readFile(path.join(output, 'coverage-source', initial.phaseTwoManifest), 'utf8'));
   const names = prompt.requiredFiles.filter(name => name.startsWith('candidate-'));
@@ -235,11 +309,12 @@ test('prepared canonical parts keep numeric UTF8 order beyond nine and navigatio
   const chunks = await Promise.all(names.map(name => fs.readFile(path.join(output, 'coverage-source', name))));
   assert(chunks.every(bytes => bytes.length <= 16384 && Buffer.from(bytes.toString('utf8')).equals(bytes)));
   const expanded = decodeBaselineAuditView(JSON.parse(Buffer.concat(chunks).toString('utf8')));
-  assert.deepEqual(expanded.finish, f.input.finish);
-  assert.deepEqual(expanded.batches, f.input.batches);
+  assert.deepEqual(expanded.effectiveLedger, f.input.plan.current);
+  assert.deepEqual(expanded.delta, f.input.delta);
+  assert(!Object.hasOwn(expanded, 'finish')); assert(!Object.hasOwn(expanded, 'batches'));
   assert.deepEqual(prompt.readBatches.flat(), prompt.requiredFiles);
   assert.equal(prompt.candidateViewProtocol, BASELINE_AUDIT_VIEW_PROTOCOL);
-  assert.deepEqual(prompt.schema, BASELINE_COVERAGE_SCHEMA, 'phase-two typed report schema is exact');
+  assert(!Object.hasOwn(prompt, 'schema'), 'The typed tool already supplies the exact report schema');
   const rowContract = prompt.instructions.find(instruction => instruction.startsWith('Every source row requires {'));
   assert(rowContract); assert(rowContract.includes(BASELINE_COVERAGE_SCHEMA.properties.sources.items.required.join(', ')));
   assert.match(rowContract, /Write unitIds, mappings and issues arrays explicitly/u);
@@ -253,10 +328,11 @@ test('prepared canonical parts keep numeric UTF8 order beyond nine and navigatio
   assert.deepEqual(BASELINE_COVERAGE_SCHEMA.properties.sources.items.required, ['ref', 'kind', 'unitIds', 'disposition', 'reason', 'mappings', 'issues']);
   assert.deepEqual(prompt.sourceUnitNavigation.sources[0].unitIds, f.units.map(unit => unit.unitId));
   assert.equal(prompt.mappingFormatExample.formatOnly, true);
+  assert.equal(prompt.mappingFormatExample.unlinkedEntriesRequireUnitId, true);
   const example = prompt.mappingFormatExample.entry;
-  assert.deepEqual(Object.keys(example).sort(), ['citeIds', 'claimIds', 'condition', 'dependencyUnitIds', 'obligationIds', 'owner', 'rangeMode', 'reason', 'supportMode', 'unitId']);
+  assert.deepEqual(Object.keys(example).sort(), ['claimIds', 'condition', 'obligationIds', 'owner', 'rangeMode', 'reason']);
   assert(!BASELINE_COVERAGE_SCHEMA.properties.sources.items.properties.mappings.items.properties.owner.enum.includes(example.owner));
-  assert(!f.units.some(unit => unit.unitId === example.unitId), 'a placeholder cannot infer an actual unit');
+  assert(!Object.hasOwn(example, 'unitId'), 'the linked example uses only its sealed duty as the anchor');
   assert.match(adapter.systemPrompt, /Phase one|Phase1/u);
   assert(!Object.hasOwn(example, 'quote'), 'UNIT examples never imply a synthesized quote');
 });
@@ -321,12 +397,34 @@ test('cross-unit and unknown duty references identify the exact rejected report 
     assert.equal(v.section, 'mappings'); assert.equal(v.entryIndex, 1);
     assert.equal(v.unitId, f.units[1].unitId); assert.equal(v.committed.unitId, f.units[0].unitId);
     assert.match(v.recovery, /UNRESOLVED\/SOURCE_INVENTORY/);
+    assert.match(v.recovery, /cannot make an obligation from another unit valid here/);
     assert(Buffer.byteLength(JSON.stringify(v)) < 2048); return true;
   });
   assert.equal(JSON.stringify(f.report), report); assert.equal(JSON.stringify(f.inventory), inventory);
   entry.obligationIds = ['uncommitted'];
   assert.throws(() => f.check(f.report), error => error.auditValidation.committed === null);
   entry.obligationIds = [own]; f.check(f.report);
+  delete entry.unitId;
+  f.check(f.report);
+  assert.equal(Object.hasOwn(entry, 'unitId'), false);
+  entry.obligationIds = ['uncommitted'];
+  assert.throws(() => f.check(f.report), error => error.auditValidation.reason === 'SOURCE_UNIT_ANCHOR_INVALID');
+});
+
+test('one audit rejection identifies all misplaced duty references for a single bounded repair', () => {
+  const f = fixture('Read the original. '.repeat(350));
+  assert(f.units.length >= 3);
+  const own = f.report.sources[0].mappings[0].obligationIds;
+  f.report.sources[0].mappings[1].obligationIds = own;
+  f.report.sources[0].mappings[2].obligationIds = own;
+  const original = structuredClone(f.report);
+  assert.throws(() => f.check(f.report), error => {
+    const v = error.auditValidation;
+    assert.equal(v.reason, 'SOURCE_OBLIGATION_MISMATCH');
+    assert.equal(v.entryIndex, 1); assert.equal(v.related.length, 1); assert.equal(v.related[0].entryIndex, 2);
+    assert.equal(v.remainingMismatches, 0); return true;
+  });
+  assert.deepEqual(f.report, original);
 });
 
 test('every committed duty needs correspondence and a faulty inventory remains UNRESOLVED, never automatic REPAIR', () => {
@@ -383,9 +481,15 @@ test('every committed duty needs correspondence and a faulty inventory remains U
 test('dependency support references current immutable units explicitly without manufacturing a READ claim', () => {
   const f = fixture('Read and follow the complete original Skill.');
   const mapping = f.report.sources[0].mappings[0];
-  mapping.supportMode = 'IMMUTABLE_DEPENDENCY'; mapping.dependencyUnitIds = [mapping.unitId];
+  delete mapping.supportMode;
+  delete mapping.dependencyUnitIds;
+  const direct = JSON.stringify(f.report); f.check(f.report); assert.equal(JSON.stringify(f.report), direct);
+  mapping.dependencyUnitIds = [mapping.unitId];
   mapping.reason = 'Controlled semantic judgement checks the complete immutable original chain; still not an automatic meaning theorem.';
   const raw = JSON.stringify(f.report); f.check(f.report); assert.equal(JSON.stringify(f.report), raw);
+  mapping.supportMode = 'DIRECT';
+  assert.throws(() => f.check(f.report), /supportMode conflicts/u);
+  delete mapping.supportMode;
   mapping.dependencyUnitIds = ['stale-unit'];
   assert.throws(() => f.check(f.report), error => /absent immutable dependency/u.test(error.message));
 });

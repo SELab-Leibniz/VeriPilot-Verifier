@@ -26,7 +26,9 @@ test('a timed-out CLI is terminated, records output, and never becomes a passing
   const root = await directory(t), outputPath = path.join(root, 'timeout.jsonl');
   await assert.rejects(invokeDocumentCli({ executable: process.execPath,
     argsPrefix: ['-e', 'process.stdout.write("starting\\n"); setInterval(() => {}, 1000)'], args: [], cwd: root,
-    deadlineAt: Date.now() + 150, outputPath, killGraceMs: 25 }), { code: 'DOCUMENT_CLI_TIMEOUT' });
+    // Leave time for a real Windows child to start under suite load; the
+    // fixture then runs indefinitely, so this still exercises forced timeout.
+    deadlineAt: Date.now() + (process.platform === 'win32' ? 1000 : 150), outputPath, killGraceMs: 25 }), { code: 'DOCUMENT_CLI_TIMEOUT' });
   assert.match(await fs.readFile(outputPath, 'utf8'), /starting/);
 });
 

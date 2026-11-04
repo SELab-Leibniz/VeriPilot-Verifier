@@ -6,6 +6,7 @@ import os from 'node:os';
 import { createSourceTools, toolText } from '../lib/review-task/source-tools.mjs';
 import { captureFiles } from '../lib/review-task/evidence-utils.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 async function fixture(t) {
   const base = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'frozen-root-alias-')));
@@ -31,7 +32,7 @@ test('frozen reads and navigation accept an alias of their selected root', async
   }
 });
 
-test('root alias support cannot expand the frozen inventory or follow a replaced child outside', async t => {
+test('root alias support cannot expand the frozen inventory or follow a replaced child outside', { skip: await fileSymlinkSkipReason() }, async t => {
   const f = await fixture(t), tools = createSourceTools(f.alias, await captureFiles(f.alias));
   const read = tools.find(tool => tool.name === 'read'), grep = tools.find(tool => tool.name === 'grep');
   await fs.writeFile(path.join(f.root, 'new.txt'), 'Not captured.');

@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { createBenchmarkFaultFixture } from '../scripts/helpers/benchmark-fault-fixture.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 async function fixture(t, spec = { path: 'diff.go', before: 'good comparison', after: 'always equal' }) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'benchmark-fault-'));
@@ -56,7 +57,7 @@ test('uncommitted or changed delivery is rejected without corruption', async t =
   assert.equal(await fs.readFile(file, 'utf8'), 'different implementation\n');
 });
 
-test('fault cannot escape the isolated benchmark through traversal or a symlink', async t => {
+test('fault cannot escape the isolated benchmark through traversal or a symlink', { skip: await fileSymlinkSkipReason() }, async t => {
   const f = await fixture(t), outside = path.join(f.root, 'outside.go');
   await fs.writeFile(outside, 'good comparison\n');
   await fs.writeFile(f.specFile, JSON.stringify({ path: '../outside.go', before: 'good', after: 'bad' }));

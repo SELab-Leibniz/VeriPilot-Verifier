@@ -6,12 +6,13 @@ import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createSyntheticSource, captureSyntheticProviderPayloads } from '../scripts/helpers/synthetic-provider-preflight.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 async function root(t) {
   const dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-synthetic-preflight-')));
   t.after(() => fs.rm(dir, { recursive: true, force: true })); return dir;
 }
-test('synthetic frozen tool rejects external, undeclared and linked paths before disclosing content', async t => {
+test('synthetic frozen tool rejects external, undeclared and linked paths before disclosing content', { skip: await fileSymlinkSkipReason() }, async t => {
   const dir = await root(t), fixture = await createSyntheticSource(path.join(dir, 'source'));
   const outside = path.join(dir, 'private-canary.txt'); await fs.writeFile(outside, 'SYNTHETIC_EXTERNAL_CANARY');
   for (const file of [outside, '../private-canary.txt', 'unknown.txt'])
@@ -20,7 +21,7 @@ test('synthetic frozen tool rejects external, undeclared and linked paths before
   await fs.symlink(outside, path.join(fixture.root, 'request.txt'));
   await assert.rejects(fixture.tool.execute('linked', { path: 'request.txt' }), /LINK_DENIED/u);
 });
-test('synthetic snapshot rejects changed bytes and internal links too', async t => {
+test('synthetic snapshot rejects changed bytes and internal links too', { skip: await fileSymlinkSkipReason() }, async t => {
   const dir = await root(t), fixture = await createSyntheticSource(path.join(dir, 'source'));
   await fs.writeFile(path.join(fixture.root, 'request.txt'), 'changed');
   await assert.rejects(fixture.tool.execute('changed', { path: 'request.txt' }), /SOURCE_CHANGED/u);

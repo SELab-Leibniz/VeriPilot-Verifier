@@ -25,7 +25,7 @@ async function within(promise, description) {
   })]); } finally { clearTimeout(timer); }
 }
 
-async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed } = {}) {
+async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed, nativeReview = false } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
@@ -97,7 +97,8 @@ implementationCorrection:
     runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
       session: { getSessionEntry: async ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(root, "sessions.json"),
         resolveSessionFilePath: (_id, entry) => entry.sessionFile, runWithWorkAdmission: async (params, callback) => callback(params.signal) } } } };
-  const options = { pluginRoot, projectScopes: projects, sharedState, reviewerFactory: factory, nativeHooks: true, postRunTerminal: async (_id, runId) => ({ runId, status: "ok" }) };
+  const options = { pluginRoot, projectScopes: projects, sharedState, ...(!nativeReview ? { reviewerFactory: factory } : {}),
+    nativeHooks: true, postRunTerminal: async (_id, runId) => ({ runId, status: "ok" }) };
   runtime = createRuntime(api, options);
 
   async function session(id) {
@@ -117,6 +118,42 @@ implementationCorrection:
   return { root, api, runtime, projects, sharedState, restartState, warnings, deactivated, hostAbort, session, task, set, selections,
     calls: () => calls, restart: () => createRuntime(api, { ...options, sharedState: restartState }) };
 }
+
+test('a retained runtime callback uses the reloaded reviewer model and honors removal of the override', async t => {
+  const f = await fixture(t, { stop: true, nativeReview: true }), captured = [];
+  let config = { agents: { defaults: { model: { primary: 'fixture/main' } } },
+    models: { providers: { fixture: { models: ['old', 'new', 'main'].map(id => ({ id, contextWindow: 204800, maxTokens: 32768 })) } } },
+    plugins: { entries: { 'runtime-corrector': { enabled: true, config: { reviewerModel: 'fixture/old' } } } } };
+  f.api.config = config;
+  f.api.pluginConfig.reviewerModel = 'fixture/old';
+  f.api.runtime.config = { current: () => config };
+  f.api.runtime.agent.runEmbeddedAgent = async params => {
+    captured.push({ provider: params.provider, model: params.model });
+    throw Object.assign(new Error('Controlled native model dispatch boundary'), { code: 'CONTROLLED_PROVIDER_FAILURE' });
+  };
+  const start = async id => {
+    const ctx = await f.session(id);
+    return { ctx, state: await f.runtime.beginSupervised({ ...ctx, sessionFile: path.join(f.root, `${id}.jsonl`),
+      provider: 'fixture', modelId: 'main', prompt: 'Write a draft.' }, new AbortController().signal) };
+  };
+  const original = await start('reload');
+  const assess = (state, id) => f.runtime.assessSupervised(state, { text: 'The task is complete.', assessmentId: id,
+    abortSignal: new AbortController().signal, deadlineAt: Date.now() + 20000 });
+  const first = await assess(original.state, 'old-model');
+  assert(captured.some(value => value.model === 'old'), JSON.stringify({ warnings: f.warnings, outcome: first }));
+  captured.length = 0;
+  config = { ...config, plugins: { entries: { 'runtime-corrector': { enabled: true, config: { reviewerModel: 'fixture/new' } } } } };
+  await assess((await start('new-assessment')).state, 'reloaded-model');
+  assert(captured.length > 0, f.warnings.join('\n'));
+  assert(captured.every(value => value.provider === 'fixture' && value.model === 'new'));
+  captured.length = 0;
+  config = { ...config, plugins: { entries: { 'runtime-corrector': { enabled: true, config: {} } } } };
+  await assess((await start('without-override')).state, 'removed-override');
+  assert(captured.length > 0, f.warnings.join('\n'));
+  assert(captured.every(value => value.model === 'main'));
+  assert.equal(f.api.pluginConfig.reviewerModel, 'fixture/old', 'The original callback still holds its old settings object');
+  assert.equal((await f.task(original.ctx)).groundTruth.version, 0, 'A model dispatch/failure cannot publish a baseline');
+});
 
 test("Session off/on restores its task and budget, admits its first new tool, and leaves peers alone", async t => {
   const f = await fixture(t), a = await f.session("a"), b = await f.session("b");

@@ -37,6 +37,10 @@ test('one pure admission policy preserves old, ambiguous, frozen and NEW_TASK bo
  assert.equal(groundTruthAdmissionFailure(classify([user('unknown')]),current,catalog).reason,'SOURCE_REJECTED');
  assert.equal(groundTruthAdmissionFailure(classify([{...material,source:{ref:'assistant:review',kind:'MATERIAL'}}]),current,catalog).reason,'SOURCE_REJECTED');
  assert.equal(groundTruthAdmissionFailure(classify([user('transcript:U2')]),frozen,catalog),null);
+ const grouped=groundTruthAdmissionFailure(classify([user('transcript:U1'),user('transcript:U2'),material]),frozen,catalog);
+ assert.equal(grouped.issueCount,2);
+ assert.deepEqual(grouped.issues.map(({operationIndex,reason})=>[operationIndex,reason]),[
+  [0,'PROCESSED_OR_AMBIGUOUS_USER_SOURCE'],[2,'FROZEN_NON_USER_OPERATION']]);
  assert.equal(groundTruthAdmissionFailure(classify([],'NO_CHANGE'),frozen,catalog),null);
  const consumed={...frozen,userSourceRefs:['transcript:U1','transcript:U2'],userSourceHashes:{'transcript:U1':'one','transcript:U2':'two'}};
  const navigation=groundTruthAdmissionContext(consumed,catalog);

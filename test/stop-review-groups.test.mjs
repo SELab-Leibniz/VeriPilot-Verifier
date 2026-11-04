@@ -360,6 +360,26 @@ test("baseline preparation timeout releases UNVERIFIED without launching groups 
   assert.equal((await sessionStore.inspect("session")).used, 0);
 });
 
+for (const code of ["BASELINE_REPAIR_LIMIT", "REVIEWER_OUTPUT_LIMIT", "BASELINE_AUDIT_INCOMPLETE"]) {
+  test(`Stop preserves the first ${code} instead of restarting its baseline preparation`, async t => {
+    const f = await fixture(t, { now: Date.now }), sessionStore = createStopCorrectionStore({ directory: f.directory });
+    let calls = 0;
+    const result = await assessStopCorrection({ sessionStore, sessionId: "session", flowId: "flow", stopId: "one",
+      sourceInput: { origin: "HUMAN", id: "user-1" }, initialize: { kind: "NEW_SESSION", evidence: "trusted session creation" },
+      config: { enabled: true },
+      prepare: async () => { throw Object.assign(new Error("Controlled baseline failure"), {
+        code: ++calls === 1 ? code : "BASELINE_BUDGET_UNVERIFIED",
+      }); },
+      reviewStoreFor: async () => assert.fail("An incomplete baseline cannot admit implementation review"),
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.stop.reviewStatus, "UNVERIFIED");
+    assert.equal(result.failure.code, code);
+    assert.deepEqual(result.preparationFailures.map(failure => failure.code), [code]);
+    assert.equal((await sessionStore.inspect("session")).used, 0);
+  });
+}
+
 test("all duties disabled skips baseline preparation and creates no scheduling scope", async t => {
   const f = await fixture(t, { now: Date.now }), sessionStore = createStopCorrectionStore({ directory: f.directory });
   const result = await assessStopCorrection({ sessionStore, sessionId: "session", flowId: "flow", stopId: "off",

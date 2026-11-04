@@ -13,6 +13,7 @@ import { atomicWriteJson } from "../lib/runtime-v2/utils.mjs";
 import { runInternalExecution, runManagedExecution, runBackgroundExecution, isInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createEvidenceLedger } from "../lib/openclaw/evidence.mjs";
 import { loadPublicToolArgumentsValidator } from "../lib/openclaw/compat-2026.7.1-2.mjs";
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 function waitForAbort(signal, reject = false) {
   return new Promise((resolve, fail) => {
@@ -805,7 +806,9 @@ test("public validator loader refuses a changed entry instead of endorsing a cac
   await assert.rejects(loadPublicToolArgumentsValidator({ hostRoot: f.hostRoot, expectedIdentity: f.expectedIdentity }), /expectedIdentity/u);
 });
 
-test("public validator loader rejects public-entry symlinks escaping the selected AI package", async (t) => {
+test("public validator loader rejects public-entry symlinks escaping the selected AI package", {
+  skip: await fileSymlinkSkipReason(),
+}, async (t) => {
   const f = await publicValidatorFixture(t);
   const external = path.join(f.root, "outside-validator.mjs");
   await fs.writeFile(external, 'throw new Error("outside package fixture evaluated");\n');

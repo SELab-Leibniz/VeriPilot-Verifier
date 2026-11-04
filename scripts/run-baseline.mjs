@@ -35,6 +35,8 @@ export function baselineRunSettings(value = {}) {
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Invalid provider base URL.');
   }
   if (settings.api === 'openai-completions' && !settings.baseUrl) throw new Error('A baseUrl is required for openai-completions.');
+  if (settings.modelSettings && (typeof settings.modelSettings !== 'object' || Array.isArray(settings.modelSettings)
+    || settings.modelSettings.id !== settings.model)) throw new Error('modelSettings must describe the selected standalone model.');
   return settings;
 }
 
@@ -87,7 +89,8 @@ export async function runBaseline({ input, materials = [], output, hostRoot,
       baselineLimits: { timeoutMs: settings.timeoutMs, maxSteps: settings.maxSteps, maxRepairs: settings.maxRepairs,
         maxAuditCalls: settings.maxAuditCalls, maxExternalRepairs: settings.maxExternalRepairs, auditUnitBytes: settings.auditUnitBytes },
       ...(settings.api === 'openai-completions' ? { provider: { api: settings.api, baseUrl: settings.baseUrl,
-        model: settings.model, credentialEnv }, providerCredential: process.env[credentialEnv] } : {}) });
+        model: settings.model, credentialEnv, ...(settings.modelSettings ? { modelSettings: settings.modelSettings } : {}) },
+        providerCredential: process.env[credentialEnv] } : {}) });
     const runtimeV2 = compileRuntimeV2Config({ version: 2,
       dynamicGroundTruth: { enabled: true, materialRoots },
       reviewers: { groundTruthExtractor: { session: 'detached', model: native.modelRef,

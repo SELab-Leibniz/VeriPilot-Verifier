@@ -35,19 +35,62 @@ test('owned JSON rejects dangerous own keys and accessors before examining their
   assert.throws(() => materializeBaselineProposal(parent, [{ op: 'remove', path: ['report', 'sources', 0] }]));
 });
 
+test('explicit owned array removal is sequential, preserves its parent and never coerces indices', () => {
+  const parent = { report: { issues: [{ id: 'first' }, { id: 'second' }, { id: 'third' }] } };
+  const result = materializeBaselineProposal(parent, [{ op: 'remove', path: ['report', 'issues', 0] },
+    { op: 'set', path: ['report', 'issues', 1, 'id'], value: 'third revised' }]);
+  assert.deepEqual(result.report.issues, [{ id: 'second' }, { id: 'third revised' }]);
+  assert.deepEqual(parent.report.issues.map(item => item.id), ['first', 'second', 'third']);
+  assert.throws(() => materializeBaselineProposal(parent, [{ op: 'remove', path: ['report', 'issues', '0'] }]));
+  assert.throws(() => materializeBaselineProposal(parent, [{ op: 'remove', path: ['report', 'issues', 3] }]));
+});
+
+test('an owned correction can split one issue in place and append the second without creating array holes', () => {
+  const parent = { report: { issues: [{ id: 'compound' }] } };
+  const changes = [
+    { op: 'set', path: ['report', 'issues', 0], value: { id: 'first' } },
+    { op: 'set', path: ['report', 'issues', 1], value: { id: 'second' } },
+  ];
+  assert.deepEqual(materializeBaselineProposal(parent, changes).report.issues, [{ id: 'first' }, { id: 'second' }]);
+  assert.deepEqual(parent.report.issues, [{ id: 'compound' }]);
+  changes[1].path[2] = 2;
+  assert.throws(() => materializeBaselineProposal(parent, changes), /cannot skip indices/u);
+});
+
 test('owned full validator rejects conversion without adopting returned or mutated values', () => {
   const args = { report: { count: '1' } }; let calls = 0;
   const capability = { identity: { identityScope: 'explicit-unit-double-not-host-qualification' }, validateToolArguments(_tool, call) {
     calls++; call.arguments.report.count = 1; return call.arguments;
   } };
-  assert.throws(() => validateBaselineProposalArguments(capability, 'finish_baseline_audit', {}, args), /coercion/u);
+  assert.throws(() => validateBaselineProposalArguments(capability, 'finish_baseline_audit', {}, args), error => {
+    assert.equal(error.code, 'BASELINE_PROPOSAL_COERCION_REQUIRED');
+    assert.deepEqual(error.baselineValidation.changes, [{ path: ['report', 'count'], submittedType: 'string', normalizedType: 'number' }]);
+    return true;
+  });
   assert.equal(calls, 1); assert.deepEqual(args, { report: { count: '1' } });
   assert.throws(() => validateBaselineProposalArguments(null, 'finish_baseline_audit', {}, args), /unavailable/u);
+});
+
+test('owned audit wire admits a malformed report for exact field feedback, without accepting its materialized shape', () => {
+  const parameters = { type: 'object', additionalProperties: false, required: ['report'], properties: {
+    report: { type: 'object', additionalProperties: false, properties: { verdict: { type: 'string' } } },
+  } };
+  const wire = baselineProposalToolSchema(parameters);
+  assert.equal(wire.properties.report.additionalProperties, undefined);
+  assert.equal(wire.anyOf[0].properties.report.additionalProperties, false);
+  const value = { report: { verdict: 'REPAIR', supportModeNote: 'extra' } };
+  const capability = { identity: {}, validateToolArguments() { throw new Error('Native host rejected report shape'); } };
+  assert.throws(() => validateBaselineProposalArguments(capability, 'finish_baseline_audit', parameters, value), error => {
+    assert.equal(error.code, 'BASELINE_PROPOSAL_SCHEMA_INVALID');
+    assert.equal(error.baselineValidation.issues[0].pointer, '/report/supportModeNote');
+    return true;
+  });
+  assert.equal(value.report.supportModeNote, 'extra');
 });
 import { registerTaskTools, TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../lib/openclaw/task-tools.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { ensureTask, taskDirectory, withTaskState, withTaskDecision, decisionGuard } from '../lib/runtime-v2/task-store.mjs';
-import { loadCurrentGroundTruth, applyGroundTruthDelta as applyProductionGroundTruthDelta } from '../lib/runtime-v2/ground-truth-ledger.mjs';
+import { freezeGroundTruth, loadCurrentGroundTruth, applyGroundTruthDelta as applyProductionGroundTruthDelta } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { runNativeCoverageFixture, auditBaselineFixture, scriptedSourceInventory } from './helpers/baseline-coverage-native.mjs';
 import { atomicWriteJson, readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { toolText } from '../lib/review-task/source-tools.mjs';
@@ -56,11 +99,12 @@ import { refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { observeInternalTool } from '../lib/openclaw/internal-context.mjs';
 import { REVIEWER_NATIVE_TOOL_DENY } from '../lib/reviewer-tools.mjs';
-import { BASELINE_EXTRACTION_PROTOCOL, createBaselineWorker } from '../lib/review-task/baseline-task.mjs';
+import { BASELINE_EXTRACTION_PROTOCOL, BASELINE_BATCH_LIMITS, createBaselineWorker } from '../lib/review-task/baseline-task.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
 import { reviewProofOwners } from '../lib/runtime-v2/review-result-validation.mjs';
 import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
 import { validateSourceBindings } from '../lib/openclaw/sources.mjs';
+import { materialManifest } from '../lib/runtime-v2/onboarding.mjs';
 const auditFixtures = new Map();
 async function applyGroundTruthDelta(options) {
   const commit = options.baselineCommit, fixture = commit && auditFixtures.get(commit.requestId ?? commit.id);
@@ -156,7 +200,8 @@ for (const wireMode of ['draft', 'full']) for (const invalid of ['missing-kind',
       assert.match(saveTool.description, /Defaults omit all three fields/u);
       const operationSchema = saveTool.parameters.properties.operations.items;
       assert.equal(saveTool.parameters.anyOf.find(branch => branch.properties?.operations).additionalProperties, false);
-      assert.deepEqual(operationSchema.properties.sourceFrom.required, ['unitId']);
+      const originalSelector = operationSchema.properties.sourceFrom;
+      assert.deepEqual(wireMode === 'draft' ? originalSelector.required : originalSelector.anyOf[0].required, ['unitId']);
       assert.deepEqual(operationSchema.properties.applicabilityKind.enum, GROUND_TRUTH_REVIEW_SCHEMA.properties.operations.items.properties.applicabilityKind.enum);
       if (wireMode === 'draft') assert(operationSchema.required.includes('applicabilityKind') && operationSchema.required.includes('verificationTarget'));
       await readAll();
@@ -455,6 +500,37 @@ test('span batches copy exact originals, share explicit metadata and preserve or
   await handle.close();
 });
 
+test('compact wire can expand beyond 50 KiB without losing originals and still has a separate bounded storage limit', async t => {
+  const line = '保留完整原文、自然触发条件和明确例外，不得为了通过校验而丢失义务。'.repeat(45);
+  for (const [count, accepted] of [[15, true], [60, false]]) {
+    const original = Array.from({ length: count }, (_, index) => `${line} ${index}`).join('\n');
+    const f = await fixture(t, { wireMode: 'compact', originalText: original });
+    const execute = async ({ call, readAll, finish }) => {
+      await readAll();
+      const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT',
+        severity: 'HARD', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
+        outcomes: Array.from({ length: count }, (_, index) => ({ name: `Retain complete original line ${index + 1}`,
+          sourceIndex: 0, lines: [index + 1, index + 1] })) };
+      assert(Buffer.byteLength(JSON.stringify(value)) < BASELINE_BATCH_LIMITS.wireBytes);
+      if (!accepted) {
+        await assert.rejects(call('save_baseline_batch', value), error => error.code === 'BASELINE_SCHEMA_INVALID'
+          && /256 KiB storage boundary/.test(error.message));
+        throw Object.assign(new Error('Controlled expanded storage rejection'), { code: 'CONTROLLED_STORAGE_LIMIT' });
+      }
+      await call('save_baseline_batch', value); await finish([1]);
+    };
+    if (!accepted) await assert.rejects(f.run(execute), { code: 'CONTROLLED_STORAGE_LIMIT' });
+    else {
+      const handle = await f.run(execute);
+      assert(Buffer.byteLength(JSON.stringify(handle.result.operations)) > BASELINE_BATCH_LIMITS.wireBytes);
+      assert.equal(handle.result.operations.map(operation => operation.text).join('\n'), original);
+      assert.equal(handle.result.operations.length, count);
+      await handle.close();
+    }
+    assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).version, 0, 'Saved candidates do not publish themselves');
+  }
+});
+
 test('span shortcuts cannot bypass current reads, promote material authority, or override captured text', async t => {
   const f = await fixture(t);
   const handle = await f.run(async ({ call, readAll, finish }) => {
@@ -561,6 +637,37 @@ test('multipart inputs default to compact outcomes and reject redundant source f
     await finish([1]);
   });
   assert.equal(handle.result.operations[0].text, 'Preserve the requested feature.');
+  await handle.close();
+});
+
+test('multipart scoped synthesis selects complete acknowledged original ranges without manual bindings or unit IDs', async t => {
+  const firstLine = 'Implement a local numeric module; deliver its usage guide.';
+  const originalText = `${firstLine}\n\n${'Quoted non-adopted reference line for the multipart fixture.\n'.repeat(320)}`;
+  const f = await fixture(t, { originalText, wireMode: 'compact' });
+  const handle = await f.run(async ({ call, readAll, finish, params }) => {
+    const prompt = await readAll();
+    assert.equal(prompt.wireMode, 'compact');
+    assert(prompt.requiredFiles.includes('source-0000-0001.txt'));
+    const { properties } = f.registry()(params).find(tool => tool.name === 'save_baseline_batch').parameters;
+    assert(properties.outcomes && properties.operations);
+    const value = { batchId: 1, defaults: { operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD' },
+      operations: [{ text: 'Implement a local numeric module.', sourceFrom: { file: 'source-0000-0000.txt', start: 1, end: 1 },
+        verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', applicabilityKind: 'CURRENT_TASK' },
+      { text: 'Deliver the numeric module usage guide.', sourceFrom: { sourceIndex: 0, start: 1, end: 1 },
+        verificationTarget: 'ARTIFACT', applicabilityKind: 'CURRENT_TASK' }] };
+    const wrong = structuredClone(value); wrong.operations[0].sourceFrom.file = 'baseline-0000.txt';
+    wrong.operations[1].sourceFrom = { sourceIndex: 0, start: 2, end: 2 };
+    await assert.rejects(call('save_baseline_batch', wrong), error => {
+      assert.equal(error.code, 'BASELINE_SOURCE_INVALID');
+      assert.deepEqual(error.baselineValidation.issues.map(issue => issue.path), [['operations', 0, 'sourceFrom'], ['operations', 1, 'sourceFrom']]);
+      assert.equal(error.baselineValidation.issues[1].bounds.selectedOriginalStartLine, 2);
+      return true;
+    });
+    await call('save_baseline_batch', { action: 'submit', ...value }); await finish([1]);
+  });
+  assert.deepEqual(handle.result.operations.map(operation => [operation.verificationTarget, operation.source.ref, operation.source.excerpt]),
+    [['IMPLEMENTATION', 'transcript:U1#L1-L1', firstLine], ['ARTIFACT', 'transcript:U1#L1-L1', firstLine]]);
+  assert.equal(f.captures.length, 1);
   await handle.close();
 });
 
@@ -700,10 +807,47 @@ test('compact outcome groups expand to exact source operations without a second 
   const f = await fixture(t, { wireMode: 'compact' });
   const handle = await f.run(async ({ call, readAll, finish, params }) => {
     assert.equal(JSON.parse(params.prompt).wireMode, 'compact'); await readAll();
-    await call('save_baseline_batch', { batchId: 1, defaults: { sourceIndex: 0, operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
-      outcomes: [{ name: 'Preserve requested feature', lines: [1, 1] }] }); await finish([1]);
+    const defaults = { sourceIndex: 0, operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
+      applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' };
+    await assert.rejects(call('save_baseline_batch', { batchId: 1, defaults,
+      outcomes: [{ name: 'Wrong original line', lines: [10, 10] },
+        { name: 'Wrong local line', file: 'source-0000-0000.txt', lines: [20, 20] }] }), error => {
+      assert.equal(error.baselineValidation.reason, 'COMPACT_SELECTION_INVALID');
+      const [original, local] = error.baselineValidation.issues;
+      assert.deepEqual(original.linesPath, ['outcomes', 0, 'lines']); assert.equal(original.bounds.originalLastLine, 1);
+      assert.deepEqual(local.linesPath, ['outcomes', 1, 'lines']); assert.equal(local.bounds.localLastCompleteLine, 1);
+      return true;
+    });
+    await call('save_baseline_batch', { batchId: 1, defaults, outcomes: [{ name: 'Preserve requested feature', lines: [1, 1] }] });
+    await finish([1]);
   });
   assert.equal(handle.result.operations[0].text, 'Preserve the requested feature.'); await handle.close();
+});
+
+test('compact metadata rejection locates inherited fields in the actual owned input and explicit correction preserves both owners', async t => {
+  const f = await fixture(t, { wireMode: 'compact', originalText: 'Implement the requested module.\nDeliver its usage guide.' });
+  const handle = await f.run(async ({ call, readAll, finish }) => {
+    await readAll();
+    const value = { batchId: 1,
+      defaults: { sourceIndex: 0, operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
+        applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION' },
+      outcomes: [{ name: 'Module', lines: [1, 1] }, { name: 'Guide', lines: [2, 2], metadata: { verificationTarget: 'ARTIFACT' } }] };
+    const rejected = JSON.parse(toolText(await call('save_baseline_batch', { action: 'submit', ...value })));
+    assert.equal(rejected.accepted, false);
+    assert.match(rejected.proposalId, /^rcproposal_[mqvz]{64}$/u);
+    assert.deepEqual(rejected.validation.rawInput.fields, [{ field: 'implementationRole', sourcePath: ['defaults', 'implementationRole'] }]);
+    assert.deepEqual(rejected.validation.rawInput.targetSourcePath, ['outcomes', 1, 'metadata', 'verificationTarget']);
+    assert.deepEqual(rejected.validation.rawInput.metadataPath, ['outcomes', 1, 'metadata']);
+    assert.equal(value.defaults.implementationRole, 'PRODUCTION', 'navigation must not modify or choose metadata');
+    const corrected = JSON.parse(toolText(await call('save_baseline_batch', { action: 'correct_and_submit', batchId: 1,
+      parentRevisionDigest: rejected.revisionDigest,
+      changes: [{ op: 'remove', path: ['defaults', 'implementationRole'] },
+        { op: 'set', path: ['outcomes', 0, 'metadata'], value: { implementationRole: 'PRODUCTION' } }] })));
+    assert.equal(corrected.saved, true, JSON.stringify(corrected)); await finish([1]);
+  });
+  assert.deepEqual(handle.result.operations.map(op => [op.text, op.verificationTarget, op.implementationRole]),
+    [['Implement the requested module.', 'IMPLEMENTATION', 'PRODUCTION'], ['Deliver its usage guide.', 'ARTIFACT', undefined]]);
+  await handle.close();
 });
 
 test('draft decisions retain cohesive paragraphs, partition split clauses, and reject forgotten scope', async t => {
@@ -891,16 +1035,32 @@ test('one unchanged mixed source clause supports separately scoped full-mode obl
   assert.equal(f.input.evidence.snapshot.entries[0].message.content, original);
 });
 
-test('same project refresh reuses the extractor but renews tools, reading proof and note validity', async t => {
+test('a candidate whose post-run proof fails cannot lend its native context to the next refresh', async t => {
+  const f = await fixture(t);
+  await assert.rejects(f.run(async ({ readAll, finish, params }) => {
+    await readAll(); await finish([]);
+    const file = path.resolve(params.cwd, '../candidates-0/finish.json'), completed = await readJson(file);
+    completed.delta.summary = 'Changed after the genuine native finish acknowledgement.';
+    await fs.writeFile(file, JSON.stringify(completed));
+  }));
+  assert.equal(f.captures.length, 1);
+  const next = await f.run(async ({ readAll, finish }) => { await readAll(); await finish([]); });
+  t.after(() => next.close());
+  assert.notEqual(next.sessionId, f.captures[0].sessionId);
+  assert.equal(next.extractorReused, false); await next.close();
+});
+
+test('same project refresh uses its own native workspace, tools, reading proof and note validity', async t => {
   const f = await fixture(t); let oldTool, oldCite;
-  const first = await f.run(async ({ call, readAll, finish, params }) => {
+  const first = await f.run(async ({ call, readAll, finish, params, batch }) => {
     await readAll();
     const state = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
     oldCite = state.citations[0].citeId;
     oldTool = f.registry()({ sessionKey: params.sessionKey, sessionId: params.sessionId, runId: params.runId })[0];
     await call('baseline_notes', { action: 'put', key: 'scope', text: 'Remember the whole request.', sourceRefs: ['transcript:U1'] });
-    await finish([]);
+    await call('save_baseline_batch', batch()); await finish([1]);
   });
+  await f.audit(first);
   await first.close(); f.input.request.hookEventId = 'event-2';
   const second = await f.run(async ({ call, readAll, finish }) => {
     const state = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
@@ -909,12 +1069,39 @@ test('same project refresh reuses the extractor but renews tools, reading proof 
     const notes = JSON.parse(toolText(await call('baseline_notes', { action: 'list' })));
     assert.equal(notes.notes[0].stale, true);
     await assert.rejects(oldTool.execute('late', { path: 'request-0000.txt' }), /expired/);
-    await assert.rejects(finish([]), { code: 'BASELINE_INCOMPLETE' });
+    await assert.rejects(finish([]), error => {
+      assert.equal(error.code, 'BASELINE_INCOMPLETE');
+      assert.equal(error.baselineValidation.reason, 'ORIGINAL_READS_INCOMPLETE');
+      assert(error.baselineValidation.recoverWith.some(read => read.path === 'source-0000-0000.txt' && read.offset === 1));
+      return true;
+    });
+    const pending = JSON.parse(toolText(await call('review_history', { mode: 'state' })));
+    assert.equal(pending.taskState.repairs, state.taskState.repairs, 'Missing reads cannot publish and do not spend a candidate repair');
     await readAll(); await finish([]);
   });
-  assert.equal(first.sessionId, second.sessionId); assert.equal(second.extractorReused, true);
+  assert.notEqual(first.sessionId, second.sessionId); assert.equal(second.extractorReused, false);
   assert.notEqual(f.captures[0].runId, f.captures[1].runId);
-  assert.equal(f.captures[0].sessionFile, f.captures[1].sessionFile); await second.close();
+  assert.notEqual(f.captures[0].sessionFile, f.captures[1].sessionFile);
+  assert.notEqual(f.captures[0].cwd, f.captures[1].cwd);
+  await second.close();
+});
+
+test('original extraction pages disclose the separator by following the returned cursor', async t => {
+  const f = await fixture(t, { originalText: 'Preserve the requested feature.\nSecond original line.\nThird original line.' });
+  const handle = await f.run(async ({ params, call, finish }) => {
+    const file = 'source-0000-0000.txt';
+    for (const other of JSON.parse(params.prompt).requiredFiles.filter(name => name !== file)) {
+      let offset = 1;
+      do { offset = (await call('source_read', { path: other, offset })).details.page.nextOffset; } while (offset);
+    }
+    const first = await call('source_read', { path: file, offset: 1, limit: 2 });
+    assert.equal(first.details.page.nextOffset, 2);
+    const last = await call('source_read', { path: file, offset: first.details.page.nextOffset, limit: 2 });
+    assert.equal(last.details.page.nextOffset, null);
+    await finish([]);
+  });
+  assert.deepEqual(handle.result.operations, []);
+  await handle.close();
 });
 
 test('a cancelled non-cooperative extractor cannot overlap the next project refresh', async t => {
@@ -1195,7 +1382,7 @@ test('draft literal preview preserves boundaries but grants neither reads nor ma
     await call('save_baseline_batch', value); await finish([1]);
   });
   const request = await readJson(path.join(handle.requestDirectory, 'request.json'));
-  assert.match(request.identity.protocol.version, /^stop-baseline-task-v18-/);
+  assert.equal(request.identity.protocol.version, BASELINE_EXTRACTION_PROTOCOL.version);
   const { requestId, protocol, ...rest } = request.identity;
   assert.equal(requestId, sha256({ protocol, taskId: request.taskId, request: f.input.request,
     baseline: [f.truth.version, f.truth.digest], sources: rest.sources }));
@@ -1466,6 +1653,31 @@ test('full-batch repair exhaustion retains the typed owner cause and bounded fee
   assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).version, f.truth.version);
 });
 
+for (const invalidCorrection of ['overlap', 'bad candidate', 'foreign proposal']) test(`owned ${invalidCorrection} at the repair limit reports exhaustion and cannot certify the draft`, async t => {
+  const f = await fixture(t); f.input.reviewer.formatRepairAttempts = 1;
+  await assert.rejects(f.run(async ({ call, batch, readAll }) => {
+    await readAll();
+    const value = batch(); delete value.operations[0].implementationRole;
+    const rejected = JSON.parse(toolText(await call('save_baseline_batch', { action: 'submit', ...value })));
+    assert.equal(rejected.accepted, false);
+    const changes = invalidCorrection === 'overlap'
+      ? [{ op: 'remove', path: ['operations', 0] }, { op: 'set', path: ['operations', 0, 'implementationRole'], value: 'PRODUCTION' }]
+      : [{ op: 'set', path: ['operations', 0, 'implementationRole'], value: invalidCorrection === 'foreign proposal' ? 'PRODUCTION' : 'invalid role' }];
+    await call('save_baseline_batch', { action: 'correct_and_submit',
+      proposalId: invalidCorrection === 'foreign proposal' ? 'foreign-proposal' : rejected.proposalId,
+      parentRevisionDigest: rejected.revisionDigest, changes });
+  }), error => {
+    assert.equal(error.code, 'BASELINE_REPAIR_LIMIT');
+    assert.match(error.message, /Original shared proposal repair allowance exhausted/u);
+    assert.match(error.message, invalidCorrection === 'overlap' ? /Last validation: Overlapping or repeated correction paths/u
+      : invalidCorrection === 'foreign proposal' ? /Last validation: Correction has a foreign or stale parent/u
+      : /Last validation:.*implementationRole/us);
+    return true;
+  });
+  assert.equal(f.captures.length, 1);
+  assert.equal((await loadCurrentGroundTruth(f.root, f.task.taskId)).version, 0);
+});
+
 test('concurrent rejected multi-operation save and legal retry serialize without a partial candidate', async t => {
   let persisted = 0;
   const f = await fixture(t, { faults: { afterBatchPersist() { persisted++; } } });
@@ -1668,7 +1880,9 @@ async function fixture(t, { large = false, materialText, materialRelativePath = 
     const id = `call-${++callId}`; params.onAssistantMessageStart();
     await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [{ type: 'toolCall', id, name, arguments: args }] } }) + '\n');
     const result = await tools.find(tool => tool.name === name).execute(id, args);
-    const message = { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: Boolean(result.isError) };
+    // OpenClaw persists a returned private tool payload as transport success;
+    // accepted:false remains an exact negative semantic receipt in its content.
+    const message = { role: 'toolResult', toolName: name, toolCallId: id, content: result.content, details: result.details, isError: false };
     if (persist) {
       hooks.get('tool_result_persist')({ toolName: name, toolCallId: id, isSynthetic: synthetic, message }, ctx());
       await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
@@ -1739,6 +1953,21 @@ async function consumedUserFixture(t, wireMode) {
   f.input.request.currentGroundTruth = { path: f.truthPath, version: truth.version, digest: truth.digest };
   return f;
 }
+
+test('a processed user source fails frozen admission before the extractor is told to reread its bytes', async t => {
+  const f = await consumedUserFixture(t, 'full');
+  const { current } = await freezeGroundTruth({ projectRoot: f.root, taskId: f.task.taskId });
+  f.input.evidence.groundTruth = current;
+  Object.assign(f.input.request.currentGroundTruth, { version: current.version, digest: current.digest, frozenAtVersion: current.frozenAtVersion });
+  const handle = await f.run(async ({ call, batch, readAll, finish }) => {
+    await assert.rejects(call('save_baseline_batch', batch()), error =>
+      error.code === 'BASELINE_ADMISSION_INVALID' && error.baselineValidation?.reason === 'PROCESSED_OR_AMBIGUOUS_USER_SOURCE');
+    await readAll();
+    await finish([]);
+  });
+  assert.equal(handle.result.operations.length, 0);
+  await handle.close();
+});
 
 async function checkedCriticalRun(f, script) {
   let scriptFailure;
@@ -2451,6 +2680,14 @@ test('critical-path MATERIAL revision replays original live006 arguments and pub
       { text: 'Per the selected delivery-verifier Skill, create a short usage guide.', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'ARTIFACT', sourceFrom: { unitId: 'S2L7' } });
     await call('save_baseline_batch', corrected); await finish([1]);
   });
+  // The captured live006 wire identifies the example as S1 and Skill as S2.
+  // Recreate that exact source order; production's canonical path sort has a
+  // separate cross-platform test and must not silently retarget this payload.
+  factory.materialManifest = async roots => {
+    const manifest = await materialManifest(roots), order = [f.material, skillPath].map(file => path.resolve(file));
+    const entries = [...manifest.entries].sort((a, b) => order.indexOf(path.resolve(a.root, a.path)) - order.indexOf(path.resolve(b.root, b.path)));
+    return { ...manifest, entries, digest: sha256(entries) };
+  };
   const refresh = async roots => {
     const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: true, materialRoots: roots },
       reviewers: { defaults: { model: 'fixture/model', timeoutMs: 20000, formatRepairAttempts: 4 } }, skillCorrection: { enabled: false }, stopCorrection: { enabled: true } },

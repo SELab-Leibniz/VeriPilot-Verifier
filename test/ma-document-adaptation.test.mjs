@@ -1,6 +1,7 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { renameSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execFile, spawn } from 'node:child_process';
@@ -8,6 +9,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createDocumentTools } from '../lib/document-tools.mjs';
 import { snapshotDocumentFiles, documentCommandChanges } from '../lib/openclaw/tools.mjs';
+import { inventoryDocumentPatterns } from '../lib/openclaw/document-inventory.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
@@ -70,19 +72,25 @@ test('bounded command snapshots detect script edits, creates and deletions and i
   assert.equal(after.checkedFiles, 3); assert(!after.currentFiles.some(entry => entry.file.endsWith('outside.md')));
 });
 
-test('wildcard and template scopes expose partial coverage without inventory, and missing/pending snapshots remain unverified', async t => {
+test('wildcard and template inventories detect new instances and preserve missing/pending snapshot boundaries', async t => {
   const root = await workspace(t); await fs.writeFile(path.join(root, 'known.md'), 'before');
   const plan = planFor(['*.md']), known = path.join(root, 'known.md');
-  const original = fs.readdir;
-  t.mock.method(fs, 'readdir', () => assert.fail('snapshot must not inventory directories'));
   const before = await snapshotDocumentFiles(plan, root, { observedPaths: [known] });
-  await fs.writeFile(known, 'after'); await fs.writeFile(path.join(root, 'new.md'), 'not discovered');
+  await fs.writeFile(known, 'after'); await fs.writeFile(path.join(root, 'new.md'), 'discovered');
   const after = await documentCommandChanges(before, plan, root, { observedPaths: [known] });
-  assert.equal(after.status, 'UNVERIFIED'); assert(after.unverified.includes('DOCUMENT_DECLARATION_UNRESOLVED'));
-  assert.deepEqual(after.files, [known]); assert.equal(after.currentFiles.length, 1);
-  const template = await snapshotDocumentFiles({ artifacts: [{ pathTemplates: ['docs/{task}/design.md'] }] }, root);
-  assert(template.unverified.includes('DOCUMENT_DECLARATION_UNRESOLVED'));
-  t.mock.restoreAll(); assert.equal(fs.readdir, original);
+  assert.equal(after.status, 'VERIFIED');
+  assert.deepEqual(after.files.sort(), [known, path.join(root, 'new.md')].sort()); assert.equal(after.currentFiles.length, 2);
+  const templatePlan = { artifacts: [{ pathTemplates: ['docs/{task}/design.md'] }] };
+  const template = await snapshotDocumentFiles(templatePlan, root);
+  assert.deepEqual(template.unverified, []); assert.equal(template.entries.length, 0);
+  await fs.mkdir(path.join(root, 'docs', 'new-instance'), { recursive: true });
+  const design = path.join(root, 'docs', 'new-instance', 'design.md'); await fs.writeFile(design, 'new design');
+  const created = await documentCommandChanges(template, templatePlan, root);
+  assert.equal(created.status, 'VERIFIED'); assert.deepEqual(created.files, [design]);
+  const withDesign = await snapshotDocumentFiles(templatePlan, root);
+  await fs.unlink(design);
+  const deleted = await documentCommandChanges(withDesign, templatePlan, root);
+  assert.equal(deleted.status, 'VERIFIED'); assert.deepEqual(deleted.files, [design]);
   const literal = planFor(['known.md']), captured = await snapshotDocumentFiles(literal, root);
   assert((await documentCommandChanges(null, literal, root)).unverified.includes('DOCUMENT_PRE_SNAPSHOT_MISSING'));
   assert((await documentCommandChanges(captured, literal, root, { pending: true })).unverified.includes('DOCUMENT_EXECUTION_PENDING'));
@@ -100,6 +108,33 @@ test('document snapshot file/byte bounds and actual links cannot produce verifie
   assert(scope.unverified.includes('DOCUMENT_PATH_OUTSIDE_SCOPE')); assert.equal(scope.bytes, 0);
   const limited = await snapshotDocumentFiles(planFor(Array.from({ length: 129 }, (_, i) => `${i}.md`)), root);
   assert.equal(limited.entries.length, 128); assert(limited.unverified.includes('DOCUMENT_DECLARATION_LIMIT'));
+});
+
+test('a declared directory disappearing during enumeration does not certify the snapshot', async t => {
+  const root = await workspace(t), directory = path.join(root, 'docs');
+  await fs.mkdir(directory);
+  await fs.writeFile(path.join(directory, 'design.md'), 'Design');
+  const unverified = [];
+  let renameAfterEntry = false;
+  await inventoryDocumentPatterns(root, [{ value: 'docs/*.md', template: false }], {
+    unverified, add() { renameAfterEntry = true; },
+    active() {
+      if (!renameAfterEntry) return;
+      renameAfterEntry = false;
+      renameSync(directory, path.join(root, 'moved-docs'));
+    },
+  });
+  assert.deepEqual(unverified, ['DOCUMENT_INVENTORY_UNSTABLE']);
+});
+
+test('document snapshot cancellation cannot be swallowed as ordinary missing coverage', async t => {
+  const root = await workspace(t); await fs.writeFile(path.join(root, 'doc.md'), 'Current document.');
+  const cancelled = Object.assign(new Error('Controlled document cancellation'), { code: 'CONTROLLED_CANCELLED' });
+  let checks = 0;
+  await assert.rejects(snapshotDocumentFiles(planFor(['doc.md']), root, { active() { if (++checks >= 3) throw cancelled; } }),
+    error => error === cancelled);
+  await assert.rejects(snapshotDocumentFiles(planFor(['docs/{task}/*.md']), root, { active() { throw cancelled; } }),
+    error => error === cancelled);
 });
 
 async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.md'], { initialize = true } = {}) {

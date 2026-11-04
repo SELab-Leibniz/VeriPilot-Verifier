@@ -191,6 +191,22 @@ test("a failed baseline remains UNVERIFIED and delivers a checker notice without
   assert.equal(task.verification.status,"UNVERIFIED");
 });
 
+test("Stop reviews a published implementation subset without accepting an unresolved refresh", async t => {
+  const f = await fixture(t, { baselineFailure: { code: "BASELINE_COVERAGE_UNVERIFIED", message: "Unresolved new source" } });
+  await f.event("SessionStart", { source: "startup" });
+  const result = await f.event("Stop");
+  assert.equal(result.stop.status, "UNVERIFIED");
+  assert.equal(result.stop.admission, undefined);
+  const diagnostic = result.stop.partialImplementation;
+  assert.equal(diagnostic.basis, "PREVIOUS_PUBLISHED_BASELINE", JSON.stringify(result.stop));
+  assert.deepEqual(diagnostic.items.map(row => row.judgement), ["PASS", "PASS"]);
+  const task = await findTask({ projectRoot: f.root, sessionId: "session" });
+  assert.equal(task.groundTruth.version, 1);
+  assert.equal(task.verification.status, "UNVERIFIED");
+  await assert.rejects(fs.stat(path.join(taskDirectory(f.root, f.task.taskId), "metrics/population.json")), { code: "ENOENT" });
+  assert.equal((await createStopCorrectionStore({ directory: f.directory }).inspect("session")).used, 0);
+});
+
 test("production entry checks zero budget before onboarding, baseline, classifier or group work", async t => {
   const f = await fixture(t, { stop: { maxCorrectionsPerFlow: 0 } });
   await f.event("SessionStart", { source: "startup" });

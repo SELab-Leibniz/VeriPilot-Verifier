@@ -71,15 +71,16 @@ export function sharedOriginalDuties({ source, unit, fullText }) {
   throw new Error(`Declare an independent source-only expectation for ${source.kind}:${source.ref}; unknown text cannot default to CONTEXT`);
 }
 
-async function fixture(t, { generic = false, wireMode = 'full', closedMixed = false, materialAlongside = false, baselineLimits } = {}) {
-  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-basis-hooks-')));
+async function fixture(t, { generic = false, wireMode = 'full', closedMixed = false, materialAlongside = false, baselineLimits,
+  rootPrefix = 'rc-basis-hooks-' } = {}) {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), rootPrefix)));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const skillName = closedMixed ? 'delivery-verifier' : 'demo';
-  const skillRoot = path.join(root, 'skills'), skillFile = path.join(skillRoot, skillName, 'SKILL.md');
+  const skillRoot = path.join(root, 'skills'), skillFile = path.join(skillRoot, skillName, 'SKILL.md').replaceAll('\\', '/');
   await fs.mkdir(path.dirname(skillFile), { recursive: true }); await fs.writeFile(skillFile, closedMixed
     ? '# Delivery\n\nCreate app.mjs. You may inspect examples if useful. If a later correction changes app.mjs, run verification again before completion.\n'
     : '# Demo\nVerify before completion.\n');
-  const material = path.join(root, 'contract.md'), transcript = path.join(root, 'transcript.jsonl');
+  const material = path.join(root, 'contract.md').replaceAll('\\', '/'), transcript = path.join(root, 'transcript.jsonl');
   await fs.writeFile(material, 'The result preserves the requested feature.');
   await fs.writeFile(transcript, JSON.stringify(user()) + '\n');
   const plan = { runtimeV2: compileRuntimeV2Config({ version: 2,
@@ -115,7 +116,9 @@ async function fixture(t, { generic = false, wireMode = 'full', closedMixed = fa
           inventory: state.coverageInventory ?? (context => scriptedSourceInventory(context, sharedOriginalDuties)),
           persistInventory: state.coveragePersistInventory !== false, observeInventory: state.coverageObserveInventory !== false,
           beforeInventory: state.coverageBeforeInventory, onInventory: state.coverageOnInventory, afterInventory: state.coverageAfterInventory,
-          returnWithoutFinish: state.coverageReturnWithoutFinish, skipRead: state.coverageSkipRead });
+          returnWithoutFinish: state.coverageReturnWithoutFinish, skipRead: state.coverageSkipRead,
+          skipReadReceipt: state.coverageSkipReadReceipt, staged: state.coverageStaged, stagedInventory: state.coverageStagedInventory,
+          repeatInventoryIdentity: state.coverageRepeatInventoryIdentity });
       }
       if (!params.toolsAllow?.includes('finish_baseline')) {
         if (params.toolsAllow) assert(params.toolsAllow.includes('rc_skill_care'));

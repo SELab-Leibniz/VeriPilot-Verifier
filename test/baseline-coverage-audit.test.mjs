@@ -6,8 +6,10 @@ import path from 'node:path';
 import os from 'node:os';
 import { sharedBasisFixture as createSharedBasisFixture, operation, user } from './helpers/runtime-v2-shared-basis-fixture.mjs';
 import { scriptedCoverageReport, scriptedSourceInventory } from './helpers/baseline-coverage-native.mjs';
-import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
-import { planGroundTruthDelta, groundTruthPlanDigest, applyGroundTruthDelta } from '../lib/runtime-v2/ground-truth-ledger.mjs';
+import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, baselineAuditSourceUnits, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
+import { registerCitation } from '../lib/review-task/evidence-utils.mjs';
+import { sourcePage } from '../lib/review-task/source-tools.mjs';
+import { planGroundTruthDelta, groundTruthPlanDigest, applyGroundTruthDelta, freezeGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { ObservationJournal } from '../lib/review-task/observation-journal.mjs';
 import { createBaselineWorker, BASELINE_EXTRACTION_PROTOCOL } from '../lib/review-task/baseline-task.mjs';
 import { sourceUnits } from '../lib/review-task/baseline-selection.mjs';
@@ -17,6 +19,21 @@ import { refreshRuntimeRequirements } from '../lib/runtime-v2/orchestrator.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { STOP_TASK_LIMITS } from '../lib/review-task/stop-policy.mjs';
 import { listNativeRuns } from '../lib/openclaw/native-runs.mjs';
+import { coveredImplementationClaims } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
+import { TASK_SCOPE_INSTRUCTIONS } from '../lib/runtime-v2/ground-truth-provenance.mjs';
+
+test('partial Stop targets omit disputed claims and preserve independently supported siblings', () => {
+  const claims = ['covered', 'disputed', 'dependent'].map(claimId => ({
+    claimId, status: 'ACTIVE', authority: 'USER_EXPLICIT', verificationTarget: 'IMPLEMENTATION', applicabilityKind: 'CURRENT_TASK',
+  }));
+  const audit = { report: { verdict: 'UNRESOLVED' }, anchoredSources: [{ kind: 'USER_MESSAGE',
+    mappings: claims.map(({ claimId }, index) => ({
+      owner: 'IMPLEMENTATION', claimIds: [claimId], unitId: 'S0U0', obligationIds: [`O${index}`],
+      ...(claimId === 'dependent' ? { dependencyUnitIds: ['S1U1'] } : {}),
+    })), issues: [{ claimIds: ['disputed'], unitId: 'S0U0', obligationIds: ['O1'] }],
+  }, { kind: 'PROJECT_FILE', mappings: [], issues: [{ claimIds: [], unitId: 'S1U1', obligationIds: [] }] }] };
+  assert.deepEqual(coveredImplementationClaims(audit, claims).map(claim => claim.claimId), ['covered']);
+});
 
 async function sharedBasisFixture(t, options) {
   const fixture = await createSharedBasisFixture(t, options);
@@ -44,6 +61,36 @@ async function refreshCapturingAuditFailure(fixture, errors, id) {
     transcript_path: fixture.transcript, hook_event_name: 'Stop', hook_event_id: id }, plan: fixture.plan, reviewerFactory: factory });
 }
 
+test('a missing separator byte identifies the source/unit and an overlapping read actually repairs its coverage', async t => {
+  const f = await sharedBasisFixture(t);
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: operation().text + '\n' } }) + '\n');
+  f.state.coverageInventory = context => scriptedSourceInventory(context, () => [{
+    statement: 'Preserve the requested feature.', owner: 'IMPLEMENTATION', condition: 'During this task.',
+  }]);
+  await f.refresh();
+  const truth = await f.truth(), proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { identity: proof.identity, truth });
+  const source = bundle.input.identity.sources.find(row => row.kind === 'USER_MESSAGE');
+  const file = bundle.files.find(row => row.path === `original-${source.parts[0].file}`), bytes = Buffer.from(file.text);
+  const registry = new Map(), unit = baselineAuditSourceUnits(bundle.input, bundle.files).find(row => row.ref === source.ref);
+  const short = registerCitation({ registry, bytes, file: file.path, sha256: file.sha256, range: { start: 1, end: 1 } });
+  const inventory = structuredClone(bundle.inventory.record.inventory);
+  const entry = inventory.sources.find(row => row.ref === source.ref).units.find(row => row.unitId === unit.unitId);
+  entry.rangeMode = 'UNIT'; delete entry.quote; entry.citeIds = [short.citeId];
+  let diagnostic;
+  assert.throws(() => validateBaselineSourceInventory(inventory, bundle.input, bundle.files, [...bundle.citations, short]), error => {
+    diagnostic = error.auditValidation;
+    assert.equal(diagnostic.reason, 'ORIGINAL_CITATION_RANGE_GAP'); assert.equal(diagnostic.ref, source.ref);
+    assert.equal(diagnostic.unitId, unit.unitId); assert.equal(diagnostic.gaps[0].end - diagnostic.gaps[0].start, 1);
+    return true;
+  });
+  const args = diagnostic.recoverWith[0], page = sourcePage(bytes, args);
+  const restored = registerCitation({ registry, bytes, file: file.path, sha256: file.sha256,
+    range: { start: page.details.page.start, end: page.details.page.end } });
+  entry.citeIds = [restored.citeId];
+  validateBaselineSourceInventory(inventory, bundle.input, bundle.files, [...bundle.citations, restored]);
+});
+
 test('first-use native audit publishes full evidence and reuses only the unchanged strong basis', async t => {
   const f = await sharedBasisFixture(t);
   await f.refresh();
@@ -52,6 +99,15 @@ test('first-use native audit publishes full evidence and reuses only the unchang
   const proof = task.groundTruth.sharedBasis.coverageAudit;
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { identity: proof.identity, truth });
   assert.notEqual(bundle.nativeRecord.sessionId, bundle.input.extractorSettlement.sessionId);
+  const extractorRequest = JSON.parse(bundle.auxiliaryFiles.filter(file => file.path.startsWith('request-'))
+    .sort((left, right) => left.path.localeCompare(right.path)).map(file => file.text).join(''));
+  const phaseTwo = JSON.parse(bundle.files.find(file => file.path === 'phase-two-manifest.json').text);
+  const phaseOne = JSON.parse(bundle.initialContext.prompt);
+  const sharedScopeRules = TASK_SCOPE_INSTRUCTIONS.filter(rule =>
+    /^(For compound rules|Encoding and read-back|Regression and tests|Troubleshooting and scope|Test methods and scope)/u.test(rule));
+  assert.equal(sharedScopeRules.length, 5);
+  for (const stage of [extractorRequest, phaseOne, phaseTwo])
+    assert(sharedScopeRules.every(rule => stage.instructions.includes(rule)));
   assert(bundle.files.some(file => file.path.startsWith('candidate-')));
   assert.equal(bundle.report.sources.length, bundle.input.identity.sources.length);
   assert(bundle.report.sources.every(source => !Object.hasOwn(source, 'sha256')));
@@ -108,6 +164,206 @@ test('new-format range-gap feedback is repaired inside the same auditor invocati
   assert.equal(bundle.budget.maxTurns, STOP_TASK_LIMITS.maxTurns);
 });
 
+test('multiple incompatible owner mappings are rejected together and can be corrected in one same-run submission', async t => {
+  const f = await twoClaimFixture(t, true);
+  f.state.coverageSubmissions = [];
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    const row = report.sources.find(source => source.kind === 'USER_MESSAGE');
+    assert.equal(row.mappings.length, 2);
+    const [first, second] = row.mappings;
+    [first.claimIds, second.claimIds] = [second.claimIds, first.claimIds];
+    return report;
+  };
+  f.state.coverageRepairReport = context => {
+    assert.equal(context.attempt, 1);
+    const feedback = JSON.parse(context.result.content[0].text).validation;
+    assert.equal(feedback.reason, 'OWNER_DUTY_MISMATCH');
+    assert.deepEqual([feedback, ...feedback.related].map(issue => issue.mappingIndex), [0, 1]);
+    assert([feedback, ...feedback.related].every(issue => issue.obligations[0].expectedInventoryOwner !== issue.targets[0].verificationTarget));
+    assert.equal(feedback.remainingMismatches, 0);
+    return scriptedCoverageReport(context);
+  };
+  await f.refresh();
+  assert.equal((await f.truth()).version, 1);
+  assert.equal(f.state.coverageSubmissions.length, 2);
+  assert.equal(new Set(f.state.coverageSubmissions.map(row => row.params.runId)).size, 1);
+});
+
+test('both inconsistent dependency selections are located in the same rejected report', async t => {
+  const f = await twoClaimFixture(t);
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context), sourceIndex = report.sources.findIndex(row => row.kind === 'USER_MESSAGE');
+    const [first, second] = report.sources[sourceIndex].mappings;
+    first.supportMode = 'DIRECT'; first.dependencyUnitIds = [second.unitId];
+    second.supportMode = 'IMMUTABLE_DEPENDENCY'; second.dependencyUnitIds = [];
+    return report;
+  };
+  f.state.coverageRepairReport = context => {
+    const validation = JSON.parse(context.result.content[0].text).validation;
+    assert.equal(validation.reason, 'REPORT_SELECTION_INVALID');
+    assert.equal(validation.issueCount, 2);
+    assert.deepEqual(validation.issues.map(issue => issue.path.slice(-3)), [
+      ['mappings', 0, 'dependencyUnitIds'], ['mappings', 1, 'dependencyUnitIds'],
+    ]);
+    return scriptedCoverageReport(context);
+  };
+  await f.refresh();
+  assert.equal((await f.truth()).version, 1);
+  assert.equal(f.audits().length, 1);
+});
+
+test('a duplicated report source identifies both the duplicate row and the omitted original', async t => {
+  const f = await sharedBasisFixture(t);
+  let expected;
+  f.state.coverageReport = context => {
+    const report = scriptedCoverageReport(context);
+    assert(report.sources.length >= 2);
+    expected = { index: 1, kind: report.sources[1].kind, ref: report.sources[1].ref };
+    report.sources[1] = structuredClone(report.sources[0]);
+    return report;
+  };
+  f.state.coverageRepairReport = context => {
+    const validation = JSON.parse(context.result.content[0].text).validation;
+    assert.equal(validation.reason, 'SOURCE_ROWS_INVALID');
+    assert.deepEqual(validation.missing, [expected]);
+    assert.equal(validation.duplicates[0].index, 1);
+    return scriptedCoverageReport(context);
+  };
+  await f.refresh();
+  assert.equal((await f.truth()).version, 1);
+});
+
+test('staged audit uses complete acknowledged units and only a final verified report publishes', async t => {
+  const f = await twoClaimFixture(t, true);
+  f.state.coverageStagedInventory = { replaceFirst: true, tryWrongDisposition: true, repeatIdentity: true, async beforeSeal({ params, tools, request }) {
+    const denied = await nativeAuditAttempt(params, tools, 'source_read', { path: request.phaseTwoManifest, offset: 1 }, 'before-seal');
+    assert.equal(denied.isError, true);
+    assert.match(denied.content[0].text, /genuine appended ACK/u);
+  } };
+  f.state.coverageStaged = { tryIncomplete: true, tryWrongDuty: true, replaceFirst: true, compactDependency: true, compactUnitAnchor: true };
+  await f.refresh();
+  const truth = await f.truth(), proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth });
+  assert.equal(truth.version, 1);
+  assert.equal(bundle.inventory.record.sectionControl.action, 'seal_units');
+  assert.equal(bundle.inventory.record.inventory.sources[0].units[0].obligations[0].reason, 'Explicit replacement of the first source-only duty reason.');
+  assert.equal(bundle.finish.record.sectionControl.action, 'finish_sections');
+  assert.equal(bundle.report.sources[0].mappings[0].reason, 'Explicit replacement of one staged section.');
+  assert.equal(Object.hasOwn(bundle.report.sources[0].mappings[0], 'supportMode'), false);
+  assert.deepEqual(bundle.report.sources[0].mappings[0].dependencyUnitIds, [bundle.report.sources.flatMap(row => row.unitIds)[1]]);
+  assert.equal(bundle.budget.repairs, 3);
+  assert.equal(bundle.budget.auditCalls, 1);
+});
+
+test('an inventory unit without a genuine persistence callback cannot unlock the candidate or publish', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageStagedInventory = { skipUnitAck: true };
+  await assert.rejects(f.refresh(), /baseline extraction failed/u);
+  assert.equal((await f.truth()).version, 0);
+  assert.equal((await f.task()).groundTruth.sharedBasis, undefined);
+});
+
+test('an explicit staged context reason preserves the complete unit and cannot waive a sealed duty', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageStaged = { compactContext: true };
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  const context = bundle.report.sources.flatMap(row => row.mappings).find(entry => entry.owner === 'CONTEXT');
+  assert.equal(context.reason, 'This original states background only and adds no new duty.');
+  assert.deepEqual(context.claimIds, []);
+  assert.deepEqual(context.obligationIds, []);
+  assert.equal(bundle.budget.repairs, 1);
+});
+
+test('staged audit reports exact unread files without spending a revision and still requires genuine reads', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageStaged = {};
+  f.state.coverageAfterInventory = async ({ params, tools, request, inventory }) => {
+    const section = { unitId: inventory.sources[0].units[0].unitId, mappings: [], issues: [] };
+    for (let i = 0; i < 2; i++) {
+      const denied = await nativeAuditAttempt(params, tools, 'finish_baseline_audit',
+        { action: 'save_section', section }, `unread-stage-${i}`);
+      const feedback = JSON.parse(denied.content[0].text);
+      assert.equal(feedback.accepted, false);
+      assert.equal(feedback.validation.reason, 'AUDIT_DISCLOSURE_GAP');
+      assert(feedback.validation.recoverWith.some(read => read.path === request.phaseTwoManifest && read.offset === 1));
+    }
+  };
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  assert.equal(bundle.budget.repairs, 0);
+  assert.equal(bundle.report.verdict, 'PASS');
+});
+
+test('a staged section without the genuine persistence callback cannot publish', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageStaged = { skipSectionAck: true };
+  await assert.rejects(f.refresh(), /baseline extraction failed/u);
+  assert.equal((await f.truth()).version, 0);
+  assert.equal((await f.task()).groundTruth.sharedBasis, undefined);
+});
+
+for (const acknowledged of [true, false]) {
+  test(`an interrupted audit exposes only genuinely acknowledged staged implementation evidence (${acknowledged})`, async t => {
+    const f = await sharedBasisFixture(t);
+    f.state.coverageStaged = { outputLimitAfterSections: true, skipSectionAck: !acknowledged };
+    await assert.rejects(f.refresh(), error => {
+      assert.equal(error.code, 'REVIEWER_OUTPUT_LIMIT');
+      const claims = error.cause?.coveredImplementationClaims ?? [];
+      assert.equal(claims.length, acknowledged ? 1 : 0);
+      if (acknowledged) assert.equal(claims[0].text, operation().text);
+      return true;
+    });
+    assert.equal((await f.truth()).version, 0);
+  });
+}
+
+test('an exhausted audit allowance still exposes its earlier acknowledged implementation evidence', async t => {
+  const f = await sharedBasisFixture(t);
+  f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
+    groundTruthExtractor: { ...f.plan.runtimeV2.reviewers.groundTruthExtractor, formatRepairAttempts: 0 } } };
+  f.state.coverageStaged = { exhaustRepairAfterSections: true };
+  await assert.rejects(f.refresh(), error => {
+    assert.equal(error.code, 'BASELINE_REPAIR_LIMIT');
+    assert.deepEqual(error.cause?.coveredImplementationClaims?.map(claim => claim.text), [operation().text]);
+    return true;
+  });
+  assert.equal((await f.truth()).version, 0);
+});
+
+test('staged candidate issues are rejected at the unit if their owner disagrees with the sealed duty', async t => {
+  const f = await sharedBasisFixture(t);
+  f.state.coverageStaged = { tryWrongIssue: true };
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  assert.equal(bundle.budget.repairs, 1);
+  assert.equal(bundle.report.verdict, 'PASS');
+});
+
+test('a rejected positive owner mapping can be corrected without spending candidate repair budget', async t => {
+  const f = await sharedBasisFixture(t);
+  f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
+    groundTruthExtractor: { ...f.plan.runtimeV2.reviewers.groundTruthExtractor, formatRepairAttempts: 0 } } };
+  f.state.coverageStaged = { tryWrongOwner: true };
+  await f.refresh();
+  const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer, { truth: await f.truth() });
+  assert.equal(bundle.budget.repairs, 0);
+  assert.equal(bundle.report.verdict, 'PASS');
+});
+
+test('terminal staged repair exhaustion preserves the audit defect that consumed the limit', async t => {
+  const f = await sharedBasisFixture(t);
+  f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
+    groundTruthExtractor: { ...f.plan.runtimeV2.reviewers.groundTruthExtractor, formatRepairAttempts: 0 } } };
+  f.state.coverageStaged = { tryWrongIssue: true };
+  await assert.rejects(f.refresh(), error => {
+    assert.match(error.cause?.message ?? '', /audit section repair allowance exhausted.*issue does not match its sealed duty/su);
+    return true;
+  });
+  assert.equal((await f.truth()).version, 0);
+});
+
 test('condition mismatch feedback locates the exact field and permits an explicit same-run correction', async t => {
   const f = await sharedBasisFixture(t);
   f.state.coverageSubmissions = [];
@@ -159,13 +415,14 @@ for (const mixed of [false, true]) test(`native audit rejects ${mixed ? 'mixed-o
   assert.equal((await f.task()).groundTruth.sharedBasis, undefined);
 });
 
-test('multi-target issues repair both document owners in the original shared allowance and preserve CONTEXT', async t => {
+test('issues-only sections repair both document owners in the original shared allowance and preserve CONTEXT', async t => {
   const f = await sharedBasisFixture(t);
+  f.state.coverageStaged = { omitEmptyLists: true };
   const wrong = ['Write the usage guide.', 'Write the reference guide.'].map(text => ({ ...operation(), text }));
   const corrected = wrong.map(({ implementationRole, ...row }) => ({ ...row, verificationTarget: 'ARTIFACT' }));
   await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: wrong.map(row => row.text).join(' ') } }) + '\n');
   f.state.sourceFrom = true; f.state.deltaOperations = wrong;
-  let feedbackTargets;
+  let feedbackTargets, expectedIssues;
   f.state.coverageReport = context => {
     const value = scriptedCoverageReport(context), row = value.sources.find(source => source.kind === 'USER_MESSAGE');
     if (context.view.effectiveLedger.claims.every(claim => claim.verificationTarget === 'ARTIFACT')) return value;
@@ -176,22 +433,35 @@ test('multi-target issues repair both document owners in the original shared all
       obligationIds: context.inventory.sources.find(source => source.kind === 'USER_MESSAGE').units.flatMap(unit => unit.obligations.map(duty => duty.obligationId)),
       issueKind: 'CANDIDATE', expectedDuty: 'Write both the usage guide and the reference guide.',
       reason: 'Both originals require document content; creating a file does not make either requirement program runtime behavior.' }];
+    expectedIssues = [{ ref: row.ref, kind: row.kind, issues: structuredClone(row.issues) }];
     row.mappings = []; f.state.deltaOperations = corrected;
     return value;
   };
   await f.refresh();
   assert.equal(f.audits().length, 2);
+  const handoff = f.state.baselinePrompts.find(prompt => prompt.generation === 1);
+  const repairControl = JSON.parse(handoff.promptAppend.split('\n').at(-1));
+  assert.deepEqual(repairControl.coverageIssues, expectedIssues);
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
   const candidateFiles = bundle.files.filter(file => file.path.startsWith('candidate-'));
   const disclosure = JSON.parse(candidateFiles.map(file => file.text).join(''));
   assert.equal(disclosure.protocol, BASELINE_AUDIT_VIEW_PROTOCOL);
-  // This is the pre-codec full view built independently from the raw bundle.
-  assert.deepEqual(decodeBaselineAuditView(disclosure), JSON.parse(JSON.stringify({
-    identity: coverageIdentity(bundle.input), sources: bundle.input.identity.sources, instructions: BASELINE_COVERAGE_INSTRUCTIONS,
-    delta: bundle.input.delta, batches: bundle.input.batches, finish: bundle.input.finish,
-    retainedSourceUnits: bundle.input.retainedSourceUnits, effectiveLedger: bundle.input.plan.current, plan: bundle.input.plan,
-  })));
+  const decoded = decodeBaselineAuditView(disclosure);
+  assert.deepEqual(decoded.identity, coverageIdentity(bundle.input));
+  assert.deepEqual(decoded.sources, bundle.input.identity.sources);
+  assert.deepEqual(decoded.delta, bundle.input.delta);
+  assert.deepEqual(decoded.retainedSourceUnits, bundle.input.retainedSourceUnits);
+  assert.deepEqual(decoded.effectiveLedger, bundle.input.plan.current);
+  assert.equal(decoded.operationDispositions.length, bundle.input.plan.operationDispositions.length);
+  for (const [index, row] of decoded.operationDispositions.entries()) {
+    const actual = bundle.input.plan.operationDispositions[index];
+    for (const key of ['operationIndex', 'operation', 'disposition']) assert.equal(row[key], actual[key]);
+    for (const key of ['target', 'effectiveTarget']) if (actual[key]) {
+      for (const field of ['claimId', 'revisionId', 'status']) assert.equal(row[key][field], actual[key][field]);
+      assert(!Object.hasOwn(row[key], 'digest'));
+    }
+  }
   for (const file of candidateFiles) {
     assert(bundle.reads.some(read => read.path === file.path && read.start === 1 && read.end === file.lines));
     assert(bundle.journalEntries.some(entry => entry.message?.details?.citation?.path === file.path
@@ -212,8 +482,18 @@ test('zero-write path repair leaves the single semantic audit repair available i
   const corrected = wrong.map(({ implementationRole, ...row }) => ({ ...row, verificationTarget: 'ARTIFACT' }));
   await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: wrong.map(row => row.text).join(' ') } }) + '\n');
   f.state.sourceFrom = true;
-  f.state.deltaOperations = [{ ...wrong[0], expectedFiles: ['not-named-in-original.txt'] }, wrong[1]];
-  f.state.afterBaseline = () => { f.state.deltaOperations = wrong; };
+  f.state.deltaOperations = wrong;
+  f.state.beforeBaselineSave = async ({ call }) => {
+    const { source, ...fields } = wrong[0];
+    await assert.rejects(call('save_baseline_batch', { batchId: 1, operations: [{
+      ...fields, sourceFrom: { unitId: 'S0L1' }, expectedFiles: ['not-named-in-original.txt'],
+    }] }), error => {
+      assert.equal(error.code, 'GROUND_TRUTH_EXPECTED_FILES_INVALID');
+      assert.deepEqual(error.baselineValidation.issues[0].correctionPath, ['operations', 0, 'expectedFiles']);
+      return true;
+    });
+    f.state.beforeBaselineSave = undefined;
+  };
   f.state.coverageReport = context => {
     const value = scriptedCoverageReport(context), row = value.sources.find(source => source.kind === 'USER_MESSAGE');
     if (context.view.effectiveLedger.claims.every(claim => claim.verificationTarget === 'ARTIFACT')) return value;
@@ -228,7 +508,7 @@ test('zero-write path repair leaves the single semantic audit repair available i
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth });
   assert.equal(truth.version, 1); assert(truth.claims.every(claim => claim.verificationTarget === 'ARTIFACT'));
   assert.equal(bundle.budget.repairs, 2); assert.equal(bundle.budget.externalRepairs, 1);
-  assert.equal(bundle.budget.auditCalls, 2); assert.equal(bundle.input.generation, 2);
+  assert.equal(bundle.budget.auditCalls, 2); assert.equal(bundle.input.generation, 1);
   assert.equal(bundle.budget.turns, bundle.budget.consumers.extractor + bundle.budget.consumers.checker);
   assert.equal(new Set(f.state.baselinePrompts.map(prompt => prompt.identity.requestId)).size, 1);
 });
@@ -269,9 +549,21 @@ test('configured 16 KiB audit units carry one complete long original through nat
   const text = 'Preserve the requested feature. ' + 'x'.repeat(7000);
   await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user', content: text } }) + '\n');
   f.state.sourceFrom = true;
+  f.state.coverageInventory = context => {
+    const inventory = scriptedSourceInventory(context, ({ source, fullText }) => {
+      if (source.kind !== 'USER_MESSAGE') return [];
+      assert.equal(fullText, text);
+      return [{ statement: 'Preserve the requested feature.', owner: 'IMPLEMENTATION', condition: 'During this task.' }];
+    });
+    for (const source of inventory.sources) for (const unit of source.units) delete unit.citeIds;
+    return inventory;
+  };
   f.state.coverageReport = context => {
     const report = scriptedCoverageReport(context);
-    for (const source of report.sources) for (const mapping of source.mappings) { mapping.rangeMode = 'UNIT'; delete mapping.quote; }
+    for (const source of report.sources) for (const mapping of source.mappings) {
+      mapping.rangeMode = 'UNIT'; delete mapping.quote; delete mapping.citeIds;
+      if (mapping.obligationIds.length) delete mapping.unitId;
+    }
     return report;
   };
   await f.refresh();
@@ -279,8 +571,16 @@ test('configured 16 KiB audit units carry one complete long original through nat
   assert.equal(bundle.input.unitLayout.maxBytes, 16384); assert.equal(bundle.identity.unitLayout.maxBytes, 16384);
   const inventory = bundle.inventory.record.inventory.sources.find(row => row.kind === 'USER_MESSAGE');
   assert.equal(inventory.units.length, 1); assert.equal(bundle.input.identity.sources[0].bytes, Buffer.byteLength(text));
+  assert.equal(Object.hasOwn(inventory.units[0], 'citeIds'), false);
+  const catalog = bundle.files.filter(file => /^unit-catalog-\d+\.txt$/u.test(file.path));
+  const navigators = JSON.parse(catalog.map(file => file.text).join(''));
+  assert(!navigators.some(unit => Object.hasOwn(unit, 'text')));
+  assert.equal(navigators.find(unit => unit.kind === 'USER_MESSAGE').endByte, Buffer.byteLength(text));
+  assert(catalog.reduce((bytes, file) => bytes + Buffer.byteLength(file.text), 0) < Buffer.byteLength(text) / 2);
   assert(bundle.initialContext.prompt.includes('at most 16384 bytes'));
   assert.equal(bundle.report.verdict, 'PASS');
+  assert(bundle.report.sources.every(row => row.mappings.every(mapping => !Object.hasOwn(mapping, 'citeIds'))));
+  assert(bundle.report.sources.some(row => row.mappings.some(mapping => mapping.obligationIds.length && !Object.hasOwn(mapping, 'unitId'))));
 });
 
 test('one configured large original unit preserves independently authored runtime and artifact duties before candidate exposure', async t => {
@@ -308,9 +608,8 @@ test('one configured large original unit preserves independently authored runtim
   assert.equal(original.units.length, 1); assert.deepEqual(new Set(original.units[0].obligations.map(row => row.owner)), new Set(['IMPLEMENTATION', 'ARTIFACT']));
 });
 
-test('expanded audit allowance retains an unresolved report and retries source-first without changing the candidate or resetting counters', async t => {
-  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
-    maxRepairs: 2000, maxAuditCalls: 2000, maxExternalRepairs: 2000 } });
+for (const contested of [false, true]) test(`unresolved audit rechecks the same candidate (${contested ? 'candidate issue in a disputed unit' : 'inventory issue only'})`, async t => {
+  const f = await sharedBasisFixture(t);
   let attempts = 0;
   f.state.coverageReport = context => {
     const report = scriptedCoverageReport(context);
@@ -319,12 +618,15 @@ test('expanded audit allowance retains an unresolved report and retries source-f
     report.verdict = 'UNRESOLVED'; row.disposition = 'UNRESOLVED';
     row.issues = row.mappings.map(mapping => ({ ...mapping, issueKind: 'SOURCE_INVENTORY', owner: 'UNKNOWN',
       expectedDuty: 'Preserve the requested feature.', reason: 'Controlled first-auditor uncertainty; not a candidate defect or acceptance.' }));
+    if (contested) row.issues.push({ ...row.mappings[0], issueKind: 'CANDIDATE',
+      expectedDuty: 'Preserve the requested feature.', reason: 'This issue depends on the disputed inventory unit.' });
     row.mappings = []; return report;
   };
   await f.refresh();
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
   assert.equal(attempts, 2); assert.equal(bundle.budget.auditCalls, 2);
+  assert.equal(bundle.budget.maxAuditCalls, 2);
   assert.equal(bundle.budget.repairs, 0); assert.equal(bundle.budget.externalRepairs, 0);
   assert.equal(bundle.input.generation, 0); assert.equal(f.state.baselinePrompts.length, 1);
 });
@@ -367,11 +669,27 @@ test('native runtime failures are not retried as incomplete semantic audits unde
   await assert.rejects(f.refresh()); assert.equal(launches, 1); assert.equal((await f.truth()).version, 0);
 });
 
+test('a native length stop remains an output limit when the host returns a generic incomplete turn', async t => {
+  const f = await sharedBasisFixture(t, { baselineLimits: { timeoutMs: 86400000, maxSteps: 2000,
+    maxRepairs: 20, maxAuditCalls: 5, maxExternalRepairs: 1 } });
+  let launches = 0; f.state.coverageLaunch = () => { launches++; };
+  f.state.coverageReturnWithoutFinish = async (_context, params) => {
+    params.onAssistantMessageStart?.();
+    await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant',
+      stopReason: 'length', usage: { output: 32768, reasoningTokens: 32768 }, content: [] } }) + '\n');
+    return { meta: { error: { kind: 'incomplete_turn', message: "Agent couldn't generate a response." } } };
+  };
+  await assert.rejects(f.refresh(), { code: 'REVIEWER_OUTPUT_LIMIT' });
+  assert.equal(launches, 1); assert.equal((await f.truth()).version, 0);
+});
+
 test('original citation rejection identifies the unit and catalog citation without granting an original read or changing the inventory', async t => {
   const f = await sharedBasisFixture(t); await f.refresh();
   const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
   const inventory = structuredClone(bundle.inventory.record.inventory), unit = inventory.sources[0].units[0];
   const catalog = bundle.citations.find(cite => cite.path.startsWith('unit-catalog-'));
+  assert.match(catalog.citeId, /^N/u);
+  assert(bundle.citations.filter(cite => cite.path.startsWith('original-source-')).every(cite => /^O\d+P\d+L\d+-\d+R\d+$/u.test(cite.citeId)));
   unit.citeIds.push(catalog.citeId);
   assert.throws(() => validateBaselineSourceInventory(inventory, bundle.input, bundle.files, bundle.citations), error => {
     assert.equal(error.auditValidation.reason, 'ORIGINAL_CITATION_SOURCE_MISMATCH');
@@ -383,20 +701,23 @@ test('original citation rejection identifies the unit and catalog citation witho
   });
 });
 
-test('an audit disclosure gap identifies the actual unread file and requires its native receipt before the same audit finishes', async t => {
-  const f = await sharedBasisFixture(t); let repairs = 0;
-  f.state.coverageSkipRead = file => file === 'original-baseline-0000.txt';
+test('an audit disclosure gap identifies the unacknowledged candidate and requires its genuine receipt before the same audit finishes', async t => {
+  const f = await sharedBasisFixture(t); let repairs = 0, withheld = false;
+  f.state.coverageSkipReadReceipt = file => {
+    if (file !== 'candidate-0.txt' || withheld) return false;
+    withheld = true; return true;
+  };
   f.state.coverageRepairReport = async context => {
     const feedback = JSON.parse(context.result.content[0].text);
     assert.equal(feedback.validation.reason, 'AUDIT_DISCLOSURE_GAP');
-    assert.deepEqual(feedback.validation.recoverWith, [{ tool: 'source_read', path: 'original-baseline-0000.txt', offset: 1 }]);
+    assert.deepEqual(feedback.validation.recoverWith, [{ tool: 'source_read', path: 'candidate-0.txt', offset: 1 }]);
     await context.readFile(feedback.validation.recoverWith[0].path); repairs++;
     return scriptedCoverageReport(context);
   };
   await f.refresh(); assert.equal(repairs, 1);
   const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
   assert.equal(bundle.budget.auditCalls, 1);
-  assert(bundle.citations.some(cite => cite.path === 'original-baseline-0000.txt'));
+  assert(bundle.citations.some(cite => cite.path === 'candidate-0.txt'));
 });
 
 test('an abbreviated inventory digest gets the complete owned identity without automatic report repair', async t => {
@@ -443,11 +764,22 @@ for (const limit of [0, 1]) test(`zero-write baseline repairs stop at configured
   const f = await sharedBasisFixture(t);
   f.plan.runtimeV2 = { ...f.plan.runtimeV2, reviewers: { ...f.plan.runtimeV2.reviewers,
     groundTruthExtractor: { ...f.plan.runtimeV2.reviewers.groundTruthExtractor, formatRepairAttempts: limit } } };
-  f.state.sourceFrom = true;
-  f.state.deltaOperations = [{ ...operation(), expectedFiles: ['not-named-in-original.txt'] }];
+  let submissions = 0;
+  f.state.beforeBaselineSave = async ({ call }) => {
+    const { source, ...fields } = operation();
+    const invalid = { batchId: 1, operations: [{ ...fields, sourceFrom: { unitId: 'S0L1' },
+      expectedFiles: ['not-named-in-original.txt'] }] };
+    for (let i = 0; i < limit; i++) {
+      submissions++;
+      await assert.rejects(call('save_baseline_batch', invalid), { code: 'GROUND_TRUTH_EXPECTED_FILES_INVALID' });
+    }
+    submissions++;
+    await call('save_baseline_batch', invalid);
+  };
   await assert.rejects(f.refresh(), /baseline extraction failed/);
   assert.equal((await f.truth()).version, 0); assert.equal(f.audits().length, 0);
-  assert.equal(f.state.baselinePrompts.length, limit + 1);
+  assert.equal(submissions, limit + 1);
+  assert.equal(f.state.baselinePrompts.length, 1);
 });
 
 test('proof verification rejects rehashed report, source, candidate and ACK mutations without repairing raw evidence', async t => {
@@ -472,6 +804,12 @@ test('proof verification rejects rehashed report, source, candidate and ACK muta
       bundle.identity = coverageIdentity(bundle.input); bundle.report.identityDigest = sha256(bundle.identity);
     }, /[Uu]nit original source identity changed|Original source identity changed/u],
     ['candidate disclosure', bundle => { bundle.files.find(file => file.path === 'candidate-0.txt').text += ' '; }, /Effective candidate disclosure changed/u],
+    ['program-only input bytes', bundle => { bundle.auxiliaryFiles[0].text += ' '; }, /Audit program-only input proof changed/u],
+    ['program-only input with rewritten hashes', bundle => {
+      const file = bundle.auxiliaryFiles[0]; file.text += ' '; file.sha256 = sha256(Buffer.from(file.text));
+      bundle.input.fileHashes[file.path] = file.sha256;
+      bundle.identity = coverageIdentity(bundle.input); bundle.report.identityDigest = sha256(bundle.identity);
+    }, /Source inventory changed or belongs to another/u],
     ['candidate index gap', bundle => { bundle.files.find(file => file.path === 'candidate-0.txt').path = 'candidate-2.txt'; }, /Effective candidate fragment changed/u],
     ['extra empty candidate fragment', bundle => {
       const count = bundle.files.filter(file => file.path.startsWith('candidate-')).length;
@@ -552,7 +890,7 @@ function missingReadReport(context) {
   return report;
 }
 
-test('an independently detected original omission repairs the same extractor within one shared allowance', async t => {
+for (const mixed of [false, true]) test(`an independently detected original omission repairs within one shared allowance (${mixed ? 'mixed verdict' : 'repair verdict'})`, async t => {
   const f = await sharedBasisFixture(t);
   await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user',
     content: 'Preserve the requested feature. Read and follow skills/demo/SKILL.md.' } }) + '\n');
@@ -562,12 +900,29 @@ test('an independently detected original omission repairs the same extractor wit
     const duty = { ...operation(), text: 'Read and follow skills/demo/SKILL.md.', verificationTarget: 'PROCESS' };
     delete duty.implementationRole;
     f.state.deltaOperations = [operation(), duty];
-    return missingReadReport(context);
+    const report = missingReadReport(context);
+    if (mixed) {
+      // The wire protocol permits omission when the sealed duty identifies one unit.
+      delete report.sources.find(source => source.kind === 'USER_MESSAGE').issues[0].unitId;
+      const row = report.sources.find(source => source.kind === 'MATERIAL');
+      const [mapping] = row.mappings;
+      report.verdict = 'UNRESOLVED';
+      row.disposition = 'UNRESOLVED';
+      row.mappings = [];
+      row.issues = [{ ...mapping, issueKind: 'SOURCE_INVENTORY', owner: 'UNKNOWN',
+        expectedDuty: 'Determine the role of this material.', reason: 'Controlled disputed inventory marker.' }];
+    }
+    return report;
   };
   await f.refresh();
   assert.equal((await f.truth()).claims.length, 2);
   assert.equal(f.audits().length, 2); assert.equal(f.globals().length, 1);
   assert.equal(f.state.baselinePrompts.length, 2);
+  if (mixed) {
+    const prompt = JSON.stringify(f.state.baselinePrompts[1]);
+    assert.match(prompt, /The original read\/follow duty is absent/);
+    assert.doesNotMatch(prompt, /Controlled disputed inventory marker/);
+  }
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
   assert.equal(bundle.budget.externalRepairs, 1); assert.equal(bundle.budget.repairs, 1);
@@ -582,9 +937,50 @@ test('a repeated semantic omission leaves no staged truth, cursor or certificate
   f.state.coverageReport = missingReadReport;
   await assert.rejects(f.refresh());
   assert.equal(f.audits().length, 2);
+  assert.equal(f.state.baselinePrompts.length, 2, 'do not dispatch another repair after the final audit');
   assert.equal((await f.truth()).version, 0);
   assert.equal((await f.task()).groundTruth.sharedBasis, undefined);
   assert.equal((await f.task()).groundTruth.sourceCursors['shared-original-basis'], undefined);
+});
+
+test('a settled truncated extractor resumes its acknowledged reads within the same generation', async t => {
+  const f = await sharedBasisFixture(t);
+  const calls = [];
+  f.state.replayBaseline = async ({ call, readAll, params }) => {
+    calls.push({ sessionId: params.sessionId, ...JSON.parse(params.prompt) });
+    if (calls.length === 1) {
+      await readAll();
+      throw Object.assign(new Error('Controlled native output limit'), { code: 'REVIEWER_OUTPUT_LIMIT' });
+    }
+    const { source, ...claim } = operation();
+    await call('save_baseline_batch', { batchId: 1, operations: [{ ...claim, sourceFrom: { unitId: 'S0L1' } }] });
+    await call('finish_baseline', { batchIds: [1], taskClassification: 'CONTINUATION', summary: 'Finished the resumed candidate.' });
+  };
+  await f.refresh();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].sessionId, calls[0].sessionId);
+  assert.equal(calls[1].generation, calls[0].generation);
+  assert.match(calls[1].promptAppend, /output was truncated/);
+  const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
+  const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
+  assert.equal(bundle.budget.repairs, 1);
+  assert.equal(bundle.budget.auditCalls, 1);
+});
+
+test('a frozen omission without new user authority does not dispatch an impossible candidate repair', async t => {
+  const f = await sharedBasisFixture(t);
+  await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user',
+    content: 'Preserve the requested feature. Read and follow skills/demo/SKILL.md.' } }) + '\n');
+  const { taskId } = await f.task();
+  await applyGroundTruthDelta({ projectRoot: f.root, taskId, delta: { operations: [operation()] } });
+  await freezeGroundTruth({ projectRoot: f.root, taskId });
+  const before = await f.truth();
+  f.state.coverageReport = missingReadReport;
+  await assert.rejects(f.refresh(), error => error.code === 'BASELINE_FROZEN_AUTHORIZATION_REQUIRED');
+  assert.equal(f.audits().length, 1);
+  assert.equal(f.state.baselinePrompts.length, 1);
+  assert.deepEqual(await f.truth(), before);
+  assert.equal((await f.task()).groundTruth.sharedBasis, undefined);
 });
 
 test('NO_CHANGE with seen input and a missing certificate is independently audited again', async t => {
@@ -598,7 +994,7 @@ test('NO_CHANGE with seen input and a missing certificate is independently audit
   assert((await f.task()).groundTruth.sharedBasis.acceptedSourceCertificate);
 });
 
-test('actual finish and KEEP_EXISTING decisions are fully read and bound into the candidate identity', async t => {
+test('actual finish remains in program proof while complete KEEP_EXISTING semantics are disclosed and identity-bound', async t => {
   const f = await sharedBasisFixture(t); await f.refresh();
   await fs.appendFile(f.material, ' Additional controlled unadopted context.');
   await f.refresh();
@@ -615,7 +1011,10 @@ test('actual finish and KEEP_EXISTING decisions are fully read and bound into th
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
   const view = decodeBaselineAuditView(JSON.parse(bundle.files.filter(file => /^candidate-\d+\.txt$/u.test(file.path))
     .sort((a, b) => Number(a.path.slice(10, -4)) - Number(b.path.slice(10, -4))).map(file => file.text).join('')));
-  assert.deepEqual(view.finish, input.finish);
+  assert(!Object.hasOwn(view, 'finish'));
+  assert.deepEqual(bundle.input.finish, input.finish);
+  assert(bundle.auxiliaryFiles.some(file => /^baseline-/.test(file.path)));
+  assert(!bundle.files.some(file => /^original-(?:baseline|request)-/.test(file.path)));
   assert.deepEqual(view.retainedSourceUnits, input.retainedSourceUnits);
   const originalIdentity = coverageIdentity(input);
   const changedFinish = structuredClone(input);
@@ -852,6 +1251,7 @@ test('source-only paths and every search tool deny candidate/control access with
 
 test('same-assistant-batch inventory plus candidate read stays denied even after inventory append; exact replay keeps first commitment', async t => {
   const f = await sharedBasisFixture(t); let originalId, sameArgs, originalNextAction, sameId = 'same-batch-candidate';
+  f.state.coverageRepeatInventoryIdentity = true;
   f.state.coverageOnInventory = async ({ params, tools, request, inventoryId, inventoryResult }) => {
     originalId = inventoryId; sameArgs = { path: 'candidate-0.txt' };
     originalNextAction = JSON.parse(inventoryResult.content[0].text).nextAction;
@@ -871,6 +1271,10 @@ test('same-assistant-batch inventory plus candidate read stays denied even after
       toolName: 'source_read', content: denied.content, isError: true } }) + '\n');
     const replay = await nativeAuditAttempt(params, tools, 'commit_baseline_inventory', inventoryArgs, 'late-exact-replay');
     assert.deepEqual(replay.content, inventoryResult.content); assert.equal(replay.isError, false);
+    const foreign = await nativeAuditAttempt(params, tools, 'commit_baseline_inventory',
+      { ...inventoryArgs, identityDigest: 'different-identity' }, 'late-foreign-identity');
+    assert.equal(foreign.isError, true);
+    assert.match(foreign.content[0].text, /Repeated source inventory identity differs/u);
     const amended = structuredClone(inventoryArgs); amended.inventory.sources[0].units[0].reason += ' changed after source-only commitment';
     assert.equal((await nativeAuditAttempt(params, tools, 'commit_baseline_inventory', amended, 'late-amendment')).isError, true);
     assert.equal(params.abortSignal.aborted, false);
@@ -878,6 +1282,7 @@ test('same-assistant-batch inventory plus candidate read stays denied even after
   await f.refresh();
   const bundle = await verifyBaselineCoverageProof((await f.task()).groundTruth.sharedBasis.coverageAudit.pointer);
   assert.equal(bundle.inventory.record.toolCallId, originalId); assert.equal(bundle.inventory.nativeToolCallId, originalId);
+  assert.equal(bundle.inventory.record.repeatedIdentity, true);
   assert.equal(bundle.inventory.record.receipt.complete, false); assert.equal(bundle.finish.record.receipt.complete, true);
   assert.deepEqual(bundle.inventory.record.receipt.nextAction, originalNextAction);
   assert.equal(bundle.budget.auditCalls, 1);

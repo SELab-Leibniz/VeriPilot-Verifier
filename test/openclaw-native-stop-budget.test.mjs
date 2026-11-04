@@ -24,7 +24,9 @@ test("terminal registration returns before slow reviews and coalesces duplicate 
   assert.equal(started, 1);
   finish(); const results = await manager.wait();
   assert.equal(results[0].status, "SETTLED"); assert.equal(results[0].reviewStatus, "PASS");
-  await createNativeStopReviews().schedule({ ...params, run });
+  const restarted = createNativeStopReviews();
+  await restarted.schedule({ ...params, run });
+  await restarted.wait({ drain: true });
   assert.equal(started, 1, "persisted terminal checkpoint must not replay model work");
 });
 test("two sequential non-Stop native reviewer roles each retain configured time beyond a short Hook window", async t => {
@@ -60,7 +62,9 @@ test("an abandoned durable receipt becomes unverified without replay", async t =
   const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
   const record = JSON.parse(await fs.readFile(file)); record.status = "RUNNING"; await fs.writeFile(file, JSON.stringify(record));
   let calls = 0;
-  const loaded = await createNativeStopReviews().schedule({ ...params, run: async () => { calls++; } });
+  const restarted = createNativeStopReviews();
+  const loaded = await restarted.schedule({ ...params, run: async () => { calls++; } });
+  await restarted.wait({ drain: true });
   assert.equal(loaded.reviewStatus, "UNVERIFIED"); assert.equal(loaded.reasonCode, "REVIEW_OWNER_LOST"); assert.equal(calls, 0);
 });
 
@@ -75,7 +79,9 @@ test("recovery retains a committed assessment without replaying uncertain contin
   const base = path.join(params.projectRoot, ".runtime-correction/openclaw/native-stop-reviews");
   const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
   await fs.writeFile(file, JSON.stringify({ ...record, status: "RUNNING" }));
-  const restored = await createNativeStopReviews().schedule({ ...params, run() { assert.fail("No replay after owner loss"); } });
+  const restarted = createNativeStopReviews();
+  const restored = await restarted.schedule({ ...params, run() { assert.fail("No replay after owner loss"); } });
+  await restarted.wait({ drain: true });
   assert.equal(restored.reviewStatus, "DEVIATION"); assert.equal(restored.reasonCode, "REVIEW_OWNER_LOST");
   assert.equal(restored.evaluationId, "committed-evaluation");
 });
@@ -292,6 +298,19 @@ test("reset cancels background extraction before it can publish to the old task"
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(task.groundTruth.version, 0);
   assert.equal(f.state.reviewController.signal.aborted, true);
+});
+
+test("an ordinary read result does not wait for background extraction", async t => {
+  const started = deferred(t), finish = deferred(t);
+  const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
+    baselineReview: async () => { started.resolve(); await finish.promise; } });
+  await within(started.promise, "background extraction");
+  await within(f.runtime.beforeTool({ toolName: "read", toolCallId: "read", params: { path: "draft.md" } }, f.ctx), "read admission");
+  await within(f.runtime.toolResult({ toolName: "read", toolCallId: "read", args: { path: "draft.md" },
+    result: { content: [{ type: "text", text: "draft contents" }] } }, f.ctx), "ordinary read result");
+  assert.equal((await findTask({ projectRoot: f.root, sessionId: "host" })).groundTruth.version, 0);
+  finish.resolve();
+  await within(f.runtime.waitForBackgroundReviews(), "background drain");
 });
 
 test("dispose cancels without waiting for an uncooperative background reviewer and explicit drain settles its metadata", async t => {

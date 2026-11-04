@@ -8,6 +8,7 @@ import test from "node:test";
 import * as claudeHost from "../lib/hosts/claude.mjs";
 import * as codeAgentHost from "../lib/hosts/codeagent.mjs";
 import { resolvePluginEntry, resolvePluginRoot } from "../lib/plugin-root.mjs";
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 function posixDrivePath(nativePath) {
   const match = nativePath.match(/^([a-zA-Z]):[\\/](.*)$/u);
@@ -139,7 +140,7 @@ test("rejects relative, missing, non-directory, wrong identity, and execution mi
   }), "PLUGIN_ROOT_EXECUTION_MISMATCH");
 });
 
-test("resolves an in-root entry and rejects lexical and symlink escapes", async (t) => {
+test("resolves an in-root entry and rejects lexical and symlink escapes", { skip: await fileSymlinkSkipReason() }, async (t) => {
   const root = await makePlugin(t, claudeHost);
   const entry = path.join(root, "scripts", "runtime-event.mjs");
   assert.equal(await resolvePluginEntry({ root, entry: "scripts/runtime-event.mjs" }), await fs.realpath(entry));

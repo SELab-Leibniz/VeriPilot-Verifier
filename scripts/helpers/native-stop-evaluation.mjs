@@ -545,8 +545,16 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
   const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
   if (pkg.name !== 'openclaw' || pkg.version !== '2026.7.1-2') throw new Error('The native live probe requires installed OpenClaw 2026.7.1-2.');
   const coding = selectedProvider?.api === 'openai-completions';
-  if (selectedProvider && (!coding || selectedProvider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4'
-    || !['glm-5.3', ...(standaloneBaseline ? ['glm-5.3-flash'] : [])].includes(selectedProvider.model)
+  const standaloneProvider = standaloneBaseline && coding && (() => {
+    try {
+      const url = new URL(selectedProvider.baseUrl);
+      return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password
+        && typeof selectedProvider.model === 'string' && Boolean(selectedProvider.model.trim())
+        && (!selectedProvider.modelSettings || selectedProvider.modelSettings.id === selectedProvider.model);
+    } catch { return false; }
+  })();
+  if (selectedProvider && (!coding || !standaloneProvider && (selectedProvider.baseUrl !== 'https://open.bigmodel.cn/api/coding/paas/v4'
+    || selectedProvider.model !== 'glm-5.3')
     || !/^[A-Z][A-Z0-9_]*$/u.test(selectedProvider.credentialEnv ?? '')))
     throw new Error('Unapproved explicit native provider configuration');
   const component = ['metered_native_baseline_batch', 'metered_native_document_batch', 'metered_native_skill_batch'].includes(batch?.kind);
@@ -578,10 +586,11 @@ export async function createNativeStopEvaluation({ hostRoot, projectRoot, output
       ...(providerWallMs !== null ? { timeoutSeconds: Math.floor(providerWallMs / 1000) } : {}),
       ...(!coding && providerTimeoutMs !== undefined ? { timeoutSeconds: Math.ceil(providerTimeoutMs / 1000) } : {}),
       apiKey: '${' + (coding ? selectedProvider.credentialEnv : 'ANTHROPIC_AUTH_TOKEN') + '}',
-      models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000, maxTokens: 32768,
+       models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow: 128000, maxTokens: 32768,
         ...(coding ? { ...(model === 'glm-5.3' ? { cost: { input: 7, output: 22, cacheRead: 7, cacheWrite: 7 } } : {}),
           compat: { supportsUsageInStreaming: true, maxTokensField: 'max_tokens', supportsStore: false,
-            supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}) }] } } },
+             supportsDeveloperRole: false, supportsReasoningEffort: false } } : {}),
+         ...(standaloneProvider ? selectedProvider.modelSettings ?? {} : {}) }] } } },
     plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] },
       entries: { 'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } } } } };
   if (standaloneBaseline && baselineLimits) {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -29,7 +29,7 @@ test('actual integrated CLI retains its provider boundary when startup loses an 
   const entry = fileURLToPath(new URL('../scripts/evaluate-native-integrated.mjs', import.meta.url));
   let code;
   try {
-    await execute(process.execPath, ['--experimental-loader', loader, entry, '--live', '--host-root', path.join(root, 'unused-host'),
+    await execute(process.execPath, ['--experimental-loader', pathToFileURL(loader).href, entry, '--live', '--host-root', path.join(root, 'unused-host'),
       '--manifest', manifest, '--output', output], { timeout: 15000,
       env: { ...process.env, RC_UNIT_TRACE: trace, RC_NATIVE_GATEWAY_API_KEY: 'synthetic-test-only' } });
     code = 0;

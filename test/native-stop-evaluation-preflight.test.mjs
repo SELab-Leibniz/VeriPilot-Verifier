@@ -3,13 +3,33 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { fenceNativeStopTools, prepareNativeEvaluationTools, createNativeStopProviderFetch, installNativeStopBatch, installNativeBaselineBatch, validateNativeStopBatchLimits } from '../scripts/helpers/native-stop-evaluation.mjs';
+import { fenceNativeStopTools, prepareNativeEvaluationTools, createNativeStopProviderFetch, installNativeStopBatch, installNativeBaselineBatch, validateNativeStopBatchLimits, createNativeStopEvaluation } from '../scripts/helpers/native-stop-evaluation.mjs';
 import { createProviderRequestBudget } from '../scripts/helpers/provider-request-budget.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
-test('native fixture fence permits generated basis and the exact external contract; denies parent/profile and links before read', async () => {
+test('custom standalone baseline models retain explicit provider, model and finite dispatch boundaries', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'native-provider-boundary-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, 'package.json'), JSON.stringify({ name: 'openclaw', version: '2026.7.1-2' }));
+  const provider = { api: 'openai-completions', baseUrl: 'https://provider.example.invalid/v1',
+    model: 'configured-custom-model', credentialEnv: 'RC_CONTROLLED_UNIT_KEY' };
+  await assert.rejects(createNativeStopEvaluation({ hostRoot: root, provider }), /Unapproved explicit native provider/);
+  for (const invalid of [
+    { ...provider, baseUrl: 'file:///private' },
+    { ...provider, baseUrl: 'https://user:secret@provider.example.invalid/v1' },
+    { ...provider, modelSettings: { id: 'different-model' } },
+    { ...provider, credentialEnv: 'not an environment variable' },
+  ]) await assert.rejects(createNativeStopEvaluation({ hostRoot: root, standaloneBaseline: true, provider: invalid }),
+    /Unapproved explicit native provider/);
+  await assert.rejects(createNativeStopEvaluation({ hostRoot: root, standaloneBaseline: true, provider }),
+    /explicitly bounded standalone baseline/);
+  assert.deepEqual((await fs.readdir(root)).sort(), ['package.json'], 'No profile, source build, auth lookup or model dispatch before admission');
+});
+
+test('native fixture fence permits generated basis and the exact external contract; denies parent/profile and links before read', { skip: await fileSymlinkSkipReason() }, async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'native-data-'));
   const projectRoot = path.join(root, 'project'), contract = path.join(root, 'contract.md');
   await fs.mkdir(path.join(projectRoot, 'basis'), { recursive: true });

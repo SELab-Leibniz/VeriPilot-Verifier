@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { prepareLiteWorkspace, collectLitePatch } from '../scripts/bench/swebench-lite-workspace.mjs';
 const execute = promisify(execFile);
-const git = async (cwd, ...args) => (await execute('git', args, { cwd, encoding: 'utf8' })).stdout.trim();
+const git = async (cwd, ...args) => (await execute('git', ['-c', 'core.autocrlf=false', ...args], { cwd, encoding: 'utf8' })).stdout.trim();
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-lite-workspace-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -73,7 +73,8 @@ test('actual exported patch applies staged/unstaged/new/binary/doc changes, excl
   await fs.appendFile(path.join(repo, 'main.py'), 'other = True\n');
   await fs.writeFile(path.join(repo, 'guide.md'), 'Updated business document.\n');
   await fs.writeFile(path.join(repo, 'data.bin'), Buffer.from([0, 8, 7, 255, 128]));
-  const newName = 'new file\nwith newline.py'; await fs.writeFile(path.join(repo, newName), 'new_value = 3\n');
+  const newName = process.platform === 'win32' ? 'new file with 空格.py' : 'new file\nwith newline.py';
+  await fs.writeFile(path.join(repo, newName), 'new_value = 3\n');
   await fs.writeFile(path.join(repo, '.gitignore'), 'explicitly-staged.txt\n');
   await fs.writeFile(path.join(repo, 'explicitly-staged.txt'), 'Included because business explicitly staged it.\n');
   await git(repo, 'add', '-f', 'explicitly-staged.txt');

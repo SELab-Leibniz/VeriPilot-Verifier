@@ -7,9 +7,16 @@ import { BASELINE_COVERAGE_SCHEMA, decodeBaselineAuditReport, decodeBaselineAudi
 import { planGroundTruthDelta } from '../../lib/runtime-v2/ground-truth-ledger.mjs';
 import { sha256 } from '../../lib/runtime-v2/utils.mjs';
 import { outsideDecision } from '../../lib/runtime-v2/decision-scope.mjs';
+import { loadPublicToolArgumentsValidator } from '../../lib/openclaw/compat-2026.7.1-2.mjs';
 
-const catalogUnits = files => JSON.parse([...files].filter(([name]) => /^unit-catalog-\d+\.txt$/u.test(name))
-  .sort(([a], [b]) => Number(a.slice(13, -4)) - Number(b.slice(13, -4))).map(([, text]) => text).join(''));
+function catalogUnits(files, sources) {
+  const originals = new Map(sources.map(source => [`${source.kind}:${source.ref}`, Buffer.concat(
+    (source.originalParts ?? source.parts.map(part => ({ path: `original-${part.file}` })))
+      .map(part => Buffer.from(files.get(part.path))))]));
+  return JSON.parse([...files].filter(([name]) => /^unit-catalog-\d+\.txt$/u.test(name))
+    .sort(([a], [b]) => Number(a.slice(13, -4)) - Number(b.slice(13, -4))).map(([, text]) => text).join(''))
+    .map(unit => ({ ...unit, text: originals.get(`${unit.kind}:${unit.ref}`).subarray(unit.startByte, unit.endByte).toString('utf8') }));
+}
 
 // Pure source-only builder. The caller must author semantic expectations from
 // originals; neither candidate objects nor their old source-linked labels are inputs.
@@ -19,7 +26,7 @@ export function scriptedSourceInventory({ request, files, citations }, interpret
   if (source.kind === 'MATERIAL' && fullText === 'Original material condition.') return [];
   throw new Error(`Missing independently authored source-only fixture interpretation for ${source.kind}:${source.ref}`);
 }) {
-  const units = catalogUnits(files), originals = request.sources.map(source => ({ kind: source.kind, ref: source.ref,
+  const units = catalogUnits(files, request.sources), originals = request.sources.map(source => ({ kind: source.kind, ref: source.ref,
     fullText: source.originalParts.map(part => files.get(part.path)).join('') }));
   return { identityDigest: request.identityDigest, sources: request.sources.map(source => {
     const fullText = source.originalParts.map(part => files.get(part.path)).join('');
@@ -36,13 +43,13 @@ export function scriptedSourceInventory({ request, files, citations }, interpret
 }
 
 export function scriptedCoverageReport({ view, files, citations, identityDigest, inventory }) {
-  const units = catalogUnits(files), active = view.effectiveLedger.claims.filter(claim => claim.status === 'ACTIVE');
+  const units = catalogUnits(files, view.sources), active = view.effectiveLedger.claims.filter(claim => claim.status === 'ACTIVE');
   const base = ref => ref?.replace(/#L\d+(?:-L?\d+)?$/u, '');
   return { identityDigest, inventoryDigest: sha256(inventory), verdict: 'PASS', sources: view.sources.map(source => {
     const own = citations.filter(cite => source.parts.some(part => `original-${part.file}` === cite.path));
     const original = inventory.sources.find(row => row.kind === source.kind && row.ref === source.ref);
     const claims = active.filter(claim => base(claim.source?.ref) === source.ref
-      || view.plan.operationDispositions.some(row => row.disposition === 'DEDUPLICATED' && row.effectiveTarget?.claimId === claim.claimId
+      || view.operationDispositions.some(row => row.disposition === 'DEDUPLICATED' && row.effectiveTarget?.claimId === claim.claimId
         && base(view.delta.operations[row.operationIndex].source?.ref) === source.ref));
     const mappings = units.filter(unit => unit.ref === source.ref && unit.kind === source.kind).flatMap(unit => {
       const duties = original.units.find(row => row.unitId === unit.unitId).obligations;
@@ -73,7 +80,8 @@ export function scriptedCoverageReport({ view, files, citations, identityDigest,
 export async function runNativeCoverageFixture({ params, registry, hooks, report = scriptedCoverageReport, mutateResult = null, formatReport = JSON.stringify,
   repairReport = null, onSubmission = null, persistFinish = true, observeFinish = true,
   inventory: inventoryOracle = scriptedSourceInventory, persistInventory = true, observeInventory = true,
-  onInventory = null, beforeInventory = null, afterInventory = null, returnWithoutFinish = null, skipRead = null }) {
+  onInventory = null, beforeInventory = null, afterInventory = null, returnWithoutFinish = null, skipRead = null, skipReadReceipt = null,
+  staged = null, stagedInventory = null, repeatInventoryIdentity = false }) {
   const request = JSON.parse(params.prompt), ctx = { sessionId: params.sessionId, sessionKey: params.sessionKey, runId: params.runId };
   const tools = registry(ctx), root = path.join(path.dirname(params.sessionFile), 'coverage-source');
   const citations = [], files = new Map(); let id = 0;
@@ -89,10 +97,11 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
       const message = { role: 'toolResult', toolCallId, toolName: 'source_read', content: result.content, details: result.details, isError: false };
       await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
       const callbacks = hooks.get('tool_result_persist');
-      for (const callback of Array.isArray(callbacks) ? callbacks : [callbacks]) callback?.({ toolName: 'source_read', toolCallId, isSynthetic: false, message }, ctx);
+      if (!skipReadReceipt?.(file)) for (const callback of Array.isArray(callbacks) ? callbacks : [callbacks])
+        callback?.({ toolName: 'source_read', toolCallId, isSynthetic: false, message }, ctx);
       citations.push(result.details.citation);
       const next = result.details.page.nextOffset;
-      offset = next && next > args.offset + 1 ? next - 1 : next; // Real overlapping disclosure retains page-boundary LF, never fabricates it.
+      offset = result.details.citation.overlapBoundary ? next : next && next > args.offset + 1 ? next - 1 : next;
     } while (offset);
     files.set(file, await fs.readFile(path.join(root, file), 'utf8'));
   }
@@ -101,11 +110,52 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
   await beforeInventory?.({ params, tools, request, files, citations });
   const inventory = await inventoryOracle(sourceContext);
   assert(!Object.hasOwn(sourceContext, 'view'), 'The inventory oracle never receives a candidate view');
+  const inventoryTool = tools.find(tool => tool.name === 'commit_baseline_inventory');
+  if (stagedInventory) {
+    const validator = await loadPublicToolArgumentsValidator(), name = inventoryTool.name;
+    async function saveUnit(unit, observe = true) {
+      const args = { action: 'save_unit', unit, ...(stagedInventory.repeatIdentity ? { identityDigest: inventory.identityDigest } : {}) },
+        toolCallId = `coverageinventory${++id}`;
+      assert.deepEqual(validator.validateToolArguments(inventoryTool, { name, arguments: structuredClone(args) }), args);
+      params.onAssistantMessageStart();
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [
+        { type: 'toolCall', id: toolCallId, name, arguments: args }] } }) + '\n');
+      const result = await inventoryTool.execute(toolCallId, args);
+      const message = { role: 'toolResult', toolCallId, toolName: name, content: result.content, isError: Boolean(result.isError) };
+      if (observe) for (const callback of [].concat(hooks.get('tool_result_persist')))
+        callback?.({ toolName: name, toolCallId, isSynthetic: false, message }, ctx);
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
+      params.onAgentToolResult?.({ toolName: name, result, isError: message.isError });
+      return JSON.parse(result.content[0].text);
+    }
+    const units = inventory.sources.flatMap(row => row.units);
+    if (stagedInventory.tryWrongDisposition) {
+      const unit = structuredClone(units.find(item => item.obligations?.length));
+      unit.disposition = 'CONTEXT';
+      const rejected = await saveUnit(unit);
+      assert.equal(rejected.accepted, false);
+      assert.match(rejected.message, /disagrees with its explicit duties/u);
+    }
+    for (const [index, unit] of units.entries()) {
+      const ack = await saveUnit(unit, !stagedInventory.skipUnitAck || index !== 0);
+      assert.equal(ack.phase, 'INVENTORY_UNIT_SAVED');
+      assert.equal(ack.complete, false);
+    }
+    if (stagedInventory.beforeSeal) await stagedInventory.beforeSeal({ params, tools, request });
+    if (stagedInventory.replaceFirst) {
+      units[0].obligations[0].reason = 'Explicit replacement of the first source-only duty reason.';
+      assert.equal((await saveUnit(units[0])).phase, 'INVENTORY_UNIT_SAVED');
+    }
+  }
   params.onAssistantMessageStart();
-  const inventoryId = `coverageinventory${++id}`, inventoryArgs = { inventory };
+  const inventoryId = `coverageinventory${++id}`, inventoryArgs = stagedInventory
+    ? { action: 'seal_units', identityDigest: inventory.identityDigest }
+    : { inventory, ...(repeatInventoryIdentity ? { identityDigest: inventory.identityDigest } : {}) };
+  if (stagedInventory || repeatInventoryIdentity) assert.deepEqual((await loadPublicToolArgumentsValidator()).validateToolArguments(inventoryTool,
+    { name: inventoryTool.name, arguments: structuredClone(inventoryArgs) }), inventoryArgs);
   await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant', content: [
     { type: 'toolCall', id: inventoryId, name: 'commit_baseline_inventory', arguments: inventoryArgs }] } }) + '\n');
-  const inventoryResult = await tools.find(tool => tool.name === 'commit_baseline_inventory').execute(inventoryId, inventoryArgs);
+  const inventoryResult = await inventoryTool.execute(inventoryId, inventoryArgs);
   const inventoryMessage = { role: 'toolResult', toolCallId: inventoryId, toolName: 'commit_baseline_inventory',
     content: inventoryResult.content, isError: Boolean(inventoryResult.isError) };
   if (observeInventory) {
@@ -125,11 +175,108 @@ export async function runNativeCoverageFixture({ params, registry, hooks, report
   const view = decodeBaselineAuditView(JSON.parse([...files].filter(([name]) => name.startsWith('candidate-'))
     .sort(([a], [b]) => Number(a.slice(10, -4)) - Number(b.slice(10, -4))).map(([, text]) => text).join('')));
   const context = { view, files, citations, inventory, identityDigest: request.identityDigest };
-  const unfinished = await returnWithoutFinish?.(context);
+  const unfinished = await returnWithoutFinish?.(context, params);
   if (unfinished) return typeof unfinished === 'object' ? unfinished
     : { payloads: [{ text: 'No confirmed audit finish; this is an incomplete native return.' }], meta: {} };
   let value = await report(context);
   await mutateResult?.({ value, params, view, files, citations });
+  if (staged) {
+    const validator = await loadPublicToolArgumentsValidator();
+    async function stagedCall(args, observe = true) {
+      params.onAssistantMessageStart();
+      const toolCallId = `coveragefinish${++id}`, name = 'finish_baseline_audit';
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant',
+        content: [{ type: 'toolCall', id: toolCallId, name, arguments: args }] } }) + '\n');
+      const tool = tools.find(tool => tool.name === name);
+      assert.deepEqual(validator.validateToolArguments(tool, { name, arguments: structuredClone(args) }), args);
+      const result = await tool.execute(toolCallId, args);
+      const message = { role: 'toolResult', toolCallId, toolName: name, content: result.content, isError: Boolean(result.isError) };
+      if (observe) {
+        const callbacks = hooks.get('tool_result_persist');
+        for (const callback of Array.isArray(callbacks) ? callbacks : [callbacks])
+          callback?.({ toolName: name, toolCallId, isSynthetic: false, message }, ctx);
+      }
+      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message }) + '\n');
+      params.onAgentToolResult?.({ toolName: name, result, isError: message.isError });
+      return JSON.parse(result.content.map(block => block.text).join(''));
+    }
+    const sections = value.sources.flatMap((source, sourceIndex) => source.unitIds.map(unitId => ({ sourceIndex, unitId,
+      mappings: source.mappings.filter(entry => entry.unitId === unitId), issues: source.issues.filter(entry => entry.unitId === unitId) })));
+    if (staged.compactUnitAnchor) for (const section of sections) delete section.sourceIndex;
+    if (staged.compactDependency) {
+      for (const section of sections) for (const entry of [...section.mappings, ...section.issues]) {
+        delete entry.supportMode;
+        delete entry.dependencyUnitIds;
+      }
+      const [first, second] = sections;
+      first.mappings[0].dependencyUnitIds = [second.unitId];
+    }
+    const completion = { action: 'finish_sections', summary: { identityDigest: value.identityDigest, inventoryDigest: value.inventoryDigest,
+      verdict: value.verdict, sources: value.sources.map(({ disposition, reason }, sourceIndex) => ({ sourceIndex, disposition, reason })) } };
+    if (staged.tryIncomplete) {
+      const incomplete = await stagedCall(completion);
+      assert.equal(incomplete.validation.reason, 'AUDIT_SECTIONS_MISSING');
+      assert.equal(incomplete.accepted, false);
+    }
+    if (staged.tryWrongDuty) {
+      const wrong = structuredClone(sections.find(section => section.mappings.some(entry => entry.obligationIds.length)));
+      wrong.mappings.find(entry => entry.obligationIds.length).obligationIds = ['not-a-committed-duty'];
+      const refused = await stagedCall({ action: 'save_section', section: wrong });
+      assert.equal(refused.accepted, false);
+      assert.equal(refused.validation.reason, 'SECTION_DUTY_ANCHOR_INVALID');
+    }
+    if (staged.tryWrongOwner) {
+      const wrong = structuredClone(sections.find(section => section.mappings.some(entry => entry.obligationIds.length)));
+      const entry = wrong.mappings.find(row => row.obligationIds.length);
+      entry.owner = entry.owner === 'IMPLEMENTATION' ? 'ARTIFACT' : 'IMPLEMENTATION';
+      const refused = await stagedCall({ action: 'save_section', section: wrong });
+      assert.equal(refused.accepted, false);
+      assert.equal(refused.validation.reason, 'SECTION_OWNER_MISMATCH');
+    }
+    if (staged.tryWrongIssue) {
+      const wrong = structuredClone(sections.find(section => section.mappings.some(entry => entry.obligationIds.length)));
+      const index = wrong.mappings.findIndex(entry => entry.obligationIds.length), [entry] = wrong.mappings.splice(index, 1);
+      wrong.issues.push({ ...entry, owner: entry.owner === 'IMPLEMENTATION' ? 'ARTIFACT' : 'IMPLEMENTATION',
+        issueKind: 'CANDIDATE', expectedDuty: 'Controlled wrong owner in the draft issue.' });
+      const refused = await stagedCall({ action: 'save_section', section: wrong });
+      assert.equal(refused.accepted, false);
+      assert.equal(refused.validation.reason, 'SECTION_ISSUE_DUTY_MISMATCH');
+    }
+    if (staged.compactContext) {
+      const duty = sections.find(section => section.mappings.some(entry => entry.obligationIds.length));
+      const refused = await stagedCall({ action: 'save_section', section: { unitId: duty.unitId, contextReason: 'Incorrectly omits a sealed duty.' } });
+      assert.equal(refused.accepted, false);
+      assert.match(refused.message, /only for a wholly sealed CONTEXT unit/u);
+    }
+    for (const [index, section] of sections.entries()) {
+      const contextOnly = staged.compactContext && section.issues.length === 0 && section.mappings.length === 1
+        && section.mappings[0].owner === 'CONTEXT';
+      const submitted = contextOnly
+        ? { unitId: section.unitId, contextReason: 'This original states background only and adds no new duty.' } : { ...section };
+      if (staged.omitEmptyLists) {
+        if (!submitted.mappings?.length) delete submitted.mappings;
+        if (!submitted.issues?.length) delete submitted.issues;
+      }
+      const saved = await stagedCall({ action: 'save_section', section: submitted },
+        !staged.skipSectionAck || index !== 0);
+      assert.equal(saved.phase, 'AUDIT_SECTION_SAVED');
+      assert.equal(saved.complete, false);
+    }
+    if (staged.replaceFirst) {
+      const replacement = structuredClone(sections[0]);
+      replacement.mappings[0].reason = 'Explicit replacement of one staged section.';
+      assert.equal((await stagedCall({ action: 'save_section', section: replacement })).complete, false);
+    }
+    if (staged.outputLimitAfterSections) return { payloads: [], meta: { stopReason: 'length' } };
+    if (staged.exhaustRepairAfterSections) {
+      const wrong = structuredClone(sections.find(section => section.mappings.some(entry => entry.obligationIds.length)));
+      wrong.mappings = [];
+      await stagedCall({ action: 'save_section', section: wrong });
+    }
+    const final = await stagedCall(completion);
+    assert.equal(final.complete, !staged.skipSectionAck);
+    return { payloads: [], meta: {} };
+  }
   let attempt = 0, formatted;
   while (true) {
     params.onAssistantMessageStart();

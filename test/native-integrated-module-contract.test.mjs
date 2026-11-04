@@ -10,6 +10,7 @@ import { bindTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { bindDocumentTools } from '../lib/document-tools.mjs';
 import { runInternalExecution } from '../lib/openclaw/internal-context.mjs';
 import { recordNativeRun } from '../lib/openclaw/native-runs.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'integrated-contract-')));
@@ -59,7 +60,7 @@ test('business fence confines all file operations and rejects altered command op
   assert.equal((await f.fence('exec', exec)).block, true);
 });
 
-test('native business fence rejects symlink deliverables and never grants unbound private reads', async t => {
+test('native business fence rejects symlink deliverables and never grants unbound private reads', { skip: await fileSymlinkSkipReason() }, async t => {
   const f = await fixture(t);
   const outside = path.join(f.root, 'outside.mjs'); await fs.writeFile(outside, 'private');
   const target = path.join(f.fixture.projectRoot, 'app.mjs'); await fs.unlink(target); await fs.symlink(outside, target);

@@ -6,14 +6,14 @@ import os from 'node:os';
 import { frozenSourceParts, frozenLineSelection, runStopBaselineTask } from '../lib/runtime-v2/baseline-task.mjs';
 import { createNativeTaskSession, nativeTaskFailure } from '../lib/openclaw/task-session.mjs';
 import { createBaselineWorker } from '../lib/review-task/baseline-task.mjs';
-import { createOwnedBaselineProposal, programPromptedBaselineRetry } from '../lib/review-task/task-evidence.mjs';
+import { createOwnedBaselineProposal, programPromptedBaselineRetry, verifyOwnedBaselineProposal } from '../lib/review-task/task-evidence.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { ensureTask, taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
-import { listNativeRuns } from '../lib/openclaw/native-runs.mjs';
+import { listNativeRuns, recordNativeRun } from '../lib/openclaw/native-runs.mjs';
 import { loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
-import { acquireBaselineAgent } from '../lib/openclaw/baseline-agent.mjs';
+import { acquireBaselineAgent, BASELINE_REUSE_BYTES } from '../lib/openclaw/baseline-agent.mjs';
 
 async function workspace(t, beforeRemove) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-ma-baseline-')));
@@ -128,6 +128,53 @@ test('pool release retires an existing header-only transcript even without a dis
   assert.notEqual(next.sessionId, first.sessionId); assert.equal(next.reused, false); await next.release();
 });
 
+test('context-overflow sessions with assistant history retire before the next extractor', async t => {
+  const root = await workspace(t), api = { runtime: { version: '2026.7.1-2', agent: {} } }, disposed = [];
+  const runner = async params => {
+    await fs.writeFile(params.sessionFile, row({ type: 'session', id: params.sessionId })
+      + row({ type: 'message', message: { role: 'assistant', content: [], stopReason: 'error' } }));
+    throw Object.assign(new Error('Context overflow: prompt too large'), { code: 'REVIEWER_RUN_FAILED' });
+  };
+  runner.close = async (...identity) => { disposed.push(identity); };
+  const first = await createNativeTaskSession(inputAt(root), { api, nativeRunner: runner, selection });
+  await assert.rejects(first.run({ ...workerAt(root), isComplete: () => false, phase: () => 'READING' }), /Context overflow/);
+  await first.close();
+  const next = await createNativeTaskSession(inputAt(root), { api, nativeRunner: runner, selection });
+  assert.notEqual(next.sessionId, first.sessionId); assert.equal(next.extractorReused, false);
+  assert.deepEqual(disposed, [[first.sessionKey, first.sessionId]]);
+  await next.close();
+});
+
+test('source inventory validation shares the original finite repair budget and replay cannot double-debit', async t => {
+  const f = await proposalFixture(t), native = { ...f.native, runId: 'independent-checker', sessionId: 'checker-session' };
+  f.worker.budget.beginAudit(native, 'candidate');
+  const digest = sha256('unchanged failed inventory');
+  f.worker.budget.rejectInventory(native, 'submit-1', digest);
+  f.worker.budget.rejectInventory(native, 'submit-1', digest);
+  assert.equal(f.worker.budget.snapshot().repairs, 1);
+  for (let index = 2; index <= 4; index++) f.worker.budget.rejectInventory(native, `submit-${index}`, digest);
+  assert.equal(f.worker.budget.snapshot().repairs, 4);
+  assert.throws(() => f.worker.budget.rejectInventory(native, 'submit-5', digest), /repair allowance exhausted/);
+});
+
+test('large successful extractor histories retire while their original evidence remains intact', async t => {
+  const root = await workspace(t), api = { runtime: { version: '2026.7.1-2', agent: {} } }, disposed = [];
+  const runner = async params => {
+    await fs.writeFile(params.sessionFile, row({ type: 'session', id: params.sessionId })
+      + row({ type: 'message', message: { role: 'assistant', content: [{ type: 'text', text: 'x'.repeat(BASELINE_REUSE_BYTES) }] } }));
+    return { payloads: [], meta: {} };
+  };
+  runner.close = async (...identity) => disposed.push(identity);
+  const first = await createNativeTaskSession(inputAt(root), { api, nativeRunner: runner, selection });
+  await first.run(workerAt(root)); await first.close();
+  const next = await createNativeTaskSession(inputAt(root), { api, nativeRunner: runner, selection });
+  assert.notEqual(next.sessionId, first.sessionId); assert.equal(next.extractorReused, false);
+  assert.deepEqual(disposed, [[first.sessionKey, first.sessionId]]);
+  const retained = await fs.readFile(path.join(root, '.runtime-correction/baseline-agent', first.sessionId, 'host-session.jsonl'));
+  assert(retained.length > BASELINE_REUSE_BYTES);
+  await next.close();
+});
+
 test('native failures preserve redacted causes, stage and run/task identity in page-readable state', async t => {
   const root = await workspace(t), secret = 'private-provider-credential', api = { runtime: { version: '2026.7.1-2', agent: {} } };
   const config = { models: { providers: { offline: { apiKey: secret } } } };
@@ -147,6 +194,9 @@ test('native failures preserve redacted causes, stage and run/task identity in p
   assert.equal(runs[0].status, 'SETTLED'); assert.deepEqual(runs[0].failure, status.failure);
   const message = nativeTaskFailure(new Error('x-api-key=sk-verylongcredential01234567890'), { taskId: 't', runId: 'r', stage: 'RESULT_VALIDATION' });
   assert(!message.message.includes('sk-verylongcredential'));
+  const overflow = nativeTaskFailure(Object.assign(new Error('REVIEWER_RUN_FAILED: REVIEWER_RUN_FAILED: Context overflow'), { code: 'REVIEWER_RUN_FAILED' }),
+    { taskId: 't', runId: 'r', stage: 'NATIVE_EXECUTION' });
+  assert.equal(overflow.message, 'REVIEWER_RUN_FAILED: Context overflow');
 });
 
 async function proposalFixture(t) {
@@ -181,8 +231,31 @@ async function proposalFixture(t) {
     await fs.appendFile(native.sessionFile, row({ type: 'message', message }));
     return JSON.parse(result.content[0].text);
   }
-  return { worker, proposal, native, call };
+  return { worker, proposal, native, call, root, parameters, capability };
 }
+
+test('owned draft navigation accepts optional current revision metadata without granting a write or extra allowance', async t => {
+  const f = await proposalFixture(t);
+  const rejected = await f.call({ action: 'submit', value: { batchId: 1, good: false } }, () => {
+    throw Object.assign(new Error('Controlled candidate rejection'), { code: 'BASELINE_SCOPE_INVALID' });
+  });
+  const metadata = await f.call({ action: 'inspect' });
+  assert.equal(metadata.proposalId, rejected.proposalId); assert.equal(metadata.revisionDigest, rejected.revisionDigest);
+  const page = await f.call({ action: 'inspect', proposalId: rejected.proposalId, path: ['good'] });
+  assert.equal(page.navigationOnly, true); assert.equal(page.text, 'false');
+  const current = await f.call({ action: 'inspect', path: ['good'] });
+  assert.equal(current.text, 'false'); assert.equal(f.worker.budget.snapshot().repairs, 1);
+  let proof;
+  const accepted = await f.call({ action: 'correct_and_submit',
+    parentRevisionDigest: rejected.revisionDigest, changes: [{ op: 'set', path: ['good'], value: true }] },
+    async value => ({ receipt: { accepted: value.good }, commit: async (_receipt, value) => { proof = value; } }));
+  assert.equal(accepted.accepted, true); assert.equal(f.worker.budget.snapshot().repairs, 1);
+  await f.proposal.closeNativeWindow(f.native);
+  await recordNativeRun(f.root, { ...f.native, status: 'SETTLED', settledAt: Date.now() });
+  await verifyOwnedBaselineProposal({ directory: path.join(f.root, 'proposals'), proof, toolName: 'save_baseline_batch',
+    parameters: f.parameters, validationCapability: f.capability, materialized: { batchId: 1, good: true }, receipt: accepted,
+    windows: f.proposal.closedWindows(), projectRoot: f.root, taskId: f.native.taskId });
+});
 
 for (const legacy of [false, true]) test(`owned repair guidance retains exact parent and ${legacy ? 'exempts proven retired RC instructions' : 'charges ordinary boundary rejections'}`, async t => {
   const f = await proposalFixture(t);
@@ -192,7 +265,7 @@ for (const legacy of [false, true]) test(`owned repair guidance retains exact pa
       baselineValidation: { reason: 'PROOF_OWNER_REQUIRED', repair } });
   });
   assert.equal(first.parentRevisionDigest, first.revisionDigest); assert(first.proposalId);
-  assert.match(first.repair, /correct_and_submit/u); assert.match(first.repair, new RegExp(first.proposalId, 'u'));
+  assert.match(first.repair, /correct_and_submit/u); assert.match(first.repair, new RegExp(first.parentRevisionDigest, 'u'));
   assert.equal(f.worker.budget.snapshot().repairs, 1);
   const deadlineAt = f.worker.budget.snapshot().deadlineAt;
   const boundary = await f.call({ action: 'submit', value: { batchId: 1, good: true } });

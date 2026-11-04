@@ -7,7 +7,7 @@ import { resolveMaxOutputTokens } from '../lib/agent-output.mjs';
 import { validateProjectConfig } from '../lib/policy/config-loader.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { loadRuntimePlan } from '../lib/runtime-plan.mjs';
-import { withNativeMaxOutputTokens } from '../lib/openclaw/native-config.mjs';
+import { withNativeMaxOutputTokens, withNativeReviewerEffort } from '../lib/openclaw/native-config.mjs';
 
 test('every reviewer defaults to 32K and follows role > defaults > project precedence', () => {
   for (const version of [1, 2]) {
@@ -62,4 +62,25 @@ test('native output settings preserve unrelated model parameters and the host co
   assert.equal(run.agents.list[0].params.temperature, 0.2);
   assert.deepEqual(run.agents.list[1], host.agents.list[1]);
   assert.equal(withNativeMaxOutputTokens({}, 'provider', 'model').agents.defaults.models['provider/model'].params.maxTokens, 32768);
+});
+
+test('declared DeepSeek reviewer effort uses isolated request controls and preserves unrelated operator settings', () => {
+  const host = { models: { providers: { custom: { api: 'openai-completions', models: [{ id: 'review', reasoning: true,
+    compat: { thinkingFormat: 'deepseek', supportedReasoningEfforts: ['low', 'medium', 'high'] } }] } } },
+    agents: { defaults: { models: { 'custom/review': { params: { temperature: 0.2, extra_body: { customFlag: true } } },
+      'custom/business': { params: { temperature: 0.9 } } } }, list: [{ id: 'main', params: { maxTokens: 32768, extraBody: { seed: 3 } } }, { id: 'other' }] } };
+  const original = structuredClone(host);
+  for (const effort of ['off', 'low', 'medium', 'high']) {
+    const scoped = withNativeReviewerEffort(host, 'custom', 'review', effort, 'main');
+    const controls = scoped.agents.defaults.models['custom/review'].params.extra_body;
+    assert.equal(controls.thinking.type, effort === 'off' ? 'disabled' : 'enabled');
+    assert.equal(controls.reasoning_effort, effort === 'off' ? undefined : effort);
+    assert.equal(controls.customFlag, true); assert.equal(scoped.agents.list[0].params.extra_body.seed, 3);
+    assert.equal(scoped.agents.list[0].params.maxTokens, 32768);
+    assert.deepEqual(scoped.agents.list[1], host.agents.list[1]);
+    assert.deepEqual(scoped.agents.defaults.models['custom/business'], host.agents.defaults.models['custom/business']);
+  }
+  assert.deepEqual(host, original);
+  const otherFormat = structuredClone(host); otherFormat.models.providers.custom.models[0].compat.thinkingFormat = 'openrouter';
+  assert.equal(withNativeReviewerEffort(otherFormat, 'custom', 'review', 'off'), otherFormat);
 });

@@ -89,7 +89,7 @@ test('offline host double verifies fresh limits, no old-deadline reuse, env-only
   assert.equal(manifest.priorBatch.reusesOldDeadline, false);
   assert.equal(manifest.fictionalSources.reduce((sum, row) => sum + row.bytes, 0), 412);
   assert.equal(manifest.sourceHashesCapturedBeforeDispatch, true);
-  assert(manifest.sourceHashes[runner.replace(process.cwd() + path.sep, '')]);
+  assert(manifest.sourceHashes[path.relative(process.cwd(), runner).replaceAll('\\', '/')]);
   async function inspect(dir) {
     for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
       const file = path.join(dir, entry.name);

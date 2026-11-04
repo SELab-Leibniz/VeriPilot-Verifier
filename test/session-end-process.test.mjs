@@ -302,7 +302,7 @@ test("declared SessionEnd rejects stdin above 256 KiB without journaling", async
 test("declared Node launch preserves a plugin root containing spaces", async (t) => {
   const root = await workspace(t);
   const spacedRoot = path.join(root, "plugin root with spaces");
-  await fs.symlink(pluginRoot, spacedRoot, "dir");
+  await fs.symlink(pluginRoot, spacedRoot, process.platform === 'win32' ? 'junction' : 'dir');
   const result = await runDeclaredSessionEnd({
     cwd: root,
     declaredPluginRoot: spacedRoot,

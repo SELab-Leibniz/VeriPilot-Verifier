@@ -9,7 +9,7 @@ import { verifyBaselineCoverageProof, BASELINE_COVERAGE_PROTOCOL } from '../lib/
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 
 test('onboarding-frozen summarized claims reject old-source ADD before save and use full NO_CHANGE plus actual current-protocol audit in the original allowance', async t => {
-  for (const initialMode of ['draft', 'compact']) {
+  for (const initialMode of ['draft', 'compact', null]) {
     const f = await sharedBasisFixture(t, { wireMode: initialMode });
     const task = await ensureTask({ projectRoot: f.root, sessionId: 'basis-session' });
     await withTaskState({ projectRoot: f.root, taskId: task.taskId }, state => { state.control ??= {}; });
@@ -28,6 +28,12 @@ test('onboarding-frozen summarized claims reject old-source ADD before save and 
       assert.deepEqual(prompt.admission.eligibleUserRefs, []);
       assert.equal(prompt.admission.currentClaims[0].claimId, existingId);
       const state = async () => JSON.parse((await call('review_history', { mode: 'state' })).content[0].text).taskState;
+      if (initialMode === null) {
+        assert.equal(prompt.wireMode, 'full');
+        await readAll();
+        await call('finish_baseline', { batchIds: [], taskClassification: 'NO_CHANGE', summary: 'Verify the existing obligations without new authority.' });
+        return;
+      }
       if (prompt.wireMode !== 'full') {
         await readAll(); const before = await state(); reads = before.metrics.readBytes; deadline = before.deadlineAt;
         const { source: _source, ...oldOperation } = operation();
@@ -41,6 +47,7 @@ test('onboarding-frozen summarized claims reject old-source ADD before save and 
           assert.equal(error.baselineValidation.reason, 'PROCESSED_OR_AMBIGUOUS_USER_SOURCE');
           assert.deepEqual(error.baselineValidation.admission.eligibleUserRefs, []);
           assert(error.message.includes('"eligibleUserRefs":[]') && error.message.includes(existingId), 'Native Error.message carries the actual program navigation');
+          assert.match(error.message, /did not create an owned draft.*same unsaved batchId/u);
           assert.match(error.baselineValidation.repair, /full mode.*NO_CHANGE/u); rejected++; return true;
         });
         const after = await state();
@@ -64,9 +71,10 @@ test('onboarding-frozen summarized claims reject old-source ADD before save and 
       await call('finish_baseline', { batchIds: [], taskClassification: 'NO_CHANGE', summary: 'Preserve the summarized ledger; independently audit all complete originals and current claims.' });
     };
     await f.refresh();
-    assert.equal(rejected, 1); assert.equal(f.globals().length, 1); assert.equal(f.audits().length, 1);
-    assert.equal(invocations.length, 2); assert.equal(new Set(invocations.map(x => x.sessionId)).size, 1);
-    assert.equal(new Set(invocations.map(x => x.runId)).size, 2);
+    assert.equal(rejected, initialMode === null ? 0 : 1); assert.equal(f.globals().length, 1); assert.equal(f.audits().length, 1);
+    const expectedInvocations = initialMode === null ? 1 : 2;
+    assert.equal(invocations.length, expectedInvocations); assert.equal(new Set(invocations.map(x => x.sessionId)).size, 1);
+    assert.equal(new Set(invocations.map(x => x.runId)).size, expectedInvocations);
     const current = await f.truth(); assert.equal(current.version, original.version); assert.equal(current.digest, original.digest);
     assert.deepEqual(current.claims, original.claims);
     const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
@@ -74,7 +82,8 @@ test('onboarding-frozen summarized claims reject old-source ADD before save and 
     assert.equal(bundle.protocol, BASELINE_COVERAGE_PROTOCOL);
     assert.equal(bundle.input.finish.receipt.status, 'NO_CHANGE'); assert.deepEqual(bundle.input.delta.operations, []);
     assert.equal(bundle.budget.externalRepairs, 0); assert.equal(bundle.budget.auditCalls, 1);
-    assert.equal(bundle.budget.repairs, initialMode === 'draft' ? 2 : 1); assert.equal(bundle.budget.maxRepairs, 3);
+    assert.equal(bundle.budget.repairs, initialMode === 'draft' ? 2 : initialMode === 'compact' ? 1 : 0);
+    assert.equal(bundle.budget.maxRepairs, 3);
     assert.equal(bundle.budget.maxTurns, 200); assert(bundle.budget.turns <= 200);
   }
 });

@@ -15,6 +15,7 @@ import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { runStartedHostEvent } from './helpers/started-host.mjs';
+import { fileSymlinkSkipReason } from './helpers/file-symlink-capability.mjs';
 
 const metrics = Object.fromEntries(Array.from({ length: 16 }, (_, i) =>
   [`M${String(i + 1).padStart(2, '0')}`, [12, 16].includes(i + 1)]));
@@ -191,7 +192,7 @@ test('catalog admission retains unknown, ambiguous, kind and user-authority reje
   assert.equal(reject({ ...operation, source: { ...operation.source, ref: privateRef, projectRelativePath: 'public.md', projectRoot: f.base } }, privateCatalog), 'INTERNAL_SOURCE');
 });
 
-test('actual bounded intake still rejects project-private, traversal, linked and external observer-private sources before native dispatch', async t => {
+test('actual bounded intake still rejects project-private, traversal, linked and external observer-private sources before native dispatch', { skip: await fileSymlinkSkipReason() }, async t => {
   const f = await fixture(t), accepted = await f.admit(f.mixed());
   const privateFile = path.join(f.projectRoot, '.runtime-correction/private.md');
   const externalFile = path.join(f.base, 'external.md');

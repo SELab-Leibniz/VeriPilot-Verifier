@@ -67,7 +67,7 @@ test('closed live006 Mixed NEW_TASK repairs its field before formal publication 
   const f = await closedMixedFixture(t), original = await f.truth();
   let rejected = false;
   f.state.replayBaseline = async ({ call, readAll, params, sourceRoot, requestDirectory, requestIdentity }) => {
-    assert.notEqual(sourceRoot, params.cwd, 'The reused native cwd must remain anchored to the first task');
+    assert.equal(sourceRoot, params.cwd, 'The current native cwd must match this transaction’s frozen source root');
     const promptIdentity = JSON.parse(params.prompt).identity;
     assert.equal(requestIdentity.requestId, promptIdentity.requestId);
     assert.equal((await readJson(path.join(requestDirectory, 'request.json'))).identity.requestId, promptIdentity.requestId);

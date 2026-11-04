@@ -51,10 +51,16 @@ async function finishedWorker(t, { receipt = 'genuine', partial = false } = {}) 
       await call('finish_baseline', { batchIds: [], taskClassification: 'NO_CHANGE', summary: 'All original obligations retained.' });
     } });
   if (receipt !== 'genuine' || partial) {
-    await assert.rejects(worker.execute(), { code: 'BASELINE_REPAIR_LIMIT' });
+    await assert.rejects(worker.execute(), error => {
+      assert.equal(error.code, 'BASELINE_INCOMPLETE');
+      assert.equal(error.baselineValidation.reason, 'ORIGINAL_READS_INCOMPLETE');
+      assert(error.baselineValidation.recoverWith.some(read => read.path === 'source-0000-0000.txt'));
+      return true;
+    });
     assert.equal(worker.result, null);
     const checkpoint = await readJson(path.join(directory, 'review-checkpoint.json'));
     assert(checkpoint.taskState.pending.length > 0); assert.notEqual(checkpoint.taskState.phase, 'CANDIDATE_COMPLETE');
+    assert.equal(checkpoint.taskState.repairs, 0, 'Invalid read receipts never grant proof or spend a candidate repair');
     assert.match(await fs.readFile(checkpoint.sessionFile, 'utf8'), /BASELINE_INCOMPLETE/u);
     await worker.close(); return;
   }

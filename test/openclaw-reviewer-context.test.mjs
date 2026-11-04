@@ -185,7 +185,7 @@ test('coverage-only SDK launch uses an owned empty workspace and copied selected
     assert.notEqual(owned, business); assert.notEqual(owned, f.root);
     assert.equal(params.workspaceDir, owned); assert.deepEqual(await fs.readdir(owned), []);
     assert.equal(path.dirname(owned), path.dirname(params.sessionFile));
-    assert(path.basename(owned).startsWith('empty-workspace-'));
+    assert.equal(path.basename(owned), 'empty-workspace');
     const selected = params.config.agents.list.find(agent => agent.id === 'main');
     assert.equal(selected.workspace, owned); assert.equal(selected.memorySearch.enabled, false);
     assert.deepEqual(params.config.agents.list.find(agent => agent.id === 'other'), original.agents.list[1]);
@@ -203,4 +203,20 @@ test('coverage-only SDK launch uses an owned empty workspace and copied selected
   assert.deepEqual(f.api.config, original);
   assert.deepEqual(await fs.readdir(owned), [], 'Retained audit evidence includes only an empty isolated workspace');
   assert.equal(await fs.readFile(path.join(business, 'AGENTS.md'), 'utf8'), 'BUSINESS_BOOTSTRAP_PRIVATE_SENTINEL');
+});
+
+test('independent baseline audit publishes from a project whose private workspace exceeds the Windows path prefix limit', async t => {
+  const { sharedBasisFixture } = await import('./helpers/runtime-v2-shared-basis-fixture.mjs');
+  const f = await sharedBasisFixture(t, { rootPrefix: `rc-long-audit-${'x'.repeat(125)}` });
+  const task = await ensureTask({ projectRoot: f.root, sessionId: 'basis-session' });
+  await withTaskState({ projectRoot: f.root, taskId: task.taskId }, state => { state.control ??= {}; });
+  let workspace;
+  f.state.coverageLaunch = async params => {
+    workspace = params.cwd;
+    assert(workspace.length > 260);
+    assert.deepEqual(await fs.readdir(workspace), []);
+  };
+  await f.refresh();
+  assert(workspace); assert.equal((await f.truth()).version, 1);
+  assert((await f.task()).groundTruth.sharedBasis.coverageAudit);
 });
