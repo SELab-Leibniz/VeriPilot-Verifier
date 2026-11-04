@@ -3,7 +3,8 @@
     "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
     "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
     "approvedCases": [
-      "security_tool_1"
+      "security_tool_1",
+      "security_tool_2"
     ],
     "promoted": [
       "B2",
@@ -90,6 +91,45 @@
         },
         "elapsedMs": 154863,
         "correction": "disabled at the isolated Gateway"
+      },
+      {
+        "case": "security_tool_2",
+        "state": "candidate-compile-error",
+        "sourceRun": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-s0\\st2",
+        "grade": null,
+        "gradeError": {
+          "message": "Property 'loadApplications' does not exist on type 'typeof PermissionService'.",
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\candidate-test.log",
+          "logSha256": "9cd2b24915598a08a30b3236ec8c95196fe31f38a81323ea722a51e658a1d68a",
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 24785
+          }
+        },
+        "commit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+        "commitSha256": "10915611e3f300974a9c9e4ddcf0e37a7f812ee44be77f676fd980350af92625",
+        "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+        "patchSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+        "freezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+        "terminal": {
+          "source": "agent.wait",
+          "requestedRunId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+          "runId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+          "status": "ok",
+          "endedAt": 1793811906987
+        },
+        "modelRequests": 39,
+        "usage": {
+          "observedCalls": 39,
+          "completeCalls": 38,
+          "tokens": 3492011
+        },
+        "elapsedMs": 699868,
+        "correction": "disabled at the isolated Gateway"
       }
     ],
     "samples": [
@@ -141,21 +181,102 @@
         "sessionSha256": "9e48372a0929e4bb789948e91487e69fe68bd044c3029b37b082886b1d76f15f",
         "patchSha256": "43db220c6afd2aceb3b02fe2302244aafd06c94f273af8fe89b5661c71f4dfbd",
         "rollback": "Remove only 20 from PASSWORD_LENGTH_OPTIONS in entry/src/main/ets/models/DataModels.ets. Keep 24 and all other S0 edits."
+      },
+      {
+        "id": "security_tool_2-natural",
+        "case": "security_tool_2",
+        "kind": "defect",
+        "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\freeze",
+        "freezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+        "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2",
+        "calibrationSha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+        "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\results.json",
+        "gradeSha256": "40cb18476638f5f1919b05c08cb772ceae187bcb33b5641b866eb5866e6f4c09",
+        "before": null,
+        "initialGradeState": "candidate-compile-error",
+        "initialGradeError": {
+          "message": "Property 'loadApplications' does not exist on type 'typeof PermissionService'.",
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-freeze-and-s0-grade\\grade\\candidate-test.log",
+          "logSha256": "9cd2b24915598a08a30b3236ec8c95196fe31f38a81323ea722a51e658a1d68a",
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 24785
+          }
+        },
+        "commit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+        "commitSha256": "10915611e3f300974a9c9e4ddcf0e37a7f812ee44be77f676fd980350af92625",
+        "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+        "patchSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb"
       }
     ],
     "frozenSourceArtifactSha256": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
     "previousManifestSha256": "09d26f23809d22a8016e3f2ec14cd454fc76c7f3f9f8dd4a32d26354576f20b6",
-    "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520"
+    "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520",
+    "supplementalCalibration": {
+      "case": "security_tool_2",
+      "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2\\results.json",
+      "sha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+      "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+      "environment": {
+        "requestedSdk": "api-24",
+        "actualSdk": "API24 / 6.1.1.125",
+        "hvigor": "6.24.2",
+        "adapted": false,
+        "changes": [
+          "build-profile signing configuration removed",
+          "target/compatible SDK API24"
+        ],
+        "originalProfileSha256": "9770cabce21dd054bbc8dec48cad68a3d35b36ccde1e95e46d8a20eb66d78fdc",
+        "adaptedProfileSha256": "297dcdacd78966cb160fb3a49cf7ff27ada7a6563dccd2744c597431dcd00f25",
+        "testPatchSha256": "f0cf5c9d5b335eaa2ba3a39d6aae8dfaed5ea259d852795f538ae3f3a3926180",
+        "datasetDigest": "271615a131fcea4d7d3cc75a2aede53df25459e7f26ea33997afff692df14549"
+      },
+      "results": [
+        {
+          "phase": "base",
+          "executed": true,
+          "f2p": [
+            0,
+            2
+          ],
+          "p2p": [
+            746,
+            746
+          ]
+        },
+        {
+          "phase": "gold",
+          "executed": true,
+          "f2p": [
+            2,
+            2
+          ],
+          "p2p": [
+            746,
+            746
+          ]
+        }
+      ]
+    },
+    "supplementalManifestSha256": "d99d3c8b0e38d29391d7b2c377e9ea442ed88619f116131fe2fa4deb8df1d843",
+    "frozenSourceArtifactSha256ByCase": {
+      "security_tool_1": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
+      "security_tool_2": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059"
+    }
   },
   "audit": {
     "totals": {
       "startedAt": "2026-11-04T09:21:38.622Z",
-      "endedAt": "2026-11-04T15:58:18.552Z",
-      "wallMinutes": 396.6655,
-      "requests": 2590,
-      "tokens": 58584338,
-      "observedCalls": 2590,
-      "completeCalls": 2496,
+      "endedAt": "2026-11-04T17:38:32.8839136Z",
+      "wallMinutes": 444.0857833333333,
+      "requests": 2787,
+      "tokens": 71489564,
+      "observedCalls": 2787,
+      "completeCalls": 2689,
       "requestsByStage": {
         "preliminary": 25,
         "oldRound1": 1420,
@@ -165,27 +286,34 @@
         "s0": 21,
         "replacementRound1": 538,
         "replacementRound2": 312,
-        "replacementRetries": 10
-      }
+        "replacementRetries": 10,
+        "securityTool2S0": 39,
+        "securityTool2Scored": 158,
+        "securityTool2RetryAttempts": 0
+      },
+      "originalWallMinutes": 396.6655
     },
     "events": [
       "原接入失败记录保留，复验以一次模型请求通过。C 校准第 2 轮触发真实压缩。正式 C 六条原包记录沿用，未重新运行。",
       "旧包第一轮 84 条、旧包第二轮 4 条完整观测及 2 条隐藏评分阶段中断记录单列归档，全部排除计分。",
       "替换包通过 A/B1/B2/B12/F 的工作者工具登记测试、17 项产物测试及四臂离线准备。B1 两个 210 秒验证均通过，未触发 600 秒补验。",
-      "按用户批准的范围缩减，第二轮仅使用 security_tool_1。其源码和隐藏校准在 C 运行期间完成，S0 在 C 结束后串行生成。S0 的首次启动前配置失败保留，未产生模型请求。",
-      "使用原来冻结的首稿、会话和注入变体。替换包只改变工具注册清单，冻结输入和隐藏评分基准继续沿用。",
+      "按用户批准的范围缩减，最初第二轮仅使用 security_tool_1。其源码和隐藏校准在 C 运行期间完成，S0 在 C 结束后串行生成。S0 的首次启动前配置失败保留，未产生模型请求。",
+      "security_tool_1 使用原来冻结的首稿、会话和注入变体。替换包只改变工具注册清单，冻结输入和隐藏评分基准继续沿用。",
+      "用户随后要求补充 security_tool_2。其隐藏校准、独立首稿与新增对照使用原预算、模型和替换包。原样例、第一轮和 C 的计分记录沿用。",
       "批次 round1-new 在北京时间 2026/11/4 22:03:55 切换串行，原因 EVALUATION_FAILED。",
       "原来计划的 15 分钟诊断未启动。工具缺失已在旧包离线测试和轨迹中复现，并由新包 210 秒实测验证。",
-      "只读目录快照在各记录阶段前后相同。各阶段及最终报告扫描均为 0 命中。"
+      "只读目录快照在各记录阶段前后相同。各阶段及最终报告扫描均为 0 命中。",
+      "补充对照于北京时间 2026/11/5 01:26:18 切换串行。第二组有一个序号在 Gateway 启动前读取模型配置失败，无模型请求。原序号单独补跑。"
     ],
     "limitations": [
       "第一轮为七个受控小样例。部分为四并发，发生启动前配置读取错误后保守切串行。原失败日志没有底层错误码，不能确证因果。",
-      "第二轮仅覆盖一个真实任务的正确首稿和单项注入变体。只能将结论用于本实验的 Stop 配置、证据和预算。",
+      "第二轮覆盖同一 ArkTS 工程的两个任务，每个审查对象只重复两次。只能将结论用于本实验的 Stop 配置、证据和预算。",
       "第二轮按同一组内比较 RC 耗时。模型请求以各隔离运行观测为准，hvigor 等锁时间单列。",
       "C 只有一条有效回答。压缩后原文注入协议只在一次 C 开运行完整观测到，缺组间得分证据。",
       "旧包第一轮首个重复的初版盲评导出在引用路径里带有臂名。正式评分前重新打乱和遮蔽路径，评分者已见过部分旧引用。替换包评分使用了遮蔽后导出。",
-      "总墙钟含等待、排查、替换包构建和两次旧包阶段。总 token 为实际记录小计，用量缺失不估算。",
-      "旧的接入、校准及最早第一轮批次只有 MatrixAssistant 与内置 OpenClaw 的历史快照。数据集的前后比对从首次续跑开始。"
+      "总墙钟为原实验与补充实验的活跃墙钟之和，含等待、排查、打包和旧包阶段，扣除两段实验之间的空档。总 token 为实际记录小计，用量缺失不估算。",
+      "旧的接入、校准及最早第一轮批次只有 MatrixAssistant 与内置 OpenClaw 的历史快照。数据集的前后比对从首次续跑开始。",
+      "security_tool_2 的原样首稿删除了原测试仍调用的接口，导致隐藏测试编译失败。未执行的测试无通过数，影响跨样例的正式判定。"
     ],
     "preliminary": [
       {
@@ -5960,8 +6088,8 @@
       "4": 19
     },
     "roundTwoConcurrency": {
-      "1": 1,
-      "3": 11
+      "1": 2,
+      "3": 16
     },
     "serialFallbacks": [
       {
@@ -5973,6 +6101,18 @@
             "id": "r1-alias-bug-1-b12",
             "state": "failed",
             "reason": "EVALUATION_FAILED"
+          }
+        ]
+      },
+      {
+        "batch": "round2-st2",
+        "at": "2026-11-04T17:26:18.528Z",
+        "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+        "affected": [
+          {
+            "id": "r2-security_tool_2-natural-2-b2",
+            "state": "failed",
+            "reason": "file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/helpers/simplify-native-evaluation.mjs:33\r\n    throw new Error('The custom DeepSeek provider or its transient credential is unavailable or invalid.');\r\n          ^\r\n\r\nError: The custom DeepSeek provider or its transient credential is unavailable or invalid.\r\n    at resolveSimplifyProvider (file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/helpers/simplify-native-evaluation.mjs:33:11)\r\n    at async file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:57:37\r\n\r\nNode.js v26.13.0\r\n"
           }
         ]
       }
@@ -6193,6 +6333,28 @@
         },
         "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false}",
         "wallMs": 0
+      },
+      {
+        "batch": "round2-st2",
+        "id": "r2-security_tool_2-natural-2-b2",
+        "arm": "B2",
+        "sample": "security_tool_2-natural",
+        "repeat": 2,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"}}",
+        "state": "failed",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b2",
+        "frameworkError": true,
+        "repairFeedback": null,
+        "reason": "file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/helpers/simplify-native-evaluation.mjs:33\r\n    throw new Error('The custom DeepSeek provider or its transient credential is unavailable or invalid.');\r\n          ^\r\n\r\nError: The custom DeepSeek provider or its transient credential is unavailable or invalid.\r\n    at resolveSimplifyProvider (file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/helpers/simplify-native-evaluation.mjs:33:11)\r\n    at async file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:57:37\r\n\r\nNode.js v26.13.0\r\n",
+        "completedInBudget": false,
+        "gatewayStarts": 0,
+        "modelRequests": 0,
+        "wallMs": 151,
+        "concurrency": 3,
+        "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+        "startedAt": "2026-11-04T17:17:49.872Z"
       }
     ],
     "snapshots": {
@@ -6824,6 +6986,265 @@
           }
         },
         "match": true
+      },
+      "round2-st2": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "round2-st2-resume": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-blind": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-calibration": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-freeze-and-s0-grade": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-s0": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-report": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
       }
     },
     "leakageScans": {
@@ -6847,12 +7268,135 @@
       "live/round1-new-r2": 0,
       "live/round1-new-resume": 0,
       "live/round2-new": 0,
-      "live/round2-new-resume": 0
+      "live/round2-new-resume": 0,
+      "live/round2-st2": 0,
+      "live/round2-st2-resume": 0,
+      "blind-round2-st2": 0,
+      "st2-calibration": 0,
+      "st2-freeze-and-s0-grade": 0,
+      "st2-s0": 0
     },
     "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
     "roundTwoInputSha256": "61b9c3d8fdecca2d741169949125b3338db086ee3dd78a8acabb56b90d30964f",
     "previousRoundTwoInputSha256": "09d26f23809d22a8016e3f2ec14cd454fc76c7f3f9f8dd4a32d26354576f20b6",
-    "compactionReused": true
+    "compactionReused": true,
+    "securityTool2": {
+      "manifestSha256": "d99d3c8b0e38d29391d7b2c377e9ea442ed88619f116131fe2fa4deb8df1d843",
+      "finalStage": "round2-st2-resume",
+      "scoredRuns": 6,
+      "blindEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\blind-round2-st2",
+      "finalHiddenGrades": [
+        {
+          "id": "r2-security_tool_2-natural-1-a",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 45700
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\candidate-test.log",
+          "logSha256": "1e2f3b7a1ba3b5e71484536d381562aa7a3159b0efa0919f891dd1fb9af4569d"
+        },
+        {
+          "id": "r2-security_tool_2-natural-1-b2",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 23366
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\candidate-test.log",
+          "logSha256": "cd650523491910a5cfcf10a810ac3e9be646f9a7a0708cfd0c547ec706ad89db"
+        },
+        {
+          "id": "r2-security_tool_2-natural-1-b12",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 19793
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\candidate-test.log",
+          "logSha256": "cdfb410796dc6a08455fe29bf7c6f43df431eda3bd8901577b71bbef02923644"
+        },
+        {
+          "id": "r2-security_tool_2-natural-2-b12",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 19773
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\candidate-test.log",
+          "logSha256": "dcb37481b526388c7e9b2050d55831941c7d2555492cbbabb074699ec32809c4"
+        },
+        {
+          "id": "r2-security_tool_2-natural-2-a",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 21047
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\candidate-test.log",
+          "logSha256": "c1c5edb95b198fddc6d7c1f9416e337c1fd20adb5f300e4d101d6f008791cc09"
+        },
+        {
+          "id": "r2-security_tool_2-natural-2-b2",
+          "candidateSha256": "707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb",
+          "executed": false,
+          "execution": {
+            "code": 1,
+            "timedOut": false,
+            "compileSucceeded": false,
+            "freshReport": false,
+            "durationMs": 20735
+          },
+          "f2pExpected": 2,
+          "p2pExpected": 746,
+          "diagnosticCount": 8,
+          "logFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\candidate-test.log",
+          "logSha256": "7c66aebd002b3aa21ea5664e0829a2fbecf316e4701a26cd50e0a8f5dd4f3202"
+        }
+      ],
+      "startedAt": "2026-11-04T16:51:07.666Z",
+      "endedAt": "2026-11-04T17:38:32.8839136Z",
+      "wallMinutes": 47.42028333333333,
+      "requests": 197,
+      "tokens": 12905226,
+      "completeCalls": 193,
+      "observedCalls": 197
+    }
   },
   "observations": [
     {
@@ -11193,6 +11737,450 @@
       "ungroundedFeedback": false,
       "gradingRationale": "未发修复反馈，未检出冻结变体缺失 20 位选项及映射的真实缺陷。",
       "blindId": "ed94ad5d-55eb-4a94-8f4f-953e4c4d9b01"
+    },
+    {
+      "id": "r2-security_tool_2-natural-1-a",
+      "arm": "A",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "timed-out",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": false,
+      "elapsedMs": 571869,
+      "rcElapsedMs": 569911,
+      "reason": "STOP_REVIEW_DEADLINE",
+      "usage": {
+        "observedCalls": 32,
+        "completeCalls": 31,
+        "tokens": 1711443
+      },
+      "totalUsage": {
+        "observedCalls": 32,
+        "completeCalls": 31,
+        "tokens": 1711443
+      },
+      "baselineCost": {
+        "elapsedMs": 569479,
+        "tokens": null
+      },
+      "frameworkError": false,
+      "gatewayPort": 55023,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:13.9623530+00:00",
+          "waitMs": 2413
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:01.9923036+00:00",
+          "waitMs": 644
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:17:25.3556666+00:00",
+          "waitMs": 21779
+        }
+      ],
+      "firstStopStatus": "UNVERIFIED",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 32,
+      "wallMs": 638743,
+      "concurrency": 3,
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "startedAt": "2026-11-04T17:07:10.344Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "5c2c117c-4840-4d32-9b4c-a8675dc82ea3"
+    },
+    {
+      "id": "r2-security_tool_2-natural-1-b2",
+      "arm": "B2",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "timed-out",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": false,
+      "elapsedMs": 573652,
+      "rcElapsedMs": 571859,
+      "reason": "STOP_REVIEW_DEADLINE",
+      "usage": {
+        "observedCalls": 27,
+        "completeCalls": 26,
+        "tokens": 1557060
+      },
+      "totalUsage": {
+        "observedCalls": 27,
+        "completeCalls": 26,
+        "tokens": 1557060
+      },
+      "baselineCost": {
+        "elapsedMs": 571417,
+        "tokens": null
+      },
+      "frameworkError": false,
+      "gatewayPort": 55022,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:12.7192128+00:00",
+          "waitMs": 1179
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:00.5422075+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:17:03.3533523+00:00",
+          "waitMs": 1135
+        }
+      ],
+      "firstStopStatus": "UNVERIFIED",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 27,
+      "wallMs": 615050,
+      "concurrency": 3,
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "startedAt": "2026-11-04T17:07:10.345Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "0d44f60d-d6c0-4989-924b-96cda64dd2f7"
+    },
+    {
+      "id": "r2-security_tool_2-natural-1-b12",
+      "arm": "B12",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "completed",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": true,
+      "elapsedMs": 508013,
+      "rcElapsedMs": 506221,
+      "reason": "NO_CURRENT_DEVIATION",
+      "usage": {
+        "observedCalls": 46,
+        "completeCalls": 46,
+        "tokens": 3819753
+      },
+      "totalUsage": {
+        "observedCalls": 46,
+        "completeCalls": 46,
+        "tokens": 3819753
+      },
+      "baselineCost": {
+        "elapsedMs": null,
+        "tokens": null
+      },
+      "frameworkError": false,
+      "gatewayPort": 55021,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:11.5415826+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:15:51.7744015+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:15:53.4191943+00:00",
+          "waitMs": 1
+        }
+      ],
+      "firstStopStatus": "NO_DEVIATION_FOUND",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 46,
+      "wallMs": 542689,
+      "concurrency": 3,
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "startedAt": "2026-11-04T17:07:10.345Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "c297790a-47c9-4832-8104-2f8953a3d52b"
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-b12",
+      "arm": "B12",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "completed",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": true,
+      "elapsedMs": 164197,
+      "rcElapsedMs": 162478,
+      "reason": "NO_CURRENT_DEVIATION",
+      "usage": {
+        "observedCalls": 19,
+        "completeCalls": 19,
+        "tokens": 1023553
+      },
+      "totalUsage": {
+        "observedCalls": 19,
+        "completeCalls": 19,
+        "tokens": 1023553
+      },
+      "baselineCost": {
+        "elapsedMs": null,
+        "tokens": null
+      },
+      "frameworkError": false,
+      "gatewayPort": 58348,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:53.6229740+00:00",
+          "waitMs": 1847
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:20:53.2734573+00:00",
+          "waitMs": 2
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:20:54.9516451+00:00",
+          "waitMs": 1
+        }
+      ],
+      "firstStopStatus": "NO_DEVIATION_FOUND",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 19,
+      "wallMs": 204682,
+      "concurrency": 3,
+      "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+      "startedAt": "2026-11-04T17:17:49.872Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "71a5ddc2-9dd4-43f2-a4d3-eb807adb195b"
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-a",
+      "arm": "A",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "failed",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": false,
+      "elapsedMs": 468657,
+      "rcElapsedMs": 467037,
+      "reason": "REVIEWER_OUTPUT_LIMIT",
+      "usage": {
+        "observedCalls": 11,
+        "completeCalls": 11,
+        "tokens": 418830
+      },
+      "totalUsage": {
+        "observedCalls": 11,
+        "completeCalls": 11,
+        "tokens": 418830
+      },
+      "baselineCost": {
+        "elapsedMs": 466668,
+        "tokens": 418830
+      },
+      "frameworkError": false,
+      "gatewayPort": 58343,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:51.7727682+00:00",
+          "waitMs": 3
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:25:55.6162109+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:25:57.2227753+00:00",
+          "waitMs": 1
+        }
+      ],
+      "firstStopStatus": "UNVERIFIED",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 11,
+      "wallMs": 508220,
+      "concurrency": 3,
+      "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+      "startedAt": "2026-11-04T17:17:49.872Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "9dc1a80c-0ffb-42e5-a487-b1e47a8c7373"
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-b2",
+      "arm": "B2",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "state": "timed-out",
+      "repairFeedback": false,
+      "feedback": null,
+      "completedInBudget": false,
+      "elapsedMs": 571133,
+      "rcElapsedMs": 569990,
+      "reason": "STOP_REVIEW_DEADLINE",
+      "usage": {
+        "observedCalls": 23,
+        "completeCalls": 22,
+        "tokens": 882576
+      },
+      "totalUsage": {
+        "observedCalls": 23,
+        "completeCalls": 22,
+        "tokens": 882576
+      },
+      "baselineCost": {
+        "elapsedMs": 569756,
+        "tokens": null
+      },
+      "frameworkError": false,
+      "gatewayPort": 53037,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:26:58.4449040+00:00",
+          "waitMs": 3
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:36:43.4384814+00:00",
+          "waitMs": 2
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:36:45.1370394+00:00",
+          "waitMs": 1
+        }
+      ],
+      "firstStopStatus": "UNVERIFIED",
+      "corrections": 0,
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\evaluation\\result.json",
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "gatewayStarts": 1,
+      "modelRequests": 23,
+      "wallMs": 608820,
+      "concurrency": 1,
+      "pairId": null,
+      "startedAt": "2026-11-04T17:26:56.871Z",
+      "matchesDefect": false,
+      "ungroundedFeedback": false,
+      "gradingRationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+      "blindId": "b01d8e5c-adee-40fd-a71e-5d1c3d4f933a"
     }
   ],
   "runs": [
@@ -16557,6 +17545,478 @@
       }
     },
     {
+      "id": "r2-security_tool_2-natural-1-a",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "arm": "A",
+      "config": {
+        "baseline": true,
+        "originalRequirementsBasis": false,
+        "deviationOnly": false
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "live-baseline",
+      "state": "timed-out",
+      "completedInBudget": false,
+      "elapsedMs": 571869,
+      "rcElapsedMs": 569911,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\evaluation\\result.json",
+      "reason": "STOP_REVIEW_DEADLINE",
+      "wallMs": 638743,
+      "modelRequests": 32,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "concurrency": 3,
+      "startedAt": "2026-11-04T17:07:10.344Z",
+      "gatewayPort": 55023,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:13.9623530+00:00",
+          "waitMs": 2413
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:01.9923036+00:00",
+          "waitMs": 644
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:17:25.3556666+00:00",
+          "waitMs": 21779
+        }
+      ],
+      "usage": {
+        "tokens": 1711443,
+        "completeCalls": 31,
+        "observedCalls": 32,
+        "coverage": 0.96875
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-a\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": {
+        "elapsedMs": 569479,
+        "tokens": null,
+        "elapsedShare": 0.9992419869067275,
+        "tokenShare": null
+      }
+    },
+    {
+      "id": "r2-security_tool_2-natural-1-b2",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "arm": "B2",
+      "config": {
+        "baseline": true,
+        "originalRequirementsBasis": false,
+        "deviationOnly": true
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "live-baseline",
+      "state": "timed-out",
+      "completedInBudget": false,
+      "elapsedMs": 573652,
+      "rcElapsedMs": 571859,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\evaluation\\result.json",
+      "reason": "STOP_REVIEW_DEADLINE",
+      "wallMs": 615050,
+      "modelRequests": 27,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "concurrency": 3,
+      "startedAt": "2026-11-04T17:07:10.345Z",
+      "gatewayPort": 55022,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:12.7192128+00:00",
+          "waitMs": 1179
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:00.5422075+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:17:03.3533523+00:00",
+          "waitMs": 1135
+        }
+      ],
+      "usage": {
+        "tokens": 1557060,
+        "completeCalls": 26,
+        "observedCalls": 27,
+        "coverage": 0.9629629629629629
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b2\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": null
+    },
+    {
+      "id": "r2-security_tool_2-natural-1-b12",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 1,
+      "arm": "B12",
+      "config": {
+        "baseline": false,
+        "originalRequirementsBasis": true,
+        "deviationOnly": true
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "original-user-message",
+      "state": "completed",
+      "completedInBudget": true,
+      "elapsedMs": 508013,
+      "rcElapsedMs": 506221,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\evaluation\\result.json",
+      "reason": "NO_CURRENT_DEVIATION",
+      "wallMs": 542689,
+      "modelRequests": 46,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+      "concurrency": 3,
+      "startedAt": "2026-11-04T17:07:10.345Z",
+      "gatewayPort": 55021,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:07:11.5415826+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:15:51.7744015+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:15:53.4191943+00:00",
+          "waitMs": 1
+        }
+      ],
+      "usage": {
+        "tokens": 3819753,
+        "completeCalls": 46,
+        "observedCalls": 46,
+        "coverage": 1
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-1-b12\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": null
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-b2",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "arm": "B2",
+      "config": {
+        "baseline": true,
+        "originalRequirementsBasis": false,
+        "deviationOnly": true
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "live-baseline",
+      "state": "timed-out",
+      "completedInBudget": false,
+      "elapsedMs": 571133,
+      "rcElapsedMs": 569990,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\evaluation\\result.json",
+      "reason": "STOP_REVIEW_DEADLINE",
+      "wallMs": 608820,
+      "modelRequests": 23,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": null,
+      "concurrency": 1,
+      "startedAt": "2026-11-04T17:26:56.871Z",
+      "gatewayPort": 53037,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:26:58.4449040+00:00",
+          "waitMs": 3
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:36:43.4384814+00:00",
+          "waitMs": 2
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:36:45.1370394+00:00",
+          "waitMs": 1
+        }
+      ],
+      "usage": {
+        "tokens": 882576,
+        "completeCalls": 22,
+        "observedCalls": 23,
+        "coverage": 0.9565217391304348
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-resume\\r2-security_tool_2-natural-2-b2\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": null
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-b12",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "arm": "B12",
+      "config": {
+        "baseline": false,
+        "originalRequirementsBasis": true,
+        "deviationOnly": true
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "original-user-message",
+      "state": "completed",
+      "completedInBudget": true,
+      "elapsedMs": 164197,
+      "rcElapsedMs": 162478,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\evaluation\\result.json",
+      "reason": "NO_CURRENT_DEVIATION",
+      "wallMs": 204682,
+      "modelRequests": 19,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+      "concurrency": 3,
+      "startedAt": "2026-11-04T17:17:49.872Z",
+      "gatewayPort": 58348,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:53.6229740+00:00",
+          "waitMs": 1847
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:20:53.2734573+00:00",
+          "waitMs": 2
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:20:54.9516451+00:00",
+          "waitMs": 1
+        }
+      ],
+      "usage": {
+        "tokens": 1023553,
+        "completeCalls": 19,
+        "observedCalls": 19,
+        "coverage": 1
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-b12\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": null
+    },
+    {
+      "id": "r2-security_tool_2-natural-2-a",
+      "round": "2",
+      "sample": "security_tool_2-natural",
+      "repeat": 2,
+      "arm": "A",
+      "config": {
+        "baseline": true,
+        "originalRequirementsBasis": false,
+        "deviationOnly": false
+      },
+      "entrypoints": [
+        "scripts/run-arkts-rc-case.mjs",
+        "scripts/calibrate-arkts-bench.mjs"
+      ],
+      "mode": "native-arkts-frozen-stop",
+      "requirements": "live-baseline",
+      "state": "failed",
+      "completedInBudget": false,
+      "elapsedMs": 468657,
+      "rcElapsedMs": 467037,
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+      "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\evaluation\\result.json",
+      "reason": "REVIEWER_OUTPUT_LIMIT",
+      "wallMs": 508220,
+      "modelRequests": 11,
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+      "concurrency": 3,
+      "startedAt": "2026-11-04T17:17:49.872Z",
+      "gatewayPort": 58343,
+      "toolchainLocks": [
+        {
+          "label": "business-install",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\evaluation\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:17:51.7727682+00:00",
+          "waitMs": 3
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\install.log",
+          "phase": "install",
+          "acquiredAt": "2026-11-04T17:25:55.6162109+00:00",
+          "waitMs": 1
+        },
+        {
+          "label": "hidden-grading",
+          "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\candidate-test.log",
+          "phase": "test",
+          "acquiredAt": "2026-11-04T17:25:57.2227753+00:00",
+          "waitMs": 1
+        }
+      ],
+      "usage": {
+        "tokens": 418830,
+        "completeCalls": 11,
+        "observedCalls": 11,
+        "coverage": 1
+      },
+      "feedback": {
+        "sent": false,
+        "matchesDefect": false,
+        "ungrounded": false,
+        "text": null,
+        "rationale": "未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。",
+        "evidenceRequest": null
+      },
+      "official": {
+        "before": null,
+        "after": null
+      },
+      "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2\\r2-security_tool_2-natural-2-a\\grading\\results.json",
+      "gradingError": "No complete, attributable hidden score.",
+      "baselineCost": {
+        "elapsedMs": 466668,
+        "tokens": 418830,
+        "elapsedShare": 0.9992099127049892,
+        "tokenShare": 1
+      }
+    },
+    {
       "id": "c-off-1",
       "round": "C",
       "sample": "kitchen-compaction",
@@ -18621,6 +20081,16 @@
             "f2pMean": 0,
             "p2pMean": 611,
             "nonRegression": true
+          },
+          {
+            "sample": "security_tool_2-natural",
+            "pairs": [
+              null,
+              null
+            ],
+            "f2pMean": null,
+            "p2pMean": null,
+            "nonRegression": null
           }
         ],
         "secondary": {
@@ -18644,6 +20114,22 @@
               },
               {
                 "sample": "security_tool_1-injected",
+                "control": [
+                  0,
+                  0
+                ],
+                "candidate": [
+                  0,
+                  0
+                ],
+                "controlMean": 0,
+                "candidateMean": 0,
+                "noise": 0,
+                "delta": 0,
+                "change": "tied"
+              },
+              {
+                "sample": "security_tool_2-natural",
                 "control": [
                   0,
                   0
@@ -18729,6 +20215,38 @@
                     "deltaMs": 0
                   }
                 ]
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  569911,
+                  467037
+                ],
+                "candidate": [
+                  569911,
+                  467037
+                ],
+                "controlMean": 518474,
+                "candidateMean": 518474,
+                "noise": 102874,
+                "delta": 0,
+                "change": "tied",
+                "pairs": [
+                  {
+                    "repeat": 1,
+                    "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+                    "controlMs": 569911,
+                    "candidateMs": 569911,
+                    "deltaMs": 0
+                  },
+                  {
+                    "repeat": 2,
+                    "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+                    "controlMs": 467037,
+                    "candidateMs": 467037,
+                    "deltaMs": 0
+                  }
+                ]
               }
             ],
             "wins": 0,
@@ -18769,11 +20287,27 @@
                 "noise": null,
                 "delta": null,
                 "change": "incomparable"
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  null,
+                  418830
+                ],
+                "candidate": [
+                  null,
+                  418830
+                ],
+                "controlMean": null,
+                "candidateMean": null,
+                "noise": null,
+                "delta": null,
+                "change": "incomparable"
               }
             ],
             "wins": 0,
             "losses": 0,
-            "incomparable": 2,
+            "incomparable": 3,
             "net": 0
           }
         },
@@ -18802,6 +20336,16 @@
             "f2pMean": 0,
             "p2pMean": 611,
             "nonRegression": true
+          },
+          {
+            "sample": "security_tool_2-natural",
+            "pairs": [
+              null,
+              null
+            ],
+            "f2pMean": null,
+            "p2pMean": null,
+            "nonRegression": null
           }
         ],
         "secondary": {
@@ -18825,6 +20369,22 @@
               },
               {
                 "sample": "security_tool_1-injected",
+                "control": [
+                  0,
+                  0
+                ],
+                "candidate": [
+                  0,
+                  0
+                ],
+                "controlMean": 0,
+                "candidateMean": 0,
+                "noise": 0,
+                "delta": 0,
+                "change": "tied"
+              },
+              {
+                "sample": "security_tool_2-natural",
                 "control": [
                   0,
                   0
@@ -18910,11 +20470,43 @@
                     "deltaMs": -23
                   }
                 ]
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  569911,
+                  null
+                ],
+                "candidate": [
+                  571859,
+                  null
+                ],
+                "controlMean": null,
+                "candidateMean": null,
+                "noise": null,
+                "delta": null,
+                "change": "incomparable",
+                "pairs": [
+                  {
+                    "repeat": 1,
+                    "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+                    "controlMs": 569911,
+                    "candidateMs": 571859,
+                    "deltaMs": 1948
+                  },
+                  {
+                    "repeat": 2,
+                    "pairId": null,
+                    "controlMs": null,
+                    "candidateMs": null,
+                    "deltaMs": null
+                  }
+                ]
               }
             ],
             "wins": 1,
             "losses": 0,
-            "incomparable": 0,
+            "incomparable": 1,
             "net": 1
           },
           "tokens": {
@@ -18950,19 +20542,35 @@
                 "noise": null,
                 "delta": null,
                 "change": "incomparable"
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  null,
+                  418830
+                ],
+                "candidate": [
+                  null,
+                  null
+                ],
+                "controlMean": null,
+                "candidateMean": null,
+                "noise": null,
+                "delta": null,
+                "change": "incomparable"
               }
             ],
             "wins": 0,
             "losses": 0,
-            "incomparable": 2,
+            "incomparable": 3,
             "net": 0
           }
         },
-        "primary": "meets-control"
+        "primary": "unscored"
       },
       {
         "arm": "B12",
-        "detected": 1,
+        "detected": 0.5,
         "falseAlarms": 0,
         "frozenCorrectFalseAlarms": 0,
         "byDefect": [
@@ -18983,6 +20591,16 @@
             "f2pMean": 1,
             "p2pMean": 611,
             "nonRegression": true
+          },
+          {
+            "sample": "security_tool_2-natural",
+            "pairs": [
+              null,
+              null
+            ],
+            "f2pMean": null,
+            "p2pMean": null,
+            "nonRegression": null
           }
         ],
         "secondary": {
@@ -19019,12 +20637,28 @@
                 "noise": 0,
                 "delta": 1,
                 "change": "improved"
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  0,
+                  0
+                ],
+                "candidate": [
+                  1,
+                  1
+                ],
+                "controlMean": 0,
+                "candidateMean": 1,
+                "noise": 0,
+                "delta": 1,
+                "change": "improved"
               }
             ],
-            "wins": 2,
+            "wins": 3,
             "losses": 0,
             "incomparable": 0,
-            "net": 2
+            "net": 3
           },
           "elapsedMs": {
             "bySample": [
@@ -19091,12 +20725,44 @@
                     "deltaMs": -450431
                   }
                 ]
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  569911,
+                  467037
+                ],
+                "candidate": [
+                  506221,
+                  162478
+                ],
+                "controlMean": 518474,
+                "candidateMean": 334349.5,
+                "noise": 102874,
+                "delta": -184124.5,
+                "change": "improved",
+                "pairs": [
+                  {
+                    "repeat": 1,
+                    "pairId": "703040b7-bbdf-4590-aaf0-54eaeba93253",
+                    "controlMs": 569911,
+                    "candidateMs": 506221,
+                    "deltaMs": -63690
+                  },
+                  {
+                    "repeat": 2,
+                    "pairId": "1d260acb-a0e3-4dc5-88de-d92959abfaec",
+                    "controlMs": 467037,
+                    "candidateMs": 162478,
+                    "deltaMs": -304559
+                  }
+                ]
               }
             ],
-            "wins": 1,
+            "wins": 2,
             "losses": 0,
             "incomparable": 1,
-            "net": 1
+            "net": 2
           },
           "tokens": {
             "bySample": [
@@ -19131,23 +20797,38 @@
                 "noise": null,
                 "delta": null,
                 "change": "incomparable"
+              },
+              {
+                "sample": "security_tool_2-natural",
+                "control": [
+                  null,
+                  418830
+                ],
+                "candidate": [
+                  3819753,
+                  1023553
+                ],
+                "controlMean": null,
+                "candidateMean": 2421653,
+                "noise": null,
+                "delta": null,
+                "change": "incomparable"
               }
             ],
             "wins": 0,
             "losses": 0,
-            "incomparable": 2,
+            "incomparable": 3,
             "net": 0
           }
         },
-        "primary": "meets-control"
+        "primary": "unscored"
       }
     ],
-    "recommendation": "B12",
-    "rankingOmissions": [],
-    "reason": "ranked-by-preregistered-metrics"
+    "recommendation": "A",
+    "reason": "round-2-unscored"
   },
   "baselineUpperBound": {
-    "elapsedShare": 0.9531331830124223,
+    "elapsedShare": 0.9675355022534202,
     "tokenShare": null
   },
   "compaction": {
@@ -19187,6 +20868,6 @@
     "change": "inconclusive"
   },
   "baselineRemoval": "retain",
-  "generatedAt": "2026-11-04T15:58:49.986Z",
-  "baselineRemovalRationale": "本实验支持 B12 的 Stop 配置。数据只覆盖一个真实任务和三个小型注入缺陷类型，未验证基线代码的其他调用场景。保留基线代码。"
+  "generatedAt": "2026-11-04T17:38:33.045Z",
+  "baselineRemovalRationale": "security_tool_2 的原样首稿未编译通过，第二轮的完整隐藏评分比较未能判定。按实验计划保留 A 和基线代码。"
 }

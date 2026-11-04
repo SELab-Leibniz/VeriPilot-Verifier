@@ -3,13 +3,13 @@
 
 ## 推荐与边界
 
-在本实验的 Stop 配置和预算下，采用 **B12**，由审查者从原文建立当次清单，只对可证实的偏差发出反馈。保留原始需求和当前源码的核验。**不建议删除基线代码**。
+加入 security_tool_2 后，按计划的证据不足规则保留 **A**，并保留基线代码。B12 仍在 security_tool_1 上完成全部审查及修复。
 
 - 第一轮四臂各检出 9/9，误报均为 0。B2 和 B12 分别完成 21/21，A 和 B1 各完成 15/21。B2 与 B12 按计划入围，B1 通过主指标但未进入前两名。B1 有样例用量覆盖不足，未用 token 破同分。
 
-- 第二轮 B12 四次全部在预算内完成。正确首稿两次均无误报，缺陷变体两次首次 Stop 均命中缺失的 20 位选项和策略映射，每次只续修一次。两次最终 FAIL_TO_PASS 均为 1/1，PASS_TO_PASS 均为 611/611。A 和 B2 各四次到审查截止，缺陷变体的最终 FAIL_TO_PASS 均为 0/1，PASS_TO_PASS 均为 611/611。
+- security_tool_1 的第二轮中，B12 四次全部在预算内完成。正确首稿两次均无误报，缺陷变体两次首次 Stop 均命中缺失的 20 位选项和策略映射，每次只续修一次。两次最终 FAIL_TO_PASS 均为 1/1，PASS_TO_PASS 均为 611/611。A 和 B2 各四次到审查截止，缺陷变体的最终 FAIL_TO_PASS 均为 0/1，PASS_TO_PASS 均为 611/611。
 
-- A 在第二轮的需求基线提取与审计占观测 RC 耗时 **95.3%**。由于用量缺项，整体 token 占比未能判定。第二轮以完成比例区分候选，耗时和 token 无需用于破同分。
+- 合并后，A 的需求基线提取与审计占观测 RC 耗时 96.8%。整体 token 占比未能判定。
 
 ## 旧包故障与替换验证
 
@@ -31,8 +31,8 @@
 - 旧包源提交 **b6700c1**，SHA256 **ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a**。
 - 替换包源提交 **0bbf9e3**，SHA256 **a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059**。正式替换只打包一次，之后哈希核对一致。
 - 两包各 195 个 lib 文件字节完全一致。改变的是 openclaw.plugin.json 和 config/openclaw-tool-contracts.json。C 中 Stop 关闭，新增工具没有审查会话绑定。C 压缩与注入的运行代码相同，沿用旧包记录。
-- 主计划 SHA256 **4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65**。新第二轮输入 SHA256 **61b9c3d8fdecca2d741169949125b3338db086ee3dd78a8acabb56b90d30964f**。 [替换包重跑计划](simplify-experiment-replacement-plan.md) · [冻结输入](simplify-experiment-round-two-inputs.json)
-- S0 的工作区提交内容 SHA256 **51b7b5532d9a8894676a4084cafdbf97017394804bd12bee1bc7aad655f7d5aa**。工作区 Git 提交、会话和补丁摘要见第二轮表。正确首稿和注入变体沿用原冻结字节。
+- 主计划 SHA256 **4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65**。security_tool_1 第二轮输入 SHA256 **61b9c3d8fdecca2d741169949125b3338db086ee3dd78a8acabb56b90d30964f**。 [替换包重跑计划](simplify-experiment-replacement-plan.md) · [冻结输入](simplify-experiment-round-two-inputs.json)
+- security_tool_1 S0 的工作区提交内容 SHA256 **51b7b5532d9a8894676a4084cafdbf97017394804bd12bee1bc7aad655f7d5aa**。工作区 Git 提交、会话和补丁摘要见第二轮表。正确首稿和注入变体沿用原冻结字节。
 
 | 只读目录 | 文件数 | 内容 SHA256 | 比对 |
 | --- | ---: | --- | --- |
@@ -43,12 +43,38 @@
 ## 并发与恢复
 
 - 新包第一轮保留的 84 条中，19 条在四并发下完成运行，65 条为串行。切换发生在 22:03:55（北京时间）。同一 alias-bug 组的一条配置读取失败在 Gateway 前发生，重试单独留档。后来一个 Git 长路径失败也在 Gateway 前发生，修复后续跑原序号。
-- 新包第二轮 11 条在三并发组内测得，分属 4 组。B12 的缺陷变体第 1 次因运行器提前关闭 Gateway 而作废。修复等待条件后，只补跑这一条并保留原始失败证据。补跑为串行，耗时不与组内 A 或 B2 比较。三条在组边界中断的准备尝试均无模型请求。
-- 全部工程检查与隐藏评分经全局 hvigor 互斥锁串行。等待时间单列。未出现 429 或 Previewer 端口冲突。
+- security_tool_1 的新包第二轮 11 条在三并发组内测得，分属 4 组。B12 的缺陷变体第 1 次因运行器提前关闭 Gateway 而作废。修复等待条件后，只补跑这一条并保留原始失败证据。补跑为串行，耗时不与组内 A 或 B2 比较。三条在组边界中断的准备尝试均无模型请求。
+- 全部工程检查与隐藏评分经全局 hvigor 互斥锁串行。等待时间单列。原批次未出现 429 或 Previewer 端口冲突。
 
 ## C 对照说明
 
 6 个序号都已记录。仅 C 关第 2 次有可评分回答，为 6/10。C 开第 3 次在首个压缩之后约 2.790 秒注入一次，共 22335 字节。其余两次 C 开未观测到注入，三次都没有可评分回答。C 的组间效果未能判定。
+
+## security_tool_2 补充对照
+
+用户在首版报告后要求加入该样例。使用同一替换包、DeepSeek 路由、每阶段预算、续修上限和计分规则。原第一轮、C 和 security_tool_1 的逐次结果沿用。
+
+- 隐藏校准通过。基准修复测试 0/2，黄金补丁 2/2，基准和黄金补丁的回归测试均为 746/746。
+- S0 自然结束，提交、补丁和会话均已冻结。它将 PermissionService.loadApplications 改为 loadApplicationsWithPolicySnapshot。原测试仍引用旧方法，独立评分编译报错 8 处。修复测试和回归测试均未执行，通过数记为未能判定。
+- 原样首稿作为自然缺陷对象。六次从相同冻结字节恢复，覆盖 A、B2、B12 各两次。首稿未达到生成正确对照与注入变体的条件。
+- 隐藏测试保持原始测试与 test_patch。模型提交中对测试的改写仍留在业务工作区，评分时依原规则排除。盲评以原题和冻结补丁为准。
+
+| 臂 | 预算内完成 | 首次命中 | 误报 | 最终 F2P（两次） | 最终 P2P（两次） |
+| --- | ---: | ---: | ---: | --- | --- |
+| A | 0/2 | 0/2 | 0 | 未能判定、未能判定 | 未能判定、未能判定 |
+| B2 | 0/2 | 0/2 | 0 | 未能判定、未能判定 | 未能判定、未能判定 |
+| B12 | 2/2 | 0/2 | 0 | 未能判定、未能判定 | 未能判定、未能判定 |
+
+六次均未发出修复反馈，最终补丁的 SHA256 均与首稿相同。六次隐藏评分均因同一缺失接口在编译时失败。B12 两次判定无当前偏差。A 一次到达审查截止、一次触发审查输出上限。B2 两次到达审查截止。
+
+本样例 A 的需求基线提取与审计占观测 RC 耗时 99.9%。整体 token 占比因用量缺项未能判定。
+
+1 条在并发 1 下运行，5 条在并发 3 下运行。RC 耗时只在同一组比较，hvigor 锁等待单列。最终隐藏测试无法完整执行的记录保留在原序号，通过数记为未能判定。
+
+跨两个样例的正式判定按预设规则保留 A。security_tool_2 的首稿没有可用的隐藏评分，无法建立修复前后的完整比较。security_tool_1 上 B12 的优势仍由其自身四次对照支持。
+
+- 补充冻结输入 SHA256 **d99d3c8b0e38d29391d7b2c377e9ea442ed88619f116131fe2fa4deb8df1d843**。工作区提交内容 SHA256 **10915611e3f300974a9c9e4ddcf0e37a7f812ee44be77f676fd980350af92625**。 [补充冻结输入](simplify-experiment-security-tool-2-inputs.json)
+- 补充墙钟 47.42 分钟，模型请求 197 次，观测 token 12905226，用量覆盖 193/197。
 
 ## 完成情况和运行边界
 
@@ -56,18 +82,20 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | 84 | 84 | 72 | 10 | 2 |
 | C | 6 | 6 | 1 | 5 | 0 |
-| 2 | 12 | 12 | 4 | 0 | 8 |
+| 2 | 18 | 18 | 6 | 1 | 11 |
 
 - 原接入失败记录保留，复验以一次模型请求通过。C 校准第 2 轮触发真实压缩。正式 C 六条原包记录沿用，未重新运行。
 - 旧包第一轮 84 条、旧包第二轮 4 条完整观测及 2 条隐藏评分阶段中断记录单列归档，全部排除计分。
 - 替换包通过 A/B1/B2/B12/F 的工作者工具登记测试、17 项产物测试及四臂离线准备。B1 两个 210 秒验证均通过，未触发 600 秒补验。
-- 按用户批准的范围缩减，第二轮仅使用 security_tool_1。其源码和隐藏校准在 C 运行期间完成，S0 在 C 结束后串行生成。S0 的首次启动前配置失败保留，未产生模型请求。
-- 使用原来冻结的首稿、会话和注入变体。替换包只改变工具注册清单，冻结输入和隐藏评分基准继续沿用。
+- 按用户批准的范围缩减，最初第二轮仅使用 security_tool_1。其源码和隐藏校准在 C 运行期间完成，S0 在 C 结束后串行生成。S0 的首次启动前配置失败保留，未产生模型请求。
+- security_tool_1 使用原来冻结的首稿、会话和注入变体。替换包只改变工具注册清单，冻结输入和隐藏评分基准继续沿用。
+- 用户随后要求补充 security_tool_2。其隐藏校准、独立首稿与新增对照使用原预算、模型和替换包。原样例、第一轮和 C 的计分记录沿用。
 - 批次 round1-new 在北京时间 2026/11/4 22:03:55 切换串行，原因 EVALUATION_FAILED。
 - 原来计划的 15 分钟诊断未启动。工具缺失已在旧包离线测试和轨迹中复现，并由新包 210 秒实测验证。
 - 只读目录快照在各记录阶段前后相同。各阶段及最终报告扫描均为 0 命中。
+- 补充对照于北京时间 2026/11/5 01:26:18 切换串行。第二组有一个序号在 Gateway 启动前读取模型配置失败，无模型请求。原序号单独补跑。
 
-总墙钟 396.666 分钟，模型请求 2590 次，记录到 58584338 token，用量覆盖 2496/2590。
+总墙钟 444.086 分钟，模型请求 2787 次，记录到 71489564 token，用量覆盖 2689/2787。
 
 ## 第一轮
 
@@ -86,25 +114,30 @@
 | 样例 | 首稿隐藏评分 F2P；P2P | 冻结工作区提交 | 会话 SHA256 | 补丁 SHA256 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | security_tool_1 | 1/1；611/611 | b22001f92964256ec569b24cf03cfdf39f5e3a17 | 9e48372a0929e4bb789948e91487e69fe68bd044c3029b37b082886b1d76f15f | 028deb4a62fcb13ea5de6d27e0d7e59cca5a75b2afc359502f85e8cd42ad924a | frozen-graded |
+| security_tool_2 | — | 61816677f7ec107da7c20a4dbd72a08cc39c3f76 | 4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df | 707acb885b4e724bbfacce613754575592e1526f84bc861f5837b148088546fb | candidate-compile-error |
 
 | 审查对象 | 类别 | 初始隐藏评分 F2P；P2P | 变体撤回 |
 | --- | --- | --- | --- |
 | security_tool_1-correct | correct | 1/1；611/611 | — |
 | security_tool_1-injected | defect | 0/1；611/611 | Remove only 20 from PASSWORD_LENGTH_OPTIONS in entry/src/main/ets/models/DataModels.ets. Keep 24 and all other S0 edits. |
+| security_tool_2-natural | defect | — | — |
 
 | 臂 | 首次 Stop 缺陷检出率 | 全部误报 | 正确首稿误报 | 主指标判定 |
 | --- | --- | --- | --- | --- |
 | A | 0 | 0 | 0 | control |
-| B2 | 0 | 0 | 0 | meets-control |
-| B12 | 1 | 0 | 0 | meets-control |
+| B2 | 0 | 0 | 0 | unscored |
+| B12 | 0.5 | 0 | 0 | unscored |
 
 | 臂 | 缺陷对象 | F2P 两次均值 | P2P 两次均值 | P2P 无新增失败 |
 | --- | --- | --- | --- | --- |
 | A | security_tool_1-injected | 0 | 611 | 是 |
+| A | security_tool_2-natural | — | — | — |
 | B2 | security_tool_1-injected | 0 | 611 | 是 |
+| B2 | security_tool_2-natural | — | — | — |
 | B12 | security_tool_1-injected | 1 | 611 | 是 |
+| B12 | security_tool_2-natural | — | — | — |
 
-第二轮的 RC 耗时只在同一并发组内比较。token 使用各隔离会话的调用计数。
+第二轮的 RC 耗时只在同一并发对内比较。token 使用各隔离会话的调用计数。
 
 | 候选臂 | 对象 | 序号 | 对照组 ID | A RC ms | 候选 RC ms | 候选减 A ms |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -112,10 +145,14 @@
 | B2 | security_tool_1-correct | 2 | bde96c64-911a-4823-903c-ca7dd8c84c2b | 571887 | 569984 | -1903 |
 | B2 | security_tool_1-injected | 1 | a8443723-7c20-4dbf-a4c0-4f4fc0d1e2fa | 569986 | 569858 | -128 |
 | B2 | security_tool_1-injected | 2 | 5e7cf295-5bb1-4ccf-a20f-ee666afb77ac | 569948 | 569925 | -23 |
+| B2 | security_tool_2-natural | 1 | 703040b7-bbdf-4590-aaf0-54eaeba93253 | 569911 | 571859 | 1948 |
+| B2 | security_tool_2-natural | 2 | — | — | — | — |
 | B12 | security_tool_1-correct | 1 | b92a2383-f566-453c-b700-4a914954e188 | 569964 | 52085 | -517879 |
 | B12 | security_tool_1-correct | 2 | bde96c64-911a-4823-903c-ca7dd8c84c2b | 571887 | 71410 | -500477 |
 | B12 | security_tool_1-injected | 1 | — | — | — | — |
 | B12 | security_tool_1-injected | 2 | 5e7cf295-5bb1-4ccf-a20f-ee666afb77ac | 569948 | 119517 | -450431 |
+| B12 | security_tool_2-natural | 1 | 703040b7-bbdf-4590-aaf0-54eaeba93253 | 569911 | 506221 | -63690 |
+| B12 | security_tool_2-natural | 2 | 1d260acb-a0e3-4dc5-88de-d92959abfaec | 467037 | 162478 | -304559 |
 
 | 运行 | 并发 | Gateway 端口 | 工具链锁等待 ms | 调用数 |
 | --- | --- | --- | --- | --- |
@@ -131,6 +168,12 @@
 | r2-security_tool_1-injected-2-b2 | 3 | 53826 | 2218 | 3 |
 | r2-security_tool_1-injected-2-b12 | 3 | 53825 | 9 | 5 |
 | r2-security_tool_1-injected-2-a | 3 | 54979 | 31478 | 3 |
+| r2-security_tool_2-natural-1-a | 3 | 55023 | 24836 | 3 |
+| r2-security_tool_2-natural-1-b2 | 3 | 55022 | 2315 | 3 |
+| r2-security_tool_2-natural-1-b12 | 3 | 55021 | 3 | 3 |
+| r2-security_tool_2-natural-2-b2 | 1 | 53037 | 6 | 3 |
+| r2-security_tool_2-natural-2-b12 | 3 | 58348 | 1850 | 3 |
+| r2-security_tool_2-natural-2-a | 3 | 58343 | 5 | 3 |
 
 ## 次指标与噪声
 
@@ -201,20 +244,26 @@
 | 1 | B12 | mixed-skill | tokens | 170619 | 144970.333 | 91313 | -25648.667 | tied |
 | 2 | B2 | security_tool_1-correct | completion | 0 | 0 | 0 | 0 | tied |
 | 2 | B2 | security_tool_1-injected | completion | 0 | 0 | 0 | 0 | tied |
+| 2 | B2 | security_tool_2-natural | completion | 0 | 0 | 0 | 0 | tied |
 | 2 | B2 | security_tool_1-correct | elapsedMs | 570925.5 | 569993 | 1923 | -932.5 | tied |
 | 2 | B2 | security_tool_1-injected | elapsedMs | 569967 | 569891.5 | 38 | -75.5 | improved |
+| 2 | B2 | security_tool_2-natural | elapsedMs | — | — | — | — | incomparable |
 | 2 | B2 | security_tool_1-correct | tokens | — | — | — | — | incomparable |
 | 2 | B2 | security_tool_1-injected | tokens | — | — | — | — | incomparable |
+| 2 | B2 | security_tool_2-natural | tokens | — | — | — | — | incomparable |
 | 2 | B12 | security_tool_1-correct | completion | 0 | 1 | 0 | 1 | improved |
 | 2 | B12 | security_tool_1-injected | completion | 0 | 1 | 0 | 1 | improved |
+| 2 | B12 | security_tool_2-natural | completion | 0 | 1 | 0 | 1 | improved |
 | 2 | B12 | security_tool_1-correct | elapsedMs | 570925.5 | 61747.5 | 1923 | -509178 | improved |
 | 2 | B12 | security_tool_1-injected | elapsedMs | — | — | — | — | incomparable |
+| 2 | B12 | security_tool_2-natural | elapsedMs | 518474 | 334349.5 | 102874 | -184124.5 | improved |
 | 2 | B12 | security_tool_1-correct | tokens | — | 289161.5 | — | — | incomparable |
 | 2 | B12 | security_tool_1-injected | tokens | — | 610176 | — | — | incomparable |
+| 2 | B12 | security_tool_2-natural | tokens | — | 2421653 | — | — | incomparable |
 
 ## A 的基线提取与审计
 
-第二轮整体可节省上限估计，耗时占比 0.953，token 占比 —。
+第二轮整体可节省上限估计，耗时占比 0.968，token 占比 —。
 
 | 样例 | 序号 | 基线 ms | 占 RC 耗时 | 基线 token | 占 RC token |
 | --- | --- | --- | --- | --- | --- |
@@ -222,6 +271,8 @@
 | security_tool_1-correct | 2 | 571379 | 0.999 | — | — |
 | security_tool_1-injected | 1 | 569582 | 0.999 | — | — |
 | security_tool_1-injected | 2 | 569136 | 0.999 | — | — |
+| security_tool_2-natural | 1 | 569479 | 0.999 | — | — |
+| security_tool_2-natural | 2 | 466668 | 0.999 | 418830 | 1 |
 
 ## C 的检查得分
 
@@ -395,6 +446,12 @@ Stop 轮 token 为可归属的 RC 用量。C 的 token 和耗时来自整个隔�
 | B2 | security_tool_1-injected | 2 | timed-out | 否 | 否 | 否 | 否 | 571286 | 569925 | 1447034 | 29/30 | 0/1；611/611 | 0/1；611/611 | 未发修复反馈，未检出冻结变体缺失 20 位选项及映射的真实缺陷。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-new-resume\r2-security_tool_1-injected-2-b2\evaluation\result.json | STOP_REVIEW_DEADLINE |
 | B12 | security_tool_1-injected | 2 | completed | 是 | 是 | 否 | 是 | 231557 | 119517 | 514054 | 18/18 | 0/1；611/611 | 1/1；611/611 | 引用当前 DataModels 与 applyConfig，说明 20 缺失且 24 的位置随之左移。20 位策略无法映射，命中注入缺陷。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-new-resume\r2-security_tool_1-injected-2-b12\evaluation\result.json | ASSESSMENT_DELIVERED |
 | A | security_tool_1-injected | 2 | timed-out | 否 | 否 | 否 | 否 | 570922 | 569948 | 1631265 | 38/39 | 0/1；611/611 | 0/1；611/611 | 未发修复反馈，未检出冻结变体缺失 20 位选项及映射的真实缺陷。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-new-resume\r2-security_tool_1-injected-2-a\evaluation\result.json | STOP_REVIEW_DEADLINE |
+| A | security_tool_2-natural | 1 | timed-out | 否 | 否 | 否 | 否 | 571869 | 569911 | 1711443 | 31/32 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2\r2-security_tool_2-natural-1-a\evaluation\result.json | STOP_REVIEW_DEADLINE |
+| B2 | security_tool_2-natural | 1 | timed-out | 否 | 否 | 否 | 否 | 573652 | 571859 | 1557060 | 26/27 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2\r2-security_tool_2-natural-1-b2\evaluation\result.json | STOP_REVIEW_DEADLINE |
+| B12 | security_tool_2-natural | 1 | completed | 否 | 否 | 否 | 是 | 508013 | 506221 | 3819753 | 46/46 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2\r2-security_tool_2-natural-1-b12\evaluation\result.json | NO_CURRENT_DEVIATION |
+| B2 | security_tool_2-natural | 2 | timed-out | 否 | 否 | 否 | 否 | 571133 | 569990 | 882576 | 22/23 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2-resume\r2-security_tool_2-natural-2-b2\evaluation\result.json | STOP_REVIEW_DEADLINE |
+| B12 | security_tool_2-natural | 2 | completed | 否 | 否 | 否 | 是 | 164197 | 162478 | 1023553 | 19/19 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2\r2-security_tool_2-natural-2-b12\evaluation\result.json | NO_CURRENT_DEVIATION |
+| A | security_tool_2-natural | 2 | failed | 否 | 否 | 否 | 否 | 468657 | 467037 | 418830 | 11/11 | — | — | 未向宿主发送修复反馈。未命中首稿删除 PermissionService.loadApplications 导致原测试无法编译的问题，无误报。 | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\round2-st2\r2-security_tool_2-natural-2-a\evaluation\result.json | REVIEWER_OUTPUT_LIMIT |
 | C-off | kitchen-compaction | 1 | failed | — | — | — | 否 | 261207 | — | 524424 | 24/27 | — | — | — | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\c-formal\c-off-1\evaluation\result.json | Compaction turn did not complete. |
 | C-on | kitchen-compaction | 1 | failed | — | — | — | 否 | 290941 | — | 393370 | 19/22 | — | — | — | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\c-formal-resume\c-on-1\evaluation\result.json | Compaction turn did not complete. |
 | C-off | kitchen-compaction | 2 | completed | — | — | — | 是 | 343188 | — | 321498 | 16/21 | — | — | — | C:\Users\user\workspace\program_workspace\runtime-corrector-toy\.runtime-correction\simplify\live\c-formal-resume\c-off-2\evaluation\result.json | — |
@@ -1062,9 +1119,10 @@ Stop 轮 token 为可归属的 RC 用量。C 的 token 和耗时来自整个隔�
 ## 局限和不确定性
 
 - 第一轮为七个受控小样例。部分为四并发，发生启动前配置读取错误后保守切串行。原失败日志没有底层错误码，不能确证因果。
-- 第二轮仅覆盖一个真实任务的正确首稿和单项注入变体。只能将结论用于本实验的 Stop 配置、证据和预算。
+- 第二轮覆盖同一 ArkTS 工程的两个任务，每个审查对象只重复两次。只能将结论用于本实验的 Stop 配置、证据和预算。
 - 第二轮按同一组内比较 RC 耗时。模型请求以各隔离运行观测为准，hvigor 等锁时间单列。
 - C 只有一条有效回答。压缩后原文注入协议只在一次 C 开运行完整观测到，缺组间得分证据。
 - 旧包第一轮首个重复的初版盲评导出在引用路径里带有臂名。正式评分前重新打乱和遮蔽路径，评分者已见过部分旧引用。替换包评分使用了遮蔽后导出。
-- 总墙钟含等待、排查、替换包构建和两次旧包阶段。总 token 为实际记录小计，用量缺失不估算。
+- 总墙钟为原实验与补充实验的活跃墙钟之和，含等待、排查、打包和旧包阶段，扣除两段实验之间的空档。总 token 为实际记录小计，用量缺失不估算。
 - 旧的接入、校准及最早第一轮批次只有 MatrixAssistant 与内置 OpenClaw 的历史快照。数据集的前后比对从首次续跑开始。
+- security_tool_2 的原样首稿删除了原测试仍调用的接口，导致隐藏测试编译失败。未执行的测试无通过数，影响跨样例的正式判定。
