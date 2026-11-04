@@ -31,6 +31,13 @@ const simplifyModel = value('--simplify-model');
 const simplifyProvider = value('--simplify-provider') ?? 'coding-plan';
 const openclawProfile = value('--openclaw-profile');
 const simplifySha = value('--simplify-package-sha256');
+const assessmentBudgetMs = Number(value('--simplify-validation-budget') ?? 210000);
+const feedbackReserveMs = 30000;
+const reviewBudgetMs = assessmentBudgetMs - feedbackReserveMs;
+if (args.includes('--simplify-validation-budget') && (simplifyArm !== 'B1' || simplifyProvider !== 'host-profile'
+  || !['external-bug', 'internal-correct'].includes(value('--case')) || ![210000, 600000].includes(assessmentBudgetMs)))
+  throw new Error('The alternate budget is only for the unscored DeepSeek B1 verification.');
+const pairRateLimitFile = value('--simplify-pair-rate-limit-file') ?? undefined;
 const simplifyNative = simplify ? await import('./helpers/simplify-native-evaluation.mjs') : null;
 if ((args.includes('--simplify-arm') || simplifyPrepare || simplifyRoot || simplifyModel || simplifySha || args.includes('--simplify-provider') || openclawProfile)
   && (!Object.hasOwn((await import('./simplify-experiment-schedule.mjs')).STOP_ARMS, simplifyArm) || !simplifyRoot
@@ -189,7 +196,7 @@ try { for (const spec of cases) {
       await fs.writeFile(path.join(outputRoot, 'prepare.json'), JSON.stringify(prepared, null, 2), { flag: 'wx' });
       process.exit(0);
     }
-    const reviewer = { session: 'detached', model, effort: 'low', timeoutMs: 180000, maxOutputTokens: 32768, maxBudgetUsd: 0.25 };
+    const reviewer = { session: 'detached', model, effort: 'low', timeoutMs: reviewBudgetMs, maxOutputTokens: 32768, maxBudgetUsd: 0.25 };
     const input = { projectRoot, sessionCwd: projectRoot, taskId: task.taskId, role: 'stop-reviewer', reviewer, schema: STOP_REVIEW_SCHEMA, hostAdapter, skillRoots,
       excludedEvidencePaths: [path.join(outputRoot, 'results.json')],
       reviewerRuntime: { executable }, evidence: { groundTruth: truth, snapshot },
@@ -202,7 +209,7 @@ try { for (const spec of cases) {
     try {
       if (simplify) {
         native = await simplifyNative.createSimplifyStopNative({ hostRoot: value('--host-root'), projectRoot, outputRoot: parent, sourceRoot,
-          prebuiltPluginRoot: packageRoot, model: simplifyModel, providerKind: simplifyProvider, openclawProfile, phaseTimeoutMs: 210000 });
+          prebuiltPluginRoot: packageRoot, model: simplifyModel, providerKind: simplifyProvider, openclawProfile, phaseTimeoutMs: assessmentBudgetMs, pairRateLimitFile });
       } else if (transport === 'native') {
         const { createNativeStopEvaluation, installNativeStopCapture } = await import('./helpers/native-stop-evaluation.mjs');
         if (nativeBatch) batchCapture = await nativeBatch.beginCase({ projectRoot, contract });
@@ -228,14 +235,14 @@ try { for (const spec of cases) {
           { supportsWorkspaceStopReview: true });
         // The production deadline includes its feedback reserve. Keep 180s
         // of actual review time plus 30s for the unchanged settlement path.
-        factory.reviewDeadlineAt = Date.now() + 210000;
-        factory.reviewAbortSignal = AbortSignal.timeout(210000);
+        factory.reviewDeadlineAt = Date.now() + assessmentBudgetMs;
+        factory.reviewAbortSignal = AbortSignal.timeout(assessmentBudgetMs);
         const { maxBudgetUsd, ...nativeReviewer } = reviewer;
         const runtimeV2 = runtimeV2Api.compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false,
           ...(simplify && spec.external ? { materialRoots: [contract] } : {}) }, skillCorrection: { enabled: false, skillRoots },
           artifactCorrection: { groundTruthReviewEnabled: false }, implementationCorrection: { enabled: false, platform: null },
           reviewers: { stopReviewer: native ? { ...nativeReviewer, model: native.modelRef } : reviewer },
-          stopCorrection: { enabled: true, assessmentTimeoutMs: 210000, feedbackReserveMs: 30000,
+          stopCorrection: { enabled: true, assessmentTimeoutMs: assessmentBudgetMs, feedbackReserveMs,
             ...(simplify ? { originalRequirementsBasis: simplify.originalRequirementsBasis, deviationOnly: simplify.deviationOnly } : {}),
             ...(!spec.allMetrics ? { metrics: Object.fromEntries(Array.from({ length: 16 }, (_, index) => [`M${String(index + 1).padStart(2, '0')}`, metricIds.includes(`M${String(index + 1).padStart(2, '0')}`)])) } : {}) } });
         const options = { projectRoot, ...(simplify ? { pluginRoot: packageRoot } : {}),
@@ -246,8 +253,8 @@ try { for (const spec of cases) {
         if (automatic || simplify) await runtimeV2Api.handleRuntimeV2Event({ ...options, input: { ...identity, hook_event_name: 'UserPromptSubmit', hook_event_id: 'original-user', prompt: statements.join('\n') } });
         const stopStartedAt = Date.now();
         if (simplify) {
-          factory.reviewDeadlineAt = stopStartedAt + 210000;
-          factory.reviewAbortSignal = AbortSignal.timeout(210000);
+          factory.reviewDeadlineAt = stopStartedAt + assessmentBudgetMs;
+          factory.reviewAbortSignal = AbortSignal.timeout(assessmentBudgetMs);
         }
         outcome = await runtimeV2Api.handleRuntimeV2Event({ ...options, assessmentContext: { mode: automatic ? 'execute_and_correct' : 'verify_only', assessmentId: 'original-stop' },
           input: { ...identity, hook_event_name: 'Stop', hook_event_id: 'original-stop', last_assistant_message: snapshot.entries.at(-1).message.content } });
@@ -261,7 +268,7 @@ try { for (const spec of cases) {
           const finalText = business.entries.filter(entry => entry.type === 'assistant').at(-1)?.message.content
             .filter(block => block.type === 'text').map(block => block.text).join('\n');
           if (!finalText) throw new Error('The real business model did not deliver a completion message.');
-          factory.reviewDeadlineAt = Date.now() + 210000; factory.reviewAbortSignal = AbortSignal.timeout(210000);
+          factory.reviewDeadlineAt = Date.now() + assessmentBudgetMs; factory.reviewAbortSignal = AbortSignal.timeout(assessmentBudgetMs);
           finalReviewStart = handles.length; handle = undefined;
           outcome = await handleRuntimeV2Event({ ...options, assessmentContext: { mode: 'verify_only', assessmentId: 'repaired-stop' },
             input: { ...identity, hook_event_name: 'Stop', hook_event_id: 'repaired-stop', last_assistant_message: finalText } });
@@ -304,21 +311,21 @@ try { for (const spec of cases) {
       const transcriptMetrics = await inspectNativeReviewArtifacts([taskStoreApi.taskDirectory(projectRoot, task.taskId)]);
       const repairFeedback = outcome?.stop ? outcome.stop.decision === 'block' && /\[runtime-corrector:stop-feedback\]/u.test(outcome.stop.feedback ?? '') : null;
       const reason = error?.code ?? outcome?.stop?.reasonCode ?? outcome?.reason ?? null;
-      const completedInBudget = outcome?.stop?.review?.collection?.complete === true && Number.isFinite(stopElapsedMs) && stopElapsedMs <= 210000;
+      const completedInBudget = outcome?.stop?.review?.collection?.complete === true && Number.isFinite(stopElapsedMs) && stopElapsedMs <= assessmentBudgetMs;
       const profileStatus = native?.providerStatus?.();
       const rateLimited = (simplifyProvider === 'host-profile' || !completedInBudget)
         && timing.some(event => event.event === 'response' && event.status === 429) || profileStatus?.failure === 'PROFILE_RATE_LIMIT';
       const frameworkError = simplifyProvider === 'host-profile' && Boolean(error || !outcome?.stop || profileStatus?.failure);
       const state = rateLimited ? 'rate-limited' : frameworkError ? 'failed' : completedInBudget ? 'completed'
-        : /DEADLINE|TIMEOUT/u.test(reason ?? '') || stopElapsedMs > 210000 ? 'timed-out' : 'failed';
+        : /DEADLINE|TIMEOUT/u.test(reason ?? '') || stopElapsedMs > assessmentBudgetMs ? 'timed-out' : 'failed';
       observation = { arm: simplifyArm, artifactSha256: simplifySha, repairFeedback, completedInBudget, state, frameworkError,
         rcElapsedMs: stopElapsedMs ?? null, reason, baselineSource: simplify.baseline ? 'controlled fixture' : 'original-user-message',
-        providerIdentity: native?.providerIdentity ?? null,
+        providerIdentity: native?.providerIdentity ?? null, gatewayPort: native?.port ?? null,
         feedback: repairFeedback ? simplifyNative.redactEvaluationText(outcome.stop.feedback) : null,
         usage: simplifyNative.summarizeProviderUsage(timing.filter(event => event.event === 'request').length, transcriptMetrics.observations.map(row => row.usage)),
         configurationSummary: JSON.stringify({ ...simplify, model: simplifyModel, provider: native?.providerIdentity ?? simplifyProvider,
-          metricIds, transport: 'isolated-openclaw-gateway', budgetMs: 210000,
-          feedbackReserveMs: 30000, fixedBaselineFixture: simplify.baseline, compactionRestore: false }) };
+          metricIds, transport: 'isolated-openclaw-gateway', budgetMs: assessmentBudgetMs,
+          feedbackReserveMs, fixedBaselineFixture: simplify.baseline, compactionRestore: false }) };
     }
     const record = { case: spec.id, engine, production, automatic, metrics: metricIds, expectedObjectIds: objects.map(object => object.objectId), expectedRows, matchesExpected, productionStatus: outcome?.stop?.status ?? null,
       ...(capture ? { capture: capture.metrics(), modelVerdictObtained: false, baselineSource: 'controlled fixture, not extraction acceptance' } : {}),

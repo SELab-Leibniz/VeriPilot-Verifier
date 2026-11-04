@@ -27,7 +27,12 @@ const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: proc
 const simplifyArm = arg('--simplify-arm');
 const s0 = simplifyArm === 'S0';
 const frozenRoot = arg('--frozen');
-const packageSha256 = 'ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a';
+const originalPackageSha256 = 'ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a';
+const replacementPackageSha256 = 'a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059';
+const packageSha256 = arg('--package-sha256') ?? originalPackageSha256;
+const packageSources = { [originalPackageSha256]: 'b6700c1f2f056949d35b5bacb763334ebe7a15cf',
+  [replacementPackageSha256]: '0bbf9e3c5ff91e2a4018a09a751a96a6d0392520' };
+const frozenPackageSha256 = arg('--frozen-package-sha256') ?? packageSha256;
 const planSha256 = arg('--plan-sha256');
 const arm = s0 ? { enabled: false, baseline: false, originalRequirementsBasis: false, deviationOnly: false }
   : simplifyArm ? { ...STOP_ARMS[simplifyArm], enabled: true } : null;
@@ -46,7 +51,8 @@ if (simplifyArm) {
     || !arg('--dataset') || !arg('--tool-root') || !arg('--package') || !profile.explicit || arg('--provider') !== 'host-profile'
     || digest(await fs.readFile(path.join(sourceRoot, 'docs/simplify-experiment-plan.md'))) !== planSha256)
     throw new Error('Supply pinned ArkTS plan, local paths, DeepSeek provider, and the appropriate S0 or frozen Stop mode.');
-  if (digest(await fs.readFile(archive = await fs.realpath(arg('--package')))) !== packageSha256)
+  if (!Object.hasOwn(packageSources, packageSha256) || !Object.hasOwn(packageSources, frozenPackageSha256)
+    || digest(await fs.readFile(archive = await fs.realpath(arg('--package')))) !== packageSha256)
     throw new Error('Pinned ArkTS integration package SHA256 changed.');
   ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile')));
 }
@@ -81,7 +87,7 @@ if (resumeRoot) {
 const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
   baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot }
   : frozenRoot ? await prepareFrozenArktsWorkspace({ frozenRoot, freezeSha256: arg('--freeze-sha256'), task, datasetDigest,
-    artifactSha256: packageSha256, planSha256, git: gitExecutable, cacheRoot, outputRoot, workspaceRoot: arg('--workspace-root') })
+    artifactSha256: frozenPackageSha256, planSha256, git: gitExecutable, cacheRoot, outputRoot, workspaceRoot: arg('--workspace-root') })
   : await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable,
   ...(arg('--workspace-base') ? { workspaceBase: path.resolve(arg('--workspace-base')) } : {}),
   workspaceRoot: arg('--workspace-root'), json5Package: arg('--json5-package'),
@@ -112,7 +118,7 @@ if (frozenRoot) {
 } else prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 if (archive) execFileSync('tar', ['-xf', archive, '-C', outputRoot], { windowsHide: true, stdio: 'pipe' });
 const artifact = archive ? path.join(outputRoot, 'package') : arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
-const baselineRef = simplifyArm ? 'b6700c1f2f056949d35b5bacb763334ebe7a15cf' : arg('--baseline-ref') ?? 'c33bae6';
+const baselineRef = simplifyArm ? packageSources[packageSha256] : arg('--baseline-ref') ?? 'c33bae6';
 let verifiedRcCommit = execFileSync(gitExecutable, ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 if (artifact) {
   const validatedSkills = await validateArtifactSkills(artifact, arg('--host-root') ?? 'C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw');
@@ -163,7 +169,7 @@ const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, s
 const { transcript: _frozenTranscript, frozen: _frozen, ...preparedSummary } = prepared;
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...preparedSummary,
   ...(arm ? { simplifyArm, planSha256, artifactSha256: packageSha256, providerIdentity,
-    ...(frozenRoot ? { freezeSha256: arg('--freeze-sha256') } : {}) } : {}),
+    ...(frozenRoot ? { freezeSha256: arg('--freeze-sha256'), frozenPackageSha256 } : {}) } : {}),
   rcSource: verifiedRcCommit,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',

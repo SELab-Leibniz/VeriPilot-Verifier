@@ -23,6 +23,8 @@ export const SCREENING_SAMPLES = Object.freeze({
 
 export function simplifySchedule(round, promoted = [], objects = []) {
   if (round !== '2' && promoted.length) throw new Error('Promotions are only used for round 2.');
+  if (round === 'validation') return ['external-bug', 'internal-correct'].map(sample => ({ id: `validation-b1-${sample}`,
+    round, sample, repeat: 1, arm: 'B1', config: STOP_ARMS.B1, entrypoints: ['scripts/evaluate-stop-workspace.mjs'], scored: false }));
   if (round === 'C') return [1, 2, 3].flatMap(repeat => ['C-off', 'C-on'].map(arm => ({
     id: `${arm.toLowerCase()}-${repeat}`, round, sample: 'kitchen-compaction', repeat, arm,
     timeoutMs: 30 * 60_000, config: { originalRequirementsEnabled: true, compactionRestore: arm === 'C-on', stop: false, skill: false, document: false },

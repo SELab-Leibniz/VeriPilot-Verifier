@@ -24,7 +24,8 @@ export async function readArktsComparisonInputs({ file, sha256, planSha256, arti
     const checked = JSON.parse(calibration);
     const grade = await fs.readFile(input.gradeFile);
     const before = arktsHiddenReward(JSON.parse(grade), manifest.patchSha256, input.case, datasetDigest);
-    if (digest(freeze) !== input.freezeSha256 || manifest.planSha256 !== planSha256 || manifest.artifactSha256 !== artifactSha256
+    if (digest(freeze) !== input.freezeSha256 || manifest.planSha256 !== planSha256
+      || manifest.artifactSha256 !== (inputs.frozenSourceArtifactSha256 ?? artifactSha256)
       || manifest.instanceId !== input.case || manifest.datasetDigest !== datasetDigest
       || digest(calibration) !== input.calibrationSha256 || checked.instanceId !== input.case || checked.environment?.datasetDigest !== datasetDigest
       || !checked.results?.find(row => row.phase === 'base')?.validFailToPassBase || !checked.results?.find(row => row.phase === 'gold')?.resolved

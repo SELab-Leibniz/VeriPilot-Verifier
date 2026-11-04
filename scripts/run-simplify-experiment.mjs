@@ -44,7 +44,8 @@ async function readResume(directory, schedule, identity) {
   const records = new Map(), retries = new Map();
   let fallback = null;
   const pending = () => schedule.filter(slot => !records.has(slot.id));
-  const group = slot => identity.arktsCli ? `${slot.sample}/${slot.repeat}` : slot.id;
+  const group = slot => identity.validationBudgetMs ? 'validation'
+    : identity.arktsCli || identity.parallelScreening ? `${slot.sample}/${slot.repeat}` : slot.id;
   for (const { directory, manifest } of batches) {
     fallback ??= await optionalJson(path.join(directory, 'serial-fallback.json'));
     const expected = pending();
@@ -73,9 +74,10 @@ async function readResume(directory, schedule, identity) {
 async function writeProgress(file, round, records, total, latest) {
   if (!file) return;
   const average = records.length ? records.reduce((sum, row) => sum + row.wallMs, 0) / records.length : null;
-  const minutes = average === null ? null : Math.ceil(average * (total - records.length) / 60_000);
+  const minutes = average === null ? null : Math.ceil(average * (total - records.length) / (60_000 * (latest.concurrency ?? 1)));
   const details = latest.reason ? redactEvaluationText(latest.reason).replace(/\s+/gu, ' ').slice(0, 250) : '无';
-  await fs.writeFile(file, ['# RC Stop 对照进度', '', `- 当前步骤　${round === '1' ? '第一轮' : round === 'C' ? 'C 正式对照' : round}`,
+  const stage = { '1': '第一轮', '2': '第二轮 ArkTS 对照', C: 'C 正式对照', validation: '新包 B1 接入验证' }[round] ?? round;
+  await fs.writeFile(file, ['# RC Stop 对照进度', '', `- 当前步骤　${stage}`,
     `- 已完成序号　${records.length}/${total}`, `- 最近一次　${latest.id} / ${latest.state}`, `- 限流或错误　${details}`,
     `- 本阶段剩余墙钟粗估　${minutes === null ? '待估' : `约 ${minutes} 分钟`}`, ''].join('\n'));
 }
@@ -106,11 +108,13 @@ function verifyArchive(file) {
 }
 
 async function runScreening(slot, context) {
-  const { hostRoot, model, packageRoot, artifactSha256, directory, providerIdentity, profileArgs } = context;
+  const { hostRoot, model, packageRoot, artifactSha256, directory, providerIdentity, profileArgs, pairRateLimitFile, validationBudgetMs } = context;
   const output = path.join(directory, 'evaluation');
   const process = await runProcess(slot.entrypoints[0], ['--live', '--transport', 'native', '--engine', 'workspace', '--production',
     '--case', slot.sample, '--host-root', hostRoot, '--output-root', output, '--simplify-arm', slot.arm,
-    '--simplify-model', model, '--simplify-provider', providerIdentity.kind, '--simplify-plugin-root', packageRoot, '--simplify-package-sha256', artifactSha256, ...profileArgs]);
+    '--simplify-model', model, '--simplify-provider', providerIdentity.kind, '--simplify-plugin-root', packageRoot, '--simplify-package-sha256', artifactSha256,
+    ...(pairRateLimitFile ? ['--simplify-pair-rate-limit-file', pairRateLimitFile] : []),
+    ...(validationBudgetMs ? ['--simplify-validation-budget', String(validationBudgetMs)] : []), ...profileArgs]);
   const evidence = path.join(output, 'results.json');
   const result = await readJson(evidence).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   const raw = result?.records?.[0];
@@ -118,8 +122,8 @@ async function runScreening(slot, context) {
   if (raw.case !== slot.sample || raw.simplify?.arm !== slot.arm || raw.simplify.artifactSha256 !== artifactSha256
     || (raw.simplify.providerIdentity || raw.simplify.state === 'completed') && JSON.stringify(raw.simplify.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`Evaluator identity mismatch for ${slot.id}.`);
-  const { state, repairFeedback, feedback, completedInBudget, rcElapsedMs, reason, usage, configurationSummary, frameworkError } = raw.simplify;
-  return { state, repairFeedback, feedback, completedInBudget, elapsedMs: raw.elapsedMs, rcElapsedMs, reason, usage, configurationSummary, evidence, frameworkError };
+  const { state, repairFeedback, feedback, completedInBudget, rcElapsedMs, reason, usage, configurationSummary, frameworkError, gatewayPort } = raw.simplify;
+  return { state, repairFeedback, feedback, completedInBudget, elapsedMs: raw.elapsedMs, rcElapsedMs, reason, usage, configurationSummary, evidence, frameworkError, gatewayPort };
 }
 
 async function runCompaction(slot, context) {
@@ -156,6 +160,7 @@ async function runBenchmark(slot, context) {
   const { hostRoot, model, archive, directory, benchmark, arkts, openclawProfile, providerIdentity, pairRateLimitFile } = context;
   const output = path.join(directory, 'evaluation');
   const options = { case: benchmark.case, output, 'host-root': hostRoot, package: archive, 'simplify-arm': slot.arm,
+    'package-sha256': context.artifactSha256, 'frozen-package-sha256': arkts.frozenSourceArtifactSha256 ?? context.artifactSha256,
     provider: 'host-profile', model, 'openclaw-profile': openclawProfile, 'plan-sha256': arkts.planSha256,
     frozen: benchmark.frozenRoot, 'freeze-sha256': benchmark.freezeSha256, ...arkts.cli,
     ...(pairRateLimitFile ? { 'pair-rate-limit-file': pairRateLimitFile } : {}) };
@@ -171,6 +176,7 @@ async function runBenchmark(slot, context) {
   }
   if (raw.simplifyArm !== slot.arm || raw.instanceId !== benchmark.case || raw.datasetDigest !== benchmark.datasetDigest
     || raw.freezeSha256 !== benchmark.freezeSha256 || raw.artifactSha256 !== context.artifactSha256 || raw.planSha256 !== arkts.planSha256
+    || raw.frozenPackageSha256 !== (arkts.frozenSourceArtifactSha256 ?? context.artifactSha256)
     || JSON.stringify(raw.providerIdentity) !== JSON.stringify(providerIdentity))
     throw new Error(`ArkTS Stop identity differs for ${slot.id}.`);
   const { state, repairFeedback, feedback, completedInBudget, elapsedMs, rcElapsedMs, reason, usage, totalUsage, baselineCost, frameworkError } = raw;
@@ -219,6 +225,7 @@ async function main() {
     'resume-from': { type: 'string' }, 'progress-file': { type: 'string' },
     'round-two-inputs-sha256': { type: 'string' }, dataset: { type: 'string' }, 'tool-root': { type: 'string' },
     cache: { type: 'string' }, 'workspace-root': { type: 'string' }, 'json5-package': { type: 'string' },
+    'validation-budget': { type: 'string' }, 'parallel-screening': { type: 'boolean' }, serial: { type: 'boolean' },
   } });
   if (values.help) {
     console.log('Usage: node scripts/run-simplify-experiment.mjs --round <1|2|C-calibration|C|model-smoke> --plan-sha256 <approved plan SHA256> --package <integration tgz> --package-sha256 <SHA256> --host-root <installed OpenClaw> --model <glm-5.3|glm-5.3-flash|deepseek-v4-flash> --output-root <new directory>');
@@ -230,14 +237,19 @@ async function main() {
     console.log('Use --resume-from <previous batch directory> and --progress-file <progress.md> for scored DeepSeek runs.');
     return;
   }
-  if (!['1', '2', 'C-calibration', 'C', 'model-smoke'].includes(values.round) || !values.package || !values['host-root'] || !values['output-root']
+  if (!['1', '2', 'C-calibration', 'C', 'model-smoke', 'validation'].includes(values.round) || !values.package || !values['host-root'] || !values['output-root']
     || !supportsSimplifyModel(values.provider, values.model, values['openclaw-profile'])) throw new Error('Choose the round and provide package, host root, model and fresh output root.');
   const limit = values.limit === undefined ? undefined : Number(values.limit);
   if (limit !== undefined && (values.round !== '1' || !Number.isSafeInteger(limit) || limit < 1 || limit > simplifySchedule('1').length))
     throw new Error('A positive scheduled prefix is only supported for round 1.');
   if (values.round === 'model-smoke' && values.provider !== 'host-profile') throw new Error('Model smoke uses the custom DeepSeek route.');
-  if (values['resume-from'] && (!['1', '2', 'C'].includes(values.round) || values.provider !== 'host-profile'))
+  if (values['resume-from'] && (!['1', '2', 'C', 'validation'].includes(values.round) || values.provider !== 'host-profile'))
     throw new Error('Resume requires a scored DeepSeek batch.');
+  const validationBudgetMs = values.round === 'validation' ? Number(values['validation-budget'] ?? 210000) : null;
+  if (values.round === 'validation' && (![210000, 600000].includes(validationBudgetMs) || values.provider !== 'host-profile')
+    || values['validation-budget'] && values.round !== 'validation'
+    || values['parallel-screening'] && (values.round !== '1' || values.provider !== 'host-profile' || limit !== undefined))
+    throw new Error('Validation and concurrent screening require the approved DeepSeek budget and full schedule.');
   if (sha256(await fs.readFile(path.join(root, 'docs/simplify-experiment-plan.md'))) !== values['plan-sha256'])
     throw new Error('The approved plan SHA256 differs from the current plan.');
   if (values.round === '2' && values.provider !== 'host-profile') throw new Error('Round 2 uses the pinned DeepSeek host profile.');
@@ -262,7 +274,6 @@ async function main() {
       || record.planSha256 && record.planSha256 !== values['plan-sha256']))
       throw new Error('Round 2 requires the same package and plan as all four first-round arms.');
     promoted = screening.promotions;
-    if (promoted.length !== 1 || promoted[0] !== 'B2') throw new Error('The approved paired ArkTS comparison is A versus B2.');
     const inputs = await readArktsComparisonInputs({ file: values['round-two-inputs'], sha256: values['round-two-inputs-sha256'],
       planSha256: values['plan-sha256'], artifactSha256, dataset: values.dataset });
     const cli = { ...Object.fromEntries(localOptions.map(key => [key, path.resolve(values[key])])), 'phase-timeout-ms': 600_000 };
@@ -284,6 +295,8 @@ async function main() {
   }
   const identity = { planSha256: values['plan-sha256'], artifactSha256, model: values.model, providerIdentity, hostVersion: host.version,
     ...(arkts ? { roundTwoInputsSha256: values['round-two-inputs-sha256'], arktsCli: arkts.cli } : {}),
+    ...(values['parallel-screening'] ? { parallelScreening: true } : {}), ...(validationBudgetMs ? { validationBudgetMs } : {}),
+    ...(values.serial ? { forceSerial: true } : {}),
     ...(values.round === 'C' ? { requirementsSha256: sha256(await fs.readFile(requirements)), compactionSettings: settings } : {}) };
   const resumeFrom = values['resume-from'] ? await fs.realpath(values['resume-from']) : null;
   const fullSchedule = values.round === 'model-smoke' ? [{ id: 'smoke', scored: false, config: {} }]
@@ -328,14 +341,15 @@ async function main() {
     if (businessRoot) businessRoots.push(businessRoot);
     let result;
     const context = { hostRoot, model, packageRoot, artifactSha256, directory, requirements, settingsFile, providerIdentity,
-      profileArgs, archive, pairRateLimitFile: pair?.rateLimitFile, openclawProfile: values['openclaw-profile'], arkts, benchmark: arkts?.samples.find(sample => sample.id === slot.sample) };
+      profileArgs, archive, pairRateLimitFile: pair?.rateLimitFile, validationBudgetMs,
+      openclawProfile: values['openclaw-profile'], arkts, benchmark: arkts?.samples.find(sample => sample.id === slot.sample) };
     const run = values.round === 'model-smoke' ? runSmoke : cMode ? runCompaction : arkts ? runBenchmark : runScreening;
     try { result = await run(slot, context); }
     catch (error) { result = { state: 'failed', evidence: directory, reason: redactEvaluationText(error.message), completedInBudget: false, frameworkError: true }; }
     if (credential) {
       const evaluation = path.join(directory, 'evaluation');
       // The Stop evaluator keeps each sample's native Gateway in a neutral subdirectory.
-      const samples = values.round === '1' ? (await fs.readdir(evaluation, { withFileTypes: true })
+      const samples = ['1', 'validation'].includes(values.round) ? (await fs.readdir(evaluation, { withFileTypes: true })
         .catch(error => { if (error.code === 'ENOENT') return []; throw error; }))
         .filter(entry => entry.isDirectory() && entry.name.startsWith('sample-')) : [];
       const nativeRun = samples.length === 1 ? path.join(evaluation, samples[0].name) : evaluation;
@@ -351,20 +365,25 @@ async function main() {
     }
     const record = { id: slot.id, arm: slot.arm, sample: slot.sample, repeat: slot.repeat, artifactSha256, planSha256: identity.planSha256,
       configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity }), ...result, wallMs: Date.now() - startedAt };
-    if (arkts) Object.assign(record, { concurrency: pair ? 2 : 1, pairId: pair?.id ?? null,
+    if (arkts || values['parallel-screening'] || validationBudgetMs) Object.assign(record, { concurrency: pair?.concurrency ?? 1, pairId: pair?.id ?? null,
       startedAt: new Date(startedAt).toISOString() });
     return { record, directory, businessRoot };
   }
 
   let attempted = 0, fallback = prior.fallback;
   for (let index = 0; index < schedule.length;) {
-    const first = schedule[index], next = schedule[index + 1];
-    const paired = arkts && !fallback && next?.sample === first.sample && next.repeat === first.repeat;
-    const slots = paired ? [first, next] : [first];
-    const pair = paired ? { id: randomUUID(), rateLimitFile: path.join(output, `pair-${first.sample}-${first.repeat}-rate-limit.txt`) } : null;
+    const first = schedule[index], slots = [first];
+    if (!fallback && !values.serial && (arkts || values['parallel-screening'] || validationBudgetMs)) {
+      for (const next of schedule.slice(index + 1)) {
+        if (!validationBudgetMs && (next.sample !== first.sample || next.repeat !== first.repeat)) break;
+        slots.push(next);
+      }
+    }
+    const paired = slots.length > 1;
+    const pair = paired ? { id: randomUUID(), concurrency: slots.length, rateLimitFile: path.join(output, `group-${first.sample}-${first.repeat}-rate-limit.txt`) } : null;
     const results = await Promise.all(slots.map(slot => runSlot(slot, pair)));
-    const ports = results.map(({ record }) => record.gatewayPort);
-    if (paired && ports[0] && ports[0] === ports[1]) for (const { record } of results) Object.assign(record, {
+    const ports = results.map(({ record }) => record.gatewayPort).filter(Number.isInteger);
+    if (paired && new Set(ports).size !== ports.length) for (const { record } of results) Object.assign(record, {
       state: 'failed', completedInBudget: false, frameworkError: true, reason: 'PAIRED_GATEWAY_PORT_REUSED',
     });
     let foundLeak = false;

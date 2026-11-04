@@ -207,7 +207,7 @@ export async function createSimplifyStopNative(options) {
     const run = createOpenClawReviewerFactory(api, { pluginRoot: gateway.pluginRoot,
       runEmbeddedAgent: params => gateway.runtime.agent.runEmbeddedAgent(params) });
     return { model: gateway.model, modelRef: gateway.modelRef, providerIdentity: gateway.providerIdentity, providerStatus: gateway.providerStatus, run, close: gateway.close,
-      metrics: () => gateway.metrics(), root: gateway.root, projectRoot };
+      metrics: () => gateway.metrics(), root: gateway.root, port: gateway.port, projectRoot };
   } catch (error) {
     await gateway.close();
     throw error;
