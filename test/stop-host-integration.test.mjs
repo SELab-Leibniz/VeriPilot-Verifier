@@ -12,7 +12,7 @@ import { admittedProjectScopes } from "./support/openclaw-project-scope.mjs";
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function nativeFixture(t, verdict = "PASS", { startProtocol = false, waitMode = "until_pass", finalizeReviewWaitMs = 0, maxCorrections = 3,
-  flowLimit = maxCorrections, sessionLimit = maxCorrections, enabled = true, metricEnabled = true, gatewayRequest,
+  flowLimit = maxCorrections, sessionLimit = maxCorrections, enabled = true, metricEnabled = true, deviationOnly = false, gatewayRequest,
   compatibility = async () => ({ emitAgentEvent() {}, markDiagnosticSessionProgress() {} }), reviewWait, terminal = async (_identity, runId) => ({ runId, status: "ok" }) } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
@@ -29,7 +29,7 @@ implementationCorrection:
   enabled: false
   platform: null
 stopCorrection:
-  enabled: ${enabled}
+  enabled: ${enabled}${deviationOnly ? '\n  deviationOnly: true' : ''}
   assessmentTimeoutMs: 10000
   feedbackReserveMs: 1000
   waitMode: ${waitMode}
@@ -472,9 +472,11 @@ test("a late release from an old corrective receipt cannot end the next user run
   assert.equal(sent.length, 1); assert.equal(f.runtime.postRuns.byId(record.id).phase, "RUNNING");
 });
 
-for (const limit of [1, 3]) test(`production correction loop with limit ${limit} preserves queued work until PASS or quota release`, async t => {
+for (const { limit, deviationOnly } of [{ limit: 1 }, { limit: 3 }, { limit: 1, deviationOnly: true }]) test(deviationOnly
+  ? "deviation-only final repair scan releases queued work and records no deviation at quota"
+  : `production correction loop with limit ${limit} preserves queued work until PASS or quota release`, async t => {
   const sent = [];
-  const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, maxCorrections: limit,
+  const f = await nativeFixture(t, "DEVIATION", { startProtocol: true, maxCorrections: limit, deviationOnly,
     gatewayRequest: async (method, params) => {
       if (method === "chat.send") { sent.push(params); return { runId: params.idempotencyKey }; } return { aborted: true };
     } });
@@ -490,7 +492,7 @@ for (const limit of [1, 3]) test(`production correction loop with limit ${limit}
     f.emitStart({ runId: ctx.runId, ts: Date.now(), seq: i + 1 }); await f.sharedState.stopStartProtocol.drain();
     assert.equal(f.runtime.postRuns.byId(record.id).phase, "CORRECTING"); assert.equal(sent.length, 0);
     await f.runtime.postRuns.mutate(record, { id: task.id, revision: i + 1, text: `edited after repair ${i + 1}` });
-    f.setVerdict(limit === 3 && i === 1 ? "PASS" : "DEVIATION");
+    f.setVerdict(deviationOnly ? () => null : limit === 3 && i === 1 ? "PASS" : "DEVIATION");
     await fs.writeFile(path.join(f.root, "app.py"), `def convert(value): return int(str(value)) + ${i}\n`);
     parentId = `repair-answer-${i}`;
     await fs.appendFile(f.transcript, JSON.stringify({ type: "message", id: parentId, parentId: i ? `feedback-${i + 1}` : "feedback",
@@ -503,7 +505,17 @@ for (const limit of [1, 3]) test(`production correction loop with limit ${limit}
   assert.deepEqual(sent.map(request => request.message), [`edited after repair ${rounds}`]);
   assert.deepEqual(current.pending.map(task => task.text), ["second queued work"]);
   assert.equal(f.dispatches.length, rounds); assert.equal(new Set(f.dispatches.map(request => request.idempotencyKey)).size, rounds);
-  if (limit === 3) assert.equal(current.reviewStatus, "PASS");
+  if (deviationOnly) {
+    assert.equal(current.reviewStatus, "NO_DEVIATION_FOUND");
+    assert.equal(current.reason, "NO_DEVIATION_FOUND");
+    const ledger = await f.store.inspect("session");
+    const [repair] = Object.values(ledger.admissions);
+    assert.equal(repair.finalReview.status, "NO_DEVIATION_FOUND");
+    assert.equal(ledger.flows[repair.flowId].closeReason, "NO_DEVIATION_FOUND");
+    const report = await readReport({ workspaceDir: f.root, sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey });
+    assert.match(report.summary, /Stop 扫描未发现偏差/u);
+    assert.doesNotMatch(report.summary, /最终验收未完成|验收通过/u);
+  } else if (limit === 3) assert.equal(current.reviewStatus, "PASS");
   else { assert.notEqual(current.reviewStatus, "PASS"); assert.equal(current.reason, "CORRECTION_BUDGET_EXHAUSTED"); }
 });
 
