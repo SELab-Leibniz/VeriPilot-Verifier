@@ -134,8 +134,14 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     await new Promise(resolve => setTimeout(resolve, 400));
   }
   const businessStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
-  if (businessStarts.some(row => row.runId !== admission?.hostRequest?.runId) || (ledger?.used ?? 0) > 1)
+  if (businessStarts.some(row => row.runId !== admission?.hostRequest?.runId) || (ledger?.used ?? 0) > 1) {
+    const persisted = await store.inspect(sessionId);
+    await save(path.join(outputRoot, 'business-run-identity-failure.json'), { sessionId, sessionKey, originalRunId,
+      expectedRunId: admission?.hostRequest?.runId ?? null, used: ledger?.used ?? null, businessStarts,
+      persistedUsed: persisted?.used ?? null, persistedAdmissions: Object.values(persisted?.admissions ?? {})
+        .map(item => ({ id: item.id, runId: item.hostRequest?.runId ?? null, accounting: item.accounting })) });
     throw new Error('Frozen Stop started an unauthorized business run.');
+  }
   const receiptRecords = (await fs.readFile(sessionFile, 'utf8')).split(/\r?\n/u).filter(Boolean).map(JSON.parse).slice(records.length);
   const changed = [...new Set([...mutationPaths, ...businessMutationPaths(receiptRecords, projectRoot)])];
   const existing = (await Promise.all(changed.map(async file => await fs.stat(path.join(projectRoot, file)).then(() => file, error => {
