@@ -2,6 +2,12 @@
 
 本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M16 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Stop 审查](stop-task-review.md) 与本页的 v2 配置。
 
+### 新项目模板与旧配置
+
+1.10.0 的新项目模板以用户需求原文审查 OpenSpec 的 proposal、design、tasks 及入边，关闭文档阶段指标和基线审查。Stop 启用原文清单及仅偏差模式（B12），检查有原有代码或测试佐证的既有行为回归。实现纠偏、Skill 看护与压缩恢复关闭。项目开关与首次会话默认仍为关闭。
+
+已有配置中省略字段的解释继续沿用旧缺省值。要切回基线模式，将 dynamicGroundTruth.enabled 和 artifactCorrection.groundTruthReviewEnabled 设为 true，将 artifactCorrection.originalRequirementsEnabled 和 stopCorrection.originalRequirementsBasis 设为 false。需要完整逐项 Stop 审查（A）时将 stopCorrection.deviationOnly 也设为 false。保留仅偏差审查则是 B2。按需要单独启用 artifactCorrection.stageMetricsEnabled。
+
 Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
 `stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。

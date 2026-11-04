@@ -192,14 +192,28 @@ limits:
 # 时退回 10.1 表格解析。
 #
 # version: 2
+# 以下模式与 /rc-project init 生成的 OpenSpec 模板一致。已有配置省略字段时沿用旧缺省值。
 # dynamicGroundTruth:
-#   enabled: true
+#   enabled: false
 #   materialRoots: [docs]
 #   panel:
 #     size: 2           # 0 关闭自动任务 onboarding
 #     adjudicator: true
+# artifactCorrection:
+#   originalRequirementsEnabled: true
+#   groundTruthReviewEnabled: false
+#   stageMetricsEnabled: false
 # stopCorrection:
 #   enabled: true
+#   originalRequirementsBasis: true
+#   deviationOnly: true
+#   waitMode: until_pass
+# implementationCorrection:
+#   enabled: false
+# skillCorrection:
+#   enabled: false
+# compactionRestore:
+#   enabled: false
 # reviewers:
 #   groundTruthExtractor:
 #     effort: low        # panel 抽取 pass 复用该角色的 timeoutMs/预算配置

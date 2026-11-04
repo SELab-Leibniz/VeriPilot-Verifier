@@ -12,6 +12,7 @@ import os from 'node:os';
 import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { validateArtifactSkills } from '../scripts/bench/validate-artifact-skills.mjs';
 import { createDocumentTools } from '../lib/document-tools.mjs';
+import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.mjs';
 import { runWorkspaceStopReview } from '../lib/runtime-v2/stop-workspace-review.mjs';
@@ -27,26 +28,35 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     assert.deepEqual(tools.filter(name => !declared.has(name)), [], `${arm} has undeclared worker tools`);
   };
   for (const [arm, originalRequirementsBasis, deviationOnly] of [
-    ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true],
+    ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true], ['default project', true, true],
   ]) await t.test(arm, async subtest => {
     const fixture = await stopProtocolFixture(subtest, 'findings');
     const { input, root } = fixture;
-    const runtime = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !originalRequirementsBasis },
-      stopCorrection: { enabled: true, originalRequirementsBasis, deviationOnly } });
+    const fromTemplate = arm === 'default project';
+    if (fromTemplate) await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+    const runtime = fromTemplate ? (await loadConfig({ cwd: root })).runtimeV2
+      : compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !originalRequirementsBasis },
+        stopCorrection: { enabled: true, originalRequirementsBasis, deviationOnly } });
+    assert.equal(Boolean(runtime.stopCorrection.originalRequirementsBasis), originalRequirementsBasis);
+    assert.equal(Boolean(runtime.stopCorrection.deviationOnly), deviationOnly);
     input.request.population.reviewPolicy = { metrics: runtime.stopCorrection.metrics, deviationOnly: runtime.stopCorrection.deviationOnly };
     if (runtime.stopCorrection.originalRequirementsBasis) input.evidence.originalRequirements = await loadStopOriginalRequirements({
       projectRoot: root, snapshot: input.evidence.snapshot,
     });
-    let tools;
+    let tools, systemPrompt;
     const captured = new Error('Offline worker tools captured');
     const session = { sessionId: randomUUID(), deadlineAt: Date.now() + 20_000, signal: new AbortController().signal, active() {},
       async run(worker) {
         tools = worker.tools.map(tool => tool.name);
+        systemPrompt = worker.systemPrompt;
         throw captured;
       } };
     await assert.rejects(runWorkspaceStopReview(input, { session }), error =>
       error.code === 'TASK_NO_VALID_SUBMISSION' && error.cause === captured);
     assert.equal(tools.includes('set_original_checklist'), originalRequirementsBasis);
+    assert.equal(systemPrompt.includes('breaks existing behavior that the request did not ask to change'), originalRequirementsBasis);
+    assert.equal(systemPrompt.includes('the existing behavior it breaks'), originalRequirementsBasis);
+    if (originalRequirementsBasis) assert.match(systemPrompt, /source_read of pre-existing code or tests/u);
     assertDeclared(arm, tools);
     if (originalRequirementsBasis) assert(source.contracts.tools.includes('set_original_checklist'));
   });

@@ -443,7 +443,7 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
   assert.equal(marketplace.name, "runtime-corrector-local");
   assert.deepEqual(marketplace.metadata, {
     description: "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
-    version: "1.9.1",
+    version: "1.10.0",
   });
   assert.equal(Object.hasOwn(marketplace, "description"), false);
   assert.equal(Object.hasOwn(marketplace, "version"), false);
