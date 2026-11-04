@@ -109,13 +109,14 @@ export function createNativeGatewayRequest({ load, port, config }) {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, compaction = null, provider, providerGuard }) {
+  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
+  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document';
   const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs)
     : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
   const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
-  if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch'].includes(providerGuard?.kind))
+  if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch', 'authorized_simplify_experiment'].includes(providerGuard?.kind))
     throw new Error('The explicit Gateway provider requires an offline network guard or a metered batch.');
   if (contextWindowTokens !== undefined && !coding && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
@@ -145,7 +146,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, 'openclaw.plugin.json'), 'utf8'));
     if (!manifest.configSchema?.properties?.businessRunTimeoutMs) throw new Error('This frozen plugin cannot disable RC business-correction deadlines; do not silently claim an unbounded host.');
   }
-  let config = { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
+  let config = { logging: { level: logLevel, consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
@@ -201,6 +202,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   if (compaction) config.agents.defaults.compaction = { ...config.agents.defaults.compaction, ...structuredClone(compaction) };
   if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,
     memoryFlush: { ...config.agents.defaults.compaction?.memoryFlush, enabled: false } };
+  if (contextTokens !== undefined) config.agents.defaults.contextTokens = contextTokens;
   if (injectDefect && !reuseProfile) {
     // A local experiment plugin corrupts only this fixture's delivery, once,
     // immediately before the REAL original host run finalizes. Host terminal,

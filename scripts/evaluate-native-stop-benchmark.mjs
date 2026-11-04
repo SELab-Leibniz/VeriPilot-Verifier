@@ -22,6 +22,17 @@ const instructionFile = path.resolve(value('--instruction'));
 const resume = args.includes('--resume');
 const seedCheckpointFile = value('--seed-checkpoint-state');
 const faultSpecFile = value('--inject-defect-spec');
+const simplifyArm = value('--simplify-arm');
+const frozenTranscript = value('--frozen-transcript');
+const frozenPatchSha256 = value('--frozen-patch-sha256');
+const simplifyArms = simplifyArm ? (await import('./simplify-experiment-schedule.mjs')).STOP_ARMS : null;
+const simplify = simplifyArms && Object.hasOwn(simplifyArms, simplifyArm) ? simplifyArms[simplifyArm] : null;
+if ((args.includes('--simplify-arm') || frozenTranscript || frozenPatchSha256) && (!simplify || resume))
+  throw new Error('Simplify benchmarks need a defined arm and a fresh profile.');
+if ((frozenTranscript || frozenPatchSha256) && (!frozenTranscript || !/^[a-f0-9]{64}$/u.test(frozenPatchSha256 ?? '') || !seedCheckpointFile || faultSpecFile))
+  throw new Error('Frozen Stop needs a pinned original transcript and seeded draft without an injected fault.');
+const cleanStatus = simplify?.deviationOnly ? 'NO_DEVIATION_FOUND' : 'PASS';
+const simplifyBenchmark = simplify ? await import('./helpers/simplify-stop-benchmark.mjs') : null;
 if (resume && seedCheckpointFile) throw new Error('Choose preserved session resume or a fresh checkpoint profile');
 if (!hostRoot || !/^[a-f0-9]{40}$/u.test(baseCommit ?? '')) throw new Error('Explicit host and benchmark base commit required');
 const timeouts = nativeStopTimeouts(Number(value('--timeout-ms', '86400000')));
@@ -63,6 +74,8 @@ if (resume || seedCheckpointFile) {
   }
 } else if (git('rev-parse', 'HEAD').trim() !== baseCommit || git('status', '--porcelain').trim())
   throw new Error('Benchmark workspace is not pristine at its declared base');
+if (frozenTranscript && hash(git('diff', '--binary', baseCommit, 'HEAD')) !== frozenPatchSha256)
+  throw new Error('Seeded frozen first-draft patch does not match the pinned input.');
 await fs.mkdir(outputRoot, { recursive: true });
 await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
 await fs.appendFile(path.join(projectRoot, '.git/info/exclude'), '\n.runtime-corrector/\n.runtime-correction/\n');
@@ -76,7 +89,7 @@ sessionDefaults:
 locale: en
 artifacts: []
 dynamicGroundTruth:
-  enabled: true
+  enabled: ${simplify?.baseline ?? true}
   panel:
     size: 0
 artifactCorrection:
@@ -95,7 +108,7 @@ stopCorrection:
   maxRepairSteps: ${budgets.maxRepairSteps}
   assessmentTimeoutMs: ${timeouts.assessmentTimeoutMs}
   feedbackReserveMs: ${timeouts.feedbackReserveMs}
-reviewers:
+${simplify ? `  originalRequirementsBasis: ${simplify.originalRequirementsBasis}\n  deviationOnly: ${simplify.deviationOnly}\n` : ''}reviewers:
   defaults:
     model: openai/${model}
     effort: low
@@ -112,6 +125,16 @@ const modules = { stop: plan.runtimeV2.stopCorrection.enabled, skill: plan.runti
     maxCorrectionsPerSession: plan.runtimeV2.stopCorrection.maxCorrectionsPerSession, maxCorrectionsPerFlow: plan.runtimeV2.stopCorrection.maxCorrectionsPerFlow } };
 if (!modules.stop || modules.skill || modules.document || modules.writeTimeImplementation || modules.artifacts)
   throw new Error('Benchmark policy is not Stop only');
+if (simplify) {
+  const { compileRuntimeV2Config } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-v2/config.mjs')).href);
+  const { requireSimplifyStopSwitches } = await import('./helpers/simplify-native-evaluation.mjs');
+  requireSimplifyStopSwitches(compileRuntimeV2Config);
+  const runtime = plan.runtimeV2;
+  if ((runtime.stopCorrection.originalRequirementsBasis === true) !== simplify.originalRequirementsBasis
+    || (runtime.stopCorrection.deviationOnly === true) !== simplify.deviationOnly || runtime.dynamicGroundTruth.enabled !== simplify.baseline)
+    throw new Error('The prebuilt plugin did not apply the requested Stop arm.');
+  modules.simplify = simplify;
+}
 await save('policy.json', modules);
 let gateway, sessionKey, runId, task, ledger, result;
 try {
@@ -127,6 +150,14 @@ try {
     const health = await gateway.request('health', {});
     if (!health.ok || gateway.metrics().modelStarts.length) throw new Error('Zero-model benchmark preflight failed');
     result = { mode: 'transport-check', complete: true, timeouts, ...gateway.metrics() };
+  } else if (frozenTranscript) {
+    const first = path.join(outputRoot, 'first-stop');
+    await fs.mkdir(first);
+    await fs.writeFile(path.join(first, 'model.patch'), git('diff', '--binary', baseCommit, 'HEAD'));
+    await save('frozen-input.json', { instructionSha256: hash(instruction), patchSha256: frozenPatchSha256,
+      transcriptSha256: hash(await fs.readFile(frozenTranscript)), head: git('rev-parse', 'HEAD').trim() });
+    result = await simplifyBenchmark.verifyFrozenBenchmark({ gateway, projectRoot, pluginRoot, plan,
+      transcript: frozenTranscript, instruction, deadlineAt, signal: controller.signal });
   } else {
     gateway.setPhase('real-benchmark-stop-only');
     if (resume) {
@@ -194,12 +225,12 @@ try {
       const allSettled = runs.length && runs.every(r => r.status === 'SETTLED');
       const activeRepair = Object.values(ledger?.admissions ?? {}).some(a => a.accounting === 'RESERVED' || a.accounting === 'USED' && !a.endedAt);
       if (faultFixture && originalTerminal?.status === 'ok' && currentVerification
-        && task?.verification?.status === 'PASS' && allSettled && !activeRepair && !used.length) {
+        && task?.verification?.status === cleanStatus && allSettled && !activeRepair && !used.length) {
         reason = 'FAULT_NOT_DETECTED'; break;
       }
-      const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification });
+      const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification, deviationOnly: simplify?.deviationOnly });
       const latestAssessmentSaved = used.length ? Boolean(finalRepairReview) : currentVerification;
-      if (originalTerminal?.status === 'ok' && latestAssessmentSaved && task?.verification?.status === 'PASS' && allSettled && !activeRepair) break;
+      if (originalTerminal?.status === 'ok' && latestAssessmentSaved && task?.verification?.status === cleanStatus && allSettled && !activeRepair) break;
       const exhausted = ledger?.used >= budgets.maxCorrections && (!used.length
         || Boolean(finalRepairReview));
       if (originalTerminal?.status === 'ok' && currentVerification && allSettled && !activeRepair && (['STOPPED_UNVERIFIED', 'STOPPED_CHECKER_ERROR', 'CANCELLED'].includes(task?.status)
@@ -209,26 +240,32 @@ try {
     if (controller.signal.aborted || Date.now() >= deadlineAt) reason = Date.now() >= deadlineAt ? 'BENCHMARK_DEADLINE' : 'BENCHMARK_CANCELLED';
     const used = Object.values(ledger?.admissions ?? {}).filter(a => a.accounting === 'USED' && !initialAdmissions.has(a.id));
     const terminals = [];
-    if (!reason && task?.verification?.status === 'PASS') {
+    if (!reason && task?.verification?.status === cleanStatus) {
       for (const id of [runId, ...used.map(a => `rc-stop-${a.id}`)])
         terminals.push(id === runId && originalTerminal ? originalTerminal
           : await waitPostRunTerminal(null, null, id, deadlineAt, controller.signal,
             (method, params, options) => gateway.request(method, params, options)));
     }
     const injected = faultFixture ? await fs.readFile(path.join(outputRoot, 'fault-injection.json'), 'utf8').then(JSON.parse, () => null) : null;
-    const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification });
+    const finalRepairReview = latestBenchmarkRepairReview({ ledger, admissions: used, verification: task?.verification, deviationOnly: simplify?.deviationOnly });
     const faultCycleComplete = !faultFixture || injected?.runId === runId && used.length > 0 && used.length <= budgets.maxCorrections
       && ledger.events.some(event => event.type === 'STOP_REVIEW_SETTLED' && event.stopId === runId && event.status === 'DEVIATION')
-      && finalRepairReview?.status === 'PASS'
+      && finalRepairReview?.status === cleanStatus
       && finalRepairReview.evaluationId === task?.verification?.evaluationId
       && used.every(a => gateway.metrics().modelStarts.some(event => event.runId === `rc-stop-${a.id}` && event.sessionId === sessionId));
-    result = { mode: 'real-benchmark-stop-only', complete: !reason && faultCycleComplete && task?.verification?.status === 'PASS'
+    result = { mode: 'real-benchmark-stop-only', complete: !reason && faultCycleComplete && task?.verification?.status === cleanStatus
         && terminals.length === used.length + 1 && terminals.every(t => t?.status === 'ok')
         && runs.every(r => r.status === 'SETTLED'),
       reason, baseCommit, instructionSha256: hash(instruction), model, timeouts, sessionId, sessionKey, originalRunId: runId,
       taskId: task?.taskId, verification: task?.verification, status: task?.status, corrections: (ledger?.used ?? 0) - initialUsed, sessionCorrections: ledger?.used ?? 0, budgets,
       terminals, privateRuns: runs, ledger, finalRepairReview, ...gateway.metrics() };
     if (faultFixture) Object.assign(result, { injected, faultCycleComplete });
+    if (simplify) {
+      const firstRepair = used.find(admission => admission.stopId === runId);
+      result.repairFeedback = Boolean(firstRepair?.hostRequest?.gate);
+      result.feedbackDelivery = firstRepair?.hostRequest?.gate ?? null;
+      result.initialStopStatus = ledger?.stops?.[runId]?.reviewStatus ?? null;
+    }
   }
 } catch (error) {
   const message = String(error.message).split(process.env.RC_EVAL_API_KEY ?? 'never-a-key').join('[REDACTED]');
@@ -240,6 +277,20 @@ try {
       await gateway.request('chat.abort', { sessionKey, runId: id }).catch(() => {});
   }
   if (gateway) { await gateway.close(); await save('closure.json', { gatewayClosed: true, at: Date.now() }); }
+  if (simplify && gateway && !args.includes('--transport-check')) {
+    const measurement = await simplifyBenchmark.measureSimplifyBenchmark({ nativeRoot: gateway.root, privateRuns: result?.privateRuns,
+      ledger: result?.ledger, rcElapsedMs: result?.rcElapsedMs });
+    if (frozenTranscript && hash(git('diff', '--binary', baseCommit, 'HEAD')) !== frozenPatchSha256)
+      Object.assign(result, { complete: false, reason: 'FROZEN_DRAFT_CHANGED' });
+    const terminalAssessment = result?.verification?.status;
+    const assessmentSettled = (result?.reason === 'FAULT_NOT_DETECTED' && terminalAssessment === cleanStatus
+      || result?.reason === 'STOP_NOT_PASSED' && terminalAssessment === 'DEVIATION')
+      && result.privateRuns?.length > 0 && result.privateRuns.every(run => run.status === 'SETTLED');
+    const completedInBudget = !controller.signal.aborted && (result?.complete || assessmentSettled);
+    Object.assign(result, { simplify: { arm: simplifyArm, ...measurement, completedInBudget: Boolean(completedInBudget),
+      state: completedInBudget ? 'completed' : measurement.rateLimited ? 'rate-limited' : controller.signal.aborted ? 'timed-out' : 'failed',
+      repairFeedback: result?.repairFeedback ?? null } });
+  }
   // These are the model's actual commits. Uncommitted work is retained for
   // diagnosis but never silently committed into an official prediction.
   await fs.writeFile(path.join(outputRoot, 'model.patch'), git('diff', '--binary', baseCommit, 'HEAD'));

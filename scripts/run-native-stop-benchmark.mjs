@@ -11,6 +11,8 @@ import { isolateInterruptedBenchmarkOwner } from './helpers/benchmark-resume-con
 const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
 const root = path.resolve(value('--prepared-root'));
 const attempt = value('--attempt') ?? 'live-relay-001';
+const simplifyArm = value('--simplify-arm');
+const verifyFrozen = args.includes('--verify-frozen');
 if (!/^[a-z0-9-]+$/u.test(attempt)) throw new Error('Invalid attempt name');
 const key = process.env.RC_EVAL_API_KEY;
 delete process.env.RC_EVAL_API_KEY;
@@ -20,13 +22,23 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(manifest.task ?? '')
   || !/^[a-f0-9]{40}$/u.test(manifest.baseCommit ?? '')
   || createHash('sha256').update(await fs.readFile(path.join(root, 'public/instruction.md'))).digest('hex') !== manifest.instructionSha256)
   throw new Error('Prepared benchmark identity does not match its public input');
+if ((args.includes('--simplify-arm') || verifyFrozen || args.includes('--artifact-root') || args.includes('--runner-source') || args.includes('--run-root'))
+  && (!['A', 'B1', 'B2', 'B12'].includes(simplifyArm) || !value('--artifact-root') || !value('--runner-source') || !value('--run-root')
+    || args.includes('--resume-from') || args.includes('--checkpoint-image')))
+  throw new Error('Simplify benchmark needs a configured arm, fixed runner source, exact prebuilt package and a fresh output directory.');
+if (verifyFrozen) {
+  if (!manifest.seedCheckpoint || manifest.injectedDefect || !/^[a-f0-9]{64}$/u.test(manifest.frozenTranscriptSha256 ?? '')
+    || !/^[a-f0-9]{64}$/u.test(manifest.frozenPatchSha256 ?? '')) throw new Error('Frozen Stop needs a pinned draft and original transcript.');
+  const actual = createHash('sha256').update(await fs.readFile(path.join(root, 'public/frozen-transcript.jsonl'))).digest('hex');
+  if (actual !== manifest.frozenTranscriptSha256) throw new Error('Frozen transcript SHA256 mismatch.');
+}
 const model = manifest.model;
 const resumeFrom = args.includes('--resume-from') ? path.resolve(value('--resume-from')) : null;
 const runtimeMs = args.includes('--timeout-ms') ? Number(value('--timeout-ms')) : manifest.maxRuntimeMs;
 if (!Number.isSafeInteger(runtimeMs) || runtimeMs < 2000 || runtimeMs > manifest.maxRuntimeMs || runtimeMs % 1000)
   throw new Error('Invalid remaining benchmark window');
 const image = args.includes('--checkpoint-image') ? value('--checkpoint-image') : manifest.image;
-const run = path.join(root, attempt); await fs.mkdir(run);
+const run = simplifyArm ? path.resolve(value('--run-root')) : path.join(root, attempt); await fs.mkdir(run);
 if (resumeFrom) {
   await fs.cp(path.join(resumeFrom, 'native-host'), path.join(run, 'native-host'), { recursive: true });
   await fs.copyFile(path.join(resumeFrom, 'target.json'), path.join(run, 'resume-source-target.json'));
@@ -67,7 +79,7 @@ const server = http.createServer(async (request, response) => {
         upstream = await fetch('https://open.bigmodel.cn/api/coding/paas/v4/chat/completions', {
           method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body,
           signal, redirect: 'error' });
-        if (upstream.status !== 429 || retry >= 10) break;
+        if (upstream.status !== 429 || retry >= 10 || simplifyArm) break;
         const retrySeconds = Number(upstream.headers.get('retry-after'));
         const waitMs = Math.min(60000, Math.max(5000, Number.isFinite(retrySeconds) && retrySeconds > 0 ? retrySeconds * 1000 : 60000));
         (record.rateLimitRetries ??= []).push({ status: 429, at: Date.now(), waitMs });
@@ -76,6 +88,12 @@ const server = http.createServer(async (request, response) => {
         await delay(waitMs, undefined, { signal });
       }
       record.status = upstream.status; response.statusCode = upstream.status;
+      if (simplifyArm && !upstream.ok) {
+        await upstream.body?.cancel();
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ error: { message: `Benchmark provider returned HTTP ${upstream.status}.` } }));
+        return;
+      }
       response.setHeader('content-type', upstream.headers.get('content-type') ?? 'application/json');
       response.setHeader('cache-control', 'no-store');
       const returned = []; let bytes = 0;
@@ -108,8 +126,8 @@ console.log(JSON.stringify({ state: 'MODEL_RELAY_REACHABLE', paidRequests: 0 }))
 const name = `rc-stop-${manifest.task}-${attempt}`;
 const command = ['run', '-i', '--platform', 'linux/amd64', '--name', name, '--cpus', '2', '--memory', '8g',
   '--mount', 'type=volume,source=rc-harbor-pilot-20261031-d9e5e15a04-nvm,target=/root/.nvm,readonly',
-  '--mount', `type=bind,source=${root}/runner-source,target=/opt/rc-source,readonly`,
-  '--mount', `type=bind,source=${root}/artifact,target=/opt/rc-artifact,readonly`,
+  '--mount', `type=bind,source=${simplifyArm ? path.resolve(value('--runner-source')) : `${root}/runner-source`},target=/opt/rc-source,readonly`,
+  '--mount', `type=bind,source=${simplifyArm ? path.resolve(value('--artifact-root')) : `${root}/artifact`},target=/opt/rc-artifact,readonly`,
   '--mount', `type=bind,source=${root}/public,target=/input,readonly`, '--mount', `type=bind,source=${run},target=/run`,
   '-e', `RC_EVAL_NATIVE_MODEL=${model}`, '-e', `RC_EVAL_BASE_URL=http://host.docker.internal:${port}/v1`,
   '--entrypoint', '/root/.nvm/versions/node/v22.23.4/bin/node', image,
@@ -119,6 +137,8 @@ const command = ['run', '-i', '--platform', 'linux/amd64', '--name', name, '--cp
   '--max-repair-steps', String(manifest.maxRepairSteps ?? 2000), '--max-corrections', String(manifest.correctionLimit ?? 3),
   ...(manifest.seedCheckpoint ? ['--seed-checkpoint-state', '/input/seed-state.json'] : []),
   ...(manifest.injectedDefect ? ['--inject-defect-spec', '/input/fault-spec.json'] : []),
+  ...(simplifyArm ? ['--simplify-arm', simplifyArm] : []),
+  ...(verifyFrozen ? ['--frozen-transcript', '/input/frozen-transcript.jsonl', '--frozen-patch-sha256', manifest.frozenPatchSha256] : []),
   ...(resumeFrom ? ['--resume'] : [])];
 await fs.writeFile(path.join(run, 'launch.json'), JSON.stringify({ command: ['docker', ...command],
   disposableTokenPersisted: false, accountKeyPassedToContainer: false, startedAt: Date.now(), resumeFrom, runtimeMs, image }, null, 2));
