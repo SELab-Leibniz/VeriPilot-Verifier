@@ -20,7 +20,7 @@ const writeJson = (file, data) => fs.writeFile(file, JSON.stringify(data, null, 
 const readJson = file => fs.readFile(file, 'utf8').then(JSON.parse);
 let scanStage;
 
-const needsRetry = record => record.state === 'rate-limited' || record.frameworkError === true;
+const needsRetry = record => record.state === 'rate-limited' || record.frameworkError === true || record.operatorInterrupted === true;
 const optionalJson = file => readJson(file).catch(error => {
   if (error.code === 'ENOENT') return null;
   throw error;
@@ -56,7 +56,7 @@ async function readResume(directory, schedule, identity) {
         || (row.planSha256 !== undefined && row.planSha256 !== identity.planSha256)))
         throw new Error(`Resume evidence is incomplete or inconsistent for ${slot.id}.`);
       if (needsRetry(record)) {
-        if (record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
+        if (record.frameworkError && record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
         interrupted = true;
       } else records.push(record);
     }
