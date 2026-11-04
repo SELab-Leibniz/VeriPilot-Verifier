@@ -110,7 +110,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
-  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard, onGatewayStart }) {
+  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document'
     || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
@@ -199,6 +199,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   if (unlimitedBusiness) {
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
     config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
+  }
+  if (disableRuntimeCorrection) {
+    const settings = config.plugins.entries['runtime-corrector'];
+    settings.config = { ...settings.config, enabled: false };
   }
   if (compaction) config.agents.defaults.compaction = { ...config.agents.defaults.compaction, ...structuredClone(compaction) };
   if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,

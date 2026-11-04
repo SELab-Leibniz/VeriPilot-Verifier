@@ -123,18 +123,22 @@ if (artifact) {
 }
 const model = simplifyArm ? arg('--model') : process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
 if (!model) throw new Error('Configured native model is required');
-await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
-await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(simplifyArm ? `openai/${model}` : model, profile, arm));
-await fs.copyFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), path.join(outputRoot, 'project-config.yaml'));
-// Validate actual generated policy before starting the native Gateway/model.
-const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
-const effective = await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
-if (arm) {
-  const { stopCorrection, dynamicGroundTruth, skillCorrection, artifactCorrection } = effective.runtimeV2;
-  if (stopCorrection.enabled !== arm.enabled || dynamicGroundTruth.enabled !== arm.baseline
-    || Boolean(stopCorrection.originalRequirementsBasis) !== arm.originalRequirementsBasis || Boolean(stopCorrection.deviationOnly) !== arm.deviationOnly
-    || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled)
-    throw new Error('Effective ArkTS correction policy differs from the assigned arm.');
+if (s0) {
+  await fs.writeFile(path.join(outputRoot, 's0-policy.json'), JSON.stringify({ pluginInstalled: true, enabled: false, ...arm }, null, 2));
+} else {
+  await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(simplifyArm ? `openai/${model}` : model, profile, arm));
+  await fs.copyFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), path.join(outputRoot, 'project-config.yaml'));
+  // Validate actual generated policy before starting the native Gateway/model.
+  const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
+  const effective = await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
+  if (arm) {
+    const { stopCorrection, dynamicGroundTruth, skillCorrection, artifactCorrection } = effective.runtimeV2;
+    if (stopCorrection.enabled !== arm.enabled || dynamicGroundTruth.enabled !== arm.baseline
+      || Boolean(stopCorrection.originalRequirementsBasis) !== arm.originalRequirementsBasis || Boolean(stopCorrection.deviationOnly) !== arm.deviationOnly
+      || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled)
+      throw new Error('Effective ArkTS correction policy differs from the assigned arm.');
+  }
 }
 // Freeze common business navigation to the baseline artifact in both arms.
 const stableNavigationRoot = path.resolve(arg('--navigation-artifact') ?? artifact ?? 'dist/runtime-corrector-openclaw');
@@ -188,10 +192,13 @@ try {
   const options = { hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit && !s0 ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
+    disableRuntimeCorrection: s0,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
   gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model,
     pairRateLimitFile: arg('--pair-rate-limit-file') })
     : await createNativeGatewayEvaluation(options);
+  if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)
+    throw new Error('S0 Gateway must disable correction before business admission.');
   if (frozenRoot) {
     result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot });
   } else {
