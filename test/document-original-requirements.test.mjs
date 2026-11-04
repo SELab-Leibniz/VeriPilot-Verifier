@@ -174,13 +174,27 @@ async function documentFixture(t, mode) {
     await fs.appendFile(transcript, JSON.stringify({ type: 'message', ...record, id, parentId: leaf }) + '\n'); leaf = id;
   };
   const calls = [];
+  // A host lifecycle mutation (manual compaction) withholds work admission until it ends.
+  let admissionHeld = null;
+  const admissions = new Set();
+  const admit = (params, run) => {
+    const admitted = Promise.resolve(admissionHeld).then(() => run(params.signal));
+    admissions.add(admitted);
+    admitted.then(() => admissions.delete(admitted), () => admissions.delete(admitted));
+    return admitted;
+  };
+  const holdAdmission = () => {
+    let open;
+    admissionHeld = new Promise(resolve => { open = resolve; });
+    return async () => { admissionHeld = null; open(); await Promise.allSettled([...admissions]); };
+  };
   const api = { id: 'runtime-corrector', pluginConfig: { hookTimeoutMs: 5000 },
     config: { plugins: { entries: { autopilot: { enabled: false } } } },
     logger: { warn: value => calls.push({ warning: value }), info() {} },
     runtime: { version: '2026.7.1-2', state: { resolveStateDir: () => path.join(root, 'host-state') },
       agent: { resolveAgentWorkspaceDir: () => root, session: {
         getSessionEntry: async () => ({ sessionId, sessionFile: transcript }), resolveStorePath: () => path.join(root, 'sessions.json'),
-        resolveSessionFilePath: () => transcript, runWithWorkAdmission: async (params, run) => run(params.signal),
+        resolveSessionFilePath: () => transcript, runWithWorkAdmission: admit,
       }, runEmbeddedAgent() { assert.fail('the offline document fixture must never start a live model'); } },
       gateway: { request: async () => ({ id: 'offline-notice', aborted: true }) } } };
   const factory = async input => {
@@ -218,13 +232,15 @@ async function documentFixture(t, mode) {
   await runtime.postRunReady;
   const context = runId => ({ agentId: 'main', sessionId, sessionKey, runId, workspaceDir: root, trigger: 'user',
     provider: 'offline', modelId: 'scripted', abortSignal: new AbortController().signal });
-  const ask = async (runId, prompt) => {
-    await append({ message: { role: 'user', content: prompt } });
+  // The MA host persists the user message only after before_prompt_build.
+  const ask = async (runId, prompt, { persistAfterPrompt = false } = {}) => {
+    if (!persistAfterPrompt) await append({ message: { role: 'user', content: prompt } });
     const ctx = context(runId);
     await runtime.sessionStart({ sessionId, source: 'startup' }, ctx);
     const gate = await runtime.beforeAgentRun({ sessionId, sessionKey, prompt }, ctx);
     assert(!gate || gate.outcome === 'pass', JSON.stringify({ gate, calls }));
     await runtime.prompt({ prompt }, ctx);
+    if (persistAfterPrompt) await append({ message: { role: 'user', content: prompt } });
     return ctx;
   };
   const write = async (ctx, content) => {
@@ -246,8 +262,9 @@ async function documentFixture(t, mode) {
     await runtime.agentEnd({ sessionId, runId: ctx.runId, success: true, messages: [{ role: 'assistant', content: text }] }, ctx);
     await runtime.waitForNativeReviews();
   };
-  const compact = async (ctx, summary, { truncate = false } = {}) => {
-    await runtime.compact({ sessionId }, ctx);
+  // A manual gateway compaction runs outside any agent run; maxLines truncation fires no hook.
+  const compact = async (ctx, summary, { truncate = false, manual = false, hook = true } = {}) => {
+    if (hook) await runtime.compact({ sessionId }, manual ? { agentId: 'main', sessionId, sessionKey, workspaceDir: root } : ctx);
     const id = `c-${randomUUID()}`;
     const record = { type: 'compaction', id, parentId: truncate ? null : leaf, summary, firstKeptEntryId: leaf, tokensBefore: 120000 };
     if (truncate) await fs.writeFile(transcript, [{ type: 'session', version: 3, id: sessionId, cwd: root }, record]
@@ -255,7 +272,7 @@ async function documentFixture(t, mode) {
     else await fs.appendFile(transcript, JSON.stringify(record) + '\n');
     leaf = id;
   };
-  return { root, ask, write, finish, compact, calls };
+  return { root, ask, write, finish, compact, holdAdmission, calls };
 }
 
 test('original mode reviews a document write against the user messages without refreshing the baseline', async t => {
@@ -287,6 +304,36 @@ for (const [truncate, writeFirst] of [[false, true], [true, true], [true, false]
   assert.deepEqual(review.messages.map(message => [message.full, message.retainedAfterCompaction ?? false]),
     [['Write docs/design.md. Keep imports offline.', truncate], ['Add a section about CSV export.', false]]);
   assert.match(result.feedback, /AGENT-OFFLINE-IMPORT/u, 'the pre-compaction requirement must still govern the review');
+});
+
+const REQUIREMENTS_ONLY = 'Requirements for docs/design.md: keep imports offline. Reply only with "Noted".';
+
+test('a turn without tools logs its user message at turn end, so a hookless truncation loses nothing', async t => {
+  const f = await documentFixture(t, 'original');
+  const first = await f.ask('requirements-only', REQUIREMENTS_ONLY, { persistAfterPrompt: true });
+  await f.finish(first, 'Noted');
+  await f.compact(first, 'Truncated.', { truncate: true, hook: false });
+  const second = await f.ask('after-truncation', 'Now write docs/design.md.', { persistAfterPrompt: true });
+  const [review] = (await f.write(second, '# Importer\nUpload imports to the cloud.\n')).calls;
+  assert.deepEqual(review.messages.map(message => [message.full, message.retainedAfterCompaction ?? false]),
+    [[REQUIREMENTS_ONLY, true], ['Now write docs/design.md.', false]]);
+});
+
+test('a manual host compaction neither waits for withheld work admission nor loses the user message', async t => {
+  const f = await documentFixture(t, 'original');
+  const first = await f.ask('requirements-only', REQUIREMENTS_ONLY, { persistAfterPrompt: true });
+  const release = f.holdAdmission();
+  const outcome = await Promise.race([f.compact(first, 'Truncated.', { truncate: true, manual: true }).then(() => 'returned'),
+    new Promise(resolve => setTimeout(resolve, 2000, 'waiting'))]);
+  await release();
+  assert.equal(outcome, 'returned');
+  await f.finish(first, 'Noted');
+  const second = await f.ask('after-compaction', 'Now write docs/design.md.');
+  const result = await f.write(second, '# Importer\nUpload imports to the cloud.\n');
+  const [review] = result.calls;
+  assert.deepEqual(review.messages.map(message => [message.full, message.retainedAfterCompaction ?? false]),
+    [[REQUIREMENTS_ONLY, true], ['Now write docs/design.md.', false]]);
+  assert.match(result.feedback, /AGENT-OFFLINE-IMPORT/u);
 });
 
 test('the Claude Code PostToolUse hook delivers the same original requirements to its review fork', async t => {
