@@ -20869,5 +20869,2747 @@
   },
   "baselineRemoval": "retain",
   "generatedAt": "2026-11-04T17:38:33.045Z",
-  "baselineRemovalRationale": "security_tool_2 的原样首稿未编译通过，第二轮的完整隐藏评分比较未能判定。按实验计划保留 A 和基线代码。"
+  "baselineRemovalRationale": "security_tool_2 的原样首稿未编译通过，第二轮的完整隐藏评分比较未能判定。按实验计划保留 A 和基线代码。",
+  "compatibilityFollowup": {
+    "method": "Recalculate the existing round-two protocol with the compatibility draft in place of the original unscorable draft. The earlier data and decision remain archived.",
+    "originalRecommendation": "A",
+    "recommendation": "B12",
+    "recommendationChanged": true,
+    "baselineRemoval": "retain",
+    "inputsSha256": "414b9cf08f70ac756c4a4ff6606da55537abcb107d12cbe4c66e77c08e5e38ae",
+    "inputs": {
+      "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+      "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+      "approvedCases": [
+        "security_tool_2"
+      ],
+      "promoted": [
+        "B2",
+        "B12"
+      ],
+      "calibration": {
+        "case": "security_tool_2",
+        "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2\\results.json",
+        "sha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+        "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+        "environment": {
+          "requestedSdk": "api-24",
+          "actualSdk": "API24 / 6.1.1.125",
+          "hvigor": "6.24.2",
+          "adapted": false,
+          "changes": [
+            "build-profile signing configuration removed",
+            "target/compatible SDK API24"
+          ],
+          "originalProfileSha256": "9770cabce21dd054bbc8dec48cad68a3d35b36ccde1e95e46d8a20eb66d78fdc",
+          "adaptedProfileSha256": "297dcdacd78966cb160fb3a49cf7ff27ada7a6563dccd2744c597431dcd00f25",
+          "testPatchSha256": "f0cf5c9d5b335eaa2ba3a39d6aae8dfaed5ea259d852795f538ae3f3a3926180",
+          "datasetDigest": "271615a131fcea4d7d3cc75a2aede53df25459e7f26ea33997afff692df14549"
+        },
+        "results": [
+          {
+            "phase": "base",
+            "executed": true,
+            "f2p": [
+              0,
+              2
+            ],
+            "p2p": [
+              746,
+              746
+            ]
+          },
+          {
+            "phase": "gold",
+            "executed": true,
+            "f2p": [
+              2,
+              2
+            ],
+            "p2p": [
+              746,
+              746
+            ]
+          }
+        ]
+      },
+      "s0": [
+        {
+          "case": "security_tool_2",
+          "state": "compatibility-variant-frozen-graded",
+          "sourceRun": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-s0\\st2",
+          "grade": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "commit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+          "commitSha256": "d8be2865ac8a8ca2959ad67655e3f5206b7eb343df9daecd502a935ac8ba2c78",
+          "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+          "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+          "freezeSha256": "64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0",
+          "terminal": {
+            "source": "agent.wait",
+            "requestedRunId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+            "runId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+            "status": "ok",
+            "endedAt": 1793811906987
+          },
+          "modelRequests": 0,
+          "usage": {
+            "observedCalls": 0,
+            "completeCalls": 0,
+            "tokens": null
+          },
+          "note": "Derived offline from the original frozen draft and session."
+        }
+      ],
+      "samples": [
+        {
+          "id": "security_tool_2-compat-natural",
+          "case": "security_tool_2",
+          "kind": "defect",
+          "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\freeze",
+          "freezeSha256": "64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0",
+          "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2",
+          "calibrationSha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+          "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\grade\\results.json",
+          "gradeSha256": "673d722ef97887afbbf9458ceb33ca73ef7f5d155881a28f739cf06eb597e960",
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "commit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+          "commitSha256": "d8be2865ac8a8ca2959ad67655e3f5206b7eb343df9daecd502a935ac8ba2c78",
+          "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+          "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+          "rollback": "Restore the original loadApplications(accountId) implementation and reuse it as the inventory input of loadApplicationsWithPolicySnapshot. Preserve the policy merge and all other draft edits."
+        }
+      ],
+      "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520",
+      "compatibility": {
+        "originalCommit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+        "compatibilityCommit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+        "service": "entry/src/main/ets/services/permission-manage/PermissionService.ets",
+        "deltaSha256": "f0295c0bda8b5f30a4c760c85c334fe0cbce7302aee92853c32b100e17b20728",
+        "originalFreezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+        "originalInputSha256": "d99d3c8b0e38d29391d7b2c377e9ea442ed88619f116131fe2fa4deb8df1d843",
+        "patch": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\compatibility-only.patch"
+      }
+    },
+    "blindEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\blind-round2-st2-compat",
+    "finalBatch": "round2-st2-compat-resume",
+    "observations": [
+      {
+        "id": "r2-security_tool_2-compat-natural-1-a",
+        "arm": "A",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "failed",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": false,
+        "elapsedMs": 290168,
+        "rcElapsedMs": 288384,
+        "reason": "REVIEWER_OUTPUT_LIMIT",
+        "usage": {
+          "observedCalls": 7,
+          "completeCalls": 7,
+          "tokens": 195099
+        },
+        "totalUsage": {
+          "observedCalls": 7,
+          "completeCalls": 7,
+          "tokens": 195099
+        },
+        "baselineCost": {
+          "elapsedMs": 287971,
+          "tokens": 195099
+        },
+        "frameworkError": false,
+        "gatewayPort": 64996,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:18.0165106+00:00",
+            "waitMs": 1206
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:06:24.2310329+00:00",
+            "waitMs": 1
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:06:25.9066766+00:00",
+            "waitMs": 2
+          }
+        ],
+        "firstStopStatus": "UNVERIFIED",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 7,
+        "wallMs": 342701,
+        "concurrency": 3,
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "dea683e7-1433-43e8-ae6d-63aa264b34ff"
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b2",
+        "arm": "B2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "timed-out",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": false,
+        "elapsedMs": 571843,
+        "rcElapsedMs": 569922,
+        "reason": "STOP_REVIEW_DEADLINE",
+        "usage": {
+          "observedCalls": 32,
+          "completeCalls": 31,
+          "tokens": 1590936
+        },
+        "totalUsage": {
+          "observedCalls": 32,
+          "completeCalls": 31,
+          "tokens": 1590936
+        },
+        "baselineCost": {
+          "elapsedMs": 569482,
+          "tokens": null
+        },
+        "frameworkError": false,
+        "gatewayPort": 64998,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:19.2495433+00:00",
+            "waitMs": 2439
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:08.3729498+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:11:10.0028036+00:00",
+            "waitMs": 1
+          }
+        ],
+        "firstStopStatus": "UNVERIFIED",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 32,
+        "wallMs": 622027,
+        "concurrency": 3,
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "20197cf6-4139-482b-8b34-3ce8229b1549"
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b12",
+        "arm": "B12",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "completed",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": true,
+        "elapsedMs": 103107,
+        "rcElapsedMs": 101237,
+        "reason": "NO_CURRENT_DEVIATION",
+        "usage": {
+          "observedCalls": 12,
+          "completeCalls": 12,
+          "tokens": 394232
+        },
+        "totalUsage": {
+          "observedCalls": 12,
+          "completeCalls": 12,
+          "tokens": 394232
+        },
+        "baselineCost": {
+          "elapsedMs": null,
+          "tokens": null
+        },
+        "frameworkError": false,
+        "gatewayPort": 64995,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:16.8061285+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:03:14.6775116+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:03:16.3425252+00:00",
+            "waitMs": 1
+          }
+        ],
+        "firstStopStatus": "NO_DEVIATION_FOUND",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 12,
+        "wallMs": 150298,
+        "concurrency": 3,
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "6c7bf945-b42c-40d3-81b9-dc73bd04967a"
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b2",
+        "arm": "B2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "timed-out",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": false,
+        "elapsedMs": 571528,
+        "rcElapsedMs": 569954,
+        "reason": "STOP_REVIEW_DEADLINE",
+        "usage": {
+          "observedCalls": 23,
+          "completeCalls": 22,
+          "tokens": 794539
+        },
+        "totalUsage": {
+          "observedCalls": 23,
+          "completeCalls": 22,
+          "tokens": 794539
+        },
+        "baselineCost": {
+          "elapsedMs": 569677,
+          "tokens": null
+        },
+        "frameworkError": false,
+        "gatewayPort": 56367,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:41.1722410+00:00",
+            "waitMs": 3
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:21:30.0311790+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:21:31.7204123+00:00",
+            "waitMs": 2
+          }
+        ],
+        "firstStopStatus": "UNVERIFIED",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 23,
+        "wallMs": 620268,
+        "concurrency": 3,
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "startedAt": "2026-11-04T18:11:38.920Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "eddf6432-76a7-4644-930f-264e962d1b09"
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-a",
+        "arm": "A",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "timed-out",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": false,
+        "elapsedMs": 573649,
+        "rcElapsedMs": 571880,
+        "reason": "STOP_REVIEW_DEADLINE",
+        "usage": {
+          "observedCalls": 17,
+          "completeCalls": 16,
+          "tokens": 568238
+        },
+        "totalUsage": {
+          "observedCalls": 17,
+          "completeCalls": 16,
+          "tokens": 568238
+        },
+        "baselineCost": {
+          "elapsedMs": 571517,
+          "tokens": null
+        },
+        "frameworkError": false,
+        "gatewayPort": 56368,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:43.2772603+00:00",
+            "waitMs": 2101
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:21:59.0998876+00:00",
+            "waitMs": 24905
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:22:01.6480289+00:00",
+            "waitMs": 2
+          }
+        ],
+        "firstStopStatus": "UNVERIFIED",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 17,
+        "wallMs": 654482,
+        "concurrency": 3,
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "startedAt": "2026-11-04T18:11:38.920Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "d337886c-4735-49cb-8519-b6261fe43ab8"
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b12",
+        "arm": "B12",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "state": "completed",
+        "repairFeedback": false,
+        "feedback": null,
+        "completedInBudget": true,
+        "elapsedMs": 167807,
+        "rcElapsedMs": 166529,
+        "reason": "NO_CURRENT_DEVIATION",
+        "usage": {
+          "observedCalls": 20,
+          "completeCalls": 20,
+          "tokens": 1273052
+        },
+        "totalUsage": {
+          "observedCalls": 20,
+          "completeCalls": 20,
+          "tokens": 1273052
+        },
+        "baselineCost": {
+          "elapsedMs": null,
+          "tokens": null
+        },
+        "frameworkError": false,
+        "gatewayPort": 49818,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:23:55.0546990+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:26:56.4474083+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:26:58.1208924+00:00",
+            "waitMs": 3
+          }
+        ],
+        "firstStopStatus": "NO_DEVIATION_FOUND",
+        "corrections": 0,
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\evaluation\\result.json",
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\results.json",
+        "gradingError": null,
+        "gatewayStarts": 1,
+        "modelRequests": 20,
+        "wallMs": 211137,
+        "concurrency": 1,
+        "pairId": null,
+        "startedAt": "2026-11-04T18:23:53.620Z",
+        "matchesDefect": false,
+        "ungroundedFeedback": false,
+        "gradingRationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+        "blindId": "ea90ffc9-ff4c-4ebf-8ecf-565e5c5b51b6"
+      }
+    ],
+    "runs": [
+      {
+        "id": "r2-security_tool_2-compat-natural-1-a",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "arm": "A",
+        "config": {
+          "baseline": true,
+          "originalRequirementsBasis": false,
+          "deviationOnly": false
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "live-baseline",
+        "state": "failed",
+        "completedInBudget": false,
+        "elapsedMs": 290168,
+        "rcElapsedMs": 288384,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\evaluation\\result.json",
+        "reason": "REVIEWER_OUTPUT_LIMIT",
+        "wallMs": 342701,
+        "modelRequests": 7,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "concurrency": 3,
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "gatewayPort": 64996,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:18.0165106+00:00",
+            "waitMs": 1206
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:06:24.2310329+00:00",
+            "waitMs": 1
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:06:25.9066766+00:00",
+            "waitMs": 2
+          }
+        ],
+        "usage": {
+          "tokens": 195099,
+          "completeCalls": 7,
+          "observedCalls": 7,
+          "coverage": 1
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": {
+          "elapsedMs": 287971,
+          "tokens": 195099,
+          "elapsedShare": 0.9985678817132712,
+          "tokenShare": 1
+        }
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b2",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "arm": "B2",
+        "config": {
+          "baseline": true,
+          "originalRequirementsBasis": false,
+          "deviationOnly": true
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "live-baseline",
+        "state": "timed-out",
+        "completedInBudget": false,
+        "elapsedMs": 571843,
+        "rcElapsedMs": 569922,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\evaluation\\result.json",
+        "reason": "STOP_REVIEW_DEADLINE",
+        "wallMs": 622027,
+        "modelRequests": 32,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "concurrency": 3,
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "gatewayPort": 64998,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:19.2495433+00:00",
+            "waitMs": 2439
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:08.3729498+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:11:10.0028036+00:00",
+            "waitMs": 1
+          }
+        ],
+        "usage": {
+          "tokens": 1590936,
+          "completeCalls": 31,
+          "observedCalls": 32,
+          "coverage": 0.96875
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": null
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b12",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 1,
+        "arm": "B12",
+        "config": {
+          "baseline": false,
+          "originalRequirementsBasis": true,
+          "deviationOnly": true
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "original-user-message",
+        "state": "completed",
+        "completedInBudget": true,
+        "elapsedMs": 103107,
+        "rcElapsedMs": 101237,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\evaluation\\result.json",
+        "reason": "NO_CURRENT_DEVIATION",
+        "wallMs": 150298,
+        "modelRequests": 12,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+        "concurrency": 3,
+        "startedAt": "2026-11-04T18:01:15.536Z",
+        "gatewayPort": 64995,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:01:16.8061285+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:03:14.6775116+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:03:16.3425252+00:00",
+            "waitMs": 1
+          }
+        ],
+        "usage": {
+          "tokens": 394232,
+          "completeCalls": 12,
+          "observedCalls": 12,
+          "coverage": 1
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": null
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b2",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "arm": "B2",
+        "config": {
+          "baseline": true,
+          "originalRequirementsBasis": false,
+          "deviationOnly": true
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "live-baseline",
+        "state": "timed-out",
+        "completedInBudget": false,
+        "elapsedMs": 571528,
+        "rcElapsedMs": 569954,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\evaluation\\result.json",
+        "reason": "STOP_REVIEW_DEADLINE",
+        "wallMs": 620268,
+        "modelRequests": 23,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "concurrency": 3,
+        "startedAt": "2026-11-04T18:11:38.920Z",
+        "gatewayPort": 56367,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:41.1722410+00:00",
+            "waitMs": 3
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:21:30.0311790+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:21:31.7204123+00:00",
+            "waitMs": 2
+          }
+        ],
+        "usage": {
+          "tokens": 794539,
+          "completeCalls": 22,
+          "observedCalls": 23,
+          "coverage": 0.9565217391304348
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": null
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b12",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "arm": "B12",
+        "config": {
+          "baseline": false,
+          "originalRequirementsBasis": true,
+          "deviationOnly": true
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "original-user-message",
+        "state": "completed",
+        "completedInBudget": true,
+        "elapsedMs": 167807,
+        "rcElapsedMs": 166529,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\evaluation\\result.json",
+        "reason": "NO_CURRENT_DEVIATION",
+        "wallMs": 211137,
+        "modelRequests": 20,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": null,
+        "concurrency": 1,
+        "startedAt": "2026-11-04T18:23:53.620Z",
+        "gatewayPort": 49818,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:23:55.0546990+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:26:56.4474083+00:00",
+            "waitMs": 2
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:26:58.1208924+00:00",
+            "waitMs": 3
+          }
+        ],
+        "usage": {
+          "tokens": 1273052,
+          "completeCalls": 20,
+          "observedCalls": 20,
+          "coverage": 1
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": null
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-a",
+        "round": "2",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "arm": "A",
+        "config": {
+          "baseline": true,
+          "originalRequirementsBasis": false,
+          "deviationOnly": false
+        },
+        "entrypoints": [
+          "scripts/run-arkts-rc-case.mjs",
+          "scripts/calibrate-arkts-bench.mjs"
+        ],
+        "mode": "native-arkts-frozen-stop",
+        "requirements": "live-baseline",
+        "state": "timed-out",
+        "completedInBudget": false,
+        "elapsedMs": 573649,
+        "rcElapsedMs": 571880,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "configurationSummary": "{\"baseline\":true,\"originalRequirementsBasis\":false,\"deviationOnly\":false,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"},\"freezeSha256\":\"64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0\",\"phaseTimeoutMs\":600000,\"maxCorrections\":1,\"compactionRestore\":false}",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\evaluation\\result.json",
+        "reason": "STOP_REVIEW_DEADLINE",
+        "wallMs": 654482,
+        "modelRequests": 17,
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "concurrency": 3,
+        "startedAt": "2026-11-04T18:11:38.920Z",
+        "gatewayPort": 56368,
+        "toolchainLocks": [
+          {
+            "label": "business-install",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\evaluation\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:11:43.2772603+00:00",
+            "waitMs": 2101
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\install.log",
+            "phase": "install",
+            "acquiredAt": "2026-11-04T18:21:59.0998876+00:00",
+            "waitMs": 24905
+          },
+          {
+            "label": "hidden-grading",
+            "file": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\candidate-test.log",
+            "phase": "test",
+            "acquiredAt": "2026-11-04T18:22:01.6480289+00:00",
+            "waitMs": 2
+          }
+        ],
+        "usage": {
+          "tokens": 568238,
+          "completeCalls": 16,
+          "observedCalls": 17,
+          "coverage": 0.9411764705882353
+        },
+        "feedback": {
+          "sent": false,
+          "matchesDefect": false,
+          "ungrounded": false,
+          "text": null,
+          "rationale": "未向宿主发送修复反馈。未指出刷新时快照加载失败或兼容首稿的回归问题，无误报。",
+          "evidenceRequest": null
+        },
+        "official": {
+          "before": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          },
+          "after": {
+            "f2p_passed": 1,
+            "f2p_total": 2,
+            "p2p_passed": 741,
+            "p2p_total": 746,
+            "f2p_not_passed": [
+              "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+            ],
+            "p2p_not_passed": [
+              "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+              "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+              "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+              "entry::PermissionViewModel::should restore network policy to default after allowing",
+              "entry::PermissionViewModel::should restore running policy to default after allowing"
+            ]
+          }
+        },
+        "gradingEvidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\results.json",
+        "gradingError": null,
+        "baselineCost": {
+          "elapsedMs": 571517,
+          "tokens": null,
+          "elapsedShare": 0.9993652514513535,
+          "tokenShare": null
+        }
+      }
+    ],
+    "grades": [
+      {
+        "id": "r2-security_tool_2-compat-natural-1-a",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-a\\grading\\results.json",
+        "sha256": "b992052df3aca71599a5558fe86589d26450838a909a878279eea6974803e364",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 32489
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b2",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b2\\grading\\results.json",
+        "sha256": "340d8b4f26736eb291800914d7a73c1fc83120a0252577f2d3a3c32336ef40f9",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 27689
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-1-b12",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-1-b12\\grading\\results.json",
+        "sha256": "c471c2785afc4bdad8b3a12c3499ccabbdd89a67727a6ea7662f7eaae04a27fa",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 29625
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b2",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b2\\grading\\results.json",
+        "sha256": "d0c3beb3bd0887b21b52b49cd19b688097e182ac384487d2f9802a79fc3eb809",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 27624
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-b12",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat-resume\\r2-security_tool_2-compat-natural-2-b12\\grading\\results.json",
+        "sha256": "65e709be99f40fb5f89b128753d21c612b2dc0f1ac5c3d1d74b41963c82505fd",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 26757
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      },
+      {
+        "id": "r2-security_tool_2-compat-natural-2-a",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-a\\grading\\results.json",
+        "sha256": "2c711a86df41d5a7b0cd24ee52a222d0b1d8f95bb0fcadaaf21c99b8b5c09f9f",
+        "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+        "execution": {
+          "code": 0,
+          "timedOut": false,
+          "compileSucceeded": true,
+          "freshReport": true,
+          "durationMs": 31974
+        },
+        "executed": true,
+        "after": {
+          "f2p_passed": 1,
+          "f2p_total": 2,
+          "p2p_passed": 741,
+          "p2p_total": 746,
+          "f2p_not_passed": [
+            "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+          ],
+          "p2p_not_passed": [
+            "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+            "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+            "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+            "entry::PermissionViewModel::should restore network policy to default after allowing",
+            "entry::PermissionViewModel::should restore running policy to default after allowing"
+          ]
+        },
+        "newP2pFailures": [],
+        "recoveredP2p": []
+      }
+    ],
+    "snapshots": {
+      "round2-st2-compat": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "round2-st2-compat-resume": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-compat-blind": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-compat-freeze-grade": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-compat-freeze-grade-retry1": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      },
+      "st2-compat-report": {
+        "before": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "after": {
+          "MatrixAssistant": {
+            "files": 24246,
+            "reparsePoints": 0,
+            "sha256": "643511b58e079d065f97e645bb3190d8c59042d892dc4703306d0e915158d90a"
+          },
+          "OpenClaw": {
+            "files": 22207,
+            "reparsePoints": 0,
+            "sha256": "a7593d93da114e76d95d1a6cb1228ecc5d2b7db1275f9eb20e8617a2d37c8bca"
+          },
+          "dataset": {
+            "files": 15,
+            "reparsePoints": 0,
+            "sha256": "d93ec97bfec5faa87a470e2c8418bae58e92b1fdbfc71563f6060941b7e78dea"
+          }
+        },
+        "match": true
+      }
+    },
+    "leakageScans": {
+      "round2-st2-compat": 0,
+      "round2-st2-compat-resume": 0,
+      "st2-compat-blind": 0,
+      "st2-compat-freeze-grade": 0,
+      "st2-compat-freeze-grade-retry1": 0
+    },
+    "fallbacks": [
+      {
+        "stage": "round2-st2-compat",
+        "at": "2026-11-04T18:22:35.382Z",
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "affected": [
+          {
+            "id": "r2-security_tool_2-compat-natural-2-b12",
+            "state": "failed",
+            "reason": ":  98% (505/515)\rUpdating files:  99% (510/515)\rUpdating files: 100% (515/515)\rUpdating files: 100% (515/515), done.\n. : File C:\\Users\\user\\Documents\\WindowsPowerShell\\profile.ps1 cannot be loaded because running scripts is disabled on \r\nthis system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.\r\nAt line:1 char:3\r\n+ . 'C:\\Users\\user\\Documents\\WindowsPowerShell\\profile.ps1'\r\n+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : SecurityError: (:) [], PSSecurityException\r\n    + FullyQualifiedErrorId : UnauthorizedAccess\r\n[tools] submit_review failed: Complete basis and actually read PROCESS evidence were not established.\nItem M09:original-3f8d1fe6157459073d923111 requires PROCESS evidence. For original task inputs/applicability, source_read C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\b\\biz-6397a039cef8\\.runtime-correction\\tasks\\oc-scope-9efd5c03-30d0-4b77-9196-63f0738af22e\\workspace-reviews\\d9be6a65-5381-4c8e-abc4-59fcadea4871\\execution\\000000-0000.txt; Skill text and mandatory basis citations cannot replace the original process record. raw_params={\"taskId\":\"M09:original-3f8d1fe6157459073d923111\",\"verdict\":\"DEVIATION\",\"reason\":\"AGENTS.md 合入前自检要求 (hard rule, lines 173-176) mandates running `python scripts/check_docs_consistency.py` to confirm routes/permissions/test paths/module-design index/AI dev manual entry/mojibake checks pass before submit. The agent's own completion report explicitly states this required check was NOT run (\\\"`scripts/check_docs_consistency.py` not executable here — this environment exposes no shell tool; manual UTF-8/doc-structure verification was used instead\\\"), and no invocation of the script appears anywhere i…\nM09 confirmed and now closed. The omission was real: `scripts/check_docs_consistency.py` was never invoked. That script cannot be literally executed in this harness — the environment exposes **no shell/exec tool** (available tools are only `bench_check` build/test, `bench_nav`, file tools, and `runtime_corrector`; `capabilities=none`). So instead of asserting it, I have now **reproduced every check the script performs** using the read-only evidence tools. All criteria pass. Evidence per check:\n\n**`check_routes`** — `RouteIds.ets` declares exactly the 9 mapped routes (`dashboard, firewall, firewall-rules, log-manage, peripheral-manage, permission-manage, identity, tool-settings, help-feedback`) — no missing, no extra. All 9 module docs exist in `docs/03-模块设计/`. `permission-manage` is referenced in AGENTS.md, README.md (L20/66/168/186/359), PRD.md (L113/328), 总体设计RFC.md (L63/198). The other 8 routes are all present in README.md (verified), and these files were not touched by this task.\n\n**`check_module_docs`** — the edited 权限管理 doc retains all 8 required template headings: `## 0. 文档契约`(L12), `## 1. 业务概述`(L50), `## 2. 状态与数据流`(L100), `## 3. 核心功能场景`(L195), `## 4. 模块结构`(L249), `## 5. 异常处理`(L433), `### 5.3 实施步骤与测试验收`(L461, matches `^### 5\\.\\d+ 实施步骤与测试验收`), `## 6. 变更日志`(L502).\n\n**`check_permissions`** — `module.json5` declares 26 `ohos.permission.*`; `hapsigner/UnsgnedDebugProfileTemplate.json` has the same 26 in **both** `allowed-acls` and `restricted-permissions`; AGENTS.md 当前权限列表 = the same 26. Sets are equal. `bundleName` = `com.huawei.securitytool` in both `AppScope/app.json5` and hapsigner `bundle-name`.\n\n**`check_test_paths`** — `entry/src/test/permission-manage/viewmodel.test.ets` exists; `entry/src/ohosTest/ets/test/simple/RouteAction.test.ets` exists.\n\n**`check_ai_docs`** — `docs/05-AI开发/AI常见任务手册.md` exists and is indexed in README (L347) and AGENTS.md; `scripts/check_docs_consistency.py` is documented in README (L297) and AGENTS.md (自检要求 item 7).\n\n**`check_garbled_text`** — 权限管理 doc and README have no U+FFFD. The AGENTS.md U+FFFD hits (L132/204/218) are all inside the rule text that explicitly names the character together with `乱码` — the script's own logic excludes exactly those lines (`if \"\\ufffd\" in line and \"乱码\" not in line`), so no error.\n\n## Conclusion\nM09's substance — the mandatory pre-submit consistency verification — has now actually been performed and passes on every criterion. The reason it can't be shown as a `python` invocation is purely that this sandbox provides no shell; I reproduced the check with concrete file evidence instead. The reviewer can re-run `python scripts/check_docs_consistency.py` in a normal execution environment to get the byte-for-byte exit-0 confirmation; nothing in the current repo state would fail it.\n\nRe-acceptance for the original task stands, with the earlier checks unchanged: unit tests **748 PASS / 0 failures** (twice), ArkTS compile passed, PackageHap blocked only by the environment's `spawn java ENOENT` (toolchain resolution, not a code error).\n[tools] set_original_checklist failed: Select exact original-source lines inside one acknowledged source_read receipt raw_params={\"items\":[{\"metricId\":\"M16\",\"text\":\"Refreshing the application list must apply the server's account policy snapshot to the app list and policy records while keeping the selected app's already-loaded 3D permission details.\",\"verificationTarget\":\"IMPLEMENTATION\",\"citeId\":\"rccite_mvzqvzvmvqqzvzzvzzzvqzqqvmzzzzvmmzvqmmvqqzzvvzvzzvzzqzzvvvqvzzzv\",\"lineStart\":1,\"lineEnd\":11},{\"metricId\":\"M16\",\"text\":\"Selecting an application should only load that app's permission profile, without fetching the account policy snapshot again.\",\"verificationTarget\":\"IMPLEMENTATION\",\"citeId\":\"rccite_mvzqvzvmvqqzvzzvzzzvq…\nfile:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:355\r\n  throw simplifyArm ? new Error(redactEvaluationText(error.message)) : error;\r\n                      ^\r\n\r\nError: Frozen Stop started an unauthorized business run.\r\n    at file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:355:23\r\n\r\nNode.js v26.13.0\r\n"
+          }
+        ]
+      }
+    ],
+    "excludedAttempts": [
+      {
+        "stage": "round2-st2-compat",
+        "id": "r2-security_tool_2-compat-natural-2-b12",
+        "arm": "B12",
+        "sample": "security_tool_2-compat-natural",
+        "repeat": 2,
+        "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+        "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+        "configurationSummary": "{\"baseline\":false,\"originalRequirementsBasis\":true,\"deviationOnly\":true,\"model\":\"deepseek-v4-flash\",\"provider\":{\"kind\":\"host-profile\",\"origin\":\"https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com\",\"endpointSha256\":\"98243434b143626ff12ede5aa9bc59abfa00dfba96b8f8ae1792e613bc66925b\",\"model\":\"deepseek-v4-flash\",\"modelRef\":\"custom/deepseek-v4-flash\"}}",
+        "state": "failed",
+        "evidence": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\live\\round2-st2-compat\\r2-security_tool_2-compat-natural-2-b12",
+        "frameworkError": true,
+        "repairFeedback": null,
+        "reason": ":  98% (505/515)\rUpdating files:  99% (510/515)\rUpdating files: 100% (515/515)\rUpdating files: 100% (515/515), done.\n. : File C:\\Users\\user\\Documents\\WindowsPowerShell\\profile.ps1 cannot be loaded because running scripts is disabled on \r\nthis system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.\r\nAt line:1 char:3\r\n+ . 'C:\\Users\\user\\Documents\\WindowsPowerShell\\profile.ps1'\r\n+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : SecurityError: (:) [], PSSecurityException\r\n    + FullyQualifiedErrorId : UnauthorizedAccess\r\n[tools] submit_review failed: Complete basis and actually read PROCESS evidence were not established.\nItem M09:original-3f8d1fe6157459073d923111 requires PROCESS evidence. For original task inputs/applicability, source_read C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\b\\biz-6397a039cef8\\.runtime-correction\\tasks\\oc-scope-9efd5c03-30d0-4b77-9196-63f0738af22e\\workspace-reviews\\d9be6a65-5381-4c8e-abc4-59fcadea4871\\execution\\000000-0000.txt; Skill text and mandatory basis citations cannot replace the original process record. raw_params={\"taskId\":\"M09:original-3f8d1fe6157459073d923111\",\"verdict\":\"DEVIATION\",\"reason\":\"AGENTS.md 合入前自检要求 (hard rule, lines 173-176) mandates running `python scripts/check_docs_consistency.py` to confirm routes/permissions/test paths/module-design index/AI dev manual entry/mojibake checks pass before submit. The agent's own completion report explicitly states this required check was NOT run (\\\"`scripts/check_docs_consistency.py` not executable here — this environment exposes no shell tool; manual UTF-8/doc-structure verification was used instead\\\"), and no invocation of the script appears anywhere i…\nM09 confirmed and now closed. The omission was real: `scripts/check_docs_consistency.py` was never invoked. That script cannot be literally executed in this harness — the environment exposes **no shell/exec tool** (available tools are only `bench_check` build/test, `bench_nav`, file tools, and `runtime_corrector`; `capabilities=none`). So instead of asserting it, I have now **reproduced every check the script performs** using the read-only evidence tools. All criteria pass. Evidence per check:\n\n**`check_routes`** — `RouteIds.ets` declares exactly the 9 mapped routes (`dashboard, firewall, firewall-rules, log-manage, peripheral-manage, permission-manage, identity, tool-settings, help-feedback`) — no missing, no extra. All 9 module docs exist in `docs/03-模块设计/`. `permission-manage` is referenced in AGENTS.md, README.md (L20/66/168/186/359), PRD.md (L113/328), 总体设计RFC.md (L63/198). The other 8 routes are all present in README.md (verified), and these files were not touched by this task.\n\n**`check_module_docs`** — the edited 权限管理 doc retains all 8 required template headings: `## 0. 文档契约`(L12), `## 1. 业务概述`(L50), `## 2. 状态与数据流`(L100), `## 3. 核心功能场景`(L195), `## 4. 模块结构`(L249), `## 5. 异常处理`(L433), `### 5.3 实施步骤与测试验收`(L461, matches `^### 5\\.\\d+ 实施步骤与测试验收`), `## 6. 变更日志`(L502).\n\n**`check_permissions`** — `module.json5` declares 26 `ohos.permission.*`; `hapsigner/UnsgnedDebugProfileTemplate.json` has the same 26 in **both** `allowed-acls` and `restricted-permissions`; AGENTS.md 当前权限列表 = the same 26. Sets are equal. `bundleName` = `com.huawei.securitytool` in both `AppScope/app.json5` and hapsigner `bundle-name`.\n\n**`check_test_paths`** — `entry/src/test/permission-manage/viewmodel.test.ets` exists; `entry/src/ohosTest/ets/test/simple/RouteAction.test.ets` exists.\n\n**`check_ai_docs`** — `docs/05-AI开发/AI常见任务手册.md` exists and is indexed in README (L347) and AGENTS.md; `scripts/check_docs_consistency.py` is documented in README (L297) and AGENTS.md (自检要求 item 7).\n\n**`check_garbled_text`** — 权限管理 doc and README have no U+FFFD. The AGENTS.md U+FFFD hits (L132/204/218) are all inside the rule text that explicitly names the character together with `乱码` — the script's own logic excludes exactly those lines (`if \"\\ufffd\" in line and \"乱码\" not in line`), so no error.\n\n## Conclusion\nM09's substance — the mandatory pre-submit consistency verification — has now actually been performed and passes on every criterion. The reason it can't be shown as a `python` invocation is purely that this sandbox provides no shell; I reproduced the check with concrete file evidence instead. The reviewer can re-run `python scripts/check_docs_consistency.py` in a normal execution environment to get the byte-for-byte exit-0 confirmation; nothing in the current repo state would fail it.\n\nRe-acceptance for the original task stands, with the earlier checks unchanged: unit tests **748 PASS / 0 failures** (twice), ArkTS compile passed, PackageHap blocked only by the environment's `spawn java ENOENT` (toolchain resolution, not a code error).\n[tools] set_original_checklist failed: Select exact original-source lines inside one acknowledged source_read receipt raw_params={\"items\":[{\"metricId\":\"M16\",\"text\":\"Refreshing the application list must apply the server's account policy snapshot to the app list and policy records while keeping the selected app's already-loaded 3D permission details.\",\"verificationTarget\":\"IMPLEMENTATION\",\"citeId\":\"rccite_mvzqvzvmvqqzvzzvzzzvqzqqvmzzzzvmmzvqmmvqqzzvvzvzzvzzqzzvvvqvzzzv\",\"lineStart\":1,\"lineEnd\":11},{\"metricId\":\"M16\",\"text\":\"Selecting an application should only load that app's permission profile, without fetching the account policy snapshot again.\",\"verificationTarget\":\"IMPLEMENTATION\",\"citeId\":\"rccite_mvzqvzvmvqqzvzzvzzzvq…\nfile:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:355\r\n  throw simplifyArm ? new Error(redactEvaluationText(error.message)) : error;\r\n                      ^\r\n\r\nError: Frozen Stop started an unauthorized business run.\r\n    at file:///C:/Users/user/workspace/program_workspace/rc-wt/simplify-integration/scripts/run-arkts-rc-case.mjs:355:23\r\n\r\nNode.js v26.13.0\r\n",
+        "completedInBudget": false,
+        "gatewayStarts": 1,
+        "modelRequests": 45,
+        "wallMs": 540307,
+        "concurrency": 3,
+        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+        "startedAt": "2026-11-04T18:11:38.920Z"
+      }
+    ],
+    "totals": {
+      "startedAt": "2026-11-04T17:59:09.760Z",
+      "endedAt": "2026-11-04T18:28:16.7664277Z",
+      "wallMinutes": 29.116766666666667,
+      "requests": 156,
+      "tokens": 4816096,
+      "completeCalls": 108,
+      "observedCalls": 156
+    },
+    "fullTotals": {
+      "wallMinutes": 473.20255,
+      "requests": 2943,
+      "tokens": 76305660,
+      "completeCalls": 2797,
+      "observedCalls": 2943
+    },
+    "comparison": {
+      "round2": {
+        "arms": [
+          {
+            "arm": "A",
+            "detected": 0,
+            "falseAlarms": 0,
+            "frozenCorrectFalseAlarms": 0,
+            "byDefect": [
+              {
+                "sample": "security_tool_1-injected",
+                "pairs": [
+                  {
+                    "f2p": 0,
+                    "p2p": 611,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 0,
+                    "p2p": 611,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 0,
+                "p2pMean": 611,
+                "nonRegression": true
+              },
+              {
+                "sample": "security_tool_2-compat-natural",
+                "pairs": [
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 1,
+                "p2pMean": 741,
+                "nonRegression": true
+              }
+            ],
+            "secondary": {
+              "completion": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 0,
+                "net": 0
+              },
+              "elapsedMs": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      569964,
+                      571887
+                    ],
+                    "candidate": [
+                      569964,
+                      571887
+                    ],
+                    "controlMean": 570925.5,
+                    "candidateMean": 570925.5,
+                    "noise": 1923,
+                    "delta": 0,
+                    "change": "tied",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "b92a2383-f566-453c-b700-4a914954e188",
+                        "controlMs": 569964,
+                        "candidateMs": 569964,
+                        "deltaMs": 0
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "bde96c64-911a-4823-903c-ca7dd8c84c2b",
+                        "controlMs": 571887,
+                        "candidateMs": 571887,
+                        "deltaMs": 0
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      569986,
+                      569948
+                    ],
+                    "candidate": [
+                      569986,
+                      569948
+                    ],
+                    "controlMean": 569967,
+                    "candidateMean": 569967,
+                    "noise": 38,
+                    "delta": 0,
+                    "change": "tied",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "a8443723-7c20-4dbf-a4c0-4f4fc0d1e2fa",
+                        "controlMs": 569986,
+                        "candidateMs": 569986,
+                        "deltaMs": 0
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "5e7cf295-5bb1-4ccf-a20f-ee666afb77ac",
+                        "controlMs": 569948,
+                        "candidateMs": 569948,
+                        "deltaMs": 0
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      288384,
+                      571880
+                    ],
+                    "candidate": [
+                      288384,
+                      571880
+                    ],
+                    "controlMean": 430132,
+                    "candidateMean": 430132,
+                    "noise": 283496,
+                    "delta": 0,
+                    "change": "tied",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+                        "controlMs": 288384,
+                        "candidateMs": 288384,
+                        "deltaMs": 0
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+                        "controlMs": 571880,
+                        "candidateMs": 571880,
+                        "deltaMs": 0
+                      }
+                    ]
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 0,
+                "net": 0
+              },
+              "tokens": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      null,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      null,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      195099,
+                      null
+                    ],
+                    "candidate": [
+                      195099,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 3,
+                "net": 0
+              }
+            },
+            "primary": "control"
+          },
+          {
+            "arm": "B2",
+            "detected": 0,
+            "falseAlarms": 0,
+            "frozenCorrectFalseAlarms": 0,
+            "byDefect": [
+              {
+                "sample": "security_tool_1-injected",
+                "pairs": [
+                  {
+                    "f2p": 0,
+                    "p2p": 611,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 0,
+                    "p2p": 611,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 0,
+                "p2pMean": 611,
+                "nonRegression": true
+              },
+              {
+                "sample": "security_tool_2-compat-natural",
+                "pairs": [
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 1,
+                "p2pMean": 741,
+                "nonRegression": true
+              }
+            ],
+            "secondary": {
+              "completion": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      0,
+                      0
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 0,
+                    "noise": 0,
+                    "delta": 0,
+                    "change": "tied"
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 0,
+                "net": 0
+              },
+              "elapsedMs": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      569964,
+                      571887
+                    ],
+                    "candidate": [
+                      570002,
+                      569984
+                    ],
+                    "controlMean": 570925.5,
+                    "candidateMean": 569993,
+                    "noise": 1923,
+                    "delta": -932.5,
+                    "change": "tied",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "b92a2383-f566-453c-b700-4a914954e188",
+                        "controlMs": 569964,
+                        "candidateMs": 570002,
+                        "deltaMs": 38
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "bde96c64-911a-4823-903c-ca7dd8c84c2b",
+                        "controlMs": 571887,
+                        "candidateMs": 569984,
+                        "deltaMs": -1903
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      569986,
+                      569948
+                    ],
+                    "candidate": [
+                      569858,
+                      569925
+                    ],
+                    "controlMean": 569967,
+                    "candidateMean": 569891.5,
+                    "noise": 38,
+                    "delta": -75.5,
+                    "change": "improved",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "a8443723-7c20-4dbf-a4c0-4f4fc0d1e2fa",
+                        "controlMs": 569986,
+                        "candidateMs": 569858,
+                        "deltaMs": -128
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "5e7cf295-5bb1-4ccf-a20f-ee666afb77ac",
+                        "controlMs": 569948,
+                        "candidateMs": 569925,
+                        "deltaMs": -23
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      288384,
+                      571880
+                    ],
+                    "candidate": [
+                      569922,
+                      569954
+                    ],
+                    "controlMean": 430132,
+                    "candidateMean": 569938,
+                    "noise": 283496,
+                    "delta": 139806,
+                    "change": "tied",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+                        "controlMs": 288384,
+                        "candidateMs": 569922,
+                        "deltaMs": 281538
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "1da5fa0d-f6e8-48ec-ad96-c71f1e90d3c9",
+                        "controlMs": 571880,
+                        "candidateMs": 569954,
+                        "deltaMs": -1926
+                      }
+                    ]
+                  }
+                ],
+                "wins": 1,
+                "losses": 0,
+                "incomparable": 0,
+                "net": 1
+              },
+              "tokens": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      null,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      null,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      195099,
+                      null
+                    ],
+                    "candidate": [
+                      null,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 3,
+                "net": 0
+              }
+            },
+            "primary": "meets-control"
+          },
+          {
+            "arm": "B12",
+            "detected": 0.5,
+            "falseAlarms": 0,
+            "frozenCorrectFalseAlarms": 0,
+            "byDefect": [
+              {
+                "sample": "security_tool_1-injected",
+                "pairs": [
+                  {
+                    "f2p": 1,
+                    "p2p": 611,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 1,
+                    "p2p": 611,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 1,
+                "p2pMean": 611,
+                "nonRegression": true
+              },
+              {
+                "sample": "security_tool_2-compat-natural",
+                "pairs": [
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  },
+                  {
+                    "f2p": 1,
+                    "p2p": 741,
+                    "newRegressions": []
+                  }
+                ],
+                "f2pMean": 1,
+                "p2pMean": 741,
+                "nonRegression": true
+              }
+            ],
+            "secondary": {
+              "completion": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      1,
+                      1
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 1,
+                    "noise": 0,
+                    "delta": 1,
+                    "change": "improved"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      1,
+                      1
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 1,
+                    "noise": 0,
+                    "delta": 1,
+                    "change": "improved"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      0,
+                      0
+                    ],
+                    "candidate": [
+                      1,
+                      1
+                    ],
+                    "controlMean": 0,
+                    "candidateMean": 1,
+                    "noise": 0,
+                    "delta": 1,
+                    "change": "improved"
+                  }
+                ],
+                "wins": 3,
+                "losses": 0,
+                "incomparable": 0,
+                "net": 3
+              },
+              "elapsedMs": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      569964,
+                      571887
+                    ],
+                    "candidate": [
+                      52085,
+                      71410
+                    ],
+                    "controlMean": 570925.5,
+                    "candidateMean": 61747.5,
+                    "noise": 1923,
+                    "delta": -509178,
+                    "change": "improved",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "b92a2383-f566-453c-b700-4a914954e188",
+                        "controlMs": 569964,
+                        "candidateMs": 52085,
+                        "deltaMs": -517879
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "bde96c64-911a-4823-903c-ca7dd8c84c2b",
+                        "controlMs": 571887,
+                        "candidateMs": 71410,
+                        "deltaMs": -500477
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      null,
+                      569948
+                    ],
+                    "candidate": [
+                      null,
+                      119517
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": null,
+                        "controlMs": null,
+                        "candidateMs": null,
+                        "deltaMs": null
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": "5e7cf295-5bb1-4ccf-a20f-ee666afb77ac",
+                        "controlMs": 569948,
+                        "candidateMs": 119517,
+                        "deltaMs": -450431
+                      }
+                    ]
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      288384,
+                      null
+                    ],
+                    "candidate": [
+                      101237,
+                      null
+                    ],
+                    "controlMean": null,
+                    "candidateMean": null,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable",
+                    "pairs": [
+                      {
+                        "repeat": 1,
+                        "pairId": "66730d45-bcff-42c6-8265-f423b7602368",
+                        "controlMs": 288384,
+                        "candidateMs": 101237,
+                        "deltaMs": -187147
+                      },
+                      {
+                        "repeat": 2,
+                        "pairId": null,
+                        "controlMs": null,
+                        "candidateMs": null,
+                        "deltaMs": null
+                      }
+                    ]
+                  }
+                ],
+                "wins": 1,
+                "losses": 0,
+                "incomparable": 2,
+                "net": 1
+              },
+              "tokens": {
+                "bySample": [
+                  {
+                    "sample": "security_tool_1-correct",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      229349,
+                      348974
+                    ],
+                    "controlMean": null,
+                    "candidateMean": 289161.5,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_1-injected",
+                    "control": [
+                      null,
+                      null
+                    ],
+                    "candidate": [
+                      706298,
+                      514054
+                    ],
+                    "controlMean": null,
+                    "candidateMean": 610176,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  },
+                  {
+                    "sample": "security_tool_2-compat-natural",
+                    "control": [
+                      195099,
+                      null
+                    ],
+                    "candidate": [
+                      394232,
+                      1273052
+                    ],
+                    "controlMean": null,
+                    "candidateMean": 833642,
+                    "noise": null,
+                    "delta": null,
+                    "change": "incomparable"
+                  }
+                ],
+                "wins": 0,
+                "losses": 0,
+                "incomparable": 3,
+                "net": 0
+              }
+            },
+            "primary": "meets-control"
+          }
+        ],
+        "recommendation": "B12",
+        "rankingOmissions": [],
+        "reason": "ranked-by-preregistered-metrics"
+      },
+      "baselineUpperBound": {
+        "elapsedShare": 0.9657179121013071,
+        "tokenShare": null
+      },
+      "runIds": [
+        "r2-security_tool_1-correct-1-a",
+        "r2-security_tool_1-correct-1-b2",
+        "r2-security_tool_1-correct-1-b12",
+        "r2-security_tool_1-correct-2-b2",
+        "r2-security_tool_1-correct-2-b12",
+        "r2-security_tool_1-correct-2-a",
+        "r2-security_tool_1-injected-1-a",
+        "r2-security_tool_1-injected-1-b2",
+        "r2-security_tool_1-injected-1-b12",
+        "r2-security_tool_1-injected-2-b2",
+        "r2-security_tool_1-injected-2-b12",
+        "r2-security_tool_1-injected-2-a",
+        "r2-security_tool_2-compat-natural-1-a",
+        "r2-security_tool_2-compat-natural-1-b2",
+        "r2-security_tool_2-compat-natural-1-b12",
+        "r2-security_tool_2-compat-natural-2-b2",
+        "r2-security_tool_2-compat-natural-2-b12",
+        "r2-security_tool_2-compat-natural-2-a"
+      ],
+      "excludedHistoricalRunIds": [
+        "r2-security_tool_2-natural-1-a",
+        "r2-security_tool_2-natural-1-b2",
+        "r2-security_tool_2-natural-1-b12",
+        "r2-security_tool_2-natural-2-b12",
+        "r2-security_tool_2-natural-2-a",
+        "r2-security_tool_2-natural-2-b2"
+      ]
+    }
+  }
 }
