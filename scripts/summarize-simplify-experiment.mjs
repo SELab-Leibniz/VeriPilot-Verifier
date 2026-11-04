@@ -48,14 +48,21 @@ function recordRun(slot, raw) {
   const record = { ...slot, state, completedInBudget, elapsedMs, rcElapsedMs, artifactSha256, configurationSummary, evidence, reason,
     usage: usageRecord(raw.usage, id) };
   if (slot.round === 'C') {
-    const { firstCompactedAt = null, injections = [], assessment } = raw.compaction ?? {};
+    const { firstCompactedAt = null, injections = [], compactionEvents = [], answer = null, assessment } = raw.compaction ?? {};
     if (firstCompactedAt !== null && !integer(firstCompactedAt) || !Array.isArray(injections)
-      || injections.some(item => !integer(item?.at) || !integer(item?.length))) throw new Error(`Invalid compaction events for ${id}.`);
-    if (state === 'completed' && (!firstCompactedAt || !assessment || !number(elapsedMs) || elapsedMs > slot.timeoutMs))
-      throw new Error(`Completed C run ${id} needs a real compaction, graded answer and duration within the cap.`);
+      || injections.some(item => !integer(item?.at) || !integer(item?.length) || known(item.compactedAt) && !integer(item.compactedAt))
+      || !Array.isArray(compactionEvents) || !compactionEvents.every(integer)
+      || answer !== null && typeof answer !== 'string' || assessment && answer !== null && assessment.answer !== answer)
+      throw new Error(`Invalid compaction events or mismatched checkpoint answer for ${id}.`);
+    if (state === 'completed' && (!firstCompactedAt || !(answer ?? assessment?.answer)?.trim() || !number(elapsedMs) || elapsedMs > slot.timeoutMs))
+      throw new Error(`Completed C run ${id} needs a real compaction, verbatim answer and duration within the cap.`);
     const injectionProtocol = !firstCompactedAt ? null : slot.arm === 'C-off' ? injections.length === 0
-      : injections.length === 1 && injections[0].at >= firstCompactedAt && injections[0].length > 0;
-    return { ...record, compaction: { firstCompactedAt, injections, injectionProtocol, grading: assessment ? scoreCompaction(assessment) : null } };
+      : compactionEvents.length ? injections.some(item => item.compactedAt === firstCompactedAt)
+        && new Set(injections.map(item => item.compactedAt)).size === injections.length
+        && injections.every(item => compactionEvents.includes(item.compactedAt) && item.at >= item.compactedAt && item.length > 0 && item.length <= 24 * 1024)
+        : injections.length === 1 && injections[0].at >= firstCompactedAt && injections[0].length > 0 && injections[0].length <= 24 * 1024;
+    return { ...record, compaction: { firstCompactedAt, injections, compactionEvents, injectionProtocol, answer: answer ?? assessment?.answer ?? null,
+      grading: assessment ? scoreCompaction(assessment) : null } };
   }
   const { repairFeedback = null, matchesDefect = null, ungroundedFeedback = null } = raw;
   if (![repairFeedback, matchesDefect, ungroundedFeedback].every(optionalBool)
