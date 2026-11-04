@@ -32,7 +32,8 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
       await beforeScope?.();
       await call('review_checklist', { stopClassification: classification.stopClassification,
         ...(classification.stage ? { stage: classification.stage } : {}),
-        completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification), requiredUserInput: null, externalBlocker: null });
+        completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification),
+        requiredUserInput: classification.requiredUserInput ?? null, externalBlocker: classification.externalBlocker ?? null });
       if (finding) {
         const citeId = await read(file);
         await call('submit_finding', { ...finding, citeIds: [citeId] });
