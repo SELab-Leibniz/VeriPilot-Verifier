@@ -93,7 +93,34 @@
       "A first attempt (harness-attempt-summary-original) stopped after compaction because the harness misread the sessions.compact response; it is not counted.",
       "In both summary runs the host summary itself retained all 8 requirements.",
       "One run per combination; one fictional case."
-    ]
+    ],
+    "afterFix": {
+      "change": "lib/openclaw/runtime.mjs: recordNativeUserMessages reads the host branch without work admission and logs user messages at agent_end and before_compaction (original mode only); a manual compaction hook (no runId) runs its admitted PreCompact checkpoint in the background instead of awaiting it.",
+      "outputRoot": ".runtime-correction/doc-semantic-live-20261104-fix",
+      "probe": { "outputRoot": ".runtime-correction/doc-semantic-probe-20261104",
+        "before": { "turn1PromptHookObservation": "STALE HOST_TRANSCRIPT_SESSION_MISMATCH", "userMessageLogAfterTurn1": false, "summaryCompactionMs": 39672, "rcHookTimeout": true },
+        "after": { "userMessageLogAfterTurn1": true, "summaryCompactionMs": 12168, "rcHookTimeout": false } },
+      "runs": [
+        { "compaction": "summary", "mode": "original", "state": "PASSED", "elapsedMs": 114531, "firstFeedbackS": 40, "compactionMs": 9291,
+          "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+          "reviewerRuns": 3, "reviewerS": 57, "extractorRuns": 0, "providerRequests": 15, "finalCheckSatisfied": true,
+          "userMessageLogAfterCompaction": 1, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true }, "rcHookFailures": 0 },
+        { "compaction": "truncate", "mode": "original", "state": "PASSED", "elapsedMs": 134081, "firstFeedbackS": 41, "compactionMs": 233,
+          "firstRound": { "detected": ["F1", "F2", "F3", "F4", "F5"], "missed": [], "extra": 0 }, "reviewRounds": ["failed:5", "passed:0"],
+          "reviewerRuns": 4, "reviewerS": 64, "extractorRuns": 0, "providerRequests": 18, "finalCheckSatisfied": true,
+          "userMessageLogAfterCompaction": 1, "userMessageLogAtEnd": { "messages": 2, "requirementMessage": true }, "rcHookFailures": 0 },
+        { "compaction": "truncate", "mode": "ledger", "state": "FAILED", "elapsedMs": 577558, "firstFeedbackS": 473, "compactionMs": 219,
+          "failure": "The final document still violates F1, F2, F3, F4, F5 and lost R8 (exit code 2) although the second review passed",
+          "firstRound": { "detected": ["F5"], "missed": ["F1", "F2", "F3", "F4"], "extra": 1 }, "reviewRounds": ["failed:2", "passed:0"],
+          "reviewerRuns": 4, "reviewerS": 89, "extractorRuns": 4, "extractorS": 407, "baselineVersion": 1, "baselineClaims": 7, "baselineClaimsFromRequirements": 0,
+          "providerRequests": 41, "finalCheckSatisfied": false, "rcHookFailures": 0 }
+      ],
+      "notes": [
+        "The truncate/ledger extra finding (line 43) is the exit-code-2 versus overwrite contradiction, reported in the exit code section rather than the F4 section.",
+        "In the truncate/ledger run the business model resolved both internal-contradiction findings against the requirements (removed exit code 2, reworded the network check as independent of reading data), and the second review passed.",
+        "One run per combination; one fictional case."
+      ]
+    }
   },
   "notes": [
     "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 3-12 s each).",
