@@ -328,6 +328,11 @@
         "enabled": {
           "type": "boolean"
         },
+        "originalRequirementsBasis": {
+          "type": "boolean",
+          "default": false,
+          "description": "Build the Stop checklist directly from original requirements in the workspace review."
+        },
         "metrics": {
           "type": "object",
           "description": "Per-metric Stop review switches. Omitted entries inherit defaults; task scope is frozen before review. Other correction pipelines keep their own switches.",
