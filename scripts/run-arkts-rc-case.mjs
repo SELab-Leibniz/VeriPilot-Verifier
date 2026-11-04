@@ -42,6 +42,12 @@ const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
+if (process.argv.includes('--release-build')) {
+  const release = JSON.parse(await fs.readFile(path.join(sourceRoot, 'docs/original-basis-release-inputs.json'), 'utf8'));
+  if (!frozenRoot || simplifyArm !== 'B12' || packageSha256 !== release.packageSha256
+    || !/^[0-9a-f]{40}$/u.test(release.sourceCommit)) throw new Error('Use the committed release build for the frozen B12 checks.');
+  packageSources[release.packageSha256] = release.sourceCommit;
+}
 const hostRoot = arg('--host-root');
 const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
 let providerIdentity, archive;

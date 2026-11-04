@@ -55,7 +55,7 @@ export async function countProfileCredentialMatches(directory, credential) {
 
 // Count provider dispatches before they reach the network and fence SDK retries
 // after an upstream failure. The SDK and the process fetch share this boundary.
-export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile }) {
+export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile, authMarker }) {
   const target = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
   const origin = new URL(target).origin, runtimeKey = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
   const previousFetch = globalThis.fetch, previousRuntime = globalThis[runtimeKey];
@@ -65,8 +65,8 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
   const wrap = fetch => async (input, init) => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
     const headers = new Headers(init?.headers ?? input?.headers);
-    const authorized = headers.get('authorization') === `Bearer ${credential()}`;
-    if (url.origin !== origin && !authorized) return fetch(input, init);
+    const authorized = headers.get('authorization') === `Bearer ${authMarker ?? credential()}`;
+    if (url.origin !== origin && !authorized && headers.get('authorization') !== `Bearer ${credential()}`) return fetch(input, init);
     if (stats.failure) throw fail(stats.failure);
     if (pairRateLimitFile && await fs.stat(pairRateLimitFile).then(() => true, error => {
       if (error.code === 'ENOENT') return false;
@@ -80,7 +80,8 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
     if (model !== provider.model) throw fail('PROFILE_MODEL_BOUNDARY');
     stats.requests++;
     let response;
-    try { response = await fetch(input, { ...init, redirect: 'error' }); }
+    if (authMarker) headers.set('authorization', `Bearer ${credential()}`);
+    try { response = await fetch(input, { ...init, ...(authMarker ? { headers } : {}), redirect: 'error' }); }
     catch (error) {
       if (init?.signal?.aborted || input?.signal?.aborted) throw error;
       throw fail('PROFILE_TRANSPORT_FAILURE');
@@ -176,9 +177,11 @@ export function simplifyProviderIdentity(provider, model, env = process.env) {
   return { kind: provider, origin: new URL(endpoint).origin, endpointSha256: createHash('sha256').update(endpoint).digest('hex'), model };
 }
 
-export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, ...options }) {
+export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, nativeCustomProvider = false, ...options }) {
   const { identity: providerIdentity, provider, credential } = await resolveSimplifyProvider(providerKind, model, openclawProfile);
-  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile });
+  // The custom model name uses a public SDK marker. Only the wire boundary holds the real credential.
+  const authMarker = provider && nativeCustomProvider ? 'rc-isolated-provider-placeholder' : undefined;
+  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile, authMarker });
   let gateway;
   const finish = async () => {
     if (!boundary) return;
@@ -186,7 +189,7 @@ export async function createSimplifyGateway({ model, providerKind = 'coding-plan
     await fs.writeFile(path.join(options.outputRoot, 'provider-boundary.json'), JSON.stringify(boundary.snapshot()), { flag: 'wx' });
   };
   try {
-    gateway = await createNativeGatewayEvaluation({ ...options, skipBootstrap: true, confineBusinessFiles: true,
+    gateway = await createNativeGatewayEvaluation({ ...options, hostProfileAuthMarker: authMarker, skipBootstrap: true, confineBusinessFiles: true,
       ...(providerKind === 'coding-plan' ? { provider: { api: 'openai-completions', baseUrl: simplifyProviderUrl, model },
         providerGuard: { kind: 'authorized_simplify_experiment', credential: () => process.env.RC_EVAL_API_KEY } } : {}),
       ...(provider ? { provider: { ...provider, definition: { ...provider.definition,

@@ -70,7 +70,7 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
 
 // A provider copied from an installed host profile. Only its endpoint and one
 // model entry are copied; the key reaches the SDK through the transient guard.
-export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null) {
+export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null, authMarker) {
   let url = null;
   try { url = new URL(provider?.baseUrl); } catch {}
   const definition = provider?.definition;
@@ -80,8 +80,8 @@ export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null
     || Object.keys(definition).some(key => /key|secret|password|header|auth/iu.test(key)))
     throw new Error('Unsupported host-profile Gateway provider definition. Credentials belong only to the transient provider guard.');
   validatePhaseTimeoutMs(phaseTimeoutMs);
-  return { providerId: 'openai', model: provider.model, definition: {
-    api: provider.api, baseUrl: provider.baseUrl,
+  return { providerId: authMarker ? 'custom' : 'openai', model: provider.model, definition: {
+    api: provider.api, baseUrl: provider.baseUrl, ...(authMarker ? { apiKey: authMarker } : {}),
     ...(phaseTimeoutMs !== null ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
     models: [{ input: ['text'], ...structuredClone(definition), name: definition.name ?? provider.model }],
   } };
@@ -109,12 +109,12 @@ export function createNativeGatewayRequest({ load, port, config }) {
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
+  unlimitedBusiness = false, hostProfileAuthMarker, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
   compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document'
     || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
-  const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs)
+  const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs, hostProfileAuthMarker)
     : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
   const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
   if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch', 'authorized_simplify_experiment'].includes(providerGuard?.kind))
@@ -185,7 +185,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
     config.plugins.allow = [...new Set([...config.plugins.allow, extra.id])];
     config.plugins.load.paths = [...new Set([...config.plugins.load.paths, await fs.realpath(extra.path)])];
-    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
+    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}),
+      ...(extra.config ? { config: extra.config } : {}) };
   }
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
@@ -241,7 +242,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   let restoreCredential = () => {};
   const modelStarts = [];
   try {
-    if (coding) {
+    if (coding && !hostProfileAuthMarker) {
       const credential = providerGuard.credential?.();
       if (typeof credential !== 'string' || !credential.trim()) throw new Error('The Gateway provider guard has no transient credential.');
       // The pinned SDK resolves the standard provider from OPENAI_API_KEY.

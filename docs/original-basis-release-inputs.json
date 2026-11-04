@@ -1,0 +1,67 @@
+{
+  "version": "1.10.0",
+  "sourceCommit": "50201d2f95ba1953c9c3039827d07fd19073940a",
+  "packageSha256": "63d7138da643ce237daec50ecd82bd2065376dce3ee98f5b392849e6af3e6653",
+  "oldSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+  "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+  "frozenSourceSha256": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
+  "frozen": [
+    {
+      "id": "st1-ceiling",
+      "root": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\direct\\objects\\ceiling\\freeze",
+      "sha256": "d0634d5026bae68ce4b3e8762a002247745e94e06a4e005f4596a73571d0e522",
+      "case": "security_tool_1"
+    },
+    {
+      "id": "st1-correct",
+      "root": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-freeze-and-s0-grade\\freeze",
+      "sha256": "3c8fc6e885b8395aa03248ae0774fbfe4c62c22a11788f1ed0fd9289bfe779ab",
+      "case": "security_tool_1"
+    }
+  ],
+  "calibration": {
+    "security_tool_1": {
+      "root": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-calibration\\st1",
+      "sha256": "59ac1d44e6ca60489843de6c5aa9c31ce2bfda1999b4c1d54b82825a4cd88cf8",
+      "f2p": 1,
+      "p2p": 611
+    },
+    "security_tool_2": {
+      "root": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2",
+      "sha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+      "f2p": 2,
+      "p2p": 746
+    }
+  },
+  "workflow": {
+    "name": "OpenSpec(solo)",
+    "cliVersion": "1.4.1",
+    "pluginVersion": "2026.7.9",
+    "nativeCliCommitFromImageManifest": "849cbca52fa072e3fdde0faac4c198f9d90db900",
+    "files": {
+      "workflow": "3d46049ec5e2fca7166f0c387ba3b4b4d5018402c021c71b479ff4564aa1467e",
+      "archive": "8ecf149556b4f6b16ca9ee3951d8de832cbb4d881a8a7f70a5577435e214650e",
+      "install": "49c2181762b87cf526f361f46731f09abfcd89242c474ec05bf0d1b24155163d",
+      "cli": "6da8222ecd7e27ccdd96ab88233513a01b19de36640e56b2c90a0d3b943e66bf",
+      "pluginManifest": "73098041f7ff709577a62067685b24280131fb0fef34203e5f8282a68ab12810",
+      "pluginEntry": "524eb867e784e29eaaa29f14e9dadb29390bde47fa574c3d7647dd9dae45ec7c"
+    },
+    "treeHashes": {
+      "MatrixAssistant": {
+        "files": 9,
+        "reparsePoints": 0,
+        "sha256": "cdb2836aa1ecc2ac3b60eef2e06d48935f7e4b4ddb81116f54be24603232549f"
+      },
+      "OpenClaw": {
+        "files": 2959,
+        "reparsePoints": 0,
+        "sha256": "cae25a966a549e6cf12fda9781e9ea1090d8836cd63bea9fed8a4bafdb8348ef"
+      },
+      "dataset": {
+        "files": 2971,
+        "reparsePoints": 0,
+        "sha256": "b15dcae2aff454a853c749b0cb128f99afb3d325f337cb036e41cad777eda915"
+      }
+    }
+  }
+}
