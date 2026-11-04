@@ -154,10 +154,12 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   const frameworkError = Boolean(boundary?.failure || !initial);
   const completedInBudget = Date.now() < deadline && initial?.progress?.complete === true
     && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview));
+  const reason = boundary?.failure ?? initial?.reasonCode ?? initial?.progress?.reasonCode ?? initial?.releaseReason
+    ?? (!initial ? 'FROZEN_STOP_NOT_REGISTERED' : null);
   const state = boundary?.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : frameworkError ? 'failed' : completedInBudget ? 'completed'
-    : Date.now() >= deadline || /TIMEOUT|DEADLINE/u.test(initial?.reasonCode ?? '') ? 'timed-out' : 'failed';
+    : Date.now() >= deadline || /TIMEOUT|DEADLINE/u.test(reason ?? '') ? 'timed-out' : 'failed';
   const result = { ...manifest, state, completedInBudget, frameworkError, sessionId, sessionKey, originalRunId,
-    reason: boundary?.failure ?? initial?.reasonCode ?? (!initial ? 'FROZEN_STOP_NOT_REGISTERED' : null), rcElapsedMs, usage, totalUsage, baselineCost, repairFeedback, feedback,
+    reason, rcElapsedMs, usage, totalUsage, baselineCost, repairFeedback, feedback,
     elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0,
     actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
     modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };

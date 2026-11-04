@@ -1,11 +1,12 @@
 {
-  "artifactSha256": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
+  "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
   "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
   "approvedCases": [
     "security_tool_1"
   ],
   "promoted": [
-    "B2"
+    "B2",
+    "B12"
   ],
   "calibration": {
     "case": "security_tool_1",
@@ -140,5 +141,8 @@
       "patchSha256": "43db220c6afd2aceb3b02fe2302244aafd06c94f273af8fe89b5661c71f4dfbd",
       "rollback": "Remove only 20 from PASSWORD_LENGTH_OPTIONS in entry/src/main/ets/models/DataModels.ets. Keep 24 and all other S0 edits."
     }
-  ]
+  ],
+  "frozenSourceArtifactSha256": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
+  "previousManifestSha256": "09d26f23809d22a8016e3f2ec14cd454fc76c7f3f9f8dd4a32d26354576f20b6",
+  "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520"
 }

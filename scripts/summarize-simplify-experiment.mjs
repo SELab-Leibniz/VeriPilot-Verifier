@@ -194,10 +194,16 @@ function finalComparison(rows, screened, promoted, samples) {
   if (!screened.ready) return { arms, recommendation: 'A', reason: 'round-1-incomplete' };
   if (!screened.promotions.length) return { arms, recommendation: 'A', reason: 'no-candidate-survived-round-1' };
   if (!ready || arms.some(arm => arm.primary === 'unscored')) return { arms, recommendation: 'A', reason: 'round-2-unscored' };
-  const { sorted, rankingOmissions } = rankArms(arms.filter(arm => ['control', 'meets-control'].includes(arm.primary)));
-  const incomparable = sorted.length > 1 && rankingOmissions.length > 0;
-  return { arms, recommendation: incomparable ? 'A' : sorted[0].arm, rankingOmissions,
-    reason: incomparable ? 'secondary-metrics-incomparable' : 'ranked-by-preregistered-metrics' };
+  let contenders = arms.filter(arm => ['control', 'meets-control'].includes(arm.primary));
+  for (const metric of metricOrder) {
+    if (contenders.length === 1) break;
+    if (contenders.some(arm => arm.secondary[metric].incomparable > 0))
+      return { arms, recommendation: 'A', rankingOmissions: [metric], reason: 'secondary-metrics-incomparable' };
+    const best = Math.max(...contenders.map(arm => arm.secondary[metric].net));
+    contenders = contenders.filter(arm => arm.secondary[metric].net === best);
+  }
+  const recommendation = simplicity.find(arm => contenders.some(row => row.arm === arm));
+  return { arms, recommendation, rankingOmissions: [], reason: 'ranked-by-preregistered-metrics' };
 }
 
 export function summarizeSimplifyExperiment({ records, promoted = [], roundTwoInputs = {}, audit = {} }) {

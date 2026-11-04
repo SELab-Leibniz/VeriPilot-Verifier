@@ -210,6 +210,7 @@ async function runBenchmark(slot, context) {
     completedInBudget: !portConflict && !graderFailure && completedInBudget,
     elapsedMs, rcElapsedMs, reason: portConflict ? 'PREVIEWER_PORT_CONFLICT' : graderFailure ? 'ARKTS_HIDDEN_GRADER_FAILED' : reason, usage, totalUsage, baselineCost,
     frameworkError: portConflict || graderFailure || frameworkError, gatewayPort: raw.gatewayPort ?? null, toolchainLocks,
+    firstStopStatus: raw.firstStop?.reviewStatus ?? null, corrections: raw.corrections ?? null,
     official: { before: benchmark.before, after }, evidence, gradingEvidence, gradingError,
     configurationSummary: JSON.stringify({ ...slot.config, model, provider: providerIdentity, freezeSha256: benchmark.freezeSha256,
       phaseTimeoutMs: raw.limits.phaseTimeoutMs, maxCorrections: raw.limits.correctionAdmissions, compactionRestore: false }) };
