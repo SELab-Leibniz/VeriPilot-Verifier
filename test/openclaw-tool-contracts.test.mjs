@@ -11,8 +11,55 @@ import entry from '../lib/openclaw/entry.mjs';
 import os from 'node:os';
 import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { validateArtifactSkills } from '../scripts/bench/validate-artifact-skills.mjs';
+import { createDocumentTools } from '../lib/document-tools.mjs';
+import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
+import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.mjs';
+import { runWorkspaceStopReview } from '../lib/runtime-v2/stop-workspace-review.mjs';
+import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 
 const sourceManifest=()=>fs.readFile(new URL('../packaging/hosts/openclaw/openclaw.plugin.json',import.meta.url),'utf8').then(JSON.parse);
+
+test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plugin', async t => {
+  const source = await sourceManifest();
+  const declared = new Set(configureOpenClawToolContract(source).contracts.tools);
+  const assertDeclared = (arm, tools) => {
+    assert(tools.length > 0, `${arm} exposed no tools`);
+    assert.deepEqual(tools.filter(name => !declared.has(name)), [], `${arm} has undeclared worker tools`);
+  };
+  for (const [arm, originalRequirementsBasis, deviationOnly] of [
+    ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true],
+  ]) await t.test(arm, async subtest => {
+    const fixture = await stopProtocolFixture(subtest, 'findings');
+    const { input, root } = fixture;
+    const runtime = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !originalRequirementsBasis },
+      stopCorrection: { enabled: true, originalRequirementsBasis, deviationOnly } });
+    input.request.population.reviewPolicy = { metrics: runtime.stopCorrection.metrics, deviationOnly: runtime.stopCorrection.deviationOnly };
+    if (runtime.stopCorrection.originalRequirementsBasis) input.evidence.originalRequirements = await loadStopOriginalRequirements({
+      projectRoot: root, snapshot: input.evidence.snapshot,
+    });
+    let tools;
+    const captured = new Error('Offline worker tools captured');
+    const session = { sessionId: randomUUID(), deadlineAt: Date.now() + 20_000, signal: new AbortController().signal, active() {},
+      async run(worker) {
+        tools = worker.tools.map(tool => tool.name);
+        throw captured;
+      } };
+    await assert.rejects(runWorkspaceStopReview(input, { session }), error =>
+      error.code === 'TASK_NO_VALID_SUBMISSION' && error.cause === captured);
+    assert.equal(tools.includes('set_original_checklist'), originalRequirementsBasis);
+    assertDeclared(arm, tools);
+    if (originalRequirementsBasis) assert(source.contracts.tools.includes('set_original_checklist'));
+  });
+  await t.test('F', async subtest => {
+    const { root } = await stopProtocolFixture(subtest, 'findings');
+    const runtime = compileRuntimeV2Config({ version: 2, artifactCorrection: { originalRequirementsEnabled: true } });
+    assert.equal(runtime.artifactCorrection.originalRequirementsEnabled, true);
+    const originalRequirements = await loadStopOriginalRequirements({ projectRoot: root,
+      snapshot: { entries: [{ type: 'user', uuid: 'requirement', message: { content: 'Keep the design local.' } }] } });
+    const document = await createDocumentTools({ projectRoot: root, semantic: { artifactFiles: ['spec.md'], originalRequirements } });
+    assertDeclared('F', [document.tool.name]);
+  });
+});
 
 test('packaged Skill metadata parses with the installed host YAML parser before model dispatch', {skip:!process.env.RC_OPENCLAW_HOST_ROOT}, async t => {
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rc-skill-yaml-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
