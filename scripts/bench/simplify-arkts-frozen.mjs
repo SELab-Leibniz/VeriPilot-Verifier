@@ -121,11 +121,15 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     initial = Object.values(ledger?.stops ?? {}).find(stop => stop.id.startsWith(originalRunId));
     admission = initial?.admissionId ? ledger.admissions[initial.admissionId] : null;
     runs = task ? await listNativeRuns(projectRoot, task.taskId) : [];
-    if (admission?.hostRequest?.gate && !terminal) {
+    if (admission?.hostRequest && !terminal) {
       terminal = await waitSimplifyRunTerminal(gateway, admission.hostRequest.runId, Math.min(deadline, Date.now() + 1500));
     }
+    // Assessment mode releases Stop when feedback is prepared. The host can
+    // still be between that handoff and its trusted business model start.
+    const correctionSettled = !initial?.admissionId || admission?.accounting === 'RELEASED' && !admission.startedAt
+      || terminal && (admission?.finalReview || terminal.status === 'error');
     const finished = initial && initial.reviewStatus !== 'PENDING' && initial.control === 'ALLOW'
-      && (!admission?.hostRequest?.gate || terminal && (admission.finalReview || terminal.status === 'error'));
+      && correctionSettled;
     if (finished && runs.every(run => run.status === 'SETTLED')) break;
     await new Promise(resolve => setTimeout(resolve, 400));
   }

@@ -51,18 +51,26 @@ async function readResume(directory, schedule, identity) {
     const expected = pending();
     if (!manifest.schedule?.length || manifest.schedule.some((slot, index) =>
       JSON.stringify(slot) !== JSON.stringify(expected[index]))) throw new Error('Resume schedule does not match the planned run order.');
+    const invalidations = await optionalJson(path.join(directory, 'invalidated-attempts.json')) ?? [];
+    if (!Array.isArray(invalidations) || invalidations.length && !identity.arktsCli
+      || new Set(invalidations.map(row => row.id)).size !== invalidations.length
+      || invalidations.some(row => !manifest.schedule.some(slot => slot.id === row.id))) throw new Error('Invalid retry override list.');
     let interruptedGroup = null;
     for (const slot of manifest.schedule) {
       const attemptRoot = path.join(directory, slot.id);
       const attempt = await optionalJson(path.join(attemptRoot, 'attempt.json'));
-      const record = await optionalJson(path.join(attemptRoot, 'observation.json'));
+      const recordFile = path.join(attemptRoot, 'observation.json');
+      const record = await optionalJson(recordFile);
+      const invalidated = invalidations.find(row => row.id === slot.id);
+      if (invalidated && (!record || sha256(await fs.readFile(recordFile)) !== invalidated.observationSha256
+        || invalidated.reason !== 'FROZEN_STOP_CONTINUATION_OBSERVER_CLOSED_EARLY')) throw new Error(`Unverified retry override for ${slot.id}.`);
       if (!attempt && !record) { interruptedGroup ??= 'not-started'; continue; }
-      if (interruptedGroup && interruptedGroup !== group(slot) || !attempt || !record || [attempt, record].some(row => row.id !== slot.id || row.arm !== slot.arm
+      if (interruptedGroup && interruptedGroup !== group(slot) && !record?.operatorInterrupted || !attempt || !record || [attempt, record].some(row => row.id !== slot.id || row.arm !== slot.arm
         || row.sample !== slot.sample || row.repeat !== slot.repeat || row.artifactSha256 !== identity.artifactSha256
         || (row.planSha256 !== undefined && row.planSha256 !== identity.planSha256)))
         throw new Error(`Resume evidence is incomplete or inconsistent for ${slot.id}.`);
-      if (needsRetry(record)) {
-        if (record.frameworkError && record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
+      if (invalidated || needsRetry(record)) {
+        if ((invalidated || record.frameworkError) && record.state !== 'rate-limited') retries.set(slot.id, (retries.get(slot.id) ?? 0) + 1);
         interruptedGroup = group(slot);
       } else records.set(slot.id, record);
     }
