@@ -4,6 +4,8 @@
 
 Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
+`stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。
+
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 
 `/rc-project init` 从插件的 `.runtime-corrector-default` 创建项目配置，显式设置上述两个开关为 `false`，并将 `reviewers.defaults.model` 填为当前宿主 RC 的 `reviewerModel`；不会覆盖已有目录。`/rc-project on|off|status` 和 `/rc-session-default on|off|status` 分别控制这两个字段。既有配置省略字段时按 `true` 解释的兼容语义不变；这些开关不改动具体纠偏功能的参数。
