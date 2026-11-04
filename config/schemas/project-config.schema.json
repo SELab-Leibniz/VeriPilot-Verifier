@@ -424,6 +424,50 @@
           "default": false,
           "description": "Report only evidence-backed Stop deviations and release completed scans without a PASS verdict."
         },
+        "regressionCheck": {
+          "type": "object",
+          "description": "Optional program-run existing-test command for the standing regression item. Runs at most once per Stop review, only when existing source changed; never through a shell.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "command": {
+              "type": [
+                "array",
+                "string"
+              ],
+              "minItems": 1,
+              "minLength": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Argv array, or a string split on whitespace and quotes without shell operators. Required when enabled."
+            },
+            "cwd": {
+              "type": "string",
+              "minLength": 1,
+              "default": ".",
+              "description": "Relative project directory for the command."
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 2147483647,
+              "default": 600000,
+              "description": "Upper bound; the run also stays within half of the remaining Stop review window. The whole process tree is killed on timeout."
+            },
+            "maxOutputBytes": {
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 4194304,
+              "default": 65536,
+              "description": "Bytes of combined output tail persisted as program evidence."
+            }
+          },
+          "additionalProperties": false
+        },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
           "minimum": 0,

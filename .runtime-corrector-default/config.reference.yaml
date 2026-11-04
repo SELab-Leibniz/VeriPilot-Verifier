@@ -208,6 +208,12 @@ limits:
 #   originalRequirementsBasis: true
 #   deviationOnly: true
 #   waitMode: until_pass
+#   regressionCheck:      # 可选：Stop 复核时由程序运行一次项目已有测试（默认关闭）
+#     enabled: false      # 仅在存在非产物源码改动且选中常驻回归项时运行
+#     command: [npm, test]  # argv 数组；字符串会按空白/引号拆分，禁止 shell 运算符
+#     cwd: .              # 相对项目根目录
+#     timeoutMs: 600000   # 同时不超过剩余 Stop 复核时间的一半；超时终止整个进程树
+#     maxOutputBytes: 65536 # 作为程序证据保留的输出尾部字节数
 # implementationCorrection:
 #   enabled: false
 # skillCorrection:
