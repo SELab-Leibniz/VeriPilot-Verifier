@@ -60,7 +60,30 @@ async function providerEnvironment(settingsPath) {
   assert(process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL, 'An explicit configured model is required');
 }
 
-export const documentHookPolicy = (model, options, dynamicBaseline = false, providerId = 'anthropic') => `version: 2
+// Reuses the provider and model an installed OpenClaw profile already uses.
+// The key is read once from its agent auth store and stays in process memory.
+export async function openclawProfileProvider(configPath, modelRef) {
+  const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+  const primary = config.agents?.defaults?.model;
+  const ref = modelRef ?? (typeof primary === 'string' ? primary : primary?.primary);
+  const slash = String(ref ?? '').indexOf('/');
+  assert(slash > 0, 'The OpenClaw profile names no provider/model reference');
+  const providerId = ref.slice(0, slash), model = ref.slice(slash + 1);
+  const provider = config.models?.providers?.[providerId], definition = provider?.models?.find(item => item.id === model);
+  assert(provider && definition, `The OpenClaw profile does not define ${ref}`);
+  const { DatabaseSync } = await import('node:sqlite');
+  const database = new DatabaseSync(path.join(path.dirname(configPath), 'agents/main/agent/openclaw-agent.sqlite'), { readOnly: true });
+  let profiles;
+  try {
+    profiles = JSON.parse(database.prepare("SELECT store_json FROM auth_profile_store WHERE store_key = 'primary'").get()?.store_json ?? '{}').profiles ?? {};
+  } finally { database.close(); }
+  const usable = Object.entries(profiles).filter(([, item]) => item.provider === providerId && item.type === 'api_key' && typeof item.key === 'string' && item.key.trim());
+  const credential = (usable.find(([id]) => id === `${providerId}:default`) ?? usable[0])?.[1].key;
+  assert(credential, `The OpenClaw profile has no API key for provider ${providerId}`);
+  return { modelRef: ref, provider: { api: provider.api, baseUrl: provider.baseUrl, model, definition }, credential: () => credential };
+}
+
+export const documentHookPolicy = (model, options, dynamicBaseline = false, providerId = 'anthropic', originalRequirements = false) => `version: 2
 locale: en
 groundTruth:
   - id: original-requirements
@@ -94,7 +117,7 @@ stopCorrection:
 artifactCorrection:
   groundTruthReviewEnabled: ${dynamicBaseline}
   stageMetricsEnabled: false
-limits:
+${originalRequirements ? '  originalRequirementsEnabled: true\n' : ''}limits:
   semanticReviewTimeoutMs: ${options.reviewTimeoutMs}
 reviewers:
   defaults:
@@ -160,13 +183,17 @@ export async function loadDocumentBenchmark(directory) {
   return { specification, requirements, draft };
 }
 
-export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {}, settingsPath, dynamicBaseline = false, benchmarkDirectory }) {
+export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {}, settingsPath, openclawProfile, openclawModel, dynamicBaseline = false, originalRequirements = false, benchmarkDirectory }) {
+  assert(!(dynamicBaseline && originalRequirements), 'Choose either the dynamic baseline or the original requirements review');
   const config = openclawDocumentOptions(options), started = Date.now(), deadlineAt = started + config.totalTimeoutMs;
   const benchmark = benchmarkDirectory ? await loadDocumentBenchmark(path.resolve(benchmarkDirectory)) : null;
   const requirements = benchmark?.requirements ?? REQUIREMENTS, initialDesign = benchmark?.draft ?? INITIAL_DESIGN;
-  await providerEnvironment(settingsPath);
-  const nativeModel = process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
-  const codingProvider = nativeModel === 'glm-5.3-flash' ? { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: nativeModel } : null;
+  const profile = openclawProfile ? await openclawProfileProvider(path.resolve(openclawProfile), openclawModel) : null;
+  if (!profile) await providerEnvironment(settingsPath);
+  const nativeModel = profile?.provider.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
+  const codingProvider = profile?.provider ?? (nativeModel === 'glm-5.3-flash' ? { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: nativeModel } : null);
+  const providerGuard = profile ? { kind: 'host_profile_native_document', credential: profile.credential }
+    : { kind: 'authorized_native_document', credential: () => process.env.ANTHROPIC_AUTH_TOKEN ?? process.env.ANTHROPIC_API_KEY };
   outputRoot = path.resolve(outputRoot);
   await fs.mkdir(path.dirname(outputRoot), { recursive: true }); await fs.mkdir(outputRoot);
   const projectRoot = path.join(outputRoot, 'project'); await fs.mkdir(projectRoot);
@@ -174,7 +201,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
   await fs.writeFile(path.join(projectRoot, 'requirements.md'), requirements);
   await fs.writeFile(path.join(projectRoot, 'draft.md'), initialDesign);
   await fs.writeFile(path.join(projectRoot, 'AGENTS.md'), 'Only design.md is editable.\n');
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(nativeModel, config, dynamicBaseline, codingProvider ? 'openai' : 'anthropic'));
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), documentHookPolicy(nativeModel, config, dynamicBaseline, codingProvider ? 'openai' : 'anthropic', originalRequirements));
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/document-review.md'), 'Check the CURRENT design content against every declared requirements.md obligation. DOCUMENT-COPY-MISMATCH diagnostics already compare literal content, including fenced whitespace and EOF newlines. Do not dismiss or duplicate these deterministic findings. Source priority and author execution controls do not require an authority/adoption paragraph or test-scope disclaimer inside the document. Require such text only when an original source explicitly requests that output text or section. Preserve original heading levels and formatting. Report concrete current contradictions using accurate physical line numbers. Do not carry resolved findings into a new round. Return no semantic findings when compliant. Return edits: []; the main agent owns actual native edits. Do not edit files.\n');
   await fs.writeFile(path.join(outputRoot, 'options.json'), JSON.stringify(config, null, 2));
   let gateway, sessionKey, sessionId, runId, task, events = [], snapshot, privateRuns = [], failure, terminal = false, state = 'FAILED';
@@ -187,8 +214,7 @@ export async function runOpenClawDocumentE2E({ hostRoot, outputRoot, options = {
       businessToolNames: ['read', 'write', 'edit'], businessToolDeny: ['runtime_corrector'], confineBusinessFiles: true,
       reviewerTimeoutMs: Math.max(config.reviewTimeoutMs, config.baselineTimeoutMs), hookTimeoutMs: config.hookTimeoutMs,
       businessTimeoutMs: config.businessTimeoutMs, disableMemoryFlush: true,
-      ...(codingProvider ? { provider: codingProvider, providerGuard: { kind: 'authorized_native_document',
-        credential: () => process.env.ANTHROPIC_AUTH_TOKEN ?? process.env.ANTHROPIC_API_KEY } } : {}) });
+      ...(codingProvider ? { provider: codingProvider, providerGuard } : {}) });
     gateway.setPhase('automatic-document-hook');
     const load = name => import(pathToFileURL(path.join(gateway.pluginRoot, name)).href);
     const [store, runs] = await Promise.all([load('lib/runtime-v2/task-store.mjs'), load('lib/openclaw/native-runs.mjs')]);
@@ -278,10 +304,12 @@ Then read requirements.md, consume the automatic feedback, and use native edits 
       assert(artifactEvaluations.length >= 2 && artifactEvaluations.every(item => item.groundTruthVersion > 0), 'Automatic document reviews were not bound to the published dynamic baseline');
       await fs.writeFile(path.join(outputRoot, 'dynamic-baseline.json'), JSON.stringify(baseline, null, 2));
     }
+    if (originalRequirements)
+      assert(!privateRuns.some(item => item.role === 'ground-truth-extractor'), 'Original requirements review must not run baseline extraction');
     state = 'PASSED';
   } catch (error) {
     let message = String(error.message);
-    for (const [key, secret] of Object.entries(process.env))
+    for (const [key, secret] of [...Object.entries(process.env), ['PROFILE_KEY', profile?.credential()]])
       if (/KEY|TOKEN|SECRET|PASSWORD/iu.test(key) && secret?.length > 7) message = message.split(secret).join('[REDACTED]');
     failure = { code: error.code ?? 'OPENCLAW_DOCUMENT_E2E_FAILED', message };
   } finally {
@@ -291,7 +319,8 @@ Then read requirements.md, consume the automatic feedback, and use native edits 
   const report = { kind: 'openclaw-automatic-document-hook-live-e2e', state, startedAt: new Date(started).toISOString(),
     finishedAt: new Date().toISOString(), elapsedMs: Date.now() - started, options: config,
     sessionKey, sessionId, runId, taskId: task?.taskId ?? evidence.reviews[0]?.scopeTaskId, terminal, terminalReceipt, failure, projectRoot,
-    gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews, dynamicBaseline, baseline, artifactEvaluations,
+    providerProfile: profile ? { modelRef: profile.modelRef, api: profile.provider.api, endpointHost: new URL(profile.provider.baseUrl).host } : null,
+    gateway: gateway?.metrics(), privateRuns, reviews: evidence.reviews, dynamicBaseline, originalRequirements, baseline, artifactEvaluations,
     benchmark: benchmark?.specification ?? null, initialCopy, finalCopy, initialFaultLocations,
     feedbackReceipts: evidence.receipts,
     effectiveTimeouts: gateway ? { reviewerTimeoutMs: gateway.config.plugins.entries['runtime-corrector'].config.reviewerTimeoutMs,
@@ -300,13 +329,14 @@ Then read requirements.md, consume the automatic feedback, and use native edits 
     finalDesign: await fs.readFile(path.join(projectRoot, 'design.md'), 'utf8').catch(() => null),
     limitations: ['Controlled fictional draft; the model performs the initial write and repair through the actual native Gateway.',
       dynamicBaseline ? 'Real dynamically extracted baseline plus automatic document review; Skill, implementation checking, Stop and official benchmark execution are disabled.'
+        : originalRequirements ? 'Original user messages, declared requirements and named project files are reviewed directly without baseline extraction; Skill, implementation checking, Stop and official benchmark execution are disabled.'
         : 'Declared original requirements are reviewed directly; dynamic baseline, Skill and Stop are separate workflows.'] };
   report.sourceHashes = Object.fromEntries(await Promise.all([
     'scripts/evaluate-openclaw-document-e2e.mjs', 'scripts/helpers/native-gateway-evaluation.mjs',
     'lib/openclaw/entry.mjs', 'lib/openclaw/runtime.mjs', 'lib/openclaw/reviewer.mjs', 'lib/document-tools.mjs',
     'lib/document-copy.mjs', 'lib/artifact-checker.mjs', 'lib/rules/engine.mjs', 'lib/policy/compiler.mjs', 'config/schemas/project-config.schema.json', 'packaging/runtime-modules.json',
     'lib/semantic-review.mjs', 'lib/review-timeout.mjs', 'skills/document-corrector/SKILL.md',
-    'lib/runtime-v2/orchestrator.mjs', 'lib/runtime-v2/ground-truth-ledger.mjs',
+    'lib/runtime-v2/orchestrator.mjs', 'lib/runtime-v2/ground-truth-ledger.mjs', 'lib/runtime-v2/original-requirements.mjs', 'skills/semantic-review/SKILL.md',
     'lib/runtime-v2/baseline-task.mjs', 'lib/openclaw/task-session.mjs',
   ].map(async name => [name, hash(await fs.readFile(path.join(SOURCE_ROOT, name)))])));
   if (gateway) report.testedProductionHashes = Object.fromEntries(await Promise.all([
@@ -319,12 +349,14 @@ Then read requirements.md, consume the automatic feedback, and use native edits 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
   if (!args.includes('--live') || !value('--host-root') || !value('--output-root'))
-    throw new Error('Use --live --host-root <installed-openclaw> --output-root <fresh-directory> [--dynamic-baseline] [--benchmark-case <directory>] [--config <json>] [--baseline-timeout-ms N] [--review-timeout-ms N] [--hook-timeout-ms N] [--business-timeout-ms N] [--total-timeout-ms N]');
+    throw new Error('Use --live --host-root <installed-openclaw> --output-root <fresh-directory> [--claude-settings <json> | --openclaw-profile <openclaw.json> [--openclaw-model <provider/model>]] [--dynamic-baseline | --original-requirements] [--benchmark-case <directory>] [--config <json>] [--baseline-timeout-ms N] [--review-timeout-ms N] [--hook-timeout-ms N] [--business-timeout-ms N] [--total-timeout-ms N]');
   const options = value('--config') ? JSON.parse(await fs.readFile(value('--config'), 'utf8')) : {};
   for (const name of ['review', 'baseline', 'hook', 'business', 'total']) if (value(`--${name}-timeout-ms`) !== undefined)
     options[`${name}TimeoutMs`] = Number(value(`--${name}-timeout-ms`));
   const result = await runOpenClawDocumentE2E({ hostRoot: value('--host-root'), outputRoot: value('--output-root'), options, settingsPath: value('--claude-settings'),
-    dynamicBaseline: args.includes('--dynamic-baseline'), benchmarkDirectory: value('--benchmark-case') });
+    openclawProfile: value('--openclaw-profile'), openclawModel: value('--openclaw-model'),
+    dynamicBaseline: args.includes('--dynamic-baseline'), originalRequirements: args.includes('--original-requirements'),
+    benchmarkDirectory: value('--benchmark-case') });
   console.log(JSON.stringify({ state: result.state, elapsedMs: result.elapsedMs, reviews: result.reviews.length,
     feedbackReceipts: result.feedbackReceipts.length, failure: result.failure, outputRoot: path.resolve(value('--output-root')) }));
   // The pinned host retains internal observers after awaited Gateway shutdown.

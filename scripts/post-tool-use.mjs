@@ -126,7 +126,8 @@ try {
   }
   prepared.reviewContext.enabled = prepared.reviewContext.nodeReviewEnabled
     || (prepared.reviewContext.workflow?.incomingEdges?.length ?? 0) > 0
-    || Boolean(runtimeV2.artifactReviewContext);
+    || Boolean(runtimeV2.artifactReviewContext)
+    || Boolean(runtimeV2.originalRequirements);
   prepared.reviewContext.runtimeV2 = runtimeV2.artifactReviewContext ?? null;
   const review = prepared.reviewContext.enabled
     ? await runSemanticReview({
@@ -137,6 +138,7 @@ try {
         runtimeV2Context: runtimeV2.artifactReviewContext ?? null,
         runtimeV2ExecutionContext: runtimeV2.reviewerExecutionContext ?? null,
         runtimeV2Evidence: runtimeV2.reviewerEvidence ?? null,
+        originalRequirements: runtimeV2.originalRequirements ?? null,
       })
     : null;
   const outcome = await finalizeArtifactCheck(prepared, review);

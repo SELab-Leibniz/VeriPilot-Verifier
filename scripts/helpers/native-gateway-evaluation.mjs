@@ -68,6 +68,25 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
   } };
 }
 
+// A provider copied from an installed host profile. Only its endpoint and one
+// model entry are copied; the key reaches the SDK through the transient guard.
+export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null) {
+  let url = null;
+  try { url = new URL(provider?.baseUrl); } catch {}
+  const definition = provider?.definition;
+  if (provider?.api !== 'openai-completions' || url?.protocol !== 'https:' || url.username || url.password || url.search || url.hash
+    || !/^[\w.:-]+$/u.test(provider.model ?? '') || definition?.id !== provider.model
+    || Object.keys(provider).some(key => !['api', 'baseUrl', 'model', 'definition'].includes(key))
+    || Object.keys(definition).some(key => /key|secret|password|header|auth/iu.test(key)))
+    throw new Error('Unsupported host-profile Gateway provider definition. Credentials belong only to the transient provider guard.');
+  validatePhaseTimeoutMs(phaseTimeoutMs);
+  return { providerId: 'openai', model: provider.model, definition: {
+    api: provider.api, baseUrl: provider.baseUrl,
+    ...(phaseTimeoutMs !== null ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+    models: [{ input: ['text'], ...structuredClone(definition), name: definition.name ?? provider.model }],
+  } };
+}
+
 async function freePort() {
   const socket = net.createServer();
   await new Promise((resolve, reject) => { socket.once('error', reject); socket.listen(0, '127.0.0.1', resolve); });
@@ -92,8 +111,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, provider, providerGuard }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
-  const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' }) : null;
-  const authorizedDocument = provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
+  const hostProfile = providerGuard?.kind === 'host_profile_native_document';
+  const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs)
+    : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
+  const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
   if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch'].includes(providerGuard?.kind))
     throw new Error('The explicit Gateway provider requires an offline network guard or a metered batch.');
   if (contextWindowTokens !== undefined && !coding && !process.env.ANTHROPIC_BASE_URL)

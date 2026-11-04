@@ -315,6 +315,9 @@
         },
         "stageMetricsEnabled": {
           "type": "boolean"
+        },
+        "originalRequirementsEnabled": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

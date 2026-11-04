@@ -1,0 +1,36 @@
+{
+  "kind": "openclaw-document-original-requirements-live-comparison",
+  "recordedAt": "2026-11-04",
+  "host": "MatrixAssistant built-in OpenClaw 2026.7.1-2 (read-only), isolated gateway profile per run",
+  "model": "custom/deepseek-v4-flash from the MatrixAssistant OpenClaw profile (openai-completions)",
+  "platform": "Windows 10.0.26200, Node v26.13.0",
+  "branch": "exp/doc-original-basis (base c11be88; excludes efb0577, which changes baseline extraction)",
+  "options": "examples/document-e2e/dynamic-benchmark-options.json",
+  "command": "node scripts/evaluate-openclaw-document-e2e.mjs --live (--original-requirements | --dynamic-baseline) --benchmark-case <case> --host-root <MA openclaw> --openclaw-profile <openclaw.json> --config examples/document-e2e/dynamic-benchmark-options.json --output-root <fresh>",
+  "cases": [
+    { "case": "terminal-bench-financial-document-processor", "mode": "original", "state": "PASSED", "elapsedMs": 78304, "firstFeedbackS": 19,
+      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 31, "extractorRuns": 0, "extractorS": 0, "providerRequests": 13, "finalCopyEquivalent": true },
+    { "case": "terminal-bench-financial-document-processor", "mode": "ledger", "state": "PASSED", "elapsedMs": 267256, "firstFeedbackS": 217,
+      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 32, "extractorRuns": 3, "extractorS": 195, "baselineClaims": 4, "providerRequests": 24, "finalCopyEquivalent": true,
+      "baselineEvents": ["GROUND_TRUTH_DELTA_REPAIRED"] },
+    { "case": "terminal-bench-constraints-scheduling", "mode": "original", "state": "PASSED", "elapsedMs": 102543, "firstFeedbackS": 35,
+      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 4, "reviewerS": 57, "extractorRuns": 0, "extractorS": 0, "providerRequests": 16, "finalCopyEquivalent": true },
+    { "case": "terminal-bench-constraints-scheduling", "mode": "ledger", "state": "FAILED", "elapsedMs": 665036, "firstFeedbackS": 485,
+      "failure": "Automatic document reviews were not bound to the published dynamic baseline",
+      "reviewRounds": ["failed:4", "passed:0"], "reviewerRuns": 2, "reviewerS": 45, "extractorRuns": 5, "extractorS": 574, "baselineClaims": 4, "providerRequests": 37, "finalCopyEquivalent": true,
+      "baselineEvents": ["GROUND_TRUTH_REFRESH_FAILED", "GROUND_TRUTH_ALIGNMENT_ATTEMPT_FAILED:BASELINE_COVERAGE_UNVERIFIED"] },
+    { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "original", "state": "PASSED", "elapsedMs": 169808, "firstFeedbackS": 49,
+      "reviewRounds": ["failed:5", "failed:1", "passed:0"], "reviewerRuns": 5, "reviewerS": 90, "extractorRuns": 0, "extractorS": 0, "providerRequests": 24, "finalCopyEquivalent": true },
+    { "case": "swe-bench-matplotlib__matplotlib-22719", "mode": "ledger", "state": "PASSED", "elapsedMs": 441483, "firstFeedbackS": 307,
+      "reviewRounds": ["failed:6", "failed:1", "passed:0"], "reviewerRuns": 6, "reviewerS": 176, "extractorRuns": 2, "extractorS": 196, "baselineClaims": 4, "providerRequests": 38, "finalCopyEquivalent": true }
+  ],
+  "totals": {
+    "original": { "passed": 3, "of": 3, "elapsedS": 351, "privateRuns": 11, "extractorRuns": 0, "providerRequests": 53 },
+    "ledger": { "passed": 2, "of": 3, "elapsedS": 1374, "privateRuns": 20, "extractorRuns": 10, "providerRequests": 99 }
+  },
+  "notes": [
+    "Extra reviewer runs in both modes are output-format repairs (phase first-repair, 5-11 s each).",
+    "Every first-round finding except one ledger AGENT-GT-DEVIATION is a deterministic DOCUMENT-COPY-MISMATCH; these cases do not measure semantic review quality.",
+    "One run per case and mode; elapsed times include provider latency on a shared cloud endpoint."
+  ]
+}
