@@ -47,7 +47,7 @@ async function tenItemFixture(t, { extraRecords = 0 } = {}) {
   const source = await scanSkillDirectory(skillRoot), saved = await persistSkillGroundTruth({ projectRoot: f.root, taskId: f.task.taskId,
     skillId: 'delivery-verifier', skillDigest: source.digest, constraints, taskOverlays: [] });
   const claims = [
-    ['app', 'Implement app.mjs as the finite-number plus-one stateless function.', 'IMPLEMENTATION', ['app.mjs']],
+    ['app', 'Implement ./app.mjs as the finite-number plus-one stateless function.', 'IMPLEMENTATION', ['./app.mjs']],
     ['guide', 'Complete docs/guide.md with all original contract requirements.', 'ARTIFACT', ['docs/guide.md']],
     ['verify', 'Actually run the verifier after the final edit and establish exit code 0 before completion; rerun after a later correction.', 'PROCESS', []],
     ['skill', 'Read and follow the matching delivery-verifier Skill.', 'PROCESS', []],

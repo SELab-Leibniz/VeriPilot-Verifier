@@ -381,8 +381,8 @@ test('combined scope/checklist and final submission preserve original proof and 
 
 test('receipt navigation excludes saved U/D and automatic rows, includes file quality, and preserves the full result', async t => {
   const f = await fixture(t), original = f.input.request.population.metrics.M01[0], truth = f.input.evidence.groundTruth;
-  const missing = { ...truth.claims[0], claimId: 'R3', revisionId: 'R3@1', text: 'Deliver missing.txt.',
-    applicabilityKind: 'CURRENT_TASK', expectedFiles: ['missing.txt'] };
+  const missing = { ...truth.claims[0], claimId: 'R3', revisionId: 'R3@1', text: 'Deliver ./missing.txt.',
+    applicabilityKind: 'CURRENT_TASK', expectedFiles: ['./missing.txt'] };
   truth.claims.push({ ...truth.claims[0], claimId: 'R2', revisionId: 'R2@1' }, missing);
   truth.version = 2; truth.digest = sha256(truth.claims);
   await fs.writeFile(f.input.request.groundTruthPath, JSON.stringify(truth));

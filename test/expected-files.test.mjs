@@ -120,6 +120,18 @@ test('a filename alone produces UNVERIFIED even if the same basename exists in t
   assert.equal(handle.collection.failures[0].code, 'STOP_EXPECTED_PATH_UNVERIFIED');
 });
 
+test('an explicitly rooted filename still proves absence without changing the root-path contract', async t => {
+  const f = await fixture(t, { expected: ['./notes.md'] });
+  const handle = await f.run(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit);
+    assert.equal(page.items[0].savedResult.judgement, 'DEVIATION');
+    assert.equal(page.expectedFileChecks[0].path, path.join(f.root, 'notes.md'));
+    assert.equal(page.expectedFileChecks[0].status, 'MISSING');
+    await f.finish(submit);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+});
+
 test('a missing scoped output keeps its real directory in the trusted absence receipt', async t => {
   const f = await fixture(t, { expected: ['notes.md'], requirementText: 'Deliver notes.md in directory `deliveries/revision-7`.' });
   await fs.writeFile(path.join(f.root, 'notes.md'), 'This is the wrong location.');
