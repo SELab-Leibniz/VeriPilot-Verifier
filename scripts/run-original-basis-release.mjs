@@ -9,7 +9,7 @@ import { digest, loadArktsTask } from './bench/arkts-dataset.mjs';
 import { arktsHiddenReward } from './bench/simplify-arkts-inputs.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './bench/arkts-java.mjs';
 import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
-import { collectReleaseEvidence, computeReleaseVerdict } from './bench/release-evidence.mjs';
+import { collectReleaseEvidence, computeReleaseVerdict, documentCorrectionEnabled } from './bench/release-evidence.mjs';
 import { seedReleaseRoot } from './bench/seed-release-root.mjs';
 import { countProfileCredentialMatches, redactEvaluationText, resolveSimplifyProvider } from './helpers/simplify-native-evaluation.mjs';
 
@@ -20,11 +20,12 @@ const usage = `node scripts/run-original-basis-release.mjs --phase=quick|e2e --r
   [--rc-config-overrides=<json>]                   deep-merged into the business RC config (see scripts/bench/arkts-regression-check.mjs --help)
   [--stop-profile=assessment|release]              quick only: release uses the template stopCorrection (waitMode until_pass)
   [--baseline-local-tests]                         record the workspace's own tests before the model starts
+  [--cases=security_tool_1,security_tool_2]        e2e only: a subset of the release cases
   [--seed-from=<old root>]                         fresh root: mirror the bare cache, pin frozen commits, copy the pinned workflow
   [--rate-limit-backoff-ms=300000] [--pair-pause-ms=90000] [--resume]`;
 const { values: args } = parseArgs({ options: Object.fromEntries([
   ...['phase','root','host-root','tool-root','dataset','package','openclaw-profile','deadline-at','release','package-sha256','source-commit','java-home',
-    'rc-config-overrides','stop-profile','seed-from','rate-limit-backoff-ms','pair-pause-ms'].map(key=>[key,{type:'string'}]),
+    'rc-config-overrides','stop-profile','seed-from','rate-limit-backoff-ms','pair-pause-ms','cases'].map(key=>[key,{type:'string'}]),
   ...['resume','baseline-local-tests','help'].map(key=>[key,{type:'boolean'}]),
 ]) });
 if(args.help){ console.log(usage); process.exit(0); }
@@ -59,8 +60,11 @@ const {identity,credential}=await resolveSimplifyProvider('host-profile',model,a
 const batch=path.join(root,phase);
 if(!args.resume) await fs.mkdir(batch,{recursive:Boolean(args['seed-from'])});
 const identityFile=path.join(batch,'identity.json');
+const releaseCases=['security_tool_1','security_tool_2'], cases=args.cases?.split(',').map(id=>id.trim()) ?? releaseCases;
+assert((phase==='e2e'||!args.cases) && cases.length && new Set(cases).size===cases.length && cases.every(id=>releaseCases.includes(id)),
+  '--cases is e2e only and names distinct cases from '+releaseCases.join(','));
 const schedule = phase==='quick' ? [1,2].flatMap(repeat=>inputs.frozen.map(sample=>({id:sample.id+'-'+repeat,group:repeat,case:sample.case,sample})))
-  : ['security_tool_1','security_tool_2'].map(id=>({id,case:id,group:1}));
+  : cases.map(id=>({id,case:id,group:1}));
 // Experiment arms are part of the identity, so a resume can never mix them.
 const pinned = { phase, manifestSha256:digest(inputBytes), packageSha256, identity, schedule, deadline,
   ...(sourceCommit?{sourceCommit}:{}), ...(overrides?{rcConfigOverridesSha256:overrides.sha256}:{}),
@@ -172,7 +176,8 @@ async function executeSlot(slot, concurrency, rateFile, controller) {
       nativeRoot:path.join(evaluation,'native-host'),turns:result.turns??[]});
     const computed=computeReleaseVerdict({businessNatural:result.businessNatural,frameworkError,hidden,documentReviews:evidence.documentReviews,
       stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis??[],turns:result.turns??[],mutationPaths:result.frozen?.mutationPaths,
-      nativeStopRecords:evidence.nativeStopRecords??result.nativeStopRecords??[],nativeStopSettled:result.nativeStopSettled??null});
+      nativeStopRecords:evidence.nativeStopRecords??result.nativeStopRecords??[],nativeStopSettled:result.nativeStopSettled??null,
+      documentCorrection:await documentCorrectionEnabled(manifest.projectRoot)});
     verdict={runThrough:computed.runThrough,reasons:computed.reasons,finalCoverage:computed.finalCoverage,codeChanged:computed.codeChanged};
   }
   const state=peerPaused?'peer-paused':rateLimited?'rate-limited':frameworkError?'framework-error':result?.state??'timed-out';

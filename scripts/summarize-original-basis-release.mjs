@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { collectReleaseEvidence, computeReleaseVerdict, hiddenScore, tokenSplit } from './bench/release-evidence.mjs';
+import { collectReleaseEvidence, computeReleaseVerdict, documentCorrectionEnabled, hiddenScore, tokenSplit } from './bench/release-evidence.mjs';
 
 const usage = 'node scripts/summarize-original-basis-release.mjs --root=<run root> --out=<directory> [--openclaw-profile=<profile> (scan outputs)]';
 const missing = fallback => error => { if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return fallback; throw error; };
@@ -70,14 +70,16 @@ export async function e2eRow({ slot, attempts: count, chosen }) {
   const { observation, directory, leak } = chosen, result = observation.result;
   const manifest = await readJson(path.join(directory, 'evaluation/manifest.json'));
   const evidence = await evidenceOf(directory, result, manifest);
+  const projectRoot = manifest?.projectRoot ?? result?.projectRoot;
+  const documentCorrection = projectRoot ? await documentCorrectionEnabled(projectRoot) : true;
   const verdict = computeReleaseVerdict({ businessNatural: result?.businessNatural, frameworkError: observation.frameworkError, hidden: observation.hidden,
     documentReviews: evidence.documentReviews, stopReviews: evidence.stopReviews, materialBasis: evidence.materialBasis, turns: result?.turns ?? [],
     mutationPaths: result?.frozen?.mutationPaths, nativeStopRecords: evidence.nativeStopRecords ?? result?.nativeStopRecords ?? [],
-    nativeStopSettled: result?.nativeStopSettled ?? null });
+    nativeStopSettled: result?.nativeStopSettled ?? null, documentCorrection });
   const tokens = tokenSplit({ documentCost: result?.documentCost, stopCost: result?.stopCost, businessUsage: result?.businessUsage,
     documentReviews: evidence.documentReviews, stopReviews: evidence.stopReviews });
   return { slot, attempts: count, state: observation.state, reason: observation.reason, frameworkError: observation.frameworkError,
-    businessNatural: result?.businessNatural ?? null, hidden: hiddenScore(observation.hidden), runThrough: verdict.runThrough, reasons: verdict.reasons,
+    businessNatural: result?.businessNatural ?? null, documentCorrection, hidden: hiddenScore(observation.hidden), runThrough: verdict.runThrough, reasons: verdict.reasons,
     finalCoverage: verdict.finalCoverage, finalStop: verdict.finalStop && reviewRow(verdict.finalStop), codeChanged: verdict.codeChanged,
     recordedRunThrough: observation.ranThrough ?? null, evidenceSource: evidence.source,
     reviews: [...evidence.documentReviews, ...evidence.stopReviews].map(reviewRow), materialBasis: evidence.materialBasis, tokens,

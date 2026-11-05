@@ -3,6 +3,7 @@
 // never from transient review requests that the product deletes.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { parseSimpleYaml } from '../../lib/simple-yaml.mjs';
 import { measureSimplifyBenchmark } from '../helpers/simplify-stop-benchmark.mjs';
 import { nativeStopSummary } from './native-stop-settlement.mjs';
 
@@ -153,17 +154,26 @@ export function finalStopOf(stopReviews, turns = []) {
   return null;
 }
 
+// An empty enabledStages in the business config turns document correction off;
+// the documents are then Stop-owned. A missing config keeps the default (on).
+export async function documentCorrectionEnabled(projectRoot) {
+  const text = await fs.readFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), 'utf8').catch(missing(null));
+  const stages = text === null ? undefined : parseSimpleYaml(text, { source: 'business config' }).enabledStages;
+  return !(Array.isArray(stages) && stages.length === 0);
+}
+
 // A run "runs through" only when every condition below is independently
 // evidenced. Each unmet condition is reported; none is inferred.
 export function computeReleaseVerdict({ businessNatural, frameworkError = false, hidden, documentReviews = [], stopReviews = [], materialBasis = [], turns = [], mutationPaths,
-  nativeStopRecords = [], nativeStopSettled = null }) {
+  nativeStopRecords = [], nativeStopSettled = null, documentCorrection = true }) {
   const reasons = [], finalStop = finalStopOf(stopReviews, turns), changed = codeChanged(mutationPaths);
   if (frameworkError) reasons.push('FRAMEWORK_ERROR');
   if (nativeStopSettled === false) reasons.push('NATIVE_STOP_UNSETTLED');
   for (const row of nativeStopRecords) if (row.status !== 'SETTLED') reasons.push(`NATIVE_STOP_PENDING:${row.occurrenceId ?? row.runId}:${row.status}`);
   if (businessNatural !== true) reasons.push('BUSINESS_NOT_NATURAL');
   if (hidden?.executed !== true) reasons.push('HIDDEN_NOT_EXECUTED');
-  if (!documentReviews.length) reasons.push('NO_DOCUMENT_REVIEW');
+  if (!documentCorrection && documentReviews.length) reasons.push('DOCUMENT_REVIEW_WHILE_DISABLED');
+  if (documentCorrection && !documentReviews.length) reasons.push('NO_DOCUMENT_REVIEW');
   for (const row of documentReviews) if (!row.settled) reasons.push(`DOCUMENT_UNSETTLED:${row.stage ?? row.file}:${row.reasonCode ?? row.status}`);
   for (const row of stopReviews) {
     if (/^MATERIAL_BASIS_/u.test(row.reasonCode ?? '')) reasons.push(`STOP_${row.reasonCode}:${row.runId}`);

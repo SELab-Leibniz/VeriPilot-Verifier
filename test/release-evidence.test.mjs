@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { codeChanged, collectReleaseEvidence, computeReleaseVerdict, finalStopOf, hiddenScore, tokenSplit } from '../scripts/bench/release-evidence.mjs';
+import { codeChanged, collectReleaseEvidence, computeReleaseVerdict, documentCorrectionEnabled, finalStopOf, hiddenScore, tokenSplit } from '../scripts/bench/release-evidence.mjs';
 
 const sessionId = 'session-1', taskId = 'task-1';
 const iso = ms => new Date(ms).toISOString();
@@ -79,6 +79,19 @@ test('a covered, fully scanned final Stop with every review settled runs through
   assert.deepEqual(computeReleaseVerdict({ ...natural, ...evidence, documentReviews: [] }).reasons, ['NO_DOCUMENT_REVIEW']);
   const unscanned = evidence.stopReviews.map(row => row.runId === 'run-final' ? { ...row, scanCompleted: false } : row);
   assert.equal(computeReleaseVerdict({ ...natural, ...evidence, stopReviews: unscanned }).finalCoverage, 'NO_COVERAGE:TASK_COMPLETE:2/2');
+});
+
+test('with document correction off a run needs no document review, and any document review blocks it', async t => {
+  const { root, evidence } = await collect(t, st1Like(t, { classification: 'TASK_COMPLETE', full: 2, selected: 2 }));
+  assert.equal(await documentCorrectionEnabled(root), true);
+  const config = path.join(root, '.runtime-corrector/config.yaml');
+  await fs.mkdir(path.dirname(config), { recursive: true });
+  await fs.writeFile(config, 'enabledStages:\n  - proposal\n');
+  assert.equal(await documentCorrectionEnabled(root), true);
+  await fs.writeFile(config, 'enabledStages: []\n');
+  assert.equal(await documentCorrectionEnabled(root), false);
+  assert.deepEqual(computeReleaseVerdict({ ...natural, ...evidence, documentReviews: [], documentCorrection: false }).reasons, []);
+  assert.deepEqual(computeReleaseVerdict({ ...natural, ...evidence, documentCorrection: false }).reasons, ['DOCUMENT_REVIEW_WHILE_DISABLED']);
 });
 
 test('st2-like run: a MATERIAL_BASIS_CHANGED final Stop and its unverified basis record block the verdict', async t => {
