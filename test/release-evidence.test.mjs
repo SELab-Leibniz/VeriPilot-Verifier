@@ -118,6 +118,16 @@ test('future coverage, SKIPPED document-only and STOP_NO_REVIEW_SCOPE fields are
   assert.deepEqual(computeReleaseVerdict({ ...natural, ...evidence, stopReviews: pending }).reasons, ['STOP_UNSETTLED:PENDING:run-proposal']);
 });
 
+test('a completed warning-only document review is settled; a pending one is not', async t => {
+  const build = (async () => {
+    const root = await workspace(t, {});
+    return { root, records: { [`tasks/${taskId}/journal/events.jsonl`]: [documentReview(root, 2000, 'tasks', 'warning'), documentReview(root, 3000, 'tasks', 'pending')] } };
+  })();
+  const { evidence } = await collect(t, build);
+  assert.deepEqual(evidence.documentReviews.map(row => [row.status, row.settled]), [['warning', true], ['pending', false]]);
+  assert.deepEqual(computeReleaseVerdict({ ...natural, ...evidence }).reasons.filter(reason => reason.startsWith('DOCUMENT_')), ['DOCUMENT_UNSETTLED:tasks:pending']);
+});
+
 test('a document review that ends on a material-basis reason is unsettled', async t => {
   const build = (async () => {
     const root = await workspace(t, {});

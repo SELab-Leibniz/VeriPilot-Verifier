@@ -90,7 +90,7 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
       requests: measured.requests, tokens: runs.length && measured.tokens !== null ? measured.tokens : envelopeTokens ?? measured.tokens,
       tokenSource: runs.length && measured.tokens !== null ? 'session' : envelopeTokens !== null ? 'envelope' : null,
       basisBudget: meta.basisBudget ?? null, recordedAt: event.recordedAt ?? null,
-      settled: ['passed', 'failed'].includes(event.result?.status) && semantic.status === 'completed' && !/^MATERIAL_BASIS_/u.test(reasonCode ?? '') });
+      settled: ['passed', 'warning', 'failed'].includes(event.result?.status) && semantic.status === 'completed' && !/^MATERIAL_BASIS_/u.test(reasonCode ?? '') });
     previous = end;
   }
 
