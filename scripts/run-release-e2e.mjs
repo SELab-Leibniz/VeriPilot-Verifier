@@ -243,8 +243,15 @@ try {
       const original = createBusinessTerminalObserver();
       while (Date.now() < deadline && !gateway.providerStatus().failure) {
         await gateway.drain();
-        const latest = await gateway.runtime.agent.session.getSessionEntry({ ...scope,readConsistency:'latest' });
-        assertBusinessSessionIdentity({sessionId,sessionKey,runId},latest,gateway.metrics().modelStarts);
+        const entry = () => gateway.runtime.agent.session.getSessionEntry({ ...scope,readConsistency:'latest' });
+        let latest = await entry();
+        // The host rewrites its session store at run end; one missing read is not yet a replacement.
+        if (!latest) { await sleep(650); latest = await entry(); }
+        try { assertBusinessSessionIdentity({sessionId,sessionKey,runId},latest,gateway.metrics().modelStarts); }
+        catch (error) {
+          if (error.code==='ARKTS_SESSION_IDENTITY_DRIFT') await write(path.join(outputRoot,'session-identity-drift.json'),{stage,...error.evidence});
+          throw error;
+        }
         const posts = await findFiles(postRoot,file=>file.endsWith('.json'));
         post = undefined;
         for (const file of posts) {
