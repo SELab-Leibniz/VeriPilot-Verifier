@@ -50,7 +50,7 @@ export function createNativeStopFixture() {
     ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
   });
   after(() => fs.rm(output, { recursive: true, force: true }));
-  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write" } = {}) {
+  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write", observeModelStart = true } = {}) {
     const params = await basic(t), root = params.projectRoot;
     const materialFile = materialText === undefined ? null : path.join(root, "requirements.md");
     if (materialFile) await fs.writeFile(materialFile, materialText);
@@ -123,6 +123,11 @@ reviewers:
         resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
         runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };
     const listeners=new Set();let startSequence=0;
+    const startModel = async context => {
+      for (const listener of listeners) listener({ type: 'model.call.started', sessionId: context.sessionId,
+        sessionKey: context.sessionKey, agentId: context.agentId, runId: context.runId, ts: Date.now(), seq: ++startSequence }, { trusted: true });
+      await state.stopStartProtocol.drain();
+    };
     api.runtime.gateway={request:async()=>({id:'fixture-notice',aborted:true})};
     const startCompatibility=async()=>({version:1,onStart:callback=>{listeners.add(callback);return()=>listeners.delete(callback);},drain:async()=>{},diagnosticsEnabled:()=>true});
     const statusCompatibility=async()=>({emitAgentEvent(){},markDiagnosticSessionProgress(){},...(compatibility?await compatibility():{})});
@@ -137,9 +142,7 @@ reviewers:
         const configuredTimeout = api.pluginConfig.hookTimeoutMs;
         if (executionTimeoutMs) api.pluginConfig.hookTimeoutMs = executionTimeoutMs;
         try {
-          for(const listener of listeners)listener({type:'model.call.started',sessionId:context.sessionId,sessionKey:context.sessionKey,agentId:context.agentId,
-            runId:context.runId,ts:Date.now(),seq:++startSequence},{trusted:true});
-          await state.stopStartProtocol.drain();
+          if (observeModelStart) await startModel(context);
         } finally { api.pluginConfig.hookTimeoutMs = configuredTimeout; }
       }
       return result;
@@ -154,7 +157,7 @@ reviewers:
     if (awaitInitialReview) await state.states.get("main:host")?.hotReviewWork?.promise;
     assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
     calls = 0; fail = failures;
-    return { api, runtime, ctx, warnings, sharedState: state, state: state.states.get("main:host"), root, materialFile, hostAbort, calls: () => calls,
+    return { api, runtime, ctx, warnings, startModel, sharedState: state, state: state.states.get("main:host"), root, materialFile, hostAbort, calls: () => calls,
       post: () => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id),
       restart: (overrides = {}) => {
         const value = createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true,

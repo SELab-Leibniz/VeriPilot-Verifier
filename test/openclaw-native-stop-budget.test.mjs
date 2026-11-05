@@ -629,11 +629,72 @@ test("manual check recovers the exact native tool call while its own correction 
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_(?:INVOCATION_UNAVAILABLE|CANCELLED)/u);
 });
 
-test("an aborted current correction closes its cancelled receipt and terminalizes the exact task", async t => {
+test("delivered correction admission survives host compaction and same-run retry", async t => {
+  for (const observeModelStart of [false, true]) await t.test(observeModelStart ? "started" : "delivered before model start", async t => {
+    const terminal = deferred(t), dispatched = deferred(t); let childRunId, reviews = 0;
+    const f = await lifecycle(t, { waitMode: "until_pass", observeModelStart,
+      review: async () => ++reviews === 1,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) await terminal.promise;
+        return { runId, status: "ok" };
+      } });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId }; } };
+    try {
+      await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+      await within(dispatched.promise, "correction dispatch");
+      await within(f.runtime.waitForNativeReviews(), "initial review");
+      const child = { ...f.ctx, runId: childRunId };
+      await f.runtime.prompt({ prompt: "Apply the delivered feedback." }, child);
+      const protocol = f.sharedState.stopStartProtocol;
+      const before = await protocol.findRun({ state: f.state, runId: childRunId });
+      assert.equal(before.admission.deliveryStatus, "DELIVERED");
+      assert.equal(before.admission.accounting, observeModelStart ? "USED" : "RESERVED");
+      await f.runtime.agentEnd({ runId: childRunId, success: false, error: "Context overflow" }, child);
+      // This is the host retry gate that previously returned ADMISSION_DENIED.
+      const prepared = await protocol.prepare({ state: f.state, runId: childRunId, signal: child.abortSignal });
+      assert.notEqual(prepared?.blocked, true, JSON.stringify(await protocol.findRun({ state: f.state, runId: childRunId })));
+      let checkpoints = 0;
+      f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
+        params.signal.throwIfAborted(); checkpoints++; return run(params.signal);
+      };
+      // The native host may omit runId on the compaction hook; it still owns
+      // only the current session checkpoint, never another run's admission.
+      const compactContext = { ...child };
+      if (!observeModelStart) delete compactContext.runId;
+      await f.runtime.compact({ sessionId: child.sessionId }, compactContext);
+      await until(() => checkpoints > 0, "compaction checkpoint admission");
+      assert(checkpoints > 0, "PreCompact checkpoint must actually enter native work admission");
+      assert.equal(f.state.reviewController.signal.aborted, false, "compaction must have a live checkpoint controller");
+      assert(!f.warnings.some(message => /Compaction checkpoint unavailable/u.test(message)), JSON.stringify(f.warnings));
+      const resumed = await f.runtime.prompt({ prompt: "Continue after compaction." }, child);
+      const gate = await f.runtime.beforeAgentRun({ prompt: resumed?.prependContext ?? "Continue after compaction." }, child);
+      assert.equal(gate.outcome, "pass");
+      await f.startModel(child);
+      assert.equal((await protocol.findRun({ state: f.state, runId: childRunId })).admission.accounting, "USED");
+      await fs.writeFile(path.join(f.root, "draft.md"), "The corrected current draft.\n");
+      await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Corrected." }] }, child);
+      terminal.resolve();
+      await within(f.runtime.waitForNativeReviews({ drain: true }), "corrected Stop settlement");
+      const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+      assert.equal(task.verification.status, "PASS", JSON.stringify(task.verification));
+      assert.equal(f.post().phase, "IDLE");
+      assert.equal(f.post().reviewStatus, "PASS");
+      assert.equal(task.stop.correctionAttempts, 1, "same-run retry consumes only one correction");
+      assert.equal(f.hostAbort.signal.aborted, false);
+    } finally { terminal.resolve(); await f.runtime.reset({}, f.ctx); await f.runtime.waitForNativeReviews({ drain: true }); }
+  });
+});
+
+test("gateway-confirmed correction failure closes its receipt and fences late completion", async t => {
   for (const waitMode of ["until_pass", "assessment"]) await t.test(waitMode, async t => {
+    const terminal = deferred(t);
     let childRunId, dispatched;
     const dispatchObserved = new Promise(resolve => { dispatched = resolve; });
-    const f = await lifecycle(t, { deviation: true, waitMode });
+    const f = await lifecycle(t, { deviation: true, waitMode,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) { await terminal.promise; return { runId, status: "error", aborted: true }; }
+        return { runId, status: "ok" };
+      } });
     f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched(); return { runId: childRunId }; } };
     await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
     // Assessment settlement and native queue acceptance are separate events.
@@ -654,16 +715,61 @@ test("an aborted current correction closes its cancelled receipt and terminalize
     const child = { ...f.ctx, runId: childRunId };
     if(waitMode!=='assessment')await f.runtime.prompt({ prompt: "RC feedback" }, child);
     await f.runtime.agentEnd({ runId: childRunId, success: false, aborted: true }, child);
+    const pending = await f.sharedState.stopStartProtocol.findRun({ state: f.state, runId: childRunId });
+    assert.equal(pending.admission.invalidatedAt, undefined, "attempt failure alone cannot revoke admission");
+    assert.equal(pending.finishedAt, undefined);
+    terminal.resolve();
+    await within(f.runtime.waitForNativeReviews({ drain: true }), "gateway terminal cleanup");
     const task = await findTask({ projectRoot: f.root, sessionId: "host" });
     assert.equal(task.status, "STOPPED_UNVERIFIED");
     assert.equal(task.verification.terminalRunId, childRunId);
-    assert.equal(task.verification.reasonCode, "RC_NATIVE_ATTEMPT_ENDED");
+    assert.equal(task.verification.reasonCode, "HOST_RUN_NOT_COMPLETED");
     assert.equal(task.verification.previousVerification.status, "DEVIATION");
     const ledger=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
     assert.equal(ledger.status,'CANCELLED');assert(ledger.admission.invalidatedAt);assert(ledger.finishedAt);
+    assert.equal(f.post().phase, "IDLE");
+    assert.equal(f.post().reviewStatus, "UNVERIFIED");
     assert.equal(f.hostAbort.signal.aborted, false);
+    await f.runtime.prompt({ prompt: "Late retry after terminal." }, child);
+    const gate = await f.runtime.beforeAgentRun({ prompt: "Late retry after terminal." }, child);
+    assert.equal(gate.outcome, "block");
+    await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Late success." }] }, child);
     await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, aborted: true }, f.ctx);
     assert.deepEqual((await findTask({ projectRoot: f.root, sessionId: "host" })).verification, task.verification);
+  });
+});
+
+test("correction retry keeps foreign-run, expiry and changed-basis fences", async t => {
+  for (const fence of ["expiry", "changed basis"]) await t.test(fence, async t => {
+    const terminal = deferred(t), dispatched = deferred(t); let childRunId;
+    const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", observeModelStart: false,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) await terminal.promise;
+        return { runId, status: "ok" };
+      } });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId }; } };
+    try {
+      await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+      await within(dispatched.promise, "correction dispatch");
+      await within(f.runtime.waitForNativeReviews(), "initial review");
+      const child = { ...f.ctx, runId: childRunId };
+      await f.runtime.prompt({ prompt: "Apply feedback." }, child);
+      await f.runtime.agentEnd({ runId: childRunId, success: false, error: "Context overflow" }, child);
+      const controller = f.state.reviewController;
+      const foreign = { ...child, runId: "rc-stop-" + "f".repeat(64) };
+      assert.equal((await f.runtime.beforeAgentRun({ prompt: "Borrow another run's admission." }, foreign)).outcome, "block");
+      await f.runtime.compact({}, foreign);
+      assert.equal(f.state.reviewController, controller, "foreign run cannot rearm the failed attempt");
+      const protocol = f.sharedState.stopStartProtocol;
+      const receipt = await protocol.findRun({ state: f.state, runId: childRunId });
+      if (fence === "expiry") {
+        t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+        t.mock.timers.tick(Math.max(1, receipt.admission.deadlineAt - Date.now() + 1));
+      } else await fs.writeFile(path.join(f.root, "draft.md"), "The feedback's evidence has changed.\n");
+      const prepared = await protocol.prepare({ state: f.state, runId: childRunId, signal: child.abortSignal });
+      assert.equal(prepared.blocked, true, fence);
+      assert.equal((await f.runtime.beforeAgentRun({ prompt: "Retry old feedback." }, child)).outcome, "block");
+    } finally { terminal.resolve(); await f.runtime.reset({}, f.ctx); await f.runtime.waitForNativeReviews({ drain: true }); }
   });
 });
 

@@ -152,6 +152,9 @@ test('an UNKNOWN old native terminal never promotes or replays a completed newer
     assert.equal(f.post().phase, 'COEXIST_WAIT'); assert.equal(f.reviewed.length, 0);
     f.setActivity('done'); await f.recheck(); await within(f.runtime.waitForNativeReviews(), 'reconciled successor review');
     assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]); assert.equal(f.post().reviewStatus, 'PASS');
+    const accepted = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+    assert.equal(accepted.verification.status, 'PASS', 'ordinary predecessor failure cannot terminalize its recovered successor');
+    assert(accepted.verification.assessmentId.startsWith(`${f.next.runId}:stop`));
   });
 });
 
