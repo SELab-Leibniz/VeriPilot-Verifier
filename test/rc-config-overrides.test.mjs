@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { parseSimpleYaml } from '../lib/simple-yaml.mjs';
 import { applyRcConfigOverrides, deepMerge, emitSimpleYaml, loadRcConfigOverrides, regressionCheckPolicy, substitutePlaceholders } from '../scripts/bench/rc-config-overrides.mjs';
 import { regressionCheckOverride, regressionVerdict } from '../scripts/bench/arkts-regression-check.mjs';
@@ -44,7 +45,7 @@ test('overrides reach the business config through the product YAML subset; none 
   const parsed = parseSimpleYaml(text);
   assert.deepEqual(parsed.stopCorrection, { enabled: true, waitMode: 'until_pass', maxCorrectionsPerSession: 3, metrics: { M08: true, M09: true },
     regressionCheck: { enabled: true, command: ['C:\\node\\node.exe', 'C:\\h/scripts/bench/arkts-regression-check.mjs', '--project=C:\\b\\biz-1',
-      '--tool-root=C:\\tools', '--java-home=C:\\jbr'], cwd: 'C:\\b\\biz-1', timeoutMs: 900000 } });
+      '--tool-root=C:\\tools', '--java-home=C:\\jbr'], cwd: '.', timeoutMs: 900000 } });
   assert.deepEqual(parsed.artifactCorrection, { paths: ['openspec/**'] });
   assert.equal(applied.file, file);
   assert.deepEqual(applied.value.stopCorrection.regressionCheck, parsed.stopCorrection.regressionCheck);
@@ -73,7 +74,23 @@ test('the emitter refuses shapes the product parser cannot read back', () => {
   assert.throws(() => substitutePlaceholders('${missing}', {}), /missing/u);
 });
 
-test('regressionCheck is validated by the harness and reported as dropped while the product ignores it', () => {
+test('the product loader honors the ArkTS regression-check override on the released template', async t => {
+  const template = await fs.readFile(new URL('../.runtime-corrector-default/config.yaml', import.meta.url), 'utf8');
+  const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-honored-'));
+  t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
+  const variables = { node: process.execPath, harnessRoot: 'C:\\h', projectRoot, toolRoot: 'C:\\tools', javaHome: 'C:\\jbr', outputRoot: 'C:\\out' };
+  const { text } = applyRcConfigOverrides(template, { file: 'x.json', sha256: 'x', value: regressionCheckOverride }, variables);
+  await fs.mkdir(path.join(projectRoot, '.runtime-corrector'));
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), text);
+  const { loadConfig } = await import('../lib/runtime-corrector.mjs');
+  const loaded = await loadConfig({ cwd: projectRoot, pluginRoot: fileURLToPath(new URL('..', import.meta.url)) });
+  const effective = loaded.runtimeV2.stopCorrection.regressionCheck;
+  assert.deepEqual({ ...effective }, { enabled: true, command: [process.execPath, 'C:\\h/scripts/bench/arkts-regression-check.mjs',
+    `--project=${projectRoot}`, '--tool-root=C:\\tools', '--java-home=C:\\jbr'], cwd: '.', timeoutMs: 900000, maxOutputBytes: 65536 });
+  assert.equal(regressionCheckPolicy(parseSimpleYaml(text).stopCorrection.regressionCheck, effective).honoredByProduct, true);
+});
+
+test('regressionCheck is validated by the harness and reported as dropped when the product ignores it', () => {
   const configured = { enabled: true, command: ['node', 'check.mjs'], cwd: 'C:\\b', timeoutMs: 1000 };
   assert.deepEqual(regressionCheckPolicy(configured, undefined), { configured, effective: null, honoredByProduct: false });
   assert.deepEqual(regressionCheckPolicy(configured, configured), { configured, effective: configured, honoredByProduct: true });

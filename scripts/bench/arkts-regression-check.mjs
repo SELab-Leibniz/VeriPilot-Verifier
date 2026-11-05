@@ -11,7 +11,7 @@ import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
-  cwd: '${projectRoot}', timeoutMs: 900000 } } };
+  cwd: '.', timeoutMs: 900000 } } };
 const usage = `node scripts/bench/arkts-regression-check.mjs --project=<business workspace> --tool-root=<command-line-tools> [--java-home=<jdk>]
   [--baseline=<baseline-local-tests.json>] [--timeout-ms=840000] [--max-names=20]
 Prints one "RC_REGRESSION_CHECK PASS|FAIL|INCOMPLETE ..." line and failing test names; exit 0 / 1 / 2.
