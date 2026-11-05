@@ -5,7 +5,7 @@ import path from 'node:path';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { applyGroundTruthDelta, loadCurrentGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
-import { normalizeExpectedFiles, observeExpectedFile, expectedFilesCurrent } from '../lib/runtime-v2/expected-files.mjs';
+import { normalizeExpectedFiles, resolveExpectedFilePath, observeExpectedFile, expectedFilesCurrent } from '../lib/runtime-v2/expected-files.mjs';
 import { GROUND_TRUTH_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { draftBaselineSchema, compactBaselineSchema, expandDraftBatch } from '../lib/review-task/baseline-selection.mjs';
 import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
@@ -13,11 +13,11 @@ import { validateStructuredReviewEvidence } from '../lib/runtime-v2/review-evide
 import { validateReviewJudgement } from '../lib/runtime-v2/review-result-validation.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 
-async function fixture(t, { kind = 'CURRENT_TASK', severity = 'HARD', status = 'ACTIVE', metric = 'M12', target = 'ARTIFACT', expected = ['docs/report.md'] } = {}) {
+async function fixture(t, { kind = 'CURRENT_TASK', severity = 'HARD', status = 'ACTIVE', metric = 'M12', target = 'ARTIFACT', expected = ['docs/report.md'], requirementText } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' };
   delete f.input.request.fixedStopClassification;
-  const claim = { ...f.input.evidence.groundTruth.claims[0], text: `Deliver ${expected.join(' and ')}.`, expectedFiles: expected,
+  const claim = { ...f.input.evidence.groundTruth.claims[0], text: requirementText ?? `Deliver ${expected.join(' and ')}.`, expectedFiles: expected,
     applicabilityKind: kind, severity, status, verificationTarget: target };
   const truth = { ...f.input.evidence.groundTruth, claims: [claim], digest: sha256([claim]) };
   f.input.evidence.groundTruth = truth;
@@ -34,7 +34,7 @@ async function fixture(t, { kind = 'CURRENT_TASK', severity = 'HARD', status = '
     assert.notEqual(handle.collection?.complete, false, JSON.stringify(handle.collection));
     return handle;
   };
-  return { ...f, truth, start, finish, run };
+  return { ...f, truth, start, finish, runRaw: f.run, run };
 }
 
 test('expected paths survive full/draft/compact extraction metadata, ledger revisions and metric projection', async t => {
@@ -61,6 +61,76 @@ test('output declarations require named exact paths rather than invented names, 
   assert.deepEqual(normalizeExpectedFiles(['docs\\report.md'], 'Deliver docs/report.md.'), ['docs/report.md']);
   for (const files of [['invented.md'], ['docs/*.md'], ['docs/'], ['<report>.md'], [''], [null], ['.'], ['https://example.com/report.md'], ['~/report.md'], ['C:report.md']])
     assert.throws(() => normalizeExpectedFiles(files, 'Deliver docs/report.md.'));
+});
+
+test('a directory and filename bind to the named output directory', () => {
+  assert.equal(resolveExpectedFilePath('notes.md', 'Create directory `deliveries/revision-7`. Deliver notes.md.').path,
+    'deliveries/revision-7/notes.md');
+  assert.equal(resolveExpectedFilePath('notes.md', '输出目录为 `交付/本轮`，生成 notes.md。').path, '交付/本轮/notes.md');
+  assert.equal(resolveExpectedFilePath('notes.md', 'Write notes.md under deliveries/revision-7/.').path,
+    'deliveries/revision-7/notes.md');
+});
+
+test('a filename without a unique original location stays unverified', () => {
+  assert.equal(resolveExpectedFilePath('notes.md', 'Deliver notes.md.').status, 'UNVERIFIED');
+  assert.equal(resolveExpectedFilePath('notes.md', 'Use directory `out/one` or directory `out/two`; deliver notes.md.').status, 'UNVERIFIED');
+});
+
+test('a complete relative or absolute path is not rebound to another directory', () => {
+  for (const file of ['docs/notes.md', './notes.md', 'C:/delivery/notes.md'])
+    assert.equal(resolveExpectedFilePath(file, 'There is also directory `different/output`.').path, file);
+});
+
+test('original directory context outside the selected filename lines prevents a false missing-file verdict', async t => {
+  const f = await stopProtocolFixture(t, 'findings');
+  f.input.request.reviewScope = { kind: 'workspace-stop' };
+  delete f.input.request.fixedStopClassification;
+  const original = 'Deliver notes.md and steps.md.\nThese are the required files.\nCreate directory `deliveries/revision-7/` for this delivery.\n';
+  f.input.evidence.originalRequirements = { digest: sha256(original), userMessages: [{ ref: 'transcript:request', sha256: sha256(original), text: original }],
+    projectFiles: [], materials: [], referencedFiles: [] };
+  await fs.mkdir(path.join(f.root, 'deliveries/revision-7'), { recursive: true });
+  for (const file of ['notes.md', 'steps.md']) await fs.writeFile(path.join(f.root, 'deliveries/revision-7', file), 'Delivered.');
+  const handle = await f.run(async ({ brief, readAll, read, submit }) => {
+    await readAll();
+    const originalPath = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+    const citeId = (await read(originalPath)).details.citation.citeId;
+    await submit('set_original_checklist', { items: [{ metricId: 'M12', text: 'Deliver notes.md and steps.md.',
+      verificationTarget: 'ARTIFACT', expectedFiles: ['notes.md', 'steps.md'], citeId, lineStart: 1, lineEnd: 2 }] });
+    const page = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+    assert.equal(page.items[0].savedResult, null);
+    assert.deepEqual(page.expectedFileChecks.map(check => check.path), ['notes.md', 'steps.md'].map(file => path.join(f.root, 'deliveries/revision-7', file)));
+    assert(page.expectedFileChecks.every(check => check.status === 'FILE'));
+    await submit('submit_review', { taskId: page.items[0].taskId, verdict: 'UNVERIFIED', reason: 'File content is outside this existence check.', citeIds: [] });
+    await submit('finish_stop_review', { summary: 'The scoped files exist.' });
+  });
+  assert(!handle.result.metricObjectJudgements.some(row => row.judgement === 'DEVIATION'));
+  assert.equal(handle.collection, undefined);
+});
+
+test('a filename alone produces UNVERIFIED even if the same basename exists in the repository root', async t => {
+  const f = await fixture(t, { expected: ['notes.md'] });
+  await fs.writeFile(path.join(f.root, 'notes.md'), 'Existence does not establish its requested location.');
+  const handle = await f.runRaw(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit);
+    assert.equal(page.items[0].savedResult.judgement, 'UNVERIFIED');
+    assert.deepEqual(page.expectedFileChecks, []);
+    await f.finish(submit);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
+  assert.equal(handle.collection.failures[0].code, 'STOP_EXPECTED_PATH_UNVERIFIED');
+});
+
+test('a missing scoped output keeps its real directory in the trusted absence receipt', async t => {
+  const f = await fixture(t, { expected: ['notes.md'], requirementText: 'Deliver notes.md in directory `deliveries/revision-7`.' });
+  await fs.writeFile(path.join(f.root, 'notes.md'), 'This is the wrong location.');
+  const handle = await f.run(async ({ readAll, submit }) => {
+    const page = await f.start(readAll, submit);
+    assert.equal(page.items[0].savedResult.judgement, 'DEVIATION');
+    assert.equal(page.expectedFileChecks[0].path, path.join(f.root, 'deliveries/revision-7/notes.md'));
+    await f.finish(submit);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+  assert.deepEqual(validateStructuredReviewEvidence(handle.result, f.input.request.population.metrics.M12, handle.sourceCitations, f.root), []);
 });
 
 test('a completely absent output gets a trusted deviation without any delivery source read; it cannot be overwritten with PASS', async t => {
