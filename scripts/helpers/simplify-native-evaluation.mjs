@@ -55,23 +55,37 @@ export async function countProfileCredentialMatches(directory, credential) {
 
 // Count provider dispatches before they reach the network and fence SDK retries
 // after an upstream failure. The SDK and the process fetch share this boundary.
-export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile, authMarker }) {
+// With pairRateLimitPauseMs a peer's 429 pauses this run's next dispatch until
+// the shared cooldown ends instead of failing it; the pause is recorded.
+export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile, pairRateLimitPauseMs = null, authMarker }) {
   const target = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
   const origin = new URL(target).origin, runtimeKey = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
   const previousFetch = globalThis.fetch, previousRuntime = globalThis[runtimeKey];
   const undici = createRequire(path.join(hostRoot, 'package.json'))('undici');
-  const stats = { requests: 0, failure: null };
+  const stats = { requests: 0, failure: null, ...(pairRateLimitPauseMs ? { pairPauses: 0, pairPausedMs: 0 } : {}) };
   const fail = code => { stats.failure ??= code; return new Error(stats.failure); };
+  const peerLimitedAt = () => fs.readFile(pairRateLimitFile, 'utf8').then(text => Number.parseInt(text, 10) || 0, error => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
   const wrap = fetch => async (input, init) => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
     const headers = new Headers(init?.headers ?? input?.headers);
     const authorized = headers.get('authorization') === `Bearer ${authMarker ?? credential()}`;
     if (url.origin !== origin && !authorized && headers.get('authorization') !== `Bearer ${credential()}`) return fetch(input, init);
     if (stats.failure) throw fail(stats.failure);
-    if (pairRateLimitFile && await fs.stat(pairRateLimitFile).then(() => true, error => {
-      if (error.code === 'ENOENT') return false;
-      throw error;
-    })) throw fail('PROFILE_PAIR_RATE_LIMIT');
+    const limitedAt = pairRateLimitFile ? await peerLimitedAt() : null;
+    if (limitedAt !== null && !pairRateLimitPauseMs) throw fail('PROFILE_PAIR_RATE_LIMIT');
+    if (limitedAt !== null && Date.now() < limitedAt + pairRateLimitPauseMs) {
+      const signal = init?.signal ?? input?.signal, pausedAt = Date.now();
+      stats.pairPauses++;
+      for (let until = limitedAt + pairRateLimitPauseMs; Date.now() < until; until = Math.max(until, (await peerLimitedAt() ?? 0) + pairRateLimitPauseMs)) {
+        if (signal?.aborted) throw signal.reason ?? new Error('aborted');
+        await delay(Math.min(1000, Math.max(1, until - Date.now())));
+      }
+      stats.pairPausedMs += Date.now() - pausedAt;
+      if (stats.failure) throw fail(stats.failure);
+    }
     if (url.href !== target || String(init?.method ?? input?.method).toUpperCase() !== 'POST' || !authorized) throw fail('PROFILE_REQUEST_BOUNDARY');
     if (stats.requests >= maxRequests) throw fail('PROFILE_REQUEST_LIMIT');
     const body = typeof init?.body === 'string' ? init.body : await input.clone?.().text();
@@ -87,7 +101,7 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
       throw fail('PROFILE_TRANSPORT_FAILURE');
     }
     if (response.status >= 400) {
-      if (response.status === 429 && pairRateLimitFile) await fs.writeFile(pairRateLimitFile, `${Date.now()}\n`, { flag: 'wx' })
+      if (response.status === 429 && pairRateLimitFile) await fs.writeFile(pairRateLimitFile, `${Date.now()}\n`, { flag: pairRateLimitPauseMs ? 'w' : 'wx' })
         .catch(error => { if (error.code !== 'EEXIST') throw error; });
       await response.body?.cancel().catch(() => {});
       throw fail(response.status === 429 ? 'PROFILE_RATE_LIMIT' : `PROFILE_HTTP_${response.status}`);
@@ -177,11 +191,13 @@ export function simplifyProviderIdentity(provider, model, env = process.env) {
   return { kind: provider, origin: new URL(endpoint).origin, endpointSha256: createHash('sha256').update(endpoint).digest('hex'), model };
 }
 
-export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, nativeCustomProvider = false, ...options }) {
+export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, pairRateLimitPauseMs = null,
+  nativeCustomProvider = false, ...options }) {
   const { identity: providerIdentity, provider, credential } = await resolveSimplifyProvider(providerKind, model, openclawProfile);
   // The custom model name uses a public SDK marker. Only the wire boundary holds the real credential.
   const authMarker = provider && nativeCustomProvider ? 'rc-isolated-provider-placeholder' : undefined;
-  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile, authMarker });
+  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile,
+    pairRateLimitPauseMs, authMarker });
   let gateway;
   const finish = async () => {
     if (!boundary) return;

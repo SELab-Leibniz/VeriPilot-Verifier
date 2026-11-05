@@ -87,12 +87,28 @@ export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null
   } };
 }
 
-async function freePort() {
+// The probe socket stays bound until the Gateway binds, so the remaining
+// TOCTOU window is tiny; a lost race is retried with a fresh port.
+export async function reservePort() {
   const socket = net.createServer();
   await new Promise((resolve, reject) => { socket.once('error', reject); socket.listen(0, '127.0.0.1', resolve); });
-  const port = socket.address().port;
-  await new Promise((resolve, reject) => socket.close(error => error ? reject(error) : resolve()));
-  return port;
+  socket.unref();
+  let closed;
+  return { port: socket.address().port, release: () => closed ??= new Promise((resolve, reject) => socket.close(error => error ? reject(error) : resolve())) };
+}
+export const addressInUse = error => error?.code === 'EADDRINUSE' || error?.cause?.code === 'EADDRINUSE'
+  || /EADDRINUSE|address already in use/iu.test(String(error?.message ?? ''));
+export async function bindWithRetry(start, reserved, { attempts = 4, onRebind = async () => {} } = {}) {
+  let { port } = reserved;
+  for (let attempt = 1; ; attempt++) {
+    await reserved?.release(); reserved = null;
+    try { return { port, server: await start(port), attempts: attempt }; }
+    catch (error) {
+      if (attempt >= attempts || !addressInUse(error)) throw error;
+      reserved = await reservePort(); port = reserved.port;
+      await onRebind(port);
+    }
+  }
 }
 
 export function createNativeGatewayRequest({ load, port, config }) {
@@ -133,8 +149,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   const noTimeoutMs = unlimitedBusiness ? (await import(pathToFileURL(path.join(hostRoot, 'dist/timeout-0Cw4kcol.js')).href)).n({ overrideMs: 0 }) : null;
   const root = path.join(outputRoot, 'native-host');
   await fs.mkdir(root, { recursive: true }); await fs.mkdir(projectRoot, { recursive: true });
-  const port = await freePort(), model = coding?.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
+  const reserved = await reservePort(), model = coding?.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
   const providerId = coding?.providerId ?? 'anthropic', providerBaseUrl = coding?.definition.baseUrl ?? process.env.ANTHROPIC_BASE_URL;
+  let port = reserved.port;
   process.env.OPENCLAW_STATE_DIR = path.join(root, 'state');
   process.env.OPENCLAW_CONFIG_PATH = path.join(root, 'config.json');
   process.env.OPENCLAW_GATEWAY_TOKEN = randomBytes(32).toString('hex');
@@ -253,7 +270,8 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     }
     const load = relative => import(pathToFileURL(path.join(hostRoot, relative)).href);
     const { startGatewayServer } = await load('dist/server-BnSQQ3Aa.js');
-    gateway = await startGatewayServer(port, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false });
+    ({ port, server: gateway } = await bindWithRetry(value => startGatewayServer(value, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false }), reserved, {
+      async onRebind(value) { config.gateway.port = value; await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2)); } }));
     await onGatewayStart?.();
     const { createPluginRuntime } = await load('dist/plugins/runtime/index.js');
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
@@ -276,5 +294,5 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
       metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts), pluginStatus: plugin.status, isolatedState: root }),
       async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } },
     };
-  } catch (error) { try { await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }
+  } catch (error) { try { await reserved.release(); await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }
 }
