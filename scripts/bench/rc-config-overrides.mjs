@@ -57,14 +57,16 @@ export function emitSimpleYaml(document) {
   assert.deepStrictEqual(parseSimpleYaml(text, { source: 'rc-config-overrides' }), document);
   return text;
 }
-// stopCorrection.regressionCheck = {enabled, command: argv, cwd, timeoutMs};
-// effective is null while the loaded product drops the field.
+// stopCorrection.regressionCheck = {enabled, command: argv, cwd, timeoutMs, maxOutputBytes};
+// only an enabled check needs a command. effective is null while the loaded product drops the field.
 export function regressionCheckPolicy(configured, effective) {
   if (configured === undefined || configured === null) return effective ? { configured: null, effective, honoredByProduct: true } : null;
-  const { enabled, command, cwd, timeoutMs, ...extra } = configured;
-  if (typeof enabled !== 'boolean' || !Array.isArray(command) || !command.length || !command.every(value => typeof value === 'string' && value)
-    || typeof cwd !== 'string' || !cwd || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || Object.keys(extra).length)
-    throw new Error('stopCorrection.regressionCheck must be {enabled:boolean, command:[argv...], cwd:string, timeoutMs:positive integer}');
+  const { enabled, command, cwd, timeoutMs, maxOutputBytes, ...extra } = configured;
+  const positive = value => value === undefined || Number.isSafeInteger(value) && value >= 1;
+  if (typeof enabled !== 'boolean' || (enabled || command !== undefined) && (!Array.isArray(command) || !command.length
+    || !command.every(value => typeof value === 'string' && value)) || cwd !== undefined && (typeof cwd !== 'string' || !cwd)
+    || !positive(timeoutMs) || !positive(maxOutputBytes) || Object.keys(extra).length)
+    throw new Error('stopCorrection.regressionCheck must be {enabled:boolean, command:[argv...] when enabled, cwd?:string, timeoutMs?:positive integer, maxOutputBytes?:positive integer}');
   return { configured, effective: effective ?? null, honoredByProduct: Boolean(effective) };
 }
 export async function loadRcConfigOverrides(file) {

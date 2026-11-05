@@ -60,6 +60,8 @@ test('the released template and the ArkTS run config survive an override round t
   const { text } = applyRcConfigOverrides(template, { file: 'x.json', sha256: 'x', value: { stopCorrection: { waitMode: 'until_pass' } } });
   const before = parseSimpleYaml(template), after = parseSimpleYaml(text);
   assert.deepEqual(after, deepMerge(before, { stopCorrection: { waitMode: 'until_pass' } }));
+  assert.equal(regressionCheckPolicy(before.stopCorrection.regressionCheck, null).configured.enabled, false,
+    'the release stop profile without an override is a valid disabled check');
   const { renderArktsRunConfig, arktsRunProfile } = await import('../scripts/bench/arkts-run-profile.mjs');
   const rendered = renderArktsRunConfig('openai/deepseek-v4-flash', arktsRunProfile('600000'), { enabled: true, baseline: false, originalRequirementsBasis: true, deviationOnly: true });
   const merged = parseSimpleYaml(emitSimpleYaml(deepMerge(parseSimpleYaml(rendered), { stopCorrection: before.stopCorrection })));
@@ -95,7 +97,11 @@ test('regressionCheck is validated by the harness and reported as dropped when t
   assert.deepEqual(regressionCheckPolicy(configured, undefined), { configured, effective: null, honoredByProduct: false });
   assert.deepEqual(regressionCheckPolicy(configured, configured), { configured, effective: configured, honoredByProduct: true });
   assert.equal(regressionCheckPolicy(undefined, undefined), null);
-  for (const invalid of [{ ...configured, command: [] }, { ...configured, command: 'node check.mjs' }, { ...configured, timeoutMs: 0 }, { ...configured, extra: 1 }])
+  const released = { enabled: false }, normalized = { enabled: false, cwd: '.', timeoutMs: 600000, maxOutputBytes: 65536 };
+  assert.deepEqual(regressionCheckPolicy(released, normalized), { configured: released, effective: normalized, honoredByProduct: true },
+    'the released template disables the check without a command');
+  for (const invalid of [{ ...configured, command: [] }, { ...configured, command: 'node check.mjs' }, { ...configured, timeoutMs: 0 }, { ...configured, extra: 1 },
+    { enabled: true }, { enabled: false, command: [] }, { ...configured, maxOutputBytes: 0 }])
     assert.throws(() => regressionCheckPolicy(invalid), /regressionCheck must be/u);
 });
 
