@@ -22,7 +22,13 @@ import { assertBusinessSessionIdentity, EXPERIMENT_SESSION_RESET } from './bench
 import { createSimplifyGateway, redactEvaluationText, resolveSimplifyProvider, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 import { STOP_ARMS } from './simplify-experiment-schedule.mjs';
 import { prepareFrozenArktsWorkspace, reviewFrozenArktsDraft } from './bench/simplify-arkts-frozen.mjs';
+import { prepareJava } from './bench/arkts-java.mjs';
+import { applyRcConfigOverrides, deepMerge, emitSimpleYaml, loadRcConfigOverrides, regressionCheckPolicy } from './bench/rc-config-overrides.mjs';
+import { parseSimpleYaml as parseHarnessYaml } from '../lib/simple-yaml.mjs';
+const parseConfiguredStop = text => parseHarnessYaml(text, { source: 'project config' }).stopCorrection ?? {};
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
+const rcOverrides = await loadRcConfigOverrides(arg('--rc-config-overrides'));
+let stopPolicy = null;
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const simplifyArm = arg('--simplify-arm');
 const s0 = simplifyArm === 'S0';
@@ -42,12 +48,16 @@ const businessToolNames = [pagedReads ? 'bench_read' : 'read', 'write', 'edit', 
 if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw new Error('--verify-pending-rc requires a genuine captured continuation');
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
+const stopProfile = arg('--stop-profile') ?? 'assessment';
+if (!['assessment', 'release'].includes(stopProfile) || stopProfile === 'release' && !frozenRoot) throw new Error('--stop-profile is assessment or release (frozen replays only).');
 if (process.argv.includes('--release-build')) {
+  // A new package is identified by its digest and exact source commit; the
+  // artifact is still verified file by file against that commit below.
   const release = JSON.parse(await fs.readFile(path.join(sourceRoot, 'docs/original-basis-release-inputs.json'), 'utf8'));
-  if (!frozenRoot || simplifyArm !== 'B12' || packageSha256 !== release.packageSha256
-    || !/^[0-9a-f]{40}$/u.test(release.sourceCommit)) throw new Error('Use the committed release build for the frozen B12 checks.');
-  packageSources[release.packageSha256] = release.sourceCommit;
-}
+  const releaseCommit = arg('--source-commit') ?? (packageSha256 === release.packageSha256 ? release.sourceCommit : null);
+  if (!frozenRoot || simplifyArm !== 'B12' || !/^[0-9a-f]{40}$/u.test(releaseCommit ?? '')) throw new Error('Use a release build and its exact source commit for the frozen B12 checks.');
+  packageSources[packageSha256] = releaseCommit;
+} else if (arg('--source-commit')) throw new Error('--source-commit requires --release-build.');
 const hostRoot = arg('--host-root');
 const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
 let providerIdentity, archive;
@@ -104,6 +114,8 @@ const inheritedScope = resumeRoot ? await inheritedBusinessMutationScope(resumeR
 await fs.writeFile(path.join(outputRoot, 'inherited-business-scope.json'), JSON.stringify(inheritedScope, null, 2));
 await fs.writeFile(path.join(outputRoot, 'public-input.json'), JSON.stringify(input, null, 2));
 const setupScript = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
+const java = prepareJava({ explicit: arg('--java-home'), projectRoot, toolRoot });
+await fs.writeFile(path.join(outputRoot, 'java.json'), JSON.stringify(java, null, 2));
 if (!resumeRoot) try {
   const installed = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
     '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'install'], { windowsHide: true, timeout: profile.setupTimeoutMs, maxBuffer: 2 * 1024 * 1024 });
@@ -139,7 +151,15 @@ if (s0) {
   await fs.writeFile(path.join(outputRoot, 's0-policy.json'), JSON.stringify({ pluginInstalled: true, enabled: false, ...arm }, null, 2));
 } else {
   await fs.mkdir(path.join(projectRoot, '.runtime-corrector'), { recursive: true });
-  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), renderArktsRunConfig(simplifyArm ? `openai/${model}` : model, profile, arm));
+  let rendered = renderArktsRunConfig(simplifyArm ? `openai/${model}` : model, profile, arm), releaseStop = null;
+  if (stopProfile === 'release') {
+    const { parseSimpleYaml } = await import(pathToFileURL(path.join(artifact, 'lib/simple-yaml.mjs')).href);
+    releaseStop = parseSimpleYaml(await fs.readFile(path.join(artifact, '.runtime-corrector-default/config.yaml'), 'utf8')).stopCorrection;
+    rendered = emitSimpleYaml(deepMerge(parseSimpleYaml(rendered), { stopCorrection: releaseStop }));
+  }
+  const configured = applyRcConfigOverrides(rendered, rcOverrides, { projectRoot, toolRoot, javaHome: java.javaHome, node: process.execPath,
+    harnessRoot: path.resolve(sourceRoot), outputRoot });
+  await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), configured.text);
   await fs.copyFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), path.join(outputRoot, 'project-config.yaml'));
   // Validate actual generated policy before starting the native Gateway/model.
   const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
@@ -148,8 +168,12 @@ if (s0) {
     const { stopCorrection, dynamicGroundTruth, skillCorrection, artifactCorrection } = effective.runtimeV2;
     if (stopCorrection.enabled !== arm.enabled || dynamicGroundTruth.enabled !== arm.baseline
       || Boolean(stopCorrection.originalRequirementsBasis) !== arm.originalRequirementsBasis || Boolean(stopCorrection.deviationOnly) !== arm.deviationOnly
-      || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled)
+      || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled
+      || releaseStop && !configured.applied?.value?.stopCorrection?.waitMode && stopCorrection.waitMode !== releaseStop.waitMode)
       throw new Error('Effective ArkTS correction policy differs from the assigned arm.');
+    stopPolicy = { profile: stopProfile, waitMode: stopCorrection.waitMode, maxCorrectionsPerSession: stopCorrection.maxCorrectionsPerSession,
+      overrides: configured.applied, regressionCheck: regressionCheckPolicy(parseConfiguredStop(configured.text).regressionCheck, stopCorrection.regressionCheck) };
+    await fs.writeFile(path.join(outputRoot, 'stop-policy.json'), JSON.stringify(stopPolicy, null, 2));
   }
 }
 // Freeze common business navigation to the baseline artifact in both arms.
@@ -171,16 +195,18 @@ if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
   if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
 }
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
-const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads });
+const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads,
+  javaHome: java.javaHome });
 const { transcript: _frozenTranscript, frozen: _frozen, ...preparedSummary } = prepared;
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...preparedSummary,
   ...(arm ? { simplifyArm, planSha256, artifactSha256: packageSha256, providerIdentity,
     ...(frozenRoot ? { freezeSha256: arg('--freeze-sha256'), frozenPackageSha256 } : {}) } : {}),
-  rcSource: verifiedRcCommit,
+  rcSource: verifiedRcCommit, java: { javaHome: java.javaHome, source: java.source, version: java.version }, stopPolicy,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
     'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/session-continuity.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
-    'bench/run-arkts-toolchain.ps1'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
+    'bench/run-arkts-toolchain.ps1', 'bench/arkts-java.mjs', 'bench/rc-config-overrides.mjs', 'bench/simplify-arkts-frozen.mjs']
+    .map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: providerIdentity?.modelRef ?? `anthropic/${model}`, privateModel: providerIdentity?.modelRef ?? `anthropic/${model}`, businessTools: businessToolNames,
   businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
@@ -190,7 +216,7 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
     providerThinkingDisabledVerified: false, qualification: process.env.ANTHROPIC_BASE_URL
       ? 'Pinned native transport omits the thinking field for this non-reasoning custom-model declaration. Requested off does not prove remote thinking is disabled; no request override or effort change is applied.'
       : 'The installed provider model definition is used. Requested off alone does not prove the emitted request or remote thinking policy; no request override or effort change is applied.' },
-  limits: { ...profile, correctionAdmissions: 1 },
+  limits: { ...profile, correctionAdmissions: stopPolicy?.maxCorrectionsPerSession ?? 1 },
   hostMaintenance: { memoryFlushEnabled: false, automaticCompaction: 'host default', sessionReset: EXPERIMENT_SESSION_RESET },
   originalLocalBaseline: baselineLocalTests ? { completeRuntime: baselineLocalTests.completeRuntime, counts: baselineLocalTests.counts, failures: baselineLocalTests.failures } : null,
   recoveryIntent: process.argv.includes('--verify-pending-rc') ? 'pending-rc-acceptance' : 'complete-business-task',
@@ -207,12 +233,13 @@ try {
     disableRuntimeCorrection: s0,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
   gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model,
-    pairRateLimitFile: arg('--pair-rate-limit-file') })
+    pairRateLimitFile: arg('--pair-rate-limit-file'), pairRateLimitPauseMs: arg('--pair-rate-limit-pause-ms') ? Number(arg('--pair-rate-limit-pause-ms')) : null })
     : await createNativeGatewayEvaluation(options);
   if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)
     throw new Error('S0 Gateway must disable correction before business admission.');
   if (frozenRoot) {
-    result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot });
+    result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot,
+      maxCorrections: stopPolicy?.maxCorrectionsPerSession ?? 1 });
   } else {
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;
   if (resumeEntry) {

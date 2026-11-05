@@ -17,6 +17,10 @@ import { businessMutationPaths } from './bench/business-mutations.mjs';
 import { businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver } from './bench/business-completion.mjs';
 import { installOriginalBasisPolicy, loadOriginalBasisWorkflow, prepareOpenSpecSession, runOpenSpecCli, workflowMessages } from './bench/original-basis-workflow.mjs';
 import { collectAutomaticDocumentEvidence } from './evaluate-openclaw-document-e2e.mjs';
+import { prepareJava } from './bench/arkts-java.mjs';
+import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
+import { localTestEvidence } from './bench/local-test-evidence.mjs';
+import { codeChanged, collectReleaseEvidence, finalStopOf, tokenSplit } from './bench/release-evidence.mjs';
 import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 import { measureSimplifyBenchmark } from './helpers/simplify-stop-benchmark.mjs';
 
@@ -29,9 +33,10 @@ const cases = ['security_tool_1', 'security_tool_2'];
 const configFile = path.join(sourceRoot, 'docs/original-basis-release-inputs.json');
 const timeoutMs = 120 * 60_000;
 const { values: args } = parseArgs({ options: Object.fromEntries([
-  ...['case','output','host-root','package','package-sha256','workflow-root','openclaw-profile','dataset','tool-root',
-    'cache','workspace-root','json5-package','pair-rate-limit-file','provider','model','deadline-at'].map(name => [name, { type: 'string' }]),
-  ['offline', { type: 'boolean' }], ['live', { type: 'boolean' }],
+  ...['case','output','host-root','package','package-sha256','source-commit','workflow-root','openclaw-profile','dataset','tool-root',
+    'cache','workspace-root','json5-package','pair-rate-limit-file','pair-rate-limit-pause-ms','provider','model','deadline-at','java-home','rc-config-overrides']
+    .map(name => [name, { type: 'string' }]),
+  ['offline', { type: 'boolean' }], ['live', { type: 'boolean' }], ['baseline-local-tests', { type: 'boolean' }],
 ]) });
 const offline = args.offline === true;
 if (offline === (args.live === true) || args.provider !== 'host-profile' || args.model !== model
@@ -44,8 +49,15 @@ const outputRoot = path.resolve(args.output);
 const archive = path.resolve(args.package);
 const deadline = Math.min(Date.now() + timeoutMs, args['deadline-at'] ? Number(args['deadline-at']) : Infinity);
 assert(Number.isFinite(deadline) && deadline > Date.now());
-assert.equal(args['package-sha256'], inputs.packageSha256);
-assert.equal(digest(await fs.readFile(archive)), inputs.packageSha256);
+// A new package names its exact commit; the archive digest, the plugin version
+// at that commit and every runtime module are still verified below.
+const packageSha256 = args['package-sha256'], sourceCommit = args['source-commit'] ?? inputs.sourceCommit;
+if (!args['source-commit']) assert.equal(packageSha256, inputs.packageSha256);
+assert.match(sourceCommit, /^[0-9a-f]{40}$/u);
+assert.equal(digest(await fs.readFile(archive)), packageSha256);
+const expectedVersion = args['source-commit'] ? JSON.parse(execFileSync('git', ['show', `${sourceCommit}:packaging/hosts/openclaw/openclaw.plugin.json`],
+  { cwd: sourceRoot, windowsHide: true, encoding: 'utf8' })).version : inputs.version;
+const rcOverrides = await loadRcConfigOverrides(args['rc-config-overrides']);
 const hostRoot = path.resolve(args['host-root']);
 const workflow = await loadOriginalBasisWorkflow(path.resolve(args['workflow-root']), hostRoot, inputs.workflow);
 const git = (cwd, ...params) => execFileSync('git', ['-c', 'core.longpaths=true', '-C', cwd, ...params],
@@ -71,10 +83,16 @@ const spec = await prepareOpenSpecSession(workflow, projectRoot, outputRoot, cha
 const artifact = path.join(outputRoot, 'package');
 execFileSync('tar', ['-xf', archive, '-C', outputRoot], { windowsHide: true, stdio: 'pipe' });
 const artifactManifest = await read(path.join(artifact, 'openclaw.plugin.json'));
-assert.equal(artifactManifest.version, inputs.version);
+assert.equal(artifactManifest.version, expectedVersion);
 await write(path.join(outputRoot, 'package-validation.json'), await verifyFrozenArtifact({ cwd: sourceRoot,
-  reference: inputs.sourceCommit, artifact }));
-const policies = await installOriginalBasisPolicy({ artifact, projectRoot, outputRoot });
+  reference: sourceCommit, artifact }));
+// The isolated Gateway runs in this process, so business tools inherit the
+// resolved JDK; `java -version` must work before any model request.
+const java = offline ? null : prepareJava({ explicit: args['java-home'], projectRoot, toolRoot: args['tool-root'] });
+if (java) await write(path.join(outputRoot, 'java.json'), java);
+const policies = await installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides: rcOverrides,
+  variables: { projectRoot, outputRoot, harnessRoot: path.resolve(sourceRoot), node: process.execPath,
+    ...(args['tool-root'] ? { toolRoot: path.resolve(args['tool-root']) } : {}), ...(java ? { javaHome: java.javaHome } : {}) } });
 const messages = workflowMessages(workflow, projectRoot, changeName,
   [publicInput.problem_statement, publicInput.hints_text].filter(value => value?.trim()).join('\n\n'));
 await write(path.join(outputRoot, 'public-input.json'), publicInput);
@@ -94,12 +112,29 @@ if (!offline) {
   if (paths.length) git(projectRoot,'add','--',...paths);
   commit(projectRoot,'Prepare shared ArkTS and OpenSpec environment');
   preparedHead = git(projectRoot,'rev-parse','HEAD').toString().trim();
+  let baselineLocalTests = null;
+  if (args['baseline-local-tests']) {
+    // The workspace's own original tests, before any model request; never the hidden oracle.
+    const coverage = path.join(projectRoot, 'entry/.test/default/intermediates/test/coverage_data/coverage.log');
+    await fs.rm(coverage, { force: true });
+    let output = ''; const checkedAt = Date.now();
+    const execution = await runBoundedProcess('powershell.exe', ['-NoProfile','-ExecutionPolicy','Bypass','-File',
+      fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url)), '-Project', projectRoot, '-ToolRoot', args['tool-root'],
+      '-Phase', 'test', '-JavaHome', java.javaHome], { cwd: projectRoot, timeoutMs: 900_000, onOutput(value) { output += value; } });
+    await fs.writeFile(path.join(outputRoot, 'baseline-local-test.log'), redactEvaluationText(output));
+    const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= checkedAt - 2000);
+    baselineLocalTests = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
+    if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
+    await write(path.join(outputRoot, 'baseline-local-tests.json'), baselineLocalTests);
+  }
   extraPluginPaths.push(await createArktsBenchTools({ outputRoot, projectRoot, toolRoot: args['tool-root'],
-    stableNavigationRoot: artifact, checkTimeoutMs: policies.runtimeV2.stopCorrection.assessmentTimeoutMs }));
+    stableNavigationRoot: artifact, checkTimeoutMs: policies.runtimeV2.stopCorrection.assessmentTimeoutMs, baselineLocalTests, javaHome: java.javaHome }));
   businessToolNames.push('bench_nav','bench_check');
 }
 await write(path.join(outputRoot, 'manifest.json'), { instance, projectRoot, preparedHead, changeName,
-  packageSha256: inputs.packageSha256, sourceCommit: inputs.sourceCommit, modelRef: 'custom/'+model,
+  packageSha256, sourceCommit, version: artifactManifest.version, modelRef: 'custom/'+model,
+  java: java ? { javaHome: java.javaHome, source: java.source, version: java.version } : null,
+  rcConfigOverrides: policies.experimentOverrides, regressionCheck: policies.regressionCheck,
   startedAt, deadline, offline });
 let gateway, sessionId, sessionKey, transcriptFile;
 async function findFiles(root, match) {
@@ -114,7 +149,8 @@ try {
   gateway = await createSimplifyGateway({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths, businessToolNames, unlimitedBusiness: true, nativeCustomProvider: true, disableMemoryFlush: true,
     preserveSessionHistory: true, model, providerKind: 'host-profile', openclawProfile: args['openclaw-profile'],
-    ...(offline ? { maxRequests: 0 } : {}), pairRateLimitFile: args['pair-rate-limit-file'] });
+    ...(offline ? { maxRequests: 0 } : {}), pairRateLimitFile: args['pair-rate-limit-file'],
+    pairRateLimitPauseMs: args['pair-rate-limit-pause-ms'] ? Number(args['pair-rate-limit-pause-ms']) : null });
   assert.equal(gateway.modelRef, 'custom/'+model);
   const created = await gateway.request('sessions.create', { key: 'agent:main:arkts-'+randomUUID(), agentId: 'main', label: 'OpenSpec(solo)' });
   assert(created.ok && created.key);
@@ -191,16 +227,7 @@ try {
     const state = gateway.runtime.state.resolveStateDir();
     const postRoot = path.join(state,'runtime-corrector-stop-sessions/post-run');
     const store = createStopCorrectionStore({directory:path.join(state,'runtime-corrector-stop-sessions')});
-    const turns = [], documentAttempts = new Map();
-    async function observeDocumentRequests() {
-      const files = await findFiles(path.join(projectRoot,'.runtime-correction','.semantic-review'),
-        file=>path.basename(file)==='request.json');
-      for (const file of files) if (!documentAttempts.has(file)) try {
-        const request = await read(file);
-        documentAttempts.set(file,{roundId:path.basename(path.dirname(file)),triggerFile:request.triggerFile,
-          stage:request.stage,observedAt:Date.now(),originalSourceCount:request.originalRequirements?.userMessages?.length??0});
-      } catch (error) { if (error.code!=='ENOENT' && !(error instanceof SyntaxError)) throw error; }
-    }
+    const turns = [];
     const stages = ['proposal','codeing'];
     const docNames = ['proposal.md','design.md','tasks.md'];
     const change = path.join(projectRoot,'openspec','changes',changeName);
@@ -215,7 +242,6 @@ try {
       const original = createBusinessTerminalObserver();
       while (Date.now() < deadline && !gateway.providerStatus().failure) {
         await gateway.drain();
-        await observeDocumentRequests();
         const latest = await gateway.runtime.agent.session.getSessionEntry({ ...scope,readConsistency:'latest' });
         assertBusinessSessionIdentity({sessionId,sessionKey,runId},latest,gateway.metrics().modelStarts);
         const posts = await findFiles(postRoot,file=>file.endsWith('.json'));
@@ -257,8 +283,9 @@ try {
     const frozen = {commit:head,commitSha256:digest(git(projectRoot,'cat-file','commit',head)),
       sessionSha256:digest(bytes),patchSha256:digest(patch),preparedHead,mutationPaths:[...paths].sort()};
     await write(path.join(frozenRoot,'freeze.json'),frozen);
+    const evidence = await collectReleaseEvidence({projectRoot,sessionId,nativeRoot:gateway.root,turns});
     const documents = await collectAutomaticDocumentEvidence(projectRoot,session,sessionId);
-    const scopeIds = [...new Set([task?.taskId,...documents.reviews.map(review=>review.scopeTaskId)].filter(Boolean))];
+    const scopeIds = [...new Set([task?.taskId,...evidence.taskIds,...documents.reviews.map(review=>review.scopeTaskId)].filter(Boolean))];
     const privateRuns = [...new Map((await Promise.all(scopeIds.map(id=>listNativeRuns(projectRoot,id)))).flat().map(run=>[run.runId,run])).values()];
     const docRuns = privateRuns.filter(run=>run.role==='artifact-reviewer');
     const stopRuns = privateRuns.filter(run=>run.role==='stop-reviewer');
@@ -271,12 +298,12 @@ try {
       records.filter(row=>row.message?.role==='assistant').map(row=>row.message.usage));
     const final = turns.at(-1), finalStops = Object.values(ledger?.stops ?? {}).filter(stop=>stop.id.startsWith(final?.runId ?? 'missing:'));
     const firstStop = finalStops[0], admission = ledger?.admissions?.[firstStop?.admissionId];
-    const stopSettled = firstStop?.progress?.complete === true && (admission
-      ? admission.finalReview?.status==='PASS' || admission.finalReview?.status==='NO_DEVIATION_FOUND'
-      : firstStop.reviewStatus==='NO_DEVIATION_FOUND' || firstStop.reviewStatus==='PASS');
+    const finalStop = finalStopOf(evidence.stopReviews,turns);
+    const stopSettled = Boolean(finalStop && ['PASS','NO_DEVIATION_FOUND','DEVIATION'].includes(finalStop.status)
+      || finalStop?.status==='SKIPPED' && finalStop.reasonCode==='STOP_DOCUMENT_ONLY_CHANGES');
     const docs = Object.fromEntries(await Promise.all(docNames.map(async file=>[file,
       await fs.readFile(path.join(change,file)).then(data=>({sha256:digest(data),bytes:data.length}),error=>{if(error.code==='ENOENT')return null;throw error;})])));
-    const reviews=documents.reviews.map((item,index)=>{
+    const documentFeedback=documents.reviews.map((item,index)=>{
       const meta=item.result.metadata;
       const relative=meta.triggerFile;
       const receipt=documents.receipts.find(row=>row.toolCallId===item.toolCallId);
@@ -296,11 +323,14 @@ try {
     await write(path.join(outputRoot,'result.json'),{
       state:boundary.failure?.includes('RATE_LIMIT')?'rate-limited':frameworkError?'framework-error':Date.now()>=deadline?'timed-out':'finished',
       reason:boundary.failure ?? final?.post?.reason ?? null,frameworkError,instance,projectRoot,sessionId,sessionKey,
-      elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:reviews,documentAttempts:[...documentAttempts.values()],documentCost,
+      elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:evidence.documentReviews,documentFeedback,
+      stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis,evidenceCounts:evidence.counts,finalStop,
+      codeChanged:codeChanged(frozen.mutationPaths),documentCost,
       firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,
       stopFeedback:admission?.hostRequest?.gate ? redactEvaluationText((admission.currentDeviations??[]).map(item=>
         [item.result?.reason,...(item.result?.evidence??[])].join('\n')).join('\n\n')) : null,
       frozen,privateRuns,modelRequests:boundary.requests,businessUsage,
+      tokenSplit:tokenSplit({documentCost,stopCost,businessUsage}),
       requestTimingCount:timings.filter(row=>row.event==='request').length,gateway:gateway.metrics(),
     });
   }

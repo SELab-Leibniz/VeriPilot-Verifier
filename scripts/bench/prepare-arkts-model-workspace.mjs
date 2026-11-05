@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { shortArktsWorkspace } from './short-workspace.mjs';
+import { withFileLock, worktreeLockPath } from './file-lock.mjs';
 const execute = promisify(execFile);
 export async function prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, workspaceBase, workspaceRoot, json5Package, preparationTimeoutMs = 180000,
   gitExecutable = process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git' }) {
@@ -12,7 +13,7 @@ export async function prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, 
   await fs.mkdir(outputRoot, { recursive: false });
   await fs.mkdir(path.dirname(projectRoot), { recursive: true });
   await git(['--git-dir', cache, 'cat-file', '-e', `${task.base_commit}^{commit}`]);
-  await git(['--git-dir', cache, 'worktree', 'add', '--detach', projectRoot, task.base_commit]);
+  await withFileLock(worktreeLockPath(cache), () => git(['--git-dir', cache, 'worktree', 'add', '--detach', projectRoot, task.base_commit]));
   const json5 = createRequire(json5Package ?? path.join(process.env.APPDATA, 'npm/node_modules/@deveco/deveco-cli/package.json'))('json5');
   const profilePath = path.join(projectRoot, 'build-profile.json5'), profile = json5.parse(await fs.readFile(profilePath, 'utf8'));
   profile.app.signingConfigs = [];

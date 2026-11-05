@@ -7,6 +7,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { digest } from './arkts-dataset.mjs';
 import { loadPackaged } from '../helpers/simplify-native-evaluation.mjs';
+import { applyRcConfigOverrides, regressionCheckPolicy } from './rc-config-overrides.mjs';
+import { parseSimpleYaml } from '../../lib/simple-yaml.mjs';
 
 const run = promisify(execFile);
 const save = (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
@@ -38,15 +40,18 @@ export async function loadOriginalBasisWorkflow(root, hostRoot, pinned) {
   }] : [] } } };
 }
 
-export async function installOriginalBasisPolicy({ artifact, projectRoot, outputRoot }) {
+// Experiment overrides are merged after the release flags; the release
+// invariants asserted below still hold for every arm.
+export async function installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides = null, variables = {} }) {
   const policyRoot = path.join(projectRoot, '.runtime-corrector');
   const templateRoot = path.join(artifact, '.runtime-corrector-default');
   const template = await fs.readFile(path.join(templateRoot, 'config.yaml'), 'utf8');
-  const configured = template.replace(/^enabled: false$/mu, 'enabled: true')
+  const released = template.replace(/^enabled: false$/mu, 'enabled: true')
     .replace(/(^sessionDefaults:\r?\n(?:  #[^\r\n]*\r?\n)*)  enabled: false$/mu, '$1  enabled: true');
-  assert.equal(configured.replace(/^enabled: true$/mu, 'enabled: false')
+  assert.equal(released.replace(/^enabled: true$/mu, 'enabled: false')
     .replace(/(^sessionDefaults:\r?\n(?:  #[^\r\n]*\r?\n)*)  enabled: true$/mu, '$1  enabled: false'), template);
-  assert.notEqual(configured, template);
+  assert.notEqual(released, template);
+  const { text: configured, applied } = applyRcConfigOverrides(released, overrides, variables);
   await fs.mkdir(policyRoot);
   for (const file of ['README.md', 'example.reviewer.md', 'example.rules.yaml', 'config.reference.yaml'])
     await fs.copyFile(path.join(templateRoot, file), path.join(policyRoot, file));
@@ -71,7 +76,8 @@ export async function installOriginalBasisPolicy({ artifact, projectRoot, output
   assert.equal(effective.skillCorrection.enabled, false);
   assert.notEqual(effective.compactionRestore?.enabled, true);
   const evidence = { templateSha256: digest(template), configuredSha256: digest(configured),
-    overrides: { enabled: true, 'sessionDefaults.enabled': true }, runtimeV2: effective };
+    overrides: { enabled: true, 'sessionDefaults.enabled': true }, experimentOverrides: applied, runtimeV2: effective,
+    regressionCheck: regressionCheckPolicy(applied && parseSimpleYaml(configured).stopCorrection?.regressionCheck, effective.stopCorrection.regressionCheck) };
   await save(path.join(outputRoot, 'effective-policy.json'), evidence);
   return evidence;
 }

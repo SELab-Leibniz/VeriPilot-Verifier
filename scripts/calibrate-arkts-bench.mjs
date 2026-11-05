@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { shortArktsWorkspace } from './bench/short-workspace.mjs';
+import { withFileLock, worktreeLockPath } from './bench/file-lock.mjs';
 import { loadArktsTask, arktsAgentInput, digest } from './bench/arkts-dataset.mjs';
 import { parseHypium, gradeArkts } from './bench/hypium-results.mjs';
 import { arktsRunProfile } from './bench/arkts-run-profile.mjs';
@@ -34,6 +35,8 @@ async function run(command, argv, cwd, name, timeoutMs = runProfile.explicit ? r
 }
 const cache = path.join(cacheRoot, task.repo.replace('/', '--') + '.git');
 await fs.mkdir(cacheRoot, { recursive: true });
+const source = shortArktsWorkspace(output, 'grd', arg('--workspace-base'), arg('--workspace-root'));
+await withFileLock(worktreeLockPath(cache), async () => {
 if (!await fs.stat(cache).catch(() => null)) {
   const init = await run('git', ['init', '--bare', cache], output, 'git-init');
   if (init.code) throw new Error('Source cache initialization failed');
@@ -49,10 +52,10 @@ if (cached.code) {
 // same tree repeatedly. These refs never enter business-agent tools.
 const retained = await run('git', ['--git-dir', cache, 'update-ref', `refs/rc-bench/base/${task.base_commit}`, task.base_commit], output, 'retain-base');
 if (retained.code) throw new Error('Could not retain shared base objects');
-const source = shortArktsWorkspace(output, 'grd', arg('--workspace-base'), arg('--workspace-root'));
 await fs.mkdir(path.dirname(source), { recursive: true });
 const checkout = await run('git', ['-c', 'core.longpaths=true', '--git-dir', cache, 'worktree', 'add', '--detach', source, task.base_commit], output, 'checkout');
 if (checkout.code) throw new Error('Shared source worktree creation failed');
+});
 const testPatch = path.join(output, 'hidden-test.patch'); await fs.writeFile(testPatch, task.test_patch);
 const apply = await run('git', ['-c', 'core.longpaths=true', 'apply', '--whitespace=nowarn', testPatch], source, 'apply-tests');
 if (apply.code) throw new Error('Hidden test patch did not apply to the exact base');
@@ -71,7 +74,8 @@ const environment = { requestedSdk: task.version, actualSdk: 'API24 / 6.1.1.125'
 await fs.writeFile(path.join(output, 'environment.json'), JSON.stringify(environment, null, 2));
 const script = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
 const shell = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-const invoke = phase => run(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Project', source, '-ToolRoot', toolRoot, '-Phase', phase], source, phase, runProfile.setupTimeoutMs);
+const invoke = phase => run(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Project', source, '-ToolRoot', toolRoot, '-Phase', phase,
+  ...(arg('--java-home') ? ['-JavaHome', arg('--java-home')] : [])], source, phase, runProfile.setupTimeoutMs);
 let calibration;
 if (candidate) {
   const directory = arg('--calibration-dir'); if (!directory) throw new Error('--candidate requires --calibration-dir with native base and gold evidence');
