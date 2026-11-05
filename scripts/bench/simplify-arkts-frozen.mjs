@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { digest } from './arkts-dataset.mjs';
 import { shortArktsWorkspace } from './short-workspace.mjs';
+import { withFileLock, worktreeLockPath } from './file-lock.mjs';
 import { businessMutationPaths, validateBusinessMutationPaths } from './business-mutations.mjs';
 import { loadPackaged, redactEvaluationText, summarizeProviderUsage, waitSimplifyRunTerminal } from '../helpers/simplify-native-evaluation.mjs';
 import { measureSimplifyBenchmark } from '../helpers/simplify-stop-benchmark.mjs';
@@ -72,12 +73,12 @@ export async function prepareFrozenArktsWorkspace({ frozenRoot, freezeSha256, ta
   const projectRoot = shortArktsWorkspace(outputRoot, 'biz', undefined, workspaceRoot);
   await fs.mkdir(outputRoot);
   await fs.mkdir(path.dirname(projectRoot), { recursive: true });
-  cacheGit('worktree', 'add', '--detach', projectRoot, frozen.commit);
+  await withFileLock(worktreeLockPath(cache), () => cacheGit('worktree', 'add', '--detach', projectRoot, frozen.commit));
   return { projectRoot, preparedHead: frozen.preparedHead, baseCommit: task.base_commit, environmentAdapted: true,
     frozenRoot, frozen, transcript };
 }
 
-export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git, outputRoot }) {
+export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git, outputRoot, maxCorrections = 1 }) {
   const { projectRoot, frozen, transcript } = prepared;
   const { sessionId, sessionKey, originalRunId } = frozen;
   const sessionFile = path.join(gateway.root, `${sessionId}.jsonl`);
@@ -114,6 +115,11 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   await gateway.hooks.runBeforeAgentFinalize({ sessionId, runId: originalRunId, lastAssistantMessage: text(last) }, context);
   await gateway.hooks.runAgentEnd({ sessionId, runId: originalRunId, success: true, messages }, context);
   let task, ledger, initial, admission, runs = [], terminal;
+  const terminals = new Map();
+  // Assessment mode releases Stop when feedback is prepared. The host can
+  // still be between that handoff and its trusted business model start.
+  const settled = item => item.accounting === 'RELEASED' && !item.startedAt
+    || terminals.get(item.hostRequest?.runId) && (item.finalReview || terminals.get(item.hostRequest.runId).status === 'error');
   while (Date.now() < deadline && !gateway.providerStatus()?.failure) {
     await gateway.drain();
     task = await findTask({ projectRoot, sessionId });
@@ -121,20 +127,24 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     initial = Object.values(ledger?.stops ?? {}).find(stop => stop.id.startsWith(originalRunId));
     admission = initial?.admissionId ? ledger.admissions[initial.admissionId] : null;
     runs = task ? await listNativeRuns(projectRoot, task.taskId) : [];
-    if (admission?.hostRequest && !terminal) {
-      terminal = await waitSimplifyRunTerminal(gateway, admission.hostRequest.runId, Math.min(deadline, Date.now() + 1500));
+    for (const item of maxCorrections > 1 ? Object.values(ledger?.admissions ?? {}) : [admission].filter(Boolean)) {
+      const runId = item.hostRequest?.runId;
+      if (!runId || terminals.has(runId)) continue;
+      const observed = await waitSimplifyRunTerminal(gateway, runId, Math.min(deadline, Date.now() + 1500));
+      if (observed) terminals.set(runId, observed);
     }
-    // Assessment mode releases Stop when feedback is prepared. The host can
-    // still be between that handoff and its trusted business model start.
-    const correctionSettled = !initial?.admissionId || admission?.accounting === 'RELEASED' && !admission.startedAt
-      || terminal && (admission?.finalReview || terminal.status === 'error');
+    terminal = terminals.get(admission?.hostRequest?.runId);
     const finished = initial && initial.reviewStatus !== 'PENDING' && initial.control === 'ALLOW'
-      && correctionSettled;
+      && (!initial.admissionId || settled(admission))
+      && (maxCorrections === 1 || Object.values(ledger.admissions ?? {}).every(settled)
+        && Object.values(ledger.stops ?? {}).every(stop => stop.reviewStatus !== 'PENDING' && stop.control === 'ALLOW'));
     if (finished && runs.every(run => run.status === 'SETTLED')) break;
     await new Promise(resolve => setTimeout(resolve, 400));
   }
   const businessStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
-  if (businessStarts.some(row => row.runId !== admission?.hostRequest?.runId) || (ledger?.used ?? 0) > 1) {
+  const repairs = Object.values(ledger?.admissions ?? {}), allowedRuns = new Set(maxCorrections === 1 ? [admission?.hostRequest?.runId]
+    : repairs.map(item => item.hostRequest?.runId));
+  if (businessStarts.some(row => !allowedRuns.has(row.runId)) || (ledger?.used ?? 0) > maxCorrections) {
     const persisted = await store.inspect(sessionId);
     await save(path.join(outputRoot, 'business-run-identity-failure.json'), { sessionId, sessionKey, originalRunId,
       expectedRunId: admission?.hostRequest?.runId ?? null, used: ledger?.used ?? null, businessStarts,
@@ -162,15 +172,19 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   const totalUsage = { observedCalls: boundary.requests, completeCalls,
     tokens: completeCalls ? (usage.tokens ?? 0) + (businessUsage.tokens ?? 0) : null };
   const frameworkError = Boolean(boundary?.failure || !initial);
+  const started = repairs.filter(item => item.startedAt);
   const completedInBudget = Date.now() < deadline && initial?.progress?.complete === true
-    && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview));
+    && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview))
+    && (maxCorrections === 1 || started.every(item => terminals.get(item.hostRequest?.runId)?.status === 'ok' && item.finalReview));
   const reason = boundary?.failure ?? initial?.reasonCode ?? initial?.progress?.reasonCode ?? initial?.releaseReason
     ?? (!initial ? 'FROZEN_STOP_NOT_REGISTERED' : null);
   const state = boundary?.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : frameworkError ? 'failed' : completedInBudget ? 'completed'
     : Date.now() >= deadline || /TIMEOUT|DEADLINE/u.test(reason ?? '') ? 'timed-out' : 'failed';
   const result = { ...manifest, state, completedInBudget, frameworkError, sessionId, sessionKey, originalRunId,
     reason, rcElapsedMs, usage, totalUsage, baselineCost, repairFeedback, feedback,
-    elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0,
+    elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0, maxCorrections,
+    repairs: repairs.map(item => ({ id: item.id, stopId: item.stopId, runId: item.hostRequest?.runId ?? null, accounting: item.accounting,
+      finalReview: item.finalReview?.status ?? null, terminal: terminals.get(item.hostRequest?.runId)?.status ?? null })),
     actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
     modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };
   await save(path.join(outputRoot, 'result.json'), result);
