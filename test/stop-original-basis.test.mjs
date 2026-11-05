@@ -12,6 +12,8 @@ import { loadStopOriginalRequirements, stopFeedbackCurrent } from '../lib/runtim
 import { userMessageLogPath } from '../lib/runtime-v2/original-requirements.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { recordDeviationFindings } from '../lib/runtime-v2/deviations.mjs';
+import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 
 test('explicitly disabling the original basis preserves the default Stop policy', () => {
   const compile = stopCorrection => compileRuntimeV2Config({ version: 2, stopCorrection }).stopCorrection;
@@ -21,6 +23,74 @@ test('explicitly disabling the original basis preserves the default Stop policy'
   const noBaseline = { version: 2, artifacts: [], dynamicGroundTruth: { enabled: false }, stopCorrection: { enabled: true } };
   assert.throws(() => validateProjectConfig(noBaseline, 'config.yaml'), /requires dynamicGroundTruth.enabled/u);
   validateProjectConfig({ ...noBaseline, stopCorrection: { enabled: true, originalRequirementsBasis: true } }, 'config.yaml');
+});
+
+for (const judgement of ['PASS', 'DEVIATION', 'UNVERIFIED']) test(`B12 explicitly rechecks the original delivered item with ${judgement}`, async t => {
+  const f = await stopProtocolFixture(t, 'findings');
+  const file = path.join(f.root, 'app.mjs'), transcript = path.join(f.root, 'session.jsonl');
+  const requirement = 'Implement transform.\nReturn the input plus one.';
+  const entries = [{ type: 'user', uuid: 'user-original', message: { content: requirement } },
+    { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }];
+  await fs.writeFile(transcript, entries.map(JSON.stringify).join('\n') + '\n');
+  await fs.writeFile(file, `export const transform = input => ${judgement === 'PASS' ? 'input + 1' : 'input'};\n`);
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true } });
+  const reviewer = input => {
+    Object.assign(f.input, input);
+    return f.run(async ({ brief, readAll, read, submit }) => {
+      await readAll();
+      const userPath = brief.task.basisFiles.find(p => path.basename(p).startsWith('user-original-'));
+      const original = (await read(userPath)).details.citation.citeId;
+      await submit('set_original_checklist', { items: [{ metricId: 'M16', text: 'Add one to the supplied value.',
+        verificationTarget: 'IMPLEMENTATION', citeId: original, lineStart: 1, lineEnd: 2 }] });
+      const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+      const [previous, regenerated] = items;
+      assert.equal(previous.objectId, object.objectId);
+      assert.equal(previous.previousDeviation.reason, 'The return value was unchanged.');
+      assert.notEqual(regenerated.objectId, previous.objectId);
+      await assert.rejects(submit('finish_stop_review', { summary: 'No finding.' }), { code: 'REVIEW_ITEM_INCOMPLETE' });
+      await assert.rejects(submit('submit_review', { taskId: regenerated.objectId, verdict: 'PASS', reason: 'Irrelevant.', citeIds: [] }),
+        { code: 'REVIEW_ITEM_OWNERSHIP_INVALID' });
+      if (judgement === 'PASS') await assert.rejects(submit('submit_review', {
+        taskId: previous.objectId, verdict: 'PASS', reason: 'Only original requirements were read.', citeIds: [original],
+      }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
+      const current = (await read(file)).details.citation.citeId;
+      await submit('submit_review', { taskId: previous.objectId, verdict: judgement, reason: 'Checked the current return expression.',
+        citeIds: judgement === 'UNVERIFIED' ? [] : [current] });
+      await submit('finish_stop_review', { summary: 'The earlier finding was reviewed.' });
+    });
+  };
+  const event = name => handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2, artifacts: [] }, reviewerFactory: reviewer,
+    stopHost: { directory: path.join(f.root, 'host'), stopId: 'follow-up', startProtocol: { version: 1 } },
+    input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: name, last_assistant_message: 'Task complete.' } });
+  await event('SessionStart');
+  await createStopCorrectionStore({ directory: path.join(f.root, 'host') }).initializeSession({
+    sessionId: 'protocol-host', initialize: { kind: 'NEW_SESSION', evidence: { fixture: true } },
+  });
+  const taskId = f.task.taskId;
+  const population = await buildMetricPopulation({ projectRoot: f.root, taskId, groundTruth: { version: 0, claims: [] }, persist: false });
+  const { population: basis } = buildOriginalStopPopulation({ population, sourceDigest: 'original', checklist: [{
+    metricId: 'M16', text: 'Return the input plus one.', verificationTarget: 'IMPLEMENTATION',
+    source: { kind: 'USER_MESSAGE', ref: 'transcript:user-original', part: 1, sha256: sha256(requirement), start: 2, end: 2 },
+  }] });
+  const [object] = basis.metrics.M16, evaluationId = 'stop-0123456789abcdef';
+  const [family] = await recordDeviationFindings({ projectRoot: f.root, taskId, pipeline: 'STOP', evaluationId, delivered: true,
+    findings: [{ deviationKey: `metric:M16:${object.sourceId}`, severity: 'error', rootCauseId: 'REQUIREMENT_OMITTED',
+      reason: 'The return value was unchanged.', violatedGroundTruthIds: [object.sourceId] }] });
+  const directory = taskDirectory(f.root, taskId);
+  await fs.mkdir(path.join(directory, 'evaluations'), { recursive: true });
+  await fs.writeFile(path.join(directory, 'evaluations', `${evaluationId}.json`),
+    JSON.stringify({ metricReport: { metrics: [{ objects: [{ ...object, judgement: 'DEVIATION' }] }] } }));
+  const result = await event('Stop');
+  assert.equal(result.stop.status, judgement === 'PASS' ? 'NO_DEVIATION_FOUND' : judgement, JSON.stringify(result.stop));
+  const updated = JSON.parse(await fs.readFile(path.join(directory, 'feedback', `${family.familyId}.json`), 'utf8'));
+  assert.equal(updated.status, judgement === 'PASS' ? 'FIXED' : 'OPEN');
+  if (judgement === 'UNVERIFIED') assert.equal(updated.lastVerifiedAt, null);
+  else {
+    assert.equal(updated.lastVerification.judgement, judgement);
+    assert.ok(updated.lastVerifiedAt);
+  }
+  if (judgement === 'DEVIATION') assert.equal(updated.observations.length, 2);
 });
 
 test('Stop originals preserve source identities and retain Skill graph items', async t => {
