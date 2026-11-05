@@ -132,6 +132,21 @@ test('an explicitly rooted filename still proves absence without changing the ro
   assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
 });
 
+test('an input directory never supplies an otherwise unspecified output location', async t => {
+  for (const requirementText of ['Read inputs under `inputs/`. Deliver notes.md.', 'Read inputs under `inputs/` before writing notes.md.']) {
+    const f = await fixture(t, { expected: ['notes.md'], requirementText });
+    await fs.writeFile(path.join(f.root, 'notes.md'), 'An unrelated input directory does not locate this output.');
+    const handle = await f.runRaw(async ({ readAll, submit }) => {
+      const page = await f.start(readAll, submit);
+      assert.equal(page.items[0].savedResult.judgement, 'UNVERIFIED');
+      assert.deepEqual(page.expectedFileChecks, []);
+      await f.finish(submit);
+    });
+    assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
+    assert.equal(handle.collection.failures[0].code, 'STOP_EXPECTED_PATH_UNVERIFIED');
+  }
+});
+
 test('a missing scoped output keeps its real directory in the trusted absence receipt', async t => {
   const f = await fixture(t, { expected: ['notes.md'], requirementText: 'Deliver notes.md in directory `deliveries/revision-7`.' });
   await fs.writeFile(path.join(f.root, 'notes.md'), 'This is the wrong location.');
