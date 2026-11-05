@@ -40,6 +40,25 @@ test('an unbounded trusted business correction reaches its next bounded review w
   assert.equal(reviews, 2); assert.equal(cancelled, 0);
 });
 
+test('a host-retried run that outlives escalated reconciliation is reviewed after its next agent_end', async t => {
+  let finished = false, reviews = 0;
+  const f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId, deadlineAt) => {
+      while (Date.now() < deadlineAt) { if (finished) return { runId, status: 'ok' }; await pause(5); }
+      return null;
+    }, review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const id = f.identity('retried'); await f.manager.started(id, 'business');
+  await f.manager.candidate(id, { runId: 'business', text: 'failed attempt', reviewBudgetMs: 10000, terminalBudgetMs: 20 });
+  for (let i = 0; i < 100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  finished = true;
+  await f.manager.candidate(id, { runId: 'business', text: 'delivered after retry', reviewBudgetMs: 10000, terminalBudgetMs: 1000 });
+  for (let i = 0; i < 100 && f.manager.snapshot(id).phase !== 'IDLE'; i++) await pause(10);
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE'); assert.equal(record.reviewStatus, 'PASS'); assert.equal(reviews, 1);
+  assert.equal(record.reconciliation, null);
+});
+
 test('explicit owner cancellation still cancels an unbounded correction', async t => {
   let cancelled = 0, f;
   f = await fixture(t, { cancelCorrection: async (_record, runId) => { assert.equal(runId, 'repair-unbounded'); cancelled++; },
