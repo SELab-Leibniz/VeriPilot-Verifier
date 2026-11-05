@@ -8,6 +8,7 @@ import { parseArgs } from 'node:util';
 import { runBoundedProcess } from './bounded-process.mjs';
 import { localTestEvidence, publicLocalTestEvidence } from './local-test-evidence.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
+import { prepareRegressionWorkspace } from './regression-workspace.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
@@ -37,14 +38,17 @@ export function regressionVerdict(current, baseline, maxNames = 20) {
 }
 
 export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, timeoutMs = 840000, maxNames = 20, signal }) {
-  const root = path.resolve(project), java = resolveJavaHome({ explicit: javaHome });
+  const root = await prepareRegressionWorkspace(path.resolve(project)), java = resolveJavaHome({ explicit: javaHome });
   applyJavaEnvironment(java.javaHome);
   const coverage = path.join(root, coverageLog);
   await fs.rm(coverage, { force: true });
   const started = Date.now(); let output = '';
-  const execution = await runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+  const run = phase => runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
     fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url)), '-Project', root, '-ToolRoot', path.resolve(toolRoot),
-    '-Phase', 'test', '-JavaHome', java.javaHome], { cwd: root, timeoutMs, signal, onOutput(value) { output += value; } });
+    '-Phase', phase, '-JavaHome', java.javaHome], { cwd: root, timeoutMs: Math.max(1, timeoutMs - (Date.now() - started)),
+    signal, onOutput(value) { output += value; } });
+  const installed = await run('install');
+  const execution = installed.exitCode === 0 && !installed.interrupted ? await run('test') : installed;
   const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
   const current = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
   const verdict = regressionVerdict(current, baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null, maxNames);
