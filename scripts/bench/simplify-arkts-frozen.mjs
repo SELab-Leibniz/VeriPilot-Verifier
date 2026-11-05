@@ -110,18 +110,69 @@ export async function applyFrozenCandidate({ git, projectRoot, patch, commit, mu
   }
 }
 
-export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git, outputRoot, maxCorrections = 1 }) {
+export function markHistoricalStopFeedback(records) {
+  const marker = /^\[runtime-corrector:stop-(?:reference|feedback)\](?:\r?\n|$)/u;
+  const internal = '[runtime-corrector:internal]\n';
+  return records.map(record => {
+    const { message } = record;
+    if (message?.role !== 'user') return record;
+    if (typeof message.content === 'string' && marker.test(message.content))
+      return { ...record, message: { ...message, content: internal + message.content } };
+    if (Array.isArray(message.content) && message.content.some(block => block.type === 'text' && marker.test(block.text))) {
+      return { ...record, message: { ...message, content: message.content.map(block =>
+        block.type === 'text' && marker.test(block.text) ? { ...block, text: internal + block.text } : block) } };
+    }
+    return record;
+  });
+}
+
+async function seedDeliveredStopFeedback({ load, prepared, taskId, sourceTask, evaluationId }) {
+  const { frozen, projectRoot } = prepared;
+  const result = await read(path.join(frozen.sourceRun, 'result.json'));
+  const sourceRoot = path.resolve(result.projectRoot);
+  if (path.dirname(path.resolve(sourceTask)) !== path.join(sourceRoot, '.runtime-correction', 'tasks')
+    || !/^stop-[a-f0-9]+$/u.test(evaluationId)
+    || !result.stopReviews?.some(row => row.evaluationId === evaluationId && row.status === 'DEVIATION'))
+    throw new Error('The historical Stop feedback does not belong to this frozen source.');
+  const evaluation = await read(path.join(sourceTask, 'evaluations', `${evaluationId}.json`));
+  const objects = evaluation.metricReport.metrics.flatMap(metric => metric.objects ?? []);
+  const replay = [];
+  for (const file of await fs.readdir(path.join(sourceTask, 'feedback'))) {
+    if (!file.endsWith('.json')) continue;
+    const family = await read(path.join(sourceTask, 'feedback', file));
+    const prior = family.observations?.find(row => row.evaluationId === evaluationId && row.pipeline === 'STOP'
+      && row.delivered === true && row.deliveredAt);
+    const object = prior && objects.find(row => row.hard && row.judgement === 'DEVIATION'
+      && prior.finding.deviationKey === `metric:${row.metricId}:${row.sourceId}`);
+    if (!object) continue;
+    const actualEvidence = prior.finding.actualEvidence.filter(ref => ref.startsWith(sourceRoot + path.sep))
+      .map(ref => path.join(projectRoot, ref.slice(sourceRoot.length + 1)));
+    replay.push({ object: { ...object, evidence: actualEvidence }, finding: { ...prior.finding, actualEvidence } });
+  }
+  if (!replay.length) throw new Error('No delivered metric feedback from the selected historical Stop was found.');
+  const [{ taskDirectory }, { recordDeviationFindings }] = await Promise.all([
+    load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/deviations.mjs'),
+  ]);
+  const directory = path.join(taskDirectory(projectRoot, taskId), 'evaluations');
+  await fs.mkdir(directory, { recursive: true });
+  await save(path.join(directory, `${evaluationId}.json`), { metricReport: { metrics: [{ objects: replay.map(row => row.object) }] } });
+  await recordDeviationFindings({ projectRoot, taskId, pipeline: 'STOP', evaluationId, delivered: true,
+    findings: replay.map(row => row.finding) });
+}
+
+export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git, outputRoot, maxCorrections = 1, reviewOnly = false,
+  priorFeedback = null }) {
   const { projectRoot, frozen, transcript } = prepared;
   const { sessionId, sessionKey, originalRunId } = frozen;
   const sessionFile = path.join(gateway.root, `${sessionId}.jsonl`);
-  const records = transcript.toString('utf8').split(/\r?\n/u).filter(Boolean).map(JSON.parse);
+  const records = markHistoricalStopFeedback(transcript.toString('utf8').split(/\r?\n/u).filter(Boolean).map(JSON.parse));
   const messages = records.filter(record => record.type === 'message').map(record => record.message);
   const user = messages.find(message => message.role === 'user');
   const last = messages.findLast(message => message.role === 'assistant');
   const text = message => typeof message?.content === 'string' ? message.content : message?.content?.filter(item => item.type === 'text').map(item => item.text).join('\n');
   if (!text(user) || !text(last) || records[0]?.id !== sessionId) throw new Error('Frozen business conversation is incomplete.');
   const mutationPaths = validateBusinessMutationPaths(frozen.mutationPaths, projectRoot);
-  await fs.writeFile(sessionFile, transcript, { flag: 'wx' });
+  await fs.writeFile(sessionFile, records.map(record => JSON.stringify(record)).join('\n') + '\n', { flag: 'wx' });
   await gateway.runtime.agent.session.upsertSessionEntry({ agentId: 'main', sessionKey, storePath: gateway.config.session.store,
     entry: { sessionId, sessionFile, spawnedCwd: projectRoot, updatedAt: Date.now() } });
   const context = { agentId: 'main', sessionId, sessionKey, runId: originalRunId, workspaceDir: projectRoot, trigger: 'user',
@@ -150,6 +201,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   if (!startedTask) throw new Error('Frozen replay: the pre-mutation hooks did not create the RC task.');
   const taskStart = await assertFrozenTaskStart({ taskStartManifestPath, projectRoot, taskId: startedTask.taskId, preparedHead: prepared.preparedHead });
   await applyFrozenCandidate({ git, projectRoot, patch: prepared.patch, commit: frozen.commit, mutationPaths });
+  if (priorFeedback) await seedDeliveredStopFeedback({ load, prepared, taskId: startedTask.taskId, ...priorFeedback });
   await gateway.hooks.runBeforeAgentFinalize({ sessionId, runId: originalRunId, lastAssistantMessage: text(last) }, context);
   await gateway.hooks.runAgentEnd({ sessionId, runId: originalRunId, success: true, messages }, context);
   let task, ledger, initial, admission, runs = [], terminal, nativeStop, nativeStopReason = null;
@@ -178,7 +230,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
       && (maxCorrections === 1 || Object.values(ledger.admissions ?? {}).every(settled)
         && Object.values(ledger.stops ?? {}).every(stop => stop.reviewStatus !== 'PENDING' && stop.control === 'ALLOW'));
     nativeStop = nativeStopSettlement(await readNativeStopRecords({ projectRoot, sessionKey, sessionId }), task?.verification);
-    const ready = finished && runs.every(run => run.status === 'SETTLED');
+    const ready = (reviewOnly ? Boolean(task?.verification) : finished) && runs.every(run => run.status === 'SETTLED');
     nativeStopReason = nativeStopGrace(nativeStop, ready);
     if (ready && (nativeStop.settled || nativeStopReason)) break;
     await new Promise(resolve => setTimeout(resolve, 400));
@@ -186,7 +238,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   const businessStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
   const repairs = Object.values(ledger?.admissions ?? {}), allowedRuns = new Set(maxCorrections === 1 ? [admission?.hostRequest?.runId]
     : repairs.map(item => item.hostRequest?.runId));
-  if (businessStarts.some(row => !allowedRuns.has(row.runId)) || (ledger?.used ?? 0) > maxCorrections) {
+  if (businessStarts.some(row => reviewOnly || !allowedRuns.has(row.runId)) || (ledger?.used ?? 0) > maxCorrections) {
     const persisted = await store.inspect(sessionId);
     await save(path.join(outputRoot, 'business-run-identity-failure.json'), { sessionId, sessionKey, originalRunId,
       expectedRunId: admission?.hostRequest?.runId ?? null, used: ledger?.used ?? null, businessStarts,
@@ -213,12 +265,13 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   const completeCalls = usage.completeCalls + businessUsage.completeCalls;
   const totalUsage = { observedCalls: boundary.requests, completeCalls,
     tokens: completeCalls ? (usage.tokens ?? 0) + (businessUsage.tokens ?? 0) : null };
-  const frameworkError = Boolean(boundary?.failure || !initial);
+  const frameworkError = Boolean(boundary?.failure || (reviewOnly ? !task?.verification : !initial));
   const started = repairs.filter(item => item.startedAt);
-  const completedInBudget = Date.now() < deadline && initial?.progress?.complete === true && nativeStop?.settled === true
+  const scanCompleted = reviewOnly ? task?.verification?.coverage?.scanCompleted === true : initial?.progress?.complete === true;
+  const completedInBudget = Date.now() < deadline && scanCompleted && nativeStop?.settled === true
     && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview))
     && (maxCorrections === 1 || started.every(item => terminals.get(item.hostRequest?.runId)?.status === 'ok' && item.finalReview));
-  const reason = boundary?.failure ?? initial?.reasonCode ?? initial?.progress?.reasonCode ?? initial?.releaseReason
+  const reason = boundary?.failure ?? (reviewOnly ? task?.verification?.reasonCode : null) ?? initial?.reasonCode ?? initial?.progress?.reasonCode ?? initial?.releaseReason
     ?? (!initial ? 'FROZEN_STOP_NOT_REGISTERED' : null);
   const state = boundary?.failure === 'PROFILE_RATE_LIMIT' ? 'rate-limited' : frameworkError ? 'failed' : completedInBudget ? 'completed'
     : Date.now() >= deadline || /TIMEOUT|DEADLINE/u.test(reason ?? '') ? 'timed-out' : 'failed';
@@ -231,6 +284,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     repairs: repairs.map(item => ({ id: item.id, stopId: item.stopId, runId: item.hostRequest?.runId ?? null, accounting: item.accounting,
       finalReview: item.finalReview?.status ?? null, terminal: terminals.get(item.hostRequest?.runId)?.status ?? null })),
     actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
+    ...(reviewOnly ? { reviewOnly, verification: task?.verification ?? null } : {}),
     modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };
   await save(path.join(outputRoot, 'result.json'), result);
   return result;

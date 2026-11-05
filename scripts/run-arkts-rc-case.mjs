@@ -49,6 +49,10 @@ if (process.argv.includes('--verify-pending-rc') && !arg('--resume-run')) throw 
 const gitExecutable = arg('--git') ?? (process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git');
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const stopProfile = arg('--stop-profile') ?? 'assessment';
+const reviewOnly = process.argv.includes('--review-only');
+if (reviewOnly && (!frozenRoot || stopProfile !== 'assessment')) throw new Error('--review-only requires a frozen assessment.');
+const priorFeedback = arg('--prior-feedback-task') ? { sourceTask: arg('--prior-feedback-task'), evaluationId: arg('--prior-feedback-evaluation') } : null;
+if (priorFeedback && (!reviewOnly || !priorFeedback.evaluationId)) throw new Error('Prior feedback requires a review-only replay and a historical evaluation ID.');
 if (!['assessment', 'release'].includes(stopProfile) || stopProfile === 'release' && !frozenRoot) throw new Error('--stop-profile is assessment or release (frozen replays only).');
 if (process.argv.includes('--release-build')) {
   // A new package is identified by its digest and exact source commit; the
@@ -57,6 +61,14 @@ if (process.argv.includes('--release-build')) {
   const releaseCommit = arg('--source-commit') ?? (packageSha256 === release.packageSha256 ? release.sourceCommit : null);
   if (!frozenRoot || simplifyArm !== 'B12' || !/^[0-9a-f]{40}$/u.test(releaseCommit ?? '')) throw new Error('Use a release build and its exact source commit for the frozen B12 checks.');
   packageSources[packageSha256] = releaseCommit;
+  if (arg('--frozen-source-release')) {
+    const origin = JSON.parse(await fs.readFile(arg('--frozen-source-release'), 'utf8'));
+    if (origin.packageSha256 !== frozenPackageSha256 || !/^[0-9a-f]{40}$/u.test(origin.sourceCommit ?? '')
+      || digest(await fs.readFile(origin.archive)) !== frozenPackageSha256)
+      throw new Error('The frozen source release identity changed.');
+    execFileSync(gitExecutable, ['-C', sourceRoot, 'cat-file', '-e', `${origin.sourceCommit}^{commit}`], { windowsHide: true });
+    packageSources[frozenPackageSha256] = origin.sourceCommit;
+  }
 } else if (arg('--source-commit')) throw new Error('--source-commit requires --release-build.');
 const hostRoot = arg('--host-root');
 const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
@@ -157,6 +169,7 @@ if (s0) {
     releaseStop = parseSimpleYaml(await fs.readFile(path.join(artifact, '.runtime-corrector-default/config.yaml'), 'utf8')).stopCorrection;
     rendered = emitSimpleYaml(deepMerge(parseSimpleYaml(rendered), { stopCorrection: releaseStop }));
   }
+  if (reviewOnly) rendered = emitSimpleYaml(deepMerge(parseHarnessYaml(rendered), { shadowMode: true }));
   const configured = applyRcConfigOverrides(rendered, rcOverrides, { projectRoot, toolRoot, javaHome: java.javaHome, node: process.execPath,
     harnessRoot: path.resolve(sourceRoot), outputRoot });
   await fs.writeFile(path.join(projectRoot, '.runtime-corrector/config.yaml'), configured.text);
@@ -164,6 +177,7 @@ if (s0) {
   // Validate actual generated policy before starting the native Gateway/model.
   const { loadConfig } = await import(pathToFileURL(path.join(artifact ?? sourceRoot, 'lib/runtime-corrector.mjs')).href);
   const effective = await loadConfig({ cwd: projectRoot, pluginRoot: artifact ?? sourceRoot });
+  if (reviewOnly && effective.runtimeV2.shadowMode !== true) throw new Error('Frozen review-only mode must suppress correction starts.');
   if (arm) {
     const { stopCorrection, dynamicGroundTruth, skillCorrection, artifactCorrection } = effective.runtimeV2;
     if (stopCorrection.enabled !== arm.enabled || dynamicGroundTruth.enabled !== arm.baseline
@@ -238,7 +252,7 @@ try {
   if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)
     throw new Error('S0 Gateway must disable correction before business admission.');
   if (frozenRoot) {
-    result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot,
+    result = await reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git: gitExecutable, outputRoot, reviewOnly, priorFeedback,
       maxCorrections: stopPolicy?.maxCorrectionsPerSession ?? 1 });
   } else {
   const key = resumeSessionKey ?? `agent:main:arkts-${randomUUID()}`;

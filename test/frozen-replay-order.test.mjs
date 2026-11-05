@@ -4,12 +4,25 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { applyFrozenCandidate, assertFrozenTaskStart } from '../scripts/bench/simplify-arkts-frozen.mjs';
+import { applyFrozenCandidate, assertFrozenTaskStart, markHistoricalStopFeedback } from '../scripts/bench/simplify-arkts-frozen.mjs';
 import { captureTaskStart, taskChanges, taskStartManifestPath } from '../lib/runtime-v2/task-changes.mjs';
 
 const git = (root, ...args) => execFileSync('git', ['-c', 'user.name=RC Test', '-c', 'user.email=rc@example.invalid', '-c', 'core.autocrlf=false',
   '-C', root, ...args], { windowsHide: true });
 const head = root => git(root, 'rev-parse', 'HEAD').toString().trim();
+
+test('historical Stop feedback retains transcript ancestry and cannot become original user input', () => {
+  const user = { id: 'first', message: { role: 'user', content: 'Update the selected option.' } };
+  const feedback = { id: 'next', parentId: 'first', message: { role: 'user', content: [
+    { type: 'text', text: '[runtime-corrector:stop-reference]\nReview result.' },
+  ] } };
+  const [original, marked] = markHistoricalStopFeedback([user, feedback]);
+  assert.equal(original, user);
+  assert.equal(marked.id, feedback.id);
+  assert.equal(marked.parentId, feedback.parentId);
+  assert.equal(marked.message.content[0].text, '[runtime-corrector:internal]\n[runtime-corrector:stop-reference]\nReview result.');
+  assert.equal(feedback.message.content[0].text, '[runtime-corrector:stop-reference]\nReview result.');
+});
 
 async function frozenFixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frozen-order-'));
