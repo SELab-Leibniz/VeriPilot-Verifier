@@ -8,6 +8,7 @@ import { digest } from './arkts-dataset.mjs';
 import { shortArktsWorkspace } from './short-workspace.mjs';
 import { withFileLock, worktreeLockPath } from './file-lock.mjs';
 import { businessMutationPaths, validateBusinessMutationPaths } from './business-mutations.mjs';
+import { nativeStopGrace as createNativeStopGrace, nativeStopSettlement, readNativeStopRecords } from './native-stop-settlement.mjs';
 import { loadPackaged, redactEvaluationText, summarizeProviderUsage, waitSimplifyRunTerminal } from '../helpers/simplify-native-evaluation.mjs';
 import { measureSimplifyBenchmark } from '../helpers/simplify-stop-benchmark.mjs';
 
@@ -70,12 +71,43 @@ export async function prepareFrozenArktsWorkspace({ frozenRoot, freezeSha256, ta
   if (digest(transcript) !== frozen.sessionSha256 || digest(patch) !== frozen.patchSha256
     || digest(cacheGit('cat-file', 'commit', frozen.commit)) !== frozen.commitSha256
     || !cacheGit('diff', '--binary', frozen.preparedHead, frozen.commit).equals(patch)) throw new Error('Frozen ArkTS bytes changed.');
+  // Dependencies are installed on the prepared tree before the candidate exists.
+  if (frozen.mutationPaths?.some(file => /(?:^|\/)oh-package(?:-lock)?\.json5$/u.test(file)))
+    throw new Error('Frozen replay cannot apply a candidate that changes oh-package dependencies after installation.');
   const projectRoot = shortArktsWorkspace(outputRoot, 'biz', undefined, workspaceRoot);
   await fs.mkdir(outputRoot);
   await fs.mkdir(path.dirname(projectRoot), { recursive: true });
-  await withFileLock(worktreeLockPath(cache), () => cacheGit('worktree', 'add', '--detach', projectRoot, frozen.commit));
+  // The task-start manifest must see the prepared tree; the candidate is applied
+  // as uncommitted changes only after the replayed pre-mutation hooks.
+  await withFileLock(worktreeLockPath(cache), () => cacheGit('worktree', 'add', '--detach', projectRoot, frozen.preparedHead));
   return { projectRoot, preparedHead: frozen.preparedHead, baseCommit: task.base_commit, environmentAdapted: true,
-    frozenRoot, frozen, transcript };
+    frozenRoot, frozen, transcript, patch };
+}
+
+export async function assertFrozenTaskStart({ taskStartManifestPath, projectRoot, taskId, preparedHead }) {
+  const file = taskStartManifestPath(projectRoot, taskId);
+  const start = await fs.readFile(file, 'utf8').then(JSON.parse, error => { if (error.code === 'ENOENT') return null; throw error; });
+  if (!start) throw new Error(`Frozen replay: the pre-mutation hooks did not capture task-start.json for task ${taskId}.`);
+  if (start.complete !== true || start.head !== preparedHead)
+    throw new Error(`Frozen replay: task-start.json recorded head ${start.head ?? start.reasonCode ?? 'unknown'}, expected prepared HEAD ${preparedHead}.`);
+  return { file, start };
+}
+
+// Working-tree bytes must be what a checkout of the frozen commit produces
+// (git cat-file --filters applies the same eol/smudge conversion as git apply);
+// the clean blob id must equal the frozen commit's blob.
+export async function applyFrozenCandidate({ git, projectRoot, patch, commit, mutationPaths }) {
+  execFileSync(git, ['-c', 'core.longpaths=true', '-C', projectRoot, 'apply', '--binary', '--whitespace=nowarn', '-'],
+    { input: patch, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  const run = (...args) => gitAt(git, projectRoot, ...args);
+  const blob = spec => { try { return run('rev-parse', '--verify', '-q', spec).toString().trim(); } catch { return null; } };
+  for (const file of mutationPaths) {
+    const spec = `${commit}:${file}`, expected = blob(spec);
+    const actual = await fs.readFile(path.join(projectRoot, file)).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (expected === null ? actual !== null : actual === null || !actual.equals(run('cat-file', '--filters', spec))
+      || run('hash-object', `--path=${file}`, '--', file).toString().trim() !== expected)
+      throw new Error(`Frozen replay: ${file} differs from the frozen commit after applying candidate.patch.`);
+  }
 }
 
 export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, profile, git, outputRoot, maxCorrections = 1 }) {
@@ -95,8 +127,9 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   const context = { agentId: 'main', sessionId, sessionKey, runId: originalRunId, workspaceDir: projectRoot, trigger: 'user',
     modelProviderId: gateway.modelRef.split('/')[0], modelId: gateway.model };
   const load = file => loadPackaged(gateway.pluginRoot, file);
-  const [{ findTask }, { createStopCorrectionStore }, { listNativeRuns }] = await Promise.all([
+  const [{ findTask }, { createStopCorrectionStore }, { listNativeRuns }, { taskStartManifestPath }] = await Promise.all([
     load('lib/runtime-v2/task-store.mjs'), load('lib/runtime-v2/stop-correction-store.mjs'), load('lib/openclaw/native-runs.mjs'),
+    load('lib/runtime-v2/task-changes.mjs'),
   ]);
   const store = createStopCorrectionStore({ directory: path.join(gateway.runtime.state.resolveStateDir(), 'runtime-corrector-stop-sessions') });
   const startedAt = Date.now();
@@ -104,17 +137,23 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
   gateway.setPhase('arkts-frozen-stop-and-repair');
   await gateway.hooks.runSessionStart({ sessionId, source: 'startup' }, context);
   await gateway.hooks.runBeforePromptBuild({ prompt: text(user), messages }, context);
-  // Restore the original mutation scope before invoking the registered terminal
-  // hooks. The mutation itself is already in the verified frozen Git tree.
+  // Replay the original pre-mutation hooks on the prepared tree (this creates the
+  // task and its start manifest), then write the verified candidate as the
+  // business turn did, uncommitted, before the terminal hooks.
   for (const file of mutationPaths) await gateway.hooks.runBeforeToolCall({ toolName: 'write', toolCallId: `frozen-${randomUUID()}`,
     params: { path: path.join(projectRoot, file) } }, context);
   const registered = globalThis[Symbol.for('runtime-corrector.openclaw.session-project-state')];
   const active = [...(registered?.values() ?? [])].flatMap(value => [...(value.states?.values() ?? [])])
     .find(value => value.sessionId === sessionId && path.relative(value.projectRoot, projectRoot) === '');
   if (!active?.projectScope.enabled || !active.nativeNeedsStop) throw new Error('The isolated native hooks did not arm the frozen Stop.');
+  const startedTask = await findTask({ projectRoot, sessionId });
+  if (!startedTask) throw new Error('Frozen replay: the pre-mutation hooks did not create the RC task.');
+  const taskStart = await assertFrozenTaskStart({ taskStartManifestPath, projectRoot, taskId: startedTask.taskId, preparedHead: prepared.preparedHead });
+  await applyFrozenCandidate({ git, projectRoot, patch: prepared.patch, commit: frozen.commit, mutationPaths });
   await gateway.hooks.runBeforeAgentFinalize({ sessionId, runId: originalRunId, lastAssistantMessage: text(last) }, context);
   await gateway.hooks.runAgentEnd({ sessionId, runId: originalRunId, success: true, messages }, context);
-  let task, ledger, initial, admission, runs = [], terminal;
+  let task, ledger, initial, admission, runs = [], terminal, nativeStop, nativeStopReason = null;
+  const nativeStopGrace = createNativeStopGrace();
   const terminals = new Map();
   // Assessment mode releases Stop when feedback is prepared. The host can
   // still be between that handoff and its trusted business model start.
@@ -138,7 +177,10 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
       && (!initial.admissionId || settled(admission))
       && (maxCorrections === 1 || Object.values(ledger.admissions ?? {}).every(settled)
         && Object.values(ledger.stops ?? {}).every(stop => stop.reviewStatus !== 'PENDING' && stop.control === 'ALLOW'));
-    if (finished && runs.every(run => run.status === 'SETTLED')) break;
+    nativeStop = nativeStopSettlement(await readNativeStopRecords({ projectRoot, sessionKey, sessionId }), task?.verification);
+    const ready = finished && runs.every(run => run.status === 'SETTLED');
+    nativeStopReason = nativeStopGrace(nativeStop, ready);
+    if (ready && (nativeStop.settled || nativeStopReason)) break;
     await new Promise(resolve => setTimeout(resolve, 400));
   }
   const businessStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
@@ -173,7 +215,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     tokens: completeCalls ? (usage.tokens ?? 0) + (businessUsage.tokens ?? 0) : null };
   const frameworkError = Boolean(boundary?.failure || !initial);
   const started = repairs.filter(item => item.startedAt);
-  const completedInBudget = Date.now() < deadline && initial?.progress?.complete === true
+  const completedInBudget = Date.now() < deadline && initial?.progress?.complete === true && nativeStop?.settled === true
     && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview))
     && (maxCorrections === 1 || started.every(item => terminals.get(item.hostRequest?.runId)?.status === 'ok' && item.finalReview));
   const reason = boundary?.failure ?? initial?.reasonCode ?? initial?.progress?.reasonCode ?? initial?.releaseReason
@@ -182,6 +224,9 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     : Date.now() >= deadline || /TIMEOUT|DEADLINE/u.test(reason ?? '') ? 'timed-out' : 'failed';
   const result = { ...manifest, state, completedInBudget, frameworkError, sessionId, sessionKey, originalRunId,
     reason, rcElapsedMs, usage, totalUsage, baselineCost, repairFeedback, feedback,
+    startHead: taskStart.start.head, patchApplied: true, taskStartManifest: taskStart.file,
+    nativeStopSettled: nativeStop?.settled === true, nativeStopReason, nativeStopRecords: nativeStop?.records ?? [], nativeStopPending: nativeStop?.pending ?? [],
+    nativeStopRequired: nativeStop?.required ?? null, nativeStopVerification: nativeStop?.carrier ?? null,
     elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0, maxCorrections,
     repairs: repairs.map(item => ({ id: item.id, stopId: item.stopId, runId: item.hostRequest?.runId ?? null, accounting: item.accounting,
       finalReview: item.finalReview?.status ?? null, terminal: terminals.get(item.hostRequest?.runId)?.status ?? null })),

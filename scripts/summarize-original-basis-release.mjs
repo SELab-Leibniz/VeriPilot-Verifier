@@ -56,11 +56,12 @@ export async function quickRow({ slot, attempts: count, chosen }) {
     : evidence.stopReviews[0] ?? null);
   const feedback = result?.repairFeedback === true;
   const deviations = first?.deviations ?? null;
-  const judgement = !result || observation.frameworkError || limited(observation) ? 'INVALID'
+  const judgement = !result || observation.frameworkError || limited(observation) || result.nativeStopSettled === false ? 'INVALID'
     : sample === 'ceiling' ? (feedback && (deviations > 0 || first?.status === 'DEVIATION') ? 'DETECTED' : 'MISSED')
       : sample === 'correct' ? (feedback ? 'FALSE_POSITIVE' : 'NO_FALSE_POSITIVE') : null;
   return { slot, sample, attempts: count, state: observation.state, reason: observation.reason, frameworkError: observation.frameworkError,
     repairFeedback: feedback, judgement, firstStop: first && reviewRow(first), stopReviews: evidence.stopReviews.map(reviewRow), evidenceSource: evidence.source,
+    nativeStopSettled: result?.nativeStopSettled ?? null, startHead: result?.startHead ?? null, patchApplied: result?.patchApplied ?? null,
     corrections: result?.corrections ?? null, modelRequests: observation.modelRequests ?? result?.modelRequests ?? null,
     tokens: result?.totalUsage?.tokens ?? result?.usage?.tokens ?? null, elapsedMs: observation.elapsedMs, leakMatches: leak?.matches ?? null };
 }
@@ -71,7 +72,8 @@ export async function e2eRow({ slot, attempts: count, chosen }) {
   const evidence = await evidenceOf(directory, result, manifest);
   const verdict = computeReleaseVerdict({ businessNatural: result?.businessNatural, frameworkError: observation.frameworkError, hidden: observation.hidden,
     documentReviews: evidence.documentReviews, stopReviews: evidence.stopReviews, materialBasis: evidence.materialBasis, turns: result?.turns ?? [],
-    mutationPaths: result?.frozen?.mutationPaths });
+    mutationPaths: result?.frozen?.mutationPaths, nativeStopRecords: evidence.nativeStopRecords ?? result?.nativeStopRecords ?? [],
+    nativeStopSettled: result?.nativeStopSettled ?? null });
   const tokens = tokenSplit({ documentCost: result?.documentCost, stopCost: result?.stopCost, businessUsage: result?.businessUsage,
     documentReviews: evidence.documentReviews, stopReviews: evidence.stopReviews });
   return { slot, attempts: count, state: observation.state, reason: observation.reason, frameworkError: observation.frameworkError,

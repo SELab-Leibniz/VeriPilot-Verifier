@@ -4,6 +4,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { measureSimplifyBenchmark } from '../helpers/simplify-stop-benchmark.mjs';
+import { nativeStopSummary } from './native-stop-settlement.mjs';
 
 const missing = fallback => error => { if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return fallback; throw error; };
 const readJson = file => fs.readFile(file, 'utf8').then(JSON.parse, missing(null));
@@ -102,16 +103,22 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
   const checked = new Set(runIds.map(checkBase).filter(Boolean));
   const stopReviews = [];
   for (const runId of runIds.filter(id => !checked.has(id))) {
-    const base = checkBase(runId), native = nativeStops.find(row => row.runId === (base ?? runId)), terminal = terminals.get(runId);
-    const inherited = base ? terminals.get(base) : undefined;
-    const evaluation = evaluations.filter(row => row.core?.stop?.id === runId).at(-1)
-      ?? evaluations.find(row => native?.evaluationId && row.evaluationId === native.evaluationId);
+    const base = checkBase(runId), terminal = terminals.get(runId), byOccurrence = nativeStops.find(row => row.occurrenceId === runId);
+    const native = byOccurrence ?? nativeStops.find(row => row.runId === (base ?? runId)), inherited = base ? terminals.get(base) : undefined;
+    // The native job of this occurrence is authoritative while it runs and once it
+    // settled with a published evaluation; a cancelled check job defers to the ledger.
+    const current = native && (byOccurrence || !base) && (native.status !== 'SETTLED' || native.evaluationId) ? native : null;
+    const evaluation = (current?.evaluationId && evaluations.find(row => row.evaluationId === current.evaluationId))
+      || evaluations.filter(row => row.core?.stop?.id === runId).at(-1)
+      || evaluations.find(row => native?.evaluationId && row.evaluationId === native.evaluationId);
     const event = settledEvents.filter(row => row.stopId === runId).at(-1);
     const review = evaluation?.review ?? evaluation?.outcome?.review ?? {}, scope = review.scopeSelection ?? {};
     const coverage = evaluation?.coverage ?? review.coverage ?? native?.coverage ?? terminal?.coverage ?? null;
     const ledger = [terminal?.status, event?.status, evaluation?.outcome?.status, evaluation?.core?.stop?.reviewStatus];
-    const status = (base ? [...ledger, inherited?.status, native?.reviewStatus] : [native?.reviewStatus, ...ledger]).find(Boolean) ?? null;
-    const reasonCode = (base ? [terminal?.reasonCode, event?.reasonCode, evaluation?.outcome?.reasonCode, inherited?.reasonCode, native?.reasonCode]
+    const status = current ? (current.status === 'SETTLED' ? current.reviewStatus : current.status ?? 'PENDING')
+      : (base ? [...ledger, inherited?.status, native?.reviewStatus] : [native?.reviewStatus, ...ledger]).find(Boolean) ?? null;
+    const reasonCode = (current ? [current.reasonCode, terminal?.reasonCode, event?.reasonCode, evaluation?.outcome?.reasonCode]
+      : base ? [terminal?.reasonCode, event?.reasonCode, evaluation?.outcome?.reasonCode, inherited?.reasonCode, native?.reasonCode]
       : [terminal?.reasonCode, native?.reasonCode, event?.reasonCode, evaluation?.outcome?.reasonCode]).find(Boolean) ?? null;
     const startedAt = (base ? [evaluation?.core?.stop?.startedAt, native?.startedAt] : [native?.startedAt, evaluation?.core?.stop?.startedAt]).find(Number.isFinite) ?? null;
     const finishedAt = (base ? [evaluation?.core?.stop?.assessmentFinishedAt, native?.assessmentCompletedAt, native?.settledAt]
@@ -125,13 +132,14 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
       scanCompleted: coverage?.scanCompleted ?? review.collection?.complete ?? null,
       coverageSource: coverage ? 'coverage' : evaluation ? 'scopeSelection' : null,
       deviations: count(evaluation?.core?.summary?.deviations) ?? count(evaluation?.core?.stop?.currentDeviations) ?? count(review.findings),
-      verificationIncomplete: evaluation?.outcome?.verificationIncomplete ?? null, evaluationId: evaluation?.evaluationId ?? native?.evaluationId ?? terminal?.evaluationId ?? null,
+      verificationIncomplete: evaluation?.outcome?.verificationIncomplete ?? null,
+      evaluationId: current?.evaluationId ?? evaluation?.evaluationId ?? native?.evaluationId ?? terminal?.evaluationId ?? null,
       durationMs: Number.isFinite(startedAt) && Number.isFinite(finishedAt) ? finishedAt - startedAt : null, ...await cost(runs),
       basisBudget: coverage?.basisBudget ?? evaluation?.basisBudget ?? review.basisBudget ?? native?.basisBudget ?? null,
       lifecycle: native?.status ?? (event ? 'SETTLED' : null), startedAt });
   }
   stopReviews.sort((left, right) => (left.startedAt ?? Infinity) - (right.startedAt ?? Infinity));
-  return { taskIds, documentReviews, stopReviews, materialBasis,
+  return { taskIds, documentReviews, stopReviews, materialBasis, nativeStopRecords: nativeStops.map(nativeStopSummary),
     counts: Object.fromEntries(['OPENCLAW_ARTIFACT_REVIEW', 'OPENCLAW_FEEDBACK_DELIVERED', 'REVIEWER_ENVELOPE', 'REVIEWER_OUTPUT_INVALID', 'STOP_CORRECTION_SETTLED']
       .map(type => [type, journal.filter(row => row.type === type).length])) };
 }
@@ -147,9 +155,12 @@ export function finalStopOf(stopReviews, turns = []) {
 
 // A run "runs through" only when every condition below is independently
 // evidenced. Each unmet condition is reported; none is inferred.
-export function computeReleaseVerdict({ businessNatural, frameworkError = false, hidden, documentReviews = [], stopReviews = [], materialBasis = [], turns = [], mutationPaths }) {
+export function computeReleaseVerdict({ businessNatural, frameworkError = false, hidden, documentReviews = [], stopReviews = [], materialBasis = [], turns = [], mutationPaths,
+  nativeStopRecords = [], nativeStopSettled = null }) {
   const reasons = [], finalStop = finalStopOf(stopReviews, turns), changed = codeChanged(mutationPaths);
   if (frameworkError) reasons.push('FRAMEWORK_ERROR');
+  if (nativeStopSettled === false) reasons.push('NATIVE_STOP_UNSETTLED');
+  for (const row of nativeStopRecords) if (row.status !== 'SETTLED') reasons.push(`NATIVE_STOP_PENDING:${row.occurrenceId ?? row.runId}:${row.status}`);
   if (businessNatural !== true) reasons.push('BUSINESS_NOT_NATURAL');
   if (hidden?.executed !== true) reasons.push('HIDDEN_NOT_EXECUTED');
   if (!documentReviews.length) reasons.push('NO_DOCUMENT_REVIEW');

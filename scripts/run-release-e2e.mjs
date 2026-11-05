@@ -21,6 +21,7 @@ import { prepareJava } from './bench/arkts-java.mjs';
 import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
 import { codeChanged, collectReleaseEvidence, finalStopOf, tokenSplit } from './bench/release-evidence.mjs';
+import { waitNativeStopSettled } from './bench/native-stop-settlement.mjs';
 import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 import { measureSimplifyBenchmark } from './helpers/simplify-stop-benchmark.mjs';
 
@@ -265,6 +266,10 @@ try {
       if (!businessCompleted(terminal,tracker.runId) || gateway.providerStatus().failure) break;
       if (stage==='proposal' && !(await Promise.all(docNames.map(file=>fs.stat(path.join(change,file)).then(stat=>stat.isFile(),()=>false)))).every(Boolean)) break;
     }
+    // Closing the Gateway cancels unsettled native Stop jobs, and the freeze
+    // commit below would move HEAD under a review that is still reading it.
+    const nativeStop = await waitNativeStopSettled({projectRoot,sessionKey,sessionId,deadlineAt:deadline,beforePoll:()=>gateway.drain(),
+      abandon:()=>Boolean(gateway.providerStatus().failure),readVerification:async()=>(await findTask({projectRoot,sessionId}))?.verification??null});
     const ledger = await store.inspect(sessionId);
     const task = await findTask({projectRoot,sessionId});
     const session = await gateway.runtime.subagent.getSession({sessionKey});
@@ -326,7 +331,7 @@ try {
       elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:evidence.documentReviews,documentFeedback,
       stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis,evidenceCounts:evidence.counts,finalStop,
       codeChanged:codeChanged(frozen.mutationPaths),documentCost,
-      firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,
+      firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,...nativeStop,
       stopFeedback:admission?.hostRequest?.gate ? redactEvaluationText((admission.currentDeviations??[]).map(item=>
         [item.result?.reason,...(item.result?.evidence??[])].join('\n')).join('\n\n')) : null,
       frozen,privateRuns,modelRequests:boundary.requests,businessUsage,

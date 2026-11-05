@@ -171,7 +171,8 @@ async function executeSlot(slot, concurrency, rateFile, controller) {
     const evidence=result.stopReviews ? result : await collectReleaseEvidence({projectRoot:manifest.projectRoot,sessionId:result.sessionId,
       nativeRoot:path.join(evaluation,'native-host'),turns:result.turns??[]});
     const computed=computeReleaseVerdict({businessNatural:result.businessNatural,frameworkError,hidden,documentReviews:evidence.documentReviews,
-      stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis??[],turns:result.turns??[],mutationPaths:result.frozen?.mutationPaths});
+      stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis??[],turns:result.turns??[],mutationPaths:result.frozen?.mutationPaths,
+      nativeStopRecords:evidence.nativeStopRecords??result.nativeStopRecords??[],nativeStopSettled:result.nativeStopSettled??null});
     verdict={runThrough:computed.runThrough,reasons:computed.reasons,finalCoverage:computed.finalCoverage,codeChanged:computed.codeChanged};
   }
   const state=peerPaused?'peer-paused':rateLimited?'rate-limited':frameworkError?'framework-error':result?.state??'timed-out';
