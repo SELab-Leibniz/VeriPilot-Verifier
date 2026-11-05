@@ -267,7 +267,12 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     tokens: completeCalls ? (usage.tokens ?? 0) + (businessUsage.tokens ?? 0) : null };
   const frameworkError = Boolean(boundary?.failure || (reviewOnly ? !task?.verification : !initial));
   const started = repairs.filter(item => item.startedAt);
-  const scanCompleted = reviewOnly ? task?.verification?.coverage?.scanCompleted === true : initial?.progress?.complete === true;
+  // Shadow assessments have no admission. The native terminal may wrap the
+  // completed assessment while accounting for the synthetic business turn.
+  const verification = reviewOnly && task?.verification?.terminalRunId === originalRunId
+    && task.verification.previousVerification?.assessmentId?.startsWith(`${originalRunId}:`)
+    ? task.verification.previousVerification : task?.verification;
+  const scanCompleted = reviewOnly ? verification?.coverage?.scanCompleted === true : initial?.progress?.complete === true;
   const completedInBudget = Date.now() < deadline && scanCompleted && nativeStop?.settled === true
     && (!repairFeedback || terminal?.status === 'ok' && Boolean(admission.finalReview))
     && (maxCorrections === 1 || started.every(item => terminals.get(item.hostRequest?.runId)?.status === 'ok' && item.finalReview));
@@ -284,7 +289,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     repairs: repairs.map(item => ({ id: item.id, stopId: item.stopId, runId: item.hostRequest?.runId ?? null, accounting: item.accounting,
       finalReview: item.finalReview?.status ?? null, terminal: terminals.get(item.hostRequest?.runId)?.status ?? null })),
     actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
-    ...(reviewOnly ? { reviewOnly, verification: task?.verification ?? null } : {}),
+    ...(reviewOnly ? { reviewOnly, verification: verification ?? null } : {}),
     modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };
   await save(path.join(outputRoot, 'result.json'), result);
   return result;
