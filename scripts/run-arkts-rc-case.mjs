@@ -119,6 +119,7 @@ if (resumeRoot) {
   await fs.mkdir(outputRoot, { recursive: false });
 }
 const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
+  ...(resumeManifest.resumeHead ? { resumeHead: resumeManifest.resumeHead } : {}),
   baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot }
   : frozenRoot ? await prepareFrozenArktsWorkspace({ frozenRoot, freezeSha256: arg('--freeze-sha256'), task, datasetDigest,
     artifactSha256: frozenPackageSha256, planSha256, git: gitExecutable, cacheRoot, outputRoot, workspaceRoot: arg('--workspace-root') })
@@ -376,10 +377,12 @@ try {
   const mutationPaths = [...new Set([...inheritedScope.mutationPaths,
     ...(actualBusinessStart ? businessMutationPaths(receiptRecords, projectRoot) : [])])].sort();
   if (mutationPaths.length) execFileSync(gitExecutable, ['--literal-pathspecs', '-C', projectRoot, 'add', '--intent-to-add', '--', ...mutationPaths], { windowsHide: true });
-  await fs.writeFile(path.join(outputRoot, 'workspace.patch'), execFileSync(gitExecutable, ['-C', projectRoot, 'diff', '--binary', 'HEAD'], { maxBuffer: 4 * 1024 * 1024 }));
-  const patch = mutationPaths.length ? execFileSync(gitExecutable, ['--literal-pathspecs', '-C', projectRoot, 'diff', '--binary', 'HEAD', '--', ...mutationPaths], { maxBuffer: 4 * 1024 * 1024 }) : Buffer.alloc(0);
+  // A genuine continuation may have a frozen implementation committed at HEAD.
+  // Candidate grading still applies to the original prepared task baseline.
+  await fs.writeFile(path.join(outputRoot, 'workspace.patch'), execFileSync(gitExecutable, ['-C', projectRoot, 'diff', '--binary', prepared.preparedHead], { maxBuffer: 4 * 1024 * 1024 }));
+  const patch = mutationPaths.length ? execFileSync(gitExecutable, ['--literal-pathspecs', '-C', projectRoot, 'diff', '--binary', prepared.preparedHead, '--', ...mutationPaths], { maxBuffer: 4 * 1024 * 1024 }) : Buffer.alloc(0);
   await fs.writeFile(path.join(outputRoot, 'candidate.patch'), patch);
-  await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths, inheritedScope, restoredRecordCount,
+  await fs.writeFile(path.join(outputRoot, 'candidate-scope.json'), JSON.stringify({ mutationPaths, inheritedScope, restoredRecordCount, preparedHead: prepared.preparedHead,
     basis: 'Captured business write/edit/apply_patch receipts plus prior genuine business scope. Maintenance-only startup attempts excluded; full workspace.patch and notes retained.' }, null, 2));
   const infrastructureComplete = (s0 || ['IDLE', 'CLOSED'].includes(post?.phase)) && runs.every(run => run.status === 'SETTLED')
     && knownBusinessTerminal(officialBusinessTerminal, finalBusinessRunId);

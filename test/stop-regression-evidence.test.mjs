@@ -68,10 +68,11 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
   await project(f.root, { broken });
+  await mutateProject?.(f.root);
   if (!broken) await fs.writeFile(path.join(f.root, 'README.md'), '# Settings\n\nPassword options.\n');
   const transcript = path.join(f.root, 'session.jsonl');
   await fs.writeFile(transcript, [{ type: 'user', uuid: 'user-original', message: { content: request } },
@@ -138,6 +139,29 @@ test('the standing regression item cites the pre-existing test and the changed c
   assert.equal(result.stop.status, 'DEVIATION', JSON.stringify(result.stop));
   assert.equal(result.decision, 'block');
   assert.match(result.feedback, /DEFAULT_INDEX/u);
+});
+
+test('changed test setup can prove a shared production-state regression without proving production fulfillment', async t => {
+  const { result } = await regressionStop(t, { broken: false,
+    mutateProject: root => fs.writeFile(path.join(root, 'test/settings.test.mjs'), TESTS +
+      '\nSettingsViewModel.prototype.applyPolicy = function () { this.minLengthIndex = -1; };\n'),
+    regressionCheck: { enabled: true, command: [process.execPath, '--input-type=module', '-e',
+      "await import('./test/settings.test.mjs'); const { SettingsViewModel, DEFAULT_INDEX } = await import('./src/settings.mjs'); const vm = new SettingsViewModel(); vm.applyPolicy({ minLength: 99 }); process.exit(vm.minLengthIndex === DEFAULT_INDEX ? 0 : 1);"] },
+    script: async ({ checklist, standing, submit, cite }) => {
+      assert(standing, 'A changed test that mutates shared production state must remain reviewable.');
+      assert.equal(standing.regressionEvidence.programRun.status, 'FAILED');
+      const changed = await cite('test/settings.test.mjs');
+      const existing = await cite(standing.regressionEvidence.evidenceFiles[0]);
+      const production = checklist.items.find(item => !item.programStanding);
+      await assert.rejects(submit('submit_review', { taskId: production.taskId, verdict: 'DEVIATION',
+        reason: 'A test edit alone cannot prove the requested production option is missing.', citeIds: [changed] }),
+      { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
+      await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION',
+        reason: 'The changed test replaces the shared applyPolicy method without restoring it, breaking the pre-existing default-index assertion for later callers.',
+        citeIds: [changed, existing] });
+    } });
+  assert.equal(result.stop.status, 'DEVIATION');
+  assert.match(result.feedback, /without restoring/u);
 });
 
 test('without existing non-artifact source changes no standing item or evidence is added', async t => {

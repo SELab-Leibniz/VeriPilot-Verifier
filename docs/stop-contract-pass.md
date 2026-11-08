@@ -260,3 +260,47 @@ one optional test skipped (`resume-compat-tests.log`). The corrected no-model
 preflight verifies the pinned artifact and resume binding
 (`st6-v2-continuation-preflight-r2`). Initial preflight omitted those arguments
 because of PowerShell array concatenation; its no-model record is retained.
+
+The genuine continuation completed its first main turn with actual agent_end
+success, 621/621 modified local tests and a successful build. The longer native
+drain reached REVIEWING without a new business request. Its immutable full
+checkpoint is `st6-v2-continuation-1/checkpoints/b68a38ce-5ad2-4f42-a386-790a5d69765f`
+(SHA256 `963ad31994cd4d4d267152feb0f5e7176530316c242126ed842c10e928fa31a8`).
+Independent grading before Stop correction completed: F2P 4/7, P2P 615/617,
+FAIL (`grade-before-stop/results.json`). Actual Stop assessment
+`stop-7a57560285d99e3201e2db82` found that USB auto-deny still overwrote an
+explicit allow policy and admitted corrective run
+`rc-stop-ecc3844087445bd8b2714ff6208e67e598bb50f26c4453709699443c5a8d8585`.
+No independent evaluator result was supplied to that model.
+
+Continuation capture must diff against the original prepared commit, not a
+later frozen HEAD containing an interrupted implementation. The CLI now uses
+`preparedHead` for both complete workspace and scoped candidate patches and
+records that base in the scope receipt. It also preserves the authenticated
+`resumeHead` for another genuine continuation. The current already-running
+process still uses the earlier exporter; retain its raw output and grade and
+recover the complete candidate from its passive full checkpoint if necessary.
+Candidate/export/inherited-scope/checkpoint/resume tests: 11/11 pass; script
+syntax and diff checks pass. This is an evidence-capture fix, not a business
+implementation change or a claim that st6 has passed.
+
+The actual first Stop repair's full checkpoint
+`checkpoints/8c4f4fec-7920-463d-9931-d338066bb065` independently scores F2P
+4/7, P2P 616/617, complete/executed FAIL (`grade-after-first-stop/results.json`).
+Its public changed tests cache `ORIGINAL_DISPATCH` and route service assertions
+through that saved function after adding static mocks in other suites. This
+can conceal an un-restored canonical service entry point from later callers;
+the code of the installed mock library and actual cleanup need inspection.
+
+The next review change is limited to the standing REGRESSION item: changed
+test source may establish shared production-state pollution when paired with
+the prior caller/assertion it breaks. Production implementation obligations
+still reject test-only proof. Guidance explicitly asks the reviewer to check
+real cleanup semantics and masked state leaks instead of trusting a method
+named `clear` or `reset`. A native Stop protocol reproduction verifies both
+the accepted regression report and the rejected test-only production claim.
+Related regression/proof tests: 47/47 pass
+(`test-state-leak-review-v6-r2.log`). The initial test fixture incorrectly used
+a nested Node test runner; its failure is retained in the first log. The
+corrected fixture explicitly calls the canonical method after loading the
+polluting test setup.
