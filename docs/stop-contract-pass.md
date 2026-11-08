@@ -159,8 +159,8 @@ inside the full-PASS-only prompt branch, so the enabled deviation-only mode
 never received them. Move that analysis into the common Stop instructions
 without requiring full PASS traces in deviation-only mode. Add one general
 check that an extended guard's output still identifies its actual pending
-state and preserves the original state-to-output mapping. No task-specific
-native fixture or new reviewer is needed for this source-visible defect.
+state and preserves the original state-to-output mapping. This first attempt
+tries the existing reviewer with guidance alone, without another review stage.
 Related Stop workspace, regression and ownership checks: **62/62 pass**
 (`stop-guidance-v10-tests.log`).
 
@@ -171,6 +171,47 @@ the complete main transcript and exact patch hash. Its import manifest
 SHA256 is `b360c395f39fbfbec1969f7ef0d6daa3e9909213942de434dd22a754a9a67dc3`.
 The next check is an independent frozen-candidate Stop replay with real
 automatic repair, not a fresh task or a continuation of the completed v8 run.
+
+The actual guidance-only v10 replay still returned NO_DEVIATION_FOUND, started
+no business correction and independently reproduced **2/5 + 673/673** on the
+identical `d1335f3...` candidate (`st7-frozen-v10`). Guidance alone did not close
+the gap. Its runtime package source `bfb4ed0` completed all 299 RC test files:
+3,066 pass, zero failures/timeouts, 46 skipped (`rc-tests-v10.log` and its
+verification receipt). Package SHA256
+`a8a635c0b19db84756893b5cd509f0156e48535ae95a9eadd64647e3a06e3a5f`.
+
+Reuse the existing isolated native runner for one optional public task check:
+`scripts/bench/probes/security-tool-firewall-state-contract.ets`. It derives
+its inputs from the public failed-switch request and its stable messages from
+the task-start ViewModel guards. Four controls exercise both original guards
+and normal mode/toggle service calls. Three requirement cases exercise both
+cross-operation rejections and confirmed-state reload after a thrown service
+call. Each service method is mocked once in a separate native process, using
+a mutable outcome holder rather than stacking SDK mock wrappers. The thrown
+case catches only to inspect state effects; it does not impose a new exception
+transport contract.
+
+On both the untouched prepared original source and the exact failing
+candidate, all **four controls pass**, and all **three new requirement cases
+fail** with real assertions. This is deliberately a new-task requirements
+check, not a claim that those new requirements passed on base or regressed.
+The initial five-case fixture and output remain preserved; the final fixture
+adds successful-service controls so a missed mock cannot masquerade as a
+missing reload. Final probe SHA256
+`83cc1b55059dbb8131e108e992e5651923e8ed951c6bf4a67af704a8e32de5d9`;
+evidence `st7-public-state-{original,candidate}-r2.json`. No evaluator test,
+assertion body or reference code enters this check.
+
+The existing composed runner gains an explicit `--requirement-probe` mode:
+keep the complete restored-original suite, then run this task check separately
+without treating its original failures as exempt known failures. Compatibility
+probes still require their hash-bound passing-control metadata. Existing
+snapshot/evaluator checks pass **11/11** (`requirement-probe-tests-v11.log`).
+The real composed execution reports the one explainable original-suite
+assertion separately from the three missing requirement effects
+(`requirement-composed-v11.log`), then returns FAIL. The optional launcher flag
+`run-frozen.ps1 -RequirementProbe` configures this command inside the same Stop;
+it adds no reviewer and makes no business-source edits.
 
 First changes:
 
