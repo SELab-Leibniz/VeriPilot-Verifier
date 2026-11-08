@@ -371,3 +371,38 @@ that one obsolete assertion cannot retire the later, still-applicable
 assertions in the same test, including unchanged result fields. No additional
 reviewer, analyzer or execution framework is introduced. Regression/proof
 tests: 18/18 pass (`boundary-contract-navigation-v7.log`).
+
+`32adab6` full suite: 299/299 files, 3,063 pass, zero fail/timeouts,
+46 skipped (`rc-tests-v7.log`). Actual outcomes still require a stronger check:
+`st6-pending-v6c` finished with NO_DEVIATION_FOUND after its real READ_ONLY
+repair, but independent grading remains 4/7, 616/617. Source/trace-preserving
+import of the original report's RC st6 r3 candidate independently reproduces
+7/7, 616/617 (`st6-report-r3-import/grade-before/results.json`). The import
+verifies the archive, exact session bytes and five official candidate source
+files. Its archived native completion receipt is explicitly distinct from a
+new agent.wait reply; this is an independent frozen-candidate experiment.
+`st6-report-r3-v7` completed its actual review with NO_DEVIATION_FOUND, no
+business repair and the unchanged 7/7, 616/617 score. Guidance alone did not
+close the implicit-contract gap.
+
+Add one optional public contract check, using the task-start missing/empty
+payload input and assertions with a successful dependency outcome. Native
+positive control on the untouched prepared production source: **1/1 PASS**;
+the exact same case on the original report candidate: **0/1**, actual
+`device_deny` versus pre-existing `default_allow`. This uses no evaluator
+case, hidden expected answer or reference implementation. Evidence:
+`st6-public-contract-calibration-r2/{baseline,original-run,candidate-run}.json`;
+probe SHA256 `98aede300e6cdfbe9ea89d87a523d78bef0d6f375f9a92736880fcdd7ff885d4`.
+
+The supplied ArkTS contract case runs in its own native process and snapshot.
+An initial appended-case calibration failed even on base because earlier
+public-suite mocks left getAll returning undefined; that rejected control is
+retained under `st6-public-contract-calibration`, not counted as a candidate
+regression. `arkts-stop-contract-check.mjs` composes the existing complete
+original suite with this independent check, binds both baselines to the same
+prepared commit and the probe bytes to their recorded SHA256, and retains both
+real outputs. Baseline/hash mismatches fail before native execution. Related
+tests: 23/23 pass (`contract-probe-tests-v8.log`); the combined native check
+reports the four intentional old-suite assertion failures plus the one new
+contract regression (`contract-composed-check-v8.log`). The source workspace
+and original suite remain unchanged; only isolated snapshots execute the case.

@@ -4,7 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { prepareRegressionWorkspace } from '../scripts/bench/regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
+import { runRegressionCheck } from '../scripts/bench/arkts-regression-check.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
 async function fixture(t) {
@@ -42,6 +43,30 @@ test('toolchain writes in the snapshot leave a previously searched source invent
   await evidence.assertFrozen();
   await fs.writeFile(path.join(f.source, '.hvigor/in-place-build.log'), 'mutates evidence');
   await assert.rejects(evidence.assertFrozen(), error => error.code === 'BASELINE_INPUT_CHANGED');
+});
+
+test('an isolated contract case preserves the original entry and never edits its source workspace', async t => {
+  const f = await fixture(t), entry = 'entry/src/test/List.test.ets';
+  const original = Buffer.from("import widget from './widget.test'\r\n// 原始公开用例\r\nexport default function testsuite() { widget() }\r\n");
+  await fs.writeFile(path.join(f.source, entry), original);
+  const copy = await prepareRegressionWorkspace(f.source);
+  const probe = Buffer.from('export default function contractCase(): void {}\n');
+  await installRegressionContractProbe(copy, probe);
+  assert((await fs.readFile(path.join(f.source, entry))).equals(original));
+  assert((await fs.readFile(path.join(copy, 'entry/src/test/__rc_original_list.test.ets'))).equals(original));
+  assert((await fs.readFile(path.join(copy, 'entry/src/test/__rc_contract_probe.test.ets'))).equals(probe));
+  assert.match(await fs.readFile(path.join(copy, entry), 'utf8'), /contractProbe\(\)/u);
+  assert.doesNotMatch(await fs.readFile(path.join(copy, entry), 'utf8'), /originalSuite/u);
+});
+
+test('a different contract probe cannot reuse an original passing baseline or start the native toolchain', async t => {
+  const f = await fixture(t), probe = path.join(f.root, 'probe.ets'), baseline = path.join(f.root, 'baseline.json');
+  await fs.writeFile(probe, 'export default function probe(): void {}\n');
+  await fs.writeFile(baseline, JSON.stringify({ completeRuntime: true, baseCommit: '1'.repeat(40), contractProbe: { sha256: '0'.repeat(64) } }));
+  const before = await fs.readdir(f.root);
+  await assert.rejects(runRegressionCheck({ project: f.source, toolRoot: path.join(f.root, 'no-toolchain'),
+    baseline, originalTests: true, contractProbe: probe }), /Contract probe baseline hash mismatch/u);
+  assert.deepEqual(await fs.readdir(f.root), before);
 });
 
 test('original test mode restores only the baseline test sources over current production code', async t => {

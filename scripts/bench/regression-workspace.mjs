@@ -2,10 +2,24 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { constants } from 'node:fs';
 
 const generated = new Set(['.git', '.hvigor', '.test', 'oh_modules', 'node_modules', '.runtime-correction', '.runtime-corrector']);
 const run = promisify(execFile);
 const suiteRoot = /(?:^|\/)src\/test(?=\/|$)/u;
+
+// Run the public contract case in a fresh native process: an earlier suite's
+// static mocks must not pollute its before/after comparison.
+export async function installRegressionContractProbe(workspace, source) {
+  if (!Buffer.isBuffer(source) || !source.length || source.length > 128 * 1024)
+    throw new Error('Contract probe must be a nonempty ArkTS module below 128 KiB.');
+  const root = path.join(workspace, 'entry/src/test');
+  await fs.copyFile(path.join(root, 'List.test.ets'), path.join(root, '__rc_original_list.test.ets'), constants.COPYFILE_EXCL);
+  await fs.writeFile(path.join(root, '__rc_contract_probe.test.ets'), source, { flag: 'wx' });
+  await fs.writeFile(path.join(root, 'List.test.ets'), `import contractProbe from './__rc_contract_probe.test'
+export default function testsuite(): void { contractProbe() }
+`);
+}
 
 // A Stop may already have observed the source tree, including build caches.
 // Run the mutating toolchain in a sibling snapshot, outside that observed tree.
