@@ -122,3 +122,22 @@ Candidate `643daf6` verification:
   real before-finalization and completion hooks verified with zero model
   requests (`observer-preflight-v3c/result.json`), plus 10 checkpoint/terminal
   tests. This keeps a tool-warning terminal distinguishable from a real abort.
+
+Fresh v3 (`2259b90`) completed both independent grades, with identical first
+and final production patches: F2P 1/2, P2P 739/746, FAIL. The real observer saved
+both the proposal and first implementation checkpoints. Its original-test
+check completed 747 tests with eight assertion failures
+(`sc-b/rc-regression-H1ETOu.result.json`). Stop returned NO_DEVIATION_FOUND and
+EXPLAINED, treating the newly introduced service method as authorization to
+bypass the existing mocked service entry point. No correction was started.
+Full transcripts, explanations and independent results remain under
+`st2-fresh-v3`.
+
+The next minimal change clarifies the distinction between an obsolete expected
+value and an unchanged assertion whose substitute boundary is bypassed.
+Adding a helper or needing fresh data does not itself authorize changing that
+boundary; equivalent effects after remocking are not compatibility evidence.
+This changes review guidance only and adds no new analysis framework. Existing
+regression/workspace-review tests: 45/45 pass (`seam-guard-tests-v4.log`).
+The same captured v3 candidate will be replayed to isolate this review change
+and preserve a directly comparable before/after evaluation.
