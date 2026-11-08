@@ -213,6 +213,38 @@ assertion separately from the three missing requirement effects
 `run-frozen.ps1 -RequirementProbe` configures this command inside the same Stop;
 it adds no reviewer and makes no business-source edits.
 
+The actual v11 replay (source `a80956b`, same runtime package bytes as v10)
+accepted two original M16 deviations and delivered them at
+`feedback-delivery/feedback-20261108T230617689Z-3334ee15`. Actual corrective
+run `rc-stop-bedc5a0db4712796ddc9ec8da122a069795b9cee274d69ae69b6a889b470df49`
+fixed both pending-state messages and reloaded confirmed state after a thrown
+mode operation. Its 681 local tests and native build pass, the public probe
+improves 4/7 -> 7/7, and both carried items receive accepted PASS receipts.
+The final Stop settles NO_DEVIATION_FOUND, but the independent full candidate
+grade improves only to **4/5 + 673/673, FAIL**. Its remaining target has a test
+error on the exceptional ViewModel path; production still rethrows after
+reload. Candidate SHA256
+`fbc5da166158acb97bd475ecea426c24377c322bef240738e4eddea530992b32`.
+
+Check the existing `FirewallOperationResult.success` contract separately
+from state reload. The positive mode control now also verifies the existing
+returned-failure path and confirmed-state reload. The new requirement case
+expects a handled mode failure to return a failed operation result without
+prescribing error text or copying an evaluator assertion. The public task
+defines thrown operations as failed switches; its existing production caller
+consumes the result's success flag. The initial seven-case probe deliberately
+did not test this transport effect, and the v11 full grade remains preserved.
+
+With the expanded public fixture, the untouched original source completes
+with all four controls passing and four new requirement cases failing. The
+exact v11 model repair completes **7/8**, failing only the new result-port
+case, despite confirmed-state reload now passing. Evidence:
+`st7-public-state-original-r3.json` and `st7-public-state-repaired-v11-r3.json`;
+fixture SHA256 `2e45c353331bd7dc583db1754af5bff5fda12a0b0c1c943c9f0f2cc3b5f6f444`.
+The next independent replay retains the authenticated original `d1335f3...`
+candidate and uses the expanded requirement check. It requires a real model
+repair and a complete 5/5 + 673/673 independent grade to close the extension.
+
 First changes:
 
 1. Enable existing regression execution, using original public test assertions
