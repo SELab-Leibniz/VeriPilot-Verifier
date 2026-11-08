@@ -225,3 +225,38 @@ with the explicit read-only host root and English locale. The original log,
 recheck results and aggregate audit are retained. A clean full invocation with
 the proper host setting is required for the final verification record; no
 implementation change was made to conceal those configuration failures.
+
+The correctly configured full suite has now completed on `799de60`: 299/299
+files, 3,060 passed, zero failed, 46 intentionally skipped, zero timed-out
+files (`rc-tests-v5-configured.log`). `release-v5` is pinned to that source and
+archive SHA256 `2990be68d5ccbbf98583f4c2c2694b6c47c654fc66e4096890fb5db6e82d3f34`.
+Fresh st6 retry `st6-fresh-v2` uses that package and the same model roles,
+original-requirements workflow and Stop-only overrides. No prior business fix
+or evaluator test was copied into its new original-base workspace.
+
+Fresh st6 v2 ended early with the real host error "Agent couldn't generate a
+response". The host recorded an incomplete turn at stopReason=toolUse after
+59 tool actions, with zero compactions; no completed implementation checkpoint
+or final Stop acceptance exists. The strict terminal rule correctly retained
+HOST_RUN_NOT_COMPLETED. Its partial candidate's complete independent score is
+4/7, 615/617, FAIL (`st6-fresh-v2/grade-final/results.json`); this is not a
+completed business run.
+
+Use the existing genuine-session continuation path to finish that work. A
+sealed schema adapter in `st6-v2-resume-input` keeps the actual error terminal,
+original 064ce248 session history bytes, original task binding and authentic
+Stop ledger; actualBusinessStart is derived from the captured exact-run model
+start, not from a presumed completion. It verifies the frozen Git commit,
+candidate/transcript hashes and original 615-test baseline. A frozen current
+HEAD remains distinct from the original prepared HEAD, preserving task-start
+assertions. No new implementation hint or evaluator result enters the resumed
+business prompt.
+
+The continuation CLI now honors the explicit host-profile model/role options
+outside the frozen experiment mode, accepts an authenticated frozen current
+HEAD while retaining the original baseline commit, and reuses the passive
+business checkpoint observer. Related restoration/profile tests: 11 pass,
+one optional test skipped (`resume-compat-tests.log`). The corrected no-model
+preflight verifies the pinned artifact and resume binding
+(`st6-v2-continuation-preflight-r2`). Initial preflight omitted those arguments
+because of PowerShell array concatenation; its no-model record is retained.

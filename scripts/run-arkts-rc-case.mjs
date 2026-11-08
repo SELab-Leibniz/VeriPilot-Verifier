@@ -18,6 +18,7 @@ import { restoreStopSessionLedger } from './bench/restore-stop-session.mjs';
 import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
 import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
+import { createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
 import { assertBusinessSessionIdentity, EXPERIMENT_SESSION_RESET } from './bench/session-continuity.mjs';
 import { createSimplifyGateway, redactEvaluationText, resolveSimplifyProvider, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 import { STOP_ARMS } from './simplify-experiment-schedule.mjs';
@@ -31,6 +32,7 @@ const rcOverrides = await loadRcConfigOverrides(arg('--rc-config-overrides'));
 let stopPolicy = null;
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const simplifyArm = arg('--simplify-arm');
+const hostProfileProvider = arg('--provider') === 'host-profile';
 const reviewerModel = arg('--reviewer-model');
 const s0 = simplifyArm === 'S0';
 const frozenRoot = arg('--frozen');
@@ -85,6 +87,8 @@ if (simplifyArm) {
     throw new Error('Pinned ArkTS integration package SHA256 changed.');
   ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile'), reviewerModel));
 }
+if (!simplifyArm && hostProfileProvider)
+  ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile'), reviewerModel));
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
 const dataset = arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/Experiments/swe-arkts-bench';
 const { task, datasetDigest } = await loadArktsTask(dataset, arg('--case') ?? 'happyword_12');
@@ -110,7 +114,8 @@ if (resumeRoot) {
   const transcript = await fs.readFile(resumeEntry.sessionFile ?? path.join(resumeRoot, 'native-host', `${resumeEntry.sessionId}.jsonl`), 'utf8');
   for (const line of transcript.trim().split('\n')) JSON.parse(line);
   const head = execFileSync(gitExecutable, ['-C', resumeManifest.projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  if (head !== resumeManifest.preparedHead) throw new Error('Prior prepared business HEAD changed.');
+  if (head !== (resumeManifest.resumeHead ?? resumeManifest.preparedHead)) throw new Error('Prior prepared business HEAD changed.');
+  if (resumeManifest.resumeHead) execFileSync(gitExecutable, ['-C', resumeManifest.projectRoot, 'merge-base', '--is-ancestor', resumeManifest.preparedHead, head], { windowsHide: true });
   await fs.mkdir(outputRoot, { recursive: false });
 }
 const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
@@ -146,7 +151,7 @@ if (frozenRoot) {
   const changed = execFileSync(gitExecutable, ['-C', projectRoot, 'diff', '--name-only', '-z', 'HEAD']).toString().split('\0').filter(Boolean);
   if (changed.some(file => !lockfiles.includes(file))) throw new Error('Dependency setup changed the frozen implementation.');
   if (changed.length) execFileSync(gitExecutable, ['-C', projectRoot, 'restore', '--source=HEAD', '--', ...changed], { windowsHide: true });
-} else prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+} else if (!resumeRoot) prepared.preparedHead = execFileSync(gitExecutable, ['-C', projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 if (archive) execFileSync('tar', ['-xf', archive, '-C', outputRoot], { windowsHide: true, stdio: 'pipe' });
 const artifact = archive ? path.join(outputRoot, 'package') : arg('--artifact') ? await fs.realpath(arg('--artifact')) : null;
 const baselineRef = simplifyArm ? packageSources[packageSha256] : arg('--baseline-ref') ?? 'c33bae6';
@@ -158,7 +163,7 @@ if (artifact) {
   verifiedRcCommit = validation.baselineCommit;
   await fs.writeFile(path.join(outputRoot, 'baseline-artifact-validation.json'), JSON.stringify(validation, null, 2));
 }
-const model = simplifyArm ? arg('--model') : process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
+const model = simplifyArm || hostProfileProvider ? arg('--model') : process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL;
 if (!model) throw new Error('Configured native model is required');
 if (s0) {
   await fs.writeFile(path.join(outputRoot, 's0-policy.json'), JSON.stringify({ pluginInstalled: true, enabled: false, ...arm }, null, 2));
@@ -186,10 +191,10 @@ if (s0) {
       || skillCorrection.enabled || artifactCorrection.groundTruthReviewEnabled
       || releaseStop && !configured.applied?.value?.stopCorrection?.waitMode && stopCorrection.waitMode !== releaseStop.waitMode)
       throw new Error('Effective ArkTS correction policy differs from the assigned arm.');
-    stopPolicy = { profile: stopProfile, waitMode: stopCorrection.waitMode, maxCorrectionsPerSession: stopCorrection.maxCorrectionsPerSession,
-      overrides: configured.applied, regressionCheck: regressionCheckPolicy(parseConfiguredStop(configured.text).regressionCheck, stopCorrection.regressionCheck) };
-    await fs.writeFile(path.join(outputRoot, 'stop-policy.json'), JSON.stringify(stopPolicy, null, 2));
   }
+  stopPolicy = { profile: stopProfile, waitMode: effective.runtimeV2.stopCorrection.waitMode, maxCorrectionsPerSession: effective.runtimeV2.stopCorrection.maxCorrectionsPerSession,
+    overrides: configured.applied, regressionCheck: regressionCheckPolicy(parseConfiguredStop(configured.text).regressionCheck, effective.runtimeV2.stopCorrection.regressionCheck) };
+  await fs.writeFile(path.join(outputRoot, 'stop-policy.json'), JSON.stringify(stopPolicy, null, 2));
 }
 // Freeze common business navigation to the baseline artifact in both arms.
 const stableNavigationRoot = path.resolve(arg('--navigation-artifact') ?? artifact ?? 'dist/runtime-corrector-openclaw');
@@ -213,6 +218,7 @@ if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
 const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads,
   javaHome: java.javaHome });
+const checkpointObserver = resumeRoot ? await createBusinessCheckpointObserver({ outputRoot, projectRoot, preparedHead: prepared.preparedHead }) : null;
 const { transcript: _frozenTranscript, frozen: _frozen, ...preparedSummary } = prepared;
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...preparedSummary,
   ...(arm ? { simplifyArm, planSha256, artifactSha256: packageSha256, providerIdentity,
@@ -224,7 +230,7 @@ const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_i
     'bench/run-arkts-toolchain.ps1', 'bench/arkts-java.mjs', 'bench/rc-config-overrides.mjs', 'bench/simplify-arkts-frozen.mjs']
     .map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
-  businessModel: providerIdentity?.modelRef ?? `anthropic/${model}`, privateModel: providerIdentity?.modelRef ?? `anthropic/${model}`, businessTools: businessToolNames,
+  businessModel: providerIdentity?.modelRef ?? `anthropic/${model}`, privateModel: reviewerModel ? `custom/${reviewerModel}` : providerIdentity?.modelRef ?? `anthropic/${model}`, businessTools: businessToolNames,
   businessReads: { paged: pagedReads, ...(pagedReads ? { defaultLines: 120, maximumLines: 250 } : {}) },
   modelCapacity: { contextWindowTokens, maximumOutputTokens: 32768, appliedToCustomProvider: Boolean(process.env.ANTHROPIC_BASE_URL),
     source: arg('--context-window-tokens') ? 'explicit CLI declaration' : 'legacy benchmark default' },
@@ -244,14 +250,21 @@ if (!hostRoot) throw new Error('--host-root=<read-only-openclaw> required for --
 let gateway, result, restoredRecordCount = 0;
 try {
   const options = { hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
-    extraPluginPaths: [extra], businessToolNames, confineBusinessFiles: true,
+    extraPluginPaths: [extra, ...(checkpointObserver ? [checkpointObserver] : [])], businessToolNames, confineBusinessFiles: true,
     phaseTimeoutMs: profile.explicit && !s0 ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
+    ...(hostProfileProvider ? { hookTimeoutMs: 30000 } : {}),
     disableRuntimeCorrection: s0,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
-  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model, reviewerModel,
+  gateway = arm || hostProfileProvider ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model, reviewerModel,
     ...(reviewerModel ? { nativeCustomProvider: true } : {}),
     pairRateLimitFile: arg('--pair-rate-limit-file'), pairRateLimitPauseMs: arg('--pair-rate-limit-pause-ms') ? Number(arg('--pair-rate-limit-pause-ms')) : null })
     : await createNativeGatewayEvaluation(options);
+  if (hostProfileProvider) {
+    const definition = gateway.config.models.providers.custom.models.find(value => value.id === model);
+    manifest.modelCapacity = { contextWindowTokens: definition.contextWindow, maximumOutputTokens: definition.maxTokens,
+      appliedToCustomProvider: true, source: 'actual pinned native host-profile definition' };
+    await fs.writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  }
   if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)
     throw new Error('S0 Gateway must disable correction before business admission.');
   if (frozenRoot) {
