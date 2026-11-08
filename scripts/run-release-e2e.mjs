@@ -32,7 +32,7 @@ const write = (file, data) => fs.writeFile(file, JSON.stringify(data, null, 2) +
 const jsonl = text => text.split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const model = 'deepseek-v4-flash';
-const cases = ['security_tool_1', 'security_tool_2', 'security_tool_6'];
+const cases = ['security_tool_1', 'security_tool_2', 'security_tool_6', 'security_tool_7'];
 const configFile = path.join(sourceRoot, 'docs/original-basis-release-inputs.json');
 const timeoutMs = 120 * 60_000;
 const { values: args } = parseArgs({ options: Object.fromEntries([
