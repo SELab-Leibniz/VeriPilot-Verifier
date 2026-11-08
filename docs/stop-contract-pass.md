@@ -77,6 +77,17 @@ Acceptance:
   or gold supplied to the business or Stop reviewer. Historical failure replays
   are development evidence, not fresh end-to-end results.
 
+Extension requested on 2026-11-09: add security_tool_1 and security_tool_7
+with the same full independent PASS gate. Required scores are respectively
+F2P 1/1 + P2P 611/611 and F2P 5/5 + P2P 673/673. Preserve the same isolated
+worktree, Stop-only policy, public-input boundary and read-only hosts. Begin
+with the existing validated package (`release-v8`, source `f1a70c6`) and fresh
+tasks from their exact original bases before adding any further product code.
+The existing release driver now permits st7 as well as st1/st2/st6; workflow,
+models and checks are unchanged. Evidence root for this extension:
+`C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-st1-st7`.
+The extension is not complete until both actual candidate grades pass.
+
 First changes:
 
 1. Enable existing regression execution, using original public test assertions
