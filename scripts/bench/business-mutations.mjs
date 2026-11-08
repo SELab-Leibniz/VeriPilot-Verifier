@@ -62,8 +62,7 @@ export function businessMutationPaths(records, projectRoot) {
       // The native receipt lists actual changes, including both sides of a
       // move. Do not infer success from requested patch text or console prose.
       const summary = message.details?.summary;
-      if (!summary || !['added', 'modified', 'deleted'].every(key => Array.isArray(summary[key]))
-        || !['added', 'modified', 'deleted'].some(key => summary[key].length))
+        if (!summary || !['added', 'modified', 'deleted'].every(key => Array.isArray(summary[key])))
         throw new Error('Successful apply_patch has no structured mutation receipt');
       for (const key of ['added', 'modified', 'deleted']) for (const file of summary[key]) paths.add(mutationPath(file, projectRoot));
     } else {

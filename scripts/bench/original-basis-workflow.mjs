@@ -42,7 +42,7 @@ export async function loadOriginalBasisWorkflow(root, hostRoot, pinned) {
 
 // Experiment overrides are merged after the release flags; the release
 // invariants asserted below still hold for every arm.
-export async function installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides = null, variables = {} }) {
+export async function installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides = null, variables = {}, reviewerModelRef = 'custom/deepseek-v4-flash' }) {
   const policyRoot = path.join(projectRoot, '.runtime-corrector');
   const templateRoot = path.join(artifact, '.runtime-corrector-default');
   const template = await fs.readFile(path.join(templateRoot, 'config.yaml'), 'utf8');
@@ -64,9 +64,10 @@ export async function installOriginalBasisPolicy({ artifact, projectRoot, output
   const effective = loaded.runtimeV2;
   assert.equal(raw.enabled, true);
   assert.equal(raw.sessionDefaults.enabled, true);
-  assert.equal(raw.reviewers.defaults.model, 'custom/deepseek-v4-flash');
+  assert.equal(raw.reviewers.defaults.model, reviewerModelRef);
+  assert.equal(effective.reviewers.stopReviewer.model, reviewerModelRef);
   assert.deepEqual(effective.artifactCorrection, {
-    originalRequirementsEnabled: true, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
+    originalRequirementsEnabled: applied?.value?.artifactCorrection?.originalRequirementsEnabled ?? true, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
   });
   assert.equal(effective.stopCorrection.enabled, true);
   assert.equal(effective.stopCorrection.originalRequirementsBasis, true);

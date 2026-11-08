@@ -126,12 +126,18 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, hostProfileAuthMarker, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
-  compaction = null, contextTokens, logLevel = 'warn', provider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
+  compaction = null, contextTokens, logLevel = 'warn', provider, reviewerProvider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document'
     || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
   const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs, hostProfileAuthMarker)
     : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
+  if (reviewerProvider) {
+    if (!hostProfile || !coding || reviewerProvider.baseUrl !== provider.baseUrl || reviewerProvider.model === provider.model)
+      throw new Error('The reviewer requires a distinct model on the same host profile.');
+    const reviewer = nativeGatewayHostProfileProvider(reviewerProvider, phaseTimeoutMs, hostProfileAuthMarker);
+    coding.definition.models.push(...reviewer.definition.models);
+  }
   const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
   if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch', 'authorized_simplify_experiment'].includes(providerGuard?.kind))
     throw new Error('The explicit Gateway provider requires an offline network guard or a metered batch.');

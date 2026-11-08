@@ -20,6 +20,7 @@ import { collectAutomaticDocumentEvidence } from './evaluate-openclaw-document-e
 import { prepareJava } from './bench/arkts-java.mjs';
 import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
+import { createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
 import { codeChanged, collectReleaseEvidence, finalStopOf, tokenSplit } from './bench/release-evidence.mjs';
 import { waitNativeStopSettled } from './bench/native-stop-settlement.mjs';
 import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
@@ -30,12 +31,12 @@ const write = (file, data) => fs.writeFile(file, JSON.stringify(data, null, 2) +
 const jsonl = text => text.split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const model = 'deepseek-v4-flash';
-const cases = ['security_tool_1', 'security_tool_2'];
+const cases = ['security_tool_1', 'security_tool_2', 'security_tool_6'];
 const configFile = path.join(sourceRoot, 'docs/original-basis-release-inputs.json');
 const timeoutMs = 120 * 60_000;
 const { values: args } = parseArgs({ options: Object.fromEntries([
   ...['case','output','host-root','package','package-sha256','source-commit','workflow-root','openclaw-profile','dataset','tool-root',
-    'cache','workspace-root','json5-package','pair-rate-limit-file','pair-rate-limit-pause-ms','provider','model','deadline-at','java-home','rc-config-overrides']
+    'cache','workspace-root','json5-package','pair-rate-limit-file','pair-rate-limit-pause-ms','provider','model','reviewer-model','deadline-at','java-home','rc-config-overrides']
     .map(name => [name, { type: 'string' }]),
   ['offline', { type: 'boolean' }], ['live', { type: 'boolean' }], ['baseline-local-tests', { type: 'boolean' }],
 ]) });
@@ -59,6 +60,7 @@ assert.equal(digest(await fs.readFile(archive)), packageSha256);
 const expectedVersion = args['source-commit'] ? JSON.parse(execFileSync('git', ['show', `${sourceCommit}:packaging/hosts/openclaw/openclaw.plugin.json`],
   { cwd: sourceRoot, windowsHide: true, encoding: 'utf8' })).version : inputs.version;
 const rcOverrides = await loadRcConfigOverrides(args['rc-config-overrides']);
+const reviewerModel = args['reviewer-model'] ?? model, reviewerModelRef = `custom/${reviewerModel}`;
 const hostRoot = path.resolve(args['host-root']);
 const workflow = await loadOriginalBasisWorkflow(path.resolve(args['workflow-root']), hostRoot, inputs.workflow);
 const git = (cwd, ...params) => execFileSync('git', ['-c', 'core.longpaths=true', '-C', cwd, ...params],
@@ -91,7 +93,7 @@ await write(path.join(outputRoot, 'package-validation.json'), await verifyFrozen
 // resolved JDK; `java -version` must work before any model request.
 const java = offline ? null : prepareJava({ explicit: args['java-home'], projectRoot, toolRoot: args['tool-root'] });
 if (java) await write(path.join(outputRoot, 'java.json'), java);
-const policies = await installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides: rcOverrides,
+const policies = await installOriginalBasisPolicy({ artifact, projectRoot, outputRoot, overrides: rcOverrides, reviewerModelRef,
   variables: { projectRoot, outputRoot, harnessRoot: path.resolve(sourceRoot), node: process.execPath,
     ...(args['tool-root'] ? { toolRoot: path.resolve(args['tool-root']) } : {}), ...(java ? { javaHome: java.javaHome } : {}) } });
 const messages = workflowMessages(workflow, projectRoot, changeName,
@@ -126,14 +128,16 @@ if (!offline) {
     const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= checkedAt - 2000);
     baselineLocalTests = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
     if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
+    baselineLocalTests.baseCommit = preparedHead;
     await write(path.join(outputRoot, 'baseline-local-tests.json'), baselineLocalTests);
   }
   extraPluginPaths.push(await createArktsBenchTools({ outputRoot, projectRoot, toolRoot: args['tool-root'],
     stableNavigationRoot: artifact, checkTimeoutMs: policies.runtimeV2.stopCorrection.assessmentTimeoutMs, baselineLocalTests, javaHome: java.javaHome }));
   businessToolNames.push('bench_nav','bench_check');
+  extraPluginPaths.push(await createBusinessCheckpointObserver({ outputRoot, projectRoot, preparedHead }));
 }
 await write(path.join(outputRoot, 'manifest.json'), { instance, projectRoot, preparedHead, changeName,
-  packageSha256, sourceCommit, version: artifactManifest.version, modelRef: 'custom/'+model,
+  packageSha256, sourceCommit, version: artifactManifest.version, modelRef: 'custom/'+model, reviewerModelRef,
   java: java ? { javaHome: java.javaHome, source: java.source, version: java.version } : null,
   rcConfigOverrides: policies.experimentOverrides, regressionCheck: policies.regressionCheck,
   startedAt, deadline, offline });
@@ -149,7 +153,7 @@ async function findFiles(root, match) {
 try {
   gateway = await createSimplifyGateway({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths, businessToolNames, unlimitedBusiness: true, nativeCustomProvider: true, disableMemoryFlush: true,
-    preserveSessionHistory: true, model, providerKind: 'host-profile', openclawProfile: args['openclaw-profile'],
+    preserveSessionHistory: true, model, reviewerModel, providerKind: 'host-profile', openclawProfile: args['openclaw-profile'],
     ...(offline ? { maxRequests: 0 } : {}), pairRateLimitFile: args['pair-rate-limit-file'],
     pairRateLimitPauseMs: args['pair-rate-limit-pause-ms'] ? Number(args['pair-rate-limit-pause-ms']) : null });
   assert.equal(gateway.modelRef, 'custom/'+model);

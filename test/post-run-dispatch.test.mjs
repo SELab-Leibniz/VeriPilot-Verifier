@@ -4,7 +4,27 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createPostRunDispatcher, createPostRunReviewPool } from "../lib/openclaw/post-run-dispatch.mjs";
-import { waitPostRunTerminal, createPostRunHostRequester } from "../lib/openclaw/post-run-host.mjs";
+import { waitPostRunTerminal, completedToolWarningTerminal, createPostRunHostRequester } from "../lib/openclaw/post-run-host.mjs";
+
+test('a drained tool-warning terminal is reviewed only with exact successful stop evidence', async t => {
+  const raw = { runId: 'business', status: 'error', error: '⚠️ 🛠️ Exec failed: harmless earlier probe (exit 1)' };
+  const completion = { runId: 'business', success: true, stopReason: 'stop' };
+  assert.equal(completedToolWarningTerminal(raw, null), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, runId: 'old' }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, success: false }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, stopReason: 'aborted' }), raw);
+  const failed = { ...raw, error: 'provider request failed' };
+  assert.equal(completedToolWarningTerminal(failed, completion), failed);
+  let reviews = 0;
+  const f = await fixture(t, { waitTerminal: async record => completedToolWarningTerminal(raw, record.candidate?.completion),
+    review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const identity = f.identity('warning');
+  await f.manager.started(identity, 'business');
+  await f.manager.candidate(identity, { runId: 'business', text: 'done', completion, reviewBudgetMs: 10000 });
+  await f.manager.drain();
+  assert.equal(reviews, 1);
+  assert.equal(f.manager.snapshot(identity).reviewStatus, 'PASS');
+});
 
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const pause = ms => new Promise(r => setTimeout(r, ms));

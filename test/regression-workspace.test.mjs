@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { execFileSync } from 'node:child_process';
 import { prepareRegressionWorkspace } from '../scripts/bench/regression-workspace.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
@@ -41,4 +42,21 @@ test('toolchain writes in the snapshot leave a previously searched source invent
   await evidence.assertFrozen();
   await fs.writeFile(path.join(f.source, '.hvigor/in-place-build.log'), 'mutates evidence');
   await assert.rejects(evidence.assertFrozen(), error => error.code === 'BASELINE_INPUT_CHANGED');
+});
+
+test('original test mode restores only the baseline test sources over current production code', async t => {
+  const { source } = await fixture(t);
+  const git = (...args) => execFileSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test',
+    '-c', 'commit.gpgsign=false', ...args], { cwd: source, encoding: 'utf8', windowsHide: true });
+  const testFile = 'entry/src/test/widget.test.ets', production = 'new-public-source.ets';
+  git('init', '-q'); git('add', '--', testFile, production); git('commit', '-qm', 'original');
+  const originalTestCommit = git('rev-parse', 'HEAD').trim();
+  await fs.writeFile(path.join(source, testFile), 'assert(widget.value === 8)\n');
+  await fs.writeFile(path.join(source, production), 'export const widget = { value: 8 }\n');
+  await fs.writeFile(path.join(source, 'entry/src/test/new.test.ets'), 'new candidate test\n');
+  const copy = await prepareRegressionWorkspace(source, { originalTestCommit });
+  assert.equal((await fs.readFile(path.join(copy, testFile), 'utf8')).replaceAll('\r\n', '\n'), 'assert(widget.value === 7)\n');
+  assert.equal(await fs.readFile(path.join(copy, production), 'utf8'), 'export const widget = { value: 8 }\n');
+  await assert.rejects(fs.access(path.join(copy, 'entry/src/test/new.test.ets')), { code: 'ENOENT' });
+  assert.equal(await fs.readFile(path.join(source, testFile), 'utf8'), 'assert(widget.value === 8)\n');
 });

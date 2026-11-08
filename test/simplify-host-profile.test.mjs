@@ -44,6 +44,15 @@ test('profile wire admission limits dispatches and stops SDK retries after a 429
       assert.deepEqual(limited.snapshot(), { requests: 1, failure: 'PROFILE_RATE_LIMIT' });
       assert.equal(dispatches, 3);
     } finally { limited.close(); }
+    status = 200;
+    const dual = installSimplifyProfileBoundary({ hostRoot, provider, credential, reviewerModel: 'deepseek-v4.1-flash' });
+    try {
+      const sendModel = model => fetch(`${provider.baseUrl}/chat/completions`, { method: 'POST',
+        headers: { authorization: `Bearer ${credential()}` }, body: JSON.stringify({ model }) });
+      await send(); await sendModel('deepseek-v4.1-flash');
+      assert.equal(dual.snapshot().requests, 2);
+      await assert.rejects(() => sendModel(undefined), /PROFILE_MODEL_BOUNDARY/u);
+    } finally { dual.close(); }
     await fs.writeFile(path.join(hostRoot, 'test-encoded'), Buffer.from(credential(), 'utf16le'));
     assert.equal(await countProfileCredentialMatches(hostRoot, credential), 1);
   } finally { globalThis.fetch = previous; }

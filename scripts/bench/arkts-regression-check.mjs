@@ -14,9 +14,10 @@ export const regressionCheckOverride = { stopCorrection: { regressionCheck: { en
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
   cwd: '.', timeoutMs: 900000 } } };
 const usage = `node scripts/bench/arkts-regression-check.mjs --project=<business workspace> --tool-root=<command-line-tools> [--java-home=<jdk>]
-  [--baseline=<baseline-local-tests.json>] [--timeout-ms=840000] [--max-names=20]
+  [--baseline=<baseline-local-tests.json>] [--original-tests] [--timeout-ms=840000] [--max-names=20]
 Prints one "RC_REGRESSION_CHECK PASS|FAIL|INCOMPLETE ..." line and failing test names; exit 0 / 1 / 2.
 With --baseline, PASS means no regressions and no new failures; pre-existing failures are listed, not counted.
+With --original-tests, run the task-start public tests on an isolated copy of the current implementation.
 
 Override for scripts/run-original-basis-release.mjs, run-release-e2e.mjs or run-arkts-rc-case.mjs (--rc-config-overrides=<file>).
 The harness substitutes \${node} \${harnessRoot} \${projectRoot} \${toolRoot} \${javaHome} \${outputRoot} before writing config.yaml:
@@ -32,13 +33,19 @@ export function regressionVerdict(current, baseline, maxNames = 20) {
   const known = comparison.comparable ? comparison.persistingFailures : [];
   const status = counted.length ? 'FAIL' : 'PASS';
   const names = [...counted.map(id => `- ${current.statuses[id]} ${id}`), ...known.map(id => `- known ${current.statuses[id]} ${id}`)];
+  const diagnostics = counted.length ? (current.runtimeDiagnostics?.messages ?? []).map(item => `  public assertion: ${item.text}`) : [];
   return { status, exitCode: counted.length ? 1 : 0, names: names.slice(0, maxNames).concat(names.length > maxNames ? [`- ... ${names.length - maxNames} more`] : []),
+    ...(diagnostics.length ? { diagnostics } : {}),
     line: `RC_REGRESSION_CHECK ${status} tests=${total} passed=${passed} failed=${total - passed}`
       + (comparison.comparable ? ` regressions=${comparison.regressions.length} newFailures=${comparison.newFailures.length} knownFailures=${known.length}` : ' baseline=none') };
 }
 
-export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, timeoutMs = 840000, maxNames = 20, signal }) {
-  const root = await prepareRegressionWorkspace(path.resolve(project)), java = resolveJavaHome({ explicit: javaHome });
+export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, timeoutMs = 840000, maxNames = 20, signal }) {
+  const baselineEvidence = baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null;
+  if (originalTests && (!baselineEvidence?.completeRuntime || !baselineEvidence.baseCommit))
+    throw new Error('--original-tests requires a completed baseline with its exact original test commit.');
+  const root = await prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
+  const java = resolveJavaHome({ explicit: javaHome });
   applyJavaEnvironment(java.javaHome);
   const coverage = path.join(root, coverageLog);
   await fs.rm(coverage, { force: true });
@@ -51,20 +58,24 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   const execution = installed.exitCode === 0 && !installed.interrupted ? await run('test') : installed;
   const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
   const current = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
-  const verdict = regressionVerdict(current, baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null, maxNames);
+  const verdict = regressionVerdict(current, baselineEvidence, maxNames);
+  if (originalTests) verdict.line += ' suite=task-start; compare failures with the original request before classifying regressions';
+  await fs.writeFile(root + '.result.json', JSON.stringify({ source: path.resolve(project), workspace: root, baselineCommit: baselineEvidence?.baseCommit,
+    current, verdict, execution, output }, null, 2));
   const errors = verdict.status === 'INCOMPLETE' ? output.split(/\r?\n/u).filter(line => /\bERROR\b|error:|Exception|RC_ARKTS_JAVA/u.test(line)).slice(-12) : [];
   return { ...verdict, errors, execution: { exitCode: execution.exitCode, interrupted: execution.interrupted, reason: execution.reason } };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const { values: args } = parseArgs({ options: Object.fromEntries([...['project', 'tool-root', 'java-home', 'baseline', 'timeout-ms', 'max-names']
-    .map(name => [name, { type: 'string' }]), ['help', { type: 'boolean' }]]) });
+    .map(name => [name, { type: 'string' }]), ['help', { type: 'boolean' }], ['original-tests', { type: 'boolean' }]]) });
   if (args.help || !args.project || !args['tool-root']) { console.log(usage); process.exit(args.help ? 0 : 2); }
   const controller = new AbortController();
   for (const name of ['SIGINT', 'SIGTERM']) process.once(name, () => controller.abort());
   const result = await runRegressionCheck({ project: args.project, toolRoot: args['tool-root'], javaHome: args['java-home'], baseline: args.baseline,
+    originalTests: args['original-tests'],
     timeoutMs: Number(args['timeout-ms'] ?? 840000), maxNames: Number(args['max-names'] ?? 20), signal: controller.signal });
-  console.log([result.line, ...result.names, ...result.errors.map(line => `  ${line.trim().slice(0, 300)}`),
+  console.log([result.line, ...result.names, ...(result.diagnostics ?? []), ...result.errors.map(line => `  ${line.trim().slice(0, 300)}`),
     ...(result.execution.interrupted ? [`  interrupted: ${result.execution.reason}`] : [])].join('\n'));
   process.exitCode = result.exitCode;
 }

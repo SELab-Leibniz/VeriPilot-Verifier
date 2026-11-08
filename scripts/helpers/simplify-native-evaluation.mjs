@@ -17,18 +17,23 @@ export function supportsSimplifyModel(provider, model, openclawProfile) {
     : ['coding-plan', 'anthropic-environment'].includes(provider) && ['glm-5.3', 'glm-5.3-flash'].includes(model) && !openclawProfile;
 }
 
-export async function resolveSimplifyProvider(kind, model, openclawProfile) {
+export async function resolveSimplifyProvider(kind, model, openclawProfile, reviewerModel) {
   if (kind !== 'host-profile') return { identity: simplifyProviderIdentity(kind, model) };
   if (!supportsSimplifyModel(kind, model, openclawProfile)) throw new Error('DeepSeek requires the custom OpenClaw profile route.');
   try {
     const { openclawProfileProvider } = await import('../evaluate-openclaw-document-e2e.mjs');
     const { provider, credential } = await openclawProfileProvider(path.resolve(openclawProfile), profileModelRef);
     transientProfileKey = credential();
+    const reviewer = reviewerModel && reviewerModel !== model
+      ? await openclawProfileProvider(path.resolve(openclawProfile), `custom/${reviewerModel}`) : null;
+    if (reviewer && (reviewer.provider.api !== provider.api || reviewer.provider.baseUrl !== provider.baseUrl
+      || reviewer.credential() !== transientProfileKey)) throw new Error('Reviewer must use the same protected provider.');
     const endpoint = new URL(provider.baseUrl);
     if (provider.api !== 'openai-completions' || endpoint.protocol !== 'https:' || endpoint.username || endpoint.password
       || endpoint.search || endpoint.hash || JSON.stringify(provider).includes(transientProfileKey)) throw new Error('Invalid profile provider.');
     return { identity: { kind, origin: endpoint.origin, endpointSha256: createHash('sha256').update(provider.baseUrl).digest('hex'),
-      model, modelRef: profileModelRef }, provider, credential };
+      model, modelRef: profileModelRef, ...(reviewer ? { reviewerModelRef: `custom/${reviewerModel}` } : {}) }, provider, credential,
+      reviewerProvider: reviewer?.provider };
   } catch {
     throw new Error('The custom DeepSeek provider or its transient credential is unavailable or invalid.');
   }
@@ -57,8 +62,9 @@ export async function countProfileCredentialMatches(directory, credential) {
 // after an upstream failure. The SDK and the process fetch share this boundary.
 // With pairRateLimitPauseMs a peer's 429 pauses this run's next dispatch until
 // the shared cooldown ends instead of failing it; the pause is recorded.
-export function installSimplifyProfileBoundary({ hostRoot, provider, credential, maxRequests = Infinity, pairRateLimitFile, pairRateLimitPauseMs = null, authMarker }) {
+export function installSimplifyProfileBoundary({ hostRoot, provider, credential, reviewerModel, maxRequests = Infinity, pairRateLimitFile, pairRateLimitPauseMs = null, authMarker }) {
   const target = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
+  const allowedModels = new Set([provider.model, reviewerModel].filter(Boolean));
   const origin = new URL(target).origin, runtimeKey = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
   const previousFetch = globalThis.fetch, previousRuntime = globalThis[runtimeKey];
   const undici = createRequire(path.join(hostRoot, 'package.json'))('undici');
@@ -91,7 +97,7 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
     const body = typeof init?.body === 'string' ? init.body : await input.clone?.().text();
     let model;
     try { if (body && !body.includes(credential())) model = JSON.parse(body).model; } catch {}
-    if (model !== provider.model) throw fail('PROFILE_MODEL_BOUNDARY');
+    if (!allowedModels.has(model)) throw fail('PROFILE_MODEL_BOUNDARY');
     stats.requests++;
     let response;
     if (authMarker) headers.set('authorization', `Bearer ${credential()}`);
@@ -191,12 +197,12 @@ export function simplifyProviderIdentity(provider, model, env = process.env) {
   return { kind: provider, origin: new URL(endpoint).origin, endpointSha256: createHash('sha256').update(endpoint).digest('hex'), model };
 }
 
-export async function createSimplifyGateway({ model, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, pairRateLimitPauseMs = null,
+export async function createSimplifyGateway({ model, reviewerModel, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, pairRateLimitPauseMs = null,
   nativeCustomProvider = false, ...options }) {
-  const { identity: providerIdentity, provider, credential } = await resolveSimplifyProvider(providerKind, model, openclawProfile);
+  const { identity: providerIdentity, provider, credential, reviewerProvider } = await resolveSimplifyProvider(providerKind, model, openclawProfile, reviewerModel);
   // The custom model name uses a public SDK marker. Only the wire boundary holds the real credential.
   const authMarker = provider && nativeCustomProvider ? 'rc-isolated-provider-placeholder' : undefined;
-  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, maxRequests, pairRateLimitFile,
+  const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, reviewerModel: reviewerProvider?.model, maxRequests, pairRateLimitFile,
     pairRateLimitPauseMs, authMarker });
   let gateway;
   const finish = async () => {
@@ -208,7 +214,7 @@ export async function createSimplifyGateway({ model, providerKind = 'coding-plan
     gateway = await createNativeGatewayEvaluation({ ...options, hostProfileAuthMarker: authMarker, skipBootstrap: true, confineBusinessFiles: true,
       ...(providerKind === 'coding-plan' ? { provider: { api: 'openai-completions', baseUrl: simplifyProviderUrl, model },
         providerGuard: { kind: 'authorized_simplify_experiment', credential: () => process.env.RC_EVAL_API_KEY } } : {}),
-      ...(provider ? { provider: { ...provider, definition: { ...provider.definition,
+      ...(provider ? { reviewerProvider, provider: { ...provider, definition: { ...provider.definition,
         ...(options.contextWindowTokens ? { contextWindow: options.contextWindowTokens } : {}) } },
         providerGuard: { kind: 'authorized_simplify_experiment', hostProfile: true, credential },
         onGatewayStart: () => fs.writeFile(path.join(options.outputRoot, 'gateway-start.json'), '{"starts":1}\n', { flag: 'wx' }) } : {}) });
