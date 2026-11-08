@@ -103,3 +103,22 @@ tests and existing workspace review tests: 45/45 pass.
 The native adapter's diagnostic filter was also dropping mixed-case
 `Error Message: Property ...` compiler messages. It now retains those details
 so a deleted API can be compared with the original caller.
+
+Candidate `643daf6` verification:
+
+- Full RC suite: 299 files, 3,057 pass, zero fail, 46 skipped
+  (`rc-tests-v3.log`).
+- Frozen read-only pilot `st2-guard-pilot-r2`: actual deepseek-v4.1-flash
+  review now reports the standing regression: deleting refreshApplicationList
+  breaks the task-start callers and yields eight ArkTS compiler errors. Saved
+  assessment `stop-63841168bed967a8d95f7e59` is DEVIATION. This is diagnostic
+  evidence, not a repaired or full-PASS business run. The shadow pilot's later
+  terminal UNVERIFIED/STOP_ASSESSMENT_NOT_PUBLISHED does not negate or promote
+  that saved assessment.
+- Initial pilot `st2-guard-pilot` was stopped after its configuration incorrectly
+  waited for the historical run in until_pass mode; its state and setup-stop
+  receipt remain. The completed read-only replay uses assessment/shadow mode.
+- The checkpoint observer now also records the exact successful agent_end;
+  real before-finalization and completion hooks verified with zero model
+  requests (`observer-preflight-v3c/result.json`), plus 10 checkpoint/terminal
+  tests. This keeps a tool-warning terminal distinguishable from a real abort.

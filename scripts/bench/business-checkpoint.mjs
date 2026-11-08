@@ -40,12 +40,22 @@ export async function createBusinessCheckpointObserver(options) {
     activation: { onStartup: true }, configSchema: { type: 'object', properties: {} } }));
   await fs.writeFile(path.join(root, 'index.mjs'), `import path from 'node:path';
 import { captureBusinessCheckpoint } from ${JSON.stringify(import.meta.url)};
+const checkpoints = new Map();
 export default { id: ${JSON.stringify(id)}, register(api) {
   api.on('before_agent_finalize', async (event, ctx) => {
     if (!ctx.sessionKey?.startsWith('agent:main:arkts-') || path.resolve(ctx.workspaceDir ?? '') !== path.resolve(${JSON.stringify(options.projectRoot)})) return;
-    await captureBusinessCheckpoint({ ...${JSON.stringify(options)}, runId: event.runId ?? ctx.runId,
+    const captured = await captureBusinessCheckpoint({ ...${JSON.stringify(options)}, runId: event.runId ?? ctx.runId,
       sessionId: event.sessionId ?? ctx.sessionId, stopReason: 'before_agent_finalize' });
+    checkpoints.set(captured.runId, captured);
   }, { priority: 1000 });
+  api.on('agent_end', async (event, ctx) => {
+    const captured = checkpoints.get(event.runId ?? ctx.runId);
+    if (!captured || !ctx.sessionKey?.startsWith('agent:main:arkts-')) return;
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(path.join(captured.directory, 'checkpoint.json'), JSON.stringify({ ...captured,
+      event: 'agent_end', success: event.success === true && !event.error && !event.aborted,
+      completedAt: new Date().toISOString() }, null, 2));
+  });
 } };
 `);
   return { id, path: root, hooks: { allowConversationAccess: true, allowPromptInjection: true } };

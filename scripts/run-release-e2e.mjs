@@ -153,11 +153,13 @@ async function findFiles(root, match) {
 }
 async function completedBusinessTerminal(observed) {
   if (observed?.status !== 'error') return observed;
+  const completions = [];
   for (const file of await findFiles(path.join(outputRoot, 'checkpoints'), file => path.basename(file) === 'checkpoint.json')) {
     const completion = await read(file);
-    if (completion.runId === observed.runId) return completedToolWarningTerminal(observed, completion);
+    if (completion.runId === observed.runId) completions.push(completion);
   }
-  return observed;
+  completions.sort((a, b) => String(b.completedAt ?? b.capturedAt).localeCompare(String(a.completedAt ?? a.capturedAt)));
+  return completedToolWarningTerminal(observed, completions[0]);
 }
 try {
   gateway = await createSimplifyGateway({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
