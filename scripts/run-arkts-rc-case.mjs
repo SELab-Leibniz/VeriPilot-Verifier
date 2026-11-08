@@ -208,6 +208,7 @@ if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
   await fs.writeFile(path.join(outputRoot, 'baseline-local-coverage.log'), raw);
   baselineLocalTests = localTestEvidence(raw, execution, { freshReport, compileOutput: fullOutput });
   if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
+  baselineLocalTests.baseCommit = prepared.preparedHead;
 }
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
 const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads,
@@ -248,6 +249,7 @@ try {
     disableRuntimeCorrection: s0,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
   gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model, reviewerModel,
+    ...(reviewerModel ? { nativeCustomProvider: true } : {}),
     pairRateLimitFile: arg('--pair-rate-limit-file'), pairRateLimitPauseMs: arg('--pair-rate-limit-pause-ms') ? Number(arg('--pair-rate-limit-pause-ms')) : null })
     : await createNativeGatewayEvaluation(options);
   if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)
