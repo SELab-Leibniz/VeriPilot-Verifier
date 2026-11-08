@@ -136,6 +136,42 @@ integration checks after the fix: **27/27 pass**
 (`disabled-doc-stages-green.log`). The existing v8 run stays intact; the
 corrected package requires its own verified trial.
 
+Scope-fix source `c8a3bb4` completed the full RC suite: 299/299 files,
+3,066 pass, zero failures/timeouts, 46 skipped (`rc-tests-v9.log` and
+`rc-tests-v9-verification.json`). Package SHA256
+`f4949ad9ff16d4624145df2b8d3191d8df258fa9d8cd51cbc6e6ce407fde7320`.
+
+The untouched v8 st7 trial finished naturally with a settled final Stop
+NO_DEVIATION_FOUND, but both independent first-draft and final grades are
+**2/5 F2P + 673/673 P2P, FAIL**, exact candidate SHA256
+`d1335f39800d478f7b34737fd1815b42340ff475e8774563ce9d91c1847dd249`.
+The two service targets pass; the ViewModel still emits the rejected action's
+busy label for cross-operation guards and skips the confirmed-state reload
+when its awaited operation rejects. These contradictions are visible in the
+public original request and current producer/caller source. The grader's
+tests, assertions and outputs are not supplied to the business/review model.
+Its local updated suite passed 680/680; the restored original suite's sole
+old no-save assertion was explained against the authorized previous-mode
+restore. That explanation does not certify the missing requested UI effects.
+
+The existing rejection-vs-returned-failure/effect analysis instructions were
+inside the full-PASS-only prompt branch, so the enabled deviation-only mode
+never received them. Move that analysis into the common Stop instructions
+without requiring full PASS traces in deviation-only mode. Add one general
+check that an extended guard's output still identifies its actual pending
+state and preserves the original state-to-output mapping. No task-specific
+native fixture or new reviewer is needed for this source-visible defect.
+Related Stop workspace, regression and ownership checks: **62/62 pass**
+(`stop-guidance-v10-tests.log`).
+
+`st7-frozen-v1` imports the exact completed v8 candidate using the existing
+authenticated release-freeze importer, retaining the original successful
+`agent.wait` terminal for code run `725f8ab8-aa26-495a-a9ee-46160da67e05`,
+the complete main transcript and exact patch hash. Its import manifest
+SHA256 is `b360c395f39fbfbec1969f7ef0d6daa3e9909213942de434dd22a754a9a67dc3`.
+The next check is an independent frozen-candidate Stop replay with real
+automatic repair, not a fresh task or a continuation of the completed v8 run.
+
 First changes:
 
 1. Enable existing regression execution, using original public test assertions
