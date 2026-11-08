@@ -80,15 +80,41 @@ Acceptance:
 Extension requested on 2026-11-09: add security_tool_1 and security_tool_7
 with the same full independent PASS gate. Required scores are respectively
 F2P 1/1 + P2P 611/611 and F2P 5/5 + P2P 673/673. Preserve the same isolated
-worktree, Stop-only policy, public-input boundary and read-only hosts. Begin
-with the existing validated package (`release-v8`, source `f1a70c6`) and fresh
-tasks from their exact original bases before adding any further product code.
+worktree, Stop-only policy, public-input boundary and read-only hosts. Started
+with the validated v8 package and fresh tasks from their exact original bases.
 The existing release driver now permits st7 as well as st1/st2/st6; workflow,
 models and checks are unchanged. Evidence root for this extension:
 `C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-st1-st7`.
-The extension is not complete until both actual candidate grades pass.
 
-Extension evidence so far:
+**Extension verified: both final candidates pass with the same v12 runtime
+package**, source `9d40ac8`, SHA256
+`a8a635c0b19db84756893b5cd509f0156e48535ae95a9eadd64647e3a06e3a5f`.
+
+- `st1-fresh-v12`: real fresh run from the original base; first draft and
+  final candidate independently pass **1/1 + 611/611**, zero corrections.
+  Actual proposal Stop `stop-skip-5ce4e63e6985329633a3088e` settled
+  `STOP_DOCUMENT_ONLY_CHANGES` with **zero reviewer requests**. The following
+  real code-stage Stop scanned all three selected objects and settled
+  NO_DEVIATION_FOUND (`stop-2ea9249b37d8ffe8bbd19725`). Final candidate SHA256
+  `d8ac51ec6738382960a86625c019237f01c602631ccd4925fadc13f0422f089e`.
+- `st7-frozen-v12`: exact failing 2/5 candidate, one real automatic repair,
+  independent full PASS **5/5 + 673/673**. Final candidate SHA256
+  `19b2365d65d070a2409180941ca128ec484947a2cf207b800d5da2fc4e72359d`.
+  The optional native requirements check runs within the existing Stop,
+  independently of the original suite, and improves **4/8 -> 8/8**.
+- `completion-evidence.json` binds the same package, candidate hashes,
+  full before/intermediate/after grades, actual feedback, model edit receipts,
+  final review and complete runtime verification. The v12 runtime bytes are
+  identical to the full-suite-verified v10 package; subsequent commits add
+  only the benchmark runner/probe and evidence documentation. No installation
+  or push was performed.
+
+The st1 result is a fresh case, and st7 is a targeted frozen replay with real
+model-authored repair. The latter uses the configured public requirement
+probe, so this does not establish a fresh-run success rate or automatically
+generalize to other tasks. The earlier failed scores and retries are retained.
+
+Extension development evidence:
 
 - Both native evaluator controls completed. st1 base is 0/1 + 611/611;
   reference control is 1/1 + 611/611. st7 base is 0/5 + 673/673;
@@ -244,6 +270,23 @@ fixture SHA256 `2e45c353331bd7dc583db1754af5bff5fda12a0b0c1c943c9f0f2cc3b5f6f444
 The next independent replay retains the authenticated original `d1335f3...`
 candidate and uses the expanded requirement check. It requires a real model
 repair and a complete 5/5 + 673/673 independent grade to close the extension.
+
+The v12 review accepted three original M16 deviations covering the two
+mutual-exclusion directions plus both exceptional mode effects: confirmed
+reload and the existing failure result. Feedback was delivered at
+`feedback-delivery/feedback-20261108T232743018Z-b0a228ca` in
+`biz-d4f7e921d42f/.runtime-correction/tasks/oc-scope-0fc26a1c-22b3-4377-84e2-2f06ab7d6216`.
+Its actual corrective run
+`rc-stop-bedc5a0db4712796ddc9ec8da122a069795b9cee274d69ae69b6a889b470df49`
+has the same deterministic identifier as v11, but a separate isolated project,
+task and feedback receipt. The model corrected both messages, attempted the
+confirmed reload and returned a failed `FirewallOperationResult` on the
+exceptional mode path. Its native build and all 682 local tests passed.
+All three carried deviations received accepted PASS receipts; raw rejected
+citation/condition submissions remain in the logs. The original suite still
+has only the explained old no-save assertion; the separate eight-case check
+passes completely. Final Stop settled NO_DEVIATION_FOUND, then the full
+independent evaluator executed and resolved all 678 expected tests.
 
 First changes:
 
