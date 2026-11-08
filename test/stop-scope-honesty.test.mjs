@@ -154,6 +154,33 @@ test('a Stop after document-only changes is skipped quietly without a reviewer o
   assert.equal(reviewed.stop.correctionAttempt, 0);
 });
 
+test('disabled document stages retain ownership so a Stop-only profile skips documents and still reviews later code', async t => {
+  const f = await fixture(t);
+  const configFile = path.join(f.root, '.runtime-corrector/config.yaml');
+  const configured = await fs.readFile(configFile, 'utf8');
+  const disabled = configured.replace(/^enabledStages:\r?\n(?:  - [^\r\n]+\r?\n)+/mu, 'enabledStages: []\n');
+  assert.notEqual(disabled, configured);
+  await fs.writeFile(configFile, disabled);
+  const plan = await loadConfig({ cwd: f.root });
+  assert.equal(plan.artifacts.length, 0);
+  assert(plan.configuredArtifacts.length >= 3);
+  Object.assign(f.plan, { artifacts: plan.artifacts, configuredArtifacts: plan.configuredArtifacts,
+    workflowCorrelation: plan.workflowCorrelation });
+  await writeFiles(f.root, DOCUMENTS);
+
+  const skipped = await f.stop('disabled-doc-stages');
+  assert.equal(skipped.stop.reasonCode, 'STOP_DOCUMENT_ONLY_CHANGES');
+  assert.deepEqual(f.calls, [], 'disabled document correction must not spend a model call through Stop');
+  assert.deepEqual(Object.keys((await f.ledger()).stops ?? {}), []);
+  assert.deepEqual(await nonArtifactChanges({ projectRoot: f.root, taskId: f.task.taskId, plan: f.plan }), []);
+
+  await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+  const reviewed = await f.stop('code-after-disabled-doc-stages');
+  assert.equal(reviewed.stop.status, 'NO_DEVIATION_FOUND', reviewed.stop.reasonCode);
+  assert.deepEqual(f.calls.filter(call => call !== 'baseline'), ['workspace-stop']);
+  assert.equal(reviewed.stop.coverage.selectedObjectCount, 2);
+});
+
 test('a business commit counts as a change while a committed workflow document does not', async t => {
   const f = await fixture(t);
   await writeFiles(f.root, DOCUMENTS);

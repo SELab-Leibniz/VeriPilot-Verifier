@@ -88,6 +88,54 @@ models and checks are unchanged. Evidence root for this extension:
 `C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-st1-st7`.
 The extension is not complete until both actual candidate grades pass.
 
+Extension evidence so far:
+
+- Both native evaluator controls completed. st1 base is 0/1 + 611/611;
+  reference control is 1/1 + 611/611. st7 base is 0/5 + 673/673;
+  reference control is 5/5 + 673/673. These controls run separately from all
+  business and reviewer sessions, which receive only the public request/source.
+- `st1-fresh-v1` completed its real proposal and code stages from the original
+  st1 base `83eb89433333eb9b5c84e8d784480e77fa8d610d`.
+  Both independent first-draft and final grades passed 1/1 + 611/611;
+  final patch SHA256
+  `d0e1b46d2f53f4f4a1461d307ff744dafc9fc69e628f7a78159551c382b3d649`.
+  The implementation changes the existing password-length option constant;
+  Stop found no production deviation and admitted zero corrections. This is
+  a fresh full PASS using the existing RC version, not evidence of a repair
+  gain caused by Stop. The local suite's two pre-existing logging-repository
+  failures persisted without new failures; the complete independent oracle
+  still passed all 612 expected tests.
+- The document-only proposal Stop ended UNVERIFIED / STOP_NO_REVIEW_SCOPE;
+  its rejected attempts to register process/doc requirements as M16 are
+  retained. The subsequent actual code-stage Stop settled
+  NO_DEVIATION_FOUND (`stop-78313e987d1958a132af129e`), with all three selected
+  objects scanned. The deviation-only rollup also retains
+  `verificationIncomplete: true`; the PASS claim comes from the separate
+  full evaluator, not treating NO_DEVIATION_FOUND as a full test verdict.
+- `st7-fresh-v1` starts with the same validated package and Stop-only policy.
+  No new generic analyzer or task-specific contract fixture has been added
+  for either extension case.
+
+The fresh st7 run exposed a scope defect before production implementation:
+its proposal-completion Stop reviewed the design, requested a document repair
+and consumed one correction. `enabledStages: []` leaves the compiler's active
+artifact list empty, but retains all declared workflow paths in
+`configuredArtifacts`. Task-change ownership had used only the active list,
+incorrectly transferring the disabled workflow documents to Stop. Preserve
+the existing declared-path ownership using that retained metadata, with the
+existing active-list fallback. Explicit review exclusions and the existing
+document-quality/declared-metric Stop gates are unchanged.
+
+The regression test loads the actual default project configuration with
+disabled stages, verifies the declared paths still exist, and exercises a
+document-only Stop followed by a real business-code edit. Before the fix it
+incorrectly called the reviewer; after the fix it skips the documents with
+no reviewer or correction budget and still reviews the later code. Rejected
+red result: `disabled-doc-stages-red.log`; ownership and original-regression
+integration checks after the fix: **27/27 pass**
+(`disabled-doc-stages-green.log`). The existing v8 run stays intact; the
+corrected package requires its own verified trial.
+
 First changes:
 
 1. Enable existing regression execution, using original public test assertions
