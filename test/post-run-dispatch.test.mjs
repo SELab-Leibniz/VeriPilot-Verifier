@@ -81,6 +81,37 @@ test('a host-retried run that outlives escalated reconciliation is reviewed afte
   assert.equal(record.reconciliation, null);
 });
 
+for (const recovery of ['agent_end', 'recheck']) test(`an owned correction resumes after late host drainage through ${recovery}`, async t => {
+  let finished = false, reviews = 0, f;
+  f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId, deadlineAt) => {
+      if (runId === 'original') return { runId, status: 'ok' };
+      while (Date.now() < deadlineAt) { if (finished) return { runId, status: 'ok' }; await pause(5); }
+      return null;
+    }, review: async record => {
+      reviews++;
+      if (reviews === 1) { await f.manager.correction(record, 'repair', Date.now()+10000, 'stop-1'); return { reviewStatus: 'DEVIATION' }; }
+      return { reviewStatus: 'PASS' };
+    } });
+  const id = f.identity(`late-correction-${recovery}`);
+  await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'draft', reviewBudgetMs: 10000 }); await f.manager.drain();
+  await f.manager.started(id, 'repair', null);
+  await f.manager.candidate(id, { runId: 'repair', text: 'fixed', reviewBudgetMs: 10000, terminalBudgetMs: 20 });
+  for (let i=0; i<100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  assert.equal(reviews, 1, 'agent_end alone must not start a review before public drainage');
+  finished = true;
+  if (recovery === 'agent_end') await f.manager.candidate(id, { runId: 'repair', text: 'fixed',
+    completion: { runId: 'repair', success: true, event: 'agent_end' }, reviewBudgetMs: 10000, terminalBudgetMs: 1000 });
+  else { const record = f.manager.snapshot(id); await f.manager.recheck(id, { runId: 'repair', version: record.version, actor: 'test-operator' }); }
+  for (let i=0; i<100 && f.manager.snapshot(id).phase !== 'IDLE'; i++) await pause(10);
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE'); assert.equal(record.reviewStatus, 'PASS');
+  assert.equal(reviews, 2); assert.equal(record.reconciliation, null); assert.equal(f.sent.length, 0);
+  assert.equal(f.errors.length, 0);
+});
+
 test('explicit owner cancellation still cancels an unbounded correction', async t => {
   let cancelled = 0, f;
   f = await fixture(t, { cancelCorrection: async (_record, runId) => { assert.equal(runId, 'repair-unbounded'); cancelled++; },

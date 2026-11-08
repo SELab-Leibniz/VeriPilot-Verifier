@@ -176,3 +176,52 @@ feedback and model repair recovered the target behavior and all regressions.
 This is a frozen-candidate repair result, not a new fresh full business run.
 
 st6 preparation starts only after this verified st2 evaluator PASS.
+
+st6 first fresh run (`147bc62`, same plugin archive as `0913b3e`):
+
+- Calibration completed: base F2P 0/7, P2P 617/617; gold control 7/7,
+  617/617. Original project-local suite has 615 tests; the frozen evaluator's
+  regression group has 617. Both controls executed completely.
+- `st6-fresh-v1` completed the two original OpenSpec stages. Its modified
+  local suite reached 621/621. Actual Stop's task-start suite completed
+  612/615, with three assertions affected by the new auto-deny behavior
+  (`sc-b/rc-regression-PeILfv.result.json`).
+- Stop reported a concrete original-requirement deviation: the USB path
+  overwrote an existing explicit allow policy with auto-deny, although the
+  request limits auto-deny to devices without an explicit policy. Feedback
+  `stop-42656447a96b46304f2e7641` started actual corrective run
+  `rc-stop-05ab855f4fc772475e01fb5e416209992886271c15d5d86089ae95a15345e8f4`.
+- The repair's new whitelist cases initially failed; the business then
+  introduced additional production dependency hooks and changed its test
+  substitutes. Its modified suite finished 623/623, and the passive observer
+  retained exact before-finalization and successful agent_end receipts.
+- Post-run state then held at HOST_RUN_RECONCILIATION_ESCALATED, without
+  starting the next review. A later root-agent diagnostic probe used an
+  unsupported dynamic import in inspector cleanup, terminating the isolated
+  Node process. This is an agent operation error, not a business or benchmark
+  test failure. `run-failure.json`, raw logs and both model checkpoints are
+  retained. No final Stop acceptance is claimed for this attempt.
+- Independent full grading of the untouched checkpoints: first draft F2P
+  1/7, P2P 616/617; actual whitelist repair F2P 1/7, P2P 617/617. Both are
+  complete/executed FAIL. Whitelist compatibility recovered, but six target
+  cases remain failed. Evidence is in `st6-fresh-v1/grade-first-draft` and
+  `grade-after-repair`; no evaluator test or expected answer was passed to
+  the business model.
+
+The next small changes retain the original service/repository boundary at
+call time, including function-valued static fields and new production test
+hooks. Runtime recovery now allows the exact owned corrective run to resume
+after its genuine public terminal arrives, without resending any business
+request. Two reproductions cover a late agent_end and explicit recheck. The
+native drain wait has its own bounded five-minute minimum because context
+compaction can outlive the shorter hook window; a successful agent_end still
+does not replace the public terminal. The full driver now saves existing
+terminal-observer events as they arrive. Related tests: 33/33 pass
+(`late-drain-tests-v5.log`). st6 has not passed yet.
+
+The first v5 full suite invocation omitted `--openclaw-host`, so 19 files
+failed to load the installed public tool validator; all 19 pass when rechecked
+with the explicit read-only host root and English locale. The original log,
+recheck results and aggregate audit are retained. A clean full invocation with
+the proper host setting is required for the final verification record; no
+implementation change was made to conceal those configuration failures.

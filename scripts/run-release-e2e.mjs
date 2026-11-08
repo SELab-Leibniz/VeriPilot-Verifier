@@ -280,6 +280,8 @@ try {
         originalTerminal = await original.poll(gateway.request,runId,starts,post?.phase ?? 'OBSERVE');
         terminal = tracker.runId===runId ? originalTerminal
           : await observer.poll(gateway.request,tracker.runId,starts,post?.phase);
+        for (const event of [...original.drainEvents(), ...observer.drainEvents()])
+          await fs.appendFile(path.join(outputRoot,'business-terminal-observations.jsonl'), JSON.stringify({stage,...event})+'\n');
         originalTerminal = await completedBusinessTerminal(originalTerminal);
         terminal = await completedBusinessTerminal(terminal);
         if (terminal && ['IDLE','CLOSED'].includes(post?.phase) && privateRuns.every(worker=>worker.status==='SETTLED')) break;
