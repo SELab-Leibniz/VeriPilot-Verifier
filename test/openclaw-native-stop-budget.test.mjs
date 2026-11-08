@@ -953,19 +953,27 @@ test("host maintenance filtering retains private reviewer tool authorization", a
   assert.equal(f.state.nativeRunId, f.ctx.runId);
 });
 
-test("a read-only continuation resumes a migration-blocked Stop, while accepted work stays quiet", async t => {
-  for (const status of ["UNVERIFIED", "PASS"]) await t.test(status, async t => {
+test("a read-only continuation retries an interrupted Stop, while accepted work stays quiet", async t => {
+  for (const { status, reasonCode } of [
+    { status: "UNVERIFIED", reasonCode: "STOP_SESSION_MIGRATION_REQUIRED" },
+    { status: "UNVERIFIED", reasonCode: "BASELINE_INPUT_CHANGED" },
+    { status: "PASS" },
+  ]) await t.test(reasonCode ?? status, async t => {
     const f = await lifecycle(t, { waitMode: "until_pass" });
     await f.runtime.postRuns.release(f.post(), "PREVIOUS_RUN_ENDED");
     const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
     await withTaskState({ projectRoot: f.root, taskId: task.taskId }, current => {
-      current.verification = { status, ...(status === "UNVERIFIED" ? { reasonCode: "STOP_SESSION_MIGRATION_REQUIRED" } : {}) };
+      current.status = status === "UNVERIFIED" ? "STOPPED_UNVERIFIED" : "ACTIVE";
+      current.verification = { status, ...(reasonCode ? { reasonCode } : {}) };
+      if (reasonCode) current.stop.lastAssessmentId = 'prior-interrupted-assessment';
     });
     await fs.appendFile(path.join(f.root, 'native.jsonl'), '\n' + JSON.stringify({ type: 'message', id: 'continue-verification', parentId: 'u',
       message: { role: 'user', content: 'Continue pending final verification.' } }) + '\n');
     const next = { ...f.ctx, runId: 'read-only-continuation' };
     await f.runtime.prompt({ prompt: 'Continue pending final verification.' }, next);
     assert.equal(f.state.nativeNeedsStop, status === "UNVERIFIED");
+    assert.equal(f.state.nativeRetryUnverifiedStop, reasonCode === "STOP_SESSION_MIGRATION_REQUIRED");
+    assert.equal(f.state.nativeRetryEvidenceStop, reasonCode === "BASELINE_INPUT_CHANGED");
     if (status === "UNVERIFIED") {
       await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
       const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');

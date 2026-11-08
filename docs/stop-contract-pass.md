@@ -324,3 +324,23 @@ guide now directs an exact read of a configured public baseline path instead
 of searching its shared live output parent and explicitly excludes hidden
 tests/reference solutions/independent grades from review inputs. Related
 workspace-review tests: 35/35 pass (`bounded-baseline-navigation-v6b.log`).
+
+Full RC suite completed for the shared-state review change: 299/299 files,
+3,061 passed, zero failures/timeouts, 46 skipped (`rc-tests-v6.log`).
+The first pending-verification continuation (`st6-pending-v6b`) preserved the
+implementation and ran 622/622 local tests, but did not start a new private
+review: its post-run record says STOP_NOT_REQUIRED. Its independent full
+grade remains 4/7, 616/617, FAIL. The new package alone cannot be credited with
+a review that never ran.
+
+The runtime had re-armed a read-only continuation only after
+STOP_SESSION_MIGRATION_REQUIRED, leaving an interrupted search-evidence review
+unresolved unless a business source edit happened. Extend that existing retry
+path specifically to BASELINE_INPUT_CHANGED on a genuine new user turn. Reuse
+the original registered Stop retry signal so the completion-text classifier
+cannot silently skip the retry. This case retains ordinary execute-and-correct
+mode and the existing ledger; migration retains verification-only behavior,
+and accepted work still triggers no extra review. Native Stop/dispatcher tests
+pass 93/93 (`interrupted-review-retry-v6c-r2.log`), including a stopped task
+with no new source edits. The first incomplete retry reproduction remains in
+the prior log rather than being overwritten.
