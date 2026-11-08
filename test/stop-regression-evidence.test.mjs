@@ -351,6 +351,25 @@ test('edited or deleted tests retain their task-start assertions as review evide
   assert((await collectRegressionEvidence({ projectRoot: root })).originalTests.some(item => item.body.includes(assertion)));
 });
 
+test('related boundary contracts remain visible when many edited ordinary cases exhaust the navigation limit', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-boundary-contract-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await project(root, { broken: false });
+  const ordinary = Array.from({ length: 12 }, (_, index) =>
+    `test('ordinary policy scenario ${index}', () => { const vm = new SettingsViewModel(); vm.applyPolicy({ minLength: 16 }); assert.equal(vm.minLengthIndex, 2); });`).join('\n');
+  const boundaryCase = "test('missing payload keeps the existing fallback', () => { assert.equal(new SettingsViewModel().minLengthIndex, DEFAULT_INDEX); });";
+  const original = TESTS.split("test('")[0] + ordinary + '\n' + boundaryCase + '\n';
+  const file = path.join(root, 'test/settings.test.mjs');
+  await fs.writeFile(file, original); git(root, 'add', '.'); git(root, 'commit', '-qm', 'many ordinary public cases and one boundary');
+  await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
+  await fs.writeFile(file, original.replaceAll('minLengthIndex, 2', 'minLengthIndex, 3'));
+  const evidence = await collectRegressionEvidence({ projectRoot: root });
+  const pointer = evidence.testPointers.find(item => item.path === 'test/settings.test.mjs');
+  assert.equal(pointer.cases.length, 8);
+  assert(pointer.cases.some(item => item.title === 'missing payload keeps the existing fallback'));
+  assert(evidence.originalTests.some(item => item.body.includes(boundaryCase)));
+});
+
 test('regressionCheck configuration is validated at normalization and by the project schema', () => {
   const stop = regressionCheck => normalizeStopCorrectionConfig({ enabled: true, regressionCheck }).regressionCheck;
   assert.equal(normalizeStopCorrectionConfig({ enabled: true }).regressionCheck, undefined);

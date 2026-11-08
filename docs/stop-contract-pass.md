@@ -344,3 +344,30 @@ and accepted work still triggers no extra review. Native Stop/dispatcher tests
 pass 93/93 (`interrupted-review-retry-v6c-r2.log`), including a stopped task
 with no new source edits. The first incomplete retry reproduction remains in
 the prior log rather than being overwritten.
+
+The correctly configured full suite on `cba82d7` completed 299/299 files,
+3,062 pass, zero fail/timeouts, 46 skipped (`rc-tests-v6c.log`). The actual
+`st6-pending-v6c` continuation restored used=1 unchanged, started a new private
+Stop, and admitted a real second correction after the review found the
+unconfigured USB READ_ONLY path returned before first-connect auto-deny.
+This establishes that the repaired retry reaches normal correction admission;
+it does not establish an independent evaluator PASS.
+
+One-off native toolchain probes use numeric toy classes in separate project
+copies, without any task/evaluator cases. Synchronous and asynchronous static
+method replacement both work through canonical, direct-caller and function-
+value invocations. Replacing the same method twice, then calling MockKit.clear
+and clearAll, leaves a wrapper returning undefined instead of the original
+value. The extended probe completed with two passing observations and that
+one intentional contract failure. Evidence is outside the model workspace at
+`Experiments/rc-native-static-call-20261109[-extended]/receipt.json` and
+`probe.ets`. This is SDK cleanup evidence, not a business score or proof of
+the cause of a particular benchmark failure.
+
+The next small review improvement keeps related missing/empty/invalid-input
+cases visible within the existing eight-case navigation budget; heavily
+edited ordinary cases must not consume every pointer. It also makes explicit
+that one obsolete assertion cannot retire the later, still-applicable
+assertions in the same test, including unchanged result fields. No additional
+reviewer, analyzer or execution framework is introduced. Regression/proof
+tests: 18/18 pass (`boundary-contract-navigation-v7.log`).
