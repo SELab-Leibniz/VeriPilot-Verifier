@@ -8,6 +8,7 @@ import { digest } from './arkts-dataset.mjs';
 import { shortArktsWorkspace } from './short-workspace.mjs';
 import { withFileLock, worktreeLockPath } from './file-lock.mjs';
 import { businessMutationPaths, validateBusinessMutationPaths } from './business-mutations.mjs';
+import { nativeCompactionStart } from './business-completion.mjs';
 import { nativeStopGrace as createNativeStopGrace, nativeStopSettlement, readNativeStopRecords } from './native-stop-settlement.mjs';
 import { loadPackaged, redactEvaluationText, summarizeProviderUsage, waitSimplifyRunTerminal } from '../helpers/simplify-native-evaluation.mjs';
 import { measureSimplifyBenchmark } from '../helpers/simplify-stop-benchmark.mjs';
@@ -235,10 +236,12 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     if (ready && (nativeStop.settled || nativeStopReason)) break;
     await new Promise(resolve => setTimeout(resolve, 400));
   }
-  const businessStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
+  const sessionStarts = gateway.metrics().modelStarts.filter(row => row.sessionId === sessionId);
+  const compactionStarts = sessionStarts.filter(row => nativeCompactionStart(row, { sessionId, sessionKey }));
+  const businessStarts = sessionStarts.filter(row => !nativeCompactionStart(row, { sessionId, sessionKey }));
   const repairs = Object.values(ledger?.admissions ?? {}), allowedRuns = new Set(maxCorrections === 1 ? [admission?.hostRequest?.runId]
     : repairs.map(item => item.hostRequest?.runId));
-  if (businessStarts.some(row => reviewOnly || !allowedRuns.has(row.runId)) || (ledger?.used ?? 0) > maxCorrections) {
+  if (businessStarts.some(row => reviewOnly || row.sessionKey !== sessionKey || !allowedRuns.has(row.runId)) || (ledger?.used ?? 0) > maxCorrections) {
     const persisted = await store.inspect(sessionId);
     await save(path.join(outputRoot, 'business-run-identity-failure.json'), { sessionId, sessionKey, originalRunId,
       expectedRunId: admission?.hostRequest?.runId ?? null, used: ledger?.used ?? null, businessStarts,
@@ -288,7 +291,7 @@ export async function reviewFrozenArktsDraft({ gateway, prepared, manifest, prof
     elapsedMs: Date.now() - startedAt, patchBytes: patch.length, terminal, firstStop: initial, corrections: ledger?.used ?? 0, maxCorrections,
     repairs: repairs.map(item => ({ id: item.id, stopId: item.stopId, runId: item.hostRequest?.runId ?? null, accounting: item.accounting,
       finalReview: item.finalReview?.status ?? null, terminal: terminals.get(item.hostRequest?.runId)?.status ?? null })),
-    actualBusinessStart: businessStarts.length > 0, infrastructureComplete: !frameworkError,
+    actualBusinessStart: businessStarts.length > 0, compactionStarts, infrastructureComplete: !frameworkError,
     ...(reviewOnly ? { reviewOnly, verification: verification ?? null } : {}),
     modelRequests: boundary?.requests ?? null, gatewayPort: gateway.port, metrics: gateway.metrics() };
   await save(path.join(outputRoot, 'result.json'), result);

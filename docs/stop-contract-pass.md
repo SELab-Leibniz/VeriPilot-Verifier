@@ -141,3 +141,38 @@ This changes review guidance only and adds no new analysis framework. Existing
 regression/workspace-review tests: 45/45 pass (`seam-guard-tests-v4.log`).
 The same captured v3 candidate will be replayed to isolate this review change
 and preserve a directly comparable before/after evaluation.
+
+st2 now has a full independent PASS after one actual Stop-driven correction
+with source `0913b3e` (`release-v4`). The same v3 candidate was replayed in
+`st2-frozen-v4-repair-r2`, using assessment mode to admit correction after the
+historical turn, with documents/skills still disabled. The new review reported
+the service-boundary regression, explicitly separated the one obsolete
+refresh-policy assertion, and delivered feedback to the actual main model.
+Its repair preserved `PermissionService.loadApplications` and moved policy
+snapshot loading inside that service entry point. The actual original suite
+then completed 746/747; only the intentionally changed assertion failed
+(`sc-b/rc-regression-7JMpZa.result.json`).
+
+The replay driver exited with `Frozen Stop started an unauthorized business
+run` during final accounting. Saved events show all business calls belong to
+the admitted correction; the extra IDs are the host's same-session native
+context compaction. Both the accepted finish_stop_review receipt and final
+NO_DEVIATION_FOUND assessment `stop-79253bdaa0f54ea399baf82d` were saved before
+shutdown. The original driver failure is retained, not relabeled as a normal
+completed fresh run. The small accounting fix excludes only native compaction
+with the exact session ID, session key and native ID format; other starts are
+still rejected. Existing completion and frozen-order tests: 13/13 pass
+(`frozen-compaction-tests.log`).
+
+`capture-frozen-repair.mjs` retained the actual repair using a separate index.
+It verifies changed production bytes against the real Stop snapshot and the
+published assessment's file hashes before grading. Independent evaluator:
+F2P **2/2**, P2P **746/746**, complete/executed/resolved **true**.
+Evidence: `st2-frozen-v4-repair-r2/grade-recovered-repair/results.json` and
+`recovered-repair/receipt.json` (patch SHA256
+`c4c68617122400d26013792fa0fb230154135e04782364d359ae096e4dd186dd`).
+Compared with its unchanged source candidate (1/2, 739/746), the actual Stop
+feedback and model repair recovered the target behavior and all regressions.
+This is a frozen-candidate repair result, not a new fresh full business run.
+
+st6 preparation starts only after this verified st2 evaluator PASS.

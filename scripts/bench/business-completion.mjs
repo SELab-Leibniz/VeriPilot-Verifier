@@ -22,6 +22,13 @@ export function businessCompleted(terminal, runId) {
   return knownBusinessTerminal(terminal, runId) && terminal.status === 'ok';
 }
 
+export function nativeCompactionStart(event, { sessionId, sessionKey }) {
+  const prefix = `${sessionId}:compaction:cmp-`;
+  return event?.sessionId === sessionId && event.sessionKey === sessionKey
+    && typeof event.runId === 'string' && event.runId.startsWith(prefix)
+    && /^[A-Za-z0-9_-]+$/u.test(event.runId.slice(prefix.length));
+}
+
 // Gateway terminal caches expire independently of a long RC review. Capture
 // the real public reply as soon as the business leaves RUNNING and retain it.
 // A new business model call or trusted correction invalidates the old reply.
