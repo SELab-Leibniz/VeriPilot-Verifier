@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { prepareRegressionWorkspace, installRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
 import { runRegressionCheck } from '../scripts/bench/arkts-regression-check.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
@@ -66,6 +67,10 @@ test('a different contract probe cannot reuse an original passing baseline or st
   const before = await fs.readdir(f.root);
   await assert.rejects(runRegressionCheck({ project: f.source, toolRoot: path.join(f.root, 'no-toolchain'),
     baseline, originalTests: true, contractProbe: probe }), /Contract probe baseline hash mismatch/u);
+  const wrapper = fileURLToPath(new URL('../scripts/bench/arkts-stop-contract-check.mjs', import.meta.url));
+  assert.throws(() => execFileSync(process.execPath, [wrapper, `--project=${f.source}`, `--tool-root=${path.join(f.root, 'no-toolchain')}`,
+    `--baseline=${baseline}`, `--contract-baseline=${baseline}`, `--contract-probe=${probe}`], { windowsHide: true, stdio: 'pipe' }),
+  error => /Contract probe baseline hash mismatch/u.test(error.stderr?.toString()));
   assert.deepEqual(await fs.readdir(f.root), before);
 });
 

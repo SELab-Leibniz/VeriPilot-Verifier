@@ -3,6 +3,7 @@
 // contract case. Each runs in a different native process and project snapshot.
 import fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
+import { createHash } from 'node:crypto';
 import { runRegressionCheck } from './arkts-regression-check.mjs';
 const { values } = parseArgs({ options: Object.fromEntries(['project', 'tool-root', 'java-home', 'baseline',
   'contract-probe', 'contract-baseline', 'timeout-ms'].map(name => [name, { type: 'string' }])) });
@@ -12,6 +13,8 @@ const read = async file => JSON.parse(await fs.readFile(file, 'utf8'));
 const [original, contract] = await Promise.all([read(values.baseline), read(values['contract-baseline'])]);
 if (original.baseCommit !== contract.baseCommit || !original.completeRuntime || !contract.completeRuntime)
   throw new Error('Original and contract baselines must be completed on the same prepared commit.');
+if (createHash('sha256').update(await fs.readFile(values['contract-probe'])).digest('hex') !== contract.contractProbe?.sha256)
+  throw new Error('Contract probe baseline hash mismatch.');
 const common = { project: values.project, toolRoot: values['tool-root'], javaHome: values['java-home'],
   timeoutMs: Number(values['timeout-ms'] ?? 420000) };
 const suite = await runRegressionCheck({ ...common, baseline: values.baseline, originalTests: true });
