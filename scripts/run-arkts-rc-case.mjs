@@ -31,6 +31,7 @@ const rcOverrides = await loadRcConfigOverrides(arg('--rc-config-overrides'));
 let stopPolicy = null;
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
 const simplifyArm = arg('--simplify-arm');
+const reviewerModel = arg('--reviewer-model');
 const s0 = simplifyArm === 'S0';
 const frozenRoot = arg('--frozen');
 const originalPackageSha256 = 'ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a';
@@ -82,7 +83,7 @@ if (simplifyArm) {
   if (!Object.hasOwn(packageSources, packageSha256) || !Object.hasOwn(packageSources, frozenPackageSha256)
     || digest(await fs.readFile(archive = await fs.realpath(arg('--package')))) !== packageSha256)
     throw new Error('Pinned ArkTS integration package SHA256 changed.');
-  ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile')));
+  ({ identity: providerIdentity } = await resolveSimplifyProvider('host-profile', arg('--model'), arg('--openclaw-profile'), reviewerModel));
 }
 const outputRoot = path.resolve(arg('--output') ?? `.runtime-correction/system-optimization/agent-runs/${arg('--case') ?? 'happyword_12'}-${Date.now()}`);
 const dataset = arg('--dataset') ?? 'C:/Users/user/workspace/program_workspace/Experiments/swe-arkts-bench';
@@ -246,7 +247,7 @@ try {
     phaseTimeoutMs: profile.explicit && !s0 ? profile.phaseTimeoutMs : null, unlimitedBusiness: profile.hostNoTimeout === true,
     disableRuntimeCorrection: s0,
     disableMemoryFlush: true, preserveSessionHistory: true, ...(arg('--context-window-tokens') ? { contextWindowTokens } : {}) };
-  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model,
+  gateway = arm ? await createSimplifyGateway({ ...options, providerKind: 'host-profile', openclawProfile: arg('--openclaw-profile'), model, reviewerModel,
     pairRateLimitFile: arg('--pair-rate-limit-file'), pairRateLimitPauseMs: arg('--pair-rate-limit-pause-ms') ? Number(arg('--pair-rate-limit-pause-ms')) : null })
     : await createNativeGatewayEvaluation(options);
   if (s0 && gateway.config.plugins.entries['runtime-corrector'].config.enabled !== false)

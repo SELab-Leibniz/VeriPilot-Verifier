@@ -62,7 +62,7 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   if (originalTests) verdict.line += ' suite=task-start; compare failures with the original request before classifying regressions';
   await fs.writeFile(root + '.result.json', JSON.stringify({ source: path.resolve(project), workspace: root, baselineCommit: baselineEvidence?.baseCommit,
     current, verdict, execution, output }, null, 2));
-  const errors = verdict.status === 'INCOMPLETE' ? output.split(/\r?\n/u).filter(line => /\bERROR\b|error:|Exception|RC_ARKTS_JAVA/u.test(line)).slice(-12) : [];
+  const errors = verdict.status === 'INCOMPLETE' ? output.split(/\r?\n/u).filter(line => /\bERROR\b|error:|Exception|RC_ARKTS_JAVA/iu.test(line)).slice(-12) : [];
   return { ...verdict, errors, execution: { exitCode: execution.exitCode, interrupted: execution.interrupted, reason: execution.reason } };
 }
 

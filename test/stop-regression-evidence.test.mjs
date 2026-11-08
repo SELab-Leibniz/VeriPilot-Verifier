@@ -10,7 +10,7 @@ import { normalizeRegressionCheck, normalizeStopCorrectionConfig } from '../lib/
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { STANDING_REGRESSION, STANDING_REGRESSION_TEXT, collectRegressionEvidence, regressionDeviationProblem,
-  runStopRegressionCheck } from '../lib/runtime-v2/regression-evidence.mjs';
+  runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 
@@ -68,13 +68,13 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
   await project(f.root, { broken });
   if (!broken) await fs.writeFile(path.join(f.root, 'README.md'), '# Settings\n\nPassword options.\n');
   const transcript = path.join(f.root, 'session.jsonl');
-  await fs.writeFile(transcript, [{ type: 'user', uuid: 'user-original', message: { content: REQUEST } },
+  await fs.writeFile(transcript, [{ type: 'user', uuid: 'user-original', message: { content: request } },
     { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }].map(entry => JSON.stringify(entry)).join('\n') + '\n');
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true, ...(regressionCheck ? { regressionCheck } : {}) } });
@@ -89,9 +89,9 @@ async function regressionStop(t, { broken = true, regressionCheck, script }) {
         await api.submit('set_original_checklist', { items: [{ metricId: 'M16', text: 'Offer a 24-character password length option.',
           verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', citeId: original, lineStart: 1, lineEnd: 1 }] });
         const checklist = await api.submit('review_checklist', SCOPE);
-        await script({ ...api, checklist, standing: checklist.items.find(item => item.programStanding === STANDING_REGRESSION),
+        const finish = await script({ ...api, original, checklist, standing: checklist.items.find(item => item.programStanding === STANDING_REGRESSION),
           cite: async file => (await api.read(path.isAbsolute(file) ? file : path.join(f.root, file))).details.citation.citeId });
-        await api.submit('finish_stop_review', { summary: 'Scanned the scoped checklist.' });
+        await api.submit('finish_stop_review', { summary: 'Scanned the scoped checklist.', ...finish });
       } catch (error) { failure = error; throw error; }
     });
   };
@@ -282,6 +282,49 @@ test('a task-start change set keeps a regression the business already committed'
   assert.deepEqual(evidence.changes.filter(change => change.code).map(change => [change.path, change.status]), [['src/settings.mjs', 'modified']]);
   assert.equal(evidence.testPointers[0]?.path, 'test/settings.test.mjs');
   assert.match(evidence.diffs.join('\n'), /^-\s+this\.minLengthIndex = index >= 0 \? index : DEFAULT_INDEX;$/mu);
+});
+
+test('a failed original-test check cannot finish as clean without an evidenced disposition', async t => {
+  const { result } = await regressionStop(t, { regressionCheck: { enabled: true, command: [process.execPath, '-e', 'process.exit(2)'] },
+    script: async ({ standing, submit, cite }) => {
+      await assert.rejects(submit('finish_stop_review', { summary: 'No deviations.' }), { code: 'REVIEW_REGRESSION_CHECK_REQUIRED' });
+      const output = await cite(standing.regressionEvidence.programRun.files[0]);
+      await assert.rejects(submit('finish_stop_review', { summary: 'The old test is stale.', regressionCheck: {
+        status: 'EXPLAINED', reason: 'The command exited 2.', citeIds: [output] } }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
+      return { regressionCheck: { status: 'UNVERIFIED', reason: 'Exit 2 alone cannot establish a source contradiction.', citeIds: [output] } };
+    } });
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.equal(result.stop.verificationIncomplete, true);
+});
+
+test('an explicitly requested behavior change can explain an old failing assertion with source evidence', async t => {
+  const { result } = await regressionStop(t, { request: REQUEST + ' Use index -1 for unsupported lengths.',
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 1024 },
+    script: async ({ standing, original, submit, cite }) => {
+      const source = await cite('src/settings.mjs'), existing = await cite('test/settings.test.mjs');
+      const check = { status: 'EXPLAINED', reason: 'The original now requires -1 instead of the old default for unsupported 99.',
+        citeIds: [await cite(standing.regressionEvidence.programRun.files[0]), source, existing] };
+      await assert.rejects(submit('finish_stop_review', { summary: 'Requested behavior.', regressionCheck: check }), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
+      return { regressionCheck: { ...check, explanations: [{ failure: 'Unsupported-length default assertion',
+        reason: 'The source uses indexOf, which returns the requested -1 for 99.', originalCiteId: original, citeIds: [source, existing] }] } };
+    } });
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
+});
+
+test('edited or deleted tests retain their task-start assertions as review evidence', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-contract-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await project(root);
+  const testPath = path.join(root, 'test/settings.test.mjs');
+  const assertion = 'assert.equal(vm.minLengthIndex, DEFAULT_INDEX);';
+  await fs.writeFile(testPath, TESTS.replace(assertion, 'assert.equal(vm.minLengthIndex, -1);'));
+  const evidence = await collectRegressionEvidence({ projectRoot: root });
+  const excerpt = evidence.originalTests.find(item => item.title.includes('default'));
+  assert(excerpt.body.includes(assertion));
+  assert(!excerpt.body.includes('minLengthIndex, -1'));
+  assert.match(renderRegressionEvidence(evidence), /Task-start public test excerpts/u);
+  await fs.unlink(testPath);
+  assert((await collectRegressionEvidence({ projectRoot: root })).originalTests.some(item => item.body.includes(assertion)));
 });
 
 test('regressionCheck configuration is validated at normalization and by the project schema', () => {

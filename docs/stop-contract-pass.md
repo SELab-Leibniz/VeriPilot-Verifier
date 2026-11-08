@@ -83,3 +83,23 @@ Fresh st2 evidence so far:
   including the actual `agent_end` event shape without message stopReason.
   `observer-preflight-v3/result.json` additionally proves a before-finalization
   snapshot through the real hook runner, with zero model requests.
+
+The v2 full run finished but did not pass. Its first repair removed the public
+`refreshApplicationList` method. The original suite then could not compile;
+Stop nevertheless returned NO_DEVIATION_FOUND. The final independent evaluator
+also could not execute its tests (compile failure, not 748 observed failures).
+Evidence: `st2-fresh-v2/grade-final/results.json` and the second actual Stop
+snapshot `sc-b/rc-regression-Puw5lJ.result.json`.
+
+The next candidate reuses the bounded task-start test excerpt collector from
+`05d061e` (at most 12 KiB of edited/deleted original test cases), and adds one
+failed-check disposition to the existing finish_stop_review tool. A reviewer
+must submit a supported regression, cite original authorization for each
+distinct changed assertion, or leave the check UNVERIFIED. It cannot finish
+clean while ignoring a failed check. Original-versus-current source evidence
+still controls whether an actual deviation is justified. New guard/evidence
+tests and existing workspace review tests: 45/45 pass.
+
+The native adapter's diagnostic filter was also dropping mixed-case
+`Error Message: Property ...` compiler messages. It now retains those details
+so a deleted API can be compared with the original caller.
