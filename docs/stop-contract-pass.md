@@ -59,3 +59,27 @@ from source `5b263551d1b30469159426c789cb9fd388b85a02`.
 Launcher: `run-case.ps1`. It grades the first production draft and final patch
 in a separate evaluator after the business/Stop loop ends.
 No fresh PASS has been established yet. st6 starts after verified st2 PASS.
+
+Fresh st2 evidence so far:
+
+- The business completed its first implementation after one successful
+  same-run context-compaction recovery. Its modified public suite passed
+  749/749 and its HAP build succeeded.
+- The actual Stop's original-assertion check then failed 6/747 tests
+  (`sc-b/rc-regression-zTf0ts.result.json`). Its untouched production snapshot
+  is retained at `sc-b/rc-regression-zTf0ts`.
+- Independent full first-draft grade: F2P 1/2, P2P 741/746, FAIL
+  (`st2-fresh-v2/grade-first-regression-draft/results.json`). Recovery of the
+  first draft uses only the production tree already saved by the real Stop
+  check, with a separate index; `recovered-first-draft/receipt.json` records
+  the source snapshot and patch digest.
+- Stop delivered a concrete production-path deviation: the new refresh logic
+  was only in `refreshApplicationList`, while the UI still used the unchanged
+  `refreshAccountsAndApplicationList` path. Corrective run
+  `rc-stop-0862d0eb8ae4ae914367acc09bbf098e1eeed0d5cacd695450566544f724354f`
+  is in the same business session. Full feedback is retained in the project
+  `feedback-delivery/feedback-20261108T160554543Z-5447023a` directory.
+- Lifecycle follow-up source `4bc9c14`: 85 native lifecycle/Stop tests pass,
+  including the actual `agent_end` event shape without message stopReason.
+  `observer-preflight-v3/result.json` additionally proves a before-finalization
+  snapshot through the real hook runner, with zero model requests.

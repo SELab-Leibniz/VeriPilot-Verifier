@@ -38,14 +38,15 @@ export async function createBusinessCheckpointObserver(options) {
   await fs.writeFile(path.join(root, 'package.json'), JSON.stringify({ name: id, version: '1.0.0', type: 'module', openclaw: { extensions: ['./index.mjs'] } }));
   await fs.writeFile(path.join(root, 'openclaw.plugin.json'), JSON.stringify({ id, name: id, main: './index.mjs',
     activation: { onStartup: true }, configSchema: { type: 'object', properties: {} } }));
-  await fs.writeFile(path.join(root, 'index.mjs'), `import { captureBusinessCheckpoint } from ${JSON.stringify(import.meta.url)};
+  await fs.writeFile(path.join(root, 'index.mjs'), `import path from 'node:path';
+import { captureBusinessCheckpoint } from ${JSON.stringify(import.meta.url)};
 export default { id: ${JSON.stringify(id)}, register(api) {
   api.on('before_agent_finalize', async (event, ctx) => {
-    if (!ctx.sessionKey?.startsWith('agent:main:arkts-') || ctx.workspaceDir !== ${JSON.stringify(options.projectRoot)}) return;
+    if (!ctx.sessionKey?.startsWith('agent:main:arkts-') || path.resolve(ctx.workspaceDir ?? '') !== path.resolve(${JSON.stringify(options.projectRoot)})) return;
     await captureBusinessCheckpoint({ ...${JSON.stringify(options)}, runId: event.runId ?? ctx.runId,
       sessionId: event.sessionId ?? ctx.sessionId, stopReason: 'before_agent_finalize' });
   }, { priority: 1000 });
 } };
 `);
-  return { id, path: root, hooks: { allowConversationAccess: true } };
+  return { id, path: root, hooks: { allowConversationAccess: true, allowPromptInjection: true } };
 }
