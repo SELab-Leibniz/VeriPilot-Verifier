@@ -13,6 +13,8 @@ test('a drained tool-warning terminal is reviewed only with exact successful sto
   assert.equal(completedToolWarningTerminal(raw, { ...completion, runId: 'old' }), raw);
   assert.equal(completedToolWarningTerminal(raw, { ...completion, success: false }), raw);
   assert.equal(completedToolWarningTerminal(raw, { ...completion, stopReason: 'aborted' }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { runId: 'business', success: true, event: 'agent_end' }).status, 'ok');
+  assert.equal(completedToolWarningTerminal(raw, { runId: 'business', success: false, event: 'agent_end' }), raw);
   const failed = { ...raw, error: 'provider request failed' };
   assert.equal(completedToolWarningTerminal(failed, completion), failed);
   let reviews = 0;

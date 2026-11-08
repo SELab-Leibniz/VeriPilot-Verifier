@@ -34,4 +34,28 @@ Policy: `config/stop-behavior-only.json`. M16 is the enabled Stop metric;
 original user requirements remain available through originalRequirementsBasis.
 Original-requirements recording is not document correction.
 
-Progress and evidence paths will be recorded here after execution.
+Evidence root: `C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261108`.
+
+Verified development evidence:
+
+- Source checkpoint `6d4dfaa`: 298 RC test files completed; 3,053 pass,
+  zero fail, 46 skipped. Log: `rc-tests.log` under the evidence root.
+- Harness checkpoint `5b26355`: checkpoint plugin entry declaration fixed;
+  a real Gateway loaded the observer and both pinned model definitions with
+  zero model requests (`observer-preflight/result.json`). Affected checkpoint
+  and business-terminal tests: 10/10 pass.
+- `st2-calibration/results.json`: original base F2P 0/2, P2P 746/746;
+  reference control F2P 2/2, P2P 746/746. Actual native runtime results.
+- `st2-fresh-v1`: preparation failure before any model request, retained in
+  `st2-live-v1.log` and `provider-boundary.json` (requests=0). Not a scored run.
+- `st2-public-replay/result.json`: the historical 85757c3 st2 r2 patch, replayed
+  without hidden tests, fails six of 747 original public tests. This demonstrates
+  an executable regression signal; the reviewer must still compare each failed
+  assertion with the original requested behavior. Full logs and the isolated
+  original-test workspace are retained beside this result.
+
+Fresh full st2 run: `st2-fresh-v2`, pinned package `release-v2/release.json`
+from source `5b263551d1b30469159426c789cb9fd388b85a02`.
+Launcher: `run-case.ps1`. It grades the first production draft and final patch
+in a separate evaluator after the business/Stop loop ends.
+No fresh PASS has been established yet. st6 starts after verified st2 PASS.

@@ -19,7 +19,7 @@ export async function captureBusinessCheckpoint({ outputRoot, projectRoot, prepa
     env: { ...process.env, GIT_INDEX_FILE: index, GIT_OPTIONAL_LOCKS: '0' }, encoding: 'buffer',
   })).stdout;
   await git('read-tree', preparedHead);
-  await git('add', '--all', '--', '.', ...excluded.map(name => `:(exclude)${name}/**`));
+  await git('add', '--all', '--', '.', ...excluded.map(name => `:(exclude,glob)**/${name}/**`));
   const patch = await git('diff', '--cached', '--binary', preparedHead);
   const paths = (await git('diff', '--cached', '--name-only', '-z', preparedHead)).toString().split('\0').filter(Boolean);
   await fs.writeFile(path.join(directory, 'candidate.patch'), patch);
@@ -40,15 +40,12 @@ export async function createBusinessCheckpointObserver(options) {
     activation: { onStartup: true }, configSchema: { type: 'object', properties: {} } }));
   await fs.writeFile(path.join(root, 'index.mjs'), `import { captureBusinessCheckpoint } from ${JSON.stringify(import.meta.url)};
 export default { id: ${JSON.stringify(id)}, register(api) {
-  api.on('agent_end', async (event, ctx) => {
-    if (!ctx.sessionKey?.startsWith('agent:main:arkts-')) return;
-    const last = (event.messages ?? []).findLast(message => message.role === 'assistant');
-    if (last?.stopReason !== 'stop') return;
+  api.on('before_agent_finalize', async (event, ctx) => {
+    if (!ctx.sessionKey?.startsWith('agent:main:arkts-') || ctx.workspaceDir !== ${JSON.stringify(options.projectRoot)}) return;
     await captureBusinessCheckpoint({ ...${JSON.stringify(options)}, runId: event.runId ?? ctx.runId,
-      sessionId: event.sessionId ?? ctx.sessionId, stopReason: last.stopReason,
-      success: event.success !== false && !event.error && !event.aborted });
-  });
+      sessionId: event.sessionId ?? ctx.sessionId, stopReason: 'before_agent_finalize' });
+  }, { priority: 1000 });
 } };
 `);
-  return { id, path: root };
+  return { id, path: root, hooks: { allowConversationAccess: true } };
 }
