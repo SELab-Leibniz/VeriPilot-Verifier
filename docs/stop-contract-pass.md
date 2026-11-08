@@ -304,3 +304,23 @@ Related regression/proof tests: 47/47 pass
 a nested Node test runner; its failure is retained in the first log. The
 corrected fixture explicitly calls the canonical method after loading the
 polluting test setup.
+
+The v5 continuation driver settled with actual business completion **true**
+and infrastructure completion **true**, but final verification UNVERIFIED /
+BASELINE_INPUT_CHANGED. The reviewer recursively searched the live experiment
+output parent for `baseline-local-tests.json`; subsequent directory changes
+correctly invalidated that search inventory. Its final prose is not an accepted
+Stop verdict. The raw HEAD-delta candidate then failed to apply in the full
+evaluator, as predicted by the capture issue above; that original export and
+failed grading log remain intact. The independently graded passive full
+checkpoint remains 4/7, 616/617.
+
+The existing pending-RC continuation path can retry this unresolved review
+with exact history and task binding. `st6-v2-pending-review-input` supplies only
+the earlier CLI's omitted frozen-HEAD metadata, verifies the current full patch
+against the passive checkpoint SHA256, and retains the authentic ledger
+(used=1, no open Stops or reserved admissions, no budget reset). The review
+guide now directs an exact read of a configured public baseline path instead
+of searching its shared live output parent and explicitly excludes hidden
+tests/reference solutions/independent grades from review inputs. Related
+workspace-review tests: 35/35 pass (`bounded-baseline-navigation-v6b.log`).
