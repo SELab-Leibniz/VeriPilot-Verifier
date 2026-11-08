@@ -406,3 +406,13 @@ tests: 23/23 pass (`contract-probe-tests-v8.log`); the combined native check
 reports the four intentional old-suite assertion failures plus the one new
 contract regression (`contract-composed-check-v8.log`). The source workspace
 and original suite remain unchanged; only isolated snapshots execute the case.
+
+The first v8 full RC run completed 299 files with one timing assertion failure
+and no file timeouts (`rc-tests-v8.log`): the sequential-role test observed
+native model budgets [3978, 3736] ms while asserting each was at least 3900.
+That assertion incorrectly charged this role's own initialization delay to
+the preceding role. Measure initialization per role and assert that its
+initialization plus remaining model budget retains the configured independent
+window; a shared budget would still fail. No product deadline is extended.
+All 71 native Stop tests pass on recheck (`private-role-budget-recheck-v8.log`);
+retain the first failure and run a clean full verification after this test fix.

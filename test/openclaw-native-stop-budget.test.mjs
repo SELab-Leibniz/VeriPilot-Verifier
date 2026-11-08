@@ -31,12 +31,15 @@ test("terminal registration returns before slow reviews and coalesces duplicate 
 });
 test("two sequential non-Stop native reviewer roles each retain configured time beyond a short Hook window", async t => {
   const params = await basic(t), manager = createNativeStopReviews(), timeouts = [];
+  let roleStartedAt;
   const api = { config: { agents: { defaults: { model: { primary: "test/test" } } } }, runtime: { agent: {
-    runEmbeddedAgent: async input => { timeouts.push(input.runTimeoutOverrideMs); await pause(1200); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; },
+    runEmbeddedAgent: async input => { timeouts.push({ timeoutMs: input.runTimeoutOverrideMs, setupMs: Date.now() - roleStartedAt });
+      await pause(1200); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; },
   } } };
   const factory = createOpenClawReviewerFactory(api, {});
   await manager.schedule({ ...params, run: async ({ deadlineAt }) => {
     for (const role of ["ground-truth-extractor", "implementation-reviewer"]) {
+      roleStartedAt = Date.now();
       const handle = await factory({ projectRoot: params.projectRoot, taskId: "task", role,
         reviewer: { timeoutMs: 4000 }, deadlineAt,
         schema: { type: "object", required: ["ok"], additionalProperties: false, properties: { ok: { type: "boolean" } } }, request: { instructions: ["fixture"] } });
@@ -45,7 +48,10 @@ test("two sequential non-Stop native reviewer roles each retain configured time 
     return { reviewStatus: "PASS" };
   } });
   assert.equal((await manager.wait())[0].reviewStatus, "PASS");
-  assert.equal(timeouts.length, 2); assert(timeouts.every(value => value >= 3900), JSON.stringify(timeouts));
+  // Initialization belongs to this role's budget; it is not time spent by the
+  // previous role. Counting it preserves the independent-budget assertion.
+  assert.equal(timeouts.length, 2);
+  assert(timeouts.every(value => value.timeoutMs + value.setupMs >= 3900), JSON.stringify(timeouts));
 });
 test("cancellation before model admission never performs work or becomes PASS", async t => {
   const params = await basic(t), controller = new AbortController(), manager = createNativeStopReviews();
