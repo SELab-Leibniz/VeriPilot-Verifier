@@ -9,6 +9,64 @@ Reuse existing review and Huawei native test tooling; retain before/after tests,
 feedback, source checkpoints, effective configuration and candidate patches.
 MatrixAssistant and its bundled OpenClaw are read-only hosts.
 
+Verified outcome (2026-11-09, Shanghai): both target candidates reached full
+independent evaluator PASS after real Stop feedback and model-authored repair.
+
+- security_tool_2: 1/2 target tests and 739/746 regressions before repair;
+  **2/2 and 746/746 after repair**. Stop caught a broken existing service seam.
+  The main model restored use of `PermissionService.loadApplications` rather
+  than bypassing its established loading contract. One actual correction;
+  final Stop NO_DEVIATION_FOUND. RC source `0913b3e`.
+- security_tool_6: the original report's evaluated candidate reproduced
+  7/7 target tests and 616/617 regressions; **7/7 and 617/617 after repair**.
+  An independently calibrated native public-input check exposed the
+  missing/empty USB payload fallback. Stop delivered this deviation, and the
+  main model reused its existing VID/PID identification result to keep
+  unidentified events out of auto-deny. One actual correction; accepted final
+  Stop NO_DEVIATION_FOUND. RC source `f1a70c6`, package SHA256
+  `6cc2f96ba98ca1ee0b1d42d905b33236b81254fefa2e7aa05a2961c6581f9697`.
+- Final complete RC verification on `9d098ff`: 299/299 test files, 3,065 pass,
+  zero failures or timeouts, 46 skipped (`rc-tests-v8-r2.log`). Changes from the
+  packaged source are only this development note and the timing-test fix
+  described below. No further product changes followed this verification.
+
+These are targeted failing-candidate replay/repair results on two development
+checkpoints, not fresh natural task runs or a same-binary success-rate study.
+For st2, the raw replay wrapper's compaction-accounting failure is retained;
+the exact genuine repair was recovered, fingerprinted and independently
+graded rather than declaring that wrapper successful. For st6, the original
+report's candidate and archived completion were authenticated before a new
+independent replay; it is not a continuation of that archived original run.
+
+The native contract case is deliberately specific to an existing public USB
+input contract. The general `config/stop-behavior-only.json` runs the complete
+original public suite. The st6 PASS additionally uses the optional composed
+check configured in `st6-report-r3-v8/stop-policy.json`; the general profile
+alone is not credited with this result. This adds a native check to the
+existing Stop, not another model review stage or a general inference engine.
+
+Final auditable evidence, relative to the evidence root below:
+
+- `completion-evidence.json`: checked scores, patch hashes, before/after
+  contract output, actual correction IDs, source/package and qualifications.
+  `finalize-evidence.mjs` rechecks those bindings without running models.
+- `st2-frozen-v4-repair-r2/grade-recovered-repair/results.json`:
+  complete/executed/resolved true, candidate SHA256
+  `c4c68617122400d26013792fa0fb230154135e04782364d359ae096e4dd186dd`.
+  Its `completion-audit.json` and `recovered-repair/receipt.json` preserve the
+  real corrective session and the original wrapper failure. The old CLI
+  manifest's `privateModel` label says v4-flash; both actual private review
+  transcripts record `deepseek-v4.1-flash`, which is the effective-model
+  evidence used here.
+- `st6-report-r3-import/grade-before/results.json` and
+  `st6-report-r3-v8/grade-final/results.json`: complete independent before/after
+  grades. Final candidate SHA256
+  `72d50453f1d9bf36a8bfc242346406c760676483732442a60d5e58eb3d3d8c68`.
+  `st6-report-r3-v8/result.json` records actualBusinessStart,
+  infrastructureComplete and nativeStopSettled all true, one correction and
+  the accepted final review. Before/after source, feedback, native reports,
+  effective configuration and failed earlier runs remain available.
+
 Acceptance:
 
 - security_tool_2: F2P 2/2 and P2P 746/746 in an independent full evaluator.
@@ -35,6 +93,9 @@ original user requirements remain available through originalRequirementsBasis.
 Original-requirements recording is not document correction.
 
 Evidence root: `C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261108`.
+
+The following is the preserved development log; intermediate failures and
+incomplete results are historical observations, not final outcome claims.
 
 Verified development evidence:
 
@@ -416,3 +477,27 @@ initialization plus remaining model budget retains the configured independent
 window; a shared budget would still fail. No product deadline is extended.
 All 71 native Stop tests pass on recheck (`private-role-budget-recheck-v8.log`);
 retain the first failure and run a clean full verification after this test fix.
+
+The clean full verification subsequently completed: 299/299 files, 3,111 tests,
+3,065 pass, zero failures/timeouts and 46 skipped (`rc-tests-v8-r2.log`).
+
+The actual v8 Stop accepted the public-contract failure and delivered feedback
+at `feedback-delivery/feedback-20261108T201010964Z-6d8a2a46` in the isolated
+business task. Corrective run
+`rc-stop-ec7647f838c96d40955502e6b207442bc9f5a601923a2a6d1c049da9570d8bfc`
+made the production guard and test changes. Its own suite passed 626/626 and
+its native HAP build succeeded. The restored original suite still reports
+the four demand-changed assertions (including shared-state interaction after
+the now-required persisted Bluetooth deny); the separate calibrated contract
+check changes from FAIL to PASS. The accepted final reviewer explains those
+four assertions against the original request and production source, after
+retrying rejected citation submissions. Those raw warnings remain in the log.
+
+Final review `stop-e012bfe8a86a29c8ac91fdf9` settled NO_DEVIATION_FOUND. The
+driver completed normally and the separate full evaluator then executed all
+624 expected tests, resolving 7/7 F2P and 617/617 P2P. Its grader uses the
+original evaluator assertions, not the model's revised tests. Final candidate,
+grade and actual correction are bound by `completion-evidence.json`.
+No business repair was manually patched, and no hidden test or reference
+implementation was supplied to either business or Stop models. Hosts remain
+unmodified; no installation or push was performed.
