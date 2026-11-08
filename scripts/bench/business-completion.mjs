@@ -8,6 +8,7 @@ export async function readBusinessTerminal(request, runId) {
       status: value?.runId === runId ? value.status : 'identity_mismatch',
       ...(typeof value?.startedAt === 'number' ? { startedAt: value.startedAt } : {}),
       ...(typeof value?.endedAt === 'number' ? { endedAt: value.endedAt } : {}),
+      ...(typeof value?.error === 'string' ? { error: value.error } : {}),
       ...(typeof value?.timeoutPhase === 'string' ? { timeoutPhase: value.timeoutPhase } : {}),
       ...(typeof value?.providerStarted === 'boolean' ? { providerStarted: value.providerStarted } : {}) };
   } catch (error) { return { source: 'agent.wait', requestedRunId: runId, runId, status: 'unavailable',

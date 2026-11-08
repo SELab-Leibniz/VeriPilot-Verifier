@@ -9,7 +9,7 @@ const excluded = ['.runtime-corrector', '.runtime-correction', '.openclaw', '.hv
 
 // A separate index captures tracked and new business files without committing
 // or changing the index under the live Stop reviewer.
-export async function captureBusinessCheckpoint({ outputRoot, projectRoot, preparedHead, runId, sessionId, stopReason }) {
+export async function captureBusinessCheckpoint({ outputRoot, projectRoot, preparedHead, runId, sessionId, stopReason, success }) {
   if (!/^[a-f0-9]{40}$/u.test(preparedHead)) throw new Error('Exact prepared commit required');
   const directory = path.join(outputRoot, 'checkpoints', randomUUID());
   await fs.mkdir(directory, { recursive: true });
@@ -23,7 +23,7 @@ export async function captureBusinessCheckpoint({ outputRoot, projectRoot, prepa
   const patch = await git('diff', '--cached', '--binary', preparedHead);
   const paths = (await git('diff', '--cached', '--name-only', '-z', preparedHead)).toString().split('\0').filter(Boolean);
   await fs.writeFile(path.join(directory, 'candidate.patch'), patch);
-  const receipt = { runId, sessionId, stopReason, capturedAt: new Date().toISOString(), preparedHead,
+  const receipt = { runId, sessionId, stopReason, success, capturedAt: new Date().toISOString(), preparedHead,
     paths, patchSha256: createHash('sha256').update(patch).digest('hex') };
   await fs.writeFile(path.join(directory, 'checkpoint.json'), JSON.stringify(receipt, null, 2));
   const coverage = path.join(projectRoot, 'entry/.test/default/intermediates/test/coverage_data/coverage.log');
@@ -35,7 +35,9 @@ export async function createBusinessCheckpointObserver(options) {
   const root = path.join(options.outputRoot, 'checkpoint-observer');
   await fs.mkdir(root);
   const id = 'rc-business-checkpoints';
-  await fs.writeFile(path.join(root, 'openclaw.plugin.json'), JSON.stringify({ id, name: id, configSchema: { type: 'object', properties: {} } }));
+  await fs.writeFile(path.join(root, 'package.json'), JSON.stringify({ name: id, version: '1.0.0', type: 'module', openclaw: { extensions: ['./index.mjs'] } }));
+  await fs.writeFile(path.join(root, 'openclaw.plugin.json'), JSON.stringify({ id, name: id, main: './index.mjs',
+    activation: { onStartup: true }, configSchema: { type: 'object', properties: {} } }));
   await fs.writeFile(path.join(root, 'index.mjs'), `import { captureBusinessCheckpoint } from ${JSON.stringify(import.meta.url)};
 export default { id: ${JSON.stringify(id)}, register(api) {
   api.on('agent_end', async (event, ctx) => {
@@ -43,7 +45,8 @@ export default { id: ${JSON.stringify(id)}, register(api) {
     const last = (event.messages ?? []).findLast(message => message.role === 'assistant');
     if (last?.stopReason !== 'stop') return;
     await captureBusinessCheckpoint({ ...${JSON.stringify(options)}, runId: event.runId ?? ctx.runId,
-      sessionId: event.sessionId ?? ctx.sessionId, stopReason: last.stopReason });
+      sessionId: event.sessionId ?? ctx.sessionId, stopReason: last.stopReason,
+      success: event.success !== false && !event.error && !event.aborted });
   });
 } };
 `);

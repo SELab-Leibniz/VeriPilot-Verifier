@@ -21,6 +21,7 @@ import { prepareJava } from './bench/arkts-java.mjs';
 import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
 import { createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
+import { completedToolWarningTerminal } from '../lib/openclaw/post-run-host.mjs';
 import { codeChanged, collectReleaseEvidence, finalStopOf, tokenSplit } from './bench/release-evidence.mjs';
 import { waitNativeStopSettled } from './bench/native-stop-settlement.mjs';
 import { createSimplifyGateway, loadPackaged, readProviderTiming, redactEvaluationText, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
@@ -150,6 +151,14 @@ async function findFiles(root, match) {
   }));
   return nested.flat();
 }
+async function completedBusinessTerminal(observed) {
+  if (observed?.status !== 'error') return observed;
+  for (const file of await findFiles(path.join(outputRoot, 'checkpoints'), file => path.basename(file) === 'checkpoint.json')) {
+    const completion = await read(file);
+    if (completion.runId === observed.runId) return completedToolWarningTerminal(observed, completion);
+  }
+  return observed;
+}
 try {
   gateway = await createSimplifyGateway({ hostRoot, projectRoot, outputRoot, sourceRoot, prebuiltPluginRoot: artifact,
     extraPluginPaths, businessToolNames, unlimitedBusiness: true, nativeCustomProvider: true, disableMemoryFlush: true,
@@ -269,6 +278,8 @@ try {
         originalTerminal = await original.poll(gateway.request,runId,starts,post?.phase ?? 'OBSERVE');
         terminal = tracker.runId===runId ? originalTerminal
           : await observer.poll(gateway.request,tracker.runId,starts,post?.phase);
+        originalTerminal = await completedBusinessTerminal(originalTerminal);
+        terminal = await completedBusinessTerminal(terminal);
         if (terminal && ['IDLE','CLOSED'].includes(post?.phase) && privateRuns.every(worker=>worker.status==='SETTLED')) break;
         await sleep(650);
       }
