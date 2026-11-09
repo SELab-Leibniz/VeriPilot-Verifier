@@ -554,6 +554,16 @@
       "additionalProperties": false,
       "description": "Shared reviewer executable and argument prefix for version 1 and version 2. The build target selects the host session protocol; role model/session/provider settings remain in reviewers."
     },
+    "requirementFrame": {
+      "description": "Optional OpenClaw requirement frame settings. Invalid values use the defaults below.",
+      "properties": {
+        "enabled": { "default": false, "description": "Boolean. Requires user message archiving." },
+        "proposers": { "default": 3, "description": "Integer from 1 through 3." },
+        "inject": { "default": true, "description": "Boolean. Enables delivery when supported." },
+        "review": { "default": true, "description": "Boolean. Enables Stop review use when supported." },
+        "timeoutMs": { "default": 600000, "description": "Positive integer. Total generation time in milliseconds." }
+      }
+    },
     "reviewers": {
       "type": "object",
       "properties": {
@@ -576,6 +586,9 @@
           "$ref": "#/$defs/reviewer"
         },
         "implementationReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "requirementFrame": {
           "$ref": "#/$defs/reviewer"
         },
         "modelPolicy": {

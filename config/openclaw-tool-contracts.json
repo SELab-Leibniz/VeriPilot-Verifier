@@ -24,7 +24,9 @@
     "submit_finding",
     "finish_stop_review",
     "commit_baseline_inventory",
-    "finish_baseline_audit"
+    "finish_baseline_audit",
+    "submit_frame_proposal",
+    "submit_frame_selection"
   ],
   "baseline": [
     "source_read",

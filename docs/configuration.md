@@ -795,3 +795,23 @@ reviewers:
 `reviewers.modelPolicy` 可使用 `off`、`critical-gates`、`all` 预设；critical-gates 仅覆盖 onboardingAdjudicator 与 stopReviewer。显式角色配置优先。写出配置时预设展开为角色字段。缺失密钥环境变量时记录 `REVIEWER_PROVIDER_DEGRADED` 并按实现回退，独立身份不会把父凭据送往第三方。抽取降级状态如 `DERIVED_CONFIG`、`ONBOARDING_DEGRADED` 可在任务日志中核对。
 
 配置 Schema 是字段校验来源：`config/schemas/project-config.schema.json`；运行时仍须通过统一策略编译器的语义约束。
+
+## 需求框架
+
+```yaml
+requirementFrame:
+  enabled: false
+  proposers: 3
+  inject: true
+  review: true
+  timeoutMs: 600000
+```
+
+默认关闭。启用需要 OpenClaw 的版本 2 项目配置，以及通过 `artifactCorrection.originalRequirementsEnabled` 或
+`stopCorrection.originalRequirementsBasis` 开启用户消息记录。观察模式下不生成。
+`proposers` 接受 1 至 3，`timeoutMs` 是生成过程的总时限，单位为毫秒。非法值使用上面的默认值。
+
+审查模型由 `reviewers.requirementFrame` 指定，未单独配置时沿用 `reviewers.defaults`。
+生成在后台进行，依据任务开始时的 Git 提交和用户消息。结果保存在项目状态目录的
+`requirement-frame/<会话哈希>/frame.json`。
+`inject` 和 `review` 分别控制后续阶段的简报送达和 Stop 终审使用，阶段 1 仅生成框架。
