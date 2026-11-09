@@ -26,13 +26,13 @@ async function fixture(t) {
   return { directory, store, initialize, begin, reserve, observe, now, advance: ms => { clock += ms; }, set: value => { clock = value; } };
 }
 
-test("AC-01: new core defaults, switches, two limits and shared 17/20-minute window", () => {
+test("AC-01: core defaults include a two-hour window with three minutes reserved", () => {
   const value = config({ enabled: true });
   assert.deepEqual([value.waitMode, value.maxCorrectionsPerSession, value.maxCorrectionsPerFlow,
-    value.assessmentTimeoutMs, value.feedbackReserveMs, value.reviewGroupSize], ["until_pass", 3, 3, 1200000, 180000, 3]);
+    value.assessmentTimeoutMs, value.feedbackReserveMs, value.reviewGroupSize], ["until_pass", 3, 3, 7_200_000, 180000, 3]);
   assert.deepEqual(Object.keys(value.metrics).filter(id => value.metrics[id]), ["M08", "M09", "M12", "M13", "M15", "M16"]);
   assert.equal(value.fileQualityReviewEnabled, false);
-  assert.deepEqual(stopCorrectionWindow(value, 1000), { startedAt: 1000, reviewDeadlineAt: 1021000, deadlineAt: 1201000 });
+  assert.deepEqual(stopCorrectionWindow(value, 1000), { startedAt: 1000, reviewDeadlineAt: 7_021_000, deadlineAt: 7_201_000 });
   assert.deepEqual(stopCorrectionWindow(value, 1000, 501000), { startedAt: 1000, reviewDeadlineAt: 321000, deadlineAt: 501000 });
 });
 
@@ -260,7 +260,7 @@ test("AC-44/16: timely confirmed repair survives old deadline; following Stop ha
   assert.equal(stillRepairing.control, "WAIT_REPAIR");
   await f.store.observeEnd({ sessionId: "session", admissionId: admission.id, executionId: `execution-${admission.id}`, endedAt: f.now() });
   const next = await f.begin("two");
-  assert.equal(next.stop.deadlineAt, f.now() + 1200000);
+  assert.equal(next.stop.deadlineAt, f.now() + 7_200_000);
   assert.equal(next.stop.capacity.sessionUsed, 1);
 });
 

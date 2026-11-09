@@ -189,6 +189,8 @@ test("materialized config renders valid, loadable version 2 YAML", async (t) => 
   assert.equal(document.implementationCorrection.platform, "harmonyos");
   assert.equal(document.stopCorrection.enabled, true);
   assert.equal(document.stopCorrection.originalRequirementsBasis, true);
+  assert.equal(document.stopCorrection.assessmentTimeoutMs, 7_200_000);
+  assert.equal(document.reviewers.stopReviewer.timeoutMs, 7_200_000);
   // No secrets, endpoints or key literals in the active configuration.
   assert.ok(!/apiKey(?!Env)/.test(rendered), "no raw apiKey key anywhere");
 

@@ -115,7 +115,7 @@ stopCorrection:
   maxCorrectionsPerSession: 2
   maxCorrectionsPerFlow: 2
 
-  assessmentTimeoutMs: 1800000
+  assessmentTimeoutMs: 7200000
   feedbackReserveMs: 180000
   reviewGroupSize: 3
 
@@ -151,6 +151,8 @@ reviewers:
     effort: low
     timeoutMs: 1800000
     formatRepairAttempts: 3
+  stopReviewer:
+    timeoutMs: 7200000
 
 skillCorrection:
   enabled: false

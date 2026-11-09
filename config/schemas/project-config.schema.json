@@ -498,7 +498,7 @@
         "assessmentTimeoutMs": {
           "type": "integer",
           "minimum": 1,
-          "default": 1200000,
+          "default": 7200000,
           "description": "One Stop's total preparation, review, settlement and delivery window. Each eligible later Stop has a fresh window; business repair time is excluded."
         },
         "waitMode": {

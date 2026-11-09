@@ -936,7 +936,7 @@ test("onboarding honors role timeouts and runs panel passes in parallel", async 
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));
   await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
-  const plan = onboardingPlan(root, { reviewers: {
+  const plan = onboardingPlan(root, { stopCorrection: { enabled: true, assessmentTimeoutMs: 1_200_000 }, reviewers: {
     defaults: { timeoutMs: 1200000 },
     groundTruthExtractor: { timeoutMs: 3600000 },
     onboardingAdjudicator: { timeoutMs: 1000 },

@@ -8,7 +8,7 @@ Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构�
 
 当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。
 
-1.10.0 起，新项目模板启用原文文档纠偏和只报告已证实偏差的原文 Stop（B12）。Stop 同时核对原文未要求改变的既有行为。需求基线提取、基线审计、实现纠偏、Skill 看护及压缩恢复在模板中关闭。项目与首次会话仍需显式开启。已有项目配置继续沿用原有字段与缺省行为。
+新项目模板默认只启用原文 Stop（B12）。Stop 只报告已证实的偏差，同时核对原文未要求改变的既有行为。项目与首次会话需显式开启。已有项目配置中的显式超时仍优先。
 
 Session 项目解析、显式启用和作用域隔离继续遵循 [Session 项目说明](session-projects.md)。7.1（包括 MA）优先跟随宿主持久化的 `spawnedCwd`，缺失时才使用 `/rc-project bind /绝对项目目录`；自动模式不接受手动绑定。没有有效项目配置时不启动自动审查。
 
@@ -18,15 +18,16 @@ stopCorrection:
   waitMode: until_pass
   maxCorrectionsPerSession: 3
   maxCorrectionsPerFlow: 3
-  assessmentTimeoutMs: 1200000 # 每次 Stop 总审查与交付窗口，20 分钟
-  feedbackReserveMs: 180000 # 包含在总窗口内，默认第 17 分钟停止审查
+  assessmentTimeoutMs: 7200000 # 每次 Stop 总审查与交付窗口，2 小时
+  feedbackReserveMs: 180000 # 总窗口最后 3 分钟预留给结算和反馈
   reviewGroupSize: 3 # 同一个 M、同一优先级的最多 K 项，一个 Agent 顺序提交
   fileQualityReviewEnabled: false
 reviewers:
   defaults:
     model: registered-provider/model
     effort: low
-    timeoutMs: 1200000 # 单角色上限仍受本次 Stop 的共享截止限制
+  stopReviewer:
+    timeoutMs: 7200000 # 单角色上限仍受本次 Stop 的共享截止限制
 ```
 
 `effort` 支持 `off`、`low`、`medium`、`high`、`xhigh`、`max`，默认 `low`。需要请求关闭思考模式时设置 `effort: "off"`；RC 将它原样传给宿主，审查、工具与证据校验继续执行。本机目标 OpenClaw 的 DeepSeek V4 原生兼容路径会显式发送 `thinking.type: "disabled"`；自定义代理及其他模型的实际行为取决于对应适配，详见 [Reviewer 思考强度](configuration.md#reviewer-思考强度)。

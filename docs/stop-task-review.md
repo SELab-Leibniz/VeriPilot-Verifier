@@ -28,13 +28,13 @@ stopCorrection:
   waitMode: until_pass
   maxCorrectionsPerSession: 3
   maxCorrectionsPerFlow: 3
-  assessmentTimeoutMs: 1200000
+  assessmentTimeoutMs: 7200000
   feedbackReserveMs: 180000
   reviewGroupSize: 3
   fileQualityReviewEnabled: false
 ```
 
-指标默认值与全关行为见 [指标开关](stop-metric-switches.md)。两层次数可以为零；分组大小和时间为正整数，预留必须小于总时限。默认 20 分钟包含 3 分钟结算/交付预留；缩短总窗口时需要显式缩短预留。
+指标默认值与全关行为见 [指标开关](stop-metric-switches.md)。两层次数可以为零，分组大小和时间为正整数。默认 2 小时包含最后 3 分钟结算和交付预留。预留必须小于总时限。
 
 旧 `maxCorrectionsPerEpoch` 只映射为 `maxCorrectionsPerFlow`；旧 `waitTimeoutMs` 只映射为本次 `assessmentTimeoutMs`，均产生弃用提示。新旧同义字段同时出现时报错。需求变化不清零会话额度，业务修复不占已经结束的审查窗口。
 

@@ -10,12 +10,12 @@ import { loadRuntimePlan } from "../lib/runtime-plan.mjs";
 
 const base = { version: 2, artifacts: [], dynamicGroundTruth: { enabled: true } };
 
-test("Stop defaults to a fresh 20-minute assessment with a three-minute reserve", () => {
+test("Stop defaults to a fresh two-hour window with a three-minute reserve", () => {
   for (const document of [base, { ...base, stopCorrection: { enabled: true } }]) {
     validateProjectConfig(document, "config.yaml");
     const stop = compileRuntimePolicy(document).runtimeV2.stopCorrection;
     assert.equal(stop.waitMode, "until_pass");
-    assert.equal(stop.assessmentTimeoutMs, 1200000);
+    assert.equal(stop.assessmentTimeoutMs, 7_200_000);
     assert.equal(stop.feedbackReserveMs, 180000);
     assert.equal(Object.hasOwn(stop, "waitTimeoutMs"), false);
   }
@@ -52,7 +52,7 @@ test("loaded YAML preserves default and explicit Stop wait settings and rejects 
   const file = path.join(directory, "config.yaml");
   const header = "version: 2\nartifacts: []\ndynamicGroundTruth:\n  enabled: true\nstopCorrection:\n  enabled: true\n";
   for (const [suffix, waitMode, assessmentTimeoutMs] of [
-    ["", "until_pass", 1200000],
+    ["", "until_pass", 7_200_000],
     ["  waitMode: until_pass\n  waitTimeoutMs: 1000\n  feedbackReserveMs: 100\n", "until_pass", 1000],
     ["  waitMode: assessment\n  assessmentTimeoutMs: 180000\n  feedbackReserveMs: 30000\n", "assessment", 180000],
   ]) {

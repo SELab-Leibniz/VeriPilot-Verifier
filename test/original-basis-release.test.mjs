@@ -22,7 +22,8 @@ test('new project template enables only original-basis Stop behind the two proje
   assert.equal(runtime.stopCorrection.originalRequirementsBasis, true);
   assert.equal(runtime.stopCorrection.deviationOnly, true);
   assert.equal(runtime.stopCorrection.waitMode, 'until_pass');
-  assert.equal(runtime.stopCorrection.assessmentTimeoutMs, 1_800_000);
+  assert.equal(runtime.stopCorrection.assessmentTimeoutMs, 7_200_000);
+  assert.equal(runtime.reviewers.stopReviewer.timeoutMs, 7_200_000);
   assert.equal(runtime.stopCorrection.maxCorrectionsPerSession, 2);
   assert.deepEqual(runtime.stopCorrection.regressionCheck, { enabled: false, cwd: '.', timeoutMs: 600_000, maxOutputBytes: 65_536 });
   assert.equal(runtime.dynamicGroundTruth.enabled, false);

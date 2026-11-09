@@ -43,6 +43,8 @@ test("a project with no config file enables only original-basis Stop", async (t)
   assert.equal(runtimeV2.implementationCorrection.platform, "harmonyos");
   assert.equal(runtimeV2.stopCorrection.enabled, true);
   assert.equal(runtimeV2.stopCorrection.originalRequirementsBasis, true);
+  assert.equal(runtimeV2.stopCorrection.assessmentTimeoutMs, 7_200_000);
+  assert.equal(runtimeV2.reviewers.stopReviewer.timeoutMs, 7_200_000);
   assert.equal(runtimeV2.skillCorrection.enabled, false);
   assert.equal(runtimeV2.artifactCorrection.groundTruthReviewEnabled, false);
   // The derivation record drives the once-per-task DERIVED_CONFIG journal.
