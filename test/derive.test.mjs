@@ -183,10 +183,12 @@ test("materialized config renders valid, loadable version 2 YAML", async (t) => 
   assert.equal(validateProjectConfig(document, "config.yaml"), document);
   assert.equal(document.version, 2);
   assert.deepEqual(document.artifacts, []);
-  assert.equal(document.dynamicGroundTruth.enabled, true);
+  assert.equal(document.dynamicGroundTruth.enabled, false);
   assert.deepEqual(document.dynamicGroundTruth.materialRoots, ["README.md"]);
+  assert.equal(document.implementationCorrection.enabled, false);
   assert.equal(document.implementationCorrection.platform, "harmonyos");
   assert.equal(document.stopCorrection.enabled, true);
+  assert.equal(document.stopCorrection.originalRequirementsBasis, true);
   // No secrets, endpoints or key literals in the active configuration.
   assert.ok(!/apiKey(?!Env)/.test(rendered), "no raw apiKey key anywhere");
 

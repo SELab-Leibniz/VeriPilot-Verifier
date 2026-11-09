@@ -252,11 +252,15 @@ test('the document request lists reference materials with their status and write
   assert(written.materials.every(file => file.originalBase64 === undefined));
 });
 
-test('(a) default template: a business edit of a discovered material keeps document review and Stop running with its frozen original', async t => {
+test('(a) with document correction enabled, a business edit of a discovered material keeps document review and Stop running with its frozen original', async t => {
   const original = '# 模块设计\nPermission checks run before every export.\n', edited = '# 模块设计\nExports skip the permission check.\n';
   const { root, task } = await project(t, { 'docs/module-design.md': original, 'AGENTS.md': 'Keep exports audited.\n',
     'notes/input.md': 'Exports use CSV.\n', 'app.py': 'def export(rows): return rows\n' });
   await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+  const configFile = path.join(root, '.runtime-corrector/config.yaml');
+  const config = await fs.readFile(configFile, 'utf8');
+  await fs.writeFile(configFile, config.replace('enabledStages: []', 'enabledStages: [proposal, design, tasks]')
+    .replace('originalRequirementsEnabled: false', 'originalRequirementsEnabled: true'));
   await withTaskState({ projectRoot: root, taskId: task.taskId }, state => { state.correctionBarrier.turnActivated = true; });
   const transcript = path.join(root, 'host.jsonl');
   await fs.writeFile(transcript, [{ type: 'session', id: 'session' },

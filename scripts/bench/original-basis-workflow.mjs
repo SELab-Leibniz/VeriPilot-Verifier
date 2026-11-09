@@ -67,7 +67,7 @@ export async function installOriginalBasisPolicy({ artifact, projectRoot, output
   assert.equal(raw.reviewers.defaults.model, reviewerModelRef);
   assert.equal(effective.reviewers.stopReviewer.model, reviewerModelRef);
   assert.deepEqual(effective.artifactCorrection, {
-    originalRequirementsEnabled: applied?.value?.artifactCorrection?.originalRequirementsEnabled ?? true, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
+    originalRequirementsEnabled: applied?.value?.artifactCorrection?.originalRequirementsEnabled ?? false, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
   });
   assert.equal(effective.stopCorrection.enabled, true);
   assert.equal(effective.stopCorrection.originalRequirementsBasis, true);

@@ -14,7 +14,7 @@
 /rc-session on
 ```
 
-`init` 把插件内的 `.runtime-corrector-default` 五个文件复制到当前 Session 实际绑定的项目下，目录名为 `.runtime-corrector`。`reviewers.defaults.model` 在创建时取当前 OpenClaw RC 的 `reviewerModel`，不使用业务会话临时模型；尚未配置该模型时提示先执行 `/rc-setup`。已有 `.runtime-corrector`（包括空目录）不会覆盖。初始化后的项目总开关和首次登记 Session 的默认开关均为 `false`；不创建基线、评审或任务运行目录。
+`init` 把插件内的 `.runtime-corrector-default` 五个文件复制到当前 Session 实际绑定的项目下，目录名为 `.runtime-corrector`。`reviewers.defaults.model` 在创建时取当前 OpenClaw RC 的 `reviewerModel`，不使用业务会话临时模型；尚未配置该模型时提示先执行 `/rc-setup`。已有 `.runtime-corrector`（包括空目录）不会覆盖。模板默认只启用 Stop 纠偏。初始化后的项目总开关和首次登记 Session 的默认开关均为 `false`，开启当前项目和 Session 后才会开始纠偏。
 
 日常控制可以使用：
 

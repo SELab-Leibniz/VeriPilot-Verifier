@@ -6,7 +6,7 @@ import path from 'node:path';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { loadProjectPolicySource } from '../lib/policy/project-policy.mjs';
 
-test('new project template enables original document review and B12 behind the two project controls', async t => {
+test('new project template enables only original-basis Stop behind the two project controls', async t => {
   const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-basis-'));
   t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
   await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(projectRoot, '.runtime-corrector'), { recursive: true });
@@ -15,7 +15,9 @@ test('new project template enables original document review and B12 behind the t
   const controls = await loadProjectPolicySource(projectRoot);
   assert.equal(controls.enabled, false);
   assert.equal(controls.sessionDefaults.enabled, false);
-  assert.deepEqual(runtime.artifactCorrection, { originalRequirementsEnabled: true, groundTruthReviewEnabled: false, stageMetricsEnabled: false });
+  assert.deepEqual(runtime.artifactCorrection, { originalRequirementsEnabled: false, groundTruthReviewEnabled: false, stageMetricsEnabled: false });
+  assert.deepEqual(plan.enabledStages, []);
+  assert.deepEqual(plan.artifacts, []);
   assert.equal(runtime.stopCorrection.enabled, true);
   assert.equal(runtime.stopCorrection.originalRequirementsBasis, true);
   assert.equal(runtime.stopCorrection.deviationOnly, true);

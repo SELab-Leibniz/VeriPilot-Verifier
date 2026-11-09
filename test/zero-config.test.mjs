@@ -22,7 +22,7 @@ async function write(root, relative, contents) {
 }
 
 
-test("a project with only a README and oh-package.json5 compiles a working v2 plan with no config file", async (t) => {
+test("a project with no config file enables only original-basis Stop", async (t) => {
   const cwd = await workspace(t);
   await write(cwd, "README.md", "# Demo app\n\nBuild a TodoList.\n");
   await write(cwd, "oh-package.json5", "{ name: 'demo' }\n");
@@ -33,16 +33,16 @@ test("a project with only a README and oh-package.json5 compiles a working v2 pl
   const runtimeV2 = plan.runtimeV2;
   assert.equal(runtimeV2.enabled, true, "the v2 runtime is on without any configuration");
   assert.equal(runtimeV2.configVersion, 2);
-  // Onboarding materials were discovered, not configured.
-  assert.equal(runtimeV2.dynamicGroundTruth.enabled, true);
+  // Stop still receives the discovered material roots.
+  assert.equal(runtimeV2.dynamicGroundTruth.enabled, false);
   assert.deepEqual(runtimeV2.dynamicGroundTruth.materialRoots, [path.join(cwd, "README.md")]);
   assert.equal(runtimeV2.dynamicGroundTruth.panel.size, 2);
   assert.equal(runtimeV2.dynamicGroundTruth.panel.adjudicator, true);
   // The platform came from the project fingerprint.
-  assert.equal(runtimeV2.implementationCorrection.enabled, true);
+  assert.equal(runtimeV2.implementationCorrection.enabled, false);
   assert.equal(runtimeV2.implementationCorrection.platform, "harmonyos");
-  // Terminal gate active; artifact/skill correction stay opt-in.
   assert.equal(runtimeV2.stopCorrection.enabled, true);
+  assert.equal(runtimeV2.stopCorrection.originalRequirementsBasis, true);
   assert.equal(runtimeV2.skillCorrection.enabled, false);
   assert.equal(runtimeV2.artifactCorrection.groundTruthReviewEnabled, false);
   // The derivation record drives the once-per-task DERIVED_CONFIG journal.

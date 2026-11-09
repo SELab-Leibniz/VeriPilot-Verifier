@@ -63,7 +63,8 @@ async function fixture(t, { repository = true, capture = true, deviationOnly = t
   };
   reviewerFactory.supportsReviewCollection = true;
   const directory = path.join(base, 'host-state');
-  const plan = { runtimeV2, artifacts: template.artifacts, workflowCorrelation: template.workflowCorrelation, output: template.output };
+  const plan = { runtimeV2, artifacts: template.artifacts, configuredArtifacts: template.configuredArtifacts,
+    workflowCorrelation: template.workflowCorrelation, output: template.output };
   const event = (hook, extras = {}, stopId) => handleRuntimeV2Event({ projectRoot: root, plan, reviewerFactory,
     stopHost: { directory, startProtocol: { version: 1 }, ...(stopId ? { stopId } : {}) },
     input: { session_id: 'session', cwd: root, transcript_path: transcript, hook_event_name: hook, last_assistant_message: 'Implementation complete.', ...extras } });
@@ -154,18 +155,10 @@ test('a Stop after document-only changes is skipped quietly without a reviewer o
   assert.equal(reviewed.stop.correctionAttempt, 0);
 });
 
-test('disabled document stages retain ownership so a Stop-only profile skips documents and still reviews later code', async t => {
+test('default disabled document stages retain ownership so Stop skips documents and still reviews later code', async t => {
   const f = await fixture(t);
-  const configFile = path.join(f.root, '.runtime-corrector/config.yaml');
-  const configured = await fs.readFile(configFile, 'utf8');
-  const disabled = configured.replace(/^enabledStages:\r?\n(?:  - [^\r\n]+\r?\n)+/mu, 'enabledStages: []\n');
-  assert.notEqual(disabled, configured);
-  await fs.writeFile(configFile, disabled);
-  const plan = await loadConfig({ cwd: f.root });
-  assert.equal(plan.artifacts.length, 0);
-  assert(plan.configuredArtifacts.length >= 3);
-  Object.assign(f.plan, { artifacts: plan.artifacts, configuredArtifacts: plan.configuredArtifacts,
-    workflowCorrelation: plan.workflowCorrelation });
+  assert.equal(f.plan.artifacts.length, 0);
+  assert(f.plan.configuredArtifacts.length >= 3);
   await writeFiles(f.root, DOCUMENTS);
 
   const skipped = await f.stop('disabled-doc-stages');
