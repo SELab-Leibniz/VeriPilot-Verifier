@@ -114,6 +114,38 @@ model-authored repair. The latter uses the configured public requirement
 probe, so this does not establish a fresh-run success rate or automatically
 generalize to other tasks. The earlier failed scores and retries are retained.
 
+The 2026-11-09 extension for `soduku-harmony_11` and `security_tool_9`
+reached full independent PASS with the same v12 runtime package (source
+`9d40ac8`). Both fresh code turns finished naturally, and both proposal
+turns recorded `STOP_DOCUMENT_ONLY_CHANGES` with zero reviewer requests.
+Their first Stop reviews settled `NO_DEVIATION_FOUND` despite incomplete
+independent target scores. The two actual candidates and business transcripts
+were authenticated and frozen for separate Stop replays.
+
+- `soduku-harmony_11` improved from **8/10 to 10/10 F2P** with **288/288
+  P2P**. The public placement probe exercises both diagonals through
+  `isValidPlacement` and includes standard-mode and non-conflict controls.
+  The actual Stop repair made the public predicate and generation use the
+  active topology. The native probe improved from **2/4 to 4/4**, and the
+  original public suite passed **289/289**.
+- `security_tool_9` improved from **6/7 to 7/7 F2P** with **670/670 P2P**.
+  The public probe exercises the direct Bluetooth dispatch rejection and
+  the policy-save entry point with the task-start dispatch substitute,
+  plus a USB save control. The actual Stop repair rejects Bluetooth before
+  persistence. The native probe improved from **2/3 to 3/3**. The restored
+  original suite retains its old Bluetooth assertions and test ordering.
+  The two original dispatch rejection cases pass **2/2** alone and both
+  fail when run after the original ACL tests, reproducing the mock leakage.
+
+Each replay delivered one real Stop correction with an `ok` repair terminal.
+Both replay summaries retain `state=failed` and
+`STOP_REGRESSION_CHECK_UNVERIFIED` for the initial regression disposition.
+Both final Stop records settled `NO_DEVIATION_FOUND` and the independent
+evaluator ran each repaired patch to completion. The package and patch hashes,
+initial and final grades, native check outputs and repair receipts are in
+`completion-evidence.json` under
+`C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-sod11-st9`.
+
 Extension development evidence:
 
 - Both native evaluator controls completed. st1 base is 0/1 + 611/611;
