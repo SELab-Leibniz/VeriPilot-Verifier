@@ -2,24 +2,40 @@
 // ambiguous, ignored and unfinished cases stay distinct from genuine failures.
 export function parseHypium(text, module = 'entry') {
   const statuses = new Map(), errors = [], recovered = [], conflicts = [], confirmedClasses = new Set();
-  let current = null, klass = null, outcomePending = null, terminal = {};
+  const startedSuites = new Set();
+  const lines = text.replace(/^\uFEFF/u, '').split(/\r?\n/u);
+  let current = null, klass = null, ordinal = null, outcomePending = null, terminal = {};
   const commit = (id, status) => {
     if (statuses.has(id)) { statuses.set(id, 'AMBIGUOUS'); errors.push({ code: 'DUPLICATE_CASE', id }); }
     else statuses.set(id, { pass: 'PASS', fail: 'FAIL', error: 'ERROR', ignore: 'IGNORED' }[status]);
   };
-  for (const line of text.replace(/^\uFEFF/u, '').split(/\r?\n/u)) {
+  for (const [index, line] of lines.entries()) {
+    // The suite lifecycle also names a class that contains only one case.
+    const suiteStart = /\[Hypium\](.+) suiteStart print success\s*$/u.exec(line);
+    if (suiteStart) startedSuites.add(suiteStart[1]);
+    const suiteEnd = /\[suite end\] (.+) consuming \d+ ms\s*$/u.exec(line);
+    if (suiteEnd && startedSuites.has(suiteEnd[1])) confirmedClasses.add(suiteEnd[1]);
     const start = /\[Hypium\]start running case '(.*)'\s*$/u.exec(line);
     if (start) {
       if (current && !outcomePending) errors.push({ code: 'UNFINISHED_CASE', name: current, class: klass });
       if (outcomePending && !outcomePending.committed) errors.push({ code: 'UNBOUND_OUTCOME', name: outcomePending.name });
       outcomePending = null;
-      current = start[1]; klass = null;
+      current = start[1]; klass = null; ordinal = null;
     }
     const name = /OHOS_REPORT_STATUS: class=([^\r\n]+)/u.exec(line);
     if (name && current && !klass) klass = name[1].trim();
     if (name && outcomePending) terminal.class = name[1].trim();
+    const number = /OHOS_REPORT_STATUS: current=(\d+)\s*$/u.exec(line);
+    if (number && outcomePending) terminal.ordinal = number[1];
+    else if (number && current) ordinal = number[1];
     const testName = /OHOS_REPORT_STATUS: test=([^\r\n]+)/u.exec(line);
-    if (testName && outcomePending) terminal.name = testName[1].trim();
+    if (testName && outcomePending) {
+      terminal.name = testName[1].trim();
+      // A split GC header can append its thread ID and level to the test name.
+      terminal.splitGcName = terminal.name.startsWith(outcomePending.name)
+        && /^\d+ D$/u.test(terminal.name.slice(outcomePending.name.length))
+        && /^(?:C[0-9a-f:.\s-]*)?0?3f00\/ArkCompiler: \[gc\]/iu.test(lines[index + 1] ?? '');
+    }
     const code = /OHOS_REPORT_STATUS_CODE: (-?\d+)\s*$/u.exec(line);
     if (code && outcomePending && Number(code[1]) !== 1) {
       const event = outcomePending;
@@ -30,11 +46,14 @@ export function parseHypium(text, module = 'entry') {
         commit(id, event.status);
         recovered.push({ id, source: 'matching Hypium outcome and terminal class/test/status code', corruptedStart: true });
       }
-      if (event.committed && terminal.name === event.name && terminal.class && agrees) {
-        if (terminal.class === klass) confirmedClasses.add(klass);
-        else conflicts.push({ initialClass: klass, terminalClass: terminal.class, name: event.name, status: event.status });
+      if (event.committed && terminal.class && agrees) {
+        const exactName = terminal.name === event.name;
+        const matchingSplitName = terminal.splitGcName && ordinal !== null && ordinal === terminal.ordinal;
+        if (exactName && terminal.class === klass) confirmedClasses.add(klass);
+        if ((exactName || matchingSplitName) && terminal.class !== klass)
+          conflicts.push({ initialClass: klass, terminalClass: terminal.class, name: event.name, status: event.status });
       }
-      current = null; klass = null; outcomePending = null; terminal = {};
+      current = null; klass = null; ordinal = null; outcomePending = null; terminal = {};
     }
     const outcome = /\[Hypium\]\[(pass|fail|error|ignore)\](.*?)\s*;/u.exec(line);
     if (!outcome) continue;
@@ -47,8 +66,8 @@ export function parseHypium(text, module = 'entry') {
   else if (outcomePending?.committed) { /* original start/class/outcome already bound */ }
   else if (current) errors.push({ code: 'UNFINISHED_CASE', name: current, class: klass });
   // GC logging can corrupt either copy of class metadata. Resolve a conflict
-  // only when exactly one complete class string was independently confirmed
-  // by matching start and terminal metadata elsewhere in this same runtime.
+  // only when exactly one class was confirmed by a separate case or by
+  // matching suite lifecycle records in this same runtime.
   // Never trim to an expected test ID or consult the dataset to invent a name.
   for (const conflict of conflicts) {
     const initialKnown = confirmedClasses.has(conflict.initialClass), terminalKnown = confirmedClasses.has(conflict.terminalClass);

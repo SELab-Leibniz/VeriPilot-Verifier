@@ -52,3 +52,48 @@ test('conflicting class names need an independent same-run witness, never an exp
   const ambiguous = parse(damaged);
   assert.ok(ambiguous.errors.some(error => error.code === 'CONFLICTING_CLASS'));
 });
+
+test('matching suite lifecycle records confirm the class of a single-case suite', () => {
+  const start = '[Hypium]Spec suiteStart print success\n';
+  const end = '[suite end] Spec consuming 1 ms\n';
+  const noisy = lines('old', 'pass').replace('class=Spec', 'class=Spec3f00/\nArkCompiler: [gc] diagnostic');
+  const parsed = parse(start + noisy + end);
+  assert.deepEqual(parsed.statuses, { 'entry::Spec::old': 'PASS' });
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.recovered.length, 1);
+  assert.ok(parse(start + noisy).errors.some(error => error.code === 'CONFLICTING_CLASS'));
+  assert.ok(parse(noisy + end).errors.some(error => error.code === 'CONFLICTING_CLASS'));
+});
+
+test('a split GC suffix needs matching case ordinals and an independently confirmed class', () => {
+  const cleanCase = lines('new', 'pass');
+  const noisy = [
+    "[Hypium]start running case 'old'",
+    'OHOS_REPORT_STATUS: class=Spec244',
+    'OHOS_REPORT_STATUS: current=7',
+    '[Hypium][pass]old ; consuming 1ms',
+    'OHOS_REPORT_STATUS: class=Spec',
+    'OHOS_REPORT_STATUS: current=7',
+    'OHOS_REPORT_STATUS: test=old42996 D',
+    'C0b-0a 04:1a:2a.244 03f00/ArkCompiler: [gc] diagnostic',
+    'OHOS_REPORT_STATUS_CODE: 0',
+    '',
+  ].join('\n');
+  const parsed = parse(cleanCase + noisy);
+  assert.deepEqual(parsed.statuses, { 'entry::Spec::new': 'PASS', 'entry::Spec::old': 'PASS' });
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(gradeArkts(task, parsed, execution).resolved, true);
+  const failed = noisy.replace('[pass]old', '[fail]old').replace('STATUS_CODE: 0', 'STATUS_CODE: -2');
+  assert.deepEqual(gradeArkts(task, parse(cleanCase + failed), execution).p2p.failed, ['entry::Spec::old']);
+  assert.ok(parse(noisy).errors.some(error => error.code === 'CONFLICTING_CLASS'));
+  for (const invalid of [
+    noisy.replace('class=Spec\nOHOS_REPORT_STATUS: current=7', 'class=Spec\nOHOS_REPORT_STATUS: current=8'),
+    noisy.replace('STATUS_CODE: 0', 'STATUS_CODE: -2'),
+    noisy.replace('C0b-0a', '11-10'),
+    noisy.replace('test=old', 'test=other'),
+  ]) {
+    const grade = gradeArkts(task, parse(cleanCase + invalid), execution);
+    assert.equal(grade.complete, false);
+    assert.equal(grade.resolved, false);
+  }
+});
