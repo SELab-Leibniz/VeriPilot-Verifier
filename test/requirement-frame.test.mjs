@@ -11,8 +11,9 @@ import { createOpenClawRuntime } from '../lib/openclaw/runtime.mjs';
 import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { toolText } from '../lib/review-task/source-tools.mjs';
-import { captureTaskStart } from '../lib/runtime-v2/task-changes.mjs';
+import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
 import { ensureTask } from '../lib/runtime-v2/task-store.mjs';
+import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { correctionFixtureRuntime } from './support/openclaw-project-scope.mjs';
 
@@ -31,20 +32,31 @@ const review = (item, decision = 'select') => ({ id: item.id, decision, reason: 
 const selectAll = items => ({ reviews: items.map(item => review(item)) });
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
-  archive = true, shadowMode = false, propose = ordinaryProposal, select = selectAll } = {}) {
+  archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false,
+  propose = ordinaryProposal, select = selectAll } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
   const cfg = path.join(projectRoot, '.runtime-corrector', 'config.yaml');
   const config = () => fs.writeFile(cfg, `version: 2
-artifacts: []
+artifacts: ${workflowDocument ? `
+  - name: proposal
+    stage: proposal
+    patterns: [proposal.md]
+    rules:
+      enabled: false
+    review:
+      enabled: true` : '[]'}
+locale: ${locale}
 dynamicGroundTruth:
   enabled: false
 artifactCorrection:
   originalRequirementsEnabled: ${archive}
 stopCorrection:
   enabled: false
+  waitMode: assessment
 shadowMode: ${shadowMode}
 requirementFrame:
   enabled: ${enabled}
+  inject: ${inject}
   proposers: ${proposers}
   timeoutMs: ${timeoutMs}
 reviewers:
@@ -90,8 +102,9 @@ reviewers:
     },
   };
   registerTaskTools(api);
+  const sharedState = {};
   const runtime = correctionFixtureRuntime(createOpenClawRuntime)(api, {
-    pluginRoot, nativeHooks, stopStartCompatibility: async () => null,
+    pluginRoot, nativeHooks, sharedState, stopStartCompatibility: async () => null,
   });
   t.after(async () => {
     await runtime.dispose();
@@ -100,11 +113,22 @@ reviewers:
   });
   const ctx = { agentId: 'main', sessionId, sessionKey, workspaceDir: projectRoot, trigger: 'user' };
   return { projectRoot, sessionId, dir, calls, warnings, config, ctx, runtime,
-    async prompt(text = userText) {
+    get state() { return sharedState.states.get(`main:${sessionId}`); },
+    async prompt(text = userText, overrides = {}) {
       const id = `u${++turn}`;
       messages.push({ type: 'message', id, parentId: turn === 1 ? null : `u${turn - 1}`, message: { role: 'user', content: text } });
       if (nativeHooks) await fs.writeFile(transcript, messages.map(JSON.stringify).join('\n') + '\n');
-      return runtime.prompt({ prompt: text }, { ...ctx, runId: id });
+      return runtime.prompt({ prompt: text }, { ...ctx, runId: id, ...overrides });
+    },
+    toolResult(toolCallId, context = {}, result = { content: [{ type: 'text', text: 'original tool result' }], details: { kept: true } }) {
+      return runtime.toolResult({ toolName: 'read', toolCallId, args: { path: 'app.js' }, result }, { ...ctx, runId: `u${turn}`, ...context });
+    },
+    async deliveries() {
+      const text = await fs.readFile(path.join(dir, 'deliveries.jsonl'), 'utf8').catch(error => {
+        if (error.code === 'ENOENT') return '';
+        throw error;
+      });
+      return text.split('\n').filter(Boolean).map(JSON.parse);
     },
     async frame() {
       await runtime.waitForBackgroundReviews();
@@ -288,4 +312,123 @@ test('ending a session aborts its running frame without publishing it', { timeou
   await f.runtime.waitForBackgroundReviews();
   assert.equal(signal.aborted, true);
   await assert.rejects(fs.stat(path.join(f.dir, 'frame.json')), { code: 'ENOENT' });
+});
+
+const briefMarker = '[runtime-corrector:feedback]';
+const briefTitle = '[RC implementation hints | advisory]';
+const deliveredBrief = result => result?.result.content.at(-1)?.text;
+
+test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count', async t => {
+  const f = await fixture(t, { nativeHooks: true });
+  const task = await ensureTask({ projectRoot: f.projectRoot, sessionId: f.sessionId });
+  assert.equal(await captureTaskStart({ projectRoot: f.projectRoot, taskId: task.taskId }), true);
+  assert.equal(await f.prompt(), undefined);
+  const frame = await f.frame();
+  const prompted = await f.prompt('Now implement the planned change.');
+  assert(prompted?.prependContext, JSON.stringify({ warnings: f.warnings, frame: frame.status,
+    nativeRunId: f.state?.nativeRunId, brief: f.state?.frameBrief }));
+  const { prependContext } = prompted;
+  assert(prependContext.startsWith(`${briefMarker}\n${briefTitle}`));
+  assert(prependContext.endsWith('1. Use the existing default (evidence: app.js:1-1)'));
+  assert.equal(prependContext.split(briefTitle).length - 1, 1);
+  assert.equal(await f.toolResult('after-prompt'), undefined);
+  const receipts = await f.deliveries();
+  assert.equal(receipts.length, 1);
+  const [{ at, ...receipt }] = receipts;
+  assert(Number.isFinite(Date.parse(at)));
+  assert.deepEqual(receipt, { channel: 'run_start', runId: 'u2', startHead: frame.startHead, productionChangesBefore: 0 });
+});
+
+test('6.4.2 and 6.4.5: a frame that becomes ready mid-turn follows existing feedback on the next result', async t => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  t.after(finish);
+  const f = await fixture(t, {
+    nativeHooks: true, propose: async () => { await pending; return ordinaryProposal(); },
+    workflowDocument: true,
+  });
+  const task = await ensureTask({ projectRoot: f.projectRoot, sessionId: f.sessionId });
+  assert.equal(await captureTaskStart({ projectRoot: f.projectRoot, taskId: task.taskId }), true);
+  assert.equal(await f.prompt(), undefined);
+  assert.equal(await f.toolResult('before-ready'), undefined, JSON.stringify(f.warnings));
+  await fs.writeFile(path.join(f.projectRoot, 'app.js'), 'export const fallback = 2;\n');
+  await fs.writeFile(path.join(f.projectRoot, 'proposal.md'), 'Draft workflow document.');
+  const plan = await loadConfig({ cwd: f.projectRoot, pluginRoot });
+  const changeSet = await taskChanges({ projectRoot: f.projectRoot, taskId: task.taskId, plan });
+  assert.deepEqual(changeSet.changes.map(({ path: file, owner }) => [file, owner]),
+    [['app.js', 'STOP'], ['proposal.md', 'DOCUMENT_CORRECTION']], JSON.stringify(plan.configuredArtifacts));
+  finish();
+  const frame = await f.frame();
+  assert.equal(await f.toolResult('awaiting-approval', {}, { content: [], interactive: true }), undefined);
+  assert.deepEqual(await f.deliveries(), []);
+  f.state.hotReviewFeedback.push('Existing hot review feedback.');
+  const result = await f.toolResult('with-brief');
+  assert.deepEqual(result.result.details, { kept: true });
+  assert.deepEqual(result.result.content.slice(0, 2), [
+    { type: 'text', text: 'original tool result' },
+    { type: 'text', text: `${briefMarker}\nExisting hot review feedback.` },
+  ]);
+  assert(deliveredBrief(result).startsWith(`${briefMarker}\n${briefTitle}`));
+  assert.equal(await f.toolResult('next-result'), undefined);
+  assert(!deliveredBrief(await f.toolResult('with-brief')).includes(briefTitle));
+  const receipts = await f.deliveries();
+  assert.equal(receipts.length, 1);
+  assert.deepEqual({ ...receipts[0], at: null }, {
+    at: null, channel: 'tool_result', runId: 'u1', startHead: frame.startHead, productionChangesBefore: 1,
+  });
+});
+
+test('6.4.3: private runs and owned Stop continuations do not receive a pending brief', async t => {
+  const f = await fixture(t, { nativeHooks: true });
+  await f.prompt();
+  await f.frame();
+  assert.equal(await f.runtime.prompt({ prompt: 'internal' }, { ...f.ctx, runId: 'private', runtimeCorrectorInternal: true }), undefined);
+  assert.equal(await f.toolResult('private-result', { runtimeCorrectorInternal: true }), undefined);
+  const runId = 'owned-stop-run';
+  const directory = path.join(f.projectRoot, '.runtime-correction', 'openclaw', 'native-followups', sha256([f.ctx.sessionKey, f.sessionId]));
+  await atomicWriteJson(path.join(directory, 'receipt.json'), {
+    runId, status: 'FINISHED', sessionId: f.sessionId, sessionKey: f.ctx.sessionKey,
+  });
+  assert.equal(await f.prompt('Stop continuation', { runId }), undefined);
+  assert.equal(await f.toolResult('owned-result', { runId }), undefined);
+  assert.deepEqual(await f.deliveries(), []);
+});
+
+test('6.4.3: inject:false and shadowMode suppress both brief channels', async t => {
+  for (const options of [{ inject: false }, { shadowMode: true }]) await t.test(JSON.stringify(options), async sub => {
+    const f = await fixture(sub, options);
+    const startHead = git(f.projectRoot, 'rev-parse', 'HEAD').trim();
+    await atomicWriteJson(path.join(f.dir, 'frame.json'), {
+      status: 'ready', startHead, guidance: [{ id: 'G1', ...ordinaryProposal().guidance[0] }], scenarios: [],
+    });
+    assert.equal(await f.prompt(), undefined);
+    assert.equal(await f.toolResult('suppressed'), undefined);
+    assert.deepEqual(await f.deliveries(), []);
+  });
+});
+
+test('6.4.4: the localized brief drops whole low-confidence items and prints only first evidence', async t => {
+  const longScenario = (label, confidence) => ({
+    ...scenario(`${label}${'b'.repeat(180)}`, confidence), when: 'w'.repeat(200), then: 't'.repeat(200),
+  });
+  const f = await fixture(t, { locale: 'zh', propose: () => ({
+    guidance: [guidance('保留这项', 1, [
+      { path: 'app.js', startLine: 1, endLine: 1 }, { path: '.gitignore', startLine: 1, endLine: 2 },
+    ])],
+    scenarios: [
+      { ...longScenario('高置信要求', 0.99), kind: 'requirement' },
+      longScenario('高置信保持', 0.98), longScenario('中间项', 0.97), longScenario('应整条移除', 0.75),
+    ],
+  }) });
+  await f.prompt();
+  assert.equal((await f.frame()).scenarios.length, 4);
+  const brief = deliveredBrief(await f.toolResult('bounded-brief'));
+  assert(brief.startsWith(`${briefMarker}\n【RC 实现提示｜仅供参考】`));
+  assert(brief.length <= 2500);
+  assert(brief.includes('1. 保留这项（依据：app.js:1-1）'));
+  assert(brief.includes('- [新需求] 前提：高置信要求'));
+  assert(brief.includes('- [保持不变] 前提：高置信保持'));
+  assert(!brief.includes('.gitignore'));
+  assert(!brief.includes('应整条移除'));
+  assert.equal((await f.deliveries())[0].productionChangesBefore, null);
 });
