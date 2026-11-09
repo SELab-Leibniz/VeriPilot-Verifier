@@ -146,6 +146,31 @@ initial and final grades, native check outputs and repair receipts are in
 `completion-evidence.json` under
 `C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-sod11-st9`.
 
+On 2026-11-09, each of the six cases started once from its original task
+commit using the Stop-only policy and the package built from `61d98d6`.
+The archive SHA256 matched the verified v12 package
+(`a8a635c0b19db84756893b5cd509f0156e48535ae95a9eadd64647e3a06e3a5f`).
+The runs for st9, Sudoku-X, st6 and st7 included their public probes.
+
+- `security_tool_1` passed with **1/1 F2P** and **611/611 P2P**.
+- `security_tool_2` passed with **2/2 F2P** and **746/746 P2P**.
+- `security_tool_9` passed with **7/7 F2P** and **670/670 P2P**.
+  The final Stop recorded `UNVERIFIED` with `STOP_REVIEW_INCOMPLETE`.
+- `soduku-harmony_11` scored **0/10 F2P** and **288/288 P2P** from its
+  interrupted code-turn checkpoint. The host reported a patch error and the
+  final export failed while staging the missing test path. The grader used
+  the saved checkpoint from that same turn and verified its patch hash.
+- `security_tool_6` passed with **7/7 F2P** and **617/617 P2P**.
+- `security_tool_7` failed with **4/5 F2P** and **673/673 P2P**. The public
+  firewall probe passed **8/8** and the final Stop recorded
+  `NO_DEVIATION_FOUND`. Independent scoring found a failure restoring the
+  previous rules, deployments and mode after a failed switch.
+
+The six scored patches include four passes, one failed completed run and one
+interrupted checkpoint. Their totals are **21/32 F2P** and **3605/3605 P2P**.
+The scoring records and candidate hashes are indexed in
+`C:/Users/user/workspace/program_workspace/Experiments/rc-stop-contract-20261109-six-once/batch-results.json`.
+
 Extension development evidence:
 
 - Both native evaluator controls completed. st1 base is 0/1 + 611/611;
