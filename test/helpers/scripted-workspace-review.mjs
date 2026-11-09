@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { runWorkspaceStopReview } from '../../lib/runtime-v2/stop-workspace-review.mjs';
 
 export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', classification: selectedClassification,
-  beforeScope, failAt = -1, finding, failFindings = false,
+  beforeScope, failAt = -1, finding, failFindings = false, script,
   reason = 'The scripted original-byte witness exercises production receipt and quota handling.' }) {
   const signal = input.abortSignal ?? new AbortController().signal;
   const deadlineAt = Math.min(input.deadlineAt ?? Infinity, Date.now() + (input.reviewer.timeoutMs ?? 20000));
@@ -27,6 +27,7 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
         return citeId;
       };
       const { task } = JSON.parse(worker.prompt);
+      if (script) return script({ worker, task, call, read });
       for (const path of task.basisFiles) await read(path);
       const classification = task.fixedStopClassification ?? selectedClassification ?? { stopClassification: 'TASK_COMPLETE', stage: null };
       await beforeScope?.();

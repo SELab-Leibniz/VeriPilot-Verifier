@@ -4,8 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
-import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { scanSkillDirectory, bindSkillGraph } from '../lib/runtime-v2/skill-source.mjs';
 import * as openclawHost from '../lib/hosts/openclaw.mjs';
 import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
@@ -15,6 +16,12 @@ import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
 import { createProductionTraceSchema, validateProductionTrace } from '../lib/review-task/production-trace.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
+import { captureTaskStart } from '../lib/runtime-v2/task-changes.mjs';
+import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
+import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
+import { frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
+import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs';
+import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
 async function fixture(t) {
   const f = await stopProtocolFixture(t, 'findings');
@@ -880,4 +887,251 @@ test('scope recovery is idempotent and rejects irrelevant stage text', async t =
     await f.result(submit, [], 'UNVERIFIED'); await submit('finish_stop_review', { summary: 'Unverified item saved.' });
   });
   assert.equal(callbacks, 1); assert.equal(handle.result.stopClassification, 'TASK_COMPLETE');
+});
+
+const frameBasis = {
+  guidance: [{ id: 'G1', statement: 'Keep the public transform signature.', contractCell: 'owner_signature',
+    evidence: [{ path: 'app.mjs', startLine: 1, endLine: 1 }], confidence: 0.95 }],
+  scenarios: ['S1', 'S2', 'S3'].map(id => ({ id, kind: 'requirement', quote: 'Return the input plus one.',
+    given: 'input is a number', when: 'transform is called', then: 'return the input plus one', confidence: 0.9 })),
+};
+const unverifiedFrame = () => [...frameBasis.guidance, ...frameBasis.scenarios].map(({ id }) =>
+  ({ id, disposition: 'UNVERIFIED', reason: 'Could not independently verify the advisory item.' }));
+const frameInstructions = `Requirement frame (basis part requirement-frame): guidance items G* and behavior scenarios S* that the program prepared from the task-start code before this candidate existed, after checking that their evidence exists and their quotes come from the user messages. They are advisory: the original user messages remain the only authority, and the frame never adds obligations.
+Before finishing, give every frame item exactly one entry in finish_stop_review.frameDispositions:
+- CHECKED: you traced it in the current production code and it holds. Cite at least one issued citeId where the effect is produced (for a scenario: where its "then" happens).
+- DEVIATION: it does not hold, and you saved a proved deviation for the corresponding original requirement (checklist object or submit_finding). Give that objectId.
+- UNVERIFIED: you could not establish it within budget, or it does not follow from the original messages. Give a short reason.
+A frame item alone is never a deviation; a DEVIATION disposition needs a proved deviation saved through the normal tools. Check scenarios of kind requirement first, then guidance whose contractCell is transport_integration, branch_matrix, error_result or values_defaults.`;
+const reproductionText = `For each deviation above:
+1. First reproduce it with a minimal public check (an existing test, a command, or a throwaway script in the system temp directory that you delete afterwards) and confirm that it fails.
+2. After the fix, rerun the same check and confirm that it passes; also run one nearby existing-behavior check to confirm that nothing else broke.
+3. If you cannot reproduce it, explain why and do not change unrelated code just to pass the review.`;
+const chineseReproduction = `处理上面每个偏差时：
+1. 先用一个最小的公开检查复现它（现有测试、命令，或放在系统临时目录、用完即删的临时脚本），确认它确实失败。
+2. 修改后再运行同一个检查，确认通过；再运行一个相邻的已有行为检查，确认原有行为没有被破坏。
+3. 如果无法复现，说明原因，不要为了通过评审而改动无关代码。`;
+
+async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true } = {}) {
+  const f = await stopProtocolFixture(t, 'findings');
+  const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
+  const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
+  await fs.writeFile(source, `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
+  const entries = [
+    { type: 'user', uuid: 'user-original', message: { role: 'user', content: 'Implement transform.\nReturn the input plus one.' } },
+    { type: 'assistant', uuid: 'assistant-complete', message: { role: 'assistant', content: 'Task complete.' } },
+  ];
+  await fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
+  const git = (...args) => execFileSync('git', ['-C', projectRoot, ...args], { windowsHide: true, encoding: 'utf8' });
+  git('init', '--quiet');
+  git('-c', 'core.autocrlf=false', 'add', '--', 'app.mjs');
+  git('-c', 'user.name=Frame Test', '-c', 'user.email=frame@example.test', 'commit', '-qm', 'task start');
+  const startHead = git('rev-parse', 'HEAD').trim();
+  assert.equal(await captureTaskStart({ projectRoot, taskId: f.task.taskId }), true);
+  if (stored !== 'missing') {
+    const file = path.join(projectRoot, '.runtime-correction', 'requirement-frame', sha256(sessionId).slice(0, 24), 'frame.json');
+    await atomicWriteJson(file, { schemaVersion: 1, status: 'ready', reason: null, sessionId,
+      startHead: stored === 'mismatch' ? 'another-head' : startHead, ...frameBasis });
+  }
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, locale, dynamicGroundTruth: { enabled: false },
+    requirementFrame: { enabled, inject: false, review },
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true, waitMode: 'until_pass',
+      metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, '0')}`, i === 15])) } });
+  return { projectRoot, sessionId, directory, source, runtimeV2, startHead,
+    async run(script) {
+      let scriptError, handle;
+      const reviewerFactory = async input => {
+        assert.equal(input.role, 'stop-reviewer');
+        assert.equal(input.request.taskChanges.startHead, startHead);
+        handle = await scriptedWorkspaceReview(input, { script: async tools => {
+          try { await script(tools, input); }
+          catch (error) { scriptError = error; throw error; }
+        } });
+        return handle;
+      };
+      const event = (hook_event_name, fields) => handleRuntimeV2Event({
+        projectRoot, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw },
+        input: { hook_event_name, session_id: sessionId, cwd: projectRoot, transcript_path: transcript,
+          last_assistant_message: 'Task complete.', ...fields },
+      });
+      await event('SessionStart', { source: 'startup' });
+      const outcome = await event('Stop');
+      if (scriptError) throw scriptError;
+      assert(handle?.result, JSON.stringify(outcome.stop));
+      return { stop: outcome.stop, handle };
+    },
+  };
+}
+
+const submitFrameTool = async (call, name, args) => JSON.parse((await call(name, args)).content[0].text);
+const frameFinishArgs = frameDispositions => ({
+  summary: 'Finished checking the original requirements.',
+  ...(frameDispositions === undefined ? {} : { frameDispositions }),
+});
+
+async function startFrameScan({ task, read, call }, { requireFrame = false } = {}) {
+  const submit = (name, args) => submitFrameTool(call, name, args);
+  let original;
+  const frameFiles = task.basisFiles.filter(file => path.basename(file).startsWith('requirement-frame-'));
+  for (const file of task.basisFiles.filter(file => !frameFiles.includes(file))) {
+    const citeId = await read(file);
+    if (path.basename(file).startsWith('user-original-')) original = citeId;
+  }
+  if (requireFrame) {
+    assert.equal(frameFiles.length, 1);
+    assert.deepEqual(JSON.parse(await fs.readFile(frameFiles[0], 'utf8')), frameBasis);
+    await assert.rejects(submit('review_scope', { stopClassification: 'TASK_COMPLETE',
+      completionClaim: true, summary: 'Review the completed work.' }), { code: 'TASK_BASIS_UNREAD' });
+  }
+  let frameCite;
+  for (const file of frameFiles) frameCite = await read(file);
+  if (requireFrame) await assert.rejects(submit('set_original_checklist', { items: [{ metricId: 'M16',
+    verificationTarget: 'IMPLEMENTATION', text: 'Treat the advisory hint as a requirement.',
+    citeId: frameCite, lineStart: 1, lineEnd: 1 }] }), { code: 'STOP_ORIGINAL_CHECKLIST_INVALID' });
+  await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+    text: 'Return the input plus one.', citeId: original, lineStart: 2, lineEnd: 2 }] });
+  const { items: [item] } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+  return { item, submit, finish: frameDispositions => submit('finish_stop_review', frameFinishArgs(frameDispositions)) };
+}
+
+async function saveFrameTestDeviation(submit, item, citeId) {
+  await submit('submit_review', { taskId: item.taskId, verdict: 'DEVIATION',
+    reason: 'The return expression is the unchanged input.', citeIds: [citeId] });
+  return submit('submit_finding', { deviationKey: 'unchanged-value-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+    severity: 'warning', reason: 'The function also omits the specified addition at its entry point.',
+    expectedConstraint: 'Return the input plus one.', violatedGroundTruthIds: [item.sourceId], citeIds: [citeId] });
+}
+
+test('7.4.1–3: a matching frame is mandatory and all dispositions are validated before completing Stop', async t => {
+  const f = await frameStopCase(t, { deviation: true });
+  const validator = process.env.RC_OPENCLAW_HOST_ROOT ? await loadPublicToolArgumentsValidator() : null;
+  const { stop, handle } = await f.run(async tools => {
+    assert(tools.worker.systemPrompt.endsWith(frameInstructions));
+    const { item, submit, finish } = await startFrameScan(tools, { requireFrame: true });
+    const citeId = await tools.read(f.source);
+    const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId] };
+    const dev = { id: 'S1', disposition: 'DEVIATION', objectId: item.taskId };
+    const unsure = unverifiedFrame()[2];
+    const finding = { id: 'S3', disposition: 'DEVIATION', objectId: 'unchanged-value-finding' };
+    const valid = [checked, dev, unsure, finding], reject = args => assert.rejects(finish(args), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    await reject(valid); // The checklist deviation and finding do not exist yet.
+    assert.equal((await saveFrameTestDeviation(submit, item, citeId)).deviationKey, finding.objectId);
+    await reject();
+    await reject(valid.slice(1));
+    await reject([checked, dev, unsure, checked]);
+    await reject([{ ...checked, id: 'G99' }, dev, unsure, finding]);
+    await reject([{ id: 'G1', disposition: 'CHECKED' }, dev, unsure, finding]);
+    await reject([{ ...checked, citeIds: ['foreign-citation'] }, dev, unsure, finding]);
+    await reject([checked, { ...dev, objectId: 'unsaved' }, unsure, finding]);
+    await reject([checked, dev, { id: 'S2', disposition: 'UNVERIFIED' }, finding]);
+    await reject([checked, dev, { ...unsure, reason: '  ' }, finding]);
+    const invalid = { not: 'an array' };
+    if (validator) {
+      const tool = tools.worker.tools.find(tool => tool.name === 'finish_stop_review');
+      const args = frameFinishArgs(invalid);
+      assert.deepEqual(validator.validateToolArguments(tool, { name: tool.name, arguments: args }), args);
+    }
+    await reject(invalid);
+    assert.equal((await finish(valid)).complete, true);
+  });
+  assert.equal(stop.status, 'DEVIATION');
+  assert.equal(stop.decision, 'block');
+  const coverage = { status: 'used', reason: null, total: 4, checked: 1, deviation: 2, unverified: 1 };
+  assert.deepEqual(handle.result.frameCoverage, coverage);
+  assert.deepEqual(stop.review.frameCoverage, coverage);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(handle.artifacts, 'review.json'), 'utf8')).frameCoverage, coverage);
+});
+
+test('7.4.3–4: absent frames preserve the original basis, instructions and finish validation', async t => {
+  let original;
+  for (const [options, reason] of [
+    [{ enabled: false }, null], [{ stored: 'missing' }, 'FRAME_NOT_READY'],
+    [{ stored: 'mismatch' }, 'START_HEAD_MISMATCH'], [{ review: false }, 'REVIEW_DISABLED'],
+    [{ openClaw: false }, null],
+  ]) await t.test(reason ?? JSON.stringify(options), async sub => {
+    const f = await frameStopCase(sub, options);
+    const { stop } = await f.run(async tools => {
+      const profile = { prompt: tools.worker.systemPrompt, parts: tools.task.basisFiles.map(file => path.basename(file)),
+        finish: tools.worker.tools.find(tool => tool.name === 'finish_stop_review').parameters };
+      const basis = JSON.parse(await fs.readFile(tools.task.basisFiles.find(file => path.basename(file).startsWith('original-basis-')), 'utf8'));
+      profile.basis = { ...basis, sources: basis.sources.map(({ file, ...source }) => ({ ...source, file: path.basename(file) })) };
+      if (!original) original = profile;
+      else assert.deepEqual(profile, original);
+      const { finish } = await startFrameScan(tools);
+      await assert.rejects(finish([]), { code: 'TASK_SUBMISSION_INVALID' });
+      assert.equal((await finish()).complete, true);
+    });
+    assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+    assert.equal(stop.feedback, null);
+    assert.deepEqual(stop.review.frameCoverage, reason ? { status: 'absent', reason } : undefined);
+  });
+  const f = await frameStopCase(t);
+  const { stop } = await f.run(async tools => {
+    const { finish } = await startFrameScan(tools);
+    assert.equal((await finish(unverifiedFrame())).complete, true);
+  });
+  assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+  assert.equal(stop.feedback, null);
+  assert.deepEqual(stop.review.frameCoverage, { status: 'used', reason: null, total: 4, checked: 0, deviation: 0, unverified: 4 });
+});
+
+test('a framed full-checklist review cannot bypass dispositions with submit_review.finish', async t => {
+  const f = await fixture(t);
+  f.input.request.requirementFrame = { basis: frameBasis };
+  const handle = await scriptedWorkspaceReview(f.input, { script: async ({ task, read, call }) => {
+    for (const file of task.basisFiles) await read(file);
+    const submit = (name, args) => submitFrameTool(call, name, args);
+    await f.scope(submit);
+    const citeId = await read(f.file);
+    const saved = await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS',
+      reason: 'Checked the original delivery.', citeIds: [citeId], finish: true });
+    assert.equal(saved.pending, 0);
+    assert.equal(saved.complete, undefined);
+    assert.equal((await submit('finish_stop_review', frameFinishArgs(unverifiedFrame()))).complete, true);
+  } });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert.equal(handle.result.frameCoverage.unverified, 4);
+});
+
+test('7.4.5: the reproduction appendix follows existing deviation feedback and native start keeps its validation', async t => {
+  for (const { review, locale, expected } of [
+    { review: true, locale: 'en', expected: reproductionText },
+    { review: true, locale: 'zh', expected: chineseReproduction },
+    { review: false, locale: 'en', expected: '' },
+  ]) await t.test(`${review}/${locale}`, async sub => {
+    // The appendix is controlled by review even when no frame was ready.
+    const f = await frameStopCase(sub, { review, stored: 'missing', deviation: true, locale });
+    const { stop } = await f.run(async tools => {
+      const { item, submit, finish } = await startFrameScan(tools);
+      await saveFrameTestDeviation(submit, item, await tools.read(f.source));
+      await finish();
+    });
+    assert.equal(stop.status, 'DEVIATION');
+    assert.equal(stop.decision, 'block');
+    assert.match(stop.feedback, /\[runtime-corrector:stop-feedback\]/u);
+    const assertAppendix = message => {
+      if (expected) {
+        assert(message.endsWith(`\n\n${expected}`));
+        assert.equal(message.split(expected).length - 1, 1);
+      } else assert(!message.includes(reproductionText) && !message.includes(chineseReproduction));
+    };
+    assertAppendix(stop.feedback);
+    const api = { config: {}, logger: { warn() {} }, runtime: { gateway: { request: async () => ({}) },
+      subagent: { run: async ({ idempotencyKey }) => ({ runId: idempotencyKey }) } } };
+    const protocol = createStopStartProtocol(api, { directoryFor: () => f.directory, isCurrent: async () => true,
+      compatibility: async () => ({ version: 1, onStart: () => () => {}, drain: async () => {}, diagnosticsEnabled: () => true }) });
+    sub.after(() => protocol.dispose());
+    const state = { projectRoot: f.projectRoot, sessionId: f.sessionId, sessionKey: 'agent:main:frame-stop', agentId: 'main' };
+    const source = { runId: 'original-run', usersDigest: 'fixture-user-digest' };
+    const reproduction = frameReproduction(f.runtimeV2);
+    const revised = await protocol.offerOriginal({ state, source, outcome: stop, isOpen: () => true, reproduction });
+    assert.equal(revised.action, 'revise');
+    assertAppendix(revised.reason);
+    const { runId } = await protocol.submit({ state, source, outcome: stop });
+    const { prependContext } = await protocol.prepare({ state, runId, reproduction });
+    assertAppendix(prependContext);
+    assert.match(prependContext, /The return expression is the unchanged input\./u);
+    assert.deepEqual(await protocol.gate({ state, runId, event: { prompt: prependContext } }), { outcome: 'pass' });
+  });
 });

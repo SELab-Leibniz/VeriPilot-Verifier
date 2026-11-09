@@ -814,4 +814,5 @@ requirementFrame:
 审查模型由 `reviewers.requirementFrame` 指定，未单独配置时沿用 `reviewers.defaults`。
 生成在后台进行，依据任务开始时的 Git 提交和用户消息。结果保存在项目状态目录的
 `requirement-frame/<会话哈希>/frame.json`。
-`inject` 控制简报送达。已有框架时在真实用户回合开头送达，本回合新生成的框架则随下一次工具结果送达。`review` 用于后续的 Stop 终审。
+`inject` 控制简报送达。已有框架时在真实用户回合开头送达，本回合新生成的框架则随下一次工具结果送达。
+`review` 启用 Stop 对匹配任务开始提交的框架逐项记录处置，并在已有偏差反馈后追加复现要求。
