@@ -32,7 +32,7 @@ const review = (item, decision = 'select') => ({ id: item.id, decision, reason: 
 const selectAll = items => ({ reviews: items.map(item => review(item)) });
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
-  archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false,
+  archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
   propose = ordinaryProposal, select = selectAll } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
   const cfg = path.join(projectRoot, '.runtime-corrector', 'config.yaml');
@@ -116,9 +116,20 @@ reviewers:
     get state() { return sharedState.states.get(`main:${sessionId}`); },
     async prompt(text = userText, overrides = {}) {
       const id = `u${++turn}`;
-      messages.push({ type: 'message', id, parentId: turn === 1 ? null : `u${turn - 1}`, message: { role: 'user', content: text } });
-      if (nativeHooks) await fs.writeFile(transcript, messages.map(JSON.stringify).join('\n') + '\n');
-      return runtime.prompt({ prompt: text }, { ...ctx, runId: id, ...overrides });
+      const message = { type: 'message', id, parentId: turn === 1 ? null : `u${turn - 1}`,
+        message: { role: 'user', content: text } };
+      const saveTranscript = () => fs.writeFile(transcript, messages.map(JSON.stringify).join('\n') + '\n');
+      const prompt = () => runtime.prompt({ prompt: text }, { ...ctx, runId: id, ...overrides });
+      if (nativeHooks && nativePromptBeforePersist) {
+        await saveTranscript();
+        const result = await prompt();
+        messages.push(message);
+        await saveTranscript();
+        return result;
+      }
+      messages.push(message);
+      if (nativeHooks) await saveTranscript();
+      return prompt();
     },
     toolResult(toolCallId, context = {}, result = { content: [{ type: 'text', text: 'original tool result' }], details: { kept: true } }) {
       return runtime.toolResult({ toolName: 'read', toolCallId, args: { path: 'app.js' }, result }, { ...ctx, runId: `u${turn}`, ...context });
@@ -376,6 +387,34 @@ test('6.4.2 and 6.4.5: a frame that becomes ready mid-turn follows existing feed
   assert.deepEqual({ ...receipts[0], at: null }, {
     at: null, channel: 'tool_result', runId: 'u1', startHead: frame.startHead, productionChangesBefore: 1,
   });
+});
+
+test('a first native turn starts after its user record is persisted and carries pending work into the next turn', async t => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  t.after(finish);
+  const f = await fixture(t, { nativeHooks: true, nativePromptBeforePersist: true,
+    propose: async () => { await pending; return ordinaryProposal(); } });
+  const task = await ensureTask({ projectRoot: f.projectRoot, sessionId: f.sessionId });
+  assert.equal(await captureTaskStart({ projectRoot: f.projectRoot, taskId: task.taskId }), true);
+  assert.equal(await f.prompt(), undefined);
+  assert.equal(f.calls.length, 0);
+  await f.runtime.beforeTool({ toolName: 'read', toolCallId: 'proposal-read', params: { path: 'app.js' } }, { ...f.ctx, runId: 'u1' });
+  const work = f.state.requirementFrameWork;
+  assert(work, JSON.stringify(f.warnings));
+  await f.runtime.prompt({ prompt: userText }, { ...f.ctx, runId: 'u1' });
+  assert.equal(await f.prompt('Now implement the planned change.'), undefined);
+  assert.equal(f.state.requirementFrameWork, work);
+  assert.equal(work.controller.signal.aborted, false);
+  finish();
+  assert.equal((await f.frame()).status, 'ready');
+  assert.deepEqual(f.calls.map(({ kind }) => kind), ['proposal', 'selection']);
+  assert(f.calls[0].params.prompt.includes(userText));
+  assert(deliveredBrief(await f.toolResult('code-read')).startsWith(briefMarker));
+  assert.equal(await f.runtime.prompt({ prompt: 'Now implement the planned change.' }, { ...f.ctx, runId: 'u2' }), undefined);
+  assert.equal(await f.toolResult('second-code-read'), undefined);
+  assert.deepEqual((await f.deliveries()).map(({ runId, channel, productionChangesBefore }) =>
+    ({ runId, channel, productionChangesBefore })), [{ runId: 'u2', channel: 'tool_result', productionChangesBefore: 0 }]);
 });
 
 test('6.4.3: private runs and owned Stop continuations do not receive a pending brief', async t => {
