@@ -92,7 +92,7 @@ reviewers:
           calls.push({ kind, params, names: [...tools.keys()] });
           const call = (name, args) => tools.get(name).execute('scripted', args, params.abortSignal);
           const args = kind === 'proposal' ? await propose({ params, call, ordinal: Number(path.basename(params.cwd).slice(-1)) })
-            : await select(JSON.parse(params.prompt.split('Candidates:\n')[1].split('\n\n')[0]), params);
+            : await select(JSON.parse(params.prompt.split('Candidates:\n')[1].split('\n\n')[0]), params, call);
           const name = kind === 'proposal' ? 'submit_frame_proposal' : 'submit_frame_selection';
           await call(name, validator ? validator.validateToolArguments(tools.get(name), { name, arguments: args }) : args);
           params.onAgentToolResult({ isError: false });
@@ -170,8 +170,8 @@ test('1. caps, sorts and renumbers valid items after selection in private sessio
     assert.equal(params.model, 'scripted');
     assert.equal(params.config.agents.list.find(agent => agent.id === 'main').workspace, params.cwd);
     assert.deepEqual(params.toolsAllow, names);
-    assert.deepEqual(names, kind === 'proposal'
-      ? ['source_read', 'source_grep', 'source_find', 'source_ls', 'semantic_graph', 'submit_frame_proposal'] : ['submit_frame_selection']);
+    assert.deepEqual(names, ['source_read', 'source_grep', 'source_find', 'source_ls', 'semantic_graph',
+      kind === 'proposal' ? 'submit_frame_proposal' : 'submit_frame_selection']);
   }
   assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 4);
 });
@@ -247,6 +247,13 @@ test('6. source and semantic graph tools see only committed files and bytes', as
     assert.deepEqual((await query({ operation: 'definition', symbol: 'candidate' })).hits, []);
     assert.equal((await query({ operation: 'dependencies', file: 'untracked.js' })).indexed, false);
     return ordinaryProposal();
+  }, select: async (items, params, call) => {
+    assert.match(params.prompt, /verify the decisive source lines/u);
+    assert.match(toolText(await call('source_read', { path: 'app.js' })), /fallback = 1/u);
+    const query = JSON.parse(toolText(await call('semantic_graph', { operation: 'definition', symbol: 'candidate' })));
+    assert.deepEqual(query.hits, []);
+    await assert.rejects(call('source_read', { path: 'untracked.js' }), { code: 'ENOENT' });
+    return selectAll(items);
   } });
   await fs.writeFile(path.join(f.projectRoot, 'start.ets'), 'export const base = 1;\n');
   await fs.writeFile(path.join(f.projectRoot, 'app.js'), 'import "./start.ets";\nexport const fallback = 1;\n');
