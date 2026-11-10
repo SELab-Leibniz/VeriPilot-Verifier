@@ -93,6 +93,16 @@ test('links methods across aliases and re-exports and keeps tests and state writ
     'store.ets': [
       'export class Store {',
       '  static async save(value: number): Promise<number> { return value }',
+      '  static async load(read: () => Promise<number[]>): Promise<number[]> {',
+      '    try { return await read() }',
+      '    catch (error) {',
+      '      const unused = () => {',
+      '        try { return [0] } catch { return [1] }',
+      '      }',
+      '      if (error) { return [] }',
+      '      throw error',
+      '    }',
+      '  }',
       '}',
     ],
     'barrel.ets': ["export { Store as Repo } from './store'"],
@@ -112,6 +122,9 @@ test('links methods across aliases and re-exports and keeps tests and state writ
       '    try { await external.read() }',
       '    catch (error) { this.state.value = 0; throw error }',
       '    finally { this.state.ready = true }',
+      '  }',
+      '  async loadForWrite(read: () => Promise<number[]>): Promise<number[]> {',
+      '    return await Storage.load(read)',
       '  }',
       '}',
     ],
@@ -154,6 +167,10 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   const flow = graph.query({ operation: 'outgoing', symbol: 'Panel.refresh' });
   assert.deepEqual(flow.controlSites.map(site => [site.kind, site.line]), [['try', 13], ['catch', 14], ['throw', 14], ['finally', 15]]);
   assert(flow.hits.some(hit => hit.target.symbol === 'external.read' && hit.target.resolution === 'unresolved' && hit.awaited));
+  const readDependency = graph.query({ operation: 'outgoing', symbol: 'Panel.loadForWrite' })
+    .hits.find(hit => hit.relation === 'call' && hit.target.symbol === 'Store.load');
+  assert.deepEqual(readDependency.target, { path: 'store.ets', symbol: 'Store.load', line: 3,
+    catchReturns: [{ catchLine: 5, line: 9 }], catchReturnCount: 1 });
   assert(flow.hits.some(hit => hit.target.symbol === 'Panel.state' && hit.relation === 'write' && hit.line === 14));
   assert.deepEqual(graph.query({ operation: 'incoming', symbol: 'Store.save' }).hits, callers.hits);
 
