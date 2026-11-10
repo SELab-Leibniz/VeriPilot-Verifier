@@ -47,6 +47,15 @@ test('indexes current definitions and relative dependencies in both directions',
   assert.equal(graph.query({ operation: 'dependencies', file: 'new.ts' }).indexed, false);
   const updated = await buildSemanticGraph(root, { excludedPaths: ['private'], budgetMs: 5000 });
   assert.equal(updated.query({ operation: 'dependencies', file: 'new.ts' }).hits[0].to, 'service.ets');
+  await fs.writeFile(path.join(root, 'mismatch.ts'), 'import { Service } from "./SeRvIcE";\n');
+  const withMismatch = await buildSemanticGraph(root, { snapshotPaths: ['mismatch.ts', 'service.ets'] });
+  assert.deepEqual(withMismatch.query({ operation: 'dependencies', file: 'mismatch.ts' }).hits, [
+    { from: 'mismatch.ts', kind: 'import', line: 1, resolution: 'case-mismatch', requestedPath: 'SeRvIcE.ets', existingPath: 'service.ets' },
+  ]);
+  assert.deepEqual(withMismatch.query({ operation: 'dependencies', file: 'service.ets' }).hits, []);
+  assert.equal(withMismatch.unresolved, 1);
+  const ambiguous = await buildSemanticGraph(root, { snapshotPaths: ['mismatch.ts', 'service.ets', 'Service.ets'] });
+  assert.deepEqual(ambiguous.query({ operation: 'dependencies', file: 'mismatch.ts' }).hits, []);
   await assert.rejects(buildSemanticGraph(root, { signal: AbortSignal.abort() }), { name: 'AbortError' });
 });
 
