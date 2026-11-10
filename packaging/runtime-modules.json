@@ -49,6 +49,7 @@
     "lib/review-task/observation-journal.mjs",
     "lib/review-task/production-trace.mjs",
     "lib/review-task/protocol-task.mjs",
+    "lib/review-task/regression-authority.mjs",
     "lib/review-task/source-tools.mjs",
     "lib/review-task/stop-policy.mjs",
     "lib/review-task/task-evidence.mjs",

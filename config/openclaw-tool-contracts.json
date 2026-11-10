@@ -24,6 +24,7 @@
     "review_notes",
     "submit_finding",
     "finish_stop_review",
+    "submit_regression_authority",
     "commit_baseline_inventory",
     "finish_baseline_audit",
     "submit_frame_proposal",
