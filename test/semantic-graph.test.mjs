@@ -167,3 +167,64 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   assert.equal(affected[1].caller.within, 'Panel.execute');
   assert.deepEqual(affected[0].effects.map(ref => [ref.relation, ref.target.symbol]), [['call', 'Store.save'], ['write', 'Panel.state']]);
 });
+
+test('traces exact string contract values to consumer branches and ignores comments and module paths', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-literals-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=rc-test', '-c', 'user.email=rc@example.invalid', '-c', 'commit.gpgsign=false', ...args],
+    { cwd: root, windowsHide: true, stdio: 'pipe', encoding: 'utf8' }).trim();
+  const files = {
+    'api.ts': [
+      'export type DispatchStatus =',
+      "  | 'sent'",
+      '  | "queued";',
+      "export type ExtensibleStatus = 'sent' | string;",
+      "export type EmptyStatus = '';",
+    ],
+    'ui.ts': [
+      "import type { DispatchStatus } from './api';",
+      'export function display(status: DispatchStatus) {',
+      "  // case 'queued':",
+      '  switch (status) {',
+      "    case 'queued': return 'Waiting';",
+      "    case 'queued_again': return 'Other';",
+      '  }',
+      '}',
+    ],
+    'ui.test.ts': ["it('renders pending state', () => {", "  expect(display('queued')).toBe('Waiting');", '});'],
+  };
+  await Promise.all(Object.entries(files).map(([file, lines]) => fs.writeFile(path.join(root, file), lines.join('\n'))));
+  const graph = await buildSemanticGraph(root, { snapshotPaths: Object.keys(files) });
+  const status = graph.query({ operation: 'context', symbol: 'DispatchStatus' });
+  assert.deepEqual(status.literalMembers, [{ value: 'sent', line: 2 }, { value: 'queued', line: 3 }]);
+  assert.equal(status.literalMemberCount, 2);
+  assert.equal(status.definitions[0].endLine, 3);
+  assert(status.hits.some(hit => hit.direction === 'incoming' && hit.path === 'ui.ts'));
+  assert.equal(graph.query({ operation: 'context', symbol: 'ExtensibleStatus' }).literalMembers, undefined);
+  const queued = graph.query({ operation: 'literal', value: 'queued' });
+  assert.deepEqual(queued.hits.map(hit => [hit.path, hit.line, hit.kind, hit.within]), [
+    ['ui.ts', 5, 'case', 'display'],
+    ['api.ts', 3, 'union-member', 'DispatchStatus'],
+    ['ui.test.ts', 2, 'value', 'renders pending state'],
+  ]);
+  assert.equal(queued.hits[2].testSource, true);
+  assert.deepEqual(graph.query({ operation: 'literal', value: './api' }).hits, []);
+  assert.deepEqual(graph.query({ operation: 'literal', value: 'Queued' }).hits, []);
+  assert.deepEqual(graph.query({ operation: 'literal', value: '' }).hits.map(hit => hit.within), ['EmptyStatus']);
+  assert.deepEqual(graph.query({ operation: 'literal', value: 'queued', file: 'ui.ts', offset: 1 }).hits, []);
+  const [impact] = graph.affectedSymbols([{ path: 'api.ts', hunks: [[3, 3]] }]);
+  assert.equal(impact.definition.symbol, 'DispatchStatus');
+  assert.equal(impact.caller.path, 'ui.ts');
+
+  git('init', '-q'); git('add', '--', ...Object.keys(files)); git('commit', '-qm', 'original status contract');
+  const base = git('rev-parse', 'HEAD');
+  await fs.writeFile(path.join(root, 'api.ts'), [
+    "export type DispatchStatus = 'sent';", ...files['api.ts'].slice(3),
+  ].join('\n'));
+  await fs.writeFile(path.join(root, 'unrelated.ts'), "export function format(kind: string) { switch (kind) { case 'queued': return 0; } }\n");
+  const current = await buildSemanticGraph(root);
+  assert.equal(current.query({ operation: 'literal', value: 'queued' }).hits.filter(hit => hit.kind === 'case').length, 2);
+  const removed = await current.removedLiteralUses([{ path: 'api.ts', hunks: [[1, 2]] }], base);
+  assert.deepEqual(removed.map(hint => [hint.definition.symbol, hint.removed.value, hint.cases.map(hit => [hit.path, hit.line])]),
+    [['DispatchStatus', 'queued', [['ui.ts', 5]]]]);
+});
