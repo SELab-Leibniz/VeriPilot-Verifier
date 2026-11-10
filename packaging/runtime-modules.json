@@ -127,6 +127,7 @@
     "lib/runtime-v2/transcript.mjs",
     "lib/runtime-v2/utils.mjs",
     "lib/semantic-graph-links.mjs",
+    "lib/semantic-graph-search.mjs",
     "lib/semantic-graph-syntax.mjs",
     "lib/semantic-graph.mjs",
     "lib/semantic-review.mjs",

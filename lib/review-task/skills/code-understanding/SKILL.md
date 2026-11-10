@@ -4,7 +4,7 @@ description: Trace implementation and compatibility obligations through public e
 disable-model-invocation: true
 ---
 
-Use semantic_graph early for source changes. Start with the public entry point, shared helper, or state field named in the task or found with source_grep. Ask for `context` using an exact symbol, preferably `Type.method`. Use `outline` when you have a file path. Scope ambiguous hits to a file.
+Use semantic_graph early for source changes. Start with the public entry point, shared helper, or state field. If the name is unknown, use `search` with a short behavioral phrase to find symbols and existing tests. Ask for `context` using an exact symbol, preferably `Type.method`. Use `outline` when you have a file path. Scope ambiguous hits to a file.
 
 - Query incoming references for callers and existing tests. Read the test's setup and assertion when it replaces a dependency, and check which behaviors the caller must preserve even with that replacement.
 - Follow outgoing calls and writes from the real entry point to the required observable result. Read the relevant source ranges. Check that every applicable success, returned failure, or thrown failure reaches the required state and that prohibited effects are unreachable on that path.

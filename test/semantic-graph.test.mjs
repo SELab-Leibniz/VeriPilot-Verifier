@@ -94,11 +94,17 @@ test('links methods across aliases and re-exports and keeps tests and state writ
     && hit.target.symbol === 'Store.save' && hit.line === 5));
   assert(method.hits.some(hit => hit.direction === 'outgoing' && hit.relation === 'write'
     && hit.target.symbol === 'Panel.state' && hit.access === 'state.value'));
-  assert(method.hits.some(hit => hit.direction === 'incoming' && hit.testSource && hit.path === 'panel.test.ets' && hit.line === 6));
+  assert(method.hits.some(hit => hit.direction === 'incoming' && hit.testSource && hit.path === 'panel.test.ets'
+    && hit.line === 6 && hit.within === 'uses the public entry point'));
 
   const callers = graph.query({ operation: 'context', symbol: 'Store.save', direction: 'incoming' });
   assert.deepEqual(callers.hits.map(row => [row.path, row.line, row.relation]), [
     ['panel.ets', 5, 'call'], ['panel.test.ets', 5, 'reference'],
   ]);
   assert(graph.query({ operation: 'outline', file: 'panel.ets' }).hits.some(row => row.qualified === 'Panel.shadow'));
+  const [testCase] = graph.query({ operation: 'search', query: 'public entry point' }).hits;
+  assert.deepEqual([testCase.kind, testCase.symbol, testCase.line], ['test', 'uses the public entry point', 3]);
+  assert.equal(graph.query({ operation: 'search', query: 'panel execute' }).hits[0].qualified, 'Panel.execute');
+  assert(graph.query({ operation: 'context', symbol: testCase.symbol, file: testCase.path, direction: 'outgoing' })
+    .hits.some(hit => hit.target.symbol === 'Panel.execute' && hit.relation === 'call'));
 });
