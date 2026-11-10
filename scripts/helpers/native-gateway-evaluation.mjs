@@ -296,6 +296,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     return { runtime, hooks: getGlobalHookRunner(), registry, config, model, modelRef: `${providerId}/${model}`, pluginRoot, root, port, faultInjection: injectDefect,
       request: createNativeGatewayRequest({ load, port, config }),
       setPhase: value => timing?.setPhase(value),
+      activeProviderRequests: () => timing?.activeRequestCount ?? null,
       async drain() { await diagnostics.waitForDiagnosticEventsDrained(); },
       metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts), pluginStatus: plugin.status, isolatedState: root }),
       async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } },

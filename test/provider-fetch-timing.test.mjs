@@ -91,7 +91,9 @@ test('closing a stalled observation is immediate and does not cancel its actual 
   let finish;
   const f = await fixture(t, (request, response) => { request.resume(); response.writeHead(200); response.write('start'); finish = () => response.end('end'); });
   const response = await fetch(f.origin), body = response.text();
+  assert.equal(f.timing.activeRequestCount, 1);
   await f.timing.close();
+  assert.equal(f.timing.activeRequestCount, 0);
   assert.equal((await f.rows()).at(-1).observerStopped, true);
   finish(); assert.equal(await body, 'startend');
   assert.equal((await f.rows()).length, 3);

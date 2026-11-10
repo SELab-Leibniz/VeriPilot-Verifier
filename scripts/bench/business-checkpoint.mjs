@@ -31,6 +31,19 @@ export async function captureBusinessCheckpoint({ outputRoot, projectRoot, prepa
   return { directory, ...receipt };
 }
 
+export async function captureInterruptedBusiness({ outputRoot, projectRoot, preparedHead, sessionId, transcriptFile,
+  interruption, sourceCommit, packageSha256 }) {
+  const output = path.join(outputRoot, 'interrupted');
+  const checkpoint = await captureBusinessCheckpoint({ outputRoot: output, projectRoot, preparedHead,
+    runId: interruption.runId, sessionId, stopReason: interruption.reason, success: false });
+  const transcript = await fs.readFile(transcriptFile);
+  await fs.writeFile(path.join(output, 'session.jsonl'), transcript, { flag: 'wx' });
+  const receipt = { ...interruption, sourceCommit, packageSha256,
+    checkpoint, sessionSha256: createHash('sha256').update(transcript).digest('hex') };
+  await fs.writeFile(path.join(output, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
+  return checkpoint;
+}
+
 export async function createBusinessCheckpointObserver(options) {
   const root = path.join(options.outputRoot, 'checkpoint-observer');
   await fs.mkdir(root);

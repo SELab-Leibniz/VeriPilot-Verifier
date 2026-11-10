@@ -51,7 +51,8 @@ export async function installProviderFetchTiming({ file, origin, progressInterva
   subscribe('trailers', ({ request }) => finish(request, 'response_end'));
   subscribe('error', ({ request, error }) => finish(request, 'request_error', errorType(error)));
   return {
-    file, get requestCount() { return serial; }, setPhase(value) { phase = value; },
+    file, get requestCount() { return serial; }, get activeRequestCount() { return active.size; },
+    setPhase(value) { phase = value; },
     async close() {
       if (!closed) {
         closed = true;

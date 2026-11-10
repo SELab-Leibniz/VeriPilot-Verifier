@@ -14,13 +14,13 @@ import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { verifyFrozenArtifact } from './bench/frozen-artifact-verification.mjs';
 import { assertBusinessSessionIdentity } from './bench/session-continuity.mjs';
 import { businessMutationPaths } from './bench/business-mutations.mjs';
-import { businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver } from './bench/business-completion.mjs';
+import { businessCompleted, createBusinessRunTracker, createBusinessStallObserver, createBusinessTerminalObserver, waitForObservation } from './bench/business-completion.mjs';
 import { installOriginalBasisPolicy, loadOriginalBasisWorkflow, prepareOpenSpecSession, runOpenSpecCli, workflowMessages } from './bench/original-basis-workflow.mjs';
 import { collectAutomaticDocumentEvidence } from './evaluate-openclaw-document-e2e.mjs';
 import { prepareJava } from './bench/arkts-java.mjs';
 import { loadRcConfigOverrides } from './bench/rc-config-overrides.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
-import { createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
+import { captureInterruptedBusiness, createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
 import { completedToolWarningTerminal } from '../lib/openclaw/post-run-host.mjs';
 import { codeChanged, collectReleaseEvidence, finalStopOf, tokenSplit } from './bench/release-evidence.mjs';
 import { waitNativeStopSettled } from './bench/native-stop-settlement.mjs';
@@ -142,7 +142,7 @@ await write(path.join(outputRoot, 'manifest.json'), { instance, projectRoot, pre
   java: java ? { javaHome: java.javaHome, source: java.source, version: java.version } : null,
   rcConfigOverrides: policies.experimentOverrides, regressionCheck: policies.regressionCheck,
   startedAt, deadline, offline });
-let gateway, sessionId, sessionKey, transcriptFile;
+let gateway, sessionId, sessionKey, transcriptFile, interruption;
 async function findFiles(root, match) {
   const entries = await fs.readdir(root, { withFileTypes: true }).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
   const nested = await Promise.all(entries.map(async entry => {
@@ -247,6 +247,11 @@ try {
     const stages = ['proposal','codeing'];
     const docNames = ['proposal.md','design.md','tasks.md'];
     const change = path.join(projectRoot,'openspec','changes',changeName);
+    let draining;
+    const drain = () => {
+      draining ??= gateway.drain().finally(() => { draining = null; });
+      return waitForObservation(draining, Math.min(2000, deadline - Date.now()));
+    };
     for (const stage of stages) {
       if (Date.now() >= deadline || gateway.providerStatus().failure) break;
       const runId = randomUUID(), turnStartedAt = Date.now(), tracker = createBusinessRunTracker(runId, sessionId);
@@ -256,8 +261,13 @@ try {
         deliver:false,thinking:'off',timeoutMs:0});
       let terminal, originalTerminal, post, task, privateRuns = [];
       const original = createBusinessTerminalObserver();
+      const checkStall = createBusinessStallObserver({ readTranscript: () => fs.readFile(transcriptFile, 'utf8') });
       while (Date.now() < deadline && !gateway.providerStatus().failure) {
-        await gateway.drain();
+        if (!await drain()) {
+          originalTerminal = terminal = undefined;
+          await checkStall({ diagnosticsDrained: false });
+          continue; // Unflushed model starts can make a cached terminal stale.
+        }
         const entry = () => gateway.runtime.agent.session.getSessionEntry({ ...scope,readConsistency:'latest' });
         let latest = await entry();
         // The host rewrites its session store at run end; one missing read is not yet a replacement.
@@ -280,95 +290,125 @@ try {
         originalTerminal = await original.poll(gateway.request,runId,starts,post?.phase ?? 'OBSERVE');
         terminal = tracker.runId===runId ? originalTerminal
           : await observer.poll(gateway.request,tracker.runId,starts,post?.phase);
-        for (const event of [...original.drainEvents(), ...observer.drainEvents()])
+        const events = [...original.drainEvents(), ...observer.drainEvents()];
+        for (const event of events)
           await fs.appendFile(path.join(outputRoot,'business-terminal-observations.jsonl'), JSON.stringify({stage,...event})+'\n');
         originalTerminal = await completedBusinessTerminal(originalTerminal);
         terminal = await completedBusinessTerminal(terminal);
         if (terminal && ['IDLE','CLOSED'].includes(post?.phase) && privateRuns.every(worker=>worker.status==='SETTLED')) break;
+        if (!terminal && tracker.runId === runId) {
+          const metrics = gateway.metrics();
+          const modelStartAt = metrics.modelStarts.findLast(event => event.sessionId === sessionId && event.sessionKey === sessionKey)?.ts;
+          const stalled = await checkStall({ sessionId, runId, post, reply: events.findLast(event => event.runId === runId),
+            modelStartAt, requestCount: metrics.providerRequests, activeRequests: gateway.activeProviderRequests(), diagnosticsDrained: true });
+          if (stalled && !gateway.providerStatus().failure && gateway.activeProviderRequests() === 0) {
+            const latestMetrics = gateway.metrics();
+            if (latestMetrics.providerRequests === metrics.providerRequests && latestMetrics.modelStarts.length === metrics.modelStarts.length) {
+              interruption = stalled;
+              break;
+            }
+          }
+        }
         await sleep(650);
       }
       turns.push({stage,runId,startedAt:turnStartedAt,finishedAt:Date.now(),finalRunId:tracker.runId,
         originalTerminal,terminal,post:post ?? null});
+      if (!terminal && !gateway.providerStatus().failure && Date.now() >= deadline)
+        interruption ??= { reason: 'BUSINESS_TERMINAL_DEADLINE', runId: tracker.runId };
       if (!businessCompleted(terminal,tracker.runId) || gateway.providerStatus().failure) break;
       if (stage==='proposal' && !(await Promise.all(docNames.map(file=>fs.stat(path.join(change,file)).then(stat=>stat.isFile(),()=>false)))).every(Boolean)) break;
     }
-    // Closing the Gateway cancels unsettled native Stop jobs, and the freeze
-    // commit below would move HEAD under a review that is still reading it.
-    const nativeStop = await waitNativeStopSettled({projectRoot,sessionKey,sessionId,deadlineAt:deadline,beforePoll:()=>gateway.drain(),
-      abandon:()=>Boolean(gateway.providerStatus().failure),readVerification:async()=>(await findTask({projectRoot,sessionId}))?.verification??null});
-    const ledger = await store.inspect(sessionId);
-    const task = await findTask({projectRoot,sessionId});
-    const session = await gateway.runtime.subagent.getSession({sessionKey});
-    const bytes = await fs.readFile(transcriptFile);
-    const records = jsonl(bytes.toString('utf8'));
-    const frozenRoot = path.join(outputRoot,'freeze');
-    await fs.mkdir(frozenRoot);
-    const paths = new Set(businessMutationPaths(records,projectRoot));
-    for (const file of await findFiles(change,()=>true)) paths.add(path.relative(projectRoot,file).replaceAll('\\','/'));
-    if (paths.size) git(projectRoot,'--literal-pathspecs','add','--all','--',...paths);
-    commit(projectRoot,'Freeze release end-to-end result');
-    const head=git(projectRoot,'rev-parse','HEAD').toString().trim();
-    const patch=git(projectRoot,'diff','--binary',preparedHead,head);
-    await fs.writeFile(path.join(frozenRoot,'session.jsonl'),bytes,{flag:'wx'});
-    await fs.writeFile(path.join(frozenRoot,'candidate.patch'),patch,{flag:'wx'});
-    const frozen = {commit:head,commitSha256:digest(git(projectRoot,'cat-file','commit',head)),
-      sessionSha256:digest(bytes),patchSha256:digest(patch),preparedHead,mutationPaths:[...paths].sort()};
-    await write(path.join(frozenRoot,'freeze.json'),frozen);
-    const evidence = await collectReleaseEvidence({projectRoot,sessionId,nativeRoot:gateway.root,turns});
-    const documents = await collectAutomaticDocumentEvidence(projectRoot,session,sessionId);
-    const scopeIds = [...new Set([task?.taskId,...evidence.taskIds,...documents.reviews.map(review=>review.scopeTaskId)].filter(Boolean))];
-    const privateRuns = [...new Map((await Promise.all(scopeIds.map(id=>listNativeRuns(projectRoot,id)))).flat().map(run=>[run.runId,run])).values()];
-    const docRuns = privateRuns.filter(run=>run.role==='artifact-reviewer');
-    const stopRuns = privateRuns.filter(run=>run.role==='stop-reviewer');
-    const [documentCost,stopCost] = await Promise.all([
-      measureSimplifyBenchmark({nativeRoot:gateway.root,privateRuns:docRuns}),
-      measureSimplifyBenchmark({nativeRoot:gateway.root,privateRuns:stopRuns,ledger}),
-    ]);
-    const boundary = gateway.providerStatus();
-    const businessUsage = summarizeProviderUsage(Math.max(0,boundary.requests-documentCost.usage.observedCalls-stopCost.usage.observedCalls),
-      records.filter(row=>row.message?.role==='assistant').map(row=>row.message.usage));
-    const final = turns.at(-1), finalStops = Object.values(ledger?.stops ?? {}).filter(stop=>stop.id.startsWith(final?.runId ?? 'missing:'));
-    const firstStop = finalStops[0], admission = ledger?.admissions?.[firstStop?.admissionId];
-    const finalStop = finalStopOf(evidence.stopReviews,turns);
-    const stopSettled = Boolean(finalStop && ['PASS','NO_DEVIATION_FOUND','DEVIATION'].includes(finalStop.status)
-      || finalStop?.status==='SKIPPED' && finalStop.reasonCode==='STOP_DOCUMENT_ONLY_CHANGES');
-    const docs = Object.fromEntries(await Promise.all(docNames.map(async file=>[file,
-      await fs.readFile(path.join(change,file)).then(data=>({sha256:digest(data),bytes:data.length}),error=>{if(error.code==='ENOENT')return null;throw error;})])));
-    const documentFeedback=documents.reviews.map((item,index)=>{
-      const meta=item.result.metadata;
-      const relative=meta.triggerFile;
-      const receipt=documents.receipts.find(row=>row.toolCallId===item.toolCallId);
-      const native=docRuns.find(run=>run.sessionId===meta.semanticReview?.forkSessionId);
-      const firstHash=meta.inputs?.find(input=>input.path===relative)?.sha256;
-      const next=documents.reviews.slice(index+1).find(row=>row.result.metadata.triggerFile===relative
-        && row.result.metadata.inputs?.some(input=>input.path===relative&&input.sha256!==firstHash));
-      const changedAfterFeedback=receipt && firstHash ? Boolean(next || docs[path.basename(relative)]?.sha256!==firstHash) : null;
-      return {result:item.result,relative,file:item.file,toolCallId:item.toolCallId,
-        semanticMs:native?.startedAt&&native?.settledAt ? native.settledAt-native.startedAt : null,
-        feedback:receipt ? redactEvaluationText(receipt.text) : null,changedAfterFeedback,
-        laterRound:next?.result.metadata.roundId??null,laterStatus:next?.result.status??null};
-    });
-    const businessNatural = turns.length===2 && turns.every(turn=>businessCompleted(turn.terminal,turn.finalRunId));
-    const frameworkError = Boolean(boundary.failure && boundary.failure!=='PROFILE_RATE_LIMIT' && boundary.failure!=='PROFILE_PAIR_RATE_LIMIT');
-    const timings = await readProviderTiming(gateway.root);
-    await write(path.join(outputRoot,'result.json'),{
-      state:boundary.failure?.includes('RATE_LIMIT')?'rate-limited':frameworkError?'framework-error':Date.now()>=deadline?'timed-out':'finished',
-      reason:boundary.failure ?? final?.post?.reason ?? null,frameworkError,instance,projectRoot,sessionId,sessionKey,
-      elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:evidence.documentReviews,documentFeedback,
-      stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis,evidenceCounts:evidence.counts,finalStop,
-      codeChanged:codeChanged(frozen.mutationPaths),documentCost,
-      firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,...nativeStop,
-      stopFeedback:admission?.hostRequest?.gate ? redactEvaluationText((admission.currentDeviations??[]).map(item=>
-        [item.result?.reason,...(item.result?.evidence??[])].join('\n')).join('\n\n')) : null,
-      frozen,privateRuns,modelRequests:boundary.requests,businessUsage,
-      tokenSplit:tokenSplit({documentCost,stopCost,businessUsage}),
-      requestTimingCount:timings.filter(row=>row.event==='request').length,gateway:gateway.metrics(),
-    });
+    if (interruption) {
+      const checkpoint = await captureInterruptedBusiness({ outputRoot, projectRoot, preparedHead, sessionId, transcriptFile,
+        interruption, sourceCommit, packageSha256 });
+      await write(path.join(outputRoot, 'result.json'), { state: 'interrupted', reason: interruption.reason,
+        frameworkError: false, instance, projectRoot, sessionId, sessionKey, elapsedMs: Date.now()-startedAt,
+        businessNatural: false, turns, finalStop: null, nativeStopSettled: false, nativeStopReason: interruption.reason,
+        interruption, checkpoint });
+    } else {
+      // Closing the Gateway cancels unsettled native Stop jobs, and the freeze
+      // commit below would move HEAD under a review that is still reading it.
+      const nativeStop = await waitNativeStopSettled({projectRoot,sessionKey,sessionId,deadlineAt:deadline,beforePoll:()=>gateway.drain(),
+        abandon:()=>Boolean(gateway.providerStatus().failure),readVerification:async()=>(await findTask({projectRoot,sessionId}))?.verification??null});
+      const ledger = await store.inspect(sessionId);
+      const task = await findTask({projectRoot,sessionId});
+      const session = await gateway.runtime.subagent.getSession({sessionKey});
+      const bytes = await fs.readFile(transcriptFile);
+      const records = jsonl(bytes.toString('utf8'));
+      const frozenRoot = path.join(outputRoot,'freeze');
+      await fs.mkdir(frozenRoot);
+      const paths = new Set(businessMutationPaths(records,projectRoot));
+      for (const file of await findFiles(change,()=>true)) paths.add(path.relative(projectRoot,file).replaceAll('\\','/'));
+      if (paths.size) git(projectRoot,'--literal-pathspecs','add','--all','--',...paths);
+      commit(projectRoot,'Freeze release end-to-end result');
+      const head=git(projectRoot,'rev-parse','HEAD').toString().trim();
+      const patch=git(projectRoot,'diff','--binary',preparedHead,head);
+      await fs.writeFile(path.join(frozenRoot,'session.jsonl'),bytes,{flag:'wx'});
+      await fs.writeFile(path.join(frozenRoot,'candidate.patch'),patch,{flag:'wx'});
+      const frozen = {commit:head,commitSha256:digest(git(projectRoot,'cat-file','commit',head)),
+        sessionSha256:digest(bytes),patchSha256:digest(patch),preparedHead,mutationPaths:[...paths].sort()};
+      await write(path.join(frozenRoot,'freeze.json'),frozen);
+      const evidence = await collectReleaseEvidence({projectRoot,sessionId,nativeRoot:gateway.root,turns});
+      const documents = await collectAutomaticDocumentEvidence(projectRoot,session,sessionId);
+      const scopeIds = [...new Set([task?.taskId,...evidence.taskIds,...documents.reviews.map(review=>review.scopeTaskId)].filter(Boolean))];
+      const privateRuns = [...new Map((await Promise.all(scopeIds.map(id=>listNativeRuns(projectRoot,id)))).flat().map(run=>[run.runId,run])).values()];
+      const docRuns = privateRuns.filter(run=>run.role==='artifact-reviewer');
+      const stopRuns = privateRuns.filter(run=>run.role==='stop-reviewer');
+      const [documentCost,stopCost] = await Promise.all([
+        measureSimplifyBenchmark({nativeRoot:gateway.root,privateRuns:docRuns}),
+        measureSimplifyBenchmark({nativeRoot:gateway.root,privateRuns:stopRuns,ledger}),
+      ]);
+      const boundary = gateway.providerStatus();
+      const businessUsage = summarizeProviderUsage(Math.max(0,boundary.requests-documentCost.usage.observedCalls-stopCost.usage.observedCalls),
+        records.filter(row=>row.message?.role==='assistant').map(row=>row.message.usage));
+      const final = turns.at(-1), finalStops = Object.values(ledger?.stops ?? {}).filter(stop=>stop.id.startsWith(final?.runId ?? 'missing:'));
+      const firstStop = finalStops[0], admission = ledger?.admissions?.[firstStop?.admissionId];
+      const finalStop = finalStopOf(evidence.stopReviews,turns);
+      const stopSettled = Boolean(finalStop && ['PASS','NO_DEVIATION_FOUND','DEVIATION'].includes(finalStop.status)
+        || finalStop?.status==='SKIPPED' && finalStop.reasonCode==='STOP_DOCUMENT_ONLY_CHANGES');
+      const docs = Object.fromEntries(await Promise.all(docNames.map(async file=>[file,
+        await fs.readFile(path.join(change,file)).then(data=>({sha256:digest(data),bytes:data.length}),error=>{if(error.code==='ENOENT')return null;throw error;})])));
+      const documentFeedback=documents.reviews.map((item,index)=>{
+        const meta=item.result.metadata;
+        const relative=meta.triggerFile;
+        const receipt=documents.receipts.find(row=>row.toolCallId===item.toolCallId);
+        const native=docRuns.find(run=>run.sessionId===meta.semanticReview?.forkSessionId);
+        const firstHash=meta.inputs?.find(input=>input.path===relative)?.sha256;
+        const next=documents.reviews.slice(index+1).find(row=>row.result.metadata.triggerFile===relative
+          && row.result.metadata.inputs?.some(input=>input.path===relative&&input.sha256!==firstHash));
+        const changedAfterFeedback=receipt && firstHash ? Boolean(next || docs[path.basename(relative)]?.sha256!==firstHash) : null;
+        return {result:item.result,relative,file:item.file,toolCallId:item.toolCallId,
+          semanticMs:native?.startedAt&&native?.settledAt ? native.settledAt-native.startedAt : null,
+          feedback:receipt ? redactEvaluationText(receipt.text) : null,changedAfterFeedback,
+          laterRound:next?.result.metadata.roundId??null,laterStatus:next?.result.status??null};
+      });
+      const businessNatural = turns.length===2 && turns.every(turn=>businessCompleted(turn.terminal,turn.finalRunId));
+      const frameworkError = Boolean(boundary.failure && boundary.failure!=='PROFILE_RATE_LIMIT' && boundary.failure!=='PROFILE_PAIR_RATE_LIMIT');
+      const timings = await readProviderTiming(gateway.root);
+      await write(path.join(outputRoot,'result.json'),{
+        state:boundary.failure?.includes('RATE_LIMIT')?'rate-limited':frameworkError?'framework-error':Date.now()>=deadline?'timed-out':'finished',
+        reason:boundary.failure ?? final?.post?.reason ?? null,frameworkError,instance,projectRoot,sessionId,sessionKey,
+        elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:evidence.documentReviews,documentFeedback,
+        stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis,evidenceCounts:evidence.counts,finalStop,
+        codeChanged:codeChanged(frozen.mutationPaths),documentCost,
+        firstStop:firstStop??null,admission:admission??null,stopSettled,stopCost,corrections:ledger?.used??0,...nativeStop,
+        stopFeedback:admission?.hostRequest?.gate ? redactEvaluationText((admission.currentDeviations??[]).map(item=>
+          [item.result?.reason,...(item.result?.evidence??[])].join('\n')).join('\n\n')) : null,
+        frozen,privateRuns,modelRequests:boundary.requests,businessUsage,
+        tokenSplit:tokenSplit({documentCost,stopCost,businessUsage}),
+        requestTimingCount:timings.filter(row=>row.event==='request').length,gateway:gateway.metrics(),
+      });
+    }
   }
 } catch (error) {
   throw new Error(redactEvaluationText(error.message));
 } finally {
-  await gateway?.close();
+  if (interruption && gateway) {
+    try {
+      if (!await waitForObservation(gateway.close(), 5000))
+        console.warn('The isolated gateway did not finish closing after the interruption receipt was saved.');
+    } catch (error) { console.warn(redactEvaluationText(error.message)); }
+  } else await gateway?.close();
 }
 
 // The isolated host may retain singleton timers after its close and provider teardown.

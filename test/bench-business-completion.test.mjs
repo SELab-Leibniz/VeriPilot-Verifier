@@ -1,6 +1,48 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver, nativeCompactionStart } from '../scripts/bench/business-completion.mjs';
+import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker, createBusinessStallObserver,
+  createBusinessTerminalObserver, nativeCompactionStart, waitForObservation } from '../scripts/bench/business-completion.mjs';
+
+test('a diagnostic drain that never finishes cannot hold the benchmark loop past its observation budget', async () => {
+  assert.equal(await waitForObservation(new Promise(() => {}), 5), false);
+  assert.equal(await waitForObservation(Promise.resolve(), 20), true);
+  await assert.rejects(waitForObservation(Promise.reject(new Error('drain failed')), 20), /drain failed/u);
+});
+
+test('only a persistently quiet exact-run context overflow produces an interrupted observation', async () => {
+  let clock = 100, transcript = JSON.stringify({ timestamp: new Date(90).toISOString(),
+    message: { role: 'assistant', stopReason: 'error', errorMessage: 'Context overflow: test' } });
+  const inspect = createBusinessStallObserver({ now: () => clock, graceMs: 50, readTranscript: async () => transcript });
+  const terminal = { source: 'agent.wait', requestedRunId: 'main', runId: 'main', status: 'timeout', timeoutPhase: 'gateway_draining' };
+  const input = { sessionId: 'session', runId: 'main', modelStartAt: 70, requestCount: 8, activeRequests: 0,
+    diagnosticsDrained: true, reply: { type: 'public-reply', runId: 'main', terminal },
+    post: { sessionId: 'session', runId: 'main', phase: 'FINALIZING',
+      reconciliation: { runId: 'main', status: 'UNKNOWN', escalatedAt: 80 } } };
+  assert.equal(await inspect(input), null);
+  clock = 140;
+  assert.equal(await inspect(input), null);
+  clock = 150;
+  assert.deepEqual(await inspect(input), { reason: 'BUSINESS_TERMINAL_UNCONFIRMED', runId: 'main', overflowAt: 90,
+    quietSince: 100, observedAt: 150, escalatedAt: 80, terminal });
+  assert.equal(await inspect({ ...input, requestCount: 9 }), null);
+  clock += 60;
+  assert.equal(await inspect({ ...input, requestCount: 9, activeRequests: 1 }), null);
+  assert.equal(await inspect(input), null);
+  clock += 60;
+  assert.equal(await inspect({ ...input, modelStartAt: 91 }), null, 'a new attempt invalidates the overflow');
+  assert.equal(await inspect(input), null);
+  clock += 60;
+  assert.equal(await inspect({ ...input, reply: { ...input.reply, terminal: { ...terminal, status: 'ok' } } }), null);
+  assert.equal(await inspect(input), null);
+  clock += 60;
+  assert.equal(await inspect({ ...input, reply: { ...input.reply, runId: 'different' } }), null);
+  assert.equal(await inspect(input), null);
+  clock += 60_001;
+  assert.equal(await inspect(input), null, 'a gap in fresh replies is not a quiet observation window');
+  clock += 60;
+  transcript += '\n' + JSON.stringify({ type: 'compaction' });
+  assert.equal(await inspect(input), null, 'transcript progress invalidates the overflow');
+});
 
 test('only native compaction in the exact business session is excluded from correction starts', () => {
   const scope = { sessionId: 'session', sessionKey: 'agent:main:arkts-case' };
