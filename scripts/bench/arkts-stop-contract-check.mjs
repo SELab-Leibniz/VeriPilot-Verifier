@@ -2,6 +2,7 @@
 // Compose the existing full public suite and a separately calibrated public
 // contract case. Each runs in a different native process and project snapshot.
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { runRegressionCheck } from './arkts-regression-check.mjs';
 import { readRegressionContractProbe } from './regression-workspace.mjs';
@@ -22,7 +23,10 @@ if (contract && (await readRegressionContractProbe(values['contract-probe'])).re
   throw new Error('Contract probe baseline hash mismatch.');
 const common = { project: values.project, toolRoot: values['tool-root'], javaHome: values['java-home'],
   timeoutMs: Number(values['timeout-ms'] ?? 420000) };
-const suite = await runRegressionCheck({ ...common, baseline: values.baseline, originalTests: true });
+// Failed task-start Bluetooth assertions can skip Hypium teardown and leak the
+// static dispatch mock. Keep that original suite in its own native process.
+const isolateBluetoothAcl = Boolean(requirement && path.basename(requirement) === 'security-tool-bluetooth-policy-contract.ets');
+const suite = await runRegressionCheck({ ...common, baseline: values.baseline, originalTests: true, isolateBluetoothAcl });
 console.log([suite.line, ...suite.names, ...(suite.diagnostics ?? []), ...suite.errors].join('\n'));
 const probe = await runRegressionCheck({ ...common, baseline: requirement ? undefined : values['contract-baseline'],
   contractProbe: requirement ?? values['contract-probe'] });

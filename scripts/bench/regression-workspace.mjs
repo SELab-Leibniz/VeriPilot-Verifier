@@ -10,6 +10,20 @@ const run = promisify(execFile);
 const suiteRoot = /(?:^|\/)src\/test(?=\/|$)/u;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
+export async function isolateBluetoothAclSuite(workspace, isolatedWorkspace) {
+  const registry = 'entry/src/test/List.test.ets';
+  const original = await fs.readFile(path.join(workspace, registry), 'utf8');
+  const binding = "import peripheralBluetoothAclConsumerTest from './peripheral/connection-record-bluetooth-acl-consumer.test'";
+  const invocation = '  peripheralBluetoothAclConsumerTest()';
+  const lines = original.split(/\r?\n/u);
+  if ([binding, invocation].some(line => lines.filter(value => value === line).length !== 1))
+    throw new Error('Cannot isolate the original Bluetooth ACL suite: expected one import and one registration.');
+  await fs.writeFile(path.join(workspace, registry),
+    lines.filter(line => line !== binding && line !== invocation).join(original.includes('\r\n') ? '\r\n' : '\n'));
+  await fs.writeFile(path.join(isolatedWorkspace, registry),
+    `${binding}\nexport default function testsuite(): void {\n${invocation}\n}\n`);
+}
+
 export async function readRegressionContractProbe(file) {
   const source = path.resolve(file);
   const body = await fs.readFile(source);

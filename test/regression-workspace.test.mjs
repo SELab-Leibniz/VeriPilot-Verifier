@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { prepareRegressionWorkspace, installRegressionContractProbe, readRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, isolateBluetoothAclSuite, readRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
 import { runRegressionCheck } from '../scripts/bench/arkts-regression-check.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
@@ -107,4 +107,23 @@ test('original test mode restores only the baseline test sources over current pr
   assert.equal(await fs.readFile(path.join(copy, production), 'utf8'), 'export const widget = { value: 8 }\n');
   await assert.rejects(fs.access(path.join(copy, 'entry/src/test/new.test.ets')), { code: 'ENOENT' });
   assert.equal(await fs.readFile(path.join(source, testFile), 'utf8'), 'assert(widget.value === 8)\n');
+});
+
+test('Bluetooth ACL isolation partitions registrations and preserves the original test bodies', async t => {
+  const { source } = await fixture(t);
+  const registry = 'entry/src/test/List.test.ets';
+  const original = "import peripheralBluetoothAclConsumerTest from './peripheral/connection-record-bluetooth-acl-consumer.test'\r\n"
+    + "import widgetTest from './widget.test'\r\nexport default function testsuite(): void {\r\n  peripheralBluetoothAclConsumerTest()\r\n  widgetTest()\r\n}\r\n";
+  await fs.writeFile(path.join(source, registry), original);
+  const main = await prepareRegressionWorkspace(source);
+  const isolated = await prepareRegressionWorkspace(source);
+  await isolateBluetoothAclSuite(main, isolated);
+  assert.equal(await fs.readFile(path.join(source, registry), 'utf8'), original);
+  assert.equal(await fs.readFile(path.join(main, registry), 'utf8'),
+    "import widgetTest from './widget.test'\r\nexport default function testsuite(): void {\r\n  widgetTest()\r\n}\r\n");
+  assert.equal(await fs.readFile(path.join(isolated, registry), 'utf8'),
+    "import peripheralBluetoothAclConsumerTest from './peripheral/connection-record-bluetooth-acl-consumer.test'\nexport default function testsuite(): void {\n  peripheralBluetoothAclConsumerTest()\n}\n");
+  for (const workspace of [main, isolated]) assert.equal(
+    await fs.readFile(path.join(workspace, 'entry/src/test/widget.test.ets'), 'utf8'), 'assert(widget.value === 7)\n');
+  await assert.rejects(isolateBluetoothAclSuite(main, isolated), /expected one import and one registration/u);
 });

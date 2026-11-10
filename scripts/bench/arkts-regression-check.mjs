@@ -8,7 +8,7 @@ import { parseArgs } from 'node:util';
 import { runBoundedProcess } from './bounded-process.mjs';
 import { localTestEvidence, publicLocalTestEvidence } from './local-test-evidence.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
-import { prepareRegressionWorkspace, installRegressionContractProbe, readRegressionContractProbe } from './regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, isolateBluetoothAclSuite, readRegressionContractProbe } from './regression-workspace.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
@@ -42,38 +42,75 @@ export function regressionVerdict(current, baseline, maxNames = 20) {
       + (comparison.comparable ? ` regressions=${comparison.regressions.length} newFailures=${comparison.newFailures.length} knownFailures=${known.length}` : ' baseline=none') };
 }
 
-export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, contractProbe, timeoutMs = 840000, maxNames = 20, signal }) {
+function combineBluetoothAclEvidence(main, isolated, baseline) {
+  const isBluetoothAcl = id => id.startsWith('entry::PeripheralConnectionRecordBluetoothAclConsumer::');
+  const isolatedIds = Object.keys(isolated.statuses);
+  const statuses = { ...main.statuses, ...isolated.statuses };
+  const expectedIds = Object.keys(baseline.statuses);
+  const sameSuite = isolatedIds.length > 0 && isolatedIds.every(isBluetoothAcl)
+    && !Object.keys(main.statuses).some(isBluetoothAcl)
+    && Object.keys(statuses).length === expectedIds.length && expectedIds.every(id => Object.hasOwn(statuses, id));
+  const completeRuntime = main.completeRuntime && isolated.completeRuntime && sameSuite;
+  const counts = { ...main.counts };
+  for (const [status, count] of Object.entries(isolated.counts)) counts[status] = (counts[status] ?? 0) + count;
+  const matchedLines = main.runtimeDiagnostics.matchedLines + isolated.runtimeDiagnostics.matchedLines;
+  const messages = [...main.runtimeDiagnostics.messages, ...isolated.runtimeDiagnostics.messages].slice(0, 16);
+  return { freshReport: main.freshReport && isolated.freshReport, finished: main.finished && isolated.finished,
+    completeRuntime, statuses, counts, allObservedPassed: completeRuntime && main.allObservedPassed && isolated.allObservedPassed,
+    failures: [...main.failures, ...isolated.failures],
+    metadataErrors: [...main.metadataErrors, ...isolated.metadataErrors, ...(sameSuite ? [] : [{ code: 'ISOLATED_SUITE_MISMATCH' }])],
+    runtimeDiagnostics: { available: main.freshReport && isolated.freshReport, messages, matchedLines,
+      truncated: matchedLines > messages.length, interpretation: 'Line numbers are relative to the two separate runtime reports in suiteIsolation.' } };
+}
+
+export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, contractProbe,
+  isolateBluetoothAcl = false, timeoutMs = 840000, maxNames = 20, signal }) {
   const baselineEvidence = baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null;
   if (originalTests && (!baselineEvidence?.completeRuntime || !baselineEvidence.baseCommit))
     throw new Error('--original-tests requires a completed baseline with its exact original test commit.');
+  if (isolateBluetoothAcl && (!originalTests || contractProbe)) throw new Error('Bluetooth ACL isolation requires the original public suite.');
   const probeInput = contractProbe ? await readRegressionContractProbe(contractProbe) : null;
   const probe = probeInput?.receipt ?? null;
   if (baselineEvidence && (probe || baselineEvidence.contractProbe)
     && probe?.sha256 !== baselineEvidence.contractProbe?.sha256) throw new Error('Contract probe baseline hash mismatch.');
   if (probe && baselineEvidence && (!baselineEvidence.completeRuntime || !/^[a-f0-9]{40}$/u.test(baselineEvidence.baseCommit ?? '')))
     throw new Error('Contract probe requires a completed original baseline with its exact commit.');
-  const root = await prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
+  const prepare = () => prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
+  const root = await prepare();
+  const isolatedRoot = isolateBluetoothAcl ? await prepare() : null;
+  if (isolatedRoot) await isolateBluetoothAclSuite(root, isolatedRoot);
   if (probeInput) await installRegressionContractProbe(root, probeInput.body, probeInput);
   const java = resolveJavaHome({ explicit: javaHome });
   applyJavaEnvironment(java.javaHome);
-  const coverage = path.join(root, coverageLog);
-  await fs.rm(coverage, { force: true });
-  const started = Date.now(); let output = '';
-  const run = phase => runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-    fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url)), '-Project', root, '-ToolRoot', path.resolve(toolRoot),
-    '-Phase', phase, '-JavaHome', java.javaHome], { cwd: root, timeoutMs: Math.max(1, timeoutMs - (Date.now() - started)),
-    signal, onOutput(value) { output += value; } });
-  const installed = await run('install');
-  const execution = installed.exitCode === 0 && !installed.interrupted ? await run('test') : installed;
-  const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
-  const current = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
+  const deadline = Date.now() + timeoutMs;
+  const runSnapshot = async workspace => {
+    const coverage = path.join(workspace, coverageLog);
+    await fs.rm(coverage, { force: true });
+    const started = Date.now(); let output = '';
+    const run = phase => runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+      fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url)), '-Project', workspace, '-ToolRoot', path.resolve(toolRoot),
+      '-Phase', phase, '-JavaHome', java.javaHome], { cwd: workspace, timeoutMs: Math.max(1, deadline - Date.now()),
+      signal, onOutput(value) { output += value; } });
+    const installed = await run('install');
+    const execution = installed.exitCode === 0 && !installed.interrupted ? await run('test') : installed;
+    const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
+    const current = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
+    return { workspace, current, execution, output };
+  };
+  const primary = await runSnapshot(root);
+  const isolated = isolatedRoot ? await runSnapshot(isolatedRoot) : null;
+  const current = isolated ? combineBluetoothAclEvidence(primary.current, isolated.current, baselineEvidence) : primary.current;
+  const execution = isolated?.execution.interrupted ? isolated.execution : primary.execution;
+  const output = isolated ? primary.output + '\n' + isolated.output : primary.output;
   const verdict = regressionVerdict(current, baselineEvidence, maxNames);
   if (originalTests && !probe) verdict.line += ' suite=task-start; compare failures with the original request before classifying regressions';
   if (probe) verdict.line += ` contractProbe=${probe.sha256}; ${baselineEvidence ? 'matches the original baseline probe' : 'baseline calibration, not a before/after comparison'}`;
   await fs.writeFile(root + '.result.json', JSON.stringify({ source: path.resolve(project), workspace: root, baselineCommit: baselineEvidence?.baseCommit,
     ...(probe ? { contractProbe: probe } : {}),
-    current, verdict, execution, output }, null, 2));
+    current, verdict, execution, output, ...(isolated ? { suiteIsolation: { primary, isolated } } : {}) }, null, 2));
   const errors = verdict.status === 'INCOMPLETE' ? output.split(/\r?\n/u).filter(line => /\bERROR\b|error:|Exception|RC_ARKTS_JAVA/iu.test(line)).slice(-12) : [];
+  if (current.metadataErrors.some(error => error.code === 'ISOLATED_SUITE_MISMATCH'))
+    errors.push('The isolated Bluetooth ACL run and the remaining public run did not cover the original suite exactly once.');
   return { ...verdict, ...(probe ? { contractProbe: probe, workspace: root } : {}), errors, execution: { exitCode: execution.exitCode, interrupted: execution.interrupted, reason: execution.reason } };
 }
 
