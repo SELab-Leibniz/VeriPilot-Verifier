@@ -3,19 +3,45 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { constants } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const generated = new Set(['.git', '.hvigor', '.test', 'oh_modules', 'node_modules', '.runtime-correction', '.runtime-corrector']);
 const run = promisify(execFile);
 const suiteRoot = /(?:^|\/)src\/test(?=\/|$)/u;
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+
+export async function readRegressionContractProbe(file) {
+  const source = path.resolve(file);
+  const body = await fs.readFile(source);
+  const stem = source.replace(/\.ets$/u, '');
+  const optional = name => fs.readFile(name).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+  const [mock, config] = await Promise.all([optional(stem + '.mock.ets'), optional(stem + '.mock.json')]);
+  if (Boolean(mock) !== Boolean(config)) throw new Error('A contract probe mock requires both ArkTS source and its module mapping.');
+  const module = config ? JSON.parse(config).module : null;
+  if (config && (typeof module !== 'string' || !/^@ohos\.[a-z0-9.]+$/iu.test(module)))
+    throw new Error('A contract probe mock requires a system module name.');
+  const files = mock ? { source: hash(body), mock: hash(mock), config: hash(config) } : null;
+  return { body, mock, module, receipt: { source, sha256: files ? hash(JSON.stringify(files)) : hash(body), ...(files ? { files } : {}) } };
+}
 
 // Run the public contract case in a fresh native process: an earlier suite's
 // static mocks must not pollute its before/after comparison.
-export async function installRegressionContractProbe(workspace, source) {
+export async function installRegressionContractProbe(workspace, source, { mock = null, module = null } = {}) {
   if (!Buffer.isBuffer(source) || !source.length || source.length > 128 * 1024)
     throw new Error('Contract probe must be a nonempty ArkTS module below 128 KiB.');
   const root = path.join(workspace, 'entry/src/test');
   await fs.copyFile(path.join(root, 'List.test.ets'), path.join(root, '__rc_original_list.test.ets'), constants.COPYFILE_EXCL);
   await fs.writeFile(path.join(root, '__rc_contract_probe.test.ets'), source, { flag: 'wx' });
+  if (mock) {
+    const mockRoot = path.join(workspace, 'entry/src/mock');
+    const configPath = path.join(mockRoot, 'mock-config.json5');
+    const existing = await fs.readFile(configPath, 'utf8').then(JSON.parse,
+      error => { if (error.code === 'ENOENT') return {}; throw error; });
+    if (Object.hasOwn(existing, module)) throw new Error(`A system mock already exists for ${module}.`);
+    await fs.mkdir(mockRoot, { recursive: true });
+    await fs.writeFile(path.join(mockRoot, '__rc_contract_probe_sdk.ets'), mock, { flag: 'wx' });
+    await fs.writeFile(configPath, JSON.stringify({ ...existing, [module]: { source: 'src/mock/__rc_contract_probe_sdk.ets' } }, null, 2) + '\n');
+  }
   await fs.writeFile(path.join(root, 'List.test.ets'), `import contractProbe from './__rc_contract_probe.test'
 export default function testsuite(): void { contractProbe() }
 `);

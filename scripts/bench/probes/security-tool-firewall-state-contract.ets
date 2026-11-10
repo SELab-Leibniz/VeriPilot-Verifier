@@ -1,15 +1,22 @@
-// Sources: the public task's mutual-exclusion/confirmed-reload requirements,
-// and the task-start ViewModel's existing pending-state messages. No evaluator
-// cases or reference implementation. Original guards and normal calls are controls;
-// the other cases exercise new task requirements, not baseline regressions.
+// Sources: the public task's rollback, confirmed-reload and mutual-exclusion
+// requirements, and the task-start ViewModel's pending-state messages.
+// SDK and preference substitutes keep policy writes in memory.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@ohos/hypium'
 import { common } from '@kit.AbilityKit'
+import { netFirewall } from '@kit.NetworkKit'
 import { ArgumentMatchers, MockKit, when } from '@ohos/hamock'
 import { FirewallService } from '../main/ets/services/firewall/FirewallService'
+import { FirewallModeSwitchService } from '../main/ets/services/firewall/FirewallModeSwitchService'
+import { FirewallModeStrategy } from '../main/ets/services/firewall/FirewallModeStrategy'
+import { SystemUserProvider } from '../main/ets/services/firewall/providers/SystemUserProvider'
+import { PreferencesAccessor } from '../main/ets/storage/preferences/PreferencesAccessor'
 import {
-  FirewallOperationResult, FirewallOverviewState, FirewallPresetMode, FirewallToggleOperationResult
+  FirewallOperationResult, FirewallOverviewState, FirewallPreparedRule, FirewallPresetMode,
+  FirewallRuleIntentMappingData, FirewallToggleOperationResult,
+  PREF_KEY_FIREWALL_ACTIVE_MODE, PREF_KEY_FIREWALL_RULE_MAPPING, UserFirewallListResult
 } from '../main/ets/services/firewall/FirewallModels'
 import { FirewallOverviewViewModel } from '../main/ets/viewmodels/firewall/overview/FirewallOverviewViewModel'
+import { firewallBackend } from '../mock/__rc_contract_probe_sdk'
 
 class Scenario {
   rejectSwitch: boolean = false
@@ -28,6 +35,138 @@ class ConfirmedOverview implements FirewallOverviewState {
   currentMode: FirewallPresetMode = 'custom'
 }
 const context = {} as common.UIAbilityContext
+const userId = 42
+const originalId = 300
+const originalName = 'existing rule'
+
+interface ScopedRule extends netFirewall.NetFirewallRule { id: number }
+
+function probeRule(name: string, id: number): ScopedRule {
+  return {
+    id: id, userId: userId, name: name, isEnabled: true,
+    direction: netFirewall.NetFirewallRuleDirection.RULE_IN,
+    type: netFirewall.NetFirewallRuleType.RULE_IP,
+    action: netFirewall.FirewallRuleAction.RULE_DENY
+  }
+}
+
+class RollbackState {
+  mode: string = 'custom'
+  mapping: string = ''
+  failModeWrite: boolean = false
+  failuresInjected: number = 0
+
+  originalPolicy(): netFirewall.NetFirewallPolicy {
+    return { isOpen: true, inAction: netFirewall.FirewallRuleAction.RULE_ALLOW,
+      outAction: netFirewall.FirewallRuleAction.RULE_ALLOW }
+  }
+
+  reset(): void {
+    this.mode = 'custom'
+    firewallBackend.policy = this.originalPolicy()
+    firewallBackend.rules = [probeRule(originalName, originalId)]
+    firewallBackend.failAdd = false
+    firewallBackend.failuresInjected = 0
+    this.failModeWrite = false
+    firewallBackend.nextId = 400
+    this.failuresInjected = 0
+    const data: FirewallRuleIntentMappingData = {
+      version: 1,
+      ruleIntents: [{
+        localRuleId: 'existing', name: originalName, type: netFirewall.NetFirewallRuleType.RULE_IP,
+        direction: netFirewall.NetFirewallRuleDirection.RULE_IN, action: netFirewall.FirewallRuleAction.RULE_DENY,
+        isEnabled: true, targetUserIds: [userId], createdAt: 1, updatedAt: 1
+      }],
+      ruleDeployments: [{ localRuleId: 'existing', userId: userId, systemRuleId: originalId }]
+    }
+    this.mapping = JSON.stringify(data)
+  }
+
+  async getString(key: string, fallback: string): Promise<string> {
+    return key === PREF_KEY_FIREWALL_ACTIVE_MODE ? this.mode : fallback
+  }
+
+  async getJsonObject<T>(key: string, fallback: T): Promise<T> {
+    if (key !== PREF_KEY_FIREWALL_RULE_MAPPING) return fallback
+    return JSON.parse(this.mapping) as T
+  }
+
+  async setValue(key: string, value: string): Promise<boolean> {
+    if (key !== PREF_KEY_FIREWALL_ACTIVE_MODE) return false
+    this.mode = value
+    // Model a persistence operation that writes before reporting failure.
+    if (this.failModeWrite && value === 'public') {
+      this.failuresInjected++
+      return false
+    }
+    return true
+  }
+
+  async setJson(key: string, value: object): Promise<boolean> {
+    if (key !== PREF_KEY_FIREWALL_RULE_MAPPING) return false
+    this.mapping = JSON.stringify(value)
+    return true
+  }
+}
+
+function publicFirewallRollbackContract(): void {
+  describe('RCPublicFirewallRollbackContract', () => {
+    const state = new RollbackState()
+    const mocks = new MockKit()
+    beforeAll(() => {
+      const users = mocks.mockFunc(SystemUserProvider, SystemUserProvider.loadAvailableUserIds)
+      const userList: UserFirewallListResult = { users: [{ userId: userId, label: 'probe user' }] }
+      when(users)().afterReturn(Promise.resolve(userList))
+      const prefs = mocks.mockFunc(PreferencesAccessor, PreferencesAccessor.of)
+      when(prefs)(ArgumentMatchers.any).afterReturn(state as never as PreferencesAccessor)
+      const build = mocks.mockFunc(FirewallModeStrategy, FirewallModeStrategy.buildRulesForMode)
+      const target: FirewallPreparedRule[] = [
+        { userId: userId, rule: probeRule('applied target rule', -1) },
+        { userId: userId, rule: probeRule('failing target rule', -1) }
+      ]
+      when(build)(ArgumentMatchers.any).afterReturn(Promise.resolve(target))
+    })
+    beforeEach(() => { state.reset() })
+    afterAll(() => { mocks.clearAll() })
+
+    const assertRestoredRules = (): void => {
+      expect(firewallBackend.rules.length).assertEqual(1)
+      expect(firewallBackend.rules[0].name).assertEqual(originalName)
+      const mapping = JSON.parse(state.mapping) as FirewallRuleIntentMappingData
+      expect(mapping.ruleIntents.length).assertEqual(1)
+      expect(mapping.ruleDeployments.length).assertEqual(1)
+      expect(mapping.ruleDeployments[0].localRuleId).assertEqual('existing')
+      expect(mapping.ruleDeployments[0].systemRuleId).assertEqual(firewallBackend.rules[0].id)
+    }
+
+    it('control applies the target mode and rules through the same simulated backend', 0, async () => {
+      const result = await FirewallModeSwitchService.switchMode(context, 'public')
+      expect(result.success).assertTrue()
+      expect(state.mode).assertEqual('public')
+      expect(firewallBackend.rules.length).assertEqual(2)
+      expect(firewallBackend.rules[0].name).assertEqual('applied target rule')
+    })
+
+    it('failed partial switch restores the policy and binds the saved mapping to the live rule', 0, async () => {
+      firewallBackend.failAdd = true
+      const result = await FirewallModeSwitchService.switchMode(context, 'public')
+      expect(firewallBackend.failuresInjected).assertEqual(1)
+      expect(result.success).assertFalse()
+      expect(state.mode).assertEqual('custom')
+      expect(firewallBackend.policy.inAction).assertEqual(state.originalPolicy().inAction)
+      assertRestoredRules()
+    })
+
+    it('a failed mode write restores the persisted mode and the previous rule mapping', 0, async () => {
+      state.failModeWrite = true
+      const result = await FirewallModeSwitchService.switchMode(context, 'public')
+      expect(state.failuresInjected).assertEqual(1)
+      expect(result.success).assertFalse()
+      expect(state.mode).assertEqual('custom')
+      assertRestoredRules()
+    })
+  })
+}
 
 export default function publicFirewallStateContract(): void {
   describe('RCPublicFirewallStateContract', () => {
@@ -147,4 +286,5 @@ export default function publicFirewallStateContract(): void {
       expect(returnedFailure).assertTrue()
     })
   })
+  publicFirewallRollbackContract()
 }

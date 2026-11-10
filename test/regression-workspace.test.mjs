@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { prepareRegressionWorkspace, installRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, readRegressionContractProbe } from '../scripts/bench/regression-workspace.mjs';
 import { runRegressionCheck } from '../scripts/bench/arkts-regression-check.mjs';
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
@@ -58,6 +58,24 @@ test('an isolated contract case preserves the original entry and never edits its
   assert((await fs.readFile(path.join(copy, 'entry/src/test/__rc_contract_probe.test.ets'))).equals(probe));
   assert.match(await fs.readFile(path.join(copy, entry), 'utf8'), /contractProbe\(\)/u);
   assert.doesNotMatch(await fs.readFile(path.join(copy, entry), 'utf8'), /originalSuite/u);
+});
+
+test('system mock bytes are bound to the probe and installed only into the test snapshot', async t => {
+  const f = await fixture(t), probe = path.join(f.root, 'probe.ets');
+  await fs.writeFile(path.join(f.source, 'entry/src/test/List.test.ets'), 'export default function suite(): void {}\n');
+  await fs.writeFile(probe, 'export default function probe(): void {}\n');
+  await fs.writeFile(path.join(f.root, 'probe.mock.ets'), 'export default class FakeSdk {}\n');
+  await fs.writeFile(path.join(f.root, 'probe.mock.json'), '{"module":"@ohos.example"}\n');
+  const input = await readRegressionContractProbe(probe);
+  const copy = await prepareRegressionWorkspace(f.source);
+  await installRegressionContractProbe(copy, input.body, input);
+  const mapping = 'entry/src/mock/mock-config.json5';
+  await assert.rejects(fs.access(path.join(f.source, mapping)), { code: 'ENOENT' });
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(copy, mapping), 'utf8')),
+    { '@ohos.example': { source: 'src/mock/__rc_contract_probe_sdk.ets' } });
+  assert.deepEqual(await fs.readFile(path.join(copy, 'entry/src/mock/__rc_contract_probe_sdk.ets')), input.mock);
+  await fs.appendFile(path.join(f.root, 'probe.mock.ets'), '// changed mock\n');
+  assert.notEqual((await readRegressionContractProbe(probe)).receipt.sha256, input.receipt.sha256);
 });
 
 test('a different contract probe cannot reuse an original passing baseline or start the native toolchain', async t => {

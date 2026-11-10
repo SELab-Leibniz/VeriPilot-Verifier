@@ -5,11 +5,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bounded-process.mjs';
 import { localTestEvidence, publicLocalTestEvidence } from './local-test-evidence.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
-import { prepareRegressionWorkspace, installRegressionContractProbe } from './regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, readRegressionContractProbe } from './regression-workspace.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
@@ -47,14 +46,14 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   const baselineEvidence = baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null;
   if (originalTests && (!baselineEvidence?.completeRuntime || !baselineEvidence.baseCommit))
     throw new Error('--original-tests requires a completed baseline with its exact original test commit.');
-  const probeBytes = contractProbe ? await fs.readFile(contractProbe) : null;
-  const probe = probeBytes ? { source: path.resolve(contractProbe), sha256: createHash('sha256').update(probeBytes).digest('hex') } : null;
+  const probeInput = contractProbe ? await readRegressionContractProbe(contractProbe) : null;
+  const probe = probeInput?.receipt ?? null;
   if (baselineEvidence && (probe || baselineEvidence.contractProbe)
     && probe?.sha256 !== baselineEvidence.contractProbe?.sha256) throw new Error('Contract probe baseline hash mismatch.');
   if (probe && baselineEvidence && (!baselineEvidence.completeRuntime || !/^[a-f0-9]{40}$/u.test(baselineEvidence.baseCommit ?? '')))
     throw new Error('Contract probe requires a completed original baseline with its exact commit.');
   const root = await prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
-  if (probe) await installRegressionContractProbe(root, probeBytes);
+  if (probeInput) await installRegressionContractProbe(root, probeInput.body, probeInput);
   const java = resolveJavaHome({ explicit: javaHome });
   applyJavaEnvironment(java.javaHome);
   const coverage = path.join(root, coverageLog);

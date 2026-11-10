@@ -68,7 +68,7 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, onReviewerStart }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
   await project(f.root, { broken });
@@ -84,6 +84,7 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
     Object.assign(f.input, input);
     return f.run(async api => {
       try {
+        await onReviewerStart?.(f.root, input.taskId);
         await api.readAll();
         const userPath = api.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
         const original = (await api.read(userPath)).details.citation.citeId;
@@ -198,9 +199,15 @@ test('without existing non-artifact source changes no standing item or evidence 
   assert.deepEqual(await collectRegressionEvidence({ projectRoot: outside }), { available: false, triggered: false, changes: [], testPointers: [] });
 });
 
-test('an enabled existing-test run is bounded, persisted and referenced from the standing hint', async t => {
+test('the existing-test run finishes before the OpenClaw private reviewer starts and its evidence reaches the standing hint', async t => {
   let runFile;
   const { f, result } = await regressionStop(t, { regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 2048 },
+    onReviewerStart: async (root, taskId) => {
+      const cache = path.join(taskDirectory(root, taskId), 'regression-check');
+      const files = await fs.readdir(cache);
+      assert.equal(files.length, 1);
+      assert.equal(JSON.parse(await fs.readFile(path.join(cache, files[0]), 'utf8')).status, 'FAILED');
+    },
     script: async ({ standing, submit, cite }) => {
       const run = standing.regressionEvidence.programRun;
       assert.deepEqual([run.status, run.exitCode, run.timedOut], ['FAILED', 1, false]);
@@ -246,6 +253,36 @@ test('a disabled or unselected regression check never runs, and an unchanged wor
   await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN + '// changed again\n');
   assert.equal((await run(config)).cached, undefined);
   assert.equal(await fs.readFile(marker, 'utf8'), 'xx');
+});
+
+test('a prepared test result cannot be used if production source changes before scope selection', async t => {
+  await regressionStop(t, {
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
+    onReviewerStart: root => fs.writeFile(path.join(root, 'src/settings.mjs'), SOURCE),
+    script: async ({ standing }) => {
+      assert.equal(standing.regressionEvidence.programRun.status, 'UNAVAILABLE');
+      assert.match(standing.regressionEvidence.programRun.summary, /WORKSPACE_CHANGED/u);
+    },
+  });
+});
+
+test('a failing public requirement probe cannot be excused as an obsolete baseline assertion', async t => {
+  const { result } = await regressionStop(t, {
+    regressionCheck: { enabled: true, command: [process.execPath, '-e',
+      "console.log('RC_REQUIREMENT_CHECK FAIL tests=1 passed=0 failed=1'); process.exit(1)"] },
+    script: async ({ standing, submit, cite, original }) => {
+      const output = await cite(standing.regressionEvidence.programRun.files[0]);
+      const code = await cite('src/settings.mjs');
+      await assert.rejects(submit('finish_stop_review', { summary: 'The original contract supersedes this result.',
+        regressionCheck: { status: 'EXPLAINED', reason: 'Obsolete expected behavior.', citeIds: [output, code],
+          explanations: [{ failure: 'public requirement', reason: 'Claim the prior assertion is obsolete.',
+            originalCiteId: original, citeIds: [code] }] } }),
+      { code: 'REVIEW_REQUIREMENT_CHECK_UNRESOLVED' });
+      return { regressionCheck: { status: 'UNVERIFIED', reason: 'The public requirement is unresolved.', citeIds: [output] } };
+    },
+  });
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.equal(result.stop.verificationIncomplete, true);
 });
 
 test('a timed-out, unlaunched or out-of-budget check is unavailable evidence and never a deviation', async t => {

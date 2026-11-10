@@ -3,8 +3,8 @@
 // contract case. Each runs in a different native process and project snapshot.
 import fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
-import { createHash } from 'node:crypto';
 import { runRegressionCheck } from './arkts-regression-check.mjs';
+import { readRegressionContractProbe } from './regression-workspace.mjs';
 const { values } = parseArgs({ options: Object.fromEntries(['project', 'tool-root', 'java-home', 'baseline',
   'contract-probe', 'contract-baseline', 'requirement-probe', 'timeout-ms'].map(name => [name, { type: 'string' }])) });
 for (const key of ['project', 'tool-root', 'baseline'])
@@ -18,7 +18,7 @@ const original = await read(values.baseline);
 const contract = requirement ? null : await read(values['contract-baseline']);
 if (!original.completeRuntime || contract && (original.baseCommit !== contract.baseCommit || !contract.completeRuntime))
   throw new Error('Original and contract baselines must be completed on the same prepared commit.');
-if (contract && createHash('sha256').update(await fs.readFile(values['contract-probe'])).digest('hex') !== contract.contractProbe?.sha256)
+if (contract && (await readRegressionContractProbe(values['contract-probe'])).receipt.sha256 !== contract.contractProbe?.sha256)
   throw new Error('Contract probe baseline hash mismatch.');
 const common = { project: values.project, toolRoot: values['tool-root'], javaHome: values['java-home'],
   timeoutMs: Number(values['timeout-ms'] ?? 420000) };
