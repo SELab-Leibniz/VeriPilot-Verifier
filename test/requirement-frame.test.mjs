@@ -176,14 +176,14 @@ test('1. caps, sorts and renumbers valid items after selection in private sessio
   assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 4);
 });
 
-test('2. drops unsupported ranges, quotes, fields and overlong items before selection', async t => {
+test('2. drops unsupported ranges, quotes, fields and guidance over 4000 characters before selection', async t => {
   const f = await fixture(t, { propose: () => ({
     guidance: [
       guidance('mixed', 0.9, [{ path: 'app.js', startLine: 1, endLine: 1 }, { path: 'missing', startLine: 1, endLine: 1 }]),
       guidance('missing', 0.9, [{ path: 'missing', startLine: 1, endLine: 1 }]),
       guidance('out of range', 0.9, [{ path: 'app.js', startLine: 1, endLine: 3 }]),
       { ...guidance('bad cell'), contractCell: 'wrong' },
-      guidance('x'.repeat(301)),
+      guidance('x'.repeat(4001)),
     ],
     scenarios: [scenario('good'), scenario('made up', 0.9, 'absent'), { ...scenario('bad kind'), kind: 'wrong' }],
   }), select: items => {
@@ -446,28 +446,26 @@ test('6.4.3: inject:false and shadowMode suppress both brief channels', async t 
   });
 });
 
-test('6.4.4: the localized brief drops whole low-confidence items and prints only first evidence', async t => {
-  const longScenario = (label, confidence) => ({
-    ...scenario(`${label}${'b'.repeat(180)}`, confidence), when: 'w'.repeat(200), then: 't'.repeat(200),
-  });
+test('6.4.4: the localized brief delivers long selected items and prints only first evidence', async t => {
+  const statement = '界'.repeat(3999) + '𠮷';
+  const quote = '原文'.repeat(2100);
+  const given = '前提'.repeat(101), when = '操作'.repeat(101), then = '预期'.repeat(101);
   const f = await fixture(t, { locale: 'zh', propose: () => ({
-    guidance: [guidance('保留这项', 1, [
+    guidance: [guidance(statement, 1, [
       { path: 'app.js', startLine: 1, endLine: 1 }, { path: '.gitignore', startLine: 1, endLine: 2 },
     ])],
     scenarios: [
-      { ...longScenario('高置信要求', 0.99), kind: 'requirement' },
-      longScenario('高置信保持', 0.98), longScenario('中间项', 0.97), longScenario('应整条移除', 0.75),
+      { ...scenario(given, 0.99, quote), kind: 'requirement', when, then },
+      scenario('低置信但已入选', 0.75),
     ],
-  }) });
-  await f.prompt();
-  assert.equal((await f.frame()).scenarios.length, 4);
-  const brief = deliveredBrief(await f.toolResult('bounded-brief'));
+  }), select: items => ({ reviews: items.map(item => ({ ...review(item), reason: '理由'.repeat(101) })) }) });
+  await f.prompt(`${userText} ${quote}`);
+  assert.deepEqual((await f.frame()).counts, { proposed: 3, valid: 3, selected: 3 });
+  const brief = deliveredBrief(await f.toolResult('long-brief'));
   assert(brief.startsWith(`${briefMarker}\n【RC 实现提示｜仅供参考】`));
-  assert(brief.length <= 2500);
-  assert(brief.includes('1. 保留这项（依据：app.js:1-1）'));
-  assert(brief.includes('- [新需求] 前提：高置信要求'));
-  assert(brief.includes('- [保持不变] 前提：高置信保持'));
+  assert(brief.includes(`1. ${statement}（依据：app.js:1-1）`));
+  assert(brief.includes(`- [新需求] 前提：${given}；操作：${when}；预期：${then}。（原文：“${quote}”）`));
+  assert(brief.includes('- [保持不变] 前提：低置信但已入选'));
   assert(!brief.includes('.gitignore'));
-  assert(!brief.includes('应整条移除'));
   assert.equal((await f.deliveries())[0].productionChangesBefore, null);
 });

@@ -208,7 +208,7 @@ requirementFrame:
 - **字段。**
   - `contractCell` 必须是附录 A.1 列出的六个值之一。
   - `kind` 必须是 `requirement` 或 `preservation`。
-  - 超长文本（超出附录 A.2 schema 的 `maxLength`）所在的项整项丢弃。
+  - `guidance.statement` 沿用 long-horizon-controller 的 4000 字符上限，超出时整条丢弃。
 - **选择之后。**
   - 只保留选择器标为 `select` 且 `confidence ≥ 0.75` 的项。选择器没有评审到的候选按 `reject` 处理。
   - 按 `confidence` 降序排列，同分时保持原顺序。
@@ -267,7 +267,7 @@ requirementFrame:
 ### 6.1 渲染
 
 - 使用附录 B 的模板。
-- 总长不超过 2500 字符；超出时从 `confidence` 最低的项开始，整项删除，直到符合。
+- 渲染全部入选条目，不设简报总字符上限。
 - 第一行必须是 `[runtime-corrector:feedback]`。这样即使宿主把简报并入用户消息，`original-requirements.mjs` 也会把那条消息标为含 RC 反馈，不会当作新需求。
 
 ### 6.2 通道
@@ -301,7 +301,7 @@ requirementFrame:
 1. 框架就绪后的下一个真实用户回合：`prependContext` 末尾包含一次简报，同一回合的工具结果不再附加。
 2. 回合进行中框架变为就绪：下一次工具结果末尾附加一次简报，之后的工具结果不再附加。
 3. 以下情况都不送达：RC 内部会话、纠偏后续运行、`inject: false`、`shadowMode`。
-4. 简报第一行是 `[runtime-corrector:feedback]`，总长不超过 2500 字符。
+4. 简报第一行是 `[runtime-corrector:feedback]`，长条目完整送达。
 5. `deliveries.jsonl` 正确记录 `channel` 和 `productionChangesBefore`。
 
 ## 7. 阶段 3：终审使用框架
@@ -465,7 +465,7 @@ Submit once with submit_frame_proposal.
       "type": "object", "additionalProperties": false,
       "required": ["statement", "contractCell", "evidence", "confidence"],
       "properties": {
-        "statement": { "type": "string", "maxLength": 300 },
+        "statement": { "type": "string", "maxLength": 4000 },
         "contractCell": { "enum": ["owner_signature", "values_defaults", "transport_integration", "branch_matrix", "error_result", "compatibility_scope"] },
         "evidence": { "type": "array", "minItems": 1, "maxItems": 3, "items": {
           "type": "object", "additionalProperties": false, "required": ["path", "startLine", "endLine"],
@@ -476,10 +476,10 @@ Submit once with submit_frame_proposal.
       "required": ["kind", "quote", "given", "when", "then", "confidence"],
       "properties": {
         "kind": { "enum": ["requirement", "preservation"] },
-        "quote": { "type": "string", "maxLength": 300 },
-        "given": { "type": "string", "maxLength": 200 },
-        "when": { "type": "string", "maxLength": 200 },
-        "then": { "type": "string", "maxLength": 200 },
+        "quote": { "type": "string" },
+        "given": { "type": "string" },
+        "when": { "type": "string" },
+        "then": { "type": "string" },
         "confidence": { "type": "number", "minimum": 0, "maximum": 1 } } } }
   }
 }
@@ -508,7 +508,7 @@ Submit once with submit_frame_selection.
 ```
 
 - `{candidates}` 是校验后的候选数组 JSON。每项带有 `id`（形如 `P1-G2`、`P3-S1`）和 `type`（`guidance` 或 `scenario`），不带 `confidence`。
-- `submit_frame_selection` 的参数是 `{ "reviews": [{ "id": string, "decision": "select" | "reject", "reason": string (maxLength 200) }] }`。
+- `submit_frame_selection` 的参数是 `{ "reviews": [{ "id": string, "decision": "select" | "reject", "reason": string }] }`。
 
 ### A.4 Stop 审查追加说明
 
