@@ -200,6 +200,16 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   assert(secondPage.hits.every(hit => hit.target.symbol === 'Store.sink' && hit.via?.[0].target === 'Store.many'));
   assert(flow.hits.some(hit => hit.target.symbol === 'Panel.state' && hit.relation === 'write' && hit.line === 14));
   assert.deepEqual(graph.query({ operation: 'incoming', symbol: 'Store.save' }).hits, callers.hits);
+  const indirectCaller = graph.query({ operation: 'incoming', symbol: 'Store.save', depth: 2 }).hits
+    .find(hit => hit.target.symbol === 'Panel.execute' && hit.testSource);
+  assert.equal(indirectCaller.within, 'uses the public entry point');
+  assert.deepEqual(indirectCaller.via, [{ path: 'panel.ets', line: 5, within: 'Panel.execute', target: 'Store.save' }]);
+  assert.equal(graph.query({ operation: 'incoming', symbol: 'Store.repeat', depth: 3 }).hits.length, 2);
+  const callerPage = graph.query({ operation: 'incoming', symbol: 'Store.sink', depth: 2 });
+  const nextCallerPage = graph.query({ operation: 'incoming', symbol: 'Store.sink', depth: 2, offset: callerPage.nextOffset });
+  assert.deepEqual([callerPage.hits.length, callerPage.nextOffset, nextCallerPage.hits.length, nextCallerPage.nextOffset], [12, 12, 5, null]);
+  assert.equal(nextCallerPage.hits.at(-1).target.symbol, 'Store.many');
+  assert.equal(nextCallerPage.hits.at(-1).via[0].target, 'Store.sink');
 
   const affected = graph.affectedSymbols([
     { path: 'panel.ets', hunks: [[5, 6]] },

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 Use semantic_graph early for source changes. Start with the public entry point, shared helper, or state field. If the name is unknown, use `search` with a short behavioral phrase to find symbols and existing tests. Ask for `context` using an exact symbol, preferably `Type.method`. Use `outline` when you have a file path. Scope ambiguous hits to a file.
 
-- Use `incoming` on the exact symbol to find callers and existing tests. Read the setup and assertion when a test substitutes a dependency. Check what the public caller guarantees with that substitute.
+- Use `incoming` on the exact symbol to find callers and existing tests. Use `depth:2` or `depth:3` when a shared helper reaches the public entry point through other methods. Read the setup and assertion when a test substitutes a dependency. Check what the public caller guarantees with that substitute.
 - When an import cannot resolve, use `dependencies` on the importing file. A `case-mismatch` shows the requested and existing paths. Verify the actual file name and import spelling, especially after a case-only rename on a case-insensitive filesystem.
 - Use `outgoing` on the public entry point. Follow calls and writes to the observable result, including the first write, external call, or returned value that matters. Read the listed control sites and unresolved call locations where relevant. Follow success, returned failure, and thrown failure separately before deciding that a check is covered.
 - Use `outgoing` with `depth:2` or `depth:3` to follow resolved calls across helper layers. Each callee is expanded once, with its first resolved route in `via`. Follow pagination and inspect source for the actual branch conditions.
