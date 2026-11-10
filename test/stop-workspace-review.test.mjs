@@ -1076,7 +1076,8 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
     await reject([checked, dev, unsure, checked]);
     await reject([{ ...checked, id: 'G99' }, dev, unsure, finding]);
     await reject([{ id: 'G1', disposition: 'CHECKED' }, dev, unsure, finding]);
-    await reject([{ ...checked, citeIds: ['foreign-citation'] }, dev, unsure, finding]);
+    await assert.rejects(finish([{ ...checked, citeIds: ['foreign-citation'] }, dev, unsure, finding]), error =>
+      error.code === 'REVIEW_FRAME_DISPOSITION_REQUIRED' && /G1 Unknown or unread citation: foreign-citation/u.test(error.message));
     await reject([checked, { ...dev, objectId: 'unsaved' }, unsure, finding]);
     await reject([checked, dev, { id: 'S2', disposition: 'UNVERIFIED' }, finding]);
     await reject([checked, dev, { ...unsure, reason: '  ' }, finding]);

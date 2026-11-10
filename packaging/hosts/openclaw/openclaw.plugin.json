@@ -49,6 +49,11 @@
         "type": "boolean",
         "default": true
       },
+      "noopToolCallGuard": {
+        "type": "boolean",
+        "default": true,
+        "description": "Reject confirmed unchanged local write/edit/apply_patch requests before execution in enabled RC sessions on OpenClaw 2026.7.1-2, whose native no-op result terminates a tool batch. The rejection instructs the business model to continue. Set false to retain native no-op handling."
+      },
       "reviewerModel": {
         "type": "string",
         "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model."
