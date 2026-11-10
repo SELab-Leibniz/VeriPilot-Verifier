@@ -63,7 +63,7 @@ OpenClaw 使用宿主原生工具和持久化回执。Claude / CodeAgent 使用�
 
 M16 的一个原始条目可能包含多个效果和失败分支。PASS 必须分别追到各适用分支的实际消费者，区分返回失败与抛出异常；`await` 后的代码不覆盖拒绝路径，`finally` 也只证明其中实际执行的操作。回滚或清除忙标志不能代替独立要求的状态刷新。若依赖下层把异常转为失败返回，需要核对相关调用边界的完整源码契约；原要求未覆盖或明确排除的异常分支不额外增加义务。
 
-其他 RC 模块可直接从 `lib/semantic-graph.mjs` 导入 `buildSemanticGraph(projectRoot, options)`，再调用返回值的 `query({ operation, symbol, file, offset })`。查询使用项目相对路径，`partial` 表示索引有遗漏，`unavailable` 表示无法建立索引。图记录是静态导航线索，结论仍以原始源码和正常引文为依据。
+其他 RC 模块可直接从 `lib/semantic-graph.mjs` 导入 `buildSemanticGraph(projectRoot, options)`，再调用返回值的 `query({ operation, symbol, file, offset })`。`incoming` 找调用者和测试，`outgoing` 找调用、写入及控制语句位置。不能解析的调用保留调用点。查询使用项目相对路径，`partial` 表示索引有遗漏，`unavailable` 表示无法建立索引。图记录是静态导航线索，结论仍以原始源码和正常引文为依据。
 
 过程义务还要核对执行者和原始事件顺序。修改前的读取不能证明修改后回读，私有审查者自己的 `source_read` 只能证明当前内容，不能替代业务执行者此前的操作。文件整体的编码/语言适用性不能从一页 ASCII 片段反推；证据范围不足时保留 UNVERIFIED，不虚构执行或豁免。条件性项目规范须按原触发条件设置逐项 applicabilityKind，不能仅因属于当前仓库就全部设为无条件当前任务。
 

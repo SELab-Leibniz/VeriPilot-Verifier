@@ -69,6 +69,11 @@ test('links methods across aliases and re-exports and keeps tests and state writ
       '    const Storage = { save(value: number) { return value } }',
       '    return Storage.save(0)',
       '  }',
+      '  async refresh(external: unknown) {',
+      '    try { await external.read() }',
+      '    catch (error) { this.state.value = 0; throw error }',
+      '    finally { this.state.ready = true }',
+      '  }',
       '}',
     ],
     'panel.test.ets': [
@@ -107,4 +112,9 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   assert.equal(graph.query({ operation: 'search', query: 'panel execute' }).hits[0].qualified, 'Panel.execute');
   assert(graph.query({ operation: 'context', symbol: testCase.symbol, file: testCase.path, direction: 'outgoing' })
     .hits.some(hit => hit.target.symbol === 'Panel.execute' && hit.relation === 'call'));
+  const flow = graph.query({ operation: 'outgoing', symbol: 'Panel.refresh' });
+  assert.deepEqual(flow.controlSites.map(site => [site.kind, site.line]), [['try', 13], ['catch', 14], ['throw', 14], ['finally', 15]]);
+  assert(flow.hits.some(hit => hit.target.symbol === 'external.read' && hit.target.resolution === 'unresolved' && hit.awaited));
+  assert(flow.hits.some(hit => hit.target.symbol === 'Panel.state' && hit.relation === 'write' && hit.line === 14));
+  assert.deepEqual(graph.query({ operation: 'incoming', symbol: 'Store.save' }).hits, callers.hits);
 });
