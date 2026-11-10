@@ -46,3 +46,59 @@ test('indexes current definitions and relative dependencies in both directions',
   assert.equal(updated.query({ operation: 'dependencies', file: 'new.ts' }).hits[0].to, 'service.ets');
   await assert.rejects(buildSemanticGraph(root, { signal: AbortSignal.abort() }), { name: 'AbortError' });
 });
+
+test('links methods across aliases and re-exports and keeps tests and state writes visible', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-methods-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const files = {
+    'store.ets': [
+      'export class Store {',
+      '  static async save(value: number): Promise<number> { return value }',
+      '}',
+    ],
+    'barrel.ets': ["export { Store as Repo } from './store'"],
+    'panel.ets': [
+      "import { Repo as Storage } from './barrel'",
+      'export class Panel {',
+      '  private state = { value: 0 }',
+      '  async execute(value: number): Promise<number> {',
+      '    this.state.value = await Storage.save(value)',
+      '    return this.state.value',
+      '  }',
+      '  shadow() {',
+      '    const Storage = { save(value: number) { return value } }',
+      '    return Storage.save(0)',
+      '  }',
+      '}',
+    ],
+    'panel.test.ets': [
+      "import { Panel } from './panel'",
+      "import * as services from './store'",
+      "it('uses the public entry point', async () => {",
+      '  const panel = new Panel()',
+      '  const reference = services.Store.save',
+      '  await panel.execute(1)',
+      '})',
+    ],
+    'outside.ets': ['export const outside = 1'],
+  };
+  await Promise.all(Object.entries(files).map(([file, lines]) => fs.writeFile(path.join(root, file), lines.join('\n') + '\n')));
+  const snapshotPaths = Object.keys(files).filter(file => file !== 'outside.ets');
+  const graph = await buildSemanticGraph(root, { snapshotPaths, budgetMs: 5000 });
+  assert.equal(graph.files, 4);
+  assert.deepEqual(graph.query({ operation: 'definition', symbol: 'outside' }).hits, []);
+
+  const method = graph.query({ operation: 'context', symbol: 'Panel.execute' });
+  assert.deepEqual(method.definitions.map(row => [row.qualified, row.line, row.endLine]), [['Panel.execute', 4, 7]]);
+  assert(method.hits.some(hit => hit.direction === 'outgoing' && hit.relation === 'call' && hit.awaited
+    && hit.target.symbol === 'Store.save' && hit.line === 5));
+  assert(method.hits.some(hit => hit.direction === 'outgoing' && hit.relation === 'write'
+    && hit.target.symbol === 'Panel.state' && hit.access === 'state.value'));
+  assert(method.hits.some(hit => hit.direction === 'incoming' && hit.testSource && hit.path === 'panel.test.ets' && hit.line === 6));
+
+  const callers = graph.query({ operation: 'context', symbol: 'Store.save', direction: 'incoming' });
+  assert.deepEqual(callers.hits.map(row => [row.path, row.line, row.relation]), [
+    ['panel.ets', 5, 'call'], ['panel.test.ets', 5, 'reference'],
+  ]);
+  assert(graph.query({ operation: 'outline', file: 'panel.ets' }).hits.some(row => row.qualified === 'Panel.shadow'));
+});

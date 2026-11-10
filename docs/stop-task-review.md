@@ -55,7 +55,7 @@ OpenClaw 使用宿主原生工具和持久化回执。Claude / CodeAgent 使用�
 审查者可使用以下工具组织工作：
 
 - `review_changes`：Git 状态、文件 diff、宿主编辑过的路径及修改片段。支持原生 `edits[]` 批量修改和 CRLF 补丁，逐处分页并标明预览截断。它们是调查入口，不能直接充当验收证据。新建未跟踪文件也会列出。
-- `semantic_graph`：终审会话启动前，RC 用有限预算从当前 Git 工作区建立索引，优先处理本任务改动的文件。支持 `summary`、按符号定位顶层定义的 `definition`，以及查询文件的入向和出向关系的 `dependencies`。第一版覆盖 JS、TS、ArkTS 的静态相对导入与重导出，路径和行号用于引导 `source_read`。图不可用时，审查继续使用原有导航工具。
+- `semantic_graph`：终审会话启动前，RC 用有限预算从当前 Git 工作区建立索引，优先处理本任务改动的文件。用 `definition` 定位符号，用 `outline` 查看文件定义，用 `context` 查询方法的调用、写入和现有测试引用。文件级关系仍由 `dependencies` 提供。索引覆盖 JS、TS、ArkTS 可静态解析的关系，路径和行号引导 `source_read`。图不可用时，审查继续使用原有导航工具。
 - `review_plan`：保存和更新审查计划，不改变原始验收项。
 - `review_checklist`：选定停止范围，分页查看原始义务、每项证据归属（`proofOwners`）、已保存结果和未完成项。`processEvidence` 提供原始用户记录、实际执行结果及匹配调用的有界样例和总数，支持直接定位较长历史中的记录；这些指针不授予引文。纯过程执行项还标明 PASS / DEVIATION 所需的结果证明。PROCESS 要读取原始过程文件，SOURCE 要读取生产代码；必读基线和 Skill 条件不代替过程证据。
 - `review_notes` 与 `review_history`：保存笔记，压缩后恢复观察记录、回执和原有引文。笔记不获得原文证据资格。
