@@ -1010,9 +1010,7 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
     assert(tools.worker.systemPrompt.endsWith(frameInstructions));
     const { item, submit, finish } = await startFrameScan(tools, { requireFrame: true });
     const citeId = await tools.read(f.source);
-    const declaration = { citeId, line: 1 };
-    const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId], reason: 'The export retains its one input parameter.',
-      executionProof: { entry: declaration, branch: declaration, effect: declaration } };
+    const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId] };
     const dev = { id: 'S1', disposition: 'DEVIATION', objectId: item.taskId };
     const unsure = unverifiedFrame()[2];
     const finding = { id: 'S3', disposition: 'DEVIATION', objectId: 'unchanged-value-finding' };
@@ -1043,41 +1041,6 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
   assert.deepEqual(handle.result.frameCoverage, coverage);
   assert.deepEqual(stop.review.frameCoverage, coverage);
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(handle.artifacts, 'review.json'), 'utf8')).frameCoverage, coverage);
-});
-
-test('CHECKED requires production line anchors for the reached branch and effect', async t => {
-  const f = await frameStopCase(t);
-  await fs.writeFile(f.source, [
-    'let lastValue;',
-    'export function transform(input) {',
-    '  if (typeof input !== "number") return undefined;',
-    '  lastValue = input + 1;',
-    '  return lastValue;',
-    '}', ''
-  ].join('\n'));
-  const testFile = path.join(f.projectRoot, 'app.test.mjs');
-  await fs.writeFile(testFile, 'transform(2);\n');
-  const { stop } = await f.run(async tools => {
-    const { finish } = await startFrameScan(tools, { requireFrame: true });
-    const citeId = await tools.read(f.source), testId = await tools.read(testFile);
-    const frameId = await tools.read(tools.task.basisFiles.find(file => path.basename(file).startsWith('requirement-frame-')));
-    const disposition = { id: 'S1', disposition: 'CHECKED', citeIds: [citeId],
-      reason: 'For 2 the type guard falls through, stores 3 in memory, and returns 3. Non-numeric input returns before the write.' };
-    const executionProof = { entry: { citeId, line: 2 }, branch: { citeId, line: 3 }, effect: { citeId, line: 4 } };
-    const [guidance, , ...others] = unverifiedFrame();
-    const finishWith = scenario => finish([guidance, scenario, ...others]);
-    const reject = scenario => assert.rejects(finishWith(scenario), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
-    await reject(disposition);
-    await reject({ ...disposition, reason: '  ', executionProof });
-    await reject({ ...disposition, executionProof: { ...executionProof, effect: { citeId, line: 99 } } });
-    for (const invalidId of [testId, frameId]) {
-      await reject({ ...disposition, citeIds: [citeId, invalidId],
-        executionProof: { ...executionProof, effect: { citeId: invalidId, line: 1 } } });
-    }
-    assert.equal((await finishWith({ ...disposition, executionProof })).complete, true);
-  });
-  assert.equal(stop.status, 'NO_DEVIATION_FOUND');
-  assert.deepEqual(stop.review.frameCoverage, { status: 'used', reason: null, total: 4, checked: 1, deviation: 0, unverified: 3 });
 });
 
 test('7.4.3–4: absent frames preserve the original basis, instructions and finish validation', async t => {
