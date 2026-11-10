@@ -12,6 +12,7 @@ import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { STANDING_REGRESSION, STANDING_REGRESSION_TEXT, collectRegressionEvidence, regressionDeviationProblem,
   runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
+import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=rc-test', '-c', 'user.email=rc-test@example.invalid',
@@ -68,16 +69,24 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, requirementFrame }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
-  await project(f.root, { broken });
+  await project(f.root, { broken: broken && !requirementFrame });
+  if (requirementFrame) {
+    const sessionId = 'protocol-host', startHead = git(f.root, 'rev-parse', 'HEAD').trim();
+    assert.equal(await captureTaskStart({ projectRoot: f.root, taskId: f.task.taskId }), true);
+    const file = path.join(f.root, '.runtime-correction', 'requirement-frame', sha256(sessionId).slice(0, 24), 'frame.json');
+    await atomicWriteJson(file, { schemaVersion: 1, status: 'ready', reason: null, sessionId, startHead, ...requirementFrame });
+    if (broken) await fs.writeFile(path.join(f.root, 'src/settings.mjs'), BROKEN);
+  }
   await mutateProject?.(f.root);
   if (!broken) await fs.writeFile(path.join(f.root, 'README.md'), '# Settings\n\nPassword options.\n');
   const transcript = path.join(f.root, 'session.jsonl');
   await fs.writeFile(transcript, [{ type: 'user', uuid: 'user-original', message: { content: request } },
     { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }].map(entry => JSON.stringify(entry)).join('\n') + '\n');
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
+    ...(requirementFrame ? { requirementFrame: { enabled: true, inject: false, review: true } } : {}),
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true, ...(regressionCheck ? { regressionCheck } : {}) } });
   let failure;
   const reviewerFactory = input => {
@@ -97,7 +106,7 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
     });
   };
   const event = (name, extra = {}) => handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
-    stopHost: { directory: path.join(f.root, 'host'), stopId: 'regression-stop', startProtocol: { version: 1 } },
+    stopHost: { directory: path.join(f.root, 'host'), stopId: 'regression-stop', startProtocol: { version: 1 }, ...(requirementFrame ? { openClaw: true } : {}) },
     input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: name, last_assistant_message: 'Task complete.', ...extra } });
   await event('SessionStart', { source: 'startup' });
   const result = await event('Stop');
@@ -333,6 +342,30 @@ test('an explicitly requested behavior change can explain an old failing asserti
         reason: 'The source uses indexOf, which returns the requested -1 for 99.', originalCiteId: original, citeIds: [source, existing] }] } };
     } });
   assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
+});
+
+test('framed Stop requires current execution anchors when explaining a public check failure', async t => {
+  const quote = 'Use index -1 for unsupported lengths.';
+  const requirementFrame = { guidance: [], scenarios: [{ id: 'S1', kind: 'requirement', quote,
+    given: 'a length outside the options', when: 'applyPolicy runs', then: 'store index -1', confidence: 0.9 }] };
+  const { result } = await regressionStop(t, { request: REQUEST + ' ' + quote, requirementFrame,
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 1024 },
+    script: async ({ standing, original, submit, cite }) => {
+      const source = await cite('src/settings.mjs'), existing = await cite('test/settings.test.mjs');
+      const frameDispositions = [{ id: 'S1', disposition: 'UNVERIFIED', reason: 'The explanation is being checked separately.' }];
+      const reason = 'applyPolicy with 99 looks up an absent option and stores -1 where the original test expects the default.';
+      const check = { status: 'EXPLAINED', reason,
+        citeIds: [await cite(standing.regressionEvidence.programRun.files[0]), source, existing] };
+      const explanation = { failure: 'Unsupported-length default assertion', reason, originalCiteId: original, citeIds: [source, existing] };
+      const executionProof = { entry: { citeId: source, line: 7 }, branch: { citeId: source, line: 8 }, effect: { citeId: source, line: 9 } };
+      const reject = item => assert.rejects(submit('finish_stop_review', { summary: 'Requested behavior.', frameDispositions,
+        regressionCheck: { ...check, explanations: [item] } }), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
+      await reject(explanation);
+      await reject({ ...explanation, executionProof: { ...executionProof, effect: { citeId: existing, line: 1 } } });
+      return { frameDispositions, regressionCheck: { ...check, explanations: [{ ...explanation, executionProof }] } };
+    } });
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
+  assert.equal(result.stop.review.frameCoverage.status, 'used');
 });
 
 test('edited or deleted tests retain their task-start assertions as review evidence', async t => {
