@@ -6,6 +6,23 @@ import test from 'node:test';
 import { createLiveSourceTools } from '../lib/review-task/live-source-tools.mjs';
 import { toolText, createSourceTools } from '../lib/review-task/source-tools.mjs';
 import { captureFiles } from '../lib/review-task/evidence-utils.mjs';
+import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
+
+test('live source_read accepts the numbered option required by original-basis instructions', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-numbered-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, 'original.txt'), 'first\nsecond\n');
+  const tool = createLiveSourceTools(root).find(tool => tool.name === 'read');
+  const args = { path: 'original.txt', numbered: true, limit: 1 };
+  assert.deepEqual(validateJsonSchema(args, tool.parameters), []);
+  const result = await tool.execute('numbered', args);
+  assert.match(toolText(result), /^\[1\] first\n/u);
+  assert.equal(result.details.page.start, 1);
+  assert.equal(result.details.page.end, 1);
+  assert.equal(result.details.page.nextOffset, 2);
+  assert.equal(result.details.page.numbered, true);
+  assert(validateJsonSchema({ ...args, numbered: 'true' }, tool.parameters).length);
+});
 
 test('broad navigation omits caches but preserves project build sources and explicit cache access', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-nav-'));
