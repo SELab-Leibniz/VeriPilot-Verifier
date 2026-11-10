@@ -634,6 +634,39 @@ test('new files after a searched inventory invalidate the review instead of prov
   }));
 });
 
+test('runtime output ancestors are navigable while original files and other directory inventories stay frozen', async t => {
+  for (const [name, runtimeOutput, changeEvidence, rejected] of [
+    ['new runtime sibling', true, false, false],
+    ['changed external evidence', true, true, true],
+    ['changed ordinary external inventory', false, false, true],
+  ]) await t.test(name, async t => {
+    const f = await fixture(t);
+    const shared = path.join(path.dirname(f.root), 'shared-' + path.basename(f.root));
+    const runtime = path.join(shared, 'runtime'), reference = path.join(shared, 'reference.md');
+    const diagnostic = path.join(shared, 'progress.log');
+    await fs.mkdir(runtime, { recursive: true });
+    t.after(() => fs.rm(shared, { recursive: true, force: true }));
+    await fs.writeFile(reference, 'Original external dependency.\n');
+    await fs.writeFile(diagnostic, 'Runtime dependency progress.\n');
+    if (runtimeOutput) f.input.excludedEvidencePaths = [runtime];
+    const run = f.run(async ({ readAll, read, submit, tools }) => {
+      await readAll(); await f.scope(submit);
+      await tools.get('source_ls').execute(crypto.randomUUID(), { path: shared });
+      await tools.get('source_grep').execute(crypto.randomUUID(), { path: shared, pattern: 'dependency', includeGenerated: true });
+      const external = await read(reference);
+      assert.notEqual(external.details.contextOnly, true);
+      const actual = await read(f.file);
+      await fs.writeFile(path.join(shared, 'new-output.json'), '{}\n');
+      await fs.appendFile(diagnostic, 'A new observation arrived.\n');
+      if (changeEvidence) await fs.writeFile(reference, 'Changed external dependency.\n');
+      await f.result(submit, [actual.details.citation.citeId]);
+      await submit('finish_stop_review', { summary: 'Current source and original dependencies checked.' });
+    });
+    if (rejected) await assert.rejects(run, { code: 'BASELINE_INPUT_CHANGED' });
+    else assert.equal((await run).result.metricObjectJudgements[0].judgement, 'PASS');
+  });
+});
+
 test('one session reuses source reads across implementation obligations while retaining M16 tracing', async t => {
   const f = await fixture(t), source = path.join(f.root, 'app.mjs'), testFile = path.join(f.root, 'app.test.mjs');
   await fs.writeFile(source, 'export const accept = value => value;\n'); await fs.writeFile(testFile, 'assert.equal(accept(1), 1);\n');

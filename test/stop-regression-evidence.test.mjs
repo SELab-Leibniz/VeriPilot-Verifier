@@ -13,6 +13,7 @@ import { STANDING_REGRESSION, STANDING_REGRESSION_TEXT, collectRegressionEvidenc
   regressionFailureInventory, runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { runProtocolTask } from '../lib/review-task/protocol-task.mjs';
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=rc-test', '-c', 'user.email=rc-test@example.invalid',
   '-c', 'commit.gpgsign=false', ...args], { cwd, windowsHide: true, stdio: 'pipe' }).toString();
@@ -126,6 +127,31 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
 }
 
 const standingPopulation = { metrics: { M16: [{ objectId: 'M16:standing-x', metricId: 'M16', programStanding: STANDING_REGRESSION }] } };
+
+test('a cancelled tool submission cannot start its deferred completion check', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-cancelled-handoff-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const abort = new AbortController();
+  let checked = false;
+  await assert.rejects(runProtocolTask({
+    task: { basisFiles: [] }, root, workspaceRoot: root, outputDir: root, deadlineAt: Date.now() + 10_000,
+    limits: { maxTurns: 10, maxAttempts: 1, maxTokens: 1024 },
+    nativeRun: async worker => {
+      const finish = worker.tools.find(tool => tool.name === 'finish');
+      await assert.rejects(finish.execute('cancelled-finish', {}, abort.signal), { name: 'AbortError' });
+      assert.equal(worker.isComplete(), false);
+    },
+    definition: { prompt: 'Fictional cancelled submission.', tools: () => [{
+      name: 'finish', parameters: { type: 'object', properties: {}, additionalProperties: false },
+      submit(_value, ctx) {
+        ctx.deferCompletion(async () => { checked = true; });
+        abort.abort();
+        return { saved: true };
+      },
+    }] },
+  }), { code: 'TASK_NO_VALID_SUBMISSION' });
+  assert.equal(checked, false);
+});
 
 test('the standing regression item cites the pre-existing test and the changed code', async t => {
   const { result } = await regressionStop(t, { script: async ({ brief, standing, submit, cite }) => {
@@ -348,12 +374,15 @@ test('an explicitly requested behavior change can explain an old failing asserti
   const { result } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
     regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 1024 },
     afterStart: root => fs.writeFile(path.join(root, 'test/settings.test.mjs'), TESTS.replace(OLD_FALLBACK, 'assert.equal(vm.minLengthIndex, -1);')),
-    authority: ({ originalMessages, cases }) => {
+    authority: ({ originalMessages, originalFiles, cases }) => {
       assert.deepEqual(originalMessages, [`${REQUEST} ${AUTHORIZED_FALLBACK}`]);
       assert.equal(cases.length, 1);
       assert(cases[0].originalTest.includes(OLD_FALLBACK));
       assert(!cases[0].originalTest.includes('assert.equal(vm.minLengthIndex, -1);'));
       assert.equal(cases[0].expectedAfter, '-1');
+      const originals = new Map(originalFiles.map(file => [file.path, file.source]));
+      assert.equal(originals.get('test/settings.test.mjs'), TESTS);
+      assert.equal(originals.get('src/settings.mjs'), SOURCE);
       return [{ id: cases[0].id, verdict: 'AUTHORIZED', reason: 'The original request explicitly replaces the default for unsupported inputs.' }];
     },
     script: async ({ standing, original, submit, cite }) => {
