@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
+import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 
 test('indexes current definitions and relative dependencies in both directions', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-graph-'));
@@ -12,10 +13,12 @@ test('indexes current definitions and relative dependencies in both directions',
   const git = (...args) => execFileSync('git', args, { cwd: root, windowsHide: true });
   git('init', '-q');
   await fs.mkdir(path.join(root, '.runtime-correction'));
+  await fs.mkdir(path.join(root, '.runtime-corrector'));
   await fs.mkdir(path.join(root, 'private'));
   await fs.writeFile(path.join(root, '.gitignore'), 'ignored.ts\n');
   await fs.writeFile(path.join(root, 'ignored.ts'), 'export const ignored = 1;\n');
   await fs.writeFile(path.join(root, '.runtime-correction', 'hidden.ets'), 'export const hidden = 1;\n');
+  await fs.writeFile(path.join(root, '.runtime-corrector', 'control.ets'), 'export const control = 1;\n');
   await fs.writeFile(path.join(root, 'private', 'excluded.ets'), 'export const excluded = 1;\n');
   await fs.writeFile(path.join(root, 'service.ets'), 'export struct Service {}\n');
   await fs.writeFile(path.join(root, 'entry.ets'), [
@@ -37,7 +40,7 @@ test('indexes current definitions and relative dependencies in both directions',
   ];
   assert.deepEqual(graph.query({ operation: 'dependencies', file: 'service.ets' }).hits, edges);
   assert.deepEqual(graph.query({ operation: 'dependencies', file: 'entry.ets' }).hits, edges);
-  for (const symbol of ['fake', 'hidden', 'ignored', 'excluded'])
+  for (const symbol of ['fake', 'hidden', 'control', 'ignored', 'excluded'])
     assert.deepEqual(graph.query({ operation: 'definition', symbol }).hits, []);
 
   await fs.writeFile(path.join(root, 'new.ts'), 'export { Service } from "./service";\n');
@@ -45,6 +48,42 @@ test('indexes current definitions and relative dependencies in both directions',
   const updated = await buildSemanticGraph(root, { excludedPaths: ['private'], budgetMs: 5000 });
   assert.equal(updated.query({ operation: 'dependencies', file: 'new.ts' }).hits[0].to, 'service.ets');
   await assert.rejects(buildSemanticGraph(root, { signal: AbortSignal.abort() }), { name: 'AbortError' });
+});
+
+test('the host graph uses the current enabled project without exposing review tools', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-business-graph-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: root, windowsHide: true });
+  const file = path.join(root, 'api.ts');
+  await fs.writeFile(file, 'export function current() {}\n');
+  let factory, resolutions = 0, enabled = true, switchProject = false;
+  const ctx = { workspaceDir: root, sessionId: 'business', sessionKey: 'agent:main:business' };
+  registerTaskTools({ registerTool: value => { factory = value; } }, {
+    resolveGraphScope: async (_event, scope) => {
+      assert.equal(scope, ctx);
+      resolutions++;
+      return { enabled, projectRoot: root, fingerprint: switchProject ? String(resolutions) : 'business' };
+    },
+  });
+  assert.equal(factory({ ...ctx, sandboxed: true }), null);
+  const privateCtx = { ...ctx, sessionId: 'review', sessionKey: 'agent:main:runtime-corrector:review' };
+  const close = bindTaskTools({ ...privateCtx, active() {}, tools: [{ name: 'source_read' }] });
+  try { assert.deepEqual(factory(privateCtx).map(tool => tool.name), ['source_read']); }
+  finally { close(); }
+  assert.equal(factory(privateCtx), null);
+
+  const tools = factory(ctx);
+  assert.deepEqual(tools.map(tool => tool.name), ['semantic_graph']);
+  const query = async symbol => JSON.parse((await tools[0].execute('call', { operation: 'definition', symbol })).content[0].text);
+  assert.equal((await query('current')).hits[0].path, 'api.ts');
+  await fs.writeFile(file, 'export function updated() {}\n');
+  assert.equal((await query('updated')).hits[0].path, 'api.ts');
+  assert.equal((await query('current')).hits.length, 0);
+  enabled = false;
+  await assert.rejects(query('updated'), /RC_PROJECT_NOT_ENABLED/u);
+  enabled = true;
+  switchProject = true;
+  await assert.rejects(query('updated'), /RC_PROJECT_SCOPE_CHANGED/u);
 });
 
 test('links methods across aliases and re-exports and keeps tests and state writes visible', async t => {
