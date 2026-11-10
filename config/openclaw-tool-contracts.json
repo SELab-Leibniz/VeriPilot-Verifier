@@ -10,6 +10,7 @@
     "source_grep",
     "source_find",
     "source_ls",
+    "semantic_graph",
     "review_history",
     "submit_review",
     "submit_classification",

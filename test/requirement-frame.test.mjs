@@ -171,7 +171,7 @@ test('1. caps, sorts and renumbers valid items after selection in private sessio
     assert.equal(params.config.agents.list.find(agent => agent.id === 'main').workspace, params.cwd);
     assert.deepEqual(params.toolsAllow, names);
     assert.deepEqual(names, kind === 'proposal'
-      ? ['source_read', 'source_grep', 'source_find', 'source_ls', 'submit_frame_proposal'] : ['submit_frame_selection']);
+      ? ['source_read', 'source_grep', 'source_find', 'source_ls', 'semantic_graph', 'submit_frame_proposal'] : ['submit_frame_selection']);
   }
   assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 4);
 });
@@ -231,19 +231,46 @@ test('5. export leaves Git status and index intact and removes its temporary dir
   for (const { params } of f.calls) await assert.rejects(fs.stat(path.dirname(params.cwd)), { code: 'ENOENT' });
 });
 
-test('6. source tools see only committed files and committed bytes', async t => {
+test('6. source and semantic graph tools see only committed files and bytes', async t => {
   const f = await fixture(t, { propose: async ({ call, params }) => {
     assert(!params.prompt.includes('candidate bytes'));
+    assert.match(params.prompt, /semantic_graph/u);
     const listing = JSON.parse(toolText(await call('source_ls', {})));
     assert(!listing.hits.includes('untracked.js'));
     await assert.rejects(call('source_read', { path: 'untracked.js' }), { code: 'ENOENT' });
     assert.match(toolText(await call('source_read', { path: 'app.js' })), /fallback = 1/u);
+    const query = async args => JSON.parse(toolText(await call('semantic_graph', args)));
+    assert.deepEqual((await query({ operation: 'definition', symbol: 'fallback' })).hits,
+      [{ path: 'app.js', symbol: 'fallback', kind: 'const', line: 2 }]);
+    assert.deepEqual((await query({ operation: 'dependencies', file: 'app.js' })).hits,
+      [{ from: 'app.js', to: 'start.ets', kind: 'import', line: 1 }]);
+    assert.deepEqual((await query({ operation: 'definition', symbol: 'candidate' })).hits, []);
+    assert.equal((await query({ operation: 'dependencies', file: 'untracked.js' })).indexed, false);
     return ordinaryProposal();
   } });
-  await fs.writeFile(path.join(f.projectRoot, 'untracked.js'), 'uncommitted file');
-  await fs.writeFile(path.join(f.projectRoot, 'app.js'), 'candidate bytes');
+  await fs.writeFile(path.join(f.projectRoot, 'start.ets'), 'export const base = 1;\n');
+  await fs.writeFile(path.join(f.projectRoot, 'app.js'), 'import "./start.ets";\nexport const fallback = 1;\n');
+  git(f.projectRoot, 'add', 'app.js', 'start.ets');
+  git(f.projectRoot, '-c', 'user.email=test@example.com', '-c', 'user.name=Test', 'commit', '-qm', 'frozen graph input');
+  await fs.writeFile(path.join(f.projectRoot, 'untracked.js'), 'export const candidate = 2;\n');
+  await fs.writeFile(path.join(f.projectRoot, 'app.js'), 'export { candidate } from "./untracked.js";\n');
   await f.prompt();
   assert.equal((await f.frame()).status, 'ready');
+});
+
+test('a snapshot without supported graph files still uses the original proposal tools', async t => {
+  const f = await fixture(t, { propose: async ({ call, params }) => {
+    assert.doesNotMatch(params.prompt, /semantic_graph/u);
+    assert.match(toolText(await call('source_read', { path: 'app.py' })), /fallback = 1/u);
+    return { guidance: [guidance('Keep the Python fallback', 0.9, [{ path: 'app.py', startLine: 1, endLine: 1 }])], scenarios: [] };
+  } });
+  git(f.projectRoot, 'mv', 'app.js', 'app.py');
+  await fs.writeFile(path.join(f.projectRoot, 'app.py'), 'fallback = 1\n');
+  git(f.projectRoot, 'add', 'app.py');
+  git(f.projectRoot, '-c', 'user.email=test@example.com', '-c', 'user.name=Test', 'commit', '-qm', 'Python snapshot');
+  await f.prompt();
+  assert.equal((await f.frame()).status, 'ready');
+  assert(!f.calls.some(({ names }) => names.includes('semantic_graph')));
 });
 
 test('7. model failure or timeout leaves prompt output unchanged', async t => {

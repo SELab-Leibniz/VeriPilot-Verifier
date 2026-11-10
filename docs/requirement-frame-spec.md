@@ -75,7 +75,7 @@
 
 明确不做：
 
-- long-horizon-controller 的控制器、PACT、Harbor、代码图、确定性验收台账、早期覆盖审计、传输冲突否决和进度守卫。
+- long-horizon-controller 的控制器、PACT、Harbor、外部代码图实现、确定性验收台账、早期覆盖审计、传输冲突否决和进度守卫。
 - 可执行探针和 OpenSpec 规格审计。第 8 节只记录方向，本轮不实现。
 - 非 git 项目，以及开始时未提交的修改（S0 只取 HEAD 提交的内容）。
 - 用户中途改需求后自动重新生成框架（见第 11 节）。
@@ -175,8 +175,9 @@ requirementFrame:
   - `--prefix` 使用正斜杠，并以 `/` 结尾。
   - 生成结束后（无论成功或失败）删除 `<tmp>`。
 - **大小上限。** 导出前用 `git ls-tree -r -l <head>` 统计。文件数超过 20000，或总字节超过 200 MB 时，记为 `unavailable`，原因 `SNAPSHOT_TOO_LARGE`。
-- **只读 S0。** 模型只拿到两类工具：
+- **只读 S0。** 提议者只拿到以下工具：
   - `createSourceTools(<tmp>/tree, snapshot)` 提供的只读工具（read、grep、find、ls）；
+  - `semantic_graph`。在启动提议者前从同一份 S0 导出和文件清单建立一次索引，各提议会话共用。查询结果只用于导航，源码依据仍由 `source_read` 确认。图不可用时继续使用原有只读工具；
   - 一个提交工具。
 
   不提供任何能读取当前工作区的工具。这是"看不到候选代码"的唯一保证，不另加检查。

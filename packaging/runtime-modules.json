@@ -126,6 +126,7 @@
     "lib/runtime-v2/transaction-journal.mjs",
     "lib/runtime-v2/transcript.mjs",
     "lib/runtime-v2/utils.mjs",
+    "lib/semantic-graph.mjs",
     "lib/semantic-review.mjs",
     "lib/simple-mode.mjs",
     "lib/simple-yaml.mjs",

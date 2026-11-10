@@ -75,6 +75,27 @@ test('deviation-only Stop accepts a cited counterexample without requiring other
   await handle.close();
 });
 
+test('Stop prepares a semantic graph before the reviewer starts and still requires source citations', async t => {
+  const f = await fixedVersionFixture(t);
+  execFileSync('git', ['init', '-q'], { cwd: f.root });
+  await fs.writeFile(path.join(f.root, 'entry.ets'), 'export { accept } from "./app.mjs";\n');
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true });
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    const graph = await submit('semantic_graph', { operation: 'dependencies', file: 'app.mjs' });
+    assert.equal(graph.navigationOnly, true);
+    assert.deepEqual(graph.hits, [{ from: 'entry.ets', to: 'app.mjs', kind: 'export', line: 1 }]);
+    assert.equal((await submit('semantic_graph', { operation: 'definition', symbol: 'accept' })).hits[0].path, 'app.mjs');
+    await readAll();
+    await f.scope(submit);
+    const row = { taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'The implementation adds one.', citeIds: ['app.mjs:1'] };
+    await assert.rejects(submit('submit_review', row), { code: 'TASK_CITATION_INVALID' });
+    const citation = (await read(f.source)).details.citation.citeId;
+    assert.equal((await submit('submit_review', { ...row, citeIds: [citation] })).saved, true);
+    assert.equal((await submit('finish_stop_review', { summary: 'Reviewed the original source.' })).complete, true);
+  });
+  await handle.close();
+});
+
 test('fixed-version omitted metadata persists two M16 PASS traces without mutating original calls', async t => {
   const f = await fixedVersionFixture(t, { two: true }); let callbackFailure, originals;
   const handle = await f.run(async ({ readAll, read, submit, tools }) => {
