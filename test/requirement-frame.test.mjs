@@ -374,6 +374,7 @@ test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit 
     nativeRunId: f.state?.nativeRunId, brief: f.state?.frameBrief }));
   const { prependContext } = prompted;
   assert(prependContext.startsWith(`${briefMarker}\n${briefTitle}`));
+  assert.match(prependContext, /semantic_graph.*incoming.*outgoing/u);
   assert(prependContext.endsWith('1. Use the existing default (evidence: app.js:1-1)'));
   assert.equal(prependContext.split(briefTitle).length - 1, 1);
   assert.equal(await f.toolResult('after-prompt'), undefined);
@@ -497,6 +498,7 @@ test('6.4.4: the localized brief delivers long selected items and prints only fi
   assert.deepEqual((await f.frame()).counts, { proposed: 3, valid: 3, selected: 3 });
   const brief = deliveredBrief(await f.toolResult('long-brief'));
   assert(brief.startsWith(`${briefMarker}\n【RC 实现提示｜仅供参考】`));
+  assert.match(brief, /semantic_graph.*incoming.*outgoing/u);
   assert(brief.includes(`1. ${statement}（依据：app.js:1-1）`));
   assert(brief.includes(`- [新需求] 前提：${given}；操作：${when}；预期：${then}。（原文：“${quote}”）`));
   assert(brief.includes('- [保持不变] 前提：低置信但已入选'));
