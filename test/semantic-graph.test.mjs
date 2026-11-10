@@ -156,4 +156,14 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   assert(flow.hits.some(hit => hit.target.symbol === 'external.read' && hit.target.resolution === 'unresolved' && hit.awaited));
   assert(flow.hits.some(hit => hit.target.symbol === 'Panel.state' && hit.relation === 'write' && hit.line === 14));
   assert.deepEqual(graph.query({ operation: 'incoming', symbol: 'Store.save' }).hits, callers.hits);
+
+  const affected = graph.affectedSymbols([
+    { path: 'panel.ets', hunks: [[5, 6]] },
+    { path: 'store.ets', hunks: [[2, 2]] },
+    { path: 'panel.test.ets', hunks: [[3, 6]] },
+  ]);
+  assert.deepEqual(affected.map(row => row.definition.qualified), ['Panel.execute', 'Store.save']);
+  assert.equal(affected[0].test.within, 'uses the public entry point');
+  assert.equal(affected[1].caller.within, 'Panel.execute');
+  assert.deepEqual(affected[0].effects.map(ref => [ref.relation, ref.target.symbol]), [['call', 'Store.save'], ['write', 'Panel.state']]);
 });

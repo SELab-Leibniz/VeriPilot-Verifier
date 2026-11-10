@@ -119,6 +119,9 @@ test('the standing regression item cites the pre-existing test and the changed c
     const hint = standing.regressionEvidence;
     assert.deepEqual(hint.changedFiles, [{ path: 'src/settings.mjs', status: 'modified' }]);
     assert.equal(hint.testPointers[0].path, 'test/settings.test.mjs');
+    const linkedMethod = hint.currentSemanticLinks.find(link => link.definition.kind === 'method');
+    assert.equal(linkedMethod?.definition.path, hint.changedFiles[0].path);
+    assert.equal(linkedMethod?.test.path, hint.testPointers[0].path);
     assert.ok(hint.testPointers[0].identifiers.includes('minLengthIndex'), JSON.stringify(hint.testPointers));
     assert.match(hint.testPointers[0].cases[0], /^L11 should set minLengthIndex to default when policy minLength not in options$/u);
     assert.deepEqual(hint.programRun, { status: 'NOT_RUN', summary: 'No program-run existing-test check ran for this Stop.' });
