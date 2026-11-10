@@ -112,6 +112,11 @@ test('links methods across aliases and re-exports and keeps tests and state writ
       '      throw error',
       '    }',
       '  }',
+      '  static repeat(value: number): number { return Store.repeat(value) }',
+      '  static many(): void {',
+      ...Array.from({ length: 16 }, (_, index) => `    Store.sink(${index})`),
+      '  }',
+      '  static sink(value: number): number { return value }',
       '}',
     ],
     'barrel.ets': ["export { Store as Repo } from './store'"],
@@ -135,6 +140,8 @@ test('links methods across aliases and re-exports and keeps tests and state writ
       '  async loadForWrite(read: () => Promise<number[]>): Promise<number[]> {',
       '    return await Storage.load(read)',
       '  }',
+      '  repeat(value: number): number { return Storage.repeat(value) }',
+      '  many(): void { Storage.many() }',
       '}',
     ],
     'panel.test.ets': [
@@ -180,6 +187,17 @@ test('links methods across aliases and re-exports and keeps tests and state writ
     .hits.find(hit => hit.relation === 'call' && hit.target.symbol === 'Store.load');
   assert.deepEqual(readDependency.target, { path: 'store.ets', symbol: 'Store.load', line: 3,
     catchReturns: [{ catchLine: 5, line: 9 }], catchReturnCount: 1 });
+  const nested = graph.query({ operation: 'outgoing', symbol: 'Panel.loadForWrite', depth: 2 });
+  const externalRead = nested.hits.find(hit => hit.target.symbol === 'read' && hit.target.resolution === 'unresolved');
+  assert.deepEqual(externalRead.via, [{ path: 'panel.ets', line: 18, within: 'Panel.loadForWrite', target: 'Store.load' }]);
+  assert.equal(graph.query({ operation: 'outgoing', symbol: 'Panel.loadForWrite' }).hits.some(hit => hit.via), false);
+  assert.equal(graph.query({ operation: 'outgoing', symbol: 'Panel.repeat', depth: 3 }).hits.filter(hit => hit.relation === 'call').length, 2);
+  assert.equal(graph.query({ operation: 'outgoing', symbol: 'Panel.shadow', depth: 3 }).hits.some(hit => hit.target.path === 'store.ets'), false);
+  assert.throws(() => graph.query({ operation: 'outgoing', symbol: 'Panel.execute', depth: 4 }), { code: 'TASK_SUBMISSION_INVALID' });
+  const firstPage = graph.query({ operation: 'outgoing', symbol: 'Panel.many', depth: 2 });
+  const secondPage = graph.query({ operation: 'outgoing', symbol: 'Panel.many', depth: 2, offset: firstPage.nextOffset });
+  assert.deepEqual([firstPage.hits.length, firstPage.nextOffset, secondPage.hits.length, secondPage.nextOffset], [12, 12, 5, null]);
+  assert(secondPage.hits.every(hit => hit.target.symbol === 'Store.sink' && hit.via?.[0].target === 'Store.many'));
   assert(flow.hits.some(hit => hit.target.symbol === 'Panel.state' && hit.relation === 'write' && hit.line === 14));
   assert.deepEqual(graph.query({ operation: 'incoming', symbol: 'Store.save' }).hits, callers.hits);
 
