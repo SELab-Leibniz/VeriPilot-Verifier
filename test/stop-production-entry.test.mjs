@@ -86,7 +86,7 @@ test('deviation-only Stop allows an empty scan and keeps existing repair feedbac
     } else {
       assert.equal(result.stop.feedback, null);
       assert.equal(result.stop.admission, null);
-      assert.equal(result.stop.verificationIncomplete, true);
+      assert.equal(result.stop.verificationIncomplete, false);
     }
   });
 });
