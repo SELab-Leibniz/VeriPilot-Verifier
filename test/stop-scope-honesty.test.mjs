@@ -28,7 +28,7 @@ async function writeFiles(root, files) {
 
 // The project uses the shipped OpenSpec template. Host state and the
 // transcript stay outside it, as they do for a real Gateway.
-async function fixture(t, { repository = true, capture = true, deviationOnly = true, metrics = ['M16'], classification, verdict = () => null } = {}) {
+async function fixture(t, { repository = true, capture = true, deviationOnly = true, fileQualityReviewEnabled = false, metrics = ['M16'], classification, verdict = () => null } = {}) {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-scope-'));
   t.after(() => fs.rm(base, { recursive: true, force: true }));
   const root = path.join(base, 'project');
@@ -53,7 +53,7 @@ async function fixture(t, { repository = true, capture = true, deviationOnly = t
   if (capture) await captureTaskStart({ projectRoot: root, taskId: task.taskId });
   const runtimeV2 = compileRuntimeV2Config({ version: 2, artifacts: [], dynamicGroundTruth: { enabled: true, panel: { size: 0 } },
     implementationCorrection: { enabled: false, platform: null },
-    stopCorrection: { enabled: true, deviationOnly, fileQualityReviewEnabled: false,
+    stopCorrection: { enabled: true, deviationOnly, fileQualityReviewEnabled,
       metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metrics.includes(id)])) } });
   const calls = [];
   const reviewerFactory = async input => {
@@ -143,6 +143,19 @@ test('a deviation-only Stop with an empty selected scope is UNVERIFIED, persists
   assert.equal(recorded.reviewStatus, 'UNVERIFIED');
   assert.equal(recorded.progress.scopeReasonCode, 'NO_APPLICABLE_METRIC_OBJECTS');
   assert.equal(result.stop.correctionAttempt, 0);
+});
+
+test('an empty selected scope stays UNVERIFIED in both review modes with file-quality review enabled', async t => {
+  for (const deviationOnly of [false, true]) await t.test(`deviationOnly=${deviationOnly}`, async subtest => {
+    const f = await fixture(subtest, { deviationOnly, fileQualityReviewEnabled: true, metrics: ['M13'] });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const result = await f.stop();
+    assert.equal(result.stop.coverage.selectedObjectCount, 0);
+    assert.equal(result.stop.coverage.fileTargetCount, 0);
+    assert.equal(result.stop.status, 'UNVERIFIED');
+    assert.equal(result.decision, 'allow');
+    assert.equal(result.stop.admission, null);
+  });
 });
 
 test('a Stop after document-only changes is skipped quietly without a reviewer or budget, and a later code edit gets a full Stop', async t => {
