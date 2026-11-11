@@ -60,6 +60,11 @@ test('remaining regressions are decided per case; missing decisions or unsaved d
   const result = reviewedRegressionFailures({ inventory, disposition, hasDeviation: id => id === 'saved' });
   assert.deepEqual(result.cases.map(item => item.verdict), ['AUTHORIZED_CHANGE', 'REGRESSION', 'UNVERIFIED']);
   assert.equal(result.status, 'UNVERIFIED');
+  const incomplete = reviewedRegressionFailures({ inventory: { complete: false, failures: [{ id: 'visible' }] },
+    disposition: { status: 'EXPLAINED', reason: 'The visible failure was authorized.',
+      cases: [{ id: 'visible', verdict: 'AUTHORIZED_CHANGE', reason: 'The request changes this assertion.' }] }, hasDeviation: () => false });
+  assert.equal(incomplete.status, 'UNVERIFIED');
+  assert.deepEqual(incomplete.cases.map(entry => entry.id), ['visible', 'regression-inventory']);
   const legacy = reviewedRegressionFailures({ inventory, hasDeviation: () => false, disposition: {
     status: 'UNVERIFIED', reason: 'The legacy review did not settle these cases independently.',
     explanations: inventory.failures.map(({ id }) => ({ failure: id, reason: 'A proposed explanation exists.' })) } });
