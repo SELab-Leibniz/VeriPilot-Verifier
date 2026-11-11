@@ -31,8 +31,10 @@ test('isolated-pass evidence rejects wrong identities, multiple cases, missing c
 });
 
 test('the native filter preserves exact test names and rejects unrepresentable scopes', () => {
-  assert.equal(regressionCaseScope('entry::DeviceConsumer::keeps empty input stable'), 'DeviceConsumer#keeps empty input stable');
-  for (const id of ['incomplete', 'entry::Suite::one,two', 'entry::Suite::quoted"case', 'entry::Suite::a&b'])
+  assert.deepEqual(regressionCaseScope('entry::DeviceConsumer::keeps empty input stable'),
+    { module: 'entry', suite: 'DeviceConsumer', itName: 'keeps empty input stable' });
+  assert.equal(regressionCaseScope('entry::Suite::quoted"case & input').itName, 'quoted"case & input');
+  for (const id of ['incomplete', 'entry::Suite::one,two', 'entry::Suite::a\nb'])
     assert.throws(() => regressionCaseScope(id));
   const config = normalizeRegressionCheck({ enabled: true, command: ['runner'], baselineFile: 'original-result.json',
     isolationCommand: ['runner', '--test={testId}'] });

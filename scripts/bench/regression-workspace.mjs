@@ -8,6 +8,36 @@ const generated = new Set(['.git', '.hvigor', '.test', 'oh_modules', 'node_modul
 const run = promisify(execFile);
 const suiteRoot = /(?:^|\/)src\/test(?=\/|$)/u;
 
+// Alter only the disposable generated runner, keeping original test modules
+// byte-identical. Hypium's suite/itName filters accept exact titles with spaces.
+export async function installRegressionCaseFilter(workspace, { module, suite, itName }) {
+  if (!/^[\w.-]+$/u.test(module) || !suite || !itName || /[\r\n,]/u.test(suite + itName))
+    throw new Error('Invalid native test selector.');
+  // This Hypium release's nested-suite scheduler ignores suite/itName when
+  // class is empty, and its CLI class validator disallows spaces. Configure
+  // the exported Core service after CLI parsing, before original registration.
+  const selector = suite + '#' + itName;
+  const hook = [
+    "import { hvigor as rcHvigor } from '@ohos/hvigor';",
+    "import * as rcFs from 'fs';",
+    "import * as rcPath from 'path';",
+    'rcHvigor.nodesEvaluated(() => {',
+    '  const moduleNode = rcHvigor.getRootNode().getSubNodeByName(' + JSON.stringify(module) + ');',
+    "  const generation = moduleNode?.getTaskByName('default@GenerateUnitTestTemplate');",
+    "  if (!generation) throw new Error('Native test-template task is unavailable.');",
+    '  generation.afterRun(() => {',
+    '    const file = rcPath.join(' + JSON.stringify(workspace) + ', ' + JSON.stringify(module) + ", '.test/testability/pages/Index.ets');",
+    "    const original = rcFs.readFileSync(file, 'utf8');",
+    '    const pattern = /Hypium\\.hypiumTest\\(([^\\n]+),\\s*testsuite\\)/;',
+    "    if (!pattern.test(original)) throw new Error('Native test-template filter slot is unavailable.');",
+    '    const selected = original.replace(pattern, (_match, args) => "Hypium.hypiumTest(" + args + ", () => { Core.getInstance().getDefaultService(\\\"config\\\").class = " + ' + JSON.stringify(JSON.stringify(selector)) + ' + "; testsuite(); })");',
+    '    rcFs.writeFileSync(file, selected.replace("import {Hypium}", "import {Hypium, Core}"));',
+    '  });',
+    '});',
+  ].join('\n');
+  await fs.appendFile(path.join(workspace, 'hvigorfile.ts'), '\n' + hook + '\n');
+}
+
 // Run the public contract case in a fresh native process: an earlier suite's
 // static mocks must not pollute its before/after comparison.
 export async function installRegressionContractProbe(workspace, source) {

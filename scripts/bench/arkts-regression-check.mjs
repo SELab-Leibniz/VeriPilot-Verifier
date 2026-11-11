@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bounded-process.mjs';
 import { localTestEvidence, publicLocalTestEvidence } from './local-test-evidence.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
-import { prepareRegressionWorkspace, installRegressionContractProbe } from './regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, installRegressionCaseFilter } from './regression-workspace.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
@@ -30,9 +30,9 @@ const coverageLog = 'entry/.test/default/intermediates/test/coverage_data/covera
 
 export function regressionCaseScope(id) {
   const match = /^[^:]+::([^:]+)::(.+)$/u.exec(id ?? '');
-  if (!match || /[\r\n,"\\#&|<>^%!`$]/u.test(match[1] + match[2]))
-    throw new Error('The exact test ID cannot be expressed safely with the native Hypium scope filter.');
-  return `${match[1]}#${match[2]}`;
+  if (!match || /[\r\n,]/u.test(match[1] + match[2]))
+    throw new Error('The exact test ID cannot be expressed with the native Hypium suite/itName filter.');
+  return { module: id.slice(0, id.indexOf('::')), suite: match[1], itName: match[2] };
 }
 
 export function regressionVerdict(current, baseline, maxNames = 20) {
@@ -51,7 +51,7 @@ export function regressionVerdict(current, baseline, maxNames = 20) {
 }
 
 export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, contractProbe, isolateTest, timeoutMs = 840000, maxNames = 20, signal }) {
-  const testScope = isolateTest === undefined ? null : regressionCaseScope(isolateTest);
+  const testFilter = isolateTest === undefined ? null : regressionCaseScope(isolateTest);
   const baselineEvidence = baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null;
   if (originalTests && (!baselineEvidence?.completeRuntime || !baselineEvidence.baseCommit))
     throw new Error('--original-tests requires a completed baseline with its exact original test commit.');
@@ -63,6 +63,7 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
     throw new Error('Contract probe requires a completed original baseline with its exact commit.');
   const root = await prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
   if (probe) await installRegressionContractProbe(root, probeBytes);
+  if (testFilter) await installRegressionCaseFilter(root, testFilter);
   const java = resolveJavaHome({ explicit: javaHome });
   applyJavaEnvironment(java.javaHome);
   const coverage = path.join(root, coverageLog);
@@ -70,7 +71,7 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   const started = Date.now(); let output = '';
   const run = phase => runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
     fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url)), '-Project', root, '-ToolRoot', path.resolve(toolRoot),
-    '-Phase', phase, '-JavaHome', java.javaHome, ...(testScope ? ['-TestScope', testScope] : [])], { cwd: root, timeoutMs: Math.max(1, timeoutMs - (Date.now() - started)),
+    '-Phase', phase, '-JavaHome', java.javaHome], { cwd: root, timeoutMs: Math.max(1, timeoutMs - (Date.now() - started)),
     signal, onOutput(value) { output += value; } });
   const installed = await run('install');
   const execution = installed.exitCode === 0 && !installed.interrupted ? await run('test') : installed;
