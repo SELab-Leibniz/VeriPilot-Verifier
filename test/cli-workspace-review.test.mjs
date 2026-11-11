@@ -108,10 +108,10 @@ test('CLI cancellation terminates the owned process and rejects late review resu
   } finally { controller.abort(new Error('Input replaced')); await rejected.catch(() => {}); }
 });
 
-test('CLI observer rejects replayed, foreign-session and altered source receipts', async () => {
+for (const citeId of ['rccite_abcd', 'C1']) test(`CLI observer rejects replayed, foreign-session and altered source receipts for ${citeId}`, async () => {
   let observations = 0;
   const worker = { isComplete: () => false, onAssistantMessageStart() {}, observeReceipt() { observations++; } };
-  const result = { content: [{ type: 'text', text: '[citeId="rccite_abcd"]\nOriginal exact page' }], details: { citation: { citeId: 'rccite_abcd' } } };
+  const result = { content: [{ type: 'text', text: `[citeId="${citeId}"]\nOriginal exact page` }], details: { citation: { citeId } } };
   const observer = createCliReceiptObserver(worker); observer.expect('internal', { path: 'file' }, result);
   observer.frame({ type: 'system', subtype: 'init', session_id: 'owned' });
   observer.frame({ type: 'assistant', session_id: 'owned', message: { id: 'A', content: [{ type: 'tool_use', id: 'read', name: 'mcp__rc_stop__source_read', input: { path: 'file' } }] } });
