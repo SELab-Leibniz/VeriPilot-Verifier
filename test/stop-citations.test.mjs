@@ -33,6 +33,19 @@ test('Stop accepts a known but unacknowledged read without adding native read co
   assert.equal(ctx.evidence.registry.size, 0);
 });
 
+test('attachment scope excludes traversal and outside symlink targets unless an exact external source was explicitly allowed', async t => {
+  const { root, ctx } = await fixture(t);
+  const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-outside-citation-'));
+  t.after(() => fs.rm(outside, { recursive: true, force: true }));
+  const file = path.join(outside, 'external.txt'); await fs.writeFile(file, 'external source\n');
+  await assert.rejects(resolveStopCitations(ctx, { citations: [{ path: file, start: 1, end: 1 }] }, root, { attachment: true }), { code: 'TASK_CITATION_INVALID' });
+  const [ref] = await resolveStopCitations(ctx, { citations: [{ path: file, start: 1, end: 1 }] }, root, { attachment: true, allowedFiles: [await fs.realpath(file)] });
+  assert.equal(ref.exactQuote, 'external source');
+  try { await fs.symlink(outside, path.join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir'); }
+  catch (error) { if (error.code === 'EPERM') return; throw error; }
+  await assert.rejects(resolveStopCitations(ctx, { citations: [{ path: 'linked/external.txt', start: 1, end: 1 }] }, root, { attachment: true }), { code: 'TASK_CITATION_INVALID' });
+});
+
 test('Stop rejects missing files, nonexistent ranges, unknown IDs and mismatching hashes mechanically', async t => {
   const { root, ctx } = await fixture(t);
   for (const ref of [{ path: 'missing', start: 1, end: 1 }, { path: '.', start: 1, end: 1 },

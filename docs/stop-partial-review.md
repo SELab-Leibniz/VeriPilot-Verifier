@@ -42,13 +42,42 @@ cancellation and deadline; it does not get a new review window.
 
 ## Mechanical citations and reports
 
-Stop tools accept citations: [{path,start,end,sha256?}], issued citeIds, or
-path#Lstart-Lend / path:start-end references. The program reads the file,
-validates the range, binds its full-file hash and checks currentness through
-publication. It does not require a prior session read, authorization quote,
-full failure-output read, production-only proof, or mandatory production trace.
-The reviewer owns whether evidence supports its decision. Original requirements,
-scope ownership, baseline hashes and lifecycle protections remain program-owned.
+Only a deviation requires evidence attachments. PASS, NO_DEVIATION_FOUND,
+AUTHORIZED_CHANGE, UNVERIFIED and frame CHECKED decisions need no citation;
+regression explanations may contain only their per-case verdict and text reason.
+An optional invalid citation cannot reject a non-deviation conclusion.
+
+The preferred wire format is `citations: [{path: "src/service.ts", start: 12,
+end: 16}]`. The program reads the bytes and records their full-file hash,
+the range and its exact excerpt. Tests, dependency source and runtime output
+are eligible. Resolved paths must stay inside the project, or identify an
+exact external original input already explicitly allowed by the program.
+Path traversal and links that escape this scope are rejected mechanically.
+There is no prior-read, read-coverage, evidence-owner/type, authorization-quote,
+full-failure-output or production-trace gate on these attachments.
+
+The first invalid deviation attachment returns TASK_CITATION_INVALID with one
+repair opportunity. A second failure, or finishing without a repair, saves only
+that proposal as a CITATION unverified item. Its siblings remain deliverable;
+it is not a technical failure or an unresolved original-requirement majority.
+A carried deviation with such a result stays open. Citations are checked again
+at finish and publication; the host delivery gate also removes stale attachment
+owners individually. A worker that has already ended is not restarted for this
+safety check. Original input/baseline changes, cancellation, expiry and timeout
+remain whole-review protections.
+
+Migration: replace `citeIds: ["C7"]` with `citations: [{path,start,end}]`.
+Known legacy IDs (including unacknowledged read receipts) and path#Lstart-Lend
+or path:start-end strings in citeIds remain readable. Existing persisted
+citations are retained. New original-checklist entries can use path plus
+lineStart/lineEnd; legacy citeId entries remain compatible.
+
+Host feedback includes the source location and an excerpt; complete attachments
+(path, start, end, sha256, text) remain in each published feedback item. Existing
+transport bounds still apply to inline excerpts. The existing instruction
+“如反馈不成立，请说明依据” is retained. citationDiagnostics records rejected
+submissions, corrected items, downgraded items and their individual events in
+the local review/evaluation/report; those diagnostics are not business feedback.
 
 Evaluation JSON, metric reports and the user report retain unverifiedItems,
 regressionCheck, frameCoverage.items and reviewCoverage. Coverage stores each

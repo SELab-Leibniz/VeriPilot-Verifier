@@ -216,5 +216,7 @@ for (const [name, { deviationOnly = false, compacted = false }] of [
   await fs.writeFile(ledgerPath, 'unrelated malformed older ledger');
   assert.equal((await feedback()).length, 1);
   await fs.writeFile(source, 'export const compare = value => value + 1;\n');
-  assert.deepEqual(await feedback(), []);
+  const staleAttachments = await feedback();
+  assert.deepEqual(staleAttachments.deviations, []);
+  assert.equal(staleAttachments.attachmentFailures.length, 1);
 });
