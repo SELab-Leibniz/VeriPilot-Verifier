@@ -294,15 +294,15 @@ test('one native session preserves baseline, exec document review, exact duplica
     assert(item.skillGraphDigest);
     assert(item.originalSkillBasis.requiredFiles.includes(identity.path), 'Stop must disclose the source actually read, despite workspace duplicate');
   }
-  assert.equal(task.verification.status, 'PASS', JSON.stringify({ post: f.post(), warnings: f.warnings }));
-  assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'PASS');
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND', JSON.stringify({ post: f.post(), warnings: f.warnings }));
+  assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
 });
 
 for (const mode of ['assessment', 'until_pass']) for (const wake of ['done', 'unknown']) {
   test(`a new ${mode} host run owns its candidate after prior until_pass IDLE; autopilot ${wake} resumes it once`, async t => {
     const f = await nativeFixture(t), prior = await f.start('prior-until-pass');
     await f.write(prior); await f.finish(prior, 'The prior design is complete.');
-    assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'PASS');
+    assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
     const reviewedBefore = f.witnesses.stop.length;
     await f.configure(mode); f.api.config.plugins.entries.autopilot.enabled = true; f.setAutopilot('running');
     const current = await f.start(`autopilot-${mode}-${wake}`); await f.write(current);
@@ -324,7 +324,7 @@ for (const mode of ['assessment', 'until_pass']) for (const wake of ['done', 'un
     const resumed = f.witnesses.stop.at(-1);
     assert(resumed.deadlineAt - resumed.at >= held.candidate.reviewBudgetMs - 1000,
       `hold must retain the complete review budget: ${JSON.stringify({ held, resumed })}`);
-    assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'PASS');
+    assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
     assert.equal(f.post().coexistence.status, wake === 'done' ? 'IDLE' : 'UNKNOWN');
     if (wake === 'unknown') assert.match(f.post().coexistence.message, /不推断|无法核实/u);
     await f.runtime.beforeFinalize({ sessionId: current.sessionId, runId: current.runId, lastAssistantMessage: held.candidate.text }, current);

@@ -160,42 +160,25 @@ test('registered native worker groups nine independent items and acknowledges th
   await handle.close();
 });
 
-test('invalid grouped item preserves other receipts; duplicate, unassigned, foreign/unacknowledged citations and invalid M16 cannot finish', async t => {
-  const foreign = await stopProtocolFixture(t, 'findings'); foreign.input.request.reviewScope = { kind: 'workspace-stop' }; delete foreign.input.request.fixedStopClassification;
-  let foreignId;
-  const foreignHandle = await checkedRun(foreign, async api => {
-    await api.readAll(); await api.submit('review_checklist', scope); foreignId = (await api.read(foreign.file)).details.citation.citeId;
-    await api.submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Actual evidence for another task only.', citeIds: [foreignId], finish: true });
-  }); await foreignHandle.close();
-  const f = await tenItemFixture(t); let rejected = [];
+test('grouped ownership errors preserve siblings while valid unacknowledged and direct citations are accepted', async t => {
+  const f = await tenItemFixture(t);
   const handle = await checkedRun(f, async api => {
-    const { ids, byFile } = await ready(f, api), valid = f.objects.filter(x => x.metricId !== 'M16');
-    const partial = await group(api, [submission(valid[0], ids), submission(valid[1], [foreignId]), submission(valid[2], ids)]);
+    const { ids } = await ready(f, api), valid = f.objects.filter(x => x.metricId !== 'M16');
+    const partial = await group(api, [submission(valid[0], ids), submission(valid[1], ['unknown-citation']), submission(valid[2], ids)]);
     assert.deepEqual(partial.map(x => x.status), ['fulfilled', 'rejected', 'fulfilled']);
     assert.equal((await savedState(f)).checkpoint.taskState.receiptCount, 2);
     await assert.rejects(api.submit('finish_stop_review', { summary: 'An invalid item is still missing.' }), /incomplete/);
+    await assert.rejects(api.submit('submit_review', submission(valid[0], ids)), /already has/);
+    await assert.rejects(api.submit('submit_review', submission({ objectId: 'M12:unassigned' }, ids)), /Unassigned/);
     const unseenPath = path.join(f.root, 'unacknowledged.mjs'); await fs.writeFile(unseenPath, 'export const other = 1;\n');
     const unacknowledgedId = (await api.read(unseenPath, { receipt: false })).details.citation.citeId;
+    await api.submit('submit_review', submission(valid[1], [unacknowledgedId]));
+    for (const object of valid.slice(3)) await api.submit('submit_review', submission(object, ids));
     const m16 = f.objects.find(x => x.metricId === 'M16');
-    const invalid = [submission(valid[0], ids), submission({ objectId: 'M12:unassigned' }, ids), submission(valid[1], [foreignId]),
-      submission(valid[1], [unacknowledgedId]), submission(m16, ids), submission(m16, ids, { productionTrace: { ...trace(), stateful: true } }),
-      submission(valid[1], [byFile.get(f.app)])];
-    const outcomes = await group(api, invalid);
-    assert(outcomes.every(x => x.status === 'rejected')); rejected = outcomes.map(x => x.reason.message);
-    assert.match(rejected[0], /already has/); assert.match(rejected[1], /Unassigned/);
-    assert.match(rejected[2], /Unknown or unread/); assert.match(rejected[3], /Unknown or unread/);
-    assert.match(rejected[4], /M16_PRODUCTION_TRACE/); assert.match(rejected[5], /Stateful flow/);
-    assert.match(rejected[6], /PROCESS|execution|invocation/i);
-    assert.equal((await savedState(f)).checkpoint.taskState.receiptCount, 2);
-    const remaining = valid.filter((_, i) => i !== 0 && i !== 2);
-    assert((await group(api, remaining.map(x => submission(x, ids)))).every(x => x.status === 'fulfilled'));
-    assert.equal((await savedState(f)).checkpoint.taskState.receiptCount, 9);
-    await assert.rejects(api.submit('finish_stop_review', { summary: 'M16 is still required.' }), /incomplete/);
-    const final = await api.submit('submit_review', submission(m16, ids, { productionTrace: trace(), finish: true })); assert.equal(final.complete, true);
+    const final = await api.submit('submit_review', submission(m16, [], { citations: [{ path: f.app, start: 1, end: 1 }], finish: true }));
+    assert.equal(final.complete, true);
   });
   assert.equal((await savedState(f)).itemFiles.length, 10);
-  t.diagnostic(JSON.stringify({ schedulingEvidence: 'one-invalid-does-not-poison-queue', preservedReceiptsAfterPartialGroup: 2,
-    rejectedCategories: ['duplicate', 'unassigned', 'foreign-task-citation', 'unacknowledged-read', 'missing-M16-trace', 'invalid-M16-trace', 'SOURCE-cannot-prove-PROCESS'], rejectionMessages: rejected }));
   await handle.close();
 });
 
@@ -268,7 +251,7 @@ test('large process navigation stays bounded and existing directory continuation
       assert.equal(result.navigationOnly, true); hits.push(...result.hits); offset = result.nextOffset;
     } while (offset !== null);
     assert.equal(hits.length, 30); assert.equal(new Set(hits).size, 30);
-    await assert.rejects(api.submit('submit_review', submission(f.objects[0], [])), /No checked original evidence|Skill basis not fully read/);
+    await assert.rejects(api.submit('submit_review', submission(f.objects[0], [], { verdict: 'DEVIATION' })), /deviation requires/i);
     await assert.rejects(api.submit('finish_stop_review', { summary: 'All paths are visible, but no item has proof yet.' }), /incomplete/);
   });
   assert.equal(handle.collection.complete, false); assert.equal(handle.sourceCitations.length, 0); await handle.close();

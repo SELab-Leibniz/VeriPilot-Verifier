@@ -105,7 +105,7 @@ test('production Stop moves from a real stage scope to task completion using onl
         hook_event_id: `stop-${index}`, last_assistant_message: entries.at(-1).message.content } });
     assert(outcome.stop?.review, JSON.stringify(outcome));
     assert.equal(outcome.stop.review.stopClassification, classification, JSON.stringify({ stop: outcome.stop, types }));
-    assert.equal(outcome.stop.status, index === 2 ? 'UNVERIFIED' : 'PASS', JSON.stringify(outcome.stop.review));
+    assert.equal(outcome.stop.status, index === 2 ? 'UNVERIFIED' : 'NO_DEVIATION_FOUND', JSON.stringify(outcome.stop.review));
     assert.equal(outcome.stop.review.metricObjectJudgements.length, index === 2 ? 0 : 1);
     if (index !== 2) assert.equal(outcome.stop.review.fileAssessments[0].status, 'PASS');
     else assert.equal(outcome.stop.review.collection.mode, 'findings-only');

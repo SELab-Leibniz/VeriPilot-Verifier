@@ -54,6 +54,8 @@ for (const judgement of ['PASS', 'DEVIATION', 'UNVERIFIED']) test(`B12 explicitl
       const current = (await read(file)).details.citation.citeId;
       await submit('submit_review', { taskId: previous.objectId, verdict: judgement, reason: 'Checked the current return expression.',
         citeIds: judgement === 'UNVERIFIED' ? [] : [current] });
+      if (judgement === 'PASS') await submit('submit_review', { taskId: regenerated.objectId, verdict: 'UNVERIFIED',
+        reason: 'The other requirement cannot be settled by this evidence.' });
       await submit('finish_stop_review', { summary: 'The earlier finding was reviewed.' });
     });
   };

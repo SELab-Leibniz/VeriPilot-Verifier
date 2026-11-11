@@ -105,7 +105,7 @@ test('a post-application graph transport failure rolls back its whole attempt be
     assert.equal(await readJson(await f.graphFile()), null);
     return;
   }
-  assert.equal(result.stop.status, 'PASS', JSON.stringify(result));
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result));
   const task = await f.task(); assert.equal((await f.truth()).version, 2);
   assert.equal(task.groundTruth.sharedBasis.proof.runId, runs[0], 'the original acknowledged, independently audited worker certifies the fresh guarded application');
   assert.equal(task.stop.infrastructureTotalFailures, 1); assert.equal(task.stop.correctionAttempts, 0);

@@ -182,7 +182,7 @@ for (const collection of [false, true]) test(`${collection ? "collected" : "lega
   reviewer.supportsReviewCollection = collection; reviewer.handoff = reviewer; reviewer.reviewItemSize = 1;
   reviewer.singleReviewMetrics = METRIC_IDS;
   const result = await f.run(undefined, reviewer);
-  assert.equal(result.decision, "allow"); assert.equal(result.stop.report.status, "PASS");
+  assert.equal(result.decision, "allow"); assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND");
   assert.deepEqual(result.stop.review.findings, []); assert.deepEqual(result.stop.review.fileAssessments, []);
   assert(!result.stop.review.metricObjectJudgements.some(row => row.objectId.startsWith("M11:")));
 });
@@ -202,7 +202,7 @@ test("explicit quality-only Stop dispatches its file duty without re-enabling M 
   assert.equal(f.calls.filter(c => c.request.reviewScope?.kind === "workspace-stop").length, 1);
   assert.equal(f.calls.flatMap(c => Object.values(c.request.population.metrics).flat()).length, 0);
   assert(result.stop.report.metrics.every(metric => metric.status === "DISABLED"));
-  assert.equal(result.stop.report.status, "PASS");
+  assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND");
 });
 
 test("metric selection is frozen across corrections and epochs; a new task can use a new selection", async t => {

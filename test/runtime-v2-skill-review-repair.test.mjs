@@ -19,7 +19,7 @@ for (const finalValid of [false, true]) test(`skill-ergonomics native full repla
   assert.equal(f.state.skillReviewCandidates.length, 3, 'one initial response plus the unchanged two repairs');
   assert.equal(Object.hasOwn(f.state.skillReviewCandidates[1], 'sourceInterpretationReviews'), false);
   assert.equal(f.state.skillReviewCandidates[2].sourceInterpretationReviews.length, f.state.nativeInput.evidence.skillGroundTruth.constraints.length);
-  assert.equal(stopped.stop.status, finalValid ? 'PASS' : 'UNVERIFIED', JSON.stringify(stopped));
+  assert.equal(stopped.stop.status, finalValid ? 'NO_DEVIATION_FOUND' : 'UNVERIFIED', JSON.stringify(stopped));
   const request = f.calls.find(call => call.role === 'skill-reviewer').request;
   const graph = await readJson(await f.graphFile()), navigation = request.canonicalConditionalTargets;
   assert.equal(navigation.expected.count, 0); assert.deepEqual(navigation.expected.keys, []);

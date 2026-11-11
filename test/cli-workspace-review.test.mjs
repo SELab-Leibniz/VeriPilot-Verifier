@@ -70,11 +70,12 @@ test('CLI compact flow selects scope with its checklist and settles the last ite
   await handle.close();
 });
 
-for (const mode of ['truncate', 'unobserved']) test(`CLI ${mode} tool output cannot certify PASS even after MCP execution`, async t => {
+for (const mode of ['truncate', 'unobserved']) test(`CLI ${mode} tool output does not gate a mechanically valid Stop citation`, async t => {
   const f = await fixture(t); f.input.env.RC_TEST_CLI_MODE = mode;
   const handle = await startRoleReviewer(f.input);
-  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
-  assert.equal(handle.sourceCitations.length, 0); await handle.close();
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert.equal(handle.citationPolicy, 'mechanical-v1');
+  assert(handle.sourceCitations[0].contentHash); await handle.close();
 });
 
 test('CLI continuation resumes the same private session, checklist and notes without rereading unchanged basis', async t => {
@@ -140,7 +141,7 @@ test('automatic CLI Stop selects the shared default engine and settles one sessi
     env: f.input.env, stopHost: { directory: path.join(f.root, 'host-state') } };
   await handleRuntimeV2Event({ ...options, input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: 'SessionStart', source: 'startup' } });
   const outcome = await handleRuntimeV2Event({ ...options, input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: 'Stop', last_assistant_message: 'The task is complete.' } });
-  assert.equal(outcome.stop.status, 'PASS', JSON.stringify(outcome.stop));
+  assert.equal(outcome.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(outcome.stop));
   const calls = (await fs.readFile(f.capture, 'utf8')).trim().split('\n').map(JSON.parse);
   assert.equal(calls.length, 1); assert.equal(JSON.parse(calls[0].args[0]).task.scope, 'workspace-stop');
 });

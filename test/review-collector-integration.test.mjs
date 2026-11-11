@@ -89,7 +89,7 @@ test("complete isolated reviews retain the original full-population PASS behavio
   const f = await fixture(t);
   const result = await f.run();
   assert.equal(result.decision, "allow");
-  assert.equal(result.stop.report.status, "PASS");
+  assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND");
   assert.equal(result.stop.review.collection.complete, true);
   assert.equal(result.feedback, null);
   assert.equal(f.calls.length, 1);
@@ -106,7 +106,7 @@ test("explicit verify_only uses the caller's current-output scope without a mode
   assert.equal(f.calls.length, 1, "one session checks all twelve original members without a separate classifier");
   assert.ok(f.calls.every(call => call.request.reviewScope.kind !== "classification"));
   assert.equal(result.stop.review.stopClassification, "TASK_COMPLETE", "caller scope cannot drift with old assistant progress");
-  assert.equal(result.stop.report.status, "PASS", "PASS still requires every owned object to pass");
+  assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND", "PASS still requires every owned object to pass");
   assert.equal(result.stop.review.metricObjectJudgements.length, 12);
 });
 

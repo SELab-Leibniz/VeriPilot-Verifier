@@ -17,5 +17,5 @@ test('the native agent_end success receipt admits a drained tool-warning termina
   await within(f.runtime.postRuns.drain(), 'warning Stop review');
   await within(f.runtime.waitForNativeReviews(), 'native review settlement');
   assert.equal(reviews, 1);
-  assert.equal(f.post().reviewStatus, 'PASS');
+  assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
 });

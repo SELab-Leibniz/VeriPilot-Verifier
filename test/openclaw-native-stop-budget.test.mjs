@@ -98,13 +98,13 @@ test("native reply preserves payload and finishes RC terminal work in its indepe
   assert.deepEqual(payload, original); assert.equal(f.calls(), 0);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].budgetMs, 11000);
-  assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
+  assert.equal(records[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));
   assert.equal(f.hostAbort.signal.aborted, false);
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.ok(task.verification.rulesDigest, "Native Stop must retain the project policy binding");
   assert.ok(task.verification.evidence?.fingerprints[path.join(f.root, "draft.md")], "Native Stop must retain its observed source fingerprints");
   const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: f.ctx.sessionKey };
-  assert.equal((await readReport(binding)).verification, "PASS", "The report must recognize a fresh native acceptance");
+  assert.equal((await readReport(binding)).verification, "NO_DEVIATION_FOUND", "The report must recognize a fresh native acceptance");
   await fs.writeFile(path.join(f.root, "draft.md"), "Changed after review.\n");
   assert.equal((await readReport(binding)).verification, "STALE", "A later source edit must invalidate acceptance");
 });
@@ -133,11 +133,11 @@ test("a fresh Gateway rediscovers modified artifacts from the active native tran
   await runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
   await runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
   const receipts = await runtime.waitForNativeReviews();
-  assert.equal(receipts[0].reviewStatus, "PASS", JSON.stringify(receipts));
+  assert.equal(receipts[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(receipts));
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.ok(task.verification.evidence.fingerprints[path.join(f.root, "draft.md")]);
   const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: ctx.sessionKey };
-  assert.equal((await readReport(binding)).verification, "PASS");
+  assert.equal((await readReport(binding)).verification, "NO_DEVIATION_FOUND");
   await fs.writeFile(path.join(f.root, "draft.md"), "Changed after the restart's review.\n");
   assert.equal((await readReport(binding)).verification, "STALE");
 });
@@ -145,7 +145,7 @@ test("a fresh Gateway rediscovers modified artifacts from the active native tran
 test("a terminal review that cannot read its native transcript never inherits an earlier run's PASS", async t => {
   const f = await lifecycle(t);
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "NO_DEVIATION_FOUND");
   const original = await findTask({ projectRoot: f.root, sessionId: "host" });
   const ctx = { ...f.ctx, runId: "unreadable-native-run" };
   await f.runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
@@ -162,7 +162,7 @@ test("transient checker faults retry RC review without spending business correct
   const f = await lifecycle(t, { failures: 2 });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
+  assert.equal(records[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(task.stop.correctionAttempts, 0);
   assert.equal(task.stop.infrastructureTotalFailures, 2);
@@ -191,13 +191,13 @@ test("ongoing review cancellation cannot return PASS or mutate host cancellation
   await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
 });
 
-test("incomplete file quality reaches the next normal host prompt without an automatic business continuation", async t => {
+test("confirmed file-quality deviations reach the next normal host prompt without changing their delivery policy", async t => {
   const f = await lifecycle(t, { quality: [{ path: "draft.md", status: "DEVIATION", reason: "The heading omits the subject, so the draft cannot be identified.", evidence: ["draft.md:1"] }] });
   let admissions = 0;
   f.api.runtime.subagent = { run: async () => { admissions++; throw new Error("Quality uncertainty must not admit another business run."); } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.equal(record.reviewStatus, "DEVIATION");
   assert.match(record.verificationFeedback, /heading omits the subject/);
   assert.equal(admissions, 0);
   await fs.appendFile(path.join(f.root, "native.jsonl"), "\n" + JSON.stringify({ type: "message", id: "next-user", parentId: "u",
@@ -207,6 +207,19 @@ test("incomplete file quality reaches the next normal host prompt without an aut
   assert.match(response.prependContext, /历史评审/);
   assert.ok(Buffer.byteLength(response.prependContext, "utf8") <= 8192);
   assert.equal(admissions, 0);
+});
+
+test("an unresolved file-quality observation stays local after a completed zero-deviation Stop", async t => {
+  const reason = 'The optional visual check cannot be settled with these observations.';
+  const f = await lifecycle(t, { quality: [{ path: 'draft.md', status: 'UNVERIFIED', reason, evidence: [] }] });
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: 'Delivered.' } }, f.ctx);
+  const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), 'native review settlement');
+  assert.equal(record.reviewStatus, 'NO_DEVIATION_FOUND');
+  assert.equal(Boolean(record.verificationFeedback), false);
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.stop.infrastructureTotalFailures, 0);
+  const response = await f.runtime.prompt({ prompt: 'Continue.' }, { ...f.ctx, runId: 'next-normal-run' });
+  assert.doesNotMatch(response?.prependContext ?? '', /optional visual check/);
 });
 test("permanent checker faults stop at the existing infrastructure ceiling", async t => {
   const f = await lifecycle(t, { failures: 20 });
@@ -495,7 +508,7 @@ test("a queued business turn waits before replacing the old run, while UI status
   finish.resolve();
   await Promise.all([next, prompt]);
   const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert.equal(record.reviewStatus, "PASS");
+  assert.equal(record.reviewStatus, "NO_DEVIATION_FOUND");
   assert.equal(f.state.nativeRunId, "next-run");
   assert.equal(await fs.readFile(source, "utf8"), original, "status is UI-only, not a host user/assistant message");
 });
@@ -551,7 +564,7 @@ test("a cancelled incoming task does not replace or cancel the pending review", 
   assert.equal(f.state.nativeRunId, f.ctx.runId);
   assert.equal(f.state.reviewController.signal.aborted, false);
   finish.resolve();
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("incoming model admission already inside the lane releases immediately and fences an uncooperative review", async t => {
@@ -682,9 +695,9 @@ test("delivered correction admission survives host compaction and same-run retry
       terminal.resolve();
       await within(f.runtime.waitForNativeReviews({ drain: true }), "corrected Stop settlement");
       const task = await findTask({ projectRoot: f.root, sessionId: "host" });
-      assert.equal(task.verification.status, "PASS", JSON.stringify(task.verification));
+      assert.equal(task.verification.status, "NO_DEVIATION_FOUND", JSON.stringify(task.verification));
       assert.equal(f.post().phase, "IDLE");
-      assert.equal(f.post().reviewStatus, "PASS");
+      assert.equal(f.post().reviewStatus, "NO_DEVIATION_FOUND");
       assert.equal(task.stop.correctionAttempts, 1, "same-run retry consumes only one correction");
       assert.equal(f.hostAbort.signal.aborted, false);
     } finally { terminal.resolve(); await f.runtime.reset({}, f.ctx); await f.runtime.waitForNativeReviews({ drain: true }); }
@@ -878,7 +891,7 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   assert.equal(controller.signal.aborted, false);
   finish.resolve();
   const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "PASS");
+  assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("host auto-compaction after a failed attempt does not become an RC hook failure", async t => {
@@ -906,7 +919,7 @@ test("host auto-compaction after a failed attempt does not become an RC hook fai
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered after retry." } }, f.ctx);
   terminal.resolve();
   const [review] = await within(f.runtime.waitForNativeReviews(), "review after a genuine outer terminal");
-  assert.equal(review.reviewStatus, "PASS");
+  assert.equal(review.reviewStatus, "NO_DEVIATION_FOUND");
   } finally {
     terminal.resolve();
     await f.runtime.reset({}, f.ctx);
@@ -945,7 +958,7 @@ test("host memory maintenance cannot replace or finalize the business run in the
   assert.equal(f.post().phase, "RUNNING");
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const [review] = await within(f.runtime.waitForNativeReviews(), "business review after maintenance");
-  assert.equal(review.reviewStatus, "PASS");
+  assert.equal(review.reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("host maintenance filtering retains private reviewer tool authorization", async t => {
@@ -984,7 +997,7 @@ test("a read-only continuation retries an interrupted Stop, while accepted work 
       await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
       const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');
       const after = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-      assert.equal(review.reviewStatus, 'PASS', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
+      assert.equal(review.reviewStatus, 'NO_DEVIATION_FOUND', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
         taskStatus: after.status, verification: { status: after.verification?.status, reason: after.verification?.reasonCode, assessmentId: after.verification?.assessmentId },
         armed: after.stop.armedAtStart, assessmentReason: f.state.nativeAssessment?.outcome?.reason,
         assessmentMode: f.state.nativeAssessment?.outcome?.assessmentMode, warnings: f.warnings.slice(-2) }));

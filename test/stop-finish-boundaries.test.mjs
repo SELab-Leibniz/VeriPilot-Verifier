@@ -105,21 +105,25 @@ for (const [quality, severity] of [["DEVIATION", "HARD"], ["UNVERIFIED", "HARD"]
     const f = await fixture(t, { quality, severity }), stop = f.result.stop;
     assert.equal(f.result.decision, "allow");
     assert.equal(stop.fileQualityIncomplete, true);
-    assert.equal(stop.verificationIncomplete, true);
-    assert.equal(stop.report.status, "UNVERIFIED");
+    assert.equal(stop.verificationIncomplete, quality === "UNVERIFIED");
+    assert.equal(stop.report.status, quality === "DEVIATION" ? "DEVIATION" : "NO_DEVIATION_FOUND");
     assert.ok(stop.report.metrics.flatMap(metric => metric.objects).every(object => object.judgement === "PASS"));
     assert.equal(stop.report.blockingObjects.length, 0);
-    assert.equal(f.state.verification.status, "UNVERIFIED");
+    assert.equal(f.state.verification.status, stop.report.status);
     assert.equal(f.state.status, "COMPLETED_WITH_ISSUES");
     assert.equal(f.state.stop.correctionAttempts, 0);
     assert.equal(f.state.stop.infrastructureFailures, 0);
-    assert.match(f.result.feedback, new RegExp(`FILE_QUALITY_${quality}`));
-    assert.match(f.result.feedback, quality === "DEVIATION" ? /concrete required section/ : /baseline is unresolved/);
-    assert.ok(Buffer.byteLength(f.result.feedback) <= 8192);
-    const indexPath = /^\[RC_DETAILS\] ([^\n]+)/mu.exec(f.result.feedback)?.[1];
-    assert(indexPath);
-    const index = JSON.parse(await fs.readFile(indexPath, "utf8"));
-    assert.ok(index.itemCount > 0);
+    assert.equal(stop.review.unverifiedItems.length, quality === 'UNVERIFIED' ? 1 : 0);
+    if (quality === 'UNVERIFIED') assert.equal(f.result.feedback, null);
+    else {
+      assert.match(f.result.feedback, /FILE_QUALITY_DEVIATION/);
+      assert.match(f.result.feedback, /concrete required section/);
+      assert.ok(Buffer.byteLength(f.result.feedback) <= 8192);
+      const indexPath = /^\[RC_DETAILS\] ([^\n]+)/mu.exec(f.result.feedback)?.[1];
+      assert(indexPath);
+      const index = JSON.parse(await fs.readFile(indexPath, 'utf8'));
+      assert.ok(index.itemCount > 0);
+    }
   });
 }
 
@@ -129,7 +133,7 @@ test("conclusive file PASS keeps the ordinary complete Stop behavior", async t =
   assert.equal(f.result.feedback, null);
   assert.equal(f.result.stop.fileQualityIncomplete, false);
   assert.equal(f.state.status, "COMPLETED");
-  assert.equal(f.state.verification.status, "PASS");
+  assert.equal(f.state.verification.status, "NO_DEVIATION_FOUND");
 });
 
 test('an omitted requested file remains visibly unverified without spending a business correction', async t => {
@@ -154,9 +158,9 @@ test("a finished file-quality gap is not certified as a complete Stop PASS", asy
   const state = await runtimeState(f.root);
   const population = JSON.parse(await fs.readFile(path.join(f.directory, "metrics/population.json"), "utf8"));
   const result = classifyStopTerminal(state, { taskId: f.task.taskId, population });
-  assert.equal(result.kind, "SETTLED_WITH_UNVERIFIED");
+  assert.equal(result.kind, "NOT_ACCEPTED");
   assert.equal(result.allMetricsPass, false);
-  assert.deepEqual(result.incompleteFiles, [{ path: "delivery.md", status: "DEVIATION" }]);
+  assert.deepEqual(f.result.stop.review.fileAssessments.map(({path,status}) => ({path,status})), [{ path: "delivery.md", status: "DEVIATION" }]);
   const report = state.evaluations[0].metricReport;
   report.status = "PASS";
   const task = state.tasks[0], saved = task.assessments[task.verification.assessmentId].result.stop;
@@ -216,11 +220,13 @@ for (const legacyMode of ["PASS", "NOT_APPLICABLE", "file", "finding", "sibling"
 
 test("one claim's finding needs one matching evidence owner, not every metric projection", async t => {
   const f = await fixture(t, { legacyMode: "mixed-finding" });
-  assert.equal(f.result.stop.report.status, "UNVERIFIED",'known findings may be delivered while unrelated assigned runtime/source checks remain incomplete');
+  assert.equal(f.result.stop.report.status, "DEVIATION",'known findings may be delivered while unrelated assigned runtime/source checks remain incomplete');
   assert.deepEqual(f.result.stop.report.checkerIssues, []);
   assert.equal(f.result.stop.review.findings.length, 1);
-  assert.equal(f.state.stop.correctionAttempts, 0,'partial feedback has not started a business correction');
-  assert.equal(f.result.stop.partialFeedbackEligible,true);
+  assert.equal(f.state.stop.correctionAttempts, 1,'a confirmed finding starts correction despite unrelated unresolved items');
+  assert.equal(f.result.stop.verificationUnavailable, false);
+  assert(f.result.stop.review.unverifiedItems.length > 0);
+  assert.equal(f.result.stop.partialFeedbackEligible,false);
   assert.match(f.result.feedback, /concrete original observation/);
 });
 

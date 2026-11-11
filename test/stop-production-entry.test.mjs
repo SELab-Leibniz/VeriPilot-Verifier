@@ -117,7 +117,7 @@ test('missing output enters the production correction gate, then creation invali
   assert.equal(await matchesEvidence(prior), false);
   await fs.appendFile(f.transcript, JSON.stringify({ type: 'assistant', uuid: 'assistant-2', message: { id: 'assistant-2', role: 'assistant', content: 'The required file has been delivered.' } }) + '\n');
   const second = await event('output-delivered');
-  assert.equal(second.stop.status, 'PASS', JSON.stringify(second.stop));
+  assert.equal(second.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(second.stop));
   assert.equal(second.stop.admission, null);
   assert.equal((await store.inspect('session')).used, 1, 'Only the actual business start consumes correction quota');
 });
@@ -137,7 +137,7 @@ test("the production Stop entry dispatches a real workspace task adapter and nev
   const f = await fixture(t);
   await f.event("SessionStart", { source: "startup" });
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "PASS", JSON.stringify(result.stop));
+  assert.equal(result.stop.status, "NO_DEVIATION_FOUND", JSON.stringify(result.stop));
   assert.equal(result.decision, "allow");
   assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(result.stop.review.metricObjectJudgements.length, 2);
@@ -148,7 +148,7 @@ test("the production Stop entry dispatches a real workspace task adapter and nev
 test('pending onboarding obligations invalidate an otherwise reusable completed Stop', async t => {
   const f = await fixture(t);
   await f.event('SessionStart', { source: 'startup' });
-  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  assert.equal((await f.event('Stop')).stop.status, 'NO_DEVIATION_FOUND');
   const reviews = f.calls.filter(value => value === 'workspace-stop').length;
   await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
     state.groundTruth.onboardingPending = [{ status: 'UNVERIFIED', operationId: 'unwritten-output',
@@ -188,7 +188,7 @@ test('pending onboarding obligations still run the Stop review, are listed separ
 test('unverified script document coverage rejects an older PASS and caps a fresh review to UNVERIFIED', async t => {
   const f = await fixture(t);
   await f.event('SessionStart', { source: 'startup' });
-  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  assert.equal((await f.event('Stop')).stop.status, 'NO_DEVIATION_FOUND');
   await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
     state.documentCoverage = { status: 'UNVERIFIED', unverified: ['DOCUMENT_DECLARATION_UNRESOLVED'] };
   });
@@ -297,7 +297,7 @@ test("a requirement epoch change preserves actual session and flow usage at the 
   await startCorrectionEpoch({ projectRoot: f.root, taskId: f.task.taskId, reason: "HARD_REQUIREMENT_CHANGED" });
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 1);
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "PASS");
+  assert.equal(result.stop.status, "NO_DEVIATION_FOUND");
   const state = await store.inspect("session");
   assert.equal(state.used, 1);
   assert.equal(state.flows[flowId].used, 1);
@@ -311,7 +311,7 @@ test("explicit read-only verification ignores exhausted automatic quota and crea
   const result = await handleRuntimeV2Event({ projectRoot: f.root, input, plan: { runtimeV2: f.runtimeV2, artifacts: [] },
     reviewerFactory: f.reviewerFactory, stopHost: { directory: f.directory },
     assessmentContext: { mode: "verify_only", assessmentId: "read-only-zero-quota", guard: decisionGuard(task) } });
-  assert.equal(result.stop?.status, "PASS", JSON.stringify(result));
+  assert.equal(result.stop?.status, "NO_DEVIATION_FOUND", JSON.stringify(result));
   assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(await createStopCorrectionStore({ directory: f.directory }).inspect("session"), null);
 });
@@ -326,7 +326,7 @@ test('production Stop forwards configured original Skill roots to its single rev
       assert.deepEqual(input.skillRoots, [custom]); return f.reviewerFactory(input); },
     assessmentContext: { mode: 'verify_only', assessmentId: 'configured-original-skill-root' },
     input: { session_id: 'session', cwd: f.root, transcript_path: path.join(f.root, 'host-transcript.jsonl'), hook_event_name: 'Stop' } });
-  assert.equal(result.stop.status, 'PASS'); assert.equal(calls, 1);
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND'); assert.equal(calls, 1);
 });
 
 test('program device verification does not build an unused whole-repository source inventory', async t => {

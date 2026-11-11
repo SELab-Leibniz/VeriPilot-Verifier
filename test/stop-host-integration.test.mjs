@@ -109,10 +109,10 @@ test("native reply runs the new groups and publishes a fresh PASS with independe
   const f = await nativeFixture(t);
   await f.start();
   const record = await f.stop();
-  assert.equal(record.reviewStatus, "PASS", JSON.stringify({ record, warnings: f.warnings }));
+  assert.equal(record.reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify({ record, warnings: f.warnings }));
   assert.equal(f.calls.filter(kind => kind === "workspace-stop").length, 1);
   const binding = { workspaceDir: f.root, sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey };
-  assert.equal((await readReport(binding)).verification, "PASS");
+  assert.equal((await readReport(binding)).verification, "NO_DEVIATION_FOUND");
   await fs.writeFile(path.join(f.root, "app.py"), "def convert(value): return 0\n");
   assert.equal((await readReport(binding)).verification, "STALE");
   assert.equal((await f.store.inspect("session")).used, 0);
@@ -214,7 +214,7 @@ test("MatrixAssistant start protocol counts the observed execution once and a su
     message: { role: "assistant", content: "Implementation complete." } }) + "\n");
   await f.runtime.agentEnd({ runId: ctx.runId, success: true, messages: [{ role: "assistant", content: "Implementation complete." }] }, ctx);
   const records = await f.runtime.waitForNativeReviews({ drain: true });
-  assert.equal(records.at(-1).reviewStatus, "PASS", JSON.stringify({ records, warnings: f.warnings }));
+  assert.equal(records.at(-1).reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify({ records, warnings: f.warnings }));
   const ledger = await f.store.inspect("session");
   assert.equal(ledger.used, 1);
   assert.equal(Object.keys(ledger.flows).length, 1, "plugin feedback must not mint a human-input flow");
@@ -403,7 +403,7 @@ test("Gateway shutdown preserves pending tasks and recovery reconciles the corre
 });
 
 for (const scenario of [
-  { name: "PASS", verdict: "PASS", status: "PASS", options: { startProtocol: true } },
+  { name: "no confirmed deviation", verdict: "PASS", status: "NO_DEVIATION_FOUND", options: { startProtocol: true } },
   { name: "Stop disabled", status: "DISABLED", options: { enabled: false } },
   { name: "all metrics disabled", status: "DISABLED", options: { metricEnabled: false } },
   { name: "session quota exhausted", reason: "SESSION_CORRECTION_LIMIT", status: "UNVERIFIED", options: { startProtocol: true, sessionLimit: 0 } },
@@ -515,7 +515,7 @@ for (const { limit, deviationOnly } of [{ limit: 1 }, { limit: 3 }, { limit: 1, 
     const report = await readReport({ workspaceDir: f.root, sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey });
     assert.match(report.summary, /Stop 扫描未发现偏差/u);
     assert.doesNotMatch(report.summary, /最终验收未完成|验收通过/u);
-  } else if (limit === 3) assert.equal(current.reviewStatus, "PASS");
+  } else if (limit === 3) assert.equal(current.reviewStatus, "NO_DEVIATION_FOUND");
   else { assert.notEqual(current.reviewStatus, "PASS"); assert.equal(current.reason, "CORRECTION_BUDGET_EXHAUSTED"); }
 });
 
