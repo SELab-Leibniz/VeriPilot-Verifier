@@ -78,6 +78,9 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
   const current = localTestEvidence(freshReport ? await fs.readFile(coverage, 'utf8') : '', execution, { freshReport, compileOutput: output });
   const verdict = regressionVerdict(current, baselineEvidence, maxNames);
+  const inventory = { complete: current.completeRuntime, failures: current.failures.map(({ id }) => ({ id,
+    title: id.replace(/^[^:]+::[^:]+::/u, '') })) };
+  if (isolateTest === undefined) verdict.names.push('RC_REGRESSION_INVENTORY ' + JSON.stringify(inventory));
   const observed = Object.keys(current.statuses);
   const isolatedCase = isolateTest === undefined ? null : { id: isolateTest, status: current.statuses[isolateTest] ?? 'UNAVAILABLE',
     complete: current.completeRuntime && observed.length === 1 && observed[0] === isolateTest, observed };

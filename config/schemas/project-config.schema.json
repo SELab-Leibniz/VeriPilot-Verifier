@@ -464,6 +464,18 @@
               "maximum": 4194304,
               "default": 65536,
               "description": "Bytes of combined output tail persisted as program evidence."
+            },
+            "baselineFile": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Immutable task-start test evidence JSON with completeRuntime and statuses by exact test ID."
+            },
+            "isolationCommand": {
+              "type": ["array", "string"],
+              "minItems": 1,
+              "minLength": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Fresh single-case runner argv. Must contain {testId}; substitution never invokes a shell."
             }
           },
           "additionalProperties": false

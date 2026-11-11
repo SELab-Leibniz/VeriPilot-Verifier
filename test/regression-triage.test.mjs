@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { runStopRegressionCheck, regressionFailureInventory, STANDING_REGRESSION } from '../lib/runtime-v2/regression-evidence.mjs';
+import { validateProjectConfig } from '../lib/policy/config-loader.mjs';
 
 const passed = id => ({ exitCode: 0, outputTail: `RC_REGRESSION_CASE ${JSON.stringify({ id, status: 'PASS', complete: true, observed: [id] })}\n` });
 
@@ -41,9 +42,11 @@ test('the native filter preserves exact test names and rejects unrepresentable s
   assert.equal(config.baselineFile, 'original-result.json');
   assert.deepEqual(config.isolationCommand, ['runner', '--test={testId}']);
   assert.throws(() => normalizeRegressionCheck({ isolationCommand: ['runner'] }), /testId/u);
+  validateProjectConfig({ version: 2, artifacts: [], dynamicGroundTruth: { enabled: false },
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, regressionCheck: config } }, 'config.yaml');
 });
 
-test('the normal regression entry runs isolation before review, retains evidence and reuses unchanged triage', async t => {
+test('the normal regression entry runs isolation before review and retains per-case evidence', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-triage-command-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'baseline.json'), JSON.stringify({ completeRuntime: true,
@@ -68,4 +71,30 @@ test('the normal regression entry runs isolation before review, retains evidence
     [['existing', 'PRE_EXISTING_FAILURE'], ['leaked', 'TEST_ISOLATION'], ['regressed', 'REVIEW_REQUIRED']]);
   assert.deepEqual(regressionFailureInventory(run), { complete: true,
     failures: [{ id: 'regressed', title: 'regressed' }], excluded: ['existing', 'leaked'] });
+});
+
+test('a complete machine inventory retains failures beyond the bounded name list', () => {
+  const failures = Array.from({ length: 30 }, (_, index) => ({ id: 'test-' + index, title: 'case ' + index }));
+  const outputTail = 'RC_REGRESSION_CHECK FAIL tests=30 passed=0 failed=30\n- FAIL test-0\n- ... 29 more\n'
+    + 'RC_REGRESSION_INVENTORY ' + JSON.stringify({ complete: true, failures });
+  assert.deepEqual(regressionFailureInventory({ status: 'FAILED', outputTail }), { complete: true, failures });
+  assert.equal(regressionFailureInventory({ status: 'FAILED', outputTail: outputTail + '\nRC_REGRESSION_INVENTORY {}' }).complete, false);
+});
+
+test('a baseline modified by an isolated run invalidates the entire regression result', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-triage-basis-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, 'baseline.json'), JSON.stringify({ completeRuntime: true, statuses: { one: 'PASS' } }));
+  const runner = path.join(root, 'runner.mjs');
+  await fs.writeFile(runner, [
+    "import fs from 'node:fs/promises';",
+    "if (!process.argv[2]) { console.log('not ok 1 - one\\n# fail 1'); process.exitCode = 1; }",
+    "else { await fs.writeFile('baseline.json', '{}');",
+    "console.log('RC_REGRESSION_CASE ' + JSON.stringify({ id:'one', status:'PASS', complete:true, observed:['one'] })); }",
+  ].join('\n'));
+  const config = normalizeRegressionCheck({ enabled: true, command: [process.execPath, runner], baselineFile: 'baseline.json',
+    isolationCommand: [process.execPath, runner, '{testId}'], timeoutMs: 10000 });
+  await assert.rejects(runStopRegressionCheck({ projectRoot: root, config,
+    population: { metrics: { M16: [{ programStanding: STANDING_REGRESSION }] } }, deadlineAt: Date.now() + 30000 }),
+  { code: 'BASELINE_INPUT_CHANGED' });
 });

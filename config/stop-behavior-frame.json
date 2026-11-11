@@ -32,6 +32,13 @@
         "--original-tests"
       ],
       "cwd": ".",
+      "baselineFile": "${outputRoot}/baseline-local-tests.json",
+      "isolationCommand": [
+        "${node}", "${harnessRoot}/scripts/bench/arkts-regression-check.mjs",
+        "--project=${projectRoot}", "--tool-root=${toolRoot}",
+        "--java-home=${javaHome}", "--baseline=${outputRoot}/baseline-local-tests.json",
+        "--original-tests", "--isolate-test={testId}"
+      ],
       "timeoutMs": 900000
     }
   },

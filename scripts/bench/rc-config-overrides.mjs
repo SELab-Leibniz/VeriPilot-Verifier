@@ -61,11 +61,14 @@ export function emitSimpleYaml(document) {
 // only an enabled check needs a command. effective is null while the loaded product drops the field.
 export function regressionCheckPolicy(configured, effective) {
   if (configured === undefined || configured === null) return effective ? { configured: null, effective, honoredByProduct: true } : null;
-  const { enabled, command, cwd, timeoutMs, maxOutputBytes, ...extra } = configured;
+  const { enabled, command, cwd, timeoutMs, maxOutputBytes, baselineFile, isolationCommand, ...extra } = configured;
   const positive = value => value === undefined || Number.isSafeInteger(value) && value >= 1;
   if (typeof enabled !== 'boolean' || (enabled || command !== undefined) && (!Array.isArray(command) || !command.length
     || !command.every(value => typeof value === 'string' && value)) || cwd !== undefined && (typeof cwd !== 'string' || !cwd)
-    || !positive(timeoutMs) || !positive(maxOutputBytes) || Object.keys(extra).length)
+    || !positive(timeoutMs) || !positive(maxOutputBytes) || Object.keys(extra).length
+    || baselineFile !== undefined && (typeof baselineFile !== 'string' || !baselineFile)
+    || isolationCommand !== undefined && (!Array.isArray(isolationCommand) || !isolationCommand.length
+      || !isolationCommand.every(value => typeof value === 'string' && value) || !isolationCommand.some(value => value.includes('{testId}'))))
     throw new Error('stopCorrection.regressionCheck must be {enabled:boolean, command:[argv...] when enabled, cwd?:string, timeoutMs?:positive integer, maxOutputBytes?:positive integer}');
   return { configured, effective: effective ?? null, honoredByProduct: Boolean(effective) };
 }
