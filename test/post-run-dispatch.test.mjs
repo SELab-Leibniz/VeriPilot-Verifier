@@ -38,7 +38,7 @@ async function fixture(t, overrides = {}) {
     sendUser: async (r, task) => { sent.push({ sessionId: r.sessionId, ...task }); return { runId: task.runId }; },
     onError: e => errors.push(e), ...overrides });
   const identity = id => ({ agentId: "main", sessionKey: `agent:main:${id}`, sessionId: id, projectRoot: root, scopeFingerprint: "scope-1" });
-  t.after(async () => { await manager.dispose(); await fs.rm(root, { recursive: true, force: true }); });
+  t.after(async () => { await manager.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
   return { root, manager, identity, sent, errors };
 }
 
