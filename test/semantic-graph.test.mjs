@@ -5,7 +5,28 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
+import { scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
+
+test('test-helper argument hints preserve reference identity and exclude control parentheses', () => {
+  const source = [
+    "import { Store } from './store'",
+    "it('registers a substituted member', () => {",
+    '  hooks.replace(Store, Store.save)',
+    '  if (Store.save) {}',
+    '  while (Store.save) {}',
+    '  const reference = (Store.save)',
+    '})',
+  ].join('\n');
+  const testReferences = scanSemanticSource(source, 'store.test.ts').uses
+    .filter(use => use.label === 'Store.save');
+  assert.equal(testReferences.length, 4);
+  assert.deepEqual(testReferences.map(use => use.argumentTo), [
+    { symbol: 'hooks.replace', line: 3, argumentIndex: 1 }, undefined, undefined, undefined,
+  ]);
+  assert(testReferences.every(use => use.relation === 'reference'));
+  assert(scanSemanticSource(source, 'store.ts').uses.every(use => use.argumentTo === undefined));
+});
 
 test('indexes current definitions and relative dependencies in both directions', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-graph-'));
@@ -149,7 +170,7 @@ test('links methods across aliases and re-exports and keeps tests and state writ
       "import * as services from './store'",
       "it('uses the public entry point', async () => {",
       '  const panel = new Panel()',
-      '  const reference = services.Store.save',
+      '  const reference = fixture(services.Store, services.Store.save)',
       '  await panel.execute(1)',
       '})',
     ],
@@ -174,6 +195,7 @@ test('links methods across aliases and re-exports and keeps tests and state writ
   assert.deepEqual(callers.hits.map(row => [row.path, row.line, row.relation]), [
     ['panel.ets', 5, 'call'], ['panel.test.ets', 5, 'reference'],
   ]);
+  assert.deepEqual(callers.hits[1].argumentTo, { symbol: 'fixture', line: 5, argumentIndex: 1 });
   assert(graph.query({ operation: 'outline', file: 'panel.ets' }).hits.some(row => row.qualified === 'Panel.shadow'));
   const [testCase] = graph.query({ operation: 'search', query: 'public entry point' }).hits;
   assert.deepEqual([testCase.kind, testCase.symbol, testCase.line], ['test', 'uses the public entry point', 3]);
