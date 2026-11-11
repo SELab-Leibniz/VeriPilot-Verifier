@@ -12,7 +12,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { stopFeedbackCurrent } from '../lib/runtime-v2/production-stop.mjs';
 import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 
-async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null, startProtocol = null } = {}) {
+async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null, startProtocol = null, classification, artifacts = [] } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "stop-entry-"));
@@ -45,16 +45,68 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null,
       return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
     }
     assert.equal(input.request.reviewScope.kind, "workspace-stop");
-    return scriptedWorkspaceReview(input, { file: path.join(root, expectedFile ?? "app.py"), verdict: verdict });
+    return scriptedWorkspaceReview(input, { file: path.join(root, expectedFile ?? "app.py"), verdict, classification });
   };
   reviewerFactory.supportsReviewCollection = true;
   const directory = path.join(root, "stable-host-state");
-  const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+  const options = { projectRoot: root, plan: { runtimeV2, artifacts, configuredArtifacts: artifacts }, reviewerFactory,
     stopHost: { directory, ...(startProtocol ? { startProtocol } : {}) } };
   const event = (hook, extras = {}) => handleRuntimeV2Event({ ...options, input: { session_id: "session", cwd: root,
     transcript_path: transcript, hook_event_name: hook, last_assistant_message: "Implementation complete.", ...extras } });
   return { root, directory, task, calls, event, document, runtimeV2, reviewerFactory, transcript };
 }
+
+test('proposal review followed by coding runs the complete production Stop under the same user flow and remaining quota', async t => {
+  for (const deviationOnly of [true, false]) await t.test(deviationOnly ? 'no deviation at proposal' : 'empty proposal scope stays unverified', async t => {
+    const classification = { stopClassification: 'STAGE_COMPLETE', stage: 'proposal' };
+    const f = await fixture(t, { classification, stop: { deviationOnly }, startProtocol: { version: 1 },
+      artifacts: [{ name: 'proposal', stage: 'proposal', metrics: [] }],
+      verdict: () => classification.stopClassification === 'STAGE_COMPLETE' ? null : 'DEVIATION' });
+    // A workflow with both a document delivery and production obligations.
+    const truthPath = path.join(taskDirectory(f.root, f.task.taskId), 'ground-truth/current.json');
+    const truth = JSON.parse(await fs.readFile(truthPath, 'utf8'));
+    truth.claims.push({ ...truth.claims[0], claimId: 'proposal', revisionId: 'proposal@1', text: 'Deliver the requested proposal.', verificationTarget: 'ARTIFACT' });
+    await fs.writeFile(truthPath, JSON.stringify(truth));
+    await f.event('SessionStart', { source: 'startup' });
+    const store = createStopCorrectionStore({ directory: f.directory }), flowId = sha256(['session', 'user-1']);
+    // One earlier actual repair start must remain charged across the phase boundary.
+    await store.beginStop({ sessionId: 'session', flowId, stopId: 'prior-repair', sourceInput: { origin: 'HUMAN', id: 'user-1' }, config: f.runtimeV2.stopCorrection });
+    await store.bindReviewScope({ sessionId: 'session', stopId: 'prior-repair', scopeId: `${path.resolve(f.root)}:${f.task.taskId}`, classification });
+    await store.settleReview({ sessionId: 'session', stopId: 'prior-repair', status: 'DEVIATION', currentDeviations: [{ objectId: 'prior', reason: 'Earlier repair.' }] });
+    const prior = await store.reserveFeedback({ sessionId: 'session', stopId: 'prior-repair', packageId: 'prior', basisCurrent: async () => true });
+    await store.observeStart({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', observationId: 'prior-start', startedAt: Date.now() });
+    await store.observeEnd({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', endedAt: Date.now() });
+    const proposal = await f.event('Stop');
+    assert.equal(proposal.stop.status, deviationOnly ? 'NO_DEVIATION_FOUND' : 'UNVERIFIED', JSON.stringify(proposal.stop));
+    if (!deviationOnly) assert.equal(proposal.stop.reasonCode, 'STOP_STAGE_METRICS_UNDECLARED');
+    assert.equal(proposal.stop.review.stopClassification, 'STAGE_COMPLETE');
+    const afterProposal = await store.inspect('session');
+    assert.equal(afterProposal.flows[flowId].closedAt, undefined);
+    assert.equal(afterProposal.stops['prior-repair'].control, deviationOnly ? 'ALLOW' : 'WAIT_REPAIR');
+    assert.equal(afterProposal.stops['prior-repair'].reviewStatus, 'DEVIATION');
+    assert.equal(afterProposal.admissions[prior.id].accounting, 'USED');
+    classification.stopClassification = 'TASK_COMPLETE'; classification.stage = null;
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    await fs.appendFile(f.transcript, JSON.stringify({ type: 'assistant', uuid: 'coding-done', message: { id: 'coding-done', role: 'assistant', content: 'Coding complete.' } }) + '\n');
+    const coding = await f.event('Stop', { last_assistant_message: 'Coding complete.' });
+    assert.equal(coding.stop.status, 'DEVIATION', JSON.stringify(coding.stop));
+    assert.equal(coding.decision, 'block');
+    assert.equal(coding.stop.review.stopClassification, 'TASK_COMPLETE');
+    assert.equal(coding.stop.review.metricObjectJudgements.length, 2);
+    assert.equal(coding.stop.review.collection.complete, true);
+    assert.equal(f.calls.filter(call => call === 'workspace-stop').length, 2);
+    const ledger = await store.inspect('session'), recorded = ledger.stops[coding.stop.stopCorrection.stopId];
+    assert.equal(Object.keys(ledger.flows).length, 1);
+    assert.equal(recorded.flowId, flowId);
+    assert.equal(recorded.capacity.sessionUsed, 1);
+    assert.equal(recorded.capacity.flowUsed, 1);
+    assert.equal(recorded.capacity.sessionLimit, 3);
+    assert.equal(recorded.capacity.flowLimit, 3);
+    assert.equal(ledger.used, 1);
+    assert.equal(ledger.flows[flowId].used, 1);
+    assert.equal(ledger.admissions[coding.stop.admission.id].accounting, 'RESERVED');
+  });
+});
 
 test('deviation-only Stop allows an empty scan and keeps existing repair feedback for cited deviations', async t => {
   for (const { enabled, verdict, status, decision } of [

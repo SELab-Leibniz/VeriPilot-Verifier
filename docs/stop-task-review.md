@@ -38,6 +38,8 @@ stopCorrection:
 
 旧 `maxCorrectionsPerEpoch` 只映射为 `maxCorrectionsPerFlow`；旧 `waitTimeoutMs` 只映射为本次 `assessmentTimeoutMs`，均产生弃用提示。新旧同义字段同时出现时报错。需求变化不清零会话额度，业务修复不占已经结束的审查窗口。
 
+Stop 将已确认的完成类型及阶段与审查范围一起持久化。`STAGE_COMPLETE`、中间输出、等待用户或外部阻塞的完整审查若没有当前偏差，只结束本次 Stop；同一范围、同一阶段的旧修复等待也可结束。阶段范围为空或没有声明适用指标时，当前 Stop 仍为 `UNVERIFIED`，但不关闭 flow，也不关闭尚未确认修好的旧偏差。后续 coding 等阶段仍在同一用户 flow 内进行完整审查，沿用会话及 flow 的已用次数、未决预约和上限，不创建新额度。已结束阶段的旧定时器不再终止后续阶段。`TASK_COMPLETE` 无偏差才按完成结果关闭整个 flow；未记录完成类型的旧调用保持原来的关闭行为。审查执行失败、取消、超时、依据过期及实际额度耗尽仍遵循原来的终止保护，已关闭的历史 flow 不自动重开。
+
 ## 单会话审查
 
 Stop 使用一个私有 task 会话。它先完整读取原始依据，再通过 `review_checklist` 的 `stopClassification` 同时确定停止类型并取得原始清单，自行规划审查顺序、读取原文并逐项提交。最后一项可用 `submit_review(finish: true)` 一并结算；复杂流程也可单独调用 `review_scope` 和 `finish_stop_review`。提前请求结算不能跳过剩余条目。必要的 Ground Truth 更新仍由独立的来源提取协议负责；基线未变化时复用已有基线。旧 `stopReviewEngine: native` 仅作为配置兼容值归一到 task。Stop worker 使用 200 个累计助手响应轮次及 32768 单次输出 token 上限；首次运行后最多在同一会话续跑一次，沿用原截止、已读凭据和已保存结果。最终自然语言不能替代提交回执。
