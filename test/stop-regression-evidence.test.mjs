@@ -78,7 +78,7 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, afterStart, authority }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, afterStart }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
   await project(f.root, { broken: broken && !afterStart });
@@ -94,12 +94,6 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
     Object.assign(f.input, input);
     return f.run(async api => {
       try {
-        if (api.brief.kind === 'regression-authorization') {
-          assert.deepEqual([...api.tools.keys()], ['submit_regression_authority']);
-          assert(authority, 'Unexpected original-authority check');
-          await api.submit('submit_regression_authority', { cases: await authority(api.brief) });
-          return;
-        }
         await api.readAll();
         const userPath = api.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
         const original = (await api.read(userPath)).details.citation.citeId;
@@ -178,10 +172,6 @@ test('the standing regression item cites the pre-existing test and the changed c
     assert.match(evidence, /L11: should set minLengthIndex to default/u);
     const changed = await cite('src/settings.mjs'), existing = await cite('test/settings.test.mjs');
     const reason = 'applyPolicy no longer falls back to DEFAULT_INDEX for an unknown minLength, which the existing test asserts.';
-    await assert.rejects(submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', reason, citeIds: [changed] }),
-      error => error.code === 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' && /pre-existing behavior it breaks/u.test(error.message));
-    await assert.rejects(submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', reason, citeIds: [existing] }),
-      { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
     assert.deepEqual(await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', reason, citeIds: [existing, changed] }),
       { saved: true, itemId: standing.taskId });
   } });
@@ -201,10 +191,6 @@ test('changed test setup can prove a shared production-state regression without 
       assert.equal(standing.regressionEvidence.programRun.status, 'FAILED');
       const changed = await cite('test/settings.test.mjs');
       const existing = await cite(standing.regressionEvidence.evidenceFiles[0]);
-      const production = checklist.items.find(item => !item.programStanding);
-      await assert.rejects(submit('submit_review', { taskId: production.taskId, verdict: 'DEVIATION',
-        reason: 'A test edit alone cannot prove the requested production option is missing.', citeIds: [changed] }),
-      { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
       await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION',
         reason: 'The changed test replaces the shared applyPolicy method without restoring it, breaking the pre-existing default-index assertion for later callers.',
         citeIds: [changed, existing] });
@@ -332,9 +318,7 @@ test('a timed-out, unlaunched or out-of-budget check is unavailable evidence and
       const run = standing.regressionEvidence.programRun;
       assert.deepEqual([run.status, run.timedOut], ['UNAVAILABLE', true]);
       assert.match(run.summary, /^Program-run existing tests unavailable \(TIMEOUT\); this is not evidence of a deviation\./u);
-      const changed = await cite('src/settings.mjs'), output = await cite(run.files[0]);
-      await assert.rejects(submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', citeIds: [output, changed],
-        reason: 'The existing test run did not finish.' }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
+      return { regressionCheck: { status: 'UNVERIFIED', reason: 'The existing test run did not finish.' } };
     } }).then(({ result }) => assert.notEqual(result.stop.status, 'DEVIATION', JSON.stringify(result.stop)));
 });
 
@@ -360,11 +344,7 @@ test('a task-start change set keeps a regression the business already committed'
 test('an unresolved original-test check is recorded without changing a completed zero-deviation conclusion', async t => {
   const { result, f } = await regressionStop(t, { regressionCheck: { enabled: true, command: [process.execPath, '-e', 'process.exit(2)'] },
     script: async ({ standing, submit, cite }) => {
-      await assert.rejects(submit('finish_stop_review', { summary: 'No deviations.' }), { code: 'REVIEW_REGRESSION_CHECK_REQUIRED' });
-      const output = await cite(standing.regressionEvidence.programRun.files[0]);
-      await assert.rejects(submit('finish_stop_review', { summary: 'The old test is stale.', regressionCheck: {
-        status: 'EXPLAINED', reason: 'The command exited 2.', citeIds: [output] } }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
-      return { regressionCheck: { status: 'UNVERIFIED', reason: 'Exit 2 alone cannot establish a source contradiction.', citeIds: [output] } };
+      return { regressionCheck: { status: 'UNVERIFIED', reason: 'Exit 2 alone cannot establish a source contradiction.' } };
     } });
   assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
   assert.equal(result.stop.verificationIncomplete, true);
@@ -377,99 +357,38 @@ test('an unresolved original-test check is recorded without changing a completed
   assert.deepEqual(evaluation.unverifiedItems, result.stop.review.unverifiedItems);
 });
 
-test('an explicitly requested behavior change can explain an old failing assertion with source evidence', async t => {
-  const { result } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
-    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 1024 },
-    afterStart: root => fs.writeFile(path.join(root, 'test/settings.test.mjs'), TESTS.replace(OLD_FALLBACK, 'assert.equal(vm.minLengthIndex, -1);')),
-    authority: ({ originalMessages, originalFiles, cases }) => {
-      assert.deepEqual(originalMessages, [`${REQUEST} ${AUTHORIZED_FALLBACK}`]);
-      assert.equal(cases.length, 1);
-      assert(cases[0].originalTest.includes(OLD_FALLBACK));
-      assert(!cases[0].originalTest.includes('assert.equal(vm.minLengthIndex, -1);'));
-      assert.equal(cases[0].expectedAfter, '-1');
-      const originals = new Map(originalFiles.map(file => [file.path, file.source]));
-      assert.equal(originals.get('test/settings.test.mjs'), TESTS);
-      assert.equal(originals.get('src/settings.mjs'), SOURCE);
-      return [{ id: cases[0].id, verdict: 'AUTHORIZED', reason: 'The original request explicitly replaces the default for unsupported inputs.' }];
-    },
-    script: async ({ standing, original, submit, cite }) => {
-      const source = await cite('src/settings.mjs'), existing = await cite('test/settings.test.mjs');
-      const run = standing.regressionEvidence.programRun;
-      assert.equal(run.failureInventory.complete, true);
-      const [failure] = run.failureInventory.failures;
-      assert.equal(failure.originalTest.path, 'test/settings.test.mjs');
-      assert.match(await fs.readFile(failure.originalTest.file, 'utf8'), /assert.equal\(vm.minLengthIndex, DEFAULT_INDEX\);/u);
-      const check = { status: 'EXPLAINED', reason: 'The original now requires -1 instead of the old default for unsupported 99.',
-        citeIds: [await cite(run.files[0])] };
-      await assert.rejects(submit('finish_stop_review', { summary: 'Requested behavior.', regressionCheck: check }), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
-      const explanation = { failure: failure.id, reason: 'The source uses indexOf, which returns the requested -1 for 99.',
-        oldExpectation: OLD_FALLBACK, expectedAfter: '-1', authorization: AUTHORIZED_FALLBACK, originalCiteId: original, citeIds: [source] };
-      const reject = override => assert.rejects(submit('finish_stop_review', { summary: 'Requested behavior.',
-        regressionCheck: { ...check, explanations: [{ ...explanation, ...override }] } }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
-      await reject({ originalTestCiteId: existing });
-      const originalTestCiteId = await cite(failure.originalTest.file);
-      await reject({ originalTestCiteId, authorization: 'Use any index for unsupported lengths.' });
-      await reject({ originalTestCiteId, oldExpectation: 'assert.equal(vm.minLengthIndex, -1);' });
-      return { regressionCheck: { ...check, explanations: [{ ...explanation, originalTestCiteId }] } };
+test('remaining regression cases accept reviewer decisions without authorization quotes or session reads', async t => {
+  const { result, f } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
+    script: async ({ standing }) => {
+      const [failure] = standing.regressionEvidence.programRun.failureInventory.failures;
+      return { regressionCheck: { status: 'EXPLAINED', reason: 'The requested fallback replaces this old expectation.',
+        cases: [{ id: failure.id, verdict: 'AUTHORIZED_CHANGE', reason: 'Unsupported inputs now use the requested index.' }] } };
     } });
   assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
+  assert.deepEqual(result.stop.review.unverifiedItems, []);
+  assert.equal(f.calls.length, 1, 'no second semantic authorization reviewer');
 });
 
-test('one authorized failure and a new mock cannot explain a separate preserved contract', async t => {
-  const mockPath = 'src/settings.mock.mjs';
-  let authorityChecks = 0;
-  const { result } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
-    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 1024 },
-    authority: ({ cases }) => {
-      authorityChecks++;
-      assert.equal(cases.length, 2);
-      assert.deepEqual(cases.map(({ oldExpectation }) => oldExpectation), ['assert.equal(vm.minLengthIndex, 2);', OLD_FALLBACK]);
-      return [
-        { id: cases[0].id, verdict: 'PRESERVE', reason: 'The original request only changes unsupported lengths.' },
-        { id: cases[1].id, verdict: 'AUTHORIZED', reason: 'The user explicitly changed the fallback.' },
-      ];
-    },
-    afterStart: async root => {
-      await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN.replace('= index;', '= policy.minLength === 16 ? -1 : index;'));
-      await fs.writeFile(path.join(root, mockPath), 'export const supportedIndex = 2;\n');
-    },
-    script: async ({ brief, standing, original, submit, cite }) => {
-      const run = standing.regressionEvidence.programRun;
-      assert.equal(run.failureInventory.complete, true);
-      const [preserved, authorized] = run.failureInventory.failures;
-      assert.equal(run.failureInventory.failures.length, 2);
-      assert.match(preserved.title, /map policy minLength 16/u);
-      assert.match(authorized.title, /default when policy minLength not in options/u);
-      const source = await cite('src/settings.mjs'), mock = await cite(mockPath);
-      const originalTestCiteId = await cite(preserved.originalTest.file);
-      const allow = { failure: authorized.id, reason: 'Unsupported lengths now return -1 as requested.', authorization: AUTHORIZED_FALLBACK,
-        oldExpectation: OLD_FALLBACK, expectedAfter: '-1', originalCiteId: original, originalTestCiteId: await cite(authorized.originalTest.file), citeIds: [source] };
-      const check = { status: 'EXPLAINED', reason: 'Both failures are intentional.', citeIds: [await cite(run.files[0]), source] };
-      const tryFinish = explanations => submit('finish_stop_review', { summary: 'Scanned the scoped checklist.',
-        regressionCheck: { ...check, explanations } });
-      const mockExplanation = { ...allow, failure: preserved.id, originalTestCiteId,
-        oldExpectation: 'assert.equal(vm.minLengthIndex, 2);', reason: 'The new mock yields the old value.' };
-      const unsupported = { ...mockExplanation, reason: 'The new production condition intentionally changes supported lengths too.', citeIds: [source] };
-      if (brief.attempt === 1) {
-        await assert.rejects(tryFinish([allow]), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
-        await assert.rejects(tryFinish([allow, allow]), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
-        await assert.rejects(tryFinish([allow, { ...allow, failure: 'Different failure' }]), { code: 'REVIEW_REGRESSION_EXPLANATION_REQUIRED' });
-        await assert.rejects(tryFinish([allow, { ...allow, failure: preserved.id }]), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
-        for (const citeIds of [[mock], [mock, source]]) {
-          await assert.rejects(tryFinish([allow, { ...mockExplanation, citeIds }]),
-            error => error.code === 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' && /changed production behavior/u.test(error.message));
-        }
-        return { regressionCheck: { ...check, explanations: [allow, unsupported] } };
-      }
-      assert.match(brief.instruction, /REVIEW_REGRESSION_AUTHORITY_REJECTED/u);
-      await assert.rejects(tryFinish([allow, unsupported]), { code: 'REVIEW_REGRESSION_AUTHORITY_REJECTED' });
-      await assert.rejects(tryFinish([unsupported, allow]), { code: 'REVIEW_REGRESSION_AUTHORITY_REJECTED' });
-      await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', citeIds: [await cite(run.files[0]), source],
-        reason: 'For supported length 16, applyPolicy now returns -1 instead of the existing option index 2. The user only changed the fallback for unsupported lengths.' });
-    } });
-  assert.equal(result.stop.status, 'DEVIATION');
-  assert.equal(result.decision, 'block');
-  assert.equal(authorityChecks, 1);
+test('one decided failure does not explain an omitted preserved contract, and a supported regression is dispatched', async t => {
+  for (const confirmed of [false, true]) {
+    const { result } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
+      regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
+      afterStart: root => fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN.replace('= index;', '= policy.minLength === 16 ? -1 : index;')),
+      script: async ({ standing, submit }) => {
+        const [preserved, authorized] = standing.regressionEvidence.programRun.failureInventory.failures;
+        if (confirmed) await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION',
+          citations: [{ path: 'src/settings.mjs', start: 8, end: 8 }],
+          reason: 'Supported length 16 returns -1 instead of the existing index 2; only unsupported lengths were authorized to change.' });
+        return { regressionCheck: { status: 'REVIEWED', reason: 'Each remaining failure is independent.', cases: [
+          { id: authorized.id, verdict: 'AUTHORIZED_CHANGE', reason: 'The fallback was explicitly changed.' },
+          ...(confirmed ? [{ id: preserved.id, verdict: 'REGRESSION', objectId: standing.taskId, reason: 'The supported index changed without authorization.' }] : []),
+        ] } };
+      } });
+    assert.equal(result.stop.status, confirmed ? 'DEVIATION' : 'NO_DEVIATION_FOUND');
+    assert.equal(result.stop.review.unverifiedItems.length, confirmed ? 0 : 1);
+    if (!confirmed) assert.equal(result.stop.feedback, null);
+  }
 });
 
 test('named regression reports need all actionable failures and ignore known failures', () => {

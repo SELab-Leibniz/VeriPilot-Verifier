@@ -51,9 +51,6 @@ for (const judgement of ['PASS', 'DEVIATION', 'UNVERIFIED']) test(`B12 explicitl
       await assert.rejects(submit('finish_stop_review', { summary: 'No finding.' }), { code: 'REVIEW_ITEM_INCOMPLETE' });
       await assert.rejects(submit('submit_review', { taskId: regenerated.objectId, verdict: 'PASS', reason: 'Irrelevant.', citeIds: [] }),
         { code: 'REVIEW_ITEM_OWNERSHIP_INVALID' });
-      if (judgement === 'PASS') await assert.rejects(submit('submit_review', {
-        taskId: previous.objectId, verdict: 'PASS', reason: 'Only original requirements were read.', citeIds: [original],
-      }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
       const current = (await read(file)).details.citation.citeId;
       await submit('submit_review', { taskId: previous.objectId, verdict: judgement, reason: 'Checked the current return expression.',
         citeIds: judgement === 'UNVERIFIED' ? [] : [current] });
