@@ -357,8 +357,8 @@ test('a task-start change set keeps a regression the business already committed'
   assert.match(evidence.diffs.join('\n'), /^-\s+this\.minLengthIndex = index >= 0 \? index : DEFAULT_INDEX;$/mu);
 });
 
-test('a failed original-test check cannot finish as clean without an evidenced disposition', async t => {
-  const { result } = await regressionStop(t, { regressionCheck: { enabled: true, command: [process.execPath, '-e', 'process.exit(2)'] },
+test('an unresolved original-test check is recorded without changing a completed zero-deviation conclusion', async t => {
+  const { result, f } = await regressionStop(t, { regressionCheck: { enabled: true, command: [process.execPath, '-e', 'process.exit(2)'] },
     script: async ({ standing, submit, cite }) => {
       await assert.rejects(submit('finish_stop_review', { summary: 'No deviations.' }), { code: 'REVIEW_REGRESSION_CHECK_REQUIRED' });
       const output = await cite(standing.regressionEvidence.programRun.files[0]);
@@ -366,8 +366,15 @@ test('a failed original-test check cannot finish as clean without an evidenced d
         status: 'EXPLAINED', reason: 'The command exited 2.', citeIds: [output] } }), { code: 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE' });
       return { regressionCheck: { status: 'UNVERIFIED', reason: 'Exit 2 alone cannot establish a source contradiction.', citeIds: [output] } };
     } });
-  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
   assert.equal(result.stop.verificationIncomplete, true);
+  assert.equal(result.stop.verificationUnavailable, false);
+  assert.equal(result.stop.admission, null);
+  assert.equal(result.stop.feedback, null);
+  assert.deepEqual(result.stop.review.unverifiedItems, [{ id: 'regression-check', type: 'REGRESSION_CHECK',
+    reason: 'Exit 2 alone cannot establish a source contradiction.' }]);
+  const evaluation = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), 'evaluations', `${result.stop.evaluationId}.json`), 'utf8'));
+  assert.deepEqual(evaluation.unverifiedItems, result.stop.review.unverifiedItems);
 });
 
 test('an explicitly requested behavior change can explain an old failing assertion with source evidence', async t => {

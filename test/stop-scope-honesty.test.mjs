@@ -98,6 +98,27 @@ test('a deviation-only intermediate Stop reviews delivered work and finds no dev
   });
 });
 
+test('one unresolved original requirement is non-blocking while a strict majority stays globally unverified', async t => {
+  for (const { name, verdict, status } of [
+    { name: 'one unresolved', verdict: (_item, index) => index === 0 ? 'UNVERIFIED' : null, status: 'NO_DEVIATION_FOUND' },
+    { name: 'a confirmed deviation and one unresolved', verdict: (_item, index) => index === 0 ? 'UNVERIFIED' : 'DEVIATION', status: 'DEVIATION' },
+    { name: 'both unresolved', verdict: () => 'UNVERIFIED', status: 'UNVERIFIED' },
+  ]) await t.test(name, async subtest => {
+    const f = await fixture(subtest, { verdict });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const result = await f.stop();
+    assert.equal(result.stop.status, status);
+    assert.equal(result.stop.verificationUnavailable, false);
+    assert.equal(result.stop.review.unverifiedItems.length, status === 'UNVERIFIED' ? 2 : 1);
+    assert(result.stop.review.unverifiedItems.every(item => item.id && item.type === 'REQUIREMENT' && item.reason));
+    if (status === 'DEVIATION') {
+      assert(result.stop.admission);
+      assert.equal(result.stop.review.metricObjectJudgements.length, 1);
+      assert.doesNotMatch(result.stop.feedback, /UNVERIFIED/u);
+    }
+  });
+});
+
 test('a deviation-only Stop with an empty selected scope is UNVERIFIED, persists its coverage and dispatches no repair', async t => {
   const f = await fixture(t, { metrics: ['M13'] });
   await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');

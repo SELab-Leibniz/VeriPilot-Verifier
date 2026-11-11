@@ -31,7 +31,7 @@ async function fixture(t, { kind = 'CURRENT_TASK', severity = 'HARD', status = '
   const finish = async submit => submit('finish_stop_review', { summary: 'Checked the explicit output contract.' });
   const run = async (...args) => {
     const handle = await f.run(...args);
-    assert.notEqual(handle.collection?.complete, false, JSON.stringify(handle.collection));
+    assert(handle.collection?.complete !== false || handle.collection.reasonCode === 'STOP_MOST_REQUIREMENTS_UNVERIFIED', JSON.stringify(handle.collection));
     return handle;
   };
   return { ...f, truth, start, finish, runRaw: f.run, run };
@@ -104,7 +104,7 @@ test('original directory context outside the selected filename lines prevents a 
     await submit('finish_stop_review', { summary: 'The scoped files exist.' });
   });
   assert(!handle.result.metricObjectJudgements.some(row => row.judgement === 'DEVIATION'));
-  assert.equal(handle.collection, undefined);
+  assert.equal(handle.collection.reasonCode, 'STOP_MOST_REQUIREMENTS_UNVERIFIED');
 });
 
 test('a filename alone produces UNVERIFIED even if the same basename exists in the repository root', async t => {
@@ -117,7 +117,8 @@ test('a filename alone produces UNVERIFIED even if the same basename exists in t
     await f.finish(submit);
   });
   assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
-  assert.equal(handle.collection.failures[0].code, 'STOP_EXPECTED_PATH_UNVERIFIED');
+  assert.equal(handle.collection.reasonCode, 'STOP_MOST_REQUIREMENTS_UNVERIFIED');
+  assert(handle.result.unverifiedItems.some(item => item.type === 'OUTPUT_PATH'));
 });
 
 test('an explicitly rooted filename still proves absence without changing the root-path contract', async t => {
@@ -143,7 +144,8 @@ test('an input directory never supplies an otherwise unspecified output location
       await f.finish(submit);
     });
     assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
-    assert.equal(handle.collection.failures[0].code, 'STOP_EXPECTED_PATH_UNVERIFIED');
+    assert.equal(handle.collection.reasonCode, 'STOP_MOST_REQUIREMENTS_UNVERIFIED');
+    assert(handle.result.unverifiedItems.some(item => item.type === 'OUTPUT_PATH'));
   }
 });
 
