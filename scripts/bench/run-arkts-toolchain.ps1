@@ -2,7 +2,8 @@ param(
   [Parameter(Mandatory=$true)][string]$Project,
   [Parameter(Mandatory=$true)][string]$ToolRoot,
   [Parameter(Mandatory=$true)][ValidateSet('install','test','build','java')][string]$Phase,
-  [string]$JavaHome = ''
+  [string]$JavaHome = '',
+  [string]$TestScope = ''
 )
 $ErrorActionPreference = 'Stop'
 $projectPath = (Resolve-Path -LiteralPath $Project).Path
@@ -45,7 +46,9 @@ try {
   } elseif ($Phase -eq 'install') {
     & (Join-Path $nodeDir 'node.exe') (Join-Path $toolPath 'ohpm/bin/pm-cli.js') install
   } else {
-    & (Join-Path $toolPath 'bin/hvigorw.bat') test -p module=entry -p coverage=false --no-daemon
+    $testArguments = @('test', '-p', 'module=entry', '-p', 'coverage=false', '--no-daemon')
+    if ($TestScope) { $testArguments += @('-p', "scope=$TestScope") }
+    & (Join-Path $toolPath 'bin/hvigorw.bat') @testArguments
   }
   $code = $LASTEXITCODE
 } finally {
