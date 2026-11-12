@@ -513,7 +513,7 @@ test('6.4.4: the localized brief delivers long selected items and prints only fi
   assert.equal((await f.deliveries())[0].productionChangesBefore, null);
 });
 
-const agentsText = '# Rules\nAlways run npm test before finishing.\nNever edit generated files.\n';
+const agentsText = '# Rules\nAlways run npm test before finishing.\nNever edit generated files.\nTests must pass before finishing.\n';
 const projectCheck = (metricId, text, source, confidence = 0.9, extra = {}) => ({ metricId, text,
   verificationTarget: 'PROCESS', applicability: '', activation: 'The request changes app.js.', source, confidence, ...extra });
 const agentsLine = (line = 2) => ({ path: 'AGENTS.md', startLine: line, endLine: line });
@@ -535,13 +535,13 @@ test('check proposers scan project documents per enabled family and store task-s
         projectCheck('M09', 'API handlers must validate input.', { path: 'docs/api.md', startLine: 1, endLine: 1 }, 0.8,
           { verificationTarget: 'IMPLEMENTATION', applicability: 'when an API handler changes' }),
       ] } : { checks: [
-        projectCheck('M13', 'Run npm test before finishing.', agentsLine(), 0.95),
+        projectCheck('M13', 'Tests must pass before finishing.', agentsLine(4), 0.95),
         projectCheck('M15', 'Low confidence journey', agentsLine(), 0.7),
       ] };
     },
     select: (items, params) => {
       assert.match(params.prompt, /Candidates of type check/u);
-      assert.deepEqual(items.filter(item => item.type === 'check').map(item => item.id), ['P2-K1', 'P2-K6', 'P3-K1', 'P3-K2']);
+      assert.deepEqual(items.filter(item => item.type === 'check').map(item => item.id), ['P2-K1', 'P2-K6', 'P3-K1']);
       assert(items.every(item => !Object.hasOwn(item, 'family') && !Object.hasOwn(item, 'confidence')));
       return selectAll(items);
     },
@@ -553,13 +553,14 @@ test('check proposers scan project documents per enabled family and store task-s
   assert(f.calls.find(call => call.kind === 'selection').names.includes('source_read'));
   const documents = prompts.projectRules.split('Project documents in the snapshot (instruction files first):\n')[1].split('\n\n')[0];
   assert.deepEqual(documents.split('\n'), ['- AGENTS.md', '- docs/api.md']);
-  assert.match(prompts.projectRules, /- M11: fixed workflow step/u);
-  assert.doesNotMatch(prompts.projectRules, /- M10:|- M13:/u);
-  assert.match(prompts.verification, /- M13:[\s\S]*- M15:/u);
-  assert.doesNotMatch(prompts.verification, /- M14:/u);
-  assert.deepEqual(frame.counts, { proposed: 9, valid: 5, selected: 4 });
+  const permitted = prompt => prompt.split('Metrics you may use:\n')[1].split('\n\n')[0];
+  assert.match(permitted(prompts.projectRules), /- M11: fixed workflow step/u);
+  assert.doesNotMatch(permitted(prompts.projectRules), /- M10:|- M13:/u);
+  assert.match(permitted(prompts.verification), /- M13:[\s\S]*- M15:/u);
+  assert.doesNotMatch(permitted(prompts.verification), /- M14:/u);
+  assert.deepEqual(frame.counts, { proposed: 9, valid: 4, selected: 4 });
   assert.deepEqual(frame.checks.map(({ id, family, metricId, text }) => [id, family, metricId, text]), [
-    ['K1', 'verification', 'M13', 'Run npm test before finishing.'],
+    ['K1', 'verification', 'M13', 'Tests must pass before finishing.'],
     ['K2', 'projectRules', 'M11', 'Always run npm test before finishing.'],
     ['K3', 'projectRules', 'M09', 'API handlers must validate input.'],
   ]);
@@ -574,8 +575,50 @@ test('check proposers scan project documents per enabled family and store task-s
 
   const brief = deliveredBrief(await f.toolResult('rules-brief'));
   assert(brief.includes('Project rules to follow before finishing (the Stop review checks them against the document text):\n'
-    + '- Run npm test before finishing. (source: AGENTS.md:2-2)'));
+    + '- Tests must pass before finishing. (source: AGENTS.md:4-4)'));
   assert(brief.includes('- API handlers must validate input. (only when: when an API handler changes) (source: docs/api.md:1-1)'));
+});
+
+test('checks reject added details, compound targets, lost conditions and text over 600 characters', async t => {
+  const conditional = 'Before committing or pushing, run npm test.';
+  const artifact = 'The design must describe authentication.';
+  const process = 'Read the design after editing.';
+  const long = 'Must ' + 'x'.repeat(600);
+  const f = await fixture(t, { checks: true, stopPolicy: '  metrics:\n    M11: true\n',
+    propose: () => ({ guidance: [], scenarios: [] }),
+    files: { 'AGENTS.md': [conditional, artifact+' '+process, long].join('\n') },
+    check: ({ family, params }) => {
+      assert.match(params.prompt, /short verbatim excerpt/u);
+      assert.match(params.prompt, /activation.*cannot broaden/u);
+      assert.match(params.prompt, /post-edit readback/u);
+      return { checks: family === 'projectRules' ? [
+        projectCheck('M11', conditional, agentsLine(1), .99, { applicability: 'Whenever code changes' }),
+        projectCheck('M11', conditional, agentsLine(1), .9, { applicability: 'Before committing or pushing' }),
+        projectCheck('M09', artifact+' '+process, agentsLine(2), .99, { verificationTarget: 'ARTIFACT' }),
+        projectCheck('M09', artifact, agentsLine(2), .9, { verificationTarget: 'ARTIFACT' }),
+        projectCheck('M11', process+' Use UTF-8.', agentsLine(2)),
+        projectCheck('M09', long, agentsLine(3)),
+      ] : [] };
+    } });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.deepEqual(frame.checks.map(({ text, applicability, verificationTarget }) =>
+    [text, applicability, verificationTarget]), [[conditional, 'Before committing or pushing', 'PROCESS'],
+    [artifact, '', 'ARTIFACT']]);
+});
+
+test('the same quoted duty in different documents or metrics has one selected check', async t => {
+  const text = 'Always run npm test before finishing.';
+  const f = await fixture(t, { checks: true, stopPolicy: '  metrics:\n    M11: true\n',
+    propose: () => ({ guidance: [], scenarios: [] }),
+    files: { 'AGENTS.md': text, 'docs/rules.md': text },
+    check: ({ family }) => ({ checks: family === 'projectRules' ? [projectCheck('M11', text, agentsLine(1), .95)]
+      : [projectCheck('M13', text, { path: 'docs/rules.md', startLine: 1, endLine: 1 }, .8)] }) });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.checks.length, 1);
+  assert.equal(frame.checks[0].metricId, 'M11');
+  assert.equal(frame.checks[0].source.path, 'AGENTS.md');
 });
 
 test('a frame with only checks is ready, and Stop receives checks without a guidance basis', async t => {
