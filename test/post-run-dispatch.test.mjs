@@ -85,6 +85,39 @@ test('late release notification keeps scope invalidation and unknown terminals c
   assert.equal(f.sent.length, 0);
 });
 
+test('a late corrective terminal rechecks its released child while retaining the original owner', async t => {
+  let finished = false, reviews = 0, probes = 0, f;
+  f = await fixture(t, {
+    waitTerminal: async (_record, runId) => {
+      probes++;
+      return runId === 'original' || finished ? { runId, status: 'ok' } : null;
+    },
+    review: async record => {
+      reviews++;
+      await f.manager.correction(record, 'repair', Date.now() + 10000, 'stop-1');
+      return { reviewStatus: 'DEVIATION' };
+    },
+  });
+  const id = f.identity('released-child');
+  await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'done', reviewBudgetMs: 10000 });
+  await f.manager.drain();
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.manager.snapshot(id).terminalRelease.runId, 'repair');
+  const before = probes;
+  await f.manager.hostEnded(id, 'original');
+  assert.equal(probes, before, 'the parent terminal cannot confirm the child is drained');
+  finished = true;
+  await f.manager.hostEnded(id, 'repair');
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE');
+  assert.equal(record.runId, 'original');
+  assert.equal(record.lastTerminal.terminalRunId, 'repair');
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(reviews, 1, 'reconciliation must not restart the semantic review');
+  assert.equal(f.sent.length, 0);
+});
+
 test('an unbounded trusted business correction reaches its next bounded review without execution expiry', async t => {
   let reviews = 0, cancelled = 0, f;
   f = await fixture(t, { cancelCorrection: async () => { cancelled++; }, review: async record => {

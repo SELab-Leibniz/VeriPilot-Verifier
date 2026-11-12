@@ -32,6 +32,18 @@ test('late agent_end reconciles a failed hook despite its cancelled reviewer sig
   assert.equal(controller.signal.aborted, true);
   assert.equal(f.calls(), 0, 'the failed stage cannot restart semantic review');
   assert.equal(f.hostAbort.signal.aborted, false);
+  const next = { ...f.ctx, runId: 'next-coding-stage' };
+  await f.runtime.prompt({ prompt: 'Continue implementing the same task.' }, next);
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'next-write', params: { path: 'draft.md' } }, next);
+  await f.state.hotReviewWork?.promise;
+  assert.equal(f.state.nativeInvalidated, false);
+  assert.notEqual(f.state.reviewController, controller);
+  await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey,
+    payload: { text: 'Delivered the implementation.' } }, next);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+  assert(f.calls() > 0, 'the next stage must enter a full semantic Stop review');
 });
 
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
