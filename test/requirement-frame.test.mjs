@@ -579,7 +579,7 @@ test('check proposers scan project documents per enabled family and store task-s
   assert(brief.includes('- API handlers must validate input. (only when: when an API handler changes) (source: docs/api.md:1-1)'));
 });
 
-test('checks reject added details, compound targets, lost conditions and text over 600 characters', async t => {
+test('checks reject added details, lost conditions and long text, and the selector separates mixed targets', async t => {
   const conditional = 'Before committing or pushing, run npm test.';
   const artifact = 'The design must describe authentication.';
   const process = 'Read the design after editing.';
@@ -587,6 +587,10 @@ test('checks reject added details, compound targets, lost conditions and text ov
   const f = await fixture(t, { checks: true, stopPolicy: '  metrics:\n    M11: true\n',
     propose: () => ({ guidance: [], scenarios: [] }),
     files: { 'AGENTS.md': [conditional, artifact+' '+process, long].join('\n') },
+    select: (items, params) => {
+      assert.match(params.prompt, /one verification target/u);
+      return { reviews: items.map(item => review(item, item.text === artifact+' '+process ? 'reject' : 'select')) };
+    },
     check: ({ family, params }) => {
       assert.match(params.prompt, /short verbatim excerpt/u);
       assert.match(params.prompt, /activation.*cannot broaden/u);
@@ -605,6 +609,19 @@ test('checks reject added details, compound targets, lost conditions and text ov
   assert.deepEqual(frame.checks.map(({ text, applicability, verificationTarget }) =>
     [text, applicability, verificationTarget]), [[conditional, 'Before committing or pushing', 'PROCESS'],
     [artifact, '', 'ARTIFACT']]);
+});
+
+test('a single reporting duty keeps conditional branches without turning each branch into a prerequisite', async t => {
+  const text = 'Before releasing, report verification results; if unavailable, report why.';
+  const f = await fixture(t, { checks: true, stopPolicy: '  metrics:\n    M11: true\n',
+    propose: () => ({ guidance: [], scenarios: [] }), files: { 'AGENTS.md': text },
+    check: ({ family }) => ({ checks: family === 'projectRules'
+      ? [projectCheck('M11', text, agentsLine(1), .9, { applicability: 'Before releasing' })] : [] }) });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.checks.length, 1);
+  assert.equal(frame.checks[0].text, text);
+  assert.equal(frame.checks[0].applicability, 'Before releasing');
 });
 
 test('the same quoted duty in different documents or metrics has one selected check', async t => {
