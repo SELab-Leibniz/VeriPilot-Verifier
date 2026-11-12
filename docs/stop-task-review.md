@@ -1,8 +1,14 @@
 # Stop 审查、预算与状态
 
+1.10.0 的新项目模板使用原文 Stop 与仅偏差模式（B12）。除原文要求外，审查对照原有代码或原有测试和当前实现，报告本次改动破坏的既有行为。反证缺失时不提交偏差。基线路径沿用原有提示。已有配置仍按旧缺省值生效。切换基线路径需要打开 dynamicGroundTruth.enabled 并关闭 stopCorrection.originalRequirementsBasis。需要完整逐项审查时同时关闭 stopCorrection.deviationOnly。文档纠偏的切换见 [配置参考](configuration.md#新项目模板与旧配置)。
+
 每轮结果的 `review.scopeSelection` 记录实际分类、基线版本、全量对象数、范围内对象数，以及各开启指标的原始对象、选择状态和排除原因。`review.metricObjectJudgements` 才是正式保存的指标判断；findings-only 的扫描任务完成数不代表指标通过数。
 
-分类提交协议 v2 要求说明原回复是否声明完成，以及必要的用户决策或外部阻塞。完成后提供可选建议仍选择完成范围；只有真实未解决的必要输入才能选择等待用户。纯实现义务不提供 proposal/design/tasks 文档阶段供分类器选择。合法阶段没有声明指标时记录 `STOP_STAGE_METRICS_UNDECLARED`；合法空对象范围记录 `NO_APPLICABLE_STAGE_OBJECTS` 或 `NO_APPLICABLE_METRIC_OBJECTS`，保持未验证，不能以 `NO_CURRENT_DEVIATION` 冒充已检验。独立文件质量审查仍可在无指标对象时工作。
+回归分流只豁免任务开始时已确认失败的条目。整套失败但单独重跑通过的条目保留为 `REVIEW_REQUIRED`，记录 `isolationObserved` 和原因；它可能是本次改动引入的共享状态或顺序依赖，不能仅凭单跑通过认定无关。分流版本进入检查缓存身份，旧 `TEST_ISOLATION` 记录可读取，但不会继续从待审失败清单中自动排除。
+
+授权判断须区分原始断言、测试准备及后续操作。补 mock 后通过不能授权原始失败；调用方单测不执行被替代的被调用方实现，是正常的测试范围。对原要求约束的调用入口，分别核对实际依赖结果与第一次可观察副作用；下层拒绝不能代替调用入口自己的保证。上述判断使用原要求和源码，不新增引用门槛或整体未验证条件。
+
+分类提交协议 v2 要求说明原回复是否声明完成，以及必要的用户决策或外部阻塞。完成后提供可选建议仍选择完成范围；只有真实未解决的必要输入才能选择等待用户。纯实现义务不提供 proposal/design/tasks 文档阶段供分类器选择。仅偏差模式下，proposal、design、tasks 等前置阶段完成时不审查原始生产实现义务（`verificationTarget: IMPLEMENTATION`），这些义务留给编码阶段或任务完成时审查；程序自有的回归义务仍在范围内，排除后为空的范围记录 `NO_APPLICABLE_STAGE_OBJECTS`。合法阶段没有声明指标时记录 `STOP_STAGE_METRICS_UNDECLARED`；合法空对象范围记录 `NO_APPLICABLE_STAGE_OBJECTS` 或 `NO_APPLICABLE_METRIC_OBJECTS`，保持未验证，不能以 `NO_CURRENT_DEVIATION` 冒充已检验。独立文件质量审查仍可在无指标对象时工作。
 
 新增实现义务可携带结构化 `implementationRole`：`PRODUCTION`、`TEST` 或 `SUPPORT`。测试源码义务保留在 M12 的原始分母，明确标为 TEST 的义务不投射到 M16 生产实现覆盖。实际运行测试应另作为 PROCESS 义务保留。旧账本没有此字段时沿用原归属，不根据名称、描述或文件是否存在悄悄删除历史义务。
 
@@ -36,6 +42,8 @@ stopCorrection:
 
 旧 `maxCorrectionsPerEpoch` 只映射为 `maxCorrectionsPerFlow`；旧 `waitTimeoutMs` 只映射为本次 `assessmentTimeoutMs`，均产生弃用提示。新旧同义字段同时出现时报错。需求变化不清零会话额度，业务修复不占已经结束的审查窗口。
 
+Stop 将已确认的完成类型及阶段与审查范围一起持久化。`STAGE_COMPLETE`、中间输出、等待用户或外部阻塞的完整审查若没有当前偏差，只结束本次 Stop；同一范围、同一阶段的旧修复等待也可结束。这类非最终 Stop 的审查正常结束但没有结论时（例如范围为空、没有声明适用指标或多数要求未验证），当前 Stop 仍为 `UNVERIFIED`，只结束本次 Stop，不关闭 flow，也不结束尚未确认修好的旧偏差。后续 coding 等阶段仍在同一用户 flow 内进行完整审查，沿用会话及 flow 的已用次数、未决预约和上限，不创建新额度。已结束阶段的旧定时器不再终止后续阶段。`TASK_COMPLETE` 没有当前偏差时（包括未验证）关闭整个 flow；未记录完成类型的旧调用保持原来的关闭行为。审查执行失败（准备或审查过程抛出错误）、取消、超时、依据过期及实际额度耗尽仍遵循原来的终止保护，已关闭的历史 flow 不自动重开。
+
 ## 单会话审查
 
 Stop 使用一个私有 task 会话。它先完整读取原始依据，再通过 `review_checklist` 的 `stopClassification` 同时确定停止类型并取得原始清单，自行规划审查顺序、读取原文并逐项提交。最后一项可用 `submit_review(finish: true)` 一并结算；复杂流程也可单独调用 `review_scope` 和 `finish_stop_review`。提前请求结算不能跳过剩余条目。必要的 Ground Truth 更新仍由独立的来源提取协议负责；基线未变化时复用已有基线。旧 `stopReviewEngine: native` 仅作为配置兼容值归一到 task。Stop worker 使用 200 个累计助手响应轮次及 32768 单次输出 token 上限；首次运行后最多在同一会话续跑一次，沿用原截止、已读凭据和已保存结果。最终自然语言不能替代提交回执。
@@ -46,19 +54,26 @@ OpenClaw 使用宿主原生工具和持久化回执。Claude / CodeAgent 使用�
 
 编排层同样只请求完整工作区审查，工厂的旧分类、分组或补充文件能力标志不能切换流程。候选交付文件在同一会话确定任务/阶段完成范围后收集，通过范围结果与清单交给审查者；中间输出、等待用户和外部阻塞不触发这次交付内容扫描。指标、findings 和已开启的文件质量在同一会话内完成；程序随后验证完整输出，并按独立条目结算。旧的逐项 PASS 缓存不代替本次已选清单的检查。
 
-直接读取当前工作区，不预先复制或遍历整个代码仓。`source_read/grep/find/ls` 接受绝对路径、父目录和链接文件；源码清单与候选文件是导航提示，不是读取白名单。读取权限由操作系统和宿主决定。递归导航默认跳过 `.git`、`node_modules` 和 RC 输出目录，可用 `includeGenerated` 显式搜索；直接读取这些路径没有 RC 目录禁令。
+直接读取当前工作区的原始文件，无需预先复制代码仓。`source_read/grep/find/ls` 接受绝对路径、父目录和链接文件；源码清单与候选文件是导航提示，不是读取白名单。读取权限由操作系统和宿主决定。递归导航默认跳过 `.git`、`node_modules` 和 RC 输出目录，可用 `includeGenerated` 显式搜索；直接读取这些路径没有 RC 目录禁令。
 
 递归 grep/find 从当前项目或相关源码子目录开始，单次最多访问 4096 个路径条目、读取 16 MiB 搜索内容。达到扫描预算会明确返回 `scanIncomplete: true`，此时零命中或 `nextOffset: null` 都不表示搜索完成；应缩小目录或直接读取已知文件。条目预算也涵盖空目录，防止无命中遍历长时间占用审查。该预算限制单次导航工作量，不限制外部来源或具体文件的读取权限，也不授予缺失判断证据。
 
 审查者可使用以下工具组织工作：
 
 - `review_changes`：Git 状态、文件 diff、宿主编辑过的路径及修改片段。支持原生 `edits[]` 批量修改和 CRLF 补丁，逐处分页并标明预览截断。它们是调查入口，不能直接充当验收证据。新建未跟踪文件也会列出。
+- `semantic_graph`：终审会话启动前，RC 用有限预算从当前 Git 工作区建立索引，优先处理本任务改动的文件。用 `search` 按关键词找符号和测试，用 `definition` 定位确切符号，用 `outline` 查看文件定义，用 `context` 查询方法的调用、写入和现有测试引用。文件级关系仍由 `dependencies` 提供。索引覆盖 JS、TS、ArkTS 可静态解析的关系，路径和行号引导 `source_read`。图不可用时，审查继续使用原有导航工具。
 - `review_plan`：保存和更新审查计划，不改变原始验收项。
 - `review_checklist`：选定停止范围，分页查看原始义务、每项证据归属（`proofOwners`）、已保存结果和未完成项。`processEvidence` 提供原始用户记录、实际执行结果及匹配调用的有界样例和总数，支持直接定位较长历史中的记录；这些指针不授予引文。纯过程执行项还标明 PASS / DEVIATION 所需的结果证明。PROCESS 要读取原始过程文件，SOURCE 要读取生产代码；必读基线和 Skill 条件不代替过程证据。
 - `review_notes` 与 `review_history`：保存笔记，压缩后恢复观察记录、回执和原有引文。笔记不获得原文证据资格。
 - `submit_review`、`submit_finding`、`finish_stop_review`：逐项保存经校验的结论，全部条目完成后结算；最后一项可直接携带 `finish: true`。
 
 M16 的一个原始条目可能包含多个效果和失败分支。PASS 必须分别追到各适用分支的实际消费者，区分返回失败与抛出异常；`await` 后的代码不覆盖拒绝路径，`finally` 也只证明其中实际执行的操作。回滚或清除忙标志不能代替独立要求的状态刷新。若依赖下层把异常转为失败返回，需要核对相关调用边界的完整源码契约；原要求未覆盖或明确排除的异常分支不额外增加义务。
+
+其他 RC 模块可直接从 `lib/semantic-graph.mjs` 导入 `buildSemanticGraph(projectRoot, options)`，再调用返回值的 `query({ operation, symbol, file, offset })`。`incoming` 找调用者和测试，`outgoing` 找调用、写入及控制语句位置。不能解析的调用保留调用点。查询使用项目相对路径，`partial` 表示索引有遗漏，`unavailable` 表示无法建立索引。图记录是静态导航线索，结论仍以原始源码和正常引文为依据。
+
+`context`（包括 `incoming` / `outgoing`）还会返回有界的 `testBoundaries`：关联调用者、依赖调用点、把该依赖作为参数传入测试辅助函数的位置，以及之后的调用或写入位置。测试的 `beforeEach` 等钩子保留自己的行号范围。结果轮流覆盖不同调用者，优先关联实际调用该入口的测试文件，避免单一测试夹具占满首屏。Stop 的 `currentSemanticLinks` 也携带这些关系。图不推断辅助函数是否真的替换依赖，也不证明后续调用在同一分支可达；澄清和终审共用的代码理解 skill 引导模型读取源码、测试设置和返回值，再判断各入口的保证。
+
+启用程序回归检查或实现验证时，范围选择使用协议层已有的交接：先结束当前原生 Reviewer 调用，再执行程序检查，随后沿用同一会话、清单、读取回执和剩余预算续审。长时间测试不再占用 `review_checklist` 工具调用，以免被宿主误判为工具停滞。交接不构成完成结论，不重置终审 deadline、纠偏次数或取消与过期保护。
 
 过程义务还要核对执行者和原始事件顺序。修改前的读取不能证明修改后回读，私有审查者自己的 `source_read` 只能证明当前内容，不能替代业务执行者此前的操作。文件整体的编码/语言适用性不能从一页 ASCII 片段反推；证据范围不足时保留 UNVERIFIED，不虚构执行或豁免。条件性项目规范须按原触发条件设置逐项 applicabilityKind，不能仅因属于当前仓库就全部设为无条件当前任务。
 

@@ -1,0 +1,42 @@
+{
+  "dynamicGroundTruth": { "enabled": false },
+  "skillCorrection": { "enabled": false },
+  "artifactCorrection": {
+    "groundTruthReviewEnabled": false,
+    "stageMetricsEnabled": false,
+    "originalRequirementsEnabled": false
+  },
+  "implementationCorrection": { "enabled": false },
+  "enabledStages": [],
+  "stopCorrection": {
+    "enabled": true,
+    "waitMode": "until_pass",
+    "originalRequirementsBasis": true,
+    "deviationOnly": true,
+    "maxCorrectionsPerSession": 3,
+    "maxCorrectionsPerFlow": 3,
+    "assessmentTimeoutMs": 1800000,
+    "feedbackReserveMs": 60000,
+    "metrics": {
+      "M01": false, "M02": false, "M03": false, "M04": false,
+      "M05": false, "M06": false, "M07": false, "M08": false,
+      "M09": false, "M10": false, "M11": false, "M12": false,
+      "M13": false, "M14": false, "M15": false, "M16": true
+    },
+    "regressionCheck": {
+      "enabled": true,
+      "command": [
+        "${node}", "${harnessRoot}/scripts/bench/arkts-regression-check.mjs",
+        "--project=${projectRoot}", "--tool-root=${toolRoot}",
+        "--java-home=${javaHome}", "--baseline=${outputRoot}/baseline-local-tests.json",
+        "--original-tests"
+      ],
+      "cwd": ".",
+      "timeoutMs": 900000
+    }
+  },
+  "reviewers": {
+    "defaults": { "model": "custom/deepseek-v4.1-flash", "timeoutMs": 1800000 },
+    "stopReviewer": { "model": "custom/deepseek-v4.1-flash", "timeoutMs": 1800000 }
+  }
+}

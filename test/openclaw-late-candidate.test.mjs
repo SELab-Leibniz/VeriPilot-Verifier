@@ -91,7 +91,7 @@ test('a late old terminal promotes the completed new native candidate once with 
     assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]);
     assert(f.reviewed[0].deadlineAt - f.reviewed[0].at >= f.checkpoint.reviewBudgetMs - 1000);
     task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-    assert(task.verification.assessmentId.startsWith(`${f.next.runId}:stop`)); assert.equal(task.verification.status, 'PASS');
+    assert(task.verification.assessmentId.startsWith(`${f.next.runId}:stop`)); assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
     assert.equal(f.post().phase, 'IDLE');
     await f.runtime.beforeFinalize({ sessionId: f.next.sessionId, lastAssistantMessage: 'Latest final candidate.' }, f.next);
     await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
@@ -131,7 +131,7 @@ test('a newer completed candidate arriving while the prior review waits resumes 
   activity = 'done'; const record = f.post();
   await f.runtime.postRuns.recheck(record, { actor: 'fixture-owner', runId: record.runId, version: record.version });
   await within(f.runtime.waitForNativeReviews(), 'safe IDLE promoted review');
-  assert.equal(reviews, 1); assert.equal(f.post().reviewStatus, 'PASS');
+  assert.equal(reviews, 1); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
   const final = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
   assert(final.verification.assessmentId.startsWith(`${next.runId}:stop`));
 });
@@ -151,7 +151,10 @@ test('an UNKNOWN old native terminal never promotes or replays a completed newer
     assert.equal(f.post().runId, f.next.runId); assert.equal(f.post().promotion.terminalStatus, terminalStatus);
     assert.equal(f.post().phase, 'COEXIST_WAIT'); assert.equal(f.reviewed.length, 0);
     f.setActivity('done'); await f.recheck(); await within(f.runtime.waitForNativeReviews(), 'reconciled successor review');
-    assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]); assert.equal(f.post().reviewStatus, 'PASS');
+    assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
+    const accepted = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+    assert.equal(accepted.verification.status, 'NO_DEVIATION_FOUND', 'ordinary predecessor failure cannot terminalize its recovered successor');
+    assert(accepted.verification.assessmentId.startsWith(`${f.next.runId}:stop`));
   });
 });
 
@@ -167,7 +170,7 @@ test('restart restores an explicitly reconstructed successor even when its promo
   const saved = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
   assert.equal(saved.stop.postRunCandidate.status, 'ADOPTED');
   assert.equal(saved.stop.postRunCandidate.adoption.adoptedVersion, f.post().promotion.adoptedVersion);
-  assert(saved.verification.assessmentId.startsWith(`${f.next.runId}:stop`)); assert.equal(saved.verification.status, 'PASS');
+  assert(saved.verification.assessmentId.startsWith(`${f.next.runId}:stop`)); assert.equal(saved.verification.status, 'NO_DEVIATION_FOUND');
   assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]);
   await f.recover(); await f.runtime.postRuns.drain(); assert.equal(f.reviewed.length, 1);
   assert.deepEqual(f.businessSends, []);
@@ -186,6 +189,6 @@ test('cancelling the owning scheduler never revives its saved newer candidate fr
     assert.deepEqual(f.businessSends, []);
     assert(f.post().phase === 'CLOSED' || f.post().successorAdmissionClosed);
     const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-    assert.equal(task.stop.postRunCandidate.status, 'UNVERIFIED'); assert.notEqual(task.verification.status, 'PASS');
+    assert.equal(task.stop.postRunCandidate.status, 'UNVERIFIED'); assert.notEqual(task.verification.status, 'NO_DEVIATION_FOUND');
   });
 });

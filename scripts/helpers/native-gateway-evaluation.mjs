@@ -68,12 +68,47 @@ export function nativeGatewayCodingProvider(provider, contextWindow = 128000, ph
   } };
 }
 
-async function freePort() {
+// A provider copied from an installed host profile. Only its endpoint and one
+// model entry are copied; the key reaches the SDK through the transient guard.
+export function nativeGatewayHostProfileProvider(provider, phaseTimeoutMs = null, authMarker) {
+  let url = null;
+  try { url = new URL(provider?.baseUrl); } catch {}
+  const definition = provider?.definition;
+  if (provider?.api !== 'openai-completions' || url?.protocol !== 'https:' || url.username || url.password || url.search || url.hash
+    || !/^[\w.:-]+$/u.test(provider.model ?? '') || definition?.id !== provider.model
+    || Object.keys(provider).some(key => !['api', 'baseUrl', 'model', 'definition'].includes(key))
+    || Object.keys(definition).some(key => /key|secret|password|header|auth/iu.test(key)))
+    throw new Error('Unsupported host-profile Gateway provider definition. Credentials belong only to the transient provider guard.');
+  validatePhaseTimeoutMs(phaseTimeoutMs);
+  return { providerId: authMarker ? 'custom' : 'openai', model: provider.model, definition: {
+    api: provider.api, baseUrl: provider.baseUrl, ...(authMarker ? { apiKey: authMarker } : {}),
+    ...(phaseTimeoutMs !== null ? { timeoutSeconds: phaseTimeoutMs / 1000 } : {}),
+    models: [{ input: ['text'], ...structuredClone(definition), name: definition.name ?? provider.model }],
+  } };
+}
+
+// The probe socket stays bound until the Gateway binds, so the remaining
+// TOCTOU window is tiny; a lost race is retried with a fresh port.
+export async function reservePort() {
   const socket = net.createServer();
   await new Promise((resolve, reject) => { socket.once('error', reject); socket.listen(0, '127.0.0.1', resolve); });
-  const port = socket.address().port;
-  await new Promise((resolve, reject) => socket.close(error => error ? reject(error) : resolve()));
-  return port;
+  socket.unref();
+  let closed;
+  return { port: socket.address().port, release: () => closed ??= new Promise((resolve, reject) => socket.close(error => error ? reject(error) : resolve())) };
+}
+export const addressInUse = error => error?.code === 'EADDRINUSE' || error?.cause?.code === 'EADDRINUSE'
+  || /EADDRINUSE|address already in use/iu.test(String(error?.message ?? ''));
+export async function bindWithRetry(start, reserved, { attempts = 4, onRebind = async () => {} } = {}) {
+  let { port } = reserved;
+  for (let attempt = 1; ; attempt++) {
+    await reserved?.release(); reserved = null;
+    try { return { port, server: await start(port), attempts: attempt }; }
+    catch (error) {
+      if (attempt >= attempts || !addressInUse(error)) throw error;
+      reserved = await reservePort(); port = reserved.port;
+      await onRebind(port);
+    }
+  }
 }
 
 export function createNativeGatewayRequest({ load, port, config }) {
@@ -82,19 +117,29 @@ export function createNativeGatewayRequest({ load, port, config }) {
     return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,
       config, method, params, timeoutMs: options.timeoutMs ?? 30000,
       // Each request has a new connection. The isolated controller must
-      // authenticate its exact-run abort as admin rather than its creator.
-      ...(method === 'chat.abort' ? { scopes: ['operator.admin'] } : {}) });
+      // authenticate its exact-run abort and manual compaction as admin.
+      ...(['chat.abort', 'sessions.compact'].includes(method) ? { scopes: ['operator.admin'] } : {}) });
   };
 }
 
 export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, outputRoot, sourceRoot, reuseProfile = false, injectDefect = false,
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
-  unlimitedBusiness = false, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false, provider, providerGuard }) {
+  unlimitedBusiness = false, hostProfileAuthMarker, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
+  compaction = null, contextTokens, logLevel = 'warn', provider, reviewerProvider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
-  const coding = provider ? nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' }) : null;
-  const authorizedDocument = provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
-  if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch'].includes(providerGuard?.kind))
+  const hostProfile = providerGuard?.kind === 'host_profile_native_document'
+    || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
+  const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs, hostProfileAuthMarker)
+    : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
+  if (reviewerProvider) {
+    if (!hostProfile || !coding || reviewerProvider.baseUrl !== provider.baseUrl || reviewerProvider.model === provider.model)
+      throw new Error('The reviewer requires a distinct model on the same host profile.');
+    const reviewer = nativeGatewayHostProfileProvider(reviewerProvider, phaseTimeoutMs, hostProfileAuthMarker);
+    coding.definition.models.push(...reviewer.definition.models);
+  }
+  const authorizedDocument = hostProfile || provider?.model === 'glm-5.3-flash' && providerGuard?.kind === 'authorized_native_document';
+  if (coding && !authorizedDocument && !['offline_native_gateway_guard', 'metered_native_gateway_batch', 'relay_native_gateway_batch', 'authorized_simplify_experiment'].includes(providerGuard?.kind))
     throw new Error('The explicit Gateway provider requires an offline network guard or a metered batch.');
   if (contextWindowTokens !== undefined && !coding && !process.env.ANTHROPIC_BASE_URL)
     throw new Error('An explicit model context capacity requires the configured custom provider definition.');
@@ -110,8 +155,9 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   const noTimeoutMs = unlimitedBusiness ? (await import(pathToFileURL(path.join(hostRoot, 'dist/timeout-0Cw4kcol.js')).href)).n({ overrideMs: 0 }) : null;
   const root = path.join(outputRoot, 'native-host');
   await fs.mkdir(root, { recursive: true }); await fs.mkdir(projectRoot, { recursive: true });
-  const port = await freePort(), model = coding?.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
+  const reserved = await reservePort(), model = coding?.model ?? process.env.RC_EVAL_NATIVE_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'transport-only';
   const providerId = coding?.providerId ?? 'anthropic', providerBaseUrl = coding?.definition.baseUrl ?? process.env.ANTHROPIC_BASE_URL;
+  let port = reserved.port;
   process.env.OPENCLAW_STATE_DIR = path.join(root, 'state');
   process.env.OPENCLAW_CONFIG_PATH = path.join(root, 'config.json');
   process.env.OPENCLAW_GATEWAY_TOKEN = randomBytes(32).toString('hex');
@@ -124,7 +170,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, 'openclaw.plugin.json'), 'utf8'));
     if (!manifest.configSchema?.properties?.businessRunTimeoutMs) throw new Error('This frozen plugin cannot disable RC business-correction deadlines; do not silently claim an unbounded host.');
   }
-  let config = { logging: { level: 'warn', consoleLevel: 'silent', file: path.join(root, 'host.log') },
+  let config = { logging: { level: logLevel, consoleLevel: 'silent', file: path.join(root, 'host.log') },
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
@@ -162,7 +208,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     if (!extra || !/^[a-z][a-z0-9-]*$/u.test(extra.id)) throw new Error('Invalid experiment plugin identity');
     config.plugins.allow = [...new Set([...config.plugins.allow, extra.id])];
     config.plugins.load.paths = [...new Set([...config.plugins.load.paths, await fs.realpath(extra.path)])];
-    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}) };
+    config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}),
+      ...(extra.config ? { config: extra.config } : {}) };
   }
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
@@ -177,8 +224,14 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
     config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
   }
+  if (disableRuntimeCorrection) {
+    const settings = config.plugins.entries['runtime-corrector'];
+    settings.config = { ...settings.config, enabled: false };
+  }
+  if (compaction) config.agents.defaults.compaction = { ...config.agents.defaults.compaction, ...structuredClone(compaction) };
   if (disableMemoryFlush) config.agents.defaults.compaction = { ...config.agents.defaults.compaction,
     memoryFlush: { ...config.agents.defaults.compaction?.memoryFlush, enabled: false } };
+  if (contextTokens !== undefined) config.agents.defaults.contextTokens = contextTokens;
   if (injectDefect && !reuseProfile) {
     // A local experiment plugin corrupts only this fixture's delivery, once,
     // immediately before the REAL original host run finalizes. Host terminal,
@@ -212,7 +265,7 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   let restoreCredential = () => {};
   const modelStarts = [];
   try {
-    if (coding) {
+    if (coding && !hostProfileAuthMarker) {
       const credential = providerGuard.credential?.();
       if (typeof credential !== 'string' || !credential.trim()) throw new Error('The Gateway provider guard has no transient credential.');
       // The pinned SDK resolves the standard provider from OPENAI_API_KEY.
@@ -223,7 +276,9 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     }
     const load = relative => import(pathToFileURL(path.join(hostRoot, relative)).href);
     const { startGatewayServer } = await load('dist/server-BnSQQ3Aa.js');
-    gateway = await startGatewayServer(port, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false });
+    ({ port, server: gateway } = await bindWithRetry(value => startGatewayServer(value, { bind: 'loopback', host: '127.0.0.1', controlUiEnabled: false }), reserved, {
+      async onRebind(value) { config.gateway.port = value; await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2)); } }));
+    await onGatewayStart?.();
     const { createPluginRuntime } = await load('dist/plugins/runtime/index.js');
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
     const registry = getGlobalPluginRegistry(), plugin = registry.plugins.find(item => item.id === 'runtime-corrector');
@@ -245,5 +300,5 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
       metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts), pluginStatus: plugin.status, isolatedState: root }),
       async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } },
     };
-  } catch (error) { try { await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }
+  } catch (error) { try { await reserved.release(); await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }
 }

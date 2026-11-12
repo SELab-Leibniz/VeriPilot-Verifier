@@ -9,6 +9,43 @@ import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
+
+test('late agent_end reconciles a failed hook despite its cancelled reviewer signal', async t => {
+  let drained = false;
+  const f = await lifecycle(t, { waitMode: 'until_pass',
+    postRunTerminal: async (_identity, runId) => drained ? { runId, status: 'ok' } : null });
+  const identity = { agentId: f.state.agentId, sessionId: f.state.sessionId, sessionKey: f.state.sessionKey,
+    projectRoot: f.state.projectRoot, scopeFingerprint: f.state.projectScope.fingerprint,
+    controlRevision: f.state.enabledRevision ?? 0, scopeTaskId: f.state.scopeTaskId };
+  f.state.nativeInvalidated = true;
+  const controller = f.state.reviewController;
+  controller.abort(Object.assign(new Error('failed hook'), { code: 'RC_HOOK_UNAVAILABLE' }));
+  await f.runtime.postRuns.release(identity, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.runtime.postRuns.snapshot(identity).phase, 'RELEASING');
+  drained = true;
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await until(() => f.runtime.postRuns.snapshot(identity).phase === 'IDLE', 'late gateway terminal reconciliation');
+  const record = f.runtime.postRuns.snapshot(identity);
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(record.reason, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.state.reviewController, controller);
+  assert.equal(controller.signal.aborted, true);
+  assert.equal(f.calls(), 0, 'the failed stage cannot restart semantic review');
+  assert.equal(f.hostAbort.signal.aborted, false);
+  const next = { ...f.ctx, runId: 'next-coding-stage' };
+  await f.runtime.prompt({ prompt: 'Continue implementing the same task.' }, next);
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'next-write', params: { path: 'draft.md' } }, next);
+  await f.state.hotReviewWork?.promise;
+  assert.equal(f.state.nativeInvalidated, false);
+  assert.notEqual(f.state.reviewController, controller);
+  await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey,
+    payload: { text: 'Delivered the implementation.' } }, next);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+  assert(f.calls() > 0, 'the next stage must enter a full semantic Stop review');
+});
+
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
   const params = await basic(t), manager = createNativeStopReviews();
   let finish, started = 0, markStarted;
@@ -31,12 +68,15 @@ test("terminal registration returns before slow reviews and coalesces duplicate 
 });
 test("two sequential non-Stop native reviewer roles each retain configured time beyond a short Hook window", async t => {
   const params = await basic(t), manager = createNativeStopReviews(), timeouts = [];
+  let roleStartedAt;
   const api = { config: { agents: { defaults: { model: { primary: "test/test" } } } }, runtime: { agent: {
-    runEmbeddedAgent: async input => { timeouts.push(input.runTimeoutOverrideMs); await pause(1200); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; },
+    runEmbeddedAgent: async input => { timeouts.push({ timeoutMs: input.runTimeoutOverrideMs, setupMs: Date.now() - roleStartedAt });
+      await pause(1200); return { payloads: [{ text: '{"ok":true}' }], meta: {} }; },
   } } };
   const factory = createOpenClawReviewerFactory(api, {});
   await manager.schedule({ ...params, run: async ({ deadlineAt }) => {
     for (const role of ["ground-truth-extractor", "implementation-reviewer"]) {
+      roleStartedAt = Date.now();
       const handle = await factory({ projectRoot: params.projectRoot, taskId: "task", role,
         reviewer: { timeoutMs: 4000 }, deadlineAt,
         schema: { type: "object", required: ["ok"], additionalProperties: false, properties: { ok: { type: "boolean" } } }, request: { instructions: ["fixture"] } });
@@ -45,7 +85,10 @@ test("two sequential non-Stop native reviewer roles each retain configured time 
     return { reviewStatus: "PASS" };
   } });
   assert.equal((await manager.wait())[0].reviewStatus, "PASS");
-  assert.equal(timeouts.length, 2); assert(timeouts.every(value => value >= 3900), JSON.stringify(timeouts));
+  // Initialization belongs to this role's budget; it is not time spent by the
+  // previous role. Counting it preserves the independent-budget assertion.
+  assert.equal(timeouts.length, 2);
+  assert(timeouts.every(value => value.timeoutMs + value.setupMs >= 3900), JSON.stringify(timeouts));
 });
 test("cancellation before model admission never performs work or becomes PASS", async t => {
   const params = await basic(t), controller = new AbortController(), manager = createNativeStopReviews();
@@ -92,13 +135,13 @@ test("native reply preserves payload and finishes RC terminal work in its indepe
   assert.deepEqual(payload, original); assert.equal(f.calls(), 0);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
   assert.equal(records[0].budgetMs, 11000);
-  assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
+  assert.equal(records[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));
   assert.equal(f.hostAbort.signal.aborted, false);
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.ok(task.verification.rulesDigest, "Native Stop must retain the project policy binding");
   assert.ok(task.verification.evidence?.fingerprints[path.join(f.root, "draft.md")], "Native Stop must retain its observed source fingerprints");
   const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: f.ctx.sessionKey };
-  assert.equal((await readReport(binding)).verification, "PASS", "The report must recognize a fresh native acceptance");
+  assert.equal((await readReport(binding)).verification, "NO_DEVIATION_FOUND", "The report must recognize a fresh native acceptance");
   await fs.writeFile(path.join(f.root, "draft.md"), "Changed after review.\n");
   assert.equal((await readReport(binding)).verification, "STALE", "A later source edit must invalidate acceptance");
 });
@@ -127,11 +170,11 @@ test("a fresh Gateway rediscovers modified artifacts from the active native tran
   await runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
   await runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
   const receipts = await runtime.waitForNativeReviews();
-  assert.equal(receipts[0].reviewStatus, "PASS", JSON.stringify(receipts));
+  assert.equal(receipts[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(receipts));
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.ok(task.verification.evidence.fingerprints[path.join(f.root, "draft.md")]);
   const binding = { workspaceDir: f.root, sessionId: "host", sessionKey: ctx.sessionKey };
-  assert.equal((await readReport(binding)).verification, "PASS");
+  assert.equal((await readReport(binding)).verification, "NO_DEVIATION_FOUND");
   await fs.writeFile(path.join(f.root, "draft.md"), "Changed after the restart's review.\n");
   assert.equal((await readReport(binding)).verification, "STALE");
 });
@@ -139,7 +182,7 @@ test("a fresh Gateway rediscovers modified artifacts from the active native tran
 test("a terminal review that cannot read its native transcript never inherits an earlier run's PASS", async t => {
   const f = await lifecycle(t);
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "NO_DEVIATION_FOUND");
   const original = await findTask({ projectRoot: f.root, sessionId: "host" });
   const ctx = { ...f.ctx, runId: "unreadable-native-run" };
   await f.runtime.beforeTool({ toolName: "exec", toolCallId: "check", params: { command: "validate draft.md" } }, ctx);
@@ -156,7 +199,7 @@ test("transient checker faults retry RC review without spending business correct
   const f = await lifecycle(t, { failures: 2 });
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const records = await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert.equal(records[0].reviewStatus, "PASS", JSON.stringify(records));
+  assert.equal(records[0].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));
   const task = await findTask({ projectRoot: f.root, sessionId: "host" });
   assert.equal(task.stop.correctionAttempts, 0);
   assert.equal(task.stop.infrastructureTotalFailures, 2);
@@ -185,13 +228,13 @@ test("ongoing review cancellation cannot return PASS or mutate host cancellation
   await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
 });
 
-test("incomplete file quality reaches the next normal host prompt without an automatic business continuation", async t => {
+test("confirmed file-quality deviations reach the next normal host prompt without changing their delivery policy", async t => {
   const f = await lifecycle(t, { quality: [{ path: "draft.md", status: "DEVIATION", reason: "The heading omits the subject, so the draft cannot be identified.", evidence: ["draft.md:1"] }] });
   let admissions = 0;
   f.api.runtime.subagent = { run: async () => { admissions++; throw new Error("Quality uncertainty must not admit another business run."); } };
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.equal(record.reviewStatus, "DEVIATION");
   assert.match(record.verificationFeedback, /heading omits the subject/);
   assert.equal(admissions, 0);
   await fs.appendFile(path.join(f.root, "native.jsonl"), "\n" + JSON.stringify({ type: "message", id: "next-user", parentId: "u",
@@ -201,6 +244,19 @@ test("incomplete file quality reaches the next normal host prompt without an aut
   assert.match(response.prependContext, /历史评审/);
   assert.ok(Buffer.byteLength(response.prependContext, "utf8") <= 8192);
   assert.equal(admissions, 0);
+});
+
+test("an unresolved file-quality observation stays local after a completed zero-deviation Stop", async t => {
+  const reason = 'The optional visual check cannot be settled with these observations.';
+  const f = await lifecycle(t, { quality: [{ path: 'draft.md', status: 'UNVERIFIED', reason, evidence: [] }] });
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: 'Delivered.' } }, f.ctx);
+  const [record] = await within(f.runtime.waitForNativeReviews({ drain: true }), 'native review settlement');
+  assert.equal(record.reviewStatus, 'NO_DEVIATION_FOUND');
+  assert.equal(Boolean(record.verificationFeedback), false);
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.stop.infrastructureTotalFailures, 0);
+  const response = await f.runtime.prompt({ prompt: 'Continue.' }, { ...f.ctx, runId: 'next-normal-run' });
+  assert.doesNotMatch(response?.prependContext ?? '', /optional visual check/);
 });
 test("permanent checker faults stop at the existing infrastructure ceiling", async t => {
   const f = await lifecycle(t, { failures: 20 });
@@ -489,7 +545,7 @@ test("a queued business turn waits before replacing the old run, while UI status
   finish.resolve();
   await Promise.all([next, prompt]);
   const [record] = await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  assert.equal(record.reviewStatus, "PASS");
+  assert.equal(record.reviewStatus, "NO_DEVIATION_FOUND");
   assert.equal(f.state.nativeRunId, "next-run");
   assert.equal(await fs.readFile(source, "utf8"), original, "status is UI-only, not a host user/assistant message");
 });
@@ -545,7 +601,7 @@ test("a cancelled incoming task does not replace or cancel the pending review", 
   assert.equal(f.state.nativeRunId, f.ctx.runId);
   assert.equal(f.state.reviewController.signal.aborted, false);
   finish.resolve();
-  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "PASS");
+  assert.equal((await within(f.runtime.waitForNativeReviews(), "native review settlement"))[0].reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("incoming model admission already inside the lane releases immediately and fences an uncooperative review", async t => {
@@ -629,11 +685,72 @@ test("manual check recovers the exact native tool call while its own correction 
   await assert.rejects(f.runtime.manualCheck(factoryContext, "draft.md", { toolCallId }), /RC_CHECK_(?:INVOCATION_UNAVAILABLE|CANCELLED)/u);
 });
 
-test("an aborted current correction closes its cancelled receipt and terminalizes the exact task", async t => {
+test("delivered correction admission survives host compaction and same-run retry", async t => {
+  for (const observeModelStart of [false, true]) await t.test(observeModelStart ? "started" : "delivered before model start", async t => {
+    const terminal = deferred(t), dispatched = deferred(t); let childRunId, reviews = 0;
+    const f = await lifecycle(t, { waitMode: "until_pass", observeModelStart,
+      review: async () => ++reviews === 1,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) await terminal.promise;
+        return { runId, status: "ok" };
+      } });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId }; } };
+    try {
+      await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+      await within(dispatched.promise, "correction dispatch");
+      await within(f.runtime.waitForNativeReviews(), "initial review");
+      const child = { ...f.ctx, runId: childRunId };
+      await f.runtime.prompt({ prompt: "Apply the delivered feedback." }, child);
+      const protocol = f.sharedState.stopStartProtocol;
+      const before = await protocol.findRun({ state: f.state, runId: childRunId });
+      assert.equal(before.admission.deliveryStatus, "DELIVERED");
+      assert.equal(before.admission.accounting, observeModelStart ? "USED" : "RESERVED");
+      await f.runtime.agentEnd({ runId: childRunId, success: false, error: "Context overflow" }, child);
+      // This is the host retry gate that previously returned ADMISSION_DENIED.
+      const prepared = await protocol.prepare({ state: f.state, runId: childRunId, signal: child.abortSignal });
+      assert.notEqual(prepared?.blocked, true, JSON.stringify(await protocol.findRun({ state: f.state, runId: childRunId })));
+      let checkpoints = 0;
+      f.api.runtime.agent.session.runWithWorkAdmission = async (params, run) => {
+        params.signal.throwIfAborted(); checkpoints++; return run(params.signal);
+      };
+      // The native host may omit runId on the compaction hook; it still owns
+      // only the current session checkpoint, never another run's admission.
+      const compactContext = { ...child };
+      if (!observeModelStart) delete compactContext.runId;
+      await f.runtime.compact({ sessionId: child.sessionId }, compactContext);
+      await until(() => checkpoints > 0, "compaction checkpoint admission");
+      assert(checkpoints > 0, "PreCompact checkpoint must actually enter native work admission");
+      assert.equal(f.state.reviewController.signal.aborted, false, "compaction must have a live checkpoint controller");
+      assert(!f.warnings.some(message => /Compaction checkpoint unavailable/u.test(message)), JSON.stringify(f.warnings));
+      const resumed = await f.runtime.prompt({ prompt: "Continue after compaction." }, child);
+      const gate = await f.runtime.beforeAgentRun({ prompt: resumed?.prependContext ?? "Continue after compaction." }, child);
+      assert.equal(gate.outcome, "pass");
+      await f.startModel(child);
+      assert.equal((await protocol.findRun({ state: f.state, runId: childRunId })).admission.accounting, "USED");
+      await fs.writeFile(path.join(f.root, "draft.md"), "The corrected current draft.\n");
+      await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Corrected." }] }, child);
+      terminal.resolve();
+      await within(f.runtime.waitForNativeReviews({ drain: true }), "corrected Stop settlement");
+      const task = await findTask({ projectRoot: f.root, sessionId: "host" });
+      assert.equal(task.verification.status, "NO_DEVIATION_FOUND", JSON.stringify(task.verification));
+      assert.equal(f.post().phase, "IDLE");
+      assert.equal(f.post().reviewStatus, "NO_DEVIATION_FOUND");
+      assert.equal(task.stop.correctionAttempts, 1, "same-run retry consumes only one correction");
+      assert.equal(f.hostAbort.signal.aborted, false);
+    } finally { terminal.resolve(); await f.runtime.reset({}, f.ctx); await f.runtime.waitForNativeReviews({ drain: true }); }
+  });
+});
+
+test("gateway-confirmed correction failure closes its receipt and fences late completion", async t => {
   for (const waitMode of ["until_pass", "assessment"]) await t.test(waitMode, async t => {
+    const terminal = deferred(t);
     let childRunId, dispatched;
     const dispatchObserved = new Promise(resolve => { dispatched = resolve; });
-    const f = await lifecycle(t, { deviation: true, waitMode });
+    const f = await lifecycle(t, { deviation: true, waitMode,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) { await terminal.promise; return { runId, status: "error", aborted: true }; }
+        return { runId, status: "ok" };
+      } });
     f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched(); return { runId: childRunId }; } };
     await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
     // Assessment settlement and native queue acceptance are separate events.
@@ -654,16 +771,61 @@ test("an aborted current correction closes its cancelled receipt and terminalize
     const child = { ...f.ctx, runId: childRunId };
     if(waitMode!=='assessment')await f.runtime.prompt({ prompt: "RC feedback" }, child);
     await f.runtime.agentEnd({ runId: childRunId, success: false, aborted: true }, child);
+    const pending = await f.sharedState.stopStartProtocol.findRun({ state: f.state, runId: childRunId });
+    assert.equal(pending.admission.invalidatedAt, undefined, "attempt failure alone cannot revoke admission");
+    assert.equal(pending.finishedAt, undefined);
+    terminal.resolve();
+    await within(f.runtime.waitForNativeReviews({ drain: true }), "gateway terminal cleanup");
     const task = await findTask({ projectRoot: f.root, sessionId: "host" });
     assert.equal(task.status, "STOPPED_UNVERIFIED");
     assert.equal(task.verification.terminalRunId, childRunId);
-    assert.equal(task.verification.reasonCode, "RC_NATIVE_ATTEMPT_ENDED");
+    assert.equal(task.verification.reasonCode, "HOST_RUN_NOT_COMPLETED");
     assert.equal(task.verification.previousVerification.status, "DEVIATION");
     const ledger=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
     assert.equal(ledger.status,'CANCELLED');assert(ledger.admission.invalidatedAt);assert(ledger.finishedAt);
+    assert.equal(f.post().phase, "IDLE");
+    assert.equal(f.post().reviewStatus, "UNVERIFIED");
     assert.equal(f.hostAbort.signal.aborted, false);
+    await f.runtime.prompt({ prompt: "Late retry after terminal." }, child);
+    const gate = await f.runtime.beforeAgentRun({ prompt: "Late retry after terminal." }, child);
+    assert.equal(gate.outcome, "block");
+    await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Late success." }] }, child);
     await f.runtime.agentEnd({ runId: f.ctx.runId, success: false, aborted: true }, f.ctx);
     assert.deepEqual((await findTask({ projectRoot: f.root, sessionId: "host" })).verification, task.verification);
+  });
+});
+
+test("correction retry keeps foreign-run, expiry and changed-basis fences", async t => {
+  for (const fence of ["expiry", "changed basis"]) await t.test(fence, async t => {
+    const terminal = deferred(t), dispatched = deferred(t); let childRunId;
+    const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", observeModelStart: false,
+      postRunTerminal: async (_identity, runId) => {
+        if (runId.startsWith("rc-stop-")) await terminal.promise;
+        return { runId, status: "ok" };
+      } });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId }; } };
+    try {
+      await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+      await within(dispatched.promise, "correction dispatch");
+      await within(f.runtime.waitForNativeReviews(), "initial review");
+      const child = { ...f.ctx, runId: childRunId };
+      await f.runtime.prompt({ prompt: "Apply feedback." }, child);
+      await f.runtime.agentEnd({ runId: childRunId, success: false, error: "Context overflow" }, child);
+      const controller = f.state.reviewController;
+      const foreign = { ...child, runId: "rc-stop-" + "f".repeat(64) };
+      assert.equal((await f.runtime.beforeAgentRun({ prompt: "Borrow another run's admission." }, foreign)).outcome, "block");
+      await f.runtime.compact({}, foreign);
+      assert.equal(f.state.reviewController, controller, "foreign run cannot rearm the failed attempt");
+      const protocol = f.sharedState.stopStartProtocol;
+      const receipt = await protocol.findRun({ state: f.state, runId: childRunId });
+      if (fence === "expiry") {
+        t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+        t.mock.timers.tick(Math.max(1, receipt.admission.deadlineAt - Date.now() + 1));
+      } else await fs.writeFile(path.join(f.root, "draft.md"), "The feedback's evidence has changed.\n");
+      const prepared = await protocol.prepare({ state: f.state, runId: childRunId, signal: child.abortSignal });
+      assert.equal(prepared.blocked, true, fence);
+      assert.equal((await f.runtime.beforeAgentRun({ prompt: "Retry old feedback." }, child)).outcome, "block");
+    } finally { terminal.resolve(); await f.runtime.reset({}, f.ctx); await f.runtime.waitForNativeReviews({ drain: true }); }
   });
 });
 
@@ -766,7 +928,7 @@ test("late correction tools after wait expiry cannot replace or cancel the next 
   assert.equal(controller.signal.aborted, false);
   finish.resolve();
   const records = await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "PASS");
+  assert.equal(records.find(record => record.runId === next.runId).reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("host auto-compaction after a failed attempt does not become an RC hook failure", async t => {
@@ -794,7 +956,7 @@ test("host auto-compaction after a failed attempt does not become an RC hook fai
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered after retry." } }, f.ctx);
   terminal.resolve();
   const [review] = await within(f.runtime.waitForNativeReviews(), "review after a genuine outer terminal");
-  assert.equal(review.reviewStatus, "PASS");
+  assert.equal(review.reviewStatus, "NO_DEVIATION_FOUND");
   } finally {
     terminal.resolve();
     await f.runtime.reset({}, f.ctx);
@@ -833,7 +995,7 @@ test("host memory maintenance cannot replace or finalize the business run in the
   assert.equal(f.post().phase, "RUNNING");
   await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
   const [review] = await within(f.runtime.waitForNativeReviews(), "business review after maintenance");
-  assert.equal(review.reviewStatus, "PASS");
+  assert.equal(review.reviewStatus, "NO_DEVIATION_FOUND");
 });
 
 test("host maintenance filtering retains private reviewer tool authorization", async t => {
@@ -847,24 +1009,32 @@ test("host maintenance filtering retains private reviewer tool authorization", a
   assert.equal(f.state.nativeRunId, f.ctx.runId);
 });
 
-test("a read-only continuation resumes a migration-blocked Stop, while accepted work stays quiet", async t => {
-  for (const status of ["UNVERIFIED", "PASS"]) await t.test(status, async t => {
+test("a read-only continuation retries an interrupted Stop, while accepted work stays quiet", async t => {
+  for (const { status, reasonCode } of [
+    { status: "UNVERIFIED", reasonCode: "STOP_SESSION_MIGRATION_REQUIRED" },
+    { status: "UNVERIFIED", reasonCode: "BASELINE_INPUT_CHANGED" },
+    { status: "PASS" },
+  ]) await t.test(reasonCode ?? status, async t => {
     const f = await lifecycle(t, { waitMode: "until_pass" });
     await f.runtime.postRuns.release(f.post(), "PREVIOUS_RUN_ENDED");
     const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
     await withTaskState({ projectRoot: f.root, taskId: task.taskId }, current => {
-      current.verification = { status, ...(status === "UNVERIFIED" ? { reasonCode: "STOP_SESSION_MIGRATION_REQUIRED" } : {}) };
+      current.status = status === "UNVERIFIED" ? "STOPPED_UNVERIFIED" : "ACTIVE";
+      current.verification = { status, ...(reasonCode ? { reasonCode } : {}) };
+      if (reasonCode) current.stop.lastAssessmentId = 'prior-interrupted-assessment';
     });
     await fs.appendFile(path.join(f.root, 'native.jsonl'), '\n' + JSON.stringify({ type: 'message', id: 'continue-verification', parentId: 'u',
       message: { role: 'user', content: 'Continue pending final verification.' } }) + '\n');
     const next = { ...f.ctx, runId: 'read-only-continuation' };
     await f.runtime.prompt({ prompt: 'Continue pending final verification.' }, next);
     assert.equal(f.state.nativeNeedsStop, status === "UNVERIFIED");
+    assert.equal(f.state.nativeRetryUnverifiedStop, reasonCode === "STOP_SESSION_MIGRATION_REQUIRED");
+    assert.equal(f.state.nativeRetryEvidenceStop, reasonCode === "BASELINE_INPUT_CHANGED");
     if (status === "UNVERIFIED") {
       await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
       const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');
       const after = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-      assert.equal(review.reviewStatus, 'PASS', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
+      assert.equal(review.reviewStatus, 'NO_DEVIATION_FOUND', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
         taskStatus: after.status, verification: { status: after.verification?.status, reason: after.verification?.reasonCode, assessmentId: after.verification?.assessmentId },
         armed: after.stop.armedAtStart, assessmentReason: f.state.nativeAssessment?.outcome?.reason,
         assessmentMode: f.state.nativeAssessment?.outcome?.assessmentMode, warnings: f.warnings.slice(-2) }));

@@ -46,7 +46,7 @@ test('an actual dispatched graph failure reuses one actor/audit and the unchange
   };
   f.state.graphNativeScript = async ({ result }) => { if (++counts.graphs === 1) throw transient(); return result; };
   const result = await stop();
-  assert.equal(result.stop.status, 'PASS', JSON.stringify(result));
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result));
   assert.equal(counts.actors, 1); assert.equal(audits(), 1); assert.equal(counts.graphs, 2);
   assert.deepEqual(budgets[1], budgets[0]);
   assert.equal((await f.task()).groundTruth.sharedBasis.proof.runId, path.basename(counts.handle.artifacts));
@@ -94,7 +94,7 @@ for (const poison of ['none', 'turn', 'repair']) test(`successful exact-cap cand
   const result = await stop();
   assert.equal(counts.actors, 1); assert.equal(audits(), 1);
   if (poison === 'none') {
-    assert.equal(result.stop.status, 'PASS', JSON.stringify(result)); assert.equal(counts.graphs, 2);
+    assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result)); assert.equal(counts.graphs, 2);
     assert.deepEqual(budgets[1], budgets[0]);
   } else {
     assert.equal(result.stop.status, 'UNVERIFIED'); assert.equal(counts.graphs, 1); await rollback();

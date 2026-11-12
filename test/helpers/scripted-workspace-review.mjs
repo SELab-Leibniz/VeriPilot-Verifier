@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { runWorkspaceStopReview } from '../../lib/runtime-v2/stop-workspace-review.mjs';
 
 export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', classification: selectedClassification,
-  beforeScope, failAt = -1, finding, failFindings = false,
+  beforeScope, failAt = -1, finding, failFindings = false, script,
   reason = 'The scripted original-byte witness exercises production receipt and quota handling.' }) {
   const signal = input.abortSignal ?? new AbortController().signal;
   const deadlineAt = Math.min(input.deadlineAt ?? Infinity, Date.now() + (input.reviewer.timeoutMs ?? 20000));
@@ -27,12 +27,15 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
         return citeId;
       };
       const { task } = JSON.parse(worker.prompt);
+      if (script) return script({ worker, task, call, read });
       for (const path of task.basisFiles) await read(path);
       const classification = task.fixedStopClassification ?? selectedClassification ?? { stopClassification: 'TASK_COMPLETE', stage: null };
       await beforeScope?.();
       await call('review_checklist', { stopClassification: classification.stopClassification,
         ...(classification.stage ? { stage: classification.stage } : {}),
-        completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification), requiredUserInput: null, externalBlocker: null });
+        completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification),
+        requiredUserInput: classification.requiredUserInput ?? null, externalBlocker: classification.externalBlocker ?? null });
+      if (worker.isComplete()) return;
       if (finding) {
         const citeId = await read(file);
         await call('submit_finding', { ...finding, citeIds: [citeId] });
@@ -47,6 +50,7 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
           if (offset + page.items.indexOf(item) === failAt) throw Object.assign(new Error('The scripted context overflow preserves already saved items.'), { code: 'CONTEXT_OVERFLOW' });
           const citeId = await read(file);
           const judgement = typeof verdict === 'function' ? verdict(item, offset + page.items.indexOf(item)) : verdict;
+          if (judgement === null) continue;
           await call('submit_review', { taskId: item.taskId, verdict: judgement,
             reason, citeIds: [citeId],
             ...(item.metricId === 'M16' && judgement === 'PASS' ? { productionTrace: {

@@ -12,7 +12,7 @@ import { sha256 } from "../lib/runtime-v2/utils.mjs";
 import { stopFeedbackCurrent } from '../lib/runtime-v2/production-stop.mjs';
 import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 
-async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null } = {}) {
+async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null, expectedFile = null, startProtocol = null, classification, artifacts = [] } = {}) {
   const parent = path.resolve(".runtime-correction/test-temp");
   await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, "stop-entry-"));
@@ -45,15 +45,105 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null,
       return { result: { summary: "Frozen requirements unchanged.", taskClassification: "NO_CHANGE", operations: [] }, close: async () => {} };
     }
     assert.equal(input.request.reviewScope.kind, "workspace-stop");
-    return scriptedWorkspaceReview(input, { file: path.join(root, expectedFile ?? "app.py"), verdict: verdict });
+    return scriptedWorkspaceReview(input, { file: path.join(root, expectedFile ?? "app.py"), verdict, classification });
   };
   reviewerFactory.supportsReviewCollection = true;
   const directory = path.join(root, "stable-host-state");
-  const options = { projectRoot: root, plan: { runtimeV2, artifacts: [] }, reviewerFactory, stopHost: { directory } };
+  const options = { projectRoot: root, plan: { runtimeV2, artifacts, configuredArtifacts: artifacts }, reviewerFactory,
+    stopHost: { directory, ...(startProtocol ? { startProtocol } : {}) } };
   const event = (hook, extras = {}) => handleRuntimeV2Event({ ...options, input: { session_id: "session", cwd: root,
     transcript_path: transcript, hook_event_name: hook, last_assistant_message: "Implementation complete.", ...extras } });
   return { root, directory, task, calls, event, document, runtimeV2, reviewerFactory, transcript };
 }
+
+test('proposal review followed by coding runs the complete production Stop under the same user flow and remaining quota', async t => {
+  for (const deviationOnly of [true, false]) await t.test(deviationOnly ? 'proposal defers production obligations' : 'empty proposal scope stays unverified', async t => {
+    const classification = { stopClassification: 'STAGE_COMPLETE', stage: 'proposal' };
+    const f = await fixture(t, { classification, stop: { deviationOnly }, startProtocol: { version: 1 },
+      artifacts: [{ name: 'proposal', stage: 'proposal', metrics: [] }],
+      verdict: () => classification.stopClassification === 'STAGE_COMPLETE' ? null : 'DEVIATION' });
+    // A workflow with both a document delivery and production obligations.
+    const truthPath = path.join(taskDirectory(f.root, f.task.taskId), 'ground-truth/current.json');
+    const truth = JSON.parse(await fs.readFile(truthPath, 'utf8'));
+    truth.claims.push({ ...truth.claims[0], claimId: 'proposal', revisionId: 'proposal@1', text: 'Deliver the requested proposal.', verificationTarget: 'ARTIFACT' });
+    await fs.writeFile(truthPath, JSON.stringify(truth));
+    await f.event('SessionStart', { source: 'startup' });
+    const store = createStopCorrectionStore({ directory: f.directory }), flowId = sha256(['session', 'user-1']);
+    // One earlier actual repair start must remain charged across the phase boundary.
+    await store.beginStop({ sessionId: 'session', flowId, stopId: 'prior-repair', sourceInput: { origin: 'HUMAN', id: 'user-1' }, config: f.runtimeV2.stopCorrection });
+    await store.bindReviewScope({ sessionId: 'session', stopId: 'prior-repair', scopeId: `${path.resolve(f.root)}:${f.task.taskId}`, classification });
+    await store.settleReview({ sessionId: 'session', stopId: 'prior-repair', status: 'DEVIATION', currentDeviations: [{ objectId: 'prior', reason: 'Earlier repair.' }] });
+    const prior = await store.reserveFeedback({ sessionId: 'session', stopId: 'prior-repair', packageId: 'prior', basisCurrent: async () => true });
+    await store.observeStart({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', observationId: 'prior-start', startedAt: Date.now() });
+    await store.observeEnd({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', endedAt: Date.now() });
+    const proposal = await f.event('Stop');
+    assert.equal(proposal.stop.status, 'UNVERIFIED', JSON.stringify(proposal.stop));
+    assert.equal(proposal.stop.reasonCode, deviationOnly ? 'STOP_NO_REVIEW_SCOPE' : 'STOP_STAGE_METRICS_UNDECLARED');
+    if (deviationOnly) assert.deepEqual([proposal.stop.coverage.fullObjectCount, proposal.stop.coverage.selectedObjectCount,
+      proposal.stop.coverage.scopeReasonCode], [2, 0, 'NO_APPLICABLE_STAGE_OBJECTS']);
+    assert.equal(proposal.stop.review.stopClassification, 'STAGE_COMPLETE');
+    const afterProposal = await store.inspect('session');
+    assert.equal(afterProposal.flows[flowId].closedAt, undefined);
+    assert.equal(afterProposal.stops['prior-repair'].control, 'WAIT_REPAIR');
+    assert.equal(afterProposal.stops['prior-repair'].reviewStatus, 'DEVIATION');
+    assert.equal(afterProposal.admissions[prior.id].accounting, 'USED');
+    classification.stopClassification = 'TASK_COMPLETE'; classification.stage = null;
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    await fs.appendFile(f.transcript, JSON.stringify({ type: 'assistant', uuid: 'coding-done', message: { id: 'coding-done', role: 'assistant', content: 'Coding complete.' } }) + '\n');
+    const coding = await f.event('Stop', { last_assistant_message: 'Coding complete.' });
+    assert.equal(coding.stop.status, 'DEVIATION', JSON.stringify(coding.stop));
+    assert.equal(coding.decision, 'block');
+    assert.equal(coding.stop.review.stopClassification, 'TASK_COMPLETE');
+    assert.equal(coding.stop.review.metricObjectJudgements.length, 2);
+    assert.equal(coding.stop.review.collection.complete, true);
+    assert.equal(f.calls.filter(call => call === 'workspace-stop').length, 2);
+    const ledger = await store.inspect('session'), recorded = ledger.stops[coding.stop.stopCorrection.stopId];
+    assert.equal(Object.keys(ledger.flows).length, 1);
+    assert.equal(recorded.flowId, flowId);
+    assert.equal(recorded.capacity.sessionUsed, 1);
+    assert.equal(recorded.capacity.flowUsed, 1);
+    assert.equal(recorded.capacity.sessionLimit, 3);
+    assert.equal(recorded.capacity.flowLimit, 3);
+    assert.equal(ledger.used, 1);
+    assert.equal(ledger.flows[flowId].used, 1);
+    assert.equal(ledger.admissions[coding.stop.admission.id].accounting, 'RESERVED');
+  });
+});
+
+test('deviation-only Stop allows an empty scan and keeps existing repair feedback for cited deviations', async t => {
+  for (const { enabled, verdict, status, decision } of [
+    { enabled: false, verdict: () => null, status: 'UNVERIFIED', decision: 'allow' },
+    { enabled: true, verdict: () => null, status: 'NO_DEVIATION_FOUND', decision: 'allow' },
+    { enabled: true, verdict: (item, index) => index === 0 ? 'DEVIATION' : null, status: 'DEVIATION', decision: 'block' },
+  ]) await t.test(`${enabled}: ${status}`, async subtest => {
+    const f = await fixture(subtest, { verdict, stop: { deviationOnly: enabled }, startProtocol: { version: 1 } });
+    validateProjectConfig(f.document, 'config.yaml');
+    await f.event('SessionStart', { source: 'startup' });
+    const result = await f.event('Stop');
+    assert.equal(result.stop.status, status, result.stop.reasonCode);
+    assert.equal(result.decision, decision);
+    if (!enabled) return;
+    assert.equal(result.stop.report.status, status);
+    assert.equal(result.stop.review.collection.complete, true);
+    assert.equal(result.stop.review.collection.totalObjects, 2);
+    assert.equal(result.stop.review.metricObjectJudgements.length, decision === 'block' ? 1 : 0);
+    const task = await findTask({ projectRoot: f.root, sessionId: 'session' });
+    assert.equal(task.verification.status, status);
+    const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect('session');
+    const recorded = ledger.stops[result.stop.stopCorrection.stopId];
+    assert.equal(recorded.reviewStatus, status);
+    if (decision === 'block') {
+      assert.match(result.stop.feedback, /\[runtime-corrector:stop-feedback\]/u);
+      assert(result.stop.admission);
+      assert.equal((await stopFeedbackCurrent({ directory: f.directory, sessionId: 'session', projectRoot: f.root,
+        taskId: f.task.taskId, deviations: recorded.currentDeviations })).length, 1);
+    } else {
+      assert.equal(result.stop.feedback, null);
+      assert.equal(result.stop.admission, null);
+      assert.equal(result.stop.verificationIncomplete, false);
+    }
+  });
+});
 
 test('missing output enters the production correction gate, then creation invalidates old feedback and a new Stop reviews the delivered file', async t => {
   const f = await fixture(t, { expectedFile: 'docs/report.md' });
@@ -81,7 +171,7 @@ test('missing output enters the production correction gate, then creation invali
   assert.equal(await matchesEvidence(prior), false);
   await fs.appendFile(f.transcript, JSON.stringify({ type: 'assistant', uuid: 'assistant-2', message: { id: 'assistant-2', role: 'assistant', content: 'The required file has been delivered.' } }) + '\n');
   const second = await event('output-delivered');
-  assert.equal(second.stop.status, 'PASS', JSON.stringify(second.stop));
+  assert.equal(second.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(second.stop));
   assert.equal(second.stop.admission, null);
   assert.equal((await store.inspect('session')).used, 1, 'Only the actual business start consumes correction quota');
 });
@@ -101,7 +191,7 @@ test("the production Stop entry dispatches a real workspace task adapter and nev
   const f = await fixture(t);
   await f.event("SessionStart", { source: "startup" });
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "PASS", JSON.stringify(result.stop));
+  assert.equal(result.stop.status, "NO_DEVIATION_FOUND", JSON.stringify(result.stop));
   assert.equal(result.decision, "allow");
   assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(result.stop.review.metricObjectJudgements.length, 2);
@@ -112,7 +202,7 @@ test("the production Stop entry dispatches a real workspace task adapter and nev
 test('pending onboarding obligations invalidate an otherwise reusable completed Stop', async t => {
   const f = await fixture(t);
   await f.event('SessionStart', { source: 'startup' });
-  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  assert.equal((await f.event('Stop')).stop.status, 'NO_DEVIATION_FOUND');
   const reviews = f.calls.filter(value => value === 'workspace-stop').length;
   await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
     state.groundTruth.onboardingPending = [{ status: 'UNVERIFIED', operationId: 'unwritten-output',
@@ -152,7 +242,7 @@ test('pending onboarding obligations still run the Stop review, are listed separ
 test('unverified script document coverage rejects an older PASS and caps a fresh review to UNVERIFIED', async t => {
   const f = await fixture(t);
   await f.event('SessionStart', { source: 'startup' });
-  assert.equal((await f.event('Stop')).stop.status, 'PASS');
+  assert.equal((await f.event('Stop')).stop.status, 'NO_DEVIATION_FOUND');
   await withTaskState({ projectRoot: f.root, taskId: f.task.taskId }, state => {
     state.documentCoverage = { status: 'UNVERIFIED', unverified: ['DOCUMENT_DECLARATION_UNRESOLVED'] };
   });
@@ -261,7 +351,7 @@ test("a requirement epoch change preserves actual session and flow usage at the 
   await startCorrectionEpoch({ projectRoot: f.root, taskId: f.task.taskId, reason: "HARD_REQUIREMENT_CHANGED" });
   assert.equal((await findTask({ projectRoot: f.root, sessionId: "session" })).stop.correctionAttempts, 1);
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "PASS");
+  assert.equal(result.stop.status, "NO_DEVIATION_FOUND");
   const state = await store.inspect("session");
   assert.equal(state.used, 1);
   assert.equal(state.flows[flowId].used, 1);
@@ -275,7 +365,7 @@ test("explicit read-only verification ignores exhausted automatic quota and crea
   const result = await handleRuntimeV2Event({ projectRoot: f.root, input, plan: { runtimeV2: f.runtimeV2, artifacts: [] },
     reviewerFactory: f.reviewerFactory, stopHost: { directory: f.directory },
     assessmentContext: { mode: "verify_only", assessmentId: "read-only-zero-quota", guard: decisionGuard(task) } });
-  assert.equal(result.stop?.status, "PASS", JSON.stringify(result));
+  assert.equal(result.stop?.status, "NO_DEVIATION_FOUND", JSON.stringify(result));
   assert.equal(f.calls.filter(value => value === "workspace-stop").length, 1);
   assert.equal(await createStopCorrectionStore({ directory: f.directory }).inspect("session"), null);
 });
@@ -290,7 +380,7 @@ test('production Stop forwards configured original Skill roots to its single rev
       assert.deepEqual(input.skillRoots, [custom]); return f.reviewerFactory(input); },
     assessmentContext: { mode: 'verify_only', assessmentId: 'configured-original-skill-root' },
     input: { session_id: 'session', cwd: f.root, transcript_path: path.join(f.root, 'host-transcript.jsonl'), hook_event_name: 'Stop' } });
-  assert.equal(result.stop.status, 'PASS'); assert.equal(calls, 1);
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND'); assert.equal(calls, 1);
 });
 
 test('program device verification does not build an unused whole-repository source inventory', async t => {

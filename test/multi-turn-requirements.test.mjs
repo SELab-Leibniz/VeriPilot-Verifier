@@ -48,7 +48,7 @@ async function fixture(t) {
 }
 
 test('quicksort then insertion sort: lazy user update publishes before the first write and reaches the production Stop', async t => {
-  const f = await fixture(t); const first = await f.event('Stop'); assert.equal(first.stop.status, 'PASS', JSON.stringify(first.stop));
+  const f = await fixture(t); const first = await f.event('Stop'); assert.equal(first.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(first.stop));
   f.entries.push({ type: 'user', uuid: 'user-2', message: { role: 'user', content: 'Also implement insertion sort.' } }); await f.persist();
   f.setDelta({ taskClassification: 'NEW_TASK', operations: [operation('Implement insertion sort.', 'user-2')] });
   const count = f.calls.length; await f.event('UserPromptSubmit', { prompt: 'Also implement insertion sort.' });
@@ -58,7 +58,7 @@ test('quicksort then insertion sort: lazy user update publishes before the first
   assert.equal((await findTask({ projectRoot: f.root, sessionId: 'session' })).taskId, f.task.taskId);
   f.setDelta({ taskClassification: 'NO_CHANGE', operations: [] });
   f.entries.push({ type: 'assistant', uuid: 'assistant-2', message: { role: 'assistant', content: 'Insertion sort complete.' } }); await f.persist();
-  const result = await f.event('Stop'); assert.equal(result.stop.status, 'PASS', JSON.stringify(result.stop));
+  const result = await f.event('Stop'); assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result.stop));
   assert.equal(result.stop.review.scopeSelection.fullObjectCount, 2);
   assert.equal(result.stop.review.scopeSelection.selectedObjectCount, 2);
   assert.equal(result.stop.review.groundTruthVersion, 2);

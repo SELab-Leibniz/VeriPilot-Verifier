@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readdirSync, realpathSync } from "node:fs";
+import { readdirSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
@@ -16,6 +16,26 @@ export function testDependencyWarnings(root) {
     if (error.code !== "MODULE_NOT_FOUND") throw error;
     return ["Review-task test dependency typebox is missing. Run: npm ci --prefix lib/review-task --ignore-scripts. Dependent tests will still run and report failures."];
   }
+}
+
+// Without RC_OPENCLAW_HOST_ROOT the OpenClaw public tool validator falls back to
+// package.json beside process.argv[1], which under node --test is test/. Without
+// a locale variable the product derives its zh default, while hook-process tests
+// assert en messages.
+export function testEnvironmentWarnings(env = process.env) {
+  return [
+    ...env.RC_OPENCLAW_HOST_ROOT ? [] : ["RC_OPENCLAW_HOST_ROOT is unset; tests that load the OpenClaw public tool validator fail with ENOENT realpath 'test/package.json'. Pass --openclaw-host=<OpenClaw package directory>."],
+    ...env.LC_ALL || env.LC_MESSAGES || env.LANG ? [] : ["LC_ALL, LC_MESSAGES and LANG are unset; the product feedback locale defaults to zh and hook-process tests that assert English messages fail. Set LANG=en_US.UTF-8 to match the recorded baseline."],
+  ];
+}
+
+export async function resolveOpenClawTestHost(directory) {
+  const { targetVersion } = await import("../lib/hosts/openclaw.mjs");
+  const root = realpathSync(path.resolve(directory));
+  const manifest = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
+  if (manifest.name !== "openclaw" || manifest.version !== targetVersion)
+    throw new Error(`--openclaw-host must be the OpenClaw ${targetVersion} package directory.`);
+  return root;
 }
 
 function terminateTree(child) {
@@ -82,8 +102,11 @@ async function main() {
   for (let index = 0; index < args.length; index++) {
     if (args[index] === "--file-timeout-ms") timeoutMs = Number(args[++index]);
     else if (args[index].startsWith("--file-timeout-ms=")) timeoutMs = Number(args[index].split("=")[1]);
+    else if (args[index] === "--openclaw-host" || args[index].startsWith("--openclaw-host="))
+      process.env.RC_OPENCLAW_HOST_ROOT = await resolveOpenClawTestHost(args[index].includes("=") ? args[index].slice(args[index].indexOf("=") + 1) : args[++index]);
     else nodeArgs.push(args[index]);
   }
+  for (const warning of testEnvironmentWarnings()) console.warn(warning);
   const files = readdirSync(path.join(root, "test")).filter(name => name.endsWith(".test.mjs"))
     .sort().map(name => path.join("test", name));
   const controller = new AbortController();

@@ -42,7 +42,7 @@ async function read(file) {
   do {
     const result = await invoke('source_read', { path: file, offset });
     if (result.isError) throw new Error(text(result));
-    citeId = /^\[citeId="([a-z_]+)"/u.exec(text(result))[1];
+    citeId = /^\[citeId="([^"]+)"/u.exec(text(result))[1];
     offset = JSON.parse(/\[RC page (\{[^\n]+\})\]$/u.exec(text(result))[1]).nextOffset;
   } while (offset !== null);
   return citeId;

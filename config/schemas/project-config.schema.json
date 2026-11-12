@@ -315,7 +315,17 @@
         },
         "stageMetricsEnabled": {
           "type": "boolean"
+        },
+        "originalRequirementsEnabled": {
+          "type": "boolean"
         }
+      },
+      "additionalProperties": false
+    },
+    "compactionRestore": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false }
       },
       "additionalProperties": false
     },
@@ -327,6 +337,11 @@
       "properties": {
         "enabled": {
           "type": "boolean"
+        },
+        "originalRequirementsBasis": {
+          "type": "boolean",
+          "default": false,
+          "description": "Build the Stop checklist directly from original requirements in the workspace review."
         },
         "metrics": {
           "type": "object",
@@ -399,10 +414,83 @@
           },
           "additionalProperties": false
         },
+        "families": {
+          "type": "object",
+          "description": "Family switches above the per-metric switches. false turns every member metric off; true or omitted keeps the metrics settings. clarification=M01-M07, skills=M08, projectRules=M09-M11, fulfillment=M12/M16, verification=M13-M15.",
+          "properties": {
+            "clarification": { "type": "boolean" },
+            "skills": { "type": "boolean" },
+            "projectRules": { "type": "boolean" },
+            "fulfillment": { "type": "boolean" },
+            "verification": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
         "fileQualityReviewEnabled": {
           "type": "boolean",
           "default": false,
           "description": "Independent unnumbered deliverable-file quality review at Stop. Disabled by default; does not enable any M metric."
+        },
+        "deviationOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report only evidence-backed Stop deviations and release completed scans without a PASS verdict."
+        },
+        "regressionCheck": {
+          "type": "object",
+          "description": "Optional program-run existing-test command for the standing regression item. Runs at most once per Stop review, only when existing source changed; never through a shell.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "command": {
+              "type": [
+                "array",
+                "string"
+              ],
+              "minItems": 1,
+              "minLength": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Argv array, or a string split on whitespace and quotes without shell operators. Required when enabled."
+            },
+            "cwd": {
+              "type": "string",
+              "minLength": 1,
+              "default": ".",
+              "description": "Relative project directory for the command."
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 2147483647,
+              "default": 600000,
+              "description": "Upper bound; the run also stays within half of the remaining Stop review window. The whole process tree is killed on timeout."
+            },
+            "maxOutputBytes": {
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 4194304,
+              "default": 65536,
+              "description": "Bytes of combined output tail persisted as program evidence."
+            },
+            "baselineFile": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Immutable task-start test evidence JSON with completeRuntime and statuses by exact test ID."
+            },
+            "isolationCommand": {
+              "type": ["array", "string"],
+              "minItems": 1,
+              "minLength": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Fresh single-case runner argv. Must contain {testId}; substitution never invokes a shell."
+            }
+          },
+          "additionalProperties": false
         },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
@@ -490,6 +578,17 @@
       "additionalProperties": false,
       "description": "Shared reviewer executable and argument prefix for version 1 and version 2. The build target selects the host session protocol; role model/session/provider settings remain in reviewers."
     },
+    "requirementFrame": {
+      "description": "Optional OpenClaw requirement frame settings. Invalid values use the defaults below.",
+      "properties": {
+        "enabled": { "default": false, "description": "Boolean. Requires user message archiving." },
+        "proposers": { "default": 3, "description": "Integer from 1 through 3." },
+        "inject": { "default": true, "description": "Boolean. Enables delivery when supported." },
+        "review": { "default": true, "description": "Boolean. Enables Stop review use when supported." },
+        "checks": { "default": false, "description": "Boolean. Adds project-rule and verification check proposers; each runs only when its Stop metric family has an enabled metric. Selected checks cite project documents and join the original-requirements Stop checklist." },
+        "timeoutMs": { "default": 600000, "description": "Positive integer. Total generation time in milliseconds." }
+      }
+    },
     "reviewers": {
       "type": "object",
       "properties": {
@@ -512,6 +611,9 @@
           "$ref": "#/$defs/reviewer"
         },
         "implementationReviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "requirementFrame": {
           "$ref": "#/$defs/reviewer"
         },
         "modelPolicy": {

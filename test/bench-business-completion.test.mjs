@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver } from '../scripts/bench/business-completion.mjs';
+import { readBusinessTerminal, knownBusinessTerminal, businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver, nativeCompactionStart } from '../scripts/bench/business-completion.mjs';
+
+test('only native compaction in the exact business session is excluded from correction starts', () => {
+  const scope = { sessionId: 'session', sessionKey: 'agent:main:arkts-case' };
+  const event = { ...scope, runId: 'session:compaction:cmp-mw833c0z-XBvWUg' };
+  assert.equal(nativeCompactionStart(event, scope), true);
+  for (const row of [
+    { ...event, sessionId: 'other' }, { ...event, sessionKey: 'other' },
+    { ...event, runId: 'other:compaction:cmp-known' },
+    { ...event, runId: 'session:compaction:cmp-' },
+    { ...event, runId: 'session:compaction:cmp-known:other' },
+    { ...event, runId: 'rc-stop-admitted' }, { ...scope, runId: 'unadmitted' },
+  ]) assert.equal(nativeCompactionStart(row, scope), false);
+});
 test('an outer context-compaction error remains failed after a successful diagnostic attempt', async () => {
   const terminal = await readBusinessTerminal(async () => ({ result: { runId: 'host', status: 'error' } }), 'host');
   assert.equal(knownBusinessTerminal(terminal, 'host'), true);

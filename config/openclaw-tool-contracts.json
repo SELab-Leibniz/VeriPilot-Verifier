@@ -10,11 +10,13 @@
     "source_grep",
     "source_find",
     "source_ls",
+    "semantic_graph",
     "review_history",
     "submit_review",
     "submit_classification",
     "submit_findings",
     "finish_findings",
+    "set_original_checklist",
     "review_scope",
     "review_checklist",
     "review_changes",
@@ -22,8 +24,11 @@
     "review_notes",
     "submit_finding",
     "finish_stop_review",
+    "submit_regression_authority",
     "commit_baseline_inventory",
-    "finish_baseline_audit"
+    "finish_baseline_audit",
+    "submit_frame_proposal",
+    "submit_frame_selection"
   ],
   "baseline": [
     "source_read",

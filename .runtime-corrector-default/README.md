@@ -1,6 +1,6 @@
 # Runtime Corrector 项目规则
 
-这个目录由 OpenClaw / MatrixAssistant 的 `/rc-project init` 从插件默认模板复制到 Session 实际绑定的项目中。模板包含 OpenSpec 的 proposal、design、tasks 三个 Stage，以及 `config.yaml` 中显式配置的需求基线、产物、Stop 和实现纠偏参数。规则与评审标准均可按项目修改。
+这个目录由 OpenClaw / MatrixAssistant 的 `/rc-project init` 从插件默认模板复制到 Session 实际绑定的项目中。模板用需求原文审查 OpenSpec 的 proposal、design、tasks 及其直接入边，Stop 使用原文清单并只报告有反证的偏差。模板关闭需求基线、文档阶段指标、实现纠偏、Skill 看护和压缩恢复。规则与评审标准均可按项目修改。
 
 初始化后，项目总开关 `enabled` 和首次登记会话的默认开关 `sessionDefaults.enabled` 均为 `false`。`reviewers.defaults.model` 在创建时复制当前 OpenClaw RC 的 `reviewerModel`，随后可以按项目修改，不会持续覆盖。已有 `.runtime-corrector` 不覆盖。
 

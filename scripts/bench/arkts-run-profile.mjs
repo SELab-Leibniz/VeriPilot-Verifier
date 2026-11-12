@@ -16,12 +16,12 @@ export function arktsRunProfile(value, { hostNoTimeout = false } = {}) {
     totalTimeoutMs: hostNoTimeout ? null : phaseTimeoutMs * 6 + 60000 };
 }
 
-export function renderArktsRunConfig(model, profile) {
+export function renderArktsRunConfig(model, profile, arm) {
   if (!/^[a-zA-Z0-9._/-]+$/u.test(model)) throw new Error('Invalid benchmark model identity.');
   return `version: 2
-artifacts: []
+${arm ? 'enabled: true\nsessionDefaults:\n  enabled: true\n' : ''}artifacts: []
 dynamicGroundTruth:
-  enabled: true
+  enabled: ${arm?.baseline ?? true}
   materialRoots: []
   panel:
     size: 0
@@ -32,15 +32,15 @@ artifactCorrection:
 implementationCorrection:
   enabled: false
 ${profile.explicit ? `  deviceBudgetMs: ${profile.phaseTimeoutMs}\n` : ''}stopCorrection:
-  enabled: true
-  waitMode: until_pass
+  enabled: ${arm?.enabled ?? true}
+  waitMode: ${arm ? 'assessment' : 'until_pass'}
   maxCorrectionsPerSession: 1
   maxCorrectionsPerFlow: 1
   assessmentTimeoutMs: ${profile.assessmentTimeoutMs}
   feedbackReserveMs: ${profile.feedbackReserveMs}
-reviewers:
+${arm ? `  originalRequirementsBasis: ${arm.originalRequirementsBasis}\n  deviationOnly: ${arm.deviationOnly}\n` : ''}reviewers:
   defaults:
-    model: anthropic/${model}
+    model: ${arm ? model : `anthropic/${model}`}
     effort: low
     timeoutMs: ${profile.privateTimeoutMs}
     maxOutputTokens: 32768

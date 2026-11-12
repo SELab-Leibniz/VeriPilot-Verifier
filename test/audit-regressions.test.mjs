@@ -122,7 +122,7 @@ test("docs-only legacy ledgers never launch source or device review", async (t) 
   const h = await harness(t, { claims: [scope, legacy, requirement("cli", "PROCESS", "workflowSteps")] });
   const outcome = await h.stop();
   assert.equal(outcome.decision, "allow");
-  assert.equal(outcome.stop.report.status, "PASS");
+  assert.equal(outcome.stop.report.status, "NO_DEVIATION_FOUND");
   assert.equal(h.calls.sourceScopes.length, 0);
   assert.equal(h.calls.device, 0);
   assert.equal((await h.state(outcome.taskId)).status, "COMPLETED");
@@ -131,7 +131,7 @@ test("docs-only legacy ledgers never launch source or device review", async (t) 
 test("mixed tasks route only source-owned objects and preserve process judgements", async (t) => {
   const h = await harness(t, { claims: [requirement("code"), requirement("design", "ARTIFACT"), requirement("cli", "PROCESS"), requirement("workflow", "PROCESS", "workflowSteps")] });
   const outcome = await h.stop();
-  assert.equal(outcome.stop.report.status, "PASS");
+  assert.equal(outcome.stop.report.status, "NO_DEVIATION_FOUND");
   assert.equal(h.calls.sourceScopes.length, 1);
   assert.deepEqual(Object.values(h.calls.sourceScopes[0].population.metrics).flat().map((object) => object.objectId), ["M12:code", "M16:code"]);
   assert.equal(h.calls.roles.filter(role => role === 'stop-reviewer').length, 1);

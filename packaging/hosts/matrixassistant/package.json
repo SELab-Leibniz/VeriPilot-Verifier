@@ -1,0 +1,11 @@
+{
+  "name": "runtime-corrector-ma",
+  "version": "1.9.1",
+  "private": true,
+  "description": "Runtime Corrector installer for MatrixAssistant (OpenClaw payload included).",
+  "type": "commonjs",
+  "main": "index.js",
+  "engines": {
+    "node": ">=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0"
+  }
+}

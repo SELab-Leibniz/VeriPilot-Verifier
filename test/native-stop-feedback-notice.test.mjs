@@ -25,6 +25,15 @@ test("only a matching committed assessment can supply the next normal prompt's h
   assert.equal(stopFeedbackNotice({ savedReviewCollection: { completedItems: 1 }, feedback }), feedback);
 });
 
+test("a document-only Stop skip is never carried into the next business prompt", () => {
+  const skipped = { status: "SKIPPED", reasonCode: "STOP_DOCUMENT_ONLY_CHANGES", verificationIncomplete: true,
+    feedback: "[runtime-corrector:status] SKIPPED (STOP_DOCUMENT_ONLY_CHANGES)：只涉及工作流文档。" };
+  assert.equal(stopFeedbackNotice(skipped), null);
+  const task = { verification: { assessmentId: "assessment", evaluationId: "stop-skip-1" }, stop: { lastAssessmentId: "stop-skip-1" },
+    assessments: { assessment: { verification: { evaluationId: "stop-skip-1" }, result: { stop: skipped } } } };
+  assert.equal(savedStopFeedbackNotice(task), null);
+});
+
 test("native display wrapping retains the existing total feedback limit", () => {
   const message = stopWaitText({ verificationFeedback: "诊断".repeat(10000) });
   assert.ok(Buffer.byteLength(message, "utf8") <= 8192);

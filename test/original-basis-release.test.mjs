@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { loadConfig } from '../lib/runtime-corrector.mjs';
+import { loadProjectPolicySource } from '../lib/policy/project-policy.mjs';
+
+test('new project template enables original document review and B12 behind the two project controls', async t => {
+  const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-basis-'));
+  t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
+  await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(projectRoot, '.runtime-corrector'), { recursive: true });
+  const plan = await loadConfig({ cwd: projectRoot });
+  const { runtimeV2: runtime } = plan;
+  const controls = await loadProjectPolicySource(projectRoot);
+  assert.equal(controls.enabled, false);
+  assert.equal(controls.sessionDefaults.enabled, false);
+  assert.deepEqual(runtime.artifactCorrection, { originalRequirementsEnabled: true, groundTruthReviewEnabled: false, stageMetricsEnabled: false });
+  assert.equal(runtime.stopCorrection.enabled, true);
+  assert.equal(runtime.stopCorrection.originalRequirementsBasis, true);
+  assert.equal(runtime.stopCorrection.deviationOnly, true);
+  assert.equal(runtime.stopCorrection.waitMode, 'until_pass');
+  assert.equal(runtime.stopCorrection.assessmentTimeoutMs, 1_800_000);
+  assert.equal(runtime.stopCorrection.maxCorrectionsPerSession, 2);
+  assert.deepEqual(runtime.stopCorrection.regressionCheck, { enabled: false, cwd: '.', timeoutMs: 600_000, maxOutputBytes: 65_536 });
+  assert.equal(runtime.dynamicGroundTruth.enabled, false);
+  assert.equal(runtime.skillCorrection.enabled, false);
+  assert.equal(runtime.implementationCorrection.enabled, false);
+  assert.notEqual(runtime.compactionRestore?.enabled, true);
+  assert.equal(controls.reviewers.defaults.model, 'custom/deepseek-v4-flash');
+  assert.deepEqual(plan.reviewGraph.edges.map(({from,to})=>[from,to]), [['proposal','design'],['proposal','tasks'],['design','tasks']]);
+  assert.deepEqual(plan.configuredArtifacts.map(item => item.nodeId), ['proposal', 'design', 'tasks']);
+});

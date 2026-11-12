@@ -17,10 +17,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--prepared-root', type=Path, required=True)
     parser.add_argument('--attempt', default='live-relay-001')
+    parser.add_argument('--run-root', type=Path)
     parser.add_argument('--verifier-image')
     args = parser.parse_args()
     root = args.prepared_root.resolve(strict=True)
-    live = root / args.attempt
+    live = args.run_root.resolve(strict=True) if args.run_root else root / args.attempt
     manifest = json.loads((root / 'manifest.json').read_text())
     assert re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', manifest['task'])
     verifier_image = args.verifier_image or manifest.get('verifierImage')

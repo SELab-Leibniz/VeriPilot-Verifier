@@ -32,8 +32,8 @@ test('actual Stop cannot PASS after an ACTIVE cache-hit graph failure, and the n
     const recovered = await f.invoke('Stop', { last_assistant_message: 'The requested work is complete.' }, outer ? {
       assessmentContext: { assessmentId: 'graph-recovered', guard: decisionGuard(task),
         deadlineAt: Date.now() + f.plan.runtimeV2.stopCorrection.assessmentTimeoutMs } } : {});
-    assert.equal(recovered.stop?.status, 'PASS', JSON.stringify(recovered)); task = await f.task();
-    assert.equal(task.verification.status, 'PASS'); assert(await readJson(await f.graphFile()));
+    assert.equal(recovered.stop?.status, 'NO_DEVIATION_FOUND', JSON.stringify(recovered)); task = await f.task();
+    assert.equal(task.verification.status, 'NO_DEVIATION_FOUND'); assert(await readJson(await f.graphFile()));
     assert(Object.values(task.watchers).every(watcher => watcher.status === 'PASS'));
     assert.notEqual(task.groundTruth.sharedBasis.proof.requestId, proof); assert(f.globals().length >= 2);
   });
@@ -65,7 +65,7 @@ test('actual Stop restores adopted completed Skill graphs and never accepts thei
       await fs.appendFile(f.transcript, JSON.stringify(user('U-retry')) + '\n');
       result = await f.invoke('Stop', { last_assistant_message: 'The requested work is complete.' });
     }
-    assert.equal(result.stop.status, 'PASS', JSON.stringify(result));
+    assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result));
     const graph = await readJson(file); assert(graph.constraints.length > 0);
     if (damage === 'corrupt') {
       assert.equal(graph.version, beforeGraph.version + 1, 'history-backed counter continuity, never a guessed previous version');

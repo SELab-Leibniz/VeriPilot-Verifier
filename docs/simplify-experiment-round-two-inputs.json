@@ -1,0 +1,148 @@
+{
+  "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+  "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+  "approvedCases": [
+    "security_tool_1"
+  ],
+  "promoted": [
+    "B2",
+    "B12"
+  ],
+  "calibration": {
+    "case": "security_tool_1",
+    "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-calibration\\st1\\results.json",
+    "sha256": "59ac1d44e6ca60489843de6c5aa9c31ce2bfda1999b4c1d54b82825a4cd88cf8",
+    "baseCommit": "83eb89433333eb9b5c84e8d784480e77fa8d610d",
+    "environment": {
+      "requestedSdk": "api-24",
+      "actualSdk": "API24 / 6.1.1.125",
+      "hvigor": "6.24.2",
+      "adapted": false,
+      "changes": [
+        "build-profile signing configuration removed",
+        "target/compatible SDK API24"
+      ],
+      "originalProfileSha256": "55175c3b6a6ff88bc40a98b545a80584d47a698bcc6c736b4499de58cb0640f1",
+      "adaptedProfileSha256": "297dcdacd78966cb160fb3a49cf7ff27ada7a6563dccd2744c597431dcd00f25",
+      "testPatchSha256": "fe100064890204a6309b79f6a9840be93b585ef1f5854be3508c2c22c0db1565",
+      "datasetDigest": "54676fcd95aaa2757a245357a83d96f2e2f16853a4061b095708f205968faa04"
+    },
+    "results": [
+      {
+        "phase": "base",
+        "executed": true,
+        "f2p": [
+          0,
+          1
+        ],
+        "p2p": [
+          611,
+          611
+        ],
+        "durationMs": 64793
+      },
+      {
+        "phase": "gold",
+        "executed": true,
+        "f2p": [
+          1,
+          1
+        ],
+        "p2p": [
+          611,
+          611
+        ],
+        "durationMs": 37001
+      }
+    ]
+  },
+  "s0": [
+    {
+      "case": "security_tool_1",
+      "state": "frozen-graded",
+      "sourceRun": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-s0-retry1\\st1",
+      "grade": {
+        "f2p_passed": 1,
+        "f2p_total": 1,
+        "p2p_passed": 611,
+        "p2p_total": 611,
+        "f2p_not_passed": [],
+        "p2p_not_passed": []
+      },
+      "commit": "b22001f92964256ec569b24cf03cfdf39f5e3a17",
+      "commitSha256": "51b7b5532d9a8894676a4084cafdbf97017394804bd12bee1bc7aad655f7d5aa",
+      "sessionSha256": "9e48372a0929e4bb789948e91487e69fe68bd044c3029b37b082886b1d76f15f",
+      "patchSha256": "028deb4a62fcb13ea5de6d27e0d7e59cca5a75b2afc359502f85e8cd42ad924a",
+      "freezeSha256": "3c8fc6e885b8395aa03248ae0774fbfe4c62c22a11788f1ed0fd9289bfe779ab",
+      "terminal": {
+        "source": "agent.wait",
+        "requestedRunId": "637d761e-6758-408b-beeb-bf5494642c7a",
+        "runId": "637d761e-6758-408b-beeb-bf5494642c7a",
+        "status": "ok",
+        "endedAt": 1793798134431
+      },
+      "modelRequests": 21,
+      "usage": {
+        "observedCalls": 21,
+        "completeCalls": 21,
+        "tokens": 831219
+      },
+      "elapsedMs": 154863,
+      "correction": "disabled at the isolated Gateway"
+    }
+  ],
+  "samples": [
+    {
+      "id": "security_tool_1-correct",
+      "case": "security_tool_1",
+      "kind": "correct",
+      "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-freeze-and-s0-grade\\freeze",
+      "freezeSha256": "3c8fc6e885b8395aa03248ae0774fbfe4c62c22a11788f1ed0fd9289bfe779ab",
+      "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-calibration\\st1",
+      "calibrationSha256": "59ac1d44e6ca60489843de6c5aa9c31ce2bfda1999b4c1d54b82825a4cd88cf8",
+      "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-freeze-and-s0-grade\\grade\\results.json",
+      "gradeSha256": "7d4e381e0c164b1d704023a201551ce71cc1f3519765832324fd1aec9ce487fe",
+      "before": {
+        "f2p_passed": 1,
+        "f2p_total": 1,
+        "p2p_passed": 611,
+        "p2p_total": 611,
+        "f2p_not_passed": [],
+        "p2p_not_passed": []
+      },
+      "commit": "b22001f92964256ec569b24cf03cfdf39f5e3a17",
+      "commitSha256": "51b7b5532d9a8894676a4084cafdbf97017394804bd12bee1bc7aad655f7d5aa",
+      "sessionSha256": "9e48372a0929e4bb789948e91487e69fe68bd044c3029b37b082886b1d76f15f",
+      "patchSha256": "028deb4a62fcb13ea5de6d27e0d7e59cca5a75b2afc359502f85e8cd42ad924a"
+    },
+    {
+      "id": "security_tool_1-injected",
+      "case": "security_tool_1",
+      "kind": "defect",
+      "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-variant-grade\\freeze",
+      "freezeSha256": "e96c28d22abedbcb7494d47c14af35e09628dd1f97172bcb229bc23ab848b671",
+      "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-calibration\\st1",
+      "calibrationSha256": "59ac1d44e6ca60489843de6c5aa9c31ce2bfda1999b4c1d54b82825a4cd88cf8",
+      "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\arkts-variant-grade\\grade\\results.json",
+      "gradeSha256": "d05032748ec8b043f331daa8867092b4dc07d4c6b603d32771fb026c1eecacf7",
+      "before": {
+        "f2p_passed": 0,
+        "f2p_total": 1,
+        "p2p_passed": 611,
+        "p2p_total": 611,
+        "f2p_not_passed": [
+          "entry::IdentitySettingsViewModel::should map policy minLength 20 to the new option index"
+        ],
+        "p2p_not_passed": []
+      },
+      "commit": "f525d6a402988ce2bb590edd365489ce72e0dfd7",
+      "commitSha256": "180c4dc0fe41ea80125c70f676080db879f6bfedca1033aa9eeb495b6efc5ef6",
+      "sessionSha256": "9e48372a0929e4bb789948e91487e69fe68bd044c3029b37b082886b1d76f15f",
+      "patchSha256": "43db220c6afd2aceb3b02fe2302244aafd06c94f273af8fe89b5661c71f4dfbd",
+      "rollback": "Remove only 20 from PASSWORD_LENGTH_OPTIONS in entry/src/main/ets/models/DataModels.ets. Keep 24 and all other S0 edits."
+    }
+  ],
+  "frozenSourceArtifactSha256": "ec358bfbd52df682ca921a185195293682ee470630f1be011c147e11a480fa9a",
+  "previousManifestSha256": "09d26f23809d22a8016e3f2ec14cd454fc76c7f3f9f8dd4a32d26354576f20b6",
+  "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520"
+}

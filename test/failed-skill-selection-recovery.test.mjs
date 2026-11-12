@@ -52,7 +52,7 @@ test('failed selected read survives document alignment and Stop runs the same Sk
   assert(aligned.groundTruth.sharedBasis.sources.some(source => source.ref === f.skillFile));
   assert(aligned.groundTruth.sharedBasis.adoptedSkills.some(skill => skill.skillId === 'demo'));
   assert(aligned.watchers[watcher.watcherId].pendingSelection);
-  const result = await stop(f); assert.equal(result.stop.status, 'PASS', JSON.stringify(result));
+  const result = await stop(f); assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result));
   const current = await f.task(); assert.deepEqual(Object.keys(current.watchers), [watcher.watcherId]);
   const recovered = current.watchers[watcher.watcherId];
   assert.equal(recovered.status, 'PASS'); assert.equal(recovered.sourceInterpretationChecked, true);
@@ -91,6 +91,6 @@ test('a genuine later read of changed original recovers the pending identity wit
   assert(row.invocationIds.includes('actual-selected-read')); assert(row.invocationIds.includes('new-current-selection'));
   assert(row.selectionOrigins.length > watcher.selectionOrigins.length);
   assert.notEqual(row.skillDigest, watcher.skillDigest);
-  const result = await stop(f); assert.equal(result.stop.status, 'PASS', JSON.stringify(result));
+  const result = await stop(f); assert.equal(result.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(result));
   assert.deepEqual(Object.keys((await f.task()).watchers), [watcher.watcherId]);
 });

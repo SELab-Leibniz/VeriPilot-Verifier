@@ -2,7 +2,17 @@
 
 本页保留版本 1 的 artifact、node/edge 与规则配置参考。任务 Ground Truth、Skill 看护、M01–M16 和 Stop 纠偏属于显式启用的 `version: 2` 能力，完整字段与默认值见 [Stop 审查](stop-task-review.md) 与本页的 v2 配置。
 
-Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)。其它写入规则和文档/Skill 总开关继续独立生效。
+### 新项目模板与旧配置
+
+1.10.0 的新项目模板以用户需求原文审查 OpenSpec 的 proposal、design、tasks 及入边，关闭文档阶段指标和基线审查。Stop 启用原文清单及仅偏差模式（B12），检查有原有代码或测试佐证的既有行为回归。实现纠偏、Skill 看护与压缩恢复关闭。项目开关与首次会话默认仍为关闭。
+
+已有配置中省略字段的解释继续沿用旧缺省值。要切回基线模式，将 dynamicGroundTruth.enabled 和 artifactCorrection.groundTruthReviewEnabled 设为 true，将 artifactCorrection.originalRequirementsEnabled 和 stopCorrection.originalRequirementsBasis 设为 false。需要完整逐项 Stop 审查（A）时将 stopCorrection.deviationOnly 也设为 false。保留仅偏差审查则是 B2。按需要单独启用 artifactCorrection.stageMetricsEnabled。
+
+Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。`stopCorrection.families` 是上一层的族开关，设为 `false` 的族会关闭其全部成员指标。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)，各族含义见 [纠偏检查体系](correction-checklist.md)。其它写入规则和文档/Skill 总开关继续独立生效。
+
+`stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。
+
+`stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。用户消息取自 `.runtime-correction/original-requirements/` 下按会话记录的日志（与 `artifactCorrection.originalRequirementsEnabled` 共用），宿主压缩上下文删掉的早期消息仍保留在清单来源中。
 
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 
@@ -780,6 +790,32 @@ reviewers:
 
 `panel.size: 0` 关闭 onboarding 小组，保留增量抽取。角色 `session: fork` 复用父上下文的隔离分叉，`detached` 使用环境身份新建会话，`independent` 使用指定提供器新建会话。OpenClaw 使用原生 reviewer 路径，模型须按宿主注册配置。角色级设置优先于 `reviewers.defaults`，再回退到 `limits.semanticReviewTimeoutMs` 和 20 分钟默认值；格式修复共享该角色绝对截止。
 
+`compactionRestore.enabled` 默认为 `false`，开启后 OpenClaw 在压缩后的首次提示构建中从原文存档恢复需求，最多注入 24 KiB。
+
 `reviewers.modelPolicy` 可使用 `off`、`critical-gates`、`all` 预设；critical-gates 仅覆盖 onboardingAdjudicator 与 stopReviewer。显式角色配置优先。写出配置时预设展开为角色字段。缺失密钥环境变量时记录 `REVIEWER_PROVIDER_DEGRADED` 并按实现回退，独立身份不会把父凭据送往第三方。抽取降级状态如 `DERIVED_CONFIG`、`ONBOARDING_DEGRADED` 可在任务日志中核对。
 
 配置 Schema 是字段校验来源：`config/schemas/project-config.schema.json`；运行时仍须通过统一策略编译器的语义约束。
+
+## 需求框架
+
+```yaml
+requirementFrame:
+  enabled: false
+  proposers: 3
+  inject: true
+  review: true
+  checks: false
+  timeoutMs: 600000
+```
+
+默认关闭。启用需要 OpenClaw 的版本 2 项目配置，以及通过 `artifactCorrection.originalRequirementsEnabled` 或
+`stopCorrection.originalRequirementsBasis` 开启用户消息记录。观察模式下不生成。
+`proposers` 接受 1 至 3，`timeoutMs` 是生成过程的总时限，单位为毫秒。非法值使用上面的默认值。
+
+审查模型由 `reviewers.requirementFrame` 指定，未单独配置时沿用 `reviewers.defaults`。
+生成在后台进行，依据任务开始时的 Git 提交和用户消息。结果保存在项目状态目录的
+`requirement-frame/<会话哈希>/frame.json`。
+`inject` 控制简报送达。已有框架时在真实用户回合开头送达，本回合新生成的框架则随下一次工具结果送达。
+`review` 启用 Stop 对匹配任务开始提交的框架逐项记录处置，并在已有偏差反馈后追加复现要求。
+
+`checks` 默认 `false`。开启后额外运行“项目规则”和“验证要求”两个检查项提议者，从任务开始提交的项目文档中找出本任务会触发的规则，选中的检查项编号为 K1、K2……。每个提议者只在其指标族至少有一个开启的 Stop 指标时运行；仓库中没有 Markdown 文档时不运行。检查项进入简报，并在 `stopCorrection.originalRequirementsBasis` 开启时并入终审清单。详见 [纠偏检查体系](correction-checklist.md)。

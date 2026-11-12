@@ -130,41 +130,21 @@ async function windowFixture(t, verdict = 'NOT_APPLICABLE') {
   return { ...f, handle, originalPath, scoped };
 }
 
-test('registered complete-window NA survives collector save and same-current proof revalidation; it is never a PASS cache hit', async t => {
-  const f = await windowFixture(t), binding = f.handle.proofs[object.objectId].conditionBinding;
-  assert.equal(binding.window.sourcePath, f.originalPath); assert.equal(binding.objectDigest, sha256(f.scoped));
-  let calls = 0, response = f.handle;
-  const factory = async () => { calls++; return response; }; factory.reviewCacheIdentity = () => 'window-proof-fixture-v1';
-  const input = { ...f.input, classification: f.input.request.fixedStopClassification, reviewerFactory: factory, deadlineAt: Date.now() + 15000 };
-  const first = await collectReviewItems(input);
-  assert.equal(first.result.metricObjectJudgements[0].judgement, 'NOT_APPLICABLE');
-  const final = await finalReview(f, first, 'complete-window-na-final');
-  assert.equal(final.status, 'SKIPPED', 'the existing all-NA arithmetic has no applicable metric; it is never invented PASS');
-  assert.deepEqual(final.review.validationIssues, []); assert.equal(final.review.collection.complete, true);
-  assert.equal(final.review.metricObjectJudgements[0].judgement, 'NOT_APPLICABLE');
-  const stored = JSON.parse(await fs.readFile(first.collection.items[0].path, 'utf8'));
-  assert.equal(Object.hasOwn(stored.result.metricObjectJudgements[0], 'conditionBinding'), false);
-  assert.equal(stored.proofs[object.objectId].conditionBinding.window.sourceHash, binding.window.sourceHash);
-  response = { ...f.handle, result: stored.result, sourceCitations: stored.sourceCitations, proofs: stored.proofs,
-    getSourceCitations: async () => stored.sourceCitations };
-  const second = await collectReviewItems(input);
-  assert.equal(second.result.metricObjectJudgements[0].judgement, 'NOT_APPLICABLE'); assert.equal(calls, 2);
-  assert.equal(second.collection.reusedItems, 0, 'the unchanged cache policy admits only PASS');
-  let invalidation = 0;
-  for (const alter of [p => { p[object.objectId].conditionBinding.objectRevision = 'R1@foreign'; },
-    p => { p[object.objectId].conditionBinding.objectDigest = 'foreign'; }, p => { p[object.objectId].conditionBinding.policy = 'old'; },
-    p => { p[object.objectId].conditionBinding.cursor = 'old'; }]) {
-    const proofs = structuredClone(stored.proofs); alter(proofs); response = { ...response, proofs };
-    const rejected = await collectReviewItems(input);
-    assert.equal(rejected.result.metricObjectJudgements[0].judgement, 'UNVERIFIED'); assert.equal(rejected.collection.complete, false);
-    const finalRejected = await finalReview(f, { ...first, proofs }, `wrong-window-certificate-${++invalidation}`);
-    assert.equal(finalRejected.status, 'UNVERIFIED', 'the derived final view also rejects a wrong program certificate');
-  }
-  response = { ...response, proofs: stored.proofs };
+test('mechanical Stop decisions survive collection without semantic certificates while original snapshot drift stays protected', async t => {
+  const f = await windowFixture(t);
+  assert.equal(f.handle.citationPolicy, 'mechanical-v1');
+  assert.equal(f.handle.proofs[object.objectId].conditionBinding, undefined);
+  const input = { ...f.input, classification: f.input.request.fixedStopClassification,
+    reviewerFactory: async () => f.handle, deadlineAt: Date.now() + 15000 };
+  const collected = await collectReviewItems(input);
+  assert.equal(collected.citationPolicy, 'mechanical-v1');
+  assert.equal(collected.result.metricObjectJudgements[0].judgement, 'NOT_APPLICABLE');
+  const final = await finalReview(f, collected, 'mechanical-condition-final');
+  assert.equal(final.status, 'NO_DEVIATION_FOUND');
   const controller = new AbortController(); controller.abort();
   await assert.rejects(collectReviewItems({ ...input, abortSignal: controller.signal }), /cancel/i);
   await assert.rejects(collectReviewItems({ ...input, deadlineAt: Date.now() - 1 }), /deadline|window|time/i);
-  await fs.appendFile(f.originalPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'later-edit', name: 'Write', input: { path: 'app.mjs' } }] } }) + '\n');
+  await fs.appendFile(f.originalPath, JSON.stringify({ type: 'assistant', message: { content: 'A later original event.' } }) + '\n');
   await assert.rejects(collectReviewItems(input), /STALE|changed|snapshot|certificate/i);
 });
 

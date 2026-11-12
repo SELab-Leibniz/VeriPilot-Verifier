@@ -66,7 +66,7 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: packaged in
   assert.equal(config.reviewers.defaults.model, "custom/changed-before-init");
   assert.equal(config.stopCorrection.waitMode, "until_pass");
   assert.equal(config.stopCorrection.maxCorrectionsPerSession, 2);
-  assert.equal(config.implementationCorrection.enabled, true);
+  assert.equal(config.implementationCorrection.enabled, false);
   assert.equal(config.enabled, false);
   assert.equal(config.sessionDefaults.enabled, false);
   assert.deepEqual((await fs.readdir(path.dirname(f.file))).sort(), ["README.md", "config.reference.yaml", "config.yaml", "example.reviewer.md", "example.rules.yaml"]);

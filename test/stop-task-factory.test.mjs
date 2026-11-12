@@ -174,5 +174,5 @@ for (const supplemental of [false, true]) test(`the canonical Stop uses one fres
       last_assistant_message: "The delivery is complete." } });
   assert.equal(identityCalls, 0, 'A new Stop checks the full workspace instead of selecting old per-item cached results.');
   assert.equal(result.stop.review.fileAssessments.length, supplemental ? 1 : 0);
-  assert.equal(itemCalls, 1); assert.equal(result.stop.report.status, 'PASS');
+  assert.equal(itemCalls, 1); assert.equal(result.stop.report.status, 'NO_DEVIATION_FOUND');
 });

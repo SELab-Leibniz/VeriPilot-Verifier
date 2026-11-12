@@ -132,7 +132,7 @@ test('a wrong DESCRIPTION proposal cannot hide a hard duty before the watcher in
   const repaired = await f.invoke('Stop', { last_assistant_message: 'The requested work is complete.' }, {
     assessmentContext: { mode: 'verify_only', assessmentId: 'repair-semantic-proposal', guard: decisionGuard(await f.task()),
       deadlineAt: Date.now() + f.plan.runtimeV2.stopCorrection.assessmentTimeoutMs, evidenceMatches: async () => true } });
-  assert.equal(repaired.stop.status, 'PASS', JSON.stringify(repaired));
+  assert.equal(repaired.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(repaired));
   assert.equal(f.graphs().length, 2, 'an observed semantic conflict invalidates only that local proposal');
   assert.equal(f.globals().length, 1, 'same original authority does not require a new global alignment');
 });
@@ -147,7 +147,7 @@ test('all nonhard original units receive semantic review and only a current same
   assert(request.sourceUnits.every(u => !Object.hasOwn(u, 'text')));
   assert(request.skill.files.every(file => !Object.hasOwn(file, 'content')), 'whole originals are paged once, not repeated in each node request');
   const first = await f.invoke('Stop', { last_assistant_message: 'The requested work is complete.' });
-  assert.equal(first.stop.status, 'PASS', JSON.stringify(first));
+  assert.equal(first.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(first));
   const firstTask = await f.task(), certificate = firstTask.groundTruth.sharedBasis.proof.requestId;
   const count = () => f.calls.filter(c => c.role === 'skill-reviewer').length;
   let verification = 0;
@@ -156,24 +156,24 @@ test('all nonhard original units receive semantic review and only a current same
       deadlineAt: Date.now() + f.plan.runtimeV2.stopCorrection.assessmentTimeoutMs, evidenceMatches: async () => true } });
   assert.equal(count(), 1);
   const second = await verify();
-  assert.equal(second.stop.status, 'PASS', JSON.stringify(second)); assert.equal(count(), 1, 'unchanged current graph/evidence/policy needs no new semantic call');
+  assert.equal(second.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(second)); assert.equal(count(), 1, 'unchanged current graph/evidence/policy needs no new semantic call');
   const old = await readJson(await f.graphFile()); old.sourceContract.version = 'legacy-semantic-contract';
   await fs.writeFile(await f.graphFile(), JSON.stringify(old));
   const repaired = await verify();
-  assert.equal(repaired.stop.status, 'PASS', JSON.stringify(repaired)); assert.equal(count(), 2);
+  assert.equal(repaired.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(repaired)); assert.equal(count(), 2);
   assert.equal(f.graphs().length, 2); assert.equal(f.globals().length, 1);
   assert.equal((await f.task()).groundTruth.sharedBasis.proof.requestId, certificate);
   await withTaskState({ projectRoot: f.root, taskId: firstTask.taskId }, state => {
     for (const watcher of Object.values(state.watchers)) watcher.sourceInterpretationChecked = false;
   });
   const missingProof = await verify();
-  assert.equal(missingProof.stop.status, 'PASS'); assert.equal(count(), 3, 'an old PASS tag without semantic coverage cannot skip every nonhard unit');
+  assert.equal(missingProof.stop.status, 'NO_DEVIATION_FOUND'); assert.equal(count(), 3, 'an old PASS tag without semantic coverage cannot skip every nonhard unit');
 });
 
 test('same-Stop old PASS becomes historical after original Skill changes, stays invalid after semantic recovery, and requires fresh full verification', async t => {
   const f = await fixture(t); await f.select();
   const stop = () => f.invoke('Stop', { hook_event_id: 'fixed-original-stop', last_assistant_message: 'The requested work is complete.' });
-  const first = await stop(); assert.equal(first.stop.status, 'PASS', JSON.stringify(first));
+  const first = await stop(); assert.equal(first.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(first));
   const firstTask = await f.task(), originalId = firstTask.verification.evaluationId;
   const originalFile = path.join(taskDirectory(f.root, firstTask.taskId), 'evaluations', `${originalId}.json`), originalBytes = await fs.readFile(originalFile);
   await fs.appendFile(f.skillFile, '\nNever modify public API signatures.\n'); f.state.semanticDisposition = 'CONFLICT';
@@ -190,8 +190,8 @@ test('same-Stop old PASS becomes historical after original Skill changes, stays 
   const verified = await f.invoke('Stop', { hook_event_id: 'fresh-guarded-verification', last_assistant_message: 'The requested work is complete.' }, {
     assessmentContext: { mode: 'verify_only', assessmentId: 'fresh-after-skill-invalidation', guard: decisionGuard(beforeFresh),
       deadlineAt: Date.now() + f.plan.runtimeV2.stopCorrection.assessmentTimeoutMs, evidenceMatches: async () => true } });
-  assert.equal(verified.stop.status, 'PASS', JSON.stringify(verified));
-  const current = await f.task(); assert.equal(current.verification.status, 'PASS'); assert.notEqual(current.verification.evaluationId, originalId);
+  assert.equal(verified.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(verified));
+  const current = await f.task(); assert.equal(current.verification.status, 'NO_DEVIATION_FOUND'); assert.notEqual(current.verification.evaluationId, originalId);
   const ignored = await invalidateCurrentStopVerification({ projectRoot: f.root, taskId: firstTask.taskId, sessionId: 'basis-session', expectedTask: beforeFresh,
     evaluationId: beforeFresh.verification.evaluationId, reasonCode: 'LATE_CALLBACK' });
   assert.equal(ignored, null); assert.equal((await f.task()).verification.evaluationId, current.verification.evaluationId);
@@ -204,7 +204,7 @@ test('same-Stop old PASS becomes historical after original Skill changes, stays 
 test('a new original Skill duty invalidates cached Stop coverage even when the semantic checker immediately confirms it', async t => {
   const f = await fixture(t); await f.select();
   const stop = () => f.invoke('Stop', { hook_event_id: 'stable-stop-positive-semantics', last_assistant_message: 'The requested work is complete.' });
-  const first = await stop(); assert.equal(first.stop.status, 'PASS'); const old = await f.task();
+  const first = await stop(); assert.equal(first.stop.status, 'NO_DEVIATION_FOUND'); const old = await f.task();
   await fs.appendFile(f.skillFile, '\nNever modify public API signatures.\n');
   const changed = await stop(); assert.equal(changed.stop.status, 'UNVERIFIED'); assert.equal(changed.stop.reused, true);
   assert.equal((await f.task()).verification.status, 'UNVERIFIED');
@@ -216,7 +216,7 @@ test('a new original Skill duty invalidates cached Stop coverage even when the s
 test('an old-policy whole-Stop evaluation remains historical and cannot bypass the current policy through early reuse', async t => {
   const f = await fixture(t); await f.select();
   const stop = () => f.invoke('Stop', { hook_event_id: 'old-policy-stop', last_assistant_message: 'The requested work is complete.' });
-  const first = await stop(); assert.equal(first.stop.status, 'PASS'); const task = await f.task();
+  const first = await stop(); assert.equal(first.stop.status, 'NO_DEVIATION_FOUND'); const task = await f.task();
   const file = path.join(taskDirectory(f.root, task.taskId), 'evaluations', `${task.verification.evaluationId}.json`);
   const prior = await readJson(file); delete prior.reviewPolicyVersion; await fs.writeFile(file, JSON.stringify(prior));
   const oldBytes = await fs.readFile(file), calls = f.calls.length;

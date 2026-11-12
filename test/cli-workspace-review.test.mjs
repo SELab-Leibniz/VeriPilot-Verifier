@@ -70,11 +70,12 @@ test('CLI compact flow selects scope with its checklist and settles the last ite
   await handle.close();
 });
 
-for (const mode of ['truncate', 'unobserved']) test(`CLI ${mode} tool output cannot certify PASS even after MCP execution`, async t => {
+for (const mode of ['truncate', 'unobserved']) test(`CLI ${mode} tool output does not gate a mechanically valid Stop citation`, async t => {
   const f = await fixture(t); f.input.env.RC_TEST_CLI_MODE = mode;
   const handle = await startRoleReviewer(f.input);
-  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
-  assert.equal(handle.sourceCitations.length, 0); await handle.close();
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert.equal(handle.citationPolicy, 'mechanical-v1');
+  assert(handle.sourceCitations[0].contentHash); await handle.close();
 });
 
 test('CLI continuation resumes the same private session, checklist and notes without rereading unchanged basis', async t => {
@@ -108,10 +109,10 @@ test('CLI cancellation terminates the owned process and rejects late review resu
   } finally { controller.abort(new Error('Input replaced')); await rejected.catch(() => {}); }
 });
 
-test('CLI observer rejects replayed, foreign-session and altered source receipts', async () => {
+for (const citeId of ['rccite_abcd', 'C1']) test(`CLI observer rejects replayed, foreign-session and altered source receipts for ${citeId}`, async () => {
   let observations = 0;
   const worker = { isComplete: () => false, onAssistantMessageStart() {}, observeReceipt() { observations++; } };
-  const result = { content: [{ type: 'text', text: '[citeId="rccite_abcd"]\nOriginal exact page' }], details: { citation: { citeId: 'rccite_abcd' } } };
+  const result = { content: [{ type: 'text', text: `[citeId="${citeId}"]\nOriginal exact page` }], details: { citation: { citeId } } };
   const observer = createCliReceiptObserver(worker); observer.expect('internal', { path: 'file' }, result);
   observer.frame({ type: 'system', subtype: 'init', session_id: 'owned' });
   observer.frame({ type: 'assistant', session_id: 'owned', message: { id: 'A', content: [{ type: 'tool_use', id: 'read', name: 'mcp__rc_stop__source_read', input: { path: 'file' } }] } });
@@ -140,7 +141,7 @@ test('automatic CLI Stop selects the shared default engine and settles one sessi
     env: f.input.env, stopHost: { directory: path.join(f.root, 'host-state') } };
   await handleRuntimeV2Event({ ...options, input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: 'SessionStart', source: 'startup' } });
   const outcome = await handleRuntimeV2Event({ ...options, input: { session_id: 'protocol-host', cwd: f.root, transcript_path: transcript, hook_event_name: 'Stop', last_assistant_message: 'The task is complete.' } });
-  assert.equal(outcome.stop.status, 'PASS', JSON.stringify(outcome.stop));
+  assert.equal(outcome.stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(outcome.stop));
   const calls = (await fs.readFile(f.capture, 'utf8')).trim().split('\n').map(JSON.parse);
   assert.equal(calls.length, 1); assert.equal(JSON.parse(calls[0].args[0]).task.scope, 'workspace-stop');
 });

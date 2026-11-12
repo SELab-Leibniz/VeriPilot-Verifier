@@ -19,7 +19,7 @@ npm run build:plugins
 - Claude Code：`claude --plugin-dir ./dist/runtime-corrector-claude`
 - CodeAgent：用宿主插件安装流程选择 `dist/runtime-corrector-codeagent`。
 - OpenClaw：`openclaw plugins install ./dist/runtime-corrector-openclaw`。
-- MatrixAssistant：使用其内置 OpenClaw CLI 安装，再按 [宿主指南](docs/openclaw.md) 登记加载路径。
+- MatrixAssistant 市场：运行 `npm run build:ma`，上传 `dist/runtime-corrector-ma-<版本号>.tgz`，选择 `client` 模式；详见 [MA 市场发行包](docs/ma-market.md)。也可按 [宿主指南](docs/openclaw.md) 使用内置 OpenClaw CLI 安装原生包。
 
 只构建默认宿主使用 `npm run build:plugin`，指定宿主使用 `npm run build:plugin -- --host claude`。源码根目录不提供安装 manifest，安装时选择构建后的目录。
 
@@ -28,6 +28,8 @@ Claude/CodeAgent 的 CLI 与 Hook 要求 **Node.js >= 18**，支持 Windows、Li
 三种宿主的产物仅使用 Node.js 内置模块，不包含旧 Stop 工作者、TypeBox 副本或其依赖锁文件；安装无需下载 npm 依赖。旧审查引擎与依赖仅保留在仓库的显式开发对照中，不读取或修改宿主及其他项目的安装。
 
 OpenClaw / MatrixAssistant 插件加载后，可由管理员在 Session 中执行 `/rc-setup`，初始化 RC 的模型、超时、Hook 权限和主 Agent 工具授权。已有模型和超时配置保留，默认使用宿主热加载；项目和会话开关保持原样。详见[宿主初始化说明](docs/openclaw.md#在-session-中初始化宿主设置)。
+
+1.10.0 起，新项目模板启用原文文档纠偏和只报告已证实偏差的原文 Stop（B12）。Stop 同时核对原文未要求改变的既有行为。需求基线提取、基线审计、实现纠偏、Skill 看护及压缩恢复在模板中关闭。项目与首次会话仍需显式开启。已有项目配置继续沿用原有字段与缺省行为。
 
 Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-project on`、`/rc-session on`。`init` 使用插件内的默认模板，项目和会话默认开关均为关闭，模型取当前宿主 RC 配置，已有项目配置不覆盖。`/rc-project on|off|status` 控制整个项目，`/rc-session-default on|off|status` 控制首次登记会话的默认选择；已登记会话不受默认值变化影响。详见[项目与会话命令](docs/session-control.md#在-session-中初始化和开关)。
 

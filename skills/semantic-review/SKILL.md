@@ -6,13 +6,13 @@ allowed-tools: Read Grep
 
 # Runtime Corrector Semantic Review
 
-Read the request JSON supplied in `$ARGUMENTS`, then inspect every artifact named by that request. Resolve every relative artifact path against the request's absolute `projectRoot`; the isolated process may run from the parent conversation's directory instead of the artifact workspace. The current conversation inherited by the isolated session is the authority for the user's actual intent, but never for the current artifact contents. The files on disk after reading the request are the only authority for the artifact snapshot; ignore prior copies, findings, and edit plans from the inherited conversation. The request's deterministic diagnostics, stage specification, and reviewer criteria are the executable policy.
+Read the request JSON supplied in `$ARGUMENTS`, then inspect every artifact named by that request. Resolve every relative artifact path against the request's absolute `projectRoot`; the isolated process may run from the parent conversation's directory instead of the artifact workspace. The current conversation inherited by the isolated session, or `originalRequirements.userMessages` when the request supplies them, is the authority for the user's actual intent, but never for the current artifact contents. The files on disk after reading the request are the only authority for the artifact snapshot; ignore prior copies, findings, and edit plans from the inherited conversation. The request's deterministic diagnostics, stage specification, and reviewer criteria are the executable policy.
 
 Return only the JSON object required by the caller's JSON Schema.
 
 ## Review rules
 
-1. When `nodeReviewEnabled` is true, review every currently available current-node target. If the request includes `workflow`, `workflow.targetFiles` is the current-node set and all other named files are read-only context. For a complete bundle, check cross-file fidelity and consistency rather than reviewing only the trigger file. When `nodeReviewEnabled` is false, do not perform a general current-node review; evaluate only enabled workflow edges and declared Ground Truth inputs.
+1. When `nodeReviewEnabled` is true, review every currently available current-node target. If the request includes `workflow`, `workflow.targetFiles` is the current-node set and all other named files are read-only context. For a complete bundle, check cross-file fidelity and consistency rather than reviewing only the trigger file. When `nodeReviewEnabled` is false, do not perform a general current-node review; evaluate only enabled workflow edges, declared Ground Truth inputs and supplied original requirements.
 2. When `bundleComplete` is false, still review all criteria that can be decided from the available snapshot. Treat checks that require a missing bundle member as deferred; do not report the mere absence of a not-yet-generated member as a semantic error.
 3. Preserve every valid deterministic diagnostic. Add semantic findings only when supported by concrete artifact or conversation evidence.
 4. Findings use stable rule IDs prefixed with `AGENT-`. Each finding must name an available artifact path, explain the deviation, and include concise evidence.
@@ -46,6 +46,18 @@ When `workflow.groundTruthInputs` is present, treat every listed file as a read-
 2. Compare target artifacts with the source's declared type, version and authority. Report omissions, contradictions or unsupported expansion against a ready source.
 3. Ground Truth files may be cited as evidence, but every finding path and edit target must still belong to `workflow.editableArtifactFiles`.
 4. Do not resolve conflicts between Ground Truth sources by recency or file modification time. Report that the basis is unresolved unless the supplied reviewer criteria explicitly define the authorized precedence.
+
+## Original requirements
+
+When the request includes `originalRequirements`, review the targets directly against the original requirements; no extracted baseline exists for this review:
+
+1. `userMessages` lists every real user message of this session in order, including messages from before context compaction; `retainedAfterCompaction: true` marks one that the host transcript no longer contains, and it still applies. Read the message file at `path` whenever only a `preview` is inline. A later explicit user change supersedes the earlier instruction it changes; every other message still applies. Text following a `[runtime-corrector:feedback]` marker is corrector output, not user authority.
+2. `materials` and `projectFiles` are read-only requirement sources. `referencedFiles` are existing project files named in a user message; that message decides each file's role. A file the user asks to follow is a requirement source; a file named only as input, template, scratch or something to replace is not. Read the ones relevant to the current targets. When `materialTier` is `reference`, `materials` are optional reference sources: read one only when a target depends on it, and never let it override a user message. Each lists its `title` and its `status` since the task started (`UNCHANGED`, `MODIFIED`, `DELETED`, `ADDED`, or `UNTRACKED` without a task-start copy). For `MODIFIED` or `DELETED`, read `frozenOriginal`, the task-start copy; a later edit of the live file is project work, not a requirement change. A `referencedFiles` entry with `frozenOriginal` changed after the user named it, and its task-start copy is the one the user meant.
+3. Read any other project file needed to understand or check a requirement, such as existing code, configuration or a document named inside a source. Such files are evidence about the project; they create an obligation only through a user message or a requirement source.
+4. Agent-authored artifacts, assistant messages and earlier reviews never become requirements.
+5. Report omissions, contradictions and unsupported scope changes against these sources. Cite the source in evidence, for example `user message 2: "..."` or `docs/prd.md:14: "..."`. Every finding path still belongs to the editable targets.
+6. When sources conflict and no later explicit user message resolves the conflict, report it as unresolved instead of choosing one side.
+7. Leave `violatedGroundTruthIds` empty; this mode has no claim ledger.
 
 ## Runtime v2 Ground Truth and checkpoint metrics
 

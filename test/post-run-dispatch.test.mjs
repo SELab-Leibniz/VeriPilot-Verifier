@@ -4,7 +4,29 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createPostRunDispatcher, createPostRunReviewPool } from "../lib/openclaw/post-run-dispatch.mjs";
-import { waitPostRunTerminal, createPostRunHostRequester } from "../lib/openclaw/post-run-host.mjs";
+import { waitPostRunTerminal, completedToolWarningTerminal, createPostRunHostRequester } from "../lib/openclaw/post-run-host.mjs";
+
+test('a drained tool-warning terminal is reviewed only with exact successful stop evidence', async t => {
+  const raw = { runId: 'business', status: 'error', error: '⚠️ 🛠️ Exec failed: harmless earlier probe (exit 1)' };
+  const completion = { runId: 'business', success: true, stopReason: 'stop' };
+  assert.equal(completedToolWarningTerminal(raw, null), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, runId: 'old' }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, success: false }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { ...completion, stopReason: 'aborted' }), raw);
+  assert.equal(completedToolWarningTerminal(raw, { runId: 'business', success: true, event: 'agent_end' }).status, 'ok');
+  assert.equal(completedToolWarningTerminal(raw, { runId: 'business', success: false, event: 'agent_end' }), raw);
+  const failed = { ...raw, error: 'provider request failed' };
+  assert.equal(completedToolWarningTerminal(failed, completion), failed);
+  let reviews = 0;
+  const f = await fixture(t, { waitTerminal: async record => completedToolWarningTerminal(raw, record.candidate?.completion),
+    review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const identity = f.identity('warning');
+  await f.manager.started(identity, 'business');
+  await f.manager.candidate(identity, { runId: 'business', text: 'done', completion, reviewBudgetMs: 10000 });
+  await f.manager.drain();
+  assert.equal(reviews, 1);
+  assert.equal(f.manager.snapshot(identity).reviewStatus, 'PASS');
+});
 
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -16,9 +38,85 @@ async function fixture(t, overrides = {}) {
     sendUser: async (r, task) => { sent.push({ sessionId: r.sessionId, ...task }); return { runId: task.runId }; },
     onError: e => errors.push(e), ...overrides });
   const identity = id => ({ agentId: "main", sessionKey: `agent:main:${id}`, sessionId: id, projectRoot: root, scopeFingerprint: "scope-1" });
-  t.after(async () => { await manager.dispose(); await fs.rm(root, { recursive: true, force: true }); });
+  t.after(async () => { await manager.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
   return { root, manager, identity, sent, errors };
 }
+
+test('late host completion rechecks an escalated release without restarting its failed review', async t => {
+  let finished = false, reviews = 0, probes = 0;
+  const f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId) => { probes++; return finished ? { runId, status: 'ok' } : null; },
+    review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const id = f.identity('failed-hook');
+  await f.manager.started(id, 'business');
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  for (let i = 0; i < 100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  const before = probes;
+  await f.manager.hostEnded(id, 'stale-run');
+  assert.equal(probes, before);
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).phase, 'RELEASING', 'agent_end alone cannot prove gateway drainage');
+  finished = true;
+  await f.manager.hostEnded(id, 'business');
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE');
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(record.reason, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(record.lastTerminal.terminalRunId, 'business');
+  assert.equal(reviews, 0);
+  assert.equal(f.sent.length, 0);
+  await f.manager.started(id, 'next-stage');
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).runId, 'next-stage');
+  assert.equal(f.manager.snapshot(id).phase, 'RUNNING');
+});
+
+test('late release notification keeps scope invalidation and unknown terminals closed to dispatch', async t => {
+  let valid = true;
+  const f = await fixture(t, { validate: async () => valid, waitTerminal: async () => null });
+  const id = f.identity('changed-scope');
+  await f.manager.started(id, 'business');
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  valid = false;
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).phase, 'CLOSED');
+  assert.equal(f.manager.snapshot(id).reason, 'SESSION_REPLACED');
+  assert.equal(f.sent.length, 0);
+});
+
+test('a late corrective terminal rechecks its released child while retaining the original owner', async t => {
+  let finished = false, reviews = 0, probes = 0, f;
+  f = await fixture(t, {
+    waitTerminal: async (_record, runId) => {
+      probes++;
+      return runId === 'original' || finished ? { runId, status: 'ok' } : null;
+    },
+    review: async record => {
+      reviews++;
+      await f.manager.correction(record, 'repair', Date.now() + 10000, 'stop-1');
+      return { reviewStatus: 'DEVIATION' };
+    },
+  });
+  const id = f.identity('released-child');
+  await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'done', reviewBudgetMs: 10000 });
+  await f.manager.drain();
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.manager.snapshot(id).terminalRelease.runId, 'repair');
+  const before = probes;
+  await f.manager.hostEnded(id, 'original');
+  assert.equal(probes, before, 'the parent terminal cannot confirm the child is drained');
+  finished = true;
+  await f.manager.hostEnded(id, 'repair');
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE');
+  assert.equal(record.runId, 'original');
+  assert.equal(record.lastTerminal.terminalRunId, 'repair');
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(reviews, 1, 'reconciliation must not restart the semantic review');
+  assert.equal(f.sent.length, 0);
+});
 
 test('an unbounded trusted business correction reaches its next bounded review without execution expiry', async t => {
   let reviews = 0, cancelled = 0, f;
@@ -38,6 +136,56 @@ test('an unbounded trusted business correction reaches its next bounded review w
   await f.manager.candidate(id, { runId: 'repair-unbounded', text: 'fixed', reviewBudgetMs: 10000 }); await f.manager.drain();
   assert.equal(f.manager.snapshot(id).phase, 'IDLE'); assert.equal(f.manager.snapshot(id).reviewStatus, 'PASS');
   assert.equal(reviews, 2); assert.equal(cancelled, 0);
+});
+
+test('a host-retried run that outlives escalated reconciliation is reviewed after its next agent_end', async t => {
+  let finished = false, reviews = 0;
+  const f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId, deadlineAt) => {
+      while (Date.now() < deadlineAt) { if (finished) return { runId, status: 'ok' }; await pause(5); }
+      return null;
+    }, review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const id = f.identity('retried'); await f.manager.started(id, 'business');
+  await f.manager.candidate(id, { runId: 'business', text: 'failed attempt', reviewBudgetMs: 10000, terminalBudgetMs: 20 });
+  for (let i = 0; i < 100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  finished = true;
+  await f.manager.candidate(id, { runId: 'business', text: 'delivered after retry', reviewBudgetMs: 10000, terminalBudgetMs: 1000 });
+  for (let i = 0; i < 100 && f.manager.snapshot(id).phase !== 'IDLE'; i++) await pause(10);
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE'); assert.equal(record.reviewStatus, 'PASS'); assert.equal(reviews, 1);
+  assert.equal(record.reconciliation, null);
+});
+
+for (const recovery of ['agent_end', 'recheck']) test(`an owned correction resumes after late host drainage through ${recovery}`, async t => {
+  let finished = false, reviews = 0, f;
+  f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId, deadlineAt) => {
+      if (runId === 'original') return { runId, status: 'ok' };
+      while (Date.now() < deadlineAt) { if (finished) return { runId, status: 'ok' }; await pause(5); }
+      return null;
+    }, review: async record => {
+      reviews++;
+      if (reviews === 1) { await f.manager.correction(record, 'repair', Date.now()+10000, 'stop-1'); return { reviewStatus: 'DEVIATION' }; }
+      return { reviewStatus: 'PASS' };
+    } });
+  const id = f.identity(`late-correction-${recovery}`);
+  await f.manager.started(id, 'original');
+  await f.manager.candidate(id, { runId: 'original', text: 'draft', reviewBudgetMs: 10000 }); await f.manager.drain();
+  await f.manager.started(id, 'repair', null);
+  await f.manager.candidate(id, { runId: 'repair', text: 'fixed', reviewBudgetMs: 10000, terminalBudgetMs: 20 });
+  for (let i=0; i<100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  assert.equal(reviews, 1, 'agent_end alone must not start a review before public drainage');
+  finished = true;
+  if (recovery === 'agent_end') await f.manager.candidate(id, { runId: 'repair', text: 'fixed',
+    completion: { runId: 'repair', success: true, event: 'agent_end' }, reviewBudgetMs: 10000, terminalBudgetMs: 1000 });
+  else { const record = f.manager.snapshot(id); await f.manager.recheck(id, { runId: 'repair', version: record.version, actor: 'test-operator' }); }
+  for (let i=0; i<100 && f.manager.snapshot(id).phase !== 'IDLE'; i++) await pause(10);
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE'); assert.equal(record.reviewStatus, 'PASS');
+  assert.equal(reviews, 2); assert.equal(record.reconciliation, null); assert.equal(f.sent.length, 0);
+  assert.equal(f.errors.length, 0);
 });
 
 test('explicit owner cancellation still cancels an unbounded correction', async t => {

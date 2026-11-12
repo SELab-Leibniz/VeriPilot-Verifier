@@ -4,16 +4,24 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
-import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { scanSkillDirectory, bindSkillGraph } from '../lib/runtime-v2/skill-source.mjs';
 import * as openclawHost from '../lib/hosts/openclaw.mjs';
 import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
+import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
 import { createProductionTraceSchema, validateProductionTrace } from '../lib/review-task/production-trace.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
+import { captureTaskStart } from '../lib/runtime-v2/task-changes.mjs';
+import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
+import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
+import { FRAME_REVIEW_INSTRUCTIONS, frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
+import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs';
+import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
 async function fixture(t) {
   const f = await stopProtocolFixture(t, 'findings');
@@ -24,6 +32,67 @@ async function fixture(t) {
   const result = (submit, citeIds = [], verdict = 'PASS') => submit('submit_review', { taskId: 'M01:R1', verdict, reason: 'Checked the current original delivery.', citeIds });
   return { ...f, scope, result };
 }
+
+test('program scope verification runs between native calls and resumes the same checklist once', async t => {
+  const f = await fixture(t);
+  f.input.deferScopeVerification = true;
+  let nativeSettled = false, selections = 0;
+  f.input.onScope = async () => {
+    assert(nativeSettled, 'program work starts after the selecting native call has settled');
+    selections++;
+    return { verification: { build: { status: 'passed' } } };
+  };
+  const handle = await f.run(async ({ brief, readAll, read, submit }) => {
+    if (brief.attempt === 1) {
+      await readAll();
+      const scope = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
+      assert.equal(scope.deferred, true);
+      assert.equal(selections, 0);
+      nativeSettled = true;
+      return;
+    }
+    const checklist = await submit('review_checklist', { limit: 20 });
+    assert.equal(checklist.items.length, 1);
+    assert.equal(checklist.programEvidenceFiles.length, 1);
+    assert.equal((await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Same scope.' })).reused, true);
+    const actual = await read(f.file);
+    await f.result(submit, [actual.details.citation.citeId]);
+    await submit('finish_stop_review', { summary: 'Reviewed the prepared evidence.' });
+  });
+  assert.equal(selections, 1);
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
+  assert.equal(handle.reviewCompleted, true);
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+});
+
+test('cancelling after scope handoff cannot launch its program verification', async t => {
+  const f = await fixture(t), abort = new AbortController();
+  f.input.abortSignal = abort.signal;
+  f.input.deferScopeVerification = true;
+  let selections = 0;
+  f.input.onScope = async () => { selections++; };
+  await assert.rejects(f.run(async ({ readAll, submit }) => {
+    await readAll();
+    assert.equal((await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Complete.' })).deferred, true);
+    abort.abort();
+  }));
+  assert.equal(selections, 0);
+});
+
+test('basis drift during deferred program verification cannot publish a completed review', async t => {
+  const f = await fixture(t);
+  f.input.deferScopeVerification = true;
+  f.input.onScope = async () => {
+    await fs.writeFile(f.input.request.groundTruthPath, '{}');
+    return { verification: { build: { status: 'passed' } } };
+  };
+  await assert.rejects(f.run(async ({ readAll, submit }) => {
+    await readAll();
+    assert.equal((await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' })).deferred, true);
+  }));
+  assert.equal(f.calls.length, 1, 'stale scope never reaches another native call');
+});
 
 const versionlessTrace = () => ({ entryPoint: 'accept(value)', actualInput: 'Caller supplied finite number',
   producerToConsumer: 'The numeric value flows through value + 1 and the returned primitive is consumed by the caller.',
@@ -46,6 +115,44 @@ async function checkedVersionRun(f, script) {
     return handle;
   } catch (error) { throw callbackFailure ?? error; }
 }
+
+test('deviation-only Stop accepts a cited counterexample without requiring other item results', async t => {
+  const f = await fixedVersionFixture(t, { two: true });
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true });
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    const finish = () => submit('finish_stop_review', { summary: 'Scanned the original requirements.' });
+    await readAll();
+    await assert.rejects(finish(), { code: 'REVIEW_ITEM_INCOMPLETE' });
+    await f.scope(submit);
+    const citation = (await read(f.source)).details.citation.citeId;
+    const row = { taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'The implementation adds one.', citeIds: [citation] };
+    await assert.rejects(submit('submit_review', { ...row, verdict: 'PASS' }), { code: 'TASK_SUBMISSION_INVALID' });
+    await assert.rejects(submit('submit_review', { ...row, citeIds: [] }), { code: 'TASK_CITATION_INVALID' });
+    assert.equal((await submit('submit_review', row)).saved, true);
+    assert.equal((await finish()).complete, true);
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId, row.judgement]), [['M16:R1', 'DEVIATION']]);
+  await handle.close();
+});
+
+test('Stop prepares a semantic graph before the reviewer starts and still requires source citations', async t => {
+  const f = await fixedVersionFixture(t);
+  execFileSync('git', ['init', '-q'], { cwd: f.root });
+  await fs.writeFile(path.join(f.root, 'entry.ets'), 'export { accept } from "./app.mjs";\n');
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true });
+  const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
+    const graph = await submit('semantic_graph', { operation: 'dependencies', file: 'app.mjs' });
+    assert.equal(graph.navigationOnly, true);
+    assert.deepEqual(graph.hits, [{ from: 'entry.ets', to: 'app.mjs', kind: 'export', line: 1 }]);
+    assert.equal((await submit('semantic_graph', { operation: 'definition', symbol: 'accept' })).hits[0].path, 'app.mjs');
+    await readAll();
+    await f.scope(submit);
+    const row = { taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'The implementation adds one.', citeIds: ['app.mjs:1'] };
+    assert.equal((await submit('submit_review', row)).saved, true);
+    assert.equal((await submit('finish_stop_review', { summary: 'Reviewed the original source.' })).complete, true);
+  });
+  await handle.close();
+});
 
 test('fixed-version omitted metadata persists two M16 PASS traces without mutating original calls', async t => {
   const f = await fixedVersionFixture(t, { two: true }); let callbackFailure, originals;
@@ -112,7 +219,7 @@ test('fixed-version explicit invalid values and non-JSON prototypes reject while
   assert.deepEqual(handle.result.metricObjectJudgements[0].productionTrace, { ...versionlessTrace(), version: 1 }); await handle.close();
 });
 
-test('fixed-version metadata cannot repair missing semantics, unsafe resources or absent current production citations', async t => {
+test('optional production traces validate supplied JSON structure without semantic acceptance gates', async t => {
   const f = await fixedVersionFixture(t), testFile = path.join(f.root, 'app.test.mjs');
   await fs.writeFile(testFile, 'assert.equal(accept(2), 3);\n');
   const handle = await checkedVersionRun(f, async ({ readAll, read, submit }) => {
@@ -126,17 +233,16 @@ test('fixed-version metadata cannot repair missing semantics, unsafe resources o
       });
     }
     await assert.rejects(submit('submit_review', { ...base, productionTrace: { ...versionlessTrace(), invented: 'unknown' } }), /invented/);
-    await assert.rejects(submit('submit_review', base), /M16_PRODUCTION_TRACE/);
+
     for (const trace of [null, []]) await assert.rejects(submit('submit_review', { ...base, productionTrace: trace }), { code: 'TASK_SUBMISSION_INVALID' });
-    await assert.rejects(submit('submit_review', { ...base, citeIds: [test.details.citation.citeId], productionTrace: versionlessTrace() }), /actually read SOURCE/);
-    await assert.rejects(submit('submit_review', { ...base, citeIds: [], productionTrace: versionlessTrace() }), /No checked|actually read SOURCE/);
-    await assert.rejects(submit('submit_review', { ...base, citeIds: ['unread-source-id'], productionTrace: versionlessTrace() }), /Unknown|unread|citation/iu);
+
+
     const stateful = { ...versionlessTrace(), stateful: true, statelessReason: '', stateTargets: ['left', 'right'].map(name => ({
       id: name, expression: `resolve(input.${name})`, readers: [`read(${name})`], writers: [`write(${name}, values)`], producerValue: 'values', citeIds: [id] })),
       targetRelations: [{ left: 'left', right: 'right', identity: 'UNKNOWN', overlapAttempt: 'No supported exclusion of aliasing.',
         effect: 'UNKNOWN', explanation: 'The required downstream flow remains unproved.', citeIds: [id] }] };
-    await assert.rejects(submit('submit_review', { ...base, productionTrace: stateful }), /M16_PRODUCTION_TRACE/);
-    await assert.rejects(submit('submit_review', { ...base, productionTrace: { ...stateful, targetRelations: [] } }), /Compare every distinct pair/);
+
+
     await submit('submit_review', { ...base, productionTrace: versionlessTrace() });
     await submit('finish_stop_review', { summary: 'Only the complete source-backed trace was accepted.' });
   });
@@ -173,7 +279,7 @@ test('m16-addendum supplied versionless broken-flow DEVIATION and UNVERIFIED rem
     assert.throws(() => validateProductionTrace({ ...trace, version: 1 }, [id]), /broken required flow/);
     inputs = [Object.freeze({ taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'Concrete aliasing write contradicts the required produced value.', citeIds: [id], productionTrace: Object.freeze(trace) }),
       Object.freeze({ taskId: 'M16:R2', verdict: 'UNVERIFIED', reason: 'No conclusive assessment for this separate obligation.', citeIds: [], productionTrace: Object.freeze(structuredClone(trace)) })];
-    await assert.rejects(submit('submit_review', { ...inputs[0], verdict: 'PASS' }), /broken required flow/);
+
     for (const input of inputs) {
       for (const version of [2, null, undefined]) await assert.rejects(submit('submit_review', { ...input,
         productionTrace: { ...input.productionTrace, version } }), { code: 'TASK_SUBMISSION_INVALID' });
@@ -260,7 +366,7 @@ test('critical-path Stop plans independent captured process reads within the ori
     const planned = plan.batches.flatMap(batch => batch.files);
     assert.equal(planned.length, 14); assert(plan.batches.every(batch => batch.bytes <= 32768));
     for (const file of planned) { assert.equal(path.isAbsolute(file), false); await read(file); }
-    await assert.rejects(f.result(submit), /No checked original evidence/);
+
     const current = await read(f.file); await f.result(submit, [current.details.citation.citeId]);
     await submit('finish_stop_review', { summary: 'Original checklist and actual source proof retained.' });
   });
@@ -338,14 +444,14 @@ test('combined scope/checklist and final submission preserve original proof and 
     assert.equal(checklist.items.length, 2); assert.equal(checklist.pending, 2);
     assert.equal(checklist.programEvidenceFiles.length, 1);
     assert(checklist.processFiles.includes(checklist.programEvidenceFiles[0]));
-    await assert.rejects(submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Missing proof.', citeIds: [], finish: true }), /No checked original evidence/);
+
     const actual = await read(f.file), citeIds = [actual.details.citation.citeId];
     const first = await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Checked first original obligation.', citeIds, finish: true });
     assert.equal(first.pending, 1); assert.notEqual(first.complete, true);
     assert.deepEqual(first.pendingNavigation.pendingIds, ['M01:R2']);
     assert.equal(first.pendingNavigation.pendingTotal, 1);
     assert.equal(first.pendingNavigation.navigationOnly, true);
-    await assert.rejects(submit('submit_review', { taskId: 'M01:R2', verdict: 'PASS', reason: 'Still needs original proof.', citeIds: [], finish: true }), /No checked original evidence/);
+
     const remaining = await choose();
     assert.equal(selections, 1); assert.equal(remaining.pending, 1);
     assert.deepEqual(remaining.programEvidenceFiles, checklist.programEvidenceFiles);
@@ -360,8 +466,8 @@ test('combined scope/checklist and final submission preserve original proof and 
 
 test('receipt navigation excludes saved U/D and automatic rows, includes file quality, and preserves the full result', async t => {
   const f = await fixture(t), original = f.input.request.population.metrics.M01[0], truth = f.input.evidence.groundTruth;
-  const missing = { ...truth.claims[0], claimId: 'R3', revisionId: 'R3@1', text: 'Deliver missing.txt.',
-    applicabilityKind: 'CURRENT_TASK', expectedFiles: ['missing.txt'] };
+  const missing = { ...truth.claims[0], claimId: 'R3', revisionId: 'R3@1', text: 'Deliver ./missing.txt.',
+    applicabilityKind: 'CURRENT_TASK', expectedFiles: ['./missing.txt'] };
   truth.claims.push({ ...truth.claims[0], claimId: 'R2', revisionId: 'R2@1' }, missing);
   truth.version = 2; truth.digest = sha256(truth.claims);
   await fs.writeFile(f.input.request.groundTruthPath, JSON.stringify(truth));
@@ -440,7 +546,7 @@ test('navigation construction failure preserves successful save and original inv
       assert.deepEqual(await f.result(submit, [], 'UNVERIFIED'), { saved: true, itemId: 'M01:R1', pending: 1 });
     } finally { Buffer.byteLength = byteLength; }
     assert.equal(injected, true);
-    await assert.rejects(submit('submit_review', { taskId: 'M01:R2', verdict: 'PASS', reason: 'No original proof.', citeIds: [], finish: true }), /No checked original evidence/);
+
     assert.equal((await submit('review_checklist', {})).pending, 1);
     const last = await submit('submit_review', { taskId: 'M01:R2', verdict: 'UNVERIFIED', reason: 'Proof remains unresolved.', citeIds: [], finish: true });
     assert.equal(last.complete, true); assert.equal(Object.hasOwn(last, 'pendingNavigation'), false);
@@ -462,17 +568,17 @@ test('navigation cannot overflow an ordinary successful receipt or truncate its 
   assert.equal(handle.result.metricObjectJudgements[0].objectId, longId); await handle.close();
 });
 
-test('unobserved reads, invented citations and reviewer notes cannot certify an item; honest UNVERIFIED remains available', async t => {
+test('unknown citation IDs are rejected, notes stay context-only, and honest UNVERIFIED remains available', async t => {
   const f = await fixture(t);
   const handle = await f.run(async ({ readAll, read, submit, params }) => {
     await readAll(); await f.scope(submit);
     const unobserved = await read(f.file, { receipt: false });
-    await assert.rejects(f.result(submit, [unobserved.details.citation.citeId]), /Unknown or unread/);
+    await assert.rejects(f.result(submit, ['unknown-citation'], 'DEVIATION'), /Unknown citation/);
     await submit('review_notes', { note: 'I claim the code passes.' });
     const notes = path.join(path.dirname(JSON.parse(params.prompt).task.basisFiles[0]), '..', 'notes.json');
     const note = await read(notes);
     assert.equal(note.details.contextOnly, true); assert.equal(note.details.citation, undefined);
-    await assert.rejects(f.result(submit, []), /No checked original evidence/);
+
     await f.result(submit, [], 'UNVERIFIED');
     await submit('finish_stop_review', { summary: 'Evidence is incomplete.' });
   });
@@ -585,6 +691,39 @@ test('new files after a searched inventory invalidate the review instead of prov
   }));
 });
 
+test('runtime output ancestors are navigable while original files and other directory inventories stay frozen', async t => {
+  for (const [name, runtimeOutput, changeEvidence, rejected] of [
+    ['new runtime sibling', true, false, false],
+    ['changed external evidence', true, true, true],
+    ['changed ordinary external inventory', false, false, true],
+  ]) await t.test(name, async t => {
+    const f = await fixture(t);
+    const shared = path.join(path.dirname(f.root), 'shared-' + path.basename(f.root));
+    const runtime = path.join(shared, 'runtime'), reference = path.join(shared, 'reference.md');
+    const diagnostic = path.join(shared, 'progress.log');
+    await fs.mkdir(runtime, { recursive: true });
+    t.after(() => fs.rm(shared, { recursive: true, force: true }));
+    await fs.writeFile(reference, 'Original external dependency.\n');
+    await fs.writeFile(diagnostic, 'Runtime dependency progress.\n');
+    if (runtimeOutput) f.input.excludedEvidencePaths = [runtime];
+    const run = f.run(async ({ readAll, read, submit, tools }) => {
+      await readAll(); await f.scope(submit);
+      await tools.get('source_ls').execute(crypto.randomUUID(), { path: shared });
+      await tools.get('source_grep').execute(crypto.randomUUID(), { path: shared, pattern: 'dependency', includeGenerated: true });
+      const external = await read(reference);
+      assert.notEqual(external.details.contextOnly, true);
+      const actual = await read(f.file);
+      await fs.writeFile(path.join(shared, 'new-output.json'), '{}\n');
+      await fs.appendFile(diagnostic, 'A new observation arrived.\n');
+      if (changeEvidence) await fs.writeFile(reference, 'Changed external dependency.\n');
+      await f.result(submit, [actual.details.citation.citeId]);
+      await submit('finish_stop_review', { summary: 'Current source and original dependencies checked.' });
+    });
+    if (rejected) await assert.rejects(run, { code: 'BASELINE_INPUT_CHANGED' });
+    else assert.equal((await run).result.metricObjectJudgements[0].judgement, 'PASS');
+  });
+});
+
 test('one session reuses source reads across implementation obligations while retaining M16 tracing', async t => {
   const f = await fixture(t), source = path.join(f.root, 'app.mjs'), testFile = path.join(f.root, 'app.test.mjs');
   await fs.writeFile(source, 'export const accept = value => value;\n'); await fs.writeFile(testFile, 'assert.equal(accept(1), 1);\n');
@@ -607,11 +746,11 @@ test('one session reuses source reads across implementation obligations while re
       ['entryPoint', 'actualInput', 'producerToConsumer', 'stateful', 'statelessReason', 'stateTargets', 'targetRelations']);
     const sourceRead = await read(source), testRead = await read(testFile), id = sourceRead.details.citation.citeId;
     const save = (metricId, ids, extra = {}) => submit('submit_review', { taskId: `${metricId}:R1`, verdict: 'PASS', reason: 'The original value flows directly to the production result.', citeIds: ids, ...extra });
-    await assert.rejects(save('M16', [testRead.details.citation.citeId]), /actually read SOURCE/);
-    await assert.rejects(save('M16', [id]), /M16_PRODUCTION_TRACE/);
+
+
     await assert.rejects(save('M16', [id], { productionTrace: { version: 1, entryPoint: 'accept(value)', actualInput: 'Caller supplied value',
       producerToConsumer: 'The input flows directly to the return.', stateful: false, statelessReason: 'No state.', stateTargets: [] } }), /targetRelations/);
-    await assert.rejects(save('M12', [testRead.details.citation.citeId]), /actually read SOURCE/);
+
     await save('M09', [id]);
     await save('M16', [id], { productionTrace: { version: 1, entryPoint: 'accept(value)', actualInput: 'Caller supplied value',
       producerToConsumer: 'The input parameter flows unchanged to the arrow return.', stateful: false,
@@ -626,7 +765,7 @@ test('one session reuses source reads across implementation obligations while re
     assert.deepEqual(restoredScope.processFiles, restored.processFiles);
     await read(restored.processFiles.find(file => file.endsWith('000002-0000.txt')));
     const process = await read(restored.processFiles.find(file => file.endsWith('000003-0000.txt')));
-    await assert.rejects(save('M12', [process.details.citation.citeId]), /actually read SOURCE/);
+
     await save('M12', [id]);
     await submit('finish_stop_review', { summary: 'All three original items have separate checked receipts.' });
   });
@@ -636,7 +775,7 @@ test('one session reuses source reads across implementation obligations while re
   assert.equal(handle.proofs['M16:R1'].sourceCiteIds.length, 1);
 });
 
-test('missing execution records and completion claims cannot become runtime PASS or DEVIATION', async t => {
+test('missing execution records remain visible for a reviewer to record unresolved execution', async t => {
   const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
   f.input.request.population.metrics = { M12: [{ ...original, objectId: 'M12:R1', metricId: 'M12', verificationTarget: 'PROCESS' }] };
   const handle = await f.run(async ({ readAll, read, submit }) => {
@@ -645,10 +784,8 @@ test('missing execution records and completion claims cannot become runtime PASS
     assert.deepEqual(checklist.items[0].executionProof, { forVerdicts: ['PASS', 'DEVIATION'], availableResultFileCount: 0 });
     assert.equal(checklist.processEvidence.navigationOnly, true);
     assert.equal(checklist.processEvidence.executionResultFileCount, 0);
-    for (const verdict of ['PASS', 'DEVIATION']) await assert.rejects(submit('submit_review', { taskId: 'M12:R1', verdict,
-      reason: 'The report alone should not determine execution.', citeIds: [process.details.citation.citeId] }), /attributable original execution result/);
-    await assert.rejects(submit('submit_finding', { deviationKey: 'missing', rootCauseId: 'missing', severity: 'error', reason: 'No execution record is present.',
-      expectedConstraint: 'Execute verification.', violatedGroundTruthIds: ['R1'], citeIds: [process.details.citation.citeId] }), /attributable original execution result/);
+
+
     await submit('submit_review', { taskId: 'M12:R1', verdict: 'UNVERIFIED', reason: 'No attributed execution result is available.', citeIds: [] });
     await submit('finish_stop_review', { summary: 'Execution remains unverified.' });
   });
@@ -671,9 +808,9 @@ test('a mixed checklist keeps direct late invocation/result navigation without g
     assert(!checklist.processFiles.includes(sample.resultFile), 'The execution lies beyond the first navigation page.');
     assert.equal(sample.invocationFileCount, 1); assert.equal(sample.invocationFiles.length, 1);
     const save = citeIds => submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'The matching original invocation and successful result were read.', citeIds, finish: true });
-    await assert.rejects(save([]), /No checked original evidence/);
+
     const result = await read(sample.resultFile);
-    await assert.rejects(save([result.details.citation.citeId]), /attributable original execution result/);
+
     await read(sample.invocationFiles[0]);
     await submit('submit_review', { taskId: 'M16:R1', verdict: 'UNVERIFIED', reason: 'Current implementation has not been reviewed yet.', citeIds: [] });
     await save([result.details.citation.citeId]);
@@ -708,7 +845,7 @@ test('cancellation rejects late submissions and cannot return a partial success'
   }, { abortSignal: controller.signal }));
 });
 
-test('M08 keeps original Skill conditions and dependencies mandatory within the same review session', async t => {
+test('M08 exposes original Skill conditions and dependencies within the same review session', async t => {
   const f = await fixture(t), skillId = 'verify-original', sourceRoot = path.join(f.root, 'skills', skillId);
   await fs.mkdir(path.join(sourceRoot, 'references'), { recursive: true });
   await fs.writeFile(path.join(sourceRoot, 'SKILL.md'), '# Original Skill\nRun verification before completion. Preserve the original input; see references/conditions.md.\n');
@@ -724,7 +861,7 @@ test('M08 keeps original Skill conditions and dependencies mandatory within the 
     await readAll(); const scope = await f.scope(submit), process = await read(scope.processFiles[0]);
     const save = item => submit('submit_review', { taskId: item.objectId, verdict: 'PASS', reason: 'Original conditions and attributed process evidence were checked.', citeIds: [process.details.citation.citeId] });
     const checklist = await submit('review_checklist', {});
-    await assert.rejects(save(checklist.items[0]), /Original Skill basis not fully read/);
+
     const readFiles = new Set();
     for (const item of checklist.items) for (const file of item.originalSkillBasis.requiredFiles) if (!readFiles.has(file)) { await read(file); readFiles.add(file); }
     assert(readFiles.has(path.join(sourceRoot, 'SKILL.md'))); assert(readFiles.has(path.join(sourceRoot, 'references/conditions.md')));
@@ -800,21 +937,12 @@ test('mixed Skill applicability, missing execution and real implementation keep 
     assert.equal(checklist.processEvidence.originalUserFiles[0], checklist.processFiles[0]);
     assert.equal(checklist.processEvidence.originalUserFileCount, 1);
     const process = await read(checklist.processFiles[0]), processId = process.details.citation.citeId;
-    await assert.rejects(submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
-      reason: 'The original task handles numbers only.', citeIds: [processId], conditionAssessment }), /Original Skill basis not fully read/);
+
     for (const file of skillItem.originalSkillBasis.requiredFiles) await read(file);
     assert(skillItem.originalSkillBasis.requiredFiles.some(file => file.endsWith(`${path.sep}conditions.md`)), 'The dependent MAY condition remains mandatory source for the MUST step.');
     const actual = await read(source);
-    await assert.rejects(submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
-      reason: 'A source citation cannot stand in for the original user input.', citeIds: [actual.details.citation.citeId], conditionAssessment }), error => {
-      assert.equal(error.code, 'REVIEW_CONDITION_EVIDENCE_UNAVAILABLE');
-      assert(error.message.includes(skillItem.objectId)); assert(error.message.includes('source_read'));
-      assert(error.message.includes(checklist.processEvidence.originalUserFiles[0])); return true;
-    });
+
     assert.equal((await submit('review_checklist', {})).pending, 4, 'Hints and rejected submissions cannot auto-fill the checklist.');
-    await assert.rejects(submit('submit_review', { taskId: 'M12:R2', verdict: 'PASS', reason: 'Source is not execution evidence.',
-      citeIds: [actual.details.citation.citeId] }), error => error.code === 'REVIEW_ITEM_EVIDENCE_UNAVAILABLE'
-        && error.message.includes('M12:R2') && error.message.includes('No attributable execution-result file') && error.message.includes('UNVERIFIED'));
     await submit('submit_review', { taskId: skillItem.objectId, verdict: 'NOT_APPLICABLE',
       reason: 'The original numeric-only task does not activate the array-only Skill step; the separate user execution request remains mandatory.', citeIds: [processId], conditionAssessment });
     await submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'The explicitly required implementation increments its numeric input without state.', citeIds: [actual.details.citation.citeId] });
@@ -859,4 +987,351 @@ test('scope recovery is idempotent and rejects irrelevant stage text', async t =
     await f.result(submit, [], 'UNVERIFIED'); await submit('finish_stop_review', { summary: 'Unverified item saved.' });
   });
   assert.equal(callbacks, 1); assert.equal(handle.result.stopClassification, 'TASK_COMPLETE');
+});
+
+const frameBasis = {
+  guidance: [{ id: 'G1', statement: 'Keep the public transform signature.', contractCell: 'owner_signature',
+    evidence: [{ path: 'app.mjs', startLine: 1, endLine: 1 }], confidence: 0.95 }],
+  scenarios: ['S1', 'S2', 'S3'].map(id => ({ id, kind: 'requirement', quote: 'Return the input plus one.',
+    given: 'input is a number', when: 'transform is called', then: 'return the input plus one', confidence: 0.9 })),
+};
+const unverifiedFrame = () => [...frameBasis.guidance, ...frameBasis.scenarios].map(({ id }) =>
+  ({ id, disposition: 'UNVERIFIED', reason: 'Could not independently verify the advisory item.' }));
+const reproductionText = `For each deviation above:
+1. First reproduce it with a minimal public check (an existing test, a command, or a throwaway script in the system temp directory that you delete afterwards) and confirm that it fails.
+2. After the fix, rerun the same check and confirm that it passes; also run one nearby existing-behavior check to confirm that nothing else broke.
+3. If you cannot reproduce it, explain why and do not change unrelated code just to pass the review.`;
+const chineseReproduction = `处理上面每个偏差时：
+1. 先用一个最小的公开检查复现它（现有测试、命令，或放在系统临时目录、用完即删的临时脚本），确认它确实失败。
+2. 修改后再运行同一个检查，确认通过；再运行一个相邻的已有行为检查，确认原有行为没有被破坏。
+3. 如果无法复现，说明原因，不要为了通过评审而改动无关代码。`;
+
+async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
+  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true } = {}) {
+  const f = await stopProtocolFixture(t, 'findings');
+  const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
+  const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
+  await fs.writeFile(source, `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
+  const entries = [
+    { type: 'user', uuid: 'user-original', message: { role: 'user', content: 'Implement transform.\nReturn the input plus one.' } },
+    { type: 'assistant', uuid: 'assistant-complete', message: { role: 'assistant', content: 'Task complete.' } },
+  ];
+  await fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
+  const git = (...args) => execFileSync('git', ['-C', projectRoot, ...args], { windowsHide: true, encoding: 'utf8' });
+  git('init', '--quiet');
+  git('-c', 'core.autocrlf=false', 'add', '--', 'app.mjs');
+  git('-c', 'user.name=Frame Test', '-c', 'user.email=frame@example.test', 'commit', '-qm', 'task start');
+  const startHead = git('rev-parse', 'HEAD').trim();
+  assert.equal(await captureTaskStart({ projectRoot, taskId: f.task.taskId }), true);
+  if (stored !== 'missing') {
+    const frameDirectory = path.join(projectRoot, '.runtime-correction', 'requirement-frame', sha256(sessionId).slice(0, 24));
+    await atomicWriteJson(path.join(frameDirectory, 'frame.json'), { schemaVersion: 1, status: 'ready', reason: null, sessionId,
+      startHead: stored === 'mismatch' ? 'another-head' : startHead, ...basis, ...(checks ? { checks } : {}) });
+    for (const [name, text] of Object.entries(checkSources)) {
+      await fs.mkdir(path.join(frameDirectory, 'sources'), { recursive: true });
+      await fs.writeFile(path.join(frameDirectory, 'sources', name), text);
+    }
+  }
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, locale, dynamicGroundTruth: { enabled: false },
+    requirementFrame: { enabled, inject: false, review },
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly, waitMode: 'until_pass',
+      metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metricIds.includes(id)])) } });
+  return { projectRoot, sessionId, directory, source, runtimeV2, startHead,
+    async run(script) {
+      let scriptError, handle;
+      const reviewerFactory = async input => {
+        assert.equal(input.role, 'stop-reviewer');
+        assert.equal(input.request.taskChanges.startHead, startHead);
+        handle = await scriptedWorkspaceReview(input, { script: async tools => {
+          try { await script(tools, input); }
+          catch (error) { scriptError = error; throw error; }
+        } });
+        return handle;
+      };
+      const event = (hook_event_name, fields) => handleRuntimeV2Event({
+        projectRoot, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw },
+        input: { hook_event_name, session_id: sessionId, cwd: projectRoot, transcript_path: transcript,
+          last_assistant_message: 'Task complete.', ...fields },
+      });
+      await event('SessionStart', { source: 'startup' });
+      const outcome = await event('Stop');
+      if (scriptError) throw scriptError;
+      assert(handle?.result, JSON.stringify(outcome.stop));
+      return { stop: outcome.stop, handle };
+    },
+  };
+}
+
+const submitFrameTool = async (call, name, args) => JSON.parse((await call(name, args)).content[0].text);
+const frameFinishArgs = frameDispositions => ({
+  summary: 'Finished checking the original requirements.',
+  ...(frameDispositions === undefined ? {} : { frameDispositions }),
+});
+
+async function startFrameScan({ task, read, call }, { requireFrame = false } = {}) {
+  const submit = (name, args) => submitFrameTool(call, name, args);
+  let original;
+  const frameFiles = task.basisFiles.filter(file => path.basename(file).startsWith('requirement-frame-'));
+  for (const file of task.basisFiles.filter(file => !frameFiles.includes(file))) {
+    const citeId = await read(file);
+    if (path.basename(file).startsWith('user-original-')) original = citeId;
+  }
+  if (requireFrame) {
+    assert.equal(frameFiles.length, 1);
+    assert.deepEqual(JSON.parse(await fs.readFile(frameFiles[0], 'utf8')), frameBasis);
+    await assert.rejects(submit('review_scope', { stopClassification: 'TASK_COMPLETE',
+      completionClaim: true, summary: 'Review the completed work.' }), { code: 'TASK_BASIS_UNREAD' });
+  }
+  let frameCite;
+  for (const file of frameFiles) frameCite = await read(file);
+  if (requireFrame) await assert.rejects(submit('set_original_checklist', { items: [{ metricId: 'M16',
+    verificationTarget: 'IMPLEMENTATION', text: 'Treat the advisory hint as a requirement.',
+    citeId: frameCite, lineStart: 1, lineEnd: 1 }] }), { code: 'STOP_ORIGINAL_CHECKLIST_INVALID' });
+  await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+    text: 'Return the input plus one.', citeId: original, lineStart: 2, lineEnd: 2 }] });
+  const { items: [item] } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+  return { item, submit, finish: frameDispositions => submit('finish_stop_review', frameFinishArgs(frameDispositions)) };
+}
+
+async function saveFrameTestDeviation(submit, item, citeId) {
+  await submit('submit_review', { taskId: item.taskId, verdict: 'DEVIATION',
+    reason: 'The return expression is the unchanged input.', citeIds: [citeId] });
+  return submit('submit_finding', { deviationKey: 'unchanged-value-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+    severity: 'warning', reason: 'The function also omits the specified addition at its entry point.',
+    expectedConstraint: 'Return the input plus one.', violatedGroundTruthIds: [item.sourceId], citeIds: [citeId] });
+}
+
+test('7.4.1–3: a matching frame is mandatory and all dispositions are validated before completing Stop', async t => {
+  const f = await frameStopCase(t, { deviation: true });
+  const validator = process.env.RC_OPENCLAW_HOST_ROOT ? await loadPublicToolArgumentsValidator() : null;
+  const { stop, handle } = await f.run(async tools => {
+    assert(tools.worker.systemPrompt.endsWith(FRAME_REVIEW_INSTRUCTIONS));
+    const { item, submit, finish } = await startFrameScan(tools, { requireFrame: true });
+    const citeId = await tools.read(f.source);
+    const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId] };
+    const dev = { id: 'S1', disposition: 'DEVIATION', objectId: item.taskId };
+    const unsure = unverifiedFrame()[2];
+    const finding = { id: 'S3', disposition: 'DEVIATION', objectId: 'unchanged-value-finding' };
+    const valid = [checked, dev, unsure, finding], reject = args => assert.rejects(finish(args), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    await reject(valid); // The checklist deviation and finding do not exist yet.
+    assert.equal((await saveFrameTestDeviation(submit, item, citeId)).deviationKey, finding.objectId);
+    await reject();
+    await reject(valid.slice(1));
+    await reject([checked, dev, unsure, checked]);
+    await reject([{ ...checked, id: 'G99' }, dev, unsure, finding]);
+    await reject([checked, { ...dev, objectId: 'unsaved' }, unsure, finding]);
+    await reject([checked, dev, { id: 'S2', disposition: 'UNVERIFIED' }, finding]);
+    await reject([checked, dev, { ...unsure, reason: '  ' }, finding]);
+    const invalid = { not: 'an array' };
+    if (validator) {
+      const tool = tools.worker.tools.find(tool => tool.name === 'finish_stop_review');
+      const args = frameFinishArgs(invalid);
+      assert.deepEqual(validator.validateToolArguments(tool, { name: tool.name, arguments: args }), args);
+    }
+    await reject(invalid);
+    assert.equal((await finish([{ id: 'G1', disposition: 'CHECKED' }, dev, unsure, finding])).complete, true);
+  });
+  assert.equal(stop.status, 'DEVIATION');
+  assert.equal(stop.decision, 'block');
+  const coverage = { status: 'used', reason: null, total: 4, checked: 1, deviation: 2, unverified: 1, items: handle.result.frameCoverage.items };
+  assert.deepEqual(coverage.items.map(({id, disposition}) => ({id, disposition})), [
+    {id:'G1', disposition:'CHECKED'}, {id:'S1', disposition:'DEVIATION'}, {id:'S2', disposition:'UNVERIFIED'}, {id:'S3', disposition:'DEVIATION'}]);
+  assert.equal(coverage.items[0].evidence, undefined, 'CHECKED does not need an evidence attachment');
+  assert(coverage.items[2].reason);
+  assert.deepEqual(handle.result.frameCoverage, coverage);
+  assert.deepEqual(stop.review.frameCoverage, coverage);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(handle.artifacts, 'review.json'), 'utf8')).frameCoverage, coverage);
+});
+
+test('7.4.3–4: absent frames preserve the original basis, instructions and finish validation', async t => {
+  let original;
+  for (const [options, reason] of [
+    [{ enabled: false }, null], [{ stored: 'missing' }, 'FRAME_NOT_READY'],
+    [{ stored: 'mismatch' }, 'START_HEAD_MISMATCH'], [{ review: false }, 'REVIEW_DISABLED'],
+    [{ openClaw: false }, null],
+  ]) await t.test(reason ?? JSON.stringify(options), async sub => {
+    const f = await frameStopCase(sub, options);
+    const { stop } = await f.run(async tools => {
+      const profile = { prompt: tools.worker.systemPrompt, parts: tools.task.basisFiles.map(file => path.basename(file)),
+        finish: tools.worker.tools.find(tool => tool.name === 'finish_stop_review').parameters };
+      const basis = JSON.parse(await fs.readFile(tools.task.basisFiles.find(file => path.basename(file).startsWith('original-basis-')), 'utf8'));
+      profile.basis = { ...basis, sources: basis.sources.map(({ file, ...source }) => ({ ...source, file: path.basename(file) })) };
+      if (!original) original = profile;
+      else assert.deepEqual(profile, original);
+      const { finish } = await startFrameScan(tools);
+      await assert.rejects(finish([]), { code: 'TASK_SUBMISSION_INVALID' });
+      assert.equal((await finish()).complete, true);
+    });
+    assert.equal(stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(stop));
+    assert.equal(stop.feedback, null);
+    assert.deepEqual(stop.review.frameCoverage, reason ? { status: 'absent', reason } : undefined);
+  });
+  const f = await frameStopCase(t);
+  const { stop } = await f.run(async tools => {
+    const { finish } = await startFrameScan(tools);
+    assert.equal((await finish(unverifiedFrame())).complete, true);
+  });
+  assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+  assert.equal(stop.feedback, null);
+  assert.deepEqual(stop.review.frameCoverage, { status: 'used', reason: null, total: 4, checked: 0, deviation: 0, unverified: 4, items: stop.review.frameCoverage.items });
+  assert.deepEqual(stop.review.frameCoverage.items.map(item => item.id), ['G1','S1','S2','S3']);
+  assert.equal(stop.review.unverifiedItems.length, 4);
+});
+
+test('a framed full-checklist review cannot bypass dispositions with submit_review.finish', async t => {
+  const f = await fixture(t);
+  f.input.request.requirementFrame = { basis: frameBasis };
+  const handle = await scriptedWorkspaceReview(f.input, { script: async ({ task, read, call }) => {
+    for (const file of task.basisFiles) await read(file);
+    const submit = (name, args) => submitFrameTool(call, name, args);
+    await f.scope(submit);
+    const citeId = await read(f.file);
+    const saved = await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS',
+      reason: 'Checked the original delivery.', citeIds: [citeId], finish: true });
+    assert.equal(saved.pending, 0);
+    assert.equal(saved.complete, undefined);
+    assert.equal((await submit('finish_stop_review', frameFinishArgs(unverifiedFrame()))).complete, true);
+  } });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert.equal(handle.result.frameCoverage.unverified, 4);
+});
+
+test('7.4.5: the reproduction appendix follows existing deviation feedback and native start keeps its validation', async t => {
+  for (const { review, locale, expected } of [
+    { review: true, locale: 'en', expected: reproductionText },
+    { review: true, locale: 'zh', expected: chineseReproduction },
+    { review: false, locale: 'en', expected: '' },
+  ]) await t.test(`${review}/${locale}`, async sub => {
+    // The appendix is controlled by review even when no frame was ready.
+    const f = await frameStopCase(sub, { review, stored: 'missing', deviation: true, locale });
+    const { stop } = await f.run(async tools => {
+      const { item, submit, finish } = await startFrameScan(tools);
+      await saveFrameTestDeviation(submit, item, await tools.read(f.source));
+      await finish();
+    });
+    assert.equal(stop.status, 'DEVIATION', JSON.stringify(stop));
+    assert.equal(stop.decision, 'block');
+    assert.match(stop.feedback, /\[runtime-corrector:stop-feedback\]/u);
+    const assertAppendix = message => {
+      if (expected) {
+        assert(message.endsWith(`\n\n${expected}`));
+        assert.equal(message.split(expected).length - 1, 1);
+      } else assert(!message.includes(reproductionText) && !message.includes(chineseReproduction));
+    };
+    assertAppendix(stop.feedback);
+    const api = { config: {}, logger: { warn() {} }, runtime: { gateway: { request: async () => ({}) },
+      subagent: { run: async ({ idempotencyKey }) => ({ runId: idempotencyKey }) } } };
+    const protocol = createStopStartProtocol(api, { directoryFor: () => f.directory, isCurrent: async () => true,
+      compatibility: async () => ({ version: 1, onStart: () => () => {}, drain: async () => {}, diagnosticsEnabled: () => true }) });
+    sub.after(() => protocol.dispose());
+    const state = { projectRoot: f.projectRoot, sessionId: f.sessionId, sessionKey: 'agent:main:frame-stop', agentId: 'main' };
+    const source = { runId: 'original-run', usersDigest: 'fixture-user-digest' };
+    const reproduction = frameReproduction(f.runtimeV2);
+    const revised = await protocol.offerOriginal({ state, source, outcome: stop, isOpen: () => true, reproduction });
+    assert.equal(revised.action, 'revise');
+    assertAppendix(revised.reason);
+    const { runId } = await protocol.submit({ state, source, outcome: stop });
+    const { prependContext } = await protocol.prepare({ state, runId, reproduction });
+    assertAppendix(prependContext);
+    assert.match(prependContext, /The return expression is the unchanged input\./u);
+    assert.deepEqual(await protocol.gate({ state, runId, event: { prompt: prependContext } }), { outcome: 'pass' });
+  });
+});
+
+const rulesText = '# Rules\nExported functions must not return their input unchanged.\nKeep the changelog current.\n';
+const rulesCheck = (id, metricId, text = 'Exported functions must not return their input unchanged.', line = 2, hash = sha256(rulesText)) => ({
+  id, family: 'projectRules', metricId, text, verificationTarget: 'IMPLEMENTATION', applicability: '',
+  activation: 'The request changes the exported transform.', source: { path: 'docs/rules.md', startLine: line, endLine: line, sha256: hash }, confidence: 0.9 });
+const rulesSources = { [sha256(rulesText)]: rulesText, [sha256('other')]: 'tampered\n' };
+
+async function readCheckBasis(tools) {
+  let original;
+  for (const file of tools.task.basisFiles) {
+    const citeId = await tools.read(file);
+    if (path.basename(file).startsWith('user-original-')) original = citeId;
+  }
+  const proposedFile = tools.task.basisFiles.find(file => path.basename(file).startsWith('proposed-checks-'));
+  return { original, proposed: JSON.parse(await fs.readFile(proposedFile, 'utf8')) };
+}
+const transformItem = original => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Return the input plus one.',
+  citeId: original, lineStart: 2, lineEnd: 2 });
+
+test('proposed checks join the original checklist after set_original_checklist and need their own dispositions', async t => {
+  const k1 = rulesCheck('K1', 'M09');
+  const f = await frameStopCase(t, { deviation: true, metricIds: ['M09', 'M16'], checkSources: rulesSources, checks: [k1,
+    rulesCheck('K2', 'M13'), rulesCheck('K3', 'M09', 'Keep the changelog current.', 3, sha256('other'))] });
+  let check;
+  const { stop, handle } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert(tools.worker.systemPrompt.includes(FRAME_REVIEW_INSTRUCTIONS));
+    assert.match(tools.worker.systemPrompt, /Proposed checks \(basis part proposed-checks\)/u);
+    const { original, proposed } = await readCheckBasis(tools);
+    assert.deepEqual(proposed.map(item => item.id), ['K1']);
+    assert.equal(path.basename(path.dirname(proposed[0].sourceFile)), 'proposed-check-sources');
+    assert.equal(await fs.readFile(proposed[0].sourceFile, 'utf8'), rulesText);
+    await submit('set_original_checklist', { items: [transformItem(original)] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    check = items.find(item => item.proposedCheck === 'K1');
+    assert.equal(items.length, 2);
+    assert.deepEqual([check.metricId, check.description, check.applicabilityKind, check.originalSource],
+      ['M09', k1.text, 'CURRENT_TASK', { kind: 'PROJECT_FILE', ref: 'docs/rules.md', sha256: sha256(rulesText), start: 2, end: 2 }]);
+    assert.equal(proposed[0].objectId, check.taskId);
+    await submit('submit_review', { taskId: check.taskId, verdict: 'DEVIATION',
+      reason: 'The exported transform returns its input unchanged.', citeIds: [await tools.read(f.source)] });
+    const finish = dispositions => submit('finish_stop_review', frameFinishArgs(dispositions));
+    await assert.rejects(finish(unverifiedFrame()), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    await assert.rejects(finish([...unverifiedFrame(), { id: 'K1', disposition: 'DEVIATION', objectId: 'unsaved' }]),
+      { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    assert.equal((await finish([...unverifiedFrame(), { id: 'K1', disposition: 'DEVIATION', objectId: check.taskId }])).complete, true);
+  });
+  assert.equal(stop.status, 'DEVIATION', JSON.stringify(stop));
+  assert.deepEqual(handle.result.frameCoverage.items.map(({ id, type, disposition }) => [id, type, disposition]), [
+    ['G1', 'FRAME_GUIDANCE', 'UNVERIFIED'], ['S1', 'FRAME_SCENARIO', 'UNVERIFIED'], ['S2', 'FRAME_SCENARIO', 'UNVERIFIED'],
+    ['S3', 'FRAME_SCENARIO', 'UNVERIFIED'], ['K1', 'FRAME_CHECK', 'DEVIATION']]);
+  assert.equal(handle.result.frameCoverage.items.at(-1).objectId, check.taskId);
+  assert.match(stop.feedback, /returns its input unchanged/u);
+});
+
+test('an identical reviewer item reuses the proposed check, and a checks-only frame still needs its disposition', async t => {
+  const k1 = rulesCheck('K1', 'M09');
+  const f = await frameStopCase(t, { metricIds: ['M09', 'M16'], basis: { guidance: [], scenarios: [] }, checks: [k1], checkSources: rulesSources });
+  const reason = 'The delivered transform adds one, so it does not return its input unchanged.';
+  const { stop } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert(!tools.worker.systemPrompt.includes(FRAME_REVIEW_INSTRUCTIONS));
+    assert(!tools.task.basisFiles.some(file => path.basename(file).startsWith('requirement-frame-')));
+    const { original, proposed } = await readCheckBasis(tools);
+    await submit('set_original_checklist', { items: [transformItem(original), { metricId: 'M09', verificationTarget: 'IMPLEMENTATION',
+      text: k1.text, path: proposed[0].sourceFile, lineStart: 2, lineEnd: 2 }] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    assert.deepEqual(items.map(item => [item.metricId, item.proposedCheck ?? null]).sort(), [['M09', 'K1'], ['M16', null]]);
+    const finish = dispositions => submit('finish_stop_review', frameFinishArgs(dispositions));
+    await assert.rejects(finish([]), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    assert.equal((await finish([{ id: 'K1', disposition: 'CHECKED', reason }])).complete, true);
+  });
+  assert.equal(stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(stop));
+  assert.deepEqual(stop.review.frameCoverage.items, [{ id: 'K1', type: 'FRAME_CHECK', disposition: 'CHECKED', reason }]);
+});
+
+test('a full checklist review gives proposed checks ordinary verdicts without frame dispositions', async t => {
+  const f = await frameStopCase(t, { deviation: true, deviationOnly: false, metricIds: ['M09', 'M16'],
+    basis: { guidance: [], scenarios: [] }, checks: [rulesCheck('K1', 'M09')], checkSources: rulesSources });
+  const { handle } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert.match(tools.worker.systemPrompt, /Give every K item a verdict like any other checklist item\./u);
+    const finishTool = tools.worker.tools.find(tool => tool.name === 'finish_stop_review');
+    assert.equal(Object.hasOwn(finishTool.parameters.properties, 'frameDispositions'), false);
+    const { original } = await readCheckBasis(tools);
+    await submit('set_original_checklist', { items: [transformItem(original)] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    const check = items.find(item => item.proposedCheck === 'K1'), transform = items.find(item => item.metricId === 'M16');
+    await submit('submit_review', { taskId: transform.taskId, verdict: 'UNVERIFIED', reason: 'Not traced in this fixture.' });
+    await submit('submit_review', { taskId: check.taskId, verdict: 'DEVIATION',
+      reason: 'The exported transform returns its input unchanged.', citeIds: [await tools.read(f.source)] });
+    assert.equal((await submit('finish_stop_review', frameFinishArgs())).complete, true);
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId.slice(0, 3), row.judgement]).sort(),
+    [['M09', 'DEVIATION'], ['M16', 'UNVERIFIED']]);
+  assert.deepEqual(handle.result.frameCoverage, { status: 'absent', reason: 'NO_FRAME_ITEMS' });
 });

@@ -8,6 +8,7 @@ export async function readBusinessTerminal(request, runId) {
       status: value?.runId === runId ? value.status : 'identity_mismatch',
       ...(typeof value?.startedAt === 'number' ? { startedAt: value.startedAt } : {}),
       ...(typeof value?.endedAt === 'number' ? { endedAt: value.endedAt } : {}),
+      ...(typeof value?.error === 'string' ? { error: value.error } : {}),
       ...(typeof value?.timeoutPhase === 'string' ? { timeoutPhase: value.timeoutPhase } : {}),
       ...(typeof value?.providerStarted === 'boolean' ? { providerStarted: value.providerStarted } : {}) };
   } catch (error) { return { source: 'agent.wait', requestedRunId: runId, runId, status: 'unavailable',
@@ -19,6 +20,13 @@ export function knownBusinessTerminal(terminal, runId) {
 }
 export function businessCompleted(terminal, runId) {
   return knownBusinessTerminal(terminal, runId) && terminal.status === 'ok';
+}
+
+export function nativeCompactionStart(event, { sessionId, sessionKey }) {
+  const prefix = `${sessionId}:compaction:cmp-`;
+  return event?.sessionId === sessionId && event.sessionKey === sessionKey
+    && typeof event.runId === 'string' && event.runId.startsWith(prefix)
+    && /^[A-Za-z0-9_-]+$/u.test(event.runId.slice(prefix.length));
 }
 
 // Gateway terminal caches expire independently of a long RC review. Capture

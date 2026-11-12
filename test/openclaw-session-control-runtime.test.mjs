@@ -243,7 +243,7 @@ test("same-run off/on with fresh user input never reuses its cancelled Stop chec
   const records = await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement");
   assert.equal(records.length, 2);
   assert.equal(records[0].reviewStatus, "CANCELLED");
-  assert.equal(records[1].reviewStatus, "PASS", JSON.stringify(records));
+  assert.equal(records[1].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));
   assert.equal(current.abortSignal.aborted, false, "late cancellation cannot abort the reopened controller");
   assert.equal((await store.inspect("same-run")).used, 1, "re-enabling never replenishes prior session usage");
 });

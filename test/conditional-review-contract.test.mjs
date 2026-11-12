@@ -101,7 +101,7 @@ test('an active requested execution never passes on source-only evidence or inac
     object: processObject, citations: [] }).judgement, 'UNVERIFIED');
 });
 
-test('native workspace repairs a conditional conflict before ACK while retaining the complete checklist', async t => {
+test('native workspace retains the reviewer conditional judgement and complete checklist', async t => {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' };
   f.input.request.fixedStopClassification = { stopClassification: 'TASK_COMPLETE', stage: null };
@@ -114,11 +114,10 @@ test('native workspace repairs a conditional conflict before ACK while retaining
     await readAll(); await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
     const source = await read(f.file), args = { taskId: object.objectId, verdict: 'NOT_YET_APPLICABLE',
       reason: 'The current complete target is numeric.', citeIds: [source.details.citation.citeId], conditionAssessment: assessment('INACTIVE_AT_CURRENT_BOUNDARY') };
-    let error; try { await submit('submit_review', args); } catch (cause) { error = cause; }
-    reached = true; assert.match(error?.message ?? '', /REVIEW_CONDITION_VERDICT_CONFLICT/);
-    assert.equal((await submit('review_checklist', {})).pending, 1);
+    reached = true;
     await submit('submit_review', { ...args, verdict: 'NOT_APPLICABLE', finish: true });
   });
   assert(reached); assert.equal(handle.result.metricObjectJudgements[0].judgement, 'NOT_APPLICABLE');
-  assert.equal(handle.proofs[object.objectId].conditionBinding.policy, contract.CONDITIONAL_REVIEW_POLICY_VERSION);
+  assert.equal(handle.citationPolicy, 'mechanical-v1');
+  assert.equal(handle.proofs[object.objectId].conditionBinding, undefined);
 });

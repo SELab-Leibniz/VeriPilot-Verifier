@@ -724,10 +724,10 @@ test("plugin registers the compatible v2 lifecycle hooks without PostToolBatch",
   const packageManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, "package.json"), "utf8"));
   const pluginManifest = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json"), "utf8"));
   const marketplace = JSON.parse(await fs.readFile(path.join(PLUGIN_ROOT, ".claude-plugin", "marketplace.json"), "utf8"));
-  assert.equal(packageManifest.version, "1.9.1");
-  assert.equal(pluginManifest.version, "1.9.1");
-  assert.equal(marketplace.metadata.version, "1.9.1");
-  assert.equal(marketplace.plugins[0].version, "1.9.1");
+  assert.equal(packageManifest.version, "1.10.0");
+  assert.equal(pluginManifest.version, "1.10.0");
+  assert.equal(marketplace.metadata.version, "1.10.0");
+  assert.equal(marketplace.plugins[0].version, "1.10.0");
   await assert.rejects(fs.access(path.join(PLUGIN_ROOT, "scripts", "user-prompt-submit.mjs")));
 });
 

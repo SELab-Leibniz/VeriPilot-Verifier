@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { compileRuntimeV2Config } from "../lib/runtime-v2/config.mjs";
-import { METRIC_IDS, DEFAULT_STOP_METRICS, resolveStopReviewPolicy, restrictStopReviewOutput } from "../lib/runtime-v2/metric-policy.mjs";
+import { METRIC_IDS, DEFAULT_STOP_METRICS, STOP_METRIC_FAMILIES, resolveStopReviewPolicy, restrictStopReviewOutput } from "../lib/runtime-v2/metric-policy.mjs";
 import { buildMetricPopulation, calculateMetricReport, METRIC_CATALOG } from "../lib/runtime-v2/metrics.mjs";
 import { validateProjectConfig } from "../lib/policy/config-loader.mjs";
 import { loadRuntimePlan } from "../lib/runtime-plan.mjs";
@@ -48,6 +48,22 @@ test("project validation accepts all sixteen boolean switches and rejects misspe
     assert.throws(() => validateProjectConfig({ ...base, stopCorrection: { enabled: true, metrics } }, "config.yaml"), /metrics/u);
   assert.throws(() => resolveStopReviewPolicy({ metrics: { M99: true } }), /known metric/u);
   assert.throws(() => validateProjectConfig({ ...base, stopCorrection: { enabled: true, fileQualityReviewEnabled: "false" } }, "config.yaml"), /fileQualityReviewEnabled/u);
+});
+
+test("family switches turn off every member metric and otherwise keep the metric switches", () => {
+  assert.deepEqual(Object.values(STOP_METRIC_FAMILIES).flat().sort(), [...METRIC_IDS].sort());
+  const off = resolveStopReviewPolicy({ metrics: { M10: true, M14: true }, families: { projectRules: false, verification: false } });
+  assert.deepEqual(METRIC_IDS.filter(id => off.metrics[id]), ["M08", "M12", "M16"]);
+  assert.equal(Object.hasOwn(off, "families"), false);
+  const on = resolveStopReviewPolicy({ metrics: { M09: false }, families: { projectRules: true, clarification: true } });
+  assert.deepEqual(METRIC_IDS.filter(id => on.metrics[id]), defaultsOn.filter(id => id !== "M09"));
+  const compiled = compileRuntimeV2Config({ ...base, stopCorrection: { enabled: true, families: { skills: false, fulfillment: false } } }).stopCorrection;
+  assert.deepEqual(METRIC_IDS.filter(id => compiled.metrics[id]), ["M09", "M13", "M15"]);
+  assert.deepEqual(resolveStopReviewPolicy(compiled).metrics, compiled.metrics);
+  validateProjectConfig({ ...base, stopCorrection: { enabled: true, families: { clarification: true, verification: false } } }, "config.yaml");
+  for (const families of [{ rules: false }, { skills: "false" }, { verification: null }, [], null])
+    assert.throws(() => validateProjectConfig({ ...base, stopCorrection: { enabled: true, families } }, "config.yaml"), /families/u);
+  assert.throws(() => resolveStopReviewPolicy({ families: { unknown: false } }), /known family/u);
 });
 
 test(".runtime-corrector/config.yaml and explicitly provided configuration each inherit missing metric defaults", async t => {
@@ -182,7 +198,7 @@ for (const collection of [false, true]) test(`${collection ? "collected" : "lega
   reviewer.supportsReviewCollection = collection; reviewer.handoff = reviewer; reviewer.reviewItemSize = 1;
   reviewer.singleReviewMetrics = METRIC_IDS;
   const result = await f.run(undefined, reviewer);
-  assert.equal(result.decision, "allow"); assert.equal(result.stop.report.status, "PASS");
+  assert.equal(result.decision, "allow"); assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND");
   assert.deepEqual(result.stop.review.findings, []); assert.deepEqual(result.stop.review.fileAssessments, []);
   assert(!result.stop.review.metricObjectJudgements.some(row => row.objectId.startsWith("M11:")));
 });
@@ -202,7 +218,7 @@ test("explicit quality-only Stop dispatches its file duty without re-enabling M 
   assert.equal(f.calls.filter(c => c.request.reviewScope?.kind === "workspace-stop").length, 1);
   assert.equal(f.calls.flatMap(c => Object.values(c.request.population.metrics).flat()).length, 0);
   assert(result.stop.report.metrics.every(metric => metric.status === "DISABLED"));
-  assert.equal(result.stop.report.status, "PASS");
+  assert.equal(result.stop.report.status, "NO_DEVIATION_FOUND");
 });
 
 test("metric selection is frozen across corrections and epochs; a new task can use a new selection", async t => {

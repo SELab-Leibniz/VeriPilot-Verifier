@@ -98,16 +98,20 @@ ignorePatterns:
   - "**/.preview/**"
 
 dynamicGroundTruth:
-  enabled: true
+  enabled: false
   panel:
     size: 2
     adjudicator: true
 
 artifactCorrection:
-  groundTruthReviewEnabled: true
+  originalRequirementsEnabled: true
+  groundTruthReviewEnabled: false
+  stageMetricsEnabled: false
 
 stopCorrection:
-  enabled: false
+  enabled: true
+  originalRequirementsBasis: true
+  deviationOnly: true
   waitMode: until_pass
 
   maxCorrectionsPerSession: 2
@@ -119,11 +123,14 @@ stopCorrection:
 
   fileQualityReviewEnabled: false
 
+  regressionCheck:
+    enabled: false
+
 deviationLoop:
   maxDeliveriesPerFamily: 5
 
 implementationCorrection:
-  enabled: true
+  enabled: false
   platform: harmonyos
   deviceBudgetMs: 1800000
 

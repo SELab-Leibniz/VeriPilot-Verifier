@@ -1,0 +1,143 @@
+{
+  "artifactSha256": "a678d55b6f58ede1ff686afc02c6438a6ba943158d6e642d38cfe4806a53b059",
+  "planSha256": "4e822f278b1b26a95270982d9b283c4646f979e018c320e689b4f3d4cb9b7a65",
+  "approvedCases": [
+    "security_tool_2"
+  ],
+  "promoted": [
+    "B2",
+    "B12"
+  ],
+  "calibration": {
+    "case": "security_tool_2",
+    "source": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2\\results.json",
+    "sha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+    "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+    "environment": {
+      "requestedSdk": "api-24",
+      "actualSdk": "API24 / 6.1.1.125",
+      "hvigor": "6.24.2",
+      "adapted": false,
+      "changes": [
+        "build-profile signing configuration removed",
+        "target/compatible SDK API24"
+      ],
+      "originalProfileSha256": "9770cabce21dd054bbc8dec48cad68a3d35b36ccde1e95e46d8a20eb66d78fdc",
+      "adaptedProfileSha256": "297dcdacd78966cb160fb3a49cf7ff27ada7a6563dccd2744c597431dcd00f25",
+      "testPatchSha256": "f0cf5c9d5b335eaa2ba3a39d6aae8dfaed5ea259d852795f538ae3f3a3926180",
+      "datasetDigest": "271615a131fcea4d7d3cc75a2aede53df25459e7f26ea33997afff692df14549"
+    },
+    "results": [
+      {
+        "phase": "base",
+        "executed": true,
+        "f2p": [
+          0,
+          2
+        ],
+        "p2p": [
+          746,
+          746
+        ]
+      },
+      {
+        "phase": "gold",
+        "executed": true,
+        "f2p": [
+          2,
+          2
+        ],
+        "p2p": [
+          746,
+          746
+        ]
+      }
+    ]
+  },
+  "s0": [
+    {
+      "case": "security_tool_2",
+      "state": "compatibility-variant-frozen-graded",
+      "sourceRun": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-s0\\st2",
+      "grade": {
+        "f2p_passed": 1,
+        "f2p_total": 2,
+        "p2p_passed": 741,
+        "p2p_total": 746,
+        "f2p_not_passed": [
+          "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+        ],
+        "p2p_not_passed": [
+          "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+          "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+          "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+          "entry::PermissionViewModel::should restore network policy to default after allowing",
+          "entry::PermissionViewModel::should restore running policy to default after allowing"
+        ]
+      },
+      "commit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+      "commitSha256": "d8be2865ac8a8ca2959ad67655e3f5206b7eb343df9daecd502a935ac8ba2c78",
+      "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+      "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+      "freezeSha256": "64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0",
+      "terminal": {
+        "source": "agent.wait",
+        "requestedRunId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+        "runId": "928ad1ad-67d2-48dd-8db4-ca93e407fdd4",
+        "status": "ok",
+        "endedAt": 1793811906987
+      },
+      "modelRequests": 0,
+      "usage": {
+        "observedCalls": 0,
+        "completeCalls": 0,
+        "tokens": null
+      },
+      "note": "Derived offline from the original frozen draft and session."
+    }
+  ],
+  "samples": [
+    {
+      "id": "security_tool_2-compat-natural",
+      "case": "security_tool_2",
+      "kind": "defect",
+      "frozenRoot": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\freeze",
+      "freezeSha256": "64b50f64d304d6818ed7419b91483bbdd3297f1822d01fc2fc46cdf57f02c2d0",
+      "calibrationDir": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-calibration\\st2",
+      "calibrationSha256": "f19e49e997b9f62597ce8c45e608a8e4eed3d7d0fcde49dc843dc78a51ebc4e5",
+      "gradeFile": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\grade\\results.json",
+      "gradeSha256": "673d722ef97887afbbf9458ceb33ca73ef7f5d155881a28f739cf06eb597e960",
+      "before": {
+        "f2p_passed": 1,
+        "f2p_total": 2,
+        "p2p_passed": 741,
+        "p2p_total": 746,
+        "f2p_not_passed": [
+          "entry::PermissionViewModel::should apply account policy snapshot while keeping loaded 3D detail"
+        ],
+        "p2p_not_passed": [
+          "entry::PermissionViewModel::should keep state unchanged when policy action fails",
+          "entry::PermissionViewModel::should refresh selected application state after a successful running policy write",
+          "entry::PermissionViewModel::should refresh selected application state after successful uninstall and network policy writes",
+          "entry::PermissionViewModel::should restore network policy to default after allowing",
+          "entry::PermissionViewModel::should restore running policy to default after allowing"
+        ]
+      },
+      "commit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+      "commitSha256": "d8be2865ac8a8ca2959ad67655e3f5206b7eb343df9daecd502a935ac8ba2c78",
+      "sessionSha256": "4ae8924bceb48ba8693d667e319fa6d691cd881b3e4c5101b4cf7f00b60f64df",
+      "patchSha256": "1aafc5f39fe3245b9a52e3e055910b7fb8c2d52fcff336796f59df365f70b99a",
+      "rollback": "Restore the original loadApplications(accountId) implementation and reuse it as the inventory input of loadApplicationsWithPolicySnapshot. Preserve the policy merge and all other draft edits."
+    }
+  ],
+  "replacementSourceCommit": "0bbf9e3c5ff91e2a4018a09a751a96a6d0392520",
+  "compatibility": {
+    "originalCommit": "61816677f7ec107da7c20a4dbd72a08cc39c3f76",
+    "compatibilityCommit": "0aa20a0587267a31e6894e82c69e6ca77d0f747a",
+    "service": "entry/src/main/ets/services/permission-manage/PermissionService.ets",
+    "deltaSha256": "f0295c0bda8b5f30a4c760c85c334fe0cbce7302aee92853c32b100e17b20728",
+    "originalFreezeSha256": "261370ba5f4ad08521d5481b8728ce01c3dfec90c9a38dc65deeb80b7fda56c9",
+    "originalInputSha256": "d99d3c8b0e38d29391d7b2c377e9ea442ed88619f116131fe2fa4deb8df1d843",
+    "patch": "C:\\Users\\user\\workspace\\program_workspace\\runtime-corrector-toy\\.runtime-correction\\simplify\\st2-compat-freeze-grade-retry1\\compatibility-only.patch"
+  }
+}

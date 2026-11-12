@@ -21,6 +21,8 @@ test('native apply_patch requires a successful matching structured receipt and a
   const receipt = { message: { role: 'toolResult', toolCallId: 'patch', toolName: 'apply_patch', isError: false,
     details: { summary: { added: ['new file.ets'], modified: ['src/main.ets'], deleted: ['old file.ets'] } } } };
   assert.deepEqual(businessMutationPaths([call, receipt], root), ['new file.ets', 'old file.ets', 'src/main.ets']);
+  assert.deepEqual(businessMutationPaths([call, { message: { ...receipt.message,
+    details: { summary: { added: [], modified: [], deleted: [] } } } }], root), []);
   assert.deepEqual(businessMutationPaths([receipt], root), []);
   assert.deepEqual(businessMutationPaths([call, { message: { ...receipt.message, isError: true } }], root), []);
   assert.deepEqual(businessMutationPaths([call, { message: { ...receipt.message, toolName: 'edit' } }], root), []);
