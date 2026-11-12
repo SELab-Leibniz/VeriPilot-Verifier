@@ -10,6 +10,43 @@ import { createNativeStopFixture, basic, deferred, pause, until, within } from "
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
+test('a failed attempt with slow transcript capture does not invalidate its admitted retry', async t => {
+  const capture = deferred(t), entered = deferred(t), terminal = deferred(t);
+  const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
+    await terminal.promise;
+    return { runId, status: 'ok' };
+  } });
+  const configPath = path.join(f.root, '.runtime-corrector/config.yaml');
+  await fs.appendFile(configPath, '\nartifactCorrection:\n  originalRequirementsEnabled: true\n');
+  const session = f.api.runtime.agent.session, getEntry = session.getSessionEntry;
+  let blocked = true;
+  session.getSessionEntry = async (...args) => {
+    if (blocked) { blocked = false; entered.resolve(); await capture.promise; }
+    return getEntry(...args);
+  };
+  f.api.pluginConfig.hookTimeoutMs = 1200;
+  const ended = f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: 'Context overflow' }, f.ctx);
+  await within(entered.promise, 'failed-attempt transcript capture');
+  await within(ended, 'bounded failed-attempt hook');
+  f.api.pluginConfig.hookTimeoutMs = 5000;
+  assert.equal(f.state.nativeInvalidated, false, 'bookkeeping must not invalidate an admitted host retry');
+  assert.equal(f.state.reviewController.signal.reason?.code, 'RC_NATIVE_ATTEMPT_ENDED');
+  const oldController = f.state.reviewController;
+  await f.runtime.prompt({ prompt: 'Retry after automatic compaction.' }, f.ctx);
+  assert.notEqual(f.state.reviewController, oldController);
+  assert.equal(f.state.reviewController.signal.aborted, false);
+  capture.resolve();
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'retry-write', params: { path: 'draft.md' } }, f.ctx);
+  await fs.writeFile(path.join(f.root, 'draft.md'), 'A draft delivered by the retried attempt.\n');
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+    payload: { text: 'Delivered after retry.' } }, f.ctx);
+  terminal.resolve();
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'retried Stop review');
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
 test('a retried native turn retains its own persisted user input while later queued inputs stay excluded', async t => {
   const terminal = deferred(t);
   const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
