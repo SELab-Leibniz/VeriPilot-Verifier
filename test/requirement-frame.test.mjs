@@ -153,17 +153,18 @@ reviewers:
 
 test('1. caps, sorts and renumbers valid items after selection in private sessions', async t => {
   const f = await fixture(t, { proposers: 3, propose: ({ ordinal }) => ({
-    guidance: Array.from({ length: 3 }, (_, i) => guidance(`P${ordinal} G${i}`, i === 0 ? 1 : 0.9)),
-    scenarios: Array.from({ length: 3 }, (_, i) => scenario(`P${ordinal} S${i}`, i === 0 ? 1 : 0.9)),
+    guidance: Array.from({ length: 6 }, (_, i) => guidance(`P${ordinal} G${i}`, i === 0 ? 1 : 0.9)),
+    scenarios: Array.from({ length: 6 }, (_, i) => scenario(`P${ordinal} S${i}`, i === 0 ? 1 : 0.9)),
   }) });
   await f.prompt();
   const result = await f.frame();
   assert.equal(result.status, 'ready');
-  assert.deepEqual(result.counts, { proposed: 18, valid: 18, selected: 11 });
+  assert.deepEqual(result.counts, { proposed: 36, valid: 36, selected: 16 });
   assert.deepEqual(result.guidance.map(item => [item.id, item.statement]),
-    [['G1', 'P1 G0'], ['G2', 'P2 G0'], ['G3', 'P3 G0'], ['G4', 'P1 G1'], ['G5', 'P1 G2']]);
+    [['G1', 'P1 G0'], ['G2', 'P2 G0'], ['G3', 'P3 G0'], ['G4', 'P1 G1'], ['G5', 'P1 G2'],
+      ['G6', 'P1 G3'], ['G7', 'P1 G4'], ['G8', 'P1 G5'], ['G9', 'P2 G1'], ['G10', 'P2 G2']]);
   assert.deepEqual(result.scenarios.map(item => [item.id, item.given]),
-    [['S1', 'P1 S0'], ['S2', 'P2 S0'], ['S3', 'P3 S0'], ['S4', 'P1 S1'], ['S5', 'P1 S2'], ['S6', 'P2 S1']]);
+    [['S1', 'P1 S0'], ['S2', 'P2 S0'], ['S3', 'P3 S0'], ['S4', 'P1 S1'], ['S5', 'P1 S2'], ['S6', 'P1 S3']]);
   assert.equal(new Set(f.calls.map(({ params }) => params.sessionId)).size, 4);
   for (const { kind, params, names } of f.calls) {
     assert.notEqual(params.sessionId, f.sessionId);
