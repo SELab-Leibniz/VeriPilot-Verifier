@@ -57,7 +57,7 @@ async function fixture(t, { verdict = "PASS", stop = {}, baselineFailure = null,
 }
 
 test('proposal review followed by coding runs the complete production Stop under the same user flow and remaining quota', async t => {
-  for (const deviationOnly of [true, false]) await t.test(deviationOnly ? 'no deviation at proposal' : 'empty proposal scope stays unverified', async t => {
+  for (const deviationOnly of [true, false]) await t.test(deviationOnly ? 'proposal defers production obligations' : 'empty proposal scope stays unverified', async t => {
     const classification = { stopClassification: 'STAGE_COMPLETE', stage: 'proposal' };
     const f = await fixture(t, { classification, stop: { deviationOnly }, startProtocol: { version: 1 },
       artifacts: [{ name: 'proposal', stage: 'proposal', metrics: [] }],
@@ -77,12 +77,14 @@ test('proposal review followed by coding runs the complete production Stop under
     await store.observeStart({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', observationId: 'prior-start', startedAt: Date.now() });
     await store.observeEnd({ sessionId: 'session', admissionId: prior.id, executionId: 'prior-run', endedAt: Date.now() });
     const proposal = await f.event('Stop');
-    assert.equal(proposal.stop.status, deviationOnly ? 'NO_DEVIATION_FOUND' : 'UNVERIFIED', JSON.stringify(proposal.stop));
-    if (!deviationOnly) assert.equal(proposal.stop.reasonCode, 'STOP_STAGE_METRICS_UNDECLARED');
+    assert.equal(proposal.stop.status, 'UNVERIFIED', JSON.stringify(proposal.stop));
+    assert.equal(proposal.stop.reasonCode, deviationOnly ? 'STOP_NO_REVIEW_SCOPE' : 'STOP_STAGE_METRICS_UNDECLARED');
+    if (deviationOnly) assert.deepEqual([proposal.stop.coverage.fullObjectCount, proposal.stop.coverage.selectedObjectCount,
+      proposal.stop.coverage.scopeReasonCode], [2, 0, 'NO_APPLICABLE_STAGE_OBJECTS']);
     assert.equal(proposal.stop.review.stopClassification, 'STAGE_COMPLETE');
     const afterProposal = await store.inspect('session');
     assert.equal(afterProposal.flows[flowId].closedAt, undefined);
-    assert.equal(afterProposal.stops['prior-repair'].control, deviationOnly ? 'ALLOW' : 'WAIT_REPAIR');
+    assert.equal(afterProposal.stops['prior-repair'].control, 'WAIT_REPAIR');
     assert.equal(afterProposal.stops['prior-repair'].reviewStatus, 'DEVIATION');
     assert.equal(afterProposal.admissions[prior.id].accounting, 'USED');
     classification.stopClassification = 'TASK_COMPLETE'; classification.stage = null;

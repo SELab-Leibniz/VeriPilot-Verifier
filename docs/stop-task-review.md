@@ -8,7 +8,7 @@
 
 授权判断须区分原始断言、测试准备及后续操作。补 mock 后通过不能授权原始失败；调用方单测不执行被替代的被调用方实现，是正常的测试范围。对原要求约束的调用入口，分别核对实际依赖结果与第一次可观察副作用；下层拒绝不能代替调用入口自己的保证。上述判断使用原要求和源码，不新增引用门槛或整体未验证条件。
 
-分类提交协议 v2 要求说明原回复是否声明完成，以及必要的用户决策或外部阻塞。完成后提供可选建议仍选择完成范围；只有真实未解决的必要输入才能选择等待用户。纯实现义务不提供 proposal/design/tasks 文档阶段供分类器选择。合法阶段没有声明指标时记录 `STOP_STAGE_METRICS_UNDECLARED`；合法空对象范围记录 `NO_APPLICABLE_STAGE_OBJECTS` 或 `NO_APPLICABLE_METRIC_OBJECTS`，保持未验证，不能以 `NO_CURRENT_DEVIATION` 冒充已检验。独立文件质量审查仍可在无指标对象时工作。
+分类提交协议 v2 要求说明原回复是否声明完成，以及必要的用户决策或外部阻塞。完成后提供可选建议仍选择完成范围；只有真实未解决的必要输入才能选择等待用户。纯实现义务不提供 proposal/design/tasks 文档阶段供分类器选择。仅偏差模式下，proposal、design、tasks 等前置阶段完成时不审查原始生产实现义务（`verificationTarget: IMPLEMENTATION`），这些义务留给编码阶段或任务完成时审查；程序自有的回归义务仍在范围内，排除后为空的范围记录 `NO_APPLICABLE_STAGE_OBJECTS`。合法阶段没有声明指标时记录 `STOP_STAGE_METRICS_UNDECLARED`；合法空对象范围记录 `NO_APPLICABLE_STAGE_OBJECTS` 或 `NO_APPLICABLE_METRIC_OBJECTS`，保持未验证，不能以 `NO_CURRENT_DEVIATION` 冒充已检验。独立文件质量审查仍可在无指标对象时工作。
 
 新增实现义务可携带结构化 `implementationRole`：`PRODUCTION`、`TEST` 或 `SUPPORT`。测试源码义务保留在 M12 的原始分母，明确标为 TEST 的义务不投射到 M16 生产实现覆盖。实际运行测试应另作为 PROCESS 义务保留。旧账本没有此字段时沿用原归属，不根据名称、描述或文件是否存在悄悄删除历史义务。
 
@@ -42,7 +42,7 @@ stopCorrection:
 
 旧 `maxCorrectionsPerEpoch` 只映射为 `maxCorrectionsPerFlow`；旧 `waitTimeoutMs` 只映射为本次 `assessmentTimeoutMs`，均产生弃用提示。新旧同义字段同时出现时报错。需求变化不清零会话额度，业务修复不占已经结束的审查窗口。
 
-Stop 将已确认的完成类型及阶段与审查范围一起持久化。`STAGE_COMPLETE`、中间输出、等待用户或外部阻塞的完整审查若没有当前偏差，只结束本次 Stop；同一范围、同一阶段的旧修复等待也可结束。阶段范围为空或没有声明适用指标时，当前 Stop 仍为 `UNVERIFIED`，但不关闭 flow，也不关闭尚未确认修好的旧偏差。后续 coding 等阶段仍在同一用户 flow 内进行完整审查，沿用会话及 flow 的已用次数、未决预约和上限，不创建新额度。已结束阶段的旧定时器不再终止后续阶段。`TASK_COMPLETE` 无偏差才按完成结果关闭整个 flow；未记录完成类型的旧调用保持原来的关闭行为。审查执行失败、取消、超时、依据过期及实际额度耗尽仍遵循原来的终止保护，已关闭的历史 flow 不自动重开。
+Stop 将已确认的完成类型及阶段与审查范围一起持久化。`STAGE_COMPLETE`、中间输出、等待用户或外部阻塞的完整审查若没有当前偏差，只结束本次 Stop；同一范围、同一阶段的旧修复等待也可结束。这类非最终 Stop 的审查正常结束但没有结论时（例如范围为空、没有声明适用指标或多数要求未验证），当前 Stop 仍为 `UNVERIFIED`，只结束本次 Stop，不关闭 flow，也不结束尚未确认修好的旧偏差。后续 coding 等阶段仍在同一用户 flow 内进行完整审查，沿用会话及 flow 的已用次数、未决预约和上限，不创建新额度。已结束阶段的旧定时器不再终止后续阶段。`TASK_COMPLETE` 没有当前偏差时（包括未验证）关闭整个 flow；未记录完成类型的旧调用保持原来的关闭行为。审查执行失败（准备或审查过程抛出错误）、取消、超时、依据过期及实际额度耗尽仍遵循原来的终止保护，已关闭的历史 flow 不自动重开。
 
 ## 单会话审查
 
