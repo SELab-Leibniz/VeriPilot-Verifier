@@ -80,6 +80,12 @@ test('the normal regression entry runs isolation before review and retains per-c
   assert.equal(run.triageVersion, 2);
   assert.deepEqual(regressionFailureInventory(run), { complete: true,
     failures: [{ id: 'leaked', title: 'leaked' }, { id: 'regressed', title: 'regressed' }], excluded: ['existing'] });
+  const deferred = await runStopRegressionCheck({ projectRoot: root, config: { ...config,
+    isolationCommand: [process.execPath, '-e', 'throw Error("Must not isolate before the controlled whole-suite disposition")', '{testId}'] },
+    population, deadlineAt: Date.now() + 30000, deferIsolation: true });
+  assert.equal(deferred.isolationPolicy, 'CONTROLLED_WHOLE_SUITE_AFTER_REVIEW');
+  assert.equal(deferred.triage.cases.some(item => item.isolatedRun), false);
+  assert.deepEqual(regressionFailureInventory(deferred), regressionFailureInventory(run), 'Both unresolved failures remain, including the real regression.');
 });
 
 test('a real order-dependent failure stays reviewable after a passing single-test run', async t => {

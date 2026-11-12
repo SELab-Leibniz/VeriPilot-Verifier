@@ -8,6 +8,26 @@ const generated = new Set(['.git', '.hvigor', '.test', 'oh_modules', 'node_modul
 const run = promisify(execFile);
 const suiteRoot = /(?:^|\/)src\/test(?=\/|$)/u;
 
+// Edit exact registrations only in a disposable task-start public test tree.
+export async function installRegressionCaseExclusions(workspace, exclusions) {
+  const seen=new Set(),changed=[];
+  for(const item of exclusions) {
+    const [module,suite,...rest]=String(item.id).split('::'),title=rest.join('::');
+    const relative=String(item.path).replaceAll('\\','/');
+    if(!module||!suite||!title||seen.has(item.id)||!relative.startsWith(module+'/src/test/')
+      ||relative.split('/').some(x=>x==='..'||x==='.')||path.isAbsolute(relative))throw new Error('Invalid public exclusion identity.');
+    seen.add(item.id);const file=path.join(workspace,relative),source=await fs.readFile(file,'utf8');
+    const suites=[...source.matchAll(/\bdescribe\(\s*(['"])([^\\\r\n]*?)\1\s*,/gu)];
+    if(!suites.some(m=>m[2]===suite))throw new Error('Public exclusion suite not found.');
+    const matches=[...source.matchAll(/^[ \t]*(?:it|test)\(\s*(['"])([^\\\r\n]*?)\1\s*,/gmu)].filter(m=>m[2]===title);
+    if(matches.length!==1)throw new Error('Public exclusion registration is ambiguous or unsupported.');
+    const match=matches[0],at=match.index+match[0].search(/\S/u);
+    await fs.writeFile(file,source.slice(0,at)+'if (false) '+source.slice(at));
+    changed.push({id:item.id,path:relative});
+  }
+  return changed;
+}
+
 // Alter only the disposable generated runner, keeping original test modules
 // byte-identical. Hypium's suite/itName filters accept exact titles with spaces.
 export async function installRegressionCaseFilter(workspace, { module, suite, itName }) {

@@ -33,6 +33,33 @@ async function fixture(t) {
   return { ...f, scope, result };
 }
 
+test('workspace review binds a historical process inversion to original calls and persists its proof', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+  f.input.request.population.metrics = { M11: [{ ...original, objectId: 'M11:R1', metricId: 'M11',
+    verificationTarget: 'PROCESS', originalSource: { kind: 'PROJECT_FILE', ref: 'AGENTS.md', sha256: 'original-rule', start: 1, end: 1 } }] };
+  f.input.evidence.snapshot.entries.push(
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'created', name: 'openspec_cli', input: { args: ['new', 'change', 'demo'] } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'created', is_error: false, content: 'Created successfully.' }] } },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'status', name: 'openspec_cli', input: { args: ['status'] } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'status', is_error: false, content: 'Status returned successfully.' }] } });
+  const handle = await f.run(async ({ readAll, read, submit }) => {
+    await readAll();
+    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+    const ids = [];
+    for (const sample of checklist.processEvidence.executionSamples) {
+      for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
+    }
+    await submit('submit_review', { taskId: 'M11:R1', verdict: 'DEVIATION', reason: 'Creation preceded the required status query.', citeIds: ids });
+    await submit('finish_stop_review', { summary: 'Only the past order is irreversible.', historicalOrders: [{
+      objectId: 'M11:R1', requiredFirstEventId: 'status', requiredSecondEventId: 'created', historicalOnly: true,
+      reason: 'The original creation is already complete; future creations still require status first.' }] });
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+  assert.equal(handle.getHistoricalOrders().length, 1);
+  assert.equal(handle.getHistoricalOrders()[0].kind, 'IRREVERSIBLE_ORDER');
+  await handle.close();
+});
+
 test('program scope verification runs between native calls and resumes the same checklist once', async t => {
   const f = await fixture(t);
   f.input.deferScopeVerification = true;
@@ -1007,13 +1034,15 @@ const chineseReproduction = `处理上面每个偏差时：
 3. 如果无法复现，说明原因，不要为了通过评审而改动无关代码。`;
 
 async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
-  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true } = {}) {
+  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true,
+  userText = 'Implement transform.\nReturn the input plus one.', processEntries = [], effectiveToolPolicy } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
   const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
   await fs.writeFile(source, `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
   const entries = [
-    { type: 'user', uuid: 'user-original', message: { role: 'user', content: 'Implement transform.\nReturn the input plus one.' } },
+    { type: 'user', uuid: 'user-original', message: { role: 'user', content: userText } },
+    ...processEntries,
     { type: 'assistant', uuid: 'assistant-complete', message: { role: 'assistant', content: 'Task complete.' } },
   ];
   await fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
@@ -1050,14 +1079,14 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
       };
       const event = (hook_event_name, fields) => handleRuntimeV2Event({
         projectRoot, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
-        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw },
+        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw, effectiveToolPolicy },
         input: { hook_event_name, session_id: sessionId, cwd: projectRoot, transcript_path: transcript,
           last_assistant_message: 'Task complete.', ...fields },
       });
       await event('SessionStart', { source: 'startup' });
       const outcome = await event('Stop');
       if (scriptError) throw scriptError;
-      assert(handle?.result, JSON.stringify(outcome.stop));
+      assert(handle?.result || outcome.stop?.reused === true, JSON.stringify(outcome.stop));
       return { stop: outcome.stop, handle };
     },
   };
@@ -1334,4 +1363,64 @@ test('a full checklist review gives proposed checks ordinary verdicts without fr
   assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId.slice(0, 3), row.judgement]).sort(),
     [['M09', 'DEVIATION'], ['M16', 'UNVERIFIED']]);
   assert.deepEqual(handle.result.frameCoverage, { status: 'absent', reason: 'NO_FRAME_ITEMS' });
+});
+
+test('production Stop exempts a command only with program-owned nonexecuting tools and lists it separately', async t => {
+  for (const capable of [false, true]) await t.test(capable ? 'fixed build tool retains UNVERIFIED' : 'verified file-only policy', async t => {
+    const command = 'python scripts/check.py';
+    const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'], userText: `Run ${command}.`,
+      effectiveToolPolicy: async () => ({ source: 'HOST_EFFECTIVE_TOOL_CATALOG', hostVersion: '2026.7.1-2', current: true,
+        sessionId: 'protocol-host', policyDigest: 'policy', catalogDigest: 'catalog', tools: capable ? [{ name: 'bench_check' }] : [
+          { name: 'read', schemaHash: '134f19bcabe3e29d63c5cebb38f1d2556759fd08adad6bc90a4b4d3cd1fb8441' }] }) });
+    const { stop } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+      await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS', text: `Run ${command}.`, citeId: original, lineStart: 1, lineEnd: 1 }] });
+      const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+      await submit('submit_review', { taskId: items[0].taskId, verdict: 'UNVERIFIED', reason: 'The original command has no execution receipt.' });
+      await submit('finish_stop_review', { summary: 'Checked the exact original command.', environmentCommands: [{ objectId: items[0].taskId, command }] });
+    });
+    assert.equal(stop.verificationIncomplete, capable, JSON.stringify(stop));
+    assert.equal(stop.environmentUnexecutable.length, capable ? 0 : 1);
+    assert.equal(stop.report.unverifiedItems.length, capable ? 1 : 0);
+    if (!capable) {
+      assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+      assert.equal(stop.report.reviewCoverage.items[0].disposition, 'ENVIRONMENT_UNEXECUTABLE');
+    }
+  });
+});
+
+test('production Stop closes with historical deviation, keeps the deviation and never redispatches its notice', async t => {
+  const processEntries = [
+    { type: 'assistant', uuid: 'create-call', message: { content: [{ type: 'tool_use', id: 'created', name: 'openspec_cli', input: { args: ['new', 'change', 'demo'] } }] } },
+    { type: 'user', uuid: 'create-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'created', is_error: false, content: 'Created successfully.' }] } },
+    { type: 'assistant', uuid: 'status-call', message: { content: [{ type: 'tool_use', id: 'status', name: 'openspec_cli', input: { args: ['status'] } }] } },
+    { type: 'user', uuid: 'status-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'status', is_error: false, content: 'Status returned successfully.' }] } },
+  ];
+  const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'],
+    userText: 'Query status before creating the change.', processEntries });
+  const { stop } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    let original;
+    for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+    await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
+      text: 'Query status before creating the change.', citeId: original, lineStart: 1, lineEnd: 1 }] });
+    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+    const citations = [];
+    for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) citations.push(await tools.read(file));
+    const id = checklist.items[0].taskId;
+    await submit('submit_review', { taskId: id, verdict: 'DEVIATION', reason: 'The completed creation precedes the required status query.', citeIds: citations });
+    await submit('finish_stop_review', { summary: 'Only the proved historical order remains.', historicalOrders: [{
+      objectId: id, requiredFirstEventId: 'status', requiredSecondEventId: 'created', historicalOnly: true,
+      reason: 'Creation already occurred; future creations still require a prior status query.' }] });
+  });
+  assert.equal(stop.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS', JSON.stringify(stop));
+  assert.equal(stop.decision, 'allow'); assert.equal(stop.admission, null); assert.equal(stop.correctionAttempt, 0);
+  assert.equal(stop.verificationIncomplete, false); assert.equal(stop.historicalDeviations.length, 1);
+  assert.equal(stop.report.judgements?.[0]?.judgement ?? stop.review.metricObjectJudgements[0]?.judgement, 'DEVIATION');
+  assert.match(stop.feedback, /historical-notice/);
+  const again = (await f.run(async () => assert.fail('An unchanged completed Stop must not invoke a new reviewer.'))).stop;
+  assert.equal(again.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS'); assert.equal(again.feedback, null);
+  assert.equal(again.historicalNotices.length, 0);
 });

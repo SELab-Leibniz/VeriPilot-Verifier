@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
   "common": [
+    "lib/runtime-v2/environment-execution.mjs",
+    "lib/runtime-v2/historical-order.mjs",
     "lib/line-page.mjs",
     "lib/agent-output.mjs",
     "lib/artifact-checker.mjs",
