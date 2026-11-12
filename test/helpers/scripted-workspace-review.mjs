@@ -35,6 +35,7 @@ export async function scriptedWorkspaceReview(input, { file, verdict = 'PASS', c
         ...(classification.stage ? { stage: classification.stage } : {}),
         completionClaim: ['TASK_COMPLETE', 'STAGE_COMPLETE'].includes(classification.stopClassification),
         requiredUserInput: classification.requiredUserInput ?? null, externalBlocker: classification.externalBlocker ?? null });
+      if (worker.isComplete()) return;
       if (finding) {
         const citeId = await read(file);
         await call('submit_finding', { ...finding, citeIds: [citeId] });

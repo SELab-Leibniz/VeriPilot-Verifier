@@ -100,6 +100,7 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
         if (api.brief.attempt === 1) await api.submit('set_original_checklist', { items: [{ metricId: 'M16', text: 'Offer a 24-character password length option.',
           verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', citeId: original, lineStart: 1, lineEnd: 1 }] });
         const checklist = await api.submit('review_checklist', api.brief.attempt === 1 ? SCOPE : { limit: 20 });
+        if (checklist.deferred) return;
         const finish = await script({ ...api, original, checklist, standing: checklist.items.find(item => item.programStanding === STANDING_REGRESSION),
           cite: async file => (await api.read(path.isAbsolute(file) ? file : path.join(f.root, file))).details.citation.citeId });
         await api.submit('finish_stop_review', { summary: 'Scanned the scoped checklist.', ...finish });
@@ -367,7 +368,8 @@ test('remaining regression cases accept reviewer decisions without authorization
     } });
   assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
   assert.deepEqual(result.stop.review.unverifiedItems, []);
-  assert.equal(f.calls.length, 1, 'no second semantic authorization reviewer');
+  assert.equal(f.calls.length, 2, 'scope preparation hands back to the same review, without a separate authorization reviewer');
+  assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
 });
 
 test('one decided failure does not explain an omitted preserved contract, and a supported regression is dispatched', async t => {

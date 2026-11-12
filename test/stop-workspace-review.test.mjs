@@ -33,6 +33,67 @@ async function fixture(t) {
   return { ...f, scope, result };
 }
 
+test('program scope verification runs between native calls and resumes the same checklist once', async t => {
+  const f = await fixture(t);
+  f.input.deferScopeVerification = true;
+  let nativeSettled = false, selections = 0;
+  f.input.onScope = async () => {
+    assert(nativeSettled, 'program work starts after the selecting native call has settled');
+    selections++;
+    return { verification: { build: { status: 'passed' } } };
+  };
+  const handle = await f.run(async ({ brief, readAll, read, submit }) => {
+    if (brief.attempt === 1) {
+      await readAll();
+      const scope = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
+      assert.equal(scope.deferred, true);
+      assert.equal(selections, 0);
+      nativeSettled = true;
+      return;
+    }
+    const checklist = await submit('review_checklist', { limit: 20 });
+    assert.equal(checklist.items.length, 1);
+    assert.equal(checklist.programEvidenceFiles.length, 1);
+    assert.equal((await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Same scope.' })).reused, true);
+    const actual = await read(f.file);
+    await f.result(submit, [actual.details.citation.citeId]);
+    await submit('finish_stop_review', { summary: 'Reviewed the prepared evidence.' });
+  });
+  assert.equal(selections, 1);
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
+  assert.equal(handle.reviewCompleted, true);
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+});
+
+test('cancelling after scope handoff cannot launch its program verification', async t => {
+  const f = await fixture(t), abort = new AbortController();
+  f.input.abortSignal = abort.signal;
+  f.input.deferScopeVerification = true;
+  let selections = 0;
+  f.input.onScope = async () => { selections++; };
+  await assert.rejects(f.run(async ({ readAll, submit }) => {
+    await readAll();
+    assert.equal((await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Complete.' })).deferred, true);
+    abort.abort();
+  }));
+  assert.equal(selections, 0);
+});
+
+test('basis drift during deferred program verification cannot publish a completed review', async t => {
+  const f = await fixture(t);
+  f.input.deferScopeVerification = true;
+  f.input.onScope = async () => {
+    await fs.writeFile(f.input.request.groundTruthPath, '{}');
+    return { verification: { build: { status: 'passed' } } };
+  };
+  await assert.rejects(f.run(async ({ readAll, submit }) => {
+    await readAll();
+    assert.equal((await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' })).deferred, true);
+  }));
+  assert.equal(f.calls.length, 1, 'stale scope never reaches another native call');
+});
+
 const versionlessTrace = () => ({ entryPoint: 'accept(value)', actualInput: 'Caller supplied finite number',
   producerToConsumer: 'The numeric value flows through value + 1 and the returned primitive is consumed by the caller.',
   stateful: false, statelessReason: 'This pure function has no stored or shared mutable state.', stateTargets: [], targetRelations: [] });
