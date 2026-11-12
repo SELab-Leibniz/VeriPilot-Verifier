@@ -159,8 +159,8 @@ test("successful nonfinal scopes do not close a flow, but task completion still 
   assert.equal((await f.begin("after-task")).stop.releaseReason, "CORRECTION_FLOW_CLOSED");
 });
 
-test("stage completion preserves quota exhaustion and cannot reopen a cancelled or unverified flow", async t => {
-  for (const outcome of ["limit", "cancel", "timeout", "stale", "unverified"]) await t.test(outcome, async subtest => {
+test("stage completion preserves quota exhaustion and cannot reopen a cancelled or failed flow", async t => {
+  for (const outcome of ["limit", "cancel", "timeout", "stale", "failed"]) await t.test(outcome, async subtest => {
     const f = await fixture(subtest), options = { config: { enabled: true, maxCorrectionsPerFlow: 1 } };
     const { stop } = await f.begin("stage", options);
     await f.store.bindReviewScope({ sessionId: "session", stopId: "stage", scopeId: "task-scope",
@@ -171,8 +171,9 @@ test("stage completion preserves quota exhaustion and cannot reopen a cancelled 
       await f.store.bindReviewScope({ sessionId: "session", stopId: "stage-final", scopeId: "task-scope",
         classification: { stopClassification: "STAGE_COMPLETE", stage: "draft" } });
       await f.store.settleReview({ sessionId: "session", stopId: "stage-final", status: "PASS", progress: { complete: true } });
-    } else if (outcome === "unverified") {
-      await f.store.settleReview({ sessionId: "session", stopId: "stage", status: "UNVERIFIED", progress: { complete: false } });
+    } else if (outcome === "failed") {
+      await f.store.settleReview({ sessionId: "session", stopId: "stage", status: "UNVERIFIED", assessmentFailed: true,
+        progress: { complete: false, reasonCode: "REVIEWER_RUN_FAILED" } });
     } else {
       if (outcome === "timeout") f.set(stop.deadlineAt);
       await f.store.expireStop({ sessionId: "session", stopId: "stage", force: true,
@@ -216,27 +217,60 @@ test("stage success leaves unrelated scope, stage and legacy repair waits untouc
   assert.equal(after.used, 3);
 });
 
-test("empty stage scope stays UNVERIFIED without preventing a later coding review", async t => {
-  for (const reasonCode of ["STOP_NO_REVIEW_SCOPE", "STOP_STAGE_METRICS_UNDECLARED", "NO_APPLICABLE_STAGE_OBJECTS", "NO_APPLICABLE_METRIC_OBJECTS"]) await t.test(reasonCode, async subtest => {
+test("an inconclusive nonfinal review stays UNVERIFIED without preventing a later coding review", async t => {
+  const cases = [["STAGE_COMPLETE", { total: 0, reasonCode: "STOP_NO_REVIEW_SCOPE" }],
+    ["STAGE_COMPLETE", { total: 0, reasonCode: "STOP_STAGE_METRICS_UNDECLARED" }],
+    ["STAGE_COMPLETE", { total: 0, reasonCode: "NO_APPLICABLE_STAGE_OBJECTS" }],
+    ["STAGE_COMPLETE", { total: 0, reasonCode: "NO_APPLICABLE_METRIC_OBJECTS" }],
+    ["STAGE_COMPLETE", { total: 1, unverified: 1 }], ["STAGE_COMPLETE", { total: 1, reasonCode: "STOP_MOST_REQUIREMENTS_UNVERIFIED" }],
+    ["INTERMEDIATE", { reasonCode: "FINDINGS_ONLY_SCOPE" }], ["WAITING_FOR_USER", { total: 2, unverified: 2 }], ["BLOCKED_EXTERNAL", {}]];
+  for (const [kind, progress] of cases) await t.test(`${kind} ${progress.reasonCode ?? "incomplete"}`, async subtest => {
     const f = await fixture(subtest);
-    await f.begin("draft");
+    const { stop } = await f.begin("draft");
     await f.store.bindReviewScope({ sessionId: "session", stopId: "draft", scopeId: "task",
-      classification: { stopClassification: "STAGE_COMPLETE", stage: "draft" } });
+      classification: { stopClassification: kind, stage: kind === "STAGE_COMPLETE" ? "proposal" : null } });
     const settled = await f.store.settleReview({ sessionId: "session", stopId: "draft", status: "UNVERIFIED",
-      progress: { complete: false, total: 0, reasonCode } });
+      progress: { complete: false, ...progress } });
+    assert.equal(settled.control, "ALLOW");
     assert.equal(settled.reviewStatus, "UNVERIFIED");
-    assert.equal(settled.releaseReason, reasonCode);
+    assert.equal(settled.releaseReason, progress.reasonCode ?? "STOP_REVIEW_INCOMPLETE");
     const next = await f.begin("coding");
     assert.equal(next.stop.control, "WAIT_REVIEW");
-    assert.equal(next.stop.capacity.sessionUsed, 0);
-    assert.equal(next.stop.capacity.flowUsed, 0);
-    // An unknown or failed review reason still takes the protected flow path.
-    await f.store.bindReviewScope({ sessionId: "session", stopId: "coding", scopeId: "task",
-      classification: { stopClassification: "STAGE_COMPLETE", stage: "coding" } });
-    await f.store.settleReview({ sessionId: "session", stopId: "coding", status: "UNVERIFIED",
-      progress: { complete: false, total: 0, reasonCode: "REVIEWER_RUN_FAILED" } });
-    assert.equal((await f.begin("after-failure")).stop.releaseReason, "CORRECTION_FLOW_CLOSED");
+    assert.equal(next.stop.capacity.reasonCode, null);
+    f.set(stop.deadlineAt + 1);
+    await f.store.expireStop({ sessionId: "session", stopId: "draft" });
+    assert.equal((await f.store.inspect("session")).flows.flow.closedAt, undefined);
   });
+  await t.test("execution failure and final completion still close the flow", async subtest => {
+    const f = await fixture(subtest);
+    for (const [stopId, stopClassification, stage, assessmentFailed] of [["coding", "STAGE_COMPLETE", "coding", true], ["final", "TASK_COMPLETE", null, false]]) {
+      const flowId = `flow-${stopId}`;
+      await f.begin(stopId, { flowId, sourceInput: { origin: "HUMAN", id: `user-${stopId}` } });
+      await f.store.bindReviewScope({ sessionId: "session", stopId, scopeId: "task", classification: { stopClassification, stage } });
+      await f.store.settleReview({ sessionId: "session", stopId, status: "UNVERIFIED", assessmentFailed,
+        progress: { complete: false, reasonCode: assessmentFailed ? "REVIEWER_RUN_FAILED" : undefined } });
+      assert.equal((await f.store.inspect("session")).flows[flowId].closeReason, assessmentFailed ? "REVIEWER_RUN_FAILED" : "STOP_REVIEW_INCOMPLETE");
+      assert.equal((await f.begin(`after-${stopId}`, { flowId })).stop.releaseReason, "CORRECTION_FLOW_CLOSED");
+    }
+  });
+});
+
+test("an inconclusive proposal Stop leaves the user's coding Stop reviewable and repairable", async t => {
+  const f = await fixture(t);
+  await f.begin("proposal");
+  await f.store.bindReviewScope({ sessionId: "session", stopId: "proposal", scopeId: "task",
+    classification: { stopClassification: "STAGE_COMPLETE", stage: "proposal" } });
+  await f.store.settleReview({ sessionId: "session", stopId: "proposal", status: "UNVERIFIED",
+    progress: { complete: false, total: 1, passed: 0, unverified: 1 } });
+  assert.equal((await f.begin("coding")).stop.control, "WAIT_REVIEW");
+  await f.store.bindReviewScope({ sessionId: "session", stopId: "coding", scopeId: "task",
+    classification: { stopClassification: "STAGE_COMPLETE", stage: "codeing" } });
+  const admission = await f.reserve("coding");
+  assert.equal(admission.accounting, "RESERVED");
+  await f.observe(admission);
+  const state = await f.store.inspect("session");
+  assert.equal(state.flows.flow.closedAt, undefined);
+  assert.equal(state.used, 1);
 });
 
 test("AC-04: assessment releases after delivery and never reblocks while tracking start", async t => {

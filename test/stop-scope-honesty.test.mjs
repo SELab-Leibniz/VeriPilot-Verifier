@@ -28,7 +28,7 @@ async function writeFiles(root, files) {
 
 // The project uses the shipped OpenSpec template. Host state and the
 // transcript stay outside it, as they do for a real Gateway.
-async function fixture(t, { repository = true, capture = true, deviationOnly = true, fileQualityReviewEnabled = false, metrics = ['M16'], classification, verdict = () => null } = {}) {
+async function fixture(t, { repository = true, capture = true, deviationOnly = true, fileQualityReviewEnabled = false, metrics = ['M16'], classification, verdict = () => null, extraClaims = [] } = {}) {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-scope-'));
   t.after(() => fs.rm(base, { recursive: true, force: true }));
   const root = path.join(base, 'project');
@@ -45,7 +45,7 @@ async function fixture(t, { repository = true, capture = true, deviationOnly = t
   const task = await ensureTask({ projectRoot: root, sessionId: 'session' });
   const truth = { taskId: task.taskId, version: 1, digest: 'frozen', claims: ['A', 'B'].map(id => ({ claimId: id, revisionId: `${id}@1`,
     category: 'requirements', text: `Frozen original conversion obligation ${id}`, authority: 'USER_EXPLICIT', severity: 'HARD', status: 'ACTIVE',
-    applicability: 'CURRENT_TASK', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION' })) };
+    applicability: 'CURRENT_TASK', applicabilityKind: 'CURRENT_TASK', verificationTarget: 'IMPLEMENTATION' })).concat(extraClaims) };
   const truthPath = path.join(taskDirectory(root, task.taskId), 'ground-truth/current.json');
   await fs.mkdir(path.dirname(truthPath), { recursive: true });
   await fs.writeFile(truthPath, JSON.stringify(truth));
@@ -116,6 +116,37 @@ test('one unresolved original requirement is non-blocking while a strict majorit
       assert.equal(result.stop.review.metricObjectJudgements.length, 1);
       assert.doesNotMatch(result.stop.feedback, /UNVERIFIED/u);
     }
+  });
+});
+
+test('an inconclusive nonfinal Stop leaves the later completion Stop reviewable and repairable', async t => {
+  // A hard document duty keeps the workflow's document stages eligible.
+  const extraClaims = [{ claimId: 'C', revisionId: 'C@1', category: 'constraints', text: 'Frozen original proposal duty C',
+    authority: 'USER_EXPLICIT', severity: 'HARD', status: 'ACTIVE', applicability: 'CURRENT_TASK', applicabilityKind: 'CURRENT_TASK',
+    verificationTarget: 'ARTIFACT' }];
+  for (const { label, first, coverage } of [
+    { label: 'proposal stage', first: { stopClassification: 'STAGE_COMPLETE', stage: 'proposal' }, coverage: [2, 0, 'NO_APPLICABLE_STAGE_OBJECTS'] },
+    { label: 'waiting for user', first: WAITING, coverage: [2, 2, 'DELIVERED_WORK_SCOPE'] },
+  ]) await t.test(label, async subtest => {
+    const frame = { ...first };
+    let judge = () => 'UNVERIFIED';
+    const f = await fixture(subtest, { classification: frame, verdict: (item, index) => judge(item, index), extraClaims });
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value)\n');
+    const early = await f.stop('early-stop');
+    assert.equal(early.decision, 'allow');
+    assert.equal(early.stop.status, 'UNVERIFIED');
+    assert.deepEqual([early.stop.coverage.fullObjectCount, early.stop.coverage.selectedObjectCount, early.stop.coverage.scopeReasonCode], coverage,
+      `${early.stop.reasonCode}: ${early.feedback}`);
+    Object.assign(frame, { stopClassification: 'TASK_COMPLETE', stage: null, requiredUserInput: null });
+    judge = (_item, index) => index === 0 ? 'DEVIATION' : null;
+    await fs.writeFile(path.join(f.root, 'app.py'), 'def convert(value): return float(value) + 0\n');
+    const final = await f.stop('final-stop');
+    assert.equal(final.stop.status, 'DEVIATION', final.stop.reasonCode);
+    assert.equal(final.decision, 'block');
+    assert(final.stop.admission);
+    const ledger = await f.ledger();
+    assert.equal(ledger.stops['final-stop'].flowId, ledger.stops['early-stop'].flowId);
+    assert.equal(ledger.flows[ledger.stops['early-stop'].flowId].closedAt, undefined);
   });
 });
 
@@ -310,6 +341,24 @@ test('non-deviation-only Stop scope is unchanged', async t => {
   assert.equal(selectStopPopulation(population, undeclared, declarations).scopeSelection.reasonCode, 'STOP_STAGE_METRICS_UNDECLARED');
   assert.equal(selectStopPopulation({ ...population, reviewPolicy: { deviationOnly: true } }, undeclared, declarations).scopeSelection.reasonCode, 'DELIVERED_WORK_SCOPE');
   assert.throws(() => selectStopPopulation(population, { stopClassification: 'STAGE_COMPLETE', stage: 'unknown' }), { code: 'STOP_STAGE_SCOPE_INVALID' });
+
+  await t.test('a deviation-only pre-implementation stage defers original production obligations', () => {
+    const production = { objectId: 'M16:A', verificationTarget: 'IMPLEMENTATION' };
+    const delivered = { reviewPolicy: { deviationOnly: true }, metrics: { M01: [{ objectId: 'M01:A', verificationTarget: 'ARTIFACT' }],
+      M16: [production, { objectId: 'M16:R', verificationTarget: 'IMPLEMENTATION', programStanding: 'REGRESSION' }] } };
+    const stages = ['proposal', 'design', 'tasks', 'codeing'].map(stage => ({ stage, metrics: [] }));
+    const scope = (value, stage) => selectStopPopulation(value, { stopClassification: 'STAGE_COMPLETE', stage }, stages);
+    for (const stage of ['proposal', 'design', 'tasks']) {
+      const selected = scope(delivered, stage);
+      assert.deepEqual(Object.values(selected.metrics).flat().map(object => object.objectId), ['M01:A', 'M16:R']);
+      assert.equal(selected.scopeSelection.reasonCode, 'DELIVERED_WORK_SCOPE');
+      const empty = scope({ ...delivered, metrics: { M16: [production] } }, stage).scopeSelection;
+      assert.deepEqual([empty.reasonCode, empty.fullObjectCount, empty.selectedObjectCount], ['NO_APPLICABLE_STAGE_OBJECTS', 1, 0]);
+    }
+    assert.equal(scope(delivered, 'codeing').scopeSelection.selectedObjectCount, 3);
+    for (const stopClassification of ['INTERMEDIATE', 'WAITING_FOR_USER', 'BLOCKED_EXTERNAL'])
+      assert.equal(selectStopPopulation(delivered, { stopClassification }).scopeSelection.selectedObjectCount, 3);
+  });
 
   await t.test('intermediate Stop selects nothing', async subtest => {
     const f = await fixture(subtest, { deviationOnly: false, classification: WAITING, verdict: 'PASS' });
