@@ -3,10 +3,51 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts/helpers/native-integrated-module-case.mjs';
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
-import { skillE2eOptions, skillE2eProvider } from '../scripts/evaluate-skill-e2e.mjs';
+import { skillE2eOptions, skillE2eProvider, skillVerifierCommand } from '../scripts/evaluate-skill-e2e.mjs';
+
+test('Skill explicit provider retains streaming usage and the finite metered token envelope', () => {
+  const options = skillE2eOptions(['--base-url','https://example.test/v1','--model','example-model']);
+  const definition = { api:'openai-completions',baseUrl:options.baseUrl,model:options.model,
+    definition:{id:options.model,maxTokens:65536,compat:{thinkingFormat:'deepseek'}} };
+  const selected = skillE2eProvider(options,definition);
+  assert.equal(selected.definition.maxTokens,32768);
+  assert.equal(selected.definition.compat.supportsUsageInStreaming,true);
+  assert.equal(selected.definition.compat.maxTokensField,'max_tokens');
+  assert.equal(selected.definition.compat.thinkingFormat,'deepseek');
+  assert.equal(definition.definition.maxTokens,65536,'the supplied public profile stays unchanged');
+});
+
+test('Windows Skill verifier executes with a cleared environment and exact read-only permissions',
+  { skip: process.platform !== 'win32' }, async t => {
+    const temp=await fs.realpath(os.tmpdir()),root=await fs.mkdtemp(path.join(temp,'rc-skill-win-command-'));
+    assert(root.startsWith(temp+path.sep));
+    t.after(()=>fs.rm(root,{recursive:true,force:true}));
+    const fixture=await prepareIntegratedFixture({projectRoot:path.join(root,'project with space'),modelRef:'fixture/model'});
+    const privateFile=path.join(root,'private.txt'),writeFile=path.join(root,'must-not-write.txt');
+    await fs.writeFile(privateFile,'not a verifier input');
+    await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),`import fs from 'node:fs';
+if(process.env.RC_VERIFY_ISOLATION_SENTINEL)throw Error('Verifier inherited environment');
+for(const action of [()=>fs.readFileSync(${JSON.stringify(privateFile)}),()=>fs.writeFileSync(${JSON.stringify(writeFile)},'denied')]){
+ let code;try{action();}catch(error){code=error.code;}if(code!=='ERR_ACCESS_DENIED')throw Error('Verifier permissions expanded');
+}
+export const accept=value=>value+1;\n`);
+    await fs.writeFile(path.join(fixture.projectRoot,'docs/guide.md'),'finite numbers; accept(2) === 3; stateless; other inputs are outside scope.\n');
+    const {stdout}=await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
+      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,
+      env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH,RC_VERIFY_ISOLATION_SENTINEL:'must-not-reach-verifier'}});
+    const result=JSON.parse(stdout.trim());
+    assert.equal(result.codePassed,true);assert.equal(result.guidePassed,true);
+    assert.equal(await fs.stat(writeFile).then(()=>true,()=>false),false);
+    await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),'export const accept=value=>value;\n');
+    await assert.rejects(promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
+      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH}}),
+      error=>error.code===3&&JSON.parse(error.stdout.trim()).codePassed===false);
+  });
 
 test('Skill public provider metadata must match its explicit endpoint and model and cannot carry a key', () => {
   const options = skillE2eOptions(['--base-url', 'https://example.test/v1', '--model', 'example-model',
@@ -14,7 +55,9 @@ test('Skill public provider metadata must match its explicit endpoint and model 
   const provider = { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model,
     definition: { id: options.model, contextWindow: 128000, maxTokens: 32768 } };
   assert.equal(options.providerDefinition, 'public-provider.json');
-  assert.equal(skillE2eProvider(options, provider), provider);
+  const selected=skillE2eProvider(options, provider);
+  assert.equal(selected.baseUrl,provider.baseUrl);assert.equal(selected.model,provider.model);
+  assert.equal(provider.definition.maxTokens,32768);
   assert.throws(() => skillE2eProvider({ ...options, model: 'other' }, provider), /must match/);
   assert.throws(() => skillE2eProvider(options, { ...provider, apiKey: 'dummy-only' }), /Credentials/);
 });

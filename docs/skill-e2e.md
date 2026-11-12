@@ -22,6 +22,8 @@ Ark 路由另加 `--base-url https://ark.cn-beijing.volces.com/api/coding/v3 --m
 
 自定义 HTTPS 兼容端点可增加 `--provider-definition <公开模型定义.json>`。文件仅含 `api`、`baseUrl`、`model` 和 `definition`（该模型的公开配置），端点及模型必须与 `--base-url`、`--model` 完全一致；不允许凭据字段。网络计量边界只额外放行这个精确的 `/chat/completions` 地址，凭据仍只从 `RC_NATIVE_GATEWAY_API_KEY` 进入进程内存。专项入口当前只支持一个模型，业务与 RC 角色共用该模型。
 
+公开提供方定义保留其思考格式，同时使用专项已有的 32768 输出上限、`max_tokens` 字段及流式 usage 回执。Windows 下专项生成等价的 PowerShell 命令，清空验证子进程环境，再以 Node 权限模式只读三份原始验证文件；不需要 `/usr/bin/env`，不扩大验证器的文件、写入、网络或子进程权限。POSIX 命令保持原样。
+
 时间项分别控制单个审阅、一次终审及反馈、原始业务任务和整轮运行；原始业务不再被入口里的固定十分钟上限截断。所有阶段仍受整轮绝对截止时间约束，增大一个参数不会自动延长其他阶段。模型提供方的等待阈值随明确配置的整轮时间设置；未知用量或鉴权失败会停止继续发请求。
 
 专项样例接受宿主默认的可选执行参数；不要求模型凑齐 `workdir/timeout/yieldMs/background` 四个字段。仍只允许原始验证命令、只读输入及两份可编辑产物，后台执行和其他工作目录仍被拒绝。原有集成评测的严格参数模式默认保持。

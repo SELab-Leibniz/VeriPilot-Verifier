@@ -87,8 +87,39 @@ export function skillE2eProvider(options, definition) {
     nativeGatewayHostProfileProvider(provider);
     if (provider.baseUrl !== options.baseUrl || provider.model !== options.model)
       throw new Error('The public provider definition must match --base-url and --model.');
+    return { ...provider, definition: { ...provider.definition, maxTokens: 32768,
+      compat: { ...provider.definition.compat, supportsUsageInStreaming: true, maxTokensField: 'max_tokens',
+        supportsStore: false, supportsDeveloperRole: false,
+        requiresReasoningContentOnAssistantMessages: provider.definition.compat?.requiresReasoningContentOnAssistantMessages
+          ?? provider.definition.compat?.thinkingFormat === 'deepseek' } } };
   }
   return provider;
+}
+
+export function skillVerifierCommand(fixture, platform = process.platform) {
+  if (platform !== 'win32') return fixture.command;
+  const ps = value => `'${value.replaceAll("'", "''")}'`;
+  const files = ['app.mjs', 'docs/guide.md', 'tools/verify.mjs'].map(file => path.join(fixture.projectRoot, file));
+  // Create only the trusted verifier child with a cleared environment. Its
+  // Node permission grants are identical to the POSIX command's three files.
+  const args = ['--permission', ...files.map(file => `--allow-fs-read=${file}`), files[2]];
+  if (args.some(arg => arg.includes('"'))) throw new Error('Invalid Windows verifier path');
+  return '& { ' + [
+    '$rcVerifyStart = New-Object System.Diagnostics.ProcessStartInfo',
+    `$rcVerifyStart.FileName = ${ps(fixture.nodeBinary)}`,
+    '$rcVerifyStart.UseShellExecute = $false', '$rcVerifyStart.CreateNoWindow = $true',
+    '$rcVerifyStart.RedirectStandardOutput = $true', '$rcVerifyStart.RedirectStandardError = $true',
+    '$rcVerifyStart.StandardOutputEncoding = [System.Text.Encoding]::UTF8',
+    '$rcVerifyStart.StandardErrorEncoding = [System.Text.Encoding]::UTF8',
+    `$rcVerifyStart.WorkingDirectory = ${ps(fixture.projectRoot)}`,
+    '$rcVerifyStart.EnvironmentVariables.Clear()',
+    `$rcVerifyStart.EnvironmentVariables['SystemRoot'] = ${ps(process.env.SystemRoot ?? 'C:\\Windows')}`,
+    `$rcVerifyStart.Arguments = ${ps(args.map(arg => '"'+arg+'"').join(' '))}`,
+    '$rcVerifyChild = [System.Diagnostics.Process]::Start($rcVerifyStart)',
+    '$rcVerifyOut = $rcVerifyChild.StandardOutput.ReadToEndAsync()', '$rcVerifyErr = $rcVerifyChild.StandardError.ReadToEndAsync()',
+    'try { if (-not ($rcVerifyChild.WaitForExit(10000))) { $rcVerifyChild.Kill(); $rcVerifyCode = 124 } else { $rcVerifyCode = $rcVerifyChild.ExitCode }; [void]$rcVerifyOut.Wait(1000); [void]$rcVerifyErr.Wait(1000); if ($rcVerifyOut.IsCompleted) { [Console]::Out.Write($rcVerifyOut.Result) } else { $rcVerifyCode = 124 }; if ($rcVerifyErr.IsCompleted) { [Console]::Error.Write($rcVerifyErr.Result) } else { $rcVerifyCode = 124 } } finally { $rcVerifyChild.Dispose() }',
+    'exit $rcVerifyCode',
+  ].join('; ') + ' }';
 }
 
 export async function evaluateSkillE2e(options) {
@@ -100,6 +131,7 @@ export async function evaluateSkillE2e(options) {
   const deadlineAt = Date.now() + options.wallMs;
   const fixture = await prepareIntegratedFixture({ projectRoot: path.join(outputRoot, 'project'), modelRef: `openai/${options.model}`, deadlineAt,
     roleTimeoutMs: options.roleTimeoutMs, assessmentTimeoutMs: options.assessmentTimeoutMs });
+  fixture.command = skillVerifierCommand(fixture);
   fixture.businessTimeoutMs = options.businessTimeoutMs;
   fixture.strictExecOptions = false;
   fixture.controlledFault = options.scenario === 'repair';
@@ -149,7 +181,7 @@ export async function evaluateSkillE2e(options) {
         batch.abort(new Error(status.dispatchStopped));
     }, 1000);
     gateway = await createNativeGatewayEvaluation({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
-      projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence],
+      projectRoot: fixture.projectRoot, confineBusinessFiles: true, skipBootstrap: true, extraPluginPaths: [fence],
       businessToolNames: ['read', 'write', 'edit', 'exec'], phaseTimeoutMs: Math.ceil(options.wallMs / 1000) * 1000,
       provider, providerGuard: options.providerDefinition ? { ...batch, hostProfile: true } : batch });
     result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile, deadlineAt, signal: batch.signal });
