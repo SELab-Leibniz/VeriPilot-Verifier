@@ -13,6 +13,8 @@
     "check": "node ./scripts/cli.mjs",
     "build:plugin": "node ./scripts/build-plugin.mjs",
     "build:plugins": "node ./scripts/build-plugin.mjs --all",
+    "build:ma": "node ./scripts/build-ma-plugin.mjs",
+    "test:ma": "node --test test/ma-market-package.test.mjs test/ma-market-lifecycle.test.mjs test/ma-market-host.test.mjs",
     "test:artifacts": "node --test test/plugin-artifacts.test.mjs test/stop-task-package.test.mjs",
     "test": "node ./scripts/test.mjs"
   },
