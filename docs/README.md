@@ -3,6 +3,7 @@
 - [安装与概览](../README.md)
 - [快速开始](tutorial.md)
 - [MatrixAssistant / OpenClaw 宿主指南](openclaw.md)
+- [MatrixAssistant 市场发行包](ma-market.md)
 - [until_pass 多会话调度与控制页](until-pass-dispatch.md)
 - [Skill 看护效率方案与验证](skill-care-efficiency.md)
 - [Session 项目选择与隔离](session-projects.md)
