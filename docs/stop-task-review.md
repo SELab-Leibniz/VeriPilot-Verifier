@@ -67,6 +67,8 @@ M16 的一个原始条目可能包含多个效果和失败分支。PASS 必须�
 
 其他 RC 模块可直接从 `lib/semantic-graph.mjs` 导入 `buildSemanticGraph(projectRoot, options)`，再调用返回值的 `query({ operation, symbol, file, offset })`。`incoming` 找调用者和测试，`outgoing` 找调用、写入及控制语句位置。不能解析的调用保留调用点。查询使用项目相对路径，`partial` 表示索引有遗漏，`unavailable` 表示无法建立索引。图记录是静态导航线索，结论仍以原始源码和正常引文为依据。
 
+`context`（包括 `incoming` / `outgoing`）还会返回有界的 `testBoundaries`：关联调用者、依赖调用点、把该依赖作为参数传入测试辅助函数的位置，以及之后的调用或写入位置。测试的 `beforeEach` 等钩子保留自己的行号范围。结果轮流覆盖不同调用者，优先关联实际调用该入口的测试文件，避免单一测试夹具占满首屏。Stop 的 `currentSemanticLinks` 也携带这些关系。图不推断辅助函数是否真的替换依赖，也不证明后续调用在同一分支可达；澄清和终审共用的代码理解 skill 引导模型读取源码、测试设置和返回值，再判断各入口的保证。
+
 过程义务还要核对执行者和原始事件顺序。修改前的读取不能证明修改后回读，私有审查者自己的 `source_read` 只能证明当前内容，不能替代业务执行者此前的操作。文件整体的编码/语言适用性不能从一页 ASCII 片段反推；证据范围不足时保留 UNVERIFIED，不虚构执行或豁免。条件性项目规范须按原触发条件设置逐项 applicabilityKind，不能仅因属于当前仓库就全部设为无条件当前任务。
 
 M16 见证中的写入指生产程序初始化及运行时操作；开发者编辑源码不是应用对存储状态的写入。资源引用须为本次提交顶层 citeIds 中的当前生产源码引用。校验错误会指出具体 stateTargets 下标和字段，保留原证据边界；有状态见证仍须显式带 `statelessReason: ""`，结构继续使用 version 1。

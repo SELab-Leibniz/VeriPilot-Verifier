@@ -28,6 +28,90 @@ test('test-helper argument hints preserve reference identity and exclude control
   assert(scanSemanticSource(source, 'store.ts').uses.every(use => use.argumentTo === undefined));
 });
 
+test('joins caller effects to dependency test arguments and preserves setup hook locations', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-boundary-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const files = {
+    'remote.ts': [
+      'export class Remote {',
+      '  static send(value: string) { return value.length > 0 }',
+      '}',
+    ],
+    'journal.ts': ['export class Journal { static append(value: string) {} }'],
+    'panel.ts': [
+      "import { Remote } from './remote'",
+      "import { Journal } from './journal'",
+      'export class Panel {',
+      '  static submit(value: string) {',
+      '    if (!Remote.send(value)) return false',
+      '    Journal.append(value)',
+      '    return true',
+      '  }',
+      '}',
+    ],
+    'panel.test.ts': [
+      "import { Remote } from './remote'",
+      "import { Panel } from './panel'",
+      'beforeEach(() => {',
+      '  doubles.replace(Remote, Remote.send).returns(true)',
+      '})',
+      'afterEach(function () { doubles.restore(Remote, Remote.send) })',
+      "it('stores a value', () => { Panel.submit('hello') })",
+      'const onlyReference = Remote.send',
+    ],
+    'unrelated.test.ts': [
+      'class Remote { static send() {} }',
+      'beforeAll(() => { doubles.replace(Remote, Remote.send) })',
+    ],
+    'production.ts': [
+      "import { Remote } from './remote'",
+      'function setup() { return Remote.send }',
+      'setup()',
+    ],
+  };
+  await Promise.all(Object.entries(files).map(([file, lines]) => fs.writeFile(path.join(root, file), lines.join('\n'))));
+  const graph = await buildSemanticGraph(root, { snapshotPaths: Object.keys(files), budgetMs: 5000 });
+  const { testBoundaries } = graph.query({ operation: 'context', symbol: 'Panel.submit' });
+  assert.equal(testBoundaries.length, 2, 'a plain reference and a shadowed class do not create test arguments');
+  const boundary = testBoundaries.find(row => row.testArgument.within === 'beforeEach');
+  assert.equal(boundary.caller.qualified, 'Panel.submit');
+  assert.equal(boundary.call.target.symbol, 'Remote.send');
+  assert.equal(boundary.call.line, 5);
+  assert.deepEqual(boundary.testArgument.argumentTo, { symbol: 'doubles.replace', line: 4, argumentIndex: 1 });
+  assert.deepEqual(boundary.testArgument.testScope,
+    { path: 'panel.test.ts', symbol: 'beforeEach', kind: 'test-hook', line: 3, endLine: 5 });
+  assert(boundary.laterSites.some(site => site.target.symbol === 'Journal.append' && site.line === 6));
+  assert.equal(testBoundaries.find(row => row.testArgument.within === 'afterEach').testArgument.testScope.line, 6);
+  const dependency = graph.query({ operation: 'incoming', symbol: 'Remote.send', file: 'remote.ts' });
+  assert(dependency.testBoundaries.some(row => row.caller.qualified === 'Panel.submit'));
+  const [impact] = graph.affectedSymbols([{ path: 'remote.ts', hunks: [[2, 2]] }]);
+  assert(impact.testBoundaries.some(row => row.testArgument.testScope.symbol === 'beforeEach'
+    && row.laterSites.some(site => site.target.symbol === 'Journal.append')),
+  'a changed callee exposes the independently callable caller and its later effect to Stop');
+  assert.equal(graph.query({ operation: 'outline', file: 'production.ts' }).hits.some(row => row.kind === 'test-hook'), false);
+  assert.equal(graph.query({ operation: 'context', symbol: 'send' }).testBoundaries, undefined,
+    'ambiguous definitions do not produce a guessed route');
+  await fs.appendFile(path.join(root, 'panel.test.ts'), '\n' + Array.from({ length: 8 }, () =>
+    'beforeEach(() => { doubles.replace(Remote, Remote.send) })').join('\n'));
+  await fs.writeFile(path.join(root, 'other.ts'), [
+    "import { Remote } from './remote'",
+    'export class Other { static submit() { return Remote.send("hi") } }',
+  ].join('\n'));
+  await fs.writeFile(path.join(root, 'other.test.ts'), [
+    "import { Remote } from './remote'",
+    "import { Other } from './other'",
+    'beforeEach(() => { doubles.replace(Remote, Remote.send) })',
+    "it('calls another entry', () => { Other.submit() })",
+  ].join('\n'));
+  const crowded = await buildSemanticGraph(root,
+    { snapshotPaths: [...Object.keys(files), 'other.ts', 'other.test.ts'], budgetMs: 5000 });
+  const routes = crowded.query({ operation: 'incoming', symbol: 'Remote.send', file: 'remote.ts' }).testBoundaries;
+  assert.equal(routes.length, 6);
+  assert(routes.some(row => row.caller.qualified === 'Panel.submit'));
+  assert(routes.some(row => row.caller.qualified === 'Other.submit' && row.testArgument.path === 'other.test.ts'),
+    'prefer tests exercising each caller and reserve space across callers instead of filling the result from one fixture');
+});
+
 test('indexes current definitions and relative dependencies in both directions', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-graph-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
