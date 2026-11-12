@@ -8,7 +8,40 @@ import { promisify } from 'node:util';
 import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts/helpers/native-integrated-module-case.mjs';
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
-import { skillE2eOptions, skillE2eProvider, skillVerifierCommand } from '../scripts/evaluate-skill-e2e.mjs';
+import { skillE2eOptions, skillE2eProvider, skillVerifierCommand, skillFinalStopAccepted } from '../scripts/evaluate-skill-e2e.mjs';
+
+test('Skill native completion accepts a fully verified deviation-only Stop and rejects incomplete or foreign evidence', () => {
+  const complete = {
+    authenticTerminals: { complete: true, terminals: [{runId:'original',status:'ok'},{runId:'repair',status:'ok'}],
+      dispatch:{phase:'IDLE',pending:0,reviewStatus:'NO_DEVIATION_FOUND',completedRuns:['original','repair']} },
+    task:{verification:{status:'NO_DEVIATION_FOUND',assessmentId:'repair:stop',evaluationId:'final',
+      coverage:{scanCompleted:true,classification:'TASK_COMPLETE',fullObjectCount:2,selectedObjectCount:2}}},
+    evaluation:{evaluationId:'final',outcome:{status:'NO_DEVIATION_FOUND',verificationIncomplete:false},unverifiedItems:[]}
+  };
+  assert.equal(skillFinalStopAccepted(complete),true);
+  const legacy=structuredClone(complete);
+  legacy.authenticTerminals.dispatch.reviewStatus=legacy.task.verification.status=legacy.evaluation.outcome.status='PASS';
+  assert.equal(skillFinalStopAccepted(legacy),true);
+  const reject=mutate=>{const input=structuredClone(complete);mutate(input);assert.equal(skillFinalStopAccepted(input),false);};
+  for(const mutate of [
+    x=>x.authenticTerminals.complete=false,
+    x=>delete x.authenticTerminals.terminals,
+    x=>x.authenticTerminals.terminals[1].status='error',
+    x=>x.authenticTerminals.dispatch.pending=1,
+    x=>x.authenticTerminals.dispatch.phase='RUNNING',
+    x=>x.authenticTerminals.dispatch.completedRuns=['original'],
+    x=>x.task.verification.assessmentId='original:stop',
+    x=>x.task.verification.coverage.scanCompleted=false,
+    x=>x.task.verification.coverage.classification='STAGE_COMPLETE',
+    x=>x.task.verification.coverage.selectedObjectCount=1,
+    x=>x.task.verification.coverage.fullObjectCount=x.task.verification.coverage.selectedObjectCount=0,
+    x=>x.evaluation.evaluationId='stale',
+    x=>x.evaluation.outcome.verificationIncomplete=true,
+    x=>x.evaluation.outcome.status='UNVERIFIED',
+    x=>x.evaluation.unverifiedItems=['unresolved'],
+    x=>delete x.evaluation.unverifiedItems
+  ])reject(mutate);
+});
 
 test('Skill explicit provider retains streaming usage and the finite metered token envelope', () => {
   const options = skillE2eOptions(['--base-url','https://example.test/v1','--model','example-model']);

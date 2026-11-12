@@ -26,7 +26,7 @@ export function skillE2eOptions(args) {
     businessTimeoutMs: positive('--business-timeout-ms', 1200000),
     hostRoot: value('--host-root') ?? '/opt/homebrew/lib/node_modules/openclaw', output: value('--output'),
     baseUrl: value('--base-url') ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model: value('--model') ?? 'glm-5.3-flash',
-    providerDefinition: value('--provider-definition'),
+    providerDefinition: value('--provider-definition'), auditExisting: value('--audit-existing'), auditOutput: value('--audit-output'),
     maxWatchTurns: Number(value('--max-watch-turns') ?? 1), intervalTurns: Number(value('--check-interval-turns') ?? 1) };
   if (!['repair', 'success'].includes(options.scenario)) throw new Error('Use --scenario repair or success');
   if (!Number.isSafeInteger(options.maxWatchTurns) || options.maxWatchTurns < 1 || options.maxWatchTurns > 10000)
@@ -122,6 +122,82 @@ export function skillVerifierCommand(fixture, platform = process.platform) {
   ].join('; ') + ' }';
 }
 
+export function skillFinalStopAccepted({ authenticTerminals: terminal, task, evaluation }) {
+  const dispatch=terminal?.dispatch, verification=task?.verification, coverage=verification?.coverage;
+  const statuses=['PASS','NO_DEVIATION_FOUND'], last=terminal?.terminals?.at(-1);
+  return Boolean(terminal?.complete === true && Array.isArray(terminal.terminals) && terminal.terminals.length > 0
+    && terminal.terminals.every(run => run.status === 'ok')
+    && dispatch?.phase === 'IDLE' && dispatch.pending === 0 && statuses.includes(dispatch.reviewStatus)
+    && dispatch.completedRuns?.includes(last.runId)
+    && statuses.includes(verification?.status) && verification.assessmentId?.startsWith(last.runId+':')
+    && evaluation?.evaluationId === verification.evaluationId && statuses.includes(evaluation.outcome?.status)
+    && evaluation.outcome.verificationIncomplete === false
+    && Array.isArray(evaluation.unverifiedItems) && evaluation.unverifiedItems.length === 0
+    && coverage?.scanCompleted === true && coverage.classification === 'TASK_COMPLETE'
+    && coverage.fullObjectCount > 0 && coverage.selectedObjectCount === coverage.fullObjectCount);
+}
+
+export async function auditSkillE2e(outputRoot, outputFile) {
+  outputRoot=path.resolve(outputRoot);
+  const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
+  const rawFile=path.join(outputRoot,'result.json'),rawBytes=await fs.readFile(rawFile),raw=JSON.parse(rawBytes);
+  const result=structuredClone(raw.result),fixture=await read(path.join(outputRoot,'fixture.json'));
+  const task=await read(path.join(outputRoot,'actual-final-task.json'));
+  const ledger=await read(path.join(outputRoot,'actual-final-ledger.json'));
+  const transport=await read(path.join(outputRoot,'gateway-batch-result.json'));
+  const evidenceRoot=path.resolve(result.taskEvidenceRoot??'');
+  if (!evidenceRoot.startsWith(path.join(outputRoot,'project')+path.sep)) throw new Error('Foreign Skill evidence root');
+  const skillRoot=path.join(evidenceRoot,'skills/delivery-verifier');
+  const graph=await read(path.join(skillRoot,'skill-ground-truth.json'));
+  const evaluation=await read(path.join(evidenceRoot,'evaluations',task.verification.evaluationId+'.json'));
+  const findings=[];
+  for(const file of await fs.readdir(path.join(skillRoot,'evaluations'))){
+    const value=await read(path.join(skillRoot,'evaluations',file));findings.push(...(value.review?.findings??[]));
+  }
+  const admissionIds=Object.keys(ledger.admissions??{}).filter(id=>ledger.admissions[id].accounting==='USED');
+  const receipts=[];
+  for(const receipt of transport.requests){
+    if(receipt.status!==200)continue;
+    const payload=await read(path.join(outputRoot,`request-${receipt.request}.json`));
+    if(hash(Buffer.from(JSON.stringify(payload)))!==receipt.payloadSha256) throw new Error('Stored provider request changed');
+    receipts.push(...unifiedSkillFeedbackReceipts({payload,graph,findings,admissionIds,request:receipt.request}));
+  }
+  let immutableInputs=true;
+  for(const [file,expected] of Object.entries(fixture.immutableHashes))
+    immutableInputs&&=hash(await fs.readFile(path.join(fixture.projectRoot,file)))===expected;
+  const fresh=result.actionEvidence?.freshVerification,writeAt=result.actionEvidence?.lastDeliveryWriteAt??0;
+  const currentHashes={};for(const file of ['app.mjs','docs/guide.md'])currentHashes[file]=hash(await fs.readFile(path.join(fixture.projectRoot,file)));
+  const freshHashes=fresh?.exitCode===0 && fresh.report?.appSha256===currentHashes['app.mjs']
+    && fresh.report?.guideSha256===currentHashes['docs/guide.md'] && fresh.startedAt>=writeAt;
+  const watchers=Object.values(task.watchers??{});
+  const checks={...result.checks,
+    automaticSkillRead:result.actionEvidence?.pairedSkillRead===true,
+    realGraphExtraction:result.actualPrivateRoles?.['ground-truth-extractor']>0,
+    realSkillReviewer:result.actualPrivateRoles?.['skill-reviewer']>0,
+    currentWatcherPass:watchers.some(w=>w.status==='PASS'&&w.sourceInterpretationChecked===true),
+    freshVerifierSuccess:result.actionEvidence?.freshSuccessfulVerificationObserved===true&&freshHashes,
+    authenticTerminal:skillFinalStopAccepted({authenticTerminals:result.authenticTerminals,task,evaluation}),
+    privateRunsSettled:result.privateRuns?.length>0&&result.privateRuns.every(run=>run.status==='SETTLED'),
+    immutableInputs,realMeteredRun:transport.realProviderRequests>0&&transport.simulatedDispatches===0
+      &&transport.budget?.inFlightRequests===0&&!transport.budget.halted&&!transport.stopped&&!transport.dispatchStopped,
+  };
+  if(raw.scenario==='repair'){
+    const original=result.authenticTerminals?.terminals?.find(run=>run.runId===result.business.originalRunId);
+    checks.skillDeviationObserved=findings.length>0;
+    checks.feedbackObserved=receipts.some(receipt=>fresh?.runId===`rc-stop-${receipt.admissionId}`
+      &&writeAt>(original?.endedAt??Infinity));
+    checks.businessRepairObserved=result.actionEvidence?.actualDeliveryWrites?.['app.mjs']>0;
+  }else checks.noUnexpectedSkillFeedback=receipts.length===0;
+  const accepted=Object.values(checks).every(Boolean)&&!raw.failure&&!raw.cleanupErrors?.length;
+  const report={scenario:raw.scenario,state:accepted?'PASS':'INCOMPLETE',checks,rawState:raw.state,
+    rawResultSha256:hash(rawBytes),source:'Read-only re-audit of existing native terminals, original graph, used admissions and successful real provider request receipts; no model calls.',
+    skillFeedbackReceipts:receipts,uniqueFeedbackAdmissions:[...new Set(receipts.map(r=>r.admissionId))],
+    realProviderRequests:transport.realProviderRequests,metricObjects:((evaluation.metricReport??evaluation.outcome.report)?.metrics??[]).find(m=>m.metricId==='M08'),
+    originalResultUnchanged:hash(await fs.readFile(rawFile))===hash(rawBytes)};
+  await fs.writeFile(path.resolve(outputFile??path.join(outputRoot,'audit-current-schema.json')),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+  return report;
+}
+
 export async function evaluateSkillE2e(options) {
   const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
   const provider = skillE2eProvider(options, options.providerDefinition
@@ -199,6 +275,8 @@ export async function evaluateSkillE2e(options) {
     }
     result.skillFeedbackReceipts = skillFeedbackReceipts;
     const task = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-final-task.json'), 'utf8'));
+    const finalEvaluation = result.taskEvidenceRoot && task.verification?.evaluationId
+      ? JSON.parse(await fs.readFile(path.join(result.taskEvidenceRoot,'evaluations',task.verification.evaluationId+'.json'),'utf8')) : null;
     const watchers = Object.values(task?.watchers ?? {});
     const assessments = [], observedFindings = [];
     const evaluationRoot = result.taskEvidenceRoot && path.join(result.taskEvidenceRoot, 'skills/delivery-verifier/evaluations');
@@ -224,7 +302,7 @@ export async function evaluateSkillE2e(options) {
       realSkillReviewer: result.actualPrivateRoles['skill-reviewer'] > 0,
       currentWatcherPass: watchers.some(w => w.status === 'PASS' && w.sourceInterpretationChecked === true),
       freshVerifierSuccess: result.actionEvidence.freshSuccessfulVerificationObserved === true,
-      authenticTerminal: result.authenticTerminals?.complete === true && result.authenticTerminals?.dispatch?.reviewStatus === 'PASS',
+      authenticTerminal: skillFinalStopAccepted({authenticTerminals:result.authenticTerminals,task,evaluation:finalEvaluation}),
       privateRunsSettled: result.privateRuns.length > 0 && result.privateRuns.every(run => run.status === 'SETTLED'),
       ...(options.scenario === 'repair' ? {
         controlledFaultApplied: await fs.stat(path.join(outputRoot, 'fault-injection.json')).then(stat => stat.size > 0, () => false),
@@ -250,7 +328,8 @@ export async function evaluateSkillE2e(options) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const report = await evaluateSkillE2e(skillE2eOptions(process.argv.slice(2)));
-  console.log(JSON.stringify({ state: report.state, outputRoot: report.outputRoot, checks: report.result?.checks, failure: report.failure }));
+  const options=skillE2eOptions(process.argv.slice(2));
+  const report = options.auditExisting ? await auditSkillE2e(options.auditExisting,options.auditOutput) : await evaluateSkillE2e(options);
+  console.log(JSON.stringify({ state: report.state, outputRoot: report.outputRoot, checks: report.result?.checks??report.checks, failure: report.failure }));
   process.exit(report.state === 'PASS' ? 0 : 1);
 }

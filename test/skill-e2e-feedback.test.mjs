@@ -18,3 +18,26 @@ test('unified native Skill feedback requires the same graph, a real Skill deviat
     { payload: { ...payload, messages: [{ role: 'user', content: message.replace('[runtime-corrector:stop-feedback]', '') }] } }])
     assert.deepEqual(unifiedSkillFeedbackReceipts({ ...input, ...changed }), []);
 });
+
+test('current structured Skill findings bind ACTIVE assessments to the original source-bound graph', () => {
+  const graph={skillId:'demo',digest:'graph',constraints:[{constraintId:'rule-1',sourceBinding:'source-sha',sourceUnitIds:['rule-1']}]};
+  const findings=[{expectedConstraint:'Verify after repairing the delivery.',reason:'The failed execution was followed by a false completion.',
+    actualEvidence:['actual exit 3'],conditionAssessments:[{objectId:'rule-1',conditionAssessment:{activation:'ACTIVE'}}]}];
+  const payload={tools:[{function:{name:'exec'}}],messages:[{role:'user',content:
+    '[runtime-corrector:stop-feedback]\nM08:demo:rule-1 (demo@1): failed verification.\n[runtime-corrector:stop-reference]\n准入 used-admission'}]};
+  const input={payload,graph,findings,admissionIds:['used-admission'],request:37};
+  assert.equal(unifiedSkillFeedbackReceipts(input)[0].admissionId,'used-admission');
+  const reject=mutate=>{const copy=structuredClone(input);mutate(copy);assert.deepEqual(unifiedSkillFeedbackReceipts(copy),[]);};
+  for(const mutate of [
+    x=>x.findings[0].conditionAssessments[0].objectId='foreign',
+    x=>x.findings[0].conditionAssessments[0].conditionAssessment.activation='INACTIVE',
+    x=>x.findings[0].conditionAssessments=[],
+    x=>x.findings[0].actualEvidence=[],
+    x=>x.findings[0].actualEvidence='unstructured claim',
+    x=>x.findings[0].reason='',
+    x=>x.findings[0].expectedConstraint='',
+    x=>x.graph.constraints[0].sourceBinding=null,
+    x=>x.graph.constraints[0].sourceUnitIds=['foreign'],
+    x=>x.admissionIds=['unrelated']
+  ])reject(mutate);
+});

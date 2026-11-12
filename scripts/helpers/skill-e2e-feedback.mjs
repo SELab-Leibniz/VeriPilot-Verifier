@@ -6,7 +6,12 @@ export function unifiedSkillFeedbackReceipts({ payload, graph, findings, admissi
   const nodes = (graph?.constraints ?? []).filter(node => findings.some(finding =>
     finding.violatedGroundTruthIds?.includes(node.constraintId)
     || finding.expectedConstraint?.includes(`constraint/${node.constraintId}`)
-    || finding.expectedConstraint?.startsWith(`${node.constraintId} (`)));
+    || finding.expectedConstraint?.startsWith(`${node.constraintId} (`)
+    || Boolean(node.sourceBinding && node.sourceUnitIds?.includes(node.constraintId)
+      && finding.reason?.trim() && finding.expectedConstraint?.trim()
+      && Array.isArray(finding.actualEvidence) && finding.actualEvidence.length > 0
+      && finding.conditionAssessments?.some(item => item.objectId === node.constraintId
+        && item.conditionAssessment?.activation === 'ACTIVE'))));
   const receipts = [];
   for (const message of payload.messages ?? []) {
     const text = message.content;
