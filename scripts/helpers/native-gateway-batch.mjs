@@ -24,14 +24,22 @@ export function gatewayBatchDestination(input, init, providerUrl = 'https://open
   throw new Error('GATEWAY_EXTERNAL_DESTINATION_DENIED');
 }
 
-export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRoot, projectRoot, manifest, offline = false }) {
+export function gatewayBatchProviderUrl(provider, explicitProviderUrl) {
+  const url = new URL(`${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`);
+  const pinned = ['https://open.bigmodel.cn/api/coding/paas/v4/chat/completions',
+    'https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions'];
+  assert(url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash,
+    'Invalid metered provider route');
+  assert(pinned.includes(url.href) || explicitProviderUrl === url.href, 'Unsupported metered provider route');
+  return url.href;
+}
+
+export async function installNativeGatewayBatch({ hostRoot, sourceRoot, outputRoot, projectRoot, manifest, offline = false, explicitProviderUrl }) {
   assert.equal(manifest.kind, 'native-gateway-original-loop-v1');
   assert.equal(manifest.credentialEnv, 'RC_NATIVE_GATEWAY_API_KEY');
   const provider = manifest.provider ?? { baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' };
-  const providerUrl = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
+  const providerUrl = gatewayBatchProviderUrl(provider, explicitProviderUrl);
   const providerOrigin = new URL(providerUrl).origin;
-  assert(['https://open.bigmodel.cn/api/coding/paas/v4/chat/completions',
-    'https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions'].includes(providerUrl), 'Unsupported metered provider route');
   const limits = validateNativeStopBatchLimits(manifest.limits);
   for (const [file, sha] of Object.entries(manifest.sourceHashes))
     assert.equal(digest(await fs.readFile(path.join(sourceRoot, file))), sha, `Unfrozen source: ${file}`);

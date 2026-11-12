@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createNativeGatewayEvaluation } from './helpers/native-gateway-evaluation.mjs';
+import { createNativeGatewayEvaluation, nativeGatewayHostProfileProvider } from './helpers/native-gateway-evaluation.mjs';
 import { installNativeGatewayBatch } from './helpers/native-gateway-batch.mjs';
 import { prepareIntegratedFixture, createIntegratedFencePlugin } from './helpers/native-integrated-module-case.mjs';
 import { runIntegratedOriginalCase } from './helpers/native-integrated-original-case.mjs';
@@ -26,6 +26,7 @@ export function skillE2eOptions(args) {
     businessTimeoutMs: positive('--business-timeout-ms', 1200000),
     hostRoot: value('--host-root') ?? '/opt/homebrew/lib/node_modules/openclaw', output: value('--output'),
     baseUrl: value('--base-url') ?? 'https://open.bigmodel.cn/api/coding/paas/v4', model: value('--model') ?? 'glm-5.3-flash',
+    providerDefinition: value('--provider-definition'),
     maxWatchTurns: Number(value('--max-watch-turns') ?? 1), intervalTurns: Number(value('--check-interval-turns') ?? 1) };
   if (!['repair', 'success'].includes(options.scenario)) throw new Error('Use --scenario repair or success');
   if (!Number.isSafeInteger(options.maxWatchTurns) || options.maxWatchTurns < 1 || options.maxWatchTurns > 10000)
@@ -78,8 +79,22 @@ output:
 `;
 }
 
+export function skillE2eProvider(options, definition) {
+  // This optional file contains public endpoint/model metadata only. The actual
+  // key must still enter exclusively through RC_NATIVE_GATEWAY_API_KEY.
+  const provider = definition ?? { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model };
+  if (definition) {
+    nativeGatewayHostProfileProvider(provider);
+    if (provider.baseUrl !== options.baseUrl || provider.model !== options.model)
+      throw new Error('The public provider definition must match --base-url and --model.');
+  }
+  return provider;
+}
+
 export async function evaluateSkillE2e(options) {
   const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
+  const provider = skillE2eProvider(options, options.providerDefinition
+    ? JSON.parse(await fs.readFile(options.providerDefinition, 'utf8')) : undefined);
   const outputRoot = path.resolve(options.output ?? path.join(sourceRoot, '.runtime-correction/skill-e2e-hour', `${options.scenario}-${randomUUID()}`));
   await fs.mkdir(outputRoot, { recursive: true });
   const deadlineAt = Date.now() + options.wallMs;
@@ -124,7 +139,8 @@ export async function evaluateSkillE2e(options) {
   const redact = error => String(error?.message ?? error).replaceAll(batch?.credential() ?? 'never-a-credential', '[REDACTED_CREDENTIAL]').slice(0, 1500);
   try {
     batch = await installNativeGatewayBatch({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
-      projectRoot: fixture.projectRoot, manifest });
+      projectRoot: fixture.projectRoot, manifest,
+      explicitProviderUrl: options.providerDefinition ? `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions` : undefined });
     if (fixture.controlledFault) faultTransport = installSkillFaultTransport({ outputRoot });
     process.on('SIGINT', cancel); process.on('SIGTERM', cancel);
     boundaryMonitor = setInterval(() => {
@@ -135,7 +151,7 @@ export async function evaluateSkillE2e(options) {
     gateway = await createNativeGatewayEvaluation({ sourceRoot, hostRoot: options.hostRoot, outputRoot,
       projectRoot: fixture.projectRoot, confineBusinessFiles: true, extraPluginPaths: [fence],
       businessToolNames: ['read', 'write', 'edit', 'exec'], phaseTimeoutMs: Math.ceil(options.wallMs / 1000) * 1000,
-      provider: { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model }, providerGuard: batch });
+      provider, providerGuard: options.providerDefinition ? { ...batch, hostProfile: true } : batch });
     result = await runIntegratedOriginalCase({ gateway, fixture, outputRoot, bindingFile, deadlineAt, signal: batch.signal });
     const session = JSON.parse(await fs.readFile(path.join(outputRoot, 'actual-business-session.json'), 'utf8'));
     const skillFeedbackReceipts = (session.messages ?? []).map(record => record.message ?? record)

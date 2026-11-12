@@ -5,9 +5,19 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import { createHash } from 'node:crypto';
-import { gatewayBatchDestination, installNativeGatewayBatch } from '../scripts/helpers/native-gateway-batch.mjs';
+import { gatewayBatchDestination, installNativeGatewayBatch, gatewayBatchProviderUrl } from '../scripts/helpers/native-gateway-batch.mjs';
 import { observeIntegratedSettlement } from '../scripts/helpers/native-integrated-original-case.mjs';
 import { awaitHarborGatewaySettlement } from '../scripts/bench/harbor-gateway-controller.mjs';
+
+test('a public custom provider route needs explicit exact HTTPS admission', () => {
+  const provider = { baseUrl: 'https://example.test/v1', model: 'example-model' };
+  const url = 'https://example.test/v1/chat/completions';
+  assert.throws(() => gatewayBatchProviderUrl(provider), /Unsupported/);
+  assert.equal(gatewayBatchProviderUrl(provider, url), url);
+  assert.throws(() => gatewayBatchProviderUrl(provider, 'https://other.test/v1/chat/completions'), /Unsupported/);
+  for (const baseUrl of ['http://example.test/v1', 'https://user:pass@example.test/v1', 'https://example.test/v1?q=1', 'https://example.test/v1#x'])
+    assert.throws(() => gatewayBatchProviderUrl({ ...provider, baseUrl }, baseUrl+'/chat/completions'), /Invalid/);
+});
 
 async function boundaryFixture(t, { wire = 'wait', wallMs = 5000 } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'native-boundary-control-'));

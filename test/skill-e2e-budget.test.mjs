@@ -6,7 +6,18 @@ import path from 'node:path';
 import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts/helpers/native-integrated-module-case.mjs';
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
-import { skillE2eOptions } from '../scripts/evaluate-skill-e2e.mjs';
+import { skillE2eOptions, skillE2eProvider } from '../scripts/evaluate-skill-e2e.mjs';
+
+test('Skill public provider metadata must match its explicit endpoint and model and cannot carry a key', () => {
+  const options = skillE2eOptions(['--base-url', 'https://example.test/v1', '--model', 'example-model',
+    '--provider-definition', 'public-provider.json']);
+  const provider = { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model,
+    definition: { id: options.model, contextWindow: 128000, maxTokens: 32768 } };
+  assert.equal(options.providerDefinition, 'public-provider.json');
+  assert.equal(skillE2eProvider(options, provider), provider);
+  assert.throws(() => skillE2eProvider({ ...options, model: 'other' }, provider), /must match/);
+  assert.throws(() => skillE2eProvider(options, { ...provider, apiKey: 'dummy-only' }), /Credentials/);
+});
 
 test('configured original business timeout can exceed ten minutes but remains bounded by the case deadline', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-skill-budget-'));

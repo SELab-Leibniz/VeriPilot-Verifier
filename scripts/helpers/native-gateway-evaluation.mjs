@@ -129,7 +129,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   compaction = null, contextTokens, logLevel = 'warn', provider, reviewerProvider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document'
-    || providerGuard?.kind === 'authorized_simplify_experiment' && providerGuard.hostProfile === true;
+    || ['authorized_simplify_experiment', 'metered_native_gateway_batch'].includes(providerGuard?.kind) && providerGuard.hostProfile === true;
   const coding = !provider ? null : hostProfile ? nativeGatewayHostProfileProvider(provider, phaseTimeoutMs, hostProfileAuthMarker)
     : nativeGatewayCodingProvider(provider, contextWindow, phaseTimeoutMs, { allowLocalRelay: providerGuard?.kind === 'relay_native_gateway_batch' });
   if (reviewerProvider) {
