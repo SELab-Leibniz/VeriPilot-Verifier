@@ -330,7 +330,7 @@ requirementFrame:
   `disposition` 取 `CHECKED`、`DEVIATION` 或 `UNVERIFIED` 之一。
 - **校验规则。**
   - 每个框架项的 id 恰好出现一次。
-  - `CHECKED`：至少给出一个本次审查已签发的 citeId，校验方式沿用现有的 citeId 校验。
+  - `CHECKED`：给出逐项核对的文字理由；不要求引用。以原始要求、实际调用入口和副作用为准，不将框架建议本身当作符合要求的证明。
   - `DEVIATION`：`objectId` 必须指向本次审查中已保存为 DEVIATION 的清单对象，或 `submit_finding` 的结果。
   - `UNVERIFIED`：`reason` 非空。
 - **校验失败。** 按现有的 `taskError` 模式返回 `REVIEW_FRAME_DISPOSITION_REQUIRED`，让审查模型在会话内补齐。

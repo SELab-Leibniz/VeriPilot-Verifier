@@ -19,7 +19,7 @@ import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { captureTaskStart } from '../lib/runtime-v2/task-changes.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
-import { frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
+import { FRAME_REVIEW_INSTRUCTIONS, frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
 import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs';
 import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
@@ -997,12 +997,6 @@ const frameBasis = {
 };
 const unverifiedFrame = () => [...frameBasis.guidance, ...frameBasis.scenarios].map(({ id }) =>
   ({ id, disposition: 'UNVERIFIED', reason: 'Could not independently verify the advisory item.' }));
-const frameInstructions = `Requirement frame (basis part requirement-frame): guidance items G* and behavior scenarios S* that the program prepared from the task-start code before this candidate existed, after checking that their evidence exists and their quotes come from the user messages. They are advisory: the original user messages remain the only authority, and the frame never adds obligations.
-Before finishing, give every frame item exactly one entry in finish_stop_review.frameDispositions:
-- CHECKED: you traced it and it holds. A textual reason is enough; no citation is required.
-- DEVIATION: it does not hold, and you saved a proved deviation for the corresponding original requirement (checklist object or submit_finding). Give that objectId.
-- UNVERIFIED: you could not establish it within budget, or it does not follow from the original messages. Give a short reason.
-A frame item alone is never a deviation; a DEVIATION disposition needs a proved deviation saved through the normal tools. Check scenarios of kind requirement first, then guidance whose contractCell is transport_integration, branch_matrix, error_result or values_defaults.`;
 const reproductionText = `For each deviation above:
 1. First reproduce it with a minimal public check (an existing test, a command, or a throwaway script in the system temp directory that you delete afterwards) and confirm that it fails.
 2. After the fix, rerun the same check and confirm that it passes; also run one nearby existing-behavior check to confirm that nothing else broke.
@@ -1107,7 +1101,7 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
   const f = await frameStopCase(t, { deviation: true });
   const validator = process.env.RC_OPENCLAW_HOST_ROOT ? await loadPublicToolArgumentsValidator() : null;
   const { stop, handle } = await f.run(async tools => {
-    assert(tools.worker.systemPrompt.endsWith(frameInstructions));
+    assert(tools.worker.systemPrompt.endsWith(FRAME_REVIEW_INSTRUCTIONS));
     const { item, submit, finish } = await startFrameScan(tools, { requireFrame: true });
     const citeId = await tools.read(f.source);
     const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId] };
