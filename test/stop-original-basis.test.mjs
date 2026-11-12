@@ -15,6 +15,22 @@ import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { recordDeviationFindings } from '../lib/runtime-v2/deviations.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 
+test('M16 cannot admit a support duty while workflow metrics are disabled', () => {
+  const population = { taskId: 'scope', groundTruthVersion: 0, metrics: { M08: [] },
+    reviewPolicy: { metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, '0')}`, i === 15])) } };
+  const source = { kind: 'PROJECT_FILE', ref: 'AGENTS.md', sha256: 'frozen', start: 1, end: 2 };
+  const item = { metricId: 'M16', text: 'Update the module design before editing code.', source,
+    verificationTarget: 'IMPLEMENTATION', implementationRole: 'SUPPORT' };
+  const build = value => buildOriginalStopPopulation({ population, checklist: [value], sourceDigest: 'original' });
+  assert.throws(() => build(item), error => error.code === 'STOP_ORIGINAL_CHECKLIST_INVALID');
+  assert.throws(() => build({ ...item, implementationRole: 'TEST' }), /production implementation obligation/);
+  assert.throws(() => build({ ...item, metricId: 'M11', verificationTarget: 'PROCESS' }), /Cannot add/);
+  const production = { ...item, text: 'The production handler validates its input.', implementationRole: 'PRODUCTION' };
+  assert.equal(build(production).population.metrics.M16.length, 1);
+  const { implementationRole, ...legacy } = production;
+  assert.equal(build(legacy).population.metrics.M16.length, 1, 'an omitted legacy role retains its default');
+});
+
 test('explicitly disabling the original basis preserves the default Stop policy', () => {
   const compile = stopCorrection => compileRuntimeV2Config({ version: 2, stopCorrection }).stopCorrection;
   assert.deepEqual(compile({ enabled: true, originalRequirementsBasis: false }), compile({ enabled: true }));
