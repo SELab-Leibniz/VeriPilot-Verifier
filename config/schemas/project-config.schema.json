@@ -414,6 +414,18 @@
           },
           "additionalProperties": false
         },
+        "families": {
+          "type": "object",
+          "description": "Family switches above the per-metric switches. false turns every member metric off; true or omitted keeps the metrics settings. clarification=M01-M07, skills=M08, projectRules=M09-M11, fulfillment=M12/M16, verification=M13-M15.",
+          "properties": {
+            "clarification": { "type": "boolean" },
+            "skills": { "type": "boolean" },
+            "projectRules": { "type": "boolean" },
+            "fulfillment": { "type": "boolean" },
+            "verification": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
         "fileQualityReviewEnabled": {
           "type": "boolean",
           "default": false,
@@ -573,6 +585,7 @@
         "proposers": { "default": 3, "description": "Integer from 1 through 3." },
         "inject": { "default": true, "description": "Boolean. Enables delivery when supported." },
         "review": { "default": true, "description": "Boolean. Enables Stop review use when supported." },
+        "checks": { "default": false, "description": "Boolean. Adds project-rule and verification check proposers; each runs only when its Stop metric family has an enabled metric. Selected checks cite project documents and join the original-requirements Stop checklist." },
         "timeoutMs": { "default": 600000, "description": "Positive integer. Total generation time in milliseconds." }
       }
     },

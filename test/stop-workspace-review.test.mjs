@@ -1006,7 +1006,8 @@ const chineseReproduction = `处理上面每个偏差时：
 2. 修改后再运行同一个检查，确认通过；再运行一个相邻的已有行为检查，确认原有行为没有被破坏。
 3. 如果无法复现，说明原因，不要为了通过评审而改动无关代码。`;
 
-async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true } = {}) {
+async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
+  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
   const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
@@ -1023,14 +1024,18 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
   const startHead = git('rev-parse', 'HEAD').trim();
   assert.equal(await captureTaskStart({ projectRoot, taskId: f.task.taskId }), true);
   if (stored !== 'missing') {
-    const file = path.join(projectRoot, '.runtime-correction', 'requirement-frame', sha256(sessionId).slice(0, 24), 'frame.json');
-    await atomicWriteJson(file, { schemaVersion: 1, status: 'ready', reason: null, sessionId,
-      startHead: stored === 'mismatch' ? 'another-head' : startHead, ...frameBasis });
+    const frameDirectory = path.join(projectRoot, '.runtime-correction', 'requirement-frame', sha256(sessionId).slice(0, 24));
+    await atomicWriteJson(path.join(frameDirectory, 'frame.json'), { schemaVersion: 1, status: 'ready', reason: null, sessionId,
+      startHead: stored === 'mismatch' ? 'another-head' : startHead, ...basis, ...(checks ? { checks } : {}) });
+    for (const [name, text] of Object.entries(checkSources)) {
+      await fs.mkdir(path.join(frameDirectory, 'sources'), { recursive: true });
+      await fs.writeFile(path.join(frameDirectory, 'sources', name), text);
+    }
   }
   const runtimeV2 = compileRuntimeV2Config({ version: 2, locale, dynamicGroundTruth: { enabled: false },
     requirementFrame: { enabled, inject: false, review },
-    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true, waitMode: 'until_pass',
-      metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`M${String(i + 1).padStart(2, '0')}`, i === 15])) } });
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly, waitMode: 'until_pass',
+      metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metricIds.includes(id)])) } });
   return { projectRoot, sessionId, directory, source, runtimeV2, startHead,
     async run(script) {
       let scriptError, handle;
@@ -1232,4 +1237,101 @@ test('7.4.5: the reproduction appendix follows existing deviation feedback and n
     assert.match(prependContext, /The return expression is the unchanged input\./u);
     assert.deepEqual(await protocol.gate({ state, runId, event: { prompt: prependContext } }), { outcome: 'pass' });
   });
+});
+
+const rulesText = '# Rules\nExported functions must not return their input unchanged.\nKeep the changelog current.\n';
+const rulesCheck = (id, metricId, text = 'Exported functions must not return their input unchanged.', line = 2, hash = sha256(rulesText)) => ({
+  id, family: 'projectRules', metricId, text, verificationTarget: 'IMPLEMENTATION', applicability: '',
+  activation: 'The request changes the exported transform.', source: { path: 'docs/rules.md', startLine: line, endLine: line, sha256: hash }, confidence: 0.9 });
+const rulesSources = { [sha256(rulesText)]: rulesText, [sha256('other')]: 'tampered\n' };
+
+async function readCheckBasis(tools) {
+  let original;
+  for (const file of tools.task.basisFiles) {
+    const citeId = await tools.read(file);
+    if (path.basename(file).startsWith('user-original-')) original = citeId;
+  }
+  const proposedFile = tools.task.basisFiles.find(file => path.basename(file).startsWith('proposed-checks-'));
+  return { original, proposed: JSON.parse(await fs.readFile(proposedFile, 'utf8')) };
+}
+const transformItem = original => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Return the input plus one.',
+  citeId: original, lineStart: 2, lineEnd: 2 });
+
+test('proposed checks join the original checklist after set_original_checklist and need their own dispositions', async t => {
+  const k1 = rulesCheck('K1', 'M09');
+  const f = await frameStopCase(t, { deviation: true, metricIds: ['M09', 'M16'], checkSources: rulesSources, checks: [k1,
+    rulesCheck('K2', 'M13'), rulesCheck('K3', 'M09', 'Keep the changelog current.', 3, sha256('other'))] });
+  let check;
+  const { stop, handle } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert(tools.worker.systemPrompt.includes(FRAME_REVIEW_INSTRUCTIONS));
+    assert.match(tools.worker.systemPrompt, /Proposed checks \(basis part proposed-checks\)/u);
+    const { original, proposed } = await readCheckBasis(tools);
+    assert.deepEqual(proposed.map(item => item.id), ['K1']);
+    assert.equal(path.basename(path.dirname(proposed[0].sourceFile)), 'proposed-check-sources');
+    assert.equal(await fs.readFile(proposed[0].sourceFile, 'utf8'), rulesText);
+    await submit('set_original_checklist', { items: [transformItem(original)] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    check = items.find(item => item.proposedCheck === 'K1');
+    assert.equal(items.length, 2);
+    assert.deepEqual([check.metricId, check.description, check.applicabilityKind, check.originalSource],
+      ['M09', k1.text, 'CURRENT_TASK', { kind: 'PROJECT_FILE', ref: 'docs/rules.md', sha256: sha256(rulesText), start: 2, end: 2 }]);
+    assert.equal(proposed[0].objectId, check.taskId);
+    await submit('submit_review', { taskId: check.taskId, verdict: 'DEVIATION',
+      reason: 'The exported transform returns its input unchanged.', citeIds: [await tools.read(f.source)] });
+    const finish = dispositions => submit('finish_stop_review', frameFinishArgs(dispositions));
+    await assert.rejects(finish(unverifiedFrame()), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    await assert.rejects(finish([...unverifiedFrame(), { id: 'K1', disposition: 'DEVIATION', objectId: 'unsaved' }]),
+      { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    assert.equal((await finish([...unverifiedFrame(), { id: 'K1', disposition: 'DEVIATION', objectId: check.taskId }])).complete, true);
+  });
+  assert.equal(stop.status, 'DEVIATION', JSON.stringify(stop));
+  assert.deepEqual(handle.result.frameCoverage.items.map(({ id, type, disposition }) => [id, type, disposition]), [
+    ['G1', 'FRAME_GUIDANCE', 'UNVERIFIED'], ['S1', 'FRAME_SCENARIO', 'UNVERIFIED'], ['S2', 'FRAME_SCENARIO', 'UNVERIFIED'],
+    ['S3', 'FRAME_SCENARIO', 'UNVERIFIED'], ['K1', 'FRAME_CHECK', 'DEVIATION']]);
+  assert.equal(handle.result.frameCoverage.items.at(-1).objectId, check.taskId);
+  assert.match(stop.feedback, /returns its input unchanged/u);
+});
+
+test('an identical reviewer item reuses the proposed check, and a checks-only frame still needs its disposition', async t => {
+  const k1 = rulesCheck('K1', 'M09');
+  const f = await frameStopCase(t, { metricIds: ['M09', 'M16'], basis: { guidance: [], scenarios: [] }, checks: [k1], checkSources: rulesSources });
+  const reason = 'The delivered transform adds one, so it does not return its input unchanged.';
+  const { stop } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert(!tools.worker.systemPrompt.includes(FRAME_REVIEW_INSTRUCTIONS));
+    assert(!tools.task.basisFiles.some(file => path.basename(file).startsWith('requirement-frame-')));
+    const { original, proposed } = await readCheckBasis(tools);
+    await submit('set_original_checklist', { items: [transformItem(original), { metricId: 'M09', verificationTarget: 'IMPLEMENTATION',
+      text: k1.text, path: proposed[0].sourceFile, lineStart: 2, lineEnd: 2 }] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    assert.deepEqual(items.map(item => [item.metricId, item.proposedCheck ?? null]).sort(), [['M09', 'K1'], ['M16', null]]);
+    const finish = dispositions => submit('finish_stop_review', frameFinishArgs(dispositions));
+    await assert.rejects(finish([]), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
+    assert.equal((await finish([{ id: 'K1', disposition: 'CHECKED', reason }])).complete, true);
+  });
+  assert.equal(stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(stop));
+  assert.deepEqual(stop.review.frameCoverage.items, [{ id: 'K1', type: 'FRAME_CHECK', disposition: 'CHECKED', reason }]);
+});
+
+test('a full checklist review gives proposed checks ordinary verdicts without frame dispositions', async t => {
+  const f = await frameStopCase(t, { deviation: true, deviationOnly: false, metricIds: ['M09', 'M16'],
+    basis: { guidance: [], scenarios: [] }, checks: [rulesCheck('K1', 'M09')], checkSources: rulesSources });
+  const { handle } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    assert.match(tools.worker.systemPrompt, /Give every K item a verdict like any other checklist item\./u);
+    const finishTool = tools.worker.tools.find(tool => tool.name === 'finish_stop_review');
+    assert.equal(Object.hasOwn(finishTool.parameters.properties, 'frameDispositions'), false);
+    const { original } = await readCheckBasis(tools);
+    await submit('set_original_checklist', { items: [transformItem(original)] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 });
+    const check = items.find(item => item.proposedCheck === 'K1'), transform = items.find(item => item.metricId === 'M16');
+    await submit('submit_review', { taskId: transform.taskId, verdict: 'UNVERIFIED', reason: 'Not traced in this fixture.' });
+    await submit('submit_review', { taskId: check.taskId, verdict: 'DEVIATION',
+      reason: 'The exported transform returns its input unchanged.', citeIds: [await tools.read(f.source)] });
+    assert.equal((await submit('finish_stop_review', frameFinishArgs())).complete, true);
+  });
+  assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId.slice(0, 3), row.judgement]).sort(),
+    [['M09', 'DEVIATION'], ['M16', 'UNVERIFIED']]);
+  assert.deepEqual(handle.result.frameCoverage, { status: 'absent', reason: 'NO_FRAME_ITEMS' });
 });

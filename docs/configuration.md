@@ -8,7 +8,7 @@
 
 已有配置中省略字段的解释继续沿用旧缺省值。要切回基线模式，将 dynamicGroundTruth.enabled 和 artifactCorrection.groundTruthReviewEnabled 设为 true，将 artifactCorrection.originalRequirementsEnabled 和 stopCorrection.originalRequirementsBasis 设为 false。需要完整逐项 Stop 审查（A）时将 stopCorrection.deviationOnly 也设为 false。保留仅偏差审查则是 B2。按需要单独启用 artifactCorrection.stageMetricsEnabled。
 
-Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)。其它写入规则和文档/Skill 总开关继续独立生效。
+Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。`stopCorrection.families` 是上一层的族开关，设为 `false` 的族会关闭其全部成员指标。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)，各族含义见 [纠偏检查体系](correction-checklist.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
 `stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。
 
@@ -804,6 +804,7 @@ requirementFrame:
   proposers: 3
   inject: true
   review: true
+  checks: false
   timeoutMs: 600000
 ```
 
@@ -816,3 +817,5 @@ requirementFrame:
 `requirement-frame/<会话哈希>/frame.json`。
 `inject` 控制简报送达。已有框架时在真实用户回合开头送达，本回合新生成的框架则随下一次工具结果送达。
 `review` 启用 Stop 对匹配任务开始提交的框架逐项记录处置，并在已有偏差反馈后追加复现要求。
+
+`checks` 默认 `false`。开启后额外运行“项目规则”和“验证要求”两个检查项提议者，从任务开始提交的项目文档中找出本任务会触发的规则，选中的检查项编号为 K1、K2……。每个提议者只在其指标族至少有一个开启的 Stop 指标时运行；仓库中没有 Markdown 文档时不运行。检查项进入简报，并在 `stopCorrection.originalRequirementsBasis` 开启时并入终审清单。详见 [纠偏检查体系](correction-checklist.md)。

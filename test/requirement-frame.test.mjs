@@ -11,6 +11,7 @@ import { createOpenClawRuntime } from '../lib/openclaw/runtime.mjs';
 import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { toolText } from '../lib/review-task/source-tools.mjs';
+import { frameCheckFamilies, readStopFrame } from '../lib/runtime-v2/requirement-frame.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
 import { ensureTask } from '../lib/runtime-v2/task-store.mjs';
 import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
@@ -33,7 +34,7 @@ const selectAll = items => ({ reviews: items.map(item => review(item)) });
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
   archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
-  propose = ordinaryProposal, select = selectAll } = {}) {
+  checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
   const cfg = path.join(projectRoot, '.runtime-corrector', 'config.yaml');
   const config = () => fs.writeFile(cfg, `version: 2
@@ -53,10 +54,11 @@ artifactCorrection:
 stopCorrection:
   enabled: false
   waitMode: assessment
-shadowMode: ${shadowMode}
+${stopPolicy}shadowMode: ${shadowMode}
 requirementFrame:
   enabled: ${enabled}
   inject: ${inject}
+  checks: ${checks}
   proposers: ${proposers}
   timeoutMs: ${timeoutMs}
 reviewers:
@@ -67,6 +69,10 @@ reviewers:
   await config();
   await fs.writeFile(path.join(projectRoot, '.gitignore'), '.runtime-correction/\nhost-state/\nnative.jsonl\n');
   await fs.writeFile(path.join(projectRoot, 'app.js'), 'export const fallback = 1;\n');
+  for (const [file, text] of Object.entries(files)) {
+    await fs.mkdir(path.dirname(path.join(projectRoot, file)), { recursive: true });
+    await fs.writeFile(path.join(projectRoot, file), text);
+  }
   if (repository) {
     git(projectRoot, 'init', '-q');
     git(projectRoot, 'config', 'core.autocrlf', 'false');
@@ -88,12 +94,14 @@ reviewers:
           resolveSessionFilePath: () => transcript, runWithWorkAdmission: async ({ signal }, run) => run(signal) },
         async runEmbeddedAgent(params) {
           const tools = new Map((toolFactory(params) ?? []).map(tool => [tool.name, tool]));
-          const kind = params.prompt.startsWith('[REQUIREMENT_FRAME_SELECTOR]') ? 'selection' : 'proposal';
+          const kind = params.prompt.startsWith('[REQUIREMENT_FRAME_SELECTOR]') ? 'selection'
+            : params.prompt.startsWith('[CORRECTION_CHECK_PROPOSAL]') ? 'check' : 'proposal';
           calls.push({ kind, params, names: [...tools.keys()] });
           const call = (name, args) => tools.get(name).execute('scripted', args, params.abortSignal);
           const args = kind === 'proposal' ? await propose({ params, call, ordinal: Number(path.basename(params.cwd).slice(-1)) })
-            : await select(JSON.parse(params.prompt.split('Candidates:\n')[1].split('\n\n')[0]), params, call);
-          const name = kind === 'proposal' ? 'submit_frame_proposal' : 'submit_frame_selection';
+            : kind === 'check' ? await check({ params, call, family: path.basename(params.cwd).slice('check-'.length) })
+              : await select(JSON.parse(params.prompt.split('Candidates:\n')[1].split('\n\n')[0]), params, call);
+          const name = kind === 'selection' ? 'submit_frame_selection' : 'submit_frame_proposal';
           await call(name, validator ? validator.validateToolArguments(tools.get(name), { name, arguments: args }) : args);
           params.onAgentToolResult({ isError: false });
           return { payloads: [], meta: {} };
@@ -324,9 +332,9 @@ test('9. disabled never creates the requirement-frame directory', async t => {
 });
 
 test('invalid config values fall back to defaults', async t => {
-  const f = await fixture(t, { enabled: 'invalid', proposers: 0, timeoutMs: -1 });
+  const f = await fixture(t, { enabled: 'invalid', proposers: 0, timeoutMs: -1, checks: 'invalid' });
   const { runtimeV2 } = await loadConfig({ cwd: f.projectRoot, pluginRoot });
-  assert.deepEqual(runtimeV2.requirementFrame, { enabled: false, proposers: 3, inject: true, review: true, timeoutMs: 600000 });
+  assert.deepEqual(runtimeV2.requirementFrame, { enabled: false, proposers: 3, inject: true, review: true, checks: false, timeoutMs: 600000 });
 });
 
 test('a valid empty result runs the selector and regenerates on the next real turn', async t => {
@@ -503,4 +511,106 @@ test('6.4.4: the localized brief delivers long selected items and prints only fi
   assert(brief.includes('- [保持不变] 前提：低置信但已入选'));
   assert(!brief.includes('.gitignore'));
   assert.equal((await f.deliveries())[0].productionChangesBefore, null);
+});
+
+const agentsText = '# Rules\nAlways run npm test before finishing.\nNever edit generated files.\n';
+const projectCheck = (metricId, text, source, confidence = 0.9, extra = {}) => ({ metricId, text,
+  verificationTarget: 'PROCESS', applicability: '', activation: 'The request changes app.js.', source, confidence, ...extra });
+const agentsLine = (line = 2) => ({ path: 'AGENTS.md', startLine: line, endLine: line });
+
+test('check proposers scan project documents per enabled family and store task-start sources', async t => {
+  const prompts = {};
+  const f = await fixture(t, {
+    checks: true, stopPolicy: '  metrics:\n    M11: true\n',
+    files: { 'AGENTS.md': agentsText, 'docs/api.md': 'API handlers must validate input.\n',
+      'skills/x/SKILL.md': 'Must run the skill.\n', 'node_modules/p/README.md': 'Must not appear.\n' },
+    check: ({ params, family }) => {
+      prompts[family] = params.prompt;
+      return family === 'projectRules' ? { checks: [
+        projectCheck('M11', 'Always run npm test before finishing.', agentsLine()),
+        projectCheck('M13', 'Wrong family', agentsLine()),
+        projectCheck('M09', 'Skill step', { path: 'skills/x/SKILL.md', startLine: 1, endLine: 1 }),
+        projectCheck('M09', 'Out of range', agentsLine(9)),
+        projectCheck('M09', 'No activation', agentsLine(3), 0.9, { activation: ' ' }),
+        projectCheck('M09', 'API handlers must validate input.', { path: 'docs/api.md', startLine: 1, endLine: 1 }, 0.8,
+          { verificationTarget: 'IMPLEMENTATION', applicability: 'when an API handler changes' }),
+      ] } : { checks: [
+        projectCheck('M13', 'Run npm test before finishing.', agentsLine(), 0.95),
+        projectCheck('M15', 'Low confidence journey', agentsLine(), 0.7),
+      ] };
+    },
+    select: (items, params) => {
+      assert.match(params.prompt, /Candidates of type check/u);
+      assert.deepEqual(items.filter(item => item.type === 'check').map(item => item.id), ['P2-K1', 'P2-K6', 'P3-K1', 'P3-K2']);
+      assert(items.every(item => !Object.hasOwn(item, 'family') && !Object.hasOwn(item, 'confidence')));
+      return selectAll(items);
+    },
+  });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.status, 'ready', JSON.stringify(f.warnings));
+  assert.deepEqual(f.calls.map(call => call.kind).sort(), ['check', 'check', 'proposal', 'selection']);
+  assert(f.calls.find(call => call.kind === 'selection').names.includes('source_read'));
+  const documents = prompts.projectRules.split('Project documents in the snapshot (instruction files first):\n')[1].split('\n\n')[0];
+  assert.deepEqual(documents.split('\n'), ['- AGENTS.md', '- docs/api.md']);
+  assert.match(prompts.projectRules, /- M11: fixed workflow step/u);
+  assert.doesNotMatch(prompts.projectRules, /- M10:|- M13:/u);
+  assert.match(prompts.verification, /- M13:[\s\S]*- M15:/u);
+  assert.doesNotMatch(prompts.verification, /- M14:/u);
+  assert.deepEqual(frame.counts, { proposed: 9, valid: 5, selected: 4 });
+  assert.deepEqual(frame.checks.map(({ id, family, metricId, text }) => [id, family, metricId, text]), [
+    ['K1', 'verification', 'M13', 'Run npm test before finishing.'],
+    ['K2', 'projectRules', 'M11', 'Always run npm test before finishing.'],
+    ['K3', 'projectRules', 'M09', 'API handlers must validate input.'],
+  ]);
+  assert.equal(frame.checks[0].source.sha256, digest(agentsText));
+  assert.equal(await fs.readFile(path.join(f.dir, 'sources', digest(agentsText)), 'utf8'), agentsText);
+
+  const startHead = git(f.projectRoot, 'rev-parse', 'HEAD').trim();
+  const stop = await readStopFrame({ projectRoot: f.projectRoot, sessionId: f.sessionId, startHead, review: true });
+  assert.deepEqual(stop.basis.guidance.map(item => item.id), ['G1']);
+  assert.deepEqual(stop.checks.map(check => [check.id, check.sourceFile]), frame.checks.map(check =>
+    [check.id, path.join(f.dir, 'sources', check.source.sha256)]));
+
+  const brief = deliveredBrief(await f.toolResult('rules-brief'));
+  assert(brief.includes('Project rules to follow before finishing (the Stop review checks them against the document text):\n'
+    + '- Run npm test before finishing. (source: AGENTS.md:2-2)'));
+  assert(brief.includes('- API handlers must validate input. (only when: when an API handler changes) (source: docs/api.md:1-1)'));
+});
+
+test('a frame with only checks is ready, and Stop receives checks without a guidance basis', async t => {
+  const f = await fixture(t, { checks: true, files: { 'AGENTS.md': agentsText },
+    propose: () => ({ guidance: [], scenarios: [] }),
+    check: ({ family }) => ({ checks: family === 'projectRules' ? [projectCheck('M09', 'Never edit generated files.', agentsLine(3))] : [] }) });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.status, 'ready');
+  assert.deepEqual([frame.guidance, frame.scenarios, frame.checks.map(check => check.id)], [[], [], ['K1']]);
+  const startHead = git(f.projectRoot, 'rev-parse', 'HEAD').trim();
+  const stop = await readStopFrame({ projectRoot: f.projectRoot, sessionId: f.sessionId, startHead, review: true });
+  assert.equal(stop.basis, undefined);
+  assert.equal(stop.reason, 'NO_FRAME_ITEMS');
+  assert.deepEqual(stop.checks.map(check => check.id), ['K1']);
+});
+
+test('check proposers follow family and metric switches and need project documents', async t => {
+  const families = async (options, files = { 'AGENTS.md': agentsText }) => {
+    const f = await fixture(t, { checks: true, files, ...options });
+    const { runtimeV2 } = await loadConfig({ cwd: f.projectRoot, pluginRoot });
+    await f.prompt();
+    await f.frame();
+    return { selected: frameCheckFamilies(runtimeV2).map(({ family, metrics }) => [family, metrics]),
+      calls: f.calls.filter(call => call.kind === 'check').map(call => path.basename(call.params.cwd)).sort() };
+  };
+  assert.deepEqual(await families({}), { selected: [['projectRules', ['M09']], ['verification', ['M13', 'M15']]],
+    calls: ['check-projectRules', 'check-verification'] });
+  assert.deepEqual(await families({ stopPolicy: '  families:\n    verification: false\n' }),
+    { selected: [['projectRules', ['M09']]], calls: ['check-projectRules'] });
+  assert.deepEqual(await families({ stopPolicy: '  metrics:\n    M09: false\n  families:\n    verification: false\n' }),
+    { selected: [], calls: [] });
+  assert.deepEqual((await families({}, {})).calls, []);
+  const off = await fixture(t, { files: { 'AGENTS.md': agentsText } });
+  await off.prompt();
+  assert.equal(Object.hasOwn(await off.frame(), 'checks'), false);
+  assert(!off.calls.some(call => call.kind === 'check'));
 });

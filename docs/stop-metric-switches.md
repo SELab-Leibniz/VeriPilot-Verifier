@@ -22,6 +22,30 @@ stopCorrection:
 
 完整默认配置见 [config.yaml](../examples/stop-metric-switches/.runtime-corrector/config.yaml)。v2 自动引导配置也会列出所有 16 项及其默认值。无效编号、拼写错误、字符串 `"false"` 等非布尔值会在加载配置时被拒绝。
 
+## 族开关
+
+`stopCorrection.families` 在指标开关之上按族整体关闭：
+
+| 族 | 成员 |
+|---|---|
+| `clarification` 需求澄清 | M01–M07 |
+| `skills` Skill 遵循 | M08 |
+| `projectRules` 项目规则 | M09、M10、M11 |
+| `fulfillment` 需求实现 | M12、M16 |
+| `verification` 验证闭环 | M13、M14、M15 |
+
+族设为 `false` 时，成员指标全部关闭，即使 `metrics` 中单独设为 `true`。族设为 `true` 或省略时不改变成员的指标开关，不会把默认关闭的成员打开。族开关只在加载配置时展开成 16 个指标开关，冻结的 `task.stop.reviewPolicy` 中只记录展开后的指标。
+
+```yaml
+stopCorrection:
+  enabled: true
+  families:
+    clarification: false
+    verification: false
+  metrics:
+    M11: true
+```
+
 ## 开关如何生效
 
 任务首次进入纠偏链路时，程序冻结完整审查策略，保存到 `task.stop.reviewPolicy`。Stop 生成分母时先完成原有义务归属，再移除关闭指标的审查对象。关闭一项不会把它自动改派给其它指标，也不会删除冻结需求；同一个需求仍可能由其它已开启指标按各自职责检查。
