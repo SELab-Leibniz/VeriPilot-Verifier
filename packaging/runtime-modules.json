@@ -188,6 +188,7 @@
     "lib/openclaw/sources.mjs",
     "lib/openclaw/stop-feedback-notice.mjs",
     "lib/openclaw/stop-start-protocol.mjs",
+    "lib/openclaw/admission-timing.mjs",
     "lib/openclaw/stop-task-runtime.mjs",
     "lib/openclaw/stop-terminal.mjs",
     "lib/openclaw/stop-wait-status.mjs",

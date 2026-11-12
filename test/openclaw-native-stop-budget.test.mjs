@@ -10,6 +10,28 @@ import { createNativeStopFixture, basic, deferred, pause, until, within } from "
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
+test('an expired input gate cannot later publish admission after slow transcript I/O completes', async t => {
+  const dispatched=deferred(t),terminal=deferred(t),slow=deferred(t),entered=deferred(t);let childRunId;
+  const f=await lifecycle(t,{waitMode:'until_pass',observeModelStart:false,review:async()=>true,
+    postRunTerminal:async(_identity,runId)=>{if(runId.startsWith('rc-stop-'))await terminal.promise;return {runId,status:'ok'};}});
+  f.api.runtime.subagent={run:async args=>{childRunId=args.idempotencyKey;dispatched.resolve();return {runId:childRunId};}};
+  try {
+    await f.runtime.reply({kind:'final',runId:f.ctx.runId,sessionKey:f.ctx.sessionKey,payload:{text:'Delivered.'}},f.ctx);
+    await within(dispatched.promise,'correction dispatch');await within(f.runtime.waitForNativeReviews(),'initial review');
+    const child={...f.ctx,runId:childRunId};const prompt=await f.runtime.prompt({prompt:'Apply current feedback.'},child);
+    const previousGate=(await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId})).admission.hostRequest.gate;
+    const session=f.api.runtime.agent.session,getEntry=session.getSessionEntry;
+    session.getSessionEntry=async(...args)=>{entered.resolve();await slow.promise;return getEntry(...args);};
+    const gate=f.runtime.beforeAgentRun({prompt:prompt.prependContext},child);
+    await within(entered.promise,'slow input identity check');
+    assert.equal((await within(gate,'bounded input gate')).outcome,'block');
+    slow.resolve();await pause(100);
+    const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
+    assert.equal(receipt.admission.accounting,'RESERVED');
+    assert.deepEqual(receipt.admission.hostRequest.gate,previousGate,'late validation must not publish or replace a gate after denial');
+  } finally {slow.resolve();terminal.resolve();await f.runtime.reset({},f.ctx);await f.runtime.waitForNativeReviews({drain:true});}
+});
+
 test('a failed attempt with slow transcript capture does not invalidate its admitted retry', async t => {
   const capture = deferred(t), entered = deferred(t), terminal = deferred(t);
   const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
