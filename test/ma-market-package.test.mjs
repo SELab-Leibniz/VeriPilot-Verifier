@@ -55,7 +55,7 @@ test("MA version overrides do not change the inner OpenClaw release or leave tem
   assert.equal(path.basename(next.archive), "runtime-corrector-ma-2.3.4.tgz");
   assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "package.json"))).version, "2.3.4");
   assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "payload/runtime-corrector/package.json"))).version,
-    "1.9.1-openclaw.11-session-projects.15");
+    JSON.parse(await fs.readFile(path.join(sourceRoot, "packaging/hosts/openclaw/openclaw.plugin.json"))).version);
   assert.equal((await fs.readdir(path.dirname(next.directory))).some(name => name.startsWith(".ma-build-")), false);
 });
 
