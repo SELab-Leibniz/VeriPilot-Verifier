@@ -10,6 +10,42 @@ import { createNativeStopFixture, basic, deferred, pause, until, within } from "
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
+test('a retried native turn retains its own persisted user input while later queued inputs stay excluded', async t => {
+  const terminal = deferred(t);
+  const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
+    if (runId === 'second-business-run') await terminal.promise;
+    return { runId, status: 'ok' };
+  } });
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+    payload: { text: 'First task delivered.' } }, f.ctx);
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'first task completion');
+  await until(() => f.post().phase === 'IDLE', 'first host terminal');
+
+  const next = { ...f.ctx, runId: 'second-business-run' };
+  // The pinned host calls before_prompt_build before persisting this input.
+  await f.runtime.prompt({ prompt: 'Revise the draft.' }, next);
+  const source = path.join(f.root, 'native.jsonl');
+  await fs.appendFile(source, '\n' + JSON.stringify({ type: 'message', id: 'second-user', parentId: 'u',
+    message: { role: 'user', content: 'Revise the draft.', idempotencyKey: `${next.runId}:user` } }) + '\n');
+  // A context precheck can fail before the first tool has observed the user.
+  await f.runtime.agentEnd({ runId: next.runId, success: false, error: 'Context overflow' }, next);
+  assert.equal(f.post().phase, 'FINALIZING');
+  await fs.appendFile(source, JSON.stringify({ type: 'message', id: 'queued-user', parentId: 'second-user',
+    message: { role: 'user', content: 'A later task.', idempotencyKey: 'future-run:user' } }) + '\n');
+  await f.runtime.prompt({ prompt: 'Retry the current task after compaction.' }, next);
+  const entries = (await fs.readFile(f.state.transcriptPath, 'utf8')).trim().split('\n').map(JSON.parse);
+  const users = entries.filter(entry => entry.type === 'user' && !entry.isMeta).map(entry => entry.uuid);
+  assert.deepEqual(users, ['u', 'second-user'], 'the current host input must replace the previous flow boundary');
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'second-write', params: { path: 'draft.md' } }, next);
+  await fs.writeFile(path.join(f.root, 'draft.md'), 'A revised delivered draft.\n');
+  await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey,
+    payload: { text: 'Revised draft delivered.' } }, next);
+  terminal.resolve();
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'second task review');
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND', 'a new user turn must not inherit CORRECTION_FLOW_CLOSED');
+});
+
 test('late agent_end reconciles a failed hook despite its cancelled reviewer signal', async t => {
   let drained = false;
   const f = await lifecycle(t, { waitMode: 'until_pass',
