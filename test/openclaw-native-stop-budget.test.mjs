@@ -9,6 +9,31 @@ import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
+
+test('late agent_end reconciles a failed hook despite its cancelled reviewer signal', async t => {
+  let drained = false;
+  const f = await lifecycle(t, { waitMode: 'until_pass',
+    postRunTerminal: async (_identity, runId) => drained ? { runId, status: 'ok' } : null });
+  const identity = { agentId: f.state.agentId, sessionId: f.state.sessionId, sessionKey: f.state.sessionKey,
+    projectRoot: f.state.projectRoot, scopeFingerprint: f.state.projectScope.fingerprint,
+    controlRevision: f.state.enabledRevision ?? 0, scopeTaskId: f.state.scopeTaskId };
+  f.state.nativeInvalidated = true;
+  const controller = f.state.reviewController;
+  controller.abort(Object.assign(new Error('failed hook'), { code: 'RC_HOOK_UNAVAILABLE' }));
+  await f.runtime.postRuns.release(identity, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.runtime.postRuns.snapshot(identity).phase, 'RELEASING');
+  drained = true;
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await until(() => f.runtime.postRuns.snapshot(identity).phase === 'IDLE', 'late gateway terminal reconciliation');
+  const record = f.runtime.postRuns.snapshot(identity);
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(record.reason, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(f.state.reviewController, controller);
+  assert.equal(controller.signal.aborted, true);
+  assert.equal(f.calls(), 0, 'the failed stage cannot restart semantic review');
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
 test("terminal registration returns before slow reviews and coalesces duplicate hooks", async t => {
   const params = await basic(t), manager = createNativeStopReviews();
   let finish, started = 0, markStarted;

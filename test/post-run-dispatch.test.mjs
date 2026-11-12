@@ -42,6 +42,49 @@ async function fixture(t, overrides = {}) {
   return { root, manager, identity, sent, errors };
 }
 
+test('late host completion rechecks an escalated release without restarting its failed review', async t => {
+  let finished = false, reviews = 0, probes = 0;
+  const f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },
+    waitTerminal: async (_record, runId) => { probes++; return finished ? { runId, status: 'ok' } : null; },
+    review: async () => { reviews++; return { reviewStatus: 'PASS' }; } });
+  const id = f.identity('failed-hook');
+  await f.manager.started(id, 'business');
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  for (let i = 0; i < 100 && !f.manager.snapshot(id).reconciliation?.escalatedAt; i++) await pause(10);
+  assert.equal(f.manager.snapshot(id).reason, 'HOST_RUN_RECONCILIATION_ESCALATED');
+  const before = probes;
+  await f.manager.hostEnded(id, 'stale-run');
+  assert.equal(probes, before);
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).phase, 'RELEASING', 'agent_end alone cannot prove gateway drainage');
+  finished = true;
+  await f.manager.hostEnded(id, 'business');
+  const record = f.manager.snapshot(id);
+  assert.equal(record.phase, 'IDLE');
+  assert.equal(record.reviewStatus, 'UNVERIFIED');
+  assert.equal(record.reason, 'RC_HOOK_UNAVAILABLE');
+  assert.equal(record.lastTerminal.terminalRunId, 'business');
+  assert.equal(reviews, 0);
+  assert.equal(f.sent.length, 0);
+  await f.manager.started(id, 'next-stage');
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).runId, 'next-stage');
+  assert.equal(f.manager.snapshot(id).phase, 'RUNNING');
+});
+
+test('late release notification keeps scope invalidation and unknown terminals closed to dispatch', async t => {
+  let valid = true;
+  const f = await fixture(t, { validate: async () => valid, waitTerminal: async () => null });
+  const id = f.identity('changed-scope');
+  await f.manager.started(id, 'business');
+  await f.manager.release(id, 'RC_HOOK_UNAVAILABLE');
+  valid = false;
+  await f.manager.hostEnded(id, 'business');
+  assert.equal(f.manager.snapshot(id).phase, 'CLOSED');
+  assert.equal(f.manager.snapshot(id).reason, 'SESSION_REPLACED');
+  assert.equal(f.sent.length, 0);
+});
+
 test('an unbounded trusted business correction reaches its next bounded review without execution expiry', async t => {
   let reviews = 0, cancelled = 0, f;
   f = await fixture(t, { cancelCorrection: async () => { cancelled++; }, review: async record => {
