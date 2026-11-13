@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { isolatedRegressionResult, triageRegressionFailures } from '../lib/runtime-v2/regression-triage.mjs';
+import { isolatedRegressionResult, triageRegressionFailures, reviewedRegressionFailures, applyCollateralReceipt } from '../lib/runtime-v2/regression-triage.mjs';
 import { regressionCaseScope } from '../scripts/bench/arkts-regression-check.mjs';
 import { normalizeRegressionCheck } from '../lib/runtime-v2/stop-correction-config.mjs';
 import fs from 'node:fs/promises';
@@ -12,6 +12,51 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const passed = id => ({ exitCode: 0, outputTail: `RC_REGRESSION_CASE ${JSON.stringify({ id, status: 'PASS', complete: true, observed: [id] })}\n` });
+
+test('mixed regression formats retain authorized explanations and explicit unresolved decisions', () => {
+  const failures = Array.from({ length: 11 }, (_, i) => ({ id: `public-case-${i}` }));
+  const disposition = { status: 'REVIEWED', reason: 'Nine replaced expectations and two unresolved failures.',
+    explanations: failures.map(({ id }, i) => ({ failure: id, reason: i < 9 ? 'The request replaces this expectation.' : 'The requirement remains unchanged.',
+      ...(i < 9 ? { authorization: 'The original request explicitly replaces the old behavior.' } : {}) })),
+    cases: failures.slice(9).map(({ id }) => ({ id, verdict: 'UNVERIFIED', reason: 'Whole-suite cause remains unknown.' })) };
+  const reviewed = reviewedRegressionFailures({ inventory: { complete: true, failures }, disposition, hasDeviation: () => false });
+  assert.deepEqual(reviewed.cases.map(x => x.verdict), [...Array(9).fill('AUTHORIZED_CHANGE'), 'UNVERIFIED', 'UNVERIFIED']);
+  const request = { requestId: 'mixed-format', baselineSha256: 'frozen-baseline', exclusions: failures.slice(0, 9), probes: failures.slice(9).map(x => x.id) };
+  const proof = { requestId: request.requestId, baselineSha256: request.baselineSha256, taskStartSuite: true, complete: true,
+    excludedIds: request.exclusions.map(x => x.id), expectedSurvivingCount: 672, observedSurvivingCount: 672,
+    failures: [], probes: Object.fromEntries(request.probes.map(id => [id, 'PASS'])) };
+  const result = applyCollateralReceipt(reviewed, request, { exitCode: 0, outputTail: 'RC_REGRESSION_COLLATERAL ' + JSON.stringify(proof) });
+  assert.equal(result.status, 'EXPLAINED');
+  assert.deepEqual(result.cases.slice(9).map(x => x.verdict), ['COLLATERAL_FAILURE', 'COLLATERAL_FAILURE']);
+});
+
+test('explicit regression decisions override same-ID legacy authorization in either direction', () => {
+  for (const verdict of ['REGRESSION', 'UNVERIFIED', 'AUTHORIZED_CHANGE']) {
+    const result = reviewedRegressionFailures({ inventory: { failures: [{ id: 'one' }] }, hasDeviation: id => id === 'saved',
+      disposition: { status: 'REVIEWED', reason: 'Mixed format.', explanations: [{ failure: 'one', reason: 'Legacy explanation.', authorization: 'Original request.' }],
+        cases: [{ id: 'one', verdict, reason: 'Explicit case decision.', ...(verdict === 'REGRESSION' ? { objectId: 'saved' } : {}) }] } });
+    assert.equal(result.cases[0].verdict, verdict);
+    assert.equal(result.cases[0].reason, 'Explicit case decision.');
+  }
+});
+
+test('mixed legacy explanations need explicit authorization and never waive a globally unverified review', () => {
+  for (const [status, authorization] of [['REVIEWED', undefined], ['REVIEWED', '  '], ['UNVERIFIED', 'The original request authorizes this.']]) {
+    const result = reviewedRegressionFailures({ inventory: { failures: [{ id: 'one' }] }, hasDeviation: () => false,
+      disposition: { status, reason: 'Not decided.', explanations: [{ failure: 'one', reason: 'A proposed explanation.', authorization }], cases: [] } });
+    assert.equal(result.cases[0].verdict, 'UNVERIFIED');
+  }
+});
+
+test('both regression formats reject unknown IDs and duplicates within their own list', () => {
+  for (const disposition of [
+    { cases: [{ id: 'unknown', verdict: 'UNVERIFIED' }], explanations: [] },
+    { cases: [], explanations: [{ failure: 'unknown', reason: 'Unknown.' }] },
+    { cases: [{ id: 'one' }, { id: 'one' }], explanations: [] },
+    { cases: [], explanations: [{ failure: 'one' }, { failure: 'one' }] },
+  ]) assert.throws(() => reviewedRegressionFailures({ inventory: { failures: [{ id: 'one' }] }, disposition, hasDeviation: () => false }),
+    { code: 'REVIEW_ITEM_OWNERSHIP_INVALID' });
+});
 
 test('program triage exempts baseline failures but retains fresh isolated passes for review', async () => {
   const called = [];

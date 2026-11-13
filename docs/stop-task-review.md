@@ -125,3 +125,5 @@ M08 的原始 Skill 按宿主默认目录和 `skillCorrection.skillRoots` 定位
 ### 流程偏差的修复性质
 
 原始义务中的 PROCESS 偏差必须在 `finish_stop_review` 明确分类：`historicalOrders` 绑定两次成功且倒序的原调用；`processRepairs` 绑定义务 ID、当前仍存在的影响和有用的后续修复动作。缺失事件不能证明顺序违规。仅说明历史无法补救不构成当前残留；未分类的候选在完整结果、部分结果和额外 finding 通道均保留为 UNVERIFIED，不派发续修，也不代表通过。真实当前缺陷经明确分类后仍按原规则纠偏。纯历史偏差使用既有独立终态和一次通知规则。
+
+回归判定兼容 `cases` 与旧版 `explanations` 同时提交：两份列表分别校验 ID 归属和唯一性，同 ID 以 `cases` 的显式判定为准，不能用旧解释覆盖 UNVERIFIED 或已证明的 REGRESSION。`REVIEWED` 混合模式下，未列入 `cases` 的旧解释只有明确填写原文授权 `authorization` 才记为 AUTHORIZED_CHANGE；整体 UNVERIFIED 的旧解释仍未定。授权后仍需程序绑定的完整控制整套运行，才可确认其余失败属于连带失败；单独通过不构成豁免。
