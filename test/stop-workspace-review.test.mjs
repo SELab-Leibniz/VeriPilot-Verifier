@@ -1098,6 +1098,38 @@ const frameFinishArgs = frameDispositions => ({
   ...(frameDispositions === undefined ? {} : { frameDispositions }),
 });
 
+test('production Stop writes large semantic navigation as readable JSON before starting its reviewer', async t => {
+  const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] } });
+  const functions = Array.from({ length: 6 }, (_, index) => {
+    const name = `changed_${index}_${'detail'.repeat(85)}`;
+    const caller = `caller_${index}_${'consumer'.repeat(65)}`;
+    return `export function ${name}(input) { return input + 1; }\nexport function ${caller}(input) { return ${name}(input); }`;
+  }).join('\n');
+  await fs.writeFile(f.source, functions + '\n');
+  let reviewerStarted = false;
+  const { handle } = await f.run(async tools => {
+    reviewerStarted = true;
+    for (const file of tools.task.basisFiles) await tools.read(file);
+    const original = tools.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+    const citeId = await tools.read(original);
+    await submitFrameTool(tools.call, 'set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+      text: 'Return the input plus one.', citeId, lineStart: 2, lineEnd: 2 }] });
+    const checklist = await submitFrameTool(tools.call, 'review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+    const links = checklist.items.find(item => item.programStanding === 'REGRESSION')?.regressionEvidence?.semanticNavigationFiles;
+    assert(links?.length, 'the real graph crosses the navigation size limit');
+    const parts = await Promise.all(links.map(file => fs.readFile(file, 'utf8')));
+    const navigation = JSON.parse(parts.join(''));
+    assert.equal(navigation.currentSemanticLinks.length, 6);
+    assert(navigation.currentSemanticLinks.every(link => link.definition && link.caller));
+    assert(Buffer.byteLength(parts.join('')) > 8192);
+    for (const item of checklist.items) await submitFrameTool(tools.call, 'submit_review', { taskId: item.taskId,
+      verdict: 'UNVERIFIED', reason: 'This transport fixture does not supply a semantic verdict.' });
+    await submitFrameTool(tools.call, 'finish_stop_review', frameFinishArgs());
+  });
+  assert.equal(reviewerStarted, true);
+  assert.equal(handle.reviewCompleted, true);
+});
+
 async function startFrameScan({ task, read, call }, { requireFrame = false } = {}) {
   const submit = (name, args) => submitFrameTool(call, name, args);
   let original;
