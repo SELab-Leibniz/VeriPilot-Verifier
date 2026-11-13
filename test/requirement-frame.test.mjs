@@ -748,3 +748,23 @@ test('an unavailable counterexample session keeps the valid original proposals w
   assert.equal(frame.scenarios.length, 1);
   assert.equal(attempts, 1);
 });
+
+test('a cluster of similar high-confidence cases does not crowd out another entry or preservation boundary', async t => {
+  const evidence = [{ path: 'billing.ts', startLine: 1, endLine: 2 }];
+  const primary = { ...scenario('a priced value', .99, 'charge rule'), kind: 'requirement',
+    entryPoint: { path: 'billing.ts', symbol: 'Quote.price' }, evidence, contractCell: 'values_defaults' };
+  const boundary = { ...primary, kind: 'preservation', quote: 'empty input', given: 'an empty input', confidence: .85 };
+  const other = { ...primary, entryPoint: { path: 'billing.ts', symbol: 'Ledger.post' }, confidence: .84 };
+  const f = await fixture(t, { proposers: 2, files: { 'billing.ts':
+    'export class Quote { static price(value) { return value == null ? 0 : value } }\nexport class Ledger { static post(value) { return Quote.price(value) } }\n' },
+    propose: ({ params, ordinal }) => params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')
+      ? { guidance: [], scenarios: [] } : { guidance: [], scenarios: ordinal === 1
+        ? Array.from({ length: 6 }, (_, index) => ({ ...primary, given: 'amount '+index, confidence: .99-index/1000 }))
+        : [boundary, other] } });
+  await f.prompt('Support the revised charge rule while preserving empty input behavior.');
+  const frame = await f.frame();
+  assert.equal(frame.scenarios.length, 6);
+  assert(frame.scenarios.some(item => item.given === 'an empty input'));
+  assert(frame.scenarios.some(item => item.entryPoint.symbol === 'Ledger.post'));
+  assert.deepEqual(frame.scenarios.map(item => item.id), ['S1','S2','S3','S4','S5','S6']);
+});
