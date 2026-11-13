@@ -8,6 +8,39 @@ import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
 import { scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 
+test('context exposes ambient state writers and sibling readers without promoting locals or constants', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-semantic-state-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const files = {
+    'settings.ts': [
+      'export let ceiling = 10',
+      'export function tune(value: number) { ceiling = value }',
+      'export const multiplier = 2',
+      'export class Context {',
+      '  static enabled = false',
+      '  static enable() { Context.enabled = true }',
+      '}',
+    ],
+    'queue.ts': [
+      "import { ceiling as maximum, multiplier, Context as C } from './settings'",
+      'export function canQueue(size: number) { return size * multiplier <= maximum && C.enabled }',
+      'export function remaining(size: number) { return maximum - size }',
+      'export function shadow(maximum: number) { return maximum }',
+    ],
+  };
+  await Promise.all(Object.entries(files).map(([file, lines]) => fs.writeFile(path.join(root, file), lines.join('\n'))));
+  const graph = await buildSemanticGraph(root, { snapshotPaths: Object.keys(files), budgetMs: 5000 });
+  const result = graph.query({ operation: 'context', symbol: 'canQueue' });
+  assert.equal(result.navigationOnly, true);
+  const state = result.stateDependencies;
+  assert.deepEqual(state.map(item => item.definition.symbol), ['ceiling', 'enabled']);
+  assert.deepEqual(state[0].writers.map(item => item.within), ['tune']);
+  assert.deepEqual(state[0].readers.map(item => item.within), ['remaining']);
+  assert.deepEqual(state[1].writers.map(item => item.within), ['Context.enable']);
+  assert.equal(graph.query({ operation: 'context', symbol: 'shadow' }).stateDependencies, undefined);
+  assert.equal(graph.query({ operation: 'incoming', symbol: 'canQueue' }).stateDependencies, undefined);
+});
+
 test('test-helper argument hints preserve reference identity and exclude control parentheses', () => {
   const source = [
     "import { Store } from './store'",
