@@ -674,3 +674,31 @@ test('check proposers follow family and metric switches and need project documen
   assert.equal(Object.hasOwn(await off.frame(), 'checks'), false);
   assert(!off.calls.some(call => call.kind === 'check'));
 });
+
+test('source-backed behavior checks keep their entry and reject non-snapshot or incomplete evidence', async t => {
+  const source = { path: 'accept.ts', startLine: 1, endLine: 3 };
+  const bound = { ...scenario('a missing value'), when: 'accept(undefined) is called', then: 'return false without storing',
+    entryPoint: { path: 'accept.ts', symbol: 'accept' }, contractCell: 'values_defaults', evidence: [source] };
+  const f = await fixture(t, { files: { 'accept.ts': 'export function accept(value) {\n  return value != null\n}\n' },
+    propose: () => ({ guidance: [], scenarios: [bound,
+      { ...bound, evidence: [{ ...source, path: 'candidate-only.ts' }] },
+      { ...bound, evidence: [{ ...source, endLine: 80 }] },
+      { ...scenario('an empty value'), entryPoint: bound.entryPoint },
+      scenario('legacy scenario remains supported'),
+    ] }), select: async (items, _params, call) => {
+      const source = toolText(await call('source_read', { path: 'accept.ts' }));
+      assert.match(source, /value != null/u);
+      assert.doesNotMatch(source, /candidate accepts all/u);
+      return selectAll(items);
+    } });
+  await f.prompt();
+  await fs.writeFile(path.join(f.projectRoot, 'accept.ts'), '// candidate accepts all\nexport function accept() { return true }\n');
+  const frame = await f.frame();
+  assert.equal(frame.scenarios.length, 2);
+  assert.deepEqual(frame.scenarios[0].entryPoint, bound.entryPoint);
+  assert.deepEqual(frame.scenarios[0].evidence, [source]);
+  assert.equal(frame.scenarios[0].contractCell, 'values_defaults');
+  assert.equal(frame.scenarios[1].entryPoint, undefined);
+  const brief = await f.runtime.prompt({ prompt: userText }, { ...f.ctx, runId: 'new-turn', trigger: 'user' });
+  assert.match(JSON.stringify(brief), /accept\.ts:1-3/u);
+});
