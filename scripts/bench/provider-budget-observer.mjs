@@ -38,19 +38,41 @@ export function providerBudget(body) {
 
 export function observeFetch(fetch, record) {
   return function (input, init) {
+    const save = body => {
+      try { const budget = providerBudget(JSON.parse(body)); if (budget) record(budget); }
+      catch { /* Observation must never affect the original request. */ }
+    };
     try {
-      if (typeof init?.body === 'string') {
-        const budget = providerBudget(JSON.parse(init.body));
-        if (budget) record(budget);
-      }
+      if (typeof init?.body === 'string') save(init.body);
+      else if (typeof input?.clone === 'function' && input.method === 'POST')
+        input.clone().text().then(save, () => {});
     } catch { /* Observation must never affect the original request. */ }
     return Reflect.apply(fetch, this, [input, init]);
   };
 }
 
+export function installBudgetObserver(target, record) {
+  const wrappers = new WeakMap();
+  const wrap = fetch => {
+    if (typeof fetch !== 'function') return fetch;
+    if (!wrappers.has(fetch)) { const observed = observeFetch(fetch, record); wrappers.set(fetch, observed); wrappers.set(observed, observed); }
+    return wrappers.get(fetch);
+  };
+  if (typeof target.fetch === 'function') target.fetch = wrap(target.fetch);
+  // The pinned SDK can use this injected Undici dependency instead of global
+  // fetch. Observe later assignments too; keep every other runtime dependency.
+  const key = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
+  const descriptor = Object.getOwnPropertyDescriptor(target, key);
+  if (descriptor?.configurable === false) return;
+  let runtime = target[key];
+  Object.defineProperty(target, key, { configurable: true, enumerable: descriptor?.enumerable ?? true,
+    get: () => runtime, set: value => { runtime = value && typeof value.fetch === 'function' ? { ...value, fetch: wrap(value.fetch) } : value; } });
+  target[key] = runtime;
+}
+
 if (process.env.RC_PROVIDER_BUDGET_FILE && typeof globalThis.fetch === 'function') {
   let sequence = 0;
-  globalThis.fetch = observeFetch(globalThis.fetch, budget => {
+  installBudgetObserver(globalThis, budget => {
     fs.appendFileSync(process.env.RC_PROVIDER_BUDGET_FILE, JSON.stringify({ at: new Date().toISOString(),
       pid: process.pid, request: ++sequence, ...budget }) + '\n');
   });
