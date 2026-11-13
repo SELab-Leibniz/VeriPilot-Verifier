@@ -3,10 +3,97 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts/helpers/native-integrated-module-case.mjs';
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
-import { skillE2eOptions } from '../scripts/evaluate-skill-e2e.mjs';
+import { skillE2eOptions, skillE2eProvider, skillVerifierCommand, skillFinalStopAccepted } from '../scripts/evaluate-skill-e2e.mjs';
+
+test('Skill native completion accepts a fully verified deviation-only Stop and rejects incomplete or foreign evidence', () => {
+  const complete = {
+    authenticTerminals: { complete: true, terminals: [{runId:'original',status:'ok'},{runId:'repair',status:'ok'}],
+      dispatch:{phase:'IDLE',pending:0,reviewStatus:'NO_DEVIATION_FOUND',completedRuns:['original','repair']} },
+    task:{verification:{status:'NO_DEVIATION_FOUND',assessmentId:'repair:stop',evaluationId:'final',
+      coverage:{scanCompleted:true,classification:'TASK_COMPLETE',fullObjectCount:2,selectedObjectCount:2}}},
+    evaluation:{evaluationId:'final',outcome:{status:'NO_DEVIATION_FOUND',verificationIncomplete:false},unverifiedItems:[]}
+  };
+  assert.equal(skillFinalStopAccepted(complete),true);
+  const legacy=structuredClone(complete);
+  legacy.authenticTerminals.dispatch.reviewStatus=legacy.task.verification.status=legacy.evaluation.outcome.status='PASS';
+  assert.equal(skillFinalStopAccepted(legacy),true);
+  const reject=mutate=>{const input=structuredClone(complete);mutate(input);assert.equal(skillFinalStopAccepted(input),false);};
+  for(const mutate of [
+    x=>x.authenticTerminals.complete=false,
+    x=>delete x.authenticTerminals.terminals,
+    x=>x.authenticTerminals.terminals[1].status='error',
+    x=>x.authenticTerminals.dispatch.pending=1,
+    x=>x.authenticTerminals.dispatch.phase='RUNNING',
+    x=>x.authenticTerminals.dispatch.completedRuns=['original'],
+    x=>x.task.verification.assessmentId='original:stop',
+    x=>x.task.verification.coverage.scanCompleted=false,
+    x=>x.task.verification.coverage.classification='STAGE_COMPLETE',
+    x=>x.task.verification.coverage.selectedObjectCount=1,
+    x=>x.task.verification.coverage.fullObjectCount=x.task.verification.coverage.selectedObjectCount=0,
+    x=>x.evaluation.evaluationId='stale',
+    x=>x.evaluation.outcome.verificationIncomplete=true,
+    x=>x.evaluation.outcome.status='UNVERIFIED',
+    x=>x.evaluation.unverifiedItems=['unresolved'],
+    x=>delete x.evaluation.unverifiedItems
+  ])reject(mutate);
+});
+
+test('Skill explicit provider retains streaming usage and the finite metered token envelope', () => {
+  const options = skillE2eOptions(['--base-url','https://example.test/v1','--model','example-model']);
+  const definition = { api:'openai-completions',baseUrl:options.baseUrl,model:options.model,
+    definition:{id:options.model,maxTokens:65536,compat:{thinkingFormat:'deepseek'}} };
+  const selected = skillE2eProvider(options,definition);
+  assert.equal(selected.definition.maxTokens,32768);
+  assert.equal(selected.definition.compat.supportsUsageInStreaming,true);
+  assert.equal(selected.definition.compat.maxTokensField,'max_tokens');
+  assert.equal(selected.definition.compat.thinkingFormat,'deepseek');
+  assert.equal(definition.definition.maxTokens,65536,'the supplied public profile stays unchanged');
+});
+
+test('Windows Skill verifier executes with a cleared environment and exact read-only permissions',
+  { skip: process.platform !== 'win32' }, async t => {
+    const temp=await fs.realpath(os.tmpdir()),root=await fs.mkdtemp(path.join(temp,'rc-skill-win-command-'));
+    assert(root.startsWith(temp+path.sep));
+    t.after(()=>fs.rm(root,{recursive:true,force:true}));
+    const fixture=await prepareIntegratedFixture({projectRoot:path.join(root,'project with space'),modelRef:'fixture/model'});
+    const privateFile=path.join(root,'private.txt'),writeFile=path.join(root,'must-not-write.txt');
+    await fs.writeFile(privateFile,'not a verifier input');
+    await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),`import fs from 'node:fs';
+if(process.env.RC_VERIFY_ISOLATION_SENTINEL)throw Error('Verifier inherited environment');
+for(const action of [()=>fs.readFileSync(${JSON.stringify(privateFile)}),()=>fs.writeFileSync(${JSON.stringify(writeFile)},'denied')]){
+ let code;try{action();}catch(error){code=error.code;}if(code!=='ERR_ACCESS_DENIED')throw Error('Verifier permissions expanded');
+}
+export const accept=value=>value+1;\n`);
+    await fs.writeFile(path.join(fixture.projectRoot,'docs/guide.md'),'finite numbers; accept(2) === 3; stateless; other inputs are outside scope.\n');
+    const {stdout}=await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
+      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,
+      env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH,RC_VERIFY_ISOLATION_SENTINEL:'must-not-reach-verifier'}});
+    const result=JSON.parse(stdout.trim());
+    assert.equal(result.codePassed,true);assert.equal(result.guidePassed,true);
+    assert.equal(await fs.stat(writeFile).then(()=>true,()=>false),false);
+    await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),'export const accept=value=>value;\n');
+    await assert.rejects(promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
+      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH}}),
+      error=>error.code===3&&JSON.parse(error.stdout.trim()).codePassed===false);
+  });
+
+test('Skill public provider metadata must match its explicit endpoint and model and cannot carry a key', () => {
+  const options = skillE2eOptions(['--base-url', 'https://example.test/v1', '--model', 'example-model',
+    '--provider-definition', 'public-provider.json']);
+  const provider = { api: 'openai-completions', baseUrl: options.baseUrl, model: options.model,
+    definition: { id: options.model, contextWindow: 128000, maxTokens: 32768 } };
+  assert.equal(options.providerDefinition, 'public-provider.json');
+  const selected=skillE2eProvider(options, provider);
+  assert.equal(selected.baseUrl,provider.baseUrl);assert.equal(selected.model,provider.model);
+  assert.equal(provider.definition.maxTokens,32768);
+  assert.throws(() => skillE2eProvider({ ...options, model: 'other' }, provider), /must match/);
+  assert.throws(() => skillE2eProvider(options, { ...provider, apiKey: 'dummy-only' }), /Credentials/);
+});
 
 test('configured original business timeout can exceed ten minutes but remains bounded by the case deadline', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-skill-budget-'));

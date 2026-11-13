@@ -115,6 +115,22 @@ test("AC-03: complete third review releases a flow after only two actual charges
   assert.equal((await f.store.inspect("session")).used, 2);
 });
 
+test('historical notices do not consume a useful repair admission and its final historical closure is accepted', async t => {
+  const f = await fixture(t);
+  await f.begin('repair');
+  const history = { kind: 'IRREVERSIBLE_ORDER', objectId: 'M11:order', source: { ref: 'AGENTS.md' }, factDigest: 'a'.repeat(64), reason: 'A proved old inversion.' };
+  await f.store.settleReview({ sessionId: 'session', stopId: 'repair', status: 'DEVIATION', historicalDeviations: [history],
+    currentDeviations: [{ objectId: 'M16:useful', reason: 'Repair the current implementation.' }] });
+  const admission = await f.store.reserveFeedback({ sessionId: 'session', stopId: 'repair', packageId: 'useful', basisCurrent: async () => true });
+  assert.equal((await f.store.inspect('session')).used, 0);
+  await f.observe(admission);
+  const finalized = await f.store.finishRepairReview({ sessionId: 'session', admissionId: admission.id,
+    status: 'COMPLETED_WITH_HISTORICAL_DEVIATIONS', evaluationId: 'final' });
+  assert.equal(finalized.finalReview.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS');
+  const state = await f.store.inspect('session'); assert.equal(state.used, 1);
+  assert.equal(state.events.filter(event => event.type === 'HISTORICAL_DEVIATION_NOTIFIED').length, 1);
+});
+
 test("a completed stage releases its repair waits while the next stage keeps the same durable quota", async t => {
   const f = await fixture(t), classification = { stopClassification: "STAGE_COMPLETE", stage: "planning" };
   const bind = stopId => f.store.bindReviewScope({ sessionId: "session", stopId, scopeId: "task-scope", classification });

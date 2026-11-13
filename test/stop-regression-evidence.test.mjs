@@ -10,10 +10,29 @@ import { normalizeRegressionCheck, normalizeStopCorrectionConfig } from '../lib/
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { STANDING_REGRESSION, STANDING_REGRESSION_TEXT, collectRegressionEvidence, regressionDeviationProblem,
-  regressionFailureInventory, runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
+  regressionFailureInventory, regressionNavigation, renderRegressionRun, runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { runProtocolTask } from '../lib/review-task/protocol-task.mjs';
+
+test('regression navigation distinguishes restored tests without authorizing their failures', () => {
+  const evidence = { changes: [], testPointers: [] };
+  const run = { status: 'FAILED', exitCode: 1, command: ['node', 'C:\\release\\scripts\\bench\\arkts-regression-check.mjs', '--original-tests'],
+    outputTail: 'not ok 1 - retains an existing guard\n# fail 1\n' };
+  const before = regressionFailureInventory(run);
+  const restored = regressionNavigation({ evidence, run });
+  assert.deepEqual(restored.programRun.testSource, { mode: 'TASK_START_PUBLIC_TESTS', currentTestEditsExecuted: false });
+  assert.match(renderRegressionRun(run), /testSource: .*TASK_START_PUBLIC_TESTS/);
+  assert.deepEqual(regressionFailureInventory(run), before);
+  assert.equal(before.failures.length, 1);
+
+  const current = { ...run, command: run.command.slice(0, 2) };
+  assert.deepEqual(regressionNavigation({ evidence, run: current }).programRun.testSource,
+    { mode: 'CURRENT_PUBLIC_TESTS', currentTestEditsExecuted: true });
+  const unrelated = { ...run, command: ['node', 'other-check.mjs', '--original-tests'], outputTail: 'suite=task-start\n' };
+  assert.deepEqual(regressionNavigation({ evidence, run: unrelated }).programRun.testSource,
+    { mode: 'CONFIGURED_COMMAND', currentTestEditsExecuted: null });
+});
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=rc-test', '-c', 'user.email=rc-test@example.invalid',
   '-c', 'commit.gpgsign=false', ...args], { cwd, windowsHide: true, stdio: 'pipe' }).toString();

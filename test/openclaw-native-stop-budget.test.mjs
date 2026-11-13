@@ -10,6 +10,101 @@ import { createNativeStopFixture, basic, deferred, pause, until, within } from "
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
+test('an expired input gate cannot later publish admission after slow transcript I/O completes', async t => {
+  const dispatched=deferred(t),terminal=deferred(t),slow=deferred(t),entered=deferred(t);let childRunId;
+  const f=await lifecycle(t,{waitMode:'until_pass',observeModelStart:false,review:async()=>true,
+    postRunTerminal:async(_identity,runId)=>{if(runId.startsWith('rc-stop-'))await terminal.promise;return {runId,status:'ok'};}});
+  f.api.runtime.subagent={run:async args=>{childRunId=args.idempotencyKey;dispatched.resolve();return {runId:childRunId};}};
+  try {
+    await f.runtime.reply({kind:'final',runId:f.ctx.runId,sessionKey:f.ctx.sessionKey,payload:{text:'Delivered.'}},f.ctx);
+    await within(dispatched.promise,'correction dispatch');await within(f.runtime.waitForNativeReviews(),'initial review');
+    const child={...f.ctx,runId:childRunId};const prompt=await f.runtime.prompt({prompt:'Apply current feedback.'},child);
+    const previousGate=(await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId})).admission.hostRequest.gate;
+    const session=f.api.runtime.agent.session,getEntry=session.getSessionEntry;
+    session.getSessionEntry=async(...args)=>{entered.resolve();await slow.promise;return getEntry(...args);};
+    const gate=f.runtime.beforeAgentRun({prompt:prompt.prependContext},child);
+    await within(entered.promise,'slow input identity check');
+    assert.equal((await within(gate,'bounded input gate')).outcome,'block');
+    slow.resolve();await pause(100);
+    const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
+    assert.equal(receipt.admission.accounting,'RESERVED');
+    assert.deepEqual(receipt.admission.hostRequest.gate,previousGate,'late validation must not publish or replace a gate after denial');
+  } finally {slow.resolve();terminal.resolve();await f.runtime.reset({},f.ctx);await f.runtime.waitForNativeReviews({drain:true});}
+});
+
+test('a failed attempt with slow transcript capture does not invalidate its admitted retry', async t => {
+  const capture = deferred(t), entered = deferred(t), terminal = deferred(t);
+  const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
+    await terminal.promise;
+    return { runId, status: 'ok' };
+  } });
+  const configPath = path.join(f.root, '.runtime-corrector/config.yaml');
+  await fs.appendFile(configPath, '\nartifactCorrection:\n  originalRequirementsEnabled: true\n');
+  const session = f.api.runtime.agent.session, getEntry = session.getSessionEntry;
+  let blocked = true;
+  session.getSessionEntry = async (...args) => {
+    if (blocked) { blocked = false; entered.resolve(); await capture.promise; }
+    return getEntry(...args);
+  };
+  f.api.pluginConfig.hookTimeoutMs = 1200;
+  const ended = f.runtime.agentEnd({ runId: f.ctx.runId, success: false, error: 'Context overflow' }, f.ctx);
+  await within(entered.promise, 'failed-attempt transcript capture');
+  await within(ended, 'bounded failed-attempt hook');
+  f.api.pluginConfig.hookTimeoutMs = 5000;
+  assert.equal(f.state.nativeInvalidated, false, 'bookkeeping must not invalidate an admitted host retry');
+  assert.equal(f.state.reviewController.signal.reason?.code, 'RC_NATIVE_ATTEMPT_ENDED');
+  const oldController = f.state.reviewController;
+  await f.runtime.prompt({ prompt: 'Retry after automatic compaction.' }, f.ctx);
+  assert.notEqual(f.state.reviewController, oldController);
+  assert.equal(f.state.reviewController.signal.aborted, false);
+  capture.resolve();
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'retry-write', params: { path: 'draft.md' } }, f.ctx);
+  await fs.writeFile(path.join(f.root, 'draft.md'), 'A draft delivered by the retried attempt.\n');
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+    payload: { text: 'Delivered after retry.' } }, f.ctx);
+  terminal.resolve();
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'retried Stop review');
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
+test('a retried native turn retains its own persisted user input while later queued inputs stay excluded', async t => {
+  const terminal = deferred(t);
+  const f = await lifecycle(t, { waitMode: 'until_pass', postRunTerminal: async (_identity, runId) => {
+    if (runId === 'second-business-run') await terminal.promise;
+    return { runId, status: 'ok' };
+  } });
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+    payload: { text: 'First task delivered.' } }, f.ctx);
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'first task completion');
+  await until(() => f.post().phase === 'IDLE', 'first host terminal');
+
+  const next = { ...f.ctx, runId: 'second-business-run' };
+  // The pinned host calls before_prompt_build before persisting this input.
+  await f.runtime.prompt({ prompt: 'Revise the draft.' }, next);
+  const source = path.join(f.root, 'native.jsonl');
+  await fs.appendFile(source, '\n' + JSON.stringify({ type: 'message', id: 'second-user', parentId: 'u',
+    message: { role: 'user', content: 'Revise the draft.', idempotencyKey: `${next.runId}:user` } }) + '\n');
+  // A context precheck can fail before the first tool has observed the user.
+  await f.runtime.agentEnd({ runId: next.runId, success: false, error: 'Context overflow' }, next);
+  assert.equal(f.post().phase, 'FINALIZING');
+  await fs.appendFile(source, JSON.stringify({ type: 'message', id: 'queued-user', parentId: 'second-user',
+    message: { role: 'user', content: 'A later task.', idempotencyKey: 'future-run:user' } }) + '\n');
+  await f.runtime.prompt({ prompt: 'Retry the current task after compaction.' }, next);
+  const entries = (await fs.readFile(f.state.transcriptPath, 'utf8')).trim().split('\n').map(JSON.parse);
+  const users = entries.filter(entry => entry.type === 'user' && !entry.isMeta).map(entry => entry.uuid);
+  assert.deepEqual(users, ['u', 'second-user'], 'the current host input must replace the previous flow boundary');
+  await f.runtime.beforeTool({ toolName: 'write', toolCallId: 'second-write', params: { path: 'draft.md' } }, next);
+  await fs.writeFile(path.join(f.root, 'draft.md'), 'A revised delivered draft.\n');
+  await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey,
+    payload: { text: 'Revised draft delivered.' } }, next);
+  terminal.resolve();
+  await within(f.runtime.waitForNativeReviews({ drain: true }), 'second task review');
+  const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
+  assert.equal(task.verification.status, 'NO_DEVIATION_FOUND', 'a new user turn must not inherit CORRECTION_FLOW_CLOSED');
+});
+
 test('late agent_end reconciles a failed hook despite its cancelled reviewer signal', async t => {
   let drained = false;
   const f = await lifecycle(t, { waitMode: 'until_pass',

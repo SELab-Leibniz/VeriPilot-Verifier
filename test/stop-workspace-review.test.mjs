@@ -33,6 +33,71 @@ async function fixture(t) {
   return { ...f, scope, result };
 }
 
+test('workspace review binds a historical process inversion to original calls and persists its proof', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+  f.input.request.population.metrics = { M11: [{ ...original, objectId: 'M11:R1', metricId: 'M11',
+    verificationTarget: 'PROCESS', originalSource: { kind: 'PROJECT_FILE', ref: 'AGENTS.md', sha256: 'original-rule', start: 1, end: 1 } }] };
+  f.input.evidence.snapshot.entries.push(
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'created', name: 'openspec_cli', input: { args: ['new', 'change', 'demo'] } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'created', is_error: false, content: 'Created successfully.' }] } },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'status', name: 'openspec_cli', input: { args: ['status'] } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'status', is_error: false, content: 'Status returned successfully.' }] } });
+  const handle = await f.run(async ({ readAll, read, submit }) => {
+    await readAll();
+    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+    const ids = [];
+    for (const sample of checklist.processEvidence.executionSamples) {
+      for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
+    }
+    await submit('submit_review', { taskId: 'M11:R1', verdict: 'DEVIATION', reason: 'Creation preceded the required status query.', citeIds: ids });
+    await submit('finish_stop_review', { summary: 'Only the past order is irreversible.', historicalOrders: [{
+      objectId: 'M11:R1', requiredFirstEventId: 'status', requiredSecondEventId: 'created', historicalOnly: true,
+      reason: 'The original creation is already complete; future creations still require status first.' }] });
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'DEVIATION');
+  assert.equal(handle.getHistoricalOrders().length, 1);
+  assert.equal(handle.getHistoricalOrders()[0].kind, 'IRREVERSIBLE_ORDER');
+  await handle.close();
+});
+
+test('ordinary and partial process-deviation channels cannot bypass historical classification', async t => {
+  for (const mode of ['finished-unclassified', 'overflow-unclassified', 'current-repair', 'finding-unclassified', 'finding-current-repair'])
+    await t.test(mode, async t => {
+      const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+      f.input.request.population.reviewPolicy = { deviationOnly: true };
+      f.input.request.population.metrics = { M11: [{ ...original, objectId: 'M11:R1', metricId: 'M11',
+        verificationTarget: 'PROCESS', originalSource: { kind: 'USER_MESSAGE', ref: 'original', sha256: 'rule', start: 1, end: 1 } }] };
+      f.input.evidence.snapshot.entries.push(
+        { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'checked-mode', name: 'Bash', input: { command: 'check-active-mode' } }] } },
+        { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'checked-mode', is_error: false, content: 'Current active mode is debug.' }] } });
+      const finding = mode.startsWith('finding-'), repair = mode.endsWith('current-repair');
+      const handle = await f.run(async ({ readAll, read, submit }) => {
+        await readAll();
+        const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+        const sample = checklist.processEvidence.executionSamples[0], ids = [];
+        for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
+        const receipt = finding ? await submit('submit_finding', { deviationKey: 'process-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+          severity: 'warning', reason: 'The active mode is still debug.', expectedConstraint: original.description,
+          violatedGroundTruthIds: [original.sourceId], citeIds: ids })
+          : await submit('submit_review', { taskId: 'M11:R1', verdict: 'DEVIATION',
+            reason: repair ? 'The active mode is still debug.' : 'Only the already completed historical order is wrong; no artifact defect remains.', citeIds: ids });
+        assert.equal(receipt.processClassificationRequired, true);
+        if (mode === 'overflow-unclassified') throw Object.assign(new Error('Controlled overflow after saving a process candidate.'), { code: 'CONTEXT_OVERFLOW' });
+        await submit('finish_stop_review', { summary: 'The process disposition is explicit.', ...(repair ? { processRepairs: [{
+          objectId: finding ? 'process-finding' : 'M11:R1', currentResidue: 'Active mode remains debug.',
+          repairAction: 'Set mode to release and read back the current setting.' }] } : {}) });
+      });
+      if (finding) {
+        assert.equal(handle.result.findings.length, repair ? 1 : 0);
+        if (!repair) assert(handle.result.unverifiedItems.some(item => item.type === 'PROCESS_CLASSIFICATION'));
+      } else {
+        assert.equal(handle.result.metricObjectJudgements[0].judgement, repair ? 'DEVIATION' : 'UNVERIFIED');
+        if (!repair) assert(handle.result.unverifiedItems.length > 0);
+      }
+      if (repair) assert.equal(JSON.parse(await fs.readFile(path.join(handle.artifacts, 'process-repairs.json'), 'utf8')).length, 1);
+    });
+});
+
 test('program scope verification runs between native calls and resumes the same checklist once', async t => {
   const f = await fixture(t);
   f.input.deferScopeVerification = true;
@@ -1007,13 +1072,15 @@ const chineseReproduction = `处理上面每个偏差时：
 3. 如果无法复现，说明原因，不要为了通过评审而改动无关代码。`;
 
 async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
-  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true } = {}) {
+  basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true,
+  userText = 'Implement transform.\nReturn the input plus one.', processEntries = [], effectiveToolPolicy } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
   const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
   await fs.writeFile(source, `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
   const entries = [
-    { type: 'user', uuid: 'user-original', message: { role: 'user', content: 'Implement transform.\nReturn the input plus one.' } },
+    { type: 'user', uuid: 'user-original', message: { role: 'user', content: userText } },
+    ...processEntries,
     { type: 'assistant', uuid: 'assistant-complete', message: { role: 'assistant', content: 'Task complete.' } },
   ];
   await fs.writeFile(transcript, entries.map(entry => JSON.stringify(entry)).join('\n') + '\n');
@@ -1050,14 +1117,14 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
       };
       const event = (hook_event_name, fields) => handleRuntimeV2Event({
         projectRoot, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
-        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw },
+        stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw, effectiveToolPolicy },
         input: { hook_event_name, session_id: sessionId, cwd: projectRoot, transcript_path: transcript,
           last_assistant_message: 'Task complete.', ...fields },
       });
       await event('SessionStart', { source: 'startup' });
       const outcome = await event('Stop');
       if (scriptError) throw scriptError;
-      assert(handle?.result, JSON.stringify(outcome.stop));
+      assert(handle?.result || outcome.stop?.reused === true, JSON.stringify(outcome.stop));
       return { stop: outcome.stop, handle };
     },
   };
@@ -1067,6 +1134,38 @@ const submitFrameTool = async (call, name, args) => JSON.parse((await call(name,
 const frameFinishArgs = frameDispositions => ({
   summary: 'Finished checking the original requirements.',
   ...(frameDispositions === undefined ? {} : { frameDispositions }),
+});
+
+test('production Stop writes large semantic navigation as readable JSON before starting its reviewer', async t => {
+  const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] } });
+  const functions = Array.from({ length: 6 }, (_, index) => {
+    const name = `changed_${index}_${'detail'.repeat(85)}`;
+    const caller = `caller_${index}_${'consumer'.repeat(65)}`;
+    return `export function ${name}(input) { return input + 1; }\nexport function ${caller}(input) { return ${name}(input); }`;
+  }).join('\n');
+  await fs.writeFile(f.source, functions + '\n');
+  let reviewerStarted = false;
+  const { handle } = await f.run(async tools => {
+    reviewerStarted = true;
+    for (const file of tools.task.basisFiles) await tools.read(file);
+    const original = tools.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+    const citeId = await tools.read(original);
+    await submitFrameTool(tools.call, 'set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+      text: 'Return the input plus one.', citeId, lineStart: 2, lineEnd: 2 }] });
+    const checklist = await submitFrameTool(tools.call, 'review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+    const links = checklist.items.find(item => item.programStanding === 'REGRESSION')?.regressionEvidence?.semanticNavigationFiles;
+    assert(links?.length, 'the real graph crosses the navigation size limit');
+    const parts = await Promise.all(links.map(file => fs.readFile(file, 'utf8')));
+    const navigation = JSON.parse(parts.join(''));
+    assert.equal(navigation.currentSemanticLinks.length, 6);
+    assert(navigation.currentSemanticLinks.every(link => link.definition && link.caller));
+    assert(Buffer.byteLength(parts.join('')) > 8192);
+    for (const item of checklist.items) await submitFrameTool(tools.call, 'submit_review', { taskId: item.taskId,
+      verdict: 'UNVERIFIED', reason: 'This transport fixture does not supply a semantic verdict.' });
+    await submitFrameTool(tools.call, 'finish_stop_review', frameFinishArgs());
+  });
+  assert.equal(reviewerStarted, true);
+  assert.equal(handle.reviewCompleted, true);
 });
 
 async function startFrameScan({ task, read, call }, { requireFrame = false } = {}) {
@@ -1334,4 +1433,97 @@ test('a full checklist review gives proposed checks ordinary verdicts without fr
   assert.deepEqual(handle.result.metricObjectJudgements.map(row => [row.objectId.slice(0, 3), row.judgement]).sort(),
     [['M09', 'DEVIATION'], ['M16', 'UNVERIFIED']]);
   assert.deepEqual(handle.result.frameCoverage, { status: 'absent', reason: 'NO_FRAME_ITEMS' });
+});
+
+test('production Stop exempts a command only with program-owned nonexecuting tools and lists it separately', async t => {
+  for (const capable of [false, true]) await t.test(capable ? 'fixed build tool retains UNVERIFIED' : 'verified file-only policy', async t => {
+    const command = 'python scripts/check.py';
+    const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'], userText: `Run ${command}.`,
+      effectiveToolPolicy: async () => ({ source: 'HOST_EFFECTIVE_TOOL_CATALOG', hostVersion: '2026.7.1-2', current: true,
+        sessionId: 'protocol-host', policyDigest: 'policy', catalogDigest: 'catalog', tools: capable ? [{ name: 'bench_check' }] : [
+          { name: 'read', schemaHash: '134f19bcabe3e29d63c5cebb38f1d2556759fd08adad6bc90a4b4d3cd1fb8441' }] }) });
+    const { stop } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+      await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS', text: `Run ${command}.`, citeId: original, lineStart: 1, lineEnd: 1 }] });
+      const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+      await submit('submit_review', { taskId: items[0].taskId, verdict: 'UNVERIFIED', reason: 'The original command has no execution receipt.' });
+      await submit('finish_stop_review', { summary: 'Checked the exact original command.', environmentCommands: [{ objectId: items[0].taskId, command }] });
+    });
+    assert.equal(stop.verificationIncomplete, capable, JSON.stringify(stop));
+    assert.equal(stop.environmentUnexecutable.length, capable ? 0 : 1);
+    assert.equal(stop.report.unverifiedItems.length, capable ? 1 : 0);
+    if (!capable) {
+      assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+      assert.equal(stop.report.reviewCoverage.items[0].disposition, 'ENVIRONMENT_UNEXECUTABLE');
+    }
+  });
+});
+
+test('production Stop never admits an unclassified process claim, but keeps a real current repair', async t => {
+  for (const [repair, finding] of [[false, false], [true, false], [false, true], [true, true]])
+    await t.test(`${finding ? 'finding' : 'row'}: ${repair ? 'current residue' : 'unclassified history'}`, async t => {
+    const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'],
+      userText: 'Set active mode to release before completion.', processEntries: [
+        { type: 'assistant', uuid: 'mode-call', message: { content: [{ type: 'tool_use', id: 'mode', name: 'Bash', input: { command: 'check-active-mode' } }] } },
+        { type: 'user', uuid: 'mode-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'mode', is_error: false, content: 'Active mode is debug.' }] } },
+      ] });
+    const { stop } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+      await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
+        text: 'Set active mode to release before completion.', citeId: original, lineStart: 1, lineEnd: 1 }] });
+      const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+      const ids = [];
+      for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push(await tools.read(file));
+      const objectId = checklist.items[0].taskId;
+      if (finding) await submit('submit_finding', { deviationKey: 'active-mode-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+        severity: 'warning', reason: 'The original process result was debug.', expectedConstraint: 'Set active mode to release before completion.',
+        violatedGroundTruthIds: [checklist.items[0].sourceId], citeIds: ids });
+      else await submit('submit_review', { taskId: objectId, verdict: 'DEVIATION', reason: 'The original process result was debug.', citeIds: ids });
+      await submit('finish_stop_review', { summary: 'Process classification controls admission.', ...(repair ? { processRepairs: [{
+        objectId: finding ? 'active-mode-finding' : objectId, currentResidue: 'The current active mode remains debug.', repairAction: 'Set release mode and verify the current setting.' }] } : {}) });
+    });
+    assert.equal(stop.status === 'DEVIATION', repair, JSON.stringify(stop));
+    if (!repair) {
+      assert.equal(stop.admission, null); assert.equal(stop.correctionAttempt, 0);
+      assert.equal(stop.verificationIncomplete, true); assert.equal(stop.historicalDeviations?.length ?? 0, 0);
+    }
+  });
+});
+
+test('production Stop closes with historical deviation, keeps the deviation and never redispatches its notice', async t => {
+  const processEntries = [
+    { type: 'assistant', uuid: 'create-call', message: { content: [{ type: 'tool_use', id: 'created', name: 'openspec_cli', input: { args: ['new', 'change', 'demo'] } }] } },
+    { type: 'user', uuid: 'create-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'created', is_error: false, content: 'Created successfully.' }] } },
+    { type: 'assistant', uuid: 'status-call', message: { content: [{ type: 'tool_use', id: 'status', name: 'openspec_cli', input: { args: ['status'] } }] } },
+    { type: 'user', uuid: 'status-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'status', is_error: false, content: 'Status returned successfully.' }] } },
+  ];
+  const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'],
+    userText: 'Query status before creating the change.', processEntries });
+  const { stop } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    let original;
+    for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+    await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
+      text: 'Query status before creating the change.', citeId: original, lineStart: 1, lineEnd: 1 }] });
+    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+    const citations = [];
+    for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) citations.push(await tools.read(file));
+    const id = checklist.items[0].taskId;
+    await submit('submit_review', { taskId: id, verdict: 'DEVIATION', reason: 'The completed creation precedes the required status query.', citeIds: citations });
+    await submit('finish_stop_review', { summary: 'Only the proved historical order remains.', historicalOrders: [{
+      objectId: id, requiredFirstEventId: 'status', requiredSecondEventId: 'created', historicalOnly: true,
+      reason: 'Creation already occurred; future creations still require a prior status query.' }] });
+  });
+  assert.equal(stop.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS', JSON.stringify(stop));
+  assert.equal(stop.decision, 'allow'); assert.equal(stop.admission, null); assert.equal(stop.correctionAttempt, 0);
+  assert.equal(stop.verificationIncomplete, false); assert.equal(stop.historicalDeviations.length, 1);
+  assert.equal(stop.report.judgements?.[0]?.judgement ?? stop.review.metricObjectJudgements[0]?.judgement, 'DEVIATION');
+  assert.match(stop.feedback, /historical-notice/);
+  const again = (await f.run(async () => assert.fail('An unchanged completed Stop must not invoke a new reviewer.'))).stop;
+  assert.equal(again.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS'); assert.equal(again.feedback, null);
+  assert.equal(again.historicalNotices.length, 0);
 });

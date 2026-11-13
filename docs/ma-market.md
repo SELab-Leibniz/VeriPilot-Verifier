@@ -1,6 +1,6 @@
 # MatrixAssistant 市场发行包
 
-在源码目录运行 `npm run build:ma`，生成 `dist/runtime-corrector-ma-1.9.1.tgz`。
+在源码目录运行 `npm run build:ma`，生成 `dist/runtime-corrector-ma-<版本号>.tgz`。
 发行版本默认取源码根 package.json 的版本，也可运行 `npm run build:ma -- --version 1.9.2`；MA 发行号限定为简单的 `x.y.z`。
 构建需要 Node.js 和系统 `tar`（Windows 自带），不需要安装构建依赖。
 

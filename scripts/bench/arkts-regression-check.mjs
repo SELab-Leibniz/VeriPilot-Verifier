@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { runBoundedProcess } from './bounded-process.mjs';
 import { localTestEvidence, publicLocalTestEvidence } from './local-test-evidence.mjs';
 import { applyJavaEnvironment, resolveJavaHome } from './arkts-java.mjs';
-import { prepareRegressionWorkspace, installRegressionContractProbe, installRegressionCaseFilter } from './regression-workspace.mjs';
+import { prepareRegressionWorkspace, installRegressionContractProbe, installRegressionCaseFilter, installRegressionCaseExclusions } from './regression-workspace.mjs';
 
 export const regressionCheckOverride = { stopCorrection: { regressionCheck: { enabled: true,
   command: ['${node}', '${harnessRoot}/scripts/bench/arkts-regression-check.mjs', '--project=${projectRoot}', '--tool-root=${toolRoot}', '--java-home=${javaHome}'],
@@ -50,9 +50,24 @@ export function regressionVerdict(current, baseline, maxNames = 20) {
       + (comparison.comparable ? ` regressions=${comparison.regressions.length} newFailures=${comparison.newFailures.length} knownFailures=${known.length}` : ' baseline=none') };
 }
 
-export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, contractProbe, isolateTest, timeoutMs = 840000, maxNames = 20, signal }) {
+export function collateralSuiteReceipt(exclusion, baseline, current) {
+  const removed=new Set(exclusion.exclusions.map(x=>x.id));
+  const survivors=Object.keys(baseline.statuses??{}).filter(id=>!removed.has(id));
+  const complete=current.completeRuntime===true&&survivors.length>0&&survivors.every(id=>['PASS','FAIL','ERROR'].includes(current.statuses[id]))
+    &&[...removed].every(id=>!Object.hasOwn(current.statuses,id));
+  return {requestId:exclusion.requestId,baselineSha256:exclusion.baselineSha256,taskStartSuite:true,complete,
+    excludedIds:[...removed],expectedSurvivingCount:survivors.length,observedSurvivingCount:survivors.filter(id=>current.statuses[id]).length,
+    failures:survivors.filter(id=>current.statuses[id]&&current.statuses[id]!=='PASS'),
+    probes:Object.fromEntries(exclusion.probes.map(id=>[id,current.statuses[id]??'UNAVAILABLE']))};
+}
+export async function runRegressionCheck({ project, toolRoot, javaHome, baseline, originalTests = false, contractProbe, isolateTest, excludeCases, timeoutMs = 840000, maxNames = 20, signal }) {
   const testFilter = isolateTest === undefined ? null : regressionCaseScope(isolateTest);
   const baselineEvidence = baseline ? JSON.parse(await fs.readFile(baseline, 'utf8')) : null;
+  const exclusion=excludeCases?JSON.parse(await fs.readFile(excludeCases,'utf8')):null;
+  if(exclusion&&(!originalTests||contractProbe||isolateTest||!baselineEvidence?.completeRuntime||!Array.isArray(exclusion.exclusions)
+    ||!exclusion.exclusions.length||!Array.isArray(exclusion.probes)||!exclusion.probes.length
+    ||exclusion.baselineSha256!==createHash('sha256').update(await fs.readFile(baseline)).digest('hex')))
+    throw new Error('Controlled exclusion requires the exact completed task-start public baseline.');
   if (originalTests && (!baselineEvidence?.completeRuntime || !baselineEvidence.baseCommit))
     throw new Error('--original-tests requires a completed baseline with its exact original test commit.');
   const probeBytes = contractProbe ? await fs.readFile(contractProbe) : null;
@@ -62,6 +77,7 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
   if (probe && baselineEvidence && (!baselineEvidence.completeRuntime || !/^[a-f0-9]{40}$/u.test(baselineEvidence.baseCommit ?? '')))
     throw new Error('Contract probe requires a completed original baseline with its exact commit.');
   const root = await prepareRegressionWorkspace(path.resolve(project), { originalTestCommit: originalTests ? baselineEvidence.baseCommit : undefined, signal });
+  if(exclusion)await installRegressionCaseExclusions(root,exclusion.exclusions);
   if (probe) await installRegressionContractProbe(root, probeBytes);
   if (testFilter) await installRegressionCaseFilter(root, testFilter);
   const java = resolveJavaHome({ explicit: javaHome });
@@ -82,21 +98,23 @@ export async function runRegressionCheck({ project, toolRoot, javaHome, baseline
     title: id.replace(/^[^:]+::[^:]+::/u, '') })) };
   if (isolateTest === undefined) verdict.names.push('RC_REGRESSION_INVENTORY ' + JSON.stringify(inventory));
   const observed = Object.keys(current.statuses);
+  const collateral=exclusion?collateralSuiteReceipt(exclusion,baselineEvidence,current):null;
+  if(collateral)verdict.names.push('RC_REGRESSION_COLLATERAL '+JSON.stringify(collateral));
   const isolatedCase = isolateTest === undefined ? null : { id: isolateTest, status: current.statuses[isolateTest] ?? 'UNAVAILABLE',
     complete: current.completeRuntime && observed.length === 1 && observed[0] === isolateTest, observed };
   if (originalTests && !probe) verdict.line += ' suite=task-start; compare failures with the original request before classifying regressions';
   if (probe) verdict.line += ` contractProbe=${probe.sha256}; ${baselineEvidence ? 'matches the original baseline probe' : 'baseline calibration, not a before/after comparison'}`;
   await fs.writeFile(root + '.result.json', JSON.stringify({ source: path.resolve(project), workspace: root, baselineCommit: baselineEvidence?.baseCommit,
     ...(probe ? { contractProbe: probe } : {}),
-    current, verdict, execution, output, ...(isolatedCase ? { isolatedCase } : {}) }, null, 2));
+    current, verdict, execution, output, ...(isolatedCase ? { isolatedCase } : {}), ...(collateral?{collateral}:{}) }, null, 2));
   const errors = verdict.status === 'INCOMPLETE' ? output.split(/\r?\n/u).filter(line => /\bERROR\b|error:|Exception|RC_ARKTS_JAVA/iu.test(line)).slice(-12) : [];
   return { ...verdict, ...(probe ? { contractProbe: probe, workspace: root } : {}), ...(isolatedCase ? { isolatedCase } : {}),
-    errors, execution: { exitCode: execution.exitCode, interrupted: execution.interrupted, reason: execution.reason } };
+    ...(collateral?{collateral}:{}),errors, execution: { exitCode: execution.exitCode, interrupted: execution.interrupted, reason: execution.reason } };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const { values: args } = parseArgs({ options: Object.fromEntries([...['project', 'tool-root', 'java-home', 'baseline', 'timeout-ms', 'max-names']
-    .concat('contract-probe', 'isolate-test').map(name => [name, { type: 'string' }]), ['help', { type: 'boolean' }], ['original-tests', { type: 'boolean' }]]) });
+    .concat('contract-probe', 'isolate-test', 'exclude-cases').map(name => [name, { type: 'string' }]), ['help', { type: 'boolean' }], ['original-tests', { type: 'boolean' }]]) });
   if (args.help || !args.project || !args['tool-root']) { console.log(usage); process.exit(args.help ? 0 : 2); }
   const controller = new AbortController();
   for (const name of ['SIGINT', 'SIGTERM']) process.once(name, () => controller.abort());
@@ -104,6 +122,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     originalTests: args['original-tests'],
     contractProbe: args['contract-probe'],
     isolateTest: args['isolate-test'],
+    excludeCases: args['exclude-cases'],
     timeoutMs: Number(args['timeout-ms'] ?? 840000), maxNames: Number(args['max-names'] ?? 20), signal: controller.signal });
   console.log([result.line, ...result.names, ...(result.isolatedCase ? [`RC_REGRESSION_CASE ${JSON.stringify(result.isolatedCase)}`] : []),
     ...(result.diagnostics ?? []), ...result.errors.map(line => `  ${line.trim().slice(0, 300)}`),
