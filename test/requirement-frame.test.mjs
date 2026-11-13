@@ -680,7 +680,8 @@ test('source-backed behavior checks keep their entry and reject non-snapshot or 
   const bound = { ...scenario('a missing value'), when: 'accept(undefined) is called', then: 'return false without storing',
     entryPoint: { path: 'accept.ts', symbol: 'accept' }, contractCell: 'values_defaults', evidence: [source] };
   const f = await fixture(t, { files: { 'accept.ts': 'export function accept(value) {\n  return value != null\n}\n' },
-    propose: () => ({ guidance: [], scenarios: [bound,
+    propose: ({ params }) => params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')
+      ? { guidance: [], scenarios: [] } : ({ guidance: [], scenarios: [bound,
       { ...bound, evidence: [{ ...source, path: 'candidate-only.ts' }] },
       { ...bound, evidence: [{ ...source, endLine: 80 }] },
       { ...scenario('an empty value'), entryPoint: bound.entryPoint },
@@ -701,4 +702,49 @@ test('source-backed behavior checks keep their entry and reject non-snapshot or 
   assert.equal(frame.scenarios[1].entryPoint, undefined);
   const brief = await f.runtime.prompt({ prompt: userText }, { ...f.ctx, runId: 'new-turn', trigger: 'user' });
   assert.match(JSON.stringify(brief), /accept\.ts:1-3/u);
+});
+
+test('contract counterexamples inspect only the task-start source and join selection once', async t => {
+  const evidence = [{ path: 'gate.ts', startLine: 1, endLine: 3 }];
+  const entryPoint = { path: 'gate.ts', symbol: 'Gate.accepts' };
+  const change = { ...scenario('a blocked string', .9, 'blocked values'), kind: 'requirement',
+    when: 'Gate.accepts(value) is called', then: 'reject the blocked value', entryPoint, evidence, contractCell: 'branch_matrix' };
+  const boundary = { ...scenario('a missing value'), when: 'Gate.accepts(undefined) is called',
+    then: 'return false', entryPoint, evidence, contractCell: 'values_defaults' };
+  let challenged = 0;
+  const f = await fixture(t, { files: { 'gate.ts': "export class Gate {\n  static accepts(value) { return typeof value === 'string' }\n}\n" },
+    propose: async ({ params, call }) => {
+      if (!params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')) return {
+        guidance: [guidance('Gate.accepts owns the input decision', .9, evidence)], scenarios: [change] };
+      challenged++;
+      const source = toolText(await call('source_read', { path: 'gate.ts' }));
+      assert.match(source, /typeof value/u);
+      assert.doesNotMatch(source, /candidate accepts everything/u);
+      await assert.rejects(call('source_read', { path: 'candidate-only.ts' }), { code: 'ENOENT' });
+      assert(params.prompt.includes('a blocked string'));
+      return { guidance: [], scenarios: [boundary] };
+    } });
+  await f.prompt('Reject blocked values while preserving existing empty input behavior.');
+  await fs.writeFile(path.join(f.projectRoot, 'gate.ts'), '// candidate accepts everything\n');
+  await fs.writeFile(path.join(f.projectRoot, 'candidate-only.ts'), '// not task-start evidence\n');
+  const frame = await f.frame();
+  assert.equal(challenged, 1);
+  assert.deepEqual(frame.counts, { proposed: 3, valid: 3, selected: 3 });
+  assert.deepEqual(frame.scenarios.map(item => item.contractCell), ['branch_matrix', 'values_defaults']);
+});
+
+test('an unavailable counterexample session keeps the valid original proposals without retrying', async t => {
+  let attempts = 0;
+  const f = await fixture(t, { files: { 'pricing.ts': 'export function price(value) { return value == null ? 0 : value }\n' },
+    propose: ({ params }) => {
+      if (params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')) { attempts++; throw new Error('session unavailable'); }
+      return { guidance: [], scenarios: [{ ...scenario('a missing value'),
+        entryPoint: { path: 'pricing.ts', symbol: 'price' }, contractCell: 'values_defaults',
+        evidence: [{ path: 'pricing.ts', startLine: 1, endLine: 1 }] }] };
+    } });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.status, 'ready');
+  assert.equal(frame.scenarios.length, 1);
+  assert.equal(attempts, 1);
 });
