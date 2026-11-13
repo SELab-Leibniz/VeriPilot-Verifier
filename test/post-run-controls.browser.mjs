@@ -19,6 +19,11 @@ const manager = createPostRunDispatcher({ directoryFor: () => root, validate: as
     sent.push(task); userRuns.add(task.runId); return { runId: task.runId };
   } });
 const methods = new Map(), routes = [], errors = [];
+const approvalModes = new Map();
+for (const action of ['get', 'set']) methods.set(`runtime-corrector.approvals.${action}`, async ({ params, respond }) => {
+  if (action === 'set') approvalModes.set(params.sessionKey, params.mode);
+  respond(true, { available: true, mode: approvalModes.get(params.sessionKey) ?? 'normal', pending: [] });
+});
 registerPostRunControls({ config: {}, logger: { warn() {} }, registerGatewayMethod: (name, handler) => methods.set(name, handler),
   registerHttpRoute: route => routes.push(route) }, { postRuns: manager, postRunReady: Promise.resolve(), validatePostSession: async () => true },
   { compatibility: async () => ({ browserClient: "fixture-client.mjs", version: "test" }) });
@@ -56,11 +61,19 @@ try {
   await page.locator("#connect").click();
   await page.locator("#pending").filter({ hasText: "" }).waitFor();
   await page.waitForFunction(() => document.getElementById("pending").value === "alpha next task");
+  await page.locator('#approval-mode:enabled').waitFor();
+  assert.equal(await page.locator('#approval-mode').inputValue(), 'normal');
+  await page.locator('#approval-mode').selectOption('unattended');
+  await page.waitForFunction(() => document.getElementById('approval-status').textContent.includes('自动授权'));
+  assert.equal(approvalModes.get('agent:main:alpha'), 'unattended');
   await page.locator("#pending").fill("alpha edited draft");
   await page.getByRole("button", { name: "agent:main:beta", exact: false }).click();
   await page.waitForFunction(() => document.getElementById("pending").value === "beta next task");
+  await page.locator('#approval-mode:enabled').waitFor();
+  assert.equal(await page.locator('#approval-mode').inputValue(), 'normal');
   await page.getByRole("button", { name: "agent:main:alpha", exact: false }).click();
   await page.waitForFunction(() => document.getElementById("pending").value === "alpha edited draft");
+  await page.waitForFunction(() => document.getElementById('approval-mode').value === 'unattended');
   const alpha = manager.snapshot(identity("alpha")), task = alpha.pending[0];
   await manager.mutate(alpha, { id: task.id, revision: task.revision, text: "changed in another tab" });
   await page.waitForFunction(() => document.getElementById("queue-note").textContent.includes("其他页面"));

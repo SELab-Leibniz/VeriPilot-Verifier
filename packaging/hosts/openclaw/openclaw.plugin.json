@@ -2,7 +2,7 @@
   "id": "runtime-corrector",
   "name": "runtime-corrector",
   "main": "./lib/openclaw/entry.mjs",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Evidence-bound native review; host execution, output and approvals remain native.",
   "activation": {
     "onStartup": true
@@ -45,6 +45,14 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
+      "approvals": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mode": { "type": "string", "enum": ["normal", "unattended"], "default": "normal", "description": "RC 后台审批：普通模式在所属聊天中确认；无人值守只自动授权本次 RC 的专用工具。" },
+          "confirmationTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "default": 300000 }
+        }
+      },
       "enabled": {
         "type": "boolean",
         "default": true

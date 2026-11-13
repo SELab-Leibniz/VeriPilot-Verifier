@@ -155,6 +155,8 @@
     "lib/openclaw/controller-store.mjs",
     "lib/openclaw/delivery.mjs",
     "lib/openclaw/entry.mjs",
+    "lib/openclaw/approval-router.mjs",
+    "lib/openclaw/ma-approval-bridge.mjs",
     "lib/openclaw/evidence.mjs",
     "lib/openclaw/hook-timeout.mjs",
     "lib/openclaw/repair-step-budget.mjs",

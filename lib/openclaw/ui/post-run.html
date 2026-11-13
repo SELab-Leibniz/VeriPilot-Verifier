@@ -9,6 +9,7 @@
 <section id="detail" aria-label="选中会话"><p id="empty">连接后选择一个会话。切换 MA 会话时，请在这里选择对应会话。</p><div id="selected" hidden><h2 id="name"></h2><p id="project"></p><p id="identity" class="muted"></p>
 <div class="phase-line"><strong id="phase"></strong><p id="reason" class="muted"></p></div>
 <p id="coexistence" class="muted" role="status" hidden></p>
+<section aria-label="RC 审批模式"><label for="approval-mode">后台检查的审批方式</label><select id="approval-mode" disabled><option value="normal">普通模式：在所属聊天中确认</option><option value="unattended">无人值守：自动授权 RC 专用工具</option></select><p id="approval-status" class="muted" role="status"></p></section>
 <section id="recovery" hidden><h3>运行状态核对</h3><p id="recovery-status" role="status"></p><div class="actions"><button id="recheck" class="secondary">重新核对</button><button id="cancel-run" class="secondary">确认取消</button><button id="release-run" class="secondary">安全解除</button></div><p class="muted">安全解除需再次确认，只解除 RC 的调度占用，不表示宿主已结束或已取消；不会重发未确认的任务和待办。</p><ol id="recovery-audit"></ol></section>
 <section id="observability" aria-label="纠偏运行记录">
 <div class="section-heading"><h3>纠偏运行概览</h3><button id="obs-refresh" class="secondary">刷新记录</button></div>
