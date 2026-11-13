@@ -61,3 +61,27 @@ test('three settlements notify once, spend no quota and close distinctly from PA
   await store.settleReview({...params,stopId:'cancelled'});
   assert.equal(Object.keys((await store.inspect('session')).historicalNotices).length,2,'a genuine new user flow is a distinct notice scope');
 });
+
+test('three distinct stage Stops deduplicate the same fact while new events, duties and revisions notify independently', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-historical-stages-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const store = createStopCorrectionStore({ directory });
+  const settle = async (stopId, history) => {
+    await store.beginStop({ sessionId: 'session', flowId: 'same-flow', stopId, sourceInput: { origin: 'HUMAN', id: 'same-user' },
+      config: { enabled: true }, initialize: { kind: 'NEW_SESSION', evidence: 'trusted fixture' } });
+    await store.bindReviewScope({ sessionId: 'session', stopId, scopeId: 'same-scope', classification: { stopClassification: 'STAGE_COMPLETE', stage: 'proposal' } });
+    return store.settleReview({ sessionId: 'session', stopId, status: HISTORICAL_ORDER_STATUS,
+      progress: { complete: true }, historicalDeviations: [history] });
+  };
+  for (const [index, count] of [[1, 1], [2, 0], [3, 0]])
+    assert.equal((await settle('stage-' + index, proof())).newHistoricalNotices.length, count);
+  const changedEvents = new Map(events); changedEvents.set('created', { ...events.get('created'), resultDigest: 'new-original-event' });
+  const newEvent = historicalOrderProof({ proposal, object, row, events: changedEvents });
+  const newDuty = historicalOrderProof({ proposal: { ...proposal, objectId: 'M11:other' }, object: { ...object, objectId: 'M11:other' }, row, events });
+  const revised = historicalOrderProof({ proposal, object: { ...object, originalSource: { ...object.originalSource, sha256: 'revised-source' } }, row, events });
+  for (const [index, history] of [newEvent, newDuty, revised].entries())
+    assert.equal((await settle('new-fact-' + index, history)).newHistoricalNotices.length, 1);
+  const state = await store.inspect('session');
+  assert.equal(Object.keys(state.historicalNotices).length, 4);
+  assert.equal(state.used, 0); assert.equal(Object.keys(state.admissions).length, 0);
+});
