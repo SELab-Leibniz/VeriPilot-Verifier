@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {historicalOrderProof,successfulHistoricalResult,partitionHistoricalDeviations,HISTORICAL_ORDER_STATUS} from '../lib/runtime-v2/historical-order.mjs';
+import {historicalOrderProof,successfulHistoricalResult,partitionHistoricalDeviations,HISTORICAL_ORDER_STATUS,
+  classifiedProcessRow,processRepairProof} from '../lib/runtime-v2/historical-order.mjs';
 import {createStopCorrectionStore} from '../lib/runtime-v2/stop-correction-store.mjs';
 const object={objectId:'M11:rule',verificationTarget:'PROCESS',originalSource:{kind:'PROJECT_FILE',ref:'AGENTS.md',sha256:'source-v1',start:10,end:10}};
 const row={judgement:'DEVIATION'};
@@ -11,6 +12,23 @@ const events=new Map([['created',{callIndex:1,resultIndex:2,successful:true,call
  ['status',{callIndex:3,resultIndex:4,successful:true,callDigest:'status',resultDigest:'queried'}]]);
 const proposal={objectId:object.objectId,requiredFirstEventId:'status',requiredSecondEventId:'created',historicalOnly:true,reason:'The required status check occurred after the original creation.'};
 const proof=()=>historicalOrderProof({proposal,object,row,events});
+
+test('unclassified original process claims fail closed while genuine current repairs and source deviations remain actionable',()=>{
+  const candidate={...row,objectId:object.objectId,reason:'The old order cannot be undone.'};
+  assert.equal(classifiedProcessRow({object,row:candidate}).judgement,'UNVERIFIED');
+  assert.equal(candidate.judgement,'DEVIATION');
+  assert.equal(classifiedProcessRow({object,row:candidate,historical:true}).judgement,'DEVIATION');
+  const repair={objectId:object.objectId,currentResidue:'The active configuration is still debug.',repairAction:'Set the active configuration to release and verify it.'};
+  assert.equal(processRepairProof({proposal:repair,object,row:candidate}).kind,'CURRENT_PROCESS_REPAIR');
+  assert.equal(classifiedProcessRow({object,row:candidate,repair:true}).judgement,'DEVIATION');
+  for(const invalid of [{...repair,currentResidue:''},{...repair,repairAction:' '},{...repair,objectId:'another'}])
+    assert.throws(()=>processRepairProof({proposal:invalid,object,row:candidate}),{code:'PROCESS_REPAIR_PROOF_INVALID'});
+  const source={...object,verificationTarget:'IMPLEMENTATION'};
+  assert.equal(classifiedProcessRow({object:source,row:candidate}).judgement,'DEVIATION');
+  assert.equal(classifiedProcessRow({object:{...source,metricId:'M11'},row:candidate}).judgement,'UNVERIFIED',
+    'the shared canonical PROCESS owner cannot be bypassed with a legacy target label');
+  assert.throws(()=>processRepairProof({proposal:repair,object:source,row:candidate}),{code:'PROCESS_REPAIR_PROOF_INVALID'});
+});
 
 test('only successful inverted original process events establish a historical residue',()=>{
   assert.equal(successfulHistoricalResult({is_error:false,content:'{"exitCode":1}'}),false);

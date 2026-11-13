@@ -60,6 +60,44 @@ test('workspace review binds a historical process inversion to original calls an
   await handle.close();
 });
 
+test('ordinary and partial process-deviation channels cannot bypass historical classification', async t => {
+  for (const mode of ['finished-unclassified', 'overflow-unclassified', 'current-repair', 'finding-unclassified', 'finding-current-repair'])
+    await t.test(mode, async t => {
+      const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+      f.input.request.population.reviewPolicy = { deviationOnly: true };
+      f.input.request.population.metrics = { M11: [{ ...original, objectId: 'M11:R1', metricId: 'M11',
+        verificationTarget: 'PROCESS', originalSource: { kind: 'USER_MESSAGE', ref: 'original', sha256: 'rule', start: 1, end: 1 } }] };
+      f.input.evidence.snapshot.entries.push(
+        { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'checked-mode', name: 'Bash', input: { command: 'check-active-mode' } }] } },
+        { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'checked-mode', is_error: false, content: 'Current active mode is debug.' }] } });
+      const finding = mode.startsWith('finding-'), repair = mode.endsWith('current-repair');
+      const handle = await f.run(async ({ readAll, read, submit }) => {
+        await readAll();
+        const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+        const sample = checklist.processEvidence.executionSamples[0], ids = [];
+        for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
+        const receipt = finding ? await submit('submit_finding', { deviationKey: 'process-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+          severity: 'warning', reason: 'The active mode is still debug.', expectedConstraint: original.description,
+          violatedGroundTruthIds: [original.sourceId], citeIds: ids })
+          : await submit('submit_review', { taskId: 'M11:R1', verdict: 'DEVIATION',
+            reason: repair ? 'The active mode is still debug.' : 'Only the already completed historical order is wrong; no artifact defect remains.', citeIds: ids });
+        assert.equal(receipt.processClassificationRequired, true);
+        if (mode === 'overflow-unclassified') throw Object.assign(new Error('Controlled overflow after saving a process candidate.'), { code: 'CONTEXT_OVERFLOW' });
+        await submit('finish_stop_review', { summary: 'The process disposition is explicit.', ...(repair ? { processRepairs: [{
+          objectId: finding ? 'process-finding' : 'M11:R1', currentResidue: 'Active mode remains debug.',
+          repairAction: 'Set mode to release and read back the current setting.' }] } : {}) });
+      });
+      if (finding) {
+        assert.equal(handle.result.findings.length, repair ? 1 : 0);
+        if (!repair) assert(handle.result.unverifiedItems.some(item => item.type === 'PROCESS_CLASSIFICATION'));
+      } else {
+        assert.equal(handle.result.metricObjectJudgements[0].judgement, repair ? 'DEVIATION' : 'UNVERIFIED');
+        if (!repair) assert(handle.result.unverifiedItems.length > 0);
+      }
+      if (repair) assert.equal(JSON.parse(await fs.readFile(path.join(handle.artifacts, 'process-repairs.json'), 'utf8')).length, 1);
+    });
+});
+
 test('program scope verification runs between native calls and resumes the same checklist once', async t => {
   const f = await fixture(t);
   f.input.deferScopeVerification = true;
@@ -1419,6 +1457,39 @@ test('production Stop exempts a command only with program-owned nonexecuting too
     if (!capable) {
       assert.equal(stop.status, 'NO_DEVIATION_FOUND');
       assert.equal(stop.report.reviewCoverage.items[0].disposition, 'ENVIRONMENT_UNEXECUTABLE');
+    }
+  });
+});
+
+test('production Stop never admits an unclassified process claim, but keeps a real current repair', async t => {
+  for (const [repair, finding] of [[false, false], [true, false], [false, true], [true, true]])
+    await t.test(`${finding ? 'finding' : 'row'}: ${repair ? 'current residue' : 'unclassified history'}`, async t => {
+    const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M11'],
+      userText: 'Set active mode to release before completion.', processEntries: [
+        { type: 'assistant', uuid: 'mode-call', message: { content: [{ type: 'tool_use', id: 'mode', name: 'Bash', input: { command: 'check-active-mode' } }] } },
+        { type: 'user', uuid: 'mode-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'mode', is_error: false, content: 'Active mode is debug.' }] } },
+      ] });
+    const { stop } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+      await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
+        text: 'Set active mode to release before completion.', citeId: original, lineStart: 1, lineEnd: 1 }] });
+      const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+      const ids = [];
+      for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push(await tools.read(file));
+      const objectId = checklist.items[0].taskId;
+      if (finding) await submit('submit_finding', { deviationKey: 'active-mode-finding', rootCauseId: 'REQUIREMENT_OMITTED',
+        severity: 'warning', reason: 'The original process result was debug.', expectedConstraint: 'Set active mode to release before completion.',
+        violatedGroundTruthIds: [checklist.items[0].sourceId], citeIds: ids });
+      else await submit('submit_review', { taskId: objectId, verdict: 'DEVIATION', reason: 'The original process result was debug.', citeIds: ids });
+      await submit('finish_stop_review', { summary: 'Process classification controls admission.', ...(repair ? { processRepairs: [{
+        objectId: finding ? 'active-mode-finding' : objectId, currentResidue: 'The current active mode remains debug.', repairAction: 'Set release mode and verify the current setting.' }] } : {}) });
+    });
+    assert.equal(stop.status === 'DEVIATION', repair, JSON.stringify(stop));
+    if (!repair) {
+      assert.equal(stop.admission, null); assert.equal(stop.correctionAttempt, 0);
+      assert.equal(stop.verificationIncomplete, true); assert.equal(stop.historicalDeviations?.length ?? 0, 0);
     }
   });
 });
