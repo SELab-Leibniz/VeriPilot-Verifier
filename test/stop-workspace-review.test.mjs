@@ -1278,7 +1278,7 @@ test('7.4.3–4: absent frames preserve the original basis, instructions and fin
   assert.equal(stop.review.unverifiedItems.length, 4);
 });
 
-test('incomplete frame preparation remains an unresolved Stop item even without a brief', async t => {
+test('incomplete advisory preparation remains visible without inventing an unresolved delivery contract', async t => {
   const f = await fixture(t);
   f.input.request.requirementFrame = { reason: 'SELECTION_INCOMPLETE', preparationIncomplete: true };
   const handle = await scriptedWorkspaceReview(f.input, { script: async ({ task, read, call }) => {
@@ -1287,7 +1287,8 @@ test('incomplete frame preparation remains an unresolved Stop item even without 
     await f.scope(submit);
     await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Checked delivery.', finish: true });
   } });
-  assert(handle.result.unverifiedItems.some(item => item.type === 'FRAME_PREPARATION' && item.reason.includes('SELECTION_INCOMPLETE')));
+  assert(!handle.result.unverifiedItems.some(item => item.type === 'FRAME_PREPARATION'));
+  assert.equal(handle.result.frameCoverage.reason,'SELECTION_INCOMPLETE');
 });
 
 test('a framed full-checklist review cannot bypass dispositions with submit_review.finish', async t => {

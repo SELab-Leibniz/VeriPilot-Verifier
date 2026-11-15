@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { auditFrameSelection } from '../lib/runtime-v2/frame-selection.mjs';
+import { auditFrameSelection, createFrameSelectionLedger } from '../lib/runtime-v2/frame-selection.mjs';
 import { countFrameDispositions } from '../lib/runtime-v2/requirement-frame.mjs';
 
 const scenario = (id, symbol = 'Consumer.apply', kind = 'requirement') => ({ id, type: 'scenario', kind,
@@ -54,8 +54,42 @@ test('Stop requires the original entry and dependency prerequisites, and an expl
   assert.equal(count({...checked,contractAssessment:{...assess,given:'A new mock returns failure.'}}),null);
   assert.equal(count({...checked,contractAssessment:{...assess,trace:' '}}),null);
   assert.equal(count(checked).checked,1);
+  const bound=count({...checked,contractAssessment:{applicability:assess.applicability,trace:assess.trace}});
+  assert.deepEqual(bound.items[0].contractAssessment.entryPoint,original.entryPoint);
+  assert.equal(bound.items[0].contractAssessment.given,original.given);
   const na={...checked,reason:'The later original request explicitly removed this input from scope.',
     contractAssessment:{...assess,applicability:'NOT_APPLICABLE',trace:'U2 narrows the operation to nonempty targets; consumer.ts:12 keeps the old empty branch.'}};
   assert.equal(count(na).items[0].contractAssessment.applicability,'NOT_APPLICABLE');
   assert.equal(count({id:'S1',disposition:'UNVERIFIED',reason:'Original suite fails; setup interference is not established.'}).unverified,1);
+});
+
+test('incremental decisions retain valid siblings, explicit pending and bounded publication', () => {
+  const candidates=Array.from({length:8},(_,i)=>scenario(String(i)));
+  const ledger=createFrameSelectionLedger(candidates);
+  let view=ledger.submit([row('0'),row('1','covered',{coveredBy:'unknown'}),null]);
+  assert.equal(view.publishable,true);
+  assert.equal(view.dispositions.find(x=>x.id==='1').decision,'pending');
+  assert.equal(view.complete,false);
+  view=ledger.submit(candidates.slice(1).map(x=>row(x.id)));
+  assert.equal(view.dispositions.filter(x=>x.decision==='select').length,6);
+  assert.equal(view.dispositions.filter(x=>x.decision==='deferred').length,2);
+  assert.equal(view.complete,false);
+  view=ledger.submit([row('6','covered',{coveredBy:'0'}),row('7','reject')]);
+  assert.equal(view.complete,true);
+  assert.equal(view.dispositions.find(x=>x.id==='0').decision,'select');
+});
+
+test('receipts reject conflicting duplicates and cover cycles without erasing prior accepted work', () => {
+  const ledger=createFrameSelectionLedger([scenario('A'),scenario('B'),scenario('C','Other.entry')]);
+  ledger.submit([row('A')]);
+  let view=ledger.submit([row('A','reject'),row('A'),row('B','covered',{coveredBy:'C'}),row('C','covered',{coveredBy:'B'})]);
+  assert.equal(view.dispositions[0].decision,'select');
+  assert.equal(view.dispositions[1].decision,'pending');
+  view=ledger.submit([row('B','covered',{coveredBy:'A'}),row('C','defer')]);
+  assert.equal(view.dispositions[1].decision,'covered');
+  assert.equal(view.dispositions[2].decision,'deferred');
+  const cycle=createFrameSelectionLedger([scenario('X'),scenario('Y')]).submit([
+    row('X','covered',{coveredBy:'Y'}),row('Y','covered',{coveredBy:'X'})]);
+  assert.equal(cycle.publishable,false);
+  assert(cycle.dispositions.every(x=>x.decision==='pending'));
 });

@@ -30,7 +30,7 @@ const scenario = (given, confidence = 0.9, quote = 'empty input') =>
   ({ kind: 'preservation', quote, given, when: 'called', then: 'use the default', confidence });
 const ordinaryProposal = () => ({ guidance: [guidance('Use the existing default')], scenarios: [] });
 const review = (item, decision = 'select') => ({ id: item.id, decision, reason: 'scripted' });
-const selectAll = items => ({ reviews: items.map(item => review(item)) });
+const selectAll = items => ({ reviews: items.map(item => review(item)), finish: true });
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
   archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
@@ -215,7 +215,7 @@ test('3. incomplete selection is repaired and explicitly selected low confidence
   let calls = 0;
   const f = await fixture(t, {
     propose: () => ({ guidance: [guidance('keep', .75), guidance('low', .1), guidance('reject'), guidance('omitted')], scenarios: [] }),
-    select: items => ({ reviews: (++calls === 1 ? items.slice(0,3) : items).map(x => review(x, x.statement === 'reject' ? 'reject' : 'select')) }),
+    select: items => ({ reviews: (++calls === 1 ? items.slice(0,3) : items).map(x => review(x, x.statement === 'reject' ? 'reject' : 'select')), finish: true }),
   });
   await f.prompt();
   const frame = await f.frame();
@@ -745,7 +745,7 @@ test('contract counterexamples inspect only the task-start source and join selec
   assert.deepEqual(frame.scenarios.map(item => item.contractCell), ['branch_matrix', 'values_defaults']);
 });
 
-test('an unavailable counterexample session withholds the brief and records the failure', async t => {
+test('an unavailable counterexample session permits a reviewed partial brief and records the failure', async t => {
   let attempts = 0;
   const f = await fixture(t, { files: { 'pricing.ts': 'export function price(value) { return value == null ? 0 : value }\n' },
     propose: ({ params }) => {
@@ -755,13 +755,13 @@ test('an unavailable counterexample session withholds the brief and records the 
     }, challenge: () => { attempts++; throw new Error('session unavailable'); } });
   await f.prompt();
   const frame = await f.frame();
-  assert.equal(frame.status, 'unavailable');
+  assert.equal(frame.status, 'partial');
   assert.equal(frame.reason, 'COUNTEREXAMPLE_INCOMPLETE');
-  assert.equal(frame.scenarios.length, 0);
+  assert.equal(frame.scenarios.length, 1);
   assert.equal(attempts, 1);
 });
 
-test('over-quota supported scenarios withhold the brief rather than lose a boundary', async t => {
+test('over-quota supported scenarios publish a partial brief with explicit internal deferral', async t => {
   const evidence = [{ path: 'billing.ts', startLine: 1, endLine: 2 }];
   const primary = { ...scenario('a priced value', .99, 'charge rule'), kind: 'requirement',
     entryPoint: { path: 'billing.ts', symbol: 'Quote.price' }, evidence, contractCell: 'values_defaults' };
@@ -775,11 +775,33 @@ test('over-quota supported scenarios withhold the brief rather than lose a bound
         : [boundary, other] } });
   await f.prompt('Support the revised charge rule while preserving empty input behavior.');
   const frame = await f.frame();
-  assert.equal(frame.status, 'unavailable');
+  assert.equal(frame.status, 'partial');
   assert.equal(frame.reason, 'SELECTION_INCOMPLETE');
   assert.equal(frame.selectionCoverage.dispositions.length, 8);
-  assert(frame.selectionCoverage.issues.some(x => x.includes('limit')));
-  assert.equal(deliveredBrief(await f.toolResult('over-quota')), undefined);
+  assert(frame.selectionCoverage.dispositions.some(x => x.decision === 'deferred'));
+  const brief=deliveredBrief(await f.toolResult('over-quota'));
+  assert.match(brief,/may still contain omissions/u);
+  assert.doesNotMatch(brief,/Publication quota|pending|deferred/u);
   const stop = await readStopFrame({projectRoot:f.projectRoot,sessionId:f.sessionId,startHead:frame.startHead,review:true});
-  assert.equal(stop.preparationIncomplete,true);
+  assert.equal(stop.basis.scenarios.length,6);
+});
+
+test('a selector timeout preserves accepted receipts and emits only a generic omission reminder once', async t => {
+  const f=await fixture(t,{timeoutMs:2500,locale:'zh',propose:()=>({guidance:[guidance('Use the owner'),guidance('Not yet reviewed')],scenarios:[]}),
+    select:async(items,params,call)=>{
+      await call('submit_frame_selection',{reviews:[review(items[0])],finish:false});
+      await delay(10000,undefined,{signal:params.abortSignal}).catch(async error=>{
+        await assert.rejects(call('submit_frame_selection',{reviews:[review(items[1])],finish:true}));
+        throw error;
+      });
+      return {reviews:[]};
+    }});
+  await f.prompt();
+  const frame=await f.frame();
+  assert.equal(frame.status,'partial');assert.equal(frame.reason,'TIMEOUT');
+  assert.equal(frame.guidance.length,1);assert.equal(frame.selectionCoverage.dispositions.length,2);
+  const brief=deliveredBrief(await f.toolResult('partial'));
+  assert.match(brief,/本次梳理可能仍有遗漏/u);assert.match(brief,/Use the owner/u);
+  assert.doesNotMatch(brief,/Not yet reviewed|pending|TIMEOUT|P1-G2/u);
+  assert.equal(deliveredBrief(await f.toolResult('again')),undefined);
 });
