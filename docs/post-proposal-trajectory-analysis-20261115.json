@@ -1,0 +1,301 @@
+{
+  "asOf": "2026-11-15T03:54:29.854509+00:00",
+  "baseCommit": "c286bc5e545cbbd61e6f16d4c2a1eb14150460c3",
+  "runtimeHead": "ed0f5dc46eeea415facf52541954dee9d7a60e88",
+  "initialRows": [
+    {
+      "case": "security_tool_2",
+      "sourceCommit": "a41c4f6f393981b453339c78bd2a820f88b14e3c",
+      "f2p": "2/2",
+      "p2p": "746/746",
+      "completeIndependent": true,
+      "repeat": null,
+      "frame": {
+        "status": "ready",
+        "reason": null,
+        "counts": {
+          "proposed": 40,
+          "valid": 39,
+          "selected": 14
+        },
+        "startedAt": "2026-11-15T01:36:05.329Z",
+        "finishedAt": "2026-11-15T01:43:46.726Z"
+      },
+      "actualClosureComplete": true,
+      "bindingValid": true,
+      "naturalExit": true,
+      "corrections": 1,
+      "projectRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-e19b57f00fee",
+      "businessTurns": [
+        {
+          "phase": "proposal",
+          "at": "2026-11-15T01:35:50.528Z"
+        },
+        {
+          "phase": "codeing",
+          "at": "2026-11-15T01:44:40.950Z"
+        }
+      ],
+      "briefDeliveries": [
+        {
+          "at": "2026-11-15T01:44:43.666Z",
+          "channel": "run_start",
+          "runId": "5ec75a11-7bc3-45bf-aba9-8ddcfa338a9e",
+          "startHead": "dae99b0d3cc461d827b4dc0e2f05263d21005377",
+          "productionChangesBefore": 1
+        }
+      ],
+      "counterexampleSubmittedAt": [
+        "2026-11-15T01:40:35.422000+00:00"
+      ]
+    },
+    {
+      "case": "security_tool_9",
+      "sourceCommit": "a41c4f6f393981b453339c78bd2a820f88b14e3c",
+      "f2p": "6/7",
+      "p2p": "669/670",
+      "completeIndependent": false,
+      "repeat": {
+        "sameFrozenCandidate": true,
+        "complete": true,
+        "f2p": "6/7",
+        "p2p": "670/670",
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-20261115\\round-1\\B\\st9\\grade-repeat-incomplete\\results.json",
+        "sha256": "43d846d3fc098e516831e03a69044232b2d717d3139befffe1b82c8570914f3b"
+      },
+      "frame": {
+        "status": "ready",
+        "reason": null,
+        "counts": {
+          "proposed": 40,
+          "valid": 40,
+          "selected": 14
+        },
+        "startedAt": "2026-11-15T02:07:20.930Z",
+        "finishedAt": "2026-11-15T02:15:42.007Z"
+      },
+      "actualClosureComplete": false,
+      "bindingValid": true,
+      "naturalExit": true,
+      "corrections": 0,
+      "projectRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-b57d6ac10c6c",
+      "businessTurns": [
+        {
+          "phase": "proposal",
+          "at": "2026-11-15T02:07:11.288Z"
+        },
+        {
+          "phase": "codeing",
+          "at": "2026-11-15T02:12:37.687Z"
+        }
+      ],
+      "briefDeliveries": [
+        {
+          "at": "2026-11-15T02:15:56.111Z",
+          "channel": "tool_result",
+          "runId": "5f189ddc-0608-4d6a-b606-66a1d7c3d30d",
+          "startHead": "489d6f63eabdf4f2cf49aa54d97d47a62176abfa",
+          "productionChangesBefore": 6
+        }
+      ],
+      "counterexampleSubmittedAt": [
+        "2026-11-15T02:12:11.354000+00:00"
+      ]
+    },
+    {
+      "case": "security_tool_6",
+      "sourceCommit": "a41c4f6f393981b453339c78bd2a820f88b14e3c",
+      "f2p": "7/7",
+      "p2p": "616/617",
+      "completeIndependent": true,
+      "repeat": null,
+      "frame": {
+        "status": "unavailable",
+        "reason": "TIMEOUT",
+        "counts": {
+          "proposed": 41,
+          "valid": 41,
+          "selected": 0
+        },
+        "startedAt": "2026-11-15T02:28:35.299Z",
+        "finishedAt": "2026-11-15T02:38:35.666Z"
+      },
+      "actualClosureComplete": false,
+      "bindingValid": true,
+      "naturalExit": true,
+      "corrections": 0,
+      "projectRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-fc776f77fcc5",
+      "businessTurns": [
+        {
+          "phase": "proposal",
+          "at": "2026-11-15T02:28:27.188Z"
+        },
+        {
+          "phase": "codeing",
+          "at": "2026-11-15T02:34:48.024Z"
+        }
+      ],
+      "briefDeliveries": [],
+      "counterexampleSubmittedAt": [
+        "2026-11-15T02:35:12.086000+00:00"
+      ]
+    },
+    {
+      "case": "soduku-harmony_11",
+      "sourceCommit": "a41c4f6f393981b453339c78bd2a820f88b14e3c",
+      "f2p": "10/10",
+      "p2p": "288/288",
+      "completeIndependent": true,
+      "repeat": null,
+      "frame": {
+        "status": "unavailable",
+        "reason": "SELECTION_INCOMPLETE",
+        "counts": {
+          "proposed": 35,
+          "valid": 32,
+          "selected": 0
+        },
+        "startedAt": "2026-11-15T03:05:40.370Z",
+        "finishedAt": "2026-11-15T03:14:31.600Z"
+      },
+      "actualClosureComplete": false,
+      "bindingValid": true,
+      "naturalExit": true,
+      "corrections": 0,
+      "projectRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-6d692668d5e1",
+      "businessTurns": [
+        {
+          "phase": "proposal",
+          "at": "2026-11-15T03:05:29.506Z"
+        },
+        {
+          "phase": "codeing",
+          "at": "2026-11-15T03:11:01.783Z"
+        }
+      ],
+      "briefDeliveries": [],
+      "counterexampleSubmittedAt": [
+        "2026-11-15T03:10:56.149000+00:00"
+      ]
+    }
+  ],
+  "additionalProbe": {
+    "case": "soduku-harmony_11",
+    "scope": "Actual Worker onmessage, real VariantConfig/GameConstants/VariantTopology/Topology/Common. Same generator observation substitute in both versions; the puzzle generation algorithm itself is not executed.",
+    "rows": [
+      {
+        "variant": "generated",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "diagonal"
+        },
+        "observations": [
+          {
+            "unitCount": 27,
+            "diagonalDuplicateAllowed": true
+          }
+        ],
+        "errors": []
+      },
+      {
+        "variant": "standard",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "diagonal"
+        },
+        "observations": [
+          {
+            "unitCount": 29,
+            "diagonalDuplicateAllowed": false
+          }
+        ],
+        "errors": []
+      },
+      {
+        "variant": "generated",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "diagonal",
+          "gridSize": 9
+        },
+        "observations": [
+          {
+            "unitCount": 29,
+            "diagonalDuplicateAllowed": false
+          }
+        ],
+        "errors": []
+      },
+      {
+        "variant": "standard",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "diagonal",
+          "gridSize": 9
+        },
+        "observations": [
+          {
+            "unitCount": 29,
+            "diagonalDuplicateAllowed": false
+          }
+        ],
+        "errors": []
+      },
+      {
+        "variant": "generated",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "standard"
+        },
+        "observations": [
+          {
+            "unitCount": 27,
+            "diagonalDuplicateAllowed": true
+          }
+        ],
+        "errors": []
+      },
+      {
+        "variant": "standard",
+        "input": {
+          "type": "generate",
+          "difficulty": 1,
+          "variantType": "standard"
+        },
+        "observations": [
+          {
+            "unitCount": 27,
+            "diagonalDuplicateAllowed": true
+          }
+        ],
+        "errors": []
+      }
+    ],
+    "evidence": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-20261115\\trajectory-analysis\\sudoku-worker-probe-results.json"
+  },
+  "decision": [
+    "Incremental accepted receipts and partial brief delivery with one generic omission reminder; pending details internal only.",
+    "Source-backed premise authority; original successful substitutes retain caller no-effect contract. Old implementation order alone is not authority.",
+    "Trace actual entry and active configuration before effects; preserve real evidence insufficiency."
+  ],
+  "partialBriefImplemented": false,
+  "goldReadAfterRuntimeFrozen": true,
+  "goldNeverSentToBusiness": true,
+  "standardPatchHashes": {
+    "security_tool_2-standard.patch": "8a46115a5d8ded06fe8a307316777212fb5b0e1beec7fc281ec0cde4b4efb770",
+    "security_tool_6-standard.patch": "fcbbd17795a0699539feb400edd01ab096ed36bd2047447487b6e4f84494bfa6",
+    "security_tool_9-standard.patch": "4e7d4bf1f7b604c70f31d70e0df39f7e32dda31c0087c7286c34bb84381b3d7b",
+    "soduku-harmony_11-standard.patch": "c570e903bad84ba9b9dc1c454ee6d61d644fdbbc1c224ddb9b374835e342fa52"
+  },
+  "supplementalRun": {
+    "root": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-15m-20261115",
+    "state": "st2 already active; future cases held for user-requested analysis; not pooled"
+  },
+  "evidenceRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-20261115\\trajectory-analysis",
+  "frameScope": "Frozen task-start source + user requirements + RC independent candidate proposals; does not examine later host-generated OpenSpec proposal or live implementation."
+}
