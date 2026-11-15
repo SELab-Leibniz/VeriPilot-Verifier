@@ -47,7 +47,9 @@ test('project checks require explicit source-bound configuration and round-trip 
     [{ ...value, source: { ...value.source, path: '../rules.md' } }],
     [{ ...value, source: { ...value.source, end: 0 } }],
     [{ ...value, source: { ...value.source, sha256: 'unknown' } }],
-    [{ ...value, source: { ...value.source, sha256: ['a'.repeat(64)] } }]])
+    [{ ...value, source: { ...value.source, sha256: ['a'.repeat(64)] } }],
+    [{ ...value, inputs: null }], [{ ...value, inputs: [{ path: '../outside', sha256: 'a'.repeat(64) }] }],
+    [{ ...value, inputs: [{ path: 'check.mjs', sha256: 'a'.repeat(64) }, { path: 'check.mjs', sha256: 'a'.repeat(64) }] }]])
     assert.throws(() => normalizeProjectChecks(checks), /projectChecks/u);
 });
 
@@ -84,6 +86,41 @@ test('real failures and bounded timeout attempts retain their evidence without a
   const attempts = await Promise.all((await fs.readdir(path.join(f.control, 'checks'))).filter(name => name.startsWith('attempt-'))
     .map(async name => JSON.parse(await fs.readFile(path.join(f.control, 'checks', name), 'utf8'))));
   assert(attempts.some(value => value.reason === 'TIMEOUT' && value.timedOut));
+});
+
+test('a cached command result cannot retire a changed selected acceptance premise', async t => {
+  const f = await fixture(t), checks = [f.config({ metrics: ['M13', 'M14', 'M15'] })];
+  const first = (await f.run(checks)).checks[0];
+  const revised = { metrics: { M13: [{ ...population.metrics.M13[0], sourceRevisionId: 'public-acceptance@2',
+    description: 'Execute for this revised acceptance premise.' }] } };
+  const next = (await f.run(checks, { population: revised })).checks[0];
+  assert.equal(next.cached, false); assert.notEqual(next.scopeDigest, first.scopeDigest);
+  assert.deepEqual(next.objectIds, ['M13:public-acceptance'], 'unselected acceptance metrics add no obligations');
+  assert.equal(await fs.readFile(f.marker, 'utf8'), 'xx');
+  assert.equal((await f.run(checks, { population: revised })).checks[0].cached, true);
+  assert.equal(await fs.readFile(f.marker, 'utf8'), 'xx');
+});
+
+test('pinned original checker files cannot be replaced before or during a successful command', async t => {
+  const f = await fixture(t), file = path.join(f.root, 'checker.mjs');
+  const script = `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(f.marker)}, 'original'); console.log('original verifier');\n`;
+  await fs.writeFile(file, script);
+  const pinned = f.config({ command: [process.execPath, 'checker.mjs'], inputs: [{ path: 'checker.mjs', sha256: sha256(script) }] });
+  assert.equal((await f.run([pinned])).checks[0].status, 'PASSED');
+  await fs.writeFile(file, `import fs from 'node:fs'; fs.appendFileSync(${JSON.stringify(f.marker)}, 'bypass'); process.exit(0);`);
+  const changed = (await f.run([pinned])).checks[0];
+  assert.equal(changed.reason, 'CHECKER_INPUT_CHANGED'); assert.equal(changed.executionConfirmed, false);
+  assert.equal(await fs.readFile(f.marker, 'utf8'), 'original');
+  // The control tree is intentionally absent from the ordinary candidate
+  // digest. Explicit pins must still detect changes to a verifier stored there.
+  const controlFile = path.join(f.control, 'original-checker.mjs');
+  await fs.writeFile(controlFile, 'original verification bytes');
+  const midRun = f.config({ id: 'changes-pinned-checker', inputs: [{ path: '.runtime-correction/original-checker.mjs',
+    sha256: sha256('original verification bytes') }], command: [process.execPath, '-e',
+    `require('node:fs').writeFileSync(${JSON.stringify(controlFile)}, 'modified verifier'); console.log('exit zero anyway')`] });
+  const result = (await f.run([midRun])).checks[0];
+  assert.equal(result.exitCode, 0); assert.equal(result.reason, 'CHECKER_INPUT_CHANGED');
+  assert.equal(result.executionConfirmed, false);
 });
 
 test('a mutating checker invalidates its binding and accounts for unstarted siblings', async t => {
