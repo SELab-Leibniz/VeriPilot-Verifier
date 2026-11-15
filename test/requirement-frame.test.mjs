@@ -394,7 +394,8 @@ test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit 
     nativeRunId: f.state?.nativeRunId, brief: f.state?.frameBrief }));
   const { prependContext } = prompted;
   assert(prependContext.startsWith(`${briefMarker}\n${briefTitle}`));
-  assert(prependContext.endsWith('1. Use the existing default (evidence: app.js:1-1)'));
+  assert(prependContext.includes('1. Use the existing default (evidence: app.js:1-1)'));
+  assert(prependContext.endsWith('This review may still contain omissions. Use the original request and actual code to complete your own checks and decisions.'));
   assert.equal(prependContext.split(briefTitle).length - 1, 1);
   assert.equal(await f.toolResult('after-prompt'), undefined);
   const receipts = await f.deliveries();
@@ -744,6 +745,47 @@ test('contract counterexamples inspect only the task-start source and join selec
   assert.equal(challenged, 1);
   assert.deepEqual(frame.counts, { proposed: 3, valid: 3, selected: 3 });
   assert.deepEqual(frame.scenarios.map(item => item.contractCell), ['branch_matrix', 'values_defaults']);
+});
+
+test('program-prepared original setup reaches counterexample, selection and Stop despite later test rewrites', async t => {
+  const entryPoint = { path: 'gate.ts', symbol: 'Gate.accepts' };
+  const evidence = [{ path: 'gate.ts', startLine: 1, endLine: 3 }];
+  const check = { ...scenario('a blocked value', .9, 'blocked values'), entryPoint, evidence, contractCell: 'branch_matrix' };
+  let reviewedContext;
+  const originalTests = `import { Gate } from '../gate';
+beforeEach(() => { dispatchResult = { success: true }; });
+afterEach(() => { restoreOriginalDispatcher(); });
+it('original entry', () => {
+  const result = Gate.accepts('blocked');
+  expect(result).assertTrue();
+  expect(label).assertEqual('original label');
+});
+`;
+  const f = await fixture(t, { files: { 'gate.ts': "export class Gate {\n static accepts(value) { return true }\n}\n", 'test/gate.test.ts': originalTests },
+    propose: () => ({ guidance: [], scenarios: [check] }),
+    challenge: ({ params }) => {
+      assert(params.prompt.includes('success: true'));
+      assert(params.prompt.includes('original label'));
+      assert(!params.prompt.includes('candidate-only failure'));
+      reviewedContext = true;
+      return { guidance: [], scenarios: [] };
+    },
+    select: (items, params) => {
+      assert(params.prompt.includes('success: true'));
+      return selectAll(items);
+    } });
+  await f.prompt('Reject blocked values while preserving existing empty input behavior.');
+  await fs.writeFile(path.join(f.projectRoot, 'test/gate.test.ts'), '// candidate-only failure\n');
+  const frame = await f.frame();
+  assert(reviewedContext);
+  assert.equal(f.calls.filter(call => call.params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')).length, 1);
+  const stop = await readStopFrame({ projectRoot: f.projectRoot, sessionId: f.sessionId, startHead: frame.startHead, review: true });
+  assert.deepEqual(stop.basis.originalContext.excerpts, frame.originalContext.excerpts);
+  assert(stop.basis.originalContext.sources.every(source => source.sourceFile && !source.unavailable));
+  const original = stop.basis.originalContext.sources.find(source => source.path === 'test/gate.test.ts');
+  assert.equal(await fs.readFile(original.sourceFile, 'utf8'), originalTests);
+  assert(JSON.stringify(stop.basis.originalContext).includes('success: true'));
+  assert(!JSON.stringify(stop.basis.originalContext).includes('candidate-only failure'));
 });
 
 test('an unavailable counterexample session permits a reviewed partial brief and records the failure', async t => {

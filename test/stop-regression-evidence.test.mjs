@@ -437,6 +437,9 @@ test('remaining regression cases accept reviewer decisions without authorization
     regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
     script: async ({ standing }) => {
       const [failure] = standing.regressionEvidence.programRun.failureInventory.failures;
+      assert(failure.originalTest.context.includes(OLD_FALLBACK));
+      const originalSource = (await Promise.all(failure.originalTest.sourceFiles.map(file => fs.readFile(file, 'utf8')))).join('');
+      assert.equal(originalSource, TESTS, 'the program supplies the actual task-start file, not a rewritten test');
       return { regressionCheck: { status: 'EXPLAINED', reason: 'The requested fallback replaces this old expectation.',
         cases: [{ id: failure.id, verdict: 'AUTHORIZED_CHANGE', reason: 'Unsupported inputs now use the requested index.' }] } };
     } });
