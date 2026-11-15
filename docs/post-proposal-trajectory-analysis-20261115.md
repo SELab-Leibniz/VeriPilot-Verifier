@@ -16,7 +16,7 @@
 - 初版运行时：`a41c4f6f393981b453339c78bd2a820f88b14e3c`，四项均已自然收尾。
 - 通用修正版：`ed0f5dc46eeea415facf52541954dee9d7a60e88`。修复了同一行为仅因 contractCell 分类不同而被拒绝覆盖的问题，明确了原成功依赖替身仍须验证。修正版在读取标准答案之前冻结。
 - 初版产物根目录：`C:/Users/user/workspace/program_workspace/Experiments/rc-post-proposal-contract-review-20261115`，下文称 O。
-- 修正版产物根目录：`C:/Users/user/workspace/program_workspace/Experiments/rc-post-proposal-contract-review-15m-20261115`，下文称 N。用户要求先分析后，保留已启动的 st2，后续三项在派发入口暂停，未向业务会话追加本报告发现。
+- 修正版产物根目录：`C:/Users/user/workspace/program_workspace/Experiments/rc-post-proposal-contract-review-15m-20261115`，下文称 N。用户要求先分析后，保留已启动的 st2 至完成，后续三项未启动。确认 st2 最终评分已保存、保活请求已释放、下一项尚在派发入口等待且无业务子进程后，已结束待派发队列。未向业务会话追加本报告发现。
 - 分析目录：O 下的 `trajectory-analysis`，下文称 A。
 - 使用原生 MA CLI、实际隔离 OpenClaw、冻结安装包、原业务模型和 RC 模型、原公共测试及独立评分器。MA 和内置 OpenClaw 保持只读。没有推送或全局安装本分支。
 
@@ -32,6 +32,10 @@
 - **数独**：独立完整执行，新需求 10/10，原回归 288/288。35 个提议、32 个有效候选；两次筛选均未通过账本检查，没有简报。失败发生在约 8 分 51 秒，属于 `SELECTION_INCOMPLETE`，不是 15 分钟不够。最终 RC 保留准备失败的未验证项，未自动修正，自然结束约 20.2 分钟。
 
 这些是每题一次初版业务运行，st9 多了一次同补丁的评分重跑。不能由此推断稳定提升、成功率或因果增益。
+
+补充样本单独报告：ed0f5dc 的 st2 在 15 分钟配置下完整通过新需求 2/2、原回归 746/746；37 个候选全部有效，修复一次筛选账本后交付 15 项，实际最终 15/15 已检查、0 项未验证。再次证明并修正同类 3D 策略保留问题，自动修正一次，业务自然结束约 34.1 分钟。frame 准备实际为 8 分 7 秒，未触及原 10 分钟上限，不能据此证明延长时限有效。终审提交仍有 5 次格式/绑定信息拒绝。
+
+补充样本的外层摘要同样误选修正前的 DEVIATION，原 `qualifiedPass=false`、`workflowComplete=false` 均原样保留。实际最终载体由 `nativeStopRequired` 指定，并通过 `nativeStopVerification`、原生 SETTLED 记录、同一 session/current task/evaluation 的持久化结果和业务退出前时间验证，结算为 NO_DEVIATION_FOUND、verificationIncomplete=false。派生结果明确标出 `captureSelectionMismatch=true`，不是把原始 UNVERIFIED 改成通过。证据在 A 的 `supplemental-st2-evidence.json` 与 N 的 `results.json`、`pending-dispatch-retirement.json`；此采集问题不应与业务修复或 RC 语义能力混在一起。
 
 ## 简报处在业务流程的什么位置
 
@@ -121,7 +125,11 @@ frame 路径相反：`submitInSession` 要求一次提交整个 selector reviews
 4. **终审追到活动配置与第一个副作用。** 对公共入口按受支持的可选参数有/无、状态空/已有、依赖原返回进行检查；确认配置写入分支实际到达、共享规则实际消费该配置、拒绝发生在派发/落库之前。看到目标函数名存在不能代替这条追踪。此规则通用于 Worker、事件 consumer 和 ViewModel，不硬编码四题。
 5. **区分建议覆盖与交付契约证据。** 准备失败是内部流程状态，不能单凭它宣称发现了代码错误，也不应必然把所有已充分验证的交付契约降为未验证。真正证据不足的交付项继续 UNVERIFIED；有来源证明不适用的建议允许 NOT_APPLICABLE，并保留理由。st9 两处原回归的证据冲突不能随部分简报优化而抹掉。
 
+复用逐项机制时，原入口、原前提与源码版本可由程序保存并绑定；审查者按项 ID 提交结论、适用性依据及当前代码追踪，无需反复抄写整段身份字段，且不能在提交时改变前提。初版 st2 有 5 次 finish 因缺理由或契约信息不一致被拒绝，这是协议成本，不是 5 个新业务缺陷。不能为了减少重试而省略真实来源追踪，也不宜继续增加抄录字段来代替证据。
+
 有意义的验证应覆盖：完整账本；到时前已有若干已接受项；到时前一个也未接受；局部覆盖冲突；配额延期；过期提交；重复发送；跨入口误覆盖；宿主提醒不泄露内部待处理清单。再冻结一个通用版本，使用新会话验证四题，保留原样本和独立评分；不把标准答案或本报告的题目专用反例作为产品输入。
+
+已经分析标准答案后的四题复测属于定向开发验证，不能宣称为未见任务的盲测或泛化证据。
 
 ## 已有实现的验证及限制
 

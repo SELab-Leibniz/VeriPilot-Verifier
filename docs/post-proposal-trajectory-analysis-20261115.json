@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-11-15T03:54:29.854509+00:00",
+  "asOf": "2026-11-15T04:03:48.647568+00:00",
   "baseCommit": "c286bc5e545cbbd61e6f16d4c2a1eb14150460c3",
   "runtimeHead": "ed0f5dc46eeea415facf52541954dee9d7a60e88",
   "initialRows": [
@@ -293,8 +293,169 @@
     "soduku-harmony_11-standard.patch": "c570e903bad84ba9b9dc1c454ee6d61d644fdbbc1c224ddb9b374835e342fa52"
   },
   "supplementalRun": {
+    "case": "security_tool_2",
+    "sourceCommit": "ed0f5dc46eeea415facf52541954dee9d7a60e88",
     "root": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-15m-20261115",
-    "state": "st2 already active; future cases held for user-requested analysis; not pooled"
+    "finalized": true,
+    "f2p": "2/2",
+    "p2p": "746/746",
+    "liveExit": 0,
+    "businessNatural": true,
+    "elapsedMs": 2043182,
+    "corrections": 1,
+    "frame": {
+      "status": "ready",
+      "reason": null,
+      "counts": {
+        "proposed": 37,
+        "valid": 37,
+        "selected": 15
+      },
+      "startedAt": "2026-11-15T03:30:50.113Z",
+      "finishedAt": "2026-11-15T03:38:57.612Z"
+    },
+    "frameElapsedMs": 487499,
+    "frameTimeoutMs": 900000,
+    "actualClosure": {
+      "capturedFinalStop": {
+        "kind": "stop",
+        "runId": "90e1ce06-91d7-466a-be2d-30cd469f4905",
+        "stage": "codeing",
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "classification": "TASK_COMPLETE",
+        "fullObjectCount": 5,
+        "selectedObjectCount": 5,
+        "scanCompleted": true,
+        "coverageSource": "coverage",
+        "deviations": 1,
+        "verificationIncomplete": false,
+        "evaluationId": "stop-3628bb7947a5c2f8b5b54cb4",
+        "durationMs": 323500,
+        "requests": 30,
+        "tokens": 2110238,
+        "basisBudget": null,
+        "lifecycle": "SETTLED",
+        "startedAt": 1794714309997
+      },
+      "finalStop": {
+        "kind": "stop",
+        "runId": "rc-stop-d958f14a2a2a9474dbd9a48de15e60377035b9a2ed77e0a2e559c50a6fce3215",
+        "stage": null,
+        "status": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND",
+        "classification": "TASK_COMPLETE",
+        "fullObjectCount": 5,
+        "selectedObjectCount": 5,
+        "scanCompleted": true,
+        "coverageSource": "coverage",
+        "deviations": 0,
+        "verificationIncomplete": false,
+        "evaluationId": "stop-d6548952fc4429f99113ca03",
+        "durationMs": 241987,
+        "requests": 26,
+        "tokens": 1732571,
+        "basisBudget": null,
+        "lifecycle": "SETTLED",
+        "startedAt": 1794715011011
+      },
+      "bindingValid": true,
+      "closureComplete": true,
+      "captureSelectionMismatch": true,
+      "reason": "Current native settlement carrier, bound to persisted session and assessment",
+      "proof": {
+        "evaluationId": "stop-d6548952fc4429f99113ca03",
+        "runId": "rc-stop-d958f14a2a2a9474dbd9a48de15e60377035b9a2ed77e0a2e559c50a6fce3215",
+        "sessionId": "6eb9a64e-830f-44b3-b372-5b2383112a7a",
+        "settledAt": 1794715253021,
+        "businessExitAt": "2026-11-15T04:01:04.4188947+00:00",
+        "nativeRecordFile": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-ff7fe1bfa8b8\\.runtime-correction\\openclaw\\native-stop-reviews\\fee7d89654793f3c39cec0e71fc4dfb9cff0bfbabde40b4f582331de82f0e52c\\f14b9e754cf44fe15074a4d54eebb813fdc0ec6cd6dddb953368c2f6ee3cb979.json",
+        "nativeRecordSha256": "5884cc8fda12ad8a9310dfd947982fb96610b1d59cac3737fd4c2a1c316626a9",
+        "evaluationFile": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-ff7fe1bfa8b8\\.runtime-correction\\tasks\\oc-scope-aea360dc-d805-439d-a5d6-e7e194bb11db\\evaluations\\stop-d6548952fc4429f99113ca03.json",
+        "evaluationSha256": "bcc5f68804db01a2268f289e842df269c4878d1225358a37bc71b27f7211ea69",
+        "taskFile": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\sc-b\\biz-ff7fe1bfa8b8\\.runtime-correction\\tasks\\oc-scope-aea360dc-d805-439d-a5d6-e7e194bb11db\\task.json",
+        "taskSha256": "9473cfd0f0afffd269f0954fe2786c7f2e977043ae6eb5c078b42d40275b1940",
+        "liveResultSha256": "c8c357898f476deaef4be16c91cb05f07de6087d2261a49a9fd63dabe2e87763"
+      },
+      "rawOutcome": {
+        "status": "NO_DEVIATION_FOUND",
+        "verificationIncomplete": false
+      }
+    },
+    "actualFrameCoverage": {
+      "status": "used",
+      "reason": null,
+      "total": 15,
+      "checked": 15,
+      "deviation": 0,
+      "unverified": 0
+    },
+    "rejectedFrameFinishes": 5,
+    "rawSummaryPreserved": {
+      "qualifiedPass": false,
+      "workflowComplete": false,
+      "finalStop": {
+        "kind": "stop",
+        "runId": "90e1ce06-91d7-466a-be2d-30cd469f4905",
+        "stage": "codeing",
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "classification": "TASK_COMPLETE",
+        "fullObjectCount": 5,
+        "selectedObjectCount": 5,
+        "scanCompleted": true,
+        "coverageSource": "coverage",
+        "deviations": 1,
+        "verificationIncomplete": false,
+        "evaluationId": "stop-3628bb7947a5c2f8b5b54cb4",
+        "durationMs": 323500,
+        "requests": 30,
+        "tokens": 2110238,
+        "basisBudget": null,
+        "lifecycle": "SETTLED",
+        "startedAt": 1794714309997
+      },
+      "stopReviewComplete": true,
+      "state": "PASS"
+    },
+    "pendingDispatchRetired": {
+      "state": "RETIRED_PENDING_DISPATCH",
+      "at": "2026-11-15T04:03:23.1437932+00:00",
+      "pid": 73940,
+      "creationDate": "2026-11-15T11:21:23.5939050+08:00",
+      "commandLine": "\"C:\\Program Files\\WindowsApps\\OpenAI.CodexPrimaryRuntime.v26-1111-574-0_26.1111.574.0_x64__3k8sg7r9htsxt\\dependencies\\native\\powershell\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File C:/Users/user/workspace/program_workspace/Experiments/rc-post-proposal-contract-review-15m-20261115/Run-Queue.ps1",
+      "hold": {
+        "round": 1,
+        "case": "security_tool_9",
+        "state": "HELD_FOR_ANALYSIS",
+        "at": "2026-11-15T12:03:09.4381116+08:00",
+        "pid": 73940
+      },
+      "completedSample": "security_tool_2",
+      "completedLiveExit": 0,
+      "powerLeaseReleased": true,
+      "activeBusinessChildren": 0,
+      "consoleChildren": [
+        {
+          "ProcessId": 74544,
+          "Name": "conhost.exe",
+          "CommandLine": "\\??\\C:\\Windows\\system32\\conhost.exe 0x4"
+        }
+      ],
+      "pendingNotLaunched": [
+        "security_tool_9",
+        "security_tool_6",
+        "soduku-harmony_11"
+      ],
+      "reason": "Latest user asked analysis before deciding further optimization; preserve completed sample and retire pending dispatch.",
+      "finishedAt": "2026-11-15T04:03:23.1817289+00:00"
+    },
+    "futureCasesNotLaunched": [
+      "security_tool_9",
+      "security_tool_6",
+      "soduku-harmony_11"
+    ],
+    "summarySha256": "ee3e423ac0a716cd44407efd5f22725705d8646359954ad254fc25bca9accff8"
   },
   "evidenceRoot": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-post-proposal-contract-review-20261115\\trajectory-analysis",
   "frameScope": "Frozen task-start source + user requirements + RC independent candidate proposals; does not examine later host-generated OpenSpec proposal or live implementation."
