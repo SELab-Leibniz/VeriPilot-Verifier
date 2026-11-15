@@ -492,6 +492,35 @@
           },
           "additionalProperties": false
         },
+        "projectChecks": {
+          "type": "array",
+          "description": "At most 16 explicit source-bound project acceptance commands for selected M13-M15 items (limit checked by configuration normalization). No shell or model-selected commands; command outcomes never create obligations or prove overall acceptance.",
+          "items": {
+            "type": "object",
+            "required": ["id", "command", "metrics", "source"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+              "enabled": { "type": "boolean", "default": true },
+              "command": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "cwd": { "type": "string", "minLength": 1, "default": "." },
+              "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 2147483647 },
+              "maxOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 4194304 },
+              "metrics": { "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": { "type": "string", "enum": ["M13", "M14", "M15"] } },
+              "source": {
+                "type": "object", "required": ["path", "sha256", "start", "end"],
+                "properties": {
+                  "path": { "type": "string", "minLength": 1 },
+                  "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                  "start": { "type": "integer", "minimum": 1 },
+                  "end": { "type": "integer", "minimum": 1 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "maxCorrectionsPerEpoch": {
           "type": "integer",
           "minimum": 0,

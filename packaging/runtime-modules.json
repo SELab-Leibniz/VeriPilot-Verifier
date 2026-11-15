@@ -99,6 +99,7 @@
     "lib/runtime-v2/process-checks.mjs",
     "lib/runtime-v2/production-stop.mjs",
     "lib/runtime-v2/regression-evidence.mjs",
+    "lib/runtime-v2/project-checks.mjs",
     "lib/runtime-v2/regression-triage.mjs",
     "lib/runtime-v2/review-collector.mjs",
     "lib/runtime-v2/review-evidence-validation.mjs",
