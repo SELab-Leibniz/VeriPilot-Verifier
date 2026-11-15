@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { auditFrameSelection } from '../lib/runtime-v2/frame-selection.mjs';
+import { countFrameDispositions } from '../lib/runtime-v2/requirement-frame.mjs';
+
+const scenario = (id, symbol = 'Consumer.apply', kind = 'requirement') => ({ id, type: 'scenario', kind,
+  confidence: .1, contractCell: 'values_defaults', entryPoint: { path: 'consumer.ts', symbol },
+  given: 'The original loader substitute returns success for an empty target.' });
+const row = (id, decision = 'select', extra = {}) => ({ id, decision, reason: 'Source establishes this input boundary.', ...extra });
+
+test('selection audits missing, repeated, unknown and unexplained dispositions before delivery', () => {
+  const candidates = [scenario('A'), scenario('B')];
+  for (const reviews of [[row('A')], [row('A'),row('A')], [row('A'),row('Z')], [row('A'),row('B','reject',{reason:' '})]])
+    assert.equal(auditFrameSelection(candidates,{reviews}).complete,false);
+  assert.equal(auditFrameSelection(candidates,{reviews:[row('A'),row('B')]}).complete,true);
+});
+
+test('coverage cannot merge a public caller into its callee, a preservation into a changed effect, or a cycle', () => {
+  for (const other of [scenario('B','Loader.load'),scenario('B','Consumer.apply','preservation')])
+    assert.equal(auditFrameSelection([scenario('A'),other],{reviews:[row('A'),row('B','covered',{coveredBy:'A'})]}).complete,false);
+  assert.equal(auditFrameSelection([scenario('A'),scenario('B')],{reviews:[row('A','covered',{coveredBy:'B'}),row('B','covered',{coveredBy:'A'})]}).complete,false);
+  assert.equal(auditFrameSelection([scenario('A'),scenario('B')],{reviews:[row('A'),row('B','covered',{coveredBy:'A'})]}).complete,true);
+});
+
+test('over-quota scenarios and family checks stay incomplete; no candidate is silently truncated', () => {
+  for (const candidates of [Array.from({length:7},(_,i)=>scenario(String(i))),
+    Array.from({length:6},(_,i)=>({id:String(i),type:'check',family:'projectRules'}))]) {
+    const audit=auditFrameSelection(candidates,{reviews:candidates.map(x=>row(x.id))});
+    assert.equal(audit.complete,false);
+    assert.equal(audit.dispositions.length,candidates.length);
+    assert(audit.issues.some(x=>x.includes('limit')));
+  }
+});
+
+test('Stop requires the original entry and dependency prerequisites, and an explicit current-code trace', () => {
+  const original=scenario('S1'), frame={guidance:[],scenarios:[original]};
+  const assess={entryPoint:original.entryPoint,given:original.given,applicability:'APPLICABLE',
+    trace:'consumer.ts:12 guards the empty target before write(), including when the original loader returns success.'};
+  const checked={id:'S1',disposition:'CHECKED',reason:'Guard dominates the first write.',contractAssessment:assess};
+  const count = entry => countFrameDispositions(frame,[entry],()=>[],()=>false);
+  assert.equal(count({...checked,reason:''}),null);
+  assert.equal(count({...checked,contractAssessment:undefined}),null);
+  assert.equal(count({...checked,contractAssessment:{...assess,entryPoint:{path:'consumer.ts',symbol:'Loader.load'}}}),null);
+  assert.equal(count({...checked,contractAssessment:{...assess,given:'A new mock returns failure.'}}),null);
+  assert.equal(count({...checked,contractAssessment:{...assess,trace:' '}}),null);
+  assert.equal(count(checked).checked,1);
+  const na={...checked,reason:'The later original request explicitly removed this input from scope.',
+    contractAssessment:{...assess,applicability:'NOT_APPLICABLE',trace:'U2 narrows the operation to nonempty targets; consumer.ts:12 keeps the old empty branch.'}};
+  assert.equal(count(na).items[0].contractAssessment.applicability,'NOT_APPLICABLE');
+  assert.equal(count({id:'S1',disposition:'UNVERIFIED',reason:'Original suite fails; setup interference is not established.'}).unverified,1);
+});

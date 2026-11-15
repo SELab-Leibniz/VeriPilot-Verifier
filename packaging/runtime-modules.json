@@ -111,6 +111,7 @@
     "lib/runtime-v2/reviewer-evidence.mjs",
     "lib/runtime-v2/reviewer.mjs",
     "lib/runtime-v2/requirement-frame.mjs",
+    "lib/runtime-v2/frame-selection.mjs",
     "lib/runtime-v2/session-end.mjs",
     "lib/runtime-v2/skill-source.mjs",
     "lib/runtime-v2/skill-care.mjs",

@@ -56,7 +56,7 @@ test('conforming and unresolved results and checked frame items need no citation
     await readAll(); await f.scope(submit);
     await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'The requirement holds.', citeIds: ['never-read'] });
     await submit('submit_review', { taskId: 'M01:R2', verdict: 'UNVERIFIED', reason: 'One item is unclear.' });
-    await submit('finish_stop_review', { summary: 'All items were reviewed.', frameDispositions: [{ id: 'G1', disposition: 'CHECKED' }] });
+    await submit('finish_stop_review', { summary: 'All items were reviewed.', frameDispositions: [{ id: 'G1', disposition: 'CHECKED', reason: 'Traced current implementation and original input conditions.' }] });
   });
   assert.equal(handle.result.frameCoverage.checked, 1);
   assert.equal((await f.production(handle)).status, 'NO_DEVIATION_FOUND');

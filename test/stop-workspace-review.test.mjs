@@ -1208,7 +1208,7 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
     assert(tools.worker.systemPrompt.endsWith(FRAME_REVIEW_INSTRUCTIONS));
     const { item, submit, finish } = await startFrameScan(tools, { requireFrame: true });
     const citeId = await tools.read(f.source);
-    const checked = { id: 'G1', disposition: 'CHECKED', citeIds: [citeId] };
+    const checked = { id: 'G1', disposition: 'CHECKED', reason: 'Traced current implementation and original input conditions.', citeIds: [citeId] };
     const dev = { id: 'S1', disposition: 'DEVIATION', objectId: item.taskId };
     const unsure = unverifiedFrame()[2];
     const finding = { id: 'S3', disposition: 'DEVIATION', objectId: 'unchanged-value-finding' };
@@ -1229,7 +1229,7 @@ test('7.4.1–3: a matching frame is mandatory and all dispositions are validate
       assert.deepEqual(validator.validateToolArguments(tool, { name: tool.name, arguments: args }), args);
     }
     await reject(invalid);
-    assert.equal((await finish([{ id: 'G1', disposition: 'CHECKED' }, dev, unsure, finding])).complete, true);
+    assert.equal((await finish([{ id: 'G1', disposition: 'CHECKED', reason: 'Traced current implementation and original input conditions.' }, dev, unsure, finding])).complete, true);
   });
   assert.equal(stop.status, 'DEVIATION');
   assert.equal(stop.decision, 'block');
@@ -1276,6 +1276,18 @@ test('7.4.3–4: absent frames preserve the original basis, instructions and fin
   assert.deepEqual(stop.review.frameCoverage, { status: 'used', reason: null, total: 4, checked: 0, deviation: 0, unverified: 4, items: stop.review.frameCoverage.items });
   assert.deepEqual(stop.review.frameCoverage.items.map(item => item.id), ['G1','S1','S2','S3']);
   assert.equal(stop.review.unverifiedItems.length, 4);
+});
+
+test('incomplete frame preparation remains an unresolved Stop item even without a brief', async t => {
+  const f = await fixture(t);
+  f.input.request.requirementFrame = { reason: 'SELECTION_INCOMPLETE', preparationIncomplete: true };
+  const handle = await scriptedWorkspaceReview(f.input, { script: async ({ task, read, call }) => {
+    for (const file of task.basisFiles) await read(file);
+    const submit = (name, args) => submitFrameTool(call, name, args);
+    await f.scope(submit);
+    await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Checked delivery.', finish: true });
+  } });
+  assert(handle.result.unverifiedItems.some(item => item.type === 'FRAME_PREPARATION' && item.reason.includes('SELECTION_INCOMPLETE')));
 });
 
 test('a framed full-checklist review cannot bypass dispositions with submit_review.finish', async t => {
@@ -1407,10 +1419,10 @@ test('an identical reviewer item reuses the proposed check, and a checks-only fr
     assert.deepEqual(items.map(item => [item.metricId, item.proposedCheck ?? null]).sort(), [['M09', 'K1'], ['M16', null]]);
     const finish = dispositions => submit('finish_stop_review', frameFinishArgs(dispositions));
     await assert.rejects(finish([]), { code: 'REVIEW_FRAME_DISPOSITION_REQUIRED' });
-    assert.equal((await finish([{ id: 'K1', disposition: 'CHECKED', reason }])).complete, true);
+    assert.equal((await finish([{ id: 'K1', disposition: 'CHECKED', reason: 'Traced current implementation and original input conditions.', reason }])).complete, true);
   });
   assert.equal(stop.status, 'NO_DEVIATION_FOUND', JSON.stringify(stop));
-  assert.deepEqual(stop.review.frameCoverage.items, [{ id: 'K1', type: 'FRAME_CHECK', disposition: 'CHECKED', reason }]);
+  assert.deepEqual(stop.review.frameCoverage.items, [{ id: 'K1', type: 'FRAME_CHECK', disposition: 'CHECKED', reason: 'Traced current implementation and original input conditions.', reason }]);
 });
 
 test('a full checklist review gives proposed checks ordinary verdicts without frame dispositions', async t => {

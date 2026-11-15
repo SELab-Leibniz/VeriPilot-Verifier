@@ -34,7 +34,7 @@ const selectAll = items => ({ reviews: items.map(item => review(item)) });
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
   archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
-  checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll } = {}) {
+  checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll, challenge = () => ({ guidance: [], scenarios: [] }) } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
   const cfg = path.join(projectRoot, '.runtime-corrector', 'config.yaml');
   const config = () => fs.writeFile(cfg, `version: 2
@@ -98,7 +98,7 @@ reviewers:
             : params.prompt.startsWith('[CORRECTION_CHECK_PROPOSAL]') ? 'check' : 'proposal';
           calls.push({ kind, params, names: [...tools.keys()] });
           const call = (name, args) => tools.get(name).execute('scripted', args, params.abortSignal);
-          const args = kind === 'proposal' ? await propose({ params, call, ordinal: Number(path.basename(params.cwd).slice(-1)) })
+          const args = kind === 'proposal' ? await (params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]') ? challenge : propose)({ params, call, ordinal: Number(path.basename(params.cwd).slice(-1)) })
             : kind === 'check' ? await check({ params, call, family: path.basename(params.cwd).slice('check-'.length) })
               : await select(JSON.parse(params.prompt.split('Candidates:\n')[1].split('\n\n')[0]), params, call);
           const name = kind === 'selection' ? 'submit_frame_selection' : 'submit_frame_proposal';
@@ -159,11 +159,15 @@ reviewers:
   };
 }
 
-test('1. caps, sorts and renumbers valid items after selection in private sessions', async t => {
+test('1. explicitly converges all candidates before sorting and renumbering', async t => {
   const f = await fixture(t, { proposers: 3, propose: ({ ordinal }) => ({
     guidance: Array.from({ length: 6 }, (_, i) => guidance(`P${ordinal} G${i}`, i === 0 ? 1 : 0.9)),
     scenarios: Array.from({ length: 6 }, (_, i) => scenario(`P${ordinal} S${i}`, i === 0 ? 1 : 0.9)),
-  }) });
+  }), select: items => {
+    const ranked = type => items.filter(x => x.type === type).sort((a,b) => Number(!/0$/.test(a.statement ?? a.given))-Number(!/0$/.test(b.statement ?? b.given)));
+    const kept = new Set([...ranked('guidance').slice(0,10), ...ranked('scenario').slice(0,6)].map(x => x.id));
+    return { reviews: items.map(x => kept.has(x.id) ? review(x) : { ...review(x, 'covered'), coveredBy: items.find(y => kept.has(y.id) && y.type === x.type).id }) };
+  } });
   await f.prompt();
   const result = await f.frame();
   assert.equal(result.status, 'ready');
@@ -173,7 +177,7 @@ test('1. caps, sorts and renumbers valid items after selection in private sessio
       ['G6', 'P1 G3'], ['G7', 'P1 G4'], ['G8', 'P1 G5'], ['G9', 'P2 G1'], ['G10', 'P2 G2']]);
   assert.deepEqual(result.scenarios.map(item => [item.id, item.given]),
     [['S1', 'P1 S0'], ['S2', 'P2 S0'], ['S3', 'P3 S0'], ['S4', 'P1 S1'], ['S5', 'P1 S2'], ['S6', 'P1 S3']]);
-  assert.equal(new Set(f.calls.map(({ params }) => params.sessionId)).size, 4);
+  assert.equal(new Set(f.calls.map(({ params }) => params.sessionId)).size, 5);
   for (const { kind, params, names } of f.calls) {
     assert.notEqual(params.sessionId, f.sessionId);
     assert.equal(params.model, 'scripted');
@@ -182,7 +186,7 @@ test('1. caps, sorts and renumbers valid items after selection in private sessio
     assert.deepEqual(names, ['source_read', 'source_grep', 'source_find', 'source_ls', 'semantic_graph',
       kind === 'proposal' ? 'submit_frame_proposal' : 'submit_frame_selection']);
   }
-  assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 4);
+  assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 5);
 });
 
 test('2. drops unsupported ranges, quotes, fields and guidance over 4000 characters before selection', async t => {
@@ -207,13 +211,19 @@ test('2. drops unsupported ranges, quotes, fields and guidance over 4000 charact
   assert.equal(result.scenarios[0].quote, 'empty input');
 });
 
-test('3. excludes rejected, low-confidence and unreviewed candidates', async t => {
+test('3. incomplete selection is repaired and explicitly selected low confidence is retained', async t => {
+  let calls = 0;
   const f = await fixture(t, {
-    propose: () => ({ guidance: [guidance('keep', 0.75), guidance('low', 0.74), guidance('reject'), guidance('omitted')], scenarios: [] }),
-    select: items => ({ reviews: [review(items[0]), review(items[1]), review(items[2], 'reject')] }),
+    propose: () => ({ guidance: [guidance('keep', .75), guidance('low', .1), guidance('reject'), guidance('omitted')], scenarios: [] }),
+    select: items => ({ reviews: (++calls === 1 ? items.slice(0,3) : items).map(x => review(x, x.statement === 'reject' ? 'reject' : 'select')) }),
   });
   await f.prompt();
-  assert.deepEqual((await f.frame()).guidance.map(item => item.statement), ['keep']);
+  const frame = await f.frame();
+  assert.equal(calls, 2);
+  assert.deepEqual(frame.guidance.map(x => x.statement), ['omitted','keep','low']);
+  assert.equal(frame.selectionCoverage.complete, true);
+  assert.equal(frame.selectionCoverage.dispositions.length, 4);
+  assert(frame.selectionCoverage.dispositions.filter(x => x.decision === 'select').every(x => x.frameId));
 });
 
 test('4. no Git HEAD records NO_GIT_HEAD without model calls', async t => {
@@ -320,7 +330,7 @@ test('8. new native user turns reuse a ready frame for the task-start HEAD', asy
   assert.equal(first.startHead, head);
   await f.prompt('A new real user turn.');
   assert.deepEqual(await f.frame(), first);
-  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls.length, 3);
 });
 
 test('9. disabled never creates the requirement-frame directory', async t => {
@@ -451,7 +461,7 @@ test('a first native turn starts after its user record is persisted and carries 
   assert.equal(work.controller.signal.aborted, false);
   finish();
   assert.equal((await f.frame()).status, 'ready');
-  assert.deepEqual(f.calls.map(({ kind }) => kind), ['proposal', 'selection']);
+  assert.deepEqual(f.calls.map(({ kind }) => kind), ['proposal', 'proposal', 'selection']);
   assert(f.calls[0].params.prompt.includes(userText));
   assert(deliveredBrief(await f.toolResult('code-read')).startsWith(briefMarker));
   assert.equal(await f.runtime.prompt({ prompt: 'Now implement the planned change.' }, { ...f.ctx, runId: 'u2' }), undefined);
@@ -549,7 +559,7 @@ test('check proposers scan project documents per enabled family and store task-s
   await f.prompt();
   const frame = await f.frame();
   assert.equal(frame.status, 'ready', JSON.stringify(f.warnings));
-  assert.deepEqual(f.calls.map(call => call.kind).sort(), ['check', 'check', 'proposal', 'selection']);
+  assert.deepEqual(f.calls.map(call => call.kind).sort(), ['check', 'check', 'proposal', 'proposal', 'selection']);
   assert(f.calls.find(call => call.kind === 'selection').names.includes('source_read'));
   const documents = prompts.projectRules.split('Project documents in the snapshot (instruction files first):\n')[1].split('\n\n')[0];
   assert.deepEqual(documents.split('\n'), ['- AGENTS.md', '- docs/api.md']);
@@ -630,7 +640,7 @@ test('the same quoted duty in different documents or metrics has one selected ch
     propose: () => ({ guidance: [], scenarios: [] }),
     files: { 'AGENTS.md': text, 'docs/rules.md': text },
     check: ({ family }) => ({ checks: family === 'projectRules' ? [projectCheck('M11', text, agentsLine(1), .95)]
-      : [projectCheck('M13', text, { path: 'docs/rules.md', startLine: 1, endLine: 1 }, .8)] }) });
+      : [projectCheck('M13', text, { path: 'docs/rules.md', startLine: 1, endLine: 1 }, .8)] }), select: items => ({ reviews: items.map((x,i) => i ? { ...review(x,'covered'), coveredBy: items[0].id } : review(x)) }) });
   await f.prompt();
   const frame = await f.frame();
   assert.equal(frame.checks.length, 1);
@@ -716,6 +726,8 @@ test('contract counterexamples inspect only the task-start source and join selec
     propose: async ({ params, call }) => {
       if (!params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')) return {
         guidance: [guidance('Gate.accepts owns the input decision', .9, evidence)], scenarios: [change] };
+      return { guidance: [], scenarios: [] };
+    }, challenge: async ({ params, call }) => {
       challenged++;
       const source = toolText(await call('source_read', { path: 'gate.ts' }));
       assert.match(source, /typeof value/u);
@@ -733,23 +745,23 @@ test('contract counterexamples inspect only the task-start source and join selec
   assert.deepEqual(frame.scenarios.map(item => item.contractCell), ['branch_matrix', 'values_defaults']);
 });
 
-test('an unavailable counterexample session keeps the valid original proposals without retrying', async t => {
+test('an unavailable counterexample session withholds the brief and records the failure', async t => {
   let attempts = 0;
   const f = await fixture(t, { files: { 'pricing.ts': 'export function price(value) { return value == null ? 0 : value }\n' },
     propose: ({ params }) => {
-      if (params.prompt.startsWith('[REQUIREMENT_FRAME_COUNTEREXAMPLE]')) { attempts++; throw new Error('session unavailable'); }
       return { guidance: [], scenarios: [{ ...scenario('a missing value'),
         entryPoint: { path: 'pricing.ts', symbol: 'price' }, contractCell: 'values_defaults',
         evidence: [{ path: 'pricing.ts', startLine: 1, endLine: 1 }] }] };
-    } });
+    }, challenge: () => { attempts++; throw new Error('session unavailable'); } });
   await f.prompt();
   const frame = await f.frame();
-  assert.equal(frame.status, 'ready');
-  assert.equal(frame.scenarios.length, 1);
+  assert.equal(frame.status, 'unavailable');
+  assert.equal(frame.reason, 'COUNTEREXAMPLE_INCOMPLETE');
+  assert.equal(frame.scenarios.length, 0);
   assert.equal(attempts, 1);
 });
 
-test('a cluster of similar high-confidence cases does not crowd out another entry or preservation boundary', async t => {
+test('over-quota supported scenarios withhold the brief rather than lose a boundary', async t => {
   const evidence = [{ path: 'billing.ts', startLine: 1, endLine: 2 }];
   const primary = { ...scenario('a priced value', .99, 'charge rule'), kind: 'requirement',
     entryPoint: { path: 'billing.ts', symbol: 'Quote.price' }, evidence, contractCell: 'values_defaults' };
@@ -763,8 +775,11 @@ test('a cluster of similar high-confidence cases does not crowd out another entr
         : [boundary, other] } });
   await f.prompt('Support the revised charge rule while preserving empty input behavior.');
   const frame = await f.frame();
-  assert.equal(frame.scenarios.length, 6);
-  assert(frame.scenarios.some(item => item.given === 'an empty input'));
-  assert(frame.scenarios.some(item => item.entryPoint.symbol === 'Ledger.post'));
-  assert.deepEqual(frame.scenarios.map(item => item.id), ['S1','S2','S3','S4','S5','S6']);
+  assert.equal(frame.status, 'unavailable');
+  assert.equal(frame.reason, 'SELECTION_INCOMPLETE');
+  assert.equal(frame.selectionCoverage.dispositions.length, 8);
+  assert(frame.selectionCoverage.issues.some(x => x.includes('limit')));
+  assert.equal(deliveredBrief(await f.toolResult('over-quota')), undefined);
+  const stop = await readStopFrame({projectRoot:f.projectRoot,sessionId:f.sessionId,startHead:frame.startHead,review:true});
+  assert.equal(stop.preparationIncomplete,true);
 });
