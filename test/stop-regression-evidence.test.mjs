@@ -97,7 +97,8 @@ async function project(root, { broken = true } = {}) {
   if (broken) await fs.writeFile(path.join(root, 'src/settings.mjs'), BROKEN);
 }
 
-async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, afterStart }) {
+async function regressionStop(t, { broken = true, regressionCheck, script, request = REQUEST, mutateProject, afterStart,
+  deviationOnly = true, beforeReview }) {
   const f = await stopProtocolFixture(t, 'findings');
   await fs.unlink(f.input.request.groundTruthPath);
   await project(f.root, { broken: broken && !afterStart });
@@ -107,12 +108,13 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
   await fs.writeFile(transcript, [{ type: 'user', uuid: 'user-original', message: { content: request } },
     { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } }].map(entry => JSON.stringify(entry)).join('\n') + '\n');
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
-    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true, ...(regressionCheck ? { regressionCheck } : {}) } });
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly, ...(regressionCheck ? { regressionCheck } : {}) } });
   let failure;
   const reviewerFactory = input => {
     Object.assign(f.input, input);
     return f.run(async api => {
       try {
+        await beforeReview?.(f.root, api.brief.attempt);
         await api.readAll();
         const userPath = api.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
         const original = (await api.read(userPath)).details.citation.citeId;
@@ -141,6 +143,59 @@ async function regressionStop(t, { broken = true, regressionCheck, script, reque
 }
 
 const standingPopulation = { metrics: { M16: [{ objectId: 'M16:standing-x', metricId: 'M16', programStanding: STANDING_REGRESSION }] } };
+
+test('complete review runs original regression before the first model scope and retains each failure', async t => {
+  let observedBeforeModel = false;
+  const { f, result } = await regressionStop(t, { deviationOnly: false,
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 2048 },
+    beforeReview: async (root, attempt) => {
+      if (attempt !== 1) return;
+      // The fixture's actual task ID is obtained from the prepared task tree,
+      // not from a guessed model-selected scope.
+      const tasks = await fs.readdir(path.join(root, '.runtime-correction', 'tasks'));
+      const files = (await Promise.all(tasks.map(async name => {
+        const dir = path.join(root, '.runtime-correction', 'tasks', name, 'regression-check');
+        return (await fs.readdir(dir).catch(() => [])).filter(x => x.endsWith('.json')).map(x => path.join(dir, x));
+      }))).flat();
+      assert.equal(files.length, 1);
+      const run = JSON.parse(await fs.readFile(files[0], 'utf8'));
+      assert.equal(run.status, 'FAILED');
+      assert.match(run.outputTail, /not ok 2 - should set minLengthIndex/u);
+      observedBeforeModel = true;
+    },
+    script: async ({ standing, checklist, submit, cite }) => {
+      assert(standing, 'complete review must retain the standing regression item');
+      assert.equal(standing.regressionEvidence.programRun.status, 'FAILED');
+      const current = await cite('src/settings.mjs'), original = await cite('test/settings.test.mjs');
+      for (const item of checklist.items) if (item.taskId !== standing.taskId)
+        await submit('submit_review', { taskId: item.taskId, verdict: 'UNVERIFIED', reason: 'This fixture reviews only the preserved fallback contract.' });
+      await submit('submit_review', { taskId: standing.taskId, verdict: 'DEVIATION', citeIds: [current, original],
+        reason: 'Unsupported lengths no longer use the original DEFAULT_INDEX; the original test and setup were not rewritten.' });
+      const failures = standing.regressionEvidence.programRun.failureInventory.failures;
+      return { regressionCheck: { status: 'REVIEWED', reason: 'Original preserved fallback fails.', cases: failures.map(x => ({
+        id: x.id, verdict: 'REGRESSION', objectId: standing.taskId, reason: 'The request adds one option and does not replace the unsupported-input fallback.' })) } };
+    } });
+  assert(observedBeforeModel);
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert(result.stop.review.metricObjectJudgements.some(row => row.objectId.startsWith('M16:standing-') && row.judgement === 'DEVIATION'));
+  assert(result.stop.review.regressionCheck.cases.some(row => row.verdict === 'REGRESSION'));
+  assert.match(result.stop.feedback, /DEVIATION M16:standing-/u);
+  assert.equal(await fs.readFile(path.join(f.root, 'test/settings.test.mjs'), 'utf8'), TESTS);
+});
+
+test('an early original-test result cannot certify a candidate changed before model review', async t => {
+  let reachedReview = false;
+  const { result } = await regressionStop(t, { deviationOnly: false,
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'], maxOutputBytes: 2048 },
+    beforeReview: async (root, attempt) => {
+      if (attempt === 1) await fs.writeFile(path.join(root, 'src/settings.mjs'), SOURCE);
+    },
+    script: async () => { reachedReview = true; assert.fail('A stale regression result must not reach substantive review.'); },
+  });
+  assert.equal(reachedReview, false);
+  assert.equal(result.stop.status, 'UNVERIFIED');
+  assert.match(result.stop.reasonCode, /INPUT_CHANGED/u, JSON.stringify({reason:result.stop.reasonCode,review:result.stop.review}));
+});
 
 test('a cancelled tool submission cannot start its deferred completion check', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-cancelled-handoff-'));
