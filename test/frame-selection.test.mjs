@@ -32,6 +32,16 @@ test('over-quota scenarios and family checks stay incomplete; no candidate is si
   }
 });
 
+test('classification labels do not prevent equivalent checks from being covered', () => {
+  const a=scenario('A'),b={...scenario('B'),contractCell:'owner_signature'};
+  const audit=auditFrameSelection([a,b],{reviews:[row('A'),row('B','covered',{coveredBy:'A'})]});
+  assert.equal(audit.complete,true);
+  const other=scenario('C','Loader.load');
+  const bad=auditFrameSelection([a,other],{reviews:[row('A'),row('C','covered',{coveredBy:'A'})]});
+  assert.equal(bad.complete,false);
+  assert(bad.issues.some(x=>x.includes('Consumer.apply')&&x.includes('Loader.load')));
+});
+
 test('Stop requires the original entry and dependency prerequisites, and an explicit current-code trace', () => {
   const original=scenario('S1'), frame={guidance:[],scenarios:[original]};
   const assess={entryPoint:original.entryPoint,given:original.given,applicability:'APPLICABLE',
