@@ -437,9 +437,6 @@ test('remaining regression cases accept reviewer decisions without authorization
     regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
     script: async ({ standing }) => {
       const [failure] = standing.regressionEvidence.programRun.failureInventory.failures;
-      assert(failure.originalTest.context.includes(OLD_FALLBACK));
-      const originalSource = (await Promise.all(failure.originalTest.sourceFiles.map(file => fs.readFile(file, 'utf8')))).join('');
-      assert.equal(originalSource, TESTS, 'the program supplies the actual task-start file, not a rewritten test');
       return { regressionCheck: { status: 'EXPLAINED', reason: 'The requested fallback replaces this old expectation.',
         cases: [{ id: failure.id, verdict: 'AUTHORIZED_CHANGE', reason: 'Unsupported inputs now use the requested index.' }] } };
     } });
@@ -447,6 +444,23 @@ test('remaining regression cases accept reviewer decisions without authorization
   assert.deepEqual(result.stop.review.unverifiedItems, []);
   assert.equal(f.calls.length, 2, 'scope preparation hands back to the same review, without a separate authorization reviewer');
   assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
+});
+
+test('a captured task start supplies original setup and source despite a later candidate test edit', async t => {
+  const { result } = await regressionStop(t, { request: `${REQUEST} ${AUTHORIZED_FALLBACK}`,
+    regressionCheck: { enabled: true, command: [process.execPath, 'tools/check.mjs'] },
+    afterStart: root => fs.writeFile(path.join(root, 'test/settings.test.mjs'), TESTS + '\n// candidate-only note\n'),
+    script: async ({ standing }) => {
+      const [failure] = standing.regressionEvidence.programRun.failureInventory.failures;
+      assert(failure.originalTest.context.includes(OLD_FALLBACK));
+      const originalSource = (await Promise.all(failure.originalTest.sourceFiles.map(file => fs.readFile(file, 'utf8')))).join('');
+      assert.equal(originalSource, TESTS);
+      assert(!failure.originalTest.context.includes('candidate-only note'));
+      return { regressionCheck: { status: 'EXPLAINED', reason: 'The requested fallback replaces this old expectation.',
+        cases: [{ id: failure.id, verdict: 'AUTHORIZED_CHANGE', reason: 'Unsupported inputs now use the requested index.' }] } };
+    } });
+  assert.equal(result.stop.status, 'NO_DEVIATION_FOUND');
+  assert.deepEqual(result.stop.review.unverifiedItems, []);
 });
 
 test('one decided failure does not explain an omitted preserved contract, and a supported regression is dispatched', async t => {
