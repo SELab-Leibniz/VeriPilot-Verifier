@@ -332,6 +332,55 @@ test("host terminal reader rejects a different run and accepts only a trustworth
   await assert.rejects(waitPostRunTerminal(api, {}, "r", Date.now() + 2000), /IDENTITY/);
 });
 
+test('a transient terminal-read failure retries only the same read and preserves the actual error terminal', async () => {
+  const calls = [], terminal = { runId: 'original', status: 'error', error: 'The native run failed' };
+  const request = async (method, params) => {
+    calls.push({ method, params });
+    if (calls.length === 1) throw Object.assign(new Error('Temporary transport timeout'), { name: 'GatewayTransportError', kind: 'timeout' });
+    if (calls.length === 2) throw Object.assign(new Error('Abnormal connection close'), { name: 'GatewayTransportError', kind: 'closed', code: 1006 });
+    return terminal;
+  };
+  assert.equal(await waitPostRunTerminal({}, {}, 'original', Date.now() + 2000, undefined, request), terminal);
+  assert.equal(calls.length, 3);
+  assert(calls.every(call => call.method === 'agent.wait' && call.params.runId === 'original'));
+});
+
+test('authorization, unknown protocol failures and a different terminal remain failures without retry', async () => {
+  for (const error of [Object.assign(new Error('Unauthorized'), { name: 'GatewayTransportError', kind: 'closed', code: 1008 }),
+    Object.assign(new Error('Invalid request'), { name: 'GatewayClientRequestError', code: 'INVALID_REQUEST' }), new Error('Unknown host failure')]) {
+    let calls = 0;
+    await assert.rejects(waitPostRunTerminal({}, {}, 'original', Date.now() + 1000, undefined, async () => { calls++; throw error; }), value => value === error);
+    assert.equal(calls, 1);
+  }
+  let calls = 0;
+  await assert.rejects(waitPostRunTerminal({}, {}, 'original', Date.now() + 1000, undefined, async () => {
+    if (++calls === 1) throw Object.assign(new Error('Transient'), { name: 'GatewayTransportError', kind: 'timeout' });
+    return { runId: 'replacement', status: 'ok' };
+  }), /HOST_TERMINAL_IDENTITY_MISMATCH/u);
+  assert.equal(calls, 2);
+});
+
+test('terminal-read retry still obeys cancellation and the unchanged overall deadline', async () => {
+  const controller = new AbortController(), cancelled = new Error('Original owner cancelled'); let calls = 0;
+  const request = async () => { calls++; throw Object.assign(new Error('Transient'), { name: 'GatewayTransportError', kind: 'timeout' }); };
+  const pending = waitPostRunTerminal({}, {}, 'original', Date.now() + 2000, controller.signal, request);
+  controller.abort(cancelled);
+  await assert.rejects(pending, value => value === cancelled);
+  assert.equal(calls, 0, 'cancellation before the scheduled request prevents any RPC');
+  let entered;
+  const started = new Promise(resolve => { entered = resolve; }), running = new AbortController();
+  const active = waitPostRunTerminal({}, {}, 'original', Date.now() + 2000, running.signal, async () => {
+    calls++; entered(); throw Object.assign(new Error('Transient'), { name: 'GatewayTransportError', kind: 'timeout' });
+  });
+  await started; running.abort(cancelled);
+  await assert.rejects(active, value => value === cancelled);
+  assert.equal(calls, 1, 'an in-flight read never retries after cancellation');
+  calls = 0;
+  const result = await waitPostRunTerminal({}, {}, 'original', Date.now() + 150, undefined, request).then(value => value, () => null);
+  assert.equal(result, null);
+  assert(calls <= 2);
+});
+
 test("unknown host terminal holds later tasks instead of starting them beside an unfinished run", async t => {
   const f = await fixture(t, { waitTerminal: async () => null });
   const a = f.identity("a"); await f.manager.started(a, "run-a");
