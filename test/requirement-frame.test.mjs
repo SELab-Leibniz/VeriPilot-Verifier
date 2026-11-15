@@ -34,7 +34,7 @@ const selectAll = items => ({ reviews: items.map(item => review(item)), finish: 
 
 async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
   archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
-  checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll, challenge = () => ({ guidance: [], scenarios: [] }) } = {}) {
+  checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll, challenge = () => ({ guidance: [], scenarios: [] }), afterSubmission = async () => {} } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
   const cfg = path.join(projectRoot, '.runtime-corrector', 'config.yaml');
   const config = () => fs.writeFile(cfg, `version: 2
@@ -104,6 +104,7 @@ reviewers:
           const name = kind === 'selection' ? 'submit_frame_selection' : 'submit_frame_proposal';
           await call(name, validator ? validator.validateToolArguments(tools.get(name), { name, arguments: args }) : args);
           params.onAgentToolResult({ isError: false });
+          await afterSubmission({ kind, params });
           return { payloads: [], meta: {} };
         },
       },
@@ -804,4 +805,70 @@ test('a selector timeout preserves accepted receipts and emits only a generic om
   assert.match(brief,/本次梳理可能仍有遗漏/u);assert.match(brief,/Use the owner/u);
   assert.doesNotMatch(brief,/Not yet reviewed|pending|TIMEOUT|P1-G2/u);
   assert.equal(deliveredBrief(await f.toolResult('again')),undefined);
+});
+
+test('a stalled proposal sibling leaves time to review completed work and rejects its late submission', async t => {
+  let release, lateParams;
+  const pending = new Promise(resolve => { release = resolve; });
+  t.after(() => release());
+  const f = await fixture(t, { timeoutMs: 3000, proposers: 2,
+    propose: async ({ ordinal, params }) => {
+      if (ordinal === 1) return ordinaryProposal();
+      lateParams = params;
+      await pending; // Deliberately does not cooperate with cancellation.
+      return { guidance: [guidance('Late unreviewed work')], scenarios: [] };
+    }, select: (items, params) => {
+      assert.equal(lateParams.abortSignal.aborted, true);
+      assert.equal(params.abortSignal.aborted, false);
+      return selectAll(items);
+    } });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.status, 'partial');
+  assert.equal(frame.reason, 'PROPOSAL_INCOMPLETE');
+  assert.deepEqual({ completed: frame.proposalReview.completed, total: frame.proposalReview.total }, { completed: 1, total: 2 });
+  assert.equal(lateParams.abortSignal.aborted, true);
+  assert.equal(frame.guidance.length, 1);
+  assert.equal(frame.guidance[0].statement, 'Use the existing default');
+  const selectionSignal = f.calls.find(call => call.kind === 'selection').params.abortSignal;
+  assert.notEqual(selectionSignal, lateParams.abortSignal);
+  release();
+  await delay(20);
+  const raw = await fs.readdir(path.join(f.dir, 'raw'));
+  assert(!raw.some(file => file.endsWith('-proposal-2.json')));
+  const brief = deliveredBrief(await f.toolResult('completed-sibling'));
+  assert.match(brief, /Use the existing default/u);
+  assert.doesNotMatch(brief, /Late unreviewed work|PROPOSAL_INCOMPLETE|proposal-2/u);
+});
+
+test('a submitted proposal survives a stalled native session after its tool acknowledgement', async t => {
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  t.after(() => release());
+  const f = await fixture(t, { timeoutMs: 3000,
+    afterSubmission: async ({ kind, params }) => {
+      if (kind === 'proposal' && path.basename(params.cwd) === 'proposal-1') await pending;
+    } });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(frame.proposalReview.completed, 1);
+  assert.equal(frame.guidance.length, 1);
+  assert.equal(frame.guidance[0].statement, 'Use the existing default');
+  assert.equal(frame.status, 'ready');
+  release();
+});
+
+test('a stalled counterexample phase cannot consume the time reserved for reviewed selection', async t => {
+  let challengeSignal;
+  const f = await fixture(t, { timeoutMs: 3000, challenge: async ({ params }) => {
+    challengeSignal = params.abortSignal;
+    await delay(10000, undefined, { signal: params.abortSignal });
+  } });
+  await f.prompt();
+  const frame = await f.frame();
+  assert.equal(challengeSignal.aborted, true);
+  assert.equal(frame.status, 'partial');
+  assert.equal(frame.reason, 'COUNTEREXAMPLE_INCOMPLETE');
+  assert.equal(frame.guidance.length, 1);
+  assert.equal(frame.selectionCoverage.complete, true);
 });
