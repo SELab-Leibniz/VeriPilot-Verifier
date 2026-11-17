@@ -6,4 +6,5 @@ rcConfigFile: "./rc-config.no-frame.yaml"
 execution:
   businessTimeoutMs: 0
   pollIntervalMs: 1000
-  observerTimeoutMs: 0
+  observerTimeoutMs: 21600000
+  maxRuntimeMs: 21600000

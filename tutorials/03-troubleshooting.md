@@ -18,6 +18,8 @@
 - `1`：配置、入口或准备错误，按错误路径/日志修正。
 - `2`：`NEEDS_ATTENTION`。原工作可能继续运行，先查原 Gateway/Session。
 - `3`：已留档，但至少一个宿主原生运行为 `error`。不当作业务任务成功，也不自动重跑。
+- `4`：`TIMED_OUT`。达到本样本最大运行时间，进程组已确认清理；部分产物保留，缺失的原生终态不伪造为成功。
+- `5`：`TIMEOUT_CLEANUP_FAILED`。达到总时限，但清理未确认，不能认为后台已经结束。检查 `process-scope-error.json`、守护日志和回执，修复后核实原实验，不启动重复样本。
 
 RC 的 `NO_DEVIATION_FOUND`、`UNVERIFIED` 等结果保持独立。CLI 返回、文件生成和一次 `ended: true` 均不足以单独证明所有纠偏工作结束。
 
@@ -55,7 +57,7 @@ HTTP 401/404 的 HEAD 响应证明 HTTP 链路有响应，不证明模型调用�
 
 ## 原 Gateway 还在工作，脚本关了
 
-`Ctrl+C` 停止脚本观察，会保留尚未结束的业务与 RC。确认旧观察进程已退出后：
+`Ctrl+C` 或观察窗口超时只停止脚本观察，会保留尚未结束的业务与 RC；该实验的总时限和独立守护进程继续生效。确认旧观察进程已退出后：
 
 ```powershell
 node scripts/run-experiment.mjs --resume 'D:/rc-lab/runs/<run-id>'
@@ -65,7 +67,7 @@ node scripts/run-experiment.mjs --resume 'D:/rc-lab/runs/<run-id>'
 
 ## 原 Gateway 已停止、电脑重启或输出被搬到另一台机器
 
-`--resume` 不会自动启动替代 Gateway。无法连接原 Gateway 时，写入 `NEEDS_ATTENTION / GATEWAY_UNAVAILABLE`，保留原请求 ID，不声称完成。旧的 `latest.json` 是历史快照，不能据此认定后台仍在运行。
+`--resume` 不会自动启动替代 Gateway。总时限内无法连接原 Gateway 时，写入 `NEEDS_ATTENTION / GATEWAY_UNAVAILABLE`，保留原请求 ID，不声称完成；到期后直接核实原进程组清理。旧的 `latest.json` 是历史快照，不能据此认定后台仍在运行。
 
 运行目录包含原机器绝对路径、PID 和原生状态，不是跨机器续跑包。迁移的是源码、样本包与新的机器配置。原运行先保留证据并核对状态，再明确决定是否开新尝试。
 
@@ -74,6 +76,20 @@ node scripts/run-experiment.mjs --resume 'D:/rc-lab/runs/<run-id>'
 这表示 RC 正在收尾，或仍缺少精确运行 ID 的原生终态。即使业务文件已经写出，仍可能有宿主排队、回复排空、私有审查或启动准入尚未结算。
 
 查看 `rc-status/latest.json.completion.reasons` 和对应日志，继续观察原运行。不要手动把状态文件改成完成、重发同一任务或关闭不明归属的 Node 进程。
+
+查询卡住、持续未知或连续失败时，观察器会有限返回 `NEEDS_ATTENTION`。健康的 WAITING/RUNNING/STOPPING 即使长时间处于同一阶段，也不会按“几分钟没有变化”被提前杀死；整个实验的硬截止时间仍有效。
+
+## 到达最大运行时间
+
+看 `run.json.experimentDeadlineAt` 和 `rc-status/sample-stop-receipt.json`。回执必须对应本次 Job、Gateway PID 及进程创建时间，并且 `activeProcesses` 为 0。`experiment-timeout.json` 保存上次看到的队列、未完成私有审查和清理回执。RC 状态通过公开自检入口刷新，可能为 `INTERRUPTED / UNVERIFIED`；它与实验的 `TIMED_OUT` 分开记录，主任务未收到的原生终态仍为未知。
+
+守护进程分成进程组截止保护和结果收尾两部分，观察器退出后仍生效。结果守护会恢复失联的进程组守护；若结果守护本身异常，进程组截止保护仍会执行并保留清理回执，此时用 `--resume` 核实并写入最终结果。清理确认通常在截止后很快完成；控制器的清理确认窗口为 35 秒，守护恢复启动另有至多 20 秒，繁忙机器还需要少量结果落盘时间。未确认时返回失败，不无限等待或伪装成功。
+
+范围是本次独立 Gateway 的 Windows Job，子孙进程默认继承该组，不按进程名批量结束 Node，也不关闭用户正常 MA 或其他样本。通过 WMI、计划任务、外部服务或远端环境另行启动的作业不属于普通子进程，需要项目自己的清理机制。Windows Job 的继承与终止行为见 [Microsoft 文档](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)。
+
+## 守护启动失败
+
+先检查 `logs/process-supervisor.log`、`rc-status/process-scope-error.json`。进程组尚未准备好时禁止提交模型任务，并关闭刚启动的 Gateway。脚本不启用 `KILL_ON_JOB_CLOSE`，避免观察器或守护自身崩溃提前杀死健康工作；恢复时只重新打开原来的命名 Job，不把复用 PID 的其他进程绑入。企业禁用 Add-Type、权限不足或进程组能力不可用时，先修复本机环境，再创建新的尝试。
 
 ## RC_HOOK_UNAVAILABLE / 前置热钩子超时
 

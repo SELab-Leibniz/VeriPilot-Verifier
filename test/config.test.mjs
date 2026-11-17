@@ -6,6 +6,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadInputs, chooseModels, publicPlan, executionPlan } from '../lib/config.mjs';
 import { writeJson, hash } from '../lib/files.mjs';
+import { run } from '../lib/runner.mjs';
+import { queryExperimentStatus } from '../lib/experiment-status.mjs';
 
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'RC 配置 空格-'));
@@ -36,6 +38,16 @@ test('machine and sample relative paths use their own directories; plan does not
   assert.equal(hash(await fs.readFile(path.join(f.root, 'sample/project/source.py'))), before);
   await assert.rejects(() => fs.stat(result.paths.outputRoot), /ENOENT/);
 });
+
+test('a preparation failure records an externally queryable failed attempt before any native allocation', async () => {
+  const f = await fixture(), input = await loadInputs(f.sample, f.machine);
+  // Fixture archive is deliberately invalid; startup must never reach a host.
+  const { record, result } = await run(input);
+  assert.equal(result.status, 'FAILED'); assert.equal(record.gatewayPid, undefined); assert.equal(record.firstRunId, undefined);
+  const state = await queryExperimentStatus(record.runDir);
+  assert.equal(state.status, 'FAILED'); assert.equal(state.canScheduleNext, true);
+  assert.equal(state.executionExitCode, 1); assert.equal(state.observer.state, 'STOPPED');
+});
 test('new-machine preflight rejects a missing SDK and environment isolation override', async () => {
   const f = await fixture();
   await fs.writeFile(f.machine, f.content.replace('sdk: ./sdk', 'sdk: ./missing-sdk'));
@@ -47,6 +59,19 @@ test('config typos fail before starting a host', async () => {
   const f = await fixture();
   await fs.appendFile(f.sample, 'execuition:\n  pollIntervalMs: 10\n');
   await assert.rejects(() => loadInputs(f.sample, f.machine), /Unknown experiment.execuition/);
+});
+
+test('each sample has a configurable finite total limit; invalid unlimited/overflow values fail before startup', async () => {
+  const f = await fixture(), base = await fs.readFile(f.sample, 'utf8');
+  assert.equal((await loadInputs(f.sample, f.machine)).execution.maxRuntimeMs, 21600000);
+  await fs.writeFile(f.sample, base + 'execution:\n  maxRuntimeMs: 7200000\n');
+  assert.equal((await loadInputs(f.sample, f.machine)).execution.maxRuntimeMs, 7200000);
+  for (const key of ['maxRuntimeMs', 'observerTimeoutMs', 'uncertainTimeoutMs', 'queryTimeoutMs']) {
+    await fs.writeFile(f.sample, base + `execution:\n  ${key}: 0\n`);
+    await assert.rejects(() => loadInputs(f.sample, f.machine), new RegExp(`Invalid execution.${key}`));
+  }
+  await fs.writeFile(f.sample, base + 'execution:\n  maxRuntimeMs: 2147483648\n');
+  await assert.rejects(() => loadInputs(f.sample, f.machine), /Invalid execution.maxRuntimeMs/);
 });
 test('new host implicit main and first listed default follow OpenClaw selection', () => {
   const source = { agents: { defaults: { model: 'p/m' } }, models: { providers: { p: { models: [{ id: 'm' }] } } },

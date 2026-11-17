@@ -1,0 +1,10 @@
+version: 1
+id: "quicksort-flow-check"
+projectDir: "./project"
+promptFile: "./prompt.md"
+rcConfigFile: "./rc-config.no-frame.yaml"
+execution:
+  maxRuntimeMs: 1800000
+  businessTimeoutMs: 0
+  observerTimeoutMs: 180000
+  pollIntervalMs: 1000

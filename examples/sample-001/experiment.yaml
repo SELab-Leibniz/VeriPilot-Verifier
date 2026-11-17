@@ -6,5 +6,6 @@ rcConfigFile: "./rc-config.yaml"
 execution:
   businessTimeoutMs: 0
   pollIntervalMs: 1000
-  # 0 means no observer deadline; it does not change RC's own review budget.
-  observerTimeoutMs: 0
+  # Observer deadline retains work; maxRuntimeMs cancels only this experiment.
+  observerTimeoutMs: 21600000
+  maxRuntimeMs: 21600000

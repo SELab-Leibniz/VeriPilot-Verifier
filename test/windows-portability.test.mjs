@@ -7,6 +7,7 @@ import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { json } from '../lib/files.mjs';
+import { queryExperimentStatus } from '../lib/experiment-status.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const execute = promisify(execFile);
@@ -48,21 +49,62 @@ extraPath: []
     const gitConfigFile = path.join(folder, 'global.gitconfig'); await fs.writeFile(gitConfigFile, gitConfig);
     const ps = value => "'" + value.replaceAll("'", "''") + "'";
     const command = `[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); $OutputEncoding=[Console]::OutputEncoding; & ${ps(process.execPath)} ${ps(path.join(root, 'scripts/run-experiment.mjs'))} ${ps(path.join(folder, 'case/experiment.yaml'))} --machine ${ps(path.join(folder, 'machine.yaml'))} --prepare-only; exit $LASTEXITCODE`;
-    const { stdout } = await execute('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(command, 'utf16le').toString('base64')],
-      { cwd: os.tmpdir(), windowsHide: true, timeout: 160000, env: { ...process.env, GIT_CONFIG_GLOBAL: gitConfigFile,
+    const execution = execute('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(command, 'utf16le').toString('base64')],
+      { cwd: folder, windowsHide: true, timeout: 160000, env: { ...process.env, GIT_CONFIG_GLOBAL: gitConfigFile,
         OPENCLAW_PROFILE: 'unrelated-production-profile', OPENCLAW_GATEWAY_TOKEN: 'must-not-be-used' }, maxBuffer: 2 * 1024 * 1024 });
+    let done = false; const observed = new Map();
+    execution.then(() => { done = true; }, () => { done = true; });
+    while (!done) {
+      try {
+        const [name] = await fs.readdir(path.join(folder, 'runs'));
+        const status = await json(path.join(folder, 'runs', name, 'experiment-status.json'));
+        observed.set(status.phase, { phase: status.phase, status: status.status, terminal: status.terminal, canScheduleNext: status.canScheduleNext });
+      } catch (error) { if (error.code !== 'ENOENT') throw error; }
+      await new Promise(resolve => setTimeout(resolve, 30));
+    }
+    const { stdout } = await execution;
     assert.match(stdout, /PREPARED:/);
     const [name] = await fs.readdir(path.join(folder, 'runs'));
     const runDir = path.join(folder, 'runs', name), record = await json(path.join(runDir, 'run.json'));
     const result = await json(path.join(runDir, 'result.json'));
     assert.equal(result.noModelDispatch, true); assert.equal(result.gatewayRetained, false);
     assert.equal(record.identity.agentId, 'main'); assert.equal(record.firstRunId, undefined);
+    assert.ok([...observed.values()].some(s => s.status === 'PREPARING' && !s.terminal && !s.canScheduleNext));
+    const status = await queryExperimentStatus(runDir);
+    assert.equal(status.status, 'PREPARED'); assert.equal(status.terminal, true); assert.equal(status.canScheduleNext, true);
+    assert.equal(status.observer.state, 'STOPPED');
+    const { stdout: queryJson } = await execute(process.execPath, [path.join(root, 'scripts/experiment-status.mjs'), runDir], { windowsHide: true, timeout: 10000 });
+    assert.equal(JSON.parse(queryJson).status, 'PREPARED');
+    console.log(`Native status transitions: ${JSON.stringify([...observed.values()])}`);
     assert.equal(await fs.readFile(gitConfigFile, 'utf8'), gitConfig);
     const cfg = await json(record.configPath);
-    assert.equal(cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs, 0);
+    assert.ok(cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs > 0);
+    assert.ok(cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs <= record.input.execution.maxRuntimeMs);
     assert.equal(cfg.agents.defaults.workspace, record.seedRoot);
     const log = await fs.readFile(path.join(runDir, 'logs/gateway.stdout.log'), 'utf8');
     assert.equal(log.includes('[model-fetch] start'), false);
     await assert.rejects(() => fs.stat(path.join(runDir, 'rc-status/send-receipt.json')), /ENOENT/);
+    await assert.rejects(() => fs.stat(path.join(folder, 'Microsoft/Windows/PowerShell/ModuleAnalysisCache')), /ENOENT/);
     console.log(`Windows zero-model qualification artifacts: ${runDir}`);
+    // The same public CLI must classify a preparation deadline as a timeout,
+    // before any Gateway/session/model can be allocated.
+    const tinySample = path.join(folder, 'case/prepare-timeout.yaml');
+    await fs.writeFile(tinySample, (await fs.readFile(path.join(folder, 'case/experiment.yaml'), 'utf8')) + 'execution:\n  maxRuntimeMs: 1\n');
+    const tinyCommand = command.replace(ps(path.join(folder, 'case/experiment.yaml')), ps(tinySample));
+    let timed;
+    try {
+      await execute('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(tinyCommand, 'utf16le').toString('base64')],
+        { cwd: os.tmpdir(), windowsHide: true, timeout: 20000 });
+      assert.fail('Expected timeout exit code');
+    } catch (error) {
+      assert.equal(error.code, 4);
+      const directory = error.stdout.match(/^Run: (.+)\r?$/m)?.[1]?.trim();
+      assert.ok(directory); timed = await json(path.join(directory, 'run.json'));
+      const result = await json(path.join(directory, 'result.json'));
+      assert.equal(result.status, 'TIMED_OUT'); assert.equal(result.cleanupConfirmed, true);
+      assert.equal(timed.gatewayPid, undefined); assert.equal(timed.firstRunId, undefined);
+      const status = await queryExperimentStatus(directory);
+      assert.equal(status.status, 'TIMED_OUT'); assert.equal(status.canScheduleNext, true);
+      console.log(`Windows preparation deadline artifacts: ${directory}`);
+    }
   });

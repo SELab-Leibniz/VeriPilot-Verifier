@@ -20,8 +20,8 @@ test('auto selects existing host models; unavailable explicit roles fail', () =>
   assert.throws(() => chooseModels(source, { reviewer: 'p/not-installed' }), /Unavailable/);
 });
 test('completion waits for native terminal even when public RC says ended', () => {
-  assert.equal(completion(settled(), { r1: { status: 'ok' } }, 'r1').settled, true);
-  assert.equal(completion(settled(), { r1: { status: 'timeout' } }, 'r1').settled, false);
+  assert.equal(completion(settled(), { r1: { runId: 'r1', status: 'ok' } }, 'r1').settled, true);
+  assert.equal(completion(settled(), { r1: { runId: 'r1', status: 'timeout' } }, 'r1').settled, false);
 });
 test('completion blocks queued tasks, repair dispatch, private reviewer and reservations', () => {
   const mutations = [
@@ -37,12 +37,12 @@ test('completion blocks queued tasks, repair dispatch, private reviewer and rese
     s => s.rc.status = 'UNKNOWN',
     s => s.private.dispatch = []
   ];
-  for (const mutate of mutations) { const s = settled(); mutate(s); assert.equal(completion(s, { r1: { status: 'ok' } }, 'r1').settled, false); }
+  for (const mutate of mutations) { const s = settled(); mutate(s); assert.equal(completion(s, { r1: { runId: 'r1', status: 'ok' } }, 'r1').settled, false); }
 });
 test('an automatic followup needs its own terminal', () => {
   const s = settled(); s.rc.runId = 'r2'; s.dispatch[0].runId = 'r2'; s.private.dispatch[0].runId = 'r2';
-  assert.equal(completion(s, { r1: { status: 'ok' } }, 'r1').settled, false);
-  assert.equal(completion(s, { r1: { status: 'ok' }, r2: { status: 'error' } }, 'r1').settled, true);
+  assert.equal(completion(s, { r1: { runId: 'r1', status: 'ok' } }, 'r1').settled, false);
+  assert.equal(completion(s, { r1: { runId: 'r1', status: 'ok' }, r2: { runId: 'r2', status: 'error' } }, 'r1').settled, true);
 });
 test('lost send acknowledgement persists original ID and never retransmits', async () => {
   const runDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-runner-send-'));
@@ -71,7 +71,7 @@ test('observer interrupt and network failure preserve unresolved run', async () 
 test('settled provider failure is archived truthfully and stops a batch with nonzero exit', async () => {
   const s = settled(); s.rc.outcome = 'UNVERIFIED'; s.rc.reasonCode = 'HOST_RUN_NOT_COMPLETED';
   s.completion = { settled: true, reasons: [] };
-  const record = { id: 'fault', input: { execution: { observerTimeoutMs: 0 } }, terminals: { r1: { status: 'error', error: 'DNS error' } } };
+  const record = { id: 'fault', firstRunId: 'r1', input: { execution: { observerTimeoutMs: 0 } }, terminals: { r1: { runId: 'r1', status: 'error', error: 'DNS error' } } };
   const result = await observe(record, null, { readSnapshot: async () => s });
   assert.equal(result.status, 'ARCHIVED'); assert.equal(result.rc.outcome, 'UNVERIFIED');
   assert.equal(result.host.r1.status, 'error'); assert.equal(experimentExitCode(result), 3);
@@ -95,6 +95,7 @@ test('machine paths/environment reach child; production OpenClaw overrides remov
       input: { paths: { openclawRoot: 'host' }, environment: { DEVECO_SDK_HOME: 'sdk', JAVA_HOME: 'java' }, binPaths: ['custom-bin'] } });
     assert.equal(env.DEVECO_SDK_HOME, 'sdk'); assert.equal(env.OPENCLAW_STATE_DIR, 'new-state');
     assert.equal(env.TEMP, env.TMPDIR); assert.equal(env.TMP, env.TEMP);
+    assert.equal(env.PSModuleAnalysisCachePath, path.join('run', 'runtime/tmp/powershell-module-cache'));
     assert.equal(env.OPENCLAW_GATEWAY_TOKEN, undefined); assert.ok(env.PATH.startsWith('custom-bin'));
   } finally { if (old === undefined) delete process.env.OPENCLAW_GATEWAY_TOKEN; else process.env.OPENCLAW_GATEWAY_TOKEN = old; }
 });

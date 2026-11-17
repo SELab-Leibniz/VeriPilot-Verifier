@@ -5,6 +5,9 @@
 1. [新机器安装与第一次运行](01-windows-setup.md)
 2. [机器配置与样本包](02-configuration-and-samples.md)
 3. [失败、中断、恢复与日志](03-troubleshooting.md)
+4. [给外层控制器的实验状态接口](04-experiment-status.md)
+
+观察恢复、总时限和异常清理的实际结果见 [流程验证记录](../FLOW-VALIDATION.md)。
 
 平时只需维护一份 `machine.yaml`；每个样本带自己的项目、提示词和 RC 配置。普通测试用 `npm test`；真实 Windows 准备用 `npm run test:windows`，它也从同一份机器配置读取路径，不调用模型。
 

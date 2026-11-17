@@ -34,7 +34,7 @@ env:
   LANG: "en_US.UTF-8"
 ```
 
-`env` 的值使用字符串。OPENCLAW 的路由/状态路径、HOME/USERPROFILE、PATH、NODE_OPTIONS、TEMP/TMP/TMPDIR 由隔离环境管理，不能从这里覆盖。Node、Git、Java 等工具目录通过各自路径字段或 `extraPath` 配置。
+`env` 的值使用字符串。OPENCLAW 的路由/状态路径、HOME/USERPROFILE、PATH、NODE_OPTIONS、TEMP/TMP/TMPDIR、`PSModuleAnalysisCachePath` 由隔离环境管理，不能从这里覆盖。Node、Git、Java 等工具目录通过各自路径字段或 `extraPath` 配置。
 
 脚本使用独立 HOME、APPDATA、临时目录和 OpenClaw Profile。它不会更改系统环境变量。依赖旧用户目录缓存、全局 npm/ohpm 设置或硬编码路径的业务项目，需要在样本或构建脚本中明确处理。
 
@@ -72,9 +72,12 @@ projectDir: "./project"
 promptFile: "./prompt.md"
 rcConfigFile: "./rc-config.yaml"
 execution:
+  maxRuntimeMs: 7200000
   businessTimeoutMs: 0
   pollIntervalMs: 1000
-  observerTimeoutMs: 0
+  observerTimeoutMs: 7200000
+  uncertainTimeoutMs: 300000
+  queryTimeoutMs: 15000
 ```
 
 这些路径相对本包的 `experiment.yaml`。ID 只使用字母、数字、下划线和横线。每次执行仍会分配唯一运行目录。
@@ -85,11 +88,17 @@ execution:
 
 ## 超时与 RC 配置
 
-- `businessTimeoutMs: 0`：业务运行不设置截止；最终脚本也将该值传给本次 RC 的后续业务修复运行。
-- `observerTimeoutMs: 0`：脚本持续观察；正数只限制观察时间，不会中止或重发业务任务。
+- `maxRuntimeMs`：整个样本的硬上限，正整数毫秒，默认 `21600000`（六小时）。示例 `7200000` 为两小时。从创建运行目录开始计时，包含准备、主任务、私有审查、全部纠偏轮次和排队任务，恢复观察不重置截止时间。预检输入本身在创建运行目录之前进行。
+- 到达硬上限后，独立守护进程终止本实验的 Windows Job，包含 Gateway 及普通方式启动的子孙进程；其排队任务随 Gateway 一起结束。保留原始工作树、状态、日志及已捕获轨迹。只有进程组确认没有活动进程才记录 `TIMED_OUT`。这与 RC 的手动“只终止当前轮、后续用户任务继续”接口是两种用途。
+- `businessTimeoutMs: 0`：业务任务只受实验总上限约束；正数可额外限制单次业务运行。后续业务修复同样受总上限约束。
+- `observerTimeoutMs`：一次观察窗口的上限，默认六小时。达到这个上限只停止观察，返回 `NEEDS_ATTENTION`，不重发任务，也不提前中断健康纠偏。独立守护进程仍在总截止时间清理该实验。
+- `uncertainTimeoutMs`：状态持续无法确认的等待上限，默认五分钟。查询恢复且显示健康活动会清除此计时，不按同一正常阶段持续时间判断卡死。
+- `queryTimeoutMs`：单次状态查询上限，默认十五秒；连续三次查询失败会停止本次观察并保留原工作。迟到的查询结果不会被当成完成依据。
 - `pollIntervalMs`：观察间隔，至少 100 ms，默认 1000 ms。
 
-RC 的评审预算、指标、最大纠偏次数、requirementFrame 等由每个样本的 `rc-config.yaml` 决定。初始化仅适配评审模型；不会悄悄缩短预算。原始配置和实际配置都留档。
+除 `businessTimeoutMs` 外，上述值都必须是正整数，不能用 `0` 关闭保护。所有毫秒值最多为 `2147483647`（约 24.8 天），避免运行时计时器溢出。`run.json` 中的 `experimentDeadlineAt` 是该次冻结的绝对截止时间；修改样本配置不会延长已经开始的实验。旧版记录中的 `observerTimeoutMs: 0` 在恢复观察时采用有限默认窗口；没有进程组身份的旧版运行不会被自动按 PID 接管关闭。
+
+RC 的评审预算、指标、最大纠偏次数、requirementFrame 等由每个样本的 `rc-config.yaml` 决定。初始化仅适配评审模型，不改这些预算；整个样本仍受 `maxRuntimeMs` 约束。原始配置和实际配置都留档。
 
 默认配置中的 ArkTS 回归命令当前关闭，里面的 `C:/MABench/...` 路径不会执行。需要开启时，使用随实验包携带的检查脚本，例如 `command` 采用 `node` 和 `scripts/check-project.mjs`，由脚本读取机器环境中的 SDK/Java 路径；不要继续使用旧机器绝对路径。命令数组不会自动做 shell 变量展开。
 
@@ -102,4 +111,4 @@ foreach ($sample in Get-ChildItem 'D:/samples' -Directory) {
 }
 ```
 
-退出码 0 只代表正常收尾或准备成功，不是独立业务评分。宿主运行失败返回 3；遇到待核对返回 2。检查当前样本后再决定后续操作，不自动覆盖失败记录。
+退出码 0 只代表正常收尾或准备成功，不是独立业务评分。宿主运行失败返回 3；遇到待核对返回 2；总时限到期清理确认返回 4，清理未确认返回 5。检查当前样本后再决定后续操作，不自动覆盖失败记录。

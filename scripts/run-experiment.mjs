@@ -13,7 +13,7 @@ function option(name, fallback) {
   const value = args[i + 1]; args.splice(i, 2); return value;
 }
 let stopped = false;
-process.on('SIGINT', () => { stopped = true; console.error('Controller stopping; keeping unresolved Gateway/session for --resume.'); });
+process.on('SIGINT', () => { stopped = true; console.error('Controller stopping; original sample deadline remains enforced. Use --resume to observe.'); });
 process.on('SIGTERM', () => { stopped = true; });
 try {
   if (args.includes('--help') || !args.length) {
@@ -39,3 +39,7 @@ try {
     }
   }
 } catch (error) { console.error(error.message); process.exitCode = 1; }
+// Host SDK modules may retain watchers. All result writes are awaited; leaving
+// this CLI must not wait for those watchers or close the sample's separate Job.
+await Promise.all([new Promise(resolve => process.stdout.write('', resolve)), new Promise(resolve => process.stderr.write('', resolve))]);
+process.exit(process.exitCode ?? 0);

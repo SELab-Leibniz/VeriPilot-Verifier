@@ -1,0 +1,10 @@
+version: 1
+id: "quicksort-hard-timeout"
+projectDir: "./project"
+promptFile: "./prompt.md"
+rcConfigFile: "./rc-config.no-frame.yaml"
+execution:
+  maxRuntimeMs: 120000
+  businessTimeoutMs: 0
+  observerTimeoutMs: 1000
+  pollIntervalMs: 1000

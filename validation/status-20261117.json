@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Shanghai",
+  "schemaVersion": "rc-experiment.status.v1",
+  "qualification": {
+    "command": "npm run test:windows",
+    "tests": 61,
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0,
+    "newProviderRequests": 0
+  },
+  "observedNativePhases": [
+    "PREPARING",
+    "STARTING",
+    "CREATING_SESSION",
+    "ENABLING_RC",
+    "READY",
+    "STOPPING_GATEWAY",
+    "PREPARED"
+  ],
+  "current": [
+    {
+      "kind": "native-host-preparation",
+      "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 迁移 验证-B43tHC\\runs\\windows-portability-20261117T122742335Z-b03dc269",
+      "status": "PREPARED",
+      "phase": "PREPARED",
+      "terminal": true,
+      "resourcesReleased": true,
+      "canScheduleNext": true,
+      "resultFinalized": true,
+      "observer": "STOPPED",
+      "publisher": "deadline-watchdog"
+    },
+    {
+      "kind": "preparation-deadline",
+      "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 迁移 验证-B43tHC\\runs\\windows-portability-20261117T122830147Z-5c0c913a",
+      "status": "TIMED_OUT",
+      "phase": "TIMED_OUT",
+      "terminal": true,
+      "resourcesReleased": true,
+      "canScheduleNext": true,
+      "resultFinalized": true,
+      "observer": "STOPPED",
+      "publisher": "controller"
+    },
+    {
+      "kind": "background-watchdog-publication",
+      "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 进程边界 0YoI1D",
+      "status": "TIMED_OUT",
+      "phase": "TIMED_OUT",
+      "terminal": true,
+      "resourcesReleased": true,
+      "canScheduleNext": true,
+      "resultFinalized": true,
+      "observer": "STOPPED",
+      "publisher": "deadline-watchdog"
+    }
+  ],
+  "historical": [
+    {
+      "runId": "quicksort-flow-check-20261117T113627646Z-041ed04f",
+      "status": "COMPLETED",
+      "rc": "ENDED",
+      "outcome": "NO_DEVIATION_FOUND",
+      "terminal": true,
+      "resourcesReleased": true,
+      "canScheduleNext": true,
+      "timeoutExpired": false,
+      "originalRecordsUnchanged": true
+    },
+    {
+      "runId": "quicksort-hard-timeout-20261117T114137467Z-6f9f4a4a",
+      "status": "TIMED_OUT",
+      "rc": "INTERRUPTED",
+      "outcome": "UNVERIFIED",
+      "terminal": true,
+      "resourcesReleased": true,
+      "canScheduleNext": true,
+      "timeoutExpired": true,
+      "originalRecordsUnchanged": true
+    }
+  ],
+  "checks": [
+    "Pure JSON CLI and read-only Node function",
+    "No slot release from RC ended/terminated or observer exit alone",
+    "Deadline expiry requires matching process cleanup proof",
+    "Persistent unknown/query timeout are bounded and do not mutate work",
+    "Failed preparation is recorded before native allocation",
+    "Completed historical run does not become timed out on a later query",
+    "Background result guardian continues publishing after observation stops",
+    "Foreign identity and cleanup proof fail closed",
+    "Native PowerShell 5.1 Chinese/spaced-path runtime qualification"
+  ],
+  "note": "Native host preparation and real Windows process groups; no new business model run or independent evaluation. Historical model attempts were queried read-only."
+}

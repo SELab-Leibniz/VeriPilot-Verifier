@@ -4,6 +4,8 @@
 
 新机器从 [Windows 教程](tutorials/README.md) 开始。当前完整默认配置存在前置热钩子超时问题；自动纠偏已在关闭 requirementFrame 的隔离样本中跑通，见 [纠偏实测记录](CORRECTION-VALIDATION.md)。
 
+状态控制、观察恢复与单个实验总时限的测试见 [流程验证记录](FLOW-VALIDATION.md)。
+
 ## 新机器配置
 
 先安装兼容的 Node（22.22.3 起的 22.x、24.15 起的 24.x 或 25.9+）、Git、MA/OpenClaw，以及包含 Session 运行状态接口的 RC 1.11.0 MA 插件包；在这台机器的宿主配置好模型和凭据。鸿蒙项目另需安装匹配版本的 SDK、Java、OHPM、Hvigor。脚本复用已安装工具，不自动安装它们。
@@ -52,7 +54,18 @@ sample/
 
 样本内的路径相对 `experiment.yaml` 解析。两个示例都包含完整的输入与 RC 配置，可以单独复制整个样本目录。
 
-RC 配置来自原先指定的 `default_rc_config/config.yaml`。初始化沿用 RC 自身的函数，仅将评审模型适配到当前机器；保存原始及实际配置。RC 的审查预算保持原值。`businessTimeoutMs: 0` 关闭业务运行截止，`observerTimeoutMs: 0` 表示脚本持续观察。观察超时不会中止或重发业务任务。
+RC 配置来自原先指定的 `default_rc_config/config.yaml`。初始化沿用 RC 自身的函数，仅将评审模型适配到当前机器；保存原始及实际配置。RC 自身的审查预算保持原值，但整个实验受样本总时限约束。
+
+每个包在 `experiment.yaml` 配置自己的最大运行时间，单位为毫秒。例如单个实验最多两小时：
+
+```yaml
+execution:
+  maxRuntimeMs: 7200000
+```
+
+默认总上限为六小时。从创建运行目录开始，包含准备、业务任务、私有审查、所有自动纠偏和排队任务；`--resume` 沿用原截止时间。到期终止该实验独立 Gateway 及其进程组，保留部分输出和日志，记录 `TIMED_OUT`（退出码 4）。进程清理未确认时记录 `TIMEOUT_CLEANUP_FAILED`（退出码 5）。手动“终止当前轮纠偏、保留后续用户任务”的 RC 接口语义保持独立。
+
+`observerTimeoutMs` 只限制一次观察窗口，默认六小时；`uncertainTimeoutMs` 限制持续无法确认状态的等待，默认五分钟；`queryTimeoutMs` 限制单次查询，默认十五秒。它们需要正整数。观察超时返回 `NEEDS_ATTENTION`，保留正常工作和独立截止守护进程；总时限到期仍会清理该实验。`businessTimeoutMs: 0` 表示业务运行只受实验总时限约束。
 
 多个包按顺序调用同一个命令即可；某个命令返回非零时停止批次并检查该次结果，不自动重试：
 
@@ -67,20 +80,24 @@ foreach ($sample in Get-ChildItem D:/samples -Directory) {
 
 终端会输出 `runs/<run-id>` 的绝对路径。主要文件：
 
-- `run.json`：输入哈希、模型、Session/运行 ID、实际工作目录和阶段。
+- `run.json`：输入哈希、模型、Session/运行 ID、实际工作目录、阶段、`experimentStartedAt` 和 `experimentDeadlineAt`。
+- `experiment-status.json`：供外层控制器读取的实验状态、心跳、RC 阶段、截止时间与调度标志；约每秒自动更新。
 - `result.json`：宿主终态、RC 终态及原因；`ARCHIVED` 代表执行已收尾留档，不代表程序通过独立评估或 RC 语义通过。
-- `artifacts/project/`：最终项目，包含业务生成的测试及输出；`artifacts/changes.patch` 是已跟踪文件的 diff，新文件以项目副本为准。
+- `artifacts/project/`：正常归档后的项目，包含业务生成的测试及输出；`artifacts/changes.patch` 是已跟踪文件的 diff，新文件以项目副本为准。超时不再复制整棵项目，部分产物保留在 `result.json.partialProject`，避免大项目复制拖住超时收尾。
 - `transcripts/`：业务及 RC 私有会话原始 JSONL 和索引。
 - `rc-status/latest.json`、`history.jsonl`、`raw/`：状态快照、观察历史和 RC 原始工作记录。
+- `rc-status/sample-stop-receipt.json`：本实验进程组清理回执；`activeProcesses: 0` 才确认清理。超时详情见 `experiment-timeout.json`。
 - `config/`：输入副本、实际 RC 配置、脱敏宿主配置。
 - `runtime/`：隔离宿主配置、鉴权、插件、工作树及运行状态，属于私有运行目录。
 - `logs/`：Gateway 和脚本日志。
 
 宿主返回的实际业务 Worktree 路径保存在 `run.json.identity.projectRoot`，其当前状态文件是 `<projectRoot>/.runtime-correction/session-runtime-status.json`。
 
-脚本同时等待业务/自动纠偏运行的原生终态、RC 当前轮结束、调度与私有审查结算。已失效但仍为 RESERVED 的启动准入也会阻止收尾。RC `UNVERIFIED` 等结果原样记录，不变成成功。
+外层查询使用 `node scripts/experiment-status.mjs "D:/experiment/runs/<run-id>"`，输出纯 JSON。函数入口为 `lib/experiment-status.mjs` 的 `queryExperimentStatus(runDir)`。释放本次实验槽位看 `canScheduleNext`，不要仅凭 RC 的 `ended` 或观察脚本退出判断结束。字段、状态与轮询用法见 [实验状态接口](tutorials/04-experiment-status.md)。
 
-退出码：`0` 为正常收尾或准备成功，`1` 为配置/入口错误，`2` 为待核对，`3` 为已留档但宿主运行出错。RC 的语义结果单独保存在 `result.json.rc`，退出码不对它进行评分。
+正常收尾同时等待业务/自动纠偏运行的准确 ID 原生终态、RC 当前轮结束、调度队列与私有审查结算，并在关闭 Gateway 前再次查询。已失效但仍为 RESERVED 的启动准入也会阻止收尾。长期处于健康 RUNNING/WAITING/STOPPING 不按阶段停留时长误杀。RC `UNVERIFIED` 等结果原样记录，不变成成功。
+
+退出码：`0` 为正常收尾或准备成功，`1` 为配置/入口错误，`2` 为待核对，`3` 为已留档但宿主运行出错，`4` 为总时限到期且清理确认，`5` 为到期但清理未确认。RC 的语义结果单独保存在 `result.json.rc`，退出码不对它进行评分。
 
 脚本观察中断、Gateway 连接错误或终态未知时记录 `NEEDS_ATTENTION`（退出码 2），保留 Gateway 和原 ID。确认没有旧观察进程后恢复观察：
 
@@ -88,7 +105,7 @@ foreach ($sample in Get-ChildItem D:/samples -Directory) {
 node scripts/run-experiment.mjs --resume "D:/experiment/runs/<run-id>"
 ```
 
-恢复只观察已提交的运行，不重新提交提示词、不新建 Session、不重新启动死掉的 Gateway。若中断发生在提交之前，检查 `run.json` 和日志后人工处理。正常结束只关闭本次启动且进程身份匹配的 Gateway。`Ctrl+C` 停止脚本观察，会保留尚未结束的业务与 RC 工作。
+恢复只观察原运行，不重新提交提示词、不新建 Session、不重新启动死掉的 Gateway。总时限到期时直接核实原进程组清理并保存超时结果。若中断发生在提交之前，检查 `run.json` 和日志。正常结束只关闭本次启动且进程身份匹配的 Gateway。`Ctrl+C` 停止脚本观察，后台工作继续受原总时限约束。
 
 ## 本地检查
 
@@ -98,6 +115,10 @@ npm test
 npm run test:windows
 # 指定其他机器配置
 npm run test:windows -- --machine "D:/experiment/machine.yaml"
+
+# 以下两项真实调用模型，分别验证观察恢复和两分钟硬超时
+node scripts/test-flow.mjs
+node scripts/test-flow.mjs --hard-timeout
 ```
 
 `lib/yaml.mjs` 来自 RC 提交 `846eb7b` 的轻量 YAML 解析器；配置使用两空格缩进、不支持 YAML anchors/复杂标记。宿主适配使用已安装 OpenClaw 的公开 Gateway SDK，项目初始化使用该次提取的 RC 插件函数。MA/OpenClaw 安装目录和已有宿主配置保持只读。

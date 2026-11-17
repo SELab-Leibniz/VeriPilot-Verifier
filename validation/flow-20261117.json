@@ -1,0 +1,243 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Shanghai",
+  "branch": "codex/experiment-mvp-20261117",
+  "baseCommit": "cdcdb8273d08a4f3bbf0bc53ced31fb77c51c9b7",
+  "scope": "Standalone experiment controller only; MA/OpenClaw and RC plugin sources unchanged.",
+  "qualification": {
+    "command": "npm run test:windows",
+    "tests": 47,
+    "passed": 47,
+    "failed": 0,
+    "skipped": 0,
+    "node": "v26.13.0",
+    "prepareOnly": {
+      "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 迁移 验证-ee7Na8\\runs\\windows-portability-20261117T115900720Z-27dc0ea3",
+      "status": "PREPARED",
+      "noModelDispatch": true
+    },
+    "preparationDeadline": {
+      "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 迁移 验证-ee7Na8\\runs\\windows-portability-20261117T115946005Z-c0b79205",
+      "maxRuntimeMs": 1,
+      "status": "TIMED_OUT",
+      "noGateway": true,
+      "noModelDispatch": true
+    },
+    "processTests": [
+      {
+        "kind": "hard-limit detached children",
+        "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 进程边界 tjNvWM",
+        "reason": "EXPERIMENT_DEADLINE_EXPIRED",
+        "activeProcesses": 0,
+        "totalProcesses": 3
+      },
+      {
+        "kind": "supervisor recovery",
+        "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 进程边界 o2WmBI",
+        "reason": "EXPERIMENT_DEADLINE_EXPIRED",
+        "activeProcesses": 0,
+        "totalProcesses": 3
+      },
+      {
+        "kind": "retained dead-process handle",
+        "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 进程边界 0VYaVp",
+        "reason": "NORMAL_CLEANUP",
+        "activeProcesses": 0,
+        "totalProcesses": 3
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "quicksort-flow-check-20261117T113627646Z-041ed04f",
+      "runDirectory": "runs/quicksort-flow-check-20261117T113627646Z-041ed04f",
+      "kind": "soft observer timeout and same-run recovery",
+      "verified": true,
+      "createdAt": "2026-11-17T11:36:27.658Z",
+      "experimentDeadlineAt": 1794917187658,
+      "maxRuntimeMs": 1800000,
+      "firstRunId": "69877e7f-7400-42b3-a122-82354c0a257d",
+      "sessionId": "3a7f4035-d67f-4aec-8a94-892518fa631c",
+      "observerInitial": {
+        "status": "NEEDS_ATTENTION",
+        "reason": "OBSERVER_DEADLINE_EXPIRED",
+        "process": null
+      },
+      "activeAtSoftTimeout": {
+        "status": "RUNNING",
+        "stage": "stop-reviewer",
+        "health": "FRESH",
+        "active": true,
+        "ended": false
+      },
+      "finalStatus": "ARCHIVED",
+      "rc": {
+        "status": "ENDED",
+        "outcome": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND"
+      },
+      "hostTerminals": [
+        {
+          "runId": "69877e7f-7400-42b3-a122-82354c0a257d",
+          "status": "ok"
+        },
+        {
+          "runId": "rc-stop-699fe17133429aca061b2fc8f76f17fa272df451bc6cc047a4de4d21e418ceea",
+          "status": "ok"
+        }
+      ],
+      "localTestOutput": "test_already_sorted (test_quicksort.QuicksortTest.test_already_sorted) ... ok\r\ntest_duplicates (test_quicksort.QuicksortTest.test_duplicates) ... ok\r\ntest_empty_list (test_quicksort.QuicksortTest.test_empty_list) ... ok\r\ntest_input_list_not_modified (test_quicksort.QuicksortTest.test_input_list_not_modified) ... ok\r\ntest_input_not_modified_when_sorted (test_quicksort.QuicksortTest.test_input_not_modified_when_sorted) ... ok\r\ntest_matches_builtin_sorted_for_random_data (test_quicksort.QuicksortTest.test_matches_builtin_sorted_for_random_data) ... ok\r\ntest_negatives (test_quicksort.QuicksortTest.test_negatives) ... ok\r\ntest_reverse_sorted (test_quicksort.QuicksortTest.test_reverse_sorted) ... ok\r\ntest_single_element (test_quicksort.QuicksortTest.test_single_element) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 9 tests in 0.000s\r\n\r\nOK\r\n\r\nEXIT_CODE=0\r\n",
+      "shutdown": {
+        "reason": "NORMAL_CLEANUP",
+        "activeProcesses": 0,
+        "totalProcesses": 100,
+        "requestedAt": 1794916155700,
+        "confirmedAt": 1794916155731,
+        "deadlineOvershootMs": null
+      },
+      "processExitCheck": [
+        {
+          "role": "gateway",
+          "pid": 73860,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "watchdog",
+          "pid": 99924,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "supervisor",
+          "pid": 17152,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        }
+      ],
+      "pluginSha256": "2b4e0a456eb5b63f8d2903cbf327d7714bd67a6dbf25932ec3162a0e539dd276"
+    },
+    {
+      "id": "quicksort-hard-timeout-20261117T113705449Z-7dac7167",
+      "runDirectory": "runs/quicksort-hard-timeout-20261117T113705449Z-7dac7167",
+      "kind": "whole-sample hard timeout",
+      "verified": true,
+      "createdAt": "2026-11-17T11:37:05.458Z",
+      "experimentDeadlineAt": 1794915545458,
+      "maxRuntimeMs": 120000,
+      "firstRunId": "1185aaa7-bd4c-4ab1-81ff-64fc7bb5ce32",
+      "sessionId": "a0f1efea-dd9d-4ddd-ac98-7714f7922460",
+      "observerInitial": {
+        "status": "NEEDS_ATTENTION",
+        "reason": "OBSERVER_DEADLINE_EXPIRED",
+        "process": null
+      },
+      "activeAtSoftTimeout": null,
+      "finalStatus": "TIMED_OUT",
+      "rc": {
+        "status": "INTERRUPTED",
+        "outcome": "UNVERIFIED",
+        "reasonCode": "RC_OWNER_EXITED"
+      },
+      "hostTerminals": [],
+      "localTestOutput": null,
+      "shutdown": {
+        "reason": "EXPERIMENT_DEADLINE_EXPIRED",
+        "activeProcesses": 0,
+        "totalProcesses": 79,
+        "requestedAt": 1794915545476,
+        "confirmedAt": 1794915545495,
+        "deadlineOvershootMs": 37
+      },
+      "processExitCheck": [
+        {
+          "role": "gateway",
+          "pid": 33024,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "watchdog",
+          "pid": 95660,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "supervisor",
+          "pid": 58496,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        }
+      ],
+      "pluginSha256": "2b4e0a456eb5b63f8d2903cbf327d7714bd67a6dbf25932ec3162a0e539dd276"
+    },
+    {
+      "id": "quicksort-hard-timeout-20261117T114137467Z-6f9f4a4a",
+      "runDirectory": "runs/quicksort-hard-timeout-20261117T114137467Z-6f9f4a4a",
+      "kind": "whole-sample hard timeout",
+      "verified": true,
+      "createdAt": "2026-11-17T11:41:37.479Z",
+      "experimentDeadlineAt": 1794915817479,
+      "maxRuntimeMs": 120000,
+      "firstRunId": "cdf7c685-7a7c-4fe8-8615-2e178f0fd718",
+      "sessionId": "5b80143d-5771-4da4-9e15-8c9af7ec50d4",
+      "observerInitial": {
+        "status": "NEEDS_ATTENTION",
+        "reason": "OBSERVER_DEADLINE_EXPIRED",
+        "process": {
+          "exitedAt": 1794915731286,
+          "exitCode": 2
+        }
+      },
+      "activeAtSoftTimeout": null,
+      "finalStatus": "TIMED_OUT",
+      "rc": {
+        "status": "INTERRUPTED",
+        "outcome": "UNVERIFIED",
+        "reasonCode": "RC_OWNER_EXITED"
+      },
+      "hostTerminals": [],
+      "localTestOutput": null,
+      "shutdown": {
+        "reason": "EXPERIMENT_DEADLINE_EXPIRED",
+        "activeProcesses": 0,
+        "totalProcesses": 77,
+        "requestedAt": 1794915817501,
+        "confirmedAt": 1794915817529,
+        "deadlineOvershootMs": 50
+      },
+      "processExitCheck": [
+        {
+          "role": "gateway",
+          "pid": 87828,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "watchdog",
+          "pid": 87852,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        },
+        {
+          "role": "supervisor",
+          "pid": 99192,
+          "originalProcessAlive": false,
+          "pidCurrentlyReused": false
+        }
+      ],
+      "pluginSha256": "2b4e0a456eb5b63f8d2903cbf327d7714bd67a6dbf25932ec3162a0e539dd276"
+    }
+  ],
+  "limitations": [
+    "Live model cases use requirementFrame.enabled=false; full default RC hot-hook issue remains as documented in CORRECTION-VALIDATION.md.",
+    "Project unittest results are fixture self-tests, not independent evaluation or benchmark scores.",
+    "Native qualification tests final code; live model flow completed earlier in the same development session, before the retained-handle cleanup fix, which has its own final native regression test.",
+    "Not tested on a second physical Windows machine or a Harmony project."
+  ],
+  "preservedFailure": {
+    "artifacts": "C:\\Users\\user\\AppData\\Local\\Temp\\RC 迁移 验证-tIjIT9\\runs\\windows-portability-20261117T115207120Z-348b841e",
+    "status": "NEEDS_ATTENTION",
+    "reason": "Dead process creation time was incorrectly used as a liveness check; fixed with kernel signaled-state check and final retained-handle regression."
+  }
+}

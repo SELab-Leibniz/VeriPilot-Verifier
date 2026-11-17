@@ -6,6 +6,7 @@
 
 - 兼容 Node：22.22.3 起的 22.x、24.15 起的 24.x，或 25.9+；当前实测 v26.13.0。
 - Git for Windows。
+- Windows PowerShell 5.1 与内置 .NET C# 编译能力（用于本实验独立进程组守护）。脚本对这个隐藏子进程设置 `-ExecutionPolicy Bypass`，不修改系统执行策略；企业策略禁用 PowerShell/Add-Type 时会在提交模型任务前失败，应先由本机管理员处理环境限制。
 - 使用本适配版本的 MatrixAssistant/OpenClaw 完整安装目录，包含 `openclaw.mjs`、`dist/` 和运行依赖。
 - 带 Session 状态接口的 RC MA 1.11.0 `.tgz` 安装包。
 - Python 示例另需 Python 3.9+。鸿蒙样本另需项目要求的 DevEco、SDK、Java、OHPM、Hvigor。
