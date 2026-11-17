@@ -12,6 +12,7 @@ Runtime Corrector 提供插件命令、Skill/自然语言、CLI，以及宿主�
 - **会话默认开关**：用户命令 `/rc-session-default on|off|status`，修改当前项目 `sessionDefaults.enabled`，不覆盖已登记会话。状态包含 `sessionDefaultEnabled`；修改需要可信用户及宿主写入权限，查询需要读取权限。这两个新增入口均为用户命令，没有新增模型工具或 Gateway 写入 RPC，见[命令说明](session-control.md#在-session-中初始化和开关)。
 
 - **会话开关**：Gateway RPC `runtime-corrector.session.get/set`，以及可信用户命令 `/rc-session status|on|off`。输入为准确的 `sessionKey`、`sessionId`，设置时增加布尔值 `enabled`；输出包含项目、会话选择、实际状态、阻断原因和记录位置。完整输入输出、认证要求、代码位置与调用示例见[开关契约](session-control.md#宿主-gateway--ui-对接)。项目总开关在项目配置中修改，没有独立的项目开关 RPC。
+- **后台运行状态与当前轮终止**：项目内 `.runtime-correction/session-runtime-status.json` 按 Session 记录阶段、是否结束、心跳与结束原因。提供 `rc-status.mjs`、`rc-refresh.mjs`、`rc-terminate.mjs`，对应可导入函数和 `runtime-corrector.runtime.get/refresh/terminate`。终止只作用于查询所得的当前轮，排队用户任务正常接续，Session 开关保持原值。见[状态与控制接口](session-runtime-status.md)。
 - **项目查询**：用户命令 `/rc-project status`，或工具 `runtime_corrector` 的 `{"command":"project"}`。前者返回文本中的 JSON，后者返回工具的 `content[].text` 中的 JSON，包含项目来源、准入状态和原因。手动项目绑定仅在旧版缺少宿主项目目录时由可信用户命令提供，见[项目解析契约](session-projects.md)。
 - **手动工具**：宿主注册名为 `runtime_corrector` 的工具，参数为 `command`、可选 `subject`、`enabled`、`format`。支持 `project`、`help`、`init`、`validate`、`stages`、`stage`、`check`、`explain`、`spec`。`check/explain/spec/stage` 必须提供 `subject`，`stage` 还需明确布尔值 `enabled`；`format` 可为 `text` 或 `json`。`init` 可在已可靠解析、配置尚未建立的项目运行；`help/project` 不要求 RC 已开启；其余命令要求当前作用域已启用。宿主工具上下文若没有工作目录或处于 sandbox，该工具不提供。
 

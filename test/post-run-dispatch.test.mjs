@@ -42,6 +42,31 @@ async function fixture(t, overrides = {}) {
   return { root, manager, identity, sent, errors };
 }
 
+test('slow publication preserves concurrent user tasks instead of timing out a local lock contender', async t => {
+  const f = await fixture(t), identity = f.identity('slow-queue');
+  await f.manager.started(identity, 'business');
+  const entered = deferred(), release = deferred(), originalRename = fs.rename;
+  const recordFile = path.join(f.root, `${f.manager.get(identity).id}.json`);
+  let intercepted = false;
+  t.mock.method(fs, 'rename', async (source, target) => {
+    if (target === recordFile && !intercepted) {
+      intercepted = true; entered.resolve(); await release.promise;
+    }
+    return originalRename(source, target);
+  });
+  const first = f.manager.defer(identity, { sourceId: 'first', text: 'first queued user' });
+  await entered.promise;
+  const second = f.manager.defer(identity, { sourceId: 'second', text: 'second queued user' });
+  // Attach rejection observation immediately, retaining both original outcomes.
+  const outcomes = Promise.allSettled([first, second]);
+  try { await pause(3300); } finally { release.resolve(); }
+  const results = await outcomes;
+  assert.deepEqual(results.map(r => r.status), ['fulfilled', 'fulfilled']);
+  assert.deepEqual(f.manager.get(identity).pending.map(r => r.text), ['first queued user', 'second queued user']);
+  assert.equal(f.manager.get(identity).phase, 'RUNNING');
+  assert.deepEqual(f.errors, []);
+});
+
 test('late host completion rechecks an escalated release without restarting its failed review', async t => {
   let finished = false, reviews = 0, probes = 0;
   const f = await fixture(t, { reconciliation: { intervalMs: 5, maxRetries: 2, escalationMs: 40 },

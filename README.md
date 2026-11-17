@@ -35,6 +35,8 @@ Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-session o
 
 多 Session 的 until_pass 使用 RC 独立控制页管理审查状态与可编辑待办；每轮正常结束后才审查，需要修复时另起运行。仅修改 RC，无需改动 MA 原生界面。见[方案与使用方式](docs/until-pass-dispatch.md)。
 
+外部前端可读取项目的 `.runtime-correction/session-runtime-status.json`，或调用 `rc-status`、`rc-refresh`、`rc-terminate` 脚本及对应函数，查询、即时自检或终止指定 Session 的当前轮纠偏。终止后用户待办正常接续，Session 纠偏开关保持原值。见[运行状态与控制接口](docs/session-runtime-status.md)。
+
 MatrixAssistant 的 RC 后台检查支持两种审批模式，可在 RC 运行控制台按会话切换，或由用户执行 `/rc-mode normal`、`/rc-mode unattended`、`/rc-mode status`。默认是**普通模式**：需要审批时，在所属 MA 聊天显示原生确认卡，允许后原调用继续，拒绝则阻断。**无人值守模式**仅自动授权当前会话、本次 RC 后台运行已登记的工具；未知工具仍拒绝，其他业务会话保持宿主原审批策略，宿主黑名单阻断不变。此选择不把 MA 主任务或其他插件整体切成无人值守。
 
 审批转接在网关启动时接入 MA 已有的本地审计服务，不修改 MA 文件，不切换全局 `monitor` 模式。安装新包后需重启 MA；已有审批连接时拒绝中途接管。普通模式的确认等待默认最多 5 分钟，且受本次后台任务剩余时限约束；取消、过期、连接失败都拒绝原调用，迟到的确认不再生效。控制台会显示连接是否可用及待确认数量。模式由已认证用户保存，项目文档或模型消息不能切换模式。可在宿主 RC 插件配置中设置 `approvals.mode`（`normal` / `unattended`）和 `approvals.confirmationTimeoutMs`；会话选择覆盖默认值。

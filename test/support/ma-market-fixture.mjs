@@ -39,7 +39,13 @@ export async function marketFixture(t, artifact, config = baseConfig()) {
     const result = await plugin.deactivate(api, init);
     assert.equal(result.error, undefined, result.error);
     await writeMarker(false);
-    await waitFor(async () => !(await readState()).active);
+    // The deferred installer commits inactive state before releasing its lock.
+    // Wait for both so a following enable cannot race the still-finishing job.
+    await waitFor(async () => !(await readState()).active
+      && !await fs.stat(path.join(path.dirname(statePath), "installer.lock")).then(() => true, error => {
+        if (error.code === "ENOENT") return false;
+        throw error;
+      }));
   };
   t.after(async () => {
     // Finish an observer before removing its fake home, so it cannot recreate

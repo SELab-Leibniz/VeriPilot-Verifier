@@ -25,7 +25,7 @@ async function within(promise, description) {
   })]); } finally { clearTimeout(timer); }
 }
 
-async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed, nativeReview = false } = {}) {
+async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed, nativeReview = false, gatewayRequest } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
@@ -94,7 +94,8 @@ implementationCorrection:
     async deactivate(scope) { deactivated.push(scope); tasks.delete(scope.identity.sessionId); },
   };
   const api = { id: "runtime-corrector", pluginConfig: {}, config: {}, logger: { warn: m => warnings.push(m) },
-    runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
+    runtime: { version: "2026.7.1-2", ...(gatewayRequest ? { gateway: { request: gatewayRequest } } : {}),
+      state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { runEmbeddedAgent() { assert.fail("Business execution must stay native."); },
       session: { getSessionEntry: async ({ sessionKey }) => entries.get(sessionKey), resolveStorePath: () => path.join(root, "sessions.json"),
         resolveSessionFilePath: (_id, entry) => entry.sessionFile, runWithWorkAdmission: async (params, callback) => callback(params.signal) } } } };
   const options = { pluginRoot, projectScopes: projects, sharedState, ...(!nativeReview ? { reviewerFactory: factory } : {}),
@@ -191,6 +192,52 @@ test("Session off/on restores its task and budget, admits its first new tool, an
   await restarted.toolResult({ toolName: "write", toolCallId: "restart-first", args: { path: "draft.md" }, result: { content: [] } }, { runtime: "openclaw" });
   assert.equal(f.restartState.states.get("main:a").seen.has("post:restart-first"), true);
   assert.equal((await f.task(a)).taskId, before.taskId);
+});
+
+for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: terminating a round fences late review callbacks and keeps correction enabled`, async t => {
+  const started = deferred(t), finish = deferred(t);
+  const dispatched = [];
+  let reviewCount = 0;
+  const f = await fixture(t, { stop: true, waitMode, gatewayRequest: async (method, params) => {
+    if (method === "agent.wait") return { runId: params.runId, status: "ok" };
+    assert.equal(method, "chat.send"); dispatched.push(params); return { runId: params.idempotencyKey };
+  }, review: async () => { if (++reviewCount === 1) { started.resolve(); await finish.promise; } } });
+  const ctx = await f.session("public-stop");
+  await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Delivered." } }, ctx);
+  await within(started.promise, "public stop review starts");
+  const target = { projectRoot: f.root, agentId: "main", sessionKey: ctx.sessionKey, sessionId: ctx.sessionId, actor: "fixture-owner" };
+  if (waitMode === "until_pass") {
+    const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
+    await f.runtime.postRuns.defer(record, { sourceId: "user-next", text: "Next user task" });
+  }
+  const status = await f.runtime.sessionRuntime.refresh(target);
+  assert.equal(status.ended, false); assert.equal(status.phase, "REVIEWING");
+  const oldController = f.sharedState.states.get("main:public-stop").reviewController;
+  const stopped = await f.runtime.sessionRuntime.terminate({ ...target, roundId: status.roundId });
+  assert.equal(stopped.target.ended, true, JSON.stringify(stopped));
+  assert.equal(oldController.signal.aborted, true);
+  assert.equal(f.selections.get(ctx.sessionId), undefined, "termination does not persist a Session off switch");
+  assert.equal(f.hostAbort.signal.aborted, false, "the native business caller remains independent");
+  if (waitMode === "until_pass") {
+    assert.deepEqual(dispatched.map(p => p.message), ["Next user task"]);
+    assert.equal((await f.runtime.sessionRuntime.get(target)).effectiveEnabled, true);
+  }
+  finish.resolve();
+  await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "cancelled review drains");
+  const calls = f.calls();
+  await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Late old final." } }, ctx);
+  await f.runtime.beforeTool({ toolName: "write", toolCallId: "late-cancelled-tool", params: { path: "draft.md" } }, ctx);
+  assert.equal(f.calls(), calls, "late events cannot restart the terminated round");
+  const nextRun = dispatched[0]?.idempotencyKey ?? "fresh-user-run";
+  const next = { ...ctx, runId: nextRun };
+  await fs.appendFile(path.join(f.root, `${ctx.sessionId}.jsonl`), "\n" + JSON.stringify({ type: "message", id: "new-user",
+    parentId: `${ctx.sessionId}-u`, message: { role: "user", content: "Continue the next user task." } }));
+  await f.runtime.prompt({ prompt: "Continue the next user task." }, next);
+  await f.runtime.beforeTool({ toolName: "write", toolCallId: "next-round-tool", params: { path: "draft.md" } }, next);
+  const resumed = f.sharedState.states.get("main:public-stop");
+  assert.equal(resumed.nativeRunId, nextRun);
+  assert.equal(resumed.reviewController.signal.aborted, false);
+  assert.notEqual(resumed.reviewController, oldController);
 });
 
 for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: disabling in-flight Stop cannot terminalize its task or publish late PASS`, async t => {

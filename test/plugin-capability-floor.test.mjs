@@ -439,11 +439,13 @@ test("manifest, marketplace, contract, command and Skill declarations agree on t
   const packageManifest = await readJson("package.json");
   const contract = await readCompatJson("contract.json");
   const marketplace = await readJson(".claude-plugin/marketplace.json");
+  const release = JSON.parse(await fs.readFile(path.join(SOURCE_ROOT, "package.json"), "utf8"));
+  assert.equal(packageManifest.version, release.version);
   const marketplacePlugin = marketplace.plugins[0];
   assert.equal(marketplace.name, "runtime-corrector-local");
   assert.deepEqual(marketplace.metadata, {
     description: "Marketplace for the standalone Runtime Corrector Claude Code plugin.",
-    version: "1.10.0",
+    version: release.version,
   });
   assert.equal(Object.hasOwn(marketplace, "description"), false);
   assert.equal(Object.hasOwn(marketplace, "version"), false);

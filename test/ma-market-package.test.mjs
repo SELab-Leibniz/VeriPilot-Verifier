@@ -34,7 +34,16 @@ test("MA release is a flat tar.gz with complete ESM payload and named CJS lifecy
   assert.equal(manifest.version, native.version);
   assert.equal(native.dependencies, undefined);
   for (const file of [".runtime-corrector-default/config.yaml", "config/openclaw-tool-contracts.json", "skills/runtime-corrector/SKILL.md",
-    "lib/openclaw/entry.mjs", "lib/openclaw/ui/index.html", "lib/runtime-v2/production-stop.mjs"]) await fs.access(path.join(payload, file));
+    "lib/openclaw/entry.mjs", "lib/openclaw/ui/index.html", "lib/runtime-v2/production-stop.mjs",
+    "scripts/rc-status.mjs", "scripts/rc-refresh.mjs", "scripts/rc-terminate.mjs", "docs/session-runtime-status.md",
+    "lib/openclaw/session-runtime-client.mjs", "lib/openclaw/session-runtime-status.mjs",
+    "lib/openclaw/session-runtime-controls.mjs", "lib/openclaw/session-runtime-cli.mjs"]) await fs.access(path.join(payload, file));
+  const project = path.join(output, "standalone-status-project"); await fs.mkdir(project);
+  const queried = JSON.parse(execFileSync(process.execPath, [path.join(payload, "scripts/rc-status.mjs"),
+    "--project-root", project, "--session-key", "agent:main:packaged-status", "--session-id", "packaged-status"],
+  { cwd: root, encoding: "utf8", windowsHide: true, env: { ...process.env, NODE_PATH: "" } }));
+  assert.equal(queried.ok, true); assert.equal(queried.result.status, "NOT_REGISTERED");
+  assert.deepEqual(await fs.readdir(project), [], "a packaged query must not initialize a project");
   for (const name of ["node_modules", ".git", "test", "experiments"]) await assert.rejects(fs.access(path.join(payload, name)));
 });
 
