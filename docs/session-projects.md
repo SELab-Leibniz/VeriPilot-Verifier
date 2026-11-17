@@ -20,7 +20,7 @@ RC 绑定只选择纠偏项目，**不改变宿主工作目录**。业务工具�
 
 ## 宿主契约
 
-用户可通过 `/rc-project init` 在可靠解析的当前项目中复制插件默认模板，再用 `/rc-project on|off|status` 控制项目总开关。`/rc-session-default on|off|status` 控制首次登记 Session 的默认选择。初始化不覆盖已有 `.runtime-corrector`，两个开关初始为 `false`，模型在创建时跟随宿主 RC 配置；完整步骤见[初始化和开关](session-control.md#在-session-中初始化和开关)。原生模式禁止的是修改 RC 绑定目录，项目内配置的上述操作仍可使用。
+用户可通过 `/rc-project init` 在可靠解析的当前项目中复制插件默认模板，再用 `/rc-project on|off|status` 控制项目总开关。`/rc-session-default on|off|status` 控制首次登记 Session 的默认选择。初始化不覆盖已有 `.runtime-corrector`，保留模板的开关和预算，将默认评审及各角色显式模型改为当前宿主 RC 的 `reviewerModel`；当前模板项目开启、首次会话默认关闭；完整步骤见[初始化和开关](session-control.md#在-session-中初始化和开关)。原生模式禁止的是修改 RC 绑定目录，项目内配置的上述操作仍可使用。
 
 `lib/openclaw/project-compat.mjs` 集中维护经过核验的版本和目录规则。`2026.7.1-2` 仅对经过 Session 身份校验的持久化 `spawnedCwd` 做能力检测；不读取模型参数里的同名字段。这个检测只切换目录解析，Reviewer、转录读取、Hook 和 Stop 仍沿用 7.1 适配。`2026.10.3` 保持原生模式；其他版本仍拒绝加载，不因出现同名字段而放开。
 

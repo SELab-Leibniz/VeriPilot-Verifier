@@ -20,6 +20,7 @@ import { ensureTask, findTask, withTaskState } from '../lib/runtime-v2/task-stor
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
+import { installOriginalDocumentProfile } from './helpers/original-document-profile.mjs';
 
 const marker = (root, taskId) => path.join(root, '.runtime-correction/openclaw/material-basis', `${sha256(taskId)}.unverified.json`);
 const exists = file => fs.access(file).then(() => true, () => false);
@@ -138,7 +139,7 @@ test('(e) strict authority still writes the permanent marker when a material cha
 
 test('(b) a docs file created mid-task changes neither the fixed roots nor the plan, and raises no SCOPE_CHANGED', async t => {
   const { root, task } = await project(t, { 'docs/module-design.md': '# Module design\nCheck permissions first.\n' });
-  await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+  await installOriginalDocumentProfile(root);
   const roots = (await loadConfig({ cwd: root })).runtimeV2.dynamicGroundTruth.materialRoots;
   assert.deepEqual(roots, [path.join(root, 'docs', 'module-design.md')]);
   await prepareMaterialBasis({ projectRoot: root, taskId: task.taskId, roots, authority: 'reference' });
@@ -252,11 +253,11 @@ test('the document request lists reference materials with their status and write
   assert(written.materials.every(file => file.originalBase64 === undefined));
 });
 
-test('(a) default template: a business edit of a discovered material keeps document review and Stop running with its frozen original', async t => {
+test('(a) enabled document profile: a business edit of a discovered material keeps document review and Stop running with its frozen original', async t => {
   const original = '# 模块设计\nPermission checks run before every export.\n', edited = '# 模块设计\nExports skip the permission check.\n';
   const { root, task } = await project(t, { 'docs/module-design.md': original, 'AGENTS.md': 'Keep exports audited.\n',
     'notes/input.md': 'Exports use CSV.\n', 'app.py': 'def export(rows): return rows\n' });
-  await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+  await installOriginalDocumentProfile(root);
   await withTaskState({ projectRoot: root, taskId: task.taskId }, state => { state.correctionBarrier.turnActivated = true; });
   const transcript = path.join(root, 'host.jsonl');
   await fs.writeFile(transcript, [{ type: 'session', id: 'session' },

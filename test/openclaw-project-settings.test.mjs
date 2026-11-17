@@ -9,12 +9,13 @@ import { parseSimpleYaml } from "../lib/simple-yaml.mjs";
 import { writeProjectControl, initializeProjectConfig } from "../lib/openclaw/project-settings.mjs";
 import { runInternalExecution, runManagedExecution } from "../lib/openclaw/internal-context.mjs";
 
-let build, pluginRoot, createProjects, registerProject, registerControl;
+let build, pluginRoot, createProjects, registerProject, registerControl, registerSetup;
 before(async () => {
   build = await fs.mkdtemp(path.join(os.tmpdir(), "rc-project-settings-build-"));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: build });
   ({ createSessionProjects: createProjects, registerProjectCommand: registerProject } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/session-projects.mjs"))));
   ({ registerSessionControl: registerControl } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/session-control.mjs"))));
+  ({ registerHostSetup: registerSetup } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/host-setup.mjs"))));
 });
 after(() => fs.rm(build, { recursive: true, force: true }));
 
@@ -50,24 +51,41 @@ async function fixture(t, version = "2026.7.1-2") {
     config: () => hostConfig, setConfig(value) { hostConfig = value; } };
 }
 
-for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: packaged init uses the selected project and current RC model, without enabling correction or overwriting files`, async t => {
+for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: packaged init adapts template models to the current host and preserves other settings`, async t => {
   const f = await fixture(t, version);
   f.config().plugins.entries["runtime-corrector"].config.reviewerModel = "custom/changed-before-init";
   const result = await f.json("rc-project", f.a, "init");
   assert.equal(result.initialized, true);
   assert.equal(result.projectRoot, f.projectRoot);
-  assert.equal(result.projectEnabled, false);
+  assert.equal(result.projectEnabled, true);
   assert.equal(result.sessionDefaultEnabled, false);
   assert.equal(result.enabled, false);
   const bytes = await fs.readFile(f.file, "utf8"), config = parseSimpleYaml(bytes);
-  const expected = parseSimpleYaml(await fs.readFile(path.join(pluginRoot, ".runtime-corrector-default/config.yaml"), "utf8"));
+  const template = await fs.readFile(path.join(pluginRoot, ".runtime-corrector-default/config.yaml"), "utf8");
+  const expected = parseSimpleYaml(template);
   expected.reviewers.defaults.model = "custom/changed-before-init";
-  assert.deepEqual(config, expected, "initialization changes only the current reviewer model in the supplied defaults");
+  expected.reviewers.stopReviewer.model = "custom/changed-before-init";
+  assert.deepEqual(config, expected, "initialization changes only reviewer models for the current environment");
+  assert.equal(result.reviewerModel, "custom/changed-before-init");
   assert.equal(config.reviewers.defaults.model, "custom/changed-before-init");
+  assert.equal(config.reviewers.stopReviewer.model, "custom/changed-before-init");
+  assert.equal(config.reviewers.defaults.timeoutMs, 7200000);
+  assert.equal(config.reviewers.stopReviewer.timeoutMs, 7200000);
   assert.equal(config.stopCorrection.waitMode, "until_pass");
-  assert.equal(config.stopCorrection.maxCorrectionsPerSession, 2);
+  assert.equal(config.stopCorrection.maxCorrectionsPerSession, 3);
+  assert.equal(config.stopCorrection.maxCorrectionsPerFlow, 3);
+  assert.equal(config.stopCorrection.assessmentTimeoutMs, 7200000);
+  assert.equal(config.stopCorrection.feedbackReserveMs, 300000);
+  assert.equal(config.stopCorrection.deviationOnly, false);
+  assert.equal(config.stopCorrection.metrics.M08, false);
+  assert.equal(config.stopCorrection.metrics.M12, false);
+  assert.equal(config.stopCorrection.regressionCheck.enabled, false);
+  assert.deepEqual(config.enabledStages, []);
+  assert.equal(config.artifactCorrection.originalRequirementsEnabled, false);
+  assert.equal(config.requirementFrame.enabled, true);
+  assert.equal(config.requirementFrame.checks, true);
   assert.equal(config.implementationCorrection.enabled, false);
-  assert.equal(config.enabled, false);
+  assert.equal(config.enabled, true);
   assert.equal(config.sessionDefaults.enabled, false);
   assert.deepEqual((await fs.readdir(path.dirname(f.file))).sort(), ["README.md", "config.reference.yaml", "config.yaml", "example.reviewer.md", "example.rules.yaml"]);
   await assert.rejects(fs.access(path.join(f.other, ".runtime-corrector")), { code: "ENOENT" });
@@ -78,6 +96,39 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: packaged in
   assert.deepEqual(await fs.readdir(f.projectRoot), [".runtime-corrector"]);
   assert.equal((await f.json("rc-project", f.a, "on")).enabled, false);
   assert.equal((await f.json("rc-session", f.a, "on")).effectiveEnabled, true);
+});
+
+test("packaged setup and project init resolve the host model alias without importing template models or changing context policy", async t => {
+  const f = await fixture(t);
+  const context = { enabled: true, config: { existing: "keep", bypassSessionPatterns: ["agent:main:personal:*"] } };
+  f.setConfig({ agents: { defaults: { model: "Current", models: { "current-provider/registered-model": { alias: "Current" } } } },
+    plugins: { entries: { "matrix-context-controller": structuredClone(context) } } });
+  let writes = 0;
+  f.api.runtime.config.mutateConfigFile = async options => {
+    assert.equal(options.base, "source");
+    const draft = structuredClone(f.config());
+    const result = await options.mutate(draft, { snapshot: {
+      path: path.join(f.root, "openclaw.json"), raw: JSON.stringify(f.config()),
+    } });
+    f.setConfig(draft); writes++;
+    return { result, followUp: {} };
+  };
+  registerSetup(f.api);
+  assert.match(await f.run("rc-setup", f.a), /已保存/u);
+  assert.equal(writes, 1);
+  assert.equal(f.config().plugins.entries["runtime-corrector"].config.reviewerModel, "current-provider/registered-model");
+  assert.deepEqual(f.config().plugins.entries["matrix-context-controller"], context);
+  const result = await f.json("rc-project", f.a, "init");
+  const actual = parseSimpleYaml(await fs.readFile(f.file, "utf8"));
+  const expected = parseSimpleYaml(await fs.readFile(path.join(pluginRoot, ".runtime-corrector-default/config.yaml"), "utf8"));
+  expected.reviewers.defaults.model = expected.reviewers.stopReviewer.model = "current-provider/registered-model";
+  assert.deepEqual(actual, expected);
+  assert.equal(result.reviewerModel, "current-provider/registered-model");
+  assert.equal(result.projectEnabled, true);
+  assert.equal(result.sessionDefaultEnabled, false);
+  assert.equal(result.enabled, false);
+  assert.deepEqual(f.config().plugins.entries["matrix-context-controller"], context);
+  assert.equal(writes, 1, "project init must not rewrite host configuration");
 });
 
 test("project gates override sessions while default changes leave saved session choices intact", async t => {
@@ -128,7 +179,7 @@ test("control edits merge concurrent changes, preserve BOM/comments/CRLF and lea
   assert.equal(await fs.readFile(f.file, "utf8"), saved);
 });
 
-test("untrusted users, private RC runs, stale sessions, missing projects and missing RC models cannot create config", async t => {
+test("untrusted users, private RC runs, stale sessions and missing projects cannot create config", async t => {
   const f = await fixture(t);
   for (const ctx of [{ ...f.a, isAuthorizedSender: false }, { ...f.a, gatewayClientScopes: ["operator.read"] }]) {
     assert.match(await f.run("rc-project", ctx, "init"), /权限/u);
@@ -143,12 +194,37 @@ test("untrusted users, private RC runs, stale sessions, missing projects and mis
   f.entries.get(f.a.sessionKey).sessionId = f.a.sessionId;
   delete f.entries.get(f.a.sessionKey).spawnedCwd;
   assert.match(await f.run("rc-project", f.a, "init"), /RC_SESSION_PROJECT_UNBOUND/u);
-  f.entries.get(f.a.sessionKey).spawnedCwd = f.projectRoot;
+  assert.match(await f.run("rc-project", f.a, "init /untrusted/path"), /用法/u);
+  await assert.rejects(fs.access(path.dirname(f.file)), { code: "ENOENT" });
+});
+
+test("template models cannot bypass a missing host RC model or use stale plugin settings", async t => {
+  const f = await fixture(t);
   f.setConfig({});
   assert.equal(f.api.pluginConfig.reviewerModel, "custom/stale-reviewer");
   assert.match(await f.run("rc-project", f.a, "init"), /RC_REVIEWER_MODEL_UNCONFIGURED/u);
-  assert.match(await f.run("rc-project", f.a, "init /untrusted/path"), /用法/u);
-  await assert.rejects(fs.access(path.dirname(f.file)), { code: "ENOENT" });
+  assert.deepEqual(await fs.readdir(f.projectRoot), []);
+  assert.deepEqual(f.config(), {});
+});
+
+test("all explicit role models adapt even when the template has no default model", async t => {
+  const f = await fixture(t), customRoot = path.join(f.root, "custom-plugin");
+  await fs.cp(pluginRoot, customRoot, { recursive: true });
+  const templatePath = path.join(customRoot, ".runtime-corrector-default/config.yaml");
+  const template = (await fs.readFile(templatePath, "utf8")).replace(/^    model:.*\r?\n/mu, "")
+    .replace(/^  stopReviewer:/mu, '  artifactReviewer:\n    model: "custom/template-only"\n    effort: "high"\n  stopReviewer:');
+  await fs.writeFile(templatePath, template);
+  const result = await initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot: customRoot,
+    reviewerModel: () => "custom/fallback", async assertCurrent() {} });
+  const config = parseSimpleYaml(await fs.readFile(f.file, "utf8")), expected = parseSimpleYaml(template);
+  expected.reviewers.defaults.model = "custom/fallback";
+  expected.reviewers.stopReviewer.model = "custom/fallback";
+  expected.reviewers.artifactReviewer.model = "custom/fallback";
+  assert.equal(result.reviewerModel, "custom/fallback");
+  assert.deepEqual(config, expected);
+  await assert.rejects(initializeProjectConfig({ projectRoot: f.other, pluginRoot: customRoot,
+    reviewerModel: () => undefined, async assertCurrent() {} }), /RC_REVIEWER_MODEL_UNCONFIGURED/u);
+  assert.deepEqual(await fs.readdir(f.other), []);
 });
 
 test("malformed config is never repaired by switch commands and initialization refuses even an existing empty directory", async t => {
@@ -171,7 +247,7 @@ test("a project switch during staged init and a concurrent manual config edit ar
   await f.run("rc-project", f.a, "init");
   const original = await fs.readFile(f.file, "utf8"), concurrent = `${original}\n# edited concurrently\n`;
   checks = 0;
-  await assert.rejects(writeProjectControl({ projectRoot: f.projectRoot, field: "project", enabled: true,
+  await assert.rejects(writeProjectControl({ projectRoot: f.projectRoot, field: "project", enabled: false,
     async assertCurrent() { if (++checks === 2) await fs.writeFile(f.file, concurrent); } }), /RC_PROJECT_CONFIG_CONFLICT/u);
   assert.equal(await fs.readFile(f.file, "utf8"), concurrent);
   assert.deepEqual((await fs.readdir(path.dirname(f.file))).sort(), ["README.md", "config.reference.yaml", "config.yaml", "example.reviewer.md", "example.rules.yaml"]);

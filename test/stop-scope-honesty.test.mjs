@@ -12,6 +12,7 @@ import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-sto
 import { selectStopPopulation } from '../lib/runtime-v2/review-routing.mjs';
 import { captureTaskStart, changeOwner, nonArtifactChanges, taskStartManifestPath } from '../lib/runtime-v2/task-changes.mjs';
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
+import { installOriginalDocumentProfile } from './helpers/original-document-profile.mjs';
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.email=rc@example.invalid', '-c', 'user.name=rc', '-c', 'commit.gpgsign=false',
   '-c', 'core.autocrlf=false', '-c', 'core.hooksPath=nonexistent', ...args], { cwd, encoding: 'utf8', windowsHide: true });
@@ -26,14 +27,14 @@ async function writeFiles(root, files) {
   }
 }
 
-// The project uses the shipped OpenSpec template. Host state and the
+// The project explicitly enables OpenSpec document review. Host state and the
 // transcript stay outside it, as they do for a real Gateway.
 async function fixture(t, { repository = true, capture = true, deviationOnly = true, fileQualityReviewEnabled = false, metrics = ['M16'], classification, verdict = () => null, extraClaims = [] } = {}) {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-scope-'));
   t.after(() => fs.rm(base, { recursive: true, force: true }));
   const root = path.join(base, 'project');
   await fs.mkdir(root);
-  await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
+  await installOriginalDocumentProfile(root);
   await fs.writeFile(path.join(root, 'app.py'), 'def convert(value): return int(value)\n');
   if (repository) { git(root, 'init', '-q'); git(root, 'add', 'app.py'); git(root, 'commit', '-q', '-m', 'Start'); }
   const template = await loadConfig({ cwd: root });
@@ -282,7 +283,7 @@ test('without a trustworthy task-start manifest a document-only Stop is still re
   });
 });
 
-test('ownership follows the shipped OpenSpec template and keeps RC-private paths out of task changes', async t => {
+test('ownership follows the enabled OpenSpec document profile and keeps RC-private paths out of task changes', async t => {
   const f = await fixture(t);
   for (const [file, owner] of [
     ['openspec/changes/demo/proposal.md', 'DOCUMENT_CORRECTION'], ['openspec/changes/demo/.openspec.yaml', 'DOCUMENT_CORRECTION'],

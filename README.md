@@ -29,9 +29,9 @@ Claude/CodeAgent 的 CLI 与 Hook 要求 **Node.js >= 18**，支持 Windows、Li
 
 OpenClaw / MatrixAssistant 插件加载后，可由管理员在 Session 中执行 `/rc-setup`，初始化 RC 的模型、超时、Hook 权限和主 Agent 工具授权。已有模型和超时配置保留，默认使用宿主热加载；项目和会话开关保持原样。详见[宿主初始化说明](docs/openclaw.md#在-session-中初始化宿主设置)。
 
-1.10.0 起，新项目模板启用原文文档纠偏和只报告已证实偏差的原文 Stop（B12）。Stop 同时核对原文未要求改变的既有行为。需求基线提取、基线审计、实现纠偏、Skill 看护及压缩恢复在模板中关闭。项目与首次会话仍需显式开启。已有项目配置继续沿用原有字段与缺省行为。
+当前新项目模板采用用户指定的默认配置：关闭 OpenSpec 阶段与文档审查，开启原文 Stop 的完整逐项审查及需求框架检查，M08、M12 关闭，其余 M 指标开启；实现纠偏和 Skill 看护关闭。项目默认开启，首次登记会话默认关闭。已有项目配置继续沿用原有字段与缺省行为。
 
-Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-project on`、`/rc-session on`。`init` 使用插件内的默认模板，项目和会话默认开关均为关闭，模型取当前宿主 RC 配置，已有项目配置不覆盖。`/rc-project on|off|status` 控制整个项目，`/rc-session-default on|off|status` 控制首次登记会话的默认选择；已登记会话不受默认值变化影响。详见[项目与会话命令](docs/session-control.md#在-session-中初始化和开关)。
+Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-session on`。`init` 保留插件内模板的开关和预算，将默认评审及各角色显式模型改为当前宿主 RC 的 `reviewerModel`，默认评审及 Stop Reviewer 超时两小时；已有项目配置不覆盖。`/rc-project on|off|status` 控制整个项目，`/rc-session-default on|off|status` 控制首次登记会话的默认选择；已登记会话不受默认值变化影响。详见[项目与会话命令](docs/session-control.md#在-session-中初始化和开关)。
 
 多 Session 的 until_pass 使用 RC 独立控制页管理审查状态与可编辑待办；每轮正常结束后才审查，需要修复时另起运行。仅修改 RC，无需改动 MA 原生界面。见[方案与使用方式](docs/until-pass-dispatch.md)。
 

@@ -1,10 +1,10 @@
 # Runtime Corrector 项目规则
 
-这个目录由 OpenClaw / MatrixAssistant 的 `/rc-project init` 从插件默认模板复制到 Session 实际绑定的项目中。模板用需求原文审查 OpenSpec 的 proposal、design、tasks 及其直接入边，Stop 使用原文清单并只报告有反证的偏差。模板关闭需求基线、文档阶段指标、实现纠偏、Skill 看护和压缩恢复。规则与评审标准均可按项目修改。
+这个目录由 OpenClaw / MatrixAssistant 的 `/rc-project init` 从插件默认模板复制到 Session 实际绑定的项目中。默认 `config.yaml` 来自用户提供的 `SEWeekly/鸿蒙kit开发的长程任务/202611/default_rc_config/config.yaml`，随插件打包，初始化时不依赖该来源路径。模板关闭 OpenSpec 阶段审阅、产物原始需求纠偏、动态需求基线、实现纠偏和 Skill 看护，开启 Stop 原始需求审查与需求框架检查；M08、M12 关闭，其余 M 指标开启。规则与评审标准均可按项目修改。
 
-初始化后，项目总开关 `enabled` 和首次登记会话的默认开关 `sessionDefaults.enabled` 均为 `false`。`reviewers.defaults.model` 在创建时复制当前 OpenClaw RC 的 `reviewerModel`，随后可以按项目修改，不会持续覆盖。已有 `.runtime-corrector` 不覆盖。
+初始化保留模型以外的模板配置：项目总开关 `enabled: true`，首次登记会话的默认开关 `sessionDefaults.enabled: false`；默认评审与 Stop Reviewer 各自超时为两小时。Stop 审查窗口两小时，反馈预留五分钟，会话与流程各最多纠偏三次。模板中的回归检查命令保留，但 `regressionCheck.enabled: false`，不会执行。已有 `.runtime-corrector` 不覆盖。
 
-在当前会话执行 `/rc-project on`，再执行 `/rc-session on`，即可允许该会话使用已配置的纠偏功能。修改 `sessionDefaults.enabled` 不会改变已登记会话的选择；各会话独立设置保存在 `sessions.local.yaml`，应加入项目的 Git 忽略规则。
+在当前会话执行 `/rc-session on`，即可允许该会话使用已配置的纠偏功能；项目已手动关闭时先执行 `/rc-project on`。初始化时，`reviewers.defaults.model` 及模板内各角色的显式 `model`（包括 `stopReviewer.model`）均改为当前 OpenClaw RC 的 `reviewerModel`，避免沿用模板来源环境中的模型；缺少宿主 RC 模型时先执行 `/rc-setup`。这使用宿主当前配置，不进行逐个模型的联网可用性探测。初始化后可按项目修改模型，重复初始化不会覆盖已有配置。修改 `sessionDefaults.enabled` 不会改变已登记会话的选择；各会话独立设置保存在 `sessions.local.yaml`，应加入项目的 Git 忽略规则。
 
 ## 三层控制
 

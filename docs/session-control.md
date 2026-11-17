@@ -10,11 +10,10 @@
 
 ```text
 /rc-project init
-/rc-project on
 /rc-session on
 ```
 
-`init` 把插件内的 `.runtime-corrector-default` 五个文件复制到当前 Session 实际绑定的项目下，目录名为 `.runtime-corrector`。`reviewers.defaults.model` 在创建时取当前 OpenClaw RC 的 `reviewerModel`，不使用业务会话临时模型；尚未配置该模型时提示先执行 `/rc-setup`。已有 `.runtime-corrector`（包括空目录）不会覆盖。初始化后的项目总开关和首次登记 Session 的默认开关均为 `false`；不创建基线、评审或任务运行目录。
+`init` 把插件内的 `.runtime-corrector-default` 五个文件复制到当前 Session 实际绑定的项目下，目录名为 `.runtime-corrector`。默认 `config.yaml` 随插件打包，采用用户提供的 `SEWeekly/鸿蒙kit开发的长程任务/202611/default_rc_config/config.yaml`，保留其中的开关与预算：项目开启、首次登记 Session 默认关闭；默认评审及 Stop Reviewer 超时两小时；Stop 最多纠偏三次，M08、M12 关闭，需求框架及检查开启。初始化时将 `reviewers.defaults.model` 和模板内各角色的显式 `model`（含 `stopReviewer.model`）统一替换为当前宿主 RC 的 `reviewerModel`，避免保留模板来源环境中的模型；缺少该设置时提示先执行 `/rc-setup`。这是读取宿主当前模型设置，不是逐个模型的联网可用性探测。已有 `.runtime-corrector`（包括空目录）不会覆盖；初始化不创建基线、评审或任务运行目录。
 
 日常控制可以使用：
 

@@ -28,7 +28,7 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     assert.deepEqual(tools.filter(name => !declared.has(name)), [], `${arm} has undeclared worker tools`);
   };
   for (const [arm, originalRequirementsBasis, deviationOnly] of [
-    ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true], ['default project', true, true],
+    ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true], ['default project', true, false],
   ]) await t.test(arm, async subtest => {
     const fixture = await stopProtocolFixture(subtest, 'findings');
     const { input, root } = fixture;

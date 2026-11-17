@@ -4,11 +4,11 @@
 
 ### 新项目模板与旧配置
 
-1.10.0 的新项目模板以用户需求原文审查 OpenSpec 的 proposal、design、tasks 及入边，关闭文档阶段指标和基线审查。Stop 启用原文清单及仅偏差模式（B12），检查有原有代码或测试佐证的既有行为回归。实现纠偏、Skill 看护与压缩恢复关闭。项目开关与首次会话默认仍为关闭。
+当前新项目模板使用用户指定的配置：OpenSpec 的 proposal、design、tasks 阶段及入边审阅关闭，产物原始需求纠偏、动态需求基线、实现纠偏和 Skill 看护关闭。Stop 启用原文清单与完整逐项审查，M08、M12 关闭，其余 M 指标开启；需求框架及其检查开启。项目总开关开启，首次会话默认关闭。默认评审与各角色的显式模型在初始化时按当前宿主 RC 配置设置；默认评审、Stop Reviewer 各自超时及 Stop 总审查窗口为两小时，Stop 会话和流程各最多纠偏三次。
 
 已有配置中省略字段的解释继续沿用旧缺省值。要切回基线模式，将 dynamicGroundTruth.enabled 和 artifactCorrection.groundTruthReviewEnabled 设为 true，将 artifactCorrection.originalRequirementsEnabled 和 stopCorrection.originalRequirementsBasis 设为 false。需要完整逐项 Stop 审查（A）时将 stopCorrection.deviationOnly 也设为 false。保留仅偏差审查则是 B2。按需要单独启用 artifactCorrection.stageMetricsEnabled。
 
-Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。`stopCorrection.families` 是上一层的族开关，设为 `false` 的族会关闭其全部成员指标。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)，各族含义见 [纠偏检查体系](correction-checklist.md)。其它写入规则和文档/Skill 总开关继续独立生效。
+Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；省略指标设置时只开启 M08、M09、M12、M13、M15、M16，当前新项目模板则显式开启除 M08、M12 外的全部指标。`stopCorrection.families` 是上一层的族开关，设为 `false` 的族会关闭其全部成员指标。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)，各族含义见 [纠偏检查体系](correction-checklist.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
 `stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。
 
@@ -16,7 +16,7 @@ Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；�
 
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 
-`/rc-project init` 从插件的 `.runtime-corrector-default` 创建项目配置，显式设置上述两个开关为 `false`，并将 `reviewers.defaults.model` 填为当前宿主 RC 的 `reviewerModel`；不会覆盖已有目录。`/rc-project on|off|status` 和 `/rc-session-default on|off|status` 分别控制这两个字段。既有配置省略字段时按 `true` 解释的兼容语义不变；这些开关不改动具体纠偏功能的参数。
+`/rc-project init` 从插件的 `.runtime-corrector-default` 创建项目配置，保留模板中的开关和预算，将 `reviewers.defaults.model` 及模板内各角色的显式 `model` 改为当前宿主 RC 的 `reviewerModel`；缺少该模型时提示先执行 `/rc-setup`，不沿用模板来源环境中的模型，也不覆盖已有目录。`/rc-project on|off|status` 和 `/rc-session-default on|off|status` 分别控制这两个字段。既有配置省略字段时按 `true` 解释的兼容语义不变；这些开关不改动具体纠偏功能的参数。
 
 ### Agent 单次输出上限
 
