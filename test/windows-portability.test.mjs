@@ -81,6 +81,7 @@ extraPath: []
     assert.ok(cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs > 0);
     assert.ok(cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs <= record.input.execution.maxRuntimeMs);
     assert.equal(cfg.agents.defaults.workspace, record.seedRoot);
+    assert.equal(cfg.agents.defaults.timeoutSeconds, Math.ceil(record.input.execution.maxRuntimeMs / 1000));
     const log = await fs.readFile(path.join(runDir, 'logs/gateway.stdout.log'), 'utf8');
     assert.equal(log.includes('[model-fetch] start'), false);
     await assert.rejects(() => fs.stat(path.join(runDir, 'rc-status/send-receipt.json')), /ENOENT/);

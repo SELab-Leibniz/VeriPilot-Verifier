@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-17",
+  "sample": "security_tool_2",
+  "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+  "maxRuntimeMs": 7200000,
+  "models": {
+    "agentId": "main",
+    "business": "custom/deepseek-v4-flash",
+    "reviewer": "custom/deepseek-v4.1-flash"
+  },
+  "pluginSha256": "2b4e0a456eb5b63f8d2903cbf327d7714bd67a6dbf25932ec3162a0e539dd276",
+  "runnerBaseCommit": "3a850dafbecb7acb8aad1a077d81b79472420ef6",
+  "zeroModelQualification": {
+    "nativeTests": {
+      "tests": 68,
+      "passed": 68,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "04ddaf587ce34df6b7d8e38d0fcc2c81da93f3b456518d3cb08bd76efd0e1487"
+    },
+    "focusedTests": {
+      "tests": 2,
+      "passed": 2,
+      "logSha256": "c8b528ccd6866d8109aa85aada8f02462ed23ec9f50ae630f46eab0499a694df"
+    },
+    "projectPhases": [
+      {
+        "phase": "doctor",
+        "exitCode": 0
+      },
+      {
+        "phase": "install",
+        "exitCode": 0
+      },
+      {
+        "phase": "test",
+        "exitCode": 0
+      },
+      {
+        "phase": "build",
+        "exitCode": 0
+      },
+      {
+        "phase": "docs",
+        "exitCode": 0
+      }
+    ],
+    "publicLocalTests": {
+      "reportedFailures": 0,
+      "reportedTotal": 747,
+      "reportedErrors": 0,
+      "finished": true,
+      "reportedPassed": 747,
+      "freshReport": true
+    },
+    "preparedRuns": [
+      "st2-demo-20261117T153337623Z-f0e14a5f",
+      "st2-demo-20261117T153719093Z-8fdadb4a"
+    ],
+    "noModelRequests": true
+  },
+  "businessAttempt": {
+    "runId": "st2-demo-20261117T154108526Z-1177c088",
+    "createdAt": "2026-11-17T15:41:08.539Z",
+    "deadlineAt": 1794937268539,
+    "statusAtRegistration": "RUNNING"
+  },
+  "scope": {
+    "artificialFaultInjection": false,
+    "independentEvaluation": false,
+    "rawPrivateProfilesExported": false,
+    "sourceInputs": "Original Git tree plus requirements.md and demo-checks.ps1"
+  }
+}

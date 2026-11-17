@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-18",
+  "archive": "dist/security-tool-2-demo-20261117-v2.zip",
+  "archiveSha256": "a971023a191e8fab9f89af9c2695ceee3eda608e7ad0ea7a914cdafa9fc96ab0",
+  "matchedFiles": 640,
+  "planFromDifferentCwd": true,
+  "utf8ChineseAndSpacedPath": true,
+  "originalProjectInputsPreserved": true,
+  "maxRuntimeMs": 7200000,
+  "status": "COMPLETED",
+  "rcOutcome": "COMPLETED_WITH_HISTORICAL_DEVIATIONS",
+  "canScheduleNext": true,
+  "activeProcesses": 0,
+  "newModelRequests": 0
+}

@@ -1,0 +1,13 @@
+{
+  "instance_id": "security_tool_2",
+  "repo": "Deslord319/security_tool",
+  "repo_url": "https://github.com/Deslord319/security_tool",
+  "base_commit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+  "problem_statement": "Refreshing the app list ignores the server policy snapshot\n\nIn the permission manager, refreshing the application list keeps the stale\nlocal policy state instead of applying the account policy snapshot returned\nby the server, so policy changes made elsewhere never show up. Selecting an\napplication to view its details also re-fetches the whole account policy\nsnapshot instead of just loading that app's details.\n\nRefreshing the list should apply the server's account policy snapshot to the\napp list and policy records while keeping the selected app's already-loaded\n3D permission details. Selecting an application should only load that app's\npermission profile, without fetching the account policy snapshot again.",
+  "hints_text": "",
+  "language": "ArkTS",
+  "framework": "HarmonyOS/OpenHarmony",
+  "base_sdk_api": 24,
+  "target_sdk_api": 24,
+  "license": "NOASSERTION"
+}

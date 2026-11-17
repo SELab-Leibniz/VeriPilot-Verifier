@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +16,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 test('portable demo contains frozen program and package, runs its plan from another cwd, and excludes private setup',
-  { skip: process.platform !== 'win32', timeout: 120000 }, async () => {
+  { skip: process.platform !== 'win32' || !existsSync(path.join(root, '.git')), timeout: 120000 }, async () => {
     const folder = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'VP 演示 包 ')));
     const outDir = path.join(folder, 'demo with spaces'), packageFile = path.join(folder, 'rc-fixture.tgz');
     await fs.writeFile(packageFile, 'opaque package bytes for packaging-only test');

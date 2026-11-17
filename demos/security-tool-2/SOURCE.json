@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "rc-security-tool-2-source.v1",
+  "instanceId": "security_tool_2",
+  "upstream": "https://github.com/Deslord319/security_tool",
+  "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+  "archive": "assets/security-tool-2-base.zip",
+  "archiveSha256": "86d417cb1a6cdf1b1068127ab6b0d097c73fec6d44aa78b11c0e880265fb2aa7",
+  "originalFileCount": 514,
+  "sourceDatasetSha256": "271615a131fcea4d7d3cc75a2aede53df25459e7f26ea33997afff692df14549",
+  "note": "Exact original Git tree. Public task fields only; patch, test_patch, hidden tests and evaluator data were not exported."
+}

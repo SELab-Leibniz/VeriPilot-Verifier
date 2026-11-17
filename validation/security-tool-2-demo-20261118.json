@@ -1,0 +1,334 @@
+{
+  "date": "2026-11-18",
+  "timezone": "Asia/Shanghai",
+  "sample": "security_tool_2",
+  "baseCommit": "d72abe27c935b878363f4e849bd370b017abf3ea",
+  "maxRuntimeMs": 7200000,
+  "hostAgentTimeoutSeconds": 7200,
+  "qualification": {
+    "command": "node scripts/test.mjs --native",
+    "tests": 70,
+    "passed": 70,
+    "failed": 0,
+    "skipped": 0,
+    "newModelRequests": 0,
+    "logSha256": "730729e07b91a6f66aeb37ce9d1b0d270ff3d7b00d817333cd61adb289158425",
+    "baselinePublicTests": {
+      "reportedFailures": 0,
+      "reportedTotal": 747,
+      "reportedErrors": 0,
+      "finished": true,
+      "reportedPassed": 747,
+      "freshReport": true
+    },
+    "nativePreparation": {
+      "runId": "st2-demo-20261117T155237219Z-a12155e6",
+      "status": "PREPARED",
+      "hostAgentTimeoutSeconds": 7200,
+      "maxRuntimeMs": 7200000,
+      "rcBusinessTimeoutMs": 7191703,
+      "cleanup": {
+        "reason": "NORMAL_CLEANUP",
+        "confirmedAt": 1794930792577,
+        "activeProcesses": 0
+      },
+      "noModelDispatch": true
+    },
+    "portableSnapshotTests": {
+      "command": "node runner/scripts/test.mjs --native --machine <external-machine.yaml>",
+      "tests": 70,
+      "passed": 68,
+      "failed": 0,
+      "skipped": 2,
+      "reasonForSkips": "Two Git-history packaging tests require the source Git checkout; native runtime controls still run.",
+      "logSha256": "65acddfa0c550a1126d098429eb22c243adf8815548850fb46b1479efa528843"
+    },
+    "handoffPrivacy": {
+      "forbiddenPrivateFiles": 0,
+      "knownCredentialMatches": 0,
+      "knownCredentialValuesNotLogged": true,
+      "checkedFiles": 641,
+      "method": "File inventory plus exact known configured credential scan of text artifacts; compressed assets originate from pinned source/package archives."
+    }
+  },
+  "firstAttempt": {
+    "runId": "st2-demo-20261117T154108526Z-1177c088",
+    "status": "FAILED",
+    "rc": {
+      "status": "ENDED",
+      "phase": "IDLE",
+      "stage": "IDLE",
+      "active": false,
+      "ended": true,
+      "health": "SETTLED",
+      "runId": "ec9c1c5b-dfc5-4669-bba7-d2886d21317b",
+      "roundId": "c9fe3cd14269393a458bd9b97419ffab29dc8258ff7772df94e04999bc810763",
+      "pendingUserTasks": 0,
+      "reasonCode": "HOST_RUN_NOT_COMPLETED",
+      "outcome": "UNVERIFIED",
+      "heartbeatAt": 1794930408221,
+      "source": "final-result"
+    },
+    "cleanup": {
+      "reason": "NORMAL_CLEANUP",
+      "confirmedAt": 1794930410877,
+      "activeProcesses": 0
+    },
+    "host": [
+      {
+        "runId": "ec9c1c5b-dfc5-4669-bba7-d2886d21317b",
+        "status": "error",
+        "endedAt": 1794930406330
+      }
+    ],
+    "maxRuntimeMs": 7200000,
+    "actualHostTimeoutSeconds": 300,
+    "expectedHostTimeoutSeconds": 7200,
+    "reason": "HOST_AGENT_TIMEOUT_WAS_HARDCODED_300_SECONDS",
+    "fix": "Sample maxRuntimeMs now sets isolated agents.defaults.timeoutSeconds; original attempt preserved. No observer migration or business-state intervention occurred."
+  },
+  "finalAttempt": {
+    "runId": "st2-demo-20261117T155454683Z-22deb0d3",
+    "createdAt": "2026-11-17T15:54:54.697Z",
+    "finishedAt": "2026-11-17T16:39:31.446Z",
+    "elapsedMs": 2676749,
+    "status": "COMPLETED",
+    "workflowCompleted": true,
+    "rc": {
+      "status": "ENDED",
+      "phase": "IDLE",
+      "stage": "IDLE",
+      "active": false,
+      "ended": true,
+      "health": "SETTLED",
+      "runId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+      "roundId": "a9dc503ca17d60aef680644f9cfdb3a72804e4ba5cc43c2cf04af24b83803d9f",
+      "pendingUserTasks": 0,
+      "reasonCode": "HISTORICAL_DEVIATIONS_NOTIFIED",
+      "outcome": "COMPLETED_WITH_HISTORICAL_DEVIATIONS",
+      "heartbeatAt": 1794933563736,
+      "source": "final-result"
+    },
+    "hosts": [
+      {
+        "runId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+        "status": "ok",
+        "endedAt": 1794932519809
+      }
+    ],
+    "reviews": [
+      {
+        "evaluationId": "stop-48331e2e422275cacb37a8a3",
+        "status": "COMPLETED_WITH_HISTORICAL_DEVIATIONS",
+        "reasonCode": "HISTORICAL_DEVIATIONS_NOTIFIED",
+        "total": 5,
+        "unverified": 0,
+        "judgements": {
+          "PASS": 4,
+          "DEVIATION": 1
+        },
+        "historicalDeviations": [
+          {
+            "kind": "IRREVERSIBLE_ORDER",
+            "objectId": "M11:original-9c287c4b633f640b7cafe505",
+            "source": {
+              "kind": "PROJECT_FILE",
+              "ref": "AGENTS.md",
+              "sha256": "97457ddd16bca851c6caee9533c488adf5856f08c76bbcad8c14ffbd5027aa49",
+              "start": 196,
+              "end": 207
+            },
+            "reason": "The permission-manage design document update (required first step) was applied at 16:03:45 (call_z02ubmogym7ulfklxt006uyk), while the production code edits (required second step) had already completed at 16:01:08 (call_gei6w45bi7wvpnca3ywtretc) and 16:02:38 (call_of7im7lt7lyrbirg8112kcmx). AGENTS.md L198-203 and the user's original instruction require the design-doc update before code/test changes. The inversion is irreversible; the document is now updated and consistent and the post-edit UTF-8 read-back was performed at 000110, so no repairable residue remains."
+          }
+        ]
+      }
+    ],
+    "publicChecks": [
+      {
+        "phase": "install",
+        "startedAt": "2026-11-17T16:11:28.4283669+00:00",
+        "finishedAt": "2026-11-17T16:11:51.8915075+00:00",
+        "exitCode": 0
+      },
+      {
+        "phase": "test",
+        "startedAt": "2026-11-17T16:17:00.5186163+00:00",
+        "finishedAt": "2026-11-17T16:17:30.5688933+00:00",
+        "exitCode": 0,
+        "localTests": {
+          "freshReport": true,
+          "finished": true,
+          "reportedTotal": 748,
+          "reportedPassed": 748,
+          "reportedFailures": 0,
+          "reportedErrors": 0
+        }
+      },
+      {
+        "phase": "build",
+        "startedAt": "2026-11-17T16:17:45.3893052+00:00",
+        "finishedAt": "2026-11-17T16:18:16.7470058+00:00",
+        "exitCode": 0
+      },
+      {
+        "phase": "docs",
+        "startedAt": "2026-11-17T16:18:39.3120683+00:00",
+        "finishedAt": "2026-11-17T16:18:39.5316381+00:00",
+        "exitCode": 0
+      }
+    ],
+    "cleanup": {
+      "reason": "NORMAL_CLEANUP",
+      "confirmedAt": 1794933565964,
+      "activeProcesses": 0
+    },
+    "observer": {
+      "state": "STOPPED",
+      "pid": 51684,
+      "heartbeatAt": 1794933571457
+    },
+    "deadlineGuard": {
+      "state": "STOPPED",
+      "heartbeatAt": 1794933565951
+    },
+    "excludedProjectDirectories": [
+      "node_modules",
+      "oh_modules"
+    ],
+    "changedFiles": [
+      "entry/src/main/ets/viewmodels/permission-manage/PermissionViewModel.ets",
+      "entry/src/test/permission-manage/viewmodel.test.ets",
+      "docs/03-模块设计/权限管理组件设计说明.md"
+    ]
+  },
+  "controlWitnesses": {
+    "sameBusinessInputs": {
+      "project": true,
+      "prompt": true,
+      "rcConfig": true,
+      "plugin": true,
+      "models": true
+    },
+    "ranBeyondPrevious300SecondCap": {
+      "runId": "st2-demo-20261117T155454683Z-22deb0d3",
+      "at": "2026-11-17T16:02:51.666Z",
+      "submittedAt": 1794930919780,
+      "elapsedSinceSubmissionMs": 451887,
+      "hostAgentTimeoutSeconds": 7200,
+      "status": "RUNNING",
+      "rc": {
+        "status": "WAITING",
+        "phase": "RUNNING",
+        "stage": "RUNNING",
+        "active": true,
+        "ended": false,
+        "health": "FRESH",
+        "runId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+        "roundId": "a9dc503ca17d60aef680644f9cfdb3a72804e4ba5cc43c2cf04af24b83803d9f",
+        "pendingUserTasks": 0,
+        "reasonCode": null,
+        "outcome": null,
+        "heartbeatAt": 1794931371445,
+        "source": "rc-status-file"
+      },
+      "canScheduleNext": false,
+      "latestBusinessEvents": [
+        {
+          "at": "2026-11-17T16:01:08.423Z",
+          "role": "assistant",
+          "stopReason": "toolUse",
+          "tools": [
+            "edit"
+          ]
+        },
+        {
+          "at": "2026-11-17T16:01:08.853Z",
+          "role": "toolResult",
+          "tools": []
+        },
+        {
+          "at": "2026-11-17T16:02:38.152Z",
+          "role": "assistant",
+          "stopReason": "toolUse",
+          "tools": [
+            "edit"
+          ]
+        },
+        {
+          "at": "2026-11-17T16:02:38.986Z",
+          "role": "toolResult",
+          "tools": []
+        }
+      ],
+      "note": "Live evidence beyond the previous 300-second host cap; not a final completion or business score."
+    },
+    "failedPublicCheckDidNotEndMainTask": {
+      "at": "2026-11-17T16:16:30.922Z",
+      "runId": "st2-demo-20261117T155454683Z-22deb0d3",
+      "firstRunId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+      "publicCheck": {
+        "finishedAt": "2026-11-17T16:13:45.4273845+00:00",
+        "startedAt": "2026-11-17T16:12:25.5731165+00:00",
+        "phase": "test",
+        "log": "demo-output/test.log",
+        "localTests": {
+          "reportedFailures": 0,
+          "reportedTotal": 0,
+          "reportedErrors": 0,
+          "finished": false,
+          "reportedPassed": 0,
+          "freshReport": false
+        },
+        "exitCode": -1
+      },
+      "experimentStatus": "RUNNING",
+      "rcStage": "RUNNING",
+      "rcHealth": "FRESH",
+      "nativeHostTerminals": [],
+      "canScheduleNext": false,
+      "note": "A failed compile/public test remains a tool result inside the live business task; the experiment is not prematurely released."
+    },
+    "mainNativeOkWaitedForRC": {
+      "at": "2026-11-17T16:31:39.964Z",
+      "runId": "st2-demo-20261117T155454683Z-22deb0d3",
+      "host": [
+        {
+          "runId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+          "status": "ok",
+          "endedAt": 1794932519809
+        }
+      ],
+      "rc": {
+        "status": "RUNNING",
+        "phase": "REVIEWING",
+        "stage": "stop-reviewer",
+        "active": true,
+        "ended": false,
+        "health": "FRESH",
+        "runId": "ad9469f1-ad4e-4451-b396-39cb4a8e9eee",
+        "roundId": "a9dc503ca17d60aef680644f9cfdb3a72804e4ba5cc43c2cf04af24b83803d9f",
+        "pendingUserTasks": 0,
+        "reasonCode": null,
+        "outcome": null,
+        "heartbeatAt": 1794933098911,
+        "source": "rc-status-file"
+      },
+      "resourcesReleased": false,
+      "canScheduleNext": false,
+      "note": "The controller holds the experiment after main-native ok while Stop review is pending."
+    },
+    "sourceFreshness": {
+      "latestPublicTestFinishedAt": "2026-11-17T16:17:30.5688933+00:00",
+      "sourceFilesModifiedAfterLatestTest": []
+    }
+  },
+  "boundaries": {
+    "artificialFaultInjection": false,
+    "independentEvaluation": null,
+    "matrixAssistantSourceModified": false,
+    "rcPluginSourceModified": false,
+    "previousFailedAttemptOverwritten": false,
+    "observerMigrationPerformed": false
+  },
+  "note": "44m37s natural workflow completion with one irreversible historical order deviation. No automatic repair followup was allocated; historical verdict retained. Public checks are not independent evaluation."
+}

@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { chooseModels } from '../lib/config.mjs';
 import { completion, privateState } from '../lib/settlement.mjs';
-import { dispatchOnce, observe, captureTranscripts, experimentExitCode, resume } from '../lib/runner.mjs';
+import { dispatchOnce, observe, captureTranscripts, experimentExitCode, resume, archive } from '../lib/runner.mjs';
 import { isolatedEnvironment, activateIsolatedEnvironment } from '../lib/host.mjs';
 import { within, extractPackage, writeJson, json, redact } from '../lib/files.mjs';
 
@@ -165,4 +166,31 @@ test('real RC archive extracts with USTAR checksum validation', { skip: !process
   const dest = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-runner-package-'));
   await extractPackage(process.env.RC_TEST_PACKAGE, dest);
   assert.equal((await json(path.join(dest, 'payload/runtime-corrector/openclaw.plugin.json'))).id, 'runtime-corrector');
+});
+
+test('archiving keeps generated output and source while excluding rebuildable dependency junctions', async () => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-archive-links-')));
+  const project = path.join(root, 'run/project'), runDir = path.join(root, 'run'), shared = path.join(root, 'shared-dependency');
+  await fs.mkdir(project, { recursive: true }); await fs.mkdir(shared);
+  await fs.writeFile(path.join(shared, 'external.txt'), 'shared dependency stays in place');
+  await fs.writeFile(path.join(project, 'source.txt'), 'original source');
+  await fs.writeFile(path.join(project, '.gitignore'), 'node_modules/\noh_modules/\n');
+  const git = args => execFileSync('git', ['-C', project, '-c', 'user.name=RC Test', '-c', 'user.email=rc-test@localhost',
+    '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=nonexistent', ...args], { windowsHide: true });
+  git(['init', '-q']); git(['add', 'source.txt', '.gitignore']); git(['commit', '-qm', 'Original input']);
+  await fs.writeFile(path.join(project, 'source.txt'), 'final source');
+  await fs.mkdir(path.join(project, 'build')); await fs.writeFile(path.join(project, 'build/result.txt'), 'generated build output');
+  for (const name of ['node_modules', 'oh_modules']) {
+    await fs.mkdir(path.join(project, name)); await fs.symlink(shared, path.join(project, name, 'package'), process.platform === 'win32' ? 'junction' : 'dir');
+  }
+  const record = { id: 'archive-test', runDir, stateDir: path.join(runDir, 'state'), identity: { projectRoot: project, agentId: 'main', sessionId: 's', sessionKey: 'agent:main:s' },
+    input: { paths: { git: 'git' } }, terminals: {} };
+  await archive(record, { status: 'ARCHIVED', host: {}, rc: { status: 'ENDED' } });
+  const output = path.join(runDir, 'artifacts/project');
+  assert.equal(await fs.readFile(path.join(output, 'source.txt'), 'utf8'), 'final source');
+  assert.equal(await fs.readFile(path.join(output, 'build/result.txt'), 'utf8'), 'generated build output');
+  for (const name of ['node_modules', 'oh_modules']) await assert.rejects(() => fs.lstat(path.join(output, name)), { code: 'ENOENT' });
+  assert.equal(await fs.readFile(path.join(shared, 'external.txt'), 'utf8'), 'shared dependency stays in place');
+  assert.deepEqual((await json(path.join(runDir, 'result.json'))).excludedProjectDirectories, ['node_modules', 'oh_modules']);
+  assert.match(await fs.readFile(path.join(runDir, 'artifacts/changes.patch'), 'utf8'), /final source/);
 });

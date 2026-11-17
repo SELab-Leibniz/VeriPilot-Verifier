@@ -1,0 +1,26 @@
+# Copy to machine.yaml. Fill this machine's actual paths; use forward slashes.
+version: 1
+paths:
+  node: "C:/Program Files/nodejs/node.exe"
+  git: "C:/Program Files/Git/cmd/git.exe"
+  python: "D:/tools/Python/python.exe"
+  openclawRoot: "D:/tools/MatrixAssistant/resources/openclaw"
+  rcPluginPackage: "./packages/runtime-corrector-ma-1.11.0.tgz"
+  hostConfig: "${USERPROFILE}/.openclaw/openclaw.json"
+  hostState: "${USERPROFILE}/.openclaw"
+  # Keep private outputs outside the shared bundle and keep paths short.
+  outputRoot: "${LOCALAPPDATA}/Temp/vp-st2"
+harmony:
+  deveco: "C:/Program Files/Huawei/DevEco Studio"
+  sdk: "C:/Program Files/Huawei/command-line-tools/sdk"
+  java: "C:/Program Files/Huawei/DevEco Studio/jbr"
+  ohpm: "C:/Program Files/Huawei/command-line-tools/ohpm"
+  hvigor: "C:/Program Files/Huawei/command-line-tools/hvigor"
+extraPath: []
+env:
+  # Node used only by the Harmony tools; separate from paths.node for OpenClaw.
+  DEVECO_NODE_HOME: "C:/Program Files/Huawei/command-line-tools/tool/node"
+models:
+  agent: "auto"
+  business: "auto"
+  reviewer: "auto"

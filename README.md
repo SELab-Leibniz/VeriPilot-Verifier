@@ -65,6 +65,8 @@ execution:
 
 默认总上限为六小时。从创建运行目录开始，包含准备、业务任务、私有审查、所有自动纠偏和排队任务；`--resume` 沿用原截止时间。到期终止该实验独立 Gateway 及其进程组，保留部分输出和日志，记录 `TIMED_OUT`（退出码 4）。进程清理未确认时记录 `TIMEOUT_CLEANUP_FAILED`（退出码 5）。手动“终止当前轮纠偏、保留后续用户任务”的 RC 接口语义保持独立。
 
+隔离宿主的 Agent 单轮默认预算按 `maxRuntimeMs` 换算为秒，避免宿主较短的默认值提前结束正常主任务；每轮仍受实验原绝对截止时间约束。显式配置的 `businessTimeoutMs` 另行约束业务调用，RC 自身审查预算保持样本原值。
+
 `observerTimeoutMs` 只限制一次观察窗口，默认六小时；`uncertainTimeoutMs` 限制持续无法确认状态的等待，默认五分钟；`queryTimeoutMs` 限制单次查询，默认十五秒。它们需要正整数。观察超时返回 `NEEDS_ATTENTION`，保留正常工作和独立截止守护进程；总时限到期仍会清理该实验。`businessTimeoutMs: 0` 表示业务运行只受实验总时限约束。
 
 多个包按顺序调用同一个命令即可；某个命令返回非零时停止批次并检查该次结果，不自动重试：
@@ -90,6 +92,8 @@ foreach ($sample in Get-ChildItem D:/samples -Directory) {
 - `config/`：输入副本、实际 RC 配置、脱敏宿主配置。
 - `runtime/`：隔离宿主配置、鉴权、插件、工作树及运行状态，属于私有运行目录。
 - `logs/`：Gateway 和脚本日志。
+
+项目归档省略可重建的 `node_modules/` 和 `oh_modules/`，避免复制依赖中的 junction；`result.json.excludedProjectDirectories` 列出这一范围。原始工作树仍完整保留，项目源码、测试报告和构建输出照常留档。
 
 宿主返回的实际业务 Worktree 路径保存在 `run.json.identity.projectRoot`，其当前状态文件是 `<projectRoot>/.runtime-correction/session-runtime-status.json`。
 
@@ -128,6 +132,8 @@ node scripts/test-flow.mjs --hard-timeout
 ## 触发一次自动纠偏
 
 需要交给同事的完整演示包，可用 `node scripts/build-quicksort-demo.mjs --machine machine.yaml` 构建。它包含实验程序、RC 包、快排样例和独立入口，使用方法见 [快排 Demo 模板说明](demos/python-quicksort/README.md)。
+
+另一个真实鸿蒙修复样本可用 `node scripts/build-security-tool-2-demo.mjs --machine machine.yaml` 构建，见 [security_tool_2 Demo](demos/security-tool-2/README.md)。它不注入错误、不包含独立评分，单个实验的总时限为两小时（`maxRuntimeMs: 7200000`），快排 Demo 仍为三十分钟。
 
 ```powershell
 # 可选：检查真实 Gateway 能加载测试钩子，不提交模型任务
