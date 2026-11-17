@@ -10,7 +10,7 @@
 | --- | --- |
 | B4 | 仅能严格证明由 RC 自身错误提示引发的边界拒绝免扣共享修复额度；其他拒绝、轮次和截止时间沿用原规则。 |
 | T3 | 同一会话 autopilot 可核实为 RUNNING 时，RC Stop 排队让路并保留完整审查预算；IDLE 正常审查；活动状态 UNKNOWN 只提示，不推断宿主结束。旧宿主终态 UNKNOWN 仍保留所有权，不能重发或抢占；真实旧终态确认后恢复精确新候选，用户取消/安全解除不会被重启复活。 |
-| X2 | 用户显式调用 host-setup 时默认追加 `agent:*:runtime-corrector:**`，先备份，保留已有规则和 deny，重复调用幂等。入口为可信管理员会话中的 `/rc-setup`；开发验证仅使用临时配置。 |
+| X2 | 安装插件及显式调用 `/rc-setup` 时只初始化 RC 和主 Agent 工具授权，不向 `matrix-context-controller.config.bypassSessionPatterns` 注入 `agent:*:runtime-corrector:**`，已有规则和 deny 保留，重复调用幂等。开发验证仅使用临时配置。 |
 | T1 | UNKNOWN 最多重试 12 次或 60 秒后升级，仍保持 UNKNOWN。安全解除需同一操作者、运行与修订绑定的短期令牌二次确认；解除只停止该 RC 调度身份，不证明宿主已取消或业务已结束。 |
 
 ## 地基：E1、E2、X1
@@ -246,7 +246,7 @@ host 首次 3 项为两个未排空后台运行的 ENOTEMPTY 清理失败和一�
 
 1. 完全退出 MA 及其 OpenClaw gateway，备份当前 RC 扩展整个目录、实际生效的 `openclaw.json` 和项目 RC 配置，记录真实注册路径。默认扩展位置可能为 `%USERPROFILE%\.openclaw\extensions\runtime-corrector`，以当前注册为准。
 2. 在 RC 仓库使用目标宿主支持的 Node 运行 `npm run build:plugins`、`npm run test:artifacts`。将 `dist/runtime-corrector-openclaw/` 的完整内容手动替换到已备份的现有 RC 扩展位置，不增加额外 dist 层，不覆盖 MA 自带 OpenClaw 或其他插件，也不在 MA 目录安装开发依赖。
-3. 重启 MA 并确认 RC 加载，保留已有注册配置。启用本次 MCC 内部会话排除修复时，在可信管理员会话显式发送 `/rc-setup`；该流程默认先备份再追加并保留原规则。核对 changed/warnings 和 `.rc-setup-*.bak`，按其重载提示操作。不要执行 `scripts/configure-ma-host.mjs`。
+3. 重启 MA 并确认 RC 加载，保留已有注册配置。需要初始化 RC 的模型、超时、Hook 权限和主 Agent 工具授权时，在可信管理员会话显式发送 `/rc-setup`；该流程不修改 MCC 的 `bypassSessionPatterns`。核对初始化结果及 warnings，按其重载提示操作。不要执行 `scripts/configure-ma-host.mjs`。
 4. 在新的小项目会话串联原始基线、声明文档脚本写入、实际 Skill 读取和 Stop；核对来源身份、文档覆盖、待处理义务和最终结论。再验 autopilot 排队、UNKNOWN 警告、重启、取消与安全解除；任何未验证依据和未知宿主终态都应保留，不得显示已完成。
 
 回滚前先在控制页暂停或禁用本次 RC 会话的自动调度，并备份运行状态，避免旧版本恢复待办后自行续作。未知宿主终态先核对，不重发。随后完全退出 MA/gateway，恢复备份的 RC 扩展整个目录和实际配置；调用过 setup 的同时核对其原始备份。重启确认旧版本加载，再用新测试会话验证。保留审计与排队历史，不通过删状态回滚；产物/配置回滚不会撤销已发生的业务文件修改。

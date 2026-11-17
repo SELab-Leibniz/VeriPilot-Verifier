@@ -104,7 +104,7 @@ OpenClaw 产物的运行环境要求与安装后的配置方式如下。
 
 命令启用 RC 及 `allowConversationAccess`、`allowPromptInjection` 两个 Hook 权限；缺少 `reviewerModel` 时读取 OpenClaw 全局默认模型（兼容字符串、`primary` 和已配置的模型别名），缺少 `hookTimeoutMs` 时设置为 `3600000`。已有明确的 RC 模型、超时及其他参数保留。主 Agent 优先选择 `agents.list` 中第一个默认 Agent，否则第一个 Agent；没有列表时使用宿主隐式 `main`。只给该 Agent 追加业务工具 `runtime_corrector`，保留其工具范围和 deny；全局工具配置、其他 Agent 和私有评审工具授权不变。已有非空插件白名单会补入 RC，空或缺省白名单仍保持不限制插件的语义。
 
-显式执行 `/rc-setup` 时，如果已配置 `matrix-context-controller`，默认向其 `bypassSessionPatterns` 追加 `agent:*:runtime-corrector:**`，避免内部审查会话进入业务记忆。使用该插件的冒号分段匹配语法；保留已有规则，重复执行不重复追加。写入前在配置文件旁保存独占创建的 `.rc-setup-*.bak` 原文备份；备份失败不写配置。返回结果包含 `changed`、`changedPaths` 和 `warnings`，未配置该插件时明确提示。
+安装插件及执行 `/rc-setup` 均不向 `matrix-context-controller.config.bypassSessionPatterns` 注入 `agent:*:runtime-corrector:**`，也不创建该插件的配置；已有规则原样保留。初始化结果包含 `changed`、`changedPaths` 和 `warnings`。MA 安装器只保留旧版安装状态已记录的规则所有权，供禁用或卸载时撤销旧版自行添加的规则；新版安装不会将已有规则认作自身添加。
 
 检测到同一会话的 autopilot 正在运行时，RC Stop 等待其停止自动续作后继续，等待期间不消耗本次审查窗口。已确认终态的旧候选可由宿主准入的新轮次替换，始终重新核对新轮次的终态。未知宿主终态或纠偏预留不能被覆盖。autopilot 的状态读取使用公开的 `autopilot.status` 和确切会话标识；不可用或返回无法核实的状态时，只在控制页提示可能互斥，保留原有 RC 行为，不推断 autopilot 已结束。RC 自己的续修仍须通过原有启动准入。
 

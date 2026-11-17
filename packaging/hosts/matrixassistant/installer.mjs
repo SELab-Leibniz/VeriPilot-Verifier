@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const packageName = "runtime-corrector-ma", pluginId = "runtime-corrector", toolName = "runtime_corrector";
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
-const bypassPattern = "agent:*:runtime-corrector:**";
+const legacyBypassPattern = "agent:*:runtime-corrector:**";
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 const hash = value => createHash("sha256").update(value).digest("hex");
@@ -225,16 +225,15 @@ export async function activate(api, init) {
     const grant = captureGrant(before, config, setup.agentId);
     const grants = state?.active ? [...state.grants] : [];
     if (grant && !grants.some(value => value.agentId === grant.agentId && value.name === grant.name)) grants.push(grant);
-    const bypassBefore = before.plugins?.entries?.["matrix-context-controller"]?.config?.bypassSessionPatterns;
     const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: where.payload,
       generation: state?.active && state.owner === where.owner ? state.generation : randomUUID(), previousEntry,
       configuredEntry: state?.active ? state.configuredEntry : structuredClone(config.plugins.entries[pluginId]),
       savedEntry: null, grants, created: state?.active ? state.created : createdContainers(before),
       allowAdded: state?.active ? state.allowAdded : Array.isArray(before.plugins?.allow) && before.plugins.allow.length > 0 && !before.plugins.allow.includes(pluginId),
-      bypassAdded: (state?.active && state.bypassAdded) || (Array.isArray(config.plugins.entries["matrix-context-controller"]?.config?.bypassSessionPatterns)
-        && !bypassBefore?.includes(bypassPattern)),
-      bypassConfigWasMissing: state?.active ? state.bypassConfigWasMissing : before.plugins?.entries?.["matrix-context-controller"]?.config === undefined,
-      bypassWasMissing: state?.active ? state.bypassWasMissing : bypassBefore === undefined };
+      // Retain ownership only to undo additions made by an older active installer.
+      bypassAdded: state?.active === true && state.bypassAdded === true,
+      bypassConfigWasMissing: state?.active === true && state.bypassConfigWasMissing === true,
+      bypassWasMissing: state?.active === true && state.bypassWasMissing === true };
     const saved = await commit(next);
     return { status: "active", pluginId, packageName, pluginRoot: where.payload, restartRequired: true, ...saved, warnings: setup.warnings };
   });
@@ -269,7 +268,7 @@ async function removeConfiguration(where, expectedGeneration) {
     if (state.bypassAdded) {
       const settings = config.plugins?.entries?.["matrix-context-controller"]?.config;
       if (Array.isArray(settings?.bypassSessionPatterns)) {
-        settings.bypassSessionPatterns = settings.bypassSessionPatterns.filter(value => value !== bypassPattern);
+        settings.bypassSessionPatterns = settings.bypassSessionPatterns.filter(value => value !== legacyBypassPattern);
         if (!settings.bypassSessionPatterns.length && state.bypassWasMissing) delete settings.bypassSessionPatterns;
         if (!Object.keys(settings).length && state.bypassConfigWasMissing) delete config.plugins.entries["matrix-context-controller"].config;
       }

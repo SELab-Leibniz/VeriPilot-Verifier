@@ -59,6 +59,49 @@ test("unrestricted plugin allowlists remain unrestricted and implicit main-agent
   }
 });
 
+test("MA installation never adds context bypasses or takes ownership of existing rules", async t => {
+  for (const [name, entry] of [
+    ["absent config", { enabled: true }],
+    ["absent patterns", { config: { existing: "keep" } }],
+    ["empty patterns", { config: { bypassSessionPatterns: [] } }],
+    ["custom patterns", { config: { existing: "keep", bypassSessionPatterns: ["agent:main:personal:*"] } }],
+    ["existing RC pattern", { config: { bypassSessionPatterns: ["agent:main:personal:*", "agent:*:runtime-corrector:**"] } }],
+    ["malformed foreign setting", { config: { bypassSessionPatterns: "invalid" } }],
+  ]) await t.test(name, async t => {
+    const base = baseConfig(); base.plugins.entries["matrix-context-controller"] = entry;
+    const f = await marketFixture(t, artifact, base);
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const result = await f.plugin.activate(f.api, f.init);
+      assert.equal(result.status, "active", result.error); await f.writeMarker(true);
+      assert.deepEqual((await f.readConfig()).plugins.entries["matrix-context-controller"], entry);
+      assert.equal((await f.readState()).bypassAdded, false);
+      assert.equal((await f.plugin.activate(f.api, f.init)).changed, false);
+      assert.deepEqual((await f.readConfig()).plugins.entries["matrix-context-controller"], entry);
+      await f.disable(); assert.deepEqual(await f.readConfig(), base);
+    }
+  });
+});
+
+test("upgrade retains cleanup ownership only for bypasses added by older installers", async t => {
+  const base = baseConfig();
+  base.plugins.entries["matrix-context-controller"] = { enabled: true, config: { bypassSessionPatterns: ["agent:main:personal:*"] } };
+  const f = await marketFixture(t, artifact, base);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active"); await f.writeMarker(true);
+  // Simulate an active installation created by a release that injected the rule.
+  const config = await f.readConfig(), state = await f.readState();
+  config.plugins.entries["matrix-context-controller"].config.bypassSessionPatterns.push("agent:*:runtime-corrector:**");
+  Object.assign(state, { bypassAdded: true, bypassConfigWasMissing: false, bypassWasMissing: false });
+  await fs.writeFile(f.configPath, JSON.stringify(config));
+  await fs.writeFile(f.statePath, JSON.stringify(state));
+  assert.equal((await f.plugin.activate(f.api, f.init)).changed, false);
+  assert.equal((await f.readState()).bypassAdded, true);
+  await f.disable(); assert.deepEqual(await f.readConfig(), base);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active"); await f.writeMarker(true);
+  assert.deepEqual((await f.readConfig()).plugins.entries["matrix-context-controller"], base.plugins.entries["matrix-context-controller"]);
+  assert.equal((await f.readState()).bypassAdded, false);
+  await f.disable(); assert.deepEqual(await f.readConfig(), base);
+});
+
 test("strict agent allow, explicit deny and existing RC parameters survive an enable-disable round trip", async t => {
   const base = baseConfig();
   base.agents.list[0].tools = { allow: ["read"], deny: ["runtime_*"] };
