@@ -1,0 +1,9 @@
+version: 1
+id: "quicksort-correction-no-frame"
+projectDir: "./project"
+promptFile: "./prompt.md"
+rcConfigFile: "./rc-config.no-frame.yaml"
+execution:
+  businessTimeoutMs: 0
+  pollIntervalMs: 1000
+  observerTimeoutMs: 0

@@ -1,0 +1,12 @@
+{
+  "id": "rc-correction-fixture",
+  "name": "RC controlled correction test",
+  "main": "./index.mjs",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["runDir"],
+    "properties": { "runDir": { "type": "string" } }
+  }
+}

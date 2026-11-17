@@ -1,0 +1,148 @@
+version: 2
+maxOutputTokens: 32768
+enabled: true
+sessionDefaults:
+  enabled: false
+locale: "zh"
+enabledStages: []
+artifacts:
+  - name: "proposal"
+    stage: "proposal"
+    type: "proposal"
+    format: "markdown"
+    editable: true
+    pathTemplates:
+      - "openspec/changes/{changeName}/proposal.md"
+    rules:
+      enabled: false
+    review:
+      enabled: false
+      criteria: "example.reviewer.md"
+  - name: "design"
+    stage: "design"
+    type: "design"
+    format: "markdown"
+    editable: true
+    pathTemplates:
+      - "openspec/changes/{changeName}/design.md"
+    rules:
+      enabled: false
+    review:
+      enabled: false
+      criteria: "example.reviewer.md"
+  - name: "tasks"
+    stage: "tasks"
+    type: "tasks"
+    format: "markdown"
+    editable: true
+    pathTemplates:
+      - "openspec/changes/{changeName}/tasks.md"
+    rules:
+      enabled: false
+    review:
+      enabled: false
+      criteria: "example.reviewer.md"
+workflow:
+  correlation:
+    keys:
+      - "changeName"
+  edges:
+    - from: "proposal"
+      to: "design"
+      review:
+        enabled: false
+        criteria: "example.reviewer.md"
+    - from: "proposal"
+      to: "tasks"
+      review:
+        enabled: false
+        criteria: "example.reviewer.md"
+    - from: "design"
+      to: "tasks"
+      review:
+        enabled: false
+        criteria: "example.reviewer.md"
+ignorePatterns:
+  - "**/.runtime-correction/**"
+  - "**/.git/**"
+  - "**/.hvigor/**"
+  - "**/oh_modules/**"
+  - "**/node_modules/**"
+  - "**/build/**"
+  - "**/.preview/**"
+dynamicGroundTruth:
+  enabled: false
+  panel:
+    size: 2
+    adjudicator: true
+artifactCorrection:
+  originalRequirementsEnabled: false
+  groundTruthReviewEnabled: false
+  stageMetricsEnabled: false
+stopCorrection:
+  enabled: true
+  originalRequirementsBasis: true
+  deviationOnly: false
+  waitMode: "until_pass"
+  maxCorrectionsPerSession: 3
+  maxCorrectionsPerFlow: 3
+  assessmentTimeoutMs: 7200000
+  feedbackReserveMs: 300000
+  reviewGroupSize: 3
+  fileQualityReviewEnabled: false
+  regressionCheck:
+    enabled: false
+    command:
+      - "C:\\MABench\\software\\node\\node.exe"
+      - "C:\\MABench\\experiment\\regression\\arkts-regression-check.mjs"
+      - "--project=C:\\MABench\\experiment\\task\\source"
+      - "--tool-root=C:\\Program Files\\Huawei\\command-line-tools"
+      - "--java-home=C:\\MABench\\software\\jbr"
+      - "--baseline=C:\\MABench\\experiment\\baseline-local-tests.json"
+      - "--original-tests"
+    cwd: "."
+    timeoutMs: 1800000
+  metrics:
+    M01: true
+    M02: true
+    M03: true
+    M04: true
+    M05: true
+    M06: true
+    M07: true
+    M08: false
+    M09: true
+    M10: true
+    M11: true
+    M12: false
+    M13: true
+    M14: true
+    M15: true
+    M16: true
+deviationLoop:
+  maxDeliveriesPerFamily: 5
+implementationCorrection:
+  enabled: false
+  platform: "harmonyos"
+  deviceBudgetMs: 1800000
+evidenceRoots:
+  - "evidence"
+output:
+  directory: ".runtime-correction"
+limits:
+  semanticReviewTimeoutMs: 1800000
+reviewers:
+  defaults:
+    model: "custom/deepseek-v4.1-flash"
+    effort: "low"
+    timeoutMs: 7200000
+    formatRepairAttempts: 3
+  stopReviewer:
+    model: "custom/deepseek-v4.1-flash"
+    timeoutMs: 7200000
+skillCorrection:
+  enabled: false
+requirementFrame:
+  enabled: true
+  checks: true
+  timeoutMs: 1200000

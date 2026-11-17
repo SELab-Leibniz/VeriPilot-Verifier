@@ -1,0 +1,32 @@
+# Copy to machine.yaml. Use forward slashes in Windows paths.
+# Relative paths below are resolved against this file, not the sample package.
+# All example paths must be replaced with the new machine's actual locations.
+version: 1
+paths:
+  node: "C:/Program Files/nodejs/node.exe"
+  git: "C:/Program Files/Git/cmd/git.exe"
+  # Optional; required by the quicksort example. Replace with the new machine's Python.
+  python: "D:/tools/Python/python.exe"
+  openclawRoot: "D:/tools/MatrixAssistant/resources/openclaw"
+  rcPluginPackage: "./packages/runtime-corrector-ma-1.11.0.tgz"
+  hostConfig: "${USERPROFILE}/.openclaw/openclaw.json"
+  hostState: "${USERPROFILE}/.openclaw"
+  outputRoot: "./runs"
+# Optional for non-Harmony samples. Configured directories must exist.
+# sdk is the SDK root required by your project's build, not an IDE executable.
+harmony:
+  deveco: "C:/Program Files/Huawei/DevEco Studio"
+  sdk: "C:/Program Files/Huawei/command-line-tools/sdk"
+  java: "C:/Program Files/Huawei/DevEco Studio/jbr"
+  ohpm: "C:/Program Files/Huawei/command-line-tools/ohpm"
+  hvigor: "C:/Program Files/Huawei/command-line-tools/hvigor"
+# Additional bin directories; optional. Paths are checked and prepended to PATH.
+extraPath: []
+# Additional environment variables, e.g. HOS_SDK_HOME or a tool-specific setting.
+# Secrets should be supplied through the host profile/environment, not this file.
+env:
+  LANG: "en_US.UTF-8"
+models:
+  agent: "auto"
+  business: "auto"
+  reviewer: "auto"

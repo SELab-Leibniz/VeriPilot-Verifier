@@ -1,0 +1,8 @@
+{
+  "name": "rc-experiment-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0" },
+  "scripts": { "test": "node scripts/test.mjs", "test:windows": "node scripts/test.mjs --native" }
+}

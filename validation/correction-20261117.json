@@ -1,0 +1,205 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Shanghai",
+  "independentEvaluation": false,
+  "attempts": [
+    {
+      "id": "quicksort-correction-20261117T095458254Z-8f634aaf",
+      "createdAt": "2026-11-17T09:54:58.265Z",
+      "finishedAt": "2026-11-17T10:00:29.447Z",
+      "sessionId": "e2185432-f3e3-44b7-b51f-4b790fe23496",
+      "firstRunId": "9a73c49b-f667-4d1b-923e-36468dd01d87",
+      "configurationSha256": "eda3de044a42e0edb349c7c117396a94333c4b89de512c60eedf329440a99d2e",
+      "promptSha256": "649c05e34f47af77a1bb7c868a4f72f30e8a0e643f050780fdfa31cb4c90d137",
+      "terminalStatuses": {
+        "9a73c49b-f667-4d1b-923e-36468dd01d87": "error"
+      },
+      "injected": false,
+      "finalStatus": "ARCHIVED",
+      "rc": {
+        "status": "ENDED",
+        "outcome": "UNVERIFIED",
+        "reasonCode": "RC_HOOK_UNAVAILABLE",
+        "active": false,
+        "ended": true,
+        "pendingUserTasks": 0
+      },
+      "used": 0,
+      "reviews": [],
+      "gatewayRetained": false,
+      "settlement": {
+        "settled": true,
+        "reasons": []
+      },
+      "missingTranscripts": [
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T095458254Z-8f634aaf\\runtime\\tmp\\rc-frame-jlUmPV\\check-verification\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T095458254Z-8f634aaf\\runtime\\tmp\\rc-frame-jlUmPV\\proposal-2\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T095458254Z-8f634aaf\\runtime\\tmp\\rc-frame-jlUmPV\\proposal-1\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T095458254Z-8f634aaf\\runtime\\tmp\\rc-frame-jlUmPV\\proposal-3\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T095458254Z-8f634aaf\\runtime\\tmp\\rc-frame-jlUmPV\\check-projectRules\\host-session.jsonl"
+      ],
+      "privateRuns": [
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "057ba7e9-cc38-4e26-affb-9c74cdf305ea"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "07f29808-a61c-40f5-aef1-d529c4b3a56c"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "69dc512d-d970-46df-b21a-d8a4e0187033"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "9a850eae-5254-4558-902b-6fd86521ded9"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "e4aac0f6-e0f0-4fe7-8ee1-40e02a8e292a"
+        }
+      ]
+    },
+    {
+      "id": "quicksort-correction-20261117T100315284Z-28d16f86",
+      "createdAt": "2026-11-17T10:03:15.290Z",
+      "finishedAt": "2026-11-17T10:05:38.049Z",
+      "sessionId": "7feace20-5e43-4311-9a5b-bd52a41f3993",
+      "firstRunId": "f8f55a5c-403c-4d51-8cc1-15fd0556e16e",
+      "configurationSha256": "eda3de044a42e0edb349c7c117396a94333c4b89de512c60eedf329440a99d2e",
+      "promptSha256": "4f269b7b75d7dbaca3e9eda24860d44b332e36cb368d6628e617fce39a30518e",
+      "terminalStatuses": {
+        "f8f55a5c-403c-4d51-8cc1-15fd0556e16e": "ok"
+      },
+      "injected": true,
+      "finalStatus": "ARCHIVED",
+      "rc": {
+        "status": "ENDED",
+        "outcome": "UNVERIFIED",
+        "reasonCode": "RC_HOOK_UNAVAILABLE",
+        "active": false,
+        "ended": true,
+        "pendingUserTasks": 0
+      },
+      "used": 0,
+      "reviews": [],
+      "gatewayRetained": false,
+      "settlement": {
+        "settled": true,
+        "reasons": []
+      },
+      "missingTranscripts": [
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T100315284Z-28d16f86\\runtime\\tmp\\rc-frame-WDNRmJ\\proposal-1\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T100315284Z-28d16f86\\runtime\\tmp\\rc-frame-WDNRmJ\\proposal-2\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T100315284Z-28d16f86\\runtime\\tmp\\rc-frame-WDNRmJ\\check-verification\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T100315284Z-28d16f86\\runtime\\tmp\\rc-frame-WDNRmJ\\proposal-3\\host-session.jsonl",
+        "C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\experiment-mvp-20261117\\runs\\quicksort-correction-20261117T100315284Z-28d16f86\\runtime\\tmp\\rc-frame-WDNRmJ\\check-projectRules\\host-session.jsonl"
+      ],
+      "privateRuns": [
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "11302fae-6a6c-43e1-8440-cb90bef831cd"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "261391a1-4a55-4d4e-a833-ca1b23d5f735"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "34933030-8248-4040-9e9c-62ef5cd82da8"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "c75ae67a-811f-437d-bb56-6cb3d9f232b9"
+        },
+        {
+          "role": "requirement-frame",
+          "status": "SETTLED",
+          "runId": "e572a21c-6d27-4818-bc8c-690ff2fe9f62"
+        }
+      ]
+    },
+    {
+      "id": "quicksort-correction-no-frame-20261117T100634452Z-ec15222c",
+      "createdAt": "2026-11-17T10:06:34.460Z",
+      "finishedAt": "2026-11-17T10:18:07.778Z",
+      "sessionId": "217c054b-ad60-4bde-85e0-9e88fcb8f011",
+      "firstRunId": "d5571396-1997-40eb-b66c-99885e90684c",
+      "configurationSha256": "c1790596e3a7b1ee42b343747126b7372cee0a0ab912a94055d54951ed5d094f",
+      "promptSha256": "322f0dea691377ac53743bd5fae8290dca6c092a64319fd4e9835f0341df45c6",
+      "terminalStatuses": {
+        "d5571396-1997-40eb-b66c-99885e90684c": "ok",
+        "rc-stop-379471756af6ff0a55c31005d029a9bdba736380694462045dab310afd475a12": "ok"
+      },
+      "injected": true,
+      "finalStatus": "ARCHIVED",
+      "rc": {
+        "status": "ENDED",
+        "outcome": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND",
+        "active": false,
+        "ended": true,
+        "pendingUserTasks": 0
+      },
+      "used": 1,
+      "reviews": [
+        {
+          "stopId": "d5571396-1997-40eb-b66c-99885e90684c",
+          "status": "DEVIATION",
+          "observedAt": 1794910407469,
+          "progress": {
+            "total": 6,
+            "completed": 6,
+            "deviations": 0,
+            "unverified": 2,
+            "groups": 4,
+            "reused": 0,
+            "complete": true
+          }
+        },
+        {
+          "stopId": "rc-stop-379471756af6ff0a55c31005d029a9bdba736380694462045dab310afd475a12",
+          "status": "NO_DEVIATION_FOUND",
+          "observedAt": 1794910684424,
+          "progress": {
+            "total": 5,
+            "completed": 5,
+            "deviations": 0,
+            "unverified": 1,
+            "groups": 4,
+            "reused": 0,
+            "complete": true
+          }
+        }
+      ],
+      "gatewayRetained": false,
+      "settlement": {
+        "settled": true,
+        "reasons": []
+      },
+      "missingTranscripts": [],
+      "privateRuns": [
+        {
+          "role": "stop-reviewer",
+          "status": "SETTLED",
+          "runId": "3c2d1577-c427-4f81-a6e2-2930ebc22a69"
+        },
+        {
+          "role": "stop-reviewer",
+          "status": "SETTLED",
+          "runId": "ddb446ce-3c03-416d-8901-f956e3f8bfb1"
+        }
+      ]
+    }
+  ]
+}

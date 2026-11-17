@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { register } from './support/correction-fixture/index.mjs';
+import { writeJson, json } from '../lib/files.mjs';
+
+test('fault changes only first native business delivery once; automatic repair remains untouched', async () => {
+  const runDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-controlled-fault-'));
+  await fs.mkdir(path.join(runDir, 'rc-status'));
+  const projectRoot = await fs.realpath(await fs.mkdir(path.join(runDir, 'project'), { recursive: true }).then(() => path.join(runDir, 'project')));
+  const identity = { projectRoot, sessionId: 'business', sessionKey: 'agent:main:business' };
+  await writeJson(path.join(runDir, 'run.json'), { identity, firstRunId: 'first' });
+  const file = path.join(projectRoot, 'quicksort.py'), original = 'def quicksort(values):\n    return sorted(values)\n';
+  await fs.writeFile(file, original);
+  let handler;
+  register({ pluginConfig: { runDir }, on(name, callback, options) { assert.equal(name, 'before_agent_finalize'); assert.equal(options.priority, 1000); handler = callback; } });
+  const ctx = { ...identity, workspaceDir: path.join(runDir, 'default-agent-workspace') };
+  await handler({ runId: 'private-reviewer' }, ctx);
+  assert.equal(await fs.readFile(file, 'utf8'), original);
+  await handler({ runId: 'first' }, ctx);
+  assert.match(await fs.readFile(file, 'utf8'), /return list\(values\)/);
+  const receipt = await json(path.join(runDir, 'rc-status/fault-injection.json'));
+  assert.equal(receipt.runId, 'first'); assert.equal(receipt.sessionId, 'business');
+  assert.equal(receipt.file, file); assert.notEqual(receipt.hookWorkspace, projectRoot);
+  await fs.writeFile(file, original);
+  await handler({ runId: 'rc-stop-real-repair' }, ctx);
+  await handler({ runId: 'first' }, ctx);
+  assert.equal(await fs.readFile(file, 'utf8'), original);
+});
