@@ -1,0 +1,134 @@
+{
+  "date": "2026-11-17",
+  "timezone": "Asia/Shanghai",
+  "scope": "Python quicksort demo; requirementFrame disabled; no independent evaluation",
+  "qualification": {
+    "command": "node scripts/test.mjs --native",
+    "tests": 66,
+    "passed": 66,
+    "failed": 0,
+    "skipped": 0,
+    "newProviderRequests": 0,
+    "logSha256": "01072b6b1b9c3c933e60b3898098fa85434df9194007e5cd6f5fbbddb7257c4a"
+  },
+  "final": {
+    "runId": "python-quicksort-demo-20261117T143519766Z-49ea9cc0",
+    "privateRunDir": "C:\\Users\\user\\AppData\\Local\\Temp\\vpd-4e686879\\python-quicksort-demo-20261117T143519766Z-49ea9cc0",
+    "startedAt": "2026-11-17T14:35:19.774Z",
+    "finishedAt": "2026-11-17T14:48:03.500Z",
+    "identity": {
+      "agentId": "main",
+      "sessionKey": "agent:main:rc-exp:python-quicksort-demo-20261117t143519766z-49ea9cc0",
+      "sessionId": "24192f88-8a81-4c98-9def-0ebe851c5786",
+      "projectRoot": "C:\\Users\\user\\AppData\\Local\\Temp\\vpd-4e686879\\python-quicksort-demo-20261117T143519766Z-49ea9cc0\\runtime\\state\\worktrees\\eb48b77a06f537e2\\wt-6e7f5b2d"
+    },
+    "status": "COMPLETED",
+    "canScheduleNext": true,
+    "rc": {
+      "status": "ENDED",
+      "phase": "IDLE",
+      "stage": "IDLE",
+      "active": false,
+      "ended": true,
+      "health": "SETTLED",
+      "runId": "rc-stop-6329b04d025e340ef20e72cec23572bc53f3d09f25682f6023c1b8eb5690f874",
+      "roundId": "c9b885be7a72942f4e9252338a373cc4977c1ec81d338000ab31260e9242fdbb",
+      "pendingUserTasks": 0,
+      "reasonCode": "NO_DEVIATION_FOUND",
+      "outcome": "NO_DEVIATION_FOUND",
+      "heartbeatAt": 1794926880557,
+      "source": "final-result"
+    },
+    "hosts": [
+      {
+        "runId": "df970e7d-4e62-4657-b84b-c66cda7240fb",
+        "status": "ok",
+        "endedAt": 1794926202919
+      },
+      {
+        "runId": "rc-stop-6329b04d025e340ef20e72cec23572bc53f3d09f25682f6023c1b8eb5690f874",
+        "status": "ok",
+        "endedAt": 1794926528475
+      }
+    ],
+    "reviews": [
+      {
+        "runId": "rc-stop-6329b04d025e340ef20e72cec23572bc53f3d09f25682f6023c1b8eb5690f874",
+        "status": "SETTLED",
+        "reviewStatus": "NO_DEVIATION_FOUND",
+        "evaluationId": "stop-14f894db4dbe1d9104c42498",
+        "createdAt": 1794926529891,
+        "settledAt": 1794926879523
+      },
+      {
+        "runId": "df970e7d-4e62-4657-b84b-c66cda7240fb",
+        "status": "SETTLED",
+        "reviewStatus": "DEVIATION",
+        "evaluationId": "stop-22b4ee57a927181b83db29d4",
+        "createdAt": 1794926202986,
+        "settledAt": 1794926442084
+      }
+    ],
+    "evaluations": [
+      {
+        "evaluationId": "stop-14f894db4dbe1d9104c42498",
+        "status": "NO_DEVIATION_FOUND",
+        "total": 5,
+        "unverified": 0,
+        "counts": {
+          "PASS": 5
+        }
+      },
+      {
+        "evaluationId": "stop-22b4ee57a927181b83db29d4",
+        "status": "DEVIATION",
+        "total": 5,
+        "unverified": 0,
+        "counts": {
+          "PASS": 4,
+          "DEVIATION": 1
+        }
+      }
+    ],
+    "cleanup": {
+      "reason": "NORMAL_CLEANUP",
+      "confirmedAt": 1794926882671,
+      "activeProcesses": 0
+    },
+    "localTests": {
+      "testsRun": 11,
+      "exitCode": 0,
+      "output": "verification.txt"
+    }
+  },
+  "priorModelAttempts": [
+    {
+      "runId": "python-quicksort-demo-20261117T135407591Z-cf584a90",
+      "demoVerified": false,
+      "reason": "DELIVERY_WRITTEN_TO_SEED_WORKSPACE",
+      "fix": "Bind submitted prompt to the native Session worktree; preserve original prompt bytes."
+    },
+    {
+      "runId": "python-quicksort-demo-20261117T141826800Z-b551e62f",
+      "demoVerified": false,
+      "reason": "EXPECTED_FILE_LOCATION_UNVERIFIED_BLOCKED_DEVIATION",
+      "fix": "Use explicit ./ output paths in the original sample requirements and prompt. RC implementation unchanged."
+    }
+  ],
+  "noModelPreparationIssues": [
+    {
+      "reason": "WINDOWS_GIT_DIR_TOO_LONG",
+      "fix": "Keep private outputs in a short path outside the distributable folder; preserved both failed preparation attempts."
+    }
+  ],
+  "boundaries": {
+    "matrixAssistantSourceModified": false,
+    "rcPluginSourceModified": false,
+    "failedAttemptsOverwritten": false
+  },
+  "delivery": {
+    "folder": "dist/python-quicksort-demo-20261117",
+    "identicalPreexistingFiles": 73,
+    "note": "All previously packaged files except README documentation and result exporter were byte-identical to the actual model run. Added development sources, validation and curated results."
+  }
+}

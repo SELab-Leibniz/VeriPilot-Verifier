@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-17",
+  "archive": "dist/python-quicksort-demo-20261117.zip",
+  "archiveSha256": "8eac087a1f8798bf0ec85bc72aa334c6f31d647787e3c44adc76198c88462f34",
+  "files": 104,
+  "planFromDifferentCwd": true,
+  "statusCommand": true,
+  "maxRuntimeMs": 1800000,
+  "sourceRunId": "python-quicksort-demo-20261117T143519766Z-49ea9cc0",
+  "noAdditionalModelRun": true,
+  "notes": "Final archive expanded into a Chinese/spaced Windows path; every BUNDLE file hash verified. Plan executed from another cwd and status query returned COMPLETED/canScheduleNext. Same 73 preexisting non-documentation/non-exporter files as the actual model run."
+}

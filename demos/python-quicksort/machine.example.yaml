@@ -1,0 +1,19 @@
+# Copy to machine.yaml and fill in this machine's paths. Use forward slashes.
+version: 1
+paths:
+  node: "C:/Program Files/nodejs/node.exe"
+  git: "C:/Program Files/Git/cmd/git.exe"
+  python: "D:/tools/Python/python.exe"
+  openclawRoot: "D:/tools/MatrixAssistant/resources/openclaw"
+  rcPluginPackage: "./packages/runtime-corrector-ma-1.11.0.tgz"
+  hostConfig: "${USERPROFILE}/.openclaw/openclaw.json"
+  hostState: "${USERPROFILE}/.openclaw"
+  # Keep output paths short for native Git worktrees. Keep private runs outside this shareable bundle.
+  outputRoot: "${LOCALAPPDATA}/Temp/VeriPilotDemo/runs"
+# No Harmony SDK is needed for this Python demo.
+extraPath: []
+models:
+  agent: "auto"
+  business: "auto"
+  # If host RC reviewerModel is absent, use an existing provider/model here.
+  reviewer: "auto"

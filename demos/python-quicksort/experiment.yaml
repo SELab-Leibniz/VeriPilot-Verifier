@@ -1,0 +1,12 @@
+version: 1
+id: "python-quicksort-demo"
+projectDir: "./project"
+promptFile: "./prompt.md"
+rcConfigFile: "./rc-config.yaml"
+execution:
+  maxRuntimeMs: 1800000
+  observerTimeoutMs: 1800000
+  uncertainTimeoutMs: 300000
+  queryTimeoutMs: 15000
+  businessTimeoutMs: 0
+  pollIntervalMs: 1000

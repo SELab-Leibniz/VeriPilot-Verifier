@@ -61,6 +61,24 @@ test('lost send acknowledgement persists original ID and never retransmits', asy
   await assert.rejects(() => dispatchOnce(record, rpc), /already submitted/);
   assert.equal(calls, 1);
 });
+
+test('submitted task binds file tools and commands to the actual Session worktree while preserving original prompt bytes', async () => {
+  const runDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-session-workspace-'));
+  await fs.mkdir(path.join(runDir, 'config')); await fs.mkdir(path.join(runDir, 'logs'));
+  const original = 'Implement quicksort.py and run tests.\n';
+  await fs.writeFile(path.join(runDir, 'config/prompt.md'), original);
+  const projectRoot = path.join(runDir, "session's worktree");
+  const record = { runDir, identity: { sessionKey: 'agent:main:test', sessionId: 's', projectRoot },
+    input: { execution: { businessTimeoutMs: 0 } } };
+  await dispatchOnce(record, async (method, params) => {
+    assert.equal(method, 'chat.send'); assert.ok(params.message.includes(projectRoot));
+    assert.ok(params.message.includes("session''s worktree")); assert.ok(params.message.endsWith(original));
+    assert.equal(await fs.readFile(path.join(runDir, 'config/submitted-prompt.md'), 'utf8'), params.message);
+    return { runId: params.idempotencyKey };
+  });
+  assert.equal(await fs.readFile(path.join(runDir, 'config/prompt.md'), 'utf8'), original);
+  assert.equal(record.sendAcknowledged, true); assert.ok(record.submittedPromptSha256);
+});
 test('observer interrupt and network failure preserve unresolved run', async () => {
   const record = { input: { execution: { observerTimeoutMs: 0, pollIntervalMs: 100 } } };
   assert.equal((await observe(record, null, { shouldStop: () => true })).reason, 'CONTROLLER_INTERRUPTED');

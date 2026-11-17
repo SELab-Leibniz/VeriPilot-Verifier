@@ -93,6 +93,8 @@ foreach ($sample in Get-ChildItem D:/samples -Directory) {
 
 宿主返回的实际业务 Worktree 路径保存在 `run.json.identity.projectRoot`，其当前状态文件是 `<projectRoot>/.runtime-correction/session-runtime-status.json`。
 
+提交任务时，程序将上述实际 Worktree 目录加入提示词，指明文件工具与 PowerShell 命令的目标位置。`config/prompt.md` 保留原始输入，`config/submitted-prompt.md` 保留实际提交文本，其哈希记录在 `run.json.submittedPromptSha256`。
+
 外层查询使用 `node scripts/experiment-status.mjs "D:/experiment/runs/<run-id>"`，输出纯 JSON。函数入口为 `lib/experiment-status.mjs` 的 `queryExperimentStatus(runDir)`。释放本次实验槽位看 `canScheduleNext`，不要仅凭 RC 的 `ended` 或观察脚本退出判断结束。字段、状态与轮询用法见 [实验状态接口](tutorials/04-experiment-status.md)。
 
 正常收尾同时等待业务/自动纠偏运行的准确 ID 原生终态、RC 当前轮结束、调度队列与私有审查结算，并在关闭 Gateway 前再次查询。已失效但仍为 RESERVED 的启动准入也会阻止收尾。长期处于健康 RUNNING/WAITING/STOPPING 不按阶段停留时长误杀。RC `UNVERIFIED` 等结果原样记录，不变成成功。
@@ -124,6 +126,8 @@ node scripts/test-flow.mjs --hard-timeout
 `lib/yaml.mjs` 来自 RC 提交 `846eb7b` 的轻量 YAML 解析器；配置使用两空格缩进、不支持 YAML anchors/复杂标记。宿主适配使用已安装 OpenClaw 的公开 Gateway SDK，项目初始化使用该次提取的 RC 插件函数。MA/OpenClaw 安装目录和已有宿主配置保持只读。
 
 ## 触发一次自动纠偏
+
+需要交给同事的完整演示包，可用 `node scripts/build-quicksort-demo.mjs --machine machine.yaml` 构建。它包含实验程序、RC 包、快排样例和独立入口，使用方法见 [快排 Demo 模板说明](demos/python-quicksort/README.md)。
 
 ```powershell
 # 可选：检查真实 Gateway 能加载测试钩子，不提交模型任务
