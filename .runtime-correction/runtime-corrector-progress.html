@@ -209,7 +209,7 @@
         </ol>
         <p>With strict coverage enabled, the operator supplies the requirement inventory before Proposal. Approval seals that inventory with the exact plan and binds it to Apply. Stop must check every sealed item, including any item the reviewer leaves out of its own checklist. The benchmark list selects production behaviors. The operator still needs to check that list against the full request, including negative constraints and regression expectations; process and conditional duties need explicit checks.</p>
         <p>For projects already using strict Proposal coverage, an opt-in <code>PlanReadiness</code> check is implemented and source-tested. It is disabled by default. The host lists every actual Apply checkbox, and the reviewer must return one <code>READY</code>, <code>BLOCKED</code> or <code>UNVERIFIED</code> row per item, backed by acknowledged reads of the current plan. When enabled, strict approval requires every row to be <code>READY</code>. This checks whether the planned work and verification can proceed, separately from coverage of the requested behavior.</p>
-        <p>The installable package includes this check. Unsupported indented checkbox syntax stays unverified. Three fresh scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair. The latest real-model trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
+        <p>The installable package includes this check. Unsupported indented checkbox syntax stays unverified. Three fresh scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair. An earlier graded trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
         <div class="table" role="region" aria-label="On track, off track and unverified criteria" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Checkpoint</th><th scope="col">On track</th><th scope="col">Confirmed deviation</th><th scope="col">Unverified</th></tr></thead>
           <tbody>
@@ -230,7 +230,7 @@
         </ol>
         <p>启用严格覆盖检查时，操作员在 Proposal 前提供需求清单。审批把清单与确切的方案版本一同封存，再绑定到 Apply。Stop 必须核对全部封存条目，审查器自己列漏的项目也不能跳过。当前基准清单选取生产行为要求，仍需操作员对照完整原文，核对否定约束与既有行为的保留要求。流程及条件性义务还需明确的检查。</p>
         <p>对于已启用严格 Proposal 覆盖检查的项目，可选的 <code>PlanReadiness</code> 检查已实现并通过源码测试，默认关闭。宿主列出 Apply 的每个实际勾选项，审查器须逐项返回 <code>READY</code>、<code>BLOCKED</code> 或 <code>UNVERIFIED</code>，并引用已确认读取的当前方案。启用后，严格审批要求所有条目均为 <code>READY</code>。这项检查核对计划中的工作和验证是否具备执行条件，与功能需求覆盖分别判断。</p>
-        <p>可安装的插件包已包含这项检查。不支持的缩进勾选语法保持待验证。三项新的标准 OpenClaw 脚本对照验证了拒绝审批、正常完成和一次原生修复。最近一轮真实模型试验已连接完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
+        <p>可安装的插件包已包含这项检查。不支持的缩进勾选语法保持待验证。三项新的标准 OpenClaw 脚本对照验证了拒绝审批、正常完成和一次原生修复。此前一轮已评分的试验连接了完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
         <div class="table" role="region" aria-label="符合预期、确认偏离与待验证的标准" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">检查点</th><th scope="col">符合预期</th><th scope="col">确认偏离</th><th scope="col">待验证</th></tr></thead>
           <tbody>
@@ -255,7 +255,7 @@
         <p>The host records admission, dispatch and actual model start. A request alone is not a completed intervention. Only a started correction consumes the repair allowance; the current evaluation permits two corrections in the same workflow. The continuation must retain the authenticated approval and requirement inventory. The evaluator checks that chain independently.</p>
         <p>During an active Apply, feedback can prompt OpenClaw to gather evidence within its existing run. After Stop, missing evidence alone currently produces an unverified result without a native follow-up. A separate bounded mechanism for obtaining that evidence is still needed; it must preserve the approved requirements and cannot treat uncertainty as a confirmed defect.</p>
         <p>The intended effects are better task completion, fewer missed requirements and fewer unnecessary interruptions at a reasonable review cost. These need live measurements. Scripted controls already verify the dispatch and requirement-continuity mechanisms; they do not establish how accurately Pro diagnoses real work.</p>
-        <p>The supplied plugin has an optional origin check, disabled by default. It lists observed upstream callers before production coverage is accepted. Each candidate needs a current read and a traced handoff or a source-based exclusion; missing, stale or incomplete evidence stays unverified. Stock OpenClaw controls verified the gate, healthy completion and one native repair on an exporter example. Relevance and actual propagation still require semantic judgment. Automatic discovery currently covers JavaScript, TypeScript and ArkTS; strict mode keeps unsupported or incomplete indexes unverified. The latest real-model trial reviewed five original items with this check; the sixth remained unverified because the parser could not bound valid unbraced statements in an upstream callback.</p>
+        <p>The supplied plugin has an optional origin check, disabled by default. It lists observed upstream callers before production coverage is accepted. Each candidate needs a current read and a traced handoff or a source-based exclusion; missing, stale or incomplete evidence stays unverified. Stock OpenClaw controls verified the gate, healthy completion and one native repair on an exporter example. Relevance and actual propagation still require semantic judgment. Automatic discovery currently covers JavaScript, TypeScript and ArkTS; strict mode keeps unsupported or incomplete indexes unverified. An earlier graded trial reviewed five original items with this check; the sixth remained unverified because the parser could not bound valid unbraced statements in an upstream callback.</p>
         <p>Current citation validation checks source locations, file revisions and bindings. It cannot establish that every diagnostic is true. The recent-history view improves access to evidence, but a reviewer can still make an unsupported execution allegation. Host checks of execution ownership and freshness are proposed work. An unverified review still holds strict approval without establishing a confirmed defect.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -269,48 +269,42 @@
         <p>宿主分别记录准许执行、请求送达和模型实际启动。发出请求还不等于完成干预。只有已经启动的修正才占用额度；当前评估允许同一流程修正两次。续跑必须保留经过认证的审批和需求清单，评估器会独立核验这条执行链。</p>
         <p>Apply 仍在运行时，反馈可以促使 OpenClaw 在现有回合内补充证据。Stop 后若仅缺少证据，当前只会记录待验证，不会启动原生续跑。仍需独立、有界的取证机制，保留获批需求，并避免把不确定性当成已确认缺陷。</p>
         <p>预期效果是正确完成更多任务，减少漏掉的需求和多余打断，并让审查开销保持合理。这些效果需要实际测量。脚本对照已验证调度和需求延续机制，Pro 在真实工作中的判断准确率仍待验证。</p>
-        <p>当前交付的插件已加入可选的上游来源检查，默认关闭。接受生产覆盖前，宿主列出观察到的调用者。每个候选都需要读取当前源码，并给出传递链或基于源码的排除理由；证据缺失、过期或发现不完整时保持待验证。标准 OpenClaw 的导出器对照已验证该约束、正常完成和一次原生修复。相关性和实际参数传递仍需语义判断，自动来源发现当前覆盖 JavaScript、TypeScript 和 ArkTS；严格模式下，不支持或不完整的索引保持待验证。最近一轮真实模型试验已用这项检查审查五项原始需求；第六项因解析器无法界定上游回调中的合法无花括号语句而保留为待验证。</p>
+        <p>当前交付的插件已加入可选的上游来源检查，默认关闭。接受生产覆盖前，宿主列出观察到的调用者。每个候选都需要读取当前源码，并给出传递链或基于源码的排除理由；证据缺失、过期或发现不完整时保持待验证。标准 OpenClaw 的导出器对照已验证该约束、正常完成和一次原生修复。相关性和实际参数传递仍需语义判断，自动来源发现当前覆盖 JavaScript、TypeScript 和 ArkTS；严格模式下，不支持或不完整的索引保持待验证。此前一轮已评分的试验用这项检查审查了五项原始需求；第六项因解析器无法界定上游回调中的合法无花括号语句而保留为待验证。</p>
         <p>当前引用校验会核对原文位置、文件版本和绑定关系，但不能证明每项诊断都属实。近期历史视图改善了证据访问，审查器仍可能提出缺少依据的执行指控。由宿主核对执行证据归属和新鲜度，目前仍是拟开展的工作。待验证的审查仍会阻止严格审批，但不足以认定存在已确认缺陷。</p>
       </div>
     </section>
     <section id="expected" aria-labelledby="expected-title expected-title-zh">
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">One task through the whole workflow</h2>
-        <p class="callout">In the most recent graded macOS Sudoku trial, ON reached full-plan review, authenticated approval, implementation, Stop review, candidate freeze and independent grading. It passed 8/10 target tests and 288/288 regressions. Stop kept one requirement unverified because of unsupported parser syntax; it did not declare the implementation fully reviewed. No native repair started.</p>
-        <p>A fresh ON-only walkthrough has finished using the qualified requirement-identity fix. Authenticated approval bound all six original requirements to its 15-task plan, and final Stop retained the same inventory. All 15 tasks were completed, the plan was preserved and all six public acceptance checks passed. Stop still returned <code>UNVERIFIED</code>; its unresolved evidence is being examined. The candidate is frozen, temporary credentials and tracked process groups are cleaned up, and independent grading is being prepared. This single-arm trial adds no formal matched pair.</p>
-        <p>The preceding ON-only run completed four valid planning documents, then stopped at approval. Two covered rows kept the expected requirement text but changed its original-source anchors, leaving only 4/6 canonical matches. The document validator had not enforced the full mandatory set; strict approval did not pass. Apply never started, and the frozen business patch is empty. That run made 82 model requests, produced no implementation grade, and cleaned up its temporary credentials and tracked groups.</p>
-        <p class="intro">Flash coded both arms, with Pro reviewing ON and a 120-minute business limit per arm. OFF used 70 Flash requests and took 9.2 minutes. ON used 56 Flash and 79 Pro requests and took 37.7 minutes; 57 Pro requests were document reviews and 22 were Stop reviews. Token records are incomplete, so no total token figure is reported.</p>
+        <p class="callout">The latest macOS Sudoku walkthrough carried the same six original requirements through authenticated approval and final Stop. All 15 planned tasks were completed, and six public acceptance checks passed. Independent grading passed 8/10 feature tests and 288/288 regressions. Stop kept the review <code>UNVERIFIED</code>, and no native repair started.</p>
+        <p>This is an ON-only engineering trial with a 120-minute workflow limit. It took about 26.6 minutes. Trusted SDK records identify 55 Flash and 76 Pro requests; these establish the selected model routes, not the provider’s internal model execution. Document-review token records are incomplete, so no total token figure is reported.</p>
         <div class="table" role="region" aria-label="Latest Sudoku walkthrough" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Evidence and limits</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Proposal and approval</th><td>ON covered all six original requirements and returned <code>READY</code> for every item in its 16-task plan. The saved approval bound that exact plan and requirement inventory to Apply.</td><td>The complete readiness and approval chain ran. The initial checklist differed before any readiness finding, so the difference cannot be credited to corrective feedback.</td></tr>
-            <tr><th scope="row">Apply</th><td>ON completed 16/16 tasks and passed public acceptance. Stop confirmed the approved plan was preserved, with only checkbox states changed.</td><td>A supporting test failed and then passed during ordinary implementation. That was OpenClaw’s own rework, not a native correction.</td></tr>
-            <tr><th scope="row">An unnecessary warning</th><td>A reviewer demanded a test rerun while acknowledging that no acceptance-driven fix had occurred, even though such a fix was the original trigger. Delivered feedback was followed by another test; a manual recheck cleared the finding.</td><td>The warning added work without a demonstrated code-quality benefit. The plugin’s general conditional guidance is revised; a separate Pro pilot remains inconclusive and exposed a document-coverage contract issue.</td></tr>
-            <tr><th scope="row">Final requirement review</th><td>The final checklist retained all six original items. Five had accepted current source and origin reviews; one remained <code>UNVERIFIED</code>. No confirmed deviation or native repair was recorded.</td><td>Two valid unbraced cleanup statements made the routing callback unsupported by the origin parser. The all-six completion observer correctly refused a clean result. A generic parser fix passed focused checks and installed OpenClaw controls. The saved trial remains unverified.</td></tr>
-            <tr><th scope="row">OFF comparison</th><td>OFF preserved its plan but completed 17/18 tasks. Its self-authored required lint check was already declared unverified during planning, and remained unchecked.</td><td>OFF ended with <code>OPENSPEC_APPLY_INCOMPLETE</code>. Source command examples do not establish a universal obligation to run that exact command; genuinely mandatory checks must still be retained.</td></tr>
-            <tr><th scope="row">Independent grades</th><td>ON received a formal standalone grade; OFF was graded separately for diagnosis. Both completed all 298 original tests: 8/10 target passes and 288/288 regression passes, with identical individual outcomes.</td><td>Zero runtime errors and no measured score gain. OFF’s diagnostic grade does not change its eligibility. No formal matched pair was added.</td></tr>
+            <tr><th scope="row">Proposal and approval</th><td>The complete four-document plan covered all six mandatory source identities. All 15 checklist items were <code>READY</code>, and authenticated approval bound that exact inventory to Apply.</td><td>The preceding attempt stopped with only 4/6 matching identities. The validator now rejects omitted identities or substituted source anchors before accepting the full review. This run passed that boundary.</td></tr>
+            <tr><th scope="row">Apply</th><td>All 15 tasks were completed. Stop confirmed the approved plan was preserved, and all six public acceptance checks passed.</td><td>Task completion and public checks do not establish complete production coverage or independent benchmark quality.</td></tr>
+            <tr><th scope="row">Final requirement review</th><td>The host retained the same six requirements and returned <code>UNVERIFIED</code>. It recorded no confirmed deviation.</td><td>The joined workspace table reports two missing or foreign origin receipts and four unresolved opaque-source cases. Those individual reasons lack a host-retained content digest in this release; they remain diagnostic observations.</td></tr>
+            <tr><th scope="row">Correction</th><td>No native correction was admitted or started.</td><td>Missing evidence alone currently ends as unverified. This run does not demonstrate a successful live repair or prove that the code has a defect.</td></tr>
+            <tr><th scope="row">Freeze and independent grade</th><td>A fresh private worker graded the nonempty frozen patch: 8/10 feature passes, 288/288 regression passes and zero runtime errors. All 298 original test outcomes are accounted for.</td><td>Original tests and the compiled test runner were preserved; candidate-authored tests were excluded. Cleanup and frozen-input integrity were verified. This diagnostic grade adds no formal matched pair or demonstrated quality gain.</td></tr>
           </tbody>
         </table></div>
-        <p>This trial exercised the planning-to-grading path and exposed two limits: an unsupported conditional warning and a conservative syntax gap. It did not demonstrate a quality gain from correction. The frozen trial retains its original plugin and results; proposed fixes are evaluated separately. The temporary provider profile was removed and the device lock was released.</p>
+        <p>An independent fictional reproduction traced one review blockage to ordinary division in unrelated code. It makes the origin parser return uncertainty for queries elsewhere. Other receipts report an unresolved event callback; the retained record does not explain the two final missing-receipt labels. These are separate issues. The next fixes address general syntax handling and host-retained final evidence. The saved run keeps its original plugin and results.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">沿一个任务走完整个流程</h2>
-        <p class="callout">最近一轮取得独立评分的 macOS Sudoku 试验中，ON 走完了完整方案审查、经过认证的审批、实现、Stop 审查、候选冻结及独立评分。目标测试通过 8/10，回归测试通过 288/288。Stop 因解析器不支持的语法而将一项需求保留为待验证，没有把实现标为已全面核查。没有启动原生修复。</p>
-        <p>全新的 ON 单组全过程试验已使用通过验证的需求身份修正并结束。经过认证的审批把六项原始需求绑定到 15 项任务，最终 Stop 保留了同一份需求清单。15 项任务全部完成，方案保持不变，六项公开验收检查全部通过。Stop 仍返回 <code>UNVERIFIED</code>，尚未核实的证据正在排查。候选代码已冻结，临时密钥配置和跟踪的进程组已清理，独立评分正在准备。本次单组试验没有增加正式匹配配对。</p>
-        <p>此前一次 ON 单组运行完成四份通过格式校验的规划文档后，在审批处停止。两条覆盖记录保留了要求原文，却改变了原始来源锚点，导致只有 4/6 项身份匹配。文档校验器此前没有强制核对完整的必需集合，严格审批未通过。Apply 没有启动，冻结的业务补丁为空。该次运行发起 82 次模型请求，没有产生实现评分，临时密钥配置和所属进程组均已清理。</p>
-        <p class="intro">两组均由 Flash 编码，ON 由 Pro 审查，每组业务时限为 120 分钟。OFF 使用 70 次 Flash 请求，耗时 9.2 分钟。ON 使用 56 次 Flash 加 79 次 Pro 请求，耗时 37.7 分钟；其中 57 次 Pro 用于文档审查，22 次用于 Stop 审查。令牌记录不完整，因此不报告总令牌数。</p>
+        <p class="callout">最近一次 macOS Sudoku 全过程试验，将同样六项原始需求从经过认证的审批保留到最终 Stop。15 项计划任务全部完成，六项公开验收检查全部通过。独立评分中，功能测试通过 8/10，回归测试通过 288/288。Stop 将审查保留为 <code>UNVERIFIED</code>，没有启动原生修复。</p>
+        <p>这是一次 ON 单组工程试验，工作流时限为 120 分钟，实际耗时约 26.6 分钟。可信 SDK 记录标明 55 次 Flash 和 76 次 Pro 请求，证明所选模型路由，不能证明服务商内部实际执行的模型。文档审查令牌记录不完整，因此不报告总令牌数。</p>
         <div class="table" role="region" aria-label="最新 Sudoku 运行全过程" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">证据与局限</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Proposal 与审批</th><td>ON 覆盖全部六项原始需求，16 项任务全部通过 <code>READY</code> 判断。保存的审批记录将这份精确方案及需求清单绑定到 Apply。</td><td>完整的就绪检查和审批链已运行。初始清单在就绪审查提出问题前就已不同，不能将差异归功于纠偏反馈。</td></tr>
-            <tr><th scope="row">Apply</th><td>ON 完成 16/16 项任务，通过公开验收。Stop 确认获批方案保留，只有勾选状态发生变化。</td><td>一项辅助测试在普通实现过程中先失败、后通过。这是 OpenClaw 的普通自我修正，没有启动原生纠偏。</td></tr>
-            <tr><th scope="row">一次多余的警告</th><td>审查器要求重测，同时承认没有发生验收反馈促成的修复，而这正是原文规定的触发条件。反馈送达后又执行了一次测试，随后手动复查清除了问题。</td><td>警告增加了工作，没有证明代码质量提高。插件的通用条件性指引已修订，另行开展的 Pro 小型对照尚无定论，并暴露了一项文档覆盖契约问题。</td></tr>
-            <tr><th scope="row">最终需求审查</th><td>最终清单保留全部六项原始需求。其中五项取得当前源码和来源审查，一项仍为 <code>UNVERIFIED</code>。没有记录已确认的偏离或原生修复。</td><td>两条合法的无花括号清理语句，使来源解析器无法完整处理路由回调。要求六项全部完成的观察器正确拒绝了干净结果。通用解析修正已通过针对性检查和已安装的 OpenClaw 对照，已保存的试验结果仍为待验证。</td></tr>
-            <tr><th scope="row">OFF 对照</th><td>OFF 保留方案，但只完成 17/18 项任务。它自行列为必需的 lint 检查在规划时已记为待验证，最终仍未勾选。</td><td>OFF 以 <code>OPENSPEC_APPLY_INCOMPLETE</code> 结束。原文中的命令示例不能证明每次都必须执行该条命令；确实必需的检查仍须保留。</td></tr>
-            <tr><th scope="row">独立评分</th><td>ON 取得正式单组评分，OFF 另行执行诊断评分。两组均执行完全部 298 项原始测试：目标测试通过 8/10，回归测试通过 288/288，逐项结果完全相同。</td><td>运行时错误为零，没有测得分数收益。OFF 的诊断评分不改变其资格，没有增加正式匹配配对。</td></tr>
+            <tr><th scope="row">Proposal 与审批</th><td>四份完整方案文档覆盖了六项必需来源身份，15 项任务全部通过 <code>READY</code> 判断。经过认证的审批将这份精确清单绑定到 Apply。</td><td>前一次尝试只有 4/6 项身份匹配而停止。校验器现会在接受完整审查前拒绝遗漏身份或替换来源锚点。本次运行已通过该边界。</td></tr>
+            <tr><th scope="row">Apply</th><td>15 项任务全部完成。Stop 确认获批方案保持不变，六项公开验收检查全部通过。</td><td>完成任务和通过公开检查，不能证明全部实际运行路径均已覆盖，也不能代替独立基准评分。</td></tr>
+            <tr><th scope="row">最终需求审查</th><td>宿主保留了同样六项需求，返回 <code>UNVERIFIED</code>，没有记录已确认的偏离。</td><td>关联的工作区表格记录了两项来源回执缺失或归属不符，以及四项未解析源码。该版本未在宿主保留这些逐项原因的内容摘要，因此它们仍是诊断观察。</td></tr>
+            <tr><th scope="row">纠偏</th><td>没有原生纠偏获得准入或实际启动。</td><td>当前仅缺少证据时，会以待验证结束。本次运行不能证明真实修复成功，也不能证明代码存在缺陷。</td></tr>
+            <tr><th scope="row">冻结与独立评分</th><td>全新私有工作区已评估非空冻结补丁：功能测试通过 8/10，回归测试通过 288/288，运行时错误为零。全部 298 项原始测试结果均已核对。</td><td>原始测试及编译后的测试运行器保持不变，没有使用候选代码自行添加的测试。清理与冻结输入完整性均已核验。本次诊断评分没有增加正式匹配配对，也未证明质量收益。</td></tr>
           </tbody>
         </table></div>
-        <p>本轮实际走通了从规划到评分的路径，也暴露出两项局限：缺少依据的条件性警告，以及保守的语法支持缺口。尚未证明纠偏带来质量收益。冻结试验保留原插件和结果，拟议修正另行评估。临时模型服务配置已删除，设备锁已释放。</p>
+        <p>独立的虚构项目复现已把一项审查阻塞定位到无关代码中的普通除法：它让来源解析器对其他位置的查询也返回不确定。另有回执报告事件回调无法解析，而保存的记录不足以解释最终两项回执缺失标签。这些问题需要分别处理。下一步修正通用语法处理，并补全宿主保存的最终审查证据。已保存的运行保留原插件和结果。</p>
       </div>
     </section>
     <section id="results" aria-labelledby="results-title results-title-zh">
@@ -324,7 +318,7 @@
           <div><dt>Phone tasks passed preflight</dt><dd>3 / 3</dd><dd class="caption">Public and independent native controls</dd></div>
           <div><dt>PC tasks qualified</dt><dd>0 / 10</dd><dd class="caption">Native failures; unit backend remains experimental</dd></div>
         </dl>
-        <p>The latest trial adds one verified standalone ON grade and a separate OFF diagnostic grade. Every original test outcome is identical between arms, with no formal matched comparison or measured repair benefit. An earlier ON workflow completed approval, implementation and Stop review using the same requirements. Reliable detection and repair of missed production paths still need evaluation on tasks held out from development. A task may fail its independent grade while providing useful mechanism evidence; a score change alone cannot establish that correction helped.</p>
+        <p>The latest single-arm diagnostic scored 8/10 feature tests and 288/288 regressions. The preceding graded pair had the same score in both arms, with identical individual outcomes. Neither establishes a measured repair benefit or adds a formal matched comparison. Reliable detection and repair of missed production paths still need evaluation on tasks held out from development. A task may fail its independent grade while providing useful mechanism evidence; a score change alone cannot establish that correction helped.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="results-title-zh">13 个任务的基准测试进展</h2>
@@ -336,7 +330,7 @@
           <div><dt>通过预检的手机任务</dt><dd>3 / 3</dd><dd class="caption">公开检查及独立原生对照</dd></div>
           <div><dt>已取得环境资格的 PC 任务</dt><dd>0 / 10</dd><dd class="caption">原生路径有故障，单元后端仍属实验</dd></div>
         </dl>
-        <p>最近一轮取得了经核验的 ON 单组评分和单独的 OFF 诊断评分，两组全部原始测试逐项结果相同，没有增加正式匹配比较，也未测得修复收益。更早一条 ON 工作流已完成审批、实施和沿用同一份需求的 Stop 审查。纠偏器能否可靠发现并修复遗漏的实际运行路径，仍需用未参与开发调优的任务评估。任务即使未通过独立评分，也可能提供有用的机制证据；仅凭分数变化，不能认定纠偏有效。</p>
+        <p>最新单组诊断中，功能测试通过 8/10，回归测试通过 288/288。此前已评分的配对中，两组分数相同，逐项结果也完全一致。这些结果均未测得修复收益，也没有增加正式匹配比较。纠偏器能否可靠发现并修复遗漏的实际运行路径，仍需用未参与开发调优的任务评估。任务即使未通过独立评分，也可能提供有用的机制证据；仅凭分数变化，不能认定纠偏有效。</p>
       </div>
       <details class="evidence-group">
         <summary><span data-report-copy lang="en">Supporting controls on the installed plugin</span><span data-report-copy lang="zh-CN">可安装插件的机制验证</span></summary>
@@ -379,6 +373,12 @@
         <summary><span data-report-copy lang="en">What the earlier evidence can establish</span><span data-report-copy lang="zh-CN">此前证据能够说明什么</span></summary>
         <div class="language-panel" data-report-copy lang="en">
           <p>A separate launch stopped before model calls because its sandbox allowed writing the shared build lock but not reading it. The narrow permission correction passed an offline dependency probe without a key. The failed launch and its cleanup remain recorded; it produced no benchmark score.</p>
+          <h3>The requirement-identity failure</h3>
+          <p>The run before the current walkthrough completed four valid planning documents, then stopped at approval. Two covered rows kept the expected requirement text but changed its original-source anchors, leaving only 4/6 canonical matches. The document validator had not enforced the full mandatory set; strict approval did not pass. Apply never started and the frozen business patch was empty. That run made 82 model requests, produced no implementation grade and cleaned up its temporary credentials and tracked groups.</p>
+          <h3>The preceding graded pair</h3>
+          <p>ON obtained authenticated approval for all six requirements, completed 16/16 tasks and preserved its plan. Final Stop reviewed five original items and left one unverified because two valid unbraced cleanup statements exceeded the origin parser’s supported syntax. No confirmed deviation or native repair was recorded. The saved result stays unverified after the generic parser fix.</p>
+          <p>A conditional warning also demanded another test while acknowledging that its stated trigger had not occurred. Delivered feedback was followed by an extra passing test, and a manual recheck cleared the warning. The revised guidance and a separate inconclusive Pro pilot do not establish better live judgment.</p>
+          <p>OFF completed 17/18 tasks; a self-authored mandatory lint check had no available executor. It remained workflow-ineligible. ON’s standalone grade and OFF’s separate diagnostic grade both accounted for all 298 original tests: 8/10 feature passes, 288/288 regression passes and zero runtime errors, with identical individual outcomes. OFF used 70 Flash requests in 9.2 minutes; ON used 56 Flash and 79 Pro requests in 37.7 minutes. Document token records were incomplete. No formal matched pair or quality gain was added.</p>
           <h3>An earlier completed workflow</h3>
           <p>An earlier paid macOS Sudoku trial used Flash for coding and Pro for review, with the same 120-minute business limit per arm. ON finished the workflow and retained all six requirement IDs. A post-run audit found a required input handoff still missing. ON used 62 Flash and 77 Pro requests and took about 51.3 minutes.</p>
           <div class="table" role="region" aria-label="Earlier completed Sudoku walkthrough" tabindex="0"><table class="evidence">
@@ -408,6 +408,12 @@
         </div>
         <div class="language-panel" data-report-copy lang="zh-CN">
           <p>另一次启动在模型调用前停止，原因是沙箱允许写入共享构建锁，却不允许读取。最小权限修正已在不使用密钥的离线依赖探测中通过。该次启动失败及清理记录仍保留，没有产生基准评分。</p>
+          <h3>需求身份校验失败</h3>
+          <p>当前全过程试验之前的一次运行，完成四份格式有效的规划文档后，在审批处停止。两条覆盖记录保留了要求原文，却改变了原始来源锚点，导致只有 4/6 项身份匹配。文档校验器此前没有强制核对完整的必需集合，严格审批未通过。Apply 没有启动，冻结的业务补丁为空。该次运行发起 82 次模型请求，没有产生实现评分，临时密钥配置和跟踪的进程组均已清理。</p>
+          <h3>此前已评分的配对</h3>
+          <p>ON 取得全部六项需求的认证审批，完成 16/16 项任务，方案保持不变。最终 Stop 审查了五项原始需求，另一项因两条合法的无花括号清理语句超出来源解析器支持范围而保留为待验证。没有记录已确认的偏离或原生修复。通用解析修正完成后，原试验结果仍为待验证。</p>
+          <p>一次条件性警告还在承认触发条件未发生的同时，要求再执行一次测试。反馈送达后增加了一次通过的测试，手动复查随后清除了警告。修订后的指引及另一次尚无定论的 Pro 小型对照，不能证明真实判断已改善。</p>
+          <p>OFF 完成 17/18 项任务，自行列为必需的 lint 检查没有可用执行工具，仍不具备工作流资格。ON 的单组评分与 OFF 的独立诊断评分均核对完全部 298 项原始测试：功能测试通过 8/10，回归测试通过 288/288，运行时错误为零，逐项结果一致。OFF 使用 70 次 Flash 请求，耗时 9.2 分钟；ON 使用 56 次 Flash 和 79 次 Pro 请求，耗时 37.7 分钟。文档令牌记录不完整。没有增加正式匹配配对，也未测得质量收益。</p>
           <h3>更早一次完成的工作流</h3>
           <p>更早一组 macOS Sudoku 付费试验由 Flash 编码、Pro 审查，每组业务时限同样为 120 分钟。ON 完成工作流，并保留全部六项需求编号。事后审计发现，一条必需的输入传递仍有遗漏。ON 共使用 62 次 Flash、77 次 Pro 请求，耗时约 51.3 分钟。</p>
           <div class="table" role="region" aria-label="此前已完成的 Sudoku 运行全过程" tabindex="0"><table class="evidence">
