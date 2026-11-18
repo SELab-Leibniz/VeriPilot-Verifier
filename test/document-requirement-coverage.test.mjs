@@ -203,12 +203,20 @@ test('required Proposal navigation does not grant source reads or coverage and d
   const requested = requiredAtoms.map(({ requirement, start, end, source }) => ({ requirement, source: { ref, start, end, sha256: source.sha256 } }));
   const approve = coverage => sealRequiredProposalCoverage(requested, [{ ref, text: originalText }],
     { ...coverage, reviewStatus: 'PASSED' }); // This fixture assumes a completed, successful host review.
-  const partial = await receiptFor([firstRow, row(anchor.anchorId, { requirement: 'Restore the prior saved ordering when reopened.' })]);
-  assert.equal(partial.rows.length, 2, 'another valid row can remain optional coverage evidence');
-  assert.throws(() => approve(partial), /coverage is incomplete \(1\/2\)/u);
+  const optional = row(anchor.anchorId, { requirement: 'Restore the prior saved ordering when reopened.' });
+  await assert.rejects(receiptFor([firstRow, optional]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.equal(error.coverageIssue.kind, 'MISSING_REQUIRED_PROPOSAL_IDENTITIES');
+    assert.equal(error.coverageIssue.missingCount, 1);
+    assert.equal(error.coverageIssue.missing[0].requirement, requiredAtoms[1].requirement);
+    return true;
+  });
   const both = await receiptFor([firstRow, row(anchor.anchorId, { requirement: requiredAtoms[1].requirement })]);
   assert.equal(approve(both).requiredAtoms.length, 2);
-  assert.equal(await receiptFor([]), null);
+  const extra = await receiptFor([firstRow, row(anchor.anchorId, { requirement: requiredAtoms[1].requirement }), optional]);
+  assert.equal(extra.rows.length, 3, 'valid optional rows remain distinct after all mandatory identities are present');
+  assert.equal(approve(extra).requiredAtoms.length, 2);
+  assert.throws(() => approve({ ...both, rows: both.rows.slice(0, 1) }), /coverage is incomplete \(1\/2\)/u);
   await assert.rejects(f.openTools({ requiredAtoms: [{ ...requiredAtoms[0], start: 1 }] }), /DOCUMENT_REQUIRED_PROPOSAL_INVALID/u);
   await assert.rejects(f.openTools({ requiredAtoms: [requiredAtoms[0], requiredAtoms[0]] }), /DOCUMENT_REQUIRED_PROPOSAL_INVALID/u);
 });
@@ -226,13 +234,74 @@ test('required Proposal navigation stays within the existing document tool byte 
     start = page.nextStart;
   }
   assert.deepEqual(seen, requiredAtoms.map(item => item.requirement));
+  await assert.rejects(f.tools.verifyRequirementCoverage([]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.equal(error.coverageIssue.missingCount, requiredAtoms.length);
+    assert(error.coverageIssue.missing.length > 0 && error.coverageIssue.missing.length <= 4);
+    assert.equal(error.coverageIssue.remainingCount + error.coverageIssue.missing.length, requiredAtoms.length);
+    assert(Buffer.byteLength(error.message) <= 8192, 'missing-identity feedback remains bounded for large Unicode inventories');
+    return true;
+  });
 });
 
-test('native reviewer receives the inventory only through its bound document tool and omissions do not trigger a retry', async t => {
+test('mandatory coverage rejects omitted and empty tables without changing optional-table semantics', async t => {
+  const requiredAtoms = [candidateAtom('Retain the saved sort order.')];
+  const strict = await fixture(t, { requiredAtoms }), optional = await fixture(t);
+  for (const rows of [undefined, null, []]) {
+    await assert.rejects(strict.tools.verifyRequirementCoverage(rows), error => {
+      assert.equal(error.code, invalid.code);
+      assert.equal(error.coverageIssue.kind, 'MISSING_REQUIRED_PROPOSAL_IDENTITIES');
+      assert.equal(error.coverageIssue.missingCount, 1);
+      assert.deepEqual(error.coverageIssue.missing[0], { originalSourceAnchorId: requiredAtoms[0].source.anchorId,
+        requirement: requiredAtoms[0].requirement, readOriginal: { action: 'read_original', ref, start: 2, count: 1 } });
+      return true;
+    });
+    assert.equal(await optional.tools.verifyRequirementCoverage(rows), null);
+  }
+});
+
+test('identical wording on another issued source anchor cannot replace a required identity', async t => {
+  const requiredAtoms = [candidateAtom('Retain the saved sort order.')];
+  const f = await fixture(t, { requiredAtoms });
+  const wrong = await f.tools.execute({ action: 'read_original', ref, start: 1, count: 1 });
+  await f.tools.execute({ action: 'open' });
+  const wrongRow = row(wrong.anchor.anchorId, { requirement: requiredAtoms[0].requirement });
+  await assert.rejects(f.tools.verifyRequirementCoverage([wrongRow]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.equal(error.coverageIssue.missing[0].originalSourceAnchorId, requiredAtoms[0].source.anchorId);
+    assert.match(error.message, /Read the exact listed spans/u);
+    return true;
+  });
+  const exact = await f.readOriginal(), correctRow = row(exact.anchor.anchorId, { requirement: requiredAtoms[0].requirement });
+  await assert.rejects(f.tools.verifyRequirementCoverage([correctRow, correctRow]), /distinct obligation/u);
+  assert.equal((await f.tools.verifyRequirementCoverage([correctRow])).rows[0].source.anchorId, exact.anchor.anchorId);
+});
+
+test('same-wording mandatory sources remain distinct and permit honest GAP or UNVERIFIED coverage', async t => {
+  const requiredAtoms = [candidateAtom('Preserve the requested preference.', 2), candidateAtom('Preserve the requested preference.', 3)];
+  const f = await fixture(t, { requiredAtoms });
+  const first = await f.readOriginal(), second = await f.tools.execute({ action: 'read_original', ref, start: 3, count: 1 });
+  await f.read(proposal, 1, 4); await f.read(spec, 1, 3);
+  const firstRow = row(first.anchor.anchorId, { requirement: requiredAtoms[0].requirement,
+    disposition: 'UNVERIFIED', reason: 'This review cannot establish coverage.', targets: [] });
+  const secondRow = row(second.anchor.anchorId, { requirement: requiredAtoms[1].requirement,
+    disposition: 'GAP', reason: 'The complete plan does not state this source obligation.', targets: [] });
+  await assert.rejects(f.tools.verifyRequirementCoverage([firstRow]), invalid);
+  const mixed = await f.tools.verifyRequirementCoverage([firstRow, secondRow]);
+  assert.deepEqual(mixed.rows.map(item => item.disposition), ['UNVERIFIED', 'GAP']);
+  const unverified = await f.tools.verifyRequirementCoverage([firstRow, { ...secondRow, disposition: 'UNVERIFIED' }]);
+  assert.deepEqual(unverified.rows.map(item => item.disposition), ['UNVERIFIED', 'UNVERIFIED']);
+  const requested = requiredAtoms.map(({ requirement, start, end, source }) => ({ requirement,
+    source: { ref, start, end, sha256: source.sha256 } }));
+  for (const receipt of [mixed, unverified]) assert.throws(() => sealRequiredProposalCoverage(requested,
+    [{ ref, text: originalText }], { ...receipt, reviewStatus: 'PASSED' }), /required Proposal atom lacks unambiguous current coverage/u);
+});
+
+test('one native format repair restores exact mandatory identities while preserving optional uncertainty', async t => {
   const requiredAtoms = [candidateAtom('Retain the saved sort order.')];
   const f = await fixture(t);
   await fs.writeFile(f.requestPath, JSON.stringify(f.semantic));
-  let documentTool, calls = 0;
+  let documentTool, calls = 0, optionalRow;
   const api = { config: { agents: { defaults: { model: 'fixture/model' } } }, logger: { warn() {} },
     registerTool(factory) { documentTool = factory; }, runtime: { version: '2026.7.1-2', agent: { async runEmbeddedAgent(params) {
       calls++;
@@ -245,10 +314,21 @@ test('native reviewer receives the inventory only through its bound document too
       const page = await call({ action: 'required_proposal' });
       assert.equal(page.items[0].requirement, requiredAtoms[0].requirement);
       const result = { summary: 'Current proposal review.', findings: [], edits: [] };
-      if (calls === 2) {
+      await call({ action: 'open' });
+      if (calls === 1) {
+        const wrong = await call({ action: 'read_original', ref, start: 1, count: 1 });
+        const optional = await call({ action: 'read_original', ref, start: 3, count: 1 });
+        optionalRow = row(optional.anchor.anchorId, { requirement: 'Treat invalid values as unknown.',
+          disposition: 'UNVERIFIED', reason: 'The current plan does not establish this optional coverage.', targets: [] });
+        result.originalRequirementCoverage = [row(wrong.anchor.anchorId, { requirement: page.items[0].requirement }), optionalRow];
+      } else {
+        assert.equal(calls, 2, 'Only the one authorized format repair may run.');
+        assert.match(params.prompt, /MISSING_REQUIRED_PROPOSAL_IDENTITIES/u);
+        assert(params.prompt.includes(requiredAtoms[0].source.anchorId));
+        assert(params.prompt.includes(JSON.stringify(page.items[0].readOriginal)));
         const original = await call(page.items[0].readOriginal);
         await call({ action: 'read', path: proposal, start: 2, count: 1 });
-        result.originalRequirementCoverage = [row(original.anchor.anchorId, { requirement: page.items[0].requirement })];
+        result.originalRequirementCoverage = [row(original.anchor.anchorId, { requirement: page.items[0].requirement }), optionalRow];
       }
       return { payloads: [{ text: JSON.stringify(result) }], meta: {} };
     } } } };
@@ -257,17 +337,15 @@ test('native reviewer receives the inventory only through its bound document too
   const input = { projectRoot: f.root, taskId: 'required-proposal-coverage', role: 'artifact-reviewer', pluginRoot: path.resolve('.'),
     reviewer: { session: 'detached', timeoutMs: 5000, formatRepairAttempts: 1 }, schema: REVIEW_SCHEMA,
     request: { semanticReviewRequestPath: f.requestPath }, evidence: { snapshot: f.snapshot, requiredProposalReview: { requiredAtoms } } };
-  const omitted = await factory(input);
-  assert.equal(omitted.originalRequirementCoverage, null);
-  assert.equal(calls, 1);
-  const request = JSON.parse(await fs.readFile(path.join(omitted.requestDirectory, 'request.json'), 'utf8'));
+  const repaired = await factory(input);
+  assert.equal(calls, 2);
+  assert.equal(repaired.originalRequirementCoverage.rows[0].requirement, requiredAtoms[0].requirement);
+  assert.deepEqual(repaired.originalRequirementCoverage.rows[0].source, requiredAtoms[0].source);
+  assert.equal(repaired.originalRequirementCoverage.rows[1].disposition, 'UNVERIFIED');
+  const request = JSON.parse(await fs.readFile(path.join(repaired.requestDirectory, 'request.json'), 'utf8'));
   assert.equal(request.requiredProposalReview, undefined);
-  await omitted.close();
-  assert.equal(documentTool({ sessionId: omitted.sessionId }), null);
-  const exact = await factory(input);
-  assert.equal(calls, 2, 'an explicitly requested next round does not reuse an omitted strict receipt');
-  assert.equal(exact.originalRequirementCoverage.rows[0].requirement, requiredAtoms[0].requirement);
-  await exact.close();
+  await repaired.close();
+  assert.equal(documentTool({ sessionId: repaired.sessionId }), null);
 });
 
 test('native repair receives artifact scope and keeps required Proposal coverage while a code check remains unverified', async t => {
