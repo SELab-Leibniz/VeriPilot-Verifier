@@ -24,6 +24,7 @@ const requirement = '保留已保存的排序。';
 const originalText = `${prefix}${requirement}\r\nTreat invalid values as unknown.\n`;
 const ref = 'transcript:preferences';
 const invalid = { code: 'DOCUMENT_REQUIREMENT_COVERAGE_INVALID' };
+const declaredArtifacts = [{ path: proposal, start: 1, end: 4 }, { path: spec, start: 1, end: 3 }];
 const candidateAtom = (requirement, start = 2, end = start) => ({ requirement, start, end,
   source: createOriginalSourceAnchor({ ref, sha256: sha256(originalText), bytes: Buffer.from(originalText), start, end }) });
 
@@ -76,7 +77,21 @@ test('unread anchors, unread ranges, and gaps between disclosed pages cannot sup
   await assert.rejects(f.tools.verifyRequirementCoverage([row(`original-source-${'0'.repeat(64)}`)]), invalid);
   const { anchor } = await f.readOriginal();
   await f.tools.execute({ action: 'manifest' });
-  await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId)]), invalid);
+  await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId)]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.deepEqual(error.coverageIssue, { row: 1, kind: 'TARGET_NOT_DISCLOSED',
+      target: { path: proposal, start: 2, end: 2 }, declaredArtifacts });
+    return true;
+  });
+  await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId, {
+    targets: [{ path: proposal, start: 2, end: 5 }],
+  })]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.equal(error.coverageIssue.kind, 'TARGET_OUT_OF_RANGE');
+    assert.deepEqual(error.coverageIssue.target, { path: proposal, start: 2, end: 5 });
+    assert.match(error.message, /physical line range 1-4/u);
+    return true;
+  });
   await f.read(proposal, 1, 1);
   await f.read(proposal, 3, 1);
   const span = row(anchor.anchorId, { targets: [{ path: proposal, start: 1, end: 3 }] });
@@ -93,7 +108,14 @@ test('a readable requirements reference remains outside the declared plan target
   assert.equal((await f.read(reference, 1, 1)).lines[0], `1: ${requirement}`);
   await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId, {
     targets: [{ path: reference, start: 1, end: 1 }],
-  })]), invalid);
+  })]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.deepEqual(error.coverageIssue, { row: 1, kind: 'OUTSIDE_ARTIFACT_SCOPE',
+      target: { path: reference, start: 1, end: 1 }, declaredArtifacts });
+    assert(error.message.includes(JSON.stringify({ path: reference, start: 1, end: 1 })));
+    assert(error.message.includes(JSON.stringify(declaredArtifacts)));
+    return true;
+  });
 });
 
 test('a gap without a target requires reading the whole declared plan scope', async t => {
@@ -115,7 +137,12 @@ test('a read original can be explicitly unverified while plan evidence is incomp
   const f = await fixture(t);
   const { anchor } = await f.readOriginal();
   assert.equal(await f.tools.verifyRequirementCoverage([]), null);
-  await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId, { targets: [] })]), /Cite at least one/u);
+  await assert.rejects(f.tools.verifyRequirementCoverage([row(anchor.anchorId, { targets: [] })]), error => {
+    assert.equal(error.code, invalid.code);
+    assert.deepEqual(error.coverageIssue, { row: 1, kind: 'EMPTY_COVERED_TARGETS', target: null, declaredArtifacts });
+    assert.match(error.message, /Cite at least one/u);
+    return true;
+  });
   const receipt = await f.tools.verifyRequirementCoverage([row(anchor.anchorId, {
     disposition: 'UNVERIFIED', reason: 'The relevant plan clauses were not read.', targets: [],
   })]);
@@ -241,4 +268,66 @@ test('native reviewer receives the inventory only through its bound document too
   assert.equal(calls, 2, 'an explicitly requested next round does not reuse an omitted strict receipt');
   assert.equal(exact.originalRequirementCoverage.rows[0].requirement, requiredAtoms[0].requirement);
   await exact.close();
+});
+
+test('native repair receives artifact scope and keeps required Proposal coverage while a code check remains unverified', async t => {
+  const requiredAtoms = [candidateAtom('Retain the saved sort order.')];
+  const f = await fixture(t);
+  const implementation = 'src/preferences.mjs';
+  await f.write(implementation, "export const normalize = value => ['asc', 'desc'].includes(value) ? value : 'unknown';\n");
+  await fs.writeFile(f.requestPath, JSON.stringify(f.semantic));
+  let documentTool, calls = 0, initialRows;
+  const api = { config: { agents: { defaults: { model: 'fixture/model' } } }, logger: { warn() {} },
+    registerTool(factory) { documentTool = factory; }, runtime: { version: '2026.7.1-2', agent: { async runEmbeddedAgent(params) {
+      calls++;
+      const tool = documentTool({ sessionId: params.sessionId, runId: params.runId });
+      const call = async args => JSON.parse((await tool.execute('fixture', args)).content[0].text);
+      if (calls === 1) {
+        await call({ action: 'open' });
+        const page = await call({ action: 'required_proposal' });
+        const requiredSource = await call(page.items[0].readOriginal);
+        const optionalSource = await call({ action: 'read_original', ref, start: 3, count: 1 });
+        await fs.readFile(path.join(f.root, implementation), 'utf8'); // An ordinary source read does not extend artifact coverage.
+        initialRows = [{ originalSourceAnchorId: optionalSource.anchor.anchorId,
+          requirement: 'Treat invalid values as unknown.', disposition: 'COVERED',
+          reason: 'The implementation normalizes invalid saved values.',
+          targets: [{ path: implementation, start: 1, end: 1 }] },
+        row(requiredSource.anchor.anchorId, { requirement: page.items[0].requirement })];
+        return { payloads: [{ text: JSON.stringify({ summary: 'Reviewed the declared artifacts.', findings: [], edits: [],
+          originalRequirementCoverage: initialRows }) }], meta: {} };
+      }
+      assert.equal(calls, 2);
+      assert(params.prompt.includes(JSON.stringify({ path: implementation, start: 1, end: 1 })));
+      const scope = /Declared current artifact coverage scope: (\[[^\n]*\])\./u.exec(params.prompt);
+      assert(scope, 'The actual repair must receive the declared current artifact scope.');
+      assert.deepEqual(JSON.parse(scope[1]), declaredArtifacts);
+      return { payloads: [{ text: JSON.stringify({ summary: 'Artifact coverage is separate from implementation correctness.',
+        findings: [], edits: [], originalRequirementCoverage: [
+          { ...initialRows[0], disposition: 'UNVERIFIED', targets: [],
+            reason: 'The declared artifacts do not establish this optional implementation check; the original duty remains.' },
+          initialRows[1],
+        ] }) }], meta: {} };
+    } } } };
+  registerDocumentTools(api);
+  const factory = createOpenClawReviewerFactory(api);
+  const handle = await factory({ projectRoot: f.root, taskId: 'artifact-coverage-scope-repair', role: 'artifact-reviewer',
+    pluginRoot: path.resolve('.'), reviewer: { session: 'detached', timeoutMs: 5000, formatRepairAttempts: 1 },
+    schema: REVIEW_SCHEMA, request: { semanticReviewRequestPath: f.requestPath },
+    evidence: { snapshot: f.snapshot, requiredProposalReview: { requiredAtoms } } });
+  try {
+    assert.equal(calls, 2, 'One repair resolves the invalid target without widening artifact scope.');
+    const coverage = handle.originalRequirementCoverage;
+    assert.equal(coverage.rows[0].disposition, 'UNVERIFIED');
+    assert.deepEqual(coverage.rows[0].targets, []);
+    assert.equal(coverage.rows[1].requirement, requiredAtoms[0].requirement);
+    assert.equal(coverage.rows[1].disposition, 'COVERED');
+    const requested = requiredAtoms.map(({ requirement, start, end, source }) => ({ requirement,
+      source: { ref, start, end, sha256: source.sha256 } }));
+    const approve = value => sealRequiredProposalCoverage(requested, [{ ref, text: originalText }],
+      { ...value, reviewStatus: 'PASSED' });
+    assert.equal(approve(coverage).requiredAtoms.length, 1);
+    assert.throws(() => approve({ ...coverage, rows: coverage.rows.slice(0, 1) }), /coverage is incomplete \(0\/1\)/u);
+    assert.throws(() => approve({ ...coverage, rows: coverage.rows.map(value => ({ ...value,
+      disposition: 'UNVERIFIED', targets: [] })) }), /required Proposal atom lacks unambiguous current coverage/u);
+  } finally { await handle.close(); }
 });
