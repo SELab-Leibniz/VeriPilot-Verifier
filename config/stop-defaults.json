@@ -26,5 +26,6 @@
     "M16": true
   },
   "fileQualityReviewEnabled": false,
-  "requireCurrentProductionCoverage": false
+  "requireCurrentProductionCoverage": false,
+  "requireProductionOriginCoverage": false
 }

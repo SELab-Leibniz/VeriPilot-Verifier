@@ -24,6 +24,10 @@ Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；�
 
 `stopCorrection.requireCurrentProductionCoverage` 默认 `false`，随任务冻结。与 `originalRequirementsBasis` 和 `deviationOnly` 一同开启后，`TASK_COMPLETE` 终审对原文中当前无条件适用的硬性 M16 生产要求逐项核查。已符合的条目需说明每个适用路径如何从原操作得到可观察结果，并标注已读取的入口和结果消费位置。入口和消费位置位于不同文件时，还须标注值的传递位置。直接产生结果的操作可用同一段源码证明入口与结果。公开探针只覆盖实际运行的用例。缺少足够证据的条目保留为未验证，其他已证实的偏差仍可进入纠偏。
 
+`stopCorrection.requireProductionOriginCoverage` 默认 `false`，同样随任务冻结。开启后，已要求生产覆盖的条目还须通过 `review_production_origin` 调查上游来源。生产覆盖可由上面的开关启用，也可由已批准的 Proposal 需求清单要求；来源开关本身不会启用生产覆盖或重新开启 M16。宿主提供有界的调用者及文件选择标识候选，审查器须读取当前源码，对观察到的候选给出 `VERIFIED` 上游传递证明或有依据的 `OUT_OF_SCOPE` 解释。发现不完整、版本过期或来源不可用时，严格来源核验保留为 `UNVERIFIED`，不能据此启动缺陷修复。
+
+来源候选目前限于可分析的 TS、JS、ArkTS 关系，以及至少包含两个路径段的文件选择字面量。字面量命中只是待调查位置，不能证明注册、路由或分支可达；程序也不保证发现全部调用者或证明语义正确。保持默认关闭时，原有生产覆盖检查继续适用，包括无法建立语义图时基于当前源码的人工判断，其覆盖保证不因此扩大。
+
 `stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。用户消息取自 `.runtime-correction/original-requirements/` 下按会话记录的日志（与 `artifactCorrection.originalRequirementsEnabled` 共用），宿主压缩上下文删掉的早期消息仍保留在清单来源中。
 
 对于已固定 SHA-256 的可信公开验收探针，`stopCorrection.regressionCheck.requirementBindings` 可按 `testId` 将具名失败限定到唯一匹配的生产实现条目。各项的 `quote` 使用准确的原文，配置示例与未绑定用例的处理见 [公开验收用例绑定](stop-task-review.md#公开验收用例绑定)。

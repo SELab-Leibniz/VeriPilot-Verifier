@@ -72,6 +72,35 @@ test("current production coverage is a separate opt-in boolean in the frozen Sto
   assert.equal(resolveStopReviewPolicy(Object.create({ requireCurrentProductionCoverage: true })).requireCurrentProductionCoverage, false);
 });
 
+test("production origin coverage is independently configured and retained in the frozen Stop policy", async t => {
+  const root = await scratch(t), directory = path.join(root, ".runtime-corrector");
+  await fs.mkdir(directory);
+  const file = path.join(directory, "config.yaml");
+  const header = "version: 2\nartifacts: []\nstopCorrection:\n  enabled: true\n  originalRequirementsBasis: true\n  deviationOnly: true\n  requireCurrentProductionCoverage: false\n";
+  for (const value of [undefined, false, true]) {
+    await fs.writeFile(file, header + (value === undefined ? "" : `  requireProductionOriginCoverage: ${value}\n`));
+    const { stopCorrection } = (await loadRuntimePlan({ cwd: root })).runtimeV2;
+    const frozenPolicy = resolveStopReviewPolicy(structuredClone(resolveStopReviewPolicy(stopCorrection)));
+    assert.equal(stopCorrection.requireProductionOriginCoverage, value ?? false);
+    assert.equal(frozenPolicy.requireProductionOriginCoverage, value ?? false);
+    assert.equal(frozenPolicy.requireCurrentProductionCoverage, false,
+      "origin checking does not itself activate production coverage");
+    assert.equal(frozenPolicy.deviationOnly, true);
+    assert.deepEqual(frozenPolicy.metrics, DEFAULT_STOP_METRICS);
+  }
+  for (const value of [null, "false", 1, [], {}]) {
+    const document = { ...base, stopCorrection: { enabled: true, requireProductionOriginCoverage: value } };
+    assert.throws(() => validateProjectConfig(document, "config.yaml"), /stopCorrection\.requireProductionOriginCoverage/u);
+    assert.throws(() => compileRuntimeV2Config(document), /stopCorrection\.requireProductionOriginCoverage/u);
+  }
+  assert.equal(resolveStopReviewPolicy(Object.create({ requireProductionOriginCoverage: true })).requireProductionOriginCoverage, false);
+  const combined = compileRuntimeV2Config({ ...base, stopCorrection: { enabled: true,
+    requireCurrentProductionCoverage: true, requireProductionOriginCoverage: true, metrics: { M16: false } } }).stopCorrection;
+  assert.equal(combined.requireProductionOriginCoverage, true);
+  assert.equal(combined.requireCurrentProductionCoverage, true);
+  assert.equal(combined.metrics.M16, false, "origin checking does not reactivate a disabled metric");
+});
+
 test("family switches turn off every member metric and otherwise keep the metric switches", () => {
   assert.deepEqual(Object.values(STOP_METRIC_FAMILIES).flat().sort(), [...METRIC_IDS].sort());
   const off = resolveStopReviewPolicy({ metrics: { M10: true, M14: true }, families: { projectRules: false, verification: false } });

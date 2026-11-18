@@ -91,6 +91,12 @@ M16 的一个原始条目可能包含多个效果和失败分支。PASS 必须�
 
 启用 `requireCurrentProductionCoverage` 的完成审查会检查已引用入口中的静态调用。当同一个函数或回调的不同分支调用相同操作并传入相同字面目标时，已确认的候选位置通过 `siblingDispatches` 返回。用 `flow.branches` 引用各候选的当前源码，说明实际参数与消费者，或以 `OUT_OF_SCOPE` 说明为什么该分支超出原始义务。遗漏或证据不足的分支保留为待验证。候选位置用于导航，启动修复仍需证明实际偏离。这项检查覆盖少量可静态识别的同函数分支。
 
+项目还可开启 `stopCorrection.requireProductionOriginCoverage`，要求已经纳入生产覆盖的条目补充上游来源调查。`review_production_origin` 返回宿主观察到的有界候选，避免把一个已经收到参数的下游函数直接当作用户操作的完整证明。审查器需要读取候选的当前源码，以 `VERIFIED` 给出上游入口、传递位置和消费者，或以 `OUT_OF_SCOPE` 解释为什么原始要求不涵盖该候选。来源发现和源码读取分别留证；搜索或图导航本身不等于读取证明。
+
+来源开关只有在生产覆盖已生效时才起作用。生产覆盖可由 `requireCurrentProductionCoverage` 开启，也可由已批准的 Proposal 需求清单要求；来源开关不会单独启用 M16。候选发现暂限于 TS、JS、ArkTS 可分析关系和至少两个路径段的文件选择字面量。相同字面量不证明真实路由关系，候选是否相关、某个分支能否正确传递输入，仍需审查原始要求和源码。部分、过期或不可用的来源发现不能得到完整覆盖结论，相应条目保留为 `UNVERIFIED`，也不会因此取得修复权限。
+
+`requireProductionOriginCoverage` 默认关闭，沿用任务冻结策略。未开启时，已有的当前源码覆盖与同函数分支检查继续运行；没有语义图的项目也继续使用原来的源码审查路径。开启该选项只加强对已观察来源的调查和读取约束，不能宣称已经穷尽调用者或证明所有运行行为。
+
 其他 RC 模块可直接从 `lib/semantic-graph.mjs` 导入 `buildSemanticGraph(projectRoot, options)`，再调用返回值的 `query({ operation, symbol, file, offset })`。`incoming` 找调用者和测试，`outgoing` 找调用、写入及控制语句位置。不能解析的调用保留调用点。查询使用项目相对路径，`partial` 表示索引有遗漏，`unavailable` 表示无法建立索引。图记录是静态导航线索，结论仍以原始源码和正常引文为依据。
 
 `context`（包括 `incoming` / `outgoing`）还会返回有界的 `testBoundaries`：关联调用者、依赖调用点、把该依赖作为参数传入测试辅助函数的位置，以及之后的调用或写入位置。测试的 `beforeEach` 等钩子保留自己的行号范围。结果轮流覆盖不同调用者，优先关联实际调用该入口的测试文件，避免单一测试夹具占满首屏。Stop 的 `currentSemanticLinks` 也携带这些关系。图不推断辅助函数是否真的替换依赖，也不证明后续调用在同一分支可达；澄清和终审共用的代码理解 skill 引导模型读取源码、测试设置和返回值，再判断各入口的保证。

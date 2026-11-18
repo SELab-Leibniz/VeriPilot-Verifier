@@ -99,6 +99,7 @@
     "lib/runtime-v2/paths.mjs",
     "lib/runtime-v2/platform-adapter.mjs",
     "lib/runtime-v2/process-checks.mjs",
+    "lib/runtime-v2/production-origin-coverage.mjs",
     "lib/runtime-v2/production-stop.mjs",
     "lib/runtime-v2/regression-evidence.mjs",
     "lib/runtime-v2/regression-triage.mjs",

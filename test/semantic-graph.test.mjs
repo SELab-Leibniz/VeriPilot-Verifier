@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
-import { findSiblingLiteralDispatches, scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
+import { discoverSiblingLiteralDispatches, findSiblingLiteralDispatches, scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 
 test('finds static dispatches in sibling branches of the same ArkTS callback', () => {
@@ -78,6 +78,84 @@ test('literal dispatch discovery excludes lookalikes, ambiguous options and call
     ...Array.from({ length: 5 }, (_, branch) => `  if (value === ${branch}) { dispatch('generate', value); }`),
     '}'].join('\n');
   assert.deepEqual(findSiblingLiteralDispatches(many, { start: 2, end: 2 }), [], 'an overfull group is not a partial witness');
+});
+
+test('detailed literal discovery distinguishes a bounded singleton from an unrecognized boundary', () => {
+  const source = [
+    'function submit(value) {',
+    "  return dispatch('export', { value, options: { if: true, switch: false } });",
+    '}',
+  ].join('\n');
+  assert.deepEqual(discoverSiblingLiteralDispatches(source, { start: 2, end: 2 }), {
+    status: 'READY', complete: true, scope: 'SAME_LEXICAL_CALLABLE', reason: 'STATIC_LITERAL_GROUP', siblings: [],
+    anchor: { start: 2, end: 2, callee: 'dispatch', destination: 'export' }, observedSiblingCount: 0,
+  });
+  assert.deepEqual(discoverSiblingLiteralDispatches(source, { start: 1, end: 1 }), {
+    status: 'NOT_APPLICABLE', complete: false, scope: 'SAME_LEXICAL_CALLABLE',
+    reason: 'NO_LITERAL_DISPATCH_AT_ANCHOR', siblings: [],
+  });
+  const alternatives = [
+    'function submit(value) {',
+    '  if (value.cached) {',
+    "    return dispatch('export', value.cached);",
+    '  }',
+    "  return dispatch('export', value);",
+    '}',
+  ].join('\n');
+  const observed = discoverSiblingLiteralDispatches(alternatives, { start: 5, end: 5 });
+  assert.equal(observed.status, 'READY');
+  assert.equal(observed.complete, true);
+  assert.deepEqual(observed.siblings, [{ start: 3, end: 3, callee: 'dispatch', destination: 'export' }]);
+});
+
+test('detailed literal discovery keeps unsupported and truncated groups unknown', () => {
+  const cases = [
+    { source: 'function submit(route, value) {\n  return dispatch(route, value);\n}', line: 2, reason: 'UNSUPPORTED_ARGUMENT' },
+    { source: 'function submit(options, value) {\n  return dispatch({ route: "export", ...options }, value);\n}', line: 2, reason: 'UNSUPPORTED_ARGUMENT' },
+    { source: 'const submit = value => dispatch("export", value);', line: 1, reason: 'UNSUPPORTED_SCOPE' },
+    { source: 'function submit(value) {\n  dispatch("export", value); dispatch("export", value.cached);\n}', line: 2, reason: 'AMBIGUOUS_ANCHOR' },
+    { source: 'function submit(value) {\n  if (value.cached) { dispatch("export", value); dispatch("export", value.cached); }\n  dispatch("export", value);\n}', line: 3, reason: 'AMBIGUOUS_LINE_ANCHORS', count: 2 },
+    { source: 'function submit(value) {\n  if (value.cached) return dispatch("export", value.cached);\n  return dispatch("export", value);\n}', line: 3, reason: 'UNSUPPORTED_BRANCH_SYNTAX' },
+    { source: 'function submit(value) {\n  switch (value.kind) { case 1: return dispatch("export", value.cached); }\n  return dispatch("export", value);\n}', line: 3, reason: 'UNSUPPORTED_BRANCH_SYNTAX' },
+    { source: 'function submit(value) {\n  return dispatch("export", value);\n}\n(', line: 2, reason: 'UNBALANCED_DELIMITERS' },
+    { source: ' '.repeat(256 * 1024 + 1), line: 1, reason: 'SOURCE_LIMIT' },
+    { source: 'return 1;', line: 0, reason: 'INVALID_INPUT' },
+    { source: ['function submit(value) {', '  dispatch("export", value);',
+      ...Array.from({ length: 5 }, (_, index) => `  if (value.kind === ${index}) { dispatch("export", value); }`),
+      '}'].join('\n'), line: 2, reason: 'SIBLING_LIMIT', count: 5 },
+  ];
+  for (const { source, line, reason, count } of cases) {
+    const result = discoverSiblingLiteralDispatches(source, { start: line, end: line });
+    assert.equal(result.status, 'UNKNOWN', reason);
+    assert.equal(result.complete, false, reason);
+    assert.equal(result.reason, reason);
+    assert.deepEqual(result.siblings, [], 'unknown results never supply partial authoritative witnesses');
+    if (count !== undefined) assert.equal(result.observedSiblingCount, count);
+    assert.deepEqual(findSiblingLiteralDispatches(source, { start: line, end: line }), [], 'legacy unknown/overfull navigation remains empty');
+  }
+});
+
+test('a dynamic alternate destination does not certify a partial static group', () => {
+  const source = [
+    'function submit(route, value) {',
+    '  if (value.cached) {',
+    '    return dispatch(route, value.cached);',
+    '  }',
+    '  if (value.saved) {',
+    "    return dispatch('export', value.saved);",
+    '  }',
+    "  return dispatch('export', value);",
+    '}',
+  ].join('\n');
+  const result = discoverSiblingLiteralDispatches(source, { start: 8, end: 8 });
+  assert.equal(result.status, 'UNKNOWN');
+  assert.equal(result.reason, 'UNRESOLVED_SIBLING');
+  assert.equal(result.complete, false);
+  assert.equal(result.observedSiblingCount, 1);
+  assert.deepEqual(result.siblings, []);
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 8, end: 8 }), [
+    { start: 6, end: 6, callee: 'dispatch', destination: 'export' },
+  ], 'the compatibility API retains static-only navigation without a completeness claim');
 });
 
 test('test-helper argument hints preserve reference identity and exclude control parentheses', () => {

@@ -80,6 +80,7 @@ test("every artifact excludes nested installations and private experiment output
     const artifact = await buildPlugin({ ...input, host });
     const names = await artifactFiles(artifact);
     assert(names.includes("lib/runtime-v2/stop-workspace-review.mjs"));
+    assert(names.includes("lib/runtime-v2/production-origin-coverage.mjs"));
     assert(names.includes("lib/agent-output.mjs"));
     assert(!names.some(name => name.split("/").some(part => ["node_modules", ".runtime-correction"].includes(part))));
     assert(!names.some(name => name.includes("sentinel")));

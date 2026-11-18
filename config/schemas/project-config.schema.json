@@ -447,6 +447,11 @@
           "default": false,
           "description": "At TASK_COMPLETE, require current production evidence for each applicable original implementation checklist item."
         },
+        "requireProductionOriginCoverage": {
+          "type": "boolean",
+          "default": false,
+          "description": "For required production coverage, require a host-bound upstream-origin discovery receipt and current evidence accounting for every observed candidate. Unsupported or incomplete discovery remains unverified."
+        },
         "regressionCheck": {
           "type": "object",
           "description": "Optional program-run existing-test command for the standing regression item. Runs at most once per Stop review, only when existing source changed; never through a shell.",

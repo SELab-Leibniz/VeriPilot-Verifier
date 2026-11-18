@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
@@ -1197,7 +1198,7 @@ const chineseReproduction = `处理上面每个偏差时：
 async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
   basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true,
   userText = 'Implement transform.\nReturn the input plus one.', processEntries = [], effectiveToolPolicy, sourceText,
-  requireCurrentProductionCoverage, artifacts = [] } = {}) {
+  requireCurrentProductionCoverage, requireProductionOriginCoverage, artifacts = [] } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
   const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
@@ -1227,6 +1228,7 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
     requirementFrame: { enabled, inject: false, review },
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly, waitMode: 'until_pass',
       ...(requireCurrentProductionCoverage === undefined ? {} : { requireCurrentProductionCoverage }),
+      ...(requireProductionOriginCoverage === undefined ? {} : { requireProductionOriginCoverage }),
       metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metricIds.includes(id)])) } });
   return { projectRoot, sessionId, directory, source, runtimeV2, startHead,
     async run(script, beforeStop) {
@@ -1759,7 +1761,8 @@ test('production Stop coverage requires current production proof and preserves s
 test('approved Proposal obligations sharing one source anchor require separate current Stop evidence', async t => {
   const requirements = ['Return the input plus one from increment.', 'Return the input doubled from double.'];
   const originalText = requirements.join(' ');
-  for (const mode of ['omitted', 'verified', 'deviation']) await t.test(mode, async t => {
+  for (const mode of ['omitted', 'verified', 'origin-verified', 'origin-retained-stale', 'deviation']) await t.test(mode, async t => {
+    const verified = mode === 'verified' || mode === 'origin-verified';
     const f = await fixture(t);
     const app = path.join(f.root, 'app.mjs');
     await fs.writeFile(app, [
@@ -1767,10 +1770,17 @@ test('approved Proposal obligations sharing one source anchor require separate c
       'export const double = input => input * 2;',
       '',
     ].join('\n'));
+    if (mode.startsWith('origin-')) {
+      // This lower-level fixture otherwise has no source Git inventory. Give
+      // the strict origin index its own disposable project, as real hosts do.
+      execFileSync('git', ['init', '--quiet', f.root]);
+      execFileSync('git', ['-C', f.root, 'add', '--', 'app.mjs']);
+    }
     f.input.request.hook.last_assistant_message = 'Both operations are complete and the tests passed.';
     f.input.request.classificationContract = 2;
     f.input.request.fixedStopClassification = { stopClassification: 'TASK_COMPLETE', stage: null };
-    f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, requireCurrentProductionCoverage: false });
+    f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, requireCurrentProductionCoverage: false,
+      requireProductionOriginCoverage: mode.startsWith('origin-') });
     f.input.evidence.snapshot.entries[0].message.content = originalText;
     const original = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
     f.input.evidence.originalRequirements = original;
@@ -1817,9 +1827,18 @@ test('approved Proposal obligations sharing one source anchor require separate c
       assert.deepEqual(omitted.approvedProposalAtomIds, [sha256([source.anchorId, requirements[1]])]);
 
       const current = (await read(app)).details.citation.citeId;
+      const origins = new Map();
+      if (mode.startsWith('origin-')) for (const [item, line] of [[checked, 1], [omitted, 2]]) {
+        assert.equal(item.requiresProductionOriginCoverage, true, 'the sealed inventory activates strict origins without the ordinary current-coverage switch');
+        const receipt = await submit('review_production_origin', { objectId: item.objectId, entry: { citeId: current, start: line, end: line } });
+        assert.equal(receipt.status, 'READY', JSON.stringify(receipt));
+        assert.deepEqual(receipt.candidates, []);
+        origins.set(item.objectId, receipt.receiptId);
+      }
       const coverage = (item, line, citeId = current) => {
         const range = { citeId, start: line, end: line };
-        return { objectId: item.objectId, reason: item.description, citeIds: [citeId], flow: { entry: range, consumer: range } };
+        return { objectId: item.objectId, reason: item.description, citeIds: [citeId], flow: { entry: range, consumer: range,
+          ...(origins.has(item.objectId) ? { originReceiptId: origins.get(item.objectId), upstream: [] } : {}) } };
       };
       const finish = (productionCoverage = []) => submit('finish_stop_review', {
         summary: 'The existing tests passed and the approved spec names both operations.', productionCoverage,
@@ -1835,18 +1854,25 @@ test('approved Proposal obligations sharing one source anchor require separate c
       assert.equal(first.complete, false);
       assert.equal(first.pendingProductionCoverageCount, 1);
       assert.equal(first.pendingProductionCoverage[0].objectId, omitted.objectId);
-      assert.equal((await finish(mode === 'verified' ? [coverage(omitted, 2)] : [])).complete, true);
+      if (mode === 'origin-retained-stale') await fs.writeFile(path.join(f.root, 'new-caller.mjs'),
+        'import { increment } from "./app.mjs";\nexport const another = () => increment(2);\n');
+      assert.equal((await finish(verified || mode === 'origin-retained-stale' ? [coverage(omitted, 2)] : [])).complete, true);
     });
     assert.equal(handle.reviewCompleted, true);
     const unverified = handle.result.unverifiedItems.filter(item => item.type === 'REQUIREMENT');
-    assert.deepEqual(unverified.map(item => item.objectId), mode === 'verified' ? [] : [omitted.objectId]);
+    assert.deepEqual(unverified.map(item => item.objectId).sort(),
+      (verified ? [] : mode === 'origin-retained-stale' ? [checked.objectId, omitted.objectId] : [omitted.objectId]).sort());
     assert.deepEqual(handle.result.metricObjectJudgements.filter(item => item.judgement === 'DEVIATION').map(item => item.objectId),
       mode === 'deviation' ? [checked.objectId] : []);
     const omittedCoverage = handle.result.reviewCoverage.items.find(item => item.id === omitted.objectId);
-    assert.equal(omittedCoverage.disposition, mode === 'verified' ? 'SOURCE_REVIEWED' : 'UNVERIFIED');
-    if (mode === 'verified') {
+    assert.equal(omittedCoverage.disposition, verified ? 'SOURCE_REVIEWED' : 'UNVERIFIED');
+    if (verified) {
       assert.equal(omittedCoverage.flow.consumer.path, 'app.mjs');
       assert.equal(omittedCoverage.flow.consumer.start, 2);
+    }
+    if (mode === 'origin-retained-stale') for (const item of handle.result.reviewCoverage.items.filter(item => item.type === 'REQUIREMENT')) {
+      assert.equal(item.disposition, 'UNVERIFIED');
+      assert.equal(item.originCoverage.reason, 'ORIGIN_INDEX_CHANGED');
     }
     await handle.close();
   });
@@ -1957,6 +1983,138 @@ test('production Stop coverage accounts for observed sibling dispatches in the s
       assert.equal(stop.admission, null);
       assert.equal(coverage.disposition, 'UNVERIFIED');
     }
+  });
+});
+
+test('strict production origins account for upstream file-backed callers before accepting downstream-only proof', async t => {
+  const requirement = 'Exports requested through the CLI must use the chosen separator, including cached inputs.';
+  let foreignReceipt;
+  for (const mode of ['legacy', 'healthy', 'out-of-scope', 'non-dispatch-verified', 'missing', 'unread', 'incomplete', 'foreign', 'wrong-entry', 'disconnected', 'stale', 'partial', 'dispatch-unknown', 'unsupported', 'flag-alone', 'deviation']) await t.test(mode, async t => {
+    const broken = ['legacy', 'deviation'].includes(mode);
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: mode !== 'flag-alone',
+      requireProductionOriginCoverage: mode !== 'legacy', userText: requirement, sourceText: [
+        'export function install(register, emit, separator, cached) {',
+        '  register("export", () => {',
+        '    if (cached) {',
+        `      emit({ view: "views/ExportView", params: { cached${broken ? '' : ', separator'} }${mode === 'dispatch-unknown' ? ', ...{}' : ''} });`,
+        '      return;',
+        '    }',
+        '    emit({ view: "views/ExportView", params: { separator } });',
+        '  });',
+        '}',
+      ].join('\n') + '\n' });
+    const consumerFile = path.join(f.projectRoot, 'views', mode === 'unsupported' ? 'ExportView.py' : 'ExportView.mjs');
+    await fs.mkdir(path.dirname(consumerFile), { recursive: true });
+    await fs.writeFile(consumerFile, mode === 'unsupported'
+      ? 'def render_export(params, rows):\n    return params.get("separator", ",").join(rows)\n'
+      : 'export function renderExport(params, rows) {\n  return rows.join(params.separator ?? ",");\n}\n');
+    const unrelated = path.join(f.projectRoot, 'help.mjs');
+    if (['out-of-scope', 'non-dispatch-verified'].includes(mode)) await fs.writeFile(unrelated, 'export const label = "views/ExportView";\n');
+    const auxiliary = path.join(f.projectRoot, 'auxiliary.mjs');
+    await fs.writeFile(auxiliary, 'export const marker = 0;\n');
+    if (mode === 'partial') await fs.writeFile(path.join(f.projectRoot, 'oversized.mjs'), ' '.repeat(256 * 1024 + 1));
+    const { install } = await import(pathToFileURL(f.source).href);
+    const { renderExport } = mode === 'unsupported' ? {} : await import(pathToFileURL(consumerFile).href);
+    for (const cached of mode === 'unsupported' ? [] : [false, true]) {
+      let callback, actual;
+      install((name, run) => { callback = run; }, packet => { actual = renderExport(packet.params, ['alpha', 'beta']); }, ';', cached);
+      callback();
+      assert.equal(actual, broken && cached ? 'alpha,beta' : 'alpha;beta');
+    }
+    let objectId;
+    const { stop, handle } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirement, citeId: original, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+      const item = page.items.find(item => item.description === requirement);
+      objectId = item.objectId;
+      if (mode === 'flag-alone') {
+        assert.notEqual(item.requiresProductionCoverage, true);
+        assert.equal((await submit('finish_stop_review', frameFinishArgs())).complete, true);
+        return;
+      }
+      assert.equal(item.requiresProductionOriginCoverage === true, mode !== 'legacy');
+      const consumer = await tools.read(consumerFile), span = (citeId, line) => ({ citeId, start: line, end: line });
+      const flow = { entry: span(consumer, 1), consumer: span(consumer, 2) };
+      const finish = () => submit('finish_stop_review', { ...frameFinishArgs(), productionCoverage: [{ objectId,
+        reason: 'The formatter consumes the supplied separator.', citeIds: [consumer], flow }] });
+      if (mode === 'deviation') {
+        const producer = await tools.read(f.source);
+        await submit('submit_review', { taskId: objectId, verdict: 'DEVIATION',
+          reason: 'Cached export omits the chosen separator, so the formatter defaults to comma.', citeIds: [producer, consumer] });
+        assert.equal((await submit('finish_stop_review', frameFinishArgs())).complete, true);
+        return;
+      }
+      if (!['legacy', 'missing'].includes(mode)) {
+        const receipt = await submit('review_production_origin', { objectId, entry: flow.entry });
+        flow.originReceiptId = mode === 'foreign' ? foreignReceipt : receipt.receiptId;
+        if (mode === 'healthy') foreignReceipt = receipt.receiptId;
+        if (['partial', 'unsupported'].includes(mode)) {
+          assert.equal(receipt.status, 'UNKNOWN');
+          assert.deepEqual(receipt.candidates, []);
+        } else {
+          assert.equal(receipt.status, 'READY', receipt.reason);
+          assert.equal(receipt.sourceReadAcknowledged, false);
+          assert.deepEqual(receipt.candidates.filter(row => row.path === 'app.mjs').map(row => [row.path, row.start]), [['app.mjs', 4], ['app.mjs', 7]]);
+        }
+        const producer = mode === 'unread' ? 'unacknowledged-index-read' : await tools.read(f.source);
+        const disconnected = mode === 'disconnected' ? await tools.read(auxiliary) : null;
+        const terminal = span(disconnected ?? consumer, disconnected ? 1 : 2);
+        const helpRead = ['out-of-scope', 'non-dispatch-verified'].includes(mode) ? await tools.read(unrelated) : null;
+        flow.upstream = receipt.candidates.map(candidate => candidate.path === 'help.mjs'
+          ? mode === 'non-dispatch-verified'
+            ? { candidateId: candidate.candidateId, disposition: 'VERIFIED', reason: 'This supposed source dispatch is only a label.',
+              citeIds: [helpRead, consumer], flow: { entry: span(helpRead, 1), handoff: span(helpRead, 1), consumer: span(consumer, 2) } }
+            : { candidateId: candidate.candidateId, disposition: 'OUT_OF_SCOPE', reason: 'This source defines a help label, without dispatching an export.',
+              citeIds: [helpRead], entry: span(helpRead, 1) }
+          : ({ candidateId: candidate.candidateId,
+          disposition: 'VERIFIED', reason: 'The CLI branch forwards the selected separator.', citeIds: [producer, consumer, ...(disconnected ? [disconnected] : [])],
+          flow: { entry: span(producer, candidate.start), handoff: span(producer, candidate.start), consumer: terminal,
+            branches: receipt.candidates.filter(other => other.path === candidate.path && other.candidateId !== candidate.candidateId).map(other => ({
+              disposition: 'VERIFIED', reason: 'The other applicable export also forwards the choice.',
+              entry: span(producer, other.start), handoff: span(producer, other.start), consumer: terminal,
+            })) } }));
+        if (mode === 'incomplete') flow.upstream.pop();
+        if (mode === 'wrong-entry') flow.entry = span(consumer, 2);
+        if (mode === 'stale') await fs.writeFile(auxiliary, 'export const marker = 1;\n');
+      }
+      const first = await finish();
+      if (['legacy', 'healthy', 'out-of-scope'].includes(mode)) assert.equal(first.complete, true);
+      else {
+        assert.equal(first.complete, false);
+        assert.equal(first.pendingProductionCoverageCount, 1);
+        assert.equal((await finish()).complete, true);
+      }
+    });
+    const coverage = handle.result.reviewCoverage.items.find(row => row.id === objectId);
+    if (mode === 'deviation') {
+      assert.equal(stop.status, 'DEVIATION'); assert.equal(stop.decision, 'block'); assert(stop.admission);
+    } else if (['legacy', 'healthy', 'out-of-scope', 'flag-alone'].includes(mode)) {
+      assert.equal(stop.status, 'NO_DEVIATION_FOUND'); assert.equal(stop.admission, null);
+      if (mode !== 'flag-alone') assert.equal(coverage.disposition, 'SOURCE_REVIEWED');
+      if (['healthy', 'out-of-scope'].includes(mode)) {
+        assert.equal(coverage.originCoverage.status, 'OBSERVED_CANDIDATES_REVIEWED');
+        assert.equal(coverage.originCoverage.candidateCount, mode === 'healthy' ? 2 : 3);
+        assert.equal(coverage.upstream.length, mode === 'healthy' ? 2 : 3);
+        assert(coverage.upstream.filter(row => row.disposition === 'VERIFIED').every(row => row.flow.entry.path === 'app.mjs'));
+      }
+    } else {
+      assert.equal(stop.status, 'UNVERIFIED'); assert.equal(stop.admission, null);
+      assert.equal(coverage.disposition, 'UNVERIFIED');
+      assert.equal(coverage.originCoverage.status, 'UNVERIFIED');
+      if (mode === 'unsupported') assert.equal(coverage.originCoverage.reason, 'UNSUPPORTED_SOURCE_LANGUAGE');
+      if (mode === 'partial') assert.equal(coverage.originCoverage.reason, 'PARTIAL_OR_UNRESOLVED_INDEX');
+      if (mode === 'dispatch-unknown') assert.match(coverage.originCoverage.reason, /^UPSTREAM_DISPATCH_/u);
+      if (mode === 'non-dispatch-verified') assert.equal(coverage.originCoverage.reason, 'UPSTREAM_DISPATCH_NO_LITERAL_DISPATCH_AT_ANCHOR');
+      if (mode === 'disconnected') assert.equal(coverage.originCoverage.reason, 'UPSTREAM_FLOW_DISCONNECTED');
+    }
+    assert.equal((await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId)).used, 0);
   });
 });
 
