@@ -6,6 +6,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { compareOpenSpecPlans, readOpenSpecPlan } from '../lib/openspec-plan.mjs';
 import { armNativeOpenSpecApply, observeNativeOpenSpecApply, prepareNativeOpenSpecProposal } from '../scripts/bench/native-openspec-approval.mjs';
+import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
+import { createStopReviewStore } from '../lib/runtime-v2/stop-review-store.mjs';
+import { assessStopCorrection } from '../lib/runtime-v2/stop-correction-assessment.mjs';
 
 const sessionKey = 'agent:main:openspec-approval';
 const sessionId = 'session';
@@ -59,7 +62,7 @@ async function fixture(t) {
     draftFiles: drafts.map(({ path: relative }) => ({ path: relative })),
     approvedDocumentsSha256: digest(JSON.stringify(drafts.map(doc => [doc.path, doc.sha256]))),
   } };
-  return { snapshot, capture, write, proposalCheckpoint };
+  return { project, snapshot, capture, write, proposalCheckpoint };
 }
 
 function stageGateway(f, { replies = {}, proposalCheckpoint = f.proposalCheckpoint,
@@ -313,7 +316,7 @@ async function restorationEvidence(t, { codeRepair = false, verificationOnly = f
   const preserved = await f.capture();
   await f.write(designPath, '# Changed design after approval\n');
   const changed = await f.capture();
-  const projectRoot = '/isolated/native-project', taskId = 'native-task', flowId = digest('original-flow');
+  const projectRoot = f.project, taskId = 'native-task', flowId = digest('original-flow');
   const sourceScope = `${projectRoot}:${taskId}`, purpose = 'openspec-plan-restoration';
   const ids = [digest('restoration-admission'), digest('code-admission')];
   const rows = requiredAtoms.map(({ requirement }, index) => ({ id: digest(requirement), objectId: `M16-exact-${index}` }));
@@ -372,6 +375,98 @@ async function restorationEvidence(t, { codeRepair = false, verificationOnly = f
   return { approval, records, initial, final, ledger, options, observe, ids };
 }
 
+async function storeBackedPartialEvidence(t) {
+  const f = await restorationEvidence(t, { codeRepair: true, verificationOnly: true });
+  const source = f.records[1], oldId = f.ids[1], oldAdmission = f.ledger.admissions[oldId];
+  const projectRoot = f.options.projectRoot, scopeId = f.ledger.stops[source.occurrenceId].reviewScopeId;
+  const sourceFile = path.join(projectRoot, 'app.mjs');
+  const bytes = Buffer.from('export const increment = input => input;\n');
+  await fs.writeFile(sourceFile, bytes);
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'native-partial-host-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  let clock = 85;
+  const store = createStopCorrectionStore({ directory, now: () => clock });
+  const review = createStopReviewStore({ directory, sessionId, scopeId, now: () => clock,
+    dependenciesCurrent: async () => digest(await fs.readFile(sourceFile)) === digest(bytes),
+    validateResult: async ({ item, result }) => {
+      assert.equal(item.basis.object.hard, true);
+      assert.equal(digest(await fs.readFile(sourceFile)), digest(bytes));
+      if (result.judgement === 'DEVIATION') {
+        assert.deepEqual(result.evidence, ['app.mjs#L1']);
+        assert.match(bytes.toString(), /input => input;/u, 'a known caller input still returns its unchanged value');
+      }
+      return { result, snapshotKey: digest(bytes) };
+    } });
+  const feedbackBasisCurrent = async deviations => {
+    if (digest(await fs.readFile(sourceFile)) !== digest(bytes)) return [];
+    const state = await review.inspect();
+    return deviations.filter(row => {
+      const item = state.items[`${row.metricId}:${row.objectId}`];
+      return item?.definition.basis.object.hard === true && item.current?.receiptId === row.receiptId
+        && row.result.judgement === 'DEVIATION' && row.result.evidence.includes('app.mjs#L1');
+    });
+  };
+  const objects = source.reviewSummary.approvedProposalInventory.requiredAtoms;
+  const confirmed = { judgement: 'DEVIATION', reason: 'The increment operation returns the original input instead of the next value.', evidence: ['app.mjs#L1'] };
+  const unresolved = { judgement: 'UNVERIFIED', reason: 'The other required source range is unavailable.', evidence: [] };
+  const core = await assessStopCorrection({ sessionStore: store, reviewStoreFor: () => review,
+    sessionId, flowId: oldAdmission.flowId, stopId: source.occurrenceId, scope: projectRoot,
+    sourceInput: { origin: 'HUMAN', id: 'operator-apply' }, initialize: { kind: 'NEW_SESSION', evidence: 'Trusted fixture host session creation.' },
+    config: { enabled: true, waitMode: 'until_pass', assessmentTimeoutMs: 2000, feedbackReserveMs: 1000 },
+    now: () => clock, prepare: async () => ({ scopeId, classification: { stopClassification: 'TASK_COMPLETE' },
+      items: objects.map(({ objectId }, index) => ({ objectId, metricId: 'M16', revisionId: digest(`required-${index}`),
+        basis: { object: { hard: true }, originalRequirementsBasis: true }, dependencies: [] })) }),
+    reviewGroup: async ({ brief, submit }) => {
+      for (const [index, item] of brief.items.entries()) await submit({ objectId: item.objectId, revisionId: item.revisionId,
+        result: index === 0 ? confirmed : unresolved });
+    },
+    finalizeSummary: async summary => ({ ...summary, status: 'UNVERIFIED', complete: false }),
+    feedbackBasisCurrent });
+  assert.equal(core.stop.reviewStatus, 'UNVERIFIED');
+  assert.equal(core.stop.currentDeviations.length, 1);
+  assert.equal(core.stop.currentDeviations[0].result.judgement, 'DEVIATION');
+  assert(core.admission, 'a real program-validated defect remains useful despite the incomplete sibling');
+  const id = core.admission.id, runId = `rc-stop-${id}`;
+  f.ids[1] = id;
+  f.final.runId = f.final.occurrenceId = runId;
+  f.final.openSpecPlan.continuationRunId = runId;
+  f.options.finalRunId = runId;
+  clock = 91;
+  await store.bindHostRequest({ sessionId, admissionId: id,
+    request: { ...oldAdmission.hostRequest, runId, message: 'An opaque fixture native reference.' } });
+  clock = 95;
+  await store.delivery({ sessionId, admissionId: id, status: 'DELIVERED' });
+  clock = 99;
+  const checked = await store.checkAdmission({ sessionId, admissionId: id,
+    basisCurrent: feedbackBasisCurrent });
+  assert.equal(checked.allowed, true);
+  clock = 100;
+  assert.equal((await store.recordHostGate({ sessionId, admissionId: id, runId,
+    feedbackRevision: checked.feedbackRevision, messageHash: digest('current verified feedback') })).allowed, true);
+  clock = 106;
+  await store.observeStart({ sessionId, admissionId: id, executionId: runId, startedAt: 105, observationId: 'trusted-fixture-start' });
+  clock = 120;
+  await store.observeEnd({ sessionId, admissionId: id, executionId: runId, endedAt: clock });
+  // A successful repair changes the original source. Historical admission
+  // evidence stays pinned to the source validated before the genuine start.
+  await fs.writeFile(sourceFile, 'export const increment = input => input + 1;\n');
+  const repaired = await import(`data:text/javascript,${encodeURIComponent(await fs.readFile(sourceFile, 'utf8'))}`);
+  assert.equal(repaired.increment(4), 5);
+  assert.notEqual(digest(await fs.readFile(sourceFile)), digest(bytes));
+  clock = 142;
+  await store.finishRepairReview({ sessionId, admissionId: id, status: f.final.reviewStatus, evaluationId: f.final.evaluationId });
+  const native = await store.inspect(sessionId);
+  delete f.ledger.admissions[oldId];
+  f.ledger.admissions[id] = native.admissions[id];
+  f.ledger.stops[source.occurrenceId] = native.stops[source.occurrenceId];
+  f.ledger.events = [...f.ledger.events.filter(row => row.stopId !== source.occurrenceId && row.admissionId !== oldId
+    && row.executionId !== oldAdmission.executionId), ...native.events];
+  source.reviewStatus = 'UNVERIFIED';
+  source.reviewSummary.status = 'UNVERIFIED';
+  source.feedbackOnly = true;
+  return f;
+}
+
 test('native restoration accepts a final strict proof only with exact host-owned admission ancestry', async t => {
   for (const codeRepair of [false, true]) for (const verificationOnly of [false, true]) await t.test(`${codeRepair ? 'with code repair' : 'plan only'} / ${verificationOnly ? 'final verification' : 'regular final Stop'}`, async t => {
     const f = await restorationEvidence(t, { codeRepair, verificationOnly, closed: true });
@@ -385,6 +480,74 @@ test('native restoration accepts a final strict proof only with exact host-owned
     assert.equal(observed.continuations.codeRepairs, codeRepair ? 1 : 0);
     assert.equal(observed.continuations.steps.at(-1).runId, f.final.runId);
     assert(!JSON.stringify(observed).includes(requiredAtoms[0].requirement));
+  });
+});
+
+test('a store-validated partial defect can repair after native restoration and reach a complete strict inventory', async t => {
+  const f = await storeBackedPartialEvidence(t);
+  const observed = f.observe();
+  assert.equal(observed.plan.status, 'CHANGED');
+  assert.equal(observed.inventory.status, 'OBSERVED');
+  assert.equal(observed.inventory.requiredAtomCount, 2);
+  assert.equal(observed.inventory.reviewStatus, 'NO_DEVIATION_FOUND');
+  assert.equal(observed.continuations.planRestorations, 1);
+  assert.equal(observed.continuations.codeRepairs, 1);
+  assert.equal(observed.continuations.steps.at(-1).partialFeedback, true);
+  assert.equal(observed.continuations.steps.at(-1).sourceRunId, f.records[1].runId);
+  assert.equal(observed.continuations.steps.at(-1).runId, f.final.runId);
+  assert(!JSON.stringify(observed).includes('increment operation'));
+});
+
+test('partial feedback flags and malformed or uncorrelated positive subsets never attest a repair', async t => {
+  const f = await storeBackedPartialEvidence(t);
+  const source = f.records[1], id = f.ids[1];
+  const mutations = {
+    'flags without evidence': ({ ledger }) => {
+      delete ledger.admissions[id].currentDeviations;
+      delete ledger.stops[source.occurrenceId].currentDeviations;
+      ledger.admissions[id].allowPartial = true;
+    },
+    'empty subset': ({ ledger }) => {
+      ledger.admissions[id].currentDeviations = [];
+      ledger.stops[source.occurrenceId].currentDeviations = [];
+    },
+    'no confirmed defect': ({ ledger }) => {
+      for (const row of [ledger.admissions[id].currentDeviations[0], ledger.stops[source.occurrenceId].currentDeviations[0]])
+        row.result.judgement = 'UNVERIFIED';
+    },
+    'forged admission receipt': ({ ledger }) => { ledger.admissions[id].currentDeviations[0].receiptId = '00000000-0000-0000-0000-000000000000'; },
+    'different admitted evidence': ({ ledger }) => { ledger.admissions[id].currentDeviations[0].result.evidence = ['other.mjs#L1']; },
+    'missing original receipt identity': ({ ledger }) => {
+      for (const row of [ledger.admissions[id].currentDeviations[0], ledger.stops[source.occurrenceId].currentDeviations[0]]) delete row.receiptId;
+    },
+    'missing typed metric basis': ({ ledger }) => {
+      for (const row of [ledger.admissions[id].currentDeviations[0], ledger.stops[source.occurrenceId].currentDeviations[0]]) delete row.basisKey;
+    },
+    'citation validation failed': ({ ledger }) => {
+      for (const row of [ledger.admissions[id].currentDeviations[0], ledger.stops[source.occurrenceId].currentDeviations[0]]) row.result.citationFailure = true;
+    },
+    'duplicate confirmed receipt': ({ ledger }) => {
+      ledger.admissions[id].currentDeviations.push(structuredClone(ledger.admissions[id].currentDeviations[0]));
+      ledger.stops[source.occurrenceId].currentDeviations.push(structuredClone(ledger.stops[source.occurrenceId].currentDeviations[0]));
+      ledger.events.find(row => row.type === 'STOP_REVIEW_SETTLED' && row.stopId === source.occurrenceId).currentDeviationCount = 2;
+    },
+    'zero settled defects': ({ ledger }) => { ledger.events.find(row => row.type === 'STOP_REVIEW_SETTLED' && row.stopId === source.occurrenceId).currentDeviationCount = 0; },
+    'missing settled defect count': ({ ledger }) => { delete ledger.events.find(row => row.type === 'STOP_REVIEW_SETTLED' && row.stopId === source.occurrenceId).currentDeviationCount; },
+    'stale gate revision': ({ ledger }) => { ledger.admissions[id].hostRequest.gate.feedbackRevision++; },
+    'changed Stop revision': ({ ledger }) => { ledger.stops[source.occurrenceId].feedbackRevision = 1; },
+    'no host partial outcome': ({ records }) => { delete records[1].feedbackOnly; },
+    'merely queued': ({ ledger }) => { ledger.admissions[id].accounting = 'RESERVED'; },
+    'ungated': ({ ledger }) => { delete ledger.admissions[id].hostRequest.gate; },
+    'not actually delivered': ({ ledger }) => { ledger.admissions[id].deliveryStatus = 'QUEUED'; },
+    'late actual start': ({ ledger }) => { ledger.admissions[id].lateConfirmation = true; },
+    'incomplete final inventory': ({ records }) => { records.at(-1).reviewSummary.approvedProposalInventory.requiredAtoms.pop(); },
+  };
+  for (const [name, mutate] of Object.entries(mutations)) await t.test(name, () => {
+    const options = structuredClone(f.options), records = structuredClone(f.records);
+    mutate({ ...options, records });
+    const observed = f.observe(records, options);
+    assert.notEqual(observed.inventory.status, 'OBSERVED');
+    assert.equal(observed.continuations, undefined);
   });
 });
 

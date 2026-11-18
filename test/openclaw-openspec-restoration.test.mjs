@@ -7,12 +7,15 @@ import { assessOpenSpecPlanRestoration, approvedApplyRepairCurrent, approvedInve
   beginOpenSpecRun, hasApprovedApplyInventory, inspectArmedOpenSpecApply, observeApprovedApplyRepairStart, openSpecApplyFinding,
   openSpecRestorationFeedbackCurrent, PLAN_RESTORATION_PURPOSE, readApprovedOpenSpecRestoration,
   registerOpenSpecPlanControl, reserveApprovedApplyRepair } from '../lib/openclaw/openspec-plan-control.mjs';
-import { recordProposalCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { recordProposalCoverage as recordCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { publishProposalCoverage } from './support/proposal-coverage.mjs';
 import { nativeTranscriptObservation } from '../lib/openclaw/native-transcript.mjs';
 import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
 import { transcriptUserMessages } from '../lib/runtime-v2/original-requirements.mjs';
 import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
+
+const recordProposalCoverage = (...args) => publishProposalCoverage(recordCoverage, ...args);
 
 const changeName = 'retain-display-options', prefix = `openspec/changes/${changeName}`;
 const taskText = '# Tasks\n\n- [ ] Retain the saved order.\n- [ ] Retain the saved filter.\n';

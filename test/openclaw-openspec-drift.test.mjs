@@ -6,6 +6,9 @@ import test, { before, after } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
+import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
+import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { readOpenSpecPlan } from '../lib/openspec-plan.mjs';
 
 const changeName = 'preserve-display-order';
 const prefix = `openspec/changes/${changeName}`;
@@ -20,25 +23,35 @@ before(async () => {
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 
-async function fixture(t, { arm = true, shadow = false, review = false, reviewerFailure = false } = {}) {
+async function fixture(t, { arm = true, shadow = false, review = false, reviewerFailure = false,
+  proposalOnly = false, reviewer, strictSources, partialManualCheck = false, fullPlanReview = false, configVersion = 2 } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-native-plan-drift-')));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
   await fs.mkdir(path.join(root, '.runtime-corrector'));
-  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), `version: 2
+  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), `version: ${configVersion}
 artifacts:
-  - name: plan
+${partialManualCheck ? `  - name: partial-plan
     stage: proposal
-    patterns: ["openspec/changes/**/proposal.md", "openspec/changes/**/design.md", "openspec/changes/**/tasks.md", "openspec/changes/**/specs/**/spec.md"]
+    patterns: ["${prefix}/design.md"]
     rules:
       enabled: false
     review:
+      enabled: true
+` : ""}  - name: plan
+    stage: proposal
+    patterns: ["openspec/changes/**/proposal.md", "openspec/changes/**/design.md", "openspec/changes/**/tasks.md", "openspec/changes/**/specs/**/spec.md"]
+${strictSources || fullPlanReview ? `    relatedRoot: project
+    relatedPatterns: ["${prefix}/**/*.md"]
+` : ""}    rules:
+      enabled: false
+    review:
       enabled: ${review}
-dynamicGroundTruth:
+${configVersion === 2 ? `dynamicGroundTruth:
   enabled: false
 stopCorrection:
   enabled: false
-shadowMode: ${shadow}
+` : ''}shadowMode: ${shadow}
 `);
   const documents = {
     [`${prefix}/proposal.md`]: '# Proposal\n\nRetain display preferences.\n',
@@ -58,7 +71,11 @@ shadowMode: ${shadow}
     runWithWorkAdmission: async (params, run) => run(params.signal) };
   const api = { id: 'runtime-corrector', config: { agents: { defaults: { model: { primary: 'test/test' } } } },
     logger: { warn: value => warnings.push(value) }, registerGatewayMethod: (name, handler) => methods.set(name, handler),
-    runtime: { version: '2026.7.1-2', agent: { session: sessions,
+    runtime: { version: '2026.7.1-2', gateway: { async request(method, params) {
+      if (method === 'agent.wait') return { runId: params.runId, status: 'ok' };
+      if (method === 'autopilot.status') return { projection: { status: 'idle' } };
+      assert.fail(`Unexpected gateway method: ${method}`);
+    } }, agent: { session: sessions,
       runEmbeddedAgent: async () => assert.fail('The plan drift guard must run without a model.') } } };
   const projectScopes = admittedProjectScopes(api);
   const task = await ensureTask({ projectRoot: root, sessionId: sid });
@@ -67,6 +84,7 @@ shadowMode: ${shadow}
   const reviewerFactory = async options => {
     calls.push(options.role);
     if (reviewerFailure) throw new Error('The artifact reviewer is unavailable.');
+    if (reviewer) return reviewer(options);
     return { sessionId: 'artifact-review', result: { summary: 'Reviewed the selected artifact.', findings: [], edits: [] },
       async close() {} };
   };
@@ -79,13 +97,20 @@ shadowMode: ${shadow}
   const state = sharedState.states.get(`main:${sid}`);
   registerPlanControl(api, { async openSpecPlanTarget(query) {
     return query.runId === state.nativeRunId && query.sessionId === sid && query.sessionKey === sessionKey
-      ? { state, projectRoot: root, current: async () => true } : null;
+      ? { state, projectRoot: root, current: async () => true,
+        ...(strictSources ? { requireProposalCoverage: true, readProposalSources: async () => strictSources } : {}) } : null;
   } });
-  async function rpc(action, params) {
-    let value;
+  async function request(action, params) {
+    let response;
     await methods.get(`runtime-corrector.openspec.${action}`)({ params,
       client: { connect: { role: 'operator', scopes: ['operator.read', 'operator.write'] } },
-      respond(success, result, error) { assert.equal(success, true, error?.message); value = result; } });
+      respond(...args) { response = args; } });
+    assert(response);
+    return response;
+  }
+  async function rpc(action, params) {
+    const [ok, value, error] = await request(action, params);
+    assert.equal(ok, true, error?.message);
     return value;
   }
   const address = { sessionKey, sessionId: sid, runId: ctx.runId, changeName };
@@ -95,10 +120,12 @@ shadowMode: ${shadow}
     await rpc('approve', approval);
     await rpc('arm', { ...approval, applyRunId: 'apply' });
   }
-  await runtime.agentEnd({ runId: ctx.runId, success: true }, ctx);
-  await runtime.waitForNativeReviews({ drain: true });
-  ctx.runId = 'apply';
-  await runtime.prompt({ prompt: 'Apply the approved plan.' }, ctx);
+  if (!proposalOnly) {
+    await runtime.agentEnd({ runId: ctx.runId, success: true }, ctx);
+    await runtime.waitForNativeReviews({ drain: true });
+    ctx.runId = 'apply';
+    await runtime.prompt({ prompt: 'Apply the approved plan.' }, ctx);
+  }
 
   const journal = async () => {
     const task = await findTask({ projectRoot: root, sessionId: sid });
@@ -126,8 +153,238 @@ shadowMode: ${shadow}
     const { runId, abortSignal, ...factoryContext } = ctx;
     return runtime.manualCheck(factoryContext, relative, { toolCallId, signal: abortSignal, ...options });
   }
-  return { root, ctx, state, runtime, projectScopes, documents, warnings, calls, edit, check, journal };
+  return { root, ctx, state, runtime, projectScopes, documents, warnings, calls, edit, check, journal, address, rpc, request,
+    api, sharedState, transcript };
 }
+
+test('a packaged full-plan manual recheck recovers exact staged private atoms from native original sources without rewriting', async t => {
+  let factory;
+  const f = await fixture(t, { arm: false, review: true, proposalOnly: true, fullPlanReview: true,
+    reviewer: options => factory(options) });
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const { registerDocumentTools } = await import(pathToFileURL(path.join(pluginRoot, 'lib/document-tools.mjs')));
+  const { createOpenClawReviewerFactory } = await import(pathToFileURL(path.join(pluginRoot, 'lib/openclaw/reviewer.mjs')));
+  const { loadConfig } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-corrector.mjs')));
+  const { selectApprovedPlanCoverage } = await import(pathToFileURL(path.join(pluginRoot, 'lib/openclaw/approved-plan-coverage.mjs')));
+  const text = 'Keep the selected order and restore it after reopening.';
+  const requirements = ['Preserve the selected ordering preference.', 'Restore the retained ordering when reopened.']
+    .map(requirement => ({ start: 1, end: 1, requirement }));
+  assert(requirements.every(item => !text.includes(item.requirement)), 'The private canonical wording cannot be copied from the public paraphrase.');
+  await fs.appendFile(path.join(f.root, '.runtime-corrector/config.yaml'), '\nartifactCorrection:\n  requireOpenSpecProposalCoverage: true\n');
+  const resolve = f.projectScopes.resolve;
+  f.api.runtime.agent.resolveAgentWorkspaceDir = () => f.root;
+  f.projectScopes.resolve = async (...args) => ({ ...await resolve(...args), plan: await loadConfig({ cwd: f.root, pluginRoot }) });
+  let documentFactory, mode = 'unavailable', invocations = 0;
+  const bindings = [];
+  f.api.registerTool = callback => { documentFactory = callback; };
+  registerDocumentTools(f.api);
+  f.api.runtime.agent.runEmbeddedAgent = async params => {
+    invocations++;
+    bindings.push({ sessionId: params.sessionId, runId: params.runId });
+    const tool = documentFactory(bindings.at(-1));
+    assert(tool, 'The real reviewer must own the exact rc_document binding.');
+    const call = async args => JSON.parse((await tool.execute('fixture', args)).content[0].text);
+    const opened = await call({ action: 'open' });
+    assert.equal(opened.requiredProposal?.total, 2, 'Manual review must retain the operator-staged inventory.');
+    const inventory = await call({ action: 'required_proposal' });
+    assert.deepEqual(inventory.items.map(row => row.requirement).sort(), requirements.map(row => row.requirement).sort());
+    if (mode === 'unavailable') throw new Error('Scripted checker unavailable before completion.');
+    const scope = await call({ action: 'manifest' });
+    for (const file of scope) await call({ action: 'read', path: file.path, start: 1, count: 200 });
+    const rows = [];
+    for (const item of inventory.items) {
+      const { anchor } = await call(item.readOriginal);
+      rows.push({ originalSourceAnchorId: anchor.anchorId, requirement: item.requirement, disposition: 'COVERED',
+        reason: 'The current spec retains and restores the selection.', targets: [{ path: `${prefix}/specs/order/spec.md`, start: 4, end: 4 }] });
+    }
+    return { payloads: [{ text: JSON.stringify({ summary: 'Reviewed the exact current plan.', edits: [],
+      findings: mode === 'blocked' ? [{ ruleId: 'AGENT-PLAN-CONSISTENCY', severity: 'error', path: `${prefix}/design.md`, line: 3,
+        message: 'The design contradicts the current spec.', evidence: [`${prefix}/design.md:3`], suggestion: 'Keep the plan consistent.' }] : [],
+      originalRequirementCoverage: rows }) }], meta: {} };
+  };
+  factory = createOpenClawReviewerFactory(f.api);
+  registerPlanControl(f.api, f.runtime);
+  const address = { ...f.address, runId: 'staged-proposal' };
+  assert.equal((await f.rpc('prepare', { ...address, sourceRunId: address.runId, sourceSha256: sha256(text), requirements })).status, 'PREPARED');
+  await fs.appendFile(f.transcript, '\n' + JSON.stringify({ type: 'message', id: 'staged-original', parentId: 'original',
+    message: { role: 'user', content: text, idempotencyKey: `${address.runId}:user` } }) + '\n');
+  f.ctx.runId = address.runId;
+  await f.runtime.prompt({ prompt: text }, f.ctx);
+  await f.edit(`${prefix}/tasks.md`, tasks);
+  const snapshot = await readOpenSpecPlan(f.root, changeName);
+  assert.equal(selectApprovedPlanCoverage(f.state, address.runId, snapshot).reviewStatus, 'UNVERIFIED');
+  mode = 'clean';
+  const checked = await f.check(`${prefix}/tasks.md`);
+  assert.equal(checked.result.status, 'passed');
+  assert.equal(checked.result.metadata.semanticReview.originalRequirementCoverage.rows.length, 2);
+  assert.equal((await readOpenSpecPlan(f.root, changeName)).revision, snapshot.revision, 'No file rewrite is needed for recovery.');
+  mode = 'blocked';
+  assert.equal((await f.check(`${prefix}/tasks.md`)).result.status, 'failed');
+  assert.equal(selectApprovedPlanCoverage(f.state, address.runId, snapshot).reviewStatus, 'BLOCKED');
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const requiredAtoms = requirements.map(({ start, end, requirement }) => ({ requirement,
+    source: { ref: 'transcript:staged-original', sha256: sha256(text), start, end } }));
+  const [ok, , error] = await f.request('approve', { ...address, expectedRevision: snapshot.revision, requiredAtoms });
+  assert.equal(ok, false);
+  assert.match(error.message, /blocking errors/u);
+  mode = 'clean';
+  assert.equal((await f.check(`${prefix}/tasks.md`)).result.status, 'passed');
+  assert(bindings.every(binding => documentFactory(binding) === null), 'Every actual reviewer handle must release its tool binding.');
+  assert.equal(invocations, 4);
+  await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+    payload: { text: 'The Proposal is ready for approval.' } }, f.ctx);
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const preview = await f.rpc('preview', address);
+  assert.equal(preview.requireProposalCoverage, true);
+  const approved = await f.rpc('approve', { ...address, expectedRevision: preview.revision, requiredAtoms });
+  assert.equal(approved.requiredAtomCount, 2);
+  const { hasPreparedOpenSpecProposalReview } = await import(pathToFileURL(path.join(pluginRoot, 'lib/openclaw/openspec-plan-control.mjs')));
+  assert.equal(hasPreparedOpenSpecProposalReview(f.sharedState, f.state), false, 'Approval releases the preparation slot.');
+  const arm = { ...address, expectedRevision: preview.revision, expectedInventorySha256: approved.inventorySha256, applyRunId: 'apply' };
+  mode = 'blocked';
+  assert.equal((await f.check(`${prefix}/tasks.md`)).result.status, 'failed');
+  const [armOk, , armError] = await f.request('arm', arm);
+  assert.equal(armOk, false);
+  assert.match(armError.message, /blocking errors/u);
+  mode = 'clean';
+  const recovered = await f.check(`${prefix}/tasks.md`);
+  assert.equal(recovered.result.status, 'passed');
+  assert.deepEqual(recovered.result.metadata.semanticReview.originalRequirementCoverage.rows.map(row => row.requirement).sort(),
+    requirements.map(row => row.requirement).sort());
+  assert.equal((await readOpenSpecPlan(f.root, changeName)).revision, snapshot.revision);
+  const armed = await f.rpc('arm', arm);
+  assert.equal(armed.status, 'ARMED');
+  assert.equal(armed.inventorySha256, approved.inventorySha256);
+  assert.equal(hasPreparedOpenSpecProposalReview(f.sharedState, f.state), false, 'Recovery must not prepare another inventory.');
+  assert(bindings.every(binding => documentFactory(binding) === null));
+  assert.equal(invocations, 6);
+  assert.deepEqual(f.warnings, []);
+});
+
+test('manual original-source preparation respects a document review opt-out', async t => {
+  const f = await fixture(t, { arm: false, proposalOnly: true });
+  await fs.appendFile(path.join(f.root, '.runtime-corrector/config.yaml'), '\nartifactCorrection:\n  originalRequirementsEnabled: true\n');
+  const checked = await f.check(`${prefix}/design.md`);
+  assert.equal(checked.result.status, 'passed');
+  assert.equal(checked.result.metadata.semanticReview, undefined);
+  assert.deepEqual(f.calls, []);
+});
+
+test('a legacy version-one plan retains a normalized disabled v2 policy and its ordinary manual artifact review', async t => {
+  const f = await fixture(t, { arm: false, proposalOnly: true, review: true, configVersion: 1 });
+  const { loadConfig } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-corrector.mjs')));
+  const plan = await loadConfig({ cwd: f.root, pluginRoot });
+  assert.equal(plan.runtimeV2.schemaVersion, 'runtime-corrector.runtime-plan.v2');
+  assert.equal(plan.runtimeV2.configVersion, 1);
+  assert.equal(plan.runtimeV2.enabled, false);
+  assert.equal(plan.runtimeV2.artifactCorrection.originalRequirementsEnabled, false);
+  assert.equal(plan.runtimeV2.dynamicGroundTruth.enabled, false);
+  assert(Array.isArray(plan.runtimeV2.dynamicGroundTruth.materialRoots));
+  const checked = await f.check(`${prefix}/design.md`);
+  assert.equal(checked.result.status, 'passed');
+  assert.equal(checked.result.metadata.semanticReview.status, 'completed');
+  assert.equal(checked.result.metadata.semanticReview.originalRequirementCoverage, undefined);
+  assert.deepEqual(f.calls, ['artifact-reviewer']);
+  assert.deepEqual(f.warnings, []);
+});
+
+test('packaged native publication keeps a later blocking review without coverage from authorizing an older all-covered plan', async t => {
+  const text = 'Retain the selected order.\nRestore the selected order after reopening.';
+  const source = { ref: 'native:proposal-original', text };
+  const identity = { ref: source.ref, sha256: sha256(text), start: 1, end: 2 };
+  const anchor = createOriginalSourceAnchor({ ...identity, bytes: Buffer.from(text) });
+  const requiredAtoms = ['Retain the selected order.', 'Restore the selected order after reopening.']
+    .map(requirement => ({ source: identity, requirement }));
+  let mode = 'clean';
+  const f = await fixture(t, { arm: false, review: true, proposalOnly: true, strictSources: [source],
+    reviewer: async options => {
+      const snapshot = await readOpenSpecPlan(options.projectRoot, changeName);
+      const target = snapshot.documents.find(file => file.path.endsWith('/spec.md'));
+      const coverage = { schemaVersion: 1, scope: snapshot.documents,
+        rows: requiredAtoms.map(({ requirement }) => ({ source: anchor, requirement, disposition: 'COVERED',
+          targets: [{ ...target, start: 4, end: 4 }] })) };
+      const findings = mode === 'clean' ? [] : [{ ruleId: 'AGENT-PLAN-CONSISTENCY', severity: 'error',
+        path: `${prefix}/design.md`, message: 'The design contradicts the retained-order spec.',
+        evidence: ['The current design resets the preference.'], suggestion: 'Keep the design consistent with the spec.' }];
+      return { sessionId: 'artifact-review', result: { summary: 'Reviewed the exact plan.', findings, edits: [] },
+        ...(mode !== 'blocked-without-rows' ? { originalRequirementCoverage: coverage } : {}), async close() {} };
+    } });
+  await f.edit(`${prefix}/proposal.md`, f.documents[`${prefix}/proposal.md`]);
+  const preview = await f.rpc('preview', f.address);
+  const approve = { ...f.address, expectedRevision: preview.revision, requiredAtoms };
+  const approved = await f.rpc('approve', approve);
+  const arm = { ...f.address, expectedRevision: preview.revision, expectedInventorySha256: approved.inventorySha256, applyRunId: 'apply' };
+  for (mode of ['blocked-with-rows', 'blocked-without-rows']) {
+    await f.edit(`${prefix}/tasks.md`, tasks);
+    const [ok, value, error] = await f.request('arm', arm);
+    assert.equal(ok, false);
+    assert.equal(value, undefined);
+    assert.match(error.message, /blocking errors/u);
+    const [approveOk, , approveError] = await f.request('approve', approve);
+    assert.equal(approveOk, false);
+    assert.match(approveError.message, /blocking errors/u);
+  }
+  mode = 'clean';
+  await f.edit(`${prefix}/design.md`, f.documents[`${prefix}/design.md`]);
+  assert.equal((await f.rpc('arm', arm)).status, 'ARMED');
+  mode = 'blocked-without-rows';
+  await f.edit(`${prefix}/tasks.md`, tasks);
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  f.ctx.runId = 'apply';
+  await f.runtime.prompt({ prompt: 'Apply the approved plan.' }, f.ctx);
+  assert.equal(f.state.nativeRunId, 'apply', 'Native execution continues after pending authority is dropped.');
+  assert.equal(await inspectPlan(f.state, 'apply'), null, 'An older ARMED response cannot bypass a later blocked review.');
+  assert.equal(f.calls.length, 5, 'each outcome must come from an actual artifact review');
+  assert.deepEqual(f.warnings, []);
+});
+
+test('a packaged explicit current subset check blocks strict arm and needs a clean full-plan re-review', async t => {
+  const text = 'Retain the selected order.\nRestore the selected order after reopening.';
+  const source = { ref: 'native:proposal-original', text };
+  const identity = { ref: source.ref, sha256: sha256(text), start: 1, end: 2 };
+  const anchor = createOriginalSourceAnchor({ ...identity, bytes: Buffer.from(text) });
+  const requiredAtoms = ['Retain the selected order.', 'Restore the selected order after reopening.']
+    .map(requirement => ({ source: identity, requirement }));
+  let mode = 'clean';
+  const f = await fixture(t, { arm: false, review: true, proposalOnly: true, partialManualCheck: true, strictSources: [source],
+    reviewer: async options => {
+      const snapshot = await readOpenSpecPlan(options.projectRoot, changeName);
+      const target = snapshot.documents.find(file => file.path.endsWith('/spec.md'));
+      return { sessionId: 'artifact-review', result: { summary: 'Reviewed the current declared scope.', edits: [],
+        findings: mode === 'blocked' ? [{ ruleId: 'AGENT-PLAN-CONSISTENCY', severity: 'error',
+          path: `${prefix}/design.md`, message: 'The current design contradicts the retained-order spec.',
+          evidence: ['The design resets the retained preference.'], suggestion: 'Preserve the retained order consistently.' }] : [] },
+        ...(mode === 'clean' ? { originalRequirementCoverage: { schemaVersion: 1, scope: snapshot.documents,
+          rows: requiredAtoms.map(({ requirement }) => ({ source: anchor, requirement, disposition: 'COVERED',
+            targets: [{ ...target, start: 4, end: 4 }] })) } } : {}), async close() {} };
+    } });
+  await f.edit(`${prefix}/proposal.md`, f.documents[`${prefix}/proposal.md`]);
+  const preview = await f.rpc('preview', f.address);
+  const approve = { ...f.address, expectedRevision: preview.revision, requiredAtoms };
+  const approved = await f.rpc('approve', approve);
+  const arm = { ...f.address, expectedRevision: preview.revision, expectedInventorySha256: approved.inventorySha256, applyRunId: 'apply' };
+  mode = 'blocked';
+  const checked = await f.check(`${prefix}/design.md`);
+  assert.equal(checked.result.status, 'failed');
+  assert.equal(checked.result.metadata.semanticReview.status, 'completed');
+  assert.deepEqual(checked.result.metadata.inputs.map(file => file.path), [`${prefix}/design.md`]);
+  let [ok, , error] = await f.request('arm', arm);
+  assert.equal(ok, false);
+  assert.match(error.message, /blocking errors/u);
+  mode = 'clean';
+  await f.check(`${prefix}/design.md`);
+  [ok, , error] = await f.request('arm', arm);
+  assert.equal(ok, false, 'a partial check cannot clear the known cross-document error');
+  assert.match(error.message, /blocking errors/u);
+  await f.edit(`${prefix}/proposal.md`, f.documents[`${prefix}/proposal.md`]);
+  assert.equal((await f.rpc('arm', arm)).status, 'ARMED');
+  assert.equal(f.calls.length, 4);
+  assert.deepEqual(f.warnings, []);
+});
 
 test('armed Apply drift adds one bounded notice and keeps mutation evidence without semantic re-review', async t => {
   const f = await fixture(t);

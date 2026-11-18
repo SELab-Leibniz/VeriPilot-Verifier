@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import { digest } from './arkts-dataset.mjs';
+import { sha256 } from '../../lib/runtime-v2/utils.mjs';
 
 const isHash = value => typeof value === 'string' && /^[0-9a-f]{64}$/u.test(value);
 
@@ -106,6 +108,35 @@ const orderedTimes = times => times.every((value, index) => Number.isFinite(valu
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 const restorationPurpose = 'openspec-plan-restoration';
 
+function confirmedPartialFeedback(record, stop, admission, settled, projectRoot, taskId) {
+  if (!stop || record.reviewStatus !== 'UNVERIFIED' || record.feedbackOnly !== true || settled?.status !== 'UNVERIFIED'
+    || !Number.isSafeInteger(settled.currentDeviationCount) || settled.currentDeviationCount < 1
+    || (stop.feedbackRevision ?? 0) !== admission.feedbackRevision) return false;
+  const admitted = admission.currentDeviations;
+  const retained = stop.currentDeviations?.length ? stop.currentDeviations : stop.invalidatedReview?.currentDeviations;
+  if (!Array.isArray(admitted) || !admitted.length || !Array.isArray(retained) || retained.length !== admitted.length
+    || settled.currentDeviationCount < admitted.length) return false;
+  const typed = row => {
+    if (!row || typeof row.objectId !== 'string' || !row.objectId || !isHash(row.revisionId)
+      || row.result?.judgement !== 'DEVIATION' || typeof row.result.reason !== 'string' || !row.result.reason.trim()
+      || !Array.isArray(row.result.evidence) || !row.result.evidence.length
+      || row.result.evidence.some(ref => typeof ref !== 'string' || !ref.trim()) || row.result.citationFailure === true) return false;
+    if (row.findingPath) {
+      const root = path.join(projectRoot, '.runtime-correction', 'tasks', taskId, 'review-components');
+      const relative = path.relative(root, row.findingPath);
+      return isHash(row.receiptId) && relative && !path.isAbsolute(relative) && !relative.split(path.sep).includes('..');
+    }
+    return /^M(?:0[1-9]|1[0-6])$/u.test(row.metricId ?? '') && isHash(row.basisKey)
+      && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/u.test(row.receiptId ?? '');
+  };
+  // These are the immutable, host-protected rows accepted by native
+  // stopFeedbackCurrent at prepare AND the input gate, not a model flag.
+  // Their original sources can legitimately change during the repair itself.
+  if (!admitted.every(typed) || !retained.every(typed) || new Set(admitted.map(row => row.receiptId)).size !== admitted.length) return false;
+  const expected = new Set(retained.map(sha256));
+  return expected.size === admitted.length && admitted.every(row => expected.has(sha256(row)));
+}
+
 // The caller reads this ledger from the host state directory, never the agent
 // workspace. Project-local Stop summaries alone cannot attest a native start.
 function restoredContinuations(approval, records, original, final, ledger, projectRoot) {
@@ -140,7 +171,8 @@ function restoredContinuations(approval, records, original, final, ledger, proje
       : target === final && admission.finalReview?.evaluationId === target.record.evaluationId
         && admission.finalReview?.status === target.record.reviewStatus && targetSettled?.evaluationId === target.record.evaluationId
         && targetSettled?.observedAt === admission.finalReview.at;
-    if (!record || previous.verdict.status !== 'OBSERVED' || record.reviewStatus !== 'DEVIATION'
+    const partial = record && confirmedPartialFeedback(record, stop, admission, settled, projectRoot, request.taskId);
+    if (!record || previous.verdict.status !== 'OBSERVED' || record.reviewStatus !== 'DEVIATION' && !partial
       || !isHash(admission.id) || request.runId !== `rc-stop-${admission.id}` || admission.executionId !== request.runId
       || ledger.admissions[admission.id] !== admission
       || admission.accounting !== 'USED' || admission.startStatus !== 'STARTED' || admission.deliveryStatus !== 'DELIVERED'
@@ -154,7 +186,7 @@ function restoredContinuations(approval, records, original, final, ledger, proje
       || ![`${projectRoot}:${request.taskId}`, `${projectRoot}:${request.taskId}:${restorationPurpose}`].includes(stop.reviewScopeId)
       || !isHash(source.usersDigest) || !isHash(source.evidenceDigest) || source.openSpecPlanRevision !== plan.currentRevision
       || !request.gate || !isHash(request.gate.messageHash) || request.gate.feedbackRevision !== admission.feedbackRevision
-      || settled?.status !== 'DEVIATION' || targetSettled?.status !== target.record.reviewStatus
+      || settled?.status !== record.reviewStatus || targetSettled?.status !== target.record.reviewStatus
       || started?.admissionId !== admission.id || started.executionId !== targetRunId || started.valid !== true
       || started.lateConfirmation !== false || started.startedAt !== admission.startedAt
       || ledger.events.indexOf(settled) >= ledger.events.indexOf(started) || ledger.events.indexOf(started) >= ledger.events.indexOf(targetSettled)
@@ -166,16 +198,16 @@ function restoredContinuations(approval, records, original, final, ledger, proje
       || flowId && flowId !== admission.flowId || taskId && taskId !== request.taskId || usersDigest && usersDigest !== source.usersDigest) return null;
     // Closing the host after final settlement may invalidate earlier records.
     // Preserve only the immutable completed start, never a cancelled queued run.
-    if (admission.invalidatedAt !== undefined || stop.reviewStatus !== 'DEVIATION') {
+    if (admission.invalidatedAt !== undefined || stop.reviewStatus !== record.reviewStatus) {
       const release = unique(row => row.type === 'STOP_RELEASED' && row.stopId === admission.stopId);
       if (admission.invalidationReason !== 'RC_NATIVE_CANCELLED' || stop.reviewStatus !== 'UNVERIFIED'
-        || stop.invalidatedReview?.status !== 'DEVIATION' || release?.reasonCode !== 'RC_NATIVE_CANCELLED' || release.accounting !== 'USED'
+        || stop.invalidatedReview?.status !== record.reviewStatus || release?.reasonCode !== 'RC_NATIVE_CANCELLED' || release.accounting !== 'USED'
         || !orderedTimes([final.record.settledAt, admission.invalidatedAt, stop.invalidatedReview.at, release.observedAt])) return null;
     }
     let purpose = 'code-repair';
     if (source.purpose === restorationPurpose) {
       const proof = source.openSpecRestoration, summary = record.reviewSummary;
-      if (plan.status !== 'CHANGED' || record.reasonCode !== 'OPENSPEC_APPLY_PLAN_CHANGED'
+      if (partial || plan.status !== 'CHANGED' || record.reasonCode !== 'OPENSPEC_APPLY_PLAN_CHANGED'
         || summary?.purpose !== restorationPurpose || summary.approvedRevision !== approval.approvedRevision
         || summary.changedRevision !== plan.currentRevision || proof?.purpose !== restorationPurpose
         || proof.approvedRevision !== approval.approvedRevision || proof.initialApplyRunId !== approval.applyRunId
@@ -188,7 +220,7 @@ function restoredContinuations(approval, records, original, final, ledger, proje
     } else if (source.purpose !== undefined || source.openSpecRestoration !== undefined || !validInventory(approval, previous)
       || !same(previous.record.reviewSummary.approvedProposalInventory.requiredAtoms.map(atom => atom.id).sort(), expectedAtoms)) return null;
     steps.unshift({ runId: targetRunId, sourceRunId: record.runId, occurrenceId: record.occurrenceId,
-      admissionId: admission.id, purpose, startedAt: admission.startedAt });
+      admissionId: admission.id, purpose, startedAt: admission.startedAt, ...(partial ? { partialFeedback: true } : {}) });
     flowId = admission.flowId; taskId = request.taskId; usersDigest = source.usersDigest;
     target = previous;
   }

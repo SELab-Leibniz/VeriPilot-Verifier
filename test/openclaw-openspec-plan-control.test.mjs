@@ -6,11 +6,14 @@ import test from 'node:test';
 import { approvedApplyRepairCurrent, approvedInventoryForApply, beginOpenSpecRun, hasApprovedApplyInventory, hasPreparedOpenSpecProposalReview,
   inspectArmedOpenSpecApply, openSpecApplyFinding, openSpecProposalReviewRequirements, registerOpenSpecPlanControl, releaseOpenSpecProposalSession,
   reserveApprovedApplyRepair } from '../lib/openclaw/openspec-plan-control.mjs';
-import { recordProposalCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { recordProposalCoverage as recordCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { publishProposalCoverage } from './support/proposal-coverage.mjs';
 import { nativeTranscriptObservation } from '../lib/openclaw/native-transcript.mjs';
 import { transcriptUserMessages } from '../lib/runtime-v2/original-requirements.mjs';
 import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
+
+const recordProposalCoverage = (...args) => publishProposalCoverage(recordCoverage, ...args);
 
 const changeName = 'preserve-sort-order';
 const otherChange = 'preserve-search-term';
@@ -519,6 +522,44 @@ test('strict approval enforces the private staged atom inventory without adding 
   assert.equal(approval.requiredAtomCount, 1);
   assert.equal(hasPreparedOpenSpecProposalReview(f.api, state), false);
   assert.deepEqual(await f.ok('approve', approve), approval);
+});
+
+test('sealed Proposal review navigation survives preparation release only for its exact native source, revision and scope', async t => {
+  const f = await fixture(t);
+  const observed = nativeTranscriptObservation([userRecord('original', 'proposal', originalText)]);
+  const sources = transcriptUserMessages(observed);
+  await f.ok('prepare', stageRequest(f));
+  const proposal = f.run('proposal', { requireProposalCoverage: true, sources });
+  const state = f.state(proposal.sessionId), snapshot = await f.ok('preview', proposal, reader);
+  const requested = { source: { ref: sources[0].ref, sha256: sha256(originalText), start: 2, end: 2 },
+    requirement: publicRequirement.requirement };
+  assert(openSpecProposalReviewRequirements(f.api, state, { changeName, observed }));
+  const source = createOriginalSourceAnchor({ ...requested.source, bytes: Buffer.from(originalText) });
+  const target = snapshot.documents.find(file => file.path.endsWith('/spec.md'));
+  recordProposalCoverage(state, target.path, { runId: proposal.runId, taskId: state.scopeTaskId, sessionId: state.sessionId,
+    scope: snapshot.documents, rows: [{ source, requirement: requested.requirement, disposition: 'COVERED',
+      targets: [{ ...target, start: 5, end: 5 }] }] });
+  await f.ok('approve', { ...proposal, expectedRevision: snapshot.revision, requiredAtoms: [requested] });
+  assert.equal(hasPreparedOpenSpecProposalReview(f.api, state), false);
+  const read = overrides => openSpecProposalReviewRequirements(f.api, state, { changeName, observed, snapshot, ...overrides });
+  const expected = { requiredAtoms: [{ start: 2, end: 2, source, requirement: requested.requirement }] };
+  assert.deepEqual(read(), expected);
+  const changed = read();
+  changed.requiredAtoms[0].requirement = 'Caller mutation cannot replace sealed wording.';
+  assert.deepEqual(read(), expected);
+  assert.equal(read({ snapshot: { ...snapshot, revision: sha256('other revision') } }), null);
+  assert.equal(read({ changeName: otherChange }), null);
+  assert.equal(read({ snapshot: undefined }), null);
+  assert.equal(read({ observed: nativeTranscriptObservation([userRecord('original', 'proposal', `${originalText}\nNew source.`)]) }), null);
+  for (const [key, value] of [['nativeRunId', 'apply'], ['scopeTaskId', 'other-task'], ['sessionId', 'other-session'],
+    ['sessionKey', 'agent:main:other'], ['scopeClosed', true], ['nativeInvalidated', true],
+    ['projectScope', { fingerprint: 'changed-scope' }]]) {
+    const prior = state[key];
+    state[key] = value;
+    assert.equal(read(), null, key);
+    state[key] = prior;
+  }
+  assert.deepEqual(read(), expected);
 });
 
 async function strictApply(t) {

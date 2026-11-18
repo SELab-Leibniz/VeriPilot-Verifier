@@ -174,7 +174,8 @@ test('required Proposal navigation does not grant source reads or coverage and d
   assert.deepEqual(opened.requiredProposal, { total: 2, navigationOnly: true, action: 'required_proposal' });
   const receiptFor = rows => f.tools.verifyRequirementCoverage(rows);
   const requested = requiredAtoms.map(({ requirement, start, end, source }) => ({ requirement, source: { ref, start, end, sha256: source.sha256 } }));
-  const approve = coverage => sealRequiredProposalCoverage(requested, [{ ref, text: originalText }], coverage);
+  const approve = coverage => sealRequiredProposalCoverage(requested, [{ ref, text: originalText }],
+    { ...coverage, reviewStatus: 'PASSED' }); // This fixture assumes a completed, successful host review.
   const partial = await receiptFor([firstRow, row(anchor.anchorId, { requirement: 'Restore the prior saved ordering when reopened.' })]);
   assert.equal(partial.rows.length, 2, 'another valid row can remain optional coverage evidence');
   assert.throws(() => approve(partial), /coverage is incomplete \(1\/2\)/u);

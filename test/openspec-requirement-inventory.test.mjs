@@ -78,6 +78,7 @@ test('binds exact public spans to retained native source and seals separate atom
   })));
   const anchor = createOriginalSourceAnchor({ ref, sha256: digest, bytes: Buffer.from(input.proposalMessage), start: 4, end: 4 });
   const sealed = sealRequiredProposalCoverage(atoms, [{ ref, text: input.proposalMessage }], {
+    reviewStatus: 'PASSED',
     rows: atoms.map(({ requirement }) => ({ requirement, source: anchor, disposition: 'COVERED', targets: [{ path: 'spec.md' }] })),
   });
   assert.equal(sealed.requiredAtoms.length, 2);

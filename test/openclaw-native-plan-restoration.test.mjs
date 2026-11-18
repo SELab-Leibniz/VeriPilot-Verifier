@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
+import { publishProposalCoverage } from './support/proposal-coverage.mjs';
 import { createNativeStopFixture } from './support/openclaw-native-stop-fixture.mjs';
 
 const { lifecycle, findTask } = createNativeStopFixture();
@@ -19,7 +20,8 @@ for (const variant of ['ordinary', 'strict', 'source-change', 'policy-change']) 
     (await fs.readFile(path.join(f.root, 'draft.md'), 'utf8')).startsWith('Broken') });
   f.state.scopeTaskId = (await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId })).taskId;
   const control = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/openclaw/openspec-plan-control.mjs')));
-  const { recordProposalCoverage } = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/openclaw/approved-plan-coverage.mjs')));
+  const { recordProposalCoverage: recordCoverage } = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/openclaw/approved-plan-coverage.mjs')));
+  const recordProposalCoverage = (...args) => publishProposalCoverage(recordCoverage, ...args);
   const { observeNativeTranscript } = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/openclaw/native-transcript.mjs')));
   const { transcriptUserMessages } = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/runtime-v2/original-requirements.mjs')));
   const { createOriginalSourceAnchor } = await import(pathToFileURL(path.join(f.pluginRoot, 'lib/runtime-v2/original-source-anchor.mjs')));

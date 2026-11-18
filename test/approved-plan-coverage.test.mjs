@@ -3,11 +3,14 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { currentApprovedPlanCoverage, recordProposalCoverage, selectApprovedPlanCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
-import { approvedCoverageForApply, beginOpenSpecRun, hasArmedOpenSpecApply, inspectArmedOpenSpecApply, registerOpenSpecPlanControl } from '../lib/openclaw/openspec-plan-control.mjs';
+import { currentApprovedPlanCoverage, recordProposalCoverage as recordCoverage, selectApprovedPlanCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { approvedCoverageForApply, beginOpenSpecRun, hasApprovedApplyInventory, hasArmedOpenSpecApply, inspectArmedOpenSpecApply, registerOpenSpecPlanControl } from '../lib/openclaw/openspec-plan-control.mjs';
 import { readOpenSpecPlan } from '../lib/openspec-plan.mjs';
 import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
+import { publishProposalCoverage } from './support/proposal-coverage.mjs';
+
+const recordProposalCoverage = (...args) => publishProposalCoverage(recordCoverage, ...args);
 
 const changeName = 'preserve-preferences';
 const change = `openspec/changes/${changeName}`;
@@ -23,6 +26,15 @@ const source = createOriginalSourceAnchor({ ref: 'transcript:requirement', sha25
 function atom(row) {
   return { source: { ref: row.source.ref, sha256: row.source.sha256, start: 1, end: 1 }, requirement: row.requirement };
 }
+
+function hostResult(f, { status = 'passed', semanticStatus = 'completed', diagnostics = [], inputs = f.snapshot.documents,
+  classification } = {}) {
+  return { status, diagnostics, ...(classification ? { classification } : {}),
+    metadata: { inputs, semanticReview: { status: semanticStatus } } };
+}
+
+const blockingError = { ruleId: 'AGENT-PLAN-CONSISTENCY', severity: 'error', path: spec,
+  message: 'The design resets the preference but the approved spec requires retaining it.' };
 
 async function fixture(t) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-approved-plan-coverage-')));
@@ -94,7 +106,7 @@ test('only the exact task, session, and Proposal run can supply coverage for the
   assert.equal(selectApprovedPlanCoverage({ ...f.state }, proposalRunId, f.snapshot), null);
   assert.deepEqual(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), {
     taskId: f.state.scopeTaskId, sessionId: f.state.sessionId, proposalRunId, changeName,
-    approvedRevision: f.snapshot.revision, rows: f.receipt.rows,
+    approvedRevision: f.snapshot.revision, reviewStatus: 'PASSED', rows: f.receipt.rows,
   });
 });
 
@@ -114,24 +126,250 @@ test('partial, stale, duplicate, or foreign plan scope cannot pin Proposal cover
   for (const target of [{ ...f.receipt.rows[0].targets[0], path: 'outside-plan.md' },
     { ...f.receipt.rows[0].targets[0], sha256: sha256('different spec bytes') }]) {
     recordProposalCoverage(f.state, proposal, { ...f.receipt, rows: [{ ...f.receipt.rows[0], targets: [target] }] });
-    assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), null);
+    assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot)?.reviewStatus, 'UNVERIFIED');
   }
 });
 
-test('a newer result for the same trigger invalidates the earlier review', async t => {
+test('a newer full-plan unavailable result invalidates the earlier review while partial uncertainty does not', async t => {
   const f = await fixture(t);
   recordProposalCoverage(f.state, proposal, f.receipt);
   assert(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot));
   recordProposalCoverage(f.state, proposal, { ...f.receipt, scope: f.receipt.scope.slice(1) });
-  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), null);
+  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot)?.reviewStatus, 'PASSED');
 
   recordProposalCoverage(f.state, proposal, f.receipt);
-  recordProposalCoverage(f.state, proposal, null);
-  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), null);
+  recordProposalCoverage(f.state, proposal, null, { result: hostResult(f, { semanticStatus: 'failed', status: 'failed' }) });
+  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot)?.reviewStatus, 'UNVERIFIED');
   recordProposalCoverage(f.state, proposal, f.receipt);
   f.state.nativeRunId = 'new-proposal';
   recordProposalCoverage(f.state, proposal, null);
   assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), null);
+});
+
+test('coverage metadata alone cannot attest that the host review completed successfully', async t => {
+  const f = await fixture(t);
+  recordCoverage(f.state, proposal, { ...f.receipt, reviewStatus: 'PASSED', status: 'passed' });
+  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot), null);
+});
+
+test('strict approval rejects all-COVERED atoms when the completed host review has a blocking cross-document error', async t => {
+  const f = await fixture(t);
+  const covered = [f.receipt.rows[0], f.receipt.rows[3]];
+  const { rpc, reject } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  const receipt = { ...f.receipt, rows: covered, reviewStatus: 'PASSED' };
+  recordProposalCoverage(f.state, proposal, receipt,
+    { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot)?.reviewStatus, 'BLOCKED');
+  const approve = { expectedRevision: (await rpc('preview')).revision, requiredAtoms: covered.map(atom) };
+  assert.match((await reject('approve', approve)).message, /blocking errors/u);
+  await reject('arm', { expectedRevision: approve.expectedRevision, expectedInventorySha256: sha256('not approved'), applyRunId });
+  beginOpenSpecRun(f.state, applyRunId);
+  assert.equal(hasArmedOpenSpecApply(f.state, applyRunId), false);
+
+  recordProposalCoverage(f.state, tasks, receipt);
+  const approved = await rpc('approve', approve);
+  assert.equal(approved.status, 'APPROVED');
+  assert.equal((await rpc('arm', { expectedRevision: approve.expectedRevision,
+    expectedInventorySha256: approved.inventorySha256, applyRunId })).status, 'ARMED');
+});
+
+test('a newer full-plan failure without coverage rows blocks an older PASS under another trigger until a clean re-review', async t => {
+  const f = await fixture(t);
+  const covered = [f.receipt.rows[0], f.receipt.rows[3]];
+  const receipt = { ...f.receipt, rows: covered };
+  const { rpc, reject } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  recordProposalCoverage(f.state, proposal, receipt);
+  const approve = { expectedRevision: (await rpc('preview')).revision, requiredAtoms: covered.map(atom) };
+  const approved = await rpc('approve', approve);
+  const arm = { expectedRevision: approve.expectedRevision, expectedInventorySha256: approved.inventorySha256, applyRunId };
+  recordProposalCoverage(f.state, tasks, null,
+    { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+  const selected = selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot);
+  assert.equal(selected.reviewStatus, 'BLOCKED');
+  assert.deepEqual(selected.rows, []);
+  assert.equal(currentApprovedPlanCoverage(selected, f.verdict), null);
+  assert.match((await reject('approve', approve)).message, /blocking errors/u);
+  assert.match((await reject('arm', arm)).message, /blocking errors/u);
+  beginOpenSpecRun(f.state, applyRunId);
+  assert.equal(hasArmedOpenSpecApply(f.state, applyRunId), false);
+
+  // Advisory diagnostics do not turn a successful semantic review into a block.
+  recordProposalCoverage(f.state, spec, receipt, { result: hostResult(f, { status: 'warning', classification: 'DEVIATION',
+    diagnostics: [{ ...blockingError, severity: 'warning', message: 'Clarify the verification instructions.' }] }) });
+  assert.equal((await rpc('approve', approve)).inventorySha256, approved.inventorySha256);
+  assert.equal((await rpc('arm', arm)).status, 'ARMED');
+});
+
+test('checker failure and pending evidence keep strict approval UNVERIFIED without inventing a requirement contradiction', async t => {
+  for (const scenario of [
+    { status: 'failed', semanticStatus: 'failed', classification: 'CHECKER_FAILURE',
+      diagnostics: [{ ...blockingError, ruleId: 'AGENT-SEMANTIC-REVIEW-FAILED' }] },
+    { status: 'failed', classification: 'CHECKER_FAILURE',
+      diagnostics: [{ ...blockingError, ruleId: 'RUNTIME-PATCH-VALIDATION-FAILED' }] },
+    { status: 'pending', diagnostics: [{ ...blockingError, severity: 'pending' }] },
+  ]) await t.test(scenario.diagnostics[0].ruleId + scenario.status, async t => {
+    const f = await fixture(t);
+    const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+    const { rpc, reject } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+      readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+    recordProposalCoverage(f.state, proposal, receipt);
+    recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, scenario) });
+    assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot).reviewStatus, 'UNVERIFIED');
+    const error = await reject('approve', { expectedRevision: (await rpc('preview')).revision, requiredAtoms: receipt.rows.map(atom) });
+    assert.match(error.message, /unavailable or incomplete/u);
+    assert.doesNotMatch(error.message, /blocking errors/u);
+  });
+});
+
+test('a current subset contradiction holds strict approval until a later clean full-plan review', async t => {
+  const f = await fixture(t);
+  const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+  const { rpc, reject } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  recordProposalCoverage(f.state, proposal, receipt);
+  const approve = { expectedRevision: f.snapshot.revision, requiredAtoms: receipt.rows.map(atom) };
+  const approved = await rpc('approve', approve);
+  const arm = { expectedRevision: f.snapshot.revision, expectedInventorySha256: approved.inventorySha256, applyRunId };
+  const inputs = f.snapshot.documents.filter(file => file.path === spec);
+  recordProposalCoverage(f.state, spec, null, { result: hostResult(f, { inputs, status: 'failed', diagnostics: [blockingError] }) });
+  assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot).reviewStatus, 'BLOCKED');
+  assert.match((await reject('approve', approve)).message, /current Proposal plan review has blocking errors/u);
+  assert.match((await reject('arm', arm)).message, /blocking errors/u);
+
+  // A partial clean/uncertain check cannot resolve a known cross-plan error.
+  for (const result of [hostResult(f, { inputs }), hostResult(f, { inputs, semanticStatus: 'failed', status: 'failed' })]) {
+    recordProposalCoverage(f.state, spec, null, { result });
+    assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot).reviewStatus, 'BLOCKED');
+    await reject('arm', arm);
+  }
+  recordProposalCoverage(f.state, proposal, receipt);
+  assert.equal((await rpc('approve', approve)).inventorySha256, approved.inventorySha256);
+  assert.equal((await rpc('arm', arm)).status, 'ARMED');
+});
+
+test('strict arm is idempotent for a current clean review but every repeat rechecks the latest full-plan outcome', async t => {
+  const f = await fixture(t);
+  const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+  const { rpc, reject } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  recordProposalCoverage(f.state, proposal, receipt);
+  const approved = await rpc('approve', { expectedRevision: f.snapshot.revision, requiredAtoms: receipt.rows.map(atom) });
+  const arm = { expectedRevision: f.snapshot.revision, expectedInventorySha256: approved.inventorySha256, applyRunId };
+  const armed = await rpc('arm', arm);
+  assert.deepEqual(await rpc('arm', arm), armed);
+  await reject('arm', { ...arm, applyRunId: 'different-apply' });
+  recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+  assert.match((await reject('arm', arm)).message, /blocking errors/u);
+  recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, { semanticStatus: 'failed', status: 'failed' }) });
+  assert.match((await reject('arm', arm)).message, /unavailable or incomplete/u);
+  recordProposalCoverage(f.state, spec, receipt);
+  assert.deepEqual(await rpc('arm', arm), armed);
+});
+
+test('a pending strict arm cannot inherit authority after a newer current blocking or full-unverified review', async t => {
+  for (const scenario of ['full-blocked', 'subset-blocked', 'checker-unavailable', 'missing-rows']) await t.test(scenario, async t => {
+    const f = await fixture(t);
+    const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+    const { rpc } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+      readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+    recordProposalCoverage(f.state, proposal, receipt);
+    const approved = await rpc('approve', { expectedRevision: f.snapshot.revision, requiredAtoms: receipt.rows.map(atom) });
+    await rpc('arm', { expectedRevision: f.snapshot.revision, expectedInventorySha256: approved.inventorySha256, applyRunId });
+    const result = hostResult(f, scenario === 'missing-rows' ? {} : scenario === 'checker-unavailable'
+      ? { semanticStatus: 'failed', status: 'failed' }
+      : { status: 'failed', diagnostics: [blockingError], ...(scenario === 'subset-blocked'
+        ? { inputs: f.snapshot.documents.filter(file => file.path === spec) } : {}) });
+    recordProposalCoverage(f.state, tasks, null, { result });
+    // No repeated arm RPC is needed for the host to reject its stale authority.
+    beginOpenSpecRun(f.state, applyRunId);
+    f.state.nativeRunId = applyRunId;
+    assert.equal(hasArmedOpenSpecApply(f.state, applyRunId), false);
+    assert.equal(hasApprovedApplyInventory(f.state, applyRunId), false);
+    assert.equal(await inspectArmedOpenSpecApply(f.state, applyRunId), null);
+    assert.equal(approvedCoverageForApply(f.state, applyRunId, f.verdict), null);
+  });
+});
+
+test('a clean full recheck and explicit rearm recover pending strict authority before Apply starts', async t => {
+  const f = await fixture(t);
+  const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+  const { rpc } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  recordProposalCoverage(f.state, proposal, receipt);
+  const approved = await rpc('approve', { expectedRevision: f.snapshot.revision, requiredAtoms: receipt.rows.map(atom) });
+  const arm = { expectedRevision: f.snapshot.revision, expectedInventorySha256: approved.inventorySha256, applyRunId };
+  const armed = await rpc('arm', arm);
+  recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+  recordProposalCoverage(f.state, spec, receipt);
+  assert.deepEqual(await rpc('arm', arm), armed);
+  beginOpenSpecRun(f.state, applyRunId);
+  f.state.nativeRunId = applyRunId;
+  assert.equal(hasArmedOpenSpecApply(f.state, applyRunId), true);
+  assert.equal(hasApprovedApplyInventory(f.state, applyRunId), true);
+});
+
+test('later Apply reviews do not revoke started strict authority and legacy pending arms keep their behavior', async t => {
+  for (const strict of [true, false]) await t.test(strict ? 'started strict Apply' : 'legacy pending Apply', async t => {
+    const f = await fixture(t);
+    const receipt = { ...f.receipt, rows: [f.receipt.rows[0], f.receipt.rows[3]] };
+    const { rpc } = gatewayFixture(f, () => ({ requireProposalCoverage: strict,
+      readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+    recordProposalCoverage(f.state, proposal, receipt);
+    const approved = await rpc('approve', { expectedRevision: f.snapshot.revision,
+      ...(strict ? { requiredAtoms: receipt.rows.map(atom) } : {}) });
+    await rpc('arm', { expectedRevision: f.snapshot.revision, applyRunId,
+      ...(strict ? { expectedInventorySha256: approved.inventorySha256 } : {}) });
+    if (strict) {
+      beginOpenSpecRun(f.state, applyRunId);
+      f.state.nativeRunId = applyRunId;
+    }
+    recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+    if (!strict) {
+      beginOpenSpecRun(f.state, applyRunId);
+      f.state.nativeRunId = applyRunId;
+    }
+    assert.equal(hasArmedOpenSpecApply(f.state, applyRunId), true);
+    assert.equal(hasApprovedApplyInventory(f.state, applyRunId), strict);
+    assert.equal((await inspectArmedOpenSpecApply(f.state, applyRunId)).status, 'PRESERVED');
+  });
+});
+
+test('stale bytes, other changes, partial scopes and foreign invocations do not poison a current clean review', async t => {
+  const f = await fixture(t);
+  const covered = [f.receipt.rows[0], f.receipt.rows[3]], receipt = { ...f.receipt, rows: covered };
+  recordProposalCoverage(f.state, proposal, receipt);
+  const inputs = f.snapshot.documents;
+  const failures = [
+    { result: hostResult(f, { status: 'failed', diagnostics: [blockingError],
+      inputs: inputs.map((file, i) => i ? file : { ...file, sha256: sha256('stale bytes') }) }) },
+    { result: hostResult(f, { status: 'failed', diagnostics: [blockingError],
+      inputs: inputs.map(file => ({ ...file, path: file.path.replace(changeName, 'another-change') })) }) },
+    { result: hostResult(f, { status: 'failed', semanticStatus: 'failed', inputs: inputs.slice(1),
+      diagnostics: [{ ...blockingError, ruleId: 'AGENT-SEMANTIC-REVIEW-FAILED' }] }) },
+    ...[{ runId: 'other-run' }, { taskId: 'other-task' }, { sessionId: 'other-session' }].map(owner => ({ ...owner,
+      result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) })),
+  ];
+  for (const publication of failures) {
+    recordProposalCoverage(f.state, tasks, null, publication);
+    assert.equal(selectApprovedPlanCoverage(f.state, proposalRunId, f.snapshot).reviewStatus, 'PASSED');
+  }
+  const { rpc } = gatewayFixture(f, () => ({ requireProposalCoverage: true,
+    readProposalSources: async () => [{ ref: source.ref, text: original.toString() }] }));
+  assert.equal((await rpc('approve', { expectedRevision: f.snapshot.revision, requiredAtoms: covered.map(atom) })).status, 'APPROVED');
+});
+
+test('legacy explicit approval and arm do not acquire the strict semantic review gate', async t => {
+  const f = await fixture(t);
+  const { rpc } = gatewayFixture(f);
+  recordProposalCoverage(f.state, tasks, null, { result: hostResult(f, { status: 'failed', diagnostics: [blockingError] }) });
+  const expectedRevision = (await rpc('preview')).revision;
+  assert.equal((await rpc('approve', { expectedRevision })).status, 'APPROVED');
+  assert.equal((await rpc('arm', { expectedRevision, applyRunId })).status, 'ARMED');
+  beginOpenSpecRun(f.state, applyRunId);
+  f.state.nativeRunId = applyRunId;
+  assert.equal(approvedCoverageForApply(f.state, applyRunId, f.verdict), null);
 });
 
 test('publication and Apply filtering leave the selected Proposal coverage unchanged', async t => {
