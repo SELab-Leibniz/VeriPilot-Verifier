@@ -48,6 +48,54 @@ test('mixed legacy explanations need explicit authorization and never waive a gl
   }
 });
 
+test('a missing failure inventory never grants authorization for the aggregate regression check', () => {
+  const id = 'regression-check';
+  const reason = 'The request replaces the original expected behavior.';
+  for (const disposition of [
+    { status: 'REVIEWED', cases: [{ id, verdict: 'AUTHORIZED_CHANGE', reason }] },
+    { status: 'EXPLAINED', explanations: [{ failure: id, reason }] },
+  ]) {
+    for (const inventory of [null, { complete: false, failures: [] }]) {
+      const reviewed = reviewedRegressionFailures({ inventory, disposition, hasDeviation: () => false });
+      assert.equal(reviewed.status, 'UNVERIFIED');
+      assert.deepEqual(reviewed.cases, [{ id, verdict: 'UNVERIFIED', reason: 'The program did not report an exact failing case to authorize.' }]);
+    }
+    const actualCase = reviewedRegressionFailures({ inventory: { complete: true, failures: [{ id }] }, disposition, hasDeviation: () => false });
+    assert.equal(actualCase.cases[0].verdict, 'AUTHORIZED_CHANGE');
+  }
+});
+
+test('collateral execution must report exactly one consistent outcome for each requested probe', () => {
+  const reviewed = { status: 'UNVERIFIED', cases: ['obsolete', 'one', 'two'].map((id, index) => ({
+    id, verdict: index ? 'UNVERIFIED' : 'AUTHORIZED_CHANGE',
+  })) };
+  const request = { requestId: 'exact-probes', baselineSha256: 'baseline', exclusions: [{ id: 'obsolete' }], probes: ['one', 'two'] };
+  const proof = { requestId: request.requestId, baselineSha256: request.baselineSha256, taskStartSuite: true, complete: true,
+    excludedIds: ['obsolete'], expectedSurvivingCount: 2, observedSurvivingCount: 2, failures: ['two'], probes: { one: 'PASS', two: 'FAIL' } };
+  const run = (encoded, metadata = {}) => ({ exitCode: 1, outputTail: `RC_REGRESSION_COLLATERAL ${encoded}\n`, ...metadata });
+  const valid = applyCollateralReceipt(reviewed, request, run(JSON.stringify(proof)));
+  assert.deepEqual(valid.cases.map(item => item.verdict), ['AUTHORIZED_CHANGE', 'COLLATERAL_FAILURE', 'UNVERIFIED']);
+
+  for (const invalid of [
+    null,
+    { ...proof, excludedIds: {} },
+    { ...proof, expectedSurvivingCount: '2', observedSurvivingCount: '2' },
+    { ...proof, expectedSurvivingCount: 1, observedSurvivingCount: 1 },
+    { ...proof, failures: ['two', 'two'] },
+    { ...proof, failures: ['one', 'two'] },
+    { ...proof, failures: [] },
+    { ...proof, probes: { one: 'PASS' } },
+    { ...proof, probes: { one: 'PASS', unrelated: 'FAIL' } },
+    { ...proof, probes: { ...proof.probes, extra: 'PASS' } },
+    { ...proof, probes: { ...proof.probes, two: 'UNAVAILABLE' } },
+  ]) assert.equal(applyCollateralReceipt(reviewed, request, run(JSON.stringify(invalid))), reviewed);
+  const encoded = JSON.stringify(proof);
+  const duplicate = encoded.replace('"one":"PASS"', '"one":"FAIL","one":"PASS"');
+  assert.equal(applyCollateralReceipt(reviewed, request, run(duplicate)), reviewed);
+  for (const metadata of [{ signal: 'SIGTERM' }, { truncated: true }, { timedOut: true }])
+    assert.equal(applyCollateralReceipt(reviewed, request, run(encoded, metadata)), reviewed);
+});
+
 test('both regression formats reject unknown IDs and duplicates within their own list', () => {
   for (const disposition of [
     { cases: [{ id: 'unknown', verdict: 'UNVERIFIED' }], explanations: [] },

@@ -2,6 +2,7 @@
 // scoring is deliberately a later evaluator process, never a host tool.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { randomUUID, createHash } from 'node:crypto';
@@ -16,18 +17,26 @@ import { arktsRunProfile, renderArktsRunConfig } from './bench/arkts-run-profile
 import { verifyFrozenArtifact } from './bench/frozen-artifact-verification.mjs';
 import { restoreStopSessionLedger } from './bench/restore-stop-session.mjs';
 import { restoreNativeProjectScope } from './bench/restore-project-scope.mjs';
-import { runBoundedProcess } from './bench/bounded-process.mjs';
 import { localTestEvidence } from './bench/local-test-evidence.mjs';
+import { runArktsLocalTest } from './bench/arkts-local-test.mjs';
+import { arktsToolchainCommand } from './bench/arkts-toolchain-runner.mjs';
 import { createBusinessCheckpointObserver } from './bench/business-checkpoint.mjs';
 import { assertBusinessSessionIdentity, EXPERIMENT_SESSION_RESET } from './bench/session-continuity.mjs';
 import { createSimplifyGateway, redactEvaluationText, resolveSimplifyProvider, summarizeProviderUsage } from './helpers/simplify-native-evaluation.mjs';
 import { STOP_ARMS } from './simplify-experiment-schedule.mjs';
 import { prepareFrozenArktsWorkspace, reviewFrozenArktsDraft } from './bench/simplify-arkts-frozen.mjs';
-import { prepareJava } from './bench/arkts-java.mjs';
+import { prepareJava, resolveJavaHome } from './bench/arkts-java.mjs';
 import { applyRcConfigOverrides, deepMerge, emitSimpleYaml, loadRcConfigOverrides, regressionCheckPolicy } from './bench/rc-config-overrides.mjs';
 import { parseSimpleYaml as parseHarnessYaml } from '../lib/simple-yaml.mjs';
 const parseConfiguredStop = text => parseHarnessYaml(text, { source: 'project config' }).stopCorrection ?? {};
 const arg = key => process.argv.find(value => value.startsWith(`${key}=`))?.slice(key.length + 1);
+const instrumentConfig = arg('--instrument-config'), instrumentToolchainSha256 = arg('--instrument-toolchain-sha256');
+const json5Option = arg('--json5-package');
+const json5Package = json5Option && path.resolve(json5Option);
+const explicitToolRoot = arg('--tool-root'), explicitJavaHome = arg('--java-home');
+if ((instrumentConfig !== undefined || instrumentToolchainSha256 !== undefined)
+  && (!instrumentConfig || !/^[a-f0-9]{64}$/u.test(instrumentToolchainSha256 ?? '') || !explicitToolRoot || !json5Package))
+  throw new Error('Instrument Test requires --instrument-config, --instrument-toolchain-sha256, --tool-root and --json5-package.');
 const rcOverrides = await loadRcConfigOverrides(arg('--rc-config-overrides'));
 let stopPolicy = null;
 const profile = arktsRunProfile(arg('--phase-timeout-ms'), { hostNoTimeout: process.argv.includes('--host-no-timeout') });
@@ -74,12 +83,12 @@ if (process.argv.includes('--release-build')) {
   }
 } else if (arg('--source-commit')) throw new Error('--source-commit requires --release-build.');
 const hostRoot = arg('--host-root');
-const toolRoot = arg('--tool-root') ?? 'C:/Program Files/Huawei/command-line-tools';
+const toolRoot = path.resolve(explicitToolRoot ?? 'C:/Program Files/Huawei/command-line-tools');
 let providerIdentity, archive;
 if (simplifyArm) {
   if (!s0 && !Object.hasOwn(STOP_ARMS, simplifyArm) || Boolean(frozenRoot) === s0 || profile.hostNoTimeout !== s0
     || arg('--resume-run') || arg('--artifact') || !hostRoot || !arg('--output') || !arg('--cache') || !arg('--workspace-root')
-    || !arg('--dataset') || !arg('--tool-root') || !arg('--package') || !profile.explicit || arg('--provider') !== 'host-profile'
+    || !arg('--dataset') || !explicitToolRoot || !arg('--package') || !profile.explicit || arg('--provider') !== 'host-profile'
     || digest(await fs.readFile(path.join(sourceRoot, 'docs/simplify-experiment-plan.md'))) !== planSha256)
     throw new Error('Supply pinned ArkTS plan, local paths, DeepSeek provider, and the appropriate S0 or frozen Stop mode.');
   if (!Object.hasOwn(packageSources, packageSha256) || !Object.hasOwn(packageSources, frozenPackageSha256)
@@ -105,6 +114,7 @@ if (resumeRoot) {
       throw new Error('Pending verification requires an authoritative completed business run with unresolved RC acceptance');
   }
   if (resumeManifest.instanceId !== task.instance_id || resumeManifest.datasetDigest !== datasetDigest) throw new Error('Resume task identity changed.');
+  if (resumeManifest.publicInstrumentSha256 !== instrumentToolchainSha256) throw new Error('Resume Instrument Test toolchain identity changed.');
   try { process.kill(resumeManifest.ownerPid, 0); throw new Error('Prior run owner is still alive.'); }
   catch (error) { if (error.code !== 'ESRCH') throw error; }
   const sessions = JSON.parse(await fs.readFile(path.join(resumeRoot, 'native-host/sessions.json'), 'utf8'));
@@ -116,8 +126,20 @@ if (resumeRoot) {
   const head = execFileSync(gitExecutable, ['-C', resumeManifest.projectRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   if (head !== (resumeManifest.resumeHead ?? resumeManifest.preparedHead)) throw new Error('Prior prepared business HEAD changed.');
   if (resumeManifest.resumeHead) execFileSync(gitExecutable, ['-C', resumeManifest.projectRoot, 'merge-base', '--is-ancestor', resumeManifest.preparedHead, head], { windowsHide: true });
-  await fs.mkdir(outputRoot, { recursive: false });
 }
+let instrument;
+if (instrumentConfig) {
+  const { arktsInstrumentRoute, captureArktsInstrumentIdentity, loadArktsInstrumentConfig } = await import('./bench/arkts-instrument-runtime.mjs');
+  const config = await loadArktsInstrumentConfig(path.resolve(instrumentConfig));
+  const route = arktsInstrumentRoute(config, task.instance_id);
+  createRequire(json5Package).resolve('json5');
+  const { javaHome } = resolveJavaHome({ explicit: explicitJavaHome });
+  const runtime = await captureArktsInstrumentIdentity({ config, toolRoot, javaHome });
+  if (runtime.sha256 !== instrumentToolchainSha256) throw new Error('Instrument Test toolchain changed after preflight.');
+  instrument = { route, expectedDevice: runtime.devices.find(device => device.target === route.target), json5Package };
+  process.env.RC_ARKTS_INSTRUMENT = JSON.stringify(instrument);
+}
+if (resumeRoot) await fs.mkdir(outputRoot, { recursive: false });
 const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, preparedHead: resumeManifest.preparedHead,
   ...(resumeManifest.resumeHead ? { resumeHead: resumeManifest.resumeHead } : {}),
   baseCommit: resumeManifest.baseCommit, environmentAdapted: true, resumedFrom: resumeRoot }
@@ -125,19 +147,19 @@ const prepared = resumeRoot ? { projectRoot: resumeManifest.projectRoot, prepare
     artifactSha256: frozenPackageSha256, planSha256, git: gitExecutable, cacheRoot, outputRoot, workspaceRoot: arg('--workspace-root') })
   : await prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, gitExecutable,
   ...(arg('--workspace-base') ? { workspaceBase: path.resolve(arg('--workspace-base')) } : {}),
-  workspaceRoot: arg('--workspace-root'), json5Package: arg('--json5-package'),
+  workspaceRoot: arg('--workspace-root'), json5Package,
   ...(profile.explicit ? { preparationTimeoutMs: profile.setupTimeoutMs } : {}) });
 const input = arktsAgentInput(task), projectRoot = prepared.projectRoot;
 const inheritedScope = resumeRoot ? await inheritedBusinessMutationScope(resumeRoot, projectRoot)
   : { mutationPaths: [], sourceRun: null, skippedStartupRuns: [] };
 await fs.writeFile(path.join(outputRoot, 'inherited-business-scope.json'), JSON.stringify(inheritedScope, null, 2));
 await fs.writeFile(path.join(outputRoot, 'public-input.json'), JSON.stringify(input, null, 2));
-const setupScript = fileURLToPath(new URL('./bench/run-arkts-toolchain.ps1', import.meta.url));
-const java = prepareJava({ explicit: arg('--java-home'), projectRoot, toolRoot });
+const java = prepareJava({ explicit: explicitJavaHome, projectRoot, toolRoot });
 await fs.writeFile(path.join(outputRoot, 'java.json'), JSON.stringify(java, null, 2));
 if (!resumeRoot) try {
-  const installed = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
-    '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'install'], { windowsHide: true, timeout: profile.setupTimeoutMs, maxBuffer: 2 * 1024 * 1024 });
+  const install = arktsToolchainCommand({ toolRoot, javaHome: java.javaHome, projectRoot, phase: 'install' });
+  const installed = execFileSync(install.command, install.args, {
+    env: install.env, windowsHide: true, timeout: profile.setupTimeoutMs, maxBuffer: 2 * 1024 * 1024 });
   await fs.writeFile(path.join(outputRoot, 'install.log'), simplifyArm ? redactEvaluationText(installed) : installed);
 } catch (error) {
   await fs.writeFile(path.join(outputRoot, 'install.log'), String(error.stdout ?? '') + String(error.stderr ?? ''));
@@ -203,32 +225,30 @@ let baselineLocalTests = resumeRoot ? await fs.readFile(path.join(resumeRoot, 'b
   if (error.code === 'ENOENT') return null; throw error;
 }) : null;
 if (!resumeRoot && process.argv.includes('--baseline-local-tests')) {
-  const coverage = path.join(projectRoot, 'entry/.test/default/intermediates/test/coverage_data/coverage.log');
-  await fs.rm(coverage, { force: true });
-  const started = Date.now(); let fullOutput = '';
-  const execution = await runBoundedProcess('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', setupScript,
-    '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'test'], { cwd: projectRoot, timeoutMs: profile.checkTimeoutMs, onOutput(value) { fullOutput += value; } });
-  await fs.writeFile(path.join(outputRoot, 'baseline-local-test.log'), fullOutput);
-  const stat = await fs.stat(coverage).catch(() => null), freshReport = Boolean(stat && stat.mtimeMs >= started - 2000);
-  const raw = freshReport ? await fs.readFile(coverage, 'utf8') : '';
+  const { execution, output, raw, freshReport } = await runArktsLocalTest({ projectRoot, toolRoot, javaHome: java.javaHome,
+    timeoutMs: profile.checkTimeoutMs, instrument });
+  await fs.writeFile(path.join(outputRoot, 'baseline-local-test.log'), output);
   await fs.writeFile(path.join(outputRoot, 'baseline-local-coverage.log'), raw);
-  baselineLocalTests = localTestEvidence(raw, execution, { freshReport, compileOutput: fullOutput });
+  baselineLocalTests = localTestEvidence(raw, execution, { freshReport, compileOutput: output });
   if (!baselineLocalTests.completeRuntime) throw new Error('Original local-test baseline did not finish; inspect baseline-local-test.log before starting a model.');
   baselineLocalTests.baseCommit = prepared.preparedHead;
 }
 if (baselineLocalTests) await fs.writeFile(path.join(outputRoot, 'baseline-local-tests.json'), JSON.stringify(baselineLocalTests, null, 2));
 const extra = await createArktsBenchTools({ outputRoot, projectRoot, toolRoot, stableNavigationRoot, checkTimeoutMs: profile.checkTimeoutMs, baselineLocalTests, pagedReads,
-  javaHome: java.javaHome });
+  javaHome: java.javaHome, instrument });
 const checkpointObserver = resumeRoot ? await createBusinessCheckpointObserver({ outputRoot, projectRoot, preparedHead: prepared.preparedHead }) : null;
 const { transcript: _frozenTranscript, frozen: _frozen, ...preparedSummary } = prepared;
 const manifest = { kind: 'real-native-arkts-rc-run', instanceId: task.instance_id, datasetDigest, ...preparedSummary,
   ...(arm ? { simplifyArm, planSha256, artifactSha256: packageSha256, providerIdentity,
     ...(frozenRoot ? { freezeSha256: arg('--freeze-sha256'), frozenPackageSha256 } : {}) } : {}),
+  ...(instrument ? { publicInstrumentSha256: instrumentToolchainSha256 } : {}),
   rcSource: verifiedRcCommit, java: { javaHome: java.javaHome, source: java.source, version: java.version }, stopPolicy,
   harnessSha256: Object.fromEntries(await Promise.all(['run-arkts-rc-case.mjs', 'helpers/native-gateway-evaluation.mjs', 'helpers/provider-fetch-timing.mjs',
     'bench/native-arkts-tools.mjs', 'bench/local-test-evidence.mjs', 'bench/hypium-results.mjs', 'bench/arkts-run-profile.mjs',
     'bench/business-completion.mjs', 'bench/business-mutations.mjs', 'bench/session-continuity.mjs', 'bench/bounded-process.mjs', 'bench/prepare-arkts-model-workspace.mjs',
-    'bench/run-arkts-toolchain.ps1', 'bench/arkts-java.mjs', 'bench/rc-config-overrides.mjs', 'bench/simplify-arkts-frozen.mjs']
+    'bench/run-arkts-toolchain.ps1', 'bench/arkts-toolchain-runner.mjs', 'bench/arkts-local-test.mjs', 'bench/arkts-java.mjs', 'bench/rc-config-overrides.mjs', 'bench/simplify-arkts-frozen.mjs',
+    ...(instrument ? ['bench/arkts-toolchain-identity.mjs', 'bench/arkts-public-test-snapshot.mjs', 'bench/arkts-instrument-runtime.mjs',
+      'bench/arkts-instrument-device.mjs', 'bench/arkts-instrument-build.mjs', 'bench/arkts-instrument-workspace.mjs', 'bench/arkts-instrument-results.mjs'] : [])]
     .map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')]))),
   prebuiltArtifact: artifact, commonNavigationRoot: stableNavigationRoot,
   businessModel: providerIdentity?.modelRef ?? `anthropic/${model}`, privateModel: reviewerModel ? `custom/${reviewerModel}` : providerIdentity?.modelRef ?? `anthropic/${model}`, businessTools: businessToolNames,

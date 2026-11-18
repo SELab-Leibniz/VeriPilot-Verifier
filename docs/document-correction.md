@@ -1,5 +1,6 @@
 # 文档纠偏：项目会话与按需证据
 
+<!-- evaluation-only -->
 ## 动态基线与真实 benchmark 需求文档
 
 同一入口增加 `--dynamic-baseline`，启用生产动态需求抽取和文档 Ground Truth 评审。复制类样例从原始用户任务及项目约束抽取并发布正式基线，记录复制契约和作者操作要求；`dynamicGroundTruth.materialRoots: []` 避免把大段示例代码重复提炼为运行义务。完整 `requirements.md` 仍作为已声明的文档 Ground Truth，由原生文档审查直接读取，并由 `review.copyFrom` 比较全部字符。文档自动 Hook 的各轮评审均须绑定已发布的基线版本。这只调整此复制类实验入口，不改变普通方案设计任务的材料配置。只启用基线和文档，Skill、实现检查、Stop、额外指标和 onboarding 小组全部关闭。
@@ -189,6 +190,7 @@ node scripts/evaluate-document-e2e.mjs --live \
 
 定位校验覆盖当前声明文件的物理行号和逐字引用，支持 `path:line: 'quote'`、双引号和行范围。定位错误要求模型重新读取并提交，程序不会悄悄挪动发现。修订后的检查必须使用当前哈希对应的完整文档，不能复用之前的 PASS。
 
+<!-- /evaluation-only -->
 ## 目标与范围
 
 本方案优化 MatrixAssistant / OpenClaw 的 artifacts、bundle、workflow 节点和入边文档评审。实现放在 runtime-corrector 插件中，不修改宿主。开发使用从当前分支建立的外部 Git worktree，共享原仓库对象；运行时直接读取项目原文件，不克隆或复制代码仓。
@@ -222,6 +224,7 @@ Stop 的任务评审引擎和 CLI 宿主的默认会话策略保持原协议。�
 
 确定性测试覆盖同项目串行和复用、跨进程互斥与崩溃恢复、取消和截止时间、空闲/失败/策略变化后的释放、当前工具绑定、重复事件零模型调用、文件变化后的拒绝、笔记失效、压缩 Hook checkpoint、MCP 真实 stdio 往返、范围和链接约束。原有文档 workflow、diff、权限、宿主进度、插件打包和注册契约继续复验。
 
+<!-- evaluation-only -->
 全量初测执行 144 个文件，出现机器负载相关的截止时间/性能阈值失败及新资源清单断言失败。补齐新工具与 skill 的打包断言后，13 个相关或失败文件改为串行复验，404 项全部通过；没有放宽既有时间与业务断言。最终文档专项和宿主/打包契约另行复验。历史初测失败与复验结果均保留在工作树的 `.runtime-correction/` 验证记录中。
 
 真实模型实验使用本机已配置的 Claude Code 模型及真实 MCP 工具，生成一个小型文档夹具，不复制仓库：连续检查“云端导入偏离 → 离线导入正确 → 遥测网络调用再次偏离”。冷启动组每轮新会话、分步导航读取；优化组一个会话、批量 `open`。两组均 3/3 判断正确。
@@ -245,3 +248,4 @@ node scripts/experiment-document-agent.mjs .runtime-correction/document-experime
 ```
 
 第三条会使用本机 Claude Code 的已配置模型产生真实用量。可通过 `RC_DOCUMENT_CLAUDE` 指定原生可执行文件。MCP 适配器采用 [官方 stdio 协议](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)，可用 `node scripts/document-tools.mjs <semantic-request.json> --stdio` 启动；这是单轮工具进程，私有笔记持久化在项目中。
+<!-- /evaluation-only -->

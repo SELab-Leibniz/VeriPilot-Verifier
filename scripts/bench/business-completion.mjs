@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 // The public terminal owns completion. Diagnostic session.ended events also
 // describe intermediate attempts and cannot establish whole-run success.
 export async function readBusinessTerminal(request, runId) {
@@ -15,11 +17,64 @@ export async function readBusinessTerminal(request, runId) {
     errorName: error?.name ?? 'Error', ...(typeof error?.code === 'string' ? { errorCode: error.code } : {}) }; }
 }
 export function knownBusinessTerminal(terminal, runId) {
-  return terminal?.source === 'agent.wait' && terminal.runId === runId
+  return typeof runId === 'string' && runId.length > 0 && terminal?.source === 'agent.wait' && terminal.runId === runId
     && ['ok', 'error'].includes(terminal.status);
 }
 export function businessCompleted(terminal, runId) {
   return knownBusinessTerminal(terminal, runId) && terminal.status === 'ok';
+}
+
+// The active retained branch must end in the exact stream error. The leaf
+// may hold a short text fragment. All invocations must already have results.
+export function retainedBusinessTransportError(records, { runId, sessionId }) {
+  if (!runId || !sessionId || records[0]?.type !== 'session' || records[0]?.id !== sessionId) return null;
+  const entries = records.slice(1).filter(row => row?.id);
+  const byId = new Map(entries.map(row => [row.id, row]));
+  const leaf = entries.at(-1), message = leaf?.message;
+  const startedAt = message?.timestamp, persistedAt = Date.parse(leaf?.timestamp);
+  const content = message?.content;
+  const fragment = Array.isArray(content) && content.length === 1 ? content[0] : null;
+  const retainedTextBytes = fragment?.type === 'text' && typeof fragment.text === 'string'
+    && Object.keys(fragment).every(key => key === 'type' || key === 'text') ? Buffer.byteLength(fragment.text) : null;
+  if (byId.size !== entries.length || leaf?.type !== 'message' || message?.role !== 'assistant'
+    || message.stopReason !== 'error' || message.errorMessage !== 'terminated'
+    || !Array.isArray(content) || content.length > 0 && (retainedTextBytes === null || retainedTextBytes > 1024)
+    || message.usage?.totalTokens !== 0
+    || !Number.isFinite(startedAt) || !Number.isFinite(persistedAt) || persistedAt < startedAt) return null;
+  const results = new Map(), seen = new Set([leaf.id]);
+  for (let row = byId.get(leaf.parentId); row && !seen.has(row.id); row = byId.get(row.parentId)) {
+    seen.add(row.id);
+    const value = row.message;
+    if (value?.role === 'user') {
+      if (value.idempotencyKey !== `${runId}:user` || results.size) return null;
+      return { messageId: leaf.id, messageSha256: createHash('sha256').update(JSON.stringify(message)).digest('hex'),
+        startedAt, persistedAt, failureKind: 'terminated', ...(retainedTextBytes ? { retainedTextBytes } : {}) };
+    }
+    if (value?.role === 'toolResult') {
+      if (!value.toolCallId || !value.toolName || results.has(value.toolCallId)) return null;
+      results.set(value.toolCallId, value.toolName);
+    } else if (value?.role === 'assistant') {
+      for (const call of value.content?.filter?.(block => block.type === 'toolCall') ?? []) {
+        if (!call.id || !call.name || results.get(call.id) !== call.name) return null;
+        results.delete(call.id);
+      }
+    }
+  }
+  return null;
+}
+
+export function pairedBusinessWorkflowFailure(final, openSpec) {
+  if (!final?.settled || !knownBusinessTerminal(final.terminal, final.finalRunId)) return 'OPENCLAW_BUSINESS_UNSETTLED';
+  if (final.terminal.status === 'error') return 'OPENCLAW_BUSINESS_TERMINAL_ERROR';
+  if (openSpec.proposal?.readyToApply !== true) return 'OPENSPEC_PLAN_NOT_READY';
+  if (openSpec.applyChecklistPreserved === false) return 'OPENSPEC_APPLY_CHECKLIST_CHANGED';
+  if (openSpec.applyChecklistPreserved !== true) return 'OPENSPEC_APPLY_PROGRESS_UNVERIFIED';
+  if (openSpec.applyChecklistCorrection && openSpec.applyChecklistCorrection.verified !== true) return 'OPENSPEC_APPLY_CHECKLIST_RECOVERY_UNVERIFIED';
+  if (openSpec.applyWorkflowScope?.status === 'CHANGED') return 'OPENSPEC_APPLY_WORKFLOW_CHANGED';
+  if (Object.hasOwn(openSpec, 'applyWorkflowScope') && openSpec.applyWorkflowScope?.status !== 'PRESERVED')
+    return 'OPENSPEC_APPLY_WORKFLOW_UNVERIFIED';
+  if (openSpec.codeing?.applyComplete === true) return null;
+  return openSpec.codeing?.readyToApply === true ? 'OPENSPEC_APPLY_INCOMPLETE' : 'OPENSPEC_APPLY_PROGRESS_UNVERIFIED';
 }
 
 export function nativeCompactionStart(event, { sessionId, sessionKey }) {

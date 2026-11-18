@@ -149,7 +149,8 @@
                 "type": "boolean"
               },
               "criteria": {},
-              "copyFrom": { "type": "string", "minLength": 1 }
+              "copyFrom": { "type": "string", "minLength": 1 },
+              "deferUntilBundleComplete": { "type": "boolean" }
             },
             "additionalProperties": false
           }
@@ -318,6 +319,11 @@
         },
         "originalRequirementsEnabled": {
           "type": "boolean"
+        },
+        "requireOpenSpecProposalCoverage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Require an operator-supplied inventory and verified plan coverage for each listed original user requirement before approving and arming OpenSpec Apply."
         }
       },
       "additionalProperties": false
@@ -436,6 +442,11 @@
           "default": false,
           "description": "Report only evidence-backed Stop deviations and release completed scans without a PASS verdict."
         },
+        "requireCurrentProductionCoverage": {
+          "type": "boolean",
+          "default": false,
+          "description": "At TASK_COMPLETE, require current production evidence for each applicable original implementation checklist item."
+        },
         "regressionCheck": {
           "type": "object",
           "description": "Optional program-run existing-test command for the standing regression item. Runs at most once per Stop review, only when existing source changed; never through a shell.",
@@ -477,6 +488,28 @@
               "default": 65536,
               "description": "Bytes of combined output tail persisted as program evidence."
             },
+            "reportProtocol": {
+              "const": "completed-suite-v1",
+              "description": "Require one complete machine inventory, a positive executed-test count, and an exit status consistent with the failures."
+            },
+            "verifierProtocol": {
+              "const": "split-requirement-v1",
+              "description": "Allow the configured verifier to run requirement-only and regression-only checks as separate phases."
+            },
+            "collateralProtocol": {
+              "const": "exclude-cases-v1",
+              "description": "Allow the configured verifier to recheck collateral regressions after excluding authorized test changes."
+            },
+            "testSource": {
+              "enum": ["task-start", "current"],
+              "description": "Declare whether the configured verifier uses the task-start or current test source."
+            },
+            "routeEnvironment": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$" },
+              "description": "At most 32 environment variable names whose values are hashed to identify the configured verifier route."
+            },
             "baselineFile": {
               "type": "string",
               "minLength": 1,
@@ -488,6 +521,20 @@
               "minLength": 1,
               "items": { "type": "string", "minLength": 1 },
               "description": "Fresh single-case runner argv. Must contain {testId}; substitution never invokes a shell."
+            },
+            "requirementBindings": {
+              "type": "array",
+              "uniqueItems": true,
+              "description": "Up to 64 exact original user quotes, each up to 1024 code points. An empty list permits navigation only for every failure. Requires an enabled command with a pinned probe and distinct --requirement-test= cases.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "testId": { "type": "string", "minLength": 1, "pattern": "^(?!\\s)(?![\\s\\S]*[\\r\\n\\u0000])[\\s\\S]*\\S(?![\\s\\S])" },
+                  "quote": { "type": "string", "minLength": 1, "pattern": "^(?!\\s)[^\\u0000]*[^\\s\\u0000](?![\\s\\S])" }
+                },
+                "required": ["testId", "quote"],
+                "additionalProperties": false
+              }
             }
           },
           "additionalProperties": false
@@ -672,6 +719,18 @@
       "type": "boolean",
       "description": "Observe-only mode: the corrector observes, classifies and journals exactly as normal but delivers no decision or feedback to the developer. The key name is kept for compatibility; must survive config loading (see lib/policy/project-policy.mjs)."
     },
+    "acceptanceFeedback": {
+      "type": "object",
+      "required": ["tool"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{1,128}$"
+        }
+      },
+      "additionalProperties": false,
+      "description": "OpenClaw advisory for an explicitly trusted verifier tool with run-bound independent acceptance and incomplete supporting check reports."
+    },
     "implementationCorrection": {
       "type": "object",
       "required": [
@@ -709,7 +768,7 @@
             "string",
             "null"
           ],
-          "description": "Platform adapter for the deterministic kit-integration check (config/platforms/<name>.json). Default: harmonyos. null or an unknown platform skips the kit check."
+          "description": "Platform adapter for the deterministic kit-integration check (config/platforms/<name>.json). Without explicit configuration the adapter is selected from project markers. null or an unknown platform skips the kit check."
         }
       },
       "additionalProperties": false,

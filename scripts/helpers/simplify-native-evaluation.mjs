@@ -9,11 +9,12 @@ import { createNativeGatewayEvaluation } from './native-gateway-evaluation.mjs';
 export const simplifyProviderUrl = 'https://open.bigmodel.cn/api/coding/paas/v4';
 const arkAnthropicUrl = 'https://ark.cn-beijing.volces.com/api/coding';
 export const deepseekModel = 'deepseek-v4-flash';
-const profileModelRef = `custom/${deepseekModel}`;
+export const deepseekCodingModel = 'deepseek-flash';
+export const deepseekReviewerModel = 'deepseek-v4-pro';
 let transientProfileKey;
 
 export function supportsSimplifyModel(provider, model, openclawProfile) {
-  return provider === 'host-profile' ? model === deepseekModel && Boolean(openclawProfile)
+  return provider === 'host-profile' ? [deepseekCodingModel, deepseekModel].includes(model) && Boolean(openclawProfile)
     : ['coding-plan', 'anthropic-environment'].includes(provider) && ['glm-5.3', 'glm-5.3-flash'].includes(model) && !openclawProfile;
 }
 
@@ -22,17 +23,20 @@ export async function resolveSimplifyProvider(kind, model, openclawProfile, revi
   if (!supportsSimplifyModel(kind, model, openclawProfile)) throw new Error('DeepSeek requires the custom OpenClaw profile route.');
   try {
     const { openclawProfileProvider } = await import('../evaluate-openclaw-document-e2e.mjs');
-    const { provider, credential } = await openclawProfileProvider(path.resolve(openclawProfile), profileModelRef);
-    transientProfileKey = credential();
+    const profile = path.resolve(openclawProfile);
+    const { modelRef, provider, credential } = await openclawProfileProvider(profile, `custom/${model}`);
+    const profileKey = credential();
     const reviewer = reviewerModel && reviewerModel !== model
-      ? await openclawProfileProvider(path.resolve(openclawProfile), `custom/${reviewerModel}`) : null;
+      ? await openclawProfileProvider(profile, `custom/${reviewerModel}`) : null;
     if (reviewer && (reviewer.provider.api !== provider.api || reviewer.provider.baseUrl !== provider.baseUrl
-      || reviewer.credential() !== transientProfileKey)) throw new Error('Reviewer must use the same protected provider.');
+      || reviewer.credential() !== profileKey)) throw new Error('Reviewer must use the same protected provider.');
     const endpoint = new URL(provider.baseUrl);
     if (provider.api !== 'openai-completions' || endpoint.protocol !== 'https:' || endpoint.username || endpoint.password
-      || endpoint.search || endpoint.hash || JSON.stringify(provider).includes(transientProfileKey)) throw new Error('Invalid profile provider.');
+      || endpoint.search || endpoint.hash || JSON.stringify([provider, reviewer?.provider]).includes(profileKey))
+      throw new Error('Invalid profile provider.');
+    transientProfileKey = profileKey;
     return { identity: { kind, origin: endpoint.origin, endpointSha256: createHash('sha256').update(provider.baseUrl).digest('hex'),
-      model, modelRef: profileModelRef, ...(reviewer ? { reviewerModelRef: `custom/${reviewerModel}` } : {}) }, provider, credential,
+      model, modelRef, ...(reviewer ? { reviewerModelRef: reviewer.modelRef } : {}) }, provider, credential,
       reviewerProvider: reviewer?.provider };
   } catch {
     throw new Error('The custom DeepSeek provider or its transient credential is unavailable or invalid.');
@@ -62,49 +66,89 @@ export async function countProfileCredentialMatches(directory, credential) {
 // after an upstream failure. The SDK and the process fetch share this boundary.
 // With pairRateLimitPauseMs a peer's 429 pauses this run's next dispatch until
 // the shared cooldown ends instead of failing it; the pause is recorded.
-export function installSimplifyProfileBoundary({ hostRoot, provider, credential, reviewerModel, maxRequests = Infinity, pairRateLimitFile, pairRateLimitPauseMs = null, authMarker }) {
+export function installSimplifyProfileBoundary({ hostRoot, provider, credential, reviewerModel, maxRequests = Infinity, pairRateLimitFile,
+  pairRateLimitPauseMs = null, authMarker, preResponseRetryDeadlineAt = null }) {
   const target = `${provider.baseUrl.replace(/\/$/u, '')}/chat/completions`;
   const allowedModels = new Set([provider.model, reviewerModel].filter(Boolean));
   const origin = new URL(target).origin, runtimeKey = '__OPENCLAW_TEST_UNDICI_RUNTIME_DEPS__';
+  const offline = maxRequests === 0;
   const previousFetch = globalThis.fetch, previousRuntime = globalThis[runtimeKey];
   const undici = createRequire(path.join(hostRoot, 'package.json'))('undici');
-  const stats = { requests: 0, failure: null, ...(pairRateLimitPauseMs ? { pairPauses: 0, pairPausedMs: 0 } : {}) };
+  if (preResponseRetryDeadlineAt !== null && (!Number.isSafeInteger(preResponseRetryDeadlineAt) || preResponseRetryDeadlineAt <= 0))
+    throw new Error('A bounded provider retry requires an absolute deadline.');
+  const stats = { requests: 0, failure: null, ...(pairRateLimitPauseMs ? { pairPauses: 0, pairPausedMs: 0 } : {}),
+    ...(preResponseRetryDeadlineAt !== null ? { preResponseRetries: 0 } : {}) };
+  let closed = false, retryReserved = false;
   const fail = code => { stats.failure ??= code; return new Error(stats.failure); };
   const peerLimitedAt = () => fs.readFile(pairRateLimitFile, 'utf8').then(text => Number.parseInt(text, 10) || 0, error => {
     if (error.code === 'ENOENT') return null;
     throw error;
   });
-  const wrap = fetch => async (input, init) => {
-    const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
-    const headers = new Headers(init?.headers ?? input?.headers);
-    const authorized = headers.get('authorization') === `Bearer ${authMarker ?? credential()}`;
-    if (url.origin !== origin && !authorized && headers.get('authorization') !== `Bearer ${credential()}`) return fetch(input, init);
+  async function admitDispatch(signal) {
+    signal?.throwIfAborted();
+    if (closed) throw new Error('PROFILE_REQUEST_BOUNDARY_CLOSED');
     if (stats.failure) throw fail(stats.failure);
     const limitedAt = pairRateLimitFile ? await peerLimitedAt() : null;
     if (limitedAt !== null && !pairRateLimitPauseMs) throw fail('PROFILE_PAIR_RATE_LIMIT');
     if (limitedAt !== null && Date.now() < limitedAt + pairRateLimitPauseMs) {
-      const signal = init?.signal ?? input?.signal, pausedAt = Date.now();
+      const pausedAt = Date.now();
       stats.pairPauses++;
       for (let until = limitedAt + pairRateLimitPauseMs; Date.now() < until; until = Math.max(until, (await peerLimitedAt() ?? 0) + pairRateLimitPauseMs)) {
         if (signal?.aborted) throw signal.reason ?? new Error('aborted');
-        await delay(Math.min(1000, Math.max(1, until - Date.now())));
+        await delay(Math.min(1000, Math.max(1, until - Date.now())), undefined, { signal });
       }
       stats.pairPausedMs += Date.now() - pausedAt;
       if (stats.failure) throw fail(stats.failure);
     }
+    signal?.throwIfAborted();
+    if (closed) throw new Error('PROFILE_REQUEST_BOUNDARY_CLOSED');
+  }
+  const wrap = fetch => async (input, init) => {
+    const plainInput = typeof input === 'string' || input instanceof URL;
+    const url = new URL(plainInput ? input : input.url);
+    const headers = new Headers(init?.headers ?? input?.headers);
+    const authorized = headers.get('authorization') === `Bearer ${authMarker ?? credential()}`;
+    if (url.origin !== origin && !authorized && headers.get('authorization') !== `Bearer ${credential()}`) {
+      if (offline) throw new Error('PROFILE_REQUEST_BOUNDARY');
+      return fetch(input, init);
+    }
+    const signal = init?.signal ?? input?.signal;
+    await admitDispatch(signal);
     if (url.href !== target || String(init?.method ?? input?.method).toUpperCase() !== 'POST' || !authorized) throw fail('PROFILE_REQUEST_BOUNDARY');
     if (stats.requests >= maxRequests) throw fail('PROFILE_REQUEST_LIMIT');
     const body = typeof init?.body === 'string' ? init.body : await input.clone?.().text();
     let model;
     try { if (body && !body.includes(credential())) model = JSON.parse(body).model; } catch {}
     if (!allowedModels.has(model)) throw fail('PROFILE_MODEL_BOUNDARY');
-    stats.requests++;
-    let response;
+    if (stats.failure) throw fail(stats.failure);
+    if (stats.requests >= maxRequests) throw fail('PROFILE_REQUEST_LIMIT');
     if (authMarker) headers.set('authorization', `Bearer ${credential()}`);
-    try { response = await fetch(input, { ...init, ...(authMarker ? { headers } : {}), redirect: 'error' }); }
+    const wire = { ...init, ...(authMarker || preResponseRetryDeadlineAt !== null ? { headers } : {}), redirect: 'error' };
+    let response;
+    stats.requests++;
+    try { response = await fetch(plainInput ? url.href : input, wire); }
     catch (error) {
-      if (init?.signal?.aborted || input?.signal?.aborted) throw error;
-      throw fail('PROFILE_TRANSPORT_FAILURE');
+      if (signal?.aborted) throw error;
+      const retryableSocketError = [error?.code, error?.cause?.code].some(code => ['ECONNRESET', 'UND_ERR_SOCKET'].includes(code));
+      // A rejected fetch has delivered no Response to OpenClaw. Once a
+      // Response exists, body errors belong to the native run's evidence.
+      if (preResponseRetryDeadlineAt === null || closed || stats.failure || retryReserved
+        || !plainInput || typeof wire.body !== 'string' || stats.requests >= maxRequests
+        || Date.now() >= preResponseRetryDeadlineAt
+        || !retryableSocketError) throw fail('PROFILE_TRANSPORT_FAILURE');
+      retryReserved = true;
+      const deadlineSignal = AbortSignal.timeout(Math.max(1, preResponseRetryDeadlineAt - Date.now()));
+      const retrySignal = signal ? AbortSignal.any([signal, deadlineSignal]) : deadlineSignal;
+      await admitDispatch(retrySignal);
+      if (Date.now() >= preResponseRetryDeadlineAt) throw fail('PROFILE_TRANSPORT_FAILURE');
+      if (stats.requests >= maxRequests) throw fail('PROFILE_REQUEST_LIMIT');
+      stats.preResponseRetries++;
+      stats.requests++;
+      try { response = await fetch(url.href, { ...wire, signal: retrySignal }); }
+      catch (retryError) {
+        if (retrySignal.aborted) throw retryError;
+        throw fail('PROFILE_TRANSPORT_FAILURE');
+      }
     }
     if (response.status >= 400) {
       if (response.status === 429 && pairRateLimitFile) await fs.writeFile(pairRateLimitFile, `${Date.now()}\n`, { flag: pairRateLimitPauseMs ? 'w' : 'wx' })
@@ -114,9 +158,14 @@ export function installSimplifyProfileBoundary({ hostRoot, provider, credential,
     }
     return response;
   };
-  globalThis.fetch = wrap(previousFetch);
+  const guardedFetch = wrap(previousFetch);
+  // OpenClaw recognizes mocked fetch before resolving DNS. Only use that
+  // entry point for the isolated zero-request run, where no URL can dispatch.
+  if (offline) guardedFetch.mock = {};
+  globalThis.fetch = guardedFetch;
   globalThis[runtimeKey] = { ...undici, fetch: wrap(undici.fetch) };
   return { snapshot: () => ({ ...stats }), close() {
+    closed = true;
     globalThis.fetch = previousFetch;
     if (previousRuntime === undefined) delete globalThis[runtimeKey]; else globalThis[runtimeKey] = previousRuntime;
   } };
@@ -198,12 +247,12 @@ export function simplifyProviderIdentity(provider, model, env = process.env) {
 }
 
 export async function createSimplifyGateway({ model, reviewerModel, providerKind = 'coding-plan', openclawProfile, maxRequests, pairRateLimitFile, pairRateLimitPauseMs = null,
-  nativeCustomProvider = false, ...options }) {
+  nativeCustomProvider = false, preResponseRetryDeadlineAt = null, ...options }) {
   const { identity: providerIdentity, provider, credential, reviewerProvider } = await resolveSimplifyProvider(providerKind, model, openclawProfile, reviewerModel);
   // The custom model name uses a public SDK marker. Only the wire boundary holds the real credential.
   const authMarker = provider && nativeCustomProvider ? 'rc-isolated-provider-placeholder' : undefined;
   const boundary = provider && installSimplifyProfileBoundary({ hostRoot: options.hostRoot, provider, credential, reviewerModel: reviewerProvider?.model, maxRequests, pairRateLimitFile,
-    pairRateLimitPauseMs, authMarker });
+    pairRateLimitPauseMs, authMarker, preResponseRetryDeadlineAt });
   let gateway;
   const finish = async () => {
     if (!boundary) return;

@@ -4,15 +4,41 @@
 
 ### 新项目模板与旧配置
 
-1.10.0 的新项目模板以用户需求原文审查 OpenSpec 的 proposal、design、tasks 及入边，关闭文档阶段指标和基线审查。Stop 启用原文清单及仅偏差模式（B12），检查有原有代码或测试佐证的既有行为回归。实现纠偏、Skill 看护与压缩恢复关闭。项目开关与首次会话默认仍为关闭。
+新项目模板以用户需求原文审查 OpenSpec 的 proposal、差量规格、design、tasks 及配置的入边，关闭文档阶段指标和基线审查。差量规格使用 `openspec/changes/{changeName}/specs/**/{capability}/spec.md`，通过 `changeName` 关联同一变更的 proposal。Stop 启用原文清单及仅偏差模式（B12），检查有原有代码或测试佐证的既有行为回归。实现纠偏、Skill 看护与压缩恢复关闭。项目开关与首次会话默认仍为关闭。
 
 已有配置中省略字段的解释继续沿用旧缺省值。要切回基线模式，将 dynamicGroundTruth.enabled 和 artifactCorrection.groundTruthReviewEnabled 设为 true，将 artifactCorrection.originalRequirementsEnabled 和 stopCorrection.originalRequirementsBasis 设为 false。需要完整逐项 Stop 审查（A）时将 stopCorrection.deviationOnly 也设为 false。保留仅偏差审查则是 B2。按需要单独启用 artifactCorrection.stageMetricsEnabled。
+
+在版本 2 项目中，`artifactCorrection.requireOpenSpecProposalCoverage: true` 会在 Proposal 启动时启用需求覆盖审批。配置也会启用对原始用户消息的文档审查。操作员通过 `runtime-corrector.openspec.approve` 提交 `expectedRevision` 和 `requiredAtoms`。每个条目包含 `requirement` 及 `source`，其中 `source` 提供原始用户消息的 `ref`、`sha256` 和从 1 开始的 `start`、`end` 行号。最多提交 48 项。评审记录的义务措辞须与清单一致，同一原文范围可对应多项不同义务。
+
+在发送 Proposal 前，通过具备 `operator.write` 权限的 Gateway 调用 `runtime-corrector.openspec.prepare`，提供 `sessionKey`、`sessionId`、`runId`、`changeName`、`sourceRunId`、`sourceSha256` 及 `requirements`。初次 Proposal 的 `sourceRunId` 与 `runId` 相同。`sourceSha256` 取自即将发送的完整用户消息，每个条目提供 `start`、`end` 和 `requirement`。插件在原生会话中核对原文后，才向私有审查器提供这份清单。审查器仍须读取原文和当前方案并逐项提交证据。`PREPARED` 表示清单已登记，继续执行 `approve` 和 `arm` 才能绑定 Apply。
+
+插件用当前宿主会话中的用户原文重建条目来源，并检查与方案版本完全一致的最近一次全方案审查。每项都须有唯一的 `COVERED` 记录。缺项、`GAP`、`UNVERIFIED` 和过期来源都会阻止审批。审批返回 `inventorySha256`，调用 `runtime-corrector.openspec.arm` 时须将它作为 `expectedInventorySha256`，并继续提供同一 `expectedRevision`。
+
+`requiredAtoms` 应填写本次任务中需要交付的无条件生产代码行为。Apply 结束时，插件在原始需求 Stop 审查中逐项核对当前生产路径。请启用 `stopCorrection.enabled`、`stopCorrection.originalRequirementsBasis`、`stopCorrection.deviationOnly` 和 M16。缺失的当前证据会使完成状态变为 `UNVERIFIED`。已确认的代码偏差仍可在原会话内获准修正，并在修正结束后按同一清单复查。文档、流程和条件义务仍由各自的审查规则处理。
+
+绑定到已批准方案的 Apply 在成功写入 OpenSpec 文档后，会立即比较当前方案与批准版本。确认改动的文件直接返回方案偏离反馈，并跳过该次写入的语义审查。正常勾选、方案无法读取和未绑定的运行仍进入原有审查路径。最终 Stop 会独立重新核对方案。
 
 Stop 指标开关使用 `stopCorrection.metrics.M01` 至 `M16` 的布尔值；默认只开启 M08、M09、M12、M13、M15、M16。`stopCorrection.families` 是上一层的族开关，设为 `false` 的族会关闭其全部成员指标。配置格式、生效时机、全关行为与完整 `.runtime-corrector/config.yaml` 示例见 [Stop 指标审查开关](stop-metric-switches.md)，各族含义见 [纠偏检查体系](correction-checklist.md)。其它写入规则和文档/Skill 总开关继续独立生效。
 
 `stopCorrection.deviationOnly` 默认 `false`。开启后只提交有反证的 Stop 偏差，扫描完成且无偏差时以“未发现偏差”放行。
 
+`stopCorrection.requireCurrentProductionCoverage` 默认 `false`，随任务冻结。与 `originalRequirementsBasis` 和 `deviationOnly` 一同开启后，`TASK_COMPLETE` 终审对原文中当前无条件适用的硬性 M16 生产要求逐项核查。已符合的条目需说明每个适用路径如何从原操作得到可观察结果，并标注已读取的入口和结果消费位置。入口和消费位置位于不同文件时，还须标注值的传递位置。直接产生结果的操作可用同一段源码证明入口与结果。公开探针只覆盖实际运行的用例。缺少足够证据的条目保留为未验证，其他已证实的偏差仍可进入纠偏。
+
 `stopCorrection.originalRequirementsBasis` 默认 `false`，开启后 Stop 在同一个审查会话中直接从需求原文生成清单，M08 继续使用 Skill 规则图。用户消息取自 `.runtime-correction/original-requirements/` 下按会话记录的日志（与 `artifactCorrection.originalRequirementsEnabled` 共用），宿主压缩上下文删掉的早期消息仍保留在清单来源中。
+
+对于已固定 SHA-256 的可信公开验收探针，`stopCorrection.regressionCheck.requirementBindings` 可按 `testId` 将具名失败限定到唯一匹配的生产实现条目。各项的 `quote` 使用准确的原文，配置示例与未绑定用例的处理见 [公开验收用例绑定](stop-task-review.md#公开验收用例绑定)。
+
+可以将 `stopCorrection.regressionCheck.reportProtocol` 设为 `completed-suite-v1`，要求受信的回归测试命令完成后输出一行机器回执，例如 `RC_REGRESSION_INVENTORY {"complete":true,"executedTests":2,"failures":[]}`。`executedTests` 必须大于零，且只计入已得出结果的用例。每个失败用例须包含唯一的 `id` 和可读的 `title`。约定退出码 0 对应无失败，1 对应有失败。缺失、重复、截断、未完成或与退出码不一致的回执会使本次验证不可用，也不会进入缓存。命令及其测试来源由项目配置者选择。省略此字段时继续使用已有的退出码判定。
+
+项目可用 `testSource` 声明验证命令运行任务开始时的测试（`task-start`）或当前测试（`current`）。仅在命令支持 `--requirement-only` 和 `--regression-only` 时设置 `verifierProtocol: split-requirement-v1`。支持 `--exclude-cases` 和对应回执的命令可通过 `collateralProtocol: exclude-cases-v1` 启用授权变更排除后的复测。`routeEnvironment` 可列出用于区分测试环境的变量名。插件用这些变量值的摘要确认验证和缓存引用的是同一环境。
+
+在原文仅偏差模式下，修改或删除既有源文件、SQL 或常见运行及构建清单（如 `package.json`、`pyproject.toml`、`go.mod`）会触发回归审查。单独更新 OpenSpec 任务清单属于文档改动。是否进入纠偏取决于既有行为被破坏的具体证据。
+
+Stop 回归缓存同时核对工作区与验证命令。把外部验证器或固定输入文件的绝对路径作为单独的命令参数，可使文件内容、权限或符号链接目标的变更触发重新验证。读取不稳定或超出指纹读取上限时，本次命令照常执行，结果跳过缓存。通过环境变量、脚本内部引用、目录内容或 `--选项=路径` 间接传入的文件需要由验证命令自身管理。
+
+在 OpenClaw 项目中，可通过 `acceptanceFeedback.tool` 选择一个受信的验证工具。流程控制器在 Apply 派发时绑定原生 `runId`。验证工具将执行结果投影到 `details.runtimeCorrectorVerification`，字段为 `runId`、`kind`（`acceptance` 或 `supporting`）和 `status`（`PASS`、`FAIL` 或 `INCOMPLETE`）。只有已确认失败的独立验收会开启提示计数。三次辅助检查尝试后，原工具输出会附加一条复验建议，每个原生运行最多一次。该配置为可选项，`shadowMode` 下仅记录提示事件。
+
+辅助检查确认本次运行留下未完成的报告时，可在 `supporting`、`INCOMPLETE` 回执中增加 `incompleteReason: RUNNER_REPORT_INCOMPLETE`。同一原生运行内，同一辅助检查连续三次出现此结果后，纠偏器建议先排查最新报告的中断点。每个运行最多提示一次。其他辅助检查结果会重置计数，独立验收仍使用自己的结果。ArkTS 适配器用成功编译、真实报告和未完成的具名用例来识别这种情况。
 
 OpenClaw／MatrixAssistant 的项目与会话开关使用根级 `enabled` 和 `sessionDefaults.enabled`，两个字段缺省均为 `true`，版本 1/2 配置均可使用。前者整体关闭本项目 RC，后者只决定首次登记 Session 的初始选择；独立会话选择保存于本地 `.runtime-corrector/sessions.local.yaml`，应加入项目的 Git 忽略规则。UI 或 `/rc-session on|off|status` 使用同一控制逻辑。完整示例、优先级及生效时机见 [项目与 Session 开关](session-control.md)。
 
@@ -288,7 +314,7 @@ limits:
 | `editable` | 否 | `true` | `false` 表示可检查、可产生 Finding，但不能生成或应用候选编辑 |
 | `outputKey` | 否 | 根据触发文件生成 | 固定该 artifact 在 `runs/` 与 `latest/` 下的目录名；多文件 bundle 可用它让所有成员共享同一结果目录 |
 | `patterns` | 条件必须 | — | 相对项目根目录的非空 glob 列表；与 `pathTemplates` 二选一 |
-| `pathTemplates` | 条件必须 | — | 可提取占位符的路径模板列表；与 `patterns` 二选一 |
+| `pathTemplates` | 条件必须 | — | 可提取单个路径段中的占位符，可使用一个 `/**/` 匹配零个或多个中间目录；与 `patterns` 二选一 |
 | `relatedPatterns` | 否 | `[]` | 关联文件 glob |
 | `relatedRoot` | 否 | `artifact-directory` | `artifact-directory` 或 `project` |
 | `groundTruth` | 否 | `[]` | 引用顶层 `groundTruth[].id`；文件只读并进入输入摘要与语义审阅 |
@@ -319,6 +345,7 @@ review:
 - `rules.enabled: false`：不加载、不执行该节点的确定性规则；
 - `review.enabled: false`：不执行该节点的 Stage 语义审查；
 - `review.enabled: true` 且省略 `criteria`：只执行插件通用语义审阅基线；
+- `review.deferUntilBundleComplete: true`：节点自身的 bundle 尚不齐备时，保留确定性诊断并延后语义审阅。补齐后，下一次对该节点的检查执行完整审阅。建议让同一节点的触发路径匹配所有 bundle 成员。此选项不影响配置了前序审阅、Ground Truth 来源或运行时指标审阅的节点。
 - `enabled: true` 且配置的 `criteria` 文件为空：明确报错；使用 `enabled: false` 关闭。
 
 仅当文档明确要求复制一份已声明的原始材料时，可设置 `review.copyFrom: <Ground Truth 来源 ID>`。该 ID 必须已列在当前 artifact 的 `groundTruth` 中，并且只能解析到一个可读源文件。`review.enabled: true` 时，生产文档检查会比较当前目标和该来源，返回 `DOCUMENT-COPY-MISMATCH` 及 JSON 转义后的当前行、来源行或 EOF 后缀；即使模型复审通过，仍有字符差异也不能通过。正文、缩进、行内空格、围栏代码块及所有换行严格保留，仅容许围栏代码块外的行尾空格/制表符不同。比较不改写文件，来源缺失时返回 pending。
@@ -357,8 +384,7 @@ workflow:
         enabled: true
 ```
 
-占位符名称以字母开头，只能包含字母、数字、下划线和连字符。模板不允许使用 `*`、`?`，
-也不允许重复或未闭合占位符。占位符匹配一个非空路径段。
+占位符名称以字母开头，只能包含字母、数字、下划线和连字符。占位符匹配单个路径段内的非空文本，且必须闭合、不能重复。模板可使用一个独立的 `/**/` 匹配零个或多个中间目录，其余 `*` 和 `?` 不可用。
 
 `correlation.keys` 非空、唯一并保持声明顺序。参与 workflow 边的每个 artifact 模板都必须
 包含全部 key。未声明为 correlation key 的占位符只负责匹配，因此相同 `changeName` 可以跨
@@ -819,3 +845,26 @@ requirementFrame:
 `review` 启用 Stop 对匹配任务开始提交的框架逐项记录处置，并在已有偏差反馈后追加复现要求。
 
 `checks` 默认 `false`。开启后额外运行“项目规则”和“验证要求”两个检查项提议者，从任务开始提交的项目文档中找出本任务会触发的规则，选中的检查项编号为 K1、K2……。每个提议者只在其指标族至少有一个开启的 Stop 指标时运行；仓库中没有 Markdown 文档时不运行。检查项进入简报，并在 `stopCorrection.originalRequirementsBasis` 开启时并入终审清单。详见 [纠偏检查体系](correction-checklist.md)。
+
+## OpenClaw 中核验获准的 OpenSpec 方案
+
+在已启用纠偏器的项目和会话中，操作员可以通过 `openclaw gateway call <method> --params '<json>' --json` 调用下列方法。参数包括实际的 `sessionKey`、`sessionId`、`runId` 和 `changeName`。插件从宿主确认会话所属工作区，并要求该运行已成功结束且相关 Stop 审查已处理完毕。
+
+1. Proposal 通过 OpenSpec 严格校验后，使用 Proposal 的运行编号调用 `runtime-corrector.openspec.preview`。核对文件内容及其 `revision`。
+2. 确认接受该方案后，使用相同参数调用 `runtime-corrector.openspec.approve`，并将 `expectedRevision` 设为预览返回的值。此方法需要 `operator.write`，预览和核验需要 `operator.read`。方案在预览后发生变化时，需要重新审阅当前版本。
+3. 如需在 Stop 自动核验，先用同一 Proposal 参数和 `expectedRevision` 调用 `runtime-corrector.openspec.arm`，再加上计划用于下一次 Apply 的 `applyRunId`。此方法需要 `operator.write`。通过 Gateway 发送 Apply 时，将该值作为 `chat.send` 的 `idempotencyKey`。只有同一会话中的下一次运行可以使用这次绑定。
+4. Stop 等待对应的 Apply 运行结算后再自动比对。结果保存在该次原生 Stop 记录的 `openSpecPlan` 字段，也可从 `runtime-corrector.dispatch.get` 的 `reviewSummary.openSpecPlan` 读取。没有使用自动核验时，可在 Apply 和 Stop 结束后使用同一会话和变更、以及新结束的 Apply 运行编号调用 `runtime-corrector.openspec.verify`。
+
+`PRESERVED` 表示获准的提案、设计、规范和任务文字得以保留，且允许按 OpenSpec 的格式勾选完成项。`CHANGED` 附带发生变化的文件路径。缺少可核验的方案时返回 `UNVERIFIED`。Stop 发现已绑定的方案被改写时，若自动修正已启用、原生协议可用且尚有额度，可通过同一原生修正队列请求恢复。该回合只能恢复已批准的范围，不能批准新方案。恢复后仍须沿用原始需求清单完成正常实现审查。证据不可用或清单仍有未完成项时，Stop 保留待验证状态。影子模式、禁用修正、额度耗尽或宿主协议不可用时，由操作员处理。审批和 Apply 绑定保存在当前会话状态中，宿主重启后需重新确认。
+
+审批同时在宿主状态中保存有大小限制的准确文档内容。只有通过真实启动、使用和交付回执核验的恢复回合，才可调用 `runtime_corrector` 的 `approved-plan` 命令列出并分页读取对应原文；此回合沿用同一份原始需求。未启动、取消或伪造的请求不能读取或继承审批。审批目标版本和排队时观察到的改写版本分别核验，原文、策略、会话范围或队列证据变化时拒绝启动。同一份证据已实际尝试恢复后，不会再次消耗修正额度；新证据仍受同一会话和流程额度约束。恢复范围由指令、方案核对和最终审查约束，并非文件系统写入沙箱。
+
+Apply 写入获准文档后，插件先核对方案。显式 `runtime_corrector check` 也会在调用语义审查器前核对同一绑定；确认改写时直接报告原有审批不匹配，保留最终 Stop 核验，避免语义复查掩盖尚未恢复的方案。勾选进度、未绑定的运行及无关文件仍走原有检查。
+
+文档审查请求同时提供完整的冻结会话和不超过 24 KiB 的近期完整消息视图，附原文行号及工具回执行的定位。近期视图只用于导航，不增加证据权限。截断、未读历史或缺少回执只能留下待验证结论；指称未执行检查、源码未变或结果编造，需要当前的正面证据。
+
+启用原文审查时，OpenClaw 文档审查器可用 `rc_document` 的 `read_original` 操作读取原始用户消息的确切行范围，并在文档发现中引用返回的 `originalSourceAnchorId`。Stop 在核对用户消息的可信读取后，为清单项保存相同的原文定位标识。标识依据消息、原文版本和准确的 UTF-8 字节范围生成。定位信息用于关联两个阶段的证据。每项义务是否覆盖仍需分别核对方案与实现。
+
+文档审查器还可提交逐项的 `originalRequirementCoverage`。每项包含原文定位标识、可独立检查的要求、结论、理由及已读取的方案范围。结论可为 `COVERED`、`GAP` 或 `UNVERIFIED`。无具体位置的遗漏判定需要先读取本轮声明的全部方案文件。通过核验的记录随文档审查结果保存，并带有当前文件版本和实际审查范围。已保存的各项结论用于追踪本轮审查过的要求，整份方案的覆盖仍需逐项确认。
+
+审批时，OpenClaw 插件从同一任务、会话和 Proposal 运行的已提交审查结果中选取记录。只有本轮审查的文档范围及内容与获准变更完全一致时，记录才会绑定到该版本。完成已绑定的 Apply 后，Stop 可按原文定位标识在清单旁显示相应方案段落。只要任务勾选改变了文件内容，原清单的精确引用及没有具体目标的范围级结论就不会带入。显示的方案段落用于定位，功能验收仍需当前实现和执行证据。

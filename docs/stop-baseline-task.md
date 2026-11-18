@@ -2,7 +2,11 @@
 
 ## 适用范围
 
-OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。该标记由任务级普通刷新及 Stop 前置刷新设置；项目内串行处理，每轮会话与来源凭据独立。初始 onboarding 抽取与裁决、Skill/文档专用抽取保持原协议；停止分类使用专用 classification task；逐项/分组审查保留其裁决协议。粒度、笔记、生命周期和实验见 [基线提取优化](baseline-extraction-optimization.md)。
+OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `boundedBasis: true` 时走专用抽取 task。普通任务刷新和 Stop 前置刷新会设置该标记。项目内串行处理，每轮会话与来源凭据独立。onboarding、Skill 和文档分别使用自己的抽取协议。停止分类使用专用 classification task，逐项和分组审查各用对应的裁决协议。
+
+<!-- evaluation-only -->
+粒度、笔记、生命周期和实验见 [基线提取优化](baseline-extraction-optimization.md)。
+<!-- /evaluation-only -->
 
 `task-session.mjs` 共用原生会话启动、模型与 effort 选择、会话身份、精确工具绑定、取消和绝对截止。执行层从 worker 取得工具、提示词和完成判断，不根据 `submit_review` 名称决定完成。基线工具不会得到业务 Agent 的工具权限，也不能写业务文件或正式 Ground Truth。
 
@@ -29,7 +33,11 @@ OpenClaw/MA 的 `ground-truth-extractor` 在 `reviewScope.kind: baseline` 且 `b
 
 每条草稿明确指定 `verificationTarget`，代码义务另须 `implementationRole`。共享默认值可用逐段 `overrides` 和拆分组 `metadata` 覆盖；只在 overrides 中出现的段落也视为保留整段。不同检查归属的义务分别成条，有效元数据不同的段落不得合并。新用户段落不能被自由排除，只有完整原文与指定的当前 USER_EXPLICIT/USER_MESSAGE 条目一致时才可作为已存在的重复要求排除。
 
-默认草稿协议只生成 ADD。来源分片、超过 128 行或 200 个草稿单元时，使用紧凑原文选取协议，以 `outcomes` 和显式元数据默认值提交，不暴露容易重复填写的 text/source/bindings。需要综合表述或修改已有 claim 时，模型可用 `fullTextReason` 请求完整文字格式，沿用同一会话、已存批次、修复次数和截止；SUPERSEDE 仍须真实 claimId 并保留该 claim 内未变条件。决策、未处理单元和分组名称进入私有检查点及分页历史，不进入宿主上下文。早期版本的第二轮方案及历史实验见 [原实验记录](baseline-token-time-optimization.md)。
+默认草稿协议只生成 ADD。来源分片、超过 128 行或 200 个草稿单元时，使用紧凑原文选取协议，以 `outcomes` 和显式元数据默认值提交，省去重复填写的 text/source/bindings。需要综合表述或修改已有 claim 时，模型可用 `fullTextReason` 请求完整文字格式，沿用同一会话、已存批次、修复次数和截止时间。SUPERSEDE 需要真实 claimId，并保留该 claim 内未变条件。决策、未处理单元和分组名称保存在私有检查点及分页历史中。
+
+<!-- evaluation-only -->
+早期版本的第二轮方案及历史实验见 [原实验记录](baseline-token-time-optimization.md)。
+<!-- /evaluation-only -->
 
 完整协议也优先使用 `outcome` + `textFrom`，由程序捕获原文、来源和已经签发的真实读取回执。可用 `file` 加工具显示的分片内 `start/end`，或 `sourceIndex` 加原始文件行号；两种坐标不能混用。边界处的不完整原始行须使用原始坐标，避免把残句当完整要求。冻结请求的 `sourceNavigation` 给出每片 `startLine/endLine`，分片内行号加 `startLine - 1` 可定位原文；它只是导航信息，不授予读取或权限。跨分片的行须有所有相交部分的连续读取覆盖，未持久化或缺失的回执不能补足证据。跨来源综合仍使用完整 text/source/bindings；动作、权限和适用性须明确提供，程序不会推断。此优化不赋予完整协议逐段决策完成保证。
 

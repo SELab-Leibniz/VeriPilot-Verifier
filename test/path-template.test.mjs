@@ -61,6 +61,8 @@ test("workflow instance equality is case-insensitive and independent of date cap
 test("path templates reject ambiguous or malformed placeholder syntax", () => {
   for (const [template, error] of [
     ["spec/*-{changeName}.md", /不能混用 glob/],
+    ["spec/{changeName}/x**/file.md", /不能混用 glob/],
+    ["spec/{changeName}/**/x/**/file.md", /不能混用 glob/],
     ["spec/{changeName.md", /未闭合/],
     ["spec/changeName}.md", /未配对/],
     ["spec/{1change}.md", /必须以字母开头/],
@@ -69,6 +71,16 @@ test("path templates reject ambiguous or malformed placeholder syntax", () => {
   ]) {
     assert.throws(() => compilePathTemplate(template), error);
   }
+});
+
+test("path templates can match nested directories without changing captures", () => {
+  const templates = compilePathTemplates(["changes/{changeName}/specs/**/{capability}/spec.md"]);
+  const expected = { changeName: "demo", capability: "auth" };
+  assert.deepEqual(matchPathTemplates("changes/demo/specs/auth/spec.md", templates)?.captures, expected);
+  assert.deepEqual(matchPathTemplates("changes/demo/specs/domain/subdomain/auth/spec.md", templates)?.captures, expected);
+  assert.equal(matchPathTemplates("changes/demo/specs/spec.md", templates), null);
+  assert.equal(matchPathTemplates("changes/demo/specs//auth/spec.md", templates), null);
+  assert.equal(templates[0].scanPattern, "changes/*/specs/**/*/spec.md");
 });
 
 

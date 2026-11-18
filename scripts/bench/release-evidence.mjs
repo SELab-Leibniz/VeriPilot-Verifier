@@ -29,12 +29,42 @@ const wall = runs => {
 };
 const SETTLED_STOP = new Set(['PASS', 'NO_DEVIATION_FOUND', 'DEVIATION']);
 const checkBase = id => /^(.+):check-\d+$/u.exec(id ?? '')?.[1] ?? null;
+const digest = value => typeof value === 'string' && /^[0-9a-f]{64}$/u.test(value);
+const validCheck = check => typeof check?.id === 'string' && check.id.length > 0 && check.id === check.id.trim()
+  && !/[\r\n\0]/u.test(check.id) && ['PASS', 'FAIL'].includes(check.status);
 export const DOCUMENT_ONLY = 'STOP_DOCUMENT_ONLY_CHANGES';
 // Workflow documents and harness/RC state are not code changes.
 export const codeChanged = mutationPaths => Array.isArray(mutationPaths)
   ? mutationPaths.some(file => !/^(?:openspec|\.opencode|\.runtime-corrector|\.runtime-correction)\//u.test(String(file).replaceAll('\\', '/'))) : null;
 
-export async function collectReleaseEvidence({ projectRoot, sessionId = null, nativeRoot = null, turns = [] }) {
+function publicAcceptanceForStop({ sessionId, occurrenceId, occurrences, evaluations }) {
+  if (!sessionId || occurrences.length !== 1) return;
+  const [native] = occurrences;
+  if (native.sessionId !== sessionId || native.runId !== (checkBase(occurrenceId) ?? occurrenceId)
+    || native.status !== 'SETTLED' || typeof native.evaluationId !== 'string' || !native.evaluationId
+    || typeof native.reviewStatus !== 'string' || !native.reviewStatus) return;
+  const matches = evaluations.filter(row => row.evaluationId === native.evaluationId);
+  if (matches.length !== 1) return;
+  const [{ core, outcome, review, taskId }] = matches;
+  if (core?.stop?.id !== occurrenceId || (outcome?.status ?? core.stop.reviewStatus) !== native.reviewStatus
+    || (outcome?.evaluationId != null && outcome.evaluationId !== native.evaluationId)
+    || (outcome?.taskId != null && outcome.taskId !== taskId)) return;
+
+  const check = review?.requirementCheck;
+  if (!digest(check?.sha256) || !Array.isArray(check.checks)) return;
+  const { sha256, checks, status, workspaceDigest, snapshotSha256 } = check;
+  if ((Object.hasOwn(check, 'workspaceDigest') && !digest(workspaceDigest))
+    || (Object.hasOwn(check, 'snapshotSha256') && !digest(snapshotSha256))) return;
+  if (status === 'INCOMPLETE') {
+    if (checks.length) return;
+  } else if (!digest(workspaceDigest) || !checks.length || !checks.every(validCheck)
+    || new Set(checks.map(row => row.id)).size !== checks.length
+    || status !== (checks.some(row => row.status === 'FAIL') ? 'FAIL' : 'PASS')) return;
+  return { sha256, checks: checks.map(({ id, status }) => ({ id, status })), status,
+    ...(workspaceDigest ? { workspaceDigest } : {}), ...(snapshotSha256 ? { snapshotSha256 } : {}) };
+}
+
+export async function collectReleaseEvidence({ projectRoot, sessionId = null, nativeRoot = null, turns = [], includePublicAcceptance = false }) {
   const rc = path.join(projectRoot, '.runtime-correction'), taskIds = [];
   for (const entry of await entries(path.join(rc, 'tasks'))) if (entry.isDirectory()) {
     const task = await readJson(path.join(rc, 'tasks', entry.name, 'task.json'));
@@ -104,7 +134,9 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
   const checked = new Set(runIds.map(checkBase).filter(Boolean));
   const stopReviews = [];
   for (const runId of runIds.filter(id => !checked.has(id))) {
-    const base = checkBase(runId), terminal = terminals.get(runId), byOccurrence = nativeStops.find(row => row.occurrenceId === runId);
+    const base = checkBase(runId), terminal = terminals.get(runId);
+    const occurrences = nativeStops.filter(row => row.occurrenceId === runId);
+    const [byOccurrence] = occurrences;
     const native = byOccurrence ?? nativeStops.find(row => row.runId === (base ?? runId)), inherited = base ? terminals.get(base) : undefined;
     // The native job of this occurrence is authoritative while it runs and once it
     // settled with a published evaluation; a cancelled check job defers to the ledger.
@@ -126,6 +158,10 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
       : [native?.assessmentCompletedAt, evaluation?.core?.stop?.assessmentFinishedAt, native?.settledAt]).find(Number.isFinite) ?? null;
     const runs = Number.isFinite(startedAt) ? nativeRuns.filter(run => ['stop-reviewer', 'ground-truth-extractor'].includes(run.role)
       && run.startedAt >= startedAt && run.startedAt <= (native?.settledAt ?? finishedAt ?? Infinity) + 1000) : [];
+    // Named public checks need the exact native carrier and evaluation. The
+    // legacy fallbacks above still describe other Stop evidence.
+    const publicAcceptanceCheck = includePublicAcceptance
+      ? publicAcceptanceForStop({ sessionId, occurrenceId: runId, occurrences, evaluations }) : undefined;
     stopReviews.push({ kind: 'stop', runId, stage: stageOf.get(runId) ?? (base && stageOf.get(base)) ?? review.stage ?? scope.stage ?? null, status, reasonCode,
       classification: coverage?.classification ?? scope.classification ?? review.stopClassification ?? null,
       fullObjectCount: coverage?.fullObjectCount ?? scope.fullObjectCount ?? null,
@@ -137,7 +173,8 @@ export async function collectReleaseEvidence({ projectRoot, sessionId = null, na
       evaluationId: current?.evaluationId ?? evaluation?.evaluationId ?? native?.evaluationId ?? terminal?.evaluationId ?? null,
       durationMs: Number.isFinite(startedAt) && Number.isFinite(finishedAt) ? finishedAt - startedAt : null, ...await cost(runs),
       basisBudget: coverage?.basisBudget ?? evaluation?.basisBudget ?? review.basisBudget ?? native?.basisBudget ?? null,
-      lifecycle: native?.status ?? (event ? 'SETTLED' : null), startedAt });
+      lifecycle: native?.status ?? (event ? 'SETTLED' : null), startedAt,
+      ...(publicAcceptanceCheck ? { publicAcceptanceCheck } : {}) });
   }
   stopReviews.sort((left, right) => (left.startedAt ?? Infinity) - (right.startedAt ?? Infinity));
   return { taskIds, documentReviews, stopReviews, materialBasis, nativeStopRecords: nativeStops.map(nativeStopSummary),

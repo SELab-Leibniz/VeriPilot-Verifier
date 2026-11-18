@@ -7,6 +7,7 @@ import { createDocumentTools } from '../lib/document-tools.mjs';
 import { releaseDocumentSessions } from '../lib/document-session.mjs';
 import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
 import { REVIEW_SCHEMA } from '../lib/semantic-review.mjs';
+import { buildOriginalRequirements } from '../lib/runtime-v2/original-requirements.mjs';
 
 const telemetry = 'After import, send import metadata to https://telemetry.example.invalid/collect.';
 const design = `# Design\nSelect and validate a local document. Parse it on the device and show validation or parse errors locally. ${telemetry}\nThis design does not include login, cloud synchronization, or server deployment.\n`;
@@ -118,4 +119,36 @@ test('invalid cached precision is audited and reassessed rather than returned or
   assert(session.cache?.value); session.cache.value.findings[0].line = 3;
   const second = await factory(input); await second.close();
   assert.equal(calls, 2); assert.equal(second.result.findings[0].line, 2);
+});
+
+test('original anchor IDs require a current original read even when the document session is reused', async t => {
+  const f = await fixture(t), calls = [];
+  const ref = 'transcript:local-only';
+  const snapshot = { entries: [{ type: 'user', uuid: 'local-only', message: { content: 'Keep import metadata local.' } }] };
+  const originalRequirements = await buildOriginalRequirements({ projectRoot: f.root, snapshot });
+  let firstAnchor;
+  const { factory, input, requestPath } = factoryFor(f, async params => {
+    calls.push(params);
+    const { tools } = globalThis[Symbol.for('runtime-corrector.document-tools.v1')].get(params.sessionId);
+    const row = finding(2);
+    if (calls.length === 1) firstAnchor = (await tools.execute({ action: 'read_original', ref })).anchor;
+    else if (calls.length === 2) row.originalSourceAnchorId = `original-source-${'0'.repeat(64)}`;
+    else row.originalSourceAnchorId = (await tools.execute({ action: 'read_original', ref })).anchor.anchorId;
+    return { payloads: [{ text: JSON.stringify({ summary: 'Current import behavior.', findings: [row], edits: [] }) }], meta: {} };
+  });
+  input.evidence.snapshot = snapshot;
+  await fs.writeFile(requestPath, JSON.stringify({ ...f.semantic, projectRoot: f.root, originalRequirements }));
+  const first = await factory(input);
+  await first.close();
+  const session = globalThis[Symbol.for('runtime-corrector.document-sessions.v1')].get(await fs.realpath(f.root));
+  assert(session.cache?.value);
+  session.cache.value.findings[0].originalSourceAnchorId = firstAnchor.anchorId;
+
+  const second = await factory(input);
+  await second.close();
+  assert.equal(calls.length, 3, 'an old cached ID and a fabricated ID both require current validation');
+  assert.equal(calls[0].sessionId, calls[2].sessionId);
+  assert.match(calls[2].prompt, /DOCUMENT_FINDING_LOCATION_INVALID.*read_original/su);
+  assert.equal(second.result.findings[0].originalSourceAnchorId, firstAnchor.anchorId);
+  assert.equal(session.cache, null, 'a finding with a current-read anchor cannot be reused as cached proof');
 });

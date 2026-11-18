@@ -97,7 +97,16 @@ for (const judgement of ['PASS', 'DEVIATION', 'UNVERIFIED']) test(`B12 explicitl
   await fs.writeFile(path.join(directory, 'evaluations', `${evaluationId}.json`),
     JSON.stringify({ metricReport: { metrics: [{ objects: [{ ...object, judgement: 'DEVIATION' }] }] } }));
   const result = await event('Stop');
-  assert.equal(result.stop.status, judgement === 'DEVIATION' ? 'DEVIATION' : 'NO_DEVIATION_FOUND', JSON.stringify(result.stop));
+  assert.equal(result.stop.status, judgement === 'DEVIATION' ? 'DEVIATION' : 'UNVERIFIED', JSON.stringify(result.stop));
+  if (judgement !== 'DEVIATION') {
+    assert.equal(result.stop.reasonCode, 'STOP_MANDATORY_REQUIREMENT_UNVERIFIED');
+    assert.equal(result.stop.decision, 'allow');
+    assert.equal(result.stop.admission, null);
+  }
+  if (judgement === 'UNVERIFIED') {
+    assert.equal(result.stop.verificationIncomplete, true);
+    assert(result.stop.review.unverifiedItems.some(item => item.type === 'DEVIATION_RECHECK' && item.objectId === object.objectId));
+  }
   const updated = JSON.parse(await fs.readFile(path.join(directory, 'feedback', `${family.familyId}.json`), 'utf8'));
   assert.equal(updated.status, judgement === 'PASS' ? 'FIXED' : 'OPEN');
   if (judgement === 'UNVERIFIED') assert.equal(updated.lastVerifiedAt, null);
@@ -161,6 +170,88 @@ test('Stop originals keep a user message that a host compaction removed, but nev
   assert.equal(after.digest, (await load([])).digest, 'once logged, the sources no longer depend on the live transcript');
   const changed = [{ type: 'user', uuid: 'user-original', message: { content: 'Return the value unchanged.' } }];
   for (let attempt = 0; attempt < 2; attempt++) await assert.rejects(load(changed), { code: 'STOP_TASK_BASIS_UNAVAILABLE' });
+});
+
+test('the native Stop basis exposes optional references on demand and preserves mandatory receipt gates', async t => {
+  const journaled = 'Task complete. The implementation returns the input plus one.';
+  for (const duplicate of [true, false]) await t.test(duplicate ? 'exact hook duplicate' : 'distinct hook text', async t => {
+    const f = await stopProtocolFixture(t, 'findings');
+    const requirement = 'Return the input plus one.';
+    const hookText = duplicate ? journaled : 'Task complete. A host follow-up is available.';
+    const latestAssistant = { type: 'assistant', uuid: 'completion',
+      message: { id: 'completion', role: 'assistant', content: [{ type: 'text', text: journaled }] } };
+    const snapshot = { entries: [{ type: 'user', uuid: 'user-original', message: { content: requirement } }, latestAssistant] };
+    const app = path.join(f.root, 'app.mjs'), instructions = path.join(f.root, 'AGENTS.md');
+    const reference = 'background.md', before = '# Original background\nOptional context from task start.\n';
+    const after = '# Updated background\nContext edited during the task.\n';
+    await Promise.all([
+      fs.writeFile(app, 'export const transform = input => input + 1;\n'),
+      fs.writeFile(instructions, 'Keep the implementation in app.mjs.\n'),
+      fs.writeFile(path.join(f.root, reference), after),
+    ]);
+    const originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot, referenceTier: true,
+      readReferenceMaterials: async () => [{ path: reference, status: 'MODIFIED', original: Buffer.from(before),
+        bytes: Buffer.byteLength(before), sha256: sha256(before), currentBytes: Buffer.byteLength(after), currentSha256: sha256(after) }] });
+    f.input.evidence = { ...f.input.evidence, snapshot, originalRequirements };
+    f.input.request = { ...f.input.request, hook: { lastAssistantMessage: hookText, stopHookActive: true },
+      reviewScope: { kind: 'workspace-stop' }, fixedStopClassification: null, classificationContract: 2 };
+
+    const script = async ({ brief, read, submit }) => {
+      const { basisFiles, referenceBasisFiles } = brief.task;
+      assert.equal(referenceBasisFiles.length, 1);
+      assert(!basisFiles.includes(referenceBasisFiles[0]));
+      assert(basisFiles.includes(instructions));
+      const deliveredText = result => {
+        assert.equal(result.details.page.nextOffset, null);
+        const [citation, ...lines] = result.content.map(block => block.text).join('').split('\n');
+        assert.match(citation, /^\[citeId=/u);
+        assert.match(lines.pop(), /^\[RC page /u);
+        return lines.join('\n');
+      };
+      const parts = [];
+      for (const file of basisFiles.filter(file => path.basename(file).startsWith('original-basis-'))) parts.push(deliveredText(await read(file)));
+      const basis = JSON.parse(parts.join(''));
+      assert.deepEqual(basis.latestAssistant, latestAssistant);
+      assert.deepEqual(basis.request.hook, { stopHookActive: true, ...(duplicate ? {} : { lastAssistantMessage: hookText }) });
+      assert.equal(Object.hasOwn(basis, 'referenceMaterials'), false);
+      assert.deepEqual(basis.sources.map(source => source.kind), ['USER_MESSAGE', 'PROJECT_FILE']);
+
+      // Exercise the optional read path on one run and leave the catalog
+      // entirely unread on the other.
+      if (!duplicate) {
+        const catalog = JSON.parse(deliveredText(await read(referenceBasisFiles[0])));
+        const [material] = catalog.referenceMaterials;
+        assert.equal(catalog.referenceMaterials.length, 1);
+        assert.equal(material.path, reference);
+        assert.equal(material.status, 'MODIFIED');
+        assert.equal(deliveredText(await read(material.frozenOriginal)), before);
+      }
+
+      const user = basis.sources.find(source => source.kind === 'USER_MESSAGE');
+      const original = await read(user.file);
+      assert.equal(deliveredText(original), requirement);
+      const checklist = { items: [{ metricId: 'M16', text: requirement, verificationTarget: 'IMPLEMENTATION',
+        citeId: original.details.citation.citeId, lineStart: 1, lineEnd: 1 }] };
+      const finish = () => submit('finish_stop_review', { summary: 'Verified the implementation.' });
+      await assert.rejects(submit('set_original_checklist', checklist), { code: 'TASK_BASIS_UNREAD' });
+      await assert.rejects(finish(), { code: 'TASK_BASIS_UNREAD' });
+      await read(instructions);
+      await submit('set_original_checklist', checklist);
+      const { items: [assigned] } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+      assert.equal(assigned.originalSource.sha256, sha256(requirement));
+      await assert.rejects(finish(), { code: 'REVIEW_ITEM_INCOMPLETE' });
+      const delivered = await read(app);
+      await submit('submit_review', { taskId: assigned.objectId, verdict: 'PASS', reason: 'The return expression adds one.',
+        citeIds: [delivered.details.citation.citeId] });
+      assert.equal((await finish()).complete, true);
+    };
+    let assertionFailure;
+    const review = await f.run(context => script(context).catch(error => {
+      assertionFailure = error;
+      throw error;
+    })).catch(error => { throw assertionFailure ?? error; });
+    assert.equal(review.result.metricObjectJudgements[0].judgement, 'PASS');
+  });
 });
 
 for (const [name, { deviationOnly = false, compacted = false }] of [

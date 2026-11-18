@@ -42,11 +42,12 @@ export async function installRegressionCaseFilter(workspace, { module, suite, it
     "import * as rcFs from 'fs';",
     "import * as rcPath from 'path';",
     'rcHvigor.nodesEvaluated(() => {',
-    '  const moduleNode = rcHvigor.getRootNode().getSubNodeByName(' + JSON.stringify(module) + ');',
+    '  const root = rcHvigor.getRootNode();',
+    '  const moduleNode = root.getSubNodeByName(' + JSON.stringify(module) + ');',
     "  const generation = moduleNode?.getTaskByName('default@GenerateUnitTestTemplate');",
     "  if (!generation) throw new Error('Native test-template task is unavailable.');",
     '  generation.afterRun(() => {',
-    '    const file = rcPath.join(' + JSON.stringify(workspace) + ', ' + JSON.stringify(module) + ", '.test/testability/pages/Index.ets');",
+    '    const file = rcPath.join(root.getNodePath(), ' + JSON.stringify(module) + ", '.test/testability/pages/Index.ets');",
     "    const original = rcFs.readFileSync(file, 'utf8');",
     '    const pattern = /Hypium\\.hypiumTest\\(([^\\n]+),\\s*testsuite\\)/;',
     "    if (!pattern.test(original)) throw new Error('Native test-template filter slot is unavailable.');",
@@ -73,7 +74,7 @@ export default function testsuite(): void { contractProbe() }
 
 // A Stop may already have observed the source tree, including build caches.
 // Run the mutating toolchain in a sibling snapshot, outside that observed tree.
-export async function prepareRegressionWorkspace(project, { originalTestCommit, signal } = {}) {
+export async function prepareRegressionWorkspace(project, { originalTestCommit, signal, preserveSymlinks = false } = {}) {
   const source = await fs.realpath(project);
   const options = { cwd: source, windowsHide: true, signal, maxBuffer: 8 * 1024 * 1024 };
   let testRoots = [];
@@ -87,7 +88,7 @@ export async function prepareRegressionWorkspace(project, { originalTestCommit, 
     if (!testRoots.length) throw new Error('The original commit has no public ArkTS unit test directories.');
   }
   const workspace = await fs.mkdtemp(path.join(path.dirname(source), 'rc-regression-'));
-  await fs.cp(source, workspace, { recursive: true, dereference: true,
+  await fs.cp(source, workspace, { recursive: true, dereference: !preserveSymlinks,
     filter(file) {
       if (file === source) return true;
       return !generated.has(path.basename(file)) && (!originalTestCommit || !suiteRoot.test(path.relative(source, file).replaceAll('\\', '/')));

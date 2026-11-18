@@ -185,6 +185,7 @@ test("cancellation during verification prevents candidate delivery and further e
 
 test("the controller time budget stops assessment with a visible unverified receipt, not cancellation", async (t) => {
   let taskId;
+  const timeoutMs = 180;
   const f = await fixture(t, { worker: async ({ child, root, params }) => {
     taskId = (await ensureTask({ projectRoot: root, sessionId: params.sessionId })).taskId;
     const messages = [
@@ -199,9 +200,12 @@ test("the controller time budget stops assessment with a visible unverified rece
     } } };
   }, assess: async ({ state, request }) => {
     assert.ok(state.deadlineAt > Date.now());
-    await waitForAbort(request.abortSignal, true);
+    const aborted = waitForAbort(request.abortSignal, true);
+    t.mock.timers.tick(timeoutMs);
+    await aborted;
   } });
-  const params = { ...f.params, timeoutMs: 180 };
+  t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: Date.now() });
+  const params = { ...f.params, timeoutMs };
   const result = await f.harness.runAttempt(params);
   assert.equal(result.aborted, false);
   assert.equal(result.externalAbort, false);

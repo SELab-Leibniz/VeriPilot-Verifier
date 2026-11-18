@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { nativeGatewayCodingProvider, createNativeGatewayEvaluation, createNativeGatewayRequest, nativeGatewayResumeProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
+import { installSimplifyProfileBoundary } from '../scripts/helpers/simplify-native-evaluation.mjs';
 
 const provider = { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' };
 
@@ -19,6 +21,13 @@ test('Gateway provider definitions cannot carry credentials or silently select a
 test('a Coding Plan Gateway cannot start without an explicit offline or metered provider boundary', async () => {
   await assert.rejects(createNativeGatewayEvaluation({ provider }), /offline network guard or a metered batch/);
   await assert.rejects(createNativeGatewayEvaluation({ provider, providerGuard: { kind: 'unlimited' } }), /offline network guard or a metered batch/);
+});
+
+test('the RC-off Gateway rejects options that could reintroduce an RC role or tool', async () => {
+  for (const options of [{ prebuiltPluginRoot: 'fixture' }, { reuseProfile: true }, { injectDefect: true },
+    { businessToolNames: ['read', 'rc_document'] }, { extraPluginPaths: [{ id: 'runtime-corrector', path: 'fixture' }] },
+    { disableRuntimeCorrection: true }, { reviewerProvider: provider }])
+    await assert.rejects(createNativeGatewayEvaluation({ omitRuntimeCorrection: true, ...options }), /no Runtime Corrector components/);
 });
 
 test('finite phase timeout becomes the public provider silence policy without changing model or mutating input', () => {
@@ -67,10 +76,25 @@ test('request timeout options do not change abort authority or forward unrelated
     load: async () => ({ callGateway: async value => { calls.push(value); } }) });
   await request('chat.abort', { runId: 'fictional-original' }, { timeoutMs: 1000, scopes: ['fictional-untrusted-scope'] });
   await request('agent.wait', { runId: 'fictional-original' }, { scopes: ['operator.admin'] });
+  await request('chat.send', { message: 'resume', systemInputProvenance: { kind: 'internal_system' }, suppressCommandInterpretation: true });
+  await request('chat.send', { message: 'normal business input' });
   assert.deepEqual(calls[0].scopes, ['operator.admin']);
   assert.equal(calls[0].timeoutMs, 1000);
   assert.equal(Object.hasOwn(calls[1], 'scopes'), false);
   assert.equal(calls[1].timeoutMs, 30000);
+  assert.deepEqual(calls[2].scopes, ['operator.admin']);
+  assert.equal(Object.hasOwn(calls[3], 'scopes'), false);
+});
+
+test('native plan preview uses read authority while preparation, approval and arming use write authority', async () => {
+  const calls = [];
+  const request = createNativeGatewayRequest({ config: {}, port: 12345,
+    load: async () => ({ callGateway: async value => { calls.push(value); } }) });
+  for (const action of ['preview', 'prepare', 'approve', 'arm']) {
+    await request(`runtime-corrector.openspec.${action}`, { runId: 'proposal' }, { timeoutMs: 800, scopes: ['operator.admin'] });
+  }
+  assert.deepEqual(calls.map(value => value.scopes), [['operator.read'], ['operator.write'], ['operator.write'], ['operator.write']]);
+  assert(calls.every(value => value.timeoutMs === 800));
 });
 
 test('request failure propagates unchanged and does not retry or submit a new run', async () => {
@@ -87,13 +111,35 @@ test('the pinned SDK resolves the standard OpenAI credential from process memory
   const previous = process.env.OPENAI_API_KEY, dummy = 'offline-gateway-env-dummy-not-a-real-key';
   try {
     process.env.OPENAI_API_KEY = dummy;
-    const sdk = await import(pathToFileURL(path.join(process.env.RC_OPENCLAW_HOST_ROOT,
-      'node_modules/@openclaw/ai/dist/env-api-keys-CtMlqaQ4.mjs')).href);
+    const hostRequire = createRequire(path.join(process.env.RC_OPENCLAW_HOST_ROOT, 'package.json'));
+    const sdk = await import(pathToFileURL(path.join(path.dirname(hostRequire.resolve('@openclaw/ai')),
+      'env-api-keys-CtMlqaQ4.mjs')).href);
     assert(sdk.n('openai') === dummy, 'The normal SDK auth path must resolve the isolated dummy environment value.');
   } finally {
     if (previous === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previous;
   }
+});
+
+test('the pinned native transport rejects zero-budget and unrelated requests before dispatch', {
+  skip: !process.env.RC_OPENCLAW_HOST_ROOT,
+}, async () => {
+  const hostRoot = process.env.RC_OPENCLAW_HOST_ROOT;
+  const { buildGuardedModelFetch } = await import(pathToFileURL(path.join(hostRoot, 'dist/plugin-sdk/provider-transport-runtime.js')).href);
+  const credential = () => 'offline-test-placeholder';
+  const profile = { baseUrl: 'https://benchmark.invalid/v1', model: 'deepseek-v4-flash' };
+  const originalFetch = globalThis.fetch;
+  const send = baseUrl => buildGuardedModelFetch({ provider: 'custom', api: 'openai-completions', id: profile.model, baseUrl })(
+    `${baseUrl}/chat/completions`, { method: 'POST', headers: baseUrl === profile.baseUrl ? { authorization: `Bearer ${credential()}` } : {},
+      body: JSON.stringify({ model: profile.model }), signal: AbortSignal.timeout(5000) });
+  const boundary = installSimplifyProfileBoundary({ hostRoot, provider: profile, credential, maxRequests: 0 });
+  try {
+    await assert.rejects(send('https://unrelated.invalid/v1'), { message: 'PROFILE_REQUEST_BOUNDARY' });
+    assert.deepEqual(boundary.snapshot(), { requests: 0, failure: null });
+    await assert.rejects(send(profile.baseUrl), { message: 'PROFILE_REQUEST_LIMIT' });
+    assert.deepEqual(boundary.snapshot(), { requests: 0, failure: 'PROFILE_REQUEST_LIMIT' });
+  } finally { boundary.close(); }
+  assert.equal(globalThis.fetch, originalFetch);
 });
 
 

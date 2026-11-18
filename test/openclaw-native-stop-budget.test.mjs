@@ -339,6 +339,7 @@ test("confirmed file-quality deviations reach the next normal host prompt withou
   assert.match(response.prependContext, /历史评审/);
   assert.ok(Buffer.byteLength(response.prependContext, "utf8") <= 8192);
   assert.equal(admissions, 0);
+  await within(f.runtime.waitForBackgroundReviews(), "next prompt background review");
 });
 
 test("an unresolved file-quality observation stays local after a completed zero-deviation Stop", async t => {

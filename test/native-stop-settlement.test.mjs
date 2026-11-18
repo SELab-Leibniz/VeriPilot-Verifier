@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { nativeStopGrace, nativeStopReviewDirectory, nativeStopSettlement, readNativeStopRecords, waitNativeStopSettled } from '../scripts/bench/native-stop-settlement.mjs';
+import { directProposalStopSettled, nativeStopGrace, nativeStopReviewDirectory, nativeStopSettlement, readNativeStopRecords, waitNativeStopSettled } from '../scripts/bench/native-stop-settlement.mjs';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const record = (fields = {}) => ({ sessionId: 's', sessionKey: 'k', runId: 'run-1', occurrenceId: 'run-1', enabledRevision: 0, status: 'SETTLED',
@@ -28,6 +28,20 @@ test('a native Stop settles only when every record settled and the current verif
     'a terminal settlement is carried by the settled job of its run');
   assert.equal(nativeStopSettlement([record({ runId: 'run-2', evaluationId: null })], terminal).settled, false);
   assert.equal(nativeStopSettlement([{ file: 'x', status: 'UNREADABLE' }], null).settled, false);
+});
+
+test('a direct Proposal can settle without a post-run owner only on its document-only Stop receipt', () => {
+  const proposal = record({ waitMode: 'assessment', reviewStatus: 'SKIPPED', reasonCode: 'STOP_DOCUMENT_ONLY_CHANGES' });
+  const scope = { sessionId: 's', sessionKey: 'k', runId: 'run-1', verification: { evaluationId: 'stop-a' } };
+  assert.equal(directProposalStopSettled([proposal], scope), true);
+  assert.equal(directProposalStopSettled([], scope), false);
+  assert.equal(directProposalStopSettled([proposal], { ...scope, verification: { evaluationId: 'stale' } }), false);
+  for (const mismatch of [{ sessionId: 'other' }, { sessionKey: 'other' }, { runId: 'earlier' },
+    { status: 'PENDING' }, { waitMode: 'until_pass' }, { reviewStatus: 'DEVIATION' }, { reasonCode: 'OTHER_SKIP' }]) {
+    assert.equal(directProposalStopSettled([{ ...proposal, ...mismatch }], scope), false);
+  }
+  assert.equal(directProposalStopSettled([proposal, proposal], scope), false);
+  assert.equal(directProposalStopSettled([proposal, record({ runId: 'another', status: 'RUNNING' })], scope), false);
 });
 
 test('a settlement that cannot change any more gives up after its grace instead of the run deadline', () => {

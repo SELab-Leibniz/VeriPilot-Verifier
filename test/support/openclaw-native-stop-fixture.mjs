@@ -157,7 +157,7 @@ reviewers:
     if (awaitInitialReview) await state.states.get("main:host")?.hotReviewWork?.promise;
     assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
     calls = 0; fail = failures;
-    return { api, runtime, ctx, warnings, startModel, sharedState: state, state: state.states.get("main:host"), root, materialFile, hostAbort, calls: () => calls,
+    return { api, runtime, ctx, warnings, startModel, sharedState: state, state: state.states.get("main:host"), root, pluginRoot, materialFile, hostAbort, calls: () => calls,
       post: () => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id),
       restart: (overrides = {}) => {
         const value = createRuntime(api, { pluginRoot, sharedState: {}, reviewerFactory: factory, nativeHooks: true,

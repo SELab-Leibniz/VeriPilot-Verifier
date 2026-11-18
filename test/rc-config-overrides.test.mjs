@@ -5,9 +5,12 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parseSimpleYaml } from '../lib/simple-yaml.mjs';
+import { normalizeRegressionCheck } from '../lib/runtime-v2/stop-correction-config.mjs';
 import { applyRcConfigOverrides, deepMerge, emitSimpleYaml, loadRcConfigOverrides, regressionCheckPolicy, substitutePlaceholders } from '../scripts/bench/rc-config-overrides.mjs';
 import { regressionCheckOverride, regressionVerdict } from '../scripts/bench/arkts-regression-check.mjs';
 
+const arktsRoute = ['RC_ARKTS_INSTRUMENT', 'RC_ARKTS_TEST_EXCHANGE', 'RC_ARKTS_TEST_TOOLCHAIN_SHA256',
+  'RC_ARKTS_TEST_RELEASE_COMMIT', 'RC_ARKTS_TEST_RUNTIME', 'RC_ARKTS_TEST_CASE'];
 const base = `# comment kept only without overrides
 enabled: true
 reviewers:
@@ -45,7 +48,7 @@ test('overrides reach the business config through the product YAML subset; none 
   const parsed = parseSimpleYaml(text);
   assert.deepEqual(parsed.stopCorrection, { enabled: true, waitMode: 'until_pass', maxCorrectionsPerSession: 3, metrics: { M08: true, M09: true },
     regressionCheck: { enabled: true, command: ['C:\\node\\node.exe', 'C:\\h/scripts/bench/arkts-regression-check.mjs', '--project=C:\\b\\biz-1',
-      '--tool-root=C:\\tools', '--java-home=C:\\jbr'], cwd: '.', timeoutMs: 900000 } });
+      '--tool-root=C:\\tools', '--java-home=C:\\jbr'], testSource: 'current', routeEnvironment: arktsRoute, cwd: '.', timeoutMs: 900000 } });
   assert.deepEqual(parsed.artifactCorrection, { paths: ['openspec/**'] });
   assert.equal(applied.file, file);
   assert.deepEqual(applied.value.stopCorrection.regressionCheck, parsed.stopCorrection.regressionCheck);
@@ -88,7 +91,8 @@ test('the product loader honors the ArkTS regression-check override on the relea
   const loaded = await loadConfig({ cwd: projectRoot, pluginRoot: fileURLToPath(new URL('..', import.meta.url)) });
   const effective = loaded.runtimeV2.stopCorrection.regressionCheck;
   assert.deepEqual({ ...effective }, { enabled: true, command: [process.execPath, 'C:\\h/scripts/bench/arkts-regression-check.mjs',
-    `--project=${projectRoot}`, '--tool-root=C:\\tools', '--java-home=C:\\jbr'], cwd: '.', timeoutMs: 900000, maxOutputBytes: 65536 });
+    `--project=${projectRoot}`, '--tool-root=C:\\tools', '--java-home=C:\\jbr'], testSource: 'current', routeEnvironment: arktsRoute,
+    cwd: '.', timeoutMs: 900000, maxOutputBytes: 65536 });
   assert.equal(regressionCheckPolicy(parseSimpleYaml(text).stopCorrection.regressionCheck, effective).honoredByProduct, true);
 });
 
@@ -103,6 +107,37 @@ test('regressionCheck is validated by the harness and reported as dropped when t
   for (const invalid of [{ ...configured, command: [] }, { ...configured, command: 'node check.mjs' }, { ...configured, timeoutMs: 0 }, { ...configured, extra: 1 },
     { enabled: true }, { enabled: false, command: [] }, { ...configured, maxOutputBytes: 0 }])
     assert.throws(() => regressionCheckPolicy(invalid), /regressionCheck must be/u);
+});
+
+test('the configured verifier contract and command must survive effective config normalization', () => {
+  const configured = { enabled: true, command: ['node', 'check.mjs'], reportProtocol: 'completed-suite-v1',
+    verifierProtocol: 'split-requirement-v1', collateralProtocol: 'exclude-cases-v1', testSource: 'task-start', routeEnvironment: ['TEST_ROUTE'] };
+  const effective = normalizeRegressionCheck(configured);
+  assert.equal(regressionCheckPolicy(configured, effective).honoredByProduct, true);
+  for (const change of [{ reportProtocol: undefined }, { verifierProtocol: undefined }, { collateralProtocol: undefined }, { testSource: 'current' },
+    { routeEnvironment: ['OTHER_ROUTE'] }, { command: ['node', 'other.mjs'] }])
+    assert.throws(() => regressionCheckPolicy(configured, { ...effective, ...change }), /configured verifier contract and command/u);
+  assert.throws(() => regressionCheckPolicy(configured, null), /configured verifier contract and command/u);
+  assert.throws(() => regressionCheckPolicy({ ...configured, testSource: 'unknown' }, effective), /regressionCheck\.testSource/u);
+  const disabled = { enabled: false, testSource: 'task-start' };
+  assert.deepEqual(regressionCheckPolicy(disabled, null), { configured: disabled, effective: null, honoredByProduct: false });
+});
+
+test('behavior presets explicitly select task-start provenance and preserve their collateral prerequisites', async () => {
+  for (const [variant, collateral] of [['frame-checks', true], ['frame', true], ['only', false]]) {
+    const file = fileURLToPath(new URL(`../config/stop-behavior-${variant}.json`, import.meta.url));
+    const overrides = await loadRcConfigOverrides(file);
+    const placeholders = { node: 'node', harnessRoot: '/harness', projectRoot: '/project', toolRoot: '/tools', javaHome: '/java', outputRoot: '/output' };
+    const { applied } = applyRcConfigOverrides(base, overrides, placeholders);
+    const check = applied.value.stopCorrection.regressionCheck;
+    const effective = normalizeRegressionCheck(check);
+    assert.equal(regressionCheckPolicy(check, effective).honoredByProduct, true);
+    assert.equal(effective.testSource, 'task-start');
+    assert.deepEqual(effective.routeEnvironment, arktsRoute);
+    assert.equal(effective.collateralProtocol, collateral ? 'exclude-cases-v1' : undefined);
+    assert.equal(Boolean(effective.baselineFile), collateral);
+    assert(check.command.includes('--original-tests'));
+  }
 });
 
 test('regression verdict counts only regressions and new failures against a complete baseline', () => {

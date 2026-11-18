@@ -59,7 +59,10 @@ test('conforming and unresolved results and checked frame items need no citation
     await submit('finish_stop_review', { summary: 'All items were reviewed.', frameDispositions: [{ id: 'G1', disposition: 'CHECKED' }] });
   });
   assert.equal(handle.result.frameCoverage.checked, 1);
-  assert.equal((await f.production(handle)).status, 'NO_DEVIATION_FOUND');
+  const outcome = await f.production(handle);
+  assert.equal(outcome.status, 'UNVERIFIED');
+  assert.equal(outcome.reasonCode, 'STOP_MANDATORY_REQUIREMENT_UNVERIFIED');
+  assert.equal(outcome.admission, null);
 });
 
 for (const deviationOnly of [true, false]) test(`bad ranges downgrade only their deviation; a valid sibling survives (${deviationOnly})`, async t => {

@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { parseHypium, gradeArkts } from '../scripts/bench/hypium-results.mjs';
-import { arktsAgentInput } from '../scripts/bench/arkts-dataset.mjs';
+import { arktsAgentInput, digest } from '../scripts/bench/arkts-dataset.mjs';
+import { arktsInstrumentRuntime } from '../scripts/bench/arkts-instrument-results.mjs';
+import { compareArktsCandidateGrades, sealArktsGradingCandidate } from '../scripts/bench/simplify-arkts-inputs.mjs';
 const lines = (name, status) => `[Hypium]start running case '${name}'\nOHOS_REPORT_STATUS: class=Spec\n[Hypium][${status}]${name} ; consuming 1ms\nOHOS_REPORT_STATUS: class=Spec\nOHOS_REPORT_STATUS: test=${name}\nOHOS_REPORT_STATUS_CODE: ${status === 'pass' ? 0 : status === 'fail' ? -2 : -3}\n`;
 const task = { instance_id: 'toy', FAIL_TO_PASS: ['entry::Spec::new'], PASS_TO_PASS: ['entry::Spec::old'] };
 const execution = { timedOut: false, compileSucceeded: true, freshReport: true, code: 0 };
@@ -11,6 +16,18 @@ test('runtime assertions override misleading exit zero and summary text', () => 
   assert.equal(base.validFailToPassBase, true); assert.equal(base.resolved, false);
   const fixed = gradeArkts(task, parse(lines('new', 'pass') + lines('old', 'pass')), execution);
   assert.equal(fixed.resolved, true);
+});
+test('grading records the runtime case inventory and failures outside the published populations', () => {
+  const expectedRun = lines('new', 'pass') + lines('old', 'pass');
+  const normal = gradeArkts(task, parse(expectedRun), execution);
+  const extra = gradeArkts(task, parse(expectedRun + lines('uncatalogued', 'fail')), execution);
+  const reordered = gradeArkts(task, parse(lines('uncatalogued', 'pass') + expectedRun), execution);
+  assert.equal(normal.testInventory.observed, 2);
+  assert.deepEqual(extra.testInventory, { expected: 2, observed: 3, extra: 1, extraFailed: 1,
+    observedIdsSha256: reordered.testInventory.observedIdsSha256 });
+  assert.notEqual(extra.testInventory.observedIdsSha256, normal.testInventory.observedIdsSha256);
+  assert.deepEqual(extra.f2p, normal.f2p);
+  assert.deepEqual(extra.p2p, normal.p2p);
 });
 test('missing, unfinished, duplicate, ignored and stale outcomes never count as resolved', () => {
   for (const text of [lines('old', 'pass'), lines('new', 'pass') + lines('old', 'ignore'),
@@ -34,6 +51,67 @@ test('agent input excludes gold, hidden tests, verdicts and gold-derived changed
     patch: 'secret gold', test_patch: 'hidden oracle', FAIL_TO_PASS: ['secret case'], implementation_files_changed: ['answer.ets'] };
   assert.deepEqual(Object.keys(arktsAgentInput(raw)), ['instance_id', 'repo', 'base_commit', 'problem_statement', 'hints_text']);
   assert.doesNotMatch(JSON.stringify(arktsAgentInput(raw)), /secret|hidden|answer/);
+});
+test('independent grading seals the exact candidate before applying or recording it', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-arkts-candidate-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const input = path.join(root, 'input.patch');
+  await fs.writeFile(input, 'sealed version');
+  await assert.rejects(sealArktsGradingCandidate(input, root, digest('other version')), /frozen digest/);
+  const sealed = await sealArktsGradingCandidate(input, root, digest('sealed version'));
+  await fs.writeFile(input, 'later mutation');
+  assert.equal(await fs.readFile(sealed.file, 'utf8'), 'sealed version');
+  assert.equal(sealed.sha256, digest('sealed version'));
+  assert.equal(sealed.bytes, Buffer.byteLength('sealed version'));
+  await assert.rejects(sealArktsGradingCandidate(input, root), { code: 'EEXIST' });
+});
+test('saved candidate grades count a gain and loss separately at a net tie', () => {
+  const beforePatchSha256 = digest('before patch'), afterPatchSha256 = digest('after patch');
+  const pins = { beforePatchSha256, afterPatchSha256 };
+  const caseA = 'entry::PrivateSuite::case A', caseB = 'entry::PrivateSuite::case B';
+  const cases = { ...task, FAIL_TO_PASS: [caseA, caseB] };
+  const receipt = (candidateSha256, pass, fail) => ({ kind: 'hidden-test-candidate-grade', candidateSha256,
+    instanceId: task.instance_id, baseCommit: 'a'.repeat(40), calibrationDirectory: '/calibration/independent',
+    environment: { datasetDigest: digest('dataset'), testPatchSha256: digest('private test patch'), toolchain: { sha256: digest('toolchain') } },
+    results: [{ phase: 'candidate', ...gradeArkts(cases, { statuses: { [pass]: 'PASS', [fail]: 'FAIL', 'entry::Spec::old': 'PASS' },
+      finished: true, errors: [] }, execution) }] });
+  const before = receipt(beforePatchSha256, caseA, caseB), after = receipt(afterPatchSha256, caseB, caseA);
+  assert.deepEqual(compareArktsCandidateGrades(before, after, pins), { kind: 'sealed-arkts-grade-comparison', ...pins,
+    f2p: { total: 2, gains: 1, losses: 1, unchanged: 0 }, p2p: { total: 1, gains: 0, losses: 0, unchanged: 1 } });
+
+  for (const invalidate of [
+    grade => { grade.candidateSha256 = beforePatchSha256; },
+    grade => { grade.calibrationDirectory += '-other'; },
+    grade => { grade.environment.toolchain.sha256 = digest('other toolchain'); },
+    grade => { grade.results[0].executed = false; },
+    grade => { grade.results[0].execution.freshReport = false; },
+    grade => { grade.results[0].execution.compileSucceeded = false; },
+    grade => { grade.results[0].execution.timedOut = true; },
+    grade => { grade.results[0].f2p.failed = []; },
+    grade => { grade.results[0].f2p.failed = [caseB]; },
+    grade => { grade.results[0].f2p.failed = ['entry::PrivateSuite::other case']; },
+  ]) {
+    const invalid = structuredClone(after);
+    invalidate(invalid);
+    assert.throws(() => compareArktsCandidateGrades(before, invalid, pins), error => {
+      assert.doesNotMatch(error.message, /PrivateSuite/u);
+      return true;
+    });
+  }
+
+  const [instrumentBefore, instrumentAfter] = structuredClone([before, after]);
+  for (const grade of [instrumentBefore, instrumentAfter]) {
+    grade.environment.runtime = arktsInstrumentRuntime;
+    Object.assign(grade.results[0].execution, { suiteSha256: digest('suite'), runnerSha256: digest('runner') });
+  }
+  assert.deepEqual(compareArktsCandidateGrades(instrumentBefore, instrumentAfter, pins), compareArktsCandidateGrades(before, after, pins));
+  for (const key of ['suiteSha256', 'runnerSha256']) {
+    const changed = structuredClone(instrumentAfter);
+    changed.results[0].execution[key] = digest('different fingerprint');
+    assert.throws(() => compareArktsCandidateGrades(instrumentBefore, changed, pins), /fingerprints must match/u);
+    delete changed.results[0].execution[key];
+    assert.throws(() => compareArktsCandidateGrades(instrumentBefore, changed, pins), /lacks its exact suite or runner fingerprint/u);
+  }
 });
 test('corrupted start logs require an independently matching terminal runtime frame', () => {
   const noisy = lines('old', 'pass').replace("case 'old'", "case 'old'.");

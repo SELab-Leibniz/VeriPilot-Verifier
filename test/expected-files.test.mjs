@@ -69,6 +69,11 @@ test('a directory and filename bind to the named output directory', () => {
   assert.equal(resolveExpectedFilePath('notes.md', '输出目录为 `交付/本轮`，生成 notes.md。').path, '交付/本轮/notes.md');
   assert.equal(resolveExpectedFilePath('notes.md', 'Write notes.md under deliveries/revision-7/.').path,
     'deliveries/revision-7/notes.md');
+  const separatelyNamed = 'Create openspec/changes/benchmark-change/ and write proposal.md and design.md.';
+  assert.throws(() => normalizeExpectedFiles(['openspec/changes/benchmark-change/proposal.md'], separatelyNamed),
+    /submit the literal filename "proposal\.md"/u);
+  assert.deepEqual(normalizeExpectedFiles(['proposal.md', 'design.md'], separatelyNamed), ['proposal.md', 'design.md']);
+  assert.equal(resolveExpectedFilePath('proposal.md', separatelyNamed).path, 'openspec/changes/benchmark-change/proposal.md');
 });
 
 test('a filename without a unique original location stays unverified', () => {
@@ -94,8 +99,14 @@ test('original directory context outside the selected filename lines prevents a 
     await readAll();
     const originalPath = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
     const citeId = (await read(originalPath)).details.citation.citeId;
-    await submit('set_original_checklist', { items: [{ metricId: 'M12', text: 'Deliver notes.md and steps.md.',
-      verificationTarget: 'ARTIFACT', expectedFiles: ['notes.md', 'steps.md'], citeId, lineStart: 1, lineEnd: 2 }] });
+    const artifact = { metricId: 'M12', text: 'Deliver notes.md and steps.md.', verificationTarget: 'ARTIFACT',
+      expectedFiles: ['notes.md', 'steps.md'], citeId, lineStart: 1, lineEnd: 2 };
+    const unrelated = { ...artifact, text: 'Create the delivery directory.', expectedFiles: ['steps.md'] };
+    await assert.rejects(submit('set_original_checklist', { items: [artifact, unrelated] }), {
+      code: 'GROUND_TRUTH_EXPECTED_FILES_INVALID',
+      message: /Checklist item 2 \(M12\): .*steps\.md.*preserve the other items/u,
+    });
+    await submit('set_original_checklist', { items: [artifact] });
     const page = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
     assert.equal(page.items[0].savedResult, null);
     assert.deepEqual(page.expectedFileChecks.map(check => check.path), ['notes.md', 'steps.md'].map(file => path.join(f.root, 'deliveries/revision-7', file)));

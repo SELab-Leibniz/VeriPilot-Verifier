@@ -35,7 +35,7 @@ Session 已选择项目后，可依次执行 `/rc-project init`、`/rc-project o
 
 多 Session 的 until_pass 使用 RC 独立控制页管理审查状态与可编辑待办；每轮正常结束后才审查，需要修复时另起运行。仅修改 RC，无需改动 MA 原生界面。见[方案与使用方式](docs/until-pass-dispatch.md)。
 
-Skill 执行看护支持原文按需检索、私有持久笔记和宿主阶段提示，见[效率方案与验证](docs/skill-care-efficiency.md)。
+Skill 执行看护支持原文按需检索、私有持久笔记和宿主阶段提示。相关选项见[配置说明](docs/configuration.md)。
 
 ## 快速开始
 

@@ -85,7 +85,7 @@ artifacts:
     # pathTemplates 用于从路径提取实例字段，适合并行 change / feature：
     # - 占位符写成 {key}，只能匹配非空且不含路径分隔符的文本；
     # - 占位符名以字母开头，可包含字母、数字、下划线和连字符；
-    # - 模板中不能混用 *、**、?；
+    # - 可使用一个独立的 /**/ 匹配零个或多个中间目录；其余 * 和 ? 不可用；
     # - 若启用 workflow.correlation，参与 Workflow 边的所有 artifact 模板都必须
     #   包含全部 correlation key。
     #
@@ -207,10 +207,12 @@ limits:
 #   enabled: true
 #   originalRequirementsBasis: true
 #   deviationOnly: true
+#   requireCurrentProductionCoverage: false  # 可选：TASK_COMPLETE 时要求用当前源码核查适用的原始生产实现条目
 #   waitMode: until_pass
 #   regressionCheck:      # 可选：Stop 复核时由程序运行一次项目已有测试（默认关闭）
 #     enabled: false      # 仅在存在非产物源码改动且选中常驻回归项时运行
 #     command: [npm, test]  # argv 数组；字符串会按空白/引号拆分，禁止 shell 运算符
+#     reportProtocol: completed-suite-v1  # 可选；仅用于输出完整机器回执的受信命令
 #     cwd: .              # 相对项目根目录
 #     timeoutMs: 600000   # 同时不超过剩余 Stop 复核时间的一半；超时终止整个进程树
 #     maxOutputBytes: 65536 # 作为程序证据保留的输出尾部字节数

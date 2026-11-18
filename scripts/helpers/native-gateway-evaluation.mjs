@@ -7,10 +7,66 @@ import { randomBytes } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
-import { installProviderFetchTiming } from './provider-fetch-timing.mjs';
+import { installProviderFetchTiming, providerTraceparentSha256 } from './provider-fetch-timing.mjs';
 import { MAX_REVIEW_TIMEOUT_MS } from '../../lib/review-timeout.mjs';
 import { TASK_TOOL_NAMES, BASELINE_TOOL_NAMES } from '../../lib/openclaw/tool-contracts.mjs';
 import { EXPERIMENT_SESSION_RESET } from '../bench/session-continuity.mjs';
+
+const modelCallTypes = new Set(['model.call.started', 'model.call.completed', 'model.call.error']);
+const transportFailureCodes = new Map([
+  ['connection_reset', ['ECONNRESET']],
+  ['connection_closed', ['UND_ERR_SOCKET']],
+  ['timeout', ['ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT']],
+]);
+const validIdentity = value => typeof value === 'string' && value.length > 0;
+const validSha256 = value => typeof value === 'string' && /^[a-f0-9]{64}$/u.test(value);
+
+function modelCallDiagnostic(event, metadata) {
+  if (metadata?.trusted !== true || !modelCallTypes.has(event.type)) return null;
+  const { type, runId, sessionId, sessionKey, callId, seq, ts, trace, failureKind } = event;
+  const traceparentSha256 = trace && providerTraceparentSha256(`00-${trace.traceId}-${trace.spanId}-${trace.traceFlags ?? '01'}`);
+  return { type, runId, sessionId, sessionKey, callId, seq, ts, ...(traceparentSha256 ? { traceparentSha256 } : {}),
+    ...(transportFailureCodes.has(failureKind) || failureKind === 'terminated' ? { failureKind } : {}) };
+}
+
+// Only the latest owned call may account for a public terminal. Join native
+// call ownership to the provider request by trace, never by phase or timing.
+export function nativeBusinessTransportFailure({ runId, sessionId, sessionKey, terminal, assistantError, modelCalls = [], transportRequests = [] }) {
+  if (![runId, sessionId, sessionKey].every(validIdentity) || terminal?.source !== 'agent.wait' || terminal.requestedRunId !== runId
+    || terminal.runId !== runId || terminal.status !== 'error' || !Number.isSafeInteger(terminal.endedAt)) return null;
+  const calls = modelCalls.filter(event => event.runId === runId);
+  if (calls.some(event => event.sessionId !== sessionId || event.sessionKey !== sessionKey || !Number.isSafeInteger(event.seq))) return null;
+  const start = calls.findLast(event => event.type === 'model.call.started');
+  const end = calls.at(-1);
+  if (!start || !validIdentity(start.callId) || !validSha256(start.traceparentSha256) || !Number.isSafeInteger(start.ts)
+    || !Number.isSafeInteger(end.ts) || end.seq <= start.seq || end.ts < start.ts || terminal.endedAt < end.ts
+    || end.callId !== start.callId || end.traceparentSha256 !== start.traceparentSha256
+    || calls.filter(event => event.callId === start.callId).length !== 2
+    || modelCalls.filter(event => event.type === 'model.call.started' && event.traceparentSha256 === start.traceparentSha256).length !== 1
+    || modelCalls.some(event => event.seq > end.seq && (event.sessionId === sessionId || event.sessionKey === sessionKey))) return null;
+  const wires = transportRequests.filter(request => request.traceparentSha256 === start.traceparentSha256);
+  if (wires.length !== 1) return null;
+  const [wire] = wires;
+  const wireStartedAt = Date.parse(wire.startedAt);
+  if (wire.event !== 'request_error' || wire.observerStopped !== false || !Number.isSafeInteger(wire.id) || !Number.isFinite(wireStartedAt)
+    || wireStartedAt < start.ts || !Number.isSafeInteger(wire.endedAt) || wire.endedAt < wireStartedAt || wire.endedAt > end.ts
+    || !['Error', 'TypeError', 'OtherError'].includes(wire.failure)) return null;
+  const partialStreamClosed = wire.responseStatus === 200 && wire.bodyChunks > 0 && wire.bytes > 0
+    && (!wire.transportCode || ['UND_ERR_SOCKET', 'ECONNRESET'].includes(wire.transportCode));
+  // The pinned host can mark a stream call completed when its result is an
+  // assistant error. The driver must attest the retained leaf and timestamps.
+  const preservedAssistantError = end.type === 'model.call.completed' && partialStreamClosed && assistantError?.failureKind === 'terminated'
+    && validIdentity(assistantError.messageId) && validSha256(assistantError.messageSha256)
+    && Number.isSafeInteger(assistantError.startedAt) && assistantError.startedAt >= start.ts && assistantError.startedAt <= wireStartedAt
+    && Number.isSafeInteger(assistantError.persistedAt) && assistantError.persistedAt >= wire.endedAt && assistantError.persistedAt <= terminal.endedAt;
+  if (!preservedAssistantError && !(end.type === 'model.call.error'
+    && (transportFailureCodes.get(end.failureKind)?.includes(wire.transportCode) || end.failureKind === 'terminated' && partialStreamClosed))) return null;
+  return { runId, sessionId, sessionKey, callId: start.callId, modelStartSeq: start.seq, modelEndSeq: end.seq,
+    traceparentSha256: start.traceparentSha256, transportRequestId: wire.id,
+    failureKind: preservedAssistantError ? assistantError.failureKind : end.failureKind,
+    ...(wire.transportCode ? { transportCode: wire.transportCode } : {}),
+    ...(preservedAssistantError ? { assistantMessageId: assistantError.messageId, assistantMessageSha256: assistantError.messageSha256 } : {}) };
+}
 
 export function nativeModelContextWindow(value = 128000) {
   const tokens = Number(value);
@@ -114,11 +170,16 @@ export async function bindWithRetry(start, reserved, { attempts = 4, onRebind = 
 export function createNativeGatewayRequest({ load, port, config }) {
   return async (method, params, options = {}) => {
     const { callGateway } = await load('dist/call-BZWJ3eG1.js');
+    const admin = ['chat.abort', 'sessions.compact'].includes(method) || method === 'chat.send'
+      && params?.systemInputProvenance?.kind === 'internal_system' && params.suppressCommandInterpretation === true;
+    const openspecScope = method === 'runtime-corrector.openspec.preview' ? 'operator.read'
+      : ['runtime-corrector.openspec.prepare', 'runtime-corrector.openspec.approve', 'runtime-corrector.openspec.arm'].includes(method)
+        ? 'operator.write' : null;
     return callGateway({ url: `ws://127.0.0.1:${port}`, token: process.env.OPENCLAW_GATEWAY_TOKEN,
       config, method, params, timeoutMs: options.timeoutMs ?? 30000,
       // Each request has a new connection. The isolated controller must
-      // authenticate its exact-run abort and manual compaction as admin.
-      ...(['chat.abort', 'sessions.compact'].includes(method) ? { scopes: ['operator.admin'] } : {}) });
+      // authenticate exact-run aborts, compaction, and internal turns as admin.
+      ...(admin ? { scopes: ['operator.admin'] } : openspecScope ? { scopes: [openspecScope] } : {}) });
   };
 }
 
@@ -126,7 +187,12 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   prebuiltPluginRoot = null, extraPluginPaths = [], businessToolNames = ['read', 'write', 'edit'], businessToolDeny = [], confineBusinessFiles = false,
   phaseTimeoutMs = null, reviewerTimeoutMs = phaseTimeoutMs, hookTimeoutMs = phaseTimeoutMs, businessTimeoutMs = phaseTimeoutMs,
   unlimitedBusiness = false, hostProfileAuthMarker, disableMemoryFlush = false, preserveSessionHistory = false, contextWindowTokens, baselineLimits, baselineWireMode, skipBootstrap = false,
-  compaction = null, contextTokens, logLevel = 'warn', provider, reviewerProvider, providerGuard, onGatewayStart, disableRuntimeCorrection = false }) {
+  compaction = null, contextTokens, logLevel = 'warn', provider, reviewerProvider, providerGuard, onGatewayStart,
+  disableRuntimeCorrection = false, omitRuntimeCorrection = false, captureBusinessTransport = false }) {
+  const correctionTools = ['runtime_corrector', 'rc_document', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES];
+  if (omitRuntimeCorrection && (prebuiltPluginRoot || reuseProfile || injectDefect || disableRuntimeCorrection || reviewerProvider
+    || extraPluginPaths.some(extra => extra?.id === 'runtime-corrector') || businessToolNames.some(name => correctionTools.includes(name))))
+    throw new Error('The RC-off Gateway requires a fresh profile with no Runtime Corrector components.');
   const contextWindow = nativeModelContextWindow(contextWindowTokens);
   const hostProfile = providerGuard?.kind === 'host_profile_native_document'
     || ['authorized_simplify_experiment', 'metered_native_gateway_batch'].includes(providerGuard?.kind) && providerGuard.hostProfile === true;
@@ -164,9 +230,10 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   process.env.OPENCLAW_SKIP_CRON = '1';
   if (!coding && process.env.ANTHROPIC_AUTH_TOKEN) process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_AUTH_TOKEN;
   process.argv[1] = path.join(hostRoot, 'openclaw.mjs');
-  const pluginRoot = prebuiltPluginRoot ? await fs.realpath(prebuiltPluginRoot) : reuseProfile ? await fs.realpath(path.join(root, 'build/runtime-corrector-openclaw'))
-    : await buildPlugin({ host: 'openclaw', sourceRoot, outputRoot: path.join(root, 'build') });
-  if (unlimitedBusiness) {
+  const pluginRoot = omitRuntimeCorrection ? null : prebuiltPluginRoot ? await fs.realpath(prebuiltPluginRoot)
+    : reuseProfile ? await fs.realpath(path.join(root, 'build/runtime-corrector-openclaw'))
+      : await buildPlugin({ host: 'openclaw', sourceRoot, outputRoot: path.join(root, 'build') });
+  if (pluginRoot && unlimitedBusiness) {
     const manifest = JSON.parse(await fs.readFile(path.join(pluginRoot, 'openclaw.plugin.json'), 'utf8'));
     if (!manifest.configSchema?.properties?.businessRunTimeoutMs) throw new Error('This frozen plugin cannot disable RC business-correction deadlines; do not silently claim an unbounded host.');
   }
@@ -174,12 +241,12 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token' }, controlUi: { enabled: false }, reload: { mode: 'off' } },
     discovery: { mdns: { mode: 'off' } }, cron: { enabled: false }, diagnostics: { enabled: true }, browser: { enabled: false },
     agents: { defaults: { workspace: projectRoot, model: { primary: `${providerId}/${model}` }, sandbox: { mode: 'off' }, heartbeat: { every: '0m' },
-      ...(coding ? { thinkingDefault: 'low', skipBootstrap: skipBootstrap || !authorizedDocument, skills: ['runtime-corrector', 'runtime-corrector-control',
-        'runtime-corrector-init', 'runtime-corrector-workflow', 'semantic-review', 'document-corrector'] } : {}),
+      ...(coding ? { thinkingDefault: 'low', skipBootstrap: skipBootstrap || !authorizedDocument, skills: omitRuntimeCorrection ? []
+        : ['runtime-corrector', 'runtime-corrector-control', 'runtime-corrector-init', 'runtime-corrector-workflow', 'semantic-review', 'document-corrector'] } : {}),
       ...(unlimitedBusiness ? { timeoutSeconds: Math.floor(noTimeoutMs / 1000) } : businessTimeoutMs ? { timeoutSeconds: businessTimeoutMs / 1000 } : {}),
       ...(disableMemoryFlush ? { compaction: { memoryFlush: { enabled: false } } } : {}) },
       list: [{ id: 'main', agentDir: path.join(root, 'agent'),
-        tools: { allow: [...new Set([...businessToolNames, 'runtime_corrector', 'rc_document', 'rc_progress', ...TASK_TOOL_NAMES, ...BASELINE_TOOL_NAMES])],
+        tools: { allow: [...new Set([...businessToolNames, ...(omitRuntimeCorrection ? [] : correctionTools)])],
           ...(businessToolDeny.length ? { deny: businessToolDeny } : {}) } }] },
     ...(confineBusinessFiles ? { tools: { fs: { workspaceOnly: true } } } : {}),
     session: { store: path.join(root, 'sessions.json'), ...(preserveSessionHistory ? { reset: EXPERIMENT_SESSION_RESET } : {}) },
@@ -187,7 +254,8 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
       api: 'anthropic-messages', baseUrl: providerBaseUrl,
       models: [{ id: model, name: model, input: ['text'], reasoning: false, contextWindow, maxTokens: 32768 }],
     } } } } : {}),
-    plugins: { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
+    plugins: omitRuntimeCorrection ? { enabled: true, allow: [], load: { paths: [] }, entries: {} }
+      : { enabled: true, allow: ['runtime-corrector'], load: { paths: [pluginRoot] }, entries: {
       'runtime-corrector': { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true },
         ...(hookTimeoutMs || reviewerTimeoutMs || businessTimeoutMs || baselineLimits || baselineWireMode ? { config: {
           ...(baselineLimits ? { baselineLimits } : {}), ...(baselineWireMode ? { baselineWireMode } : {}),
@@ -211,21 +279,20 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config.plugins.entries[extra.id] = { enabled: true, ...(extra.hooks ? { hooks: extra.hooks } : {}),
       ...(extra.config ? { config: extra.config } : {}) };
   }
+  const settings = config.plugins.entries['runtime-corrector'];
   if (phaseTimeoutMs) {
     config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
     config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
     config.agents.defaults.timeoutSeconds = (businessTimeoutMs ?? phaseTimeoutMs) / 1000;
-    const settings = config.plugins.entries['runtime-corrector'];
-    settings.config = { ...settings.config, hookTimeoutMs: hookTimeoutMs ?? phaseTimeoutMs, reviewerTimeoutMs: reviewerTimeoutMs ?? phaseTimeoutMs };
+    if (settings) settings.config = { ...settings.config, hookTimeoutMs: hookTimeoutMs ?? phaseTimeoutMs, reviewerTimeoutMs: reviewerTimeoutMs ?? phaseTimeoutMs };
     if (reuseProfile && provider) config.models.providers[providerId] = { ...config.models.providers[providerId],
       baseUrl: provider.baseUrl, timeoutSeconds: phaseTimeoutMs / 1000 };
   }
   if (unlimitedBusiness) {
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
-    config.plugins.entries['runtime-corrector'].config = { ...config.plugins.entries['runtime-corrector'].config, businessRunTimeoutMs: 0 };
+    if (settings) settings.config = { ...settings.config, businessRunTimeoutMs: 0 };
   }
   if (disableRuntimeCorrection) {
-    const settings = config.plugins.entries['runtime-corrector'];
     settings.config = { ...settings.config, enabled: false };
   }
   if (compaction) config.agents.defaults.compaction = { ...config.agents.defaults.compaction, ...structuredClone(compaction) };
@@ -260,10 +327,11 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
   const timing = providerBaseUrl ? await installProviderFetchTiming({
     file: path.join(root, reuseProfile ? 'restart-provider-fetch-timing.jsonl' : 'provider-fetch-timing.jsonl'), origin: new URL(providerBaseUrl).origin,
+    captureTraceparent: captureBusinessTransport,
   }) : null;
   let gateway, unsubscribe;
   let restoreCredential = () => {};
-  const modelStarts = [];
+  const modelStarts = [], modelCalls = [];
   try {
     if (coding && !hostProfileAuthMarker) {
       const credential = providerGuard.credential?.();
@@ -282,7 +350,10 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const { createPluginRuntime } = await load('dist/plugins/runtime/index.js');
     const { getGlobalHookRunner, getGlobalPluginRegistry } = await load('dist/plugins/hook-runner-global.js');
     const registry = getGlobalPluginRegistry(), plugin = registry.plugins.find(item => item.id === 'runtime-corrector');
-    if (plugin?.status !== 'loaded') throw new Error('The actual Gateway did not load the built RC plugin.');
+    if (omitRuntimeCorrection) {
+      if (plugin?.status === 'loaded' || registry.agentToolResultMiddlewares.some(entry => entry.pluginId === 'runtime-corrector'))
+        throw new Error('The RC-off Gateway unexpectedly activated Runtime Corrector.');
+    } else if (plugin?.status !== 'loaded') throw new Error('The actual Gateway did not load the built RC plugin.');
     for (const extra of extraPluginPaths) if (registry.plugins.find(item => item.id === extra.id)?.status !== 'loaded')
       throw new Error(`Experiment capability failed to load before any business request: ${extra.id}`);
     if (injectDefect && registry.plugins.find(item => item.id === 'rc-fault-fixture')?.status !== 'loaded')
@@ -290,14 +361,19 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const runtime = createPluginRuntime({ allowGatewaySubagentBinding: true });
     if (!await runtime.gateway.isAvailable()) throw new Error('The actual in-process Gateway dispatch port is unavailable.');
     const diagnostics = await load('dist/plugin-sdk/diagnostic-runtime.js');
-    unsubscribe = diagnostics.onInternalDiagnosticEvent(event => {
+    unsubscribe = diagnostics.onInternalDiagnosticEvent((event, metadata) => {
       if (event.type === 'model.call.started') modelStarts.push({ runId: event.runId, sessionId: event.sessionId, sessionKey: event.sessionKey, ts: event.ts, seq: event.seq });
+      const call = captureBusinessTransport ? modelCallDiagnostic(event, metadata) : null;
+      if (call) modelCalls.push(call);
     });
     return { runtime, hooks: getGlobalHookRunner(), registry, config, model, modelRef: `${providerId}/${model}`, pluginRoot, root, port, faultInjection: injectDefect,
       request: createNativeGatewayRequest({ load, port, config }),
       setPhase: value => timing?.setPhase(value),
       async drain() { await diagnostics.waitForDiagnosticEventsDrained(); },
-      metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts), pluginStatus: plugin.status, isolatedState: root }),
+      businessTransportFailure: identity => nativeBusinessTransportFailure({ ...identity, modelCalls, transportRequests: timing?.traceRequests() ?? [] }),
+      metrics: () => ({ hostVersion: pkg.version, ownerPid: process.pid, providerRequests: timing?.requestCount ?? null, modelStarts: structuredClone(modelStarts),
+        ...(captureBusinessTransport ? { modelCalls: structuredClone(modelCalls) } : {}),
+        pluginStatus: plugin?.status ?? 'absent', isolatedState: root }),
       async close() { try { await gateway.close({ reason: 'Isolated RC acceptance probe finished' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } },
     };
   } catch (error) { try { await reserved.release(); await gateway?.close({ reason: 'Isolated RC acceptance probe failed' }); } finally { unsubscribe?.(); restoreCredential(); await timing?.close(); } throw error; }

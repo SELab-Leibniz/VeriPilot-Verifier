@@ -58,6 +58,7 @@ test('tools bound output, reject undeclared files and forbid link escapes', asyn
   const root = await project(t); await fs.writeFile(path.join(root, 'target.md'), 'REQ-1 一'.repeat(3000) + '\n' + 'REQ-1\n'.repeat(100));
   const tools = await createDocumentTools({ projectRoot: root, semantic: semantic() });
   assert.equal((await tools.execute({ action: 'read', path: 'target.md' })).requiresHostRead, true);
+  await assert.rejects(tools.execute({ action: 'search', query: 'REQ-1' }), /DOCUMENT_PATH_REQUIRED.*open or manifest/);
   const search = await tools.execute({ action: 'search', path: 'target.md', query: 'REQ-1' });
   assert.equal(search.truncated, true); assert(Buffer.byteLength(JSON.stringify(search)) < 9000);
   await assert.rejects(tools.execute({ action: 'read', path: '../other.md' }), /NOT_DECLARED/);

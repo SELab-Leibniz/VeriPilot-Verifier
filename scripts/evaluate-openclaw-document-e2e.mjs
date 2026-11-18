@@ -10,6 +10,7 @@ import { REQUIREMENTS, INITIAL_DESIGN } from './evaluate-document-e2e.mjs';
 import { resolveReviewTimeoutMs } from '../lib/review-timeout.mjs';
 import { assessDocumentCopy } from '../lib/document-copy.mjs';
 import { changedFiles } from '../lib/openclaw/tools.mjs';
+import { findTask, taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 export { assessDocumentCopy } from '../lib/document-copy.mjs';
 
 const SOURCE_ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -143,9 +144,8 @@ async function journal(projectRoot, task, store) {
     .trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
 }
 
-// Static document-only policy intentionally has no dynamic task ledger. Its
-// authoritative evidence is the session-scoped production artifact result and
-// the matching tool result actually committed to the native conversation.
+// Reviews live in the session artifacts or the scoped task journal, depending
+// on the output policy. Delivery always needs the actual native tool result.
 export async function collectAutomaticDocumentEvidence(projectRoot, snapshot, sessionId) {
   const root = path.join(projectRoot, '.runtime-correction/openclaw/session-artifacts'), artifacts = [];
   async function walk(directory) {
@@ -168,9 +168,30 @@ export async function collectAutomaticDocumentEvidence(projectRoot, snapshot, se
     .map(item => ({ toolCallId: item.toolCallId, toolName: item.toolName,
       text: (item.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n') }))
     .filter(item => item.text.includes('[runtime-corrector:feedback]'));
-  const reviews = artifacts.sort((a, b) => a.result.metadata.roundId.localeCompare(b.result.metadata.roundId))
-    .map(item => ({ ...item, toolCallId: receipts.find(receipt => receipt.text.includes(item.result.metadata.roundId))?.toolCallId }));
-  return { reviews, receipts };
+  const roundKey = (scopeTaskId, roundId) => JSON.stringify([scopeTaskId, roundId]);
+  const reviews = new Map(artifacts.map(item => {
+    const roundId = item.result.metadata.roundId;
+    return [roundKey(item.scopeTaskId, roundId),
+      { ...item, toolCallId: receipts.find(receipt => receipt.text.includes(roundId))?.toolCallId }];
+  }));
+  const task = await findTask({ projectRoot, sessionId });
+  if (task && (task.rootSessionId === sessionId || task.sessionIds?.includes(sessionId))) {
+    const file = path.join(taskDirectory(projectRoot, task.taskId), 'journal/events.jsonl');
+    const contents = await fs.readFile(file, 'utf8').catch(error => { if (error.code === 'ENOENT') return ''; throw error; });
+    for (const line of contents.slice(0, contents.lastIndexOf('\n') + 1).split(/\r?\n/u).filter(Boolean)) {
+      const event = JSON.parse(line);
+      const metadata = event.result?.metadata;
+      if (event.type !== 'OPENCLAW_ARTIFACT_REVIEW' || metadata?.semanticReview?.parentSessionId !== sessionId
+        || typeof metadata.roundId !== 'string') continue;
+      const key = roundKey(task.taskId, metadata.roundId);
+      const receipt = typeof event.toolCallId === 'string' && typeof event.feedback === 'string' && event.feedback
+        ? receipts.find(item => item.toolCallId === event.toolCallId && item.text.includes(event.feedback))
+        : undefined;
+      reviews.set(key, { file: reviews.get(key)?.file ?? file, result: event.result, scopeTaskId: task.taskId,
+        toolCallId: receipt?.toolCallId });
+    }
+  }
+  return { reviews: [...reviews.values()].sort((a, b) => a.result.metadata.roundId.localeCompare(b.result.metadata.roundId)), receipts };
 }
 
 export async function loadDocumentBenchmark(directory) {

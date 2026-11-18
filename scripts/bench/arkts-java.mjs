@@ -1,12 +1,14 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { arktsToolchainCommand } from './arkts-toolchain-runner.mjs';
 export const devEcoJbr = 'C:\\Program Files\\Huawei\\DevEco Studio\\jbr';
+export const macDevEcoJbr = '/Applications/DevEco-Studio.app/Contents/jbr/Contents/Home';
 const executable = (home, platform) => path.join(home, 'bin', platform === 'win32' ? 'java.exe' : 'java');
 // Same order as run-arkts-toolchain.ps1: explicit choices must be valid; an
 // unusable inherited JAVA_HOME falls through to the DevEco runtime.
-export function resolveJavaHome({ explicit, env = process.env, exists = existsSync, platform = process.platform, devEco = devEcoJbr } = {}) {
+export function resolveJavaHome({ explicit, env = process.env, exists = existsSync, platform = process.platform,
+  devEco = platform === 'darwin' ? macDevEcoJbr : devEcoJbr } = {}) {
   for (const [source, value, strict] of [['option', explicit, true], ['RC_JAVA_HOME', env.RC_JAVA_HOME, true], ['JAVA_HOME', env.JAVA_HOME, false], ['deveco', devEco, false]]) {
     if (!value) continue;
     const javaHome = path.resolve(value), java = executable(javaHome, platform);
@@ -31,10 +33,8 @@ export function assertJavaRuns({ env = process.env, projectRoot, toolRoot, javaH
   if (plain.status !== 0 || !version) throw new Error(`java -version failed in the business environment (${plain.error?.code ?? plain.status})`);
   const result = { javaHome, version, path: true };
   if (!projectRoot || !toolRoot) return result;
-  const script = fileURLToPath(new URL('./run-arkts-toolchain.ps1', import.meta.url));
-  const shell = path.join(env.SystemRoot ?? 'C:/Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-  const wrapped = spawnSync(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Project', projectRoot, '-ToolRoot', toolRoot, '-Phase', 'java',
-    ...(javaHome ? ['-JavaHome', javaHome] : [])], { env, encoding: 'utf8', windowsHide: true, timeout });
+  const wrapper = arktsToolchainCommand({ toolRoot, javaHome, projectRoot, phase: 'java', env });
+  const wrapped = spawnSync(wrapper.command, wrapper.args, { env: wrapper.env, encoding: 'utf8', windowsHide: true, timeout });
   const line = /\[RC_ARKTS_JAVA\] (\{.*\})/u.exec(wrapped.stdout ?? '')?.[1], toolchain = line ? JSON.parse(line) : null;
   if (wrapped.status !== 0 || !versionOf(wrapped.stdout ?? '') || !toolchain?.javaHome || (javaHome && path.resolve(toolchain.javaHome).toLowerCase() !== path.resolve(javaHome).toLowerCase()))
     throw new Error(`Toolchain java preflight failed (${wrapped.error?.code ?? wrapped.status})`);

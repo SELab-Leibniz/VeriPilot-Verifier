@@ -158,6 +158,35 @@ test("native cache identity survives new factories and credential rotation but t
     createOpenClawReviewerFactory(api, { env: { FIXTURE_KEY: "second-secret" } }).reviewCacheIdentity(independent));
 });
 
+test('native artifact reviewer receives recent frozen execution navigation and an explicit absence-of-evidence rule', async t => {
+  let prepared;
+  const f = await fixture(t, async ({ params }) => {
+    assert.match(params.extraSystemPrompt, /A truncated read, unread history or missing receipt establishes only UNVERIFIED/);
+    assert.match(params.extraSystemPrompt, /not fabrication, an unperformed check or unchanged source/);
+    assert.match(params.extraSystemPrompt, /affirmative current evidence/);
+    assert.match(params.extraSystemPrompt, /without inventing an error finding or rollback edit/);
+    assert.match(params.extraSystemPrompt, /earlier planning instructions within their applicable phase/);
+    const navigation = JSON.parse(await fs.readFile(prepared.transcriptNavigation.path, 'utf8'));
+    const latest = navigation.entries.at(-1).entry;
+    assert.equal(latest.uuid, 'later-real-check');
+    assert.equal(latest.message.content[0].content.exitCode, 0);
+    assert.equal(navigation.complete, false, 'the omitted prefix cannot establish nonexecution');
+    assert.equal(navigation.latestExternalUser.sourceMessageId, 'current-run:user');
+    return output();
+  });
+  f.input.role = 'artifact-reviewer';
+  delete f.input.request.reviewScope;
+  f.input.onPrepared = value => { prepared = value.request; };
+  f.input.evidence.snapshot.entries = [
+    { type: 'user', uuid: 'old-planning', message: { content: 'Planning only. '.repeat(30000) } },
+    { type: 'user', uuid: 'later-apply', sourceMessageId: 'current-run:user', message: { content: 'Proceed with implementation and verification.' } },
+    { type: 'user', uuid: 'later-real-check', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'check', content: { exitCode: 0, outputComplete: true } }] } },
+  ];
+  const handle = await f.factory(f.input);
+  try { assert.equal(f.calls(), 1); }
+  finally { await handle.close(); }
+});
+
 
 test("the plugin has no custom reviewer context guard or budget error handler", async () => {
   await assert.rejects(fs.access(new URL("../lib/openclaw/reviewer-context.mjs", import.meta.url)), { code: "ENOENT" });
@@ -207,7 +236,8 @@ test('coverage-only SDK launch uses an owned empty workspace and copied selected
 
 test('independent baseline audit publishes from a project whose private workspace exceeds the Windows path prefix limit', async t => {
   const { sharedBasisFixture } = await import('./helpers/runtime-v2-shared-basis-fixture.mjs');
-  const f = await sharedBasisFixture(t, { rootPrefix: `rc-long-audit-${'x'.repeat(125)}` });
+  // Exceed the path limit even when the suite uses a short macOS temporary root.
+  const f = await sharedBasisFixture(t, { rootPrefix: `rc-long-audit-${'x'.repeat(180)}` });
   const task = await ensureTask({ projectRoot: f.root, sessionId: 'basis-session' });
   await withTaskState({ projectRoot: f.root, taskId: task.taskId }, state => { state.control ??= {}; });
   let workspace;

@@ -108,6 +108,13 @@ test("all hosts package complete runtime imports, resources and usable documenta
       await fs.access(path.join(root, resource));
     }
     if (host === "openclaw") {
+      const evaluationInputs = /(?:swe-arkts-bench|terminal-bench-batching|soduku-harmony_11|happyword_\d+|security_tool_\d+|arkts-(?:stop-contract|regression)-check\.mjs|RC_ARKTS_TEST_CASE)/iu;
+      for (const file of files) {
+        const relative = path.relative(root, file).replaceAll(path.sep, "/");
+        assert(!relative.startsWith("scripts/bench/") && !relative.startsWith("config/arkts-public-acceptance/"), relative);
+        assert.doesNotMatch(await fs.readFile(file, "utf8"), evaluationInputs, relative);
+      }
+      await assert.rejects(fs.access(path.join(root, "docs/document-correction-experiment.json")), { code: "ENOENT" });
       for (const name of ["config.yaml", "config.reference.yaml", "example.reviewer.md", "example.rules.yaml", "README.md"]) {
         await fs.access(path.join(root, ".runtime-corrector-default", name));
       }

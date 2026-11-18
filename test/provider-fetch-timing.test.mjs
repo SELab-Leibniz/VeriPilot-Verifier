@@ -6,7 +6,8 @@ import os from 'node:os';
 import http from 'node:http';
 import { channel } from 'node:diagnostics_channel';
 import { pathToFileURL } from 'node:url';
-import { installProviderFetchTiming } from '../scripts/helpers/provider-fetch-timing.mjs';
+import { installProviderFetchTiming, providerTraceparentSha256 } from '../scripts/helpers/provider-fetch-timing.mjs';
+import { nativeBusinessTransportFailure } from '../scripts/helpers/native-gateway-evaluation.mjs';
 
 async function fixture(t, handler, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-fetch-timing-'));
@@ -106,6 +107,102 @@ test('an aborted real request retains its original error and logs no message', a
   await f.timing.close();
   assert((await f.rows()).some(row => row.event === 'request_error'));
   assert.equal((await fs.readFile(f.timing.file, 'utf8')).includes('PRIVATE_ABORT_MESSAGE'), false);
+});
+
+test('a dropped response body records the HTTP status and allowlisted socket code', async t => {
+  let drop;
+  const secret = 'PRIVATE_TERMINATED_STREAM';
+  const f = await fixture(t, (request, response) => {
+    request.resume(); response.writeHead(200); response.write(secret);
+    drop = () => response.destroy();
+  });
+  const response = await fetch(f.origin);
+  const rejected = assert.rejects(response.text());
+  drop();
+  await rejected;
+  await f.timing.close();
+  const error = (await f.rows()).at(-1);
+  assert.equal(error.event, 'request_error');
+  assert.equal(error.responseStatus, 200);
+  assert.equal(error.transportCode, 'UND_ERR_SOCKET');
+  assert.equal(error.observerStopped, false);
+  assert.equal((await fs.readFile(f.timing.file, 'utf8')).includes(secret), false);
+});
+
+test('correlation retains only the exact trace hash and a closed request observation', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-fetch-correlation-'));
+  t.after(async () => fs.rm(root, { recursive: true, force: true }));
+  const origin = 'https://contract.invalid';
+  const timing = await installProviderFetchTiming({ file: path.join(root, 'timing.jsonl'), origin, captureTraceparent: true });
+  t.after(() => timing.close());
+  const rawTrace = '00-1234567890abcdef1234567890abcdef-1234567890abcdef-01';
+  const headers = ['Authorization', 'PRIVATE_CORRELATION_AUTH', 'traceparent', rawTrace];
+  const request = { origin, headers };
+  channel('undici:request:create').publish({ request });
+  channel('undici:request:create').publish({ request: { origin, headers: [...headers, 'TraceParent', rawTrace] } });
+  channel('undici:request:create').publish({ request: { origin: 'https://other.invalid', headers } });
+  assert.equal(timing.traceRequests().length, 1);
+  assert.equal(timing.traceRequests()[0].event, 'request');
+  channel('undici:request:headers').publish({ request, response: { statusCode: 200 } });
+  channel('undici:request:bodyChunkReceived').publish({ request, chunk: Buffer.from('PRIVATE_CORRELATION_BODY') });
+  channel('undici:request:error').publish({ request, error: Object.assign(new Error('PRIVATE_CORRELATION_ERROR'), { code: 'UND_ERR_SOCKET' }) });
+  const [closed] = timing.traceRequests();
+  assert.equal(closed.traceparentSha256, providerTraceparentSha256(rawTrace));
+  assert.equal(closed.event, 'request_error');
+  assert.equal(closed.transportCode, 'UND_ERR_SOCKET');
+  assert.equal(closed.responseStatus, 200);
+  assert(Number.isSafeInteger(closed.endedAt));
+  await timing.close();
+  assert.equal(timing.requestCount, 2);
+  const saved = await fs.readFile(timing.file, 'utf8');
+  for (const value of ['PRIVATE_CORRELATION', rawTrace, origin, 'Authorization']) assert.equal(saved.includes(value), false);
+});
+
+function nativeFailureFixture() {
+  const identity = { runId: 'apply', sessionId: 'business', sessionKey: 'agent:main:business' };
+  const traceparentSha256 = 'a'.repeat(64);
+  const call = { ...identity, callId: 'owned', traceparentSha256 };
+  return { ...identity, terminal: { source: 'agent.wait', requestedRunId: identity.runId, runId: identity.runId, status: 'error', endedAt: 1100 },
+    modelCalls: [
+      { ...call, type: 'model.call.started', ts: 1000, seq: 1 },
+      { ...call, type: 'model.call.error', ts: 1090, seq: 2, failureKind: 'connection_closed' },
+    ], transportRequests: [{ id: 1, traceparentSha256, startedAt: new Date(1005).toISOString(), endedAt: 1080,
+      event: 'request_error', observerStopped: false, failure: 'Error', transportCode: 'UND_ERR_SOCKET', responseStatus: 200, bytes: 549, bodyChunks: 2 }] };
+}
+
+test('benchmark transport recovery requires a settled exact business terminal, latest owned call and unique closed wire', () => {
+  assert.equal(nativeBusinessTransportFailure(nativeFailureFixture())?.transportCode, 'UND_ERR_SOCKET');
+  for (const mutate of [
+    f => { f.terminal.requestedRunId = 'reviewer'; },
+    f => { f.terminal.status = 'timeout'; },
+    f => { f.modelCalls[1].sessionKey = 'agent:main:reviewer'; },
+    f => { f.modelCalls[1].callId = 'other-call'; },
+    f => { f.modelCalls[1].failureKind = 'aborted'; },
+    f => { f.modelCalls[1].ts = 1200; },
+    f => { f.modelCalls.push({ ...f.modelCalls[0], callId: 'newer', seq: 3 }); },
+    f => { f.modelCalls.push({ ...f.modelCalls[0], runId: 'compaction', callId: 'newer', seq: 3 }); },
+    f => { f.modelCalls.push({ ...f.modelCalls[0], runId: 'reviewer', sessionId: 'private', sessionKey: 'private', seq: 3 }); },
+    f => { f.transportRequests[0].traceparentSha256 = 'b'.repeat(64); },
+    f => { f.transportRequests[0].event = 'response_end'; },
+    f => { f.transportRequests[0].failure = 'AbortError'; },
+    f => { f.transportRequests.push({ ...f.transportRequests[0], id: 2, event: 'request' }); },
+  ]) {
+    const value = nativeFailureFixture(); mutate(value);
+    assert.equal(nativeBusinessTransportFailure(value), null, mutate.toString());
+  }
+});
+
+test('an SDK completed call can match a closed stream only with the controller-attested terminated assistant leaf', () => {
+  const f = nativeFailureFixture();
+  f.modelCalls[1] = { ...f.modelCalls[1], type: 'model.call.completed', failureKind: undefined };
+  f.transportRequests[0] = { ...f.transportRequests[0], transportCode: undefined, failure: 'OtherError' };
+  assert.equal(nativeBusinessTransportFailure(f), null);
+  const assistantError = { failureKind: 'terminated', messageId: 'business-leaf', messageSha256: 'c'.repeat(64), startedAt: 1001, persistedAt: 1081 };
+  assert.equal(nativeBusinessTransportFailure({ ...f, assistantError })?.assistantMessageSha256, assistantError.messageSha256);
+  for (const change of [{ startedAt: 999 }, { startedAt: 1006 }, { persistedAt: 1079 }, { persistedAt: 1101 }, { failureKind: 'timeout' }])
+    assert.equal(nativeBusinessTransportFailure({ ...f, assistantError: { ...assistantError, ...change } }), null);
+  f.transportRequests[0].bytes = 0;
+  assert.equal(nativeBusinessTransportFailure({ ...f, assistantError }), null);
 });
 
 test('owned subscriptions are released without removing other diagnostics listeners', async t => {

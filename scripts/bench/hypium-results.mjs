@@ -1,5 +1,7 @@
 // Parse actual runtime events, not the known-noisy SDK summary names. Missing,
 // ambiguous, ignored and unfinished cases stay distinct from genuine failures.
+import { digest } from './arkts-dataset.mjs';
+
 export function parseHypium(text, module = 'entry') {
   const statuses = new Map(), errors = [], recovered = [], conflicts = [], confirmedClasses = new Set();
   const startedSuites = new Set();
@@ -88,11 +90,17 @@ export function gradeArkts(task, parsed, execution) {
     return { ...values, passRate: ids.length ? values.passed.length / ids.length : null };
   };
   const f2p = group(task.FAIL_TO_PASS), p2p = group(task.PASS_TO_PASS);
+  const expectedIds = new Set([...task.FAIL_TO_PASS, ...task.PASS_TO_PASS]);
+  const observedIds = Object.keys(parsed.statuses).sort();
+  const extra = observedIds.filter(id => !expectedIds.has(id));
+  const testInventory = { expected: expectedIds.size, observed: observedIds.length, extra: extra.length,
+    extraFailed: extra.filter(id => ['FAIL', 'ERROR'].includes(parsed.statuses[id])).length,
+    observedIdsSha256: digest(JSON.stringify(observedIds)) };
   const complete = [f2p, p2p].every(g => !g.missing.length && !g.ignored.length && !g.ambiguous.length) && !parsed.errors.length;
   // A nonzero hvigor exit is normal for a real failing baseline suite. It
   // cannot make a missing runtime report count as a test result.
   const executed = !execution.timedOut && execution.compileSucceeded && execution.freshReport === true && parsed.finished === true && complete;
-  return { instanceId: task.instance_id, execution, runtimeErrors: parsed.errors, complete, executed, f2p, p2p,
+  return { instanceId: task.instance_id, execution, runtimeErrors: parsed.errors, complete, executed, testInventory, f2p, p2p,
     resolved: executed && f2p.failed.length + f2p.testErrors.length + p2p.failed.length + p2p.testErrors.length === 0,
     validFailToPassBase: executed && f2p.failed.length + f2p.testErrors.length === f2p.expected && p2p.passed.length === p2p.expected };
 }

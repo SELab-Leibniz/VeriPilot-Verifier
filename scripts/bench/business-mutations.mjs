@@ -14,6 +14,23 @@ export function validateBusinessMutationPaths(files, projectRoot) {
   return [...new Set(files.map(file => mutationPath(file, projectRoot)))].sort();
 }
 
+export async function sealableMutationPaths({ projectRoot, paths, trackedPaths }) {
+  const tracked = new Set(trackedPaths);
+  const candidates = validateBusinessMutationPaths(paths, projectRoot);
+  const selected = await Promise.all(candidates.map(async file => {
+    // A missing indexed file still represents a deletion. A temporary
+    // untracked file that was removed has no final Git change to stage.
+    if (tracked.has(file)) return file;
+    try { await fs.lstat(path.join(projectRoot, file)); }
+    catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return null;
+      throw error;
+    }
+    return file;
+  }));
+  return selected.filter(file => file !== null);
+}
+
 // Follow explicit continuation ancestry only. A maintenance-only attempt must
 // preserve earlier business progress without adding its memory writes to it.
 export async function inheritedBusinessMutationScope(directory, projectRoot) {

@@ -35,6 +35,18 @@ test('only successful inverted original process events establish a historical re
   assert.equal(successfulHistoricalResult({is_error:false,content:[{type:'text',text:'{"success":false}'}]}),false);
   assert.equal(successfulHistoricalResult({is_error:true,content:'Created.'}),false);
   assert.equal(successfulHistoricalResult({is_error:false,content:'{"exitCode":0}'}),true);
+  for (const value of [
+    { status: 'INCOMPLETE', exitCode: null },
+    { status: 'UNVERIFIED', exitCode: 0 },
+    { status: 'unavailable' },
+    { status: 'Timed-Out' },
+    { status: 'RUNNING', success: true },
+    { status: 'PASS', outputComplete: false, exitCode: 0 },
+    { exitCode: 0, interrupted: true },
+  ]) assert.equal(successfulHistoricalResult({ content: JSON.stringify(value) }), false);
+  assert.equal(successfulHistoricalResult({ content: '{"status":"PASS","exitCode":0,"outputComplete":true}' }), true);
+  assert.equal(successfulHistoricalResult({ content: 'Created and ready.' }), true);
+  assert.equal(successfulHistoricalResult({ isError: true, content: 'Created.' }), false);
   const p=proof();assert.equal(p.kind,'IRREVERSIBLE_ORDER');assert.equal(p.objectId,object.objectId);
   for(const args of [{proposal:{...proposal,historicalOnly:false}}, {proposal:{...proposal,requiredFirstEventId:'missing'}},
     {proposal:{...proposal,requiredFirstEventId:'created',requiredSecondEventId:'status'}}, {row:{judgement:'UNVERIFIED'}},
@@ -49,6 +61,14 @@ test('same history binds one digest; new events or revised original sources rema
   assert.notEqual(proof().factDigest,historicalOrderProof({proposal,object:{...object,originalSource:{...object.originalSource,sha256:'source-v2'}},row,events}).factDigest);
   const changed=new Map(events);changed.set('created',{...events.get('created'),resultDigest:'a-new-event'});
   assert.notEqual(proof().factDigest,historicalOrderProof({proposal,object,row,events:changed}).factDigest);
+});
+
+test('overlapping or same-record actions do not prove a serial historical inversion', () => {
+  for (const resultIndex of [3, 5]) {
+    const overlapping = new Map(events);
+    overlapping.set('created', { ...events.get('created'), resultIndex });
+    assert.throws(() => historicalOrderProof({ proposal, object, row, events: overlapping }), { code: 'HISTORICAL_ORDER_PROOF_INVALID' });
+  }
 });
 
 test('historical closure preserves deviations and does not swallow repairable or unverified work',()=>{

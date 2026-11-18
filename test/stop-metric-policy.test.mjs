@@ -50,6 +50,28 @@ test("project validation accepts all sixteen boolean switches and rejects misspe
   assert.throws(() => validateProjectConfig({ ...base, stopCorrection: { enabled: true, fileQualityReviewEnabled: "false" } }, "config.yaml"), /fileQualityReviewEnabled/u);
 });
 
+test("current production coverage is a separate opt-in boolean in the frozen Stop review policy", async t => {
+  const root = await scratch(t), directory = path.join(root, ".runtime-corrector");
+  await fs.mkdir(directory);
+  const file = path.join(directory, "config.yaml");
+  const header = "version: 2\nartifacts: []\nstopCorrection:\n  enabled: true\n  originalRequirementsBasis: true\n  deviationOnly: true\n";
+  for (const value of [undefined, false, true]) {
+    await fs.writeFile(file, header + (value === undefined ? "" : `  requireCurrentProductionCoverage: ${value}\n`));
+    const { stopCorrection } = (await loadRuntimePlan({ cwd: root })).runtimeV2;
+    const frozenPolicy = resolveStopReviewPolicy(structuredClone(resolveStopReviewPolicy(stopCorrection)));
+    assert.equal(stopCorrection.requireCurrentProductionCoverage, value ?? false);
+    assert.equal(frozenPolicy.requireCurrentProductionCoverage, value ?? false);
+    assert.equal(frozenPolicy.deviationOnly, true);
+    assert.deepEqual(frozenPolicy.metrics, DEFAULT_STOP_METRICS);
+  }
+  for (const value of [null, "false", 1]) {
+    const document = { ...base, stopCorrection: { enabled: true, requireCurrentProductionCoverage: value } };
+    assert.throws(() => validateProjectConfig(document, "config.yaml"), /stopCorrection\.requireCurrentProductionCoverage/u);
+    assert.throws(() => compileRuntimeV2Config(document), /stopCorrection\.requireCurrentProductionCoverage/u);
+  }
+  assert.equal(resolveStopReviewPolicy(Object.create({ requireCurrentProductionCoverage: true })).requireCurrentProductionCoverage, false);
+});
+
 test("family switches turn off every member metric and otherwise keep the metric switches", () => {
   assert.deepEqual(Object.values(STOP_METRIC_FAMILIES).flat().sort(), [...METRIC_IDS].sort());
   const off = resolveStopReviewPolicy({ metrics: { M10: true, M14: true }, families: { projectRules: false, verification: false } });

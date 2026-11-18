@@ -24,6 +24,16 @@
     },
     "regressionCheck": {
       "enabled": true,
+      "testSource": "task-start",
+      "collateralProtocol": "exclude-cases-v1",
+      "routeEnvironment": [
+        "RC_ARKTS_INSTRUMENT",
+        "RC_ARKTS_TEST_EXCHANGE",
+        "RC_ARKTS_TEST_TOOLCHAIN_SHA256",
+        "RC_ARKTS_TEST_RELEASE_COMMIT",
+        "RC_ARKTS_TEST_RUNTIME",
+        "RC_ARKTS_TEST_CASE"
+      ],
       "command": [
         "${node}", "${harnessRoot}/scripts/bench/arkts-regression-check.mjs",
         "--project=${projectRoot}", "--tool-root=${toolRoot}",

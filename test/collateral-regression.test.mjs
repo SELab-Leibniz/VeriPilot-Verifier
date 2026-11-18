@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import {applyCollateralReceipt} from '../lib/runtime-v2/regression-triage.mjs';
+import { confirmCollateralRegressionFailures, runStopRegressionCheck, STANDING_REGRESSION } from '../lib/runtime-v2/regression-evidence.mjs';
+import { normalizeRegressionCheck } from '../lib/runtime-v2/stop-correction-config.mjs';
 import {installRegressionCaseExclusions} from '../scripts/bench/regression-workspace.mjs';
 import {collateralSuiteReceipt} from '../scripts/bench/arkts-regression-check.mjs';
 
@@ -38,6 +41,58 @@ test('whole-suite receipt rejects missing survivors and exclusions that still ra
   assert.equal(proof().complete,true);
   assert.equal(collateralSuiteReceipt(request,baseline,{...current,statuses:{'entry::Suite::dependent':'PASS'}}).complete,false);
   assert.equal(collateralSuiteReceipt(request,baseline,{...current,statuses:{...current.statuses,'entry::Suite::obsolete':'FAIL'}}).complete,false);
+  assert.equal(collateralSuiteReceipt(request,baseline,{...current,statuses:{...current.statuses,'entry::Suite::unexpected':'PASS'}}).complete,false);
+});
+
+test('a task-start verifier dispatches collateral checks only with the explicit protocol', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-collateral-protocol-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const projectRoot = path.join(root, 'project');
+  await fs.mkdir(projectRoot);
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test',
+    '-c', 'commit.gpgsign=false', ...args], { cwd: projectRoot, windowsHide: true, stdio: 'pipe' });
+  git('init', '-q');
+  git('commit', '--allow-empty', '-qm', 'task start');
+
+  const verifier = path.join(root, 'verify.mjs');
+  const baselineFile = path.join(root, 'baseline.json');
+  const outputDirectory = path.join(root, 'evidence');
+  const failures = [...request.exclusions.map(item => item.id), ...request.probes].map(id => ({ id, title: id }));
+  const inventory = { complete: true, failures: failures.map(failure => ({ ...failure,
+    originalTest: { path: request.exclusions[0].path } })) };
+  await fs.writeFile(baselineFile, JSON.stringify({ completeRuntime: true, ...baseline }));
+  await fs.writeFile(verifier, `import fs from 'node:fs';
+    const prefix = '--exclude-cases=';
+    const flag = process.argv.find(arg => arg.startsWith(prefix));
+    if (!flag) {
+      console.log('RC_REGRESSION_INVENTORY ' + JSON.stringify({ complete: true, failures: ${JSON.stringify(failures)} }));
+    } else {
+      const request = JSON.parse(fs.readFileSync(flag.slice(prefix.length), 'utf8'));
+      const proof = { requestId: request.requestId, baselineSha256: request.baselineSha256,
+        taskStartSuite: true, complete: true, excludedIds: request.exclusions.map(item => item.id),
+        expectedSurvivingCount: 2, observedSurvivingCount: 2,
+        failures: [request.probes[1]], probes: { [request.probes[0]]: 'PASS', [request.probes[1]]: 'FAIL' } };
+      console.log('RC_REGRESSION_COLLATERAL ' + JSON.stringify(proof));
+    }
+    process.exitCode = 1;
+  `);
+  const population = { metrics: { M16: [{ programStanding: STANDING_REGRESSION }] } };
+  const initial = collateralProtocol => runStopRegressionCheck({ projectRoot, population,
+    config: normalizeRegressionCheck({ enabled: true, testSource: 'task-start', command: [process.execPath, verifier],
+      baselineFile, ...(collateralProtocol ? { collateralProtocol } : {}) }) });
+  const confirm = run => confirmCollateralRegressionFailures({ projectRoot, inventory, reviewed, run, outputDirectory });
+  const ordinary = await initial();
+  assert.equal(ordinary.status, 'FAILED');
+  assert.equal(await confirm(ordinary), reviewed);
+  await assert.rejects(fs.access(outputDirectory), { code: 'ENOENT' });
+
+  const controlled = await initial('exclude-cases-v1');
+  assert.equal(controlled.collateralProtocol, 'exclude-cases-v1');
+  assert.notEqual(controlled.key, ordinary.key);
+  const confirmed = await confirm(controlled);
+  assert.deepEqual(confirmed.cases.map(item => item.verdict),
+    ['AUTHORIZED_CHANGE', 'COLLATERAL_FAILURE', 'UNVERIFIED', 'REGRESSION']);
+  assert.equal((await fs.readdir(outputDirectory)).length, 2);
 });
 
 test('an exact public registration is disabled only in the disposable tree; ambiguous targets fail closed',async t=>{

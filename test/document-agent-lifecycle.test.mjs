@@ -80,6 +80,50 @@ test('MCP stdio adapter exposes the same bounded production tool and rejects unk
   assert.equal(messages[3].result.isError, true);
 });
 
+test('the native document launch supplies the prepared evidence paths without reading the request wrapper', async t => {
+  const root = await project(t);
+  const originalPath = path.join(root, 'original-semantic-request.json');
+  const entries = [{ type: 'user', message: { content: 'Original user requirement.' } }];
+  const semanticRequest = { projectRoot: root, artifactFiles: ['a.md'], originalRequirements: { digest: 'original-authority',
+    userMessages: [{ order: 1, text: entries[0].message.content }] } };
+  await fs.writeFile(originalPath, JSON.stringify(semanticRequest));
+  const instructions = 'Review the document against the original scope and cite only files in this round.';
+  let prepared, documentToolFactory;
+  registerDocumentTools({ registerTool(factory) { documentToolFactory = factory; } });
+  const api = { config: { agents: { defaults: { model: 'fixture/model' } } }, runtime: { agent: {
+    async runEmbeddedAgent(params) {
+      const { semanticReviewRequestPath, transcript } = prepared;
+      assert.notEqual(semanticReviewRequestPath, originalPath);
+      assert.ok(params.prompt.includes(JSON.stringify(semanticReviewRequestPath)));
+      assert.ok(params.prompt.includes(JSON.stringify(transcript.path)));
+      assert.ok(params.prompt.includes(instructions));
+      assert.match(params.prompt, /Use originalRequirements for user intent/u);
+      assert.match(params.extraSystemPrompt, /Read the frozen transcript when a criterion or a claim in the current artifact depends on an observed action/u);
+      assert.ok(!params.prompt.includes('Original user requirement.'));
+      assert.ok(!params.prompt.includes(prepared.wrapperPath));
+      const semantic = JSON.parse(await fs.readFile(semanticReviewRequestPath, 'utf8'));
+      assert.deepEqual(semantic.originalRequirements, semanticRequest.originalRequirements);
+      assert.deepEqual(semantic.runtimeV2.transcript, transcript);
+      assert.deepEqual(JSON.parse(await fs.readFile(transcript.path, 'utf8')), { entries });
+      const tool = documentToolFactory({ sessionId: params.sessionId, runId: params.runId });
+      const opened = JSON.parse((await tool.execute('open', { action: 'open' })).content[0].text);
+      assert.equal(opened.requestPath, semanticReviewRequestPath);
+      assert.equal(opened.documents[0].lines[0], '1: target');
+      return { payloads: [{ text: JSON.stringify({ summary: 'aligned', findings: [], edits: [] }) }], meta: {} };
+    },
+  } } };
+  const review = await createOpenClawReviewerFactory(api)({ projectRoot: root, taskId: 'document-bootstrap',
+    role: 'artifact-reviewer', pluginRoot: path.resolve('.'), schema: REVIEW_SCHEMA, reviewer: { timeoutMs: 5000 },
+    request: { semanticReviewRequestPath: originalPath, instructions }, evidence: { semanticRequest, snapshot: { entries, digest: 'snapshot' } },
+    async onPrepared({ request, requestPath }) {
+      assert.deepEqual(JSON.parse(await fs.readFile(requestPath, 'utf8')), request);
+      prepared = { ...request, wrapperPath: requestPath };
+    },
+  });
+  try { assert.equal(review.result.summary, 'aligned'); }
+  finally { await review.close(); }
+});
+
 test('SQLite host session ownership survives a fresh plugin API registry and closes the exact identity', async t => {
   const root = await project(t), entries = new Map(), calls = [], removals = [];
   const session = { resolveStorePath: () => '/native/sessions.json', getSessionEntry: async ({ sessionKey }) => entries.get(sessionKey),

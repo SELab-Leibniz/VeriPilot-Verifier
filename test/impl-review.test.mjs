@@ -52,7 +52,7 @@ function transcriptEntries(turns) {
   return entries.map((entry) => JSON.stringify(entry)).join("\n");
 }
 
-function implPlan(projectRoot, { shadowMode = false } = {}) {
+function implPlan(projectRoot, { shadowMode = false, platform } = {}) {
   return {
     runtimeV2: compileRuntimeV2Config({
       version: 2,
@@ -61,7 +61,7 @@ function implPlan(projectRoot, { shadowMode = false } = {}) {
       skillCorrection: { enabled: false, selection: { mode: "include", include: [] } },
       artifactCorrection: { groundTruthReviewEnabled: false, stageMetricsEnabled: false },
       stopCorrection: { enabled: true, maxCorrectionsPerEpoch: 3 },
-      implementationCorrection: { enabled: true },
+      implementationCorrection: { enabled: true, platform },
     }, { policyRoot: path.join(projectRoot, ".runtime-corrector") }),
   };
 }
@@ -411,7 +411,8 @@ test("kit findings block the stop gate and stamp observation.turnIndex", async (
     "|------|---------|---------|",
     "| 扫码 | scan-kit | ScanService.ets |",
   ].join("\n"));
-  const plan = implPlan(root);
+  assert.equal(implPlan(root).runtimeV2.implementationCorrection.platform, null);
+  const plan = implPlan(root, { platform: "harmonyos" });
   // The shared scripted reviewer passes everything; only the deterministic check can block.
   const state = { serial: 0, implCalls: 0, implPasses: true };
   const first = await runStop(root, plan, implFakeFactory(state), "stop-kit-1");

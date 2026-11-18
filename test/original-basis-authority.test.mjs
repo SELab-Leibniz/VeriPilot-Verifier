@@ -9,8 +9,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { prepareMaterialBasis, readMaterialBasis, invalidateMaterialBasis, fixedMaterialRoots } from '../lib/openclaw/material-basis.mjs';
+import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
 import { createOpenClawRuntime } from '../lib/openclaw/runtime.mjs';
+import { releaseDocumentSessions } from '../lib/document-session.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
+import { REVIEW_SCHEMA } from '../lib/semantic-review.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.mjs';
@@ -42,8 +45,7 @@ async function writeFiles(root, files) {
   }
 }
 
-const basisJson = async files => JSON.parse((await Promise.all(files.filter(file => path.basename(file).startsWith('original-basis-'))
-  .map(file => fs.readFile(file, 'utf8')))).join(''));
+const readJsonParts = async files => JSON.parse((await Promise.all(files.map(file => fs.readFile(file, 'utf8')))).join(''));
 
 // Drives the real workspace Stop review tools in-process, like
 // scriptedWorkspaceReview, with a script that owns the original checklist.
@@ -201,9 +203,11 @@ test('(c) the Stop mandatory basis is user messages, instructions and named file
         assert(names.includes('AGENTS.md') && names.includes('notes/input.md'), names.join('\n'));
         assert(!names.some(name => name.startsWith('docs/') || name.includes('reference-originals')), names.join('\n'));
         await readAll();
-        const json = await basisJson(brief.task.basisFiles);
+        const json = await readJsonParts(brief.task.basisFiles.filter(file => path.basename(file).startsWith('original-basis-')));
         assert(!json.sources.some(source => source.ref.startsWith('docs/')));
-        const [design, glossary] = json.referenceMaterials;
+        assert(!Object.hasOwn(json, 'referenceMaterials'));
+        for (const file of brief.task.referenceBasisFiles) await read(file);
+        const { referenceMaterials: [design, glossary] } = await readJsonParts(brief.task.referenceBasisFiles);
         assert.deepEqual([design.path, design.status, design.title, design.sha256, design.bytes],
           ['docs/design-notes.md', 'MODIFIED', 'Design notes', sha256(notes), Buffer.byteLength(notes)]);
         assert.equal(await fs.readFile(design.frozenOriginal, 'utf8'), notes);
@@ -252,8 +256,84 @@ test('the document request lists reference materials with their status and write
   assert(written.materials.every(file => file.originalBase64 === undefined));
 });
 
+test('Proposal findings and the persisted Stop checklist join one original span across paging and paraphrase', async t => {
+  const proposal = 'openspec/changes/sort-order/proposal.md';
+  const { root, task } = await project(t, { [proposal]: '# Proposal\nReset the saved sort order.\n' });
+  t.after(() => releaseDocumentSessions(root));
+  const prefix = 'Context\n'.repeat(2048);
+  const selected = '恢复已保存的排序 🧪。\r';
+  const original = `${prefix}${selected}\n${'Further context.\n'.repeat(750)}`;
+  const ref = 'transcript:original-sort-order';
+  const snapshot = { entries: [
+    { type: 'user', uuid: 'original-sort-order', message: { content: original } },
+    { type: 'assistant', uuid: 'completion', message: { content: 'Task complete.' } },
+  ] };
+  const documentOriginals = await buildOriginalRequirements({ projectRoot: root, sessionId: 'session', snapshot });
+  const requestRoot = path.join(root, '.runtime-correction', '.semantic-review', 'proposal');
+  const requestPath = path.join(requestRoot, 'request.json');
+  const semantic = { projectRoot: root, stage: 'proposal', artifactFiles: [proposal],
+    originalRequirements: await writeOriginalRequirementSources(requestRoot, documentOriginals) };
+  assert(!Object.hasOwn(semantic.originalRequirements.userMessages[0], 'text'), 'the original is delivered through the archived file');
+  await fs.writeFile(requestPath, JSON.stringify(semantic));
+
+  let documentAnchor;
+  const api = { config: { agents: { defaults: { model: 'fixture/model' } } }, logger: { warn() {} },
+    runtime: { version: '2026.7.1-2', agent: { async runEmbeddedAgent(params) {
+      const { tools } = globalThis[Symbol.for('runtime-corrector.document-tools.v1')].get(params.sessionId);
+      const current = await tools.execute({ action: 'read', path: proposal, start: 2, count: 1 });
+      assert.deepEqual(current.lines, ['2: Reset the saved sort order.']);
+      const evidence = await tools.execute({ action: 'read_original', ref, start: 2049, count: 1 });
+      assert.equal(evidence.text, selected);
+      documentAnchor = evidence.anchor;
+      const result = { summary: 'Review the proposal.', edits: [], findings: [{ ruleId: 'AGENT-SORT-ORDER', severity: 'error',
+        path: proposal, line: 2, message: 'The proposal discards the user’s prior preference.',
+        evidence: [`${proposal}:2 "Reset the saved sort order."`], originalSourceAnchorId: documentAnchor.anchorId }] };
+      return { payloads: [{ text: JSON.stringify(result) }], meta: {} };
+    } } },
+  };
+  const artifact = await createOpenClawReviewerFactory(api)({ projectRoot: root, taskId: task.taskId,
+    role: 'artifact-reviewer', pluginRoot: path.resolve('.'), reviewer: { session: 'detached', timeoutMs: 5000 },
+    schema: REVIEW_SCHEMA, request: { semanticReviewRequestPath: requestPath }, evidence: { snapshot, semanticRequest: semantic } });
+  await artifact.close();
+  assert.equal(artifact.result.findings[0].originalSourceAnchorId, documentAnchor.anchorId);
+  assert.deepEqual(documentAnchor, { anchorId: documentAnchor.anchorId, kind: 'USER_MESSAGE', ref, sha256: sha256(original),
+    byteStart: Buffer.byteLength(prefix), byteEnd: Buffer.byteLength(prefix + selected) });
+
+  const stopOriginals = await loadStopOriginalRequirements({ projectRoot: root, sessionId: 'session', snapshot });
+  const paraphrase = 'Apply the previously saved sorting preference.';
+  let reviewDirectory;
+  const stop = await scriptedOriginalStop({ projectRoot: root, taskId: task.taskId,
+    request: { hook: { last_assistant_message: 'Task complete.' }, workflowStages: ['proposal', 'implementation'],
+      population: { taskId: task.taskId, groundTruthVersion: 0, metrics: {}, reviewPolicy: { deviationOnly: true, metrics: { M16: true } } } },
+    evidence: { snapshot, originalRequirements: stopOriginals, groundTruth: { taskId: task.taskId, version: 0, claims: [] } },
+    onPrepared: ({ requestDirectory }) => { reviewDirectory = requestDirectory; },
+  }, async ({ task: brief, read, call }) => {
+    for (const file of brief.basisFiles) await read(file);
+    const secondPart = brief.basisFiles.find(file => path.basename(file) === 'user-original-0-0001.txt');
+    assert(secondPart, 'Stop delivers the selected source after a part boundary');
+    const { details: { citation: { citeId } } } = await call('source_read', { path: secondPart, offset: 1 });
+    const checklist = await call('set_original_checklist', { items: [{ metricId: 'M16', text: paraphrase,
+      verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', citeId, lineStart: 1, lineEnd: 1 }],
+    scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+    const page = JSON.parse(checklist.content[0].text);
+    assert.deepEqual(page.items[0].originalSourceAnchor, documentAnchor);
+    await call('finish_stop_review', { summary: 'Checklist captured for the current task.' });
+  });
+  await stop.close();
+  const persisted = JSON.parse(await fs.readFile(path.join(reviewDirectory, 'original-checklist.json'), 'utf8'));
+  const [object] = persisted.population.metrics.M16;
+  const [claim] = persisted.groundTruth.claims;
+  assert.deepEqual(object.originalSourceAnchor, documentAnchor);
+  assert.deepEqual(claim.originalSourceAnchor, documentAnchor);
+  assert.equal(object.originalSource.part, 2);
+  assert.equal(object.description, paraphrase);
+  assert.equal(object.sourceId, claim.claimId);
+});
+
 test('(a) default template: a business edit of a discovered material keeps document review and Stop running with its frozen original', async t => {
   const original = '# 模块设计\nPermission checks run before every export.\n', edited = '# 模块设计\nExports skip the permission check.\n';
+  const proposal = 'openspec/changes/export/proposal.md';
+  const delta = 'openspec/changes/export/specs/reporting/export/spec.md';
   const { root, task } = await project(t, { 'docs/module-design.md': original, 'AGENTS.md': 'Keep exports audited.\n',
     'notes/input.md': 'Exports use CSV.\n', 'app.py': 'def export(rows): return rows\n' });
   await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
@@ -268,12 +348,18 @@ test('(a) default template: a business edit of a discovered material keeps docum
     if (input.role === 'artifact-reviewer') {
       const semantic = JSON.parse(await fs.readFile(input.request.semanticReviewRequestPath, 'utf8'));
       documents.push({ semantic, frozen: await Promise.all(semantic.originalRequirements.materials.map(file => file.frozenOriginal && fs.readFile(file.frozenOriginal, 'utf8'))) });
-      return { result: { summary: 'Scripted document review.', edits: [], findings: [] }, sessionId: randomUUID(), close: async () => {} };
+      const wrongFormat = semantic.workflow.targetFiles.includes(delta) && (await fs.readFile(path.join(root, delta), 'utf8')).includes('JSON');
+      const findings = wrongFormat ? [{ ruleId: 'AGENT-EXPORT-FORMAT', severity: 'error', path: delta, line: 2,
+        message: 'The proposed output format conflicts with the requested CSV export.',
+        evidence: ['notes/input.md:1', `${delta}:2`] }] : [];
+      return { result: { summary: 'Scripted document review.', edits: [], findings }, sessionId: randomUUID(), close: async () => {} };
     }
     assert.equal(input.request.reviewScope.kind, 'workspace-stop');
     return scriptedOriginalStop(input, async ({ task: brief, read, call, metricId, prompt }) => {
       for (const file of brief.basisFiles) await read(file);
-      const json = await basisJson(brief.basisFiles), design = json.referenceMaterials.find(file => file.path === 'docs/module-design.md');
+      for (const file of brief.referenceBasisFiles) await read(file);
+      const { referenceMaterials } = await readJsonParts(brief.referenceBasisFiles);
+      const design = referenceMaterials.find(file => file.path === 'docs/module-design.md');
       stop = { names: brief.basisFiles.map(file => slashes(path.relative(root, file))), design, budget: brief.basisBudget, prompt,
         frozen: await fs.readFile(design.frozenOriginal, 'utf8') };
       const citeId = await read(design.frozenOriginal);
@@ -305,13 +391,23 @@ test('(a) default template: a business edit of a discovered material keeps docum
   assert.deepEqual([captured?.status, captured?.authority, captured?.files], ['CAPTURED', 'reference', 1], JSON.stringify({ captured, warnings }));
   await write('edit-design', 'docs/module-design.md', edited);
   await write('new-notes', 'docs/new-notes.md', '# New notes\n');
-  const reviewed = await write('proposal', 'openspec/changes/export/proposal.md', '# Proposal\nExport rows as CSV.\n');
+  const reviewed = await write('proposal', proposal, '# Proposal\nExport rows as CSV.\n');
   assert.equal(documents.length, 1, JSON.stringify({ reviewed, warnings }));
   const [{ semantic, frozen }] = documents;
   assert.equal(semantic.originalRequirements.materialTier, 'reference');
   assert.deepEqual(semantic.originalRequirements.materials.map(file => [file.path, file.status, file.title]), [['docs/module-design.md', 'MODIFIED', '模块设计']]);
   assert.deepEqual(frozen, [original]);
   assert.deepEqual(semantic.originalRequirements.referencedFiles.map(file => file.path), ['notes/input.md']);
+  const rejected = await write('delta-draft', delta, '# Export behavior\nExport rows as JSON.\n');
+  assert.match(JSON.stringify(rejected), /AGENT-EXPORT-FORMAT/u);
+  const corrected = await write('delta-corrected', delta, '# Export behavior\nExport rows as CSV.\n');
+  assert.doesNotMatch(JSON.stringify(corrected), /AGENT-EXPORT-FORMAT/u);
+  assert.equal(documents.length, 3);
+  for (const { semantic } of documents.slice(1)) {
+    assert.deepEqual(semantic.workflow.targetFiles, [delta]);
+    assert.deepEqual(semantic.workflow.incomingEdges[0].sourceFiles, [proposal]);
+    assert.deepEqual(semantic.originalRequirements.referencedFiles.map(file => file.path), ['notes/input.md']);
+  }
   await runtime.reply({ kind: 'final', sessionKey: ctx.sessionKey, runId: ctx.runId, payload: { text: 'The proposal is written.' } }, ctx);
   const [record] = await runtime.waitForNativeReviews({ drain: true });
   assert(stop, JSON.stringify({ record, warnings }));
@@ -321,7 +417,7 @@ test('(a) default template: a business edit of a discovered material keeps docum
   assert.deepEqual([stop.design.status, stop.design.title, stop.design.sha256], ['MODIFIED', '模块设计', sha256(original)]);
   assert.equal(stop.frozen, original);
   assert.equal(stop.budget.referenceFiles, 1);
-  assert.match(stop.prompt, /referenceMaterials: optional project context/u);
+  assert.match(stop.prompt, /When an obligation needs optional context, read task\.referenceBasisFiles/u);
   const current = await findTask({ projectRoot: root, sessionId: 'session' });
   assert.equal(current.materialBasis, undefined);
   assert.doesNotMatch(JSON.stringify({ verification: current.verification, warnings }), /MATERIAL_BASIS/u);

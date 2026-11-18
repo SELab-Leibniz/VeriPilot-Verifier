@@ -11,8 +11,11 @@ import { scanSkillDirectory, bindSkillGraph } from '../lib/runtime-v2/skill-sour
 import * as openclawHost from '../lib/hosts/openclaw.mjs';
 import { skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
-import { buildMetricPopulation } from '../lib/runtime-v2/metrics.mjs';
+import { buildMetricPopulation, buildOriginalStopPopulation } from '../lib/runtime-v2/metrics.mjs';
+import { recordDeviationFindings } from '../lib/runtime-v2/deviations.mjs';
 import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
+import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.mjs';
+import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
 import { prepareMixedSkillEvaluation, MIXED_SKILL_EXPECTED } from '../scripts/helpers/mixed-skill-evaluation.mjs';
 import { createProductionTraceSchema, validateProductionTrace } from '../lib/review-task/production-trace.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
@@ -21,6 +24,7 @@ import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { FRAME_REVIEW_INSTRUCTIONS, frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
 import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs';
+import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
 import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
 async function fixture(t) {
@@ -129,6 +133,75 @@ test('program scope verification runs between native calls and resumes the same 
   assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
   assert.equal(handle.reviewCompleted, true);
   assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+});
+
+test('combined original checklist validates scope before saving and resumes its first page with the same review budget', async t => {
+  const f = await fixture(t);
+  const requirement = 'Deliver the required value.';
+  const source = path.join(f.root, 'app.mjs');
+  await fs.writeFile(source, 'export const requiredValue = 1;\n');
+  f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+  f.input.request.classificationContract = 2;
+  f.input.request.fixedStopClassification = { stopClassification: 'TASK_COMPLETE', stage: null };
+  f.input.deferScopeVerification = true;
+  let nativeSettled = false, selections = 0;
+  f.input.onScope = async (frame, basis) => {
+    assert(nativeSettled, 'program verification waits for the selecting native call to settle');
+    selections++;
+    assert.equal(frame.stopClassification, 'TASK_COMPLETE');
+    assert.equal(basis.population.metrics.M16[0].originalSource.sha256, sha256(requirement));
+    return { verification: { build: { status: 'passed' } } };
+  };
+
+  const handle = await checkedVersionRun(f, async ({ brief, readAll, read, submit }) => {
+    if (brief.attempt === 1) {
+      const userSource = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+      const citeId = (await read(userSource)).details.citation.citeId;
+      const items = [{ metricId: 'M16', text: requirement, verificationTarget: 'IMPLEMENTATION', citeId, lineStart: 1, lineEnd: 1 }];
+      const scope = { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 1 };
+      const save = selection => submit('set_original_checklist', { items, scope: selection });
+      await assert.rejects(save(scope), { code: 'TASK_BASIS_UNREAD' });
+      await readAll();
+      await assert.rejects(save({ ...scope, completionClaim: false }), { code: 'STOP_CLASSIFICATION_INVALID' });
+      await assert.rejects(save({ ...scope, stopClassification: 'INTERMEDIATE', completionClaim: false }), { code: 'STOP_STAGE_SCOPE_INVALID' });
+      const checklistPath = path.join(path.dirname(path.dirname(userSource)), 'original-checklist.json');
+      await assert.rejects(fs.stat(checklistPath), { code: 'ENOENT' });
+      assert.deepEqual(await submit('review_checklist', {}), { next: 'set_original_checklist', scopeSelected: false });
+
+      const handoff = await save(scope);
+      assert.equal(handoff.deferred, true);
+      assert.equal(handoff.scopeSelected, false);
+      assert.equal(handoff.next, 'review_checklist');
+      assert((await fs.stat(checklistPath)).isFile());
+      assert.equal(selections, 0);
+      nativeSettled = true;
+      return;
+    }
+
+    const encoded = /^Current checklist page \(JSON data\):\n([^\r\n]+)$/mu.exec(brief.instruction)?.[1];
+    assert(encoded);
+    const page = JSON.parse(encoded);
+    assert.equal(page.classification.stopClassification, 'TASK_COMPLETE');
+    assert.equal(page.nextOffset, null);
+    assert.equal(page.items.length, 1);
+    const [item] = page.items;
+    assert.equal(item.originalSource.sha256, sha256(requirement));
+    assert.equal(item.savedResult, null);
+    assert.equal(page.evidencePriority, 'CURRENT_SOURCE');
+    const finish = () => submit('finish_stop_review', { summary: 'Verified the original delivery.' });
+    await assert.rejects(finish(), { code: 'REVIEW_ITEM_INCOMPLETE' });
+    const current = await read(source);
+    await submit('submit_review', { taskId: item.taskId, verdict: 'PASS', reason: 'The application exports the required value.',
+      citeIds: [current.details.citation.citeId] });
+    assert.equal((await finish()).complete, true);
+  });
+  assert.equal(selections, 1);
+  assert.equal(f.calls.length, 2);
+  assert.equal(f.calls[0].sessionId, f.calls[1].sessionId);
+  assert(f.calls[1].timeoutMs > 0 && f.calls[1].timeoutMs <= f.calls[0].timeoutMs);
+  assert.equal(handle.reviewCompleted, true);
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  await handle.close();
 });
 
 test('cancelling after scope handoff cannot launch its program verification', async t => {
@@ -872,17 +945,67 @@ test('a mixed checklist keeps direct late invocation/result navigation without g
     const sample = checklist.processEvidence.executionSamples[0];
     assert(!checklist.processFiles.includes(sample.resultFile), 'The execution lies beyond the first navigation page.');
     assert.equal(sample.invocationFileCount, 1); assert.equal(sample.invocationFiles.length, 1);
+    const [pair] = checklist.processEvidence.recentExecutionPairs;
+    assert.equal(pair.toolName, 'Bash');
+    assert.deepEqual(pair.invocationFiles.map(file => path.resolve(f.root, file)), sample.invocationFiles);
+    assert.deepEqual(pair.resultFiles.map(file => path.resolve(f.root, file)), [sample.resultFile]);
     const save = citeIds => submit('submit_review', { taskId: 'M12:R1', verdict: 'PASS', reason: 'The matching original invocation and successful result were read.', citeIds, finish: true });
 
-    const result = await read(sample.resultFile);
+    const result = await read(pair.resultFiles[0]);
 
-    await read(sample.invocationFiles[0]);
+    await read(pair.invocationFiles[0]);
     await submit('submit_review', { taskId: 'M16:R1', verdict: 'UNVERIFIED', reason: 'Current implementation has not been reviewed yet.', citeIds: [] });
     await save([result.details.citation.citeId]);
   });
   assert.equal(f.calls.length, 1);
   assert.equal(handle.result.metricObjectJudgements.find(row => row.objectId === 'M12:R1').judgement, 'PASS');
   assert.equal(handle.result.metricObjectJudgements.find(row => row.objectId === 'M16:R1').judgement, 'UNVERIFIED');
+});
+
+test('recent process navigation groups completed calls and leaves ambiguous or older records in the original history', async t => {
+  const f = await fixture(t), original = f.input.request.population.metrics.M01[0];
+  f.input.request.population.metrics = { M12: [{ ...original, objectId: 'M12:R1', metricId: 'M12', verificationTarget: 'PROCESS' }] };
+  const call = (id, name, input = {}) => ({ type: 'tool_use', id, name, input });
+  const result = (tool_use_id, content, is_error = false) => ({ type: 'tool_result', tool_use_id, content, is_error });
+  const entries = f.input.evidence.snapshot.entries;
+  const append = (type, ...content) => {
+    entries.push({ type, message: { content } });
+    return String(entries.length - 1).padStart(6, '0');
+  };
+  append('assistant', call('first', 'Check', { action: 'compile' }));
+  const firstResult = append('user', result('first', 'Compiled.'));
+  for (let index = 0; index < 10; index++) {
+    append('assistant', call(`older-${index}`, 'Earlier', { action: `check-${index}` }));
+    append('user', result(`older-${index}`, 'Ran.'));
+  }
+  const recentCall = append('assistant', call('compile', 'Check', { action: 'compile' }), call('test', 'Check', { operation: 'test' }));
+  const recentResult = append('user', result('compile', 'Failed to compile.', true), result('test', 'Ran tests.'.repeat(2500)));
+  append('assistant', call('open', 'Check', { action: 'compile' }));
+  append('assistant', call('duplicate-call', 'AmbiguousCall'), call('duplicate-call', 'AmbiguousCall'), call('duplicate-result', 'AmbiguousResult'));
+  append('user', result('duplicate-call', 'One result.'), result('duplicate-result', 'First.'), result('duplicate-result', 'Second.'));
+  append('user', result('out-of-order', 'Before invocation.'));
+  append('assistant', call('out-of-order', 'OutOfOrder'), call('unsafe-label', 'Inspect', { action: 'arbitrary free text', operation: { name: 'nested' } }));
+  const lastResult = append('user', result('out-of-order', 'After invocation.'), result('unsafe-label', 'Inspected.'));
+
+  let navigation;
+  const handle = await f.run(async ({ readAll, submit }) => {
+    await readAll();
+    navigation = (await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' })).processEvidence;
+    await submit('submit_review', { taskId: 'M12:R1', verdict: 'UNVERIFIED', reason: 'Navigation alone provides no execution proof.', citeIds: [], finish: true });
+  });
+  const { executionSamples, recentExecutionPairs } = navigation;
+  assert.equal(path.basename(executionSamples[0].resultFile), `${firstResult}-0000.txt`);
+  assert(recentExecutionPairs.length >= 3 && recentExecutionPairs.length <= 8);
+  assert(Buffer.byteLength(JSON.stringify(recentExecutionPairs)) <= 3072);
+  assert.deepEqual(recentExecutionPairs.slice(0, 3).map(pair => [pair.toolName, pair.operation]),
+    [['Inspect', undefined], ['Check', 'compile'], ['Check', 'test']]);
+  assert(recentExecutionPairs.slice(3).every(pair => pair.toolName === 'Earlier'));
+  for (const pair of recentExecutionPairs.slice(1, 3)) {
+    assert.deepEqual(pair.invocationFiles.map(file => path.basename(file)), [`${recentCall}-0000.txt`]);
+    assert.deepEqual(pair.resultFiles.map(file => path.basename(file)), [`${recentResult}-0000.txt`, `${recentResult}-0001.txt`]);
+  }
+  assert.equal(path.basename(recentExecutionPairs[0].resultFiles[0]), `${lastResult}-0000.txt`);
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED');
 });
 
 test('optional file quality shares the session and requires the actual declared delivery bytes', async t => {
@@ -1073,11 +1196,12 @@ const chineseReproduction = `处理上面每个偏差时：
 
 async function frameStopCase(t, { enabled = true, review = true, stored = 'matching', deviation = false, locale = 'en', openClaw = true,
   basis = frameBasis, checks = null, checkSources = {}, metricIds = ['M16'], deviationOnly = true,
-  userText = 'Implement transform.\nReturn the input plus one.', processEntries = [], effectiveToolPolicy } = {}) {
+  userText = 'Implement transform.\nReturn the input plus one.', processEntries = [], effectiveToolPolicy, sourceText,
+  requireCurrentProductionCoverage, artifacts = [] } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const projectRoot = f.root, sessionId = 'protocol-host', directory = path.join(projectRoot, '.runtime-correction', 'host');
   const source = path.join(projectRoot, 'app.mjs'), transcript = path.join(projectRoot, 'session.jsonl');
-  await fs.writeFile(source, `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
+  await fs.writeFile(source, sourceText ?? `export const transform = input => ${deviation ? 'input' : 'input + 1'};\n`);
   const entries = [
     { type: 'user', uuid: 'user-original', message: { role: 'user', content: userText } },
     ...processEntries,
@@ -1102,9 +1226,10 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
   const runtimeV2 = compileRuntimeV2Config({ version: 2, locale, dynamicGroundTruth: { enabled: false },
     requirementFrame: { enabled, inject: false, review },
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly, waitMode: 'until_pass',
+      ...(requireCurrentProductionCoverage === undefined ? {} : { requireCurrentProductionCoverage }),
       metrics: Object.fromEntries(Array.from({ length: 16 }, (_, i) => `M${String(i + 1).padStart(2, '0')}`).map(id => [id, metricIds.includes(id)])) } });
   return { projectRoot, sessionId, directory, source, runtimeV2, startHead,
-    async run(script) {
+    async run(script, beforeStop) {
       let scriptError, handle;
       const reviewerFactory = async input => {
         assert.equal(input.role, 'stop-reviewer');
@@ -1116,12 +1241,13 @@ async function frameStopCase(t, { enabled = true, review = true, stored = 'match
         return handle;
       };
       const event = (hook_event_name, fields) => handleRuntimeV2Event({
-        projectRoot, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+        projectRoot, plan: { runtimeV2, artifacts }, reviewerFactory,
         stopHost: { directory, startProtocol: { version: 1 }, stopId: 'frame-stop', openClaw, effectiveToolPolicy },
         input: { hook_event_name, session_id: sessionId, cwd: projectRoot, transcript_path: transcript,
           last_assistant_message: 'Task complete.', ...fields },
       });
       await event('SessionStart', { source: 'startup' });
+      await beforeStop?.(f.task.taskId);
       const outcome = await event('Stop');
       if (scriptError) throw scriptError;
       assert(handle?.result || outcome.stop?.reused === true, JSON.stringify(outcome.stop));
@@ -1459,6 +1585,464 @@ test('production Stop exempts a command only with program-owned nonexecuting too
       assert.equal(stop.report.reviewCoverage.items[0].disposition, 'ENVIRONMENT_UNEXECUTABLE');
     }
   });
+});
+
+test('one unverified post-build project command makes a completed Stop unverified with no repair admission', async t => {
+  const f = await frameStopCase(t, { basis: { guidance: [], scenarios: [] }, metricIds: ['M09', 'M16'], processEntries: [
+    { type: 'assistant', uuid: 'build-call', message: { content: [{ type: 'tool_use', id: 'build', name: 'bench_check', input: { phase: 'build' } }] } },
+    { type: 'user', uuid: 'build-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'build', is_error: false, content: 'HAP build succeeded.' }] } },
+  ] });
+  const guide = path.join(f.projectRoot, 'AGENTS.md');
+  const requirement = 'After a successful HAP build, run `codelinter -c ./code-linter.json5 . --fix`.';
+  await fs.writeFile(guide, `# Project guide\n${requirement}\n`);
+  const { stop, handle } = await f.run(async tools => {
+    const submit = (name, args) => submitFrameTool(tools.call, name, args);
+    let original;
+    for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
+    await submit('set_original_checklist', { items: [transformItem(original), { metricId: 'M09',
+      verificationTarget: 'PROCESS', text: requirement, citeId: await tools.read(guide), lineStart: 2, lineEnd: 2 }] });
+    const { items } = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true });
+    const lint = items.find(item => item.metricId === 'M09');
+    assert.equal(lint.originalSource.ref, 'AGENTS.md');
+    await submit('submit_review', { taskId: lint.taskId, verdict: 'UNVERIFIED', reason: 'No attributable CodeLinter invocation or result.' });
+    assert.equal((await submit('finish_stop_review', frameFinishArgs())).complete, true);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 1);
+  assert.equal(stop.status, 'UNVERIFIED');
+  assert.equal(stop.reasonCode, 'STOP_MANDATORY_REQUIREMENT_UNVERIFIED');
+  assert.equal(stop.coverage.scanCompleted, true);
+  assert.equal(stop.verificationIncomplete, true);
+  assert.equal(stop.decision, 'allow');
+  assert.equal(stop.admission, null);
+  assert.match(stop.feedback, /STOP_MANDATORY_REQUIREMENT_UNVERIFIED/u);
+  const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId);
+  assert.equal(ledger.stops['frame-stop'].reviewStatus, 'UNVERIFIED');
+  assert.equal(ledger.used, 0);
+});
+
+test('production Stop coverage requires current production proof and preserves supported repairs', async t => {
+  const requirements = [
+    'Return the input plus one from increment.',
+    'Return the input doubled from double.',
+    'Return zero from reset.',
+  ];
+  for (const mode of ['missing', 'invalid', 'test-sources', 'producer-only', 'unread-consumer', 'observed', 'cross-file', 'deviation', 'disabled', 'stage']) await t.test(mode, async t => {
+    const stage = mode === 'stage', required = mode !== 'disabled' && !stage;
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: mode !== 'disabled',
+      ...(stage ? { artifacts: [{ nodeId: 'implementation', stage: 'implementation', metrics: ['M16'], patterns: ['app.mjs'] }] } : {}),
+      userText: requirements.join('\n'), sourceText: [
+        `export const increment = input => ${mode === 'deviation' ? 'input' : 'input + 1'};`,
+        'export const double = input => input * 2;',
+        'export const reset = () => 0;',
+      ].join('\n') + '\n' });
+    const testSource = path.join(f.projectRoot, 'app.test.mjs');
+    await fs.writeFile(testSource, 'import assert from "node:assert/strict";\nassert.equal(2 * 2, 4);\n');
+    const consumerFile = path.join(f.projectRoot, 'consumer.mjs');
+    if (mode === 'cross-file') await fs.writeFile(consumerFile, 'export const report = result => ({ result });\n');
+    const testSources = [];
+    if (mode === 'test-sources') {
+      for (const [relative, body] of [
+        ['app/src/androidTest/kotlin/Calculations.kt', 'fun increment(value: Int) = value + 1'],
+        ['src/__mocks__/calculations.ts', 'export const double = (value: number) => value * 2;'],
+        ['spec/calculations.rb', 'def reset = 0'],
+      ]) {
+        const file = path.join(f.projectRoot, relative);
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(file, body + '\n');
+        testSources.push(file);
+      }
+    }
+    let reviewCalls = 0, obligations;
+    const { stop, handle } = await f.run(async tools => {
+      reviewCalls++;
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const items = requirements.map((text, index) => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text, citeId: original, lineStart: index + 1, lineEnd: index + 1 }));
+      const page = await submit('set_original_checklist', { items, scope: { stopClassification: stage ? 'STAGE_COMPLETE' : 'TASK_COMPLETE',
+        ...(stage ? { stage: 'implementation' } : {}), completionClaim: true } });
+      obligations = requirements.map(text => page.items.find(item => item.description === text));
+      assert(obligations.every(Boolean));
+      assert(obligations.every(item => (item.requiresProductionCoverage === true) === required));
+      const finish = productionCoverage => submit('finish_stop_review', { ...frameFinishArgs(),
+        ...(productionCoverage ? { productionCoverage } : {}) });
+      const span = (citeId, line) => ({ citeId, start: line, end: line });
+      const record = (index, citeId) => ({ objectId: obligations[index].objectId, reason: requirements[index], citeIds: [citeId],
+        flow: { entry: span(citeId, index + 1), consumer: span(citeId, index + 1) } });
+
+      if (mode === 'deviation') {
+        assert.equal((await submit('submit_review', { taskId: obligations[0].objectId, verdict: 'DEVIATION',
+          reason: 'increment returns the input unchanged, omitting the requested addition.', citeIds: [await tools.read(f.source)] })).saved, true);
+        assert.equal((await finish()).complete, true, 'two unresolved siblings do not require another finish before a proven repair');
+        return;
+      }
+      if (!required) {
+        assert.equal((await finish()).complete, true);
+        return;
+      }
+      if (mode === 'cross-file') {
+        const producer = await tools.read(f.source), consumer = await tools.read(consumerFile);
+        const proposals = requirements.map((_, index) => {
+          const proposal = record(index, producer);
+          proposal.citeIds.push(consumer);
+          proposal.flow.consumer = span(consumer, 1);
+          return proposal;
+        });
+        assert.equal((await finish(proposals)).pendingProductionCoverageCount, 3);
+        for (const proposal of proposals) proposal.flow.handoff = proposal.flow.entry;
+        assert.equal((await finish(proposals)).complete, true);
+        return;
+      }
+      const source = mode === 'observed' ? await tools.read(f.source) : null;
+      let firstCoverage = mode === 'invalid' ? [
+        record(0, 'unobserved-current-source'), record(1, await tools.read(testSource)), record(2, original),
+        { objectId: 'M16:unassigned', reason: 'This source read is genuine, but this item was never assigned.', citeIds: [await tools.read(f.source)] },
+      ] : source ? [record(0, source)] : undefined;
+      if (mode === 'test-sources') {
+        firstCoverage = [];
+        for (const [index, file] of testSources.entries()) firstCoverage.push(record(index, await tools.read(file)));
+      }
+      if (mode === 'producer-only' || mode === 'unread-consumer') {
+        const producer = await tools.read(f.source);
+        firstCoverage = requirements.map((_, index) => {
+          const proposal = record(index, producer);
+          if (mode === 'producer-only') delete proposal.flow;
+          else proposal.flow.consumer = span(producer, 100);
+          return proposal;
+        });
+      }
+      const first = await finish(firstCoverage);
+      assert.equal(first.pendingProductionCoverageCount, source ? 2 : 3);
+      assert.notEqual(first.complete, true);
+      assert.equal((await finish(source ? [record(1, source), record(2, source)] : undefined)).complete, true);
+    });
+    assert.equal(reviewCalls, 1, 'all coverage settlement uses the existing review');
+    if (stage) assert.equal(stop.coverage.classification, 'STAGE_COMPLETE');
+    const unresolved = stop.report.unverifiedItems.filter(item => item.type === 'REQUIREMENT').map(item => item.objectId).sort();
+    if (mode === 'deviation') {
+      assert.equal(stop.status, 'DEVIATION');
+      assert.deepEqual(unresolved, obligations.slice(1).map(item => item.objectId).sort());
+      assert.equal(stop.decision, 'block');
+      assert(stop.admission, 'the supported production deviation still admits repair');
+      assert.equal(handle.result.metricObjectJudgements.filter(row => row.judgement === 'DEVIATION').length, 1);
+    } else {
+      const incomplete = ['missing', 'invalid', 'test-sources', 'producer-only', 'unread-consumer'].includes(mode);
+      assert.deepEqual(unresolved, incomplete ? obligations.map(item => item.objectId).sort() : []);
+      assert.equal(stop.status, incomplete ? 'UNVERIFIED' : 'NO_DEVIATION_FOUND');
+      assert.equal(stop.verificationIncomplete, incomplete);
+      if (incomplete) assert.equal(stop.reasonCode, 'STOP_MANDATORY_REQUIREMENT_UNVERIFIED');
+      assert.equal(stop.decision, 'allow');
+      assert.equal(stop.admission, null);
+      if (mode === 'observed') for (const [index, obligation] of obligations.entries()) {
+        const row = handle.result.reviewCoverage.items.find(item => item.id === obligation.objectId);
+        assert.equal(row.disposition, 'SOURCE_REVIEWED');
+        assert.equal(row.flow.entry.path, 'app.mjs');
+        assert.equal(row.flow.entry.start, index + 1);
+        assert.deepEqual(row.flow.consumer, row.flow.entry, 'one direct statement may prove both roles');
+      }
+      if (mode === 'cross-file') for (const obligation of obligations) {
+        const row = handle.result.reviewCoverage.items.find(item => item.id === obligation.objectId);
+        assert.equal(row.disposition, 'SOURCE_REVIEWED');
+        assert.equal(row.flow.consumer.path, 'consumer.mjs');
+        assert.deepEqual(row.flow.handoff, row.flow.entry, 'the same line may receive and forward the operation');
+      }
+    }
+    const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId);
+    assert.equal(ledger.used, 0, 'the fixture verifies admission without dispatching a native continuation');
+  });
+});
+
+test('approved Proposal obligations sharing one source anchor require separate current Stop evidence', async t => {
+  const requirements = ['Return the input plus one from increment.', 'Return the input doubled from double.'];
+  const originalText = requirements.join(' ');
+  for (const mode of ['omitted', 'verified', 'deviation']) await t.test(mode, async t => {
+    const f = await fixture(t);
+    const app = path.join(f.root, 'app.mjs');
+    await fs.writeFile(app, [
+      `export const increment = input => ${mode === 'deviation' ? 'input' : 'input + 1'};`,
+      'export const double = input => input * 2;',
+      '',
+    ].join('\n'));
+    f.input.request.hook.last_assistant_message = 'Both operations are complete and the tests passed.';
+    f.input.request.classificationContract = 2;
+    f.input.request.fixedStopClassification = { stopClassification: 'TASK_COMPLETE', stage: null };
+    f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, requireCurrentProductionCoverage: false });
+    f.input.evidence.snapshot.entries[0].message.content = originalText;
+    const original = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+    f.input.evidence.originalRequirements = original;
+    const [message] = original.userMessages;
+    assert.equal(message.text, originalText);
+    const source = createOriginalSourceAnchor({ ref: message.ref, sha256: message.sha256, bytes: Buffer.from(message.text), start: 1, end: 1 });
+    const requiredAtoms = requirements.map(requirement => ({ id: sha256([source.anchorId, requirement]), source, requirement }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const planPath = 'openspec/changes/transform-inputs/specs/transforms/spec.md';
+    const plan = path.join(f.root, planPath);
+    const planText = requirements.join('\n') + '\n';
+    await fs.mkdir(path.dirname(plan), { recursive: true });
+    await fs.writeFile(plan, planText);
+    const scope = { changeName: 'transform-inputs', proposalRunId: 'proposal-run', applyRunId: 'apply-run',
+      approvedRevision: sha256(planText), taskId: f.input.taskId, sessionId: 'protocol-host' };
+    f.input.request.approvedProposalInventory = { inventorySha256: sha256(requiredAtoms), requiredAtoms };
+    f.input.evidence.approvedPlanCoverage = { ...scope, rows: requirements.map((requirement, index) => ({
+      source, requirement, disposition: 'COVERED', reason: 'The approved plan directly states this behavior.',
+      targets: [{ path: planPath, sha256: sha256(planText), start: index + 1, end: index + 1 }],
+    })) };
+    f.input.onScope = async () => ({ regressionCheck: {
+      status: 'PASSED', command: ['node', '--test'], cwd: '.', exitCode: 0,
+      outputTail: 'RC_REGRESSION_INVENTORY {"complete":true,"executedTests":1,"failures":[]}\n',
+      requirementCheck: { sha256: sha256('passing public probe'), workspaceDigest: sha256('candidate'),
+        status: 'PASS', checks: [{ id: 'double ordinary input', status: 'PASS' }] },
+    } });
+
+    let checked, omitted;
+    const handle = await checkedVersionRun(f, async ({ brief, readAll, read, submit }) => {
+      await readAll();
+      const originalFile = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+      const originalRead = (await read(originalFile)).details.citation.citeId;
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirements[0], citeId: originalRead, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+      assert.equal(page.requirementCheck.status, 'PASS');
+      assert.equal(page.approvedProposalCoverage.total, 2);
+      [checked, omitted] = requirements.map(text => page.items.find(item => item.description === text));
+      assert(checked?.requiresProductionCoverage && omitted?.requiresProductionCoverage);
+      assert.notEqual(checked.objectId, omitted.objectId);
+      assert.equal(checked.originalSourceAnchor.anchorId, source.anchorId);
+      assert.equal(omitted.originalSourceAnchor.anchorId, source.anchorId);
+      assert.deepEqual(checked.approvedProposalAtomIds, [sha256([source.anchorId, requirements[0]])]);
+      assert.deepEqual(omitted.approvedProposalAtomIds, [sha256([source.anchorId, requirements[1]])]);
+
+      const current = (await read(app)).details.citation.citeId;
+      const coverage = (item, line, citeId = current) => {
+        const range = { citeId, start: line, end: line };
+        return { objectId: item.objectId, reason: item.description, citeIds: [citeId], flow: { entry: range, consumer: range } };
+      };
+      const finish = (productionCoverage = []) => submit('finish_stop_review', {
+        summary: 'The existing tests passed and the approved spec names both operations.', productionCoverage,
+      });
+      if (mode === 'deviation') {
+        await submit('submit_review', { taskId: checked.objectId, verdict: 'DEVIATION',
+          reason: 'The current increment function returns the unchanged input.', citeIds: [current] });
+        assert.equal((await finish()).complete, true);
+        return;
+      }
+      const approvedSpec = (await read(plan)).details.citation.citeId;
+      const first = await finish([coverage(checked, 1), coverage(omitted, 2, approvedSpec)]);
+      assert.equal(first.complete, false);
+      assert.equal(first.pendingProductionCoverageCount, 1);
+      assert.equal(first.pendingProductionCoverage[0].objectId, omitted.objectId);
+      assert.equal((await finish(mode === 'verified' ? [coverage(omitted, 2)] : [])).complete, true);
+    });
+    assert.equal(handle.reviewCompleted, true);
+    const unverified = handle.result.unverifiedItems.filter(item => item.type === 'REQUIREMENT');
+    assert.deepEqual(unverified.map(item => item.objectId), mode === 'verified' ? [] : [omitted.objectId]);
+    assert.deepEqual(handle.result.metricObjectJudgements.filter(item => item.judgement === 'DEVIATION').map(item => item.objectId),
+      mode === 'deviation' ? [checked.objectId] : []);
+    const omittedCoverage = handle.result.reviewCoverage.items.find(item => item.id === omitted.objectId);
+    assert.equal(omittedCoverage.disposition, mode === 'verified' ? 'SOURCE_REVIEWED' : 'UNVERIFIED');
+    if (mode === 'verified') {
+      assert.equal(omittedCoverage.flow.consumer.path, 'app.mjs');
+      assert.equal(omittedCoverage.flow.consumer.start, 2);
+    }
+    await handle.close();
+  });
+});
+
+test('production Stop coverage accounts for observed sibling dispatches in the same callback', async t => {
+  const requirement = 'When the user selects a mode, generate the result in that mode.';
+  for (const mode of ['missing', 'unread', 'wrong-entry', 'no-handoff', 'healthy', 'deviation']) await t.test(mode, async t => {
+    const broken = mode === 'missing' || mode === 'deviation';
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: true, userText: requirement,
+      sourceText: [
+        'export function install(register, dispatch, selection, seed, imported, previous) {',
+        "  register('resume', () => {",
+        "    dispatch({ route: 'result', params: { previous } });",
+        '  });',
+        "  register('start', () => {",
+        '    if (seed) {',
+        `      dispatch({ route: 'result', params: { seed${broken ? '' : ', mode: selection'} } });`,
+        '      return;',
+        '    }',
+        '    if (imported) {',
+        "      dispatch({ route: 'result', params: { imported } });",
+        '      return;',
+        '    }',
+        "    dispatch({ route: 'result', params: { mode: selection } });",
+        '  });',
+        '}',
+      ].join('\n') + '\n' });
+    const consumerFile = path.join(f.projectRoot, 'result.mjs');
+    await fs.writeFile(consumerFile, [
+      'export function renderResult(params, generate) {',
+      '  if (params.previous) return params.previous;',
+      '  if (params.imported) return params.imported;',
+      "  return generate(params.mode ?? 'standard', params.seed);",
+      '}',
+    ].join('\n') + '\n');
+    let objectId, reviewCalls = 0;
+    const { stop, handle } = await f.run(async tools => {
+      reviewCalls++;
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirement, citeId: original, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+      const item = page.items.find(item => item.description === requirement);
+      assert.equal(item.requiresProductionCoverage, true);
+      objectId = item.objectId;
+      const partial = mode === 'unread'
+        ? (await tools.call('source_read', { path: f.source, offset: 11, limit: 4 })).details.citation : null;
+      if (partial) assert.deepEqual([partial.start, partial.end], [11, 14]);
+      const producer = partial?.citeId ?? await tools.read(f.source);
+      const consumer = await tools.read(consumerFile);
+      const span = (citeId, line) => ({ citeId, start: line, end: line });
+      const ordinary = span(producer, 14), seeded = span(producer, 7), effect = span(consumer, 4);
+      const finish = flow => submit('finish_stop_review', { ...frameFinishArgs(), ...(flow && {
+        productionCoverage: [{ objectId, reason: 'Traced the selected mode into generation.', citeIds: [producer, consumer], flow }],
+      }) });
+      if (mode === 'deviation') {
+        const saved = await submit('submit_review', { taskId: objectId, verdict: 'DEVIATION',
+          reason: 'The seeded launch omits the selected mode, so generation falls back to standard.', citeIds: [producer, consumer] });
+        assert.equal(saved.saved, true);
+        assert.equal((await finish()).complete, true);
+        return;
+      }
+      const flow = { entry: ordinary, handoff: ordinary, consumer: effect,
+        ...(mode === 'missing' ? {} : { branches: [
+          { disposition: 'VERIFIED', reason: 'Seeded dispatch also passes the selected mode.', entry: seeded, consumer: effect,
+            ...(mode === 'no-handoff' ? {} : { handoff: seeded }) },
+          { disposition: 'OUT_OF_SCOPE', reason: 'Import returns a supplied result without generating.',
+            entry: span(producer, mode === 'wrong-entry' ? 3 : 11) },
+        ] }) };
+      const first = await finish(flow);
+      if (mode === 'healthy') {
+        assert.equal(first.complete, true);
+        return;
+      }
+      assert.equal(first.complete, false);
+      assert.equal(first.pendingProductionCoverageCount, 1);
+      assert.deepEqual(first.pendingProductionCoverage[0].siblingDispatches,
+        [{ path: 'app.mjs', start: 7, end: 7 }, { path: 'app.mjs', start: 11, end: 11 }]);
+      assert.equal((await finish(flow)).complete, true);
+    });
+    assert.equal(reviewCalls, 1);
+    const coverage = handle.result.reviewCoverage.items.find(item => item.id === objectId);
+    const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId);
+    assert.equal(ledger.used, 0);
+    if (mode === 'deviation') {
+      assert.equal(stop.status, 'DEVIATION');
+      assert.equal(stop.decision, 'block');
+      assert(stop.admission);
+    } else if (mode === 'healthy') {
+      assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+      assert.equal(stop.admission, null);
+      assert.equal(coverage.disposition, 'SOURCE_REVIEWED');
+      assert.equal(coverage.flow.entry.start, 14);
+      assert.equal(coverage.flow.branches, undefined);
+      assert.deepEqual(coverage.branches.map(branch => [branch.disposition, branch.entry.start]),
+        [['VERIFIED', 7], ['OUT_OF_SCOPE', 11]]);
+      assert.equal(coverage.branches[0].consumer.path, 'result.mjs');
+      assert.equal(coverage.branches[0].handoff.path, 'app.mjs');
+    } else {
+      assert.equal(stop.status, 'UNVERIFIED');
+      assert.equal(stop.reasonCode, 'STOP_MANDATORY_REQUIREMENT_UNVERIFIED');
+      assert.equal(stop.admission, null);
+      assert.equal(coverage.disposition, 'UNVERIFIED');
+    }
+  });
+});
+
+test('a current source deviation can finish on submission only when separate review work is settled', async t => {
+  const userText = 'Return the input plus one.\nReturn zero from reset.\nSet active mode to release before completion.';
+  for (const mode of ['separate', 'combined', 'corrected-citation', 'downgraded-citation', 'pending-citation', 'frame', 'process', 'regression', 'prior-follow-up'])
+    await t.test(mode, async t => {
+      const f = await frameStopCase(t, { enabled: mode === 'frame', deviation: true, metricIds: ['M16', 'M11'],
+        userText,
+        ...(mode === 'process' ? { processEntries: [
+          { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'mode', name: 'Bash', input: { command: 'check-mode' } }] } },
+          { type: 'user', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'mode', content: 'Active mode is debug.' }] } },
+        ] } : {}) });
+      if (mode === 'regression') await fs.appendFile(f.source, '// A source change triggers the standing regression check.\n');
+
+      const { stop, handle } = await f.run(async ({ task, read, call, worker }, input) => {
+        if (mode === 'regression') {
+          const onScope = input.onScope;
+          input.onScope = async (...args) => ({ ...await onScope(...args), regressionCheck: { status: 'UNAVAILABLE', reason: 'FIXTURE_RUN_UNAVAILABLE' } });
+        }
+        const submit = (name, args) => submitFrameTool(call, name, args);
+        for (const file of task.basisFiles) await read(file);
+        const original = task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+        const items = ['Return the input plus one.', 'Return zero from reset.'].map((text, index) => ({
+          metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION',
+          text, path: original, lineStart: index + 1, lineEnd: index + 1,
+        }));
+        if (mode === 'process') items.push({ metricId: 'M11', verificationTarget: 'PROCESS',
+          text: 'Set active mode to release before completion.', path: original, lineStart: 3, lineEnd: 3 });
+        const page = await submit('set_original_checklist', { items, scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+        const [first, sibling] = items.slice(0, 2).map(item => page.items.find(row => row.description === item.text).objectId);
+        const source = await read(f.source);
+        const deviation = { taskId: first, verdict: 'DEVIATION', reason: 'The current transform returns its input unchanged.',
+          citeIds: [source], ...(mode === 'separate' ? {} : { finish: true }) };
+        const invalid = { ...deviation, taskId: mode === 'pending-citation' ? sibling : first, citeIds: ['unissued-source-citation'] };
+        if (mode.endsWith('-citation')) await assert.rejects(submit('submit_review', invalid), { code: 'TASK_CITATION_INVALID' });
+        if (mode === 'process') {
+          const processId = page.items.find(item => item.metricId === 'M11').objectId;
+          const { processEvidence } = await submit('review_checklist', { includeProcessEvidence: true });
+          const resultId = await read(processEvidence.executionSamples[0].resultFile);
+          assert.equal((await submit('submit_review', { taskId: processId, verdict: 'DEVIATION',
+            reason: 'The original process result reports debug mode.', citeIds: [resultId] })).processClassificationRequired, true);
+        }
+        const receipt = await submit('submit_review', mode === 'downgraded-citation' ? invalid : deviation);
+        assert.equal(receipt.saved, true);
+        assert.equal(receipt.itemId, first);
+        const combined = ['combined', 'corrected-citation'].includes(mode);
+        assert.equal(worker.isComplete(), combined);
+        assert.equal(receipt.complete === true, combined);
+        if (combined) return;
+        if (mode === 'downgraded-citation') assert.equal(receipt.verdict, 'UNVERIFIED');
+        if (mode !== 'separate' && mode !== 'downgraded-citation') assert.equal(receipt.next, 'finish_stop_review');
+        if (mode === 'prior-follow-up') {
+          assert(page.items.find(item => item.objectId === sibling).previousDeviation);
+          await assert.rejects(submit('finish_stop_review', frameFinishArgs()), { code: 'REVIEW_ITEM_INCOMPLETE' });
+          await submit('submit_review', { taskId: sibling, verdict: 'UNVERIFIED', reason: 'The carried item still lacks current evidence.' });
+        }
+        const finish = await submit('finish_stop_review', { ...frameFinishArgs(mode === 'frame' ? unverifiedFrame() : undefined),
+          ...(mode === 'regression' ? { regressionCheck: { status: 'UNVERIFIED', reason: 'The fixture check could not run.' } } : {}) });
+        assert.equal(finish.complete, true);
+      }, mode === 'prior-follow-up' ? async taskId => {
+        const population = await buildMetricPopulation({ projectRoot: f.projectRoot, taskId, groundTruth: { version: 0, claims: [] }, persist: false });
+        const [object] = buildOriginalStopPopulation({ population, sourceDigest: 'fixture-original', checklist: [{
+          metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', text: 'Return zero from reset.',
+          source: { kind: 'USER_MESSAGE', ref: 'transcript:user-original', part: 1, sha256: sha256(userText), start: 2, end: 2 },
+        }] }).population.metrics.M16;
+        const evaluationId = 'stop-0123456789abcdef';
+        await recordDeviationFindings({ projectRoot: f.projectRoot, taskId, pipeline: 'STOP', evaluationId, delivered: true,
+          findings: [{ deviationKey: `metric:M16:${object.sourceId}`, rootCauseId: 'REQUIREMENT_OMITTED', severity: 'error',
+            reason: 'The earlier implementation omitted reset.', violatedGroundTruthIds: [object.sourceId] }] });
+        await atomicWriteJson(path.join(taskDirectory(f.projectRoot, taskId), 'evaluations', `${evaluationId}.json`), {
+          metricReport: { metrics: [{ objects: [{ ...object, judgement: 'DEVIATION' }] }] },
+        });
+      } : undefined);
+
+      if (mode === 'downgraded-citation') {
+        assert.notEqual(stop.status, 'DEVIATION');
+        assert.equal(stop.verificationIncomplete, true);
+        assert.equal(stop.admission, null);
+      } else {
+        assert.equal(stop.status, 'DEVIATION');
+        assert(stop.admission);
+      }
+      assert.equal(handle.result.citationDiagnostics.correctedItems, mode === 'corrected-citation' ? 1 : 0);
+      assert.equal(handle.result.citationDiagnostics.downgradedItems, ['downgraded-citation', 'pending-citation'].includes(mode) ? 1 : 0);
+    });
 });
 
 test('production Stop never admits an unclassified process claim, but keeps a real current repair', async t => {

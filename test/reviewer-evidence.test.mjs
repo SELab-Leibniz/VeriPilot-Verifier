@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { prepareReviewerRequest } from "../lib/runtime-v2/reviewer-evidence.mjs";
+import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 
 async function workspace(t) {
@@ -85,6 +86,76 @@ test("transcript evidence retains complete entries and source cursor identity wi
   assert.equal(prepared.transcript.digest, "raw-source-transcript-digest");
   assert.equal(prepared.transcript.cursor, "tool-result");
   await assert.rejects(fs.access(path.join(root, "request.json")), { code: "ENOENT" });
+});
+
+test('recent whole-entry navigation exposes later edits and real checks beyond a long planning prefix', async t => {
+  const root = await workspace(t);
+  const entries = [
+    { type: 'user', uuid: 'planning', sourceMessageId: 'proposal:user', message: { content: 'Complete planning only. ' + 'Long historical planning context. '.repeat(12000) } },
+    { type: 'user', uuid: 'apply', sourceMessageId: 'apply:user', message: { content: 'The plan is approved. Implement it and run the required checks.' } },
+    { type: 'assistant', uuid: 'edit-call', message: { content: [{ type: 'tool_use', id: 'edit-1', name: 'edit', input: { path: 'app.py', oldText: 'return 0', newText: 'return 1' } }] } },
+    { type: 'user', uuid: 'edit-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'edit-1', content: 'Updated app.py.' }] } },
+    { type: 'assistant', uuid: 'check-call', message: { content: [{ type: 'tool_use', id: 'check-1', name: 'project_check', input: { action: 'test' } }] } },
+    { type: 'user', uuid: 'check-result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'check-1', content: { exitCode: 0, outputComplete: true, counts: { PASS: 3 }, snapshotSha256: 'a'.repeat(64) } }] } },
+  ];
+  await fs.writeFile(path.join(root, 'auth-store.json'), 'UNRELATED_AUTH_STORE_SENTINEL');
+  const prepared = await prepareReviewerRequest({ requestDirectory: path.join(root, 'review'), request: {},
+    evidence: { snapshot: { entries, digest: 'frozen-digest', lastEntryKey: 'check-result',
+      invocation: { runId: 'apply', sessionId: 'session', auth: 'DO_NOT_COPY_INVOCATION_FIELDS' } },
+      semanticRequest: { artifactFiles: ['plan.md'], runtimeV2: {} } } });
+  const full = await fs.readFile(prepared.transcript.path), recent = await fs.readFile(prepared.transcriptNavigation.path);
+  const navigation = JSON.parse(recent), fullLines = full.toString().split('\n');
+  assert(full.length > 318 * 1024, 'the full history exceeds a normal prefix-only read');
+  assert(recent.length <= 24 * 1024);
+  assert.equal(sha256(recent), prepared.transcriptNavigation.sha256);
+  assert.equal(navigation.source.sha256, sha256(full));
+  assert.equal(navigation.source.digest, 'frozen-digest');
+  assert.equal(navigation.source.cursor, 'check-result');
+  assert.equal(navigation.source.entryCount, entries.length);
+  assert.deepEqual(navigation.invocation, { runId: 'apply', sessionId: 'session' });
+  assert.equal(navigation.latestExternalUser.sourceMessageId, 'apply:user');
+  assert.equal(navigation.complete, false);
+  assert.equal(navigation.omittedEntryCount, 1);
+  assert.deepEqual(navigation.entries.map(row => row.sourceIndex), [1, 2, 3, 4, 5]);
+  for (const row of navigation.entries) assert.deepEqual(row.entry, entries[row.sourceIndex], 'selected entries are whole original values');
+  for (const ref of [navigation.latestExternalUser, ...navigation.recentToolResults, ...navigation.recentToolResults.map(row => row.call)]) {
+    const exactEntry = fullLines.slice(ref.startLine - 1, ref.startLine - 1 + ref.lineCount).join('\n').replace(/,\s*$/u, '');
+    assert.deepEqual(JSON.parse(exactEntry), entries[ref.index], 'full-transcript offsets retrieve the exact original entry');
+    assert.equal(ref.sha256, sha256(entries[ref.index]));
+  }
+  assert.match(navigation.instructions, /Missing or unread evidence is UNVERIFIED, never proof that an action did not occur/);
+  assert.doesNotMatch(recent.toString(), /UNRELATED_AUTH_STORE_SENTINEL|DO_NOT_COPY_INVOCATION_FIELDS|Complete planning only/);
+  assert.deepEqual(await readJson(prepared.transcript.path), { entries }, 'earlier authority remains in the full snapshot');
+  assert.deepEqual((await readJson(prepared.semanticReviewRequestPath)).runtimeV2.transcriptNavigation, prepared.transcriptNavigation);
+});
+
+test('oversized latest entries stay explicitly omitted with exact full-source navigation', async t => {
+  const root = await workspace(t);
+  const entries = [
+    { type: 'user', uuid: 'u', sourceMessageId: 'run:user', message: { content: 'Current task.' } },
+    { type: 'user', uuid: 'result', isMeta: true, message: { content: [{ type: 'tool_result', tool_use_id: 'check', content: 'Uncut output. '.repeat(10000) }] } },
+  ];
+  const prepared = await prepareReviewerRequest({ requestDirectory: root, request: {}, evidence: { snapshot: { entries } } });
+  const navigation = await readJson(prepared.transcriptNavigation.path);
+  assert.equal(navigation.complete, false);
+  assert.equal(navigation.omittedEntryCount, 1);
+  assert.deepEqual(navigation.entries.map(row => row.entry), [entries[0]]);
+  assert.equal(navigation.recentToolResults[0].index, 1);
+  assert.equal(navigation.recentToolResults[0].toolUseId, 'check');
+  assert.equal(navigation.recentToolResults[0].call, undefined, 'an unavailable call must not be invented');
+  assert.deepEqual((await readJson(prepared.transcript.path)).entries[1], entries[1]);
+  assert((await fs.stat(prepared.transcriptNavigation.path)).size <= 24 * 1024);
+});
+
+test('empty history does not invent a run, phase, user or execution result', async t => {
+  const root = await workspace(t);
+  const prepared = await prepareReviewerRequest({ requestDirectory: root, request: {}, evidence: { snapshot: { entries: [] } } });
+  const navigation = await readJson(prepared.transcriptNavigation.path);
+  assert.deepEqual(navigation.entries, []);
+  assert.deepEqual(navigation.recentToolResults, []);
+  assert.equal(navigation.latestExternalUser, null);
+  assert.equal(navigation.invocation, undefined);
+  assert.equal(navigation.complete, true);
 });
 
 

@@ -15,7 +15,7 @@ before(async () => {
   createRuntime = correctionFixtureRuntime(createRuntime);
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
-async function fixture(t, pluginConfig = {}) {
+async function fixture(t, pluginConfig = {}, { shadow = false, acceptanceFeedback } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-native-lifecycle-"));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true }); });
@@ -33,6 +33,8 @@ dynamicGroundTruth:
   enabled: false
 stopCorrection:
   enabled: false
+shadowMode: ${shadow}
+${acceptanceFeedback ? `acceptanceFeedback:\n  tool: ${acceptanceFeedback.tool}\n` : ''}
 `);
   const file = path.join(root, "native.jsonl"), sid = "native-parent";
   await fs.writeFile(file, [{ type: "session", id: sid }, { type: "message", id: "u", parentId: null,
@@ -51,6 +53,151 @@ stopCorrection:
   await runtime.prompt({ prompt: "Write a draft when appropriate." }, ctx);
   return { runtime, ctx, sessions, hostAbort, warnings, state: sharedState.states.get(`main:${sid}`) };
 }
+
+const checkTool = 'check_fixture';
+const acceptanceFeedback = { tool: checkTool };
+const middlewareContext = { runtime: 'openclaw' };
+
+function checkReceipt(ctx, toolCallId, kind, status) {
+  return { toolName: checkTool, toolCallId, args: { action: kind === 'acceptance' ? 'acceptance' : 'verify' },
+    result: { content: [{ type: 'text', text: 'Original check result' }, { type: 'image', data: 'fixture', mimeType: 'image/png' }],
+      mediaUrl: 'fixture://media', terminate: false,
+      details: { runtimeCorrectorVerification: { runId: ctx.runId, kind, status }, original: { preserved: true } } } };
+}
+
+async function bindCheck(f, event, ctx = f.ctx) {
+  assert.equal(await f.runtime.beforeTool({ toolName: event.toolName, toolCallId: event.toolCallId, params: event.args }, ctx), undefined);
+}
+
+function incompleteReport(ctx, id, action = 'verify') {
+  const event = checkReceipt(ctx, id, 'supporting', 'INCOMPLETE');
+  event.args.action = action;
+  event.result.details.runtimeCorrectorVerification.incompleteReason = 'RUNNER_REPORT_INCOMPLETE';
+  return event;
+}
+
+async function receiveCheck(f, event, ctx = f.ctx) {
+  await bindCheck(f, event, ctx);
+  return f.runtime.toolResult(event, middlewareContext);
+}
+
+test('acceptance feedback appends one advisory per native run without changing the host result', async t => {
+  const f = await fixture(t, {}, { acceptanceFeedback });
+  const receive = (id, kind, status = 'PASS', ctx = f.ctx) => receiveCheck(f, checkReceipt(ctx, id, kind, status), ctx);
+  assert.equal(await receive('acceptance-failed', 'acceptance', 'FAIL'), undefined);
+  const first = checkReceipt(f.ctx, 'first-support', 'supporting', 'PASS');
+  assert.equal(await receiveCheck(f, first), undefined);
+  assert.equal(await f.runtime.toolResult(first, middlewareContext), undefined, 'repeated delivery of the same call does not count twice');
+  assert.equal(await receive('second-support', 'supporting', 'INCOMPLETE'), undefined);
+
+  const third = checkReceipt(f.ctx, 'third-support', 'supporting', 'PASS');
+  const original = structuredClone(third.result);
+  const outcome = await receiveCheck(f, third);
+  assert.deepEqual(third.result, original, 'the native input result retains its original bytes and fields');
+  assert.equal(outcome.result.content.length, original.content.length + 1);
+  assert.deepEqual(outcome.result.content.slice(0, -1), original.content);
+  assert.deepEqual({ ...outcome.result, content: original.content }, original);
+  assert.equal(outcome.result.content.at(-1).type, 'text');
+  assert.match(outcome.result.content.at(-1).text, /RC_ACCEPTANCE_RECHECK/u);
+
+  assert.equal(await receive('fourth-support', 'supporting'), undefined);
+  assert.equal(await receive('acceptance-failed-again', 'acceptance', 'FAIL'), undefined);
+  for (const id of ['another-1', 'another-2', 'another-3']) assert.equal(await receive(id, 'supporting'), undefined);
+  const stale = checkReceipt(f.ctx, 'old-delayed-check', 'supporting', 'PASS');
+  await bindCheck(f, stale);
+  const next = { ...f.ctx, runId: 'next-admitted-run' };
+  await f.runtime.prompt({ prompt: 'Start the next run.' }, next);
+  assert.equal(await f.runtime.toolResult(stale, middlewareContext), undefined);
+  assert.equal(f.state.nativeRunId, next.runId);
+  assert.equal(await receive('next-before-fail', 'supporting', 'PASS', next), undefined);
+  assert.equal(await receive('next-failed', 'acceptance', 'FAIL', next), undefined);
+  assert.equal(await receive('next-support-1', 'supporting', 'PASS', next), undefined);
+  assert.equal(await receive('next-support-2', 'supporting', 'PASS', next), undefined);
+  const nextOutcome = await receive('next-support-3', 'supporting', 'PASS', next);
+  assert.match(nextOutcome.result.content.at(-1).text, /RC_ACCEPTANCE_RECHECK/u);
+  assert.equal(f.hostAbort.signal.aborted, false);
+});
+
+test('the latest acceptance receipt controls which supporting results count', async t => {
+  const f = await fixture(t, {}, { acceptanceFeedback });
+  const receive = (id, kind, status = 'PASS') => receiveCheck(f, checkReceipt(f.ctx, id, kind, status));
+  for (const status of ['PASS', 'INCOMPLETE', 'FAIL']) {
+    assert.equal(await receive(`${status}-initial-fail`, 'acceptance', 'FAIL'), undefined);
+    assert.equal(await receive(`${status}-support-1`, 'supporting'), undefined);
+    assert.equal(await receive(`${status}-support-2`, 'supporting'), undefined);
+    assert.equal(await receive(`${status}-latest-acceptance`, 'acceptance', status), undefined);
+    assert.equal(await receive(`${status}-after`, 'supporting'), undefined);
+  }
+  assert.equal(await receive('another-support', 'supporting'), undefined);
+  const outcome = await receive('third-since-latest-fail', 'supporting');
+  assert.match(outcome.result.content.at(-1).text, /RC_ACCEPTANCE_RECHECK/u);
+});
+
+test('unbound, mismatched and private check results do not advance acceptance feedback', async t => {
+  const f = await fixture(t, {}, { acceptanceFeedback });
+  assert.equal(await receiveCheck(f, checkReceipt(f.ctx, 'owned-failure', 'acceptance', 'FAIL')), undefined);
+  const forged = checkReceipt(f.ctx, 'no-invocation', 'supporting', 'PASS');
+  assert.equal(await f.runtime.toolResult(forged, middlewareContext), undefined);
+  const wrongArgs = checkReceipt(f.ctx, 'wrong-args', 'supporting', 'PASS');
+  await bindCheck(f, wrongArgs);
+  assert.equal(await f.runtime.toolResult({ ...wrongArgs, args: { action: 'other' } }, middlewareContext), undefined);
+  const wrongTool = checkReceipt(f.ctx, 'wrong-tool', 'supporting', 'PASS');
+  await bindCheck(f, wrongTool);
+  assert.equal(await f.runtime.toolResult({ ...wrongTool, toolName: 'other_fixture' }, middlewareContext), undefined);
+  const wrongRun = checkReceipt({ ...f.ctx, runId: 'unowned-run' }, 'wrong-run', 'supporting', 'PASS');
+  assert.equal(await receiveCheck(f, wrongRun), undefined);
+  const privateCtx = { ...f.ctx, sessionId: 'private-reviewer', sessionKey: 'agent:main:runtime-corrector:private' };
+  assert.equal(await receiveCheck(f, checkReceipt(privateCtx, 'private-check', 'supporting', 'PASS'), privateCtx), undefined);
+
+  for (const id of ['real-support-1', 'real-support-2'])
+    assert.equal(await receiveCheck(f, checkReceipt(f.ctx, id, 'supporting', 'PASS')), undefined);
+  const outcome = await receiveCheck(f, checkReceipt(f.ctx, 'real-support-3', 'supporting', 'PASS'));
+  assert.match(outcome.result.content.at(-1).text, /RC_ACCEPTANCE_RECHECK/u);
+});
+
+test('repeated incomplete reports on the same check get one run-bound advisory', async t => {
+  const f = await fixture(t, {}, { acceptanceFeedback });
+  const receive = (id, action, ctx = f.ctx) => receiveCheck(f, incompleteReport(ctx, id, action), ctx);
+  assert.equal(await f.runtime.toolResult(incompleteReport(f.ctx, 'not-admitted'), middlewareContext), undefined);
+  const first = incompleteReport(f.ctx, 'first');
+  assert.equal(await receiveCheck(f, first), undefined);
+  assert.equal(await f.runtime.toolResult(first, middlewareContext), undefined);
+  assert.equal(await receive('second'), undefined);
+  assert.equal(await receiveCheck(f, checkReceipt(f.ctx, 'healthy', 'supporting', 'PASS')), undefined);
+  assert.equal(await receive('after-healthy'), undefined);
+  assert.equal(await receive('another-check', 'different'), undefined);
+  assert.equal(await receive('same-first'), undefined);
+  assert.equal(await receiveCheck(f, checkReceipt(f.ctx, 'independent', 'acceptance', 'PASS')), undefined);
+  assert.equal(await receive('same-second'), undefined);
+  const last = incompleteReport(f.ctx, 'same-third');
+  const outcome = await receiveCheck(f, last);
+  assert.match(outcome.result.content.at(-1).text, /RC_VERIFICATION_INCOMPLETE/u);
+  assert.doesNotMatch(outcome.result.content.at(-1).text, /RC_ACCEPTANCE_RECHECK/u);
+  assert.deepEqual({ ...outcome.result, content: outcome.result.content.slice(0, -1) }, last.result);
+  assert.equal(await receive('same-fourth'), undefined);
+  assert.equal(await receive('same-fifth'), undefined);
+
+  const stale = incompleteReport(f.ctx, 'stale');
+  await bindCheck(f, stale);
+  const next = { ...f.ctx, runId: 'next-verification-run' };
+  await f.runtime.prompt({ prompt: 'Proceed with the next run.' }, next);
+  assert.equal(await f.runtime.toolResult(stale, middlewareContext), undefined);
+  assert.equal(await receive('new-first', undefined, next), undefined);
+  assert.equal(await receive('new-second', undefined, next), undefined);
+  const repeated = await receive('new-third', undefined, next);
+  assert.match(repeated.result.content.at(-1).text, /RC_VERIFICATION_INCOMPLETE/u);
+});
+
+test('acceptance feedback stays silent when unconfigured or in shadow mode', async t => {
+  for (const options of [{}, { acceptanceFeedback, shadow: true }]) {
+    const f = await fixture(t, {}, options);
+    assert.equal(await receiveCheck(f, checkReceipt(f.ctx, 'failure', 'acceptance', 'FAIL')), undefined);
+    for (const id of ['one', 'two', 'three'])
+      assert.equal(await receiveCheck(f, checkReceipt(f.ctx, id, 'supporting', 'PASS')), undefined);
+    for (const id of ['partial-1', 'partial-2', 'partial-3']) assert.equal(await receiveCheck(f, incompleteReport(f.ctx, id)), undefined);
+    assert.equal(f.hostAbort.signal.aborted, false);
+  }
+});
 
 test('pinned-host no-op guard uses a pre-execution rejection and supports an explicit opt-out', async t => {
   for (const enabled of [true, false]) {

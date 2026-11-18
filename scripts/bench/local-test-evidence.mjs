@@ -1,4 +1,5 @@
 import { parseHypium } from './hypium-results.mjs';
+import { arktsInstrumentRuntime, parseArktsInstrumentResults } from './arkts-instrument-results.mjs';
 
 function runtimeDiagnostics(raw, freshReport) {
   const messages = [];
@@ -18,15 +19,34 @@ function runtimeDiagnostics(raw, freshReport) {
 
 // These are original, public workspace tests, never the hidden test oracle.
 export function localTestEvidence(raw, execution, { freshReport, compileOutput }) {
-  const parsed = freshReport ? parseHypium(raw) : { statuses: {}, errors: [], finished: false };
+  const instrument = execution.runtime === arktsInstrumentRuntime;
+  const parse = instrument ? parseArktsInstrumentResults : parseHypium;
+  const parsed = freshReport ? parse(raw) : { statuses: {}, errors: [], finished: false };
+  const compiled = instrument ? execution.compileSucceeded === true : /Finished :entry:.*@UnitTestArkTS/u.test(compileOutput);
   const completeRuntime = Boolean(freshReport && execution.outputComplete && !execution.interrupted
-    && parsed.finished && !parsed.errors.length && /Finished :entry:.*@UnitTestArkTS/u.test(compileOutput));
+    && parsed.finished && !parsed.errors.length && compiled);
   const counts = {};
   for (const status of Object.values(parsed.statuses)) counts[status] = (counts[status] ?? 0) + 1;
   return { freshReport, finished: parsed.finished, completeRuntime, statuses: parsed.statuses, counts,
     allObservedPassed: completeRuntime && Object.keys(parsed.statuses).length > 0 && Object.values(parsed.statuses).every(status => status === 'PASS'),
     failures: Object.entries(parsed.statuses).filter(([, status]) => status !== 'PASS').map(([id, status]) => ({ id, status })),
     metadataErrors: parsed.errors, runtimeDiagnostics: runtimeDiagnostics(raw, freshReport) };
+}
+
+export function supportingTestVerification(current, execution) {
+  const attempted = current.finished || Object.keys(current.statuses).length > 0
+    || execution.device && Number.isFinite(execution.deviceDurationMs);
+  if (!attempted) return null;
+  const kind = 'supporting';
+  if (current.allObservedPassed && execution.exitCode === 0) return { kind, status: 'PASS' };
+  if (current.completeRuntime && current.counts.FAIL > 0) return { kind, status: 'FAIL' };
+
+  const incompleteReport = execution.runtime === arktsInstrumentRuntime && execution.compileSucceeded === true
+    && execution.exitCode === 0 && execution.outputComplete === true && !execution.interrupted
+    && current.freshReport && !current.completeRuntime && !current.counts.FAIL && !current.counts.ERROR
+    && current.metadataErrors.length === 2 && current.metadataErrors[0].code === 'FAILED_TEST_SESSION'
+    && current.metadataErrors[1].code === 'INCOMPLETE_DEVICE_REPORT' && current.metadataErrors[1].activeCaseId;
+  return { kind, status: 'INCOMPLETE', ...(incompleteReport ? { incompleteReason: 'RUNNER_REPORT_INCOMPLETE' } : {}) };
 }
 
 export function publicLocalTestEvidence(current, baseline) {

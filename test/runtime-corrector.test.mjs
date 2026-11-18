@@ -374,6 +374,59 @@ test("incomplete bundles run semantic review against the available snapshot", as
 });
 
 
+test("an opted-in bundle defers semantic review until all members are present", async (t) => {
+  const cwd = await workspace(t);
+  await writeFile(cwd, ".runtime-corrector/config.yaml", `version: 1
+artifacts:
+  - name: two-file
+    patterns: [A.md, B.md]
+    relatedPatterns: [A.md, B.md]
+    relatedRoot: project
+    rules:
+      enabled: true
+      file: required.rules.yaml
+    review:
+      enabled: true
+      deferUntilBundleComplete: true
+`);
+  await writeFile(cwd, ".runtime-corrector/required.rules.yaml", `version: 1
+rules:
+  - id: TWO-FILE-REQUIRED
+    type: require-artifacts
+    artifacts: [A.md, B.md]
+    severity: error
+`);
+
+  let reviewedInputs;
+  async function reviewWrite(filePath) {
+    const input = hookInput(cwd, filePath, "Write");
+    const prepared = await handleHook(input, { pluginRoot: PLUGIN_ROOT, deferPersistence: true });
+    const review = await runSemanticReview({ input, prepared, pluginRoot: PLUGIN_ROOT,
+      invokeFork: async ({ prompt }) => {
+        const requestPath = prompt.match(/--request "([^"]+)"/)?.[1];
+        const request = JSON.parse(await fs.readFile(requestPath, "utf8"));
+        reviewedInputs = request.artifactFiles;
+        return { review: { summary: "Reviewed both files.", findings: [], edits: [] } };
+      } });
+    return finalizeArtifactCheck(prepared, review);
+  }
+
+  const { result: partial, feedback } = await reviewWrite(await writeFile(cwd, "A.md", "# A\n"));
+  assert.equal(reviewedInputs, undefined);
+  assert.equal(partial.status, "pending");
+  assert.equal(partial.agentReview.status, "deferred");
+  assert.equal(partial.metadata.semanticReview.reasonCode, "ARTIFACT_BUNDLE_INCOMPLETE");
+  assert(partial.diagnostics.some(({ ruleId }) => ruleId === "TWO-FILE-REQUIRED"));
+  assert.match(feedback, /语义审阅已延后|semantic review is deferred/u);
+
+  const { result: complete } = await reviewWrite(await writeFile(cwd, "B.md", "# B\n"));
+  assert.deepEqual([...reviewedInputs].sort(), ["A.md", "B.md"]);
+  assert.equal(complete.status, "passed");
+  assert.equal(complete.agentReview.status, "completed");
+  assert.notEqual(complete.metadata.inputDigest, partial.metadata.inputDigest);
+});
+
+
 test("every write to a two-file bundle reviews the current snapshot and persists one paired result", async (t) => {
   const cwd = await workspace(t);
   await writeFile(cwd, ".runtime-corrector/config.yaml", `version: 1

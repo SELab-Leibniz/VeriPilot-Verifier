@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { isDeepStrictEqual } from 'node:util';
 import { parseSimpleYaml } from '../../lib/simple-yaml.mjs';
+import { normalizeRegressionCheck } from '../../lib/runtime-v2/stop-correction-config.mjs';
 import { digest } from './arkts-dataset.mjs';
 const plain = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 // Objects merge by key; arrays, scalars and null replace the base value.
@@ -57,19 +59,31 @@ export function emitSimpleYaml(document) {
   assert.deepStrictEqual(parseSimpleYaml(text, { source: 'rc-config-overrides' }), document);
   return text;
 }
-// stopCorrection.regressionCheck = {enabled, command: argv, cwd, timeoutMs, maxOutputBytes};
-// only an enabled check needs a command. effective is null while the loaded product drops the field.
+const regressionContractFields = ['reportProtocol', 'verifierProtocol', 'collateralProtocol', 'testSource', 'routeEnvironment'];
+
 export function regressionCheckPolicy(configured, effective) {
   if (configured === undefined || configured === null) return effective ? { configured: null, effective, honoredByProduct: true } : null;
-  const { enabled, command, cwd, timeoutMs, maxOutputBytes, baselineFile, isolationCommand, ...extra } = configured;
+  const { enabled, command, cwd, timeoutMs, maxOutputBytes, baselineFile, isolationCommand, requirementBindings, ...contract } = configured;
   const positive = value => value === undefined || Number.isSafeInteger(value) && value >= 1;
   if (typeof enabled !== 'boolean' || (enabled || command !== undefined) && (!Array.isArray(command) || !command.length
     || !command.every(value => typeof value === 'string' && value)) || cwd !== undefined && (typeof cwd !== 'string' || !cwd)
-    || !positive(timeoutMs) || !positive(maxOutputBytes) || Object.keys(extra).length
+    || !positive(timeoutMs) || !positive(maxOutputBytes) || Object.keys(contract).some(key => !regressionContractFields.includes(key))
     || baselineFile !== undefined && (typeof baselineFile !== 'string' || !baselineFile)
     || isolationCommand !== undefined && (!Array.isArray(isolationCommand) || !isolationCommand.length
       || !isolationCommand.every(value => typeof value === 'string' && value) || !isolationCommand.some(value => value.includes('{testId}'))))
     throw new Error('stopCorrection.regressionCheck must be {enabled:boolean, command:[argv...] when enabled, cwd?:string, timeoutMs?:positive integer, maxOutputBytes?:positive integer}');
+  if (Object.hasOwn(configured, 'requirementBindings')) {
+    const expected = normalizeRegressionCheck({ enabled, command, requirementBindings });
+    if (effective?.enabled !== true || !isDeepStrictEqual(effective.command, expected.command)
+      || !isDeepStrictEqual(effective.requirementBindings, expected.requirementBindings))
+      throw new Error('The loaded product did not preserve the configured requirement bindings and probe command.');
+  }
+  if (Object.keys(contract).length) {
+    const expected = normalizeRegressionCheck({ enabled, ...(command === undefined ? {} : { command }), ...contract });
+    if ((enabled || effective) && (effective?.enabled !== expected.enabled || !isDeepStrictEqual(effective.command, expected.command)
+      || regressionContractFields.some(field => !isDeepStrictEqual(effective[field], expected[field]))))
+      throw new Error('The loaded product did not preserve the configured verifier contract and command.');
+  }
   return { configured, effective: effective ?? null, honoredByProduct: Boolean(effective) };
 }
 export async function loadRcConfigOverrides(file) {
@@ -82,7 +96,14 @@ export async function loadRcConfigOverrides(file) {
 // the original text, comments included, is kept byte for byte.
 export function applyRcConfigOverrides(text, overrides, variables = {}) {
   if (!overrides) return { text, applied: null };
-  const value = substitutePlaceholders(overrides.value, variables);
+  const source = structuredClone(overrides.value);
+  const check = source.stopCorrection?.regressionCheck;
+  const hasBindings = plain(check) && Object.hasOwn(check, 'requirementBindings');
+  const requirementBindings = check?.requirementBindings;
+  // The case IDs and quoted requirement bytes are data, including literal ${...}.
+  if (hasBindings) delete check.requirementBindings;
+  const value = substitutePlaceholders(source, variables);
+  if (hasBindings) value.stopCorrection.regressionCheck.requirementBindings = requirementBindings;
   const merged = deepMerge(parseSimpleYaml(text, { source: 'base config' }), value);
   return { text: emitSimpleYaml(merged), applied: { file: overrides.file, sha256: overrides.sha256, value } };
 }

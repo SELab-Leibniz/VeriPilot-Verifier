@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { openclawDocumentOptions, collectAutomaticDocumentEvidence, documentHookPolicy, loadDocumentBenchmark, assessDocumentCopy, documentMutations, locateDocumentFaults } from '../scripts/evaluate-openclaw-document-e2e.mjs';
+import { ensureTask, taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { loadConfig, checkArtifact, finalizeArtifactCheck } from '../lib/runtime-corrector.mjs';
 import { fileURLToPath } from 'node:url';
 
@@ -143,6 +144,47 @@ test('static document evidence binds production rounds to the actual native sess
   assert(evidence.reviews.every(item => item.scopeTaskId === 'real-scope'));
   const missing = await collectAutomaticDocumentEvidence(root, { messages: [] }, 'current-session');
   assert(missing.reviews.every(item => item.toolCallId === undefined), 'Persisting a result cannot invent feedback delivery');
+});
+
+test('scoped proposal rounds survive without artifact files and bind feedback to native tool results', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'openclaw-scoped-document-evidence-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const sessionId = 'proposal-session';
+  const taskId = 'proposal-scope';
+  await ensureTask({ projectRoot: root, sessionId, explicitTaskId: taskId });
+  const first = { status: 'failed', metadata: { roundId: '001', semanticReview: { parentSessionId: sessionId } } };
+  const second = { status: 'passed', metadata: { roundId: '002', semanticReview: { parentSessionId: sessionId } } };
+  const journalFile = path.join(taskDirectory(root, taskId), 'journal/events.jsonl');
+  await fs.mkdir(path.dirname(journalFile), { recursive: true });
+  const rows = [
+    { type: 'OPENCLAW_ARTIFACT_REVIEW', toolCallId: 'draft-write', result: first, feedback: 'Correct the requirement.' },
+    { type: 'OPENCLAW_ARTIFACT_REVIEW', toolCallId: 'proposal-edit', result: second, feedback: 'The revision passes.' },
+    { type: 'OPENCLAW_ARTIFACT_REVIEW', toolCallId: 'another-session', result: {
+      ...first, metadata: { roundId: '003', semanticReview: { parentSessionId: 'another-session' } },
+    }, feedback: 'Correct the requirement.' },
+  ];
+  await fs.appendFile(journalFile, rows.map(row => JSON.stringify(row)).join('\n') + '\n{"type":');
+  const resultFile = path.join(root, '.runtime-correction/openclaw/session-artifacts', taskId, 'runs/proposal/002/result.json');
+  await fs.mkdir(path.dirname(resultFile), { recursive: true });
+  await fs.writeFile(resultFile, JSON.stringify(second));
+
+  const nativeResult = (toolCallId, text) => ({ message: {
+    role: 'toolResult', toolCallId, content: [{ type: 'text', text: `[runtime-corrector:feedback]\n${text}` }],
+  } });
+  const evidence = await collectAutomaticDocumentEvidence(root, { messages: [
+    nativeResult('copied-feedback', 'Correct the requirement.'),
+    nativeResult('draft-write', 'Correct the requirement.'),
+    nativeResult('proposal-edit', 'The revision passes.'),
+  ] }, sessionId);
+  assert.deepEqual(evidence.reviews, [
+    { file: journalFile, result: first, scopeTaskId: taskId, toolCallId: 'draft-write' },
+    { file: resultFile, result: second, scopeTaskId: taskId, toolCallId: 'proposal-edit' },
+  ]);
+  const unrelated = await collectAutomaticDocumentEvidence(root, { messages: [
+    nativeResult('different-call', 'Correct the requirement.'),
+    nativeResult('proposal-edit', 'Unrelated feedback.'),
+  ] }, sessionId);
+  assert(unrelated.reviews.every(item => item.toolCallId === undefined));
 });
 
 test('all benchmark document samples preserve their original sources and only the declared candidate changes', async () => {

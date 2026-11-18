@@ -31,7 +31,8 @@ async function project(t) {
   return root;
 }
 
-const policy = (mode, { materialRoots = '[docs/requirements]', originalKey = true, compactionRestore = false } = {}) => `version: 2
+const policy = (mode, { materialRoots = '[docs/requirements]', originalKey = true, compactionRestore = false,
+  nodeReview = 'enabled', incomingReview } = {}) => `version: 2
 artifacts:
   - name: design
     stage: design
@@ -39,10 +40,21 @@ artifacts:
     patterns: [docs/design.md]
     rules:
       enabled: false
-    review:
-      enabled: true
+${nodeReview === 'default' ? '' : `    review:
+      enabled: ${nodeReview === 'enabled'}
       criteria: document-review.md
-dynamicGroundTruth:
+`}${incomingReview === undefined ? '' : `  - name: proposal
+    stage: proposal
+    format: markdown
+    patterns: [docs/proposal.md]
+workflow:
+  edges:
+    - from: proposal
+      to: design
+      review:
+        enabled: ${incomingReview}
+        criteria: document-review.md
+`}dynamicGroundTruth:
   enabled: ${mode !== 'original-only' && mode !== 'stop-original'}
 ${materialRoots ? `  materialRoots: ${materialRoots}\n` : ''}  panel:
     size: 0
@@ -141,6 +153,13 @@ test('original requirements need no dynamic baseline and cannot be combined with
     'unset material roots fall back to project material discovery');
   await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), policy('ledger').replace('originalRequirementsEnabled: false', 'originalRequirementsEnabled: true'));
   await assert.rejects(loadRuntimePlan({ cwd: root }), /originalRequirementsEnabled/u);
+  const strict = config => config.replace(/originalRequirementsEnabled: (?:true|false)/u, 'requireOpenSpecProposalCoverage: true');
+  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), strict(policy('original-only', { materialRoots: null })));
+  const strictPlan = await loadRuntimePlan({ cwd: root });
+  assert.equal(strictPlan.runtimeV2.artifactCorrection.originalRequirementsEnabled, true);
+  assert.equal(strictPlan.runtimeV2.artifactCorrection.requireOpenSpecProposalCoverage, true);
+  await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), strict(policy('ledger')));
+  await assert.rejects(loadRuntimePlan({ cwd: root }), /requireOpenSpecProposalCoverage/u);
 });
 
 test('the live document harness policy selects the original requirements review', async t => {
@@ -165,6 +184,7 @@ async function documentFixture(t, mode, policyOptions = {}) {
   await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), policy(mode, policyOptions));
   await fs.writeFile(path.join(root, '.runtime-corrector/document-review.md'), 'Check the design against the original requirements.\n');
   await fs.writeFile(path.join(root, 'docs/requirements/constraints.md'), '# Constraints\nAll imports run offline on the device.\n');
+  if (policyOptions.incomingReview !== undefined) await fs.writeFile(path.join(root, 'docs/proposal.md'), '# Proposal\nKeep imports local.\n');
   const sessionId = `doc-${mode}`, sessionKey = `agent:main:doc-${mode}`, transcript = path.join(root, 'native.jsonl');
   await fs.writeFile(transcript, JSON.stringify({ type: 'session', version: 3, id: sessionId, cwd: root }) + '\n');
   let leaf = null;
@@ -243,19 +263,21 @@ async function documentFixture(t, mode, policyOptions = {}) {
     if (persistAfterPrompt) await append({ message: { role: 'user', content: prompt } });
     return ctx;
   };
-  const write = async (ctx, content) => {
-    const toolCallId = randomUUID(), args = { path: 'docs/design.md', content };
-    await append({ message: { role: 'assistant', content: [{ type: 'toolCall', id: toolCallId, name: 'write', arguments: args }] } });
-    const gate = await runtime.beforeTool({ toolName: 'write', toolCallId, params: args }, ctx);
+  const documentTool = async (ctx, toolName, args, content, details) => {
+    const toolCallId = randomUUID();
+    await append({ message: { role: 'assistant', content: [{ type: 'toolCall', id: toolCallId, name: toolName, arguments: args }] } });
+    const gate = await runtime.beforeTool({ toolName, toolCallId, params: args }, ctx);
     assert(!gate?.block, JSON.stringify(gate));
-    await fs.writeFile(path.join(root, 'docs/design.md'), content);
-    await append({ message: { role: 'toolResult', toolName: 'write', toolCallId, isError: false, content: [{ type: 'text', text: 'written' }] } });
+    if (content !== undefined) await fs.writeFile(path.join(root, 'docs/design.md'), content);
+    const blocks = [{ type: 'text', text: details.error ?? 'written' }];
     const before = calls.length;
-    const result = await runtime.toolResult({ toolName: 'write', toolCallId, args,
-      result: { content: [{ type: 'text', text: 'written' }], details: { status: 'completed' } } }, ctx);
+    const result = await runtime.toolResult({ toolName, toolCallId, args, result: { content: blocks, details } }, ctx);
+    await append({ message: { role: 'toolResult', toolName, toolCallId, isError: details.status === 'error', content: result?.result?.content ?? blocks } });
     const text = (result?.result?.content ?? []).filter(block => block.type === 'text').map(block => block.text).join('\n');
     return { feedback: text, calls: calls.slice(before) };
   };
+  const write = (ctx, content) => documentTool(ctx, 'write', { path: 'docs/design.md', content }, content, { status: 'completed' });
+  const edit = (ctx, edits, content, details = { status: 'completed' }) => documentTool(ctx, 'edit', { path: 'docs/design.md', edits }, content, details);
   const finish = async (ctx, text) => {
     await append({ message: { role: 'assistant', content: text } });
     await runtime.beforeFinalize({ sessionId, runId: ctx.runId, lastAssistantMessage: text }, ctx);
@@ -272,7 +294,7 @@ async function documentFixture(t, mode, policyOptions = {}) {
     else await fs.appendFile(transcript, JSON.stringify(record) + '\n');
     leaf = id;
   };
-  return { root, sessionId, ask, write, finish, compact, holdAdmission, calls,
+  return { root, sessionId, ask, write, edit, finish, compact, holdAdmission, calls,
     get promptResult() { return promptResult; } };
 }
 
@@ -291,6 +313,58 @@ test('original mode reviews a document write against the user messages without r
   const repaired = await f.write(ctx, '# Importer\nImports run offline on the device.\n');
   assert.deepEqual(repaired.calls.map(call => call.role), ['artifact-reviewer']);
   assert.doesNotMatch(repaired.feedback, /AGENT-OFFLINE-IMPORT/u);
+});
+
+test('original requirements cannot re-enable an explicitly disabled artifact review', async t => {
+  for (const { name, nodeReview, incomingReview, reviewed } of [
+    { name: 'disabled node and incoming edge', nodeReview: 'disabled', incomingReview: false, reviewed: false },
+    { name: 'omitted node setting', nodeReview: 'default', incomingReview: false, reviewed: true },
+    { name: 'disabled node with an independently enabled edge', nodeReview: 'disabled', incomingReview: true, reviewed: true },
+  ]) await t.test(name, async t => {
+    const f = await documentFixture(t, 'original', { nodeReview, incomingReview });
+    const prompt = 'Write docs/design.md. Keep imports offline.';
+    const ctx = await f.ask('declared-policy-run', prompt);
+    const result = await f.write(ctx, '# Importer\nUpload imports to the cloud.\n');
+    assert.deepEqual(result.calls.map(call => call.role), reviewed ? ['artifact-reviewer'] : []);
+    const archived = await recordUserMessages({ projectRoot: f.root, sessionId: f.sessionId });
+    assert.deepEqual(archived.map(message => message.text), [prompt]);
+    if (reviewed) assert.deepEqual(result.calls[0].messages.map(message => message.full), [prompt]);
+    else assert.doesNotMatch(result.feedback, /AGENT-OFFLINE-IMPORT/u);
+  });
+});
+
+test('pinned native Edit does not re-review a document after an atomic old-text mismatch', async t => {
+  const f = await documentFixture(t, 'original');
+  const prompt = 'Write docs/design.md for the importer. Keep imports offline.';
+  const ctx = await f.ask('edit-result-run', prompt);
+  const drifted = '# Importer\nUpload imports to the cloud.\n';
+  const first = await f.write(ctx, drifted);
+  assert.match(first.feedback, /AGENT-OFFLINE-IMPORT/u);
+
+  const file = path.join(f.root, 'docs/design.md');
+  const missingHunk = { oldText: 'Already removed.', newText: 'Import offline.' };
+  const rename = { oldText: '# Importer', newText: '# CSV Importer' };
+  for (const [edits, mismatch, hint] of [
+    [[missingHunk], 'the exact text', ''],
+    [[rename, missingHunk], 'edits[1]', '\n\nNearby text differs.'],
+  ]) {
+    const result = await f.edit(ctx, edits, undefined, { status: 'error', tool: 'edit',
+      error: `Could not find ${mismatch} in ${file}. The old text must match exactly including all whitespace and newlines.${hint}` });
+    assert.deepEqual(result.calls, []);
+    assert.equal(await fs.readFile(file, 'utf8'), drifted);
+  }
+
+  const partial = drifted.replace(rename.oldText, rename.newText);
+  const correction = { oldText: 'Upload imports to the cloud.', newText: 'Imports run offline.' };
+  const afterWrite = await f.edit(ctx, [rename, correction], partial,
+    { status: 'error', tool: 'edit', error: 'Operation aborted' });
+  assert.deepEqual(afterWrite.calls.map(call => call.role), ['artifact-reviewer']);
+  assert.match(afterWrite.feedback, /AGENT-OFFLINE-IMPORT/u);
+
+  const next = await f.edit(ctx, [correction], partial.replace(correction.oldText, correction.newText));
+  assert.deepEqual(next.calls.map(call => call.role), ['artifact-reviewer']);
+  assert.deepEqual(next.calls[0].messages.map(message => message.full), [prompt]);
+  assert.doesNotMatch(next.feedback, /AGENT-OFFLINE-IMPORT/u);
 });
 
 for (const [truncate, writeFirst] of [[false, true], [true, true], [true, false]]) test(`original mode still sees the original user message after ${truncate ? 'a truncating' : 'an append-only'} host compaction${writeFirst ? '' : ' before any document write'}`, async t => {

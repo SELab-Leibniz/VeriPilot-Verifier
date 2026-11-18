@@ -5,8 +5,80 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
-import { scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
+import { findSiblingLiteralDispatches, scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
+
+test('finds static dispatches in sibling branches of the same ArkTS callback', () => {
+  const source = [
+    'struct Entry {',
+    '  build() {',
+    "    Button('Resume').onClick(() => {",
+    "      router.pushUrl({ url: 'pages/GamePage', params: previous });",
+    '    });',
+    "    Button('Start').onClick(() => {",
+    '      if (seedInput) {',
+    '        router.pushUrl({',
+    "          url: 'pages/GamePage',",
+    '          params: { seedId: seedInput },',
+    '        });',
+    '      } else if (importedBoard) {',
+    '        router.pushUrl({',
+    "          url: 'pages/GamePage',",
+    '          params: { importedPuzzle: importedBoard },',
+    '        });',
+    '      } else {',
+    '        router.pushUrl({',
+    '          url: "pages/GamePage",',
+    '          params: { variantType: selected },',
+    '        });',
+    '      }',
+    '    });',
+    '  }',
+    '}',
+  ].join('\n');
+  const siblings = [
+    { start: 8, end: 11, callee: 'router.pushUrl', destination: 'pages/GamePage' },
+    { start: 13, end: 16, callee: 'router.pushUrl', destination: 'pages/GamePage' },
+  ];
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 18, end: 21 }), siblings);
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 19, end: 19 }), siblings);
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 4, end: 4 }), []);
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 8, end: 21 }), []);
+});
+
+test('literal dispatch discovery excludes lookalikes, ambiguous options and calls in other scopes', () => {
+  const source = [
+    'export function start(mode, data) {',
+    '  if (data) {',
+    "    // dispatch('generate', mode);",
+    '    const lookalike = "dispatch(\'generate\', mode)";',
+    "    handle(() => dispatch('generate', 'later'));",
+    "    handle(() => { dispatch('generate', 'later'); });",
+    "    handle({ run() { dispatch('generate', 'later'); } });",
+    "    log('generate', mode);",
+    "    dispatch({ route: 'generate', note: 'extra' }, mode);",
+    "    dispatch({ route: 'generate', ...options }, mode);",
+    "    dispatch({ differentProperty: 'generate' }, mode);",
+    "    dispatch('generate' + suffix, data);",
+    "    dispatch('generate', data);",
+    '  } else {',
+    "    dispatch('generate', mode);",
+    '  }',
+    '}',
+    'function resume(previous) {',
+    "  dispatch('generate', previous);",
+    '}',
+  ].join('\n');
+  assert.deepEqual(findSiblingLiteralDispatches(source, { start: 15, end: 15 }), [
+    { start: 13, end: 13, callee: 'dispatch', destination: 'generate' },
+  ]);
+  for (const line of [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19])
+    assert.deepEqual(findSiblingLiteralDispatches(source, { start: line, end: line }), []);
+  const many = ["function start(value) {", "  dispatch('generate', value);",
+    ...Array.from({ length: 5 }, (_, branch) => `  if (value === ${branch}) { dispatch('generate', value); }`),
+    '}'].join('\n');
+  assert.deepEqual(findSiblingLiteralDispatches(many, { start: 2, end: 2 }), [], 'an overfull group is not a partial witness');
+});
 
 test('test-helper argument hints preserve reference identity and exclude control parentheses', () => {
   const source = [

@@ -53,6 +53,16 @@ export function nativeStopSettlement(records = [], verification = null) {
     carrier: carrier ? nativeStopSummary(carrier) : null, records: records.map(nativeStopSummary) };
 }
 
+// A direct Proposal Stop can settle as document-only without a post-run entry.
+export function directProposalStopSettled(records, { sessionId, sessionKey, runId, verification }) {
+  const matches = records.filter(record => record.sessionId === sessionId && record.sessionKey === sessionKey && record.runId === runId);
+  if (matches.length !== 1) return false;
+  const [record] = matches;
+  return record.waitMode === 'assessment' && record.status === 'SETTLED' && record.reviewStatus === 'SKIPPED'
+    && record.reasonCode === 'STOP_DOCUMENT_ONLY_CHANGES' && record.evaluationId === verification?.evaluationId
+    && typeof record.evaluationId === 'string' && record.evaluationId.length > 0 && nativeStopSettlement(records, verification).settled;
+}
+
 export async function waitNativeStopSettled({ projectRoot, sessionKey, sessionId, readVerification, deadlineAt, pollMs = 500, graceMs, beforePoll, abandon }) {
   const startedAt = Date.now(), grace = nativeStopGrace({ graceMs });
   let state, reason = null;

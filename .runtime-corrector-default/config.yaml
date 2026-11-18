@@ -16,9 +16,11 @@ sessionDefaults:
 # Locale for the highest-visibility developer-facing messages: zh (default) or en.
 locale: zh
 
-# OpenSpec's hidden workflow emits these three stages in dependency order.
+# OpenSpec change artifacts. Correlation stays on the change name, including
+# when a change contains several capability specs.
 enabledStages:
   - proposal
+  - specs
   - design
   - tasks
 
@@ -32,6 +34,19 @@ artifacts:
     editable: true
     pathTemplates:
       - "openspec/changes/{changeName}/proposal.md"
+    rules:
+      enabled: false
+    review:
+      enabled: true
+      criteria: example.reviewer.md
+
+  - name: specs
+    stage: specs
+    type: openspec-delta-spec
+    format: markdown
+    editable: true
+    pathTemplates:
+      - "openspec/changes/{changeName}/specs/**/{capability}/spec.md"
     rules:
       enabled: false
     review:
@@ -64,20 +79,29 @@ artifacts:
       enabled: true
       criteria: example.reviewer.md
 
-# Direct edges describe every upstream artifact read by a target. Runtime
-# Corrector does not expand transitive dependencies, so tasks reads both
-# proposal and design explicitly.
+# Edges declare direct review inputs. Tasks reads the proposal for scope,
+# the delta specs for required behavior, and the design for implementation.
 workflow:
   correlation:
     keys:
       - changeName
   edges:
     - from: proposal
+      to: specs
+      review:
+        enabled: true
+        criteria: example.reviewer.md
+    - from: proposal
       to: design
       review:
         enabled: true
         criteria: example.reviewer.md
     - from: proposal
+      to: tasks
+      review:
+        enabled: true
+        criteria: example.reviewer.md
+    - from: specs
       to: tasks
       review:
         enabled: true
@@ -131,7 +155,6 @@ deviationLoop:
 
 implementationCorrection:
   enabled: false
-  platform: harmonyos
   deviceBudgetMs: 1800000
 
 evidenceRoots: [evidence]

@@ -164,6 +164,79 @@ test('a frozen replay ledger check replaces the cancelled native record of the s
   assert.equal(finalStopOf(evidence.stopReviews, turns).runId, 'run-final:check-1');
 });
 
+const publicAcceptance = {
+  sha256: 'a'.repeat(64), status: 'FAIL', workspaceDigest: 'b'.repeat(64), snapshotSha256: 'c'.repeat(64),
+  checks: [{ id: 'entry::Acceptance::passes', status: 'PASS' }, { id: 'entry::Acceptance::fails', status: 'FAIL' }],
+};
+const nativePath = `openclaw/native-stop-reviews/${sessionId}/b.json`;
+const evaluationPath = `tasks/${taskId}/evaluations/stop-current.json`;
+
+function publicAcceptanceRecords({ occurrenceId = 'run-final:check-1', check = publicAcceptance } = {}) {
+  const native = { ...nativeStop('run-final', 20_000, 'DEVIATION'), occurrenceId, evaluationId: 'stop-current' };
+  const assessed = evaluation(occurrenceId, 20_000, { status: 'DEVIATION', classification: 'TASK_COMPLETE' });
+  return { [nativePath]: native, [evaluationPath]: {
+    ...assessed, evaluationId: native.evaluationId, outcome: { ...assessed.outcome, evaluationId: native.evaluationId, taskId },
+    review: { ...assessed.review, requirementCheck: check },
+  } };
+}
+
+test('public acceptance is opt-in and projects only the exact settled native check occurrence', async t => {
+  const check = { ...publicAcceptance, rawOutput: 'private', checks: publicAcceptance.checks.map(row => ({ ...row, extra: 'private' })) };
+  const projectRoot = await workspace(t, publicAcceptanceRecords({ check }));
+  const options = { projectRoot, sessionId, turns };
+  const legacy = await collectReleaseEvidence(options);
+  assert.equal(Object.hasOwn(finalStopOf(legacy.stopReviews, turns), 'publicAcceptanceCheck'), false);
+  const evidence = await collectReleaseEvidence({ ...options, includePublicAcceptance: true });
+  assert.deepEqual(evidence.stopReviews.map(row => row.runId), ['run-final:check-1']);
+  assert.deepEqual(finalStopOf(evidence.stopReviews, turns).publicAcceptanceCheck, publicAcceptance);
+});
+
+test('a settled public attempt with incomplete runtime evidence remains incomplete', async t => {
+  const check = { sha256: publicAcceptance.sha256, checks: [], status: 'INCOMPLETE' };
+  const records = publicAcceptanceRecords({ occurrenceId: 'run-final', check: { ...check, reason: 'REQUIREMENT_PROBE_RUNTIME_INCOMPLETE' } });
+  records[nativePath].reviewStatus = 'UNVERIFIED';
+  records[evaluationPath].outcome.status = 'UNVERIFIED';
+  const projectRoot = await workspace(t, records);
+  const evidence = await collectReleaseEvidence({ projectRoot, sessionId, turns, includePublicAcceptance: true });
+  assert.deepEqual(finalStopOf(evidence.stopReviews, turns).publicAcceptanceCheck, check);
+});
+
+test('public acceptance omits stale, missing, or ambiguous settlement evidence', async t => {
+  const cases = {
+    'different occurrence': records => { records[evaluationPath].core.stop.id = 'run-final:check-2'; },
+    'different session': records => { records[nativePath].sessionId = 'unrelated'; },
+    'unsettled native job': records => { records[nativePath].status = 'RUNNING'; },
+    'missing evaluation reference': records => { records[nativePath].evaluationId = 'stop-missing'; },
+    'inconsistent status': records => { records[evaluationPath].outcome.status = 'NO_DEVIATION_FOUND'; },
+    'ambiguous native occurrence': records => { records[nativePath.replace('b.json', 'c.json')] = records[nativePath]; },
+    'ambiguous evaluation': records => { records[evaluationPath.replace('current.json', 'copy.json')] = records[evaluationPath]; },
+  };
+  for (const [name, mutate] of Object.entries(cases)) await t.test(name, async subtest => {
+    const records = publicAcceptanceRecords();
+    mutate(records);
+    const projectRoot = await workspace(subtest, records);
+    const evidence = await collectReleaseEvidence({ projectRoot, sessionId, turns, includePublicAcceptance: true });
+    assert.ok(evidence.stopReviews.length > 0);
+    assert.ok(evidence.stopReviews.every(row => !Object.hasOwn(row, 'publicAcceptanceCheck')));
+  });
+});
+
+test('public acceptance omits malformed check statuses, IDs, or digests', async t => {
+  const cases = {
+    'contradictory aggregate': { status: 'PASS' },
+    'ambiguous check ID': { checks: [{ id: 'same', status: 'PASS' }, { id: 'same', status: 'FAIL' }] },
+    'invalid check ID': { checks: [{ id: 'embedded\nnewline', status: 'FAIL' }] },
+    'invalid case status': { checks: [{ id: 'case', status: 'UNAVAILABLE' }] },
+    'missing workspace digest': { workspaceDigest: null },
+    'invalid snapshot digest': { snapshotSha256: 'unverified' },
+  };
+  for (const [name, extra] of Object.entries(cases)) await t.test(name, async subtest => {
+    const projectRoot = await workspace(subtest, publicAcceptanceRecords({ check: { ...publicAcceptance, ...extra } }));
+    const evidence = await collectReleaseEvidence({ projectRoot, sessionId, turns, includePublicAcceptance: true });
+    assert.equal(Object.hasOwn(finalStopOf(evidence.stopReviews, turns), 'publicAcceptanceCheck'), false);
+  });
+});
+
 test('token split, hidden score and code-change classification', () => {
   const documentReviews = [{ requests: 2, tokens: 100 }, { requests: 1, tokens: 50 }], stopReviews = [{ requests: 3, tokens: 400 }];
   assert.deepEqual(tokenSplit({ businessUsage: { observedCalls: 7, tokens: 900 }, documentReviews, stopReviews }),

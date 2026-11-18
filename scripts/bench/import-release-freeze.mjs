@@ -5,7 +5,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
-import { digest, loadArktsTask } from './arkts-dataset.mjs';
+import { arktsAgentInput, digest, loadArktsTask, validateArktsAgentInput } from './arkts-dataset.mjs';
+import { arktsBusinessDiffScope } from './business-checkpoint.mjs';
 import { businessCompleted } from './business-completion.mjs';
 import { validateBusinessMutationPaths } from './business-mutations.mjs';
 
@@ -14,6 +15,40 @@ const git = (root, ...args) => execFileSync('git', ['-c', 'core.longpaths=true',
   { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 16 * 1024 * 1024 });
 const write = (file, data) => fs.writeFile(file, data, { flag: 'wx' });
 const lf = text => text.replaceAll('\r\n', '\n');
+
+async function verifyPairedFreeze({ sourceRun, plan, manifest, result, frozen, task, datasetDigest, canonicalPatch, candidate }) {
+  assert.equal(manifest.changeName, 'benchmark-change', 'Paired freeze has an unexpected OpenSpec change name.');
+  const planBytes = await fs.readFile(plan);
+  const { kind, tasks } = JSON.parse(planBytes);
+  assert(['arkts-openclaw-openspec-pairs-v1', 'arkts-openclaw-openspec-instrument-pilot-v1', 'arkts-openclaw-openspec-subset-v1'].includes(kind)
+    && Array.isArray(tasks), 'Paired freeze requires its original paired campaign plan.');
+  const pins = tasks.filter(pin => pin?.id === task.instance_id);
+  const [publicBytes, plannedPublic, workspacePatch] = await Promise.all([
+    fs.readFile(path.join(sourceRun, 'public-input.json')),
+    fs.readFile(path.join(path.dirname(plan), 'public', `${task.instance_id}.json`)),
+    fs.readFile(path.join(sourceRun, 'freeze', 'workspace.patch')),
+  ]);
+  const publicInputSha256 = digest(publicBytes);
+  assert(pins.length === 1 && pins[0].baseCommit === task.base_commit && pins[0].datasetSha256 === datasetDigest
+    && pins[0].publicSha256 === publicInputSha256 && publicBytes.equals(plannedPublic)
+    && manifest.publicInputSha256 === publicInputSha256 && result.publicInputSha256 === publicInputSha256,
+  'Paired freeze public input differs from its task and campaign plan pins.');
+  assert.deepEqual(validateArktsAgentInput(JSON.parse(publicBytes), task.instance_id), arktsAgentInput(task));
+  assert.equal(digest(workspacePatch), frozen.workspacePatchSha256, 'Paired freeze workspace.patch hash differs.');
+  assert(workspacePatch.equals(canonicalPatch), 'Paired freeze workspace.patch differs from the full Git diff.');
+  const project = manifest.projectRoot;
+  assert(candidate.equals(git(project, 'diff', '--binary', frozen.preparedHead, frozen.commit, '--', ...arktsBusinessDiffScope)),
+    'Paired freeze candidate.patch differs from the scoped business Git diff.');
+  git(project, 'merge-base', '--is-ancestor', task.base_commit, frozen.preparedHead);
+  git(project, 'merge-base', '--is-ancestor', frozen.preparedHead, frozen.commit);
+  const paths = git(project, 'diff', '--name-only', '-z', frozen.preparedHead, frozen.commit).toString().split('\0').filter(Boolean);
+  const captured = new Set(validateBusinessMutationPaths(frozen.mutationPaths, project));
+  const workflowArtifact = /^openspec\/changes\/benchmark-change\/(?:\.openspec\.yaml|(?:proposal|design|tasks)\.md|specs\/[^/]+\/spec\.md)$/u;
+  assert(paths.length && paths.every(file => captured.has(file)
+    && (!/^(?:openspec|\.opencode)(?:\/|$)/u.test(file) || workflowArtifact.test(file))),
+  'Paired freeze includes an untracked mutation or unexpected workflow path.');
+  return { planSha256: digest(planBytes), publicInputSha256, businessPatchSha256: digest(candidate), businessPatch: candidate };
+}
 
 // Reverse only attributable successful native edits, and require an independent
 // exact source snapshot for every restored file before making a replay commit.
@@ -66,6 +101,9 @@ export async function importReleaseFreeze({ sourceRun, output, dataset, release,
     json(path.join(sourceRun, 'manifest.json')), json(path.join(sourceRun, 'result.json')),
     json(path.join(sourceRun, 'freeze', 'freeze.json')), json(release),
   ]);
+  const paired = Object.hasOwn(frozen, 'workspacePatchSha256') || Object.hasOwn(manifest, 'publicInputSha256')
+    || Object.hasOwn(result, 'publicInputSha256');
+  assert(!paired || !beforeRepairTask, 'Paired freezes do not support before-repair restoration.');
   const { task, datasetDigest } = await loadArktsTask(dataset, manifest.instance.id);
   assert.deepEqual(result.instance, manifest.instance);
   assert.equal(datasetDigest, manifest.instance.datasetDigest);
@@ -89,7 +127,8 @@ export async function importReleaseFreeze({ sourceRun, output, dataset, release,
   assert.equal(digest(patch), frozen.patchSha256);
   assert.equal(digest(git(project, 'cat-file', 'commit', frozen.commit)), frozen.commitSha256);
   const canonicalPatch = git(project, 'diff', '--binary', frozen.preparedHead, frozen.commit);
-  assert(canonicalPatch.equals(patch) || git(project, '-c', 'core.quotepath=false', 'diff', '--binary', frozen.preparedHead, frozen.commit).equals(patch));
+  const pairedEvidence = paired ? await verifyPairedFreeze({ sourceRun, plan, manifest, result, frozen, task, datasetDigest, canonicalPatch, candidate: patch }) : null;
+  if (!paired) assert(canonicalPatch.equals(patch) || git(project, '-c', 'core.quotepath=false', 'diff', '--binary', frozen.preparedHead, frozen.commit).equals(patch));
   patch = canonicalPatch;
   const lines = transcript.toString('utf8').split(/\r?\n/u).filter(Boolean);
   const records = lines.map(JSON.parse);
@@ -121,15 +160,18 @@ export async function importReleaseFreeze({ sourceRun, output, dataset, release,
   assert(mutationPaths.length && mutationPaths.every(file => allowed.has(file)), 'Imported freeze mutation scope differs.');
   const imported = { ...frozen, commit, commitSha256: digest(git(cache, 'cat-file', 'commit', commit)), mutationPaths,
     patchSha256: digest(patch), sessionSha256: digest(transcript), instanceId: task.instance_id, datasetDigest,
-    artifactSha256: sourceRelease.packageSha256, planSha256: digest(await fs.readFile(plan)), sourceRun: path.resolve(sourceRun),
+    artifactSha256: sourceRelease.packageSha256, planSha256: pairedEvidence?.planSha256 ?? digest(await fs.readFile(plan)), sourceRun: path.resolve(sourceRun),
     sessionId: result.sessionId, sessionKey: result.sessionKey, originalRunId, terminal,
+    ...(pairedEvidence ? { publicInputSha256: pairedEvidence.publicInputSha256, businessPatchSha256: pairedEvidence.businessPatchSha256 } : {}),
     ...(restoration ? { restoration } : {}) };
   await fs.mkdir(output);
   await write(path.join(output, 'candidate.patch'), patch);
+  if (pairedEvidence) await write(path.join(output, 'business-candidate.patch'), pairedEvidence.businessPatch);
   await write(path.join(output, 'session.jsonl'), transcript);
   const bytes = JSON.stringify(imported, null, 2) + '\n';
   await write(path.join(output, 'freeze.json'), bytes);
-  return { sha256: digest(bytes), commit, mutationPaths };
+  return { sha256: digest(bytes), commit, mutationPaths,
+    ...(pairedEvidence ? { patchSha256: imported.patchSha256, businessPatchSha256: pairedEvidence.businessPatchSha256 } : {}) };
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
