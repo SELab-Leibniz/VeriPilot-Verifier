@@ -277,6 +277,7 @@
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">One task through the whole workflow</h2>
         <p class="callout">The latest macOS Sudoku trial completed the ON workflow: full-plan review, authenticated approval, implementation, Stop review, candidate freeze and independent grading. It passed 8/10 target tests and 288/288 regressions. Stop kept one requirement unverified because of unsupported parser syntax; it did not declare the implementation fully reviewed. No native repair started.</p>
+        <p>The next ON-only walkthrough is held before model launch. Its package rebuild and phone identity preflight passed, but an independent audit found another parser gap: an executable call inside a template expression could disappear from a supposedly complete branch group. That uncertainty must be preserved before this package is used for another trial. No model call has started, and an ON-only run cannot add a formal matched pair.</p>
         <p class="intro">Flash coded both arms, with Pro reviewing ON and a 120-minute business limit per arm. OFF used 70 Flash requests and took 9.2 minutes. ON used 56 Flash and 79 Pro requests and took 37.7 minutes; 57 Pro requests were document reviews and 22 were Stop reviews. Token records are incomplete, so no total token figure is reported.</p>
         <div class="table" role="region" aria-label="Latest Sudoku walkthrough" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Evidence and limits</th></tr></thead>
@@ -294,6 +295,7 @@
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">沿一个任务走完整个流程</h2>
         <p class="callout">最新的 macOS Sudoku 试验中，ON 已走完完整方案审查、经过认证的审批、实现、Stop 审查、候选冻结及独立评分。目标测试通过 8/10，回归测试通过 288/288。Stop 因解析器不支持的语法而将一项需求保留为待验证，没有把实现标为已全面核查。没有启动原生修复。</p>
+        <p>下一轮 ON 单组全过程试验暂缓发起模型调用。插件重复构建和手机身份预检均已通过，但独立审计又发现一处解析缺口：模板表达式中实际执行的调用可能从被标为完整的分支组中消失。再次试验前，必须让这类不确定性保留下来。目前尚未发起本轮模型调用；ON 单组试验也不会增加正式匹配配对。</p>
         <p class="intro">两组均由 Flash 编码，ON 由 Pro 审查，每组业务时限为 120 分钟。OFF 使用 70 次 Flash 请求，耗时 9.2 分钟。ON 使用 56 次 Flash 加 79 次 Pro 请求，耗时 37.7 分钟；其中 57 次 Pro 用于文档审查，22 次用于 Stop 审查。令牌记录不完整，因此不报告总令牌数。</p>
         <div class="table" role="region" aria-label="最新 Sudoku 运行全过程" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">证据与局限</th></tr></thead>
@@ -314,7 +316,7 @@
         <h2 id="results-title">What the 13-task benchmark has shown</h2>
         <p class="intro">SWE-ArkTS-Bench evaluates the plugin on 13 coding tasks. The plan repeats each task three times: 39 OFF/ON pairs and 78 runs. Each pair contains one OFF run and one ON run on the same task. The repetitions are intended to show variation between model runs. OFF disables runtime correction; ON enables it. Both use the same coding model, task input, OpenSpec workflow, public checks and time budget.</p>
         <p>Hidden tests and reference solutions stay in the private grading environment. The evaluator grades frozen patches against a calibrated runtime. A formal quality comparison requires two eligible, verified grades from the same setup. The zero below counts qualifying comparisons, not failed tasks. Workflow failures, missing grades and environment interruptions remain in the record.</p>
-        <p>The formal filter depends on workflow completion, an outcome the corrector may change. A planned secondary view would grade every valid frozen candidate and report workflow status and missing runs alongside quality. It is not implemented yet; the existing formal definition and 39-pair plan remain unchanged.</p>
+        <p>The formal filter depends on workflow completion, an outcome the corrector may change. An optional candidate-evidence reader now keeps every listed run visible, including unstarted, missing and partial results, alongside workflow status. It verified the earlier pair’s retained grades while preserving their different eligibility. It reads existing grades; automatically grading every valid frozen candidate is still planned. The formal definition and 39-pair plan remain unchanged.</p>
         <dl id="status" class="metrics">
           <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">13 tasks × 3 paired repetitions</dd></div>
           <div><dt>Phone tasks passed preflight</dt><dd>3 / 3</dd><dd class="caption">Public and independent native controls</dd></div>
@@ -326,7 +328,7 @@
         <h2 id="results-title-zh">13 个任务的基准测试进展</h2>
         <p class="intro">SWE-ArkTS-Bench 用 13 个编码任务评估插件。计划每项任务重复三次，共 39 个 OFF/ON 配对、78 次运行。每对包含同一任务的一次 OFF 和一次 ON，重复运行用于观察模型结果的波动。OFF 关闭运行时纠偏，ON 启用纠偏。两组使用相同的编码模型、任务输入、OpenSpec 流程、公开检查和时间预算。</p>
         <p>隐藏测试和参考解保留在私有评分环境中。评估器使用已校准的运行时对冻结补丁评分。正式质量比较要求同一环境中的两组均符合条件，并取得经核验的评分。下方的零表示已满足条件的比较数量，不是失败任务数。流程失败、评分缺失和环境中断继续保留在记录中。</p>
-        <p>正式比较以工作流完成为前提，而纠偏器本身可能改变这一结果。计划另建候选质量视图，对每个有效冻结补丁评分，同时报告工作流状态和缺失运行。该视图尚未实现，现有正式定义和 39 配对计划保持不变。</p>
+        <p>正式比较以工作流完成为前提，而纠偏器本身可能改变这一结果。现已加入可选的候选证据读取器，把清单中的每次运行及其工作流状态一并保留，包括未启动、缺失和结果不完整的情况。它已核验先前一对运行保存的评分，同时保留两组原有的不同资格。读取器使用已有评分；自动评估每个有效冻结补丁仍属后续工作。现有正式定义和 39 配对计划保持不变。</p>
         <dl id="status-zh" class="metrics">
           <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">13 个任务 × 每项 3 对重复运行</dd></div>
           <div><dt>通过预检的手机任务</dt><dd>3 / 3</dd><dd class="caption">公开检查及独立原生对照</dd></div>
