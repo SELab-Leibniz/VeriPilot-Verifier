@@ -65,6 +65,25 @@ test('resolved direct callers are observed even for flat module names', async t 
   assert.equal(receipt.status, 'READY', receipt.reason);
   assert(receipt.candidates.some(row => row.path === 'entry.mjs' && row.kinds.includes('RESOLVED_REFERENCE')));
 });
+test('origin discovery distinguishes a resolved empty caller set from an unresolved entry range', async t => {
+  const f = await fixture(t), file = 'entry.mjs';
+  const body = 'export function first(value) {\n  return value;\n}\nvoid 0;\nexport function second(value) {\n  return value + 1;\n}\n';
+  await fs.writeFile(path.join(f.root, file), body);
+  const graph = await buildSemanticGraph(f.root, { snapshotPaths: [file] });
+  const origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: 'entry-ranges' });
+  for (const [start, end, status, reason] of [
+    [1, 3, 'READY', 'OBSERVED_CANDIDATES_RECORDED'],
+    [4, 4, 'UNKNOWN', 'ENTRY_SYMBOL_UNRESOLVED'],
+    [1, 7, 'UNKNOWN', 'ENTRY_SYMBOL_UNRESOLVED'],
+  ]) {
+    const entry = { path: path.join(f.root, file), start, end, sha256: sha256(body) };
+    const receipt = await origin.discover({ objectId: 'entry-range', entry });
+    assert.equal(receipt.status, status, `${start}-${end}: ${receipt.reason}`);
+    assert.equal(receipt.reason, reason);
+    assert.deepEqual(receipt.candidates, []);
+    assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'entry-range', entry })).status, status);
+  }
+});
 test('listed deletions remain usable but recreating an absent source invalidates the index', async t => {
   const f = await fixture(t);
   const graph = await buildSemanticGraph(f.root, { snapshotPaths: [...Object.keys(files), 'removed.mjs'] });

@@ -1986,6 +1986,161 @@ test('production Stop coverage accounts for observed sibling dispatches in the s
   });
 });
 
+test('strict production origins leave unresolved entry ranges unverified and accept resolved entries without callers', async t => {
+  const requirement = 'The public transform must return the input plus one.';
+  for (const mode of ['resolved', 'crossing', 'legacy-crossing']) await t.test(mode, async t => {
+    const strict = mode !== 'legacy-crossing';
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: true,
+      requireProductionOriginCoverage: strict, userText: requirement, sourceText:
+        'export function transform(input) {\n  return input + 1;\n}\n\nexport function inspect(input) {\n  return input;\n}\n' });
+    let objectId;
+    const { stop, handle } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirement, citeId: original, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+      objectId = page.items.find(item => item.description === requirement).objectId;
+      const source = await tools.read(f.source);
+      const flow = { entry: { citeId: source, start: 1, end: mode === 'resolved' ? 1 : 7 },
+        consumer: { citeId: source, start: 2, end: 2 } };
+      if (strict) {
+        const receipt = await submit('review_production_origin', { objectId, entry: flow.entry });
+        assert.equal(receipt.status, mode === 'resolved' ? 'READY' : 'UNKNOWN');
+        if (mode === 'crossing') assert.equal(receipt.reason, 'ENTRY_SYMBOL_UNRESOLVED');
+        assert.deepEqual(receipt.candidates, []);
+        flow.originReceiptId = receipt.receiptId;
+        flow.upstream = [];
+      }
+      const finish = () => submit('finish_stop_review', { ...frameFinishArgs(), productionCoverage: [{ objectId,
+        reason: 'The public transform computes the requested result.', citeIds: [source], flow }] });
+      const first = await finish();
+      if (mode === 'crossing') {
+        assert.equal(first.complete, false);
+        assert.equal(first.pendingProductionCoverage[0].originIssue, 'ENTRY_SYMBOL_UNRESOLVED');
+        assert.equal((await finish()).complete, true);
+      } else assert.equal(first.complete, true);
+    });
+    const coverage = handle.result.reviewCoverage.items.find(row => row.id === objectId);
+    assert.equal(stop.status, mode === 'crossing' ? 'UNVERIFIED' : 'NO_DEVIATION_FOUND');
+    assert.equal(coverage.disposition, mode === 'crossing' ? 'UNVERIFIED' : 'SOURCE_REVIEWED');
+    if (mode === 'resolved') assert.equal(coverage.originCoverage.candidateCount, 0);
+    assert.equal(stop.admission, null);
+  });
+});
+
+test('strict production origins preserve ordinary processing without file-selector dispatch evidence', async t => {
+  const requirement = 'Expose the documented transformation through the public transform function.';
+  const cases = [
+    ['number', 'export function transform(input) { return Number(input) + 1; }', 1],
+    ['json', 'export function transform(input) { return JSON.stringify(input); }', 1],
+    ['nested-calls', 'export function transform(input) { return Math.max(Number(input), 0); }', 1],
+    ['number-peers', 'export function transform(input, flag) { if (flag) { return Number("0"); } return Number(input); }', 1],
+    ['json-peers', 'export function transform(input, flag) { if (flag) { return JSON.stringify("fallback"); } return JSON.stringify(input); }', 1],
+    ['custom-peers', 'function normalize(value) { return value; }\nexport function transform(input, flag) { if (flag) { return normalize("0"); } return normalize(input); }', 2],
+  ];
+  for (const [mode, sourceText, line] of cases) await t.test(mode, async t => {
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: true,
+      requireProductionOriginCoverage: true, userText: requirement, sourceText: 'export const marker = 0;\n' });
+    const sourceFile = path.join(f.projectRoot, 'processing', 'Result.mjs');
+    await fs.mkdir(path.dirname(sourceFile), { recursive: true });
+    await fs.writeFile(sourceFile, sourceText + '\n');
+    let objectId;
+    const { stop, handle } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirement, citeId: original, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+      objectId = page.items.find(item => item.description === requirement).objectId;
+      const source = await tools.read(sourceFile), span = { citeId: source, start: line, end: line };
+      const receipt = await submit('review_production_origin', { objectId, entry: span });
+      assert.equal(receipt.status, 'READY', receipt.reason);
+      assert.deepEqual(receipt.candidates, []);
+      assert.equal((await submit('finish_stop_review', { ...frameFinishArgs(), productionCoverage: [{ objectId,
+        reason: 'The public function performs the documented transformation.', citeIds: [source],
+        flow: { entry: span, consumer: span, originReceiptId: receipt.receiptId, upstream: [] } }] })).complete, true);
+    });
+    assert.equal(stop.status, 'NO_DEVIATION_FOUND');
+    assert.equal(handle.result.reviewCoverage.items.find(row => row.id === objectId).disposition, 'SOURCE_REVIEWED');
+    assert.equal(stop.admission, null);
+  });
+});
+
+test('strict production origins reject incomplete primary dispatch discovery', async t => {
+  const requirement = 'Dispatch the selected option to the report consumer.';
+  for (const mode of ['dynamic-sibling', 'ambiguous-anchor', 'unsupported-anchor', 'healthy', 'healthy-header', 'legacy-dynamic']) await t.test(mode, async t => {
+    const strict = mode !== 'legacy-dynamic';
+    const selected = 'emit({ route: "reports/Result", option });';
+    const anchor = mode === 'unsupported-anchor' ? 'emit(packet);'
+      : mode === 'ambiguous-anchor' ? `${selected} ${selected}` : selected;
+    const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: true,
+      requireProductionOriginCoverage: strict, userText: requirement, sourceText: mode === 'healthy-header'
+        ? 'export function dispatch(emit, option) { emit({ route: "reports/Result", option }); console.info("ready"); }\n' : [
+        'export function dispatch(flag, emit, option, packet) {',
+        '  if (flag) {',
+        `    ${anchor}`,
+        '  } else {',
+        `    ${['healthy', 'unsupported-anchor'].includes(mode) ? selected : 'emit(packet);'}`,
+        '  }',
+        '}',
+      ].join('\n') + '\n' });
+    const consumerFile = path.join(f.projectRoot, 'reports', 'Result.mjs');
+    await fs.mkdir(path.dirname(consumerFile), { recursive: true });
+    await fs.writeFile(consumerFile, 'export function consume(packet) {\n  return packet.option;\n}\n');
+    let objectId;
+    const { stop, handle } = await f.run(async tools => {
+      const submit = (name, args) => submitFrameTool(tools.call, name, args);
+      let original;
+      for (const file of tools.task.basisFiles) {
+        const id = await tools.read(file);
+        if (path.basename(file).startsWith('user-original-')) original = id;
+      }
+      const page = await submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text: requirement, citeId: original, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+      objectId = page.items.find(item => item.description === requirement).objectId;
+      const source = await tools.read(f.source), span = line => ({ citeId: source, start: line, end: line });
+      const consumer = await tools.read(consumerFile), effect = { citeId: consumer, start: 2, end: 2 };
+      const entry = span(mode === 'healthy-header' ? 1 : 3);
+      const flow = { entry, handoff: entry, consumer: effect };
+      if (mode === 'healthy') flow.branches = [{ disposition: 'VERIFIED', reason: 'The alternate dispatch passes the same option.',
+        entry: span(5), handoff: span(5), consumer: effect }];
+      if (strict) {
+        const receipt = await submit('review_production_origin', { objectId, entry: flow.entry });
+        assert.equal(receipt.status, 'READY', receipt.reason);
+        assert.deepEqual(receipt.candidates, []);
+        flow.originReceiptId = receipt.receiptId;
+        flow.upstream = [];
+      }
+      const finish = () => submit('finish_stop_review', { ...frameFinishArgs(), productionCoverage: [{ objectId,
+        reason: 'The dispatch passes the selected option.', citeIds: [source, consumer], flow }] });
+      const first = await finish();
+      if (['healthy', 'healthy-header', 'legacy-dynamic'].includes(mode)) assert.equal(first.complete, true);
+      else {
+        const reasons = { 'dynamic-sibling': 'UNRESOLVED_SIBLING', 'ambiguous-anchor': 'AMBIGUOUS_ANCHOR',
+          'unsupported-anchor': 'UNSUPPORTED_ARGUMENT' };
+        assert.equal(first.complete, false);
+        assert.equal(first.pendingProductionCoverage[0].originIssue, `PRIMARY_DISPATCH_${reasons[mode]}`);
+        assert.equal((await finish()).complete, true);
+      }
+    });
+    const healthy = ['healthy', 'healthy-header', 'legacy-dynamic'].includes(mode);
+    const coverage = handle.result.reviewCoverage.items.find(row => row.id === objectId);
+    assert.equal(stop.status, healthy ? 'NO_DEVIATION_FOUND' : 'UNVERIFIED');
+    assert.equal(coverage.disposition, healthy ? 'SOURCE_REVIEWED' : 'UNVERIFIED');
+    assert.equal(stop.admission, null);
+  });
+});
+
 test('strict production origins account for upstream file-backed callers before accepting downstream-only proof', async t => {
   const requirement = 'Exports requested through the CLI must use the chosen separator, including cached inputs.';
   let foreignReceipt;

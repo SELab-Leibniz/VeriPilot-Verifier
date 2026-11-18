@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
-import { discoverSiblingLiteralDispatches, findSiblingLiteralDispatches, scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
+import { discoverSiblingLiteralDispatches, discoverFileSelectorSiblingDispatches, findSiblingLiteralDispatches, scanSemanticSource } from '../lib/semantic-graph-syntax.mjs';
 import { bindTaskTools, registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 
 test('finds static dispatches in sibling branches of the same ArkTS callback', () => {
@@ -156,6 +156,36 @@ test('a dynamic alternate destination does not certify a partial static group', 
   assert.deepEqual(findSiblingLiteralDispatches(source, { start: 8, end: 8 }), [
     { start: 6, end: 6, callee: 'dispatch', destination: 'export' },
   ], 'the compatibility API retains static-only navigation without a completeness claim');
+});
+
+test('primary file-selector discovery requires a matching literal or same-callee static peer', () => {
+  const selectors = ['reports/Result'];
+  for (const source of [
+    'function transform(input) { return Number(input) + 1; }',
+    'function transform(input) { return JSON.stringify(input); }',
+    'function transform(input) { return Math.max(Number(input), 0); }',
+    'function transform(input, flag) { if (flag) { return Number("0"); } return Number(input); }',
+    'function transform(input, flag) { if (flag) { return normalize("0"); } return normalize(input); }',
+  ]) assert.equal(discoverFileSelectorSiblingDispatches(source, { start: 1, end: 1 }, selectors).status, 'NOT_APPLICABLE');
+  const source = [
+    'function send(emit, packet, flag) {',
+    '  if (flag) {',
+    '    emit(packet);',
+    '  } else {',
+    '    emit({ view: "reports/Result", params: packet });',
+    '  }',
+    '}',
+  ].join('\n');
+  for (const [line, reason] of [[3, 'UNSUPPORTED_ARGUMENT'], [5, 'UNRESOLVED_SIBLING']]) {
+    const result = discoverFileSelectorSiblingDispatches(source, { start: line, end: line }, selectors);
+    assert.equal(result.status, 'UNKNOWN');
+    assert.equal(result.reason, reason);
+    assert.deepEqual(result.siblings, []);
+  }
+  assert.equal(discoverFileSelectorSiblingDispatches(source, { start: 3, end: 3 }, ['other/Result']).status, 'NOT_APPLICABLE');
+  const header = 'function send(emit, packet) { emit({ view: "reports/Result", params: packet }); console.info("ready"); }';
+  assert.equal(discoverFileSelectorSiblingDispatches(header, { start: 1, end: 1 }, selectors).status, 'READY');
+  assert.equal(discoverSiblingLiteralDispatches(header, { start: 1, end: 1 }).status, 'UNKNOWN', 'the existing unscoped API remains unchanged');
 });
 
 test('test-helper argument hints preserve reference identity and exclude control parentheses', () => {
