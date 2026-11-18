@@ -164,7 +164,7 @@ test('native artifact reviewer receives recent frozen execution navigation and a
     assert.match(params.extraSystemPrompt, /A truncated read, unread history or missing receipt establishes only UNVERIFIED/);
     assert.match(params.extraSystemPrompt, /not fabrication, an unperformed check or unchanged source/);
     assert.match(params.extraSystemPrompt, /affirmative current evidence/);
-    assert.match(params.extraSystemPrompt, /without inventing an error finding or rollback edit/);
+    assert.match(params.extraSystemPrompt, /without inventing a violation finding, action-demanding warning or rollback edit/);
     assert.match(params.extraSystemPrompt, /earlier planning instructions within their applicable phase/);
     const navigation = JSON.parse(await fs.readFile(prepared.transcriptNavigation.path, 'utf8'));
     const latest = navigation.entries.at(-1).entry;
