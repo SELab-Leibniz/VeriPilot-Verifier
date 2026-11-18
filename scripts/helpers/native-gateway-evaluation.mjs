@@ -21,11 +21,42 @@ const transportFailureCodes = new Map([
 const validIdentity = value => typeof value === 'string' && value.length > 0;
 const validSha256 = value => typeof value === 'string' && /^[a-f0-9]{64}$/u.test(value);
 
-function modelCallDiagnostic(event, metadata) {
-  if (metadata?.trusted !== true || !modelCallTypes.has(event.type)) return null;
+const modelRoutePart = (value, limit) => typeof value === 'string' && value.length <= limit
+  && /^[a-z0-9][a-z0-9._:/-]*$/iu.test(value) && !/^sk[-_]/iu.test(value) && !value.includes('://');
+const modelRouteKey = (provider, model) => JSON.stringify([provider, model]);
+
+// Retain only configured model identifiers, never endpoint, credential or
+// private model-content fields. An unknown route is evidence missing, not a
+// reason to guess the model from an outer phase or configured reviewer role.
+export function nativeModelDiagnosticRoutes(config, primary = {}) {
+  const routes = new Set();
+  const add = (provider, model) => {
+    if (modelRoutePart(provider, 64) && modelRoutePart(model, 128)) routes.add(modelRouteKey(provider, model));
+  };
+  add(primary.provider, primary.model);
+  for (const [provider, settings] of Object.entries(config?.models?.providers ?? {}))
+    for (const model of Array.isArray(settings?.models) ? settings.models : []) add(provider, model?.id);
+  return routes;
+}
+
+function modelAttribution(event, routes) {
+  if (event.provider == null || event.model == null)
+    return { status: 'UNAVAILABLE', reason: 'MODEL_IDENTITY_MISSING' };
+  if (!modelRoutePart(event.provider, 64) || !modelRoutePart(event.model, 128))
+    return { status: 'UNAVAILABLE', reason: 'MODEL_IDENTITY_MALFORMED' };
+  if (!routes.has(modelRouteKey(event.provider, event.model)))
+    return { status: 'UNAVAILABLE', reason: 'MODEL_ROUTE_NOT_CONFIGURED' };
+  return { status: 'OBSERVED', source: 'TRUSTED_HOST_MODEL_CALL', provider: event.provider, model: event.model };
+}
+
+// OBSERVED identifies the host-selected route. A provider request still needs
+// the existing trace/ownership join; this does not attest backend model weights.
+export function nativeModelCallDiagnostic(event, metadata, routes = new Set()) {
+  if (metadata?.trusted !== true || !modelCallTypes.has(event?.type)) return null;
   const { type, runId, sessionId, sessionKey, callId, seq, ts, trace, failureKind } = event;
   const traceparentSha256 = trace && providerTraceparentSha256(`00-${trace.traceId}-${trace.spanId}-${trace.traceFlags ?? '01'}`);
   return { type, runId, sessionId, sessionKey, callId, seq, ts, ...(traceparentSha256 ? { traceparentSha256 } : {}),
+    modelAttribution: modelAttribution(event, routes),
     ...(transportFailureCodes.has(failureKind) || failureKind === 'terminated' ? { failureKind } : {}) };
 }
 
@@ -383,10 +414,12 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     const runtime = createPluginRuntime({ allowGatewaySubagentBinding: true });
     if (!await runtime.gateway.isAvailable()) throw new Error('The actual in-process Gateway dispatch port is unavailable.');
     const diagnostics = await load('dist/plugin-sdk/diagnostic-runtime.js');
+    const diagnosticRoutes = nativeModelDiagnosticRoutes(config, { provider: providerId, model });
     unsubscribe = diagnostics.onInternalDiagnosticEvent((event, metadata) => {
-      if (event.type === 'model.call.started') modelStarts.push({ runId: event.runId, sessionId: event.sessionId, sessionKey: event.sessionKey, ts: event.ts, seq: event.seq });
-      const call = captureBusinessTransport ? modelCallDiagnostic(event, metadata) : null;
-      if (call) modelCalls.push(call);
+      const call = nativeModelCallDiagnostic(event, metadata, diagnosticRoutes);
+      if (call?.type === 'model.call.started') modelStarts.push({ runId: call.runId, sessionId: call.sessionId,
+        sessionKey: call.sessionKey, ts: call.ts, seq: call.seq, modelAttribution: call.modelAttribution });
+      if (captureBusinessTransport && call) modelCalls.push(call);
     });
     return { runtime, hooks: getGlobalHookRunner(), registry, config, model, modelRef: `${providerId}/${model}`, pluginRoot, root, port, faultInjection: injectDefect,
       request: createNativeGatewayRequest({ load, port, config }),
