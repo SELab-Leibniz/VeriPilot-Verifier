@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { nativeGatewayCodingProvider, createNativeGatewayEvaluation, createNativeGatewayRequest, nativeGatewayResumeProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
+import fs from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
+import { nativeGatewayCodingProvider, createNativeGatewayEvaluation, createNativeGatewayRequest, nativeGatewayResumeProvider,
+  nativeGatewayDiagnosticsPolicy } from '../scripts/helpers/native-gateway-evaluation.mjs';
 import { installSimplifyProfileBoundary } from '../scripts/helpers/simplify-native-evaluation.mjs';
+import { relayNativeReviewActivity } from '../lib/openclaw/review-activity.mjs';
 
 const provider = { api: 'openai-completions', baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4', model: 'glm-5.3' };
 
@@ -53,6 +57,67 @@ test('invalid or unbounded phase values fail before any native host setup', asyn
       providerGuard: { kind: 'offline_native_gateway_guard' } }), /Invalid isolated phase timeout/);
     await assert.rejects(createNativeGatewayEvaluation({ phaseTimeoutMs }), /Invalid isolated phase timeout/);
   }
+});
+
+test('explicit unlimited business policy retains diagnostics without a shorter host recovery deadline', () => {
+  const original = { enabled: true, memoryPressureSnapshot: false };
+  assert.deepEqual(nativeGatewayDiagnosticsPolicy(original), original);
+  assert.deepEqual(nativeGatewayDiagnosticsPolicy(original, { phaseTimeoutMs: 45000 }),
+    { ...original, stuckSessionWarnMs: 45000, stuckSessionAbortMs: 45000 });
+  assert.deepEqual(nativeGatewayDiagnosticsPolicy(original, { unlimitedBusiness: true, noTimeoutMs: 2_147_483_647 }),
+    { ...original, stuckSessionAbortMs: 2_147_483_647 });
+  assert.deepEqual(nativeGatewayDiagnosticsPolicy({ ...original, stuckSessionAbortMs: 1000 },
+    { phaseTimeoutMs: 45000, unlimitedBusiness: true, noTimeoutMs: 2_147_483_647 }),
+  { ...original, stuckSessionWarnMs: 45000, stuckSessionAbortMs: 2_147_483_647 });
+  assert.deepEqual(original, { enabled: true, memoryPressureSnapshot: false });
+  for (const noTimeoutMs of [null, 0, -1, Infinity, 2_147_483_648])
+    assert.throws(() => nativeGatewayDiagnosticsPolicy(original, { unlimitedBusiness: true, noTimeoutMs }), /pinned native no-timeout/);
+});
+
+test('pinned host watchdog can cancel a private review before its deadline; explicit unlimited policy preserves the finite role bound', {
+  skip: !process.env.RC_OPENCLAW_HOST_ROOT,
+}, async () => {
+  const hostRoot = process.env.RC_OPENCLAW_HOST_ROOT;
+  const pkg = JSON.parse(await fs.readFile(path.join(hostRoot, 'package.json'), 'utf8'));
+  assert.equal(pkg.name, 'openclaw'); assert.equal(pkg.version, '2026.7.1-2');
+  const diagnosticFile = path.join(hostRoot, 'dist/diagnostic-DhwkYT4X.js');
+  const source = await fs.readFile(diagnosticFile, 'utf8');
+  assert(source.includes('resolveStuckSessionAbortMs as b'));
+  assert(source.includes('resolveStuckSessionWarnMs as x'));
+  const host = await import(pathToFileURL(diagnosticFile).href);
+  const { n: resolveRunTimeout } = await import(pathToFileURL(path.join(hostRoot, 'dist/timeout-0Cw4kcol.js')).href);
+  const threshold = diagnostics => host.b({ diagnostics }, host.x({ diagnostics }));
+  assert.equal(threshold({ enabled: true }), 360_000);
+  const noTimeoutMs = resolveRunTimeout({ overrideMs: 0 });
+  assert.equal(noTimeoutMs, 2_147_000_000);
+  const oldPolicy = { enabled: true, stuckSessionWarnMs: 1000, stuckSessionAbortMs: 1000 };
+  const fixedPolicy = nativeGatewayDiagnosticsPolicy(oldPolicy, { unlimitedBusiness: true, noTimeoutMs });
+  assert.equal(threshold(oldPolicy), 1000); assert.equal(threshold(fixedPolicy), noTimeoutMs);
+  async function review(diagnostics, roleMs, workMs) {
+    const controller = new AbortController(), progress = [];
+    let activity;
+    const parent = { runId: 'scripted-parent', sessionId: 'scripted-session', sessionKey: 'agent:main:scripted' };
+    const sdk = {
+      onRunActivity: listener => { activity = listener; return () => { activity = null; }; },
+      onAgentEvent: () => () => {}, emitAgentEvent: () => {},
+      reportProgress: (_parent, reason) => progress.push(reason),
+    };
+    const close = relayNativeReviewActivity({ sdk, parent, runId: 'scripted-private', role: 'artifact-reviewer',
+      controller, deadlineAt: Date.now() + roleMs });
+    const parentTimer = setTimeout(() => activity?.({ type: 'run.completed', runId: parent.runId }), threshold(diagnostics));
+    parentTimer.unref();
+    const roleTimer = setTimeout(() => controller.abort(new Error('SCRIPTED_PRIVATE_ROLE_DEADLINE')), roleMs);
+    try { await delay(workMs, undefined, { signal: controller.signal }); return { status: 'COMPLETED', progress }; }
+    catch { return { status: 'ABORTED', reason: controller.signal.reason?.message, progress }; }
+    finally { clearTimeout(parentTimer); clearTimeout(roleTimer); close(); }
+  }
+  const cancelled = await review(oldPolicy, 3000, 1300);
+  assert.equal(cancelled.status, 'ABORTED'); assert.match(cancelled.reason, /parent run ended during review/);
+  const completed = await review(fixedPolicy, 3000, 1300);
+  assert.equal(completed.status, 'COMPLETED');
+  assert.deepEqual(completed.progress, ['runtime-corrector:review:started'], 'No heartbeat fabricates reviewer progress');
+  const bounded = await review(fixedPolicy, 100, 500);
+  assert.equal(bounded.status, 'ABORTED'); assert.equal(bounded.reason, 'SCRIPTED_PRIVATE_ROLE_DEADLINE');
 });
 
 test('isolated request forwards an explicit remaining timeout and preserves the legacy default and params', async () => {

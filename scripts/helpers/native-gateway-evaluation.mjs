@@ -80,6 +80,25 @@ function validatePhaseTimeoutMs(phaseTimeoutMs) {
     || phaseTimeoutMs % 1000 !== 0)) throw new Error('Invalid isolated phase timeout.');
 }
 
+export function nativeGatewayDiagnosticsPolicy(diagnostics, { phaseTimeoutMs = null, unlimitedBusiness = false, noTimeoutMs = null } = {}) {
+  validatePhaseTimeoutMs(phaseTimeoutMs);
+  const policy = { ...diagnostics };
+  if (phaseTimeoutMs !== null) {
+    policy.stuckSessionWarnMs = phaseTimeoutMs;
+    policy.stuckSessionAbortMs = phaseTimeoutMs;
+  }
+  if (unlimitedBusiness) {
+    if (!Number.isSafeInteger(noTimeoutMs) || noTimeoutMs < 1 || noTimeoutMs > 2_147_483_647)
+      throw new Error('The isolated host requires its pinned native no-timeout value.');
+    // The native run deadline and stalled-session recovery are separate host
+    // cancellation paths. Keep warnings, but do not let the latter silently
+    // shorten explicit private-role or outer-controller deadlines. This does
+    // not emit progress or change provider/reviewer timeouts.
+    policy.stuckSessionAbortMs = noTimeoutMs;
+  }
+  return policy;
+}
+
 function localRelayUrl(value) {
   try { const u = new URL(value); return u.protocol === 'http:' && u.hostname === 'host.docker.internal'
     && /^[1-9]\d{0,4}$/u.test(u.port) && u.pathname === '/v1' && !u.username && !u.password && !u.search && !u.hash; }
@@ -281,7 +300,6 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
   }
   const settings = config.plugins.entries['runtime-corrector'];
   if (phaseTimeoutMs) {
-    config.diagnostics = { ...config.diagnostics, stuckSessionWarnMs: phaseTimeoutMs, stuckSessionAbortMs: phaseTimeoutMs };
     config.session = { ...config.session, writeLock: { ...config.session?.writeLock, maxHoldMs: phaseTimeoutMs + 5000 } };
     config.agents.defaults.timeoutSeconds = (businessTimeoutMs ?? phaseTimeoutMs) / 1000;
     if (settings) settings.config = { ...settings.config, hookTimeoutMs: hookTimeoutMs ?? phaseTimeoutMs, reviewerTimeoutMs: reviewerTimeoutMs ?? phaseTimeoutMs };
@@ -292,6 +310,7 @@ export async function createNativeGatewayEvaluation({ hostRoot, projectRoot, out
     config.agents.defaults.timeoutSeconds = Math.floor(noTimeoutMs / 1000);
     if (settings) settings.config = { ...settings.config, businessRunTimeoutMs: 0 };
   }
+  config.diagnostics = nativeGatewayDiagnosticsPolicy(config.diagnostics, { phaseTimeoutMs, unlimitedBusiness, noTimeoutMs });
   if (disableRuntimeCorrection) {
     settings.config = { ...settings.config, enabled: false };
   }
