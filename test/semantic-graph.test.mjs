@@ -261,6 +261,68 @@ test('regex-looking tokens cannot hide division execution inside a newly support
   }
 });
 
+test('opaque execution in braced branches cannot certify a partial static dispatch group', () => {
+  for (const statement of [
+    '`${router.open({ view: "screens/Result", params: input.saved })}`;',
+    'tag`${router.open({ view: "screens/Result", params: input.saved })}`;',
+    'cleanup(`${router.open({ view: "screens/Result", params: input.saved })}`);',
+    'if (`${router.open({ view: "screens/Result", params: input.saved })}`) { cleanup(); }',
+    'void (left / router.open("screens/Result", input.saved) / right);',
+    'cleanup(left / router.open("screens/Result", input.saved) / right);',
+    'if (left / router.open("screens/Result", input.saved) / right) { cleanup(); }',
+    'router.open?.({ view: "screens/Result", params: input.saved });',
+    'router?.open({ view: "screens/Result", params: input.saved });',
+    'router["open"]({ view: "screens/Result", params: input.saved });',
+    '(router.open)({ view: "screens/Result", params: input.saved });',
+    'router.open!({ view: "screens/Result", params: input.saved });',
+    'router.open<Options>({ view: "screens/Result", params: input.saved });',
+    'router.\\u006fpen({ view: "screens/Result", params: input.saved });',
+  ]) {
+    const source = ['function openView(input, left, right) {', '  if (input.saved) {',
+      `    ${statement}`, '  } else {',
+      '    router.open({ view: "screens/Result", params: input.current });', '  }', '}'].join('\n');
+    for (const result of [discoverSiblingLiteralDispatches(source, { start: 5, end: 5 }),
+      discoverFileSelectorSiblingDispatches(source, { start: 5, end: 5 }, ['screens/Result'])]) {
+      assert.equal(result.status, 'UNKNOWN', statement);
+      assert.equal(result.complete, false, statement);
+      assert.deepEqual(result.siblings, [], statement);
+      assert(['UNSUPPORTED_EXECUTABLE_SYNTAX', 'UNBALANCED_DELIMITERS'].includes(result.reason), `${statement}: ${result.reason}`);
+    }
+  }
+});
+
+test('opaque execution stays scoped to its callable and requires a dispatch anchor', () => {
+  const unrelated = [
+    'const label = `${other("screens/Result")}`;',
+    'function unrelated() { `${router.open("screens/Result", input.saved)}`; }',
+  ];
+  const nested = [
+    'const later = () => `${router.open("screens/Result", input.saved)}`;',
+    'defer(() => `${router.open("screens/Result", input.saved)}`);',
+    'defer(() => { `${router.open("screens/Result", input.saved)}`; });',
+    'function later() { router.open?.("screens/Result", input.saved); }',
+    'defer({ later() { router["open"]("screens/Result", input.saved); } });',
+    '// `${router.open("screens/Result", input.saved)}` / router.open?.()',
+    'const label = "` / router.open?.(screens/Result)";',
+  ];
+  for (const statement of nested) {
+    const lines = [...unrelated, 'function openView(input) {', `  ${statement}`,
+      '  if (input.saved) { router.open("screens/Result", input.saved); }',
+      '  router.open("screens/Result", input.current);', '}'];
+    const line = lines.length - 1;
+    const result = discoverFileSelectorSiblingDispatches(lines.join('\n'), { start: line, end: line }, ['screens/Result']);
+    assert.equal(result.status, 'READY', `${statement}: ${result.reason}`);
+    assert.equal(result.siblings.length, 1, statement);
+  }
+  for (const source of [
+    'function format(input) { return `${input}`; }',
+    'function format(input) { return input?.format(); }',
+    'function format(input) { return input["format"](); }',
+    'function format(input) { return input / 2; }',
+  ]) assert.equal(discoverFileSelectorSiblingDispatches(source, { start: 1, end: 1 }, ['screens/Result']).status,
+    'NOT_APPLICABLE', source);
+});
+
 test('a dynamic alternate destination does not certify a partial static group', () => {
   const source = [
     'function submit(route, value) {',

@@ -102,3 +102,105 @@ test('an oversized origin response becomes explicit unknown instead of a passing
   assert(Buffer.byteLength(JSON.stringify(receipt)) <= 1000);
   assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'required-export', entry: f.entry })).status, 'UNKNOWN');
 });
+
+test('opaque origins use exact query-scoped lexical witnesses without inventing callers', async t => {
+  for (const [label, statement, expected] of [
+    ['hidden-literal', '`${emit({ view: "views/ExportView", params: input })}`;', 'UNKNOWN'],
+    ['escaped-selector', '`${emit({ view: "views\\u002fExportView", params: input })}`;', 'UNKNOWN'],
+    ['hidden-symbol', '`${renderExport(input)}`;', 'UNKNOWN'],
+    ['hidden-alias', '`${encode(input)}`;', 'UNKNOWN'],
+    ['hidden-namespace', '`${renderer.renderExport(input)}`;', 'UNKNOWN'],
+    ['division-symbol', 'left / renderExport(input) / right;', 'UNKNOWN'],
+    ['division-selector', 'left / emit({ view: "views/ExportView", params: input }) / right;', 'UNKNOWN'],
+    ['unrelated-log', '`${amount}`;', 'READY'],
+    ['near-symbol', '`${renderExportExtra(input)}`;', 'READY'],
+    ['near-path', '`${emit({ view: "views/ExportViewExtra" })}`;', 'READY'],
+    ['path-suffix', '`${emit({ view: "other/views/ExportView" })}`;', 'READY'],
+    ['static-symbol-text', '`renderExport ${amount}`;', 'READY'],
+    ['static-quoted-path-text', '`"views/ExportView" ${amount}`;', 'READY'],
+    ['ordinary-string', "'${renderExport(input)}';", 'READY'],
+    ['comment', '// `${renderExport(input)}`;', 'READY'],
+  ]) await t.test(label, async t => {
+    const f = await fixture(t);
+    const caller = ['import { renderExport, renderExport as encode } from "./views/ExportView.mjs";',
+      'import * as renderer from "./views/ExportView.mjs";',
+      'export function run(input, emit, amount, left, right) {', `  ${statement}`, '}'].join('\n') + '\n';
+    await fs.writeFile(path.join(f.root, 'caller.mjs'), caller);
+    const graph = await buildSemanticGraph(f.root, { snapshotPaths: ['views/ExportView.mjs', 'caller.mjs'] });
+    assert.equal(graph.status, 'ready', 'opaque metadata does not globally disable ordinary source navigation');
+    const origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: label });
+    const receipt = await origin.discover({ objectId: 'required-export', entry: f.entry });
+    assert.equal(receipt.status, expected, receipt.reason);
+    assert.deepEqual(receipt.candidates, [], 'an opaque witness is not a fabricated call or partial candidate set');
+    if (expected === 'UNKNOWN') {
+      assert(['UNPARSED_POTENTIAL_ORIGIN', 'OPAQUE_ORIGIN_UNRESOLVED'].includes(receipt.reason), receipt.reason);
+      assert.equal(receipt.unparsedOrigin.path, 'caller.mjs');
+      assert.equal(receipt.unparsedOrigin.start, 4);
+      assert.equal(receipt.unparsedOrigin.sha256, sha256(caller));
+      assert.equal(receipt.unparsedOrigin.sourceReadAcknowledged, false);
+      assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'required-export', entry: f.entry })).status, 'UNKNOWN');
+    } else {
+      assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'required-export', entry: f.entry })).status, 'READY');
+      await fs.appendFile(path.join(f.root, 'caller.mjs'), '\n');
+      assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'required-export', entry: f.entry })).reason, 'ORIGIN_INDEX_CHANGED');
+    }
+  });
+});
+
+test('opaque origin limits stay unknown rather than certifying an empty vocabulary', async t => {
+  for (const statement of [
+    '`' + '${amount}'.repeat(100) + '`;',
+    '`' + ' '.repeat(16 * 1024) + '`;',
+    Array.from({ length: 257 }, () => '`plain`;').join('\n'),
+  ]) {
+    const f = await fixture(t);
+    await fs.writeFile(path.join(f.root, 'caller.mjs'), `export function log(amount) {\n${statement}\n}\n`);
+    const graph = await buildSemanticGraph(f.root, { snapshotPaths: ['views/ExportView.mjs', 'caller.mjs'] });
+    const origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: 'bounded-opaque' });
+    const receipt = await origin.discover({ objectId: 'required-export', entry: f.entry });
+    assert.equal(receipt.status, 'UNKNOWN'); assert.equal(receipt.reason, 'OPAQUE_ORIGIN_UNRESOLVED');
+    assert.deepEqual(receipt.candidates, []);
+  }
+});
+
+test('opaque references preserve known re-export aliases and cap query work', async t => {
+  const f = await fixture(t);
+  await fs.writeFile(path.join(f.root, 'barrel.mjs'), 'export { renderExport as encode } from "./views/ExportView.mjs";\n');
+  await fs.writeFile(path.join(f.root, 'caller.mjs'), 'import { encode as printRows } from "./barrel.mjs";\nexport function run(input) { `${printRows(input)}`; }\n');
+  let graph = await buildSemanticGraph(f.root, { snapshotPaths: ['views/ExportView.mjs', 'barrel.mjs', 'caller.mjs'] });
+  let origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: 're-export' });
+  let receipt = await origin.discover({ objectId: 'required-export', entry: f.entry });
+  assert.equal(receipt.status, 'UNKNOWN'); assert.equal(receipt.reason, 'UNPARSED_POTENTIAL_ORIGIN');
+  assert.equal(receipt.unparsedOrigin.symbol, 'printRows');
+  const paths = ['views/ExportView.mjs'];
+  for (let i = 0; i < 40; i++) {
+    const file = `logging-${i}.mjs`; paths.push(file);
+    await fs.writeFile(path.join(f.root, file), Array.from({ length: 240 }, () => '`plain`;').join('\n'));
+  }
+  graph = await buildSemanticGraph(f.root, { snapshotPaths: paths });
+  assert.equal(graph.status, 'ready');
+  origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: 'query-cap' });
+  receipt = await origin.discover({ objectId: 'required-export', entry: f.entry });
+  assert.equal(receipt.status, 'UNKNOWN'); assert.equal(receipt.reason, 'OPAQUE_ORIGIN_QUERY_LIMIT');
+  assert.deepEqual(receipt.candidates, []);
+});
+
+test('static templates retain escaped interpolation text and Unicode line continuations', async t => {
+  for (const [relative, token] of [
+    ['views/${name}/Export.mjs', '`views/\\${name}/Export`'],
+    ['views/ExportView.mjs', '`views/\\\u2028ExportView`'],
+    ['views/ExportView.mjs', '`views/\\\u2029ExportView`'],
+  ]) {
+    const f = await fixture(t), body = files['views/ExportView.mjs'];
+    await fs.mkdir(path.dirname(path.join(f.root, relative)), { recursive: true });
+    await fs.writeFile(path.join(f.root, relative), body);
+    await fs.writeFile(path.join(f.root, 'caller.mjs'), `export function run(input, emit) { emit({ view: ${token}, params: input }); }\n`);
+    const graph = await buildSemanticGraph(f.root, { snapshotPaths: [relative, 'caller.mjs'] });
+    const origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: 'static-escaped' });
+    const receipt = await origin.discover({ objectId: 'required-export', entry: {
+      path: path.join(f.root, relative), start: 1, end: 1, sha256: sha256(body),
+    } });
+    assert.equal(receipt.status, 'UNKNOWN'); assert.equal(receipt.reason, 'UNPARSED_POTENTIAL_ORIGIN');
+    assert.equal(receipt.unparsedOrigin.selector, relative.slice(0, -4));
+  }
+});
