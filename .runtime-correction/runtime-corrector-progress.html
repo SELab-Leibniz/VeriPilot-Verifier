@@ -277,7 +277,7 @@
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">One task through the whole workflow</h2>
         <p class="callout">The latest macOS Sudoku trial completed the ON workflow: full-plan review, authenticated approval, implementation, Stop review, candidate freeze and independent grading. It passed 8/10 target tests and 288/288 regressions. Stop kept one requirement unverified because of unsupported parser syntax; it did not declare the implementation fully reviewed. No native repair started.</p>
-        <p>The updated package passed the installed-OpenClaw controls and a fresh phone identity preflight. A new ON-only walkthrough is being prepared to test it with real Flash/Pro calls. No model call has started for this walkthrough, and it cannot add a formal matched pair.</p>
+        <p>The updated package passed the installed-OpenClaw controls and a fresh phone identity preflight. The new ON-only walkthrough stopped before any model request because its sandbox omitted read access to the shared build lock. Its owned process groups settled and temporary credentials were removed. A narrow permission fix is being checked without a key. This setup failure produced no task score or formal matched pair.</p>
         <p class="intro">Flash coded both arms, with Pro reviewing ON and a 120-minute business limit per arm. OFF used 70 Flash requests and took 9.2 minutes. ON used 56 Flash and 79 Pro requests and took 37.7 minutes; 57 Pro requests were document reviews and 22 were Stop reviews. Token records are incomplete, so no total token figure is reported.</p>
         <div class="table" role="region" aria-label="Latest Sudoku walkthrough" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Evidence and limits</th></tr></thead>
@@ -295,7 +295,7 @@
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">沿一个任务走完整个流程</h2>
         <p class="callout">最新的 macOS Sudoku 试验中，ON 已走完完整方案审查、经过认证的审批、实现、Stop 审查、候选冻结及独立评分。目标测试通过 8/10，回归测试通过 288/288。Stop 因解析器不支持的语法而将一项需求保留为待验证，没有把实现标为已全面核查。没有启动原生修复。</p>
-        <p>更新后的插件已通过安装后的 OpenClaw 对照和新一轮手机身份预检，正在准备 ON 单组全过程试验，使用真实 Flash/Pro 调用。目前尚未发起本轮模型调用，也不会增加正式匹配配对。</p>
+        <p>更新后的插件已通过安装后的 OpenClaw 对照和新一轮手机身份预检。新的 ON 单组全过程试验因沙箱缺少共享构建锁的读取权限而停止，尚未发起任何模型请求。所属进程组已结束，临时密钥配置已删除。正在不使用密钥的情况下验证最小权限修正。本次配置失败没有产生任务评分或正式匹配配对。</p>
         <p class="intro">两组均由 Flash 编码，ON 由 Pro 审查，每组业务时限为 120 分钟。OFF 使用 70 次 Flash 请求，耗时 9.2 分钟。ON 使用 56 次 Flash 加 79 次 Pro 请求，耗时 37.7 分钟；其中 57 次 Pro 用于文档审查，22 次用于 Stop 审查。令牌记录不完整，因此不报告总令牌数。</p>
         <div class="table" role="region" aria-label="最新 Sudoku 运行全过程" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">证据与局限</th></tr></thead>
