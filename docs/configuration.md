@@ -10,7 +10,13 @@
 
 在版本 2 项目中，`artifactCorrection.requireOpenSpecProposalCoverage: true` 会在 Proposal 启动时启用需求覆盖审批。配置也会启用对原始用户消息的文档审查。操作员通过 `runtime-corrector.openspec.approve` 提交 `expectedRevision` 和 `requiredAtoms`。每个条目包含 `requirement` 及 `source`，其中 `source` 提供原始用户消息的 `ref`、`sha256` 和从 1 开始的 `start`、`end` 行号。最多提交 48 项。评审记录的义务措辞须与清单一致，同一原文范围可对应多项不同义务。
 
+`artifactCorrection.requireOpenSpecPlanReadiness` 默认 `false`。开启后也会启用上述需求覆盖审批和原文审查，并要求当前完整方案对每个实际 OpenSpec 复选框任务给出 `READY` 评估，才可审批并绑定 Apply。标题、备注或任务描述中的“未验证”不会让复选框失去完成约束。Proposal 阶段的后续工作不必已经执行，但已知且未解决的必要前提须保留为 `BLOCKED` 或 `UNVERIFIED`；不能为放行而删掉原始要求明确规定的验证。可选示例也不应擅自变成强制任务。程序核对任务标识、版本、范围和已读取的引用；执行方法是否可行仍是审查器根据证据作出的语义判断，工具目录中未出现某项不能单独证明它无法执行。
+
 在发送 Proposal 前，通过具备 `operator.write` 权限的 Gateway 调用 `runtime-corrector.openspec.prepare`，提供 `sessionKey`、`sessionId`、`runId`、`changeName`、`sourceRunId`、`sourceSha256` 及 `requirements`。初次 Proposal 的 `sourceRunId` 与 `runId` 相同。`sourceSha256` 取自即将发送的完整用户消息，每个条目提供 `start`、`end` 和 `requirement`。插件在原生会话中核对原文后，才向私有审查器提供这份清单。审查器仍须读取原文和当前方案并逐项提交证据。`PREPARED` 表示清单已登记，继续执行 `approve` 和 `arm` 才能绑定 Apply。
+
+已显式启用 `artifactCorrection.requireOpenSpecProposalCoverage: true` 的项目，也可在该次 `prepare` 请求中传入 `requirePlanReadiness: true`。仅设置 `originalRequirementsEnabled: true` 不满足此接口的前提，`prepare` 会拒绝登记，不会隐式扩大原始需求范围。此选择绑定到原始消息和 Proposal 运行，后续审批或绑定 Apply 不能将它降级。私有审查器通过现有 `rc_document` 的 `plan_checklist` 分页读取任务导航，再读取实际源行并提交独立的 `planReadiness`。程序从所有任务行推导总状态；漏项、重复项、过期引用及超出限额都会使就绪状态无法确认。当前限额为 128 个实际复选框、每行 4096 字节和每页 8192 字节；空清单也不能得到 `READY`。复选框不会因此获得原始需求的权威。
+
+就绪清单支持以 `-` 或 `*` 开头的顶层复选框任务。遇到带前导空格、制表符或混合缩进的复选框行时，严格就绪检查会返回 `UNSUPPORTED_TASK_SYNTAX`，保持无法确认，而不会只审查顶层子集后声明 `READY`。这不改变默认 Apply 解析方式，也不将这些行解释为新的原始需求或自动删除它们。
 
 插件用当前宿主会话中的用户原文重建条目来源，并检查与方案版本完全一致的最近一次全方案审查。每项都须有唯一的 `COVERED` 记录。缺项、`GAP`、`UNVERIFIED` 和过期来源都会阻止审批。审批返回 `inventorySha256`，调用 `runtime-corrector.openspec.arm` 时须将它作为 `expectedInventorySha256`，并继续提供同一 `expectedRevision`。
 

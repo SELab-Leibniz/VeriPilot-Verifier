@@ -157,6 +157,83 @@ stopCorrection:
     api, sharedState, transcript };
 }
 
+test('operator readiness requires strict coverage and reaches the real packaged Proposal hooks without enabling it implicitly', async t => {
+  let factory;
+  const f = await fixture(t, { arm: false, review: true, proposalOnly: true, fullPlanReview: true,
+    reviewer: options => factory(options) });
+  await f.runtime.agentEnd({ runId: f.ctx.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const { loadConfig } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-corrector.mjs')));
+  const { registerDocumentTools } = await import(pathToFileURL(path.join(pluginRoot, 'lib/document-tools.mjs')));
+  const { createOpenClawReviewerFactory } = await import(pathToFileURL(path.join(pluginRoot, 'lib/openclaw/reviewer.mjs')));
+  const configuration = path.join(f.root, '.runtime-corrector/config.yaml');
+  await fs.appendFile(configuration, '\nartifactCorrection:\n  originalRequirementsEnabled: true\n  requireOpenSpecProposalCoverage: false\n');
+  const resolve = f.projectScopes.resolve;
+  f.api.runtime.agent.resolveAgentWorkspaceDir = () => f.root;
+  f.projectScopes.resolve = async (...args) => ({ ...await resolve(...args), plan: await loadConfig({ cwd: f.root, pluginRoot }) });
+  registerPlanControl(f.api, f.runtime);
+  const text = 'Retain the selected order and restore it after reopening.';
+  const requirements = ['Retain the selected display ordering.'].map(requirement => ({ start: 1, end: 1, requirement }));
+  const address = { ...f.address, runId: 'readiness-proposal' };
+  const preparation = { ...address, sourceRunId: address.runId, sourceSha256: sha256(text), requirements,
+    requirePlanReadiness: true };
+  const rejected = await f.request('prepare', preparation);
+  assert.equal(rejected[0], false);
+  assert.equal(rejected[2].code, 'CONFLICT');
+  assert.equal((await loadConfig({ cwd: f.root, pluginRoot })).runtimeV2.artifactCorrection.requireOpenSpecProposalCoverage, undefined);
+
+  await fs.writeFile(configuration, (await fs.readFile(configuration, 'utf8')).replace(
+    'requireOpenSpecProposalCoverage: false', 'requireOpenSpecProposalCoverage: true'));
+  assert.equal((await f.rpc('prepare', preparation)).requirePlanReadiness, true);
+  let documentFactory, invocations = 0;
+  f.api.registerTool = callback => { documentFactory = callback; };
+  registerDocumentTools(f.api);
+  f.api.runtime.agent.runEmbeddedAgent = async params => {
+    invocations++;
+    const tool = documentFactory({ sessionId: params.sessionId, runId: params.runId });
+    assert(tool);
+    const call = async args => JSON.parse((await tool.execute('readiness-fixture', args)).content[0].text);
+    const opened = await call({ action: 'open' });
+    assert.equal(opened.requiredProposal.total, 1);
+    assert.equal(opened.planReadiness.total, 1);
+    const atoms = await call({ action: 'required_proposal' });
+    const checklist = await call({ action: 'plan_checklist' });
+    for (const file of await call({ action: 'manifest' }))
+      await call({ action: 'read', path: file.path, start: 1, count: 200 });
+    const { anchor } = await call(atoms.items[0].readOriginal);
+    return { payloads: [{ text: JSON.stringify({ summary: 'The unchecked work is planned and its prerequisites are sourced.',
+      findings: [], edits: [], originalRequirementCoverage: [{ originalSourceAnchorId: anchor.anchorId,
+        requirement: requirements[0].requirement, disposition: 'COVERED', reason: 'The current spec retains the ordering.',
+        targets: [{ path: `${prefix}/specs/order/spec.md`, start: 4, end: 4 }] }],
+      planReadiness: { inventorySha256: checklist.inventorySha256, status: 'READY',
+        rows: checklist.items.map(task => ({ taskId: task.id, status: 'READY', reason: 'Future work is defined by the current plan.',
+          targets: [{ path: task.path, start: task.line, end: task.line }] })) } }) }], meta: {} };
+  };
+  factory = createOpenClawReviewerFactory(f.api);
+  await fs.appendFile(f.transcript, '\n' + JSON.stringify({ type: 'message', id: 'readiness-original', parentId: 'original',
+    message: { role: 'user', content: text, idempotencyKey: `${address.runId}:user` } }) + '\n');
+  f.ctx.runId = address.runId;
+  await f.runtime.prompt({ prompt: text }, f.ctx);
+  assert.equal(f.state.nativeProposalCoveragePolicy.required, true);
+  assert.equal(f.state.nativeProposalCoveragePolicy.requirePlanReadiness, false, 'Only the operator preparation opted into readiness.');
+  const checked = await f.check(`${prefix}/tasks.md`);
+  assert.equal(invocations, 1);
+  assert.equal(checked.result.metadata.semanticReview.planReadiness.status, 'READY');
+  assert.equal(checked.result.metadata.semanticReview.planReadiness.runId, address.runId);
+  await f.runtime.agentEnd({ runId: address.runId, success: true }, f.ctx);
+  await f.runtime.waitForNativeReviews({ drain: true });
+  const preview = await f.rpc('preview', address);
+  assert.equal(preview.requirePlanReadiness, true);
+  const coverage = checked.result.metadata.semanticReview.originalRequirementCoverage;
+  const approval = await f.rpc('approve', { ...address, expectedRevision: preview.revision,
+    requiredAtoms: coverage.rows.map(row => ({ source: { ref: row.source.ref, sha256: row.source.sha256, start: 1, end: 1 },
+      requirement: row.requirement })) });
+  assert.equal(approval.planReadiness.status, 'READY');
+  const armed = await f.rpc('arm', { ...address, expectedRevision: preview.revision, applyRunId: 'readiness-apply',
+    expectedInventorySha256: approval.inventorySha256 });
+  assert.equal(armed.planReadiness.inventorySha256, checked.result.metadata.semanticReview.planReadiness.inventorySha256);
+});
+
 test('a packaged full-plan manual recheck recovers exact staged private atoms from native original sources without rewriting', async t => {
   let factory;
   const f = await fixture(t, { arm: false, review: true, proposalOnly: true, fullPlanReview: true,

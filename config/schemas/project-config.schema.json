@@ -324,6 +324,11 @@
           "type": "boolean",
           "default": false,
           "description": "Require an operator-supplied inventory and verified plan coverage for each listed original user requirement before approving and arming OpenSpec Apply."
+        },
+        "requireOpenSpecPlanReadiness": {
+          "type": "boolean",
+          "default": false,
+          "description": "Require a current complete READY assessment of every OpenSpec checklist task before approving and arming Apply. Also enables original requirements review and strict Proposal requirement coverage; future work need not already be executed."
         }
       },
       "additionalProperties": false

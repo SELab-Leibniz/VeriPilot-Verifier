@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { loadRuntimePlan } from '../lib/runtime-plan.mjs';
+import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { buildOriginalRequirements, recordUserMessages, userMessageLogPath, writeOriginalRequirementSources }
   from '../lib/runtime-v2/original-requirements.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
@@ -160,6 +161,35 @@ test('original requirements need no dynamic baseline and cannot be combined with
   assert.equal(strictPlan.runtimeV2.artifactCorrection.requireOpenSpecProposalCoverage, true);
   await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), strict(policy('ledger')));
   await assert.rejects(loadRuntimePlan({ cwd: root }), /requireOpenSpecProposalCoverage/u);
+});
+
+test('plan readiness opts into strict original review while absent and false preserve the legacy config', async t => {
+  const legacy = compileRuntimeV2Config({ version: 2 });
+  const disabled = compileRuntimeV2Config({ version: 2, artifactCorrection: { requireOpenSpecPlanReadiness: false } });
+  assert.deepEqual(disabled.artifactCorrection, legacy.artifactCorrection);
+  assert.equal(Object.hasOwn(legacy.artifactCorrection, 'requireOpenSpecPlanReadiness'), false);
+  const enabled = compileRuntimeV2Config({ version: 2, artifactCorrection: {
+    requireOpenSpecPlanReadiness: true, requireOpenSpecProposalCoverage: false, originalRequirementsEnabled: false,
+  } });
+  assert.deepEqual(enabled.artifactCorrection, { groundTruthReviewEnabled: false, stageMetricsEnabled: false,
+    originalRequirementsEnabled: true, requireOpenSpecProposalCoverage: true, requireOpenSpecPlanReadiness: true });
+  assert(Object.isFrozen(enabled.artifactCorrection));
+
+  const root = await project(t);
+  await fs.mkdir(path.join(root, '.runtime-corrector'));
+  const readiness = config => config.replace(/originalRequirementsEnabled: (?:true|false)/u,
+    'requireOpenSpecPlanReadiness: true');
+  const configPath = path.join(root, '.runtime-corrector/config.yaml');
+  await fs.writeFile(configPath, readiness(policy('original-only', { materialRoots: null })));
+  const plan = await loadRuntimePlan({ cwd: root });
+  assert.equal(plan.runtimeV2.artifactCorrection.requireOpenSpecPlanReadiness, true);
+  assert.equal(plan.runtimeV2.artifactCorrection.requireOpenSpecProposalCoverage, true);
+  assert.equal(plan.runtimeV2.artifactCorrection.originalRequirementsEnabled, true);
+  await fs.writeFile(configPath, readiness(policy('ledger')));
+  await assert.rejects(loadRuntimePlan({ cwd: root }), /requireOpenSpecPlanReadiness/u);
+  await fs.writeFile(configPath, readiness(policy('original-only')).replace('requireOpenSpecPlanReadiness: true',
+    'requireOpenSpecPlanReadiness: "true"'));
+  await assert.rejects(loadRuntimePlan({ cwd: root }), /requireOpenSpecPlanReadiness/u);
 });
 
 test('the live document harness policy selects the original requirements review', async t => {
