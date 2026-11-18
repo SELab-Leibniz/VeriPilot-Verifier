@@ -265,22 +265,28 @@ test('the optional repository lint action reports an unverifiable check as an un
   assert.deepEqual(answer, { action: 'lint', status: 'INCOMPLETE', success: false, reason: 'REQUIRED_LINT_CONFIG_MISSING', lint: null });
 });
 
-test('the shared plan and implementation instructions describe only registered check actions', () => {
-  assert.match(arktsVerificationInstructions(), /bench_check supports build, test\./u);
+test('shared verification instructions match available tools and keep Apply reports outside the approved plan', () => {
+  const standard = arktsVerificationInstructions();
+  assert.match(standard, /bench_check supports build, test\./u);
   const planning = arktsVerificationInstructions({ lintRequirement: {}, stage: 'proposal' });
   assert.match(planning, /Plan verification using the available tools/u);
   assert.match(planning, /Leave implementation files unchanged and implementation tasks unchecked/u);
   assert.match(planning, /Keep optional checks and their availability in notes outside the checklist/u);
   const withProbe = arktsVerificationInstructions({ publicAcceptance: {} });
-  assert.match(withProbe, /Run project verification through the available tools during Apply/u);
-  assert.match(withProbe, /Keep the approved checklist entries/u);
-  assert.match(withProbe, /Record verification blockers in notes outside the entries/u);
-  assert.match(withProbe, /only asks for a status report is complete once the status is recorded/u);
   assert.match(withProbe, /bench_check supports build, test, acceptance\./u);
-  assert.match(withProbe, /treat command examples as guidance/iu);
-  assert.match(withProbe, /record a required check with no available tool as unverified and leave its task unchecked/iu);
   const withBoth = arktsVerificationInstructions({ publicAcceptance: {}, lintRequirement: {} });
   assert.match(withBoth, /bench_check supports build, test, lint, acceptance\./u);
+  for (const apply of [standard, withProbe, withBoth, arktsVerificationInstructions({ stage: 'apply' })]) {
+    assert.match(apply, /Run project verification through the available tools during Apply/u);
+    assert.match(apply, /Keep every approved OpenSpec document unchanged, including notes, except for the completion marks of existing checklist entries/u);
+    assert.match(apply, /Do not append, remove or rewrite approved text/u);
+    assert.match(apply, /Record verification blockers and results in the final response, not in those documents/u);
+    assert.match(apply, /only asks for a status report is complete once the status is recorded in the final response/u);
+    assert.match(apply, /Leave required verification tasks unchecked while their outcomes remain unverified/u);
+    assert.match(apply, /treat command examples as guidance/iu);
+    assert.match(apply, /record a required check with no available tool as unverified and leave its task unchecked/iu);
+    assert.doesNotMatch(apply, /notes outside the entries|notes outside the checklist/u);
+  }
 });
 
 test('the pinned OpenClaw source loader can load the generated acceptance plugin', {

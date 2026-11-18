@@ -14,7 +14,7 @@ export function arktsVerificationInstructions(options) {
     `The project tool bench_check supports ${arktsCheckActions(options).join(', ')}. Use openspec_cli for the OpenSpec workflow.`,
     options?.stage === 'proposal'
       ? 'Complete planning only. Plan verification using the available tools. Leave implementation files unchanged and implementation tasks unchecked until the controller dispatches Apply. Use checkboxes for implementation and required verification. Keep optional checks and their availability in notes outside the checklist.'
-      : 'Run project verification through the available tools during Apply. Keep the approved checklist entries and update their completion marks to reflect the work. Record verification blockers in notes outside the entries. A task that only asks for a status report is complete once the status is recorded. Preserve the actual verification outcome in the report.',
+      : 'Run project verification through the available tools during Apply. Keep every approved OpenSpec document unchanged, including notes, except for the completion marks of existing checklist entries. Do not append, remove or rewrite approved text. Record verification blockers and results in the final response, not in those documents. A task that only asks for a status report is complete once the status is recorded in the final response. Leave required verification tasks unchecked while their outcomes remain unverified.',
     'Derive required checks from the task and applicable repository instructions. Treat command examples as guidance. Record a required check with no available tool as unverified and leave its task unchecked.',
   ].join('\n');
 }
