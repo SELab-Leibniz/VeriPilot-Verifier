@@ -209,7 +209,7 @@
         </ol>
         <p>With strict coverage enabled, the operator supplies the requirement inventory before Proposal. Approval seals that inventory with the exact plan and binds it to Apply. Stop must check every sealed item, including any item the reviewer leaves out of its own checklist. The current sealed list covers unconditional production behavior; process and conditional obligations need separate checks.</p>
         <p>For projects already using strict Proposal coverage, an opt-in <code>PlanReadiness</code> check is implemented and source-tested. It is disabled by default. The host lists every actual Apply checkbox, and the reviewer must return one <code>READY</code>, <code>BLOCKED</code> or <code>UNVERIFIED</code> row per item, backed by acknowledged reads of the current plan. When enabled, strict approval requires every row to be <code>READY</code>. This checks whether the planned work and verification can proceed, separately from coverage of the requested behavior.</p>
-        <p>The source suite passed 215 checks, and 116 affected checks passed after strict task syntax handling was added. Unsupported indented checkbox syntax stays unverified; default Apply parsing is unchanged. The installable package now includes this check. Three scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair. The latest real-model trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
+        <p>The installable package includes this check. Unsupported indented checkbox syntax stays unverified. Three fresh scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair, including current source and both dispatch branches around the supported unbraced cleanup call. The latest real-model trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
         <div class="table" role="region" aria-label="On track, off track and unverified criteria" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Checkpoint</th><th scope="col">On track</th><th scope="col">Confirmed deviation</th><th scope="col">Unverified</th></tr></thead>
           <tbody>
@@ -230,7 +230,7 @@
         </ol>
         <p>启用严格覆盖检查时，操作员在 Proposal 前提供需求清单。审批把清单与确切的方案版本一同封存，再绑定到 Apply。Stop 必须核对全部封存条目，审查器自己列漏的项目也不能跳过。当前封存清单覆盖无条件的生产行为，流程和条件性要求还需单独核查。</p>
         <p>对于已启用严格 Proposal 覆盖检查的项目，可选的 <code>PlanReadiness</code> 检查已实现并通过源码测试，默认关闭。宿主列出 Apply 的每个实际勾选项，审查器须逐项返回 <code>READY</code>、<code>BLOCKED</code> 或 <code>UNVERIFIED</code>，并引用已确认读取的当前方案。启用后，严格审批要求所有条目均为 <code>READY</code>。这项检查核对计划中的工作和验证是否具备执行条件，与功能需求覆盖分别判断。</p>
-        <p>源码测试通过 215 项；加入严格任务语法处理后，相关 116 项检查通过。不支持的缩进勾选语法保持待验证，默认 Apply 解析行为不变。可安装的插件包现已包含这项检查。三项使用脚本响应的标准 OpenClaw 对照验证了拒绝审批、正常完成和一次原生修复。最近一轮真实模型试验已连接完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
+        <p>可安装的插件包已包含这项检查。不支持的缩进勾选语法保持待验证。三项新的标准 OpenClaw 脚本对照验证了拒绝审批、正常完成和一次原生修复，并核对了当前源码，以及已支持的无花括号清理调用附近的两条分发路径。最近一轮真实模型试验已连接完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
         <div class="table" role="region" aria-label="符合预期、确认偏离与待验证的标准" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">检查点</th><th scope="col">符合预期</th><th scope="col">确认偏离</th><th scope="col">待验证</th></tr></thead>
           <tbody>
@@ -284,7 +284,7 @@
             <tr><th scope="row">Proposal and approval</th><td>ON covered all six original requirements and returned <code>READY</code> for every item in its 16-task plan. The saved approval bound that exact plan and requirement inventory to Apply.</td><td>The complete readiness and approval chain ran. The initial checklist differed before any readiness finding, so the difference cannot be credited to corrective feedback.</td></tr>
             <tr><th scope="row">Apply</th><td>ON completed 16/16 tasks and passed public acceptance. Stop confirmed the approved plan was preserved, with only checkbox states changed.</td><td>A supporting test failed and then passed during ordinary implementation. That was OpenClaw’s own rework, not a native correction.</td></tr>
             <tr><th scope="row">An unnecessary warning</th><td>A reviewer demanded a test rerun while acknowledging that no acceptance-driven fix had occurred, even though such a fix was the original trigger. Delivered feedback was followed by another test; a manual recheck cleared the finding.</td><td>This unsupported process warning added work without a demonstrated code-quality benefit. General review guidance has been tightened in source; real-model controls are being prepared.</td></tr>
-            <tr><th scope="row">Final requirement review</th><td>The final checklist retained all six original items. Five had accepted current source and origin reviews; one remained <code>UNVERIFIED</code>. No confirmed deviation or native repair was recorded.</td><td>Two valid unbraced cleanup statements made the routing callback unsupported by the origin parser. The all-six completion observer correctly refused a clean result. A generic parser fix passed focused checks; installed-host qualification is still pending.</td></tr>
+            <tr><th scope="row">Final requirement review</th><td>The final checklist retained all six original items. Five had accepted current source and origin reviews; one remained <code>UNVERIFIED</code>. No confirmed deviation or native repair was recorded.</td><td>Two valid unbraced cleanup statements made the routing callback unsupported by the origin parser. The all-six completion observer correctly refused a clean result. A generic parser fix passed focused checks and installed OpenClaw controls. The saved trial remains unverified.</td></tr>
             <tr><th scope="row">OFF comparison</th><td>OFF preserved its plan but completed 17/18 tasks. Its self-authored required lint check was already declared unverified during planning, and remained unchecked.</td><td>OFF ended with <code>OPENSPEC_APPLY_INCOMPLETE</code>. Source command examples do not establish a universal obligation to run that exact command; genuinely mandatory checks must still be retained.</td></tr>
             <tr><th scope="row">Independent grades</th><td>ON received a formal standalone grade; OFF was graded separately for diagnosis. Both completed all 298 original tests: 8/10 target passes and 288/288 regression passes, with identical individual outcomes.</td><td>Zero runtime errors and no measured score gain. OFF’s diagnostic grade does not change its eligibility. No formal matched pair was added.</td></tr>
           </tbody>
@@ -301,7 +301,7 @@
             <tr><th scope="row">Proposal 与审批</th><td>ON 覆盖全部六项原始需求，16 项任务全部通过 <code>READY</code> 判断。保存的审批记录将这份精确方案及需求清单绑定到 Apply。</td><td>完整的就绪检查和审批链已运行。初始清单在就绪审查提出问题前就已不同，不能将差异归功于纠偏反馈。</td></tr>
             <tr><th scope="row">Apply</th><td>ON 完成 16/16 项任务，通过公开验收。Stop 确认获批方案保留，只有勾选状态发生变化。</td><td>一项辅助测试在普通实现过程中先失败、后通过。这是 OpenClaw 的普通自我修正，没有启动原生纠偏。</td></tr>
             <tr><th scope="row">一次多余的警告</th><td>审查器要求重测，同时承认没有发生验收反馈促成的修复，而这正是原文规定的触发条件。反馈送达后又执行了一次测试，随后手动复查清除了问题。</td><td>这项缺少依据的流程警告增加了工作，没有证明代码质量提高。源码中的通用审查指引已收紧，真实模型对照正在准备。</td></tr>
-            <tr><th scope="row">最终需求审查</th><td>最终清单保留全部六项原始需求。其中五项取得当前源码和来源审查，一项仍为 <code>UNVERIFIED</code>。没有记录已确认的偏离或原生修复。</td><td>两条合法的无花括号清理语句，使来源解析器无法完整处理路由回调。要求六项全部完成的观察器正确拒绝了干净结果。通用解析修正已通过针对性检查，标准宿主核验仍待完成。</td></tr>
+            <tr><th scope="row">最终需求审查</th><td>最终清单保留全部六项原始需求。其中五项取得当前源码和来源审查，一项仍为 <code>UNVERIFIED</code>。没有记录已确认的偏离或原生修复。</td><td>两条合法的无花括号清理语句，使来源解析器无法完整处理路由回调。要求六项全部完成的观察器正确拒绝了干净结果。通用解析修正已通过针对性检查和已安装的 OpenClaw 对照，已保存的试验结果仍为待验证。</td></tr>
             <tr><th scope="row">OFF 对照</th><td>OFF 保留方案，但只完成 17/18 项任务。它自行列为必需的 lint 检查在规划时已记为待验证，最终仍未勾选。</td><td>OFF 以 <code>OPENSPEC_APPLY_INCOMPLETE</code> 结束。原文中的命令示例不能证明每次都必须执行该条命令；确实必需的检查仍须保留。</td></tr>
             <tr><th scope="row">独立评分</th><td>ON 取得正式单组评分，OFF 另行执行诊断评分。两组均执行完全部 298 项原始测试：目标测试通过 8/10，回归测试通过 288/288，逐项结果完全相同。</td><td>运行时错误为零，没有测得分数收益。OFF 的诊断评分不改变其资格，没有增加正式匹配配对。</td></tr>
           </tbody>
@@ -460,7 +460,7 @@
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="next-title">What still needs to improve</h2>
         <ol class="next">
-          <li>Qualify the general branch-syntax fix exposed by the latest trial, then evaluate origin review on coding tasks held out from development. Trace required user choices from their original operation; measure missed or wrongly excluded callers as well as successful repairs.</li>
+          <li>Evaluate the extended origin review on coding tasks held out from development. The bounded branch-syntax fix has passed source checks and installed OpenClaw controls. Trace required user choices from their original operation; measure missed or wrongly excluded callers as well as successful repairs.</li>
           <li>Measure the accuracy of PlanReadiness judgments beyond the completed approval-chain check. Before approval, distinguish optional command examples from mandatory tasks. <code>READY</code> does not attest execution; completion still requires fresh execution evidence. Genuinely required but unavailable checks remain unverified.</li>
           <li>Test the revised conditional-obligation guidance with real Pro reviews of inactive triggers, completed active duties and missing active duties. Preserve original conditions and separate unconditional checks; the prompt change does not enforce semantic correctness.</li>
           <li>Add bounded evidence gathering after an inconclusive Stop, with explicit allowed checks, preserved approval and an enforced restriction on code edits. Keep its allowance separate from defect repair, then review the new evidence before deciding whether repair is justified.</li>
@@ -472,7 +472,7 @@
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="next-title-zh">仍需解决的问题</h2>
         <ol class="next">
-          <li>核验本轮暴露的通用分支语法修正，再用未参与开发调优的编码任务评估来源审查。从原始操作追踪必需的用户选择，既测量成功修复，也统计漏掉或错误排除的调用者。</li>
+          <li>用未参与开发调优的编码任务评估扩展后的来源审查。有界分支语法修正已通过源码检查和已安装的 OpenClaw 对照。从原始操作追踪必需的用户选择，既测量成功修复，也统计漏掉或错误排除的调用者。</li>
           <li>在已完成的审批链检查之外，测量 PlanReadiness 判断的准确率。审批前把可选命令示例与必需任务分清。<code>READY</code> 不证明已经执行；完成时仍需新鲜的执行证据。确实必需但无法执行的检查应保持待验证。</li>
           <li>用真实 Pro 审查检验修订后的条件性义务指引，分别测试触发条件未成立、成立且已完成、成立但未完成。保留原始条件，另行核对无条件检查；提示词修订不能强制保证语义正确。</li>
           <li>为证据不足的 Stop 增加有界取证，明确允许的检查、保留原审批，并由宿主限制代码修改。取证额度与缺陷修复分开，重新审查新证据后，再判断是否有依据修复代码。</li>
