@@ -214,7 +214,8 @@
             <thead><tr><th scope="col">Checkpoint</th><th scope="col">On track</th><th scope="col">Off track</th></tr></thead>
             <tbody>
               <tr><th scope="row">Proposal scope</th><td>The applicable artifacts cover the requested change and constraints, and the Proposal passes strict OpenSpec validation.</td><td>A requirement is missing or contradicted, or strict validation identifies a contract violation.</td></tr>
-              <tr><th scope="row">Apply progress</th><td>The approved items retain their wording and order. Checkmarks reflect completed work. Tasks can remain open while Apply is in progress.</td><td>Apply rewrites the approved tasks or claims completion for work that current evidence shows is unfinished.</td></tr>
+              <tr><th scope="row">Approved plan</th><td>Approved document text stays unchanged except for checkbox state. The current exact-plan policy also freezes verification notes.</td><td>An unapproved text edit breaks document integrity. Whether it changes requirements or harms code needs separate evidence.</td></tr>
+              <tr><th scope="row">Apply progress</th><td>Checkmarks reflect completed work. Tasks can remain open while Apply is in progress.</td><td>Apply claims completion for work that current evidence shows is unfinished.</td></tr>
               <tr><th scope="row">Required behavior</th><td>Current evidence covers the relevant production path from the user input to the result, including alternate paths required by the task.</td><td>Current source or a trusted check shows a required path produces the wrong result. Sudoku’s seeded Start route, for example, dropped the user’s selected Diagonal mode.</td></tr>
               <tr><th scope="row">Preserved behavior</th><td>Existing behavior in scope still works, with differences accounted for by the requested change.</td><td>A verified failure newly breaks behavior the task requires the implementation to preserve.</td></tr>
             </tbody>
@@ -243,7 +244,8 @@
             <thead><tr><th scope="col">检查点</th><th scope="col">符合预期</th><th scope="col">已偏离</th></tr></thead>
             <tbody>
               <tr><th scope="row">提案范围</th><td>相关文档覆盖所需变更和项目约束，Proposal 通过 OpenSpec 严格校验。</td><td>遗漏或违背原始需求，或严格校验发现违反规范的内容。</td></tr>
-              <tr><th scope="row">实施进度</th><td>已批准清单保持原有文字和顺序，勾选项对应实际已完成的工作。实施过程中保留未完成项属于正常进度。</td><td>Apply 改写已批准的任务，或宣称完成了当前证据表明尚未完成的工作。</td></tr>
+              <tr><th scope="row">获批方案</th><td>获批文档除勾选状态外保持原文。当前精确方案策略也会冻结验证说明。</td><td>未经批准的文字改动违反文档完整性约束。它是否改变需求或损害代码，还需单独核验。</td></tr>
+              <tr><th scope="row">实施进度</th><td>勾选项对应实际已完成的工作。实施过程中保留未完成项属于正常进度。</td><td>Apply 宣称完成了当前证据表明尚未完成的工作。</td></tr>
               <tr><th scope="row">要求实现的行为</th><td>当前证据覆盖从用户输入到最终结果的实际运行路径，包括任务涉及的其他分支。</td><td>当前源码或可信检查显示某条必需路径的结果有误。例如，Sudoku 设置种子后执行 Start 时，丢失了用户选择的 Diagonal 模式。</td></tr>
               <tr><th scope="row">应保留的行为</th><td>范围内的既有行为仍能正常工作，出现的差异有对应的变更要求。</td><td>验证确认，本次实现破坏了任务要求保留的行为。</td></tr>
             </tbody>
@@ -272,7 +274,7 @@
           <li><strong>During Proposal</strong> the reviewer cites the original requirement when an OpenSpec document omits or contradicts it. OpenClaw can revise the document before approval.</li>
           <li><strong>At Stop</strong> the reviewer checks OpenClaw’s claim of completion against the current code and trusted tool results. If the evidence identifies a defect OpenClaw can fix, the reviewer can request a repair in the same session within its budget. The request includes the requirement, the affected path, and the evidence. After OpenClaw edits the code, the reviewer checks the original requirement again with fresh evidence.</li>
           <li><strong>Once a plan is approved</strong> an authenticated operator can bind it to the next Apply run. When that run settles, Stop lists changed files and reports any confirmed departure from the plan. If the checklist is incomplete or evidence is unavailable, the result stays unverified.</li>
-          <li><strong>After Apply and Stop have finished in the benchmark</strong> the controller compares the final checklist with the approved copy. If the checklist was rewritten and the rest of the workflow stayed in scope, the controller can resume the same session once within the original budget. Before freezing the candidate, it checks that the original checklist was restored and the tasks were completed.</li>
+          <li><strong>When Stop confirms an approved-plan change</strong> the plugin can request a native restoration run within the shared correction budget. The admitted run can read the sealed approved text. Its successor keeps the same original requirement list and must pass the ordinary code review. An intentional amendment needs new operator approval. The evaluator independently checks restoration and requirement continuity.</li>
         </ol>
         <p>Work continues without repair when the checkpoint passes. The plugin records when it finds an issue, when it delivers the repair request, and when the repair begins. Only the start counts against the session’s repair allowance.</p>
         <p>The reviewer checks different requirements at the end of a stage, at task completion, and when an external blocker stops work. The current code can show what was implemented. To confirm a check ran, the reviewer needs a trusted execution record for the same snapshot. A failed pinned public test can justify a repair if it covers an original requirement and the current code confirms the problem.</p>
@@ -285,7 +287,7 @@
           <li><strong>Proposal 阶段。</strong> 审查器发现 OpenSpec 文档遗漏或违背原始要求时，会引用对应的原文。OpenClaw 可在方案批准前修改文档。</li>
           <li><strong>Stop 检查点。</strong> 审查器用当前代码和可信的工具结果核对 OpenClaw 的完成声明。证据指向可修复的问题时，审查器可在预算内请求 OpenClaw 在原会话中做一次修正，并说明哪项要求未满足、涉及哪条路径、依据是什么。OpenClaw 修改后，审查器用新证据复核原始要求。</li>
           <li><strong>方案获批后。</strong> 通过身份验证的操作员可把方案绑定到下一次 Apply。运行结束时，Stop 列出改动的文件，并报告已经确认的方案偏离。清单未完成或无法取得证据时，结果记为待验证。</li>
-          <li><strong>基准测试中的 Apply 和 Stop 均结束后。</strong> 控制器将最终清单与已批准的版本对照。确认清单被改写，且其余流程仍在获准范围内时，控制器可在原预算内接续原会话一次。冻结候选版本前，控制器会核对原清单是否恢复、清单中的任务是否实际完成。</li>
+          <li><strong>Stop 确认获批方案被改动时。</strong> 插件可在共享修正额度内请求原生恢复回合，获准回合可以读取封存的获批原文。后续回合沿用同一份原始需求清单，仍须接受正常的代码审查。主动修订方案需要操作员重新批准。评估器独立核对恢复结果和需求是否延续。</li>
         </ol>
         <p>检查通过时，流程直接继续。插件分别记录问题何时发现、修正请求何时送达，以及修正何时开始。只有实际启动的修正才占用会话额度。</p>
         <p>单个阶段结束、整个任务完成和遇到外部阻塞时，审查的要求各不相同。当前代码可以说明实现了什么。要确认某项检查运行过，需要同一代码快照的可信运行记录。固定版本的公开测试失败，如果对应某项原始要求，且当前代码也能证实问题，就可以据此请求修正。</p>
@@ -324,7 +326,7 @@
         <p>An interrupted design review recovered on recheck without changing the design. A later recheck falsely alleged fabricated verification. Independent audit found fresh build, test and acceptance receipts with matching production snapshots. The reviewer had read a truncated transcript containing the earlier planning prompt, without reaching those receipts or reading the source. The installable build now checks approval drift before explicit semantic rechecks and supplies a bounded recent-message view with full-history navigation. The updated installed plugin now has native plan restoration, and the evaluator recognizes its authenticated continuation chain. Scripted stock OpenClaw controls verified requirement continuity through restoration and a subsequent code repair. The paid pair used the earlier build, so its failed workflow outcome remains unchanged.</p>
         <p>An independent audit found normative coverage for all six requirements, with a verification gap at the selected-mode entry point: the plan makes the actual UI handoff an optional manual check. Test task 5.3 also asks for a board invalid under Standard rules, while the design asks for a puzzle uniquely solvable only with diagonal constraints. The literal task conflicts with the shared row, column and box rules. Coverage records therefore need separate checks for test adequacy and internal consistency.</p>
         <p>When OpenClaw’s native records confirm that a repair began, the evaluator can compare the patch sealed just before the first repair with the final patch. That comparison shows which tests started passing or failing. The benchmark also records workflow outcomes, confirmed repair starts, and request costs for attempted runs.</p>
-        <p>The approved new pair is running on macOS with the updated plugin, Flash coding and Pro reviews. OFF finished all 19 checklist items, but replacing one verification note failed the exact-plan check. All task descriptions stayed unchanged; this edit alone does not establish requirement drift or poor code. It made 61 Flash requests in about 9.5 minutes. ON is still in Proposal: its early proposal, spec and design reviews passed, but the complete six-requirement review, approval, Apply and any native repair remain unobserved. The reviewer has read the bounded recent-history view first; this verifies access to that view, not the accuracy of its judgments. Neither new patch has an independent grade yet.</p>
+        <p>The approved new pair is running on macOS with the updated plugin, Flash coding and Pro reviews. OFF finished all 19 checklist items, but replacing one verification note failed the exact-plan check. All task descriptions stayed unchanged; this edit alone does not establish requirement drift or poor code. It made 61 Flash requests in about 9.5 minutes. ON passed a clean full-plan review covering all six original requirements and has entered Apply; the runner requires native approval and arming before that step. Final requirement continuity and any native repair remain unverified. The reviewer has read the bounded recent-history view first; this verifies access to that view, not the accuracy of its judgments. Neither new patch has an independent grade yet.</p>
         <h3>Completed Flash/Pro Sudoku pair</h3>
         <p>Both frozen patches were graded independently on the calibrated API 24 phone. Each ran all 298 tests once, with matching per-test outcomes and no runtime errors. These are diagnostic grades: neither arm qualified for the formal comparison, and the pair shows no quality gain.</p>
         <div class="table" role="region" aria-label="Completed Flash and Pro diagnostic pair" tabindex="0"><table class="evidence">
@@ -370,7 +372,7 @@
         <p>一次中断的设计审查经复查恢复，设计本身没有改动。后一次复查错误地指称验证结果为编造。独立审计找到真实且新鲜的构建、测试和验收回执，生产代码快照也一致。审查器只读到了包含早期规划提示的截断会话，未读到后续回执，也未读取源码。可安装版本现已在显式语义复查前核对审批偏离，并提供有大小上限的近期完整消息视图和完整历史定位。更新后的已安装插件现已支持原生方案恢复，评估器也已支持核验其经过认证的续跑链。标准 OpenClaw 的脚本对照验证了恢复过程及后续代码修复中的需求延续。付费配对使用的是此前的版本，其流程失败结果保持原样。</p>
         <p>独立复核确认，6 项需求均有规范内容，但所选模式的入口验证仍有缺口：方案把真实界面参数传递的检查列为可选手工验证。测试任务 5.3 还要求构造违反标准规则的棋盘，而设计描述的是仅在加入对角线约束后才有唯一解的谜题。按字面理解，该任务与两种模式共有的行、列和宫规则冲突。因此，覆盖记录之外还需核对测试是否充分、方案内部是否一致。</p>
         <p>如果 OpenClaw 的原生记录确认修正已启动，评估器可以对比首次修正开始前封存的补丁和最终补丁，看哪些测试从失败转为通过，或从通过转为失败。流程结果、确认启动的修正和请求开销也会按次记录。</p>
-        <p>新配对已获批准，正在 macOS 上使用更新后的插件运行，Flash 编码，Pro 审查。OFF 完成全部 19 项任务，但替换一条验证说明未通过精确方案检查。所有任务原文保持不变，这处编辑本身不能证明需求偏离或代码质量差。OFF 共发出 61 次 Flash 请求，耗时约 9.5 分钟。ON 仍在 Proposal 阶段，早期提案、规范和设计审查已通过，尚未观察到完整六项需求的审查、审批、Apply 或原生修复。审查器已先读取有大小上限的近期历史视图，这验证了它能访问该视图，判断是否准确仍需核验。两份新补丁均未取得独立评分。</p>
+        <p>新配对已获批准，正在 macOS 上使用更新后的插件运行，Flash 编码，Pro 审查。OFF 完成全部 19 项任务，但替换一条验证说明未通过精确方案检查。所有任务原文保持不变，这处编辑本身不能证明需求偏离或代码质量差。OFF 共发出 61 次 Flash 请求，耗时约 9.5 分钟。ON 的完整方案审查已通过，全部六项原始需求均有覆盖记录，现已进入 Apply；运行器要求先完成原生审批和绑定，才可进入这一步。最终需求延续和原生修复仍待核验。审查器已先读取有大小上限的近期历史视图，这验证了它能访问该视图，判断是否准确仍需核验。两份新补丁均未取得独立评分。</p>
         <h3>已完成的 Flash/Pro Sudoku 配对</h3>
         <p>两份冻结补丁均在已校准的 API 24 手机上独立评分，各执行全部 298 项测试一次，逐项结果一致，没有运行时错误。这是诊断评分，两组均未满足正式比较条件，本次配对没有显示质量改善。</p>
         <div class="table" role="region" aria-label="已完成的 Flash 和 Pro 诊断配对" tabindex="0"><table class="evidence">
@@ -635,10 +637,10 @@
         </div>
       </details>
       <details class="evidence-group">
-        <summary><span data-report-copy lang="en">Apply checklist recovery on the current controller</span><span data-report-copy lang="zh-CN">当前控制器的 Apply 清单恢复</span></summary>
+        <summary><span data-report-copy lang="en">Earlier benchmark-controller checklist recovery</span><span data-report-copy lang="zh-CN">早期基准控制器的清单恢复</span></summary>
         <div class="language-panel" data-report-copy lang="en">
           <h3>Apply checklist recovery control</h3>
-          <p>The paired controller saves the checklist after Proposal passes validation. Once Apply and native Stop finish, a verified checklist rewrite can trigger one internal continuation in the same OpenClaw session. The continuation receives the approved text and checks each task against the implementation and available checks. Independent grading requires the approved checklist, every task checked off, strict validation and unchanged workflow scope.</p>
+          <p>The earlier paired controller saved the checklist after Proposal passed validation. Once Apply and native Stop finished, a verified checklist rewrite could trigger one internal continuation in the same OpenClaw session. The continuation received the approved text and checked each task against the implementation and available checks. Independent grading required the approved checklist, every task checked off, strict validation and unchanged workflow scope.</p>
           <p>OpenClaw refused to revise the final response in place after a file write, so the controller starts a new run in the same session. The macOS replay used OpenSpec, the plugin from the later paid run and the updated controller. The checklist rewrite failed the final check with recovery disabled. With recovery enabled, the same rewrite passed after restoration. Checkbox-only updates needed zero continuations. All three arms produced the same production patch and passed an independent Node check. Recovery took two scripted business requests. The replay sent zero external model requests and added zero formal ArkTS grades.</p>
           <p>A second native control restored the approved text and left an unfinished verification task open. Strict validation passed, and the workflow reported Apply incomplete with one of two tasks checked off. The production patch stayed the same and the candidate remained ineligible for grading.</p>
           <p>The OpenSpec CLI replay used the exact frozen controller modules for all 13 task fixtures and 166 approved entries. Three phone proposals came from sealed historical checkpoints. The ten PC proposals came from archived planning documents. Every fixture accepted ordinary checklist progress without a continuation. Each restored the approved list after a verified rewrite and rejected changes to other workflow files. The scripted CLI and controller checks added zero formal benchmark pairs.</p>
@@ -646,7 +648,7 @@
         </div>
         <div class="language-panel" data-report-copy lang="zh-CN">
           <h3>Apply 清单恢复对照</h3>
-          <p>Proposal 通过验证后，配对试验控制器会保存获批清单。Apply 和原生 Stop 结束后，如果确认清单被改写，控制器可以在同一个 OpenClaw 会话中内部续跑一次。续跑时会提供获批清单的原文，并根据实现和现有检查结果逐项核实任务。候选补丁须保留获批清单和工作流范围，通过严格验证，并勾选全部任务，才能进入独立评分。</p>
+          <p>早期配对试验控制器在 Proposal 通过验证后保存获批清单。Apply 和原生 Stop 结束后，如果确认清单被改写，控制器可在同一个 OpenClaw 会话中内部续跑一次。续跑时提供获批清单的原文，并根据实现和现有检查结果逐项核实任务。候选补丁须保留获批清单和工作流范围，通过严格验证，并勾选全部任务，才能进入独立评分。</p>
           <p>写入文件后，OpenClaw 拒绝在原运行中修改最终回复，控制器于是从同一会话启动新一轮运行。macOS 上的三组重放使用 OpenSpec、较晚一次付费试验所用的插件以及更新后的控制器。关闭恢复时，改写后的清单未通过最终检查。启用恢复时，控制器将同样的改写还原为获批清单，通过了检查。只更改勾选状态无需续跑。三组的生产代码补丁完全相同，也都通过了独立的 Node 检查。恢复额外用了 2 次脚本化业务请求。此次重放没有调用外部模型，也没有新增正式 ArkTS 评分。</p>
           <p>第二个原生对照恢复了清单原文，并保留一项尚未完成的验证任务。严格验证通过，两项任务只勾选了一项，工作流据此将 Apply 记为未完成。生产代码补丁保持一致，候选补丁仍不具备评分资格。</p>
           <p>OpenSpec CLI 使用冻结版本的同一套控制器模块重放了全部 13 个任务样例和 166 个获批条目。3 个手机任务的 Proposal 来自封存的历史检查点，10 个 PC 任务的 Proposal 根据归档规划文档重建。对所有样例，控制器都接受正常的勾选进度，无需续跑。确认清单被改写后，控制器会恢复获批清单，并拒绝其他工作流文件的变更。这些脚本检查实际运行了 CLI 和控制器，新增正式基准配对数为 0。</p>
@@ -733,7 +735,7 @@
           <h3>手机与 PC 评测工作进程就绪情况</h3>
           <p>macOS 上的两个工作进程都用开发版本重新预检了三个手机任务。新一轮 Sudoku 原生 Instrument Test 通过了全部 289 项既有测试，功能检查结果仍为预期的 2/6。此前的资格验证覆盖了三个任务，共通过 1,082 项既有测试。</p>
           <p>冻结版本的策略安装器为 ON 组的全部 13 个任务加载了原始需求审查、实际运行路径检查和既有回归测试套件。启用公开验收后，5 个任务共有 15 项内置检查，其中 4 个任务的 10 项检查绑定了原始需求。加入新分支检查的开发版本为 13 个任务加载了相同的策略。手机资格验证取得了三个手机任务的实际运行证据。</p>
-          <p>交付包包含完整计划、按设备划分的两个子计划和单独的 Security Tool 4 校准计划。四份计划都在全新检出的代码目录中通过了核验。公开准备命令用固定的 Git 缓存生成并验证了全部 10 个 PC 源码快照。PC 原生执行仍待进行。</p>
+          <p>交付包包含完整计划、按设备划分的两个子计划和单独的 Security Tool 4 校准计划。四份计划都在全新检出的代码目录中通过了核验。公开准备命令用固定的 Git 缓存生成并验证了全部 10 个 PC 源码快照。PC 原生执行已完成首个校准，但尚未通过资格验证。</p>
           <p>已准备好的手机启动流程使用带有 Sudoku 分支检查和 Apply 工作流完整性检查的控制器，保留全部 18 次运行，每次最多启动一组配对。首组是 Sudoku 11 第 1 轮，先运行 OFF，再运行 ON。预检确认评测尚未启动，并核验了工作进程和策略，全程没有调用模型。</p>
           <h3>以任务起始代码运行手机公开测试</h3>
           <div class="table" role="region" aria-label="手机公开测试基线" tabindex="0">
