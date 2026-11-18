@@ -135,6 +135,132 @@ test('detailed literal discovery keeps unsupported and truncated groups unknown'
   }
 });
 
+test('bounded unbraced cleanup calls preserve the complete surrounding dispatch group', () => {
+  for (const suffix of [';', '']) {
+    const source = [
+      'function openView(input) {',
+      `  if (input.dirty) clearCache(context(input))${suffix}`,
+      '  if (input.saved) {',
+      `    if (input.dirty) clearCache(context(input))${suffix}`,
+      '    router.open({ view: "screens/Result", params: input.saved });',
+      '  } else {',
+      '    router.open({ view: "screens/Result", params: input.current });',
+      '  }',
+      '}',
+    ].join('\n');
+    const result = discoverSiblingLiteralDispatches(source, { start: 7, end: 7 });
+    assert.equal(result.status, 'READY');
+    assert.deepEqual(result.siblings, [{ start: 5, end: 5, callee: 'router.open', destination: 'screens/Result' }]);
+    assert.deepEqual(discoverFileSelectorSiblingDispatches(source, { start: 7, end: 7 }, ['screens/Result']), result);
+  }
+});
+
+test('a supported unbraced dispatch has its own branch rather than disappearing into its parent', () => {
+  for (const suffix of [';', '']) {
+    const source = [
+      'function openView(input) {',
+      '  if (input.saved)',
+      '    router.open({',
+      '      view: "screens/Result",',
+      '      params: input.saved,',
+      `    })${suffix}`,
+      '  router.open({ view: "screens/Result", params: input.current });',
+      '}',
+    ].join('\n');
+    const result = discoverSiblingLiteralDispatches(source, { start: 7, end: 7 });
+    assert.equal(result.status, 'READY');
+    assert.deepEqual(result.siblings, [{ start: 3, end: 6, callee: 'router.open', destination: 'screens/Result' }]);
+    const reverse = discoverSiblingLiteralDispatches(source, { start: 4, end: 4 });
+    assert.equal(reverse.status, 'READY');
+    assert.deepEqual(reverse.siblings, [{ start: 7, end: 7, callee: 'router.open', destination: 'screens/Result' }]);
+    assert.deepEqual(discoverFileSelectorSiblingDispatches(source, { start: 7, end: 7 }, ['screens/Result']), result);
+  }
+});
+
+test('unbraced branch support keeps ambiguous, deferred and compound statements unknown', () => {
+  for (const statement of [
+    'if (input.saved) return router.open({ view: "screens/Result", params: input.saved });',
+    'if (input.saved) if (input.cached) cleanup(); else cleanupOther();',
+    'if (input.saved) cleanup(); else { cleanupOther(); }',
+    'if (input.saved) handlers[input.kind](input);',
+    'if (input.saved) cleanup().then(complete);',
+    'if (input.saved) cleanup(), router.open({ view: "screens/Result", params: input.saved });',
+    'if (input.saved) input.ready = true;',
+    'if (input.saved) cleanup()\n    (input);',
+    'if (input.saved) cleanup()\n    [input.kind](input);',
+    'if (input.saved) cleanup() && router.open({ view: "screens/Result", params: input.saved });',
+    'if (router.open("screens/Result", input.saved)) cleanup();',
+    'if (input.saved) defer(() => { router.open({ view: "screens/Result", params: input.saved }); });',
+    'if (input.saved) await cleanup(input);',
+    'if (input.saved) while (input.cached) cleanup(input);',
+    'switch (input.kind) { case 1: cleanup(); }',
+  ]) {
+    const lines = ['function openView(input) {', statement,
+      '  router.open({ view: "screens/Result", params: input.current });', '}'];
+    const source = lines.join('\n'), line = source.split('\n').length - 1;
+    const result = discoverSiblingLiteralDispatches(source, { start: line, end: line });
+    assert.equal(result.status, 'UNKNOWN', statement);
+    assert.equal(result.reason, 'UNSUPPORTED_BRANCH_SYNTAX', statement);
+    assert.deepEqual(result.siblings, [], statement);
+  }
+});
+
+test('a dynamic destination in a bounded unbraced call cannot certify the static dispatch alone', () => {
+  const source = [
+    'function openView(input, route) {',
+    '  if (input.saved) router.open(route, input.saved);',
+    '  router.open("screens/Result", input.current);',
+    '}',
+  ].join('\n');
+  const result = discoverSiblingLiteralDispatches(source, { start: 3, end: 3 });
+  assert.equal(result.status, 'UNKNOWN');
+  assert.equal(result.reason, 'UNRESOLVED_SIBLING');
+  assert.deepEqual(result.siblings, []);
+});
+
+test('opaque templates cannot hide execution inside a newly supported unbraced branch', () => {
+  for (const statement of [
+    'if (`${router.open("screens/Result", input.saved)}`) cleanup();',
+    'if (tag`${router.open("screens/Result", input.saved)}`) cleanup();',
+    'if (input.saved) cleanup(`${router.open("screens/Result", input.saved)}`);',
+    'if (input.saved) cleanup(tag`${router.open("screens/Result", input.saved)}`);',
+    'if (input.saved) tag`${router.open("screens/Result", input.saved)}`;',
+    'if (`saved`) cleanup();',
+    'if (tag`saved`) cleanup();',
+    'if (input.saved) cleanup(`saved`);',
+    'if (input.saved) cleanup(tag`saved`);',
+    'if (input.saved) cleanup({ label: `${router.open("screens/Result", input.saved)}` });',
+  ]) {
+    const source = ['function openView(input) {', `  ${statement}`,
+      '  router.open("screens/Result", input.current);', '}'].join('\n');
+    for (const result of [discoverSiblingLiteralDispatches(source, { start: 3, end: 3 }),
+      discoverFileSelectorSiblingDispatches(source, { start: 3, end: 3 }, ['screens/Result'])]) {
+      assert.equal(result.status, 'UNKNOWN', statement);
+      assert.equal(result.reason, 'UNSUPPORTED_BRANCH_SYNTAX', statement);
+      assert.equal(result.complete, false, statement);
+      assert.deepEqual(result.siblings, [], statement);
+    }
+  }
+});
+
+test('regex-looking tokens cannot hide division execution inside a newly supported unbraced branch', () => {
+  for (const statement of [
+    'if (left / dispatch("export", input.saved) / right) cleanup();',
+    'if (input.saved) cleanup(left / dispatch("export", input.saved) / right);',
+    'if (/saved/) cleanup();',
+    'if (input.saved) cleanup(/saved/);',
+    'if (input.saved) cleanup({ label: left / dispatch("export", input.saved) / right });',
+  ]) {
+    const source = ['function openView(input, left, right) {', `  ${statement}`,
+      '  dispatch("export", input.current);', '}'].join('\n');
+    const result = discoverSiblingLiteralDispatches(source, { start: 3, end: 3 });
+    assert.equal(result.status, 'UNKNOWN', statement);
+    assert.equal(result.reason, 'UNSUPPORTED_BRANCH_SYNTAX', statement);
+    assert.equal(result.complete, false, statement);
+    assert.deepEqual(result.siblings, [], statement);
+  }
+});
+
 test('a dynamic alternate destination does not certify a partial static group', () => {
   const source = [
     'function submit(route, value) {',
