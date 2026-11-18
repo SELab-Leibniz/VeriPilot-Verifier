@@ -209,7 +209,7 @@
         </ol>
         <p>With strict coverage enabled, the operator supplies the requirement inventory before Proposal. Approval seals that inventory with the exact plan and binds it to Apply. Stop must check every sealed item, including any item the reviewer leaves out of its own checklist. The current sealed list covers unconditional production behavior; process and conditional obligations need separate checks.</p>
         <p>For projects already using strict Proposal coverage, an opt-in <code>PlanReadiness</code> check is implemented and source-tested. It is disabled by default. The host lists every actual Apply checkbox, and the reviewer must return one <code>READY</code>, <code>BLOCKED</code> or <code>UNVERIFIED</code> row per item, backed by acknowledged reads of the current plan. When enabled, strict approval requires every row to be <code>READY</code>. This checks whether the planned work and verification can proceed, separately from coverage of the requested behavior.</p>
-        <p>The installable package includes this check. Unsupported indented checkbox syntax stays unverified. Three fresh scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair, including current source and both dispatch branches around the supported unbraced cleanup call. The latest real-model trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
+        <p>The installable package includes this check. Unsupported indented checkbox syntax stays unverified. Three fresh scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair. The latest real-model trial joined full-plan readiness to approval and final plan preservation, but exposed an unsupported process warning and an origin-parser limit. A readiness judgment proves neither execution nor SDK capability.</p>
         <div class="table" role="region" aria-label="On track, off track and unverified criteria" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Checkpoint</th><th scope="col">On track</th><th scope="col">Confirmed deviation</th><th scope="col">Unverified</th></tr></thead>
           <tbody>
@@ -230,7 +230,7 @@
         </ol>
         <p>启用严格覆盖检查时，操作员在 Proposal 前提供需求清单。审批把清单与确切的方案版本一同封存，再绑定到 Apply。Stop 必须核对全部封存条目，审查器自己列漏的项目也不能跳过。当前封存清单覆盖无条件的生产行为，流程和条件性要求还需单独核查。</p>
         <p>对于已启用严格 Proposal 覆盖检查的项目，可选的 <code>PlanReadiness</code> 检查已实现并通过源码测试，默认关闭。宿主列出 Apply 的每个实际勾选项，审查器须逐项返回 <code>READY</code>、<code>BLOCKED</code> 或 <code>UNVERIFIED</code>，并引用已确认读取的当前方案。启用后，严格审批要求所有条目均为 <code>READY</code>。这项检查核对计划中的工作和验证是否具备执行条件，与功能需求覆盖分别判断。</p>
-        <p>可安装的插件包已包含这项检查。不支持的缩进勾选语法保持待验证。三项新的标准 OpenClaw 脚本对照验证了拒绝审批、正常完成和一次原生修复，并核对了当前源码，以及已支持的无花括号清理调用附近的两条分发路径。最近一轮真实模型试验已连接完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
+        <p>可安装的插件包已包含这项检查。不支持的缩进勾选语法保持待验证。三项新的标准 OpenClaw 脚本对照验证了拒绝审批、正常完成和一次原生修复。最近一轮真实模型试验已连接完整方案就绪、审批及最终方案保留，但暴露了缺少依据的流程警告和来源解析限制。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
         <div class="table" role="region" aria-label="符合预期、确认偏离与待验证的标准" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">检查点</th><th scope="col">符合预期</th><th scope="col">确认偏离</th><th scope="col">待验证</th></tr></thead>
           <tbody>
@@ -314,6 +314,7 @@
         <h2 id="results-title">What the 13-task benchmark has shown</h2>
         <p class="intro">SWE-ArkTS-Bench evaluates the plugin on 13 coding tasks. The plan repeats each task three times: 39 OFF/ON pairs and 78 runs. Each pair contains one OFF run and one ON run on the same task. The repetitions are intended to show variation between model runs. OFF disables runtime correction; ON enables it. Both use the same coding model, task input, OpenSpec workflow, public checks and time budget.</p>
         <p>Hidden tests and reference solutions stay in the private grading environment. The evaluator grades frozen patches against a calibrated runtime. A formal quality comparison requires two eligible, verified grades from the same setup. The zero below counts qualifying comparisons, not failed tasks. Workflow failures, missing grades and environment interruptions remain in the record.</p>
+        <p>The formal filter depends on workflow completion, an outcome the corrector may change. A planned secondary view would grade every valid frozen candidate and report workflow status and missing runs alongside quality. It is not implemented yet; the existing formal definition and 39-pair plan remain unchanged.</p>
         <dl id="status" class="metrics">
           <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">13 tasks × 3 paired repetitions</dd></div>
           <div><dt>Phone tasks passed preflight</dt><dd>3 / 3</dd><dd class="caption">Public and independent native controls</dd></div>
@@ -325,6 +326,7 @@
         <h2 id="results-title-zh">13 个任务的基准测试进展</h2>
         <p class="intro">SWE-ArkTS-Bench 用 13 个编码任务评估插件。计划每项任务重复三次，共 39 个 OFF/ON 配对、78 次运行。每对包含同一任务的一次 OFF 和一次 ON，重复运行用于观察模型结果的波动。OFF 关闭运行时纠偏，ON 启用纠偏。两组使用相同的编码模型、任务输入、OpenSpec 流程、公开检查和时间预算。</p>
         <p>隐藏测试和参考解保留在私有评分环境中。评估器使用已校准的运行时对冻结补丁评分。正式质量比较要求同一环境中的两组均符合条件，并取得经核验的评分。下方的零表示已满足条件的比较数量，不是失败任务数。流程失败、评分缺失和环境中断继续保留在记录中。</p>
+        <p>正式比较以工作流完成为前提，而纠偏器本身可能改变这一结果。计划另建候选质量视图，对每个有效冻结补丁评分，同时报告工作流状态和缺失运行。该视图尚未实现，现有正式定义和 39 配对计划保持不变。</p>
         <dl id="status-zh" class="metrics">
           <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">13 个任务 × 每项 3 对重复运行</dd></div>
           <div><dt>通过预检的手机任务</dt><dd>3 / 3</dd><dd class="caption">公开检查及独立原生对照</dd></div>

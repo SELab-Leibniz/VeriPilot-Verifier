@@ -341,6 +341,9 @@ export default {id:'rc-fault-fixture',name:'RC isolated fault injection',registe
     config.plugins.allow.push('rc-fault-fixture'); config.plugins.load.paths.push(fixtureRoot);
     config.plugins.entries['rc-fault-fixture'] = { enabled: true, hooks: { allowConversationAccess: true, allowPromptInjection: true } };
   }
+  // Evaluation profiles must not check registries or update the pinned host.
+  // Apply this after resume too, since older captured profiles lack the policy.
+  config.update = { ...config.update, checkOnStart: false, auto: { ...config.update?.auto, enabled: false } };
   // The random loopback Gateway token lives in this process only. Existing
   // provider credentials are inherited, not embedded in this saved config.
   await fs.writeFile(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2));
