@@ -308,10 +308,10 @@
     <section id="results" aria-labelledby="results-title results-title-zh">
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="results-title">What the 13-task benchmark has shown</h2>
-        <p class="intro">SWE-ArkTS-Bench evaluates the plugin on 13 coding tasks. The plan repeats each task three times: 39 OFF/ON pairs and 78 runs. OFF disables runtime correction; ON enables it. Both use the same coding model, task input, OpenSpec workflow, public checks and time budget.</p>
+        <p class="intro">SWE-ArkTS-Bench evaluates the plugin on 13 coding tasks. The plan repeats each task three times: 39 OFF/ON pairs and 78 runs. Each pair contains one OFF run and one ON run on the same task. The repetitions are intended to show variation between model runs. OFF disables runtime correction; ON enables it. Both use the same coding model, task input, OpenSpec workflow, public checks and time budget.</p>
         <p>Hidden tests and reference solutions stay in the private grading environment. The evaluator grades frozen patches against a calibrated runtime. A formal quality comparison requires two eligible, verified grades from the same setup. Workflow failures, missing grades and environment interruptions remain in the record.</p>
         <dl id="status" class="metrics">
-          <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">No demonstrated live quality gain yet</dd></div>
+          <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">13 tasks × 3 paired repetitions</dd></div>
           <div><dt>Phone tasks passed preflight</dt><dd>3 / 3</dd><dd class="caption">Public and independent native controls</dd></div>
           <div><dt>PC tasks qualified</dt><dd>0 / 10</dd><dd class="caption">Native failures; unit backend remains experimental</dd></div>
         </dl>
@@ -319,10 +319,10 @@
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="results-title-zh">13 个任务的基准测试进展</h2>
-        <p class="intro">SWE-ArkTS-Bench 用 13 个编码任务评估插件。计划每项任务重复三次，共 39 个 OFF/ON 配对、78 次运行。OFF 关闭运行时纠偏，ON 启用纠偏。两组使用相同的编码模型、任务输入、OpenSpec 流程、公开检查和时间预算。</p>
+        <p class="intro">SWE-ArkTS-Bench 用 13 个编码任务评估插件。计划每项任务重复三次，共 39 个 OFF/ON 配对、78 次运行。每对包含同一任务的一次 OFF 和一次 ON，重复运行用于观察模型结果的波动。OFF 关闭运行时纠偏，ON 启用纠偏。两组使用相同的编码模型、任务输入、OpenSpec 流程、公开检查和时间预算。</p>
         <p>隐藏测试和参考解保留在私有评分环境中。评估器使用已校准的运行时对冻结补丁评分。正式质量比较要求同一环境中的两组均符合条件，并取得经核验的评分。流程失败、评分缺失和环境中断继续保留在记录中。</p>
         <dl id="status-zh" class="metrics">
-          <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">尚未证明实际质量收益</dd></div>
+          <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">13 个任务 × 每项 3 对重复运行</dd></div>
           <div><dt>通过预检的手机任务</dt><dd>3 / 3</dd><dd class="caption">公开检查及独立原生对照</dd></div>
           <div><dt>已取得环境资格的 PC 任务</dt><dd>0 / 10</dd><dd class="caption">原生路径有故障，单元后端仍属实验</dd></div>
         </dl>
