@@ -27,8 +27,9 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     assert(tools.length > 0, `${arm} exposed no tools`);
     assert.deepEqual(tools.filter(name => !declared.has(name)), [], `${arm} has undeclared worker tools`);
   };
-  for (const [arm, originalRequirementsBasis, deviationOnly] of [
+  for (const [arm, originalRequirementsBasis, deviationOnly, strictOrigin = false] of [
     ['A', false, false], ['B1', true, false], ['B2', false, true], ['B12', true, true], ['default project', true, true],
+    ['B12 strict origin', true, true, true],
   ]) await t.test(arm, async subtest => {
     const fixture = await stopProtocolFixture(subtest, 'findings');
     const { input, root } = fixture;
@@ -36,10 +37,13 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     if (fromTemplate) await fs.cp(new URL('../.runtime-corrector-default/', import.meta.url), path.join(root, '.runtime-corrector'), { recursive: true });
     const runtime = fromTemplate ? (await loadConfig({ cwd: root })).runtimeV2
       : compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: !originalRequirementsBasis },
-        stopCorrection: { enabled: true, originalRequirementsBasis, deviationOnly } });
+        stopCorrection: { enabled: true, originalRequirementsBasis, deviationOnly,
+          requireCurrentProductionCoverage: strictOrigin, requireProductionOriginCoverage: strictOrigin } });
     assert.equal(Boolean(runtime.stopCorrection.originalRequirementsBasis), originalRequirementsBasis);
     assert.equal(Boolean(runtime.stopCorrection.deviationOnly), deviationOnly);
-    input.request.population.reviewPolicy = { metrics: runtime.stopCorrection.metrics, deviationOnly: runtime.stopCorrection.deviationOnly };
+    input.request.population.reviewPolicy = { metrics: runtime.stopCorrection.metrics, deviationOnly: runtime.stopCorrection.deviationOnly,
+      requireCurrentProductionCoverage: runtime.stopCorrection.requireCurrentProductionCoverage,
+      requireProductionOriginCoverage: runtime.stopCorrection.requireProductionOriginCoverage };
     if (runtime.stopCorrection.originalRequirementsBasis) input.evidence.originalRequirements = await loadStopOriginalRequirements({
       projectRoot: root, snapshot: input.evidence.snapshot,
     });
@@ -54,10 +58,12 @@ test('actual A, B1, B2, B12 and F worker tools are declared by the OpenClaw plug
     await assert.rejects(runWorkspaceStopReview(input, { session }), error =>
       error.code === 'TASK_NO_VALID_SUBMISSION' && error.cause === captured);
     assert.equal(tools.includes('set_original_checklist'), originalRequirementsBasis);
+    assert.equal(tools.includes('review_production_origin'), strictOrigin);
     assert.equal(systemPrompt.includes('breaks existing behavior that the request did not ask to change'), false);
     assert.equal(systemPrompt.includes('standing REGRESSION item'), false, 'regression guidance follows the program standing item, absent without source changes');
     assertDeclared(arm, tools);
     if (originalRequirementsBasis) assert(source.contracts.tools.includes('set_original_checklist'));
+    if (strictOrigin) assert(source.contracts.tools.includes('review_production_origin'));
   });
   await t.test('F', async subtest => {
     const { root } = await stopProtocolFixture(subtest, 'findings');
@@ -89,6 +95,8 @@ test('the full registration contract includes every actual factory even without 
  assert(names.has('rc_skill_care'));
  assert.deepEqual([...names].sort(),[...manifest.contracts.tools].sort());
  assert(TASK_TOOL_NAMES.includes('finish_baseline_audit'));
+ assert(TASK_TOOL_NAMES.includes('review_production_origin'));
+ assert(!BASELINE_TOOL_NAMES.includes('review_production_origin'));
  assert(TASK_TOOL_NAMES.includes('commit_baseline_inventory'));
  assert(!BASELINE_TOOL_NAMES.includes('commit_baseline_inventory'));
  const groups=JSON.parse(await fs.readFile(new URL('../config/openclaw-tool-contracts.json',import.meta.url),'utf8'));

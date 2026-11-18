@@ -17,6 +17,7 @@
     "submit_findings",
     "finish_findings",
     "set_original_checklist",
+    "review_production_origin",
     "review_scope",
     "review_checklist",
     "review_changes",
