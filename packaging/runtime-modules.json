@@ -195,6 +195,7 @@
     "lib/openclaw/session-settings.mjs",
     "lib/openclaw/sources.mjs",
     "lib/openclaw/stop-feedback-notice.mjs",
+    "lib/openclaw/stop-review-coverage-receipt.mjs",
     "lib/openclaw/stop-start-protocol.mjs",
     "lib/openclaw/admission-timing.mjs",
     "lib/openclaw/stop-task-runtime.mjs",
