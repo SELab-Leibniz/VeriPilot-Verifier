@@ -99,11 +99,13 @@ export async function installOriginalBasisPolicy({ artifact, projectRoot, output
     assert.notEqual(reviewer.session, 'independent', `Benchmark ${role} must use the selected OpenClaw provider model.`);
   }
   const artifactOverride = applied?.value?.artifactCorrection;
-  const strictProposal = artifactOverride?.requireOpenSpecProposalCoverage === true;
+  const planReadiness = artifactOverride?.requireOpenSpecPlanReadiness === true;
+  const strictProposal = artifactOverride?.requireOpenSpecProposalCoverage === true || planReadiness;
   assert.deepEqual(effective.artifactCorrection, {
     originalRequirementsEnabled: strictProposal || (artifactOverride?.originalRequirementsEnabled ?? true),
     groundTruthReviewEnabled: false, stageMetricsEnabled: false,
     ...(strictProposal ? { requireOpenSpecProposalCoverage: true } : {}),
+    ...(planReadiness ? { requireOpenSpecPlanReadiness: true } : {}),
   });
   assert.equal(effective.stopCorrection.enabled, true);
   assert.equal(effective.stopCorrection.originalRequirementsBasis, true);

@@ -45,6 +45,36 @@ test('strict Proposal enrollment preserves the actual product policy and enables
   });
 });
 
+test('Plan Readiness enrollment retains its strict original-source implications', async t => {
+  for (const strict of [undefined, false, true]) await t.test(String(strict), async t => {
+    const overrides = { value: { artifactCorrection: {
+      originalRequirementsEnabled: false,
+      ...(strict === undefined ? {} : { requireOpenSpecProposalCoverage: strict }),
+      requireOpenSpecPlanReadiness: true,
+    } } };
+    const evidence = await installOriginalBasisPolicy({ ...await policyFixture(t), overrides,
+      reviewerModelRef: 'custom/deepseek-v4-pro' });
+    assert.deepEqual(evidence.runtimeV2.artifactCorrection, {
+      originalRequirementsEnabled: true, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
+      requireOpenSpecProposalCoverage: true, requireOpenSpecPlanReadiness: true,
+    });
+    assert.equal(evidence.runtimeV2.stopCorrection.originalRequirementsBasis, true);
+    assert.equal(evidence.runtimeV2.stopCorrection.deviationOnly, true);
+    for (const role of ['artifactReviewer', 'stopReviewer'])
+      assert.equal(evidence.runtimeV2.reviewers[role].model, 'custom/deepseek-v4-pro');
+  });
+});
+
+test('explicitly disabled Plan Readiness leaves legacy compiled enrollment unchanged', async t => {
+  const overrides = { value: { artifactCorrection: {
+    requireOpenSpecProposalCoverage: false, requireOpenSpecPlanReadiness: false,
+  } } };
+  const evidence = await installOriginalBasisPolicy({ ...await policyFixture(t), overrides });
+  assert.deepEqual(evidence.runtimeV2.artifactCorrection, {
+    originalRequirementsEnabled: true, groundTruthReviewEnabled: false, stageMetricsEnabled: false,
+  });
+});
+
 test('keeps published policy bytes when the benchmark reviewer model stays on the default', async t => {
   for (const [label, reviewerModelRef] of [['implicit', undefined], ['explicit', 'custom/deepseek-v4-flash']]) await t.test(label, async t => {
     const fixture = await policyFixture(t);

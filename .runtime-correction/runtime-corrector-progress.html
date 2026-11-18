@@ -209,7 +209,7 @@
         </ol>
         <p>With strict coverage enabled, the operator supplies the requirement inventory before Proposal. Approval seals that inventory with the exact plan and binds it to Apply. Stop must check every sealed item, including any item the reviewer leaves out of its own checklist. The current sealed list covers unconditional production behavior; process and conditional obligations need separate checks.</p>
         <p>For projects already using strict Proposal coverage, an opt-in <code>PlanReadiness</code> check is implemented and source-tested. It is disabled by default. The host lists every actual Apply checkbox, and the reviewer must return one <code>READY</code>, <code>BLOCKED</code> or <code>UNVERIFIED</code> row per item, backed by acknowledged reads of the current plan. When enabled, strict approval requires every row to be <code>READY</code>. This checks whether the planned work and verification can proceed, separately from coverage of the requested behavior.</p>
-        <p>The source suite passed 215 checks, and a further affected-case suite passed 116 after strict task-syntax handling was added. Unsupported indented checkbox syntax stays unverified; default Apply parsing is unchanged. The published package predates this change, and installed-plugin and real-model validation are pending. A readiness judgment proves neither execution nor SDK capability.</p>
+        <p>The source suite passed 215 checks, and 116 affected checks passed after strict task syntax handling was added. Unsupported indented checkbox syntax stays unverified; default Apply parsing is unchanged. The installable package now includes this check. Three scripted controls on stock OpenClaw verified approval denial, healthy completion and one native repair. Real-model validation is still pending. A readiness judgment proves neither execution nor SDK capability.</p>
         <div class="table" role="region" aria-label="On track, off track and unverified criteria" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">Checkpoint</th><th scope="col">On track</th><th scope="col">Confirmed deviation</th><th scope="col">Unverified</th></tr></thead>
           <tbody>
@@ -230,7 +230,7 @@
         </ol>
         <p>启用严格覆盖检查时，操作员在 Proposal 前提供需求清单。审批把清单与确切的方案版本一同封存，再绑定到 Apply。Stop 必须核对全部封存条目，审查器自己列漏的项目也不能跳过。当前封存清单覆盖无条件的生产行为，流程和条件性要求还需单独核查。</p>
         <p>对于已启用严格 Proposal 覆盖检查的项目，可选的 <code>PlanReadiness</code> 检查已实现并通过源码测试，默认关闭。宿主列出 Apply 的每个实际勾选项，审查器须逐项返回 <code>READY</code>、<code>BLOCKED</code> 或 <code>UNVERIFIED</code>，并引用已确认读取的当前方案。启用后，严格审批要求所有条目均为 <code>READY</code>。这项检查核对计划中的工作和验证是否具备执行条件，与功能需求覆盖分别判断。</p>
-        <p>源码测试通过 215 项；加入严格任务语法处理后，相关测试另有 116 项通过。不支持的缩进勾选语法保持待验证，默认 Apply 解析行为不变。已发布的插件包尚不含这项改动，可安装插件和真实模型验证仍待完成。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
+        <p>源码测试通过 215 项；加入严格任务语法处理后，相关 116 项检查通过。不支持的缩进勾选语法保持待验证，默认 Apply 解析行为不变。可安装的插件包现已包含这项检查。三项使用脚本响应的标准 OpenClaw 对照验证了拒绝审批、正常完成和一次原生修复。真实模型验证仍待进行。就绪判断不能证明检查已经执行，也不能证明 SDK 具备相应能力。</p>
         <div class="table" role="region" aria-label="符合预期、确认偏离与待验证的标准" tabindex="0"><table class="evidence">
           <thead><tr><th scope="col">检查点</th><th scope="col">符合预期</th><th scope="col">确认偏离</th><th scope="col">待验证</th></tr></thead>
           <tbody>
@@ -342,6 +342,7 @@
             <tr><th scope="row">Restoration then code repair</th><td>One restoration plus one code repair; checks progressed 3/4, 3/4, 4/4 with the same two approved requirements through final Stop.</td><td>Verifies execution and inventory continuity, not live detection accuracy.</td></tr>
             <tr><th scope="row">Origin coverage</th><td>Omitted observed callers kept coverage unverified. Healthy code passed without repair. One native caller repair improved independent checks from 3/4 to 4/4 while retaining both approved requirements.</td><td>Three fresh scripted controls passed. The earlier negative reporting assertion failure remains recorded. Real-model accuracy is still unmeasured.</td></tr>
             <tr><th scope="row">Source-review boundaries</th><td>Unresolved entries and incomplete matched file-selector groups remain unverified. Ordinary processing calls retain their existing behavior.</td><td>173 local Stop, origin, syntax and packaging checks passed; one Windows-only check was skipped.</td></tr>
+            <tr><th scope="row">Plan Readiness</th><td>Uncertain task readiness blocked approval despite two covered features. A complete READY plan finished without repair. Another control preserved readiness and both requirements through one native code repair, improving checks from 3/4 to 4/4.</td><td>Scripted responses; exact request feedback and saved prompts were verified. Two earlier fixture failures remain recorded, with the first request text mismatch unexplained. Real-model accuracy is unmeasured.</td></tr>
             <tr><th scope="row">Strict approval</th><td>Two covered rows plus a semantic error were denied. A clean recheck of unchanged files allowed approval and binding.</td><td>Tests the approval rule; it does not establish the truth of a model’s diagnosis.</td></tr>
             <tr><th scope="row">Healthy and defective code</th><td>Node.js and Python controls let healthy work finish without repair; confirmed faulty paths received one repair and passed independent checks.</td><td>Tasks use scripted model responses; live generalization remains open.</td></tr>
           </tbody>
@@ -355,6 +356,7 @@
             <tr><th scope="row">恢复后修复代码</th><td>一次恢复加一次代码修复；检查依次为 3/4、3/4、4/4，最终 Stop 始终沿用相同两项获批需求。</td><td>验证执行和需求延续，未验证实际检测准确率。</td></tr>
             <tr><th scope="row">来源覆盖</th><td>遗漏观察到的调用者时保持待验证；正常代码无需修复即可通过。一次原生调用者修复把独立检查从 3/4 提升到 4/4，始终保留两项获批需求。</td><td>三项重新运行的脚本对照均通过。此前负例的报告断言失败仍保留，真实模型准确率尚未测量。</td></tr>
             <tr><th scope="row">源码审查边界</th><td>无法确定入口，或匹配文件引用的分支组不完整时保持待验证。普通处理调用保持既有行为。</td><td>本地 Stop、来源、语法及打包检查共通过 173 项，一项 Windows 专用检查跳过。</td></tr>
+            <tr><th scope="row">Plan Readiness</th><td>两项功能均已覆盖时，任务就绪状态不确定仍阻止审批。完整 READY 方案无需修复即可完成。另一项对照沿用就绪证明和两项需求，完成一次原生代码修复，检查从 3/4 提升到 4/4。</td><td>使用脚本响应，已核验请求中的完整反馈和保存的提示词。此前两次对照失败均保留，首次请求文本不匹配的原因仍未查明，真实模型准确率尚未测量。</td></tr>
             <tr><th scope="row">严格审批</th><td>两项覆盖记录加一项语义错误时拒绝审批；文件不变，干净的复查后允许审批和绑定。</td><td>验证审批规则，不能证明模型诊断属实。</td></tr>
             <tr><th scope="row">正常与缺陷代码</th><td>Node.js 和 Python 对照让正常任务无需修复直接结束，已确认的缺陷路径修复一次后通过独立检查。</td><td>模型响应由脚本提供，实际泛化能力仍待测量。</td></tr>
           </tbody>
@@ -455,7 +457,7 @@
         <h2 id="next-title">What still needs to improve</h2>
         <ol class="next">
           <li>Evaluate the new origin check with real reviewer responses and coding tasks held out from development. Trace required user choices from their original operation; measure missed or wrongly excluded callers as well as successful repairs.</li>
-          <li>Finish reviewing and packaging the opt-in PlanReadiness check, then validate it on the installed plugin and a fresh frozen run. Check mandatory verification before approval, keeping optional command examples separate from required tasks. <code>READY</code> does not attest execution; completion still requires fresh execution evidence. Genuinely required but unavailable checks remain unverified.</li>
+          <li>Evaluate the packaged PlanReadiness check in a fresh real-model run. Its evaluator compatibility fix passed 39 checks and policy installation for all three phone tasks. Before approval, distinguish optional command examples from mandatory tasks. <code>READY</code> does not attest execution; completion still requires fresh execution evidence. Genuinely required but unavailable checks remain unverified.</li>
           <li>Strengthen evidence checks before accepting execution allegations. Missing or unread evidence should remain unverified; a confirmed finding needs affirmative current evidence.</li>
           <li>Add bounded evidence gathering after an inconclusive Stop, with explicit allowed checks and preserved approval. Re-review the new evidence before deciding whether code repair is justified.</li>
           <li>Test whether overlapping document reviews from one multi-file write can be combined without losing early feedback. Keep a fresh whole-plan review before approval; matching document hashes alone do not justify replaying old evidence.</li>
@@ -467,7 +469,7 @@
         <h2 id="next-title-zh">仍需解决的问题</h2>
         <ol class="next">
           <li>用真实审查模型响应和未参与开发调优的编码任务评估新的来源检查。从原始操作追踪必需的用户选择，既测量成功修复，也统计漏掉或错误排除的调用者。</li>
-          <li>完成可选 PlanReadiness 检查的复核和打包，再验证安装后的插件及新冻结运行。审批前核对必需验证的执行条件，把可选命令示例与必需任务分清。<code>READY</code> 不证明已经执行；完成时仍需新鲜的执行证据。确实必需但无法执行的检查应保持待验证。</li>
+          <li>在新的真实模型运行中评估已打包的 PlanReadiness 检查。评估器兼容修正已通过 39 项检查及全部三个手机任务的策略安装。审批前把可选命令示例与必需任务分清。<code>READY</code> 不证明已经执行；完成时仍需新鲜的执行证据。确实必需但无法执行的检查应保持待验证。</li>
           <li>加强对执行指控的证据校验。缺失或未读取的证据应保持待验证，确认问题需要当前证据正面支持。</li>
           <li>为证据不足的 Stop 增加有界取证，明确允许的检查并保留原审批。先重新审查新证据，再判断是否有依据修复代码。</li>
           <li>测试能否合并一次多文件写入触发的重叠文档审查，同时保留提前反馈。审批前仍需新鲜的完整方案审查，不能只凭文档哈希相同就重用旧证据。</li>
