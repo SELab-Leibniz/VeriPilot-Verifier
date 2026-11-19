@@ -54,22 +54,56 @@ test("a queued business turn waits before replacing the old run, while UI status
   assert.equal(await fs.readFile(source, "utf8"), original, "status is UI-only, not a host user/assistant message");
 });
 
-test("Stop deadline releases a hung backend and ignores its late PASS/commit even when cancellation cleanup hangs", async t => {
+test("the automatic Stop deadline expires while durable registration is blocked without starting a backend", async t => {
+  const params = await basic(t), jobs = new Map(), manager = createNativeStopReviews(jobs);
+  const reading = deferred(t), finishRead = deferred(t);
+  const base = path.join(params.projectRoot, ".runtime-correction/openclaw/native-stop-reviews");
+  const readFile = fs.readFile;
+  let held = false, backendStarts = 0;
+  t.mock.method(fs, "readFile", async function (file, ...args) {
+    if (!held && typeof file === "string" && file.startsWith(base + path.sep)) {
+      held = true; reading.resolve(); await finishRead.promise;
+    }
+    return readFile.call(this, file, ...args);
+  });
+  const registration = manager.schedule({ ...params, budgetMs: 100,
+    run: async () => { backendStarts++; return { reviewStatus: "PASS" }; } });
+  try {
+    await within(reading.promise, "blocked durable registration");
+    const [job] = jobs.values();
+    const result = await within(job.released, "automatic pre-start Stop deadline");
+    assert.equal(result.reviewStatus, "UNVERIFIED");
+    assert.equal(result.reasonCode, "REVIEW_DEADLINE_EXPIRED");
+    assert.equal(result.budgetMs, 100);
+    assert.equal(backendStarts, 0);
+    assert.equal(manager.pending(params).length, 0);
+  } finally { finishRead.resolve(); await registration; }
+  const [record] = await within(manager.wait({ drain: true }), "durable pre-start expiry settlement");
+  assert.equal(record.reviewStatus, "UNVERIFIED");
+  assert.equal(record.reasonCode, "REVIEW_DEADLINE_EXPIRED");
+  assert.equal(backendStarts, 0);
+  const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
+  assert.equal(JSON.parse(await fs.readFile(file)).reviewStatus, "UNVERIFIED");
+});
+
+test("expiring a started Stop releases a hung backend and ignores late PASS/commit even when cancellation cleanup hangs", async t => {
   const params = await basic(t), manager = createNativeStopReviews(), started = deferred(t), finish = deferred(t);
+  const cancelling = deferred(t);
   let commit, reviewSignal;
-  await manager.schedule({ ...params, budgetMs: 100, onCancel: () => new Promise(() => {}),
+  await manager.schedule({ ...params, onCancel: () => { cancelling.resolve(); return new Promise(() => {}); },
     run: async input => { commit = input.commit; reviewSignal = input.signal; started.resolve(); await finish.promise; return { reviewStatus: "PASS" }; } });
   await within(started.promise, "started signal");
   const [job] = manager.pending(params);
+  job.expire();
   const result = await job.released;
   assert.equal(result.reviewStatus, "UNVERIFIED");
   assert.equal(result.reasonCode, "REVIEW_DEADLINE_EXPIRED");
   assert.equal(reviewSignal.aborted, true);
   assert.equal(manager.pending(params).length, 0);
   await assert.rejects(commit({ reviewStatus: "PASS" }), { code: "RC_STOP_REVIEW_STALE" });
+  await within(cancelling.promise, "hung cancellation cleanup entered");
   finish.resolve();
-  assert.equal((await manager.wait())[0].reviewStatus, "UNVERIFIED");
-  await pause(10);
+  assert.equal((await within(manager.wait({ drain: true }), "late backend settlement"))[0].reviewStatus, "UNVERIFIED");
   const base = path.join(params.projectRoot, ".runtime-correction/openclaw/native-stop-reviews");
   const sub = (await fs.readdir(base))[0], file = path.join(base, sub, (await fs.readdir(path.join(base, sub)))[0]);
   assert.equal(JSON.parse(await fs.readFile(file)).reviewStatus, "UNVERIFIED");

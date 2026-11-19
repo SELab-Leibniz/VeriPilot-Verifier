@@ -11,22 +11,49 @@ import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-sto
 
 let build, pluginRoot, createRuntime, findTask, withTaskState;
 before(async () => {
-  build = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-build-"));
+  build = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-build-")));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: build });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
   ({ findTask, withTaskState } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/task-store.mjs"))));
 });
 after(() => fs.rm(build, { recursive: true, force: true }));
 const deferred = t => { let resolve; const promise = new Promise(r => { resolve = r; }); t?.after(resolve); return { promise, resolve }; };
-async function within(promise, description) {
+async function within(promise, description, diagnostics) {
   let timer;
   try { return await Promise.race([promise, new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}`)), 5000);
+    timer = setTimeout(() => reject(new Error(`Timed out waiting for ${description}${diagnostics ? `; diagnostics=${JSON.stringify(diagnostics())}` : ""}`)), 5000);
   })]); } finally { clearTimeout(timer); }
 }
 
+function observeSettlement(f, extra) {
+  const observed = new WeakMap();
+  const watch = promise => {
+    if (!promise?.then || observed.has(promise)) return;
+    const result = { status: "PENDING" }; observed.set(promise, result);
+    Promise.resolve(promise).then(() => { result.status = "FULFILLED"; }, error => {
+      result.status = "REJECTED"; result.code = String(error?.code ?? error?.name).slice(0, 80);
+    });
+  };
+  for (const job of [...f.sharedState.stopReviewJobs.values()].slice(0, 8))
+    for (const promise of [job.registered, job.released, job.done, job.work, job.settlement]) watch(promise);
+  for (const state of [...f.sharedState.states.values()].slice(0, 8)) watch(state.nativePreparingStop);
+  const status = promise => !promise ? { status: "ABSENT" } : observed.get(promise) ?? { status: "NOT_OBSERVED_AT_WAIT_START" };
+  return () => ({ hostVersion: f.api.runtime.version, ...extra(),
+    jobs: [...f.sharedState.stopReviewJobs.values()].slice(0, 8).map(job => ({
+      runId: job.record.runId, occurrenceId: job.record.occurrenceId, enabledRevision: job.record.enabledRevision,
+      status: job.record.status, reviewStatus: job.record.reviewStatus, reasonCode: job.record.reasonCode,
+      pending: job.pending, remainingMs: job.record.deadlineAt - Date.now(),
+      registered: status(job.registered), released: status(job.released), done: status(job.done),
+      work: status(job.work), settlement: status(job.settlement) })),
+    states: [...f.sharedState.states.values()].slice(0, 8).map(state => ({
+      runId: state.nativeRunId, enabledRevision: state.enabledRevision, scopeClosed: state.scopeClosed,
+      nativeInvalidated: state.nativeInvalidated, reviewAborted: state.reviewController?.signal.aborted,
+      preparingStop: status(state.nativePreparingStop) })),
+    postRuns: f.runtime.postRuns.list({ limit: 8 }), warnings: f.warnings.slice(-6).map(text => text.slice(0, 300)) });
+}
+
 async function fixture(t, { stop = false, waitMode = "assessment", review, reviewClosed, nativeReview = false } = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-control-runtime-")));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 25 }); });
   await fs.mkdir(path.join(root, ".runtime-corrector"));
@@ -217,10 +244,10 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: disablin
 });
 
 test("same-run off/on with fresh user input never reuses its cancelled Stop checkpoint or session quota", async t => {
-  let reviews = 0;
+  let reviews = 0, firstReviewReturned = false;
   const started = deferred(t), finish = deferred(t);
   const f = await fixture(t, { stop: true, waitMode: "until_pass", review: async () => {
-    if (++reviews === 1) { started.resolve(); await finish.promise; }
+    if (++reviews === 1) { started.resolve(); await finish.promise; firstReviewReturned = true; }
   } });
   const store = createStopCorrectionStore({ directory: path.join(f.root, "host-state/runtime-corrector-stop-sessions") });
   await store.initializeSession({ sessionId: "same-run", initialize: { kind: "VERIFIED_HISTORY",
@@ -230,6 +257,7 @@ test("same-run off/on with fresh user input never reuses its cancelled Stop chec
   const ctx = await f.session("same-run");
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "First delivery." } }, ctx);
   await within(started.promise, "started signal");
+  const retired = f.sharedState.states.get("main:same-run");
   await f.set(ctx, false);
   await f.set(ctx, true);
   const prompt = "Continue the same task after re-enabling correction.";
@@ -238,9 +266,12 @@ test("same-run off/on with fresh user input never reuses its cancelled Stop chec
   await f.runtime.prompt({ prompt }, ctx);
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "new-write", params: { path: "draft.md" } }, ctx);
   const current = f.sharedState.states.get("main:same-run");
+  assert.notEqual(current, retired, "the reopened run owns a separate controller state");
+  assert.equal(retired.reviewController.signal.aborted, true, "the previous review remains cancelled");
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "New delivery." } }, ctx);
   finish.resolve();
-  const records = await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement");
+  const diagnostics = observeSettlement(f, () => ({ reviews, firstReviewReturned }));
+  const records = await within(f.runtime.waitForNativeReviews({ drain: true, settle: true }), "native review settlement", diagnostics);
   assert.equal(records.length, 2);
   assert.equal(records[0].reviewStatus, "CANCELLED");
   assert.equal(records[1].reviewStatus, "NO_DEVIATION_FOUND", JSON.stringify(records));

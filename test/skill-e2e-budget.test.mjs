@@ -7,7 +7,7 @@ import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
 import { skillE2eOptions, skillE2eProvider, skillVerifierCommand, skillFinalStopAccepted } from '../scripts/evaluate-skill-e2e.mjs';
-import { runPowerShellTestCommand } from './helpers/powershell-process.mjs';
+import { runPowerShellTestCommand, withPowerShellVerifierDiagnostics } from './helpers/powershell-process.mjs';
 
 test('Skill native completion accepts a fully verified deviation-only Stop and rejects incomplete or foreign evidence', () => {
   const complete = {
@@ -73,14 +73,15 @@ export const accept=value=>value+1;\n`);
     // clears the verifier child's environment independently of this launcher.
     const launcherEnv=Object.fromEntries(['SystemRoot','PATH','USERPROFILE','APPDATA','LOCALAPPDATA','TEMP','TMP']
       .filter(key=>typeof process.env[key]==='string').map(key=>[key,process.env[key]]));
-    const {stdout}=await runPowerShellTestCommand(skillVerifierCommand(fixture),{
+    const command=withPowerShellVerifierDiagnostics(skillVerifierCommand(fixture));
+    const {stdout}=await runPowerShellTestCommand(command,{
       cwd:fixture.projectRoot,
       env:{...launcherEnv,RC_VERIFY_ISOLATION_SENTINEL:'must-not-reach-verifier'}});
     const result=JSON.parse(stdout.trim());
     assert.equal(result.codePassed,true);assert.equal(result.guidePassed,true);
     assert.equal(await fs.stat(writeFile).then(()=>true,()=>false),false);
     await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),'export const accept=value=>value;\n');
-    await assert.rejects(runPowerShellTestCommand(skillVerifierCommand(fixture),{
+    await assert.rejects(runPowerShellTestCommand(command,{
       cwd:fixture.projectRoot,env:launcherEnv}),
       error=>error.code===3&&JSON.parse(error.stdout.trim()).codePassed===false);
   });
