@@ -158,14 +158,14 @@
     "scope": "Prior frozen source/archive only. The latest generic healthy ON trial used this archive: active authenticated approval and Apply; unchanged implementation; incomplete workflow with STOP_SETTLEMENT assertion; confirmed owned cleanup. Independent post-cleanup diagnostic grade9/9 across4requirements,0corrective starts,21Flash/29Pro requests. No accepted final review, successful workflow or quality gain is claimed."
   },
   "remoteCI": {
-    "status": "LATEST_RUN_FAILED_FIVE_MATRIX_PASSED_WINDOWS_NODE24_FAILED",
-    "currentRun": 44506071712,
-    "currentRunHead": "45ad2f595a58fbeda4f7fb4e3a3f204927481fa7",
-    "latestCompletedRun": 44506071712,
-    "latestCompletedRunHead": "45ad2f595a58fbeda4f7fb4e3a3f204927481fa7",
+    "status": "CURRENT_REMOTE_MATRIX_FAILED_TEST_ONLY_FOLLOWUP_LOCAL_PASS",
+    "currentRun": 44523268488,
+    "currentRunHead": "78d82e2d56dab5ab984fd9863425e155c4621ab4",
+    "latestCompletedRun": 44523268488,
+    "latestCompletedRunHead": "78d82e2d56dab5ab984fd9863425e155c4621ab4",
     "latestCompletedConclusion": "failure",
-    "latestCompletedPassedMatrixJobs": 5,
-    "latestCompletedFailedMatrixJobs": 1,
+    "latestCompletedPassedMatrixJobs": 4,
+    "latestCompletedFailedMatrixJobs": 2,
     "testOnlyFollowup": {
       "status": "LOCAL_REVIEW_CLEAR_REMOTE_SIX_MATRIX_JOBS_PASSED",
       "relatedPassedNode18": 41,
@@ -218,16 +218,19 @@
       "failureInvestigation": "Latest failures differ from prior a0 fixtures, which now passed. Ubuntu hung-group test includes prelaunch work in its300ms cutoff. Windows progress test outer10s also includes setup; background/late-candidate phase timeouts need further diagnostics. No product cause, deadline weakening or green CI claim."
     },
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/45ad2f5-natural-a41k/terminal-verification.json",
-      "sha256": "3794c90e8fe0c29ab8b60eda0ac4ac944746d48d4d8d0cb7337cb22aa438d68b",
-      "watcherTerminal": "873516",
+      "status": "IMMUTABLE_OFFICIAL_TERMINAL_RETAINED",
+      "watcherTerminal": "f4a9f5",
       "watcherExitCode": 1,
-      "finalMetadataTerminal": "fc4cc7",
+      "finalMetadataTerminal": "78bca1",
       "finalMetadataExitCode": 0,
-      "failedJobLogTerminal": "6a28f0",
-      "failedJobLogExitCode": 0,
-      "failedJobLogSha256": "763b2847d16134f3585518f21ab4d231082229d137a31759e711473a2e237361",
-      "publishJob": "SKIPPED"
+      "failedJobs": [
+        135557110359,
+        135557111088
+      ],
+      "publishJob": "SKIPPED",
+      "path": ".runtime-correction/validation/ci-fix/78d82e2-natural-m4k9/natural-terminal-verification.json",
+      "sha256": "55592ac68c2f6136b84465ff238446ae5701c9eedf00d1cb7375d502afbb595e",
+      "snapshotSha256": "8f4b81e4c8ce161949ae257be7c5e093f3569be3f29e39281fe4b3d6cadd4ec1"
     },
     "pendingCausalFixtureFollowup": {
       "status": "LOCAL_PEER_CLEAR_REMOTE_FIVE_PASS_WINDOWS_NODE24_FAILED",
@@ -252,8 +255,6 @@
       "sourceCommit": "3cbf3a64cb928f78a90faeb69bd74df31afa50ab"
     },
     "currentRunConclusion": "failure",
-    "currentRunPassedMatrixJobs": 5,
-    "currentRunFailedMatrixJobs": 1,
     "priorSixGreenRun": {
       "run": 44498423107,
       "head": "a893f8f07fa193eeebee5e3635c21c8c7e6b5de3",
@@ -269,15 +270,22 @@
       }
     },
     "latestWindows": {
-      "files": 382,
-      "passed": 4618,
+      "files": 384,
+      "passed": 4635,
       "failed": 1,
-      "skipped": 45,
       "cancelled": 0,
+      "skipped": 45,
       "fileTimeouts": 0,
-      "failure": "baseline-readonly-budget.test.mjs exact-cap successful-candidate graph witness expected1 actual0",
-      "historicalCause": "UNPROVEN",
-      "investigation": "Controlled delayed per-record synthetic padding append reproduces same missing graph before reviewer deadline. Product policy unchanged; isolated fixture fix under review."
+      "failedFile": "test/openclaw-native-stop-correction.test.mjs",
+      "failedCase": "kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running",
+      "failure": "Timed out waiting for native review settlement",
+      "historicalFailedPhase": "UNOBSERVABLE_TWO_IDENTICAL_WAIT_LABELS",
+      "completeLogBytes": 51693,
+      "completeLogSha256": "ddc65016a7cd9c88e6f8b9ba8f1feaae9213a3be75286ea972c79f055f058bf9",
+      "logFetchTerminal": "5ae451",
+      "logFetchExitCode": 0,
+      "prior6c0OnboardingAdmissionProgressFailuresPassed": true,
+      "causeEstablished": false
     },
     "exactCapFixtureFollowup": {
       "status": "LOCAL_CAUSAL_AND_PEER_CLEAR_ROOT_THREE_PASS_REMOTE_NOT_RUN",
@@ -291,7 +299,198 @@
       "rootPeerReceiptSha256": "a80265695776f5b13bd3a5de039d78937469bbce306491e4f04849574120461d",
       "historicalWindowsCause": "UNPROVEN",
       "controls": "Controlled delayed per-record padding reproduces missing graph; batching preserves all real budget callbacks and records; slow single flush still fails original deadline."
-    }
+    },
+    "currentRunInitialLookupTerminal": "6ad6ac",
+    "prior45adNaturalFailure": {
+      "latestCompletedRun": 44506071712,
+      "latestCompletedRunHead": "45ad2f595a58fbeda4f7fb4e3a3f204927481fa7",
+      "latestCompletedConclusion": "failure",
+      "latestCompletedPassedMatrixJobs": 5,
+      "latestCompletedFailedMatrixJobs": 1,
+      "terminalEvidence": {
+        "path": ".runtime-correction/validation/ci-fix/45ad2f5-natural-a41k/terminal-verification.json",
+        "sha256": "3794c90e8fe0c29ab8b60eda0ac4ac944746d48d4d8d0cb7337cb22aa438d68b",
+        "watcherTerminal": "873516",
+        "watcherExitCode": 1,
+        "finalMetadataTerminal": "fc4cc7",
+        "finalMetadataExitCode": 0,
+        "failedJobLogTerminal": "6a28f0",
+        "failedJobLogExitCode": 0,
+        "failedJobLogSha256": "763b2847d16134f3585518f21ab4d231082229d137a31759e711473a2e237361",
+        "publishJob": "SKIPPED"
+      }
+    },
+    "currentFailedWindowsSummary": {
+      "files": 383,
+      "completed": 383,
+      "failedFiles": [
+        "test\\onboarding-adaptation.test.mjs",
+        "test\\openclaw-admission-history.test.mjs",
+        "test\\openclaw-approved-task-progress.test.mjs"
+      ],
+      "timedOutFiles": [
+        "test\\openclaw-approved-task-progress.test.mjs"
+      ],
+      "totals": {
+        "tests": 4660,
+        "pass": 4613,
+        "fail": 1,
+        "cancelled": 1,
+        "skipped": 45
+      },
+      "caveat": "Runner totals exclude checks in a file killed at its 180-second watchdog. The captured progress-file assertion is additional to summary.fail=1; do not sum them as a complete check denominator. No historical timeout/semantic cause inferred from elapsed time alone.",
+      "sourceCause": "NOT_UNIQUELY_ESTABLISHED",
+      "testOnlyCandidate": "Separate setup/cleanup from original20s observation and split21unchanged progress cases into9+12 files; safe diagnostics for unresolved semantic assertions. Peer review pending; no product cap/assertion weakening."
+    },
+    "lastCompletedTerminalEvidence": {
+      "status": "IMMUTABLE_OFFICIAL_TERMINAL_AND_COMPLETE_FAILED_LOG_RETAINED",
+      "watcherTerminal": "3c5049",
+      "watcherExitCode": 1,
+      "finalMetadataTerminal": "090b54",
+      "finalMetadataExitCode": 0,
+      "failedJob": 135536611437,
+      "publishJob": "SKIPPED",
+      "jobElapsedSeconds": 1484,
+      "fullSuiteStepElapsedSeconds": 1404,
+      "notASameSourceRetry": true,
+      "path": ".runtime-correction/validation/ci-fix/6c0fa34-natural-w7p4/natural-terminal-verification.json",
+      "sha256": "31233aea9f27e0ac238844ee0a89c4ae2a3a4111f0a8fc183817c8fa74e0e218",
+      "snapshotSha256": "f1136a70fc666dd769ac0e3ca495da5060b9da0b9dcc3aeff0102f495d46590d",
+      "failedJobLogSha256": "e854b6526be8fca5578624693674ae9860601108c07d2fa93082e6e282edee6d",
+      "failedLogSafeProjectionSha256": "0c4af3c9c86087bf2ed7fd6b23dcef55cb3777db6ee8bca97cf9d5b29df9e765",
+      "failedJobLogTerminal": "0f38f7",
+      "failedJobLogExitCode": 0
+    },
+    "causalTestFollowup": {
+      "sourceCommit": "78d82e2d56dab5ab984fd9863425e155c4621ab4",
+      "status": "PUBLISHED_REMOTE_VERIFICATION_PENDING",
+      "patchSha256": "d41ac2b21423355ae0d0d98cefe0eb55205f7bd4ac27cac044745430006876b4",
+      "rootIntegrationSha256": "c0301bf70a8260da4fb288593718de3026401cb0cb66cee5dc2c8642742637ac",
+      "peerReviewSha256": "3f0239495a46cedcaf5daff6fd2094dcd55f889419713a3b1939cbc3f978dd18",
+      "ownerFocusedPassesEachNode18Node24": 37,
+      "rootIntegratedPassesNode24": 37,
+      "independentSplitProgressSubsetPasses": 21,
+      "subsetIsNotAdditionalChecks": true,
+      "progressOriginalCasesPreserved": 21,
+      "progressFilesCaseCounts": [
+        9,
+        12
+      ],
+      "setupBoundMs": 60000,
+      "observationBoundMs": 20000,
+      "cleanupBoundMs": 20000,
+      "fileDeadlineMs": 180000,
+      "productRuntimeOrAssertionsChanged": false,
+      "twoSemanticFailureCausesProven": false,
+      "causalControls": "Pre-runtime21ssetup oldwatchdogfails/newsetupcompletes; genuinelyunsettledobserver failsat20,002ms.",
+      "actualPush": {
+        "launch": "f5af17",
+        "session": 34865,
+        "terminal": "610951",
+        "exitCode": 0,
+        "branch": "codex/openclaw-runtime-corrector",
+        "mainMerged": false
+      }
+    },
+    "currentRunEvidence": {
+      "initialLookupLaunch": "07e0ec",
+      "initialLookupTerminal": "6694e9",
+      "exitCode": 0,
+      "initialJobsLookupTerminal": "2f4365",
+      "watcherSession": 53555,
+      "watcherLaunch": "e1eb73",
+      "sourceChanges": "TEST_ONLY_FIVE_PATHS",
+      "runtimeChanged": false,
+      "workflowRetriedOrCancelled": false
+    },
+    "terminalEvidenceScope": "CURRENT_AND_LAST_COMPLETED_RUN44523268488_EXACT78d82_FAILURE",
+    "currentProgress": {
+      "passedMatrixJobs": 4,
+      "failedMatrixJobs": 2,
+      "activeMatrixJobs": 0,
+      "failedJobs": [
+        "UBUNTU_NODE24",
+        "WINDOWS_NODE24"
+      ],
+      "overallConclusion": "failure",
+      "countsAreInterim": false
+    },
+    "cooldownTestFollowup": {
+      "status": "ROOT_INTEGRATED_PASS_REMOTE_FOLLOWUP_NOT_YET_LAUNCHED",
+      "runtimeOrHelperChanged": false,
+      "relatedPassedPerNodeVersion": 4,
+      "independentPeerPassedPerNodeVersion": 4,
+      "policyCooldownMs": 300,
+      "allOriginal250msAssertionsRetained": true,
+      "realMonotonicWaitAssertionAdded": true,
+      "controlled100msSetupDelayReproducesMetricMismatch": true,
+      "historicalExactIoDelayMeasured": false,
+      "noCooldownMutantRejected": true,
+      "patchSha256": "f95a3d77a36a35fe2233f889536b9b45d980bb2b784d87527ff4850255a2d6a7",
+      "peerReceiptSha256": "4bce0fbe6dca3e6b9f8ea34d2c0676e339599195fb5293af38b37f7aaf1c4cbe",
+      "ubuntuCompleteLogSha256": "47a01b85676a71beb7b04cfbf02b825b8074833f74e8f21c13f8e5a14cbefa97",
+      "scope": "Fixture measurement fix only; no green CI or product-quality benefit claim.",
+      "rootIntegratedPassedNode24": 4,
+      "rootIntegrationReceiptSha256": "f56941f67a6ecf59eca3d979111ee95523d72e41471bdeee9b8794e91acc3d8b",
+      "rootActualTerminal": "0a4399"
+    },
+    "previousCompleted6c0Evidence": {
+      "latestCompletedRun": 44517323824,
+      "latestCompletedRunHead": "6c0fa34e777c0dcc2fbc97e852ab4de697e97ca7",
+      "latestCompletedConclusion": "failure",
+      "latestCompletedPassedMatrixJobs": 5,
+      "latestCompletedFailedMatrixJobs": 1,
+      "terminalEvidence": {
+        "status": "IMMUTABLE_OFFICIAL_TERMINAL_AND_COMPLETE_FAILED_LOG_RETAINED",
+        "watcherTerminal": "3c5049",
+        "watcherExitCode": 1,
+        "finalMetadataTerminal": "090b54",
+        "finalMetadataExitCode": 0,
+        "failedJob": 135536611437,
+        "publishJob": "SKIPPED",
+        "jobElapsedSeconds": 1484,
+        "fullSuiteStepElapsedSeconds": 1404,
+        "notASameSourceRetry": true,
+        "path": ".runtime-correction/validation/ci-fix/6c0fa34-natural-w7p4/natural-terminal-verification.json",
+        "sha256": "31233aea9f27e0ac238844ee0a89c4ae2a3a4111f0a8fc183817c8fa74e0e218",
+        "snapshotSha256": "f1136a70fc666dd769ac0e3ca495da5060b9da0b9dcc3aeff0102f495d46590d",
+        "failedJobLogSha256": "e854b6526be8fca5578624693674ae9860601108c07d2fa93082e6e282edee6d",
+        "failedLogSafeProjectionSha256": "0c4af3c9c86087bf2ed7fd6b23dcef55cb3777db6ee8bca97cf9d5b29df9e765",
+        "failedJobLogTerminal": "0f38f7",
+        "failedJobLogExitCode": 0
+      }
+    },
+    "prior45adWindows": {
+      "files": 382,
+      "passed": 4618,
+      "failed": 1,
+      "skipped": 45,
+      "cancelled": 0,
+      "fileTimeouts": 0,
+      "failure": "baseline-readonly-budget.test.mjs exact-cap successful-candidate graph witness expected1 actual0",
+      "historicalCause": "UNPROVEN",
+      "investigation": "Controlled delayed per-record synthetic padding append reproduces same missing graph before reviewer deadline. Product policy unchanged; isolated fixture fix under review."
+    },
+    "windowsStopDiagnosticFollowup": {
+      "status": "ROOT_PEER_CLEAR_AND_INTEGRATED_NODE24_PASS_REMOTE_PENDING",
+      "rootPassedNode24": 14,
+      "ownerPassedNode24": 14,
+      "ownerChangedCasePassedNode18": 1,
+      "ownerNode18Filtered": 7,
+      "ownerFullNode18Passed": 10,
+      "ownerFullNode18Failed": 4,
+      "sameNode18FailuresReproducedOnImmutableParent": true,
+      "allOriginalAssertionsAndBoundsPreserved": true,
+      "runtimeChanged": false,
+      "historicalCauseEstablished": false,
+      "rootReceiptSha256": "da9262d98a7d38d2d153be2efc01c18e62514cbf80a7f8384a1e0025aad44625",
+      "ownerHoldSha256": "eaac1e219c54afcca03aae10769cee410c8a448593b1642de4316788ac789f2c",
+      "ownerVerificationSha256": "fff10b10bc4f416be11d0ac4b96f12e8b06ed8a672230f6951ff74c44f5c65a0",
+      "safeWindowsProjectionSha256": "e50b8bd63642f3187b5d43a8cf4861fe42959152d89bd188b2a8149d7bd258ea",
+      "independentSourcePeerSha256": "37fa7a0933ad6083e0d9970aa385ed4a9ab523af9e70e0dbebb3d94e3ec08f97"
+    },
+    "nextTestOnlySourceCommit": "a57c42acdefc4ad9e20beec8480f0baaef359695",
+    "nextTestOnlySourceStatus": "READY_FOR_FEATURE_BRANCH_PUBLICATION"
   },
   "supersededSourceRun": {
     "sourceCommit": "8699809bdaa0e518b2017172a093565fc6ec8fe1",
@@ -338,124 +537,34 @@
     "sanitizedOutcomeSha256": "b1cab601e5e518a4d8e9c2d82f95e6ee88e48a545e701b423272bbd5708e2a22"
   },
   "latestGeneralPurposeTrial": {
-    "status": "VERIFIED_COMPLETION_ORDINARY_APPLY_REPAIR_NO_RC_REPAIR",
-    "kind": "GENERAL_PURPOSE_DECLARED_START_VARIANT_ON_SANITIZED_OUTCOME_V1",
-    "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
-    "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
-    "codingModel": "deepseek-flash",
-    "reviewerModel": "deepseek-v4-pro",
-    "strictOriginalInventory": true,
-    "strictProposalCoverage": true,
-    "strictPlanReadiness": true,
-    "currentProductionSourceFlow": true,
-    "optionalProductionOriginCoverage": false,
-    "activationBeforeFirstChatVerified": true,
-    "declaredPublicStartingSourceVariant": true,
-    "startingSourceSha256": "d9372b1254f603810cb9b94901222d25fb9cedcf795588df6ed326c68e7a3456",
-    "otherInitialFilesUnchanged": 5,
-    "publicInputsUnchanged": 2,
-    "modelsPoliciesLimitsSameAsHealthyTrial": true,
-    "materializationSha256": "a4a0bff5581f3b53c09b7a52a04d77d627dcdfedfd0ff026066afc9733b39b2e",
-    "independentPreparedSourcePeerSha256": "0e8ec3db1f2b96b5eac61f967ffa5dc05b1a24241dbe0b4adac0a398325db014",
-    "rootVariantRevalidationSha256": "217cb503ebe2f95a1988298545107b6752a73ebf5960704c5c11be5b2f5c2a4d",
-    "freshCombinedSandboxSha256": "ac746d3c3c4c51bd619974723a1e6b2739575c9141febb81658f14f5114dca40",
-    "driverAdmissionSha256": "35c54b53813f447c25d177ce4d0e30c857178ad6a918b55ac2fbd3e4941d79a1",
-    "rootOwnedSession": 25075,
-    "launchToolResult": "83c394",
-    "finalOutcome": "INDEPENDENT_HOST_ACCEPTANCE_AND_FINITE_CODE_GRADE_VERIFIED",
-    "qualityResult": "PASS_9_OF_9_FOUR_REQUIREMENTS",
-    "driverExpectedHealthyAnnotation": "INAPPLICABLE_HISTORICAL_ANNOTATION_NOT_A_GATE",
-    "matchedComparison": false,
-    "formalMatchedPairsAdded": 0,
-    "scope": "One declared development-only starting-source variant. Ordinary Flash repair is not an RC repair; no guaranteed defect survival, quality gain, causal overhead or generalization claim.",
-    "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
-    "sourceChangeStage": "ORDINARY_APPLY_BEFORE_STOP_REVIEWER_DISPATCH",
-    "implementationUnchanged": false,
-    "originalRequirements": 4,
-    "plannedCheckboxes": 11,
-    "completedCheckboxes": 11,
-    "nativeReviewStatus": "NO_DEVIATION_FOUND",
-    "coverageReceiptStatus": "MATCHED",
-    "driverContinuityStatus": "OBSERVED",
-    "correctiveBusinessStarts": 0,
-    "correctiveAdmissions": 0,
-    "hostStartsByModel": {
-      "deepseek-flash": 39,
-      "deepseek-v4-pro": 18
-    },
-    "hostStarts": 57,
-    "hostCompletions": 57,
-    "providerRequests": 57,
-    "currentPublicTestExitCode": 0,
-    "latestPublicTestCurrentSourceBound": true,
-    "candidateAndFinalFullPatchEqual": true,
-    "captureOrdering": "NOT_INDEPENDENTLY_QUALIFIED",
-    "applyCandidateCaptured": true,
-    "duplicateCandidateCallbacks": 1,
-    "nativeAckAudit": "INDEPENDENT_NATIVE_ACK_COVERAGE_OWNERSHIP_AND_CLOSURE_VERIFIED",
-    "nativeAckAuditSha256": "43a67bddbdce7cabc44702f60f5edca71cf9543e5cc4814517643a338c1e9be2",
-    "nativeAckAuditVerificationSha256": "5555ddaf26554b2bce0a866f842e766dee5f6baaa1461aa3ddbc82e0084c2545",
-    "nativeOriginalFinishAckComplete": true,
-    "acknowledgedCurrentSourceReads": 7,
-    "canonicalRequirementSourceFlowsVerified": 4,
-    "additionalReviewedObjects": 6,
-    "totalSourceReviewedRows": 10,
-    "unverifiedFinalCoverageRows": 0,
-    "stopElapsedMs": 245011,
-    "independentPrivateGrades": [
-      {
-        "name": "observed-apply",
-        "status": "PASS",
-        "passedChecks": 9,
-        "totalChecks": 9,
-        "atomStatus": {
-          "A1": "PASS",
-          "A2": "PASS",
-          "A3": "PASS",
-          "A4": "PASS"
-        }
+    "kind": "ORDINARY_PUBLIC_DEFAULT_GENERAL_CODING_OUTCOME_V1",
+    "status": "CLOSED_INCOMPLETE_EVALUATION_GUARD_WITH_PASSING_FINAL_CODE",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "originalControllerStatus": "INCOMPLETE",
+    "nativeStopStatus": "NO_DEVIATION_FOUND",
+    "independentFinalGrade": {
+      "status": "PASS",
+      "passedChecks": 9,
+      "totalChecks": 9,
+      "atomStatus": {
+        "A1": "PASS",
+        "A2": "PASS",
+        "A3": "PASS",
+        "A4": "PASS"
       },
-      {
-        "name": "final-delivered",
-        "status": "PASS",
-        "passedChecks": 9,
-        "totalChecks": 9,
-        "atomStatus": {
-          "A1": "PASS",
-          "A2": "PASS",
-          "A3": "PASS",
-          "A4": "PASS"
-        }
-      }
-    ],
-    "privateGradeReceiptSha256": "ca22bae30049d1a4047656483119e06a556926bf704d8371703d2a7a39c6d35e",
-    "privateGradeToolTerminal": "fd698b",
-    "privateGradeExitCode": 0,
-    "rootFreezeSha256": "e678c648a7a7a8dd46045cdda7bc62929a0c41cb3030e6a4375259173708ecd9",
-    "driverResultSha256": "00295c25f890e2d71c5ac8c4d424f339d73a7161bfd705baa8d1d595e765a2ac",
-    "ownedCleanupConfirmed": true,
-    "ownedGroupAbsent": true,
-    "rootTerminalCode": 0,
-    "rootTerminalSignal": null,
-    "rootTerminalToolResult": "7e9c00",
-    "gatewayClosed": true,
-    "documentReviewRetryCause": "REQUIRED_ANCHORS_PRESENT_BUT_REQUIREMENT_TEXT_PARAPHRASED",
-    "documentFirstCoverageRows": 6,
-    "documentFirstExactRequiredIdentities": 0,
-    "documentRepairedExactRequiredIdentities": 4,
-    "documentNavigationZeroStartRejected": true,
-    "qualityGainProved": false,
-    "realModelCorrectorRepairProved": false,
-    "limits": [
-      "One declared development-only start variant; ordinary Flash repair is not an RC repair.",
-      "Two equal full snapshots used the same sealed nine-check evaluator after cleanup; they are not independent oracles.",
-      "Native acknowledgement, ownership and current source-flow joins do not establish semantic completeness or upstream caller closure.",
-      "No matched OFF comparison, causal overhead, held-out transfer or formal benchmark credit.",
-      "Frozen runtime archive differs from current download only in four documentation members; no reclassification of the archive executed."
-    ],
-    "approvedProgressSemanticReviewSkips": 1,
-    "approvedProgressCountReceiptSha256": "788b0b95de5f1e8e8864d5012e4e4df39d91b6c4f8412cee3eba0d77c0c35b90",
-    "sanitizedOutcomeSha256": "a0e78fb32fd801a56012ae2fb565cbfe573f4d711345dd62ededc799223840a7"
+      "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+      "modelRequests": 0,
+      "feedbackToModels": false,
+      "limitation": "Finite final-only functional checks. No causal RC repair credit, native completion, all-descendant cleanup or generalization proof follows from this grade.",
+      "receiptSha256": "76f7960c859074a986c1fcde0fcae0a26abdfda2b157bbcae7e8442157f8e6d0",
+      "actualTerminal": "a46d84",
+      "exitCode": 0,
+      "afterOriginalControllerTerminal": true
+    },
+    "nativeCorrectiveCodingStarts": 0,
+    "formalMatchedPairsAdded": 0,
+    "qualityGainClaimed": false,
+    "detailKey": "ordinaryPublicCodingWalkthrough"
   },
   "priorStrictOriginGeneralPurposeTrial": {
     "status": "INCOMPLETE_FINAL_VERIFICATION",
@@ -646,9 +755,20 @@
     "scope": "Historical exact8189/d864 source/archive qualification. Subsequentc077 documentation archive shared its runtime bytes. Current required-ID archive changes two runtime modules and does not inherit these native/live coding results."
   },
   "activeGeneralPurposeTrial": {
-    "status": "NONE",
-    "lastClosedTrialStatus": "VERIFIED_COMPLETION_ORDINARY_APPLY_REPAIR_NO_RC_REPAIR",
-    "liveProcessesOwnedByTrial": 0
+    "status": "CLOSED_NO_MODEL_RUN_ACTIVE",
+    "rootSession": 21577,
+    "rootLaunchSha256": "a866b7c965580536bbd2f45e4d1d3e1bd23cb284e686f39aeefea5b833167ba4",
+    "admissionSha256": "cb50e125daf805a29c267389eca5319b3645a9c38774835ba0ee4fae409284a3",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "strictOptinsEnabled": 0,
+    "defaultCorrectionLimit": 2,
+    "privateRuntimeSdkOrSessionInjection": false,
+    "sealedApproval": false,
+    "formalMatchedPairsAdded": 0,
+    "realModelRepairBenefitEstablished": false,
+    "originalControllerStatus": "INCOMPLETE",
+    "nativeStopStatus": "NO_DEVIATION_FOUND",
+    "independentFinalGrade": "PASS_9_OF_9"
   },
   "priorHealthyGeneralPurposeTrial": {
     "kind": "GENERAL_PURPOSE_HEALTHY_ON_SANITIZED_OUTCOME_V1",
@@ -943,7 +1063,7 @@
     "scope": "Invalidates only scratch index stat cache; preserves business index bytes, mtime, index entries and flags. Controlled generic defect reproduced; historical timing cause unproven."
   },
   "generalPurposePublicWorkflowAudit": {
-    "status": "SOURCE_AUDIT_DESIGN_IN_PROGRESS_NO_NEW_OPERATOR_INTERFACE_IMPLEMENTED",
+    "status": "SOURCE_AUDIT_AND_OPERATOR_CLI_DESIGN_REVIEWED_IMPLEMENTATION_DEFERRED_PUBLIC_WALKTHROUGH_FIRST",
     "ordinaryDefaultDocumentReviewAndNativeStopCorrection": "SOURCE_SUPPORTED_WITHOUT_OPERATOR_STAGED_ATOMS",
     "sealedApproval": "TRUSTED_OUT_OF_BAND_GATEWAY_APIS_CURRENTLY_REQUIRED",
     "plainChatApprovalMintsSealedLock": false,
@@ -1044,5 +1164,390 @@
     "configRetainsEnvReferences": true,
     "ownedDirectChildrenExited": true,
     "limitation": "One ordinary setup attempt did not reach the Gateway. Startup cause is under investigation; no first-use or model qualification."
+  },
+  "branchPublication": {
+    "branch": "codex/openclaw-runtime-corrector",
+    "head": "6c0fa34e777c0dcc2fbc97e852ab4de697e97ca7",
+    "actualPushSession": 64982,
+    "actualPushTerminal": "ac579e",
+    "exitCode": 0,
+    "mainMerged": false
+  },
+  "ordinaryPublicCodingWalkthrough": {
+    "status": "CLOSED_INCOMPLETE_EVALUATION_GUARD_WITH_PASSING_FINAL_CODE",
+    "transport": "STOCK_GATEWAY_TUI_PUBLIC_COMMANDS",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "admissionSha256": "cb50e125daf805a29c267389eca5319b3645a9c38774835ba0ee4fae409284a3",
+    "setupReceiptSha256": "024483f14b4f17abdf18aaf9890553cd4478086f6a971b874f8633923df5eff6",
+    "compiledDefaultsSha256": "f3cdfb225b4b492528f98556d6ff8549a7276e43343d996f9d77f3277fcd0d3b",
+    "setupActualCommandPairs": 7,
+    "setupAfterDriverFixes": true,
+    "setupRealKeyRead": false,
+    "setupCodingRequests": 0,
+    "sourceAndPurePeerSha256": "16455de29dcf1342c28505018a79c02bb9150da771eb1c71cf539b77ee7e5b82",
+    "controllerPeerSha256": "c4d58d52decd32387a06ba11f835d78beecbb4eb92b98adf77e6067a085bff9c",
+    "kernelGroups": 11,
+    "strictOptionalFlagsEnabled": 0,
+    "correctionLimits": {
+      "session": 2,
+      "flow": 2
+    },
+    "preparedAtomInventory": false,
+    "sealedApproval": false,
+    "finalOnlyGradingPlanned": true,
+    "rootLaunch": {
+      "kind": "ORDINARY_PUBLIC_ROOT_LAUNCH_V1",
+      "actualSession": 21577,
+      "initialChunk": "dbdd67",
+      "admissionSha256": "cb50e125daf805a29c267389eca5319b3645a9c38774835ba0ee4fae409284a3",
+      "status": "LAUNCHED_PUBLIC_PROPOSAL",
+      "originalWallMs": 3600000,
+      "maxUpstreamCalls": 256,
+      "apiRoles": {
+        "coding": "deepseek-flash",
+        "review": "deepseek-v4-pro"
+      },
+      "newUserCostApprovalRequested": false,
+      "standingUserAuthorizationUsed": true
+    },
+    "qualityGainClaimed": false,
+    "proposal": {
+      "status": "SETTLED",
+      "stopStatus": "SKIPPED",
+      "stopReason": "STOP_DOCUMENT_ONLY_CHANGES",
+      "strictOpenSpecValidation": true,
+      "tasks": 17,
+      "businessFilesUnchanged": true
+    },
+    "operatorReviewSha256": "44c0e2850f4ce9e30158e529715ab92073bc7430c9483e0a974e6afffde574ed",
+    "ordinaryApplyApprovalSha256": "f87c3efb70f64a1fecd0b0a865ce3252b984ad887d84b18152a38e4ab4dc23c0",
+    "originalControllerStatus": "INCOMPLETE",
+    "originalTerminal": {
+      "chunk": "4b2697",
+      "exitCode": 1
+    },
+    "elapsedMs": 1397055,
+    "rootClosureSha256": "9070e89f7baccc431151d3d50df47340e252aa50f95602919927e348ee9eb167",
+    "hostMetadataAuditSha256": "6a550b4fb846c06602d888ca7855a902b478972abe7b61f7153b6e098e35d1f6",
+    "hostMetadataAuditTerminal": {
+      "chunk": "8a5edf",
+      "exitCode": 0
+    },
+    "finalReview": {
+      "status": "NO_DEVIATION_FOUND",
+      "runId": "02afff69-295a-4e62-9a15-87af2c3286b6",
+      "currentStoredAndPublicSummaryDigestJoined": true,
+      "nativeStopState": "SETTLED",
+      "reviewerChecklistRows": 9,
+      "unverifiedRows": 0,
+      "denominator": "REVIEWER_SELECTED_CHECKLIST_NOT_ORIGINAL_REQUIREMENT_INVENTORY",
+      "coverageReceiptStatus": "RECORDED",
+      "coverageBodyAndSourceAckIndependentlyAudited": false,
+      "allOriginalRequirementsProven": false
+    },
+    "nativeCorrectionLedger": {
+      "sessionUsed": 0,
+      "validNativeCorrectionStarts": 0,
+      "unresolvedStartJoins": 0,
+      "documentFeedbackEvents": 6,
+      "zeroNativeStartsMeansZeroFeedback": false
+    },
+    "transportOutcome": {
+      "admitted": 64,
+      "completedFetches": 64,
+      "http200": 64,
+      "denied": 0,
+      "transportErrors": 0,
+      "models": {
+        "deepseek-flash": 30,
+        "deepseek-v4-pro": 34
+      },
+      "relayClosedAndDrained": true,
+      "modelCountsProveNativeRoleOrRepair": false
+    },
+    "production": {
+      "initialSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+      "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+      "unchanged": true,
+      "publicTestsExpanded": true,
+      "originalRequirements": 4,
+      "tasksCompleted": 17
+    },
+    "independentFinalGrade": {
+      "status": "PASS",
+      "passedChecks": 9,
+      "totalChecks": 9,
+      "atomStatus": {
+        "A1": "PASS",
+        "A2": "PASS",
+        "A3": "PASS",
+        "A4": "PASS"
+      },
+      "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+      "modelRequests": 0,
+      "feedbackToModels": false,
+      "limitation": "Finite final-only functional checks. No causal RC repair credit, native completion, all-descendant cleanup or generalization proof follows from this grade.",
+      "receiptSha256": "76f7960c859074a986c1fcde0fcae0a26abdfda2b157bbcae7e8442157f8e6d0",
+      "actualTerminal": "a46d84",
+      "exitCode": 0,
+      "afterOriginalControllerTerminal": true
+    },
+    "postclosureOpenSpecCheck": {
+      "status": "PASS",
+      "afterOriginalControllerTerminal": true,
+      "originalControllerOutcomeRemains": "INCOMPLETE",
+      "allTasksDone": 17,
+      "strictValidationPassed": true,
+      "unarchivedChangePresent": true,
+      "allProjectRegularFilesUnchanged": true,
+      "modelRequests": 0,
+      "feedbackToModels": false,
+      "receiptSha256": "e3b6bc22df624ae86502295dc28b67aa0646257ab1b14a738eecb3019faf34dd",
+      "actualTerminal": "9e3ce9",
+      "exitCode": 0
+    },
+    "evaluationFailure": {
+      "status": "DETERMINISTIC_ONE_LINE_DELTA_CONFIRMED",
+      "failedGuard": "EXACT_NON_CHECKBOX_TASK_PROSE_EQUALITY",
+      "changedTaskProse": "Approval prerequisite clarified; all other task prose unchanged after checkbox normalization.",
+      "scope": "Ordinary approval/default workflow, no sealed plan binding.",
+      "originalFailureRetained": true,
+      "postclosurePassReclassifiesOriginal": false,
+      "pluginFailureOrRepairBenefitInferred": false,
+      "diagnosisSha256": "981e3fdd2c1014c62357567cd98703bc80e114ac2e6c4b73a6b511e4208c11a1",
+      "diagnosisActualTerminal": "78d606",
+      "reconstructedApprovedTaskProseSha256": "7087f294ebf1cc4a652392af05e2f45a21353868d6adbfa0719842f897364fc9"
+    },
+    "cleanup": {
+      "observedActorLineageAbsent": true,
+      "gatewayPortClosed": true,
+      "relayClosedAndDrained": true,
+      "universalAllDescendantAbsenceProven": false
+    },
+    "limits": [
+      "ON-only healthy initial code, no matched quality comparison or real-model repair benefit.",
+      "No prepared atomic inventory; optional required-ID path not exercised.",
+      "Nine reviewer-selected rows do not prove exhaustive coverage of four original requirements.",
+      "Native private finish/source-read acknowledgements not independently audited in this case.",
+      "Elapsed time includes operator review and is not measured RC overhead.",
+      "Two setup-driver failures retained; controlled Gateway restart used."
+    ],
+    "boundedStructuredSemanticAudit": {
+      "status": "FOUR_FUNCTIONAL_REQUIREMENTS_EXPLICITLY_INCLUDED",
+      "auditSha256": "5afbb3868fcb5479bcc0e7120a8bc08f050c5da6719f8c2fed83cae864d10442",
+      "actualTerminal": "d7741f",
+      "functionalObligationsExplicitlyIncluded": [
+        "A1",
+        "A2",
+        "A3",
+        "A4"
+      ],
+      "selectedRows": 9,
+      "metricRowCounts": {
+        "M12": 3,
+        "M16": 6
+      },
+      "disposition": "NO_CONFIRMED_DEVIATION",
+      "sourceReadFingerprintMatchesCurrent": true,
+      "privateNativeWireAckIndependentlyAudited": false,
+      "perRequirementFlowProofRecorded": false,
+      "publicWorkflowOrScopeDutiesWithoutDistinctRows": 5,
+      "provenViolationsFromMissingRows": 0,
+      "allOriginalRequirementsProven": false,
+      "originalControllerOutcomeRemains": "INCOMPLETE",
+      "providerBodyReasoningTranscriptKeyOrGraderSourceRead": false
+    },
+    "structuredDocumentFeedbackAudit": {
+      "receiptSha256": "01014da19bab38325c9902c630dac723ad25893bff200d8239d4de0779e28aea",
+      "joinedDeliveries": 6,
+      "deferredPendingBundleNotices": 3,
+      "passedCompletedReviews": 3,
+      "blockingErrorOrWarningFindings": 0,
+      "patches": 0,
+      "deliveredNonblockingInfoAdvisories": 1,
+      "advisoryTarget": "Approval prerequisite in tasks.md",
+      "exactRewriteCausality": "UNPROVEN",
+      "modelOutputDiagnosticCodeAbsentFromPackagedRuntime": true,
+      "genericSchemaAndRendererHandleInfoSuggestions": true,
+      "nativeCorrectiveCodingRuns": 0,
+      "repairBenefitClaimed": false
+    }
+  },
+  "priorOrdinaryApplyRepairGeneralPurposeTrial": {
+    "status": "VERIFIED_COMPLETION_ORDINARY_APPLY_REPAIR_NO_RC_REPAIR",
+    "kind": "GENERAL_PURPOSE_DECLARED_START_VARIANT_ON_SANITIZED_OUTCOME_V1",
+    "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
+    "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+    "codingModel": "deepseek-flash",
+    "reviewerModel": "deepseek-v4-pro",
+    "strictOriginalInventory": true,
+    "strictProposalCoverage": true,
+    "strictPlanReadiness": true,
+    "currentProductionSourceFlow": true,
+    "optionalProductionOriginCoverage": false,
+    "activationBeforeFirstChatVerified": true,
+    "declaredPublicStartingSourceVariant": true,
+    "startingSourceSha256": "d9372b1254f603810cb9b94901222d25fb9cedcf795588df6ed326c68e7a3456",
+    "otherInitialFilesUnchanged": 5,
+    "publicInputsUnchanged": 2,
+    "modelsPoliciesLimitsSameAsHealthyTrial": true,
+    "materializationSha256": "a4a0bff5581f3b53c09b7a52a04d77d627dcdfedfd0ff026066afc9733b39b2e",
+    "independentPreparedSourcePeerSha256": "0e8ec3db1f2b96b5eac61f967ffa5dc05b1a24241dbe0b4adac0a398325db014",
+    "rootVariantRevalidationSha256": "217cb503ebe2f95a1988298545107b6752a73ebf5960704c5c11be5b2f5c2a4d",
+    "freshCombinedSandboxSha256": "ac746d3c3c4c51bd619974723a1e6b2739575c9141febb81658f14f5114dca40",
+    "driverAdmissionSha256": "35c54b53813f447c25d177ce4d0e30c857178ad6a918b55ac2fbd3e4941d79a1",
+    "rootOwnedSession": 25075,
+    "launchToolResult": "83c394",
+    "finalOutcome": "INDEPENDENT_HOST_ACCEPTANCE_AND_FINITE_CODE_GRADE_VERIFIED",
+    "qualityResult": "PASS_9_OF_9_FOUR_REQUIREMENTS",
+    "driverExpectedHealthyAnnotation": "INAPPLICABLE_HISTORICAL_ANNOTATION_NOT_A_GATE",
+    "matchedComparison": false,
+    "formalMatchedPairsAdded": 0,
+    "scope": "One declared development-only starting-source variant. Ordinary Flash repair is not an RC repair; no guaranteed defect survival, quality gain, causal overhead or generalization claim.",
+    "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+    "sourceChangeStage": "ORDINARY_APPLY_BEFORE_STOP_REVIEWER_DISPATCH",
+    "implementationUnchanged": false,
+    "originalRequirements": 4,
+    "plannedCheckboxes": 11,
+    "completedCheckboxes": 11,
+    "nativeReviewStatus": "NO_DEVIATION_FOUND",
+    "coverageReceiptStatus": "MATCHED",
+    "driverContinuityStatus": "OBSERVED",
+    "correctiveBusinessStarts": 0,
+    "correctiveAdmissions": 0,
+    "hostStartsByModel": {
+      "deepseek-flash": 39,
+      "deepseek-v4-pro": 18
+    },
+    "hostStarts": 57,
+    "hostCompletions": 57,
+    "providerRequests": 57,
+    "currentPublicTestExitCode": 0,
+    "latestPublicTestCurrentSourceBound": true,
+    "candidateAndFinalFullPatchEqual": true,
+    "captureOrdering": "NOT_INDEPENDENTLY_QUALIFIED",
+    "applyCandidateCaptured": true,
+    "duplicateCandidateCallbacks": 1,
+    "nativeAckAudit": "INDEPENDENT_NATIVE_ACK_COVERAGE_OWNERSHIP_AND_CLOSURE_VERIFIED",
+    "nativeAckAuditSha256": "43a67bddbdce7cabc44702f60f5edca71cf9543e5cc4814517643a338c1e9be2",
+    "nativeAckAuditVerificationSha256": "5555ddaf26554b2bce0a866f842e766dee5f6baaa1461aa3ddbc82e0084c2545",
+    "nativeOriginalFinishAckComplete": true,
+    "acknowledgedCurrentSourceReads": 7,
+    "canonicalRequirementSourceFlowsVerified": 4,
+    "additionalReviewedObjects": 6,
+    "totalSourceReviewedRows": 10,
+    "unverifiedFinalCoverageRows": 0,
+    "stopElapsedMs": 245011,
+    "independentPrivateGrades": [
+      {
+        "name": "observed-apply",
+        "status": "PASS",
+        "passedChecks": 9,
+        "totalChecks": 9,
+        "atomStatus": {
+          "A1": "PASS",
+          "A2": "PASS",
+          "A3": "PASS",
+          "A4": "PASS"
+        }
+      },
+      {
+        "name": "final-delivered",
+        "status": "PASS",
+        "passedChecks": 9,
+        "totalChecks": 9,
+        "atomStatus": {
+          "A1": "PASS",
+          "A2": "PASS",
+          "A3": "PASS",
+          "A4": "PASS"
+        }
+      }
+    ],
+    "privateGradeReceiptSha256": "ca22bae30049d1a4047656483119e06a556926bf704d8371703d2a7a39c6d35e",
+    "privateGradeToolTerminal": "fd698b",
+    "privateGradeExitCode": 0,
+    "rootFreezeSha256": "e678c648a7a7a8dd46045cdda7bc62929a0c41cb3030e6a4375259173708ecd9",
+    "driverResultSha256": "00295c25f890e2d71c5ac8c4d424f339d73a7161bfd705baa8d1d595e765a2ac",
+    "ownedCleanupConfirmed": true,
+    "ownedGroupAbsent": true,
+    "rootTerminalCode": 0,
+    "rootTerminalSignal": null,
+    "rootTerminalToolResult": "7e9c00",
+    "gatewayClosed": true,
+    "documentReviewRetryCause": "REQUIRED_ANCHORS_PRESENT_BUT_REQUIREMENT_TEXT_PARAPHRASED",
+    "documentFirstCoverageRows": 6,
+    "documentFirstExactRequiredIdentities": 0,
+    "documentRepairedExactRequiredIdentities": 4,
+    "documentNavigationZeroStartRejected": true,
+    "qualityGainProved": false,
+    "realModelCorrectorRepairProved": false,
+    "limits": [
+      "One declared development-only start variant; ordinary Flash repair is not an RC repair.",
+      "Two equal full snapshots used the same sealed nine-check evaluator after cleanup; they are not independent oracles.",
+      "Native acknowledgement, ownership and current source-flow joins do not establish semantic completeness or upstream caller closure.",
+      "No matched OFF comparison, causal overhead, held-out transfer or formal benchmark credit.",
+      "Frozen runtime archive differs from current download only in four documentation members; no reclassification of the archive executed."
+    ],
+    "approvedProgressSemanticReviewSkips": 1,
+    "approvedProgressCountReceiptSha256": "788b0b95de5f1e8e8864d5012e4e4df39d91b6c4f8412cee3eba0d77c0c35b90",
+    "sanitizedOutcomeSha256": "a0e78fb32fd801a56012ae2fb565cbfe573f4d711345dd62ededc799223840a7"
+  },
+  "reportCurrentQa": {
+    "status": "PASS",
+    "actualLaunch": "4e2072",
+    "actualSession": 59377,
+    "actualTerminal": "a1a154",
+    "exitCode": 0,
+    "viewports": 4,
+    "languages": 2,
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "receiptSha256": "32c0bea40ec37297482b067afa74e98d694f4a84c4395ee2a429fb653424949a",
+    "htmlSha256": "98d6345668643b4924701a8c34f81d249d416dda590d4c9d7839b6bd87abbc61",
+    "sourceConsistencyPeer": "review_pilot_v4 read-only; ordinary versus sealed diagram and stale historical qualifiers corrected."
+  },
+  "generalPurposePriority": {
+    "firstPriority": true,
+    "deliverable": "GENERAL_PURPOSE_OPENCLAW_PLUGIN",
+    "benchmarkRole": "EXTERNAL_EVALUATION_ONLY",
+    "caseSpecificRuntimeLogicAllowed": false,
+    "realModelNativeRepairBenefit": "NOT_ESTABLISHED",
+    "nextEvaluationNeeds": [
+      "Ordinary plan deltas observed without fake sealed-approval failure.",
+      "Actual native successor joined through current host records before settlement.",
+      "Source-evidenced bounded repair with independent before/after code checks.",
+      "Held-out tasks and matched overhead/quality measurements."
+    ],
+    "originalIncompleteTrialPreserved": true
+  },
+  "ordinaryPublicEvaluatorSuccessor": {
+    "status": "GENERIC_PLAN_GUARD_HELD_AND_ROOT_PEER_CLEAR_NATIVE_SUCCESSOR_JOIN_IN_PROGRESS",
+    "sourceHoldSha256": "4824538bb1651c7cd5ab3fd18611a7a29381e11fa8385d53cce7d49a31b57254",
+    "rootPeerSha256": "bc85fad79a3e409d92c6597aaf7dd47e16fe5d0eb648af014a98ad1128cf74e9",
+    "rootIndependentPassed": 14,
+    "rootActualTerminal": "fdde42",
+    "runtimeOrAdmittedInputsChanged": false,
+    "ordinaryPlanChanges": "STRUCTURAL_OBSERVATION_WITHOUT_SEMANTIC_APPROVAL",
+    "sealedSnapshotCriterion": "EXACT_NORMALIZED_TASK_AND_NON_TASK_CONTENT",
+    "futureLiveAdmissionGranted": false,
+    "originalTrialOutcomeRemains": "INCOMPLETE",
+    "limits": [
+      "Private controller source draft retains earlier actor/helper paths and is not admitted for a future live run.",
+      "Native successor join is a separate pending evaluator change."
+    ],
+    "nativeHelperSourceHoldSha256": "0ad3cf09b1ba5adf60298cba84f6b62866637c85110ba28acf0dd571b52385db",
+    "nativeHelperControls": {
+      "new": 21,
+      "unchangedLegacy": 10,
+      "status": "AUTHOR_PASS_PEER_PENDING",
+      "actualModelOrHostExecution": false,
+      "schemaFixtureSource": "ACTUAL_PURE_STORE_METHODS_SYNTHETIC_STARTS",
+      "unqualified": [
+        "Same-run original revisions.",
+        "Started-then-revoked completion.",
+        "Fresh actor/live composition and actual corrective-run observation."
+      ]
+    }
   }
 }
