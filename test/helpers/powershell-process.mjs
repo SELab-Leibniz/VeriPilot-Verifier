@@ -49,17 +49,18 @@ export function stripPowerShellStartup(stderr, marker) {
   return stderr.split(/\r?\n/u).filter(line => line !== marker).join('\n');
 }
 
-export function runPowerShellTestCommand(command, options = {}) {
+export function runPowerShellTestCommand(command, options = {}, { execFile: runFile = execFile } = {}) {
   const invocation = powershellTestInvocation(command), startedAt = Date.now();
   let startupMs = null, observedStderr = '';
   return new Promise((resolve, reject) => {
-    const child = execFile('powershell.exe', invocation.args,
+    const child = runFile('powershell.exe', invocation.args,
       { ...options, windowsHide: true, timeout: invocation.timeoutMs }, (error, stdout, stderr) => {
         const diagnostics = { elapsedMs: Date.now() - startedAt, timeoutMs: invocation.timeoutMs, startupMs,
           startupObserved: stderr.includes(invocation.startupMarker), killed: error?.killed ?? false,
           code: error?.code ?? 0, signal: error?.signal ?? null, verifierPhases: powerShellVerifierPhases(stderr) };
         const cleaned = stripPowerShellStartup(stderr, invocation.startupMarker);
         if (error) {
+          error.stdout = stdout;
           error.stderr = cleaned;
           error.message += `\nPowerShell test diagnostics: ${JSON.stringify(diagnostics)}`;
           error.powershellDiagnostics = diagnostics;

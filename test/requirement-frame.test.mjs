@@ -484,6 +484,10 @@ test('6.4.3: inject:false and shadowMode suppress both brief channels', async t 
       status: 'ready', startHead, guidance: [{ id: 'G1', ...ordinaryProposal().guidance[0] }], scenarios: [],
     });
     assert.equal(await f.prompt(), undefined);
+    // Complete the cached-frame lookup before teardown cancels work: on
+    // Windows an aborted Git child can still own the project directory.
+    await f.runtime.waitForBackgroundReviews();
+    assert.equal(f.calls.length, 0);
     assert.equal(await f.toolResult('suppressed'), undefined);
     assert.deepEqual(await f.deliveries(), []);
   });
