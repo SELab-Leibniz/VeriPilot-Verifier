@@ -45,7 +45,7 @@ test("budget exhaustion keeps failure, missing verification and a verified fix d
   assert.match(text, /design\.md \| 未通过 \| 内存存储/u);
   assert.match(text, /tasks\.md \| 未验证/u);
   assert.match(text, /请修正剩余问题，再重新验收/u);
-  assert.doesNotMatch(text, /^\*\*验收通过/u);
+  assert.doesNotMatch(text, /^\*\*(?:验收通过|本轮已记录清单验收通过)/u);
 });
 
 test("a timed-out review exposes a short reason and does not claim completion or file retention", () => {

@@ -95,18 +95,24 @@
       "proofSha256": "9541b06378ed1e86eac24b7e134ab5d6ad6560f228b6f215f55a588635882468",
       "verifierSha256": "f4c691ab16b9d0ccee18e5c2f3ebae752a4533b266e03f5621afee80b696723a"
     },
-    "scope": "Prior frozen source/archive only. First general attempt invalid due to evaluation sandbox blocking host session registration. Fresh retry3 now has actualauthenticatedactivation and runtime task state; finalquality/overhead outcome pending."
+    "scope": "Prior frozen source/archive only. The latest generic healthy ON trial used this archive: active authenticated approval and Apply; unchanged implementation; incomplete workflow with STOP_SETTLEMENT assertion; confirmed owned cleanup. Independent post-cleanup diagnostic grade9/9 across4requirements,0corrective starts,21Flash/29Pro requests. No accepted final review, successful workflow or quality gain is claimed."
   },
   "remoteCI": {
-    "status": "PENDING_TEST_FIX_PUSH",
-    "currentBranchRun": 44482517061,
-    "currentRunHead": "f4394c451d0677645c8dda68bef1a8aaf59c4647",
-    "latestCompletedRun": 44480451886,
+    "status": "WINDOWS_FAILED_NEW_TEST_FIXES_PENDING_PUSH",
+    "latestCompletedRun": 44484002510,
+    "latestCompletedRunHead": "23ea7251f0a78608273cc591a8240251a63b5b5b",
     "latestCompletedConclusion": "failure",
     "latestCompletedPassedMatrixJobs": 5,
     "latestCompletedFailedMatrixJobs": 1,
     "remainingPlatform": "Windows Node24",
-    "failureInvestigation": "Earlier startup hang resolved. Test-only stdout retention and background-drain fixes pass38checks+1Windows skip each on Node18/24; actualWindows fullsuite confirmation pending."
+    "windows": {
+      "files": 378,
+      "passed": 4580,
+      "failed": 2,
+      "skipped": 45,
+      "fileTimeouts": 0
+    },
+    "failureInvestigation": "Prior stdout/teardown failures did not recur. Two remaining fixtures concern watchdog setup timing and LF-only strict-policy insertion. Test-only fixes preserve product deadlines and validate LF/CRLF; root integrated focused Node24 checks passed28/28. New remote Windows confirmation pending."
   },
   "limits": [
     "New archive has targeted source, build, artifact and exact-package initialization checks; no new full-suite or installed-native qualification is claimed.",
@@ -115,5 +121,20 @@
     "Real-model general usefulness and formal benchmark quality gains remain unproven."
   ],
   "formalMatchedPairs": 0,
-  "plannedMatchedPairs": 39
+  "plannedMatchedPairs": 39,
+  "heldNewerSource": {
+    "sourceCommit": "8699809bdaa0e518b2017172a093565fc6ec8fe1",
+    "packageSha256": "56cf90675981b2ebe263ea5670d41188abf4361add22088aa00983d241b084bb",
+    "status": "HELD_NOT_DELIVERED",
+    "artifactChecksPerNodeVersion": 17,
+    "fullSuite": {
+      "files": 379,
+      "passed": 4598,
+      "failed": 4,
+      "skipped": 33,
+      "timeouts": 0,
+      "inputsUnchanged": 1156
+    },
+    "scope": "Four full-suite failures are stale summary-heading test expectations, now corrected in separate test-only changes with59focusedchecks. Full run remains failed. No installed-native or live-model qualification transferred."
+  }
 }

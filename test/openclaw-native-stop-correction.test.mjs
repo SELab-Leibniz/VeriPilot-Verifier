@@ -171,20 +171,53 @@ test('an initial review that crosses its absolute deadline cannot create a corre
 });
 
 test("until_pass execution watchdog closes an unfinished correction and fences its late terminal", async t => {
-  let childRunId;
+  let childRunId, stage = 'fixture', armed = false;
   const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", executionTimeoutMs: 50 });
   f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
-  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await within(f.runtime.waitForNativeReviews(), "review");
-  const child = { ...f.ctx, runId: childRunId };
-  await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  await until(() => f.post().phase === "IDLE", "execution watchdog");
-  assert.equal(f.post().reviewStatus, "UNVERIFIED");
-  assert.equal(f.post().reason, "POST_RUN_EXECUTION_TIMEOUT");
-  await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, child);
-  await within(f.runtime.waitForNativeReviews(), "review");
-  assert.equal(f.post().reviewStatus, "UNVERIFIED");
-  assert.equal(f.hostAbort.signal.aborted, false);
+  const started = f.runtime.postRuns.started.bind(f.runtime.postRuns);
+  f.runtime.postRuns.started = async (identity, runId, timeoutMs, trustedCorrection) => {
+    if (runId !== childRunId || trustedCorrection === false) return started(identity, runId, timeoutMs, trustedCorrection);
+    assert.equal(timeoutMs, 50);
+    // Freeze only at the actual trusted start. Disk work must not consume the
+    // execution interval before the watchdog has durably armed.
+    t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+    const result = await started(identity, runId, timeoutMs, trustedCorrection);
+    assert.equal(f.post().phase, 'CORRECTING');
+    assert.equal(f.post().deadlineAt - Date.now(), 50);
+    armed = true;
+    return result;
+  };
+  try {
+    stage = 'initial reply';
+    await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+    stage = 'initial review settlement';
+    await within(f.runtime.waitForNativeReviews(), "initial watchdog review settlement");
+    const child = { ...f.ctx, runId: childRunId };
+    stage = 'correction prompt';
+    await f.runtime.prompt({ prompt: "RC feedback" }, child);
+    assert.equal(armed, true, 'The real trusted-start callback must arm this watchdog.');
+    t.mock.timers.tick(51);
+    stage = 'watchdog expiry';
+    // until uses Date; retain its original five-second real bound while the
+    // execution clock is controlled. Global timers are never mocked here.
+    await within(until(() => f.post().phase === "IDLE", "execution watchdog"), "execution watchdog", 5000);
+    assert.equal(f.post().reviewStatus, "UNVERIFIED");
+    assert.equal(f.post().reason, "POST_RUN_EXECUTION_TIMEOUT");
+    t.mock.timers.reset();
+    stage = 'late terminal';
+    await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [] }, child);
+    stage = 'late terminal settlement';
+    await within(f.runtime.waitForNativeReviews(), "late watchdog terminal settlement");
+    assert.equal(f.post().reviewStatus, "UNVERIFIED");
+    assert.equal(f.hostAbort.signal.aborted, false);
+  } catch (error) {
+    const record = f.post();
+    t.diagnostic(JSON.stringify({ stage, childRunId, watchdogArmed: armed, phase: record?.phase, reason: record?.reason,
+      reviewStatus: record?.reviewStatus, runId: record?.runId, correctionRunId: record?.correctionRunId,
+      deadlineAt: record?.deadlineAt, reviewCalls: f.calls(),
+      warnings: f.warnings.slice(-3).map(value => String(value).replace(/\s+/gu, ' ').slice(0, 240)) }));
+    throw error;
+  } finally { t.mock.timers.reset(); }
 });
 
 test("kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running", async t => {

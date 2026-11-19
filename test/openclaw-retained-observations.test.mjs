@@ -17,7 +17,7 @@ async function fixture(t) {
  return {root,task,file,save,binding:{workspaceDir:root,sessionId:'host'}};
 }
 test('later checker failure cannot hide current source-bound observations or convert partial PASS to closure',async t=>{
- const f=await fixture(t);const r=await readReport(f.binding);assert.equal(r.verification,'UNVERIFIED');assert.equal(r.retainedObservations.length,1);assert.equal(r.retainedObservations[0].objectIds.length,3);assert.match(r.summary,/已有依据支持的偏离/);assert.match(r.summary,/ACCEPTANCE\.md#L2-L2/);assert.doesNotMatch(r.summary,/^\*\*验收通过/);
+ const f=await fixture(t);const r=await readReport(f.binding);assert.equal(r.verification,'UNVERIFIED');assert.equal(r.retainedObservations.length,1);assert.equal(r.retainedObservations[0].objectIds.length,3);assert.match(r.summary,/已有依据支持的偏离/);assert.match(r.summary,/ACCEPTANCE\.md#L2-L2/);assert.doesNotMatch(r.summary,/^\*\*(?:验收通过|本轮已记录清单验收通过)/u);
 });
 test('changed source bytes or changed requirement version invalidate retained observations',async t=>{
  const f=await fixture(t);await fs.writeFile(f.file,'# Changed bytes\n');assert.equal((await readReport(f.binding)).retainedObservations.length,0);

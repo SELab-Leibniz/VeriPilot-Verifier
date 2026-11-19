@@ -117,7 +117,7 @@ test("supervisor withholds a failed candidate, corrects and then publishes only 
   assert.deepEqual(f.counts(), { rounds: 2, assessments: 2, begins: 1 });
   const history = (await fs.readFile(f.params.sessionFile, "utf8")).trim().split("\n").map(JSON.parse);
   assert.deepEqual(history.map((entry) => entry.message.role), ["user", "assistant"]);
-  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*本轮已记录清单验收通过。\*\*/u);
   assert.equal(history.at(-1).message.content[0].text, result.lastAssistant.content[0].text);
   assert.doesNotMatch(result.lastAssistant.content[0].text, /任务 oc-|阶段：|连续评审故障|三份文档/u);
   assert.equal(result.replayMetadata.replaySafe, false);
@@ -349,7 +349,7 @@ test("a genuine requirement during assessment cancels that assessment and is dur
   } });
   assert.equal(persisted, true);
   const result = await running;
-  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*本轮已记录清单验收通过。\*\*/u);
   assert.equal(f.counts().rounds, 2);
 });
 
@@ -369,7 +369,7 @@ test("a worker cannot create a child controller, but its next ordinary verificat
     await fs.writeFile(path.join(root, "result.txt"), "VERIFIED");
     return { payloads: [{ text: "Done" }], meta: {} };
   } });
-  assert.match((await f.harness.runAttempt(f.params)).lastAssistant.content[0].text, /^Done\n\n\*\*验收通过/u);
+  assert.match((await f.harness.runAttempt(f.params)).lastAssistant.content[0].text, /^Done\n\n\*\*本轮已记录清单验收通过。\*\*/u);
   assert.equal(f.counts().assessments, 1);
 });
 
@@ -657,7 +657,7 @@ test('transient model rejection resumes the same history without replaying tools
     return { payloads: [{ text: 'Task completed.' }], meta: {} };
   } });
   const result = await f.harness.runAttempt(f.params);
-  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*验收通过/u);
+  assert.match(result.lastAssistant.content[0].text, /^Task completed\.\n\n\*\*本轮已记录清单验收通过。\*\*/u);
   assert.equal(calls[0].sessionFile, calls[1].sessionFile);
   assert.equal(calls[0].sessionId, calls[1].sessionId);
   assert.notEqual(calls[0].runId, calls[1].runId);

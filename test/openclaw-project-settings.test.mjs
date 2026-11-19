@@ -18,6 +18,14 @@ before(async () => {
 });
 after(() => fs.rm(build, { recursive: true, force: true }));
 
+async function copyInitResources(target) {
+  // initializeProjectConfig reads these packaged resources, including the
+  // runtime catalog used by loadConfig; it imports no code from this copy.
+  await fs.mkdir(path.join(target, 'config'), { recursive: true });
+  await fs.copyFile(path.join(pluginRoot, 'config/runtime.yaml'), path.join(target, 'config/runtime.yaml'));
+  await fs.cp(path.join(pluginRoot, '.runtime-corrector-default'), path.join(target, '.runtime-corrector-default'), { recursive: true });
+}
+
 async function fixture(t, version = "2026.7.1-2") {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-project-settings-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -105,16 +113,20 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: explicit fu
   await assert.rejects(fs.access(path.join(f.other, ".runtime-corrector")), { code: "ENOENT" });
 });
 
-test("full-plan init preserves strict policy and model settings supplied by the packaged defaults", async t => {
+for (const eol of ['\n', '\r\n']) test(`full-plan init preserves strict policy and model settings supplied by ${eol === '\n' ? 'LF' : 'CRLF'} packaged defaults`, async t => {
   const f = await fixture(t), customPlugin = path.join(f.root, "custom-plugin");
-  await fs.cp(pluginRoot, customPlugin, { recursive: true });
+  await copyInitResources(customPlugin);
   const defaultsFile = path.join(customPlugin, ".runtime-corrector-default/config.yaml");
   const original = (await fs.readFile(defaultsFile, "utf8"))
-    .replace("artifactCorrection:\n", "artifactCorrection:\n  requireOpenSpecProposalCoverage: true\n  requireOpenSpecPlanReadiness: true\n")
-    .replace("stopCorrection:\n", "stopCorrection:\n  requireCurrentProductionCoverage: true\n")
+    .replace(/\r?\n/gu, eol)
+    .replace(/^artifactCorrection:(\r?\n)/mu, (_, end) => `artifactCorrection:${end}  requireOpenSpecProposalCoverage: true${end}  requireOpenSpecPlanReadiness: true${end}`)
+    .replace(/^stopCorrection:(\r?\n)/mu, (_, end) => `stopCorrection:${end}  requireCurrentProductionCoverage: true${end}`)
     .replace("effort: low", "effort: high");
   await fs.writeFile(defaultsFile, original);
   const before = parseSimpleYaml(original);
+  assert.equal(before.artifactCorrection.requireOpenSpecProposalCoverage, true, 'The fixture must actually enable strict coverage.');
+  assert.equal(before.artifactCorrection.requireOpenSpecPlanReadiness, true, 'The fixture must actually enable readiness.');
+  assert.equal(before.stopCorrection.requireCurrentProductionCoverage, true, 'The fixture must actually enable production coverage.');
   const result = await initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot: customPlugin,
     reviewerModel: () => "custom/operator-reviewer", assertCurrent: async () => {}, profile: "openspec-full-plan" });
   assert.equal(result.profile, "openspec-full-plan");
@@ -145,7 +157,7 @@ test("init profile typos are rejected before filesystem changes and an existing 
 
 test("full-plan init with a missing companion or stale project never publishes a partial policy", async t => {
   const f = await fixture(t), customPlugin = path.join(f.root, "incomplete-plugin");
-  await fs.cp(pluginRoot, customPlugin, { recursive: true });
+  await copyInitResources(customPlugin);
   await fs.rm(path.join(customPlugin, ".runtime-corrector-default/openspec-plan.rules.yaml"));
   await assert.rejects(initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot: customPlugin,
     reviewerModel: () => "custom/reviewer", assertCurrent: async () => {}, profile: "openspec-full-plan" }), { code: "ENOENT" });
