@@ -1,0 +1,75 @@
+{
+  "kind": "openclaw-runtime-corrector-validation-v1",
+  "version": "1.10.0",
+  "sourceCommit": "8ee015d7dc9036412e1630374cc8fa770aaae3d1",
+  "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
+  "packageSha256": "993fc2466b29ff9a8d4d2c2e7c3d325759b16972b0efea93a8493f51a670228e",
+  "packageMembers": 272,
+  "host": {
+    "name": "openclaw",
+    "version": "2026.7.1-2",
+    "freshStockInstallProfiles": 3
+  },
+  "openspec": {
+    "version": "1.4.1",
+    "workflow": "Proposal -> authenticated approval -> Apply; candidate freeze before external Archive"
+  },
+  "sourceChecks": {
+    "tests": 713,
+    "passed": 712,
+    "failed": 0,
+    "skipped": 1,
+    "skipReason": "Windows-only",
+    "inputsUnchanged": 918
+  },
+  "callbackScopeMatrix": {
+    "cases": 111,
+    "passed": 111,
+    "scope": "Fresh generic source checks; separate from native controls"
+  },
+  "nativeControls": {
+    "kind": "scripted-fictional-exporter",
+    "status": "VERIFIED_DIAGNOSTIC_CONTROLS",
+    "refusal": {
+      "unresolvedTasks": 1,
+      "taskCount": 3,
+      "reason": "TASK_INVENTORY_NOT_READY",
+      "applyStarts": 0,
+      "repairs": 0
+    },
+    "healthy": {
+      "checksPassed": 4,
+      "checksTotal": 4,
+      "repairs": 0,
+      "finalReview": "NO_DEVIATION_FOUND"
+    },
+    "repair": {
+      "checksBefore": 3,
+      "checksAfter": 4,
+      "checksTotal": 4,
+      "nativeRepairs": 1,
+      "admission": "USED",
+      "start": "STARTED",
+      "delivery": "DELIVERED",
+      "finalReview": "NO_DEVIATION_FOUND"
+    },
+    "invariants": [
+      "same two original requirement identities within each workflow",
+      "approved three-task plan preserved",
+      "current host coverage content and ownership matched",
+      "exact feedback bytes joined to native dispatch and provider request",
+      "all three root jobs exited naturally with code zero",
+      "tracked owned process groups absent after cleanup"
+    ],
+    "proofSha256": "270a5f3190dccf50407bbe20301967fd7c279a6ff1da13e20cf98ceda05ccf0c",
+    "verifierSha256": "f47cb9d6d98f3b73f3c0d8c49962fa85c4569a8bd250d7defe93499be6c9aa61"
+  },
+  "limits": [
+    "Scripted responses do not establish real-model diagnosis accuracy or benchmark quality gains.",
+    "Native controls use a named function with no observed upstream candidates; native callback review and nonempty caller semantics remain unevaluated.",
+    "Matching content digests establish evidence integrity and ownership, not semantic truth.",
+    "Cleanup proof covers tracked owned process groups."
+  ],
+  "formalMatchedPairs": 0,
+  "plannedMatchedPairs": 39
+}
