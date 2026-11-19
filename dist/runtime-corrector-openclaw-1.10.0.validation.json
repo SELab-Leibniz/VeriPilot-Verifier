@@ -1,9 +1,9 @@
 {
   "kind": "openclaw-runtime-corrector-validation-v1",
   "version": "1.10.0",
-  "sourceCommit": "c07772bc74b5853f1d2d9fae986b335a8686c499",
+  "sourceCommit": "1345d548453fb60be126de197b7bcbfc4e0eee21",
   "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-  "packageSha256": "dcb02bf7bcdacfb463e235cef062f3da018c3b50bb4690f3d7a8f085acfca960",
+  "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
   "packageMembers": 275,
   "host": {
     "name": "openclaw",
@@ -14,67 +14,87 @@
     "workflow": "Proposal -> authenticated approval -> Apply; external grading after candidate freeze"
   },
   "sourceBinding": {
-    "sourceManifestSha256": "45acb1cdd67416c765d0b2c65d4042223086be68013515f04c12166bb8718af4",
-    "memberManifestSha256": "3d67fb04d203d36595156683fec6cb511b437d0ac6cd1bf296bddc475235449c",
-    "trackedSourceInputs": 1160,
+    "sourceManifestSha256": "36576fe59b7c0400e7d7c020580477c0e490ea209789676c9567b1411544a06c",
+    "memberManifestSha256": "47821ad4d50ee13de931bd81069e10fe076884f41e0ae386c5b79be700ea09e3",
+    "runtimeManifestSha256": "b5a4a0f10a43f83d91ed433787e8f769f96344993a7e4c722f35616c842a6b6b",
+    "trackedSourceInputs": 1161,
     "runtimeFilesCompared": 207,
-    "allRuntimeBytesIdenticalToPriorPackage": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
-    "unchangedPackageMembers": 271,
-    "changedDocumentationMembers": [
-      ".runtime-corrector-default/README.md",
-      "README.en.md",
-      "README.md",
-      "docs/openclaw.md"
+    "changedRuntimeMembersVsPriorDocumentationArchive": [
+      "lib/document-tools.mjs",
+      "lib/openclaw/reviewer.mjs"
     ],
-    "rootVerificationSha256": "7a74029ed8ab86737f61d93f388d123d92358dc31b2901a68ca64f37af5ac61f",
-    "caseSpecializationScope": "Only four generic documentation files changed; all other package bytes are identical. Prior named-case scan remains scoped to prior archive."
+    "unchangedMembersVsPriorDocumentationArchive": 273,
+    "sameExactArchiveAsPriorA432Qualification": true,
+    "rootVerificationSha256": "189613ea9e3c9514fd195781a76c9a3d768bb8ddabf69250f999d1d70f2930d5",
+    "namedBenchmarkAndPilotCaseTermMatches": 0,
+    "scanScope": "Four named case terms across207runtime modules of same exactd9af archive, not exhaustive proof against implicit specialization."
   },
   "generalPurposeChanges": [
-    "Optional reuse of a fresh approved whole-plan review for checkbox-only Apply progress; default false, enabled in optional whole-plan topology. Ordinary artifact rules, ownership/policy/inventory checks and final Stop remain active.",
-    "Unsupported callable guidance preserves unverified origin proof while permitting independently evidenced code defects; no parser support or forced PASS added.",
-    "Coverage metadata identifies the inventory denominator and does not claim original requirement completeness.",
-    "Documentation-only archive update adds the ordinary stock install/setup/project-mode/init/on quickstart. Executable runtime, policy and resources are unchanged."
+    "Required Proposal obligations use host-issued stable identifiers. A valid current ID selects canonical host text while retaining exact current original reads, plan citations, every required identity and all coverage dispositions. Legacy exact-text rows remain supported.",
+    "Required document session protocol advances to invalidate old prompt sessions. Strict result-cache reuse remains disabled.",
+    "Retains optional approved checkbox-only semantic review reuse; ordinary artifact rules and final Stop remain active.",
+    "Retains default-off optional origin diagnostics and the ordinary stock install/setup/full-plan guide. No task or benchmark case is encoded in shipped runtime changes.",
+    "Separate evaluation utility fix preserves Git racy-stat checks on its owned scratch index; the collector and its tests are outside the plugin archive."
   ],
   "sourceChecks": {
-    "status": "DOCUMENTATION_ONLY_SOURCE_AND_RUNTIME_EQUIVALENCE_VERIFIED",
-    "fullSuiteForThisExactSource": "NOT_RUN",
-    "priorFrozenRuntimeFullSuite": {
-      "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
-      "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+    "status": "EXACT_SOURCE_FULL_SUITE_AND_TARGETED_CHECKS_PASS",
+    "fullSuiteForThisExactSource": "PASS",
+    "fullSuite": {
       "status": "PASS",
       "node": "v24.14.1",
-      "files": 381,
-      "passed": 4630,
+      "files": 383,
+      "passed": 4650,
       "failed": 0,
       "cancelled": 0,
       "skipped": 33,
       "fileTimeouts": 0,
       "fileTimeoutMs": 180000,
       "actualLaunches": 1,
-      "retries": 0,
-      "inputsUnchanged": 1158,
-      "dependencyFilesUnchanged": 1385,
-      "receiptSha256": "0caebd7671f79d1a492ac36bc78142f13a5a79f482fb1e75b5e4bae438c2e3c0",
-      "logSha256": "1bf3bf315af76017cce84c119bbc30d90cfc907c6e073ca8006dc60e9448ab04"
+      "unchangedSourceRetries": 0,
+      "inputsUnchanged": 1161,
+      "dependencyFilesUnchanged": 1386,
+      "receiptSha256": "03938a24f8926f3179109ee35ec65aa55ee0e7f88abb05c228c0ac5ddf57bd78",
+      "logSha256": "4d992ba6e0c5e0b6247de3e868c26ad45802eb9c5384299bea34ad7b2a51f3ee"
     },
-    "localCausalFixtureIntegratedChecks": 84,
-    "localDocumentationRelatedChecks": 31,
-    "finalDocumentationPackageCase": 1,
-    "scope": "Current exact source changes only tests/docs since prior frozen runtime; old full suite remains scoped to its exact source."
+    "proposalIdentityFocusedPerNode": 83,
+    "proposalIdentityRootIntegratedPassed": 83,
+    "proposalIdentityPeer": "CLEAR",
+    "proposalIdentityRootReceiptSha256": "21f31a326108909a804c1d178fa9d760ab9d213e7f4542805cb1cf3f469cd5d5",
+    "exactCapFixtureFocusedPerNode": 3,
+    "exactCapFixtureRootIntegratedPassed": 3,
+    "collectorFocusedPerNode": 7,
+    "collectorRootIntegratedPassed": 7,
+    "priorFailedSourceRunReceiptSha256": "48eca18bd5c00563b05862fcf013477c49572e1e2b8cc4b18efd3c77d569068d"
   },
   "packageChecks": {
     "node18AllHostBuildsPassed": true,
     "node18ArtifactChecksPassed": 17,
     "node24ArtifactChecksPassed": 17,
     "node18OpenClawMemberBytesMatched": 275,
-    "receiptSha256": "dedc306a7e0cb9153c66fe69130f77b302e9ceed4c3a673db39210b8efa7aad1",
-    "separateExactArchiveInitializationSuite": "NOT_RERUN_FOR_DOCUMENTATION_ONLY_ARCHIVE",
-    "exactArchiveFullSuite": "NOT_RUN",
-    "exactArchiveStockInstallations": 0,
-    "exactArchiveNativeRuns": 0,
-    "scope": "Exact docs-only build/artifact/source/member/runtime-equivalence qualification only."
+    "artifactCheckExecutionSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+    "sameExactArchiveChecksRerunForSourceOnlyCollectorFix": false,
+    "artifactQualificationSha256": "27533c34920d1e765688a7a66032d81324ec39dccedd2ef642cb9bda14eccf09",
+    "currentSourceBuildQualificationSha256": "f47e9f70aaf6da118390d08f3a93e3a7823b853aaec4c5a30f8013c5d8db2988",
+    "sourceRebuildSameExactArchive": true,
+    "separateExactArchiveInitializationSuite": "NOT_RUN",
+    "exactArchiveStockInstallations": 1,
+    "exactArchiveNativeCodingRuns": 0,
+    "scope": "Same exactd9af artifact checks and Node18all build executed on a432 source. New1345 build/source closure actually verified byte equality; no relabelled execution."
   },
-  "stockInstallations": [],
+  "stockInstallations": [
+    {
+      "profile": "ordinary-public-gateway-tui",
+      "status": "STOCK_CLI_INSTALL_AND_PUBLIC_SETUP_PASS",
+      "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+      "executionSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+      "verifiedMembers": 275,
+      "actualServerCommandJoins": 7,
+      "effectiveEnabled": true,
+      "cleanupConfirmed": true,
+      "rootPeerReceiptSha256": "f10d3f12f807e14f460a5ee056e1bcbb35a78edb55dfbc1af91542b6af9e25ad",
+      "scope": "Same exact current archive; command setup only, no coding/semantic review/correction execution."
+    }
+  ],
   "optionalOpenSpecTopology": {
     "newProjectActivation": "/rc-project init openspec-full-plan",
     "existingProjectActivation": "Explicit merge of enabledStages, artifacts and workflow; companion rules copied manually.",
@@ -84,10 +104,14 @@
     "strictModelStopPoliciesReplaced": false
   },
   "nativeControls": {
-    "status": "NOT_RERUN_FOR_DOCUMENTATION_ONLY_ARCHIVE",
-    "runtimeBytesEqualPriorQualifiedPackage": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
-    "priorRuntimeControlsStatus": "VERIFIED_DIAGNOSTIC_CONTROLS",
-    "scope": "Prior controls and their actual installations retain old archive/source bindings; current package has byte-equivalent runtime, not a new installed/native qualification."
+    "status": "ORDINARY_PUBLIC_SETUP_ONLY_NO_NEW_CODING_CONTROL",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "realModelsUsed": false,
+    "realCredentialRead": false,
+    "nativeCodingCompletionClaimed": false,
+    "automaticReloadQualified": false,
+    "scriptedOrPaidCodingControlsForThisArchive": 0,
+    "scope": "Exactarchive public setup verified separately. Old8189/d864 native controls and real-model trials retain their own archive/source bindings."
   },
   "priorQualifiedPackage": {
     "sourceCommit": "eaad88921001275d0151c9a5d2a1bdc23ba80a9d",
@@ -134,14 +158,14 @@
     "scope": "Prior frozen source/archive only. The latest generic healthy ON trial used this archive: active authenticated approval and Apply; unchanged implementation; incomplete workflow with STOP_SETTLEMENT assertion; confirmed owned cleanup. Independent post-cleanup diagnostic grade9/9 across4requirements,0corrective starts,21Flash/29Pro requests. No accepted final review, successful workflow or quality gain is claimed."
   },
   "remoteCI": {
-    "status": "SIX_MATRIX_JOBS_PASSED",
-    "currentRun": 44498423107,
-    "currentRunHead": "a893f8f07fa193eeebee5e3635c21c8c7e6b5de3",
-    "latestCompletedRun": 44498423107,
-    "latestCompletedRunHead": "a893f8f07fa193eeebee5e3635c21c8c7e6b5de3",
-    "latestCompletedConclusion": "success",
-    "latestCompletedPassedMatrixJobs": 6,
-    "latestCompletedFailedMatrixJobs": 0,
+    "status": "LATEST_RUN_FAILED_FIVE_MATRIX_PASSED_WINDOWS_NODE24_FAILED",
+    "currentRun": 44506071712,
+    "currentRunHead": "45ad2f595a58fbeda4f7fb4e3a3f204927481fa7",
+    "latestCompletedRun": 44506071712,
+    "latestCompletedRunHead": "45ad2f595a58fbeda4f7fb4e3a3f204927481fa7",
+    "latestCompletedConclusion": "failure",
+    "latestCompletedPassedMatrixJobs": 5,
+    "latestCompletedFailedMatrixJobs": 1,
     "testOnlyFollowup": {
       "status": "LOCAL_REVIEW_CLEAR_REMOTE_SIX_MATRIX_JOBS_PASSED",
       "relatedPassedNode18": 41,
@@ -194,15 +218,19 @@
       "failureInvestigation": "Latest failures differ from prior a0 fixtures, which now passed. Ubuntu hung-group test includes prelaunch work in its300ms cutoff. Windows progress test outer10s also includes setup; background/late-candidate phase timeouts need further diagnostics. No product cause, deadline weakening or green CI claim."
     },
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/a300-44496222984-peer-bf4e/a893-six-green-terminal.json",
-      "sha256": "8d4e5c945478827285da5cd33418817807736dc4db7aa84e998406a0bafbe5d5",
-      "metadataTerminal": "ccb90b",
-      "exitCode": 0,
-      "publishJob": "SKIPPED",
-      "scope": "Exact a893f8f source only; unpublished causal fixture follow-up is separate. No retry or earlier failure reclassification."
+      "path": ".runtime-correction/validation/ci-fix/45ad2f5-natural-a41k/terminal-verification.json",
+      "sha256": "3794c90e8fe0c29ab8b60eda0ac4ac944746d48d4d8d0cb7337cb22aa438d68b",
+      "watcherTerminal": "873516",
+      "watcherExitCode": 1,
+      "finalMetadataTerminal": "fc4cc7",
+      "finalMetadataExitCode": 0,
+      "failedJobLogTerminal": "6a28f0",
+      "failedJobLogExitCode": 0,
+      "failedJobLogSha256": "763b2847d16134f3585518f21ab4d231082229d137a31759e711473a2e237361",
+      "publishJob": "SKIPPED"
     },
     "pendingCausalFixtureFollowup": {
-      "status": "PEER_CLEAR_ROOT_INTEGRATED_TARGETED_PASS_REMOTE_PENDING",
+      "status": "LOCAL_PEER_CLEAR_REMOTE_FIVE_PASS_WINDOWS_NODE24_FAILED",
       "testFiles": 4,
       "ownerRelatedPassesPerNodeVersion": 84,
       "ownerPassesScope": "Disjoint related slices63+21, not one integrated run",
@@ -222,6 +250,47 @@
         "Historical failures are not uniquely explained by these controls."
       ],
       "sourceCommit": "3cbf3a64cb928f78a90faeb69bd74df31afa50ab"
+    },
+    "currentRunConclusion": "failure",
+    "currentRunPassedMatrixJobs": 5,
+    "currentRunFailedMatrixJobs": 1,
+    "priorSixGreenRun": {
+      "run": 44498423107,
+      "head": "a893f8f07fa193eeebee5e3635c21c8c7e6b5de3",
+      "conclusion": "success",
+      "passedMatrixJobs": 6,
+      "terminalEvidence": {
+        "path": ".runtime-correction/validation/ci-fix/a300-44496222984-peer-bf4e/a893-six-green-terminal.json",
+        "sha256": "8d4e5c945478827285da5cd33418817807736dc4db7aa84e998406a0bafbe5d5",
+        "metadataTerminal": "ccb90b",
+        "exitCode": 0,
+        "publishJob": "SKIPPED",
+        "scope": "Exact a893f8f source only; unpublished causal fixture follow-up is separate. No retry or earlier failure reclassification."
+      }
+    },
+    "latestWindows": {
+      "files": 382,
+      "passed": 4618,
+      "failed": 1,
+      "skipped": 45,
+      "cancelled": 0,
+      "fileTimeouts": 0,
+      "failure": "baseline-readonly-budget.test.mjs exact-cap successful-candidate graph witness expected1 actual0",
+      "historicalCause": "UNPROVEN",
+      "investigation": "Controlled delayed per-record synthetic padding append reproduces same missing graph before reviewer deadline. Product policy unchanged; isolated fixture fix under review."
+    },
+    "exactCapFixtureFollowup": {
+      "status": "LOCAL_CAUSAL_AND_PEER_CLEAR_ROOT_THREE_PASS_REMOTE_NOT_RUN",
+      "sourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+      "testFiles": 2,
+      "focusedPassedNode18": 3,
+      "focusedPassedNode24": 3,
+      "rootIntegratedPassedNode24": 3,
+      "runtimeChanged": false,
+      "productDeadlinesChanged": false,
+      "rootPeerReceiptSha256": "a80265695776f5b13bd3a5de039d78937469bbce306491e4f04849574120461d",
+      "historicalWindowsCause": "UNPROVEN",
+      "controls": "Controlled delayed per-record padding reproduces missing graph; batching preserves all real budget callbacks and records; slow single flush still fails original deadline."
     }
   },
   "supersededSourceRun": {
@@ -234,11 +303,13 @@
     "scope": "Failed stale heading contracts, corrected in later source. This historical full run remains failed."
   },
   "limits": [
-    "Exact frozen source/archive only; mutable report and dist publication do not change the qualified runtime source.",
-    "Stock CLI installation is separate from native scripted business qualification. Prior native controls remain tied to their original archive.",
-    "Latest strict-origin ON development trial observed one approved-checkbox review skip and Apply capture, then reached the final reviewer deadline. No completed workflow or quality/time gain. Prior Proposal connection failure retained separately.",
-    "No real-model general usefulness or formal benchmark quality gain established.",
-    "Current docs-only archive has no new exact-archive full-suite, stock-install or native trial qualification. Prior runtime results and current byte-equivalence evidence are recorded separately."
+    "Qualification is bound to exact source/archive; source-wide tests do not establish semantic usefulness.",
+    "The current exact archive passed ordinary public setup with a controlled foreground restart; automatic reload and new-archive coding/correction execution remain untested.",
+    "Prior real-model healthy and defective-start workflows used8189/d864. Both completed and passed finite checks, with zero RC coding starts; ordinary Flash repair is not RC benefit.",
+    "No held-out transfer, causal overhead, real-model correction quality gain or formal benchmark improvement established; formal comparisons remain0/39.",
+    "Optional strict inventory/Proposal/readiness/production-flow checks are not enabled by initialization. Ordinary defaults do not guarantee complete original-requirement coverage.",
+    "Operator authentication assumes protected Gateway authority; unrestricted host exec can inherit credentials and does not establish human-exclusive approval.",
+    "Naturally failed a432 full-source run and prior45ad Windows CI failure remain preserved; current remote result for these source changes is pending publication."
   ],
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -267,43 +338,70 @@
     "sanitizedOutcomeSha256": "b1cab601e5e518a4d8e9c2d82f95e6ee88e48a545e701b423272bbd5708e2a22"
   },
   "latestGeneralPurposeTrial": {
-    "kind": "GENERAL_PURPOSE_HEALTHY_ON_SANITIZED_OUTCOME_V1",
-    "status": "VERIFIED_HEALTHY_NORMAL_PROFILE_COMPLETION",
+    "status": "VERIFIED_COMPLETION_ORDINARY_APPLY_REPAIR_NO_RC_REPAIR",
+    "kind": "GENERAL_PURPOSE_DECLARED_START_VARIANT_ON_SANITIZED_OUTCOME_V1",
     "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
     "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
-    "normalSourceFlowProfile": true,
-    "optionalOriginCoverageDeclaredFalseBeforeLaunch": true,
+    "codingModel": "deepseek-flash",
+    "reviewerModel": "deepseek-v4-pro",
     "strictOriginalInventory": true,
     "strictProposalCoverage": true,
     "strictPlanReadiness": true,
-    "currentProductionSourceFlowRequired": true,
+    "currentProductionSourceFlow": true,
+    "optionalProductionOriginCoverage": false,
     "activationBeforeFirstChatVerified": true,
-    "completePlanReviewPassed": true,
-    "officialOpenSpecValidationPassed": true,
-    "authenticatedApplyReached": true,
+    "declaredPublicStartingSourceVariant": true,
+    "startingSourceSha256": "d9372b1254f603810cb9b94901222d25fb9cedcf795588df6ed326c68e7a3456",
+    "otherInitialFilesUnchanged": 5,
+    "publicInputsUnchanged": 2,
+    "modelsPoliciesLimitsSameAsHealthyTrial": true,
+    "materializationSha256": "a4a0bff5581f3b53c09b7a52a04d77d627dcdfedfd0ff026066afc9733b39b2e",
+    "independentPreparedSourcePeerSha256": "0e8ec3db1f2b96b5eac61f967ffa5dc05b1a24241dbe0b4adac0a398325db014",
+    "rootVariantRevalidationSha256": "217cb503ebe2f95a1988298545107b6752a73ebf5960704c5c11be5b2f5c2a4d",
+    "freshCombinedSandboxSha256": "ac746d3c3c4c51bd619974723a1e6b2739575c9141febb81658f14f5114dca40",
+    "driverAdmissionSha256": "35c54b53813f447c25d177ce4d0e30c857178ad6a918b55ac2fbd3e4941d79a1",
+    "rootOwnedSession": 25075,
+    "launchToolResult": "83c394",
+    "finalOutcome": "INDEPENDENT_HOST_ACCEPTANCE_AND_FINITE_CODE_GRADE_VERIFIED",
+    "qualityResult": "PASS_9_OF_9_FOUR_REQUIREMENTS",
+    "driverExpectedHealthyAnnotation": "INAPPLICABLE_HISTORICAL_ANNOTATION_NOT_A_GATE",
+    "matchedComparison": false,
+    "formalMatchedPairsAdded": 0,
+    "scope": "One declared development-only starting-source variant. Ordinary Flash repair is not an RC repair; no guaranteed defect survival, quality gain, causal overhead or generalization claim.",
+    "finalSourceSha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+    "sourceChangeStage": "ORDINARY_APPLY_BEFORE_STOP_REVIEWER_DISPATCH",
+    "implementationUnchanged": false,
     "originalRequirements": 4,
-    "plannedCheckboxes": 16,
-    "completedCheckboxes": 16,
-    "approvedProgressSemanticReviewSkips": 1,
-    "applyCandidateCaptured": true,
-    "duplicateCandidateCallbacks": 1,
-    "captureOrdering": "NOT_INDEPENDENTLY_QUALIFIED",
-    "candidateAndFinalFullPatchEqual": true,
+    "plannedCheckboxes": 11,
+    "completedCheckboxes": 11,
     "nativeReviewStatus": "NO_DEVIATION_FOUND",
-    "driverState": "SETTLED_REQUIRES_INDEPENDENT_GRADING_AND_NATIVE_ACK_AUDIT",
     "coverageReceiptStatus": "MATCHED",
     "driverContinuityStatus": "OBSERVED",
     "correctiveBusinessStarts": 0,
+    "correctiveAdmissions": 0,
     "hostStartsByModel": {
-      "deepseek-flash": 31,
-      "deepseek-v4-pro": 16
+      "deepseek-flash": 39,
+      "deepseek-v4-pro": 18
     },
-    "providerRequests": 47,
-    "implementationUnchanged": false,
-    "finalSourceSha256": "9c7be26390da94551fbee73ad2fb536dddd834a7e558b7c2f30d06d30be1555d",
-    "publicTestExecutions": 2,
-    "latestPublicTestExitCode": 0,
+    "hostStarts": 57,
+    "hostCompletions": 57,
+    "providerRequests": 57,
+    "currentPublicTestExitCode": 0,
     "latestPublicTestCurrentSourceBound": true,
+    "candidateAndFinalFullPatchEqual": true,
+    "captureOrdering": "NOT_INDEPENDENTLY_QUALIFIED",
+    "applyCandidateCaptured": true,
+    "duplicateCandidateCallbacks": 1,
+    "nativeAckAudit": "INDEPENDENT_NATIVE_ACK_COVERAGE_OWNERSHIP_AND_CLOSURE_VERIFIED",
+    "nativeAckAuditSha256": "43a67bddbdce7cabc44702f60f5edca71cf9543e5cc4814517643a338c1e9be2",
+    "nativeAckAuditVerificationSha256": "5555ddaf26554b2bce0a866f842e766dee5f6baaa1461aa3ddbc82e0084c2545",
+    "nativeOriginalFinishAckComplete": true,
+    "acknowledgedCurrentSourceReads": 7,
+    "canonicalRequirementSourceFlowsVerified": 4,
+    "additionalReviewedObjects": 6,
+    "totalSourceReviewedRows": 10,
+    "unverifiedFinalCoverageRows": 0,
+    "stopElapsedMs": 245011,
     "independentPrivateGrades": [
       {
         "name": "observed-apply",
@@ -330,36 +428,34 @@
         }
       }
     ],
-    "privateGradeReceiptSha256": "ae1b764866907e6af9af2c99999bc1b858f13a665d4bf776eef88286697277f6",
-    "privateGradeToolTerminal": "da3b3f",
+    "privateGradeReceiptSha256": "ca22bae30049d1a4047656483119e06a556926bf704d8371703d2a7a39c6d35e",
+    "privateGradeToolTerminal": "fd698b",
     "privateGradeExitCode": 0,
-    "nativeAckAudit": "VERIFIED_HOST_NATIVE_ACCEPTANCE_WITHIN_DECLARED_PROFILE",
+    "rootFreezeSha256": "e678c648a7a7a8dd46045cdda7bc62929a0c41cb3030e6a4375259173708ecd9",
+    "driverResultSha256": "00295c25f890e2d71c5ac8c4d424f339d73a7161bfd705baa8d1d595e765a2ac",
     "ownedCleanupConfirmed": true,
     "ownedGroupAbsent": true,
     "rootTerminalCode": 0,
     "rootTerminalSignal": null,
-    "rootTerminalToolResult": "3dca0a",
+    "rootTerminalToolResult": "7e9c00",
     "gatewayClosed": true,
-    "rootFreezeSha256": "16566d6e5b521065af23cb771f141c1ff3afe60f8adf13b830dda0997ab9c96c",
-    "driverResultSha256": "72bf4100a2cdb5d406f6f12c46197b89c11eced29db713868c1a626c45254178",
-    "matchedComparison": false,
+    "documentReviewRetryCause": "REQUIRED_ANCHORS_PRESENT_BUT_REQUIREMENT_TEXT_PARAPHRASED",
+    "documentFirstCoverageRows": 6,
+    "documentFirstExactRequiredIdentities": 0,
+    "documentRepairedExactRequiredIdentities": 4,
+    "documentNavigationZeroStartRejected": true,
     "qualityGainProved": false,
-    "formalMatchedPairsAdded": 0,
+    "realModelCorrectorRepairProved": false,
     "limits": [
-      "Two equal full snapshots graded by the same sealed private evaluator after cleanup.",
-      "Finite nine-check/four-atom grade does not prove general semantic accuracy.",
-      "One healthy ON-only development trial; no bounded real-model repair, causal overhead, held-out transfer or formal comparison established.",
-      "Optional origin analysis was off from launch; this is not strict-origin success.",
-      "Host-native acceptance is independently verified within the declared profile; it does not establish semantic accuracy beyond the finite private grade or transfer."
+      "One declared development-only start variant; ordinary Flash repair is not an RC repair.",
+      "Two equal full snapshots used the same sealed nine-check evaluator after cleanup; they are not independent oracles.",
+      "Native acknowledgement, ownership and current source-flow joins do not establish semantic completeness or upstream caller closure.",
+      "No matched OFF comparison, causal overhead, held-out transfer or formal benchmark credit.",
+      "Frozen runtime archive differs from current download only in four documentation members; no reclassification of the archive executed."
     ],
-    "independentNativeAcceptanceVerified": true,
-    "nativeAckAuditSha256": "54a115044a39e91dd8f149ff588f7770e31198bf12be8e7028903cd86551fb17",
-    "nativeAckAuditVerificationSha256": "f109329f49fee4d6d3d4f5a54d862d42fe3064eb07ab775c716930b98f8137fd",
-    "nativeOriginalFinishAckComplete": true,
-    "acknowledgedCurrentSourceReads": 7,
-    "canonicalRequirementSourceFlowsVerified": 4,
-    "unverifiedFinalCoverageRows": 0,
-    "sanitizedOutcomeSha256": "f41923a09f192d0b35ed7084f4c7b5f64b1e2559b18c957b004693bd434d9f1d"
+    "approvedProgressSemanticReviewSkips": 1,
+    "approvedProgressCountReceiptSha256": "788b0b95de5f1e8e8864d5012e4e4df39d91b6c4f8412cee3eba0d77c0c35b90",
+    "sanitizedOutcomeSha256": "a0e78fb32fd801a56012ae2fb565cbfe573f4d711345dd62ededc799223840a7"
   },
   "priorStrictOriginGeneralPurposeTrial": {
     "status": "INCOMPLETE_FINAL_VERIFICATION",
@@ -421,7 +517,7 @@
     "scope": "Observed native optimization/candidate capture; final verification incomplete at reviewer deadline. Independent code grades do not establish native acceptance, timing benefit or quality gain."
   },
   "documentationSourceFollowup": {
-    "status": "PUBLISHED_DOCUMENTATION_ONLY_ARCHIVE",
+    "status": "PRIOR_DOCUMENTATION_RELEASE_RETAINED_IN_CURRENT_ARCHIVE",
     "changedMarkdownFiles": 3,
     "runtimeChanged": false,
     "policyDefaultsChanged": false,
@@ -547,6 +643,406 @@
       "actualRootTerminals": 2,
       "verificationSha256": "29db9d74b3937fd44ed598c3b377735235821e503a62953d6ab012519ec1cd32"
     },
-    "scope": "Prior exact archive/runtime source. New documentation-only archive shares every executable/runtime/policy/resource byte; no exact-archive qualification is inherited."
+    "scope": "Historical exact8189/d864 source/archive qualification. Subsequentc077 documentation archive shared its runtime bytes. Current required-ID archive changes two runtime modules and does not inherit these native/live coding results."
+  },
+  "activeGeneralPurposeTrial": {
+    "status": "NONE",
+    "lastClosedTrialStatus": "VERIFIED_COMPLETION_ORDINARY_APPLY_REPAIR_NO_RC_REPAIR",
+    "liveProcessesOwnedByTrial": 0
+  },
+  "priorHealthyGeneralPurposeTrial": {
+    "kind": "GENERAL_PURPOSE_HEALTHY_ON_SANITIZED_OUTCOME_V1",
+    "status": "VERIFIED_HEALTHY_NORMAL_PROFILE_COMPLETION",
+    "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
+    "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+    "normalSourceFlowProfile": true,
+    "optionalOriginCoverageDeclaredFalseBeforeLaunch": true,
+    "strictOriginalInventory": true,
+    "strictProposalCoverage": true,
+    "strictPlanReadiness": true,
+    "currentProductionSourceFlowRequired": true,
+    "activationBeforeFirstChatVerified": true,
+    "completePlanReviewPassed": true,
+    "officialOpenSpecValidationPassed": true,
+    "authenticatedApplyReached": true,
+    "originalRequirements": 4,
+    "plannedCheckboxes": 16,
+    "completedCheckboxes": 16,
+    "approvedProgressSemanticReviewSkips": 1,
+    "applyCandidateCaptured": true,
+    "duplicateCandidateCallbacks": 1,
+    "captureOrdering": "NOT_INDEPENDENTLY_QUALIFIED",
+    "candidateAndFinalFullPatchEqual": true,
+    "nativeReviewStatus": "NO_DEVIATION_FOUND",
+    "driverState": "SETTLED_REQUIRES_INDEPENDENT_GRADING_AND_NATIVE_ACK_AUDIT",
+    "coverageReceiptStatus": "MATCHED",
+    "driverContinuityStatus": "OBSERVED",
+    "correctiveBusinessStarts": 0,
+    "hostStartsByModel": {
+      "deepseek-flash": 31,
+      "deepseek-v4-pro": 16
+    },
+    "providerRequests": 47,
+    "implementationUnchanged": false,
+    "finalSourceSha256": "9c7be26390da94551fbee73ad2fb536dddd834a7e558b7c2f30d06d30be1555d",
+    "publicTestExecutions": 2,
+    "latestPublicTestExitCode": 0,
+    "latestPublicTestCurrentSourceBound": true,
+    "independentPrivateGrades": [
+      {
+        "name": "observed-apply",
+        "status": "PASS",
+        "passedChecks": 9,
+        "totalChecks": 9,
+        "atomStatus": {
+          "A1": "PASS",
+          "A2": "PASS",
+          "A3": "PASS",
+          "A4": "PASS"
+        }
+      },
+      {
+        "name": "final-delivered",
+        "status": "PASS",
+        "passedChecks": 9,
+        "totalChecks": 9,
+        "atomStatus": {
+          "A1": "PASS",
+          "A2": "PASS",
+          "A3": "PASS",
+          "A4": "PASS"
+        }
+      }
+    ],
+    "privateGradeReceiptSha256": "ae1b764866907e6af9af2c99999bc1b858f13a665d4bf776eef88286697277f6",
+    "privateGradeToolTerminal": "da3b3f",
+    "privateGradeExitCode": 0,
+    "nativeAckAudit": "VERIFIED_HOST_NATIVE_ACCEPTANCE_WITHIN_DECLARED_PROFILE",
+    "ownedCleanupConfirmed": true,
+    "ownedGroupAbsent": true,
+    "rootTerminalCode": 0,
+    "rootTerminalSignal": null,
+    "rootTerminalToolResult": "3dca0a",
+    "gatewayClosed": true,
+    "rootFreezeSha256": "16566d6e5b521065af23cb771f141c1ff3afe60f8adf13b830dda0997ab9c96c",
+    "driverResultSha256": "72bf4100a2cdb5d406f6f12c46197b89c11eced29db713868c1a626c45254178",
+    "matchedComparison": false,
+    "qualityGainProved": false,
+    "formalMatchedPairsAdded": 0,
+    "limits": [
+      "Two equal full snapshots graded by the same sealed private evaluator after cleanup.",
+      "Finite nine-check/four-atom grade does not prove general semantic accuracy.",
+      "One healthy ON-only development trial; no bounded real-model repair, causal overhead, held-out transfer or formal comparison established.",
+      "Optional origin analysis was off from launch; this is not strict-origin success.",
+      "Host-native acceptance is independently verified within the declared profile; it does not establish semantic accuracy beyond the finite private grade or transfer."
+    ],
+    "independentNativeAcceptanceVerified": true,
+    "nativeAckAuditSha256": "54a115044a39e91dd8f149ff588f7770e31198bf12be8e7028903cd86551fb17",
+    "nativeAckAuditVerificationSha256": "f109329f49fee4d6d3d4f5a54d862d42fe3064eb07ab775c716930b98f8137fd",
+    "nativeOriginalFinishAckComplete": true,
+    "acknowledgedCurrentSourceReads": 7,
+    "canonicalRequirementSourceFlowsVerified": 4,
+    "unverifiedFinalCoverageRows": 0,
+    "sanitizedOutcomeSha256": "f41923a09f192d0b35ed7084f4c7b5f64b1e2559b18c957b004693bd434d9f1d"
+  },
+  "generalPurposeInterfaceFollowup": {
+    "status": "PUBLISHED_CANDIDATE_SOURCE_FULL_PASS_REAL_MODEL_ID_PATH_NOT_YET_MEASURED",
+    "problem": "Required Proposal identity uses exact reviewer-copied prose; acknowledged source anchors with paraphrased text caused a repair worker.",
+    "direction": "Host-issued canonical obligation identifier, preserving current original reads, artifact citations, every required row and disposition checks.",
+    "runtimeChangedInPublishedArchive": true,
+    "liveOverheadBenefitMeasured": false,
+    "sourceCommit": "f62f051",
+    "integratedSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+    "focusedPassedPerNode": 83,
+    "rootIntegratedPassedNode24": 83,
+    "independentPeer": "CLEAR",
+    "rootIntegratedReceiptSha256": "21f31a326108909a804c1d178fa9d760ab9d213e7f4542805cb1cf3f469cd5d5"
+  },
+  "ordinaryStockFirstUse": {
+    "status": "VERIFIED_ORDINARY_PUBLIC_INSTALL_SETUP_AND_SESSION_ACTIVATION",
+    "stockInstallExitCode": 0,
+    "installedMembersMatched": 275,
+    "actualTuiCommandServerReplyJoins": 7,
+    "effectiveEnabled": true,
+    "registered": true,
+    "publicServerIdentityVerified": true,
+    "privateEvaluationRuntimeInjection": false,
+    "initializationLeavesProjectAndSessionDefaultOff": true,
+    "setupAppliedBy": "CONTROLLED_FOREGROUND_RESTART",
+    "automaticReloadQualified": false,
+    "reviewerModel": "custom/deepseek-v4-pro",
+    "codingModel": "custom/deepseek-flash",
+    "optionalStrictPoliciesAutomaticallyEnabled": false,
+    "modelGeneratedAssistantRows": 0,
+    "globalProviderCounterInstrumented": false,
+    "realKeyRead": false,
+    "codingRequestSent": false,
+    "allObservedOwnedPidBirthsAndGroupsAbsent": true,
+    "auditSha256": "772980e93c0e8801c153033e3435529a1c0bed44fb82ef152e13cab2d3c6c412",
+    "verificationSha256": "3325b84722352200e85b5d27ed2bd20ff628da9979b72f8a991c05844e6fed12",
+    "rootPeerSha256": "f10d3f12f807e14f460a5ee056e1bcbb35a78edb55dfbc1af91542b6af9e25ad",
+    "limits": [
+      "Ordinary default configuration setup only, not coding/document-review/correction execution.",
+      "Original startup timeout remains unexplained and preserved."
+    ],
+    "executionSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "allCurrentRuntimeModulesEqualInstalledArchive": true
+  },
+  "candidatePackage": {
+    "status": "PROMOTED_ARTIFACT_AND_SOURCE_FULL_SUITE_AND_ORDINARY_SETUP_VERIFIED",
+    "sourceCommit": "1345d548453fb60be126de197b7bcbfc4e0eee21",
+    "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+    "promotedToDist": true,
+    "sourceInputs": 1161,
+    "members": 275,
+    "runtimeModules": 207,
+    "changedMembersVsPublishedDocsArchive": [
+      "lib/document-tools.mjs",
+      "lib/openclaw/reviewer.mjs"
+    ],
+    "unchangedMembers": 273,
+    "artifactChecksPassedPerNode": 17,
+    "node18AllHostBuildMembersMatched": 275,
+    "localQualificationSha256": "27533c34920d1e765688a7a66032d81324ec39dccedd2ef642cb9bda14eccf09",
+    "rootArchiveVerificationSha256": "189613ea9e3c9514fd195781a76c9a3d768bb8ddabf69250f999d1d70f2930d5",
+    "sourceFullSuite": {
+      "status": "PASS",
+      "sourceCommit": "1345d548453fb60be126de197b7bcbfc4e0eee21",
+      "node": "v24.14.1",
+      "actualLaunchTerminal": "77741d",
+      "actualSession": 42543,
+      "actualTerminal": "2d7d06",
+      "exitCode": 0,
+      "actualLaunches": 1,
+      "unchangedSourceRetries": 0,
+      "inputsBeforeSha256": "b949f4c91aebf0140f70af78792641e87bb75e6cdc86b0731600226a36dbf5d4",
+      "unchangedSourceInputs": 1161,
+      "unchangedDependencyInputs": 1386,
+      "sourceChanges": [],
+      "summary": {
+        "files": 383,
+        "completed": 383,
+        "failedFiles": [],
+        "timedOutFiles": [],
+        "totals": {
+          "tests": 4683,
+          "pass": 4650,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 33
+        }
+      },
+      "fileTimeoutMs": 180000,
+      "fileTimeouts": 0,
+      "logSha256": "4d992ba6e0c5e0b6247de3e868c26ad45802eb9c5384299bea34ad7b2a51f3ee",
+      "priorFailedRun": {
+        "sourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+        "receiptSha256": "48eca18bd5c00563b05862fcf013477c49572e1e2b8cc4b18efd3c77d569068d",
+        "classification": "Naturally failed prior source run preserved; reviewed collector source fix then new single run."
+      },
+      "limits": [
+        "Source-wide regression, not semantic quality benefit or real-model correction success.",
+        "Exactarchive build/artifact/ordinary-public-setup receipts remain separately bound."
+      ]
+    },
+    "ordinaryStockFirstUse": {
+      "status": "VERIFIED_ORDINARY_PUBLIC_INSTALL_SETUP_AND_SESSION_ACTIVATION",
+      "stockInstallExitCode": 0,
+      "installedMembersMatched": 275,
+      "actualTuiCommandServerReplyJoins": 7,
+      "effectiveEnabled": true,
+      "registered": true,
+      "publicServerIdentityVerified": true,
+      "privateEvaluationRuntimeInjection": false,
+      "initializationLeavesProjectAndSessionDefaultOff": true,
+      "setupAppliedBy": "CONTROLLED_FOREGROUND_RESTART",
+      "automaticReloadQualified": false,
+      "reviewerModel": "custom/deepseek-v4-pro",
+      "codingModel": "custom/deepseek-flash",
+      "optionalStrictPoliciesAutomaticallyEnabled": false,
+      "modelGeneratedAssistantRows": 0,
+      "globalProviderCounterInstrumented": false,
+      "realKeyRead": false,
+      "codingRequestSent": false,
+      "allObservedOwnedPidBirthsAndGroupsAbsent": true,
+      "auditSha256": "772980e93c0e8801c153033e3435529a1c0bed44fb82ef152e13cab2d3c6c412",
+      "verificationSha256": "3325b84722352200e85b5d27ed2bd20ff628da9979b72f8a991c05844e6fed12",
+      "rootPeerSha256": "f10d3f12f807e14f460a5ee056e1bcbb35a78edb55dfbc1af91542b6af9e25ad",
+      "limits": [
+        "Ordinary default configuration setup only, not coding/document-review/correction execution.",
+        "Original startup timeout remains unexplained and preserved."
+      ],
+      "executionSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+      "packageSha256": "d9af717636415fdc0a95f8eae4b1a568bcbfa4c38d07c691271d8fae87f37c3d",
+      "allCurrentRuntimeModulesEqualInstalledArchive": true
+    },
+    "nativeCodingOrReviewerQualification": "NOT_RUN_FOR_THIS_CANDIDATE",
+    "separateExactArchiveInitializationSuite": "NOT_RUN",
+    "formalMatchedPairsAdded": 0,
+    "priorFailedSourceFullSuite": {
+      "status": "FAIL_SINGLE_BENCH_WORKSPACE_PATCH_COLLECTION_ASSERTION",
+      "sourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+      "actualLaunchTerminal": "344e37",
+      "actualSession": 58993,
+      "actualTerminal": "6df536",
+      "exitCode": 1,
+      "actualLaunches": 1,
+      "retries": 0,
+      "inputsBeforeSha256": "b1cc1afcb77232ec7bfa49367e6c826b256b556f53ac10135f39ec09a1b7030e",
+      "unchangedSourceInputs": 1161,
+      "unchangedDependencyInputs": 1386,
+      "sourceChanges": [],
+      "summary": {
+        "files": 383,
+        "completed": 383,
+        "failedFiles": [
+          "test/swebench-lite-workspace.test.mjs"
+        ],
+        "timedOutFiles": [],
+        "totals": {
+          "tests": 4682,
+          "pass": 4648,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 33
+        }
+      },
+      "fileTimeoutMs": 180000,
+      "fileTimeouts": 0,
+      "failure": {
+        "file": "test/swebench-lite-workspace.test.mjs",
+        "case": 6,
+        "assertion": "Expected changed main.py content in collected business patch.",
+        "code": "ERR_ASSERTION",
+        "cause": "NOT_YET_ESTABLISHED"
+      },
+      "logSha256": "f5ef7b2507e443bbb4792fbed52a638374a5df982298a01513e7ce2703dd8ec0",
+      "limits": [
+        "This is a naturally failed source-wide run, not full-suite qualification.",
+        "The failing evaluator utility is outside the OpenClaw plugin archive; this does not uniquely implicate the new requirement-ID runtime change."
+      ]
+    },
+    "sourceManifestSha256": "36576fe59b7c0400e7d7c020580477c0e490ea209789676c9567b1411544a06c",
+    "sourceRebindOnlyChangesOutsideArchive": [
+      "scripts/bench/swebench-lite-workspace.mjs",
+      "test/swebench-lite-workspace.test.mjs"
+    ],
+    "artifactCheckExecutionSourceCommit": "a4323a4e631cb3782f30804c14ec726058896aed",
+    "sameExactArchiveChecksRerun": false,
+    "sourceFullSuiteReceiptSha256": "03938a24f8926f3179109ee35ec65aa55ee0e7f88abb05c228c0ac5ddf57bd78"
+  },
+  "collectorFollowup": {
+    "status": "COMMITTED_PEER_CLEAR_TARGETED_AND_FULL_SOURCE_PASS",
+    "sourceCommit": "1345d548453fb60be126de197b7bcbfc4e0eee21",
+    "pluginArchiveChanged": false,
+    "rootIntegratedPassed": 7,
+    "focusedPassedPerNode": 7,
+    "originalSixCasesUnchanged": true,
+    "rootReceiptSha256": "c30a223bf05cb810383e958daaebcaf0a2fbe3c01bda73f9ce78aede794ebf27",
+    "scope": "Invalidates only scratch index stat cache; preserves business index bytes, mtime, index entries and flags. Controlled generic defect reproduced; historical timing cause unproven."
+  },
+  "generalPurposePublicWorkflowAudit": {
+    "status": "SOURCE_AUDIT_DESIGN_IN_PROGRESS_NO_NEW_OPERATOR_INTERFACE_IMPLEMENTED",
+    "ordinaryDefaultDocumentReviewAndNativeStopCorrection": "SOURCE_SUPPORTED_WITHOUT_OPERATOR_STAGED_ATOMS",
+    "sealedApproval": "TRUSTED_OUT_OF_BAND_GATEWAY_APIS_CURRENTLY_REQUIRED",
+    "plainChatApprovalMintsSealedLock": false,
+    "pluginCommandsPersistAsOriginalExternalUserMessages": true,
+    "textFilteringCommandsFromOriginalBasisPermitted": false,
+    "applyBindingRequiresTrustedActualRunIdentity": true,
+    "defaultPoliciesAutomaticallyMadeStrict": false,
+    "nextDesign": "Source-backed public operator CLI or UI using existing authenticated preview/approval/arm APIs; no source or run-identity shortcut.",
+    "nativeTrial9": "NOT_ADMITTED_ADAPTER_COPY_NOT_CREATED",
+    "sourceAuditSha256": "c8aea548b90aa8856fb9f3b477f5dc8ed8e543f8ed083a915579fe5c331546b9",
+    "designSha256": "c9af4f02fb614c7d21b3cf77faa703c2c0f2f77350410edaa9b4d492c776ce07",
+    "sourceHoldSha256": "c924aebd23ef9c7196396197290a73753b3994e721614aa9706bb2e311e23864",
+    "operatorAuthenticationProvesHumanPresence": false,
+    "stockExecCanInheritGatewayCredentials": true,
+    "smallestNextVerification": "Ordinary publicTUI coding walkthrough under unchanged defaults; no private evaluation runtime injection."
+  },
+  "priorDocumentationOnlyPackage": {
+    "sourceCommit": "c07772bc74b5853f1d2d9fae986b335a8686c499",
+    "packageSha256": "dcb02bf7bcdacfb463e235cef062f3da018c3b50bb4690f3d7a8f085acfca960",
+    "sourceBinding": {
+      "sourceManifestSha256": "45acb1cdd67416c765d0b2c65d4042223086be68013515f04c12166bb8718af4",
+      "memberManifestSha256": "3d67fb04d203d36595156683fec6cb511b437d0ac6cd1bf296bddc475235449c",
+      "trackedSourceInputs": 1160,
+      "runtimeFilesCompared": 207,
+      "allRuntimeBytesIdenticalToPriorPackage": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+      "unchangedPackageMembers": 271,
+      "changedDocumentationMembers": [
+        ".runtime-corrector-default/README.md",
+        "README.en.md",
+        "README.md",
+        "docs/openclaw.md"
+      ],
+      "rootVerificationSha256": "7a74029ed8ab86737f61d93f388d123d92358dc31b2901a68ca64f37af5ac61f",
+      "caseSpecializationScope": "Only four generic documentation files changed; all other package bytes are identical. Prior named-case scan remains scoped to prior archive."
+    },
+    "generalPurposeChanges": [
+      "Optional reuse of a fresh approved whole-plan review for checkbox-only Apply progress; default false, enabled in optional whole-plan topology. Ordinary artifact rules, ownership/policy/inventory checks and final Stop remain active.",
+      "Unsupported callable guidance preserves unverified origin proof while permitting independently evidenced code defects; no parser support or forced PASS added.",
+      "Coverage metadata identifies the inventory denominator and does not claim original requirement completeness.",
+      "Documentation-only archive update adds the ordinary stock install/setup/project-mode/init/on quickstart. Executable runtime, policy and resources are unchanged."
+    ],
+    "sourceChecks": {
+      "status": "DOCUMENTATION_ONLY_SOURCE_AND_RUNTIME_EQUIVALENCE_VERIFIED",
+      "fullSuiteForThisExactSource": "NOT_RUN",
+      "priorFrozenRuntimeFullSuite": {
+        "sourceCommit": "8189fa5d0f17ed7611969b5d90a605a9ea389de6",
+        "packageSha256": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+        "status": "PASS",
+        "node": "v24.14.1",
+        "files": 381,
+        "passed": 4630,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 33,
+        "fileTimeouts": 0,
+        "fileTimeoutMs": 180000,
+        "actualLaunches": 1,
+        "retries": 0,
+        "inputsUnchanged": 1158,
+        "dependencyFilesUnchanged": 1385,
+        "receiptSha256": "0caebd7671f79d1a492ac36bc78142f13a5a79f482fb1e75b5e4bae438c2e3c0",
+        "logSha256": "1bf3bf315af76017cce84c119bbc30d90cfc907c6e073ca8006dc60e9448ab04"
+      },
+      "localCausalFixtureIntegratedChecks": 84,
+      "localDocumentationRelatedChecks": 31,
+      "finalDocumentationPackageCase": 1,
+      "scope": "Current exact source changes only tests/docs since prior frozen runtime; old full suite remains scoped to its exact source."
+    },
+    "packageChecks": {
+      "node18AllHostBuildsPassed": true,
+      "node18ArtifactChecksPassed": 17,
+      "node24ArtifactChecksPassed": 17,
+      "node18OpenClawMemberBytesMatched": 275,
+      "receiptSha256": "dedc306a7e0cb9153c66fe69130f77b302e9ceed4c3a673db39210b8efa7aad1",
+      "separateExactArchiveInitializationSuite": "NOT_RERUN_FOR_DOCUMENTATION_ONLY_ARCHIVE",
+      "exactArchiveFullSuite": "NOT_RUN",
+      "exactArchiveStockInstallations": 0,
+      "exactArchiveNativeRuns": 0,
+      "scope": "Exact docs-only build/artifact/source/member/runtime-equivalence qualification only."
+    },
+    "stockInstallations": [],
+    "nativeControls": {
+      "status": "NOT_RERUN_FOR_DOCUMENTATION_ONLY_ARCHIVE",
+      "runtimeBytesEqualPriorQualifiedPackage": "d8640d06c7b9779f218830793d0202d334a965e4307677fbf366f253cfa611b3",
+      "priorRuntimeControlsStatus": "VERIFIED_DIAGNOSTIC_CONTROLS",
+      "scope": "Prior controls and their actual installations retain old archive/source bindings; current package has byte-equivalent runtime, not a new installed/native qualification."
+    }
+  },
+  "priorFailedOrdinarySetupAttempt": {
+    "status": "INSTALL_AND_REVIEWER_CONFIG_PASSED_GATEWAY_NOT_READY_TUI_NOT_STARTED",
+    "packageSha256": "dcb02bf7bcdacfb463e235cef062f3da018c3b50bb4690f3d7a8f085acfca960",
+    "stockCliInstallExitCode": 0,
+    "ordinaryReviewerConfigExitCode": 0,
+    "gatewayReadyWithinInitial60Seconds": false,
+    "tuiStarted": false,
+    "evaluationRuntimeInjection": false,
+    "privateLogsContainNoCredentialValue": true,
+    "configRetainsEnvReferences": true,
+    "ownedDirectChildrenExited": true,
+    "limitation": "One ordinary setup attempt did not reach the Gateway. Startup cause is under investigation; no first-use or model qualification."
   }
 }
