@@ -110,8 +110,6 @@ test('opaque origins use exact query-scoped lexical witnesses without inventing 
     ['hidden-symbol', '`${renderExport(input)}`;', 'UNKNOWN'],
     ['hidden-alias', '`${encode(input)}`;', 'UNKNOWN'],
     ['hidden-namespace', '`${renderer.renderExport(input)}`;', 'UNKNOWN'],
-    ['division-symbol', 'left / renderExport(input) / right;', 'UNKNOWN'],
-    ['division-selector', 'left / emit({ view: "views/ExportView", params: input }) / right;', 'UNKNOWN'],
     ['unrelated-log', '`${amount}`;', 'READY'],
     ['near-symbol', '`${renderExportExtra(input)}`;', 'READY'],
     ['near-path', '`${emit({ view: "views/ExportViewExtra" })}`;', 'READY'],
@@ -144,6 +142,27 @@ test('opaque origins use exact query-scoped lexical witnesses without inventing 
       await fs.appendFile(path.join(f.root, 'caller.mjs'), '\n');
       assert.equal((await origin.lookup(receipt.receiptId, { objectId: 'required-export', entry: f.entry })).reason, 'ORIGIN_INDEX_CHANGED');
     }
+  });
+});
+
+test('paired division preserves actual calls and qualified literal candidates instead of hiding them in regex text', async t => {
+  for (const [statement, kind] of [
+    ['left / renderExport(input) / right;', 'RESOLVED_REFERENCE'],
+    ['left / emit({ view: "views/ExportView", params: input }) / right;', 'FILE_SELECTOR_LITERAL_CANDIDATE'],
+  ]) await t.test(kind, async t => {
+    const f = await fixture(t);
+    const caller = 'import { renderExport } from "./views/ExportView.mjs";\n'
+      + `export function run(input, emit, left, right) { ${statement} }\n`;
+    await fs.writeFile(path.join(f.root, 'caller.mjs'), caller);
+    const graph = await buildSemanticGraph(f.root, { snapshotPaths: ['views/ExportView.mjs', 'caller.mjs'] });
+    const origin = createProductionOriginCoverage({ projectRoot: f.root, graph, contextId: kind });
+    const receipt = await origin.discover({ objectId: 'required-export', entry: f.entry });
+    assert.equal(receipt.status, 'READY', receipt.reason);
+    assert.equal(receipt.candidates.length, 1, 'arithmetic must not become a passing empty caller set');
+    assert.equal(receipt.candidates[0].path, 'caller.mjs');
+    assert(receipt.candidates[0].kinds.includes(kind));
+    assert.equal(receipt.candidates[0].start, 2);
+    assert.equal(receipt.sourceReadAcknowledged, false);
   });
 });
 

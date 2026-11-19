@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { Script } from 'node:vm';
 import { buildSemanticGraph } from '../lib/semantic-graph.mjs';
 import { scanSemanticSource, discoverSiblingLiteralDispatches, discoverFileSelectorSiblingDispatches }
   from '../lib/semantic-graph-syntax.mjs';
@@ -37,6 +38,20 @@ test('bounded division operators retain visible operand and call tokens without 
     ['visible alias call', 'return count / encode(input);', true],
     ['assignment with visible alias call', 'count /= encode(input);', true],
     ['visible namespace call', 'return count / renderer.format(input);', true],
+    ['numeric operands', 'const ratio = 2 / 3;', false],
+    ['composite numeric arithmetic', 'const ratio = count > 0 ? count * 2 / 3 : 0;', false],
+    ['grouped operand', 'const ratio = (count + 1) / width;', false],
+    ['member operand', 'const ratio = input.count / width;', false],
+    ['call operand', 'const ratio = encode(input) / width;', true],
+    ['grouped call operand', 'const ratio = count / (encode(input));', true],
+    ['paired alias call', 'left / encode(input) / right;', true],
+    ['paired namespace call', 'left / renderer.format(input) / right;', true],
+    ['postfix operand', 'count++ / encode(input) / right;', true],
+    ['keyword member operand', 'input.await / encode(input) / right;', true],
+    ['literal argument in paired arithmetic', 'left / emit({ view: "nested/format", params: input }) / right;', false],
+    ['division continues across a newline', 'const ratio = count\n  / width;', false],
+    ['comments after an operator remain inert', 'const ratio = count / /* renderer.format(input) */ width;', false],
+    ['deep arithmetic retains visible calls', `const ratio = ${'('.repeat(70)}count / encode(input)${')'.repeat(70)};`, true],
   ]) await t.test(name, async t => {
     const f = await discover(t, statement);
     assert.deepEqual(scanSemanticSource(f.caller, 'caller.mjs').opaqueOrigins, []);
@@ -59,22 +74,49 @@ test('unrelated bounded arithmetic does not suppress an independently resolved c
   assert.deepEqual(f.receipt.candidates.map(c => c.path), ['caller.mjs']);
 });
 
+test('statement and for-of regex contexts never become apparent executable callers', async t => {
+  for (const [name, statement] of [
+    ['if body', 'if (count) /encode(input)/g.test(input);'],
+    ['while body', 'while (count) /encode(input)/g.test(input);'],
+    ['for body', 'for (let i = 0; i < count; i++) /encode(input)/g.test(input);'],
+    ['for-of operand', 'for (input of /encode(input)/g) {}'],
+    ['parenthesized for-of target', 'for ((input) of /encode(input)/g) {}'],
+    ['nested parenthesized for-of target', 'for (((input)) of /encode(input)/g) {}'],
+    ['parenthesized member for-of target', 'for ((input.value) of /encode(input)/g) {}'],
+    ['catch body', 'try {} catch (error) { /encode(input)/g.test(input); }'],
+    ['switch case', 'switch (count) { case 1: /encode(input)/g.test(input); }'],
+    ['do body', 'do /encode(input)/g.test(input); while (false);'],
+    ['else body', 'if (count) {} else /encode(input)/g.test(input);'],
+    ['returned regex', 'return /encode(input)/g;'],
+    ['thrown regex', 'throw /encode(input)/g;'],
+    ['break label', 'loop: while (count) { break loop\n /encode(input)/g.test(input); }'],
+    ['escaped break label', 'loop: while (count) { break \\u006coop\n /encode(input)/g.test(input); }'],
+    ['escaped continue label', 'loop: while (count) { continue l\\u006fop\n /encode(input)/g.test(input); }'],
+    ['braced escaped break label', 'loop: while (count) { break \\u{6c}oop\n /encode(input)/g.test(input); }'],
+    ['braced escaped continue label', 'loop: while (count) { continue lo\\u{6f}p\n /encode(input)/g.test(input); }'],
+    ['escaped numeric label suffix', 'l123: while (count) { break \\u{6c}123\n /encode(input)/g.test(input); }'],
+    ['escaped mixed label suffix', 'l1a2: while (count) { continue \\u{6c}1a2\n /encode(input)/g.test(input); }'],
+    ['newline prefix increment', 'count\n ++ /encode(input)/g.lastIndex;'],
+  ]) await t.test(name, async t => {
+    // Syntax checking is compile-only. None of the fixture statements execute.
+    assert.doesNotThrow(() => new Script('"use strict"; function run(input, count) {\n' + statement + '\n}'));
+    const f = await discover(t, statement);
+    assert.deepEqual(f.graph.query({ operation: 'incoming', file: 'format.mjs', symbol: 'format' }).hits, [],
+      'regex text must not invent a resolved caller even when the overall receipt is already unknown');
+    assert.equal(f.receipt.status, 'UNKNOWN', f.receipt.reason);
+  });
+});
+
 test('regex-shaped, hidden and ambiguous slash syntax keeps conservative origin uncertainty', async t => {
   for (const [name, statement] of [
-    ['paired hidden alias', 'left / encode(input) / right;'],
-    ['paired hidden namespace', 'left / renderer.format(input) / right;'],
-    ['paired hidden selector', 'left / emit({ view: "nested/format", params: input }) / right;'],
     ['regex alias vocabulary', 'const pattern = /encode/;'],
     ['regex next to division', 'const ratio = count / /encode/.test(input);'],
     ['division next to template', 'const ratio = count / `${encode(input)}`;'],
     ['escaped operand', 'const ratio = count / \\u0065ncode(input);'],
-    ['newline ambiguity', 'const ratio = count\n  / width;'],
     ['unbalanced grouping', 'const ratio = Math.floor(count / width;'],
     ['unbalanced close', 'const ratio = count / width);'],
     ['invalid parameter division', 'function broken(count / width) {}'],
     ['dangling operator', 'const ratio = count / ;'],
-    ['unsupported closed expression', 'const ratio = (count + 1) / width;'],
-    ['unsupported member operand', 'const ratio = input.count / width;'],
     ['division assignment then regex', 'count /= /encode/.test(input);'],
     ['escaped alias after division', 'const ratio = count / width; return \\u0065ncode(input);'],
     ['escaped alias before division', 'const result = \\u0065ncode(input); const ratio = count / width;'],
@@ -84,8 +126,6 @@ test('regex-shaped, hidden and ambiguous slash syntax keeps conservative origin 
     ['paired braced escape', 'left / \\u{65}ncode(input) / right;'],
     ['escaped alias without division', 'return \\u0065ncode(input);'],
     ['non-operand keyword', 'debugger / width;'],
-    ['comment-adjacent ambiguous token', 'const ratio = count / /* renderer.format(input) */ width;'],
-    ['bounded nesting', `const ratio = ${'('.repeat(70)}count / width${')'.repeat(70)};`],
   ]) await t.test(name, async t => {
     const f = await discover(t, statement);
     assert.equal(f.receipt.status, 'UNKNOWN', f.receipt.reason);
