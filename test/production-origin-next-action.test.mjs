@@ -91,14 +91,14 @@ test('unresolved source navigation receives no unsupported-callable instruction'
   assert.equal(receipt.nextAction, undefined);
 });
 
-test('the actual Stop tool keeps missing reads recoverable and unsupported callable coverage UNVERIFIED', async t => {
+async function strictStopFixture(t, requirement = 'Deliver the required value.') {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' };
   f.input.request.classificationContract = 2;
   f.input.request.fixedStopClassification = { stopClassification: 'TASK_COMPLETE', stage: null };
   f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true,
     requireCurrentProductionCoverage: true, requireProductionOriginCoverage: true });
-  f.input.evidence.snapshot.entries[0].message.content = 'Deliver the required value.';
+  f.input.evidence.snapshot.entries[0].message.content = requirement;
   f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
   const file = path.join(f.root, 'app.mjs');
   await fs.writeFile(file, unsupported);
@@ -106,6 +106,11 @@ test('the actual Stop tool keeps missing reads recoverable and unsupported calla
   execFileSync('git', ['-C', f.root, 'add', '--', 'app.mjs']);
   f.input.onScope = async () => ({ regressionCheck: { status: 'PASSED', command: ['node', '--test'], cwd: '.', exitCode: 0,
     outputTail: 'RC_REGRESSION_INVENTORY {"complete":true,"executedTests":1,"failures":[]}\n' } });
+  return { ...f, source: file };
+}
+
+test('the actual Stop tool keeps missing reads recoverable and unsupported callable coverage UNVERIFIED', async t => {
+  const f = await strictStopFixture(t), file = f.source;
   let failure, objectId;
   const handle = await f.run(async tools => {
     try {
@@ -124,7 +129,9 @@ test('the actual Stop tool keeps missing reads recoverable and unsupported calla
       assert.equal(receipt.nextAction, 'KEEP_UNVERIFIED_FOR_CURRENT_CALLABLE');
       assert.equal(receipt.status, 'UNKNOWN');
       assert.match(tools.params.extraSystemPrompt, /Changing only overlapping line ranges or rereading the same bytes/);
-      assert.match(tools.params.extraSystemPrompt, /do not choose a downstream helper to evade the original operation/);
+      assert.match(tools.params.extraSystemPrompt, /Do not choose a downstream helper to evade the original operation/);
+      assert.match(tools.params.extraSystemPrompt, /Keep this origin proof UNVERIFIED/);
+      assert.match(tools.params.extraSystemPrompt, /independently evidenced deviations may still be submitted/);
       const value = { summary: 'The current callable binding is unsupported.', productionCoverage: [{ objectId,
         citeIds: [citation], reason: 'Read the current value and return.', flow: { entry, consumer: { citeId: citation, start: 4, end: 4 },
           originReceiptId: receipt.receiptId, upstream: [] } }] };
@@ -142,5 +149,40 @@ test('the actual Stop tool keeps missing reads recoverable and unsupported calla
     assert.equal(row.originCoverage.reason, 'ENTRY_CALLABLE_UNSUPPORTED');
     assert.equal(handle.result.metricObjectJudgements.some(row => row.judgement === 'PASS'), false);
     assert.equal(await fs.readFile(file, 'utf8'), unsupported);
+  } finally { await handle.close(); }
+});
+
+test('unsupported origin navigation does not suppress an independently source-evidenced deviation', async t => {
+  const requirement = 'Return the input unchanged.';
+  const f = await strictStopFixture(t, requirement);
+  let failure, objectId, handle;
+  try {
+    handle = await f.run(async tools => {
+      try {
+        await tools.readAll();
+        const original = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+        const originalId = (await tools.read(original)).details.citation.citeId;
+        const page = await tools.submit('set_original_checklist', { items: [{ metricId: 'M16', text: requirement,
+          verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', citeId: originalId, lineStart: 1, lineEnd: 1 }],
+        scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+        objectId = page.items.find(item => item.description === requirement).objectId;
+        const citation = (await tools.read(f.source)).details.citation.citeId;
+        const origin = await tools.submit('review_production_origin', { objectId, entry: { citeId: citation, start: 2, end: 5 } });
+        assert.equal(origin.status, 'UNKNOWN');
+        assert.equal(origin.nextAction, 'KEEP_UNVERIFIED_FOR_CURRENT_CALLABLE');
+        const saved = await tools.submit('submit_review', { taskId: objectId, verdict: 'DEVIATION',
+          reason: 'The method adds one to the input and returns that changed value, contradicting the required unchanged return.',
+          citeIds: [citation] });
+        assert.equal(saved.saved, true);
+        assert.equal((await tools.submit('finish_stop_review', { summary: 'Found the source-evidenced changed return.' })).complete, true);
+      } catch (error) { failure = error; throw error; }
+    });
+  } catch (error) { throw failure ?? error; }
+  try {
+    if (failure) throw failure;
+    assert.equal(handle.reviewCompleted, true);
+    assert.equal(handle.result.metricObjectJudgements.find(row => row.objectId === objectId).judgement, 'DEVIATION');
+    assert.equal(handle.result.reviewCoverage.items.find(row => row.id === objectId).disposition, 'DEVIATION');
+    assert.equal(await fs.readFile(f.source, 'utf8'), unsupported);
   } finally { await handle.close(); }
 });
