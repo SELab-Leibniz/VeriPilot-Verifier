@@ -1,88 +1,114 @@
 {
   "kind": "openclaw-runtime-corrector-validation-v1",
   "version": "1.10.0",
-  "sourceCommit": "eaad88921001275d0151c9a5d2a1bdc23ba80a9d",
+  "sourceCommit": "312ae3bd82eb14b7773f43dff6a8aa5f4a09fff0",
   "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-  "packageSha256": "43c5f1e402d845a45ea35c08e9644c595b35f355f274e7556f25f39f1e3eca42",
+  "packageSha256": "a52c5cd6a0ca514b25f66bdf12dbbced5f6b7cd41e931f5299f7a672589cf375",
   "packageMembers": 275,
   "host": {
     "name": "openclaw",
-    "version": "2026.7.1-2",
-    "freshStockInstallProfiles": 2
+    "version": "2026.7.1-2"
   },
   "openspec": {
     "version": "1.4.1",
     "workflow": "Proposal -> authenticated approval -> Apply; external grading after candidate freeze"
   },
-  "sourceChecks": {
-    "files": 378,
-    "tests": 4623,
-    "cancelled": 0,
-    "skipped": 33,
-    "fileTimeoutMs": 180000,
-    "actualLaunches": 1,
-    "retries": 0,
-    "logSha256": "356807235d3f980e0f889dd8e30673a4cf9af1171480c57905bcb5d1e157ee69",
-    "receiptSha256": "720228ea95e487c06f6950cc047c07235b394bc1339db2aeef22c3ad09e8593a",
-    "passed": 4590,
-    "failed": 0,
-    "inputsUnchanged": 1155
-  },
-  "node18": {
-    "version": "18.20.8",
-    "allHostBuildsPassed": true,
-    "artifactChecksPassed": 17,
-    "artifactChecksTotal": 17
-  },
   "sourceBinding": {
-    "sourceManifestSha256": "25eca23c9bd979fbaa003f0891f539e5f0188b773786deef6d9b03a2fef942ed",
-    "memberManifestSha256": "dc8f8ad9612bcfb6690a964ef4d01fcfed06b0fafa30ec52a563f3ef71328ad4",
+    "sourceManifestSha256": "ebea86ce8d1f27ee2f7c99fa94118133985518db448dd3be31d5d3038b924eeb",
+    "memberManifestSha256": "47a7a1ac95d80b774617d828a9987d1d99292a29413f8e87756f0684e57420d2",
     "runtimeFilesCompared": 207,
-    "namedBenchmarkTermMatches": 0
+    "namedBenchmarkAndPilotCaseTermMatches": 0
+  },
+  "sourceChecks": {
+    "scope": "Targeted checks of optional project initialization, session scope and existing whole-plan topology",
+    "node18": {
+      "passed": 40,
+      "failed": 0,
+      "skipped": 0
+    },
+    "node24": {
+      "passed": 40,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fullSuiteForThisCommitRun": false
+  },
+  "packageChecks": {
+    "node18AllHostBuildsPassed": true,
+    "node18ArtifactChecksPassed": 17,
+    "node24ArtifactChecksPassed": 17,
+    "node18ExactArchiveInitChecksPassed": 13,
+    "node24ExactArchiveInitChecksPassed": 13,
+    "receiptSha256": "7f16749615a75ed82e3b32a5a8629eba02dd72a747c5dc876fc3425f13af634e"
   },
   "optionalOpenSpecTopology": {
-    "activation": "Explicit merge of enabledStages, artifacts and workflow only; companion rules copied manually.",
-    "defaultConfigurationChanged": false,
-    "strictModelStopPoliciesReplaced": false,
-    "scriptedRuntimeControlsPassed": 9
+    "newProjectActivation": "/rc-project init openspec-full-plan",
+    "existingProjectActivation": "Explicit merge of enabledStages, artifacts and workflow; companion rules copied manually.",
+    "plainInitializationChanged": false,
+    "existingPolicyOverwritten": false,
+    "projectAndSessionDefaultEnabled": false,
+    "strictModelStopPoliciesReplaced": false
   },
   "nativeControls": {
-    "kind": "scripted-fictional-exporter",
-    "status": "VERIFIED_DIAGNOSTIC_CONTROLS",
-    "healthy": {
-      "checksPassed": 4,
-      "checksTotal": 4,
-      "repairs": 0,
-      "proofOffers": 0,
-      "outcome": "COVERAGE_WITHOUT_REPAIR"
+    "status": "NOT_RUN_FOR_THIS_ARCHIVE",
+    "priorArchiveEvidenceTransferred": false
+  },
+  "priorQualifiedPackage": {
+    "sourceCommit": "eaad88921001275d0151c9a5d2a1bdc23ba80a9d",
+    "packageSha256": "43c5f1e402d845a45ea35c08e9644c595b35f355f274e7556f25f39f1e3eca42",
+    "sourceChecks": {
+      "files": 378,
+      "tests": 4623,
+      "cancelled": 0,
+      "skipped": 33,
+      "fileTimeoutMs": 180000,
+      "actualLaunches": 1,
+      "retries": 0,
+      "logSha256": "356807235d3f980e0f889dd8e30673a4cf9af1171480c57905bcb5d1e157ee69",
+      "receiptSha256": "720228ea95e487c06f6950cc047c07235b394bc1339db2aeef22c3ad09e8593a",
+      "passed": 4590,
+      "failed": 0,
+      "inputsUnchanged": 1155
     },
-    "repair": {
-      "checksBefore": 3,
-      "checksAfter": 4,
-      "checksTotal": 4,
-      "nativeRepairs": 1,
-      "proofOffers": 1,
-      "freshReadsAfterOffer": 2,
-      "outcome": "ONE_NATIVE_REPAIR_THEN_COVERAGE"
+    "nativeControls": {
+      "kind": "scripted-fictional-exporter",
+      "status": "VERIFIED_DIAGNOSTIC_CONTROLS",
+      "healthy": {
+        "checksPassed": 4,
+        "checksTotal": 4,
+        "repairs": 0,
+        "proofOffers": 0,
+        "outcome": "COVERAGE_WITHOUT_REPAIR"
+      },
+      "repair": {
+        "checksBefore": 3,
+        "checksAfter": 4,
+        "checksTotal": 4,
+        "nativeRepairs": 1,
+        "proofOffers": 1,
+        "freshReadsAfterOffer": 2,
+        "outcome": "ONE_NATIVE_REPAIR_THEN_COVERAGE"
+      },
+      "preservedOriginalRequirements": 2,
+      "naturalRootTerminals": 2,
+      "ownedCleanupVerified": true,
+      "proofSha256": "9541b06378ed1e86eac24b7e134ab5d6ad6560f228b6f215f55a588635882468",
+      "verifierSha256": "f4c691ab16b9d0ccee18e5c2f3ebae752a4533b266e03f5621afee80b696723a"
     },
-    "preservedOriginalRequirements": 2,
-    "naturalRootTerminals": 2,
-    "ownedCleanupVerified": true,
-    "proofSha256": "9541b06378ed1e86eac24b7e134ab5d6ad6560f228b6f215f55a588635882468",
-    "verifierSha256": "f4c691ab16b9d0ccee18e5c2f3ebae752a4533b266e03f5621afee80b696723a"
+    "scope": "Prior frozen source/archive only. The active healthy real-model development walkthrough keeps that archive pinned; its outcome is pending."
   },
   "remoteCI": {
-    "status": "PENDING_NEW_BRANCH_RUN",
-    "priorRunPassedJobs": 5,
-    "priorRunFailedJobs": 1,
+    "status": "PENDING_NEW_SOURCE_PUSH",
+    "previousSourceRun": 44480451886,
+    "previousSourcePassedJobs": 5,
+    "previousSourcePendingJobs": 1,
     "remainingPlatform": "Windows Node24"
   },
   "limits": [
-    "Native controls use scripted local responses; no real-model judgment accuracy or coding-quality benefit is established.",
-    "Native controls do not activate the optional whole-plan topology or qualify native multi-file scheduling.",
-    "Source discovery and platform support retain their documented boundaries; skipped tests remain skipped.",
-    "Cleanup covers tracked owned process groups. Nonfatal macOS Git cache-write warnings are retained.",
-    "Formal benchmark comparisons remain separate from source and mechanism checks."
+    "New archive has targeted source, build, artifact and exact-package initialization checks; no new full-suite or installed-native qualification is claimed.",
+    "Source changes add explicit opt-in initialization only; default activation, models, strict policies and existing-project protection remain unchanged.",
+    "Prior scripted native controls and the prior full local suite are tied to their own frozen source/archive.",
+    "Real-model general usefulness and formal benchmark quality gains remain unproven."
   ],
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39
