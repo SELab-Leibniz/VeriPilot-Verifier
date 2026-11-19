@@ -170,13 +170,23 @@ test('held Stop candidates survive restart and resume one review when autopilot 
 });
 
 test('cancelling a held Stop does not dispatch queued business work while autopilot remains active', async t => {
-  let status = 'RUNNING';
+  let status = 'RUNNING', pauseNextStatus = false, statusPaused = false, releaseStatus;
+  const statusGate = new Promise(resolve => { releaseStatus = resolve; });
   const f = await fixture(t, { reconciliation: { intervalMs: 20 }, waitTerminal: async () => ({ status: 'ok' }),
-    beforeReview: async () => ({ hold: status === 'RUNNING', coexistence: { status } }) });
+    beforeReview: async () => {
+      if (pauseNextStatus) { pauseNextStatus = false; statusPaused = true; await statusGate; }
+      return { hold: status === 'RUNNING', coexistence: { status } };
+    } });
   await f.manager.started(f.identity, 'run'); await f.manager.defer(f.identity, { text: 'held next task' });
   await f.manager.candidate(f.identity, { runId: 'run', text: 'done', reviewBudgetMs: 2000 }); await f.manager.drain();
   assert.equal(f.current().phase, 'COEXIST_WAIT');
-  assert.equal((await f.request('cancel', f.target())).ok, true);
+  // Keep the real next poll active, but hold its write while the versioned
+  // operator cancellation is in flight. Stale versions must still conflict.
+  pauseNextStatus = true;
+  try {
+    await until(() => statusPaused);
+    assert.equal((await f.request('cancel', f.target())).ok, true);
+  } finally { releaseStatus(); }
   assert.equal(f.current().phase, 'IDLE'); assert.equal(f.current().pending.length, 1); assert.equal(f.sent.length, 0);
   await pause(60); assert.equal(f.sent.length, 0);
   status = 'IDLE'; await until(() => f.sent.length === 1); await f.manager.drain();
