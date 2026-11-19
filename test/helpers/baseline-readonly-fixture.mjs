@@ -44,10 +44,17 @@ export function useLastTurnAndRepair(f, counts) {
   f.state.coverageMutation = async ({ params }) => {
     const budget = counts.handle.baselineTask.budget;
     const initial = budget.snapshot(); assert.equal(initial.maxTurns, 200); assert.equal(initial.maxRepairs, 3);
-    while (budget.snapshot().turns < initial.maxTurns - 1) {
-      params.onAssistantMessageStart();
-      await fs.appendFile(params.sessionFile, JSON.stringify({ type: 'message', message: { role: 'assistant',
-        content: [{ type: 'text', text: 'Controlled original-turn boundary.' }] } }) + '\n');
+    const records = [];
+    try {
+      while (budget.snapshot().turns < initial.maxTurns - 1) {
+        params.onAssistantMessageStart();
+        records.push(JSON.stringify({ type: 'message', message: { role: 'assistant',
+          content: [{ type: 'text', text: 'Controlled original-turn boundary.' }] } }) + '\n');
+      }
+    } finally {
+      // Keep every real budget callback and transcript record, including turns
+      // before a failure, without a separate filesystem open for each padding row.
+      if (records.length) await fs.appendFile(params.sessionFile, records.join(''));
     }
   };
 }
