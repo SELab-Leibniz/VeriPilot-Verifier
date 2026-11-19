@@ -186,11 +186,13 @@ test("restarting after a lost user ACK waits for that run, then releases only th
 
 test("24 sessions keep FIFO task order, bounded reviews and isolated task mutations", async t => {
   let active = 0, maximum = 0;
-  const terminalRuns = new Set();
+  const terminalRuns = new Set(), releaseReviews = deferred();
   const f = await fixture(t, { concurrency: 3,
     waitTerminal: async (_record, runId) => ({ status: terminalRuns.has(runId) ? "ok" : "unknown" }),
     review: async () => {
-    maximum = Math.max(maximum, ++active); await pause(10); active--; return { reviewStatus: "PASS" };
+      maximum = Math.max(maximum, ++active);
+      try { await releaseReviews.promise; return { reviewStatus: "PASS" }; }
+      finally { active--; }
   } });
   const ids = Array.from({ length: 24 }, (_, i) => f.identity(`session-${i}`));
   await Promise.all(ids.map(async (id, i) => {
@@ -201,8 +203,17 @@ test("24 sessions keep FIFO task order, bounded reviews and isolated task mutati
     await f.manager.mutate(id, { id: first.id, revision: 1, text: `edited-${i}` });
     await f.manager.mutate(id, { id: deleted.id, revision: 1, remove: true });
     terminalRuns.add(`business-${i}`);
-    await f.manager.candidate(id, { runId: `business-${i}`, text: "done", reviewBudgetMs: 15000 });
   }));
+  try {
+    // Finish independent durable preparation before testing pool overlap. Keep
+    // admitted reviews blocked until all sessions have reached the review pool.
+    await Promise.all(ids.map((id, i) => f.manager.candidate(id,
+      { runId: `business-${i}`, text: "done", reviewBudgetMs: 15000 })));
+    await until(() => maximum > 1 && ids.every(id => ["REVIEW_QUEUED", "REVIEWING"].includes(f.manager.snapshot(id).phase)),
+      "overlapping reviews with all 24 sessions queued");
+    assert(maximum <= 3);
+    assert(ids.filter(id => f.manager.snapshot(id).phase === "REVIEWING").length <= 3);
+  } finally { releaseReviews.resolve(); }
   await f.manager.drain(); assert(maximum <= 3); assert(maximum > 1); assert.equal(f.sent.length, 24);
   await Promise.all(ids.map(async (id, i) => {
     const sent = f.sent.find(task => task.sessionId === id.sessionId); assert.equal(sent.text, `edited-${i}`);
