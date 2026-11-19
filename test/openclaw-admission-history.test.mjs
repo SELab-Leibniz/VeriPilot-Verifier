@@ -24,6 +24,7 @@ async function withOwnedContinuation(t, observeModelStart, run) {
     // filesystem work is outside the original twenty-second gate observation.
     const ready = await bounded('OWNED_CONTINUATION_SETUP', 60000, async () => {
       f = await lifecycle(t, { waitMode: 'until_pass', waitTimeoutMs: 120000,
+        executionTimeoutMs: 5000,
         observeModelStart, review: async () => ++reviews === 1,
         postRunTerminal: async (_identity, runId) => {
           if (runId.startsWith('rc-stop-')) await terminal.promise;
@@ -39,7 +40,14 @@ async function withOwnedContinuation(t, observeModelStart, run) {
       await within(dispatched.promise, 'correction dispatch');
       await within(f.runtime.waitForNativeReviews(), 'initial review');
       child = { ...f.ctx, runId: childRunId };
-      const prompt = await f.runtime.prompt({ prompt: 'Apply the current feedback.' }, child);
+      // Child prompt preparation is completed setup, as is fixture onboarding.
+      // The start gate remains 1s; trusted start explicitly keeps its 5s lease.
+      const hookTimeoutMs = f.api.pluginConfig.hookTimeoutMs;
+      let prompt;
+      try {
+        f.api.pluginConfig.hookTimeoutMs = 30000;
+        prompt = await f.runtime.prompt({ prompt: 'Apply the current feedback.' }, child);
+      } finally { f.api.pluginConfig.hookTimeoutMs = hookTimeoutMs; }
       const protocol = f.sharedState.stopStartProtocol;
       const before = await protocol.findRun({ state: f.state, runId: childRunId });
       assert.equal(before.admission.accounting, observeModelStart ? 'USED' : 'RESERVED');

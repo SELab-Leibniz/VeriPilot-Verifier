@@ -26,6 +26,16 @@ async function fixture(t) {
   await runGit(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '-m', 'fixture']);
   const child = spawn(process.execPath, ['-e', ''], { windowsHide: true }), ownerPid = child.pid;
   await new Promise((resolve, reject) => { child.once('error', reject); child.once('close', resolve); });
+  assert.notEqual(ownerPid, process.pid);
+  // This export fixture observes its original owner as exited. The OS may reuse
+  // that numeric PID before another CLI call; other owners still use real kill(0).
+  const closedOwnerObservation = path.join(root, 'closed-owner-observation.cjs');
+  await fs.writeFile(closedOwnerObservation, `const originalKill = process.kill;
+process.kill = function (pid, signal) {
+  if (pid === ${ownerPid} && signal === 0)
+    throw Object.assign(new Error('The fixture original owner has exited'), { code: 'ESRCH' });
+  return originalKill.call(this, pid, signal);
+};\n`);
   const manifest = { projectRoot, ownerPid, preparedHead: (await runGit(['rev-parse', 'HEAD'])).trim(), instanceId: 'fixture', datasetDigest: 'fixture' };
   const result = { ...manifest, state: 'SETTLED', actualBusinessStart: true, sessionId: 'session', patchBytes: 0, verification: 'PASS' };
   const save = (name, value) => fs.writeFile(path.join(run, name), JSON.stringify(value));
@@ -44,7 +54,7 @@ async function fixture(t) {
   ];
   await fs.writeFile(path.join(run, 'native-host/session.jsonl'), records.map(JSON.stringify).join('\n') + '\n');
   return { run, output, manifest, result, save, projectRoot, runGit,
-    invoke: () => execute(process.execPath, [script, `--run=${run}`, `--output=${output}`], { windowsHide: true }) };
+    invoke: () => execute(process.execPath, ['--require', closedOwnerObservation, script, `--run=${run}`, `--output=${output}`], { windowsHide: true }) };
 }
 
 test('reexport uses frozen diff and successful receipts, preserves originals and excludes bootstrap changes', async t => {

@@ -359,32 +359,32 @@
     "scope": "The current 8bd archive passed source, package and fresh stock CLI checks only, with zero model runs. The closed 2a trial remains separate: 9/7/9 checks, 13 steps, one native correction and final UNVERIFIED. It grants no efficacy or acceptance to this archive."
   },
   "remoteCI": {
-    "status": "CURRENT_HEAD_NATURAL_CI_COMPLETED_SIX_PASS_ONE_FAILURE",
-    "currentRun": 44601659499,
-    "currentRunHead": "02672339b8f999e9d0a325d2f258f91666efe007",
+    "status": "CURRENT_HEAD_NATURAL_CI_COMPLETED_FIVE_PASS_TWO_FAILURES",
+    "currentRun": 44607343815,
+    "currentRunHead": "6a3dcd460865ea6fc8142f89862a06b1fbcc442d",
     "currentRunConclusion": "failure",
-    "latestCompletedRun": 44601659499,
-    "latestCompletedRunHead": "02672339b8f999e9d0a325d2f258f91666efe007",
+    "latestCompletedRun": 44607343815,
+    "latestCompletedRunHead": "6a3dcd460865ea6fc8142f89862a06b1fbcc442d",
     "latestCompletedConclusion": "failure",
-    "latestCompletedPassedMatrixJobs": 6,
-    "latestCompletedFailedMatrixJobs": 1,
+    "latestCompletedPassedMatrixJobs": 5,
+    "latestCompletedFailedMatrixJobs": 2,
     "matrixTotal": 7,
     "runAttempt": 1,
     "currentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/terminal-receipt.json",
-      "sha256": "e5872944b049e11ee139c99dd2de8271ab74997daad08becaf199607fd220bc1",
-      "actualWatchSession": 47043,
-      "actualTerminal": "102a30",
+      "path": ".runtime-correction/validation/ci-fix/post-basis-natural-ana0xfao/terminal-receipt.json",
+      "sha256": "ff773651070efdaa580e97f6e7eeeb985ea9ccee90b702ee62004fa4cdc08566",
+      "actualWatchSession": 43151,
+      "actualTerminal": "131735",
       "actualExitCode": 1,
       "retryOrCancel": false,
       "finalReadback": {
-        "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-readback.json",
-        "sha256": "bc364b4d92e78a62602d32a497781d1dcebfd02c5080abb82196a9a1cd1e0237"
+        "path": ".runtime-correction/validation/ci-fix/post-basis-natural-ana0xfao/final-readback.json",
+        "sha256": "81f7458ee027da9140029a574308a28dd01d24723e7f44235d33811b408cdb4c"
       },
       "fileInventory": {
-        "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-file-inventory.json",
-        "sha256": "9cfe83f14eaa399b87ff825c4aae871202cc2dd807c07551e171ba82ec141038"
+        "path": ".runtime-correction/validation/ci-fix/post-basis-natural-ana0xfao/final-file-inventory.json",
+        "sha256": "f392182c62f1172ea9b9da25be3b6a9d28d7a106afa1c9bb465463d36f5fd037"
       }
     },
     "fileCoverage": {
@@ -404,14 +404,18 @@
     },
     "failures": [
       {
-        "job": "Node24/windows-latest/shard2of2",
-        "file": "test/runtime-v2-shared-basis-publication.test.mjs",
-        "case": 2,
-        "observedBoundary": "TypeError result.watcher undefined after user revision/new baseline shared-basis scenario.",
-        "durationMs": 48380,
-        "cause": "UNDER_INVESTIGATION",
-        "uniqueHistoricalCauseProven": false,
-        "rawLogSha256": "276b36cd78e4b8bb8bbe65941ee85f67ce8af3c963b1909d372fda996c184675"
+        "file": "test/bench-candidate-reexport.test.mjs",
+        "case": 1,
+        "observedBoundary": "Expected EEXIST, received owner-alive guard.",
+        "historicalCause": "UNPROVEN",
+        "candidateStatus": "TEST_ONLY_CANDIDATE_HELD_PEER_PENDING"
+      },
+      {
+        "file": "test/openclaw-admission-history.test.mjs",
+        "case": 1,
+        "observedBoundary": "Fixture callback expected USED; observed RESERVED.",
+        "historicalCause": "UNPROVEN",
+        "candidateStatus": "UNDER_INVESTIGATION"
       }
     ],
     "previousCompletedBeforeGuidance": {
@@ -552,7 +556,7 @@
       },
       "scope": "Seven official jobs passed on the exact pushed 27e source after the test-only cleanup fixture fix. The guidance commit and 8bd archive postdate that run and need their own remote validation. This establishes neither model efficacy nor future CI reliability."
     },
-    "scope": "Exact0267natural CI result remains6/7 with one Windows shared-basis failure; unique historical cause unproven. The source-supported one-file fixture fix is now integrated and focused9/9 eachNode18/24, with new official validation pending. Runtime/helper/archive unchanged; no model-benefit claim.",
+    "scope": "Official6a3run44607343815 remains5PASS2FAIL and all387files completed. Two further test-only fixture fixes integrated; actual combined8/8 eachNode18/24. Preparation allowance changed to30s while real1s gate/5s executionlease/20s observation/180s file bound retained. Exporter/runtime/helpers/archive unchanged; historical causes unproven and new remote pending.",
     "currentRunStatus": "completed",
     "fixtureFixes": [
       {
@@ -617,6 +621,36 @@
           }
         },
         "scope": "Existing semantic clock20s in staged-publication case only plus exact-expiry/source-change rollback controls. Original six bodies/assertions byte-exact; runtime/helper/deadline values unchanged. Real21s delayed-publication control reproduces a supported failure mechanism; unique historical Windows cause remains unproven."
+      },
+      {
+        "file": "test/bench-candidate-reexport.test.mjs",
+        "status": "ROOT_INTEGRATED_FOCUSED_PASS_REMOTE_PENDING",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/ci-fix/6a3-reexport-bnk7r1in/source-hold.json",
+          "sha256": "17c14489e9fddd796fbe35a1d2d9ac8cfbacdb7a44d86347a62546e723ef07c1"
+        },
+        "peer": {
+          "path": ".runtime-correction/validation/ci-fix/reexport-owned-pid-peer-okuwi62g/peer-review.json",
+          "sha256": "ef1b658a31c14098c231243c6d1470d2f8a940c185a24acec3f59ec47459876a"
+        },
+        "postimageSha256": "30dca2c8c472296bd0b06752806fb1c3c6306707a88cddb16ece3a3cddafd9e5",
+        "scope": "Scoped fixture closed-owner signal0 observation; all other PIDs real and live-parent negative preserved. Not OS liveness qualification or historical PID-reuse proof.",
+        "historicalUniqueCauseProven": false
+      },
+      {
+        "file": "test/openclaw-admission-history.test.mjs",
+        "status": "ROOT_INTEGRATED_FOCUSED_PASS_REMOTE_PENDING",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/ci-fix/6a3-admission-setup-i0q9oyth/source-hold.json",
+          "sha256": "d963e83cd315e32fd3f59f9b39b32cbdba2038b51fde8850719c68978fbdbd51"
+        },
+        "peer": {
+          "path": ".runtime-correction/validation/ci-fix/6a3-admission-root-peer-q9jbjyaf/peer-review.json",
+          "sha256": "b52ec548b75bd9fce2626878cbadd4f7ffbd12591b175ae8c60a5655f1797b4e"
+        },
+        "postimageSha256": "b7c7a65d0507360f04f89751974d42f2342c206e648d9d68a247b74fcd1efdbe",
+        "scope": "Completed child setup gets30s allowance; trusted executionlease5000/freshgate1000/observations20000/file180000 retained, realexpiry and slowownership negatives verified.",
+        "historicalUniqueCauseProven": false
       }
     ],
     "rootFocusedIntegration": {
@@ -644,11 +678,11 @@
     },
     "currentRunAttempt": 1,
     "rootReportedCurrentMatrixSnapshot": {
-      "passed": 6,
-      "failed": 1,
+      "passed": 5,
+      "failed": 2,
       "running": 0,
       "total": 7,
-      "scope": "SEALED_NATURAL_TERMINAL_RECEIPT_AND_FINAL_READBACK_VERIFIED"
+      "scope": "SEALED_TERMINAL_AND_FINAL_READBACK_VERIFIED"
     },
     "preceding486CompletedResult": {
       "latestCompletedRun": 44595052825,
@@ -736,7 +770,86 @@
       }
     ],
     "bothRecentlyFixedTestFilesPassedCurrentRun": true,
-    "nextOfficialValidationStatus": "PENDING_NEW_PUSH_AND_NATURAL_OFFICIAL_RUN_FOR_LATEST_TEST_ONLY_FIX"
+    "nextOfficialValidationStatus": "PENDING_NEW_PUSH_FOR_TWO_INTEGRATED_TEST_ONLY_FIXTURES",
+    "terminalEvidenceScope": "CURRENT_COMPLETED_EXACT_6A3_NATURAL_RUN",
+    "preceding0267CompletedResult": {
+      "latestCompletedRun": 44601659499,
+      "latestCompletedRunHead": "02672339b8f999e9d0a325d2f258f91666efe007",
+      "latestCompletedConclusion": "failure",
+      "latestCompletedPassedMatrixJobs": 6,
+      "latestCompletedFailedMatrixJobs": 1,
+      "terminalEvidence": {
+        "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/terminal-receipt.json",
+        "sha256": "e5872944b049e11ee139c99dd2de8271ab74997daad08becaf199607fd220bc1",
+        "actualWatchSession": 47043,
+        "actualTerminal": "102a30",
+        "actualExitCode": 1,
+        "retryOrCancel": false,
+        "finalReadback": {
+          "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-readback.json",
+          "sha256": "bc364b4d92e78a62602d32a497781d1dcebfd02c5080abb82196a9a1cd1e0237"
+        },
+        "fileInventory": {
+          "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-file-inventory.json",
+          "sha256": "9cfe83f14eaa399b87ff825c4aae871202cc2dd807c07551e171ba82ec141038"
+        }
+      },
+      "failures": [
+        {
+          "job": "Node24/windows-latest/shard2of2",
+          "file": "test/runtime-v2-shared-basis-publication.test.mjs",
+          "case": 2,
+          "observedBoundary": "TypeError result.watcher undefined after user revision/new baseline shared-basis scenario.",
+          "durationMs": 48380,
+          "cause": "UNDER_INVESTIGATION",
+          "uniqueHistoricalCauseProven": false,
+          "rawLogSha256": "276b36cd78e4b8bb8bbe65941ee85f67ce8af3c963b1909d372fda996c184675"
+        }
+      ]
+    },
+    "allThreeRecentlyFixedTestFilesPassedCurrentRun": true,
+    "rootTwoWindowsFixturesIntegration": {
+      "path": ".runtime-correction/validation/ci-fix/6a3-root-windows-fixtures-x_7afa1m/root-integration.json",
+      "sha256": "64e4cdac8ce6b6f6e002a3edc9189454b9394cf6b4520db84c8ec504d2f490f8",
+      "status": "FOCUSED_PASS_REMOTE_PENDING",
+      "countsPerNodeVersion": 8,
+      "node18Pass": 8,
+      "node24Pass": 8,
+      "focusedTerminals": {
+        "clean-node18": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ci-fix/6a3-root-windows-fixtures-x_7afa1m/clean-node18-terminal.json",
+          "sha256": "390464111e42611c5600b6adf4ee1951f5d29a00ef8c32f522d551570b23da15",
+          "counts": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0
+          }
+        },
+        "clean-node24": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ci-fix/6a3-root-windows-fixtures-x_7afa1m/clean-node24-terminal.json",
+          "sha256": "66b693b4c7b2744bbb6efbbe048078abcdd5314100b16deb8f4626cdc838a049",
+          "counts": {
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0
+          }
+        }
+      },
+      "runtimeHelpersExporterAndProductionLimitsUnchanged": true
+    },
+    "changedFixturePreparationAllowance": {
+      "preparationAllowanceMs": 30000,
+      "preparationGuardMs": 60000,
+      "actualChangeNotClaimedUnchanged": true,
+      "realFreshGateMs": 1000,
+      "realExecutionLeaseMs": 5000,
+      "realObservationMs": 20000,
+      "perFileLimitMs": 180000
+    }
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -990,9 +1103,56 @@
     "newGuidanceBenefitClaimedFromThisTrial": false
   },
   "activeGeneralPurposeTrial": {
-    "status": "NONE_BOTH_TRANSFER_ARMS_CLOSED_ON_UNQUALIFIED",
+    "status": "NONE_BOTH_NEW_ARMS_CLOSED_EVALUATOR_CONTROL_REQUIRED",
     "activePaidTrials": 0,
     "lastClosedPaidTransferArm": {
+      "arm": "ON",
+      "rootOwnedSession": 49951,
+      "actualTerminal": "8e51a8",
+      "exitCode": 1,
+      "status": "INCOMPLETE_NATIVE_OBSERVER_EXCEPTION_AFTER_ORIGINAL_CLEAN_OK",
+      "completedFlashRequests": 18,
+      "completedProRequests": 21,
+      "grade": null,
+      "rootTerminalSha256": "b673de5151b20ddfdb2b2a161bdda651db2fe265e78fb18515ce525ffaa9ba16"
+    },
+    "onPublicSetupRunning": false,
+    "onPaidCodingStarted": true,
+    "generalBenefitClaimed": false,
+    "currentArchiveOnReviewQualified": false,
+    "standingUserPaidAuthorizationPersists": true,
+    "onPaidCodingClosed": true,
+    "onCompletedArm": false,
+    "lastClosedOffTransferArm": {
+      "arm": "OFF",
+      "rootOwnedSession": 62545,
+      "actualTerminal": "5ac70b",
+      "exitCode": 1,
+      "status": "INCOMPLETE_OBSERVER_UNVERIFIED_PLANNING_HANDOFF",
+      "completedFlashRequests": 17,
+      "completedProRequests": 0,
+      "grade": null,
+      "rootReportedReceiptSha256Prefix": "eb0d0672"
+    },
+    "activeArm": null,
+    "activeOperatorDirectory": ".runtime-correction/validation/python-transfer-on-g9aq8kp0",
+    "rootOwnedLaunch": "8a5a24",
+    "rootOwnedSession": 49951,
+    "activeOnFieldsCountingScope": "NEW_V6_FINAL_PAIR_ONLY_PRIOR_V5_ON_IN_LAST_CLOSED_RECORD",
+    "lastClosedCurrentPairArm": {
+      "arm": "ON",
+      "rootOwnedSession": 49951,
+      "actualTerminal": "8e51a8",
+      "exitCode": 1,
+      "status": "INCOMPLETE_NATIVE_OBSERVER_EXCEPTION_AFTER_ORIGINAL_CLEAN_OK",
+      "completedFlashRequests": 18,
+      "completedProRequests": 21,
+      "grade": null,
+      "rootTerminalSha256": "b673de5151b20ddfdb2b2a161bdda651db2fe265e78fb18515ce525ffaa9ba16"
+    },
+    "currentArchiveBoundOnProTrafficObserved": true,
+    "currentArchiveOnReviewQualifiedScope": "No final review or complete-arm acceptance yet; actual bound Pro traffic is observed.",
+    "historicalV5LastClosedPaidTransferArm": {
       "arm": "ON",
       "rootOwnedSession": 61049,
       "actualTerminal": "1d06c8",
@@ -1004,14 +1164,7 @@
       "rootReceiptSha256Prefix": "28b50921",
       "closureSha256Prefix": "16cef57d"
     },
-    "onPublicSetupRunning": false,
-    "onPaidCodingStarted": true,
-    "generalBenefitClaimed": false,
-    "currentArchiveOnReviewQualified": false,
-    "standingUserPaidAuthorizationPersists": true,
-    "onPaidCodingClosed": true,
-    "onCompletedArm": false,
-    "lastClosedOffTransferArm": {
+    "historicalV5LastClosedOffTransferArm": {
       "arm": "OFF",
       "operatorDirectory": ".runtime-correction/validation/python-transfer-off-xksh23u8",
       "actualTerminal": "3c76d5",
@@ -1332,25 +1485,25 @@
         "scope": "Only the two next-work transport sentences changed: localhost-stub public transport now verified; full workflow, ON native chain, paid pair and real-model recovery remain untested."
       }
     },
-    "htmlSha256": "dd10864ef1ae4ac48612e3c2e2a0ebf0d73d9e65db41b66e2eafba216f4ad8d2",
-    "scope": "Only workflow activation and integrated sharedbasis fixture-fix prose updated. Current official6/7 failure, confirmed dailyreset and V5 unqualifiedpair remain. Rootfocused9/9 each18/24, new officialpending. New V6-final sourcepeerCLEAR/keyfreepreparing, no new paidpair. No product/archive or modelbenefit claim.",
-    "actualLaunch": "881d9b",
-    "actualSession": 68806,
-    "actualTerminal": "df02b2",
+    "htmlSha256": "190070b67d27e6c5f0644c616465c325ae061c8581ebd835be3f1d378062b919",
+    "scope": "Python now protocol-development walkthrough, not independent heldout quality evidence. Two-row OFF/ON table with originalU/cleanplanning versus missingledger/retryerror limits; bothclosed/noApply/grades/benefit, priorV5pair separate. Actual SDKstartup-only proof and preserved originalschemaassertfail, fullpluginworkflowcontrolpending/no morepaid. BothnewCIfixtures integrated8/8 eachNode with30ssetupchange explicit and real1s/5s/20s/180s limitsretained; official5/7failure/newremote pending.",
+    "actualLaunch": "fc3680",
+    "actualSession": 27595,
+    "actualTerminal": "3ce771",
     "exitCode": 0,
     "viewports": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
-    "receiptPath": ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/receipt.json",
-    "receiptSha256": "c8f08f0535dcf353ba75037827e678497e42e633d5a984d4ed4cae79da3f18b3",
+    "receiptPath": ".runtime-correction/validation/report-development-ci-bootstrap-qa-q3z0h7rl/receipt.json",
+    "receiptSha256": "ab19d6251dffcad99cb916cb4c2a18b3347026b6f9463182618ac017594634f6",
     "sections": 6,
     "collapsedHistoryGroups": 3,
     "sameFileLanguageToggle": true,
     "visibleDatesOrHashes": false,
     "humanizerFileMode": true,
     "styleScriptInlineCodeAndLinkTargetsUnchanged": true,
-    "visualReadown": "Final English desktop and Simplified Chinese mobile workflow screenshots inspected. Session activation sentence wraps cleanly; existing theme, six sections and three collapsed histories retained.",
+    "visualReadown": "Dedicated English desktop and Simplified Chinese mobile OFF/ON table images inspected. All four views have two table rows/two columns and no table or page horizontal overflow. Existing theme, six sections and three collapsed histories retained.",
     "privatePreparationErrorsPreserved": [
       ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/initial-update-selection-incident.json",
       ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/final-metadata-first-attempt-incident.json",
@@ -1366,8 +1519,8 @@
       "scope": "PASS_ON_SUPERSEDED_PROSE_ONLY_SNAPSHOT"
     },
     "priorReportMetadataSnapshot": {
-      "path": ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/metadata-before.json",
-      "sha256": "b2623b7c5e686ff262e2c2c14478636d127791162374b35b7f9d2d60221cf722"
+      "path": ".runtime-correction/validation/report-development-ci-bootstrap-qa-q3z0h7rl/metadata-before.json",
+      "sha256": "a0131465c468ba34095b10ce460a00c73830403e8c83ea775b8227b5a3b5c566"
     },
     "precedingBothClosedSnapshotQa": {
       "status": "PASS",
@@ -1386,7 +1539,59 @@
       "receiptPath": ".runtime-correction/validation/report-reset-cause-qa-u6h9if8_/receipt.json",
       "receiptSha256": "fd6fabb4e6d394d54738a23fae9a92c339c2dc4f0d5ee33c507acfca98b55979",
       "htmlSha256": "0f2de113a19974726478ee2084a61a5676aa2e9ea9e10e1f2818874c8ecfbb96"
-    }
+    },
+    "precedingIntegratedFixtureQa": {
+      "status": "PASS",
+      "actualLaunch": "881d9b",
+      "actualSession": 68806,
+      "actualTerminal": "df02b2",
+      "receiptPath": ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/receipt.json",
+      "receiptSha256": "c8f08f0535dcf353ba75037827e678497e42e633d5a984d4ed4cae79da3f18b3",
+      "htmlSha256": "dd10864ef1ae4ac48612e3c2e2a0ebf0d73d9e65db41b66e2eafba216f4ad8d2"
+    },
+    "precedingNewOffRunningQa": {
+      "status": "PASS",
+      "actualLaunch": "2ee9a4",
+      "actualSession": 87684,
+      "actualTerminal": "a0441e",
+      "receiptPath": ".runtime-correction/validation/report-new-transfer-off-active-qa-lwfd6bzr/receipt.json",
+      "receiptSha256": "b1d1e8c396109f7908f5127c0b8ea2336ad02f3467b8969e99d5baa8e6840e0f",
+      "htmlSha256": "21eadbbb46a8dd067534ba6534cde57bef4745475294967d2c9dcb1097d05f1e"
+    },
+    "precedingBoundOnRunningQa": {
+      "status": "PASS",
+      "actualLaunch": "b0aa70",
+      "actualSession": 41224,
+      "actualTerminal": "ee4b6b",
+      "receiptPath": ".runtime-correction/validation/report-comparison-planning-stop-qa-807qsckz/receipt.json",
+      "receiptSha256": "b922fd7d55619d2085a16b76515ecc8287fb6eac40d0cb6c5e8646dfcc0e2053",
+      "htmlSha256": "24c6405b68bdb274675aa0176667f831c8a064004c04224a0c6af00f38c915eb"
+    },
+    "precedingBothClosedQa": {
+      "status": "PASS",
+      "actualLaunch": "c368dc",
+      "actualSession": 32539,
+      "actualTerminal": "09178e",
+      "receiptPath": ".runtime-correction/validation/report-comparison-both-closed-qa-qhs1_v3j/receipt.json",
+      "receiptSha256": "f09fdb1f208797cd61b60cd4b0f22e11c8f293bdf4e98cbe3f2f543c8c9c21a6",
+      "htmlSha256": "d5c5ffbcc33d2f44255219033026bb8711232c8c294754f7a9aab84c3c1e391e"
+    },
+    "walkthroughTableScreenshots": [
+      {
+        "path": ".runtime-correction/validation/report-development-ci-bootstrap-qa-q3z0h7rl/python-table-en-1200.png",
+        "sha256": "bc9a4884969d811015677810c7a93146f87bb53dff59894d4480eee605b04234",
+        "width": 979,
+        "height": 258,
+        "visuallyInspected": true
+      },
+      {
+        "path": ".runtime-correction/validation/report-development-ci-bootstrap-qa-q3z0h7rl/python-table-zh-CN-390.png",
+        "sha256": "3a9a8906db1429e9899f6cf1347f23bfe42e104575694f197d49b4d6e7819263",
+        "width": 318,
+        "height": 379,
+        "visuallyInspected": true
+      }
+    ]
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -1439,10 +1644,10 @@
     "prior2aHelperEvidenceRetainedSeparately": true
   },
   "preparedTransferEvaluation": {
-    "status": "BOTH_ARMS_CLOSED_OFF_FROZEN_ON_INCOMPLETE_UNQUALIFIED_NO_PRIVATE_GRADES",
+    "status": "BOTH_NEW_ARMS_CLOSED_OBSERVER_HANDOFF_UNQUALIFIED_NO_GRADES",
     "language": "Python",
-    "taskRole": "HELD_OUT_FROM_PRODUCT_FIX_DEVELOPMENT_OUTSIDE_13_BENCHMARK",
-    "actualModelArmsStarted": 2,
+    "taskRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_OUTSIDE_13_TASK_BENCHMARK",
+    "actualModelArmsStarted": 4,
     "functionalChecks": 34,
     "authoredPublicTestsAndDependencyRestrictionAssessedSeparately": true,
     "sourceHold": {
@@ -1454,8 +1659,8 @@
       "sha256": "79a5229fcd2a613e0a70a0e1f238d8cf363e76aa99b196d127fa4075d2da8a43"
     },
     "runtimeSpecializationAdded": false,
-    "scope": "V3 fixes private checker input/import/PATH fairness before any paid use. Both API and CLI and grader must share pinned supported interpreter and command environment; no quality result yet.",
-    "commonPublicCompletionContractStatus": "OFF_CODING_PATH_ENDED_ON_INCOMPLETE_NO_QUALIFIED_MATCHED_COMPARISON",
+    "scope": "The Python case began as a proposed transfer evaluation and is now used for protocol-integration development. It is not independent held-out quality evidence. Both closed arms retain their original unqualified handoff outcomes; no grade or general-benefit claim.",
+    "commonPublicCompletionContractStatus": "OFF_OBSERVER_UNVERIFIED_ON_ORIGINAL_OK_THEN_NATIVE_OBSERVER_EXCEPTION",
     "consistentPythonPathRequiredForChildCommands": true,
     "commonOriginalTerminalObserverV2": {
       "status": "SOURCE_PURE_PEER_AND_LOCALHOST_STUB_PUBLIC_TRANSPORT_CLEAR",
@@ -1782,14 +1987,14 @@
       },
       "scope": "Live phase is root-reported metadata only. No actor/model/provider body, key, oracle or grade was read by this report updater; no quality, overhead or formal-pair benefit is claimed."
     },
-    "executionPreparationScope": "Both V5 paid attempts remain closed and ungraded, with ON invalid beforeApply due confirmed stockdaily reset. Separately held V6-final sourcepeer is CLEAR; fresh newpair credentialfree OFF setup is being prepared. Both paid arms must be rerun; no new paid pair started.",
-    "actualModelArmsClosed": 2,
+    "executionPreparationScope": "Both V6-final arms closed beforeApply. OFF heldU from host terminal rule. ON originalcleanOK and actual Proplanning traffic, then native observer FileExistsError after unsupported administrative bootstrap left required ledger absent. Absence is not zero. No model/provider/requirements failure, grade, repair or clean-pair benefit inferred. No more paid reruns before source fix and actual plugin-enabled credentialfree wholeworkflow control.",
+    "actualModelArmsClosed": 4,
     "completionCountingScope": "PAID_PUBLIC_CODING_PATH_ENDED_ONLY_NOT_FUNCTIONAL_OR_WHOLE_WORKFLOW_QUALIFICATION",
     "qualifiedMatchedComparisonCompleted": false,
     "runtimeBenefitClaimed": false,
     "nextEvaluatorLifecycleRevision": {
       "version": "V6-final",
-      "status": "SOURCE_PEER_CLEAR_CREDENTIAL_FREE_SETUP_PREPARING_NO_NEW_PAID_PAIR",
+      "status": "BOTH_ARMS_CLOSED_EXTERNAL_BOOTSTRAP_AND_OBSERVER_FIX_REQUIRED",
       "sourceHold": {
         "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
         "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
@@ -1815,12 +2020,266 @@
         "rootReportedPreflightTerminal": "fceaa8",
         "preflightExitCode": 0,
         "rootReportedPreflightReceiptSha256Prefix": "a9c5f8f",
-        "publicSetupStatus": "RUNNING_ROOT_REPORTED_SNAPSHOT",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
         "rootOwnedSetupLaunch": "97839a",
         "rootOwnedSetupSession": 36652,
-        "newPaidArmsStarted": 0
+        "newPaidOffArmsStarted": 1
       }
-    }
+    },
+    "allTransferAttemptCountingScope": "Two closed V5 attempts plus both closed V6-final arms; none supplies a clean completed matched comparison.",
+    "currentMatchedPair": {
+      "controllerVersion": "V6-final",
+      "status": "BOTH_CLOSED_NO_APPLY_NO_QUALIFIED_MATCHED_COMPARISON",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
+        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
+      },
+      "sameCurrentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
+      "bothFreshArmsRequired": true,
+      "priorV5OffReused": false,
+      "requiredStockSessionReset": {
+        "mode": "idle",
+        "idleMinutes": 120
+      },
+      "actualPaidArmsStarted": 2,
+      "actualPaidArmsClosed": 2,
+      "actualPaidArmsGraded": 0,
+      "off": {
+        "operatorDirectory": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
+        "status": "INCOMPLETE_OBSERVER_UNVERIFIED_PLANNING_HANDOFF",
+        "rootOwnedLaunch": "b2db25",
+        "rootOwnedSession": 62545,
+        "rootReportedAdmissionSha256Prefix": "b6b05d39",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "rootReportedSetupEvidenceSha256Prefixes": [
+          "c874b424",
+          "668371ab"
+        ],
+        "stockIdleReset120MinutesActuallyReadBack": true,
+        "firstFreshPublicCodingSendAcknowledged": true,
+        "firstActualFlashHttp200Observed": true,
+        "rootReportedProviderSnapshot": {
+          "actualMetadataTerminal": "d4ee11",
+          "exitCode": 0,
+          "completedFlash": 10,
+          "completedPro": 0,
+          "scope": "HISTORICAL_FIRST_CONFIRMED_SNAPSHOT_SUPERSEDED_BY_ROOT_REPORTED_TERMINAL_COUNTS"
+        },
+        "proposalReadyObservedAtSnapshot": false,
+        "closure": null,
+        "grade": null,
+        "rootOwnedTerminal": "5ac70b",
+        "exitCode": 1,
+        "rootReportedReceiptSha256Prefix": "eb0d0672",
+        "completedFlashRequests": 17,
+        "completedProRequests": 0,
+        "completedHttp200Requests": 17,
+        "stagesCompleted": 0,
+        "applyReached": false,
+        "sessionBindingStayedCurrent": true,
+        "hostSessionResetObserved": false,
+        "commonObserverReasonCode": "WAIT_PROVIDER_OR_HOST_ERROR",
+        "actualAgentWaitError": "Exec failed",
+        "providerCauseClaimed": false,
+        "semanticCodeQualityFailureClaimed": false,
+        "knownOwnedCleanupConfirmed": true,
+        "finalTypedFailureAndFreezePending": false,
+        "retryOffToObtainPass": false,
+        "observerOrBudgetRelaxed": false,
+        "rootReportedTerminalSha256Prefix": "83246502",
+        "rootReportedClosureSha256Prefix": "067475df",
+        "rootReportedFreezeSha256Prefix": "38fb06ff",
+        "frozenFiles": 24,
+        "actualFreezeTerminal": "22b143",
+        "freezeExitCode": 0,
+        "allFourProtectedInitialInputsUnchanged": true,
+        "originalEpochToFinalReceiptElapsedMs": 71410,
+        "typedPublicFinalProjectionSha256Prefix": "4515d2b0",
+        "actualAgentWaitErrorScope": "Gateway top-level error retains earlier delivered Exec warning; not proof model/provider aborted.",
+        "modelNormalStopObservedInTypedPublicProjection": true,
+        "proposalCompletionClaim": "MODEL_PUBLIC_TEXT_ONLY_NOT_ROOT_VALIDATED",
+        "publicTextReportedUncheckedTasks": 14,
+        "rootOfficialProposalValidationPerformed": false,
+        "rootApplyApprovalPerformed": false,
+        "currentHeldCompletionRuleQualification": "UNVERIFIED",
+        "commandWarningAloneProvesOffTrack": false,
+        "retroactiveObserverSuccessGranted": false,
+        "sourceClarification": {
+          "path": ".runtime-correction/validation/python-transfer-agent-wait-clarification-9_6k_q30/public-final-addendum.json",
+          "sha256": "ba0cd71a9a8d1076c0d6022dc0545df7b43e4da93b45a07c2a019a5ceaa7bc4e",
+          "normalMainModelStopPrecededGatewayErrorMs": 68,
+          "proposalQualityOrOfficialValidationCredit": false,
+          "currentHeldObserverUnverifiedUnchanged": true
+        }
+      },
+      "on": {
+        "status": "INCOMPLETE_NATIVE_OBSERVER_EXCEPTION_AFTER_ORIGINAL_CLEAN_OK",
+        "actualPaidArmsStarted": 1,
+        "grade": null,
+        "rootReportedFreshProfile": "g9aq8kp0",
+        "credentialFreePreflight": {
+          "passed": 23,
+          "checks": 23,
+          "rootReportedReceiptSha256Prefix": "74a64c00"
+        },
+        "rootOwnedSetupLaunch": "1c4e0e",
+        "rootOwnedSetupSession": 28767,
+        "operatorDirectory": ".runtime-correction/validation/python-transfer-on-g9aq8kp0",
+        "rootOwnedLaunch": "8a5a24",
+        "rootOwnedSession": 49951,
+        "rootReportedAdmissionSha256Prefix": "22cdc505",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "rootOwnedSetupTerminal": "9325f5",
+        "setupExitCode": 0,
+        "rootReportedSetupEvidenceSha256Prefixes": [
+          "980d0c7c",
+          "a9a0d24a"
+        ],
+        "actualCurrentSessionAndProjectAndKeyAndAgentJoined": true,
+        "actualFreshSendUuidAndPublicDispatchRunScopeVersionJoined": true,
+        "effectiveEnabled": true,
+        "hostSessionResetObserved": false,
+        "commonOriginalObserverStarted": true,
+        "actualBoundOnProTrafficObserved": true,
+        "finalReviewOrSemanticAccuracyQualified": false,
+        "boundOnTreatmentStarted": true,
+        "currentArchiveFinalOnReviewQualified": false,
+        "offCodeOrPrivateGraderFeedbackProvided": false,
+        "closure": null,
+        "publicBindingReadown": {
+          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-public-binding-readown.json",
+          "sha256": "a4a9a9658445083b80bb547a5b786c42a95c310be0a4e4c4c888e8b95c3a8ffe",
+          "actualMetadataTerminal": "fabea4",
+          "exitCode": 0
+        },
+        "rootReportedProviderSnapshot": {
+          "actualMetadataTerminal": "edb9e1",
+          "exitCode": 0,
+          "completedFlash": 15,
+          "completedPro": 1,
+          "completedHttp200": 16,
+          "errors": 0,
+          "proposalReadyObserved": false,
+          "closureObserved": false,
+          "scope": "HISTORICAL_FIRST_BOUND_TRAFFIC_SNAPSHOT_SUPERSEDED_BY_FINAL_ROOT_REPORTED_COUNTS"
+        },
+        "rootOwnedTerminal": "8e51a8",
+        "exitCode": 1,
+        "rootReportedReceiptSha256Prefix": "3630f5e6",
+        "rootReportedClosureSha256Prefix": "db96fbe3",
+        "rootReportedFreezeSha256Prefix": "5096e5b3",
+        "frozenFiles": 24,
+        "rootReportedFreezeActualTools": [
+          "51bc4b",
+          "f240d4"
+        ],
+        "allFourProtectedInitialInputsUnchanged": true,
+        "completedFlashRequests": 18,
+        "completedProRequests": 21,
+        "completedHttp200Requests": 39,
+        "providerRequestErrors": 0,
+        "rootReportedElapsedMs": 263755,
+        "stagesCompleted": 0,
+        "applyReached": false,
+        "knownOwnedCleanupConfirmed": true,
+        "currentCommonOriginalCompletionQualification": "CLEAN_OK",
+        "wholeWorkflowCompletionQualified": false,
+        "nativeObserverReasonCode": "PRIVATE_DIAGNOSTIC_REQUIRED",
+        "externalEvaluatorExceptionType": "FileExistsError",
+        "nativeBudgetLedgerStatus": "ABSENT",
+        "nativeAdmissionOrBusinessStartCount": null,
+        "absentLedgerInterpretedAsZero": false,
+        "sourceCause": "Unsupported administrative bootstrap omitted genuine SDK session_start; native observer retry then reused exclusive output address.",
+        "rootReportedSourceCauseSha256Prefix": "55c51deb",
+        "rootReportedScopeTokens": [
+          "IDLE",
+          "SKIPPED",
+          "STOP_DOCUMENT_ONLY_CHANGES"
+        ],
+        "modelProviderOrRequirementsFailureClaimed": false,
+        "finalTypedFailureAndFreezePending": false,
+        "rootTerminal": {
+          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-live-terminal.json",
+          "sha256": "b673de5151b20ddfdb2b2a161bdda651db2fe265e78fb18515ce525ffaa9ba16",
+          "actualMetadataTerminal": "d4189f",
+          "exitCode": 0
+        }
+      },
+      "qualifiedMatchedComparisonCompleted": false,
+      "modelBenefitClaimed": false,
+      "authority": "ROOT_METADATA_NOTIFICATIONS_ONLY_NO_REPORTER_ACTOR_AUDIT",
+      "cleanPairClaimed": false,
+      "currentEvidenceRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_NOT_INDEPENDENT_HELD_OUT_QUALITY"
+    },
+    "nextPaidPairTechnicalPrerequisites": {
+      "newPaidRunsAllowedByCurrentTechnicalState": false,
+      "evaluatorSourceFixRequired": true,
+      "actualPluginEnabledCredentialFreeWholeProposalApplyControlRequired": true,
+      "standingUserPaidAuthorizationPersists": true,
+      "runtimeOrArchiveChangeAssumed": false,
+      "startupOnlyProofQualified": true,
+      "wholePluginEnabledCredentialFreeWorkflowStatus": "PENDING_NOT_QUALIFIED"
+    },
+    "initialPreparationRole": "HELD_OUT_FROM_PRODUCT_FIX_DEVELOPMENT_OUTSIDE_13_BENCHMARK",
+    "independentHeldOutQualityEvidence": false,
+    "caseNowUsedForProtocolDebugging": true,
+    "publicBootstrapStartupOnly": {
+      "status": "STARTUP_ONLY_QUALIFIED_BY_SEPARATE_CLOSED_READBACK_FULL_WORKFLOW_PENDING",
+      "readback": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/closed-readback.json",
+        "sha256": "da90ea3af175bedaad0442523b150f1fb5c99eddea2ce59089913b47de1bf1eb"
+      },
+      "verification": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/verification.json",
+        "sha256": "62ad6f3aa8aa734abf921878b037c7b1d42434ce7ccf0c6b9b23ffa1ee961864"
+      },
+      "originalFailedProbe": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/receipt.json",
+        "sha256": "2a2c109a176e14d3e9f5a91abfd8db6d509665fb33142dc45c53f513d8a1e92f",
+        "actualLaunch": "baccd9",
+        "actualSession": 81240,
+        "actualTerminal": "7b2ede",
+        "exitCode": 1,
+        "failure": "Draft numeric schema assertion; actual producer schema was the supported string v1.",
+        "originalFailedStatusRetained": true
+      },
+      "actualSeparateClosedReadbackTerminal": "ff0bcc",
+      "separateReadbackExitCode": 0,
+      "firstPublicUnallocatedKeyMessageTriggeredGenuineSdkSessionStart": true,
+      "ledgerInitializedBeforeAdministrativeSetup": true,
+      "used": 0,
+      "admissions": 0,
+      "flows": 0,
+      "stops": 0,
+      "ledgerPresentForThisStartupProofOnly": true,
+      "priorMissingLedgerReclassifiedAsZero": false,
+      "fakeLocalSseReplies": 1,
+      "upstreamRequests": 0,
+      "realModelCalls": 0,
+      "exactInstalledRegularMembers": 276,
+      "privateSdkIdentityOrLedgerInjected": false,
+      "knownOwnedCleanupConfirmed": true,
+      "fullPluginEnabledProposalApplyControlQualified": false,
+      "qualityNativeRepairOrGeneralBenefitClaimed": false
+    },
+    "prospectiveCommonTerminalObserverV3": {
+      "status": "SOURCE_PURE_PEER_CLEAR_NOT_USED_BY_CLOSED_PAID_ARMS",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/common-public-terminal-v3-ioc3886f/source-hold.json",
+        "sha256": "e6221a92dbbc8435a86abb65b06bf70c87c0e62f4fb144c096389429104a437d"
+      },
+      "peer": {
+        "path": ".runtime-correction/validation/common-terminal-v3-peer-c9_6slrg/peer-review.json",
+        "sha256": "14b83d1b3b22d6420506776cccd7df475435fbf30ead060055b85e3b3363541b"
+      },
+      "ownerPureControls": 70,
+      "independentPureControls": 70,
+      "errorObservedDoesNotMeanCleanOrPhaseApproval": true,
+      "historicalTrialsReclassified": false,
+      "shippedPluginIncludesPrivateHelper": false,
+      "actualWholeWorkflowUseQualified": false
+    },
+    "frozenOriginalPreparationHoldsAndClosedReceiptsUnchanged": true
   },
   "previousClosedGeneralPurposeTrial": {
     "status": "CLOSED_WORKFLOW_SETTLED_FINAL_REVIEW_UNVERIFIED",
