@@ -5,9 +5,48 @@ import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 
 // Native lifecycle suites include real deadline windows exceeding 90 seconds.
 export const DEFAULT_FILE_TIMEOUT_MS = 180_000;
+
+export function parseTestArguments(args) {
+  let timeoutMs = DEFAULT_FILE_TIMEOUT_MS, concurrency = 4, shard = "1/1", openclawHost;
+  const nodeArgs = [];
+  for (let index = 0; index < args.length; index++) {
+    const argument = args[index], equal = argument.indexOf("="), name = equal < 0 ? argument : argument.slice(0, equal);
+    if (["--file-timeout-ms", "--file-concurrency", "--file-shard", "--openclaw-host"].includes(name)) {
+      const value = equal < 0 ? args[++index] : argument.slice(equal + 1);
+      if (!value || value.startsWith("--")) throw new Error(`Missing value for ${name}.`);
+      if (name === "--file-timeout-ms") timeoutMs = Number(value);
+      else if (name === "--file-concurrency") concurrency = Number(value);
+      else if (name === "--file-shard") shard = value;
+      else openclawHost = value;
+    } else nodeArgs.push(argument);
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || !Number.isSafeInteger(concurrency) || concurrency <= 0)
+    throw new Error("Test timeout and concurrency must be positive integers.");
+  return { timeoutMs, concurrency, shard, openclawHost, nodeArgs };
+}
+
+// Normalize before sorting so Windows and POSIX jobs publish the same inventory.
+// A file's sorted index belongs to exactly one shard; sharding never selects cases.
+export function selectTestFileShard(files, shard = "1/1") {
+  if (typeof shard !== "string" || !/^[1-9]\d*\/[1-9]\d*$/u.test(shard))
+    throw new Error("--file-shard must be an index/count such as 1/2.");
+  const [shardIndex, shardCount] = shard.split("/").map(Number);
+  if (!Number.isSafeInteger(shardIndex) || !Number.isSafeInteger(shardCount) || shardIndex > shardCount)
+    throw new Error("--file-shard requires 1 <= index <= count.");
+  if (!Array.isArray(files) || !files.length || files.some(file => typeof file !== "string" || !file))
+    throw new Error("Test file inventory must be nonempty.");
+  const sorted = files.map(file => file.replaceAll("\\", "/")).sort();
+  if (new Set(sorted).size !== sorted.length) throw new Error("Test file inventory contains duplicates.");
+  if (shardCount > sorted.length) throw new Error("--file-shard count exceeds the test file count.");
+  const selected = sorted.filter((_file, index) => index % shardCount === shardIndex - 1);
+  const digest = values => createHash("sha256").update(JSON.stringify(values)).digest("hex");
+  return { files: selected, fullTestFileCount: sorted.length, shardIndex, shardCount,
+    fullFileListSha256: digest(sorted), selectedFileListSha256: digest(selected) };
+}
 
 export function testDependencyWarnings(root) {
   try {
@@ -98,24 +137,19 @@ async function main() {
   const temporaryRoot = realpathSync(tmpdir());
   if (process.platform === "win32") process.env.TEMP = process.env.TMP = temporaryRoot;
   else process.env.TMPDIR = temporaryRoot;
-  let timeoutMs = DEFAULT_FILE_TIMEOUT_MS;
-  const nodeArgs = [], args = process.argv.slice(2);
-  for (let index = 0; index < args.length; index++) {
-    if (args[index] === "--file-timeout-ms") timeoutMs = Number(args[++index]);
-    else if (args[index].startsWith("--file-timeout-ms=")) timeoutMs = Number(args[index].split("=")[1]);
-    else if (args[index] === "--openclaw-host" || args[index].startsWith("--openclaw-host="))
-      process.env.RC_OPENCLAW_HOST_ROOT = await resolveOpenClawTestHost(args[index].includes("=") ? args[index].slice(args[index].indexOf("=") + 1) : args[++index]);
-    else nodeArgs.push(args[index]);
-  }
+  const { timeoutMs, concurrency, shard, openclawHost, nodeArgs } = parseTestArguments(process.argv.slice(2));
+  if (openclawHost) process.env.RC_OPENCLAW_HOST_ROOT = await resolveOpenClawTestHost(openclawHost);
   for (const warning of testEnvironmentWarnings()) console.warn(warning);
-  const files = readdirSync(path.join(root, "test")).filter(name => name.endsWith(".test.mjs"))
-    .sort().map(name => path.join("test", name));
+  const { files, ...selection } = selectTestFileShard(readdirSync(path.join(root, "test"))
+    .filter(name => name.endsWith(".test.mjs")).map(name => `test/${name}`), shard);
+  const plan = { ...selection, partition: "sorted-file-index-modulo-v1", fileConcurrency: concurrency, fileTimeoutMs: timeoutMs };
+  console.log(JSON.stringify({ event: "TEST_FILE_PLAN", ...plan, selectedFiles: files }));
   const controller = new AbortController();
   const interrupt = () => controller.abort();
   process.once("SIGINT", interrupt);
   process.once("SIGTERM", interrupt);
   try {
-    const results = await runTestFiles({ files, cwd: root, timeoutMs, nodeArgs, signal: controller.signal,
+    const results = await runTestFiles({ files, cwd: root, timeoutMs, concurrency, nodeArgs, signal: controller.signal,
       onResult(result) {
         const label = result.timedOut ? `TIMEOUT (${timeoutMs} ms)` : result.passed ? "PASS" : "FAIL";
         console.log(`${label} ${result.file}`);
@@ -123,7 +157,7 @@ async function main() {
       } });
     const totals = Object.fromEntries(["tests", "pass", "fail", "cancelled", "skipped"]
       .map(name => [name, results.reduce((sum, result) => sum + (result.counts[name] ?? 0), 0)]));
-    console.log(JSON.stringify({ files: files.length, completed: results.length,
+    console.log(JSON.stringify({ ...plan, files: files.length, completed: results.length,
       failedFiles: results.filter(result => !result.passed).map(result => result.file),
       timedOutFiles: results.filter(result => result.timedOut).map(result => result.file), totals }));
     process.exitCode = controller.signal.aborted ? 130 : results.every(result => result.passed) ? 0 : 1;

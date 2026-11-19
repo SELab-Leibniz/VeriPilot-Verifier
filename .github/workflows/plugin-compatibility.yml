@@ -50,13 +50,28 @@ jobs:
           test/session-end-process.test.mjs
 
   runtime:
-    name: Node 24 / ${{ matrix.os }}
+    name: Node 24 / ${{ matrix.os }} / shard ${{ matrix.shard }}
     timeout-minutes: 25
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Scheduling experiment: keep every test and deadline, but divide Windows
+        # across two VMs with two file workers each. This does not establish a
+        # cause for earlier failures. Each job logs its complete shard inventory.
+        include:
+          - os: ubuntu-latest
+            shard: 1/1
+            file-concurrency: 4
+          - os: macos-latest
+            shard: 1/1
+            file-concurrency: 4
+          - os: windows-latest
+            shard: 1/2
+            file-concurrency: 2
+          - os: windows-latest
+            shard: 2/2
+            file-concurrency: 2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -68,10 +83,13 @@ jobs:
       - run: npm run build:plugins
       - name: Verify artifacts and entry points
         run: npm run test:artifacts
-      - name: Run full suite
+      - name: Run assigned test files
         # Native lifecycle tests exercise real deadline windows. Windows needs
         # more than 90 seconds for that file; retain a bounded process deadline.
-        run: npm test -- --openclaw-host=.ci/openclaw/node_modules/openclaw --file-timeout-ms=180000
+        run: >-
+          npm test -- --openclaw-host=.ci/openclaw/node_modules/openclaw
+          --file-timeout-ms=180000 --file-concurrency=${{ matrix.file-concurrency }}
+          --file-shard=${{ matrix.shard }}
 
   release:
     name: Publish host-specific plugin archives
