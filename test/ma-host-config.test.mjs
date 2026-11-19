@@ -6,7 +6,7 @@ import test from "node:test";
 import { configureMAHost } from "../scripts/configure-ma-host.mjs";
 
 async function fixture(t, config = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-config-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-config-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const pluginRoot = path.join(root, "extensions/runtime-corrector");
   const configPath = path.join(root, "openclaw.json");
@@ -108,6 +108,15 @@ test("malformed config is not overwritten and equivalent Windows paths are not d
   await fs.writeFile(f.configPath, JSON.stringify({ plugins: { load: { paths: [f.pluginRoot] } } }));
   await configureMAHost(f);
   assert.deepEqual(JSON.parse(await fs.readFile(f.configPath, "utf8")).plugins.load.paths, [f.pluginRoot]);
+});
+
+test('setup preserves an existing discovery path that resolves to the same plugin directory', async t => {
+  const f = await fixture(t);
+  const alias = path.join(f.root, 'plugin-alias');
+  await fs.symlink(f.pluginRoot, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await fs.writeFile(f.configPath, JSON.stringify({ plugins: { load: { paths: [alias] } } }));
+  await configureMAHost(f);
+  assert.deepEqual(JSON.parse(await fs.readFile(f.configPath, 'utf8')).plugins.load.paths, [alias]);
 });
 
 test("agent tool opt-in preserves inherited tools, deny rules and other agents without changing global tools", async t => {

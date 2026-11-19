@@ -16,7 +16,7 @@ before(async () => {
   // This test file runs in Node's isolated test process. Never inherit a path
   // that could redirect a fake-home lifecycle operation to the real user.
   for (const name of Object.keys(inheritedPaths)) delete process.env[name];
-  output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-lifecycle-"));
+  output = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-lifecycle-")));
   artifact = (await buildMAPackage({ sourceRoot, outputRoot: output })).directory;
 });
 after(async () => {
@@ -102,7 +102,9 @@ test("disable follows the host's committed switch, preserves unrelated edits and
   assert.deepEqual(disabled.agents.list[0].tools.alsoAllow, ["browser", "user_added_tool"]);
   assert.equal(disabled.untouched.added, "after install");
   assert.equal((await f.readState()).savedEntry.config.reviewerModel, "changed/reviewer");
-  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  const reactivated = await f.plugin.activate(f.api, f.init);
+  assert.equal(reactivated.error, undefined, reactivated.error);
+  assert.equal(reactivated.status, "active");
   assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].config.reviewerModel, "changed/reviewer");
   await f.writeMarker(true); await f.disable();
   await fs.rm(f.pluginDir, { recursive: true, force: true });

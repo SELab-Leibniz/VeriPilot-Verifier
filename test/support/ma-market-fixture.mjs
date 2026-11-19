@@ -20,7 +20,7 @@ export async function waitFor(check, timeout = 3000) {
 }
 
 export async function marketFixture(t, artifact, config = baseConfig()) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-market-user-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-market-user-")));
   const home = path.join(root, "user home 中文"), pluginDir = path.join(home, ".matrixassistant", "plugins", "runtime-corrector-1.9.1");
   const configPath = path.join(home, ".openclaw", "openclaw.json");
   const statePath = path.join(home, ".openclaw", "runtime-corrector-ma", "state.json");
@@ -39,7 +39,13 @@ export async function marketFixture(t, artifact, config = baseConfig()) {
     const result = await plugin.deactivate(api, init);
     assert.equal(result.error, undefined, result.error);
     await writeMarker(false);
-    await waitFor(async () => !(await readState()).active);
+    await waitFor(async () => {
+      if ((await readState()).active) return false;
+      // The observer commits state before releasing its installer lock.
+      // Re-enable only after that committed lifecycle operation has closed.
+      try { await fs.access(path.join(path.dirname(statePath), 'installer.lock')); return false; }
+      catch (error) { if (error.code === 'ENOENT') return true; throw error; }
+    });
   };
   t.after(async () => {
     // Finish an observer before removing its fake home, so it cannot recreate

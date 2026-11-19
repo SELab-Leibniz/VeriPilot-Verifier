@@ -24,7 +24,7 @@ const run = promisify(execFile);
 const sha256 = /^[a-f0-9]{64}$/u;
 const commit = /^[a-f0-9]{40}$/u;
 const gitExecutable = process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git';
-const git = (...args) => run(gitExecutable, ['-c', 'core.longpaths=true', ...args], {
+const git = (...args) => run(gitExecutable, ['-c', 'core.longpaths=true', '-c', 'core.autocrlf=false', ...args], {
   encoding:'utf8', windowsHide:true, timeout:30_000, env:{ ...process.env, GIT_NO_LAZY_FETCH:'1' },
 }).then(({ stdout }) => stdout.trim());
 const writeNew = (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2) + '\n', { flag:'wx' });

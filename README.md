@@ -154,3 +154,5 @@ const saved = await gateway.request("runtime-corrector.session.set", {
 验证与维护命令见文档导航中的维护说明。所有自动测试使用本地受控输入；构建和测试不会启动真实模型评测。
 
 首次运行测试前执行 `npm ci --prefix lib/review-task --ignore-scripts`，安装源码测试使用的独立依赖。缺少 `typebox` 时，`npm test` 会提示此命令，并保留相关测试的失败结果。
+
+完整套件还需要只读的 OpenClaw `2026.7.1-2` 安装，供基线工具校验参数使用。通过 `npm test -- --openclaw-host <OpenClaw 包目录>` 指定；缺少宿主时，相关基线测试会失败，不会自动跳过。安装命令和语言环境设置见源码仓库的维护说明。测试无需 API key。

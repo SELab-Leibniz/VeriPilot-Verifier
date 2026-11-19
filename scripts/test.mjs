@@ -6,7 +6,8 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
-export const DEFAULT_FILE_TIMEOUT_MS = 90_000;
+// Native lifecycle suites include real deadline windows exceeding 90 seconds.
+export const DEFAULT_FILE_TIMEOUT_MS = 180_000;
 
 export function testDependencyWarnings(root) {
   try {

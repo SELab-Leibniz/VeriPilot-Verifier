@@ -48,7 +48,7 @@ async function assertCompileOutput(outputRoot, assay, expectedFile) {
 }
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pc-smoke-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pc-smoke-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const gitRoot = path.join(root, 'base');
   const dataset = path.join(root, 'private-fixture-dataset');
@@ -76,12 +76,16 @@ async function fixture(t) {
   } }));
   const git = (...args) => execFileSync('git', ['-C', gitRoot, ...args], { encoding: 'utf8', windowsHide: true }).trim();
   git('init', '--quiet');
+  git('config', 'core.autocrlf', 'false');
   git('add', 'build-profile.json5', publicTest, listFile, productionFile);
   git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false',
     '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '-m', 'public task base');
   const baseCommit = git('rev-parse', 'HEAD');
   const baseTree = git('rev-parse', 'HEAD^{tree}');
   git('clone', '--quiet', '--bare', '.', path.join(cacheRoot, 'test--example.git'));
+  // Checkout must preserve byte-bound source even when the host/cache enables
+  // Windows line-ending conversion.
+  git('--git-dir', path.join(cacheRoot, 'test--example.git'), 'config', 'core.autocrlf', 'true');
   const patch = 'FIXTURE_PRIVATE_GOLD', testPatch = 'FIXTURE_PRIVATE_TEST';
   await fs.writeFile(path.join(dataset, `${id}.json`), JSON.stringify({
     instance_id: id, repo: 'test/example', base_commit: baseCommit, problem_statement: 'Return 2 from Answer while preserving ordering.', hints_text: '',

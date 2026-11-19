@@ -3,12 +3,12 @@ import test from 'node:test';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { resolveStopCitations } from '../lib/runtime-v2/stop-citations.mjs';
+import { resolveStopCitations, stopAttachmentCurrent } from '../lib/runtime-v2/stop-citations.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { reviewedRegressionFailures } from '../lib/runtime-v2/regression-triage.mjs';
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-citations-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-stop-citations-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, 'source.txt');
   await fs.writeFile(file, 'one\ntwo\nthree');
@@ -31,6 +31,33 @@ test('Stop accepts a known but unacknowledged read without adding native read co
   ctx.evidence.lookupCitation = id => id === 'pending' ? { path: 'source.txt', start: 1, end: 1 } : null;
   assert.equal((await resolveStopCitations(ctx, { citeIds: ['pending'] }, root)).length, 1);
   assert.equal(ctx.evidence.registry.size, 0);
+});
+
+test('Stop canonicalizes an aliased project root before checking current citation containment', async t => {
+  const { root, file, ctx } = await fixture(t);
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-citation-alias-'));
+  t.after(() => fs.rm(parent, { recursive: true, force: true }));
+  const alias = path.join(parent, 'project');
+  await fs.symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const [ref] = await resolveStopCitations(ctx, { citations: [{ path: 'source.txt', start: 1, end: 1 }] }, alias);
+  assert.equal(ref.path, file);
+  assert.equal(ref.sha256, sha256('one\ntwo\nthree'));
+});
+
+test('an attachment retains its requested project alias and rejects retargeting even with identical bytes', async t => {
+  const { root, ctx } = await fixture(t);
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-citation-retarget-'));
+  t.after(() => fs.rm(parent, { recursive: true, force: true }));
+  const alias = path.join(parent, 'project'), other = path.join(parent, 'other');
+  await fs.mkdir(other);
+  await fs.writeFile(path.join(other, 'source.txt'), 'one\ntwo\nthree');
+  await fs.symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const [ref] = await resolveStopCitations(ctx, { citations: [{ path: 'source.txt', start: 1, end: 1 }] }, alias, { attachment: true });
+  assert.equal(ref.requestedPath, path.join(alias, 'source.txt'));
+  assert.equal(await stopAttachmentCurrent(ref), true);
+  await fs.unlink(alias);
+  await fs.symlink(other, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  assert.equal(await stopAttachmentCurrent(ref), false);
 });
 
 test('attachment scope excludes traversal and outside symlink targets unless an exact external source was explicitly allowed', async t => {

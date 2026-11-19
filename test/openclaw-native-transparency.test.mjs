@@ -9,14 +9,14 @@ import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { isNoopToolRequest } from '../lib/openclaw/tools.mjs';
 let output, pluginRoot, createRuntime;
 before(async () => {
-  output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-transparency-build-"));
+  output = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-transparency-build-")));
   pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: output });
   ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
   createRuntime = correctionFixtureRuntime(createRuntime);
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 async function fixture(t, pluginConfig = {}, { shadow = false, acceptanceFeedback } = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-native-lifecycle-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-native-lifecycle-")));
   let runtime;
   t.after(async () => { await runtime?.dispose(); await fs.rm(root, { recursive: true, force: true }); });
   await fs.mkdir(path.join(root, ".runtime-corrector"));
@@ -217,7 +217,7 @@ test('pinned-host no-op guard uses a pre-execution rejection and supports an exp
 });
 
 test('no-op detection preserves changed, unreadable, ambiguous and outside-scope requests', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-noop-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-noop-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'source.txt'), 'alpha\r\nbeta\r\n');
   const patch = (before, after) => `*** Begin Patch\n*** Update File: source.txt\n@@\n-${before}\n+${after}\n*** End Patch`;

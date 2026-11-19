@@ -13,7 +13,7 @@ import { withTestReviewProof } from "./helpers/review-proof.mjs";
 const row = (id, metric = "M01", target = "ARTIFACT") => ({ objectId: `${metric}:${id}`, metricId: metric,
   sourceId: id, sourceRevisionId: `${id}@1`, description: `Check ${id}.`, verificationTarget: target });
 async function fixture(t, objects = [row("R1")]) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-pass-reuse-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-pass-reuse-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const taskId = "pass-reuse", taskRoot = path.join(root, ".runtime-correction", "tasks", taskId);
   const groundTruthPath = path.join(taskRoot, "ground-truth", "current.json"), source = path.join(root, "output.txt");
@@ -145,7 +145,7 @@ test("uncited candidate and declaration mutations invalidate a running collectio
 });
 
 test("an explicit external policy remains a hash dependency without becoming business evidence", async t => {
-  const f = await fixture(t), policyRoot = await fs.mkdtemp(path.join(os.tmpdir(), "rc-external-policy-"));
+  const f = await fixture(t), policyRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-external-policy-")));
   t.after(() => fs.rm(policyRoot, { recursive: true, force: true }));
   const config = path.join(policyRoot, "policy.yaml");
   await fs.writeFile(config, "metrics: [M01]\n");

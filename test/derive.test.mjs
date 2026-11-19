@@ -121,12 +121,12 @@ test("compile precedence: plugin defaults < derived < explicit config", async (t
   assert.equal(explicitCompile.derivation.materialRootsDerived, false);
   assert.equal(explicitCompile.derivation.platformDerived, false);
 
-  // Without a derivation pass the plugin default platform stands unchanged.
+  // Without project markers the general-purpose plugin has no platform default.
   const defaultCompile = compileRuntimeV2Config({
     version: 2,
     implementationCorrection: { enabled: true },
   });
-  assert.equal(defaultCompile.implementationCorrection.platform, "harmonyos");
+  assert.equal(defaultCompile.implementationCorrection.platform, null);
   assert.equal(defaultCompile.derivation, null);
 });
 

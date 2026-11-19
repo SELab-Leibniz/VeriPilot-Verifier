@@ -9,7 +9,7 @@ import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task
 import { atomicWriteJson, sha256 } from "../lib/runtime-v2/utils.mjs";
 
 async function fixture(t, mode) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc scoped cli 空 格-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc scoped cli 空 格-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const task = await ensureTask({ projectRoot: root, sessionId: "business-host" });
   const claims = [{ claimId: "R1", revisionId: "R1@1", category: "requirements", text: "Check the exact original execution result.",

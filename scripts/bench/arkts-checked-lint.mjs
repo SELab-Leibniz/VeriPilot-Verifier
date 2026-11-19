@@ -61,7 +61,7 @@ async function readReport(bytes, snapshot) {
       assert(entry && Object.hasOwn(counts, entry.severity) && typeof entry.message === 'string' && typeof entry.rule === 'string'
         && Number.isSafeInteger(entry.line) && entry.line >= 0 && Number.isSafeInteger(entry.column) && entry.column >= 0);
       counts[entry.severity]++;
-      if (issues.length < 10) issues.push({ file: text(file), line: entry.line, column: entry.column,
+      if (issues.length < 10) issues.push({ file: text(file.replaceAll('\\', '/')), line: entry.line, column: entry.column,
         severity: entry.severity, rule: text(entry.rule), message: text(entry.message) });
     }
   }

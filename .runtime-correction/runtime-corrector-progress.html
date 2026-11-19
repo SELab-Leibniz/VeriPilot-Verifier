@@ -276,7 +276,7 @@
     <section id="expected" aria-labelledby="expected-title expected-title-zh">
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">One task through the whole workflow</h2>
-        <p>The active ON walkthrough selects Flash for coding and Pro for reviews. Its local-test baseline completed. The first document review failed with <code>REVIEWER_RUN_ABORTED</code>; OpenClaw continued to the specification draft, whose review is now active. Proposal is still in progress, with no final Stop result or independent grade.</p>
+        <p>The active ON walkthrough selects Flash for coding and Pro for reviews. Its local-test baseline completed. The first document review failed with <code>REVIEWER_RUN_ABORTED</code>; OpenClaw continued preparing the planning documents. Proposal is still in progress, with no final Stop result or independent grade.</p>
         <p class="callout">The latest completed macOS Sudoku walkthrough carried the same six original requirements through authenticated approval and final Stop. All 15 planned tasks were completed, and six public acceptance checks passed. Independent grading passed 8/10 feature tests and 288/288 regressions. Stop kept the review <code>UNVERIFIED</code>, and no native repair started.</p>
         <p>That completed ON-only engineering trial had a 120-minute workflow limit and took about 26.6 minutes. Trusted SDK records identify 55 Flash and 76 Pro requests; these establish the selected model routes, not the provider’s internal model execution. Document-review token records are incomplete, so no total token figure is reported.</p>
         <div class="table" role="region" aria-label="Latest Sudoku walkthrough" tabindex="0"><table class="evidence">
@@ -295,7 +295,7 @@
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">沿一个任务走完整个流程</h2>
-        <p>当前 ON 全过程试验选用 Flash 编码、Pro 审查，原有本地测试基线已完成。首次文档审查以 <code>REVIEWER_RUN_ABORTED</code> 失败；OpenClaw 继续编写规范草稿，目前正在审查该草稿。Proposal 尚未结束，也没有最终 Stop 结果或独立评分。</p>
+        <p>当前 ON 全过程试验选用 Flash 编码、Pro 审查，原有本地测试基线已完成。首次文档审查以 <code>REVIEWER_RUN_ABORTED</code> 失败；OpenClaw 继续编写方案文档。Proposal 尚未结束，也没有最终 Stop 结果或独立评分。</p>
         <p class="callout">最近一次已结束的 macOS Sudoku 全过程试验，将同样六项原始需求从经过认证的审批保留到最终 Stop。15 项计划任务全部完成，六项公开验收检查全部通过。独立评分中，功能测试通过 8/10，回归测试通过 288/288。Stop 将审查保留为 <code>UNVERIFIED</code>，没有启动原生修复。</p>
         <p>该次已完成的 ON 单组工程试验，工作流时限为 120 分钟，实际耗时约 26.6 分钟。可信 SDK 记录标明 55 次 Flash 和 76 次 Pro 请求，证明所选模型路由，不能证明服务商内部实际执行的模型。文档审查令牌记录不完整，因此不报告总令牌数。</p>
         <div class="table" role="region" aria-label="最新 Sudoku 运行全过程" tabindex="0"><table class="evidence">
@@ -341,6 +341,7 @@
       <details class="evidence-group">
         <summary><span data-report-copy lang="en">Supporting controls on the installed plugin</span><span data-report-copy lang="zh-CN">可安装插件的机制验证</span></summary>
         <div class="language-panel" data-report-copy lang="en">
+        <p>Repository tests now use the pinned OpenClaw host and an explicit English locale. All 356 test files passed locally on Node 24: 4,345 tests passed, 33 were skipped and none failed. Node 18 compatibility and artifact checks also passed. Path, line-ending and teardown fixes retain the evidence checks; each file still has a bounded deadline. CI runs these checks on macOS, Linux and Windows. These controlled tests add no benchmark result.</p>
         <p>The released package passed three stock-OpenClaw controls: approval denial, healthy completion and one native repair. The repair improved independent fixture checks from 3/4 to 4/4 while preserving both approved requirements. Exact delivered feedback, final host receipts and tracked-group cleanup were verified. These scripted controls verify the current package’s correction path through a named function entry. Native callback-review semantics and real-model judgment accuracy remain unverified. They add no formal-pair credit.</p>
         <p>An earlier repair attempt failed the feedback check after the local capture corrupted a Chinese character; the saved SDK prompt retained the correct reference. A byte-split reproduction identified a receiver decoding bug, although the original network chunks were not retained. The fresh controls used a byte-preserving receiver with the same plugin, scripted model behavior and feedback checks. The failed attempt remains recorded and unqualified; its owner process is absent, while exhaustive descendant cleanup was not established.</p>
         <div class="table" role="region" aria-label="Mechanism controls on the installed plugin" tabindex="0"><table class="evidence">
@@ -363,6 +364,7 @@
         </table></div>
         </div>
         <div class="language-panel" data-report-copy lang="zh-CN">
+        <p>仓库测试现使用固定版本的 OpenClaw 宿主，并明确设置英语环境。Node 24 的全部 356 个测试文件在本机通过：4,345 项通过，33 项跳过，没有失败。Node 18 兼容性及安装包检查也已通过。路径、换行和清理修正保留既有证据检查，每个文件仍受明确时限约束。CI 在 macOS、Linux 和 Windows 上执行这些检查。这些受控测试没有增加基准测试结果。</p>
         <p>已交付的安装包通过了三项标准 OpenClaw 对照：拒绝审批、正常完成及一次原生修复。修复把独立对照检查从 3/4 提升到 4/4，始终保留两项获批需求。确切的反馈送达、最终宿主回执及跟踪进程组清理均已核验。这些脚本对照通过具名函数入口验证当前安装包的纠偏执行链。原生回调审查的语义及真实模型判断准确率仍待验证，没有增加正式配对。</p>
         <p>此前一次修复尝试因本机捕获记录损坏一个汉字而未通过反馈检查，SDK 保存的提示词仍保留正确引用。字节拆分复现发现接收器存在解码缺陷，但原始网络分块未被保存。新的对照使用保留完整字节的接收器，插件、脚本模型行为及反馈检查均沿用原配置。失败尝试继续保留，不获得验证资格；其所属进程已不存在，全部后代进程的清理则未得到证明。</p>
         <div class="table" role="region" aria-label="可安装插件的机制对照" tabindex="0"><table class="evidence">

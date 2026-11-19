@@ -110,7 +110,9 @@ async function supportedShellInvocations(command) {
     {
       name: "powershell",
       executable: path.join(windowsRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
-      args: ["-NoProfile", "-NonInteractive", "-Command", command],
+      // Explicitly forward redirected stdin through PowerShell's pipeline so
+      // the native Node child receives both the JSON input and its EOF.
+      args: ["-NoProfile", "-NonInteractive", "-Command", `$input | & { ${command} }`],
     },
     {
       name: "git-bash",

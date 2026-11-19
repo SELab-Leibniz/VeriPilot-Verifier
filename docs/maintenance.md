@@ -5,14 +5,18 @@
 开发环境使用 Node 24.16 或兼容的更高版本；Claude/CodeAgent 的基础兼容性仍在 Node 18 验证。原生 reviewer 的独立开发依赖通过 `npm ci --prefix lib/review-task --ignore-scripts` 安装，保留精确版本及锁文件。
 
 ```sh
+npm ci --prefix lib/review-task --ignore-scripts
+npm install --prefix .runtime-correction/test-host --ignore-scripts --no-audit --no-fund openclaw@2026.7.1-2
 npm run build:plugins
 npm run test:artifacts
-npm test
+npm test -- --openclaw-host .runtime-correction/test-host/node_modules/openclaw
 ```
 
-测试入口只发现 `test/*.test.mjs`，最多并行运行四个独立文件。每个文件默认最多运行 90 秒，超时终止所属进程树、记录失败并继续其他文件；断言失败和中断均返回非零退出码。需要调整单次验证上限时使用 `npm test -- --file-timeout-ms 120000`，不得把超时当成跳过或通过。CI 另有 15 分钟作业上限。
+运行前将 `LANG`（或 `LC_ALL`）设为 `en_US.UTF-8`，使命令式 Hook 的语言与测试断言一致。已有同版本安装时，可直接指定其包目录，无需重复安装。
 
-测试使用本地脚本和受控 reviewer，不调用真实模型。安装宿主契约测试可通过 `RC_OPENCLAW_HOST_ROOT`、`RC_MA_HOST_ROOT`、`RC_MA_ROOT` 指向已安装包；未提供时相关测试跳过。宿主包只读，禁止为通过测试改写安装目录。
+测试入口只发现 `test/*.test.mjs`，最多并行运行四个独立文件。每个文件默认最多运行 180 秒，以容纳原生生命周期测试中的实际等待窗口；超时终止所属进程树、记录失败并继续其他文件，断言失败和中断均返回非零退出码。可通过 `--file-timeout-ms` 设置文件时限，不得把超时当成跳过或通过。CI 显式采用同一文件时限，完整 Node 24 作业上限为 25 分钟，包含宿主安装。Node 18 兼容性作业仍限 15 分钟。
+
+测试使用本地脚本和受控 reviewer，不调用真实模型，也不需要 API key。基线工具使用 OpenClaw 的公开参数校验器，因此完整套件必须通过 `--openclaw-host` 或 `RC_OPENCLAW_HOST_ROOT` 指定匹配的宿主包；缺少时会报错。额外的 MatrixAssistant 安装契约测试可通过 `RC_MA_HOST_ROOT`、`RC_MA_ROOT` 指向已安装包，未提供时这些额外测试跳过。宿主包只读，禁止为通过测试改写安装目录。
 
 命令式宿主的 SessionEnd 只为尚未结束的标准输入保留 100ms 等待；收到 EOF 后先关闭输入看门狗，再加载解析器并写入生命周期日志。它不约束已收到完整输入后的解析和日志写入，也不保证任意资源争抢下的 shell/Node 启动耗时。进程回归保留原有 1200ms 壁钟断言；OpenClaw 原生会话结束直接调用宿主进程内的处理函数，不经过此启动脚本。
 

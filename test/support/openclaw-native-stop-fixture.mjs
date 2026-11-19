@@ -23,7 +23,7 @@ export async function until(predicate, description) {
   }
 }
 export async function basic(t) {
-  const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-"));
+  const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-")));
   const cleanup = {};
   t.after(async () => { await cleanup.dispose?.(); await fs.rm(projectRoot, { recursive: true, force: true }); });
   return { cleanup, projectRoot, sessionId: "host", sessionKey: "agent:main:budget", runId: "business-run",
@@ -42,7 +42,7 @@ export const deferred = t => {
 export function createNativeStopFixture() {
   let output, pluginRoot, createRuntime, findTask, withTaskState, taskDirectory, readReport;
   before(async () => {
-    output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-"));
+    output = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-budget-build-")));
     pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: fileURLToPath(new URL("../../", import.meta.url)), outputRoot: output });
     ({ createOpenClawRuntime: createRuntime } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/runtime.mjs"))));
     createRuntime = correctionFixtureRuntime(createRuntime);

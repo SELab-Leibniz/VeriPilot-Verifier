@@ -13,7 +13,7 @@ const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 
 
 async function workspace(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.mkdir(path.join(root, ".runtime-corrector"), { recursive: true });
   await fs.writeFile(path.join(root, ".runtime-corrector", "config.yaml"), [
@@ -110,7 +110,7 @@ async function onlyTaskState(root) {
 
 test("CodeAgent3-only PreToolUse discovers a plugin-bundled Skill through the canonical root", async (t) => {
   const root = await workspace(t);
-  const outputRoot = await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-artifact-"));
+  const outputRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "plugin-root-propagation-artifact-")));
   t.after(() => fs.rm(outputRoot, { recursive: true, force: true }));
   const pluginRoot = await buildPlugin({ host: "codeagent", sourceRoot: PLUGIN_ROOT, outputRoot });
   await fs.writeFile(path.join(pluginRoot, 'skills/runtime-corrector-control/SKILL.md'), '# Controlled Skill\n\nRead the task before reviewing.\n');

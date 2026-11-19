@@ -20,7 +20,7 @@ const objectsOf = input => Object.values(input.request.population.metrics).flat(
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fixture(t, objects = [object("R1"), object("R2"), object("R3")]) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "review-collector-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "review-collector-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const source = path.join(root, "source.txt");
   await fs.writeFile(source, "Original application source.\nIts actual behavior is observable here.\n");

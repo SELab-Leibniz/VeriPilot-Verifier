@@ -5,9 +5,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { inheritedBusinessMutationScope } from '../scripts/bench/business-mutations.mjs';
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-inherited-scope-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-inherited-scope-')));
   t.after(async () => {
-    if (!path.resolve(root).startsWith(path.join(path.resolve(os.tmpdir()), 'rc-inherited-scope-'))) throw new Error('Unsafe cleanup path');
+    if (!path.resolve(root).startsWith(path.join(await fs.realpath(os.tmpdir()), 'rc-inherited-scope-'))) throw new Error('Unsafe cleanup path');
     await fs.rm(root, { recursive: true, force: true });
   });
   const projectRoot = path.join(root, 'project'); await fs.mkdir(projectRoot);

@@ -198,7 +198,7 @@ const resumedChecklistPage = brief => {
 };
 
 test('a pinned public probe failure survives the independent task-start failure filter', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   const baseline = path.join(root, 'baseline.json');
@@ -214,7 +214,7 @@ test('a pinned public probe failure survives the independent task-start failure 
 });
 
 test('trusts only one complete public receipt with the exact pinned digest and test IDs', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   const snapshot = 'd'.repeat(64);
@@ -238,7 +238,7 @@ test('trusts only one complete public receipt with the exact pinned digest and t
 });
 
 test('selects independent Stop phases explicitly and caches only complete pinned results', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-split-requirement-only-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-split-requirement-only-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project');
   await project(projectRoot, { broken: false });
@@ -402,8 +402,8 @@ test('selects independent Stop phases explicitly and caches only complete pinned
 });
 
 test('an inherited output pipe prevents accepting a visible public requirement receipt', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-drain-'));
-  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-public-requirement-drain-')));
+  t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   await project(root, { broken: false });
   const lines = [
     'RC_REGRESSION_INVENTORY ' + JSON.stringify({ complete: true, executedTests: 1, failures: [] }),
@@ -429,7 +429,7 @@ test('an inherited output pipe prevents accepting a visible public requirement r
 });
 
 test('split original regressions reject incomplete or ambiguous output while retaining the pinned requirement', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-split-regression-output-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-split-regression-output-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project');
   await project(projectRoot, { broken: false });
@@ -778,7 +778,7 @@ test('deferred probe navigation bounds evidence and lists failed cases before pa
 });
 
 test('a cancelled tool submission cannot start its deferred completion check', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-cancelled-handoff-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-cancelled-handoff-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const abort = new AbortController();
   let checked = false;
@@ -863,7 +863,7 @@ test('without existing non-artifact source changes no standing item or evidence 
     } });
   assert.notEqual(result.stop.reasonCode, 'STOP_REGRESSION_CHECK_UNVERIFIED');
   await assert.rejects(fs.access(path.join(taskDirectory(f.root, f.task.taskId), 'regression-check')), { code: 'ENOENT' });
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-none-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-none-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   const collect = (options = {}) => collectRegressionEvidence({ projectRoot: root, ...options });
@@ -884,7 +884,7 @@ test('without existing non-artifact source changes no standing item or evidence 
   assert.equal((await collect()).triggered, true);
   assert.equal((await collect({ artifacts: [{ patterns: ['generated/**'] }] })).triggered, false);
   assert.equal((await collect({ excluded: [path.join(root, 'generated')] })).triggered, false);
-  const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-nogit-'));
+  const outside = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-nogit-')));
   t.after(() => fs.rm(outside, { recursive: true, force: true }));
   assert.deepEqual(await collectRegressionEvidence({ projectRoot: outside }), { available: false, triggered: false, changes: [], testPointers: [] });
 });
@@ -970,7 +970,7 @@ test('an enabled existing-test run is bounded, persisted and referenced from the
 });
 
 test('a disabled or unselected regression check never runs, and an unchanged workspace reuses its result', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-run-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-run-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const marker = path.join(root, '.runtime-correction', 'runs.log');
@@ -992,7 +992,7 @@ test('a disabled or unselected regression check never runs, and an unchanged wor
 });
 
 test('Stop revalidates changed external verifier bytes without invalidating unchanged workspace evidence', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-external-verifier-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-external-verifier-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project');
   await project(projectRoot, { broken: false });
@@ -1023,7 +1023,7 @@ test('Stop revalidates changed external verifier bytes without invalidating unch
 });
 
 test('a verifier which changes while running cannot populate the Stop cache', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-changing-verifier-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-changing-verifier-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project');
   await project(projectRoot, { broken: false });
@@ -1040,7 +1040,7 @@ test('a verifier which changes while running cannot populate the Stop cache', as
 });
 
 async function checkCompletedSuiteRecovery(t, { command, file, healthy, broken, failedTest, prepare }) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-completed-suite-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-completed-suite-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   await prepare?.(root);
@@ -1109,7 +1109,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
 });
 
 test('completed-suite reporting keeps invalid or absent receipts out of the cache', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-completed-suite-invalid-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-completed-suite-invalid-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const cacheDirectory = path.join(root, '.runtime-correction', 'cache');
@@ -1168,7 +1168,7 @@ test('a completed-suite check without a receipt keeps Stop unverified without re
 });
 
 test('changed file permissions invalidate a cached regression result', { skip: process.platform === 'win32' }, async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-mode-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-mode-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const file = path.join(root, 'src/settings.mjs');
@@ -1197,7 +1197,7 @@ test('changed file permissions invalidate a cached regression result', { skip: p
 });
 
 test('a changed symbolic link prevents reuse of a regression result', { skip: process.platform === 'win32' }, async t => {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-linked-'));
+  const directory = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-linked-')));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const root = path.join(directory, 'project');
   await fs.mkdir(root);
@@ -1217,7 +1217,7 @@ test('a changed symbolic link prevents reuse of a regression result', { skip: pr
 });
 
 test('a regression check cannot cache results for a workspace that changed during execution', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-workspace-change-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-workspace-change-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const file = path.join(root, 'src/settings.mjs');
@@ -1237,7 +1237,7 @@ test('a regression check cannot cache results for a workspace that changed durin
 });
 
 test('a timed-out, unlaunched or out-of-budget check is unavailable evidence and never a deviation', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-timeout-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-timeout-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const heartbeat = path.join(root, 'heartbeat.log');
@@ -1279,7 +1279,7 @@ test('a timed-out, unlaunched or out-of-budget check is unavailable evidence and
 });
 
 test('an incomplete native check stays unavailable and is retried on the same workspace', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-worker-unavailable-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-worker-unavailable-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const projectRoot = path.join(root, 'project'), cacheDirectory = path.join(root, 'cache');
   await project(projectRoot);
@@ -1308,7 +1308,7 @@ test('an incomplete native check stays unavailable and is retried on the same wo
 });
 
 test('explicit route environment scopes cached outcomes to the exact runner route', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-runner-route-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-runner-route-')));
   const projectRoot = path.join(root, 'project'), cacheDirectory = path.join(root, 'cache');
   const route = 'RC_TEST_FIXTURE_EXCHANGE';
   const runtime = 'RC_TEST_FIXTURE_RUNTIME', caseKey = 'RC_TEST_FIXTURE_CASE';
@@ -1400,7 +1400,7 @@ test('explicit route environment scopes cached outcomes to the exact runner rout
 });
 
 test('a task-start change set keeps a regression the business already committed', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-committed-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-committed-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   const taskId = 'task-committed-regression';
@@ -1505,7 +1505,7 @@ test('named regression reports need all actionable failures and ignore known fai
 });
 
 test('edited or deleted tests retain their task-start assertions as review evidence', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-contract-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-original-contract-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root);
   const testPath = path.join(root, 'test/settings.test.mjs');
@@ -1521,7 +1521,7 @@ test('edited or deleted tests retain their task-start assertions as review evide
 });
 
 test('related boundary contracts remain visible when many edited ordinary cases exhaust the navigation limit', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-boundary-contract-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-boundary-contract-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await project(root, { broken: false });
   const ordinary = Array.from({ length: 12 }, (_, index) =>

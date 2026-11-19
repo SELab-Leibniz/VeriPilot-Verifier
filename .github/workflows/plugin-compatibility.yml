@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+
 jobs:
   compatibility:
     name: Node 18 / ${{ matrix.os }}
@@ -47,7 +51,7 @@ jobs:
 
   runtime:
     name: Node 24 / ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -59,11 +63,15 @@ jobs:
         with:
           node-version: 24
       - run: npm ci --prefix lib/review-task --ignore-scripts
+      - name: Install pinned OpenClaw test host
+        run: npm install --prefix .ci/openclaw --ignore-scripts --no-package-lock --no-audit --no-fund openclaw@2026.7.1-2
       - run: npm run build:plugins
       - name: Verify artifacts and entry points
         run: npm run test:artifacts
       - name: Run full suite
-        run: npm test
+        # Native lifecycle tests exercise real deadline windows. Windows needs
+        # more than 90 seconds for that file; retain a bounded process deadline.
+        run: npm test -- --openclaw-host=.ci/openclaw/node_modules/openclaw --file-timeout-ms=180000
 
   release:
     name: Publish host-specific plugin archives

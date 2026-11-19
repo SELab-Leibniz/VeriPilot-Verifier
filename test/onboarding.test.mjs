@@ -400,7 +400,7 @@ test("onboarding runs the panel once, adjudicates, freezes the ledger, and journ
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));
   await write(root, ".runtime-corrector/materials/app-requirements.md", "# requirements\n");
-  const plan = onboardingPlan(root);
+  const plan = onboardingPlan(root, { implementationCorrection: { platform: "harmonyos" } });
   const factory = onboardingFakeFactory({
     passOperations: () => [REQUIREMENT_OP, SCAN_CAPABILITY_OP],
     stopAssessment: passingStopAssessment,
@@ -738,7 +738,7 @@ test("onboarded capability claims gate the stop: hard entries block, inferred-on
   await write(root, ".runtime-corrector/materials/app-requirements.md", "The app must integrate scan-kit for barcode scanning.\n");
   await write(root, "transcript.jsonl", transcriptEntries(1));
   await write(root, "entry/src/main/ets/pages/Index.ets", "@Entry struct Index {}");
-  const plan = onboardingPlan(root, { implementationCorrection: { enabled: true } });
+  const plan = onboardingPlan(root, { implementationCorrection: { enabled: true, platform: "harmonyos" } });
   const factory = onboardingFakeFactory({
     // scan-kit is agreed by both passes (majority-confirmed HARD); map-kit is
     // inferred by only one pass and kept by the adjudicator as disputed.
@@ -852,7 +852,7 @@ test("onboarding unions the deterministic table parse with the panel result", as
   const root = await workspace(t);
   await write(root, "transcript.jsonl", transcriptEntries(1));
   await write(root, ".runtime-corrector/materials/app-requirements.md", KIT_TABLE_MD);
-  const plan = onboardingPlan(root);
+  const plan = onboardingPlan(root, { implementationCorrection: { platform: "harmonyos" } });
   // The panel proposes only one table kit (in sloppy casing) plus an inferred
   // SOFT capability the table does not carry.
   const factory = onboardingFakeFactory({

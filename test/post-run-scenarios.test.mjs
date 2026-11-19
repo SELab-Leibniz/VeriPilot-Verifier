@@ -186,7 +186,10 @@ test("restarting after a lost user ACK waits for that run, then releases only th
 
 test("24 sessions keep FIFO task order, bounded reviews and isolated task mutations", async t => {
   let active = 0, maximum = 0;
-  const f = await fixture(t, { concurrency: 3, review: async () => {
+  const terminalRuns = new Set();
+  const f = await fixture(t, { concurrency: 3,
+    waitTerminal: async (_record, runId) => ({ status: terminalRuns.has(runId) ? "ok" : "unknown" }),
+    review: async () => {
     maximum = Math.max(maximum, ++active); await pause(10); active--; return { reviewStatus: "PASS" };
   } });
   const ids = Array.from({ length: 24 }, (_, i) => f.identity(`session-${i}`));
@@ -197,12 +200,14 @@ test("24 sessions keep FIFO task order, bounded reviews and isolated task mutati
     await f.manager.defer(id, { sourceId: "last", text: `last-${i}` });
     await f.manager.mutate(id, { id: first.id, revision: 1, text: `edited-${i}` });
     await f.manager.mutate(id, { id: deleted.id, revision: 1, remove: true });
+    terminalRuns.add(`business-${i}`);
     await f.manager.candidate(id, { runId: `business-${i}`, text: "done", reviewBudgetMs: 15000 });
   }));
   await f.manager.drain(); assert(maximum <= 3); assert(maximum > 1); assert.equal(f.sent.length, 24);
   await Promise.all(ids.map(async (id, i) => {
     const sent = f.sent.find(task => task.sessionId === id.sessionId); assert.equal(sent.text, `edited-${i}`);
     await f.manager.started(id, sent.runId);
+    terminalRuns.add(sent.runId);
     await f.manager.candidate(id, { runId: sent.runId, text: "done", needsReview: false, reviewBudgetMs: 10000 });
   }));
   await f.manager.drain(); assert.equal(f.sent.length, 48);

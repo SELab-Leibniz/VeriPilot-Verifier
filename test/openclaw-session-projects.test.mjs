@@ -235,9 +235,14 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version} host directo
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "off", params: { path: "draft.md" } }, ctx);
   assert.equal(state.abortSignal.aborted, true); assert.equal(f.sharedState.states.size, 0);
   assert.deepEqual(await fs.readdir(f.off), []);
+  // Canceled review scope checks may have resolved the previous directory.
+  // Establish the current selection after those owned tasks settle, then test
+  // that repeated resolution of the unchanged selection stays silent.
+  await f.runtime.waitForBackgroundReviews();
+  await f.projects.resolve({}, ctx);
   const logCount = f.infos.length;
   await f.projects.resolve({}, ctx); await f.projects.resolve({}, ctx);
-  assert.equal(f.infos.length, logCount, "unchanged selection must not flood logs");
+  assert.equal(f.infos.length, logCount, `unchanged selection must not flood logs: ${JSON.stringify(f.infos.slice(logCount))}`);
   const activated = f.infos.filter(x => x.type === "RC_PROJECT_SCOPE_ACTIVATED");
   assert.deepEqual(activated.map(x => [x.previousProjectRoot, x.projectRoot]), [[null, f.a], [f.a, f.b]]);
   assert(f.infos.some(x => x.type === "RC_PROJECT_RESOLVED" && x.projectRoot === f.off && !x.enabled && x.reason === "RC_PROJECT_NOT_ENABLED"));

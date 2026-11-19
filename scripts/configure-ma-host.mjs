@@ -45,7 +45,9 @@ export async function configureMAHost({
     throw new Error("plugins.load.paths must be an array of paths.");
   }
   const portable = pluginRoot.replaceAll("\\", "/");
-  if (!plugins.load.paths.some(value => path.resolve(value) === pluginRoot)) plugins.load.paths.push(portable);
+  const configuredPaths = await Promise.all(plugins.load.paths.map(value =>
+    fs.realpath(path.resolve(value)).catch(() => path.resolve(value))));
+  if (!configuredPaths.includes(pluginRoot)) plugins.load.paths.push(portable);
   if (!plugins.allow.includes(manifest.id)) plugins.allow.push(manifest.id);
   plugins.entries[manifest.id] ??= {};
   const entry = plugins.entries[manifest.id];

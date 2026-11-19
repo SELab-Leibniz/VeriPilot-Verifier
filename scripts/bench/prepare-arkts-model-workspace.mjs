@@ -9,7 +9,7 @@ const execute = promisify(execFile);
 export async function prepareArktsModelWorkspace({ task, outputRoot, cacheRoot, workspaceBase, workspaceRoot, json5Package, preparationTimeoutMs = 180000,
   gitExecutable = process.platform === 'win32' ? 'C:/Program Files/Git/cmd/git.exe' : 'git' }) {
   const cache = path.join(cacheRoot, task.repo.replace('/', '--') + '.git'), projectRoot = shortArktsWorkspace(outputRoot, 'biz', workspaceBase, workspaceRoot);
-  const git = argv => execute(gitExecutable, ['-c', 'core.longpaths=true', ...argv], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: preparationTimeoutMs });
+  const git = argv => execute(gitExecutable, ['-c', 'core.longpaths=true', '-c', 'core.autocrlf=false', ...argv], { windowsHide: true, maxBuffer: 2 * 1024 * 1024, timeout: preparationTimeoutMs });
   await fs.mkdir(outputRoot, { recursive: false });
   await fs.mkdir(path.dirname(projectRoot), { recursive: true });
   await git(['--git-dir', cache, 'cat-file', '-e', `${task.base_commit}^{commit}`]);

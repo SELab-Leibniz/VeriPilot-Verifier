@@ -14,7 +14,7 @@ import { ensureTask, taskDirectory, decisionGuard } from "../lib/runtime-v2/task
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-artifact-candidates-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-artifact-candidates-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const write = async (relative, bytes = relative) => {
     const file = path.join(root, relative);

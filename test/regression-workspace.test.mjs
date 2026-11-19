@@ -10,8 +10,8 @@ import { runRegressionCheck } from '../scripts/bench/arkts-regression-check.mjs'
 import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-isolation-'));
-  t.after(async () => { assert(path.resolve(root).startsWith(path.resolve(os.tmpdir()) + path.sep)); await fs.rm(root, { recursive: true, force: true }); });
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-regression-isolation-')));
+  t.after(async () => { assert(path.resolve(root).startsWith(await fs.realpath(os.tmpdir()) + path.sep)); await fs.rm(root, { recursive: true, force: true }); });
   const source = path.join(root, 'project');
   await fs.mkdir(path.join(source, 'entry/src/test'), { recursive: true });
   await fs.writeFile(path.join(source, 'entry/src/test/widget.test.ets'), 'assert(widget.value === 7)\n');

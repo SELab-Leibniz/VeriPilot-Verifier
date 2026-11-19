@@ -9,7 +9,7 @@ import { captureFiles } from '../lib/review-task/evidence-utils.mjs';
 import { validateJsonSchema } from '../lib/json-schema-validator.mjs';
 
 test('live source_read accepts the numbered option required by original-basis instructions', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-numbered-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-numbered-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'original.txt'), 'first\nsecond\n');
   const tool = createLiveSourceTools(root).find(tool => tool.name === 'read');
@@ -25,7 +25,7 @@ test('live source_read accepts the numbered option required by original-basis in
 });
 
 test('broad navigation omits caches but preserves project build sources and explicit cache access', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-nav-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-nav-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const files = ['src/main.ets', 'build/entry.ts', 'target/manual.py', 'vendor/adapter.js',
     '.hvigor/cache.ets', 'oh_modules/dependency.ets', '.test/generated.ets', '.venv/lib.py', '__pycache__/cached.py'];
@@ -49,7 +49,7 @@ test('broad navigation omits caches but preserves project build sources and expl
 });
 
 test('navigation checks original paths, rereads changes, and honors cancellation', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-fresh-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-fresh-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, 'main.ts'); await fs.writeFile(file, 'before\n');
   const observations = [], paths = [];
@@ -68,7 +68,7 @@ test('navigation checks original paths, rereads changes, and honors cancellation
 });
 
 test('live and frozen find explain wildcard misses without silently changing literal semantics', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-literal-find-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-literal-find-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'main.ets'), 'original NEEDLE_IN_CONTENT\n');
   for (const tools of [createLiveSourceTools(root), createSourceTools(root, await captureFiles(root))]) {
@@ -87,8 +87,27 @@ test('live and frozen find explain wildcard misses without silently changing lit
   }
 });
 
+test('frozen navigation canonicalizes its selected root and retains traversal and link bounds', async t => {
+  const parent = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frozen-scope-')));
+  t.after(() => fs.rm(parent, { recursive: true, force: true }));
+  const root = path.join(parent, 'project'), outside = path.join(parent, 'outside'), alias = path.join(parent, 'alias');
+  await fs.mkdir(root); await fs.mkdir(outside);
+  await fs.writeFile(path.join(root, 'source.txt'), 'inside\n');
+  await fs.writeFile(path.join(outside, 'secret.txt'), 'outside\n');
+  const tools = new Map(createSourceTools(root, await captureFiles(root)).map(tool => [tool.name, tool]));
+  await fs.symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const aliased = new Map(createSourceTools(alias, await captureFiles(root)).map(tool => [tool.name, tool]));
+  assert.deepEqual(JSON.parse(toolText(await aliased.get('ls').execute('list', {}))).hits, ['source.txt']);
+  assert.match(toolText(await aliased.get('read').execute('read', { path: 'source.txt' })), /inside/u);
+  await fs.symlink(outside, path.join(root, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+  for (const selected of [tools, aliased]) {
+    for (const name of ['read', 'ls', 'find', 'grep']) for (const target of ['../outside/secret.txt', 'escape/secret.txt'])
+      await assert.rejects(selected.get(name).execute('outside', { path: target, pattern: 'outside' }), /outside snapshot/u);
+  }
+});
+
 test('recursive entry budget reports an incomplete miss and preserves direct and narrowed external access', async t => {
-  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-budget-'));
+  const parent = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-budget-')));
   t.after(() => fs.rm(parent, { recursive: true, force: true }));
   const root = path.join(parent, 'project'); await fs.mkdir(root);
   for (const file of ['a.ts', 'b.ts', 'c.ts', 'z.ts']) await fs.writeFile(path.join(parent, file), file === 'z.ts' ? 'needle\n' : 'other\n');
@@ -106,7 +125,7 @@ test('recursive entry budget reports an incomplete miss and preserves direct and
 });
 
 test('recursive byte and empty-directory budgets bound scans without manufacturing search completeness', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-byte-budget-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-live-byte-budget-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'a.ts'), '12345678');
   await fs.writeFile(path.join(root, 'b.ts'), 'needle');

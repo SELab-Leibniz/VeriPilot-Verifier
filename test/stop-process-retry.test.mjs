@@ -12,7 +12,7 @@ import { observedLegacyStop } from "./helpers/legacy-review.mjs";
 import {scriptedProductionProofs} from './helpers/observed-review.mjs';
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-process-retry-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-process-retry-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const task = await ensureTask({ projectRoot: root, sessionId: "retry-host" });
   await applyGroundTruthDelta({ projectRoot: root, taskId: task.taskId, delta: { operations: [

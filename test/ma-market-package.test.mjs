@@ -13,14 +13,15 @@ const sourceRoot = fileURLToPath(new URL("../", import.meta.url));
 const require = createRequire(import.meta.url);
 let output, result;
 before(async () => {
-  output = await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-package-"));
+  output = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-package-")));
   result = await buildMAPackage({ sourceRoot, outputRoot: path.join(output, "build output 中文") });
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 
 test("MA release is a flat tar.gz with complete ESM payload and named CJS lifecycle exports", async () => {
   const root = path.join(output, "unpacked"); await fs.mkdir(root);
-  execFileSync("tar", ["-xzf", result.archive, "-C", root], { windowsHide: true });
+  execFileSync("tar", ["-xzf", path.basename(result.archive), "-C", path.relative(path.dirname(result.archive), root)],
+    { cwd: path.dirname(result.archive), windowsHide: true });
   assert.deepEqual((await fs.readdir(root)).sort(), ["README.md", "index.js", "installer.mjs", "package.json", "payload"]);
   const wrapper = require(path.join(root, "index.js"));
   assert.equal(typeof wrapper.activate, "function"); assert.equal(typeof wrapper.deactivate, "function");

@@ -31,7 +31,7 @@ async function sourceSelection(descriptor, needle) {
 }
 
 async function fixture(t, { hugeSecond = false, withSpaces = false } = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), withSpaces ? "rc scoped native 空 格-" : "rc-scoped-native-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), withSpaces ? "rc scoped native 空 格-" : "rc-scoped-native-")));
   // Native archive cleanup may outlive the collector's bounded close on Windows.
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const task = await ensureTask({ projectRoot: root, sessionId: "scoped-business-host" });

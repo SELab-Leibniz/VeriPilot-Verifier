@@ -26,8 +26,8 @@ async function write(root, relativePath, contents) {
 
 
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "reviewer hook 空 格-"));
-  const artifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "reviewer-hook-plugin-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "reviewer hook 空 格-")));
+  const artifactOutput = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "reviewer-hook-plugin-")));
   t.after(() => Promise.all([
     fs.rm(root, { recursive: true, force: true }),
     fs.rm(artifactOutput, { recursive: true, force: true }),

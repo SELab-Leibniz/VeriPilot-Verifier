@@ -1112,30 +1112,37 @@ test("a read-only continuation retries an interrupted Stop, while accepted work 
     { status: "PASS" },
   ]) await t.test(reasonCode ?? status, async t => {
     const f = await lifecycle(t, { waitMode: "until_pass" });
-    await f.runtime.postRuns.release(f.post(), "PREVIOUS_RUN_ENDED");
-    const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-    await withTaskState({ projectRoot: f.root, taskId: task.taskId }, current => {
-      current.status = status === "UNVERIFIED" ? "STOPPED_UNVERIFIED" : "ACTIVE";
-      current.verification = { status, ...(reasonCode ? { reasonCode } : {}) };
-      if (reasonCode) current.stop.lastAssessmentId = 'prior-interrupted-assessment';
-    });
-    await fs.appendFile(path.join(f.root, 'native.jsonl'), '\n' + JSON.stringify({ type: 'message', id: 'continue-verification', parentId: 'u',
-      message: { role: 'user', content: 'Continue pending final verification.' } }) + '\n');
-    const next = { ...f.ctx, runId: 'read-only-continuation' };
-    await f.runtime.prompt({ prompt: 'Continue pending final verification.' }, next);
-    assert.equal(f.state.nativeNeedsStop, status === "UNVERIFIED");
-    assert.equal(f.state.nativeRetryUnverifiedStop, reasonCode === "STOP_SESSION_MIGRATION_REQUIRED");
-    assert.equal(f.state.nativeRetryEvidenceStop, reasonCode === "BASELINE_INPUT_CHANGED");
-    if (status === "UNVERIFIED") {
-      await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
-      const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');
-      const after = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
-      assert.equal(review.reviewStatus, 'NO_DEVIATION_FOUND', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
-        taskStatus: after.status, verification: { status: after.verification?.status, reason: after.verification?.reasonCode, assessmentId: after.verification?.assessmentId },
-        armed: after.stop.armedAtStart, assessmentReason: f.state.nativeAssessment?.outcome?.reason,
-        assessmentMode: f.state.nativeAssessment?.outcome?.assessmentMode, warnings: f.warnings.slice(-2) }));
-    } else {
-      assert.equal(f.calls(), 0, 'accepted work must not trigger another private review');
+    try {
+      await f.runtime.postRuns.release(f.post(), "PREVIOUS_RUN_ENDED");
+      const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+      await withTaskState({ projectRoot: f.root, taskId: task.taskId }, current => {
+        current.status = status === "UNVERIFIED" ? "STOPPED_UNVERIFIED" : "ACTIVE";
+        current.verification = { status, ...(reasonCode ? { reasonCode } : {}) };
+        if (reasonCode) current.stop.lastAssessmentId = 'prior-interrupted-assessment';
+      });
+      await fs.appendFile(path.join(f.root, 'native.jsonl'), '\n' + JSON.stringify({ type: 'message', id: 'continue-verification', parentId: 'u',
+        message: { role: 'user', content: 'Continue pending final verification.' } }) + '\n');
+      const next = { ...f.ctx, runId: 'read-only-continuation' };
+      await f.runtime.prompt({ prompt: 'Continue pending final verification.' }, next);
+      assert.equal(f.state.nativeNeedsStop, status === "UNVERIFIED");
+      assert.equal(f.state.nativeRetryUnverifiedStop, reasonCode === "STOP_SESSION_MIGRATION_REQUIRED");
+      assert.equal(f.state.nativeRetryEvidenceStop, reasonCode === "BASELINE_INPUT_CHANGED");
+      if (status === "UNVERIFIED") {
+        await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey, payload: { text: 'Implementation complete; verify actual acceptance.' } }, next);
+        const [review] = await within(f.runtime.waitForNativeReviews(), 'resumed acceptance without dummy source edits');
+        const after = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+        assert.equal(review.reviewStatus, 'NO_DEVIATION_FOUND', JSON.stringify({ reasonCode: review.reasonCode, status: review.reviewStatus, calls: f.calls(),
+          taskStatus: after.status, verification: { status: after.verification?.status, reason: after.verification?.reasonCode, assessmentId: after.verification?.assessmentId },
+          armed: after.stop.armedAtStart, assessmentReason: f.state.nativeAssessment?.outcome?.reason,
+          assessmentMode: f.state.nativeAssessment?.outcome?.assessmentMode, warnings: f.warnings.slice(-2) }));
+      } else {
+        assert.equal(f.calls(), 0, 'accepted work must not trigger another private review');
+      }
+    } finally {
+      // prompt() can start background bookkeeping even when PASS correctly
+      // avoids a new Stop review. Drain these owned writes before fixture rm.
+      await within(f.runtime.waitForBackgroundReviews(), 'continuation background bookkeeping');
+      await within(f.runtime.waitForNativeReviews({ drain: true }), 'continuation Stop bookkeeping');
     }
   });
 });
