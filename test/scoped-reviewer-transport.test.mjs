@@ -13,6 +13,7 @@ import { REVIEW_SCOPE_REQUEST_BYTES } from "../lib/runtime-v2/review-scope.mjs";
 import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 import { atomicWriteJson, sha256 } from "../lib/runtime-v2/utils.mjs";
 import { observeInternalTool } from "../lib/openclaw/internal-context.mjs";
+import { DEFAULT_REVIEW_TIMEOUT_MS } from "../lib/review-timeout.mjs";
 
 const json = async file => JSON.parse(await fs.readFile(file, "utf8"));
 const output = value => ({ payloads: [{ text: typeof value === "string" ? value : JSON.stringify(value) }], meta: {} });
@@ -260,16 +261,19 @@ test("scoped implementation transport retains exact production ownership for rel
 test("implementation review dispatches short native tasks and preserves siblings when a single obligation exceeds the input budget", async t => {
   for (const hugeSecond of [false, true]) await t.test(hugeSecond ? "oversized middle obligation" : "all obligations fit", async t => {
     const f = await fixture(t, { hugeSecond }), before = await fs.readFile(f.groundTruthPath, "utf8");
+    const itemTimeoutMs = 10000;
     const n = native(f, async ({ request }) => {
       const rows = rowsOf(request); assert.equal(rows.length, 1);
       assert.equal(request.sourceManifest, undefined);
       assert.ok(request.reviewSources.sourceManifest.path);
       return output({ summary: "Compared production code for the assigned obligation.", findings: [], metricObjectJudgements: rows.map(row => ({
         objectId: row.objectId, judgement: "PASS", reason: "The current production source establishes this obligation.", evidence: [`${f.source}#L1-L2`] })) });
-    });
+    }, { reviewerTimeoutMs: itemTimeoutMs });
     let deviceCalls = 0;
     const result = await runImplementationReview({ projectRoot: f.root, sessionCwd: f.root, taskId: f.taskId,
-      parentSessionId: "business-host", runtimeV2: { locale: "en", reviewers: { implementationReviewer: { timeoutMs: 10000, formatRepairAttempts: 0 } },
+      // Scope and ownership are independent of durable preparation latency.
+      // Use the shipped collection window; native tasks retain their 10s cap.
+      parentSessionId: "business-host", runtimeV2: { locale: "en", reviewers: { implementationReviewer: { timeoutMs: DEFAULT_REVIEW_TIMEOUT_MS, formatRepairAttempts: 0 } },
         implementationCorrection: { platform: null }, dynamicGroundTruth: { materialRoots: [] } }, reviewerFactory: n.factory,
       population: f.population(["R1", "R2", "R3"]), groundTruth: f.groundTruth, groundTruthPath: f.groundTruthPath,
       rootCauseIds: ["IMPLEMENTATION_BEHAVIOR_MISMATCH"], deviceVerifier: async () => {
@@ -281,8 +285,16 @@ test("implementation review dispatches short native tasks and preserves siblings
     assert.equal(result.sourceManifestCount, 1);
     assert.equal(result.status, hugeSecond ? "FAILED" : "COMPLETED");
     assert.equal(result.collection.complete, !hugeSecond);
+    if (JSON.stringify(result.metricObjectJudgements.map(row => row.judgement))
+      !== JSON.stringify(["PASS", hugeSecond ? "UNVERIFIED" : "PASS", "PASS"])) console.error("SCOPED_TRANSPORT_FAILURE " + JSON.stringify({
+      status: result.status, complete: result.collection.complete,
+      judgements: result.metricObjectJudgements.map(({ objectId, judgement }) => ({ objectId, judgement })),
+      failures: result.collection.failures.map(({ code, objectIds }) => ({ code, objectIds })),
+      nativeCalls: n.calls.map(({ params, request }) => ({ objectIds: rowsOf(request).map(row => row.objectId), timeoutMs: params.timeoutMs })),
+    }));
     assert.deepEqual(result.metricObjectJudgements.map(row => row.judgement), ["PASS", hugeSecond ? "UNVERIFIED" : "PASS", "PASS"]);
     assert.equal(n.calls.length, hugeSecond ? 2 : 3);
+    assert(n.calls.every(({ params }) => params.timeoutMs > 0 && params.timeoutMs <= itemTimeoutMs));
     assert.equal(new Set(n.calls.map(call => call.params.sessionId)).size, n.calls.length);
     if (hugeSecond) assert.equal(result.collection.failures[0].code, "REVIEW_SCOPE_TOO_LARGE");
     for (const item of result.collection.items) await fs.access(item.path);

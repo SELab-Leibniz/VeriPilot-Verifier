@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 import {runStartedHostEvent as handleRuntimeV2Event} from "./helpers/started-host.mjs";
 import { compileRuntimeV2Config, METRIC_IDS } from "../lib/runtime-v2/config.mjs";
 import { applyGroundTruthDelta } from "../lib/runtime-v2/ground-truth-ledger.mjs";
@@ -99,6 +100,7 @@ test("complete isolated reviews retain the original full-population PASS behavio
 });
 
 test("explicit verify_only uses the caller's current-output scope without a model classifier", async t => {
+  semanticReviewClock(t, { timeoutMs: 15000 });
   const f = await fixture(t, -1, "INTERMEDIATE");
   const state = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.task.taskId), "task.json"), "utf8"));
   const result = await f.run({ assessmentContext: { mode: "verify_only", assessmentId: "caller-scope",

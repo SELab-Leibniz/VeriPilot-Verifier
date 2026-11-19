@@ -17,6 +17,7 @@ import { ensureTask } from '../lib/runtime-v2/task-store.mjs';
 import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { loadConfig } from '../lib/runtime-corrector.mjs';
 import { correctionFixtureRuntime } from './support/openclaw-project-scope.mjs';
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 
 const pluginRoot = fileURLToPath(new URL('../', import.meta.url));
 const userText = 'Preserve  empty\ninput behavior.';
@@ -372,6 +373,31 @@ const briefMarker = '[runtime-corrector:feedback]';
 const briefTitle = '[RC implementation hints | advisory]';
 const deliveredBrief = result => result?.result.content.at(-1)?.text;
 
+// This semantic delivery scenario owns the frame clock. Filesystem work and
+// retry backoffs stay real; only its declared ten-second role budget advances.
+function midTurnFrameClock(t) {
+  const budgetMs = 10000;
+  const clock = semanticReviewClock(t, { timeoutMs: budgetMs });
+  const RealDate = Date;
+  const LogicalDate = new Proxy(RealDate, {
+    apply() { return new RealDate(clock.now()).toString(); },
+    construct(target, args, newTarget) {
+      return Reflect.construct(target, args.length ? args : [clock.now()], newTarget);
+    },
+  });
+  t.mock.method(globalThis, 'Date', LogicalDate);
+  const nativeTimeout = AbortSignal.timeout;
+  t.mock.method(AbortSignal, 'timeout', milliseconds => {
+    if (milliseconds !== budgetMs) return nativeTimeout(milliseconds);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new DOMException('Frame deadline expired', 'TimeoutError')), budgetMs);
+    t.after(() => clearTimeout(timer));
+    return controller.signal;
+  });
+  return clock;
+}
+
+
 test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count', async t => {
   const f = await fixture(t, { nativeHooks: true });
   const task = await ensureTask({ projectRoot: f.projectRoot, sessionId: f.sessionId });
@@ -394,6 +420,7 @@ test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit 
 });
 
 test('6.4.2 and 6.4.5: a frame that becomes ready mid-turn follows existing feedback on the next result', async t => {
+  midTurnFrameClock(t);
   let finish;
   const pending = new Promise(resolve => { finish = resolve; });
   t.after(finish);
@@ -677,4 +704,31 @@ test('check proposers follow family and metric switches and need project documen
   await off.prompt();
   assert.equal(Object.hasOwn(await off.frame(), 'checks'), false);
   assert(!off.calls.some(call => call.kind === 'check'));
+});
+
+
+test('the mid-turn semantic frame still expires at its unchanged logical ten-second budget', async t => {
+  const clock = midTurnFrameClock(t);
+  let finish, begin;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const entered = new Promise(resolve => { begin = resolve; });
+  t.after(finish);
+  const f = await fixture(t, { nativeHooks: true, propose: async ({ params }) => {
+    begin(params.abortSignal);
+    await pending;
+    return ordinaryProposal();
+  } });
+  assert.equal(await f.prompt(), undefined);
+  const signal = await entered;
+  clock.advance(9999);
+  assert.equal(signal.aborted, false);
+  clock.advance(1);
+  assert.equal(signal.aborted, true);
+  finish();
+  const frame = await f.frame();
+  assert.equal(frame.status, 'unavailable');
+  assert.equal(frame.reason, 'TIMEOUT');
+  assert.deepEqual(frame.guidance, []);
+  assert.equal(await f.toolResult('after-expiry'), undefined);
+  assert.deepEqual(await f.deliveries(), []);
 });
