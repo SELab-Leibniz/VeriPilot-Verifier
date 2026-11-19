@@ -80,6 +80,83 @@ for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: packaged in
   assert.equal((await f.json("rc-session", f.a, "on")).effectiveEnabled, true);
 });
 
+for (const version of ["2026.7.1-2", "2026.10.3"]) test(`${version}: explicit full-plan init applies only the packaged topology and its rules`, async t => {
+  const f = await fixture(t, version);
+  const defaults = path.join(pluginRoot, ".runtime-corrector-default");
+  const baseline = parseSimpleYaml(await fs.readFile(path.join(defaults, "config.yaml"), "utf8"));
+  const topology = parseSimpleYaml(await fs.readFile(path.join(defaults, "openspec-full-plan.topology.yaml"), "utf8"));
+  const result = await f.json("rc-project", f.a, "init openspec-full-plan");
+  assert.equal(result.profile, "openspec-full-plan");
+  assert.equal(result.projectRoot, f.projectRoot);
+  assert.equal(result.enabled, false);
+  baseline.reviewers.defaults.model = "custom/current-reviewer";
+  const config = parseSimpleYaml(await fs.readFile(f.file, "utf8"));
+  assert.deepEqual(config, { ...baseline, ...topology });
+  assert.equal(config.enabled, false);
+  assert.equal(config.sessionDefaults.enabled, false);
+  assert.equal(config.artifacts.length, 1);
+  assert.equal(config.artifacts[0].review.deferUntilBundleComplete, true);
+  assert.deepEqual(config.workflow.correlation.keys, ["changeName"]);
+  assert.deepEqual(config.workflow.edges, []);
+  assert.deepEqual(await fs.readFile(path.join(path.dirname(f.file), "openspec-plan.rules.yaml")),
+    await fs.readFile(path.join(defaults, "openspec-plan.rules.yaml")));
+  assert.deepEqual((await fs.readdir(path.dirname(f.file))).sort(),
+    ["README.md", "config.reference.yaml", "config.yaml", "example.reviewer.md", "example.rules.yaml", "openspec-plan.rules.yaml"]);
+  await assert.rejects(fs.access(path.join(f.other, ".runtime-corrector")), { code: "ENOENT" });
+});
+
+test("full-plan init preserves strict policy and model settings supplied by the packaged defaults", async t => {
+  const f = await fixture(t), customPlugin = path.join(f.root, "custom-plugin");
+  await fs.cp(pluginRoot, customPlugin, { recursive: true });
+  const defaultsFile = path.join(customPlugin, ".runtime-corrector-default/config.yaml");
+  const original = (await fs.readFile(defaultsFile, "utf8"))
+    .replace("artifactCorrection:\n", "artifactCorrection:\n  requireOpenSpecProposalCoverage: true\n  requireOpenSpecPlanReadiness: true\n")
+    .replace("stopCorrection:\n", "stopCorrection:\n  requireCurrentProductionCoverage: true\n")
+    .replace("effort: low", "effort: high");
+  await fs.writeFile(defaultsFile, original);
+  const before = parseSimpleYaml(original);
+  const result = await initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot: customPlugin,
+    reviewerModel: () => "custom/operator-reviewer", assertCurrent: async () => {}, profile: "openspec-full-plan" });
+  assert.equal(result.profile, "openspec-full-plan");
+  const actual = parseSimpleYaml(await fs.readFile(f.file, "utf8"));
+  const topology = parseSimpleYaml(await fs.readFile(path.join(customPlugin, ".runtime-corrector-default/openspec-full-plan.topology.yaml"), "utf8"));
+  before.reviewers.defaults.model = "custom/operator-reviewer";
+  assert.deepEqual(actual, { ...before, ...topology });
+  assert.equal(actual.artifactCorrection.requireOpenSpecProposalCoverage, true);
+  assert.equal(actual.artifactCorrection.requireOpenSpecPlanReadiness, true);
+  assert.equal(actual.stopCorrection.requireCurrentProductionCoverage, true);
+  assert.equal(actual.reviewers.defaults.effort, "high");
+});
+
+test("init profile typos are rejected before filesystem changes and an existing policy is never converted", async t => {
+  const f = await fixture(t);
+  for (const args of ["init openspec-full-plans", "init openspec-full-plan extra", "status openspec-full-plan", "on openspec-full-plan"]) {
+    assert.match(await f.run("rc-project", f.a, args), /用法/u);
+    assert.deepEqual(await fs.readdir(f.projectRoot), []);
+  }
+  await assert.rejects(initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot,
+    reviewerModel: () => "custom/reviewer", assertCurrent: async () => {}, profile: "typo" }), /RC_PROJECT_PROFILE_INVALID/u);
+  await f.run("rc-project", f.a, "init");
+  const original = await fs.readFile(f.file, "utf8");
+  assert.match(await f.run("rc-project", f.a, "init openspec-full-plan"), /RC_PROJECT_CONFIG_EXISTS/u);
+  assert.equal(await fs.readFile(f.file, "utf8"), original);
+  await assert.rejects(fs.access(path.join(path.dirname(f.file), "openspec-plan.rules.yaml")), { code: "ENOENT" });
+});
+
+test("full-plan init with a missing companion or stale project never publishes a partial policy", async t => {
+  const f = await fixture(t), customPlugin = path.join(f.root, "incomplete-plugin");
+  await fs.cp(pluginRoot, customPlugin, { recursive: true });
+  await fs.rm(path.join(customPlugin, ".runtime-corrector-default/openspec-plan.rules.yaml"));
+  await assert.rejects(initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot: customPlugin,
+    reviewerModel: () => "custom/reviewer", assertCurrent: async () => {}, profile: "openspec-full-plan" }), { code: "ENOENT" });
+  assert.deepEqual(await fs.readdir(f.projectRoot), []);
+  let checks = 0;
+  await assert.rejects(initializeProjectConfig({ projectRoot: f.projectRoot, pluginRoot,
+    reviewerModel: () => "custom/reviewer", profile: "openspec-full-plan",
+    async assertCurrent() { if (++checks === 2) throw new Error("HOST_SESSION_REPLACED_OR_MISSING"); } }), /HOST_SESSION_REPLACED_OR_MISSING/u);
+  assert.deepEqual(await fs.readdir(f.projectRoot), []);
+});
+
 test("project gates override sessions while default changes leave saved session choices intact", async t => {
   const f = await fixture(t);
   await f.run("rc-project", f.a, "init");

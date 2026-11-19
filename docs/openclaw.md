@@ -8,7 +8,9 @@ Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构�
 
 一次已确认完成的多文件写入，如果各文件对应同一审查节点、相同完整材料、权限、规则和需求绑定，可共用一个新语义审查。每个文件仍单独保存快照、机械检查及审查关联；宿主在调度和发布前重新核对完整材料清单及当前内容。后续写入必须重新审查。不同节点、未完成命令、动态 Ground Truth 和运行时指标上下文继续分别处理，已获批方案的即时漂移检查仍先于语义审查执行。
 
-需要减少 OpenSpec 草稿阶段的反复语义审阅时，可显式选择安装包 `.runtime-corrector-default/openspec-full-plan.topology.yaml`：备份当前项目配置，将随附 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`，只合入 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值，并核对原有拓扑与自定义审阅标准。它不是独立配置，不能覆盖整个 `config.yaml`；模型、时限、严格原文覆盖与任务就绪要求、Stop、验证及项目/会话开关均保留。初始化不会自动选择或复制可选资源。此拓扑要求同一变更的 proposal、design、tasks 和至少一份差量规格，齐备前保留确定性检查并延后语义审阅，齐备后读取当前整包；随后每次成员修改都重新审阅。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。文件齐备不证明需求、所有能力规格或任务完整，也不替代 Apply 前既有的 OpenSpec 校验、当前完整方案覆盖与 READY 检查，未启用的严格检查不会因此自动开启。
+新项目可用 `/rc-project init openspec-full-plan` 选择整包审阅：初始化只替换默认配置的 `enabledStages`、`artifacts`、`workflow`，复制配套规则，保留模型及其余策略，项目和首次会话仍关闭。普通 `/rc-project init` 保持原有逐文档拓扑；两种初始化均拒绝覆盖已有 `.runtime-corrector/`。
+
+已有项目需要减少 OpenSpec 草稿阶段的反复语义审阅时，可显式选择安装包 `.runtime-corrector-default/openspec-full-plan.topology.yaml`：备份当前项目配置，将随附 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`，只合入 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值，并核对原有拓扑与自定义审阅标准。它不是独立配置，不能覆盖整个 `config.yaml`；模型、时限、严格原文覆盖与任务就绪要求、Stop、验证及项目/会话开关均保留。此拓扑要求同一变更的 proposal、design、tasks 和至少一份差量规格，齐备前保留确定性检查并延后语义审阅，齐备后读取当前整包；随后每次成员修改都重新审阅。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。文件齐备不证明需求、所有能力规格或任务完整，也不替代 Apply 前既有的 OpenSpec 校验、当前完整方案覆盖与 READY 检查，未启用的严格检查不会因此自动开启。
 
 当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。
 
