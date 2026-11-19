@@ -7,6 +7,7 @@ import { readMaterialBasis } from "../lib/openclaw/material-basis.mjs";
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
+import { runtimeFailureDiagnostics } from "./helpers/runtime-failure-diagnostics.mjs";
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
@@ -221,27 +222,53 @@ test("until_pass execution watchdog closes an unfinished correction and fences i
 });
 
 test("kitchen parent expiry closes an admitted receipt and terminalizes the task while a child review is running", async t => {
-  const started = deferred(t), finish = deferred(t); let childRunId, calls = 0;
-  const f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000,
-    review: async () => { if (++calls === 1) return true; started.resolve(); await finish.promise; return false; } });
-  f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
-  await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
-  await within(f.runtime.waitForNativeReviews(), "native review settlement");
-  const child = { ...f.ctx, runId: childRunId };
-  await f.runtime.prompt({ prompt: "RC feedback" }, child);
-  await fs.writeFile(path.join(f.root,'draft.md'),'The changed current source requires a fresh child review.\n');
-  await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
-  await within(started.promise, "started signal");
-  await f.runtime.postRuns.release(f.post(), "POST_RUN_EXECUTION_TIMEOUT"); finish.resolve();
-  await within(f.runtime.waitForNativeReviews({ drain: true }), "native review settlement");
-  let task;
-  for (let i = 0; i < 30; i++) { task = await findTask({ projectRoot: f.root, sessionId: "host" });
-    if (task.status === "STOPPED_UNVERIFIED") break; await pause(10); }
-  assert.equal(task.status, "STOPPED_UNVERIFIED"); assert.equal(task.verification.status, "UNVERIFIED");
-  assert.equal(task.verification.previousVerification.status, "DEVIATION");
-  assert.equal(task.stop.correctionAttempts, 1); assert.equal(f.hostAbort.signal.aborted, false);
-  const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
-  assert(receipt.finishedAt);assert.equal(receipt.status,'CANCELLED');
+  let f, childRunId, calls = 0, finishReleased = false, phase = 'SETUP';
+  const beganAt = Date.now();
+  try {
+    const started = deferred(t), finish = deferred(t);
+    phase = 'LIFECYCLE_SETUP';
+    f = await lifecycle(t, { deviation: true, waitMode: "until_pass", hookTimeoutMs: 20000, waitTimeoutMs: 20000,
+      review: async () => { if (++calls === 1) return true; started.resolve(); await finish.promise; return false; } });
+    f.api.runtime.subagent = { run: async args => { childRunId = args.idempotencyKey; return { runId: childRunId }; } };
+    phase = 'INITIAL_REPLY';
+    await f.runtime.reply({ kind: "final", runId: f.ctx.runId, sessionKey: f.ctx.sessionKey, payload: { text: "Delivered." } }, f.ctx);
+    phase = 'INITIAL_PARENT_REVIEW_SETTLEMENT';
+    await within(f.runtime.waitForNativeReviews(), "initial parent review settlement");
+    const child = { ...f.ctx, runId: childRunId };
+    phase = 'CHILD_PROMPT';
+    await f.runtime.prompt({ prompt: "RC feedback" }, child);
+    await fs.writeFile(path.join(f.root,'draft.md'),'The changed current source requires a fresh child review.\n');
+    phase = 'CHILD_REVIEW_DISPATCH';
+    await f.runtime.agentEnd({ runId: childRunId, success: true, messages: [{ role: "assistant", content: "Rechecked." }] }, child);
+    phase = 'CHILD_REVIEW_STARTED';
+    await within(started.promise, "started signal");
+    phase = 'PARENT_EXPIRY';
+    await f.runtime.postRuns.release(f.post(), "POST_RUN_EXECUTION_TIMEOUT"); finish.resolve(); finishReleased = true;
+    phase = 'POST_EXPIRY_CHILD_REVIEW_SETTLEMENT';
+    await within(f.runtime.waitForNativeReviews({ drain: true }), "post-expiry child review settlement");
+    phase = 'TASK_TERMINAL';
+    let task;
+    for (let i = 0; i < 30; i++) { task = await findTask({ projectRoot: f.root, sessionId: "host" });
+      if (task.status === "STOPPED_UNVERIFIED") break; await pause(10); }
+    assert.equal(task.status, "STOPPED_UNVERIFIED"); assert.equal(task.verification.status, "UNVERIFIED");
+    assert.equal(task.verification.previousVerification.status, "DEVIATION");
+    assert.equal(task.stop.correctionAttempts, 1); assert.equal(f.hostAbort.signal.aborted, false);
+    phase = 'RECEIPT_TERMINAL';
+    const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
+    assert(receipt.finishedAt);assert.equal(receipt.status,'CANCELLED');
+  } catch (error) {
+    let post, diagnostics;
+    try { post = f?.post(); } catch { /* No post-run record may exist yet. */ }
+    try {
+      const { calls: unusedCalls, ...safe } = await runtimeFailureDiagnostics({ root: f?.root, post });
+      diagnostics = safe;
+    } catch { diagnostics = { unavailable: 'DIAGNOSTIC_READ_FAILED' }; }
+    t.diagnostic(JSON.stringify({ phase, observedAt: 'FAILURE_DIAGNOSTIC', elapsedMs: Date.now() - beganAt,
+      reviewFactoryCalls: f?.calls(), enteredReviewCallbacks: calls,
+      childRunObserved: Boolean(childRunId), childCompletionReleased: finishReleased,
+      hostAbortObserved: f?.hostAbort.signal.aborted, diagnostics }));
+    throw error;
+  }
 });
 
 test("reset during correction releases until_pass even after the original review has settled", async t => {

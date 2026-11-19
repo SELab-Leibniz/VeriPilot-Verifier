@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
+import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
@@ -84,11 +85,25 @@ test('with a pause window a peer 429 delays the next dispatch instead of failing
     assert.equal(dispatches, 0);
   } finally { strict.close(); }
   const paused = installSimplifyProfileBoundary({ hostRoot, provider, credential, pairRateLimitFile, pairRateLimitPauseMs: 300 });
+  const realNow = Date.now, readFile = fs.readFile;
+  let now = realNow(), clockTimer;
+  // Measure the cooldown itself, independently of marker-write/read latency.
+  // Start its real timer only after the boundary actually reads the marker.
+  Date.now = () => now;
+  fs.readFile = async function(file, ...args) {
+    const value = await readFile.call(this, file, ...args);
+    if (file === pairRateLimitFile && clockTimer === undefined) {
+      clockTimer = setTimeout(() => { now += 300; }, 300);
+    }
+    return value;
+  };
   try {
+    const realStarted = performance.now();
     const started = Date.now();
     await fs.writeFile(pairRateLimitFile, `${started}\n`);
     assert.equal((await send()).status, 200);
     assert.ok(Date.now() - started >= 250);
+    assert.ok(performance.now() - realStarted >= 250);
     await fs.writeFile(pairRateLimitFile, `${Date.now() - 10_000}\n`);
     assert.equal((await send()).status, 200);
     const snapshot = paused.snapshot();
@@ -97,7 +112,12 @@ test('with a pause window a peer 429 delays the next dispatch instead of failing
     assert.equal(snapshot.pairPauses, 1);
     assert.ok(snapshot.pairPausedMs >= 250);
     assert.equal(dispatches, 2);
-  } finally { paused.close(); }
+  } finally {
+    clearTimeout(clockTimer);
+    Date.now = realNow;
+    fs.readFile = readFile;
+    paused.close();
+  }
 });
 
 test('seeding from a shallow cache carries frozen commits that no ref reaches and leaves the old root unchanged', async t => {
