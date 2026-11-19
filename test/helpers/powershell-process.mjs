@@ -10,7 +10,7 @@ export const POWERSHELL_TEST_TIMEOUT_MS = 60_000;
 // intact. In particular, its cleared child environment and deadlines stay exact.
 export function withPowerShellVerifierDiagnostics(command) {
   for (const [phase, anchor, child] of [
-    ['setup', '$rcVerifyStart = New-Object System.Diagnostics.ProcessStartInfo'],
+    ['setup', '$rcVerifyStart = [System.Diagnostics.ProcessStartInfo]::new()'],
     ['start', '$rcVerifyChild = [System.Diagnostics.Process]::Start($rcVerifyStart)'],
     ['stdout-read', '$rcVerifyOut = $rcVerifyChild.StandardOutput.ReadToEndAsync()', true],
     ['stderr-read', '$rcVerifyErr = $rcVerifyChild.StandardError.ReadToEndAsync()', true],

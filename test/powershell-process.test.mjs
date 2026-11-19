@@ -4,13 +4,18 @@ import { skillVerifierCommand } from '../scripts/evaluate-skill-e2e.mjs';
 import { withPowerShellVerifierDiagnostics, powerShellVerifierPhases, POWERSHELL_TEST_TIMEOUT_MS } from './helpers/powershell-process.mjs';
 
 test('Windows verifier diagnostics preserve every executable statement and timeout', () => {
-  const command = skillVerifierCommand({ projectRoot: '/fixture/project with space', nodeBinary: '/fixture/node' }, 'win32');
-  const instrumented = withPowerShellVerifierDiagnostics(command);
-  const marker = /\[Console\]::Error\.WriteLine\(\('RC_TEST_VERIFIER_PHASE:[a-z-]+'(?: \+ ' pid=' \+ \[string\]\$rcVerifyChild\.Id)?\)\); /gu;
-  assert.equal([...instrumented.matchAll(marker)].length, 12);
-  assert.equal(instrumented.replace(marker, ''), command);
-  assert.equal(POWERSHELL_TEST_TIMEOUT_MS, 60000);
-  assert.throws(() => withPowerShellVerifierDiagnostics(command.replace('$rcVerifyChild.Kill()', 'changed-child-command')));
+  for (const fixture of [
+    { projectRoot: '/fixture/project with space', nodeBinary: '/fixture/node' },
+    { projectRoot: "/fixture/project's notes/文档", nodeBinary: "/fixture/node's binary" },
+  ]) {
+    const command = skillVerifierCommand(fixture, 'win32');
+    const instrumented = withPowerShellVerifierDiagnostics(command);
+    const marker = /\[Console\]::Error\.WriteLine\(\('RC_TEST_VERIFIER_PHASE:[a-z-]+'(?: \+ ' pid=' \+ \[string\]\$rcVerifyChild\.Id)?\)\); /gu;
+    assert.equal([...instrumented.matchAll(marker)].length, 12);
+    assert.equal(instrumented.replace(marker, ''), command);
+    assert.equal(POWERSHELL_TEST_TIMEOUT_MS, 60000);
+    assert.throws(() => withPowerShellVerifierDiagnostics(command.replace('$rcVerifyChild.Kill()', 'changed-child-command')));
+  }
 });
 
 test('PowerShell phase diagnostics retain only bounded, well-formed stage and child PID records', () => {

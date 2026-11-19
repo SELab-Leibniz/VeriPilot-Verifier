@@ -263,9 +263,12 @@ test("a final transcript lock cannot publish candidate success after the work bu
   const f = await fixture(t, { assess: async () => ({ reason: "STOP_BARRIER_NOT_REQUIRED" }) });
   const append = f.sdk.appendSessionTranscriptMessage;
   f.sdk.appendSessionTranscriptMessage = async (request) => {
-    if (request.message.content?.[0]?.text === "Task completed.") await new Promise(resolve => setTimeout(resolve, 1100));
+    if (request.message.content?.[0]?.text === "Task completed.") t.mock.timers.tick(1100);
     return append(request);
   };
+  // Advance the work clock only after the candidate reaches the final lock.
+  // Filesystem setup must not consume the scenario's 1000ms budget first.
+  t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: Date.now() });
   const result = await f.harness.runAttempt({ ...f.params, timeoutMs: 1000 });
   assert.equal(result.aborted, false);
   assert.match(result.lastAssistant.content[0].text, /总运行时限/u);

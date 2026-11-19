@@ -105,7 +105,7 @@ export function skillVerifierCommand(fixture, platform = process.platform) {
   const args = ['--permission', ...files.map(file => `--allow-fs-read=${file}`), files[2]];
   if (args.some(arg => arg.includes('"'))) throw new Error('Invalid Windows verifier path');
   return '& { ' + [
-    '$rcVerifyStart = New-Object System.Diagnostics.ProcessStartInfo',
+    '$rcVerifyStart = [System.Diagnostics.ProcessStartInfo]::new()',
     `$rcVerifyStart.FileName = ${ps(fixture.nodeBinary)}`,
     '$rcVerifyStart.UseShellExecute = $false', '$rcVerifyStart.CreateNoWindow = $true',
     '$rcVerifyStart.RedirectStandardOutput = $true', '$rcVerifyStart.RedirectStandardError = $true',

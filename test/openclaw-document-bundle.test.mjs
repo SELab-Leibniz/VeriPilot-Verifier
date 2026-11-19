@@ -210,8 +210,8 @@ rules:
   assert.equal(f.calls.length, 2, `Different trigger diagnostics must remain independent. ${JSON.stringify({ warnings: f.warnings,
     reviews: rows.map(row => ({ trigger: row.result.metadata.triggerFile, diagnostics: row.result.diagnostics })) })}`);
   assert.equal(rows.length, 2);
-  assert.equal(rows.find(row => row.file.endsWith('/overview.md')).result.status, 'passed');
-  const sibling = rows.find(row => row.file.endsWith('/design.md')).result;
+  assert.equal(rows.find(row => path.basename(row.file) === 'overview.md').result.status, 'passed');
+  const sibling = rows.find(row => path.basename(row.file) === 'design.md').result;
   assert.equal(sibling.status, 'failed');
   assert(sibling.diagnostics.some(row => row.ruleId === 'REQUIRE-LOCAL-PREFERENCE'));
 });
