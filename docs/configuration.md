@@ -358,7 +358,10 @@ review:
 - `review.enabled: false`：不执行该节点的 Stage 语义审查；
 - `review.enabled: true` 且省略 `criteria`：只执行插件通用语义审阅基线；
 - `review.deferUntilBundleComplete: true`：节点自身的 bundle 尚不齐备时，保留确定性诊断并延后语义审阅。补齐后，下一次对该节点的检查执行完整审阅。建议让同一节点的触发路径匹配所有 bundle 成员。此选项不影响配置了前序审阅、Ground Truth 来源或运行时指标审阅的节点。
+- `review.skipApprovedTaskProgress: true`：原生 OpenClaw 的自动文档写入可跳过获批任务清单中允许的勾选状态变化所触发的重复语义审阅，默认关闭；整组 OpenSpec 方案覆盖层显式启用它。它要求当前原始 Apply 已绑定严格需求清单，先前完整方案的语义审查通过，且当前方案、节点范围、策略与审查标准、会话及控制版本仍与获批依据一致。确定性规则与变更记录仍执行，最终 Stop 仍须取得当前代码证据。宿主只记录方案完整性观察，不产生新的语义 PASS。
 - `enabled: true` 且配置的 `criteria` 文件为空：明确报错；使用 `enabled: false` 关闭。
+
+该优化不改变显式手动检查或默认行为。方案文字发生变化时，原有偏移检查仍立即反馈；未绑定、来源或策略陈旧、待定脚本写入、独立 Ground Truth、前序审阅和阶段指标等无法保留其独立检查的范围，沿用普通审阅。原始 Apply 中一旦出现触及该方案的后续语义审查，就不再沿用旧审批来跳过审阅，即使后续审查通过；已知的阻断或待验证结果不能被旧的通过依据掩盖。纠偏续跑也不使用这项优化。
 
 仅当文档明确要求复制一份已声明的原始材料时，可设置 `review.copyFrom: <Ground Truth 来源 ID>`。该 ID 必须已列在当前 artifact 的 `groundTruth` 中，并且只能解析到一个可读源文件。`review.enabled: true` 时，生产文档检查会比较当前目标和该来源，返回 `DOCUMENT-COPY-MISMATCH` 及 JSON 转义后的当前行、来源行或 EOF 后缀；即使模型复审通过，仍有字符差异也不能通过。正文、缩进、行内空格、围栏代码块及所有换行严格保留，仅容许围栏代码块外的行尾空格/制表符不同。比较不改写文件，来源缺失时返回 pending。
 

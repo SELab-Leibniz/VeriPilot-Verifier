@@ -26,6 +26,7 @@ artifacts:
       enabled: true
       criteria: example.reviewer.md
       deferUntilBundleComplete: true
+      skipApprovedTaskProgress: true
 
 workflow:
   correlation:

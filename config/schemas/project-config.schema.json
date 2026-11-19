@@ -150,7 +150,8 @@
               },
               "criteria": {},
               "copyFrom": { "type": "string", "minLength": 1 },
-              "deferUntilBundleComplete": { "type": "boolean" }
+              "deferUntilBundleComplete": { "type": "boolean" },
+              "skipApprovedTaskProgress": { "type": "boolean" }
             },
             "additionalProperties": false
           }
