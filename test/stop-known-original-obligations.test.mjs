@@ -23,14 +23,15 @@ async function finish(tools, value) {
   return first;
 }
 
-async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false } = {}) {
+async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false, title = false, compound = false, distinct = false, large = false } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
   f.input.request.classificationContract = 2;
   f.input.request.workflowStages = ['proposal'];
   f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, metrics: { M11: true, M16: true } });
-  f.requirement = internal ? 'Preserve ordering for empty and non-empty inputs.' : advisory ? 'Consider preserving stream ordering.' : external ? 'If the user later requests publishing, run the release audit.' : conditional ? 'Preserve ordering when streaming is enabled.' : 'Preserve stream ordering.';
-  f.input.evidence.snapshot.entries[0].message.content = f.requirement;
+  f.requirement = compound ? 'Preserve stream ordering and run the declared validation command.' : internal ? 'Preserve ordering for empty and non-empty inputs.' : advisory ? 'Consider preserving stream ordering.' : external ? 'If the user later requests publishing, run the release audit.' : conditional ? 'Preserve ordering when streaming is enabled.' : 'Preserve stream ordering.';
+  f.secondRequirement = 'Preserve diagnostic labels.';
+  f.input.evidence.snapshot.entries[0].message.content = title ? `# Stream contract\n${large ? 'Background context. '.repeat(1000) + '\n' : ''}${f.requirement}\n${f.secondRequirement}\n` : f.requirement;
   const original = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
   f.input.evidence.originalRequirements = original;
   const source = original.userMessages[0];
@@ -48,23 +49,27 @@ async function fixture(t, { conditional = false, external = false, internal = fa
         targets: [{ ...snapshot.documents[0], start: 1, end: 2 }] }] },
     publication: { runId: 'proposal-run', taskId: f.input.taskId, sessionId: 'protocol-host', result: { status: 'passed',
       metadata: { inputs: snapshot.documents, semanticReview: { status: 'completed' } } } } };
+  if (distinct) f.observation.receipt.rows.push({ ...f.observation.receipt.rows[0], requirement: f.secondRequirement });
   if (oversized) { const row = f.observation.receipt.rows[0];
     f.observation.receipt.rows = Array.from({ length: 49 }, (_, index) => ({ ...row, requirement: `${row.requirement} Observation ${index}.` })); }
   if (!empty) assert.equal(await observeKnownOriginalObligations(f.owner, f.observation), true);
   f.owner.nativeRunId = 'apply-run'; f.owner.reviewController = new AbortController();
   f.input.readKnownOriginalObligations = knownOriginalObligationReader(f.owner);
   f.candidate = knownOriginalObligations(f.owner)?.items[0];
+  f.candidates = knownOriginalObligations(f.owner)?.items;
   f.production = path.join(f.root, 'stream.mjs');
   await fs.writeFile(f.production, 'export const streaming = true;\nexport const ordered = values => [...values];\n');
-  f.prepare = async ({ brief, readAll, read, submit }, { stage = false, include = true, metricId = 'M16', target = 'IMPLEMENTATION' } = {}) => {
+  f.prepare = async ({ brief, readAll, read, submit }, { stage = false, include = true, metricId = 'M16', target = 'IMPLEMENTATION', formed = false, currentText = f.requirement, line = title ? 2 : 1 } = {}) => {
     await readAll();
     const originalFile = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
     const originalId = (await read(originalFile)).details.citation.citeId;
-    const page = await submit('set_original_checklist', { items: include ? [{ metricId, verificationTarget: target, text: f.requirement,
-      ...(conditional ? { applicability: external ? 'A later user requests publishing.' : 'Streaming is enabled.' } : {}), citeId: originalId, lineStart: 1, lineEnd: 1 }] : [],
+    const page = await submit('set_original_checklist', { items: include ? [{ metricId, verificationTarget: target, text: currentText,
+      ...(conditional ? { applicability: external ? 'A later user requests publishing.' : 'Streaming is enabled.' } : {}),
+      ...(formed ? { knownCandidateId: f.candidate.id, knownDutyReason: 'This original duty line states the complete retained obligation.' } : {}),
+      citeId: originalId, lineStart: line, lineEnd: line }] : [],
       scope: { stopClassification: stage ? 'STAGE_COMPLETE' : 'TASK_COMPLETE', ...(stage ? { stage: stage === true ? 'proposal' : stage } : {}), completionClaim: true, limit: 20 } });
-    const object = page.items?.find(item => item.description === f.requirement);
-    return { originalId, object, originalFile };
+    const object = page.items?.find(item => item.description === (formed ? f.requirement : currentText));
+    return { originalId, object, originalFile, page };
   };
   return f;
 }
@@ -230,9 +235,9 @@ for (const superseded of [false, true]) test(`explicit ${superseded ? 'later use
   await handle.close();
 });
 
-for (const mode of ['missing', 'checked', 'over-limit']) test(`actual host settlement ${mode}`, async t => {
-  const checked = mode === 'checked';
-  const f = await fixture(t, { oversized: mode === 'over-limit' }), transcript = path.join(f.root, 'session.jsonl');
+for (const mode of ['missing', 'checked', 'over-limit', 'corroborated', 'corroborated-missing']) test(`actual host settlement ${mode}`, async t => {
+  const checked = ['checked', 'corroborated'].includes(mode), corroborated = mode.startsWith('corroborated');
+  const f = await fixture(t, { oversized: mode === 'over-limit', title: corroborated }), transcript = path.join(f.root, 'session.jsonl');
   await fs.writeFile(transcript, f.input.evidence.snapshot.entries.map(JSON.stringify).join('\n') + '\n');
   const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
     stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true } });
@@ -240,7 +245,7 @@ for (const mode of ['missing', 'checked', 'over-limit']) test(`actual host settl
   const reviewerFactory = input => {
     Object.assign(f.input, input);
     return f.run(async tools => {
-      const { object } = await f.prepare(tools);
+      const { object } = await f.prepare(tools, { formed: corroborated, ...(corroborated ? { currentText: 'A model paraphrase.' } : {}) });
       const citeId = checked ? (await tools.read(f.production)).details.citation.citeId : null;
       const final = { summary: 'The host receives explicit current evidence or unresolved retention.',
         ...(checked ? { knownObligations: [{ id: f.candidate.id, disposition: 'CURRENT', objectId: object.objectId,
@@ -303,4 +308,299 @@ test('same-stop cached acceptance cannot bypass a newly admitted host cohort', a
   assert.deepEqual(await fs.readFile(evaluation), historical);
   const saved = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.input.taskId), 'task.json'), 'utf8'));
   assert.equal(saved.verification.status, 'UNVERIFIED');
+});
+
+const knownCurrent = (f, object, citeIds, extra = {}) => ({ id: f.candidate.id, disposition: 'CURRENT',
+  objectId: object.objectId, verdict: 'NO_CONFIRMED_DEVIATION', reason: 'Reviewed the complete retained duty against current evidence.', citeIds, ...extra });
+
+test('host knownCandidateId keeps the whole duty while associating an acknowledged atomic source span', async t => {
+  const f = await fixture(t, { title: true });
+  const handle = await f.run(async tools => {
+    const { object } = await f.prepare(tools, { formed: true, currentText: 'Return records in arrival order.' });
+    assert.equal(object.description, f.requirement);
+    assert.notEqual(object.originalSourceAnchor.anchorId, f.candidate.source.anchorId);
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'Current full-duty proof.', knownObligations: [knownCurrent(f, object, [source])] });
+  });
+  const row = handle.result.knownOriginalCoverage.items[0];
+  assert.equal(row.disposition, 'CURRENT'); assert.equal(row.association.requirement, f.requirement);
+  assert.equal(row.association.kind, 'REVIEWER_ASSERTED_DUTY_CORRESPONDENCE');
+  assert.notEqual(row.association.retainedSource.anchorId, row.association.corroboratingSource.anchorId);
+  assert.deepEqual(row.association.proofSubject.proofOwners, ['SOURCE']);
+  assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
+
+test('finish corroboration repairs a frozen paraphrase in the same worker without rebuilding the checklist', async t => {
+  const f = await fixture(t, { title: true });
+  const handle = await f.run(async tools => {
+    const { object, originalId } = await f.prepare(tools, { currentText: 'Return records in arrival order.' });
+    const directory = path.dirname(path.dirname(tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('known-original-observations'))));
+    const before = await fs.readFile(path.join(directory, 'original-checklist.json'));
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    const pending = await tools.submit('finish_stop_review', { summary: 'Initial accounting.', knownObligations: [knownCurrent(f, object, [source])] });
+    assert.equal(pending.complete, false); assert.equal(pending.pendingKnownOriginalCount, 1);
+    const result = await tools.submit('finish_stop_review', { summary: 'Explicit current duty correspondence.', knownObligations: [
+      knownCurrent(f, object, [source], { corroboration: { citeId: originalId, start: 2, end: 2,
+        reason: 'This original atomic duty is the full retained ordering requirement.' } })] });
+    assert.equal(result.complete, true);
+    assert.deepEqual(await fs.readFile(path.join(directory, 'original-checklist.json')), before);
+  });
+  const row = handle.result.knownOriginalCoverage.items[0]; assert.equal(row.disposition, 'CURRENT');
+  assert.equal(row.association.requirement, f.requirement); assert.equal(f.calls.length, 1);
+  await handle.close();
+});
+
+for (const mode of ['same-message-only', 'wrong-current-span', 'missing-current-proof', 'plan-only-proof', 'unacknowledged-original', 'conditional-without-assessment', 'unconditional-exclusion'])
+  test(`explicit known duty association ${mode} cannot manufacture a clean assessment`, async t => {
+    const f = await fixture(t, { title: true, conditional: mode === 'conditional-without-assessment' });
+    const handle = await f.run(async tools => {
+      const { object, originalId, originalFile } = await f.prepare(tools, { currentText: 'A shorter model description.' });
+      let original = originalId;
+      if (mode === 'unacknowledged-original') original = (await tools.read(originalFile, { receipt: false })).details.citation.citeId;
+      const source = mode === 'missing-current-proof' ? null : (await tools.read(mode === 'plan-only-proof'
+        ? path.join(f.root, 'openspec/changes/add-stream/proposal.md') : f.production)).details.citation.citeId;
+      const row = knownCurrent(f, object, source ? [source] : [], {
+        ...(mode === 'same-message-only' ? {} : { corroboration: { citeId: original,
+          start: mode === 'wrong-current-span' ? 3 : 2, end: mode === 'wrong-current-span' ? 3 : 2,
+          reason: 'Explicit claimed duty correspondence, not a proof by source identity.' } }),
+        ...(mode === 'unconditional-exclusion' ? { verdict: 'NOT_APPLICABLE' } : {}) });
+      await finish(tools, { summary: 'Preserve uncertainty.', knownObligations: [row] });
+    });
+    assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED');
+    assert(handle.result.unverifiedItems.some(item => item.type === 'KNOWN_ORIGINAL_OBLIGATION'));
+    await handle.close();
+  });
+
+for (const invalid of ['unknown-id', 'duplicate-id', 'missing-reason', 'path-without-ack'])
+  test(`invalid formed association ${invalid} is rejected before freeze and the same worker can correct it`, async t => {
+    const f = await fixture(t, { title: true });
+    const handle = await f.run(async tools => {
+      await tools.readAll();
+      const file = tools.brief.task.basisFiles.find(value => path.basename(value).startsWith('user-original-0'));
+      const originalId = (await tools.read(file)).details.citation.citeId;
+      const item = { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'A narrow paraphrase.',
+        knownCandidateId: invalid === 'unknown-id' ? 'foreign-known-candidate' : f.candidate.id,
+        ...(invalid === 'missing-reason' ? {} : { knownDutyReason: 'The full retained duty is supported by this original line.' }),
+        ...(invalid === 'path-without-ack' ? { path: file } : { citeId: originalId }), lineStart: 2, lineEnd: 2 };
+      await assert.rejects(tools.submit('set_original_checklist', { items: invalid === 'duplicate-id' ? [item, item] : [item] }),
+        { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+      const { object } = await f.prepare(tools, { formed: true });
+      const source = (await tools.read(f.production)).details.citation.citeId;
+      await finish(tools, { summary: 'Corrected before scope freeze.', knownObligations: [knownCurrent(f, object, [source])] });
+    });
+    assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'CURRENT'); await handle.close();
+  });
+
+test('an identical original message under a foreign user ref cannot corroborate the retained duty', async t => {
+  const f = await fixture(t, { title: true });
+  f.input.evidence.snapshot.entries.push({ type: 'user', uuid: 'U2', message: { content: f.input.evidence.snapshot.entries[0].message.content } });
+  f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+  const handle = await f.run(async tools => {
+    const { object } = await f.prepare(tools, { currentText: 'A shorter model description.' });
+    const foreign = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-1'));
+    const original = (await tools.read(foreign)).details.citation.citeId;
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'Source identity remains distinct.', knownObligations: [knownCurrent(f, object, [source], {
+      corroboration: { citeId: original, start: 2, end: 2, reason: 'A same-hash later message cannot replace the retained source.' } })] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+test('canonical compound duty is not narrowed to source-only proof when its declared full subject requires execution', async t => {
+  const f = await fixture(t, { title: true, compound: true });
+  const handle = await f.run(async tools => {
+    const { object } = await f.prepare(tools, { formed: true, currentText: 'Preserve stream ordering.', metricId: 'M12', target: 'PROCESS' });
+    assert.equal(object.description, f.requirement); assert.equal(object.verificationTarget, 'PROCESS');
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'Source code is only part of this compound duty.', knownObligations: [knownCurrent(f, object, [source])] });
+  });
+  const row = handle.result.knownOriginalCoverage.items[0]; assert.equal(row.disposition, 'UNVERIFIED');
+  assert.equal(row.association.requirement, f.requirement); assert.deepEqual(row.association.proofSubject.proofOwners, ['PROCESS']);
+  await handle.close();
+});
+
+for (const saved of ['DEVIATION', 'UNVERIFIED']) test(`finish association cannot erase an already saved ${saved}`, async t => {
+  const f = await fixture(t, { title: true });
+  if (saved === 'DEVIATION') await fs.writeFile(f.production, 'export const ordered = values => values.reverse();\n');
+  const handle = await f.run(async tools => {
+    const { object, originalId } = await f.prepare(tools, { currentText: 'Return records in arrival order.' });
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await tools.submit('submit_review', { taskId: object.objectId, verdict: saved,
+      reason: saved === 'DEVIATION' ? 'Current code reverses the required order.' : 'A required current dependency remains unavailable.', citeIds: [source] });
+    await finish(tools, { summary: 'An association is not a saved-result override.', knownObligations: [knownCurrent(f, object, [source], {
+      corroboration: { citeId: originalId, start: 2, end: 2, reason: 'This is the full original ordering duty.' } })] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED');
+  assert(handle.result.metricObjectJudgements.some(row => row.judgement === saved)); await handle.close();
+});
+
+for (const collision of [false, true]) test(`distinct same-message duties ${collision ? 'cannot borrow one formed object' : 'retain separate host ID accounting'}`, async t => {
+  const f = await fixture(t, { title: true, distinct: true });
+  const handle = await f.run(async tools => {
+    await tools.readAll();
+    const file = tools.brief.task.basisFiles.find(value => path.basename(value).startsWith('user-original-0'));
+    const originalId = (await tools.read(file)).details.citation.citeId;
+    const page = await tools.submit('set_original_checklist', { items: f.candidates.map((candidate, index) => ({
+      metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'A model paraphrase.', knownCandidateId: candidate.id,
+      knownDutyReason: 'This distinct current original line supports the whole named candidate.',
+      citeId: originalId, lineStart: index + 2, lineEnd: index + 2 })),
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+    const objects = f.candidates.map(candidate => page.items.find(value => value.description === candidate.requirement));
+    assert.notEqual(objects[0].objectId, objects[1].objectId);
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    const rows = f.candidates.map((candidate, index) => ({ id: candidate.id, disposition: 'CURRENT',
+      objectId: objects[collision ? 0 : index].objectId, verdict: 'NO_CONFIRMED_DEVIATION',
+      reason: 'Explicit separate current duty assessment.', citeIds: [source] }));
+    if (collision) {
+      await assert.rejects(tools.submit('finish_stop_review', { summary: 'Rejected cross-ID borrowing.', knownObligations: rows }),
+        { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+      await finish(tools, { summary: 'The remaining candidate stays visible.', knownObligations: [rows[0],
+        { id: f.candidates[1].id, disposition: 'UNVERIFIED', reason: 'No separate current assessment supplied.' }] });
+    } else await finish(tools, { summary: 'Both IDs independently assessed.', knownObligations: rows });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items.length, 2);
+  assert.deepEqual(handle.result.knownOriginalCoverage.items.map(value => value.disposition), collision ? ['CURRENT', 'UNVERIFIED'] : ['CURRENT', 'CURRENT']);
+  await handle.close();
+});
+
+test('a fresh source hash does not make an old retained anchor current', async t => {
+  const f = await fixture(t, { title: true });
+  const message = f.input.evidence.originalRequirements.userMessages[0];
+  message.text += 'An actual later amendment.\n'; message.sha256 = sha256(message.text);
+  const handle = await f.run(async tools => {
+    await assert.rejects(f.prepare(tools, { formed: true }), { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+    await f.prepare(tools);
+    const complete = await tools.submit('finish_stop_review', { summary: 'Stale retained source remains unverified.' });
+    assert.equal(complete.complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+test('corroborating original bytes remain part of final source freshness validation', async t => {
+  const f = await fixture(t, { title: true });
+  await assert.rejects(f.run(async tools => {
+    const { object, originalFile } = await f.prepare(tools, { formed: true });
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await fs.appendFile(originalFile, '\nChanged after acknowledged association.');
+    await tools.submit('finish_stop_review', { summary: 'Cannot seal stale current correspondence.', knownObligations: [knownCurrent(f, object, [source])] });
+  }), error => /INPUT_CHANGED|STALE/u.test(error.code));
+});
+
+test('formed association alone never supplies a current verdict', async t => {
+  const f = await fixture(t, { title: true });
+  const handle = await f.run(async tools => {
+    await f.prepare(tools, { formed: true });
+    await finish(tools, { summary: 'Association is not proof or a verdict.' });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+test('formed canonical implementation duty can remain explicitly phase deferred', async t => {
+  const f = await fixture(t, { title: true });
+  const handle = await f.run(async tools => {
+    const { page } = await f.prepare(tools, { formed: true, stage: true });
+    const binding = page.knownObligations.items[0].formedAssociation;
+    assert(binding.objectId);
+    await finish(tools, { summary: 'Implementation is outside this actual Proposal stage.', knownObligations: [
+      { id: f.candidate.id, disposition: 'PHASE_DEFERRED', objectId: binding.objectId,
+        reason: 'This recognized Proposal stage excludes implementation review.' }] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'PHASE_DEFERRED'); await handle.close();
+});
+
+test('known source corroboration preserves actual chunk byte offsets instead of treating a part hash as the whole source', async t => {
+  const f = await fixture(t, { title: true, large: true });
+  const handle = await f.run(async tools => {
+    await tools.readAll();
+    const parts = tools.brief.task.basisFiles.filter(file => path.basename(file).startsWith('user-original-0'));
+    assert(parts.length > 1);
+    let original, localLine;
+    for (const file of parts) {
+      const text = await fs.readFile(file, 'utf8'), index = text.split('\n').indexOf(f.requirement);
+      if (index >= 0) { original = (await tools.read(file)).details.citation.citeId; localLine = index + 1; break; }
+    }
+    const page = await tools.submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+      text: 'A shorter wording.', knownCandidateId: f.candidate.id, knownDutyReason: 'The complete duty is on this current part-local line.',
+      citeId: original, lineStart: localLine, lineEnd: localLine }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+    const object = page.items.find(item => item.description === f.requirement);
+    assert(object.originalSourceAnchor.byteStart > 16384);
+    assert.equal(object.originalSourceAnchor.sha256, f.candidate.source.sha256);
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'Current duty retains global original-source identity.', knownObligations: [knownCurrent(f, object, [source])] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'CURRENT'); await handle.close();
+});
+
+test('formed conditional duty retains its original condition assessment contract', async t => {
+  const f = await fixture(t, { title: true, conditional: true });
+  const handle = await f.run(async tools => {
+    const { object } = await f.prepare(tools, { formed: true, currentText: 'Preserve ordering.' });
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'Current full condition is explicitly active.', knownObligations: [knownCurrent(f, object, [source], {
+      conditionAssessment: { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'The current source explicitly enables streaming.' } })] });
+  });
+  const row = handle.result.knownOriginalCoverage.items[0];
+  assert.equal(row.disposition, 'CURRENT'); assert.equal(row.association.proofSubject.applicabilityKind, 'CONDITIONAL');
+  assert.equal(row.association.requirement, f.requirement); await handle.close();
+});
+
+test('a fresh canonical known item cannot erase a delivered carried deviation with another frozen object ID', async t => {
+  const f = await fixture(t, { title: true }), transcript = path.join(f.root, 'session.jsonl');
+  await fs.writeFile(f.production, 'export const ordered = values => values.reverse();\n');
+  await fs.writeFile(transcript, f.input.evidence.snapshot.entries.map(JSON.stringify).join('\n') + '\n');
+  const runtimeV2 = compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: false },
+    stopCorrection: { enabled: true, originalRequirementsBasis: true, deviationOnly: true } });
+  const reader = f.input.readKnownOriginalObligations; let phase = 1, oldId, freshId;
+  const reviewerFactory = input => { Object.assign(f.input, input); return f.run(async tools => {
+    const { object, originalId, page } = await f.prepare(tools, { formed: phase === 2,
+      currentText: phase === 1 ? 'Return records in arrival order.' : 'A different model shorthand.' });
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    if (phase === 1) {
+      oldId = object.objectId;
+      await tools.submit('submit_review', { taskId: oldId, verdict: 'DEVIATION', reason: 'The current reverse operation violates ordering.', citeIds: [source] });
+    } else {
+      freshId = object.objectId; assert.notEqual(freshId, oldId);
+      assert(page.items.some(item => item.objectId === oldId && item.previousDeviation), 'The original delivered deviation remains carried.');
+    }
+    await finish(tools, { summary: 'Known association cannot stand in for prior-deviation closure.', knownObligations: [
+      knownCurrent(f, object, [source], phase === 1 ? { verdict: 'DEVIATION',
+        corroboration: { citeId: originalId, start: 2, end: 2, reason: 'The same full ordering duty has this current atomic source.' } } : {})] });
+  }); };
+  reviewerFactory.supportsStopTasks = true;
+  const event = name => handleRuntimeV2Event({ projectRoot: f.root, plan: { runtimeV2, artifacts: [] }, reviewerFactory,
+    stopHost: { directory: path.join(f.root, 'host'), stopId: `carry-known-${phase}`, startProtocol: { version: 1 }, readKnownOriginalObligations: reader },
+    input: { hook_event_name: name, session_id: 'protocol-host', cwd: f.root, transcript_path: transcript,
+      prompt: f.requirement, last_assistant_message: 'The implementation is complete.' } });
+  await event('SessionStart');
+  await createStopCorrectionStore({ directory: path.join(f.root, 'host') }).initializeSession({ sessionId: 'protocol-host', initialize: { kind: 'NEW_SESSION', evidence: { fixture: true } } });
+  await event('UserPromptSubmit');
+  const first = await event('Stop'); assert.equal(first.stop.status, 'DEVIATION');
+  phase = 2;
+  await fs.appendFile(transcript, JSON.stringify({ type: 'assistant', uuid: 'A2', message: { content: 'A later completion claim.' } }) + '\n');
+  const second = await event('Stop'); assert.notEqual(second.stop.status, 'NO_DEVIATION_FOUND');
+  assert(freshId, 'The second actual host assessment ran and created the distinct canonical item.');
+  const saved = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, f.input.taskId), 'task.json'), 'utf8'));
+  assert(Object.values(saved.deviations).some(family => family.status === 'OPEN'));
+});
+
+test('finish repair cannot replace a formed whole-duty PROCESS subject with a narrower SOURCE item', async t => {
+  const f = await fixture(t, { title: true, compound: true });
+  const handle = await f.run(async tools => {
+    await tools.readAll();
+    const file = tools.brief.task.basisFiles.find(value => path.basename(value).startsWith('user-original-0'));
+    const originalId = (await tools.read(file)).details.citation.citeId;
+    const sourceItem = { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Preserve stream ordering.',
+      citeId: originalId, lineStart: 2, lineEnd: 2 };
+    const page = await tools.submit('set_original_checklist', { items: [
+      { ...sourceItem, metricId: 'M12', verificationTarget: 'PROCESS', knownCandidateId: f.candidate.id,
+        knownDutyReason: 'The complete retained duty includes the declared validation execution.' }, sourceItem],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+    const narrowed = page.items.find(item => item.metricId === 'M16');
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    await finish(tools, { summary: 'A shorter source-only subject cannot replace the formed duty.', knownObligations: [knownCurrent(f, narrowed, [source], {
+      corroboration: { citeId: originalId, start: 2, end: 2, reason: 'Claimed correspondence cannot change the formed proof subject.' } })] });
+  });
+  const row = handle.result.knownOriginalCoverage.items[0]; assert.equal(row.disposition, 'UNVERIFIED');
+  assert.match(row.reason, /formed object/u); await handle.close();
 });

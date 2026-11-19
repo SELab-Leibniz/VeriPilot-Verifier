@@ -143,9 +143,12 @@ test('shipped bare and full-plan topologies admit the actual host-published obse
   const hostAdapter = await load('lib/hosts/openclaw.mjs');
   const { createDocumentTools } = await load('lib/document-tools.mjs');
   const { knownOriginalObligations: observed } = await load('lib/runtime-v2/known-original-obligations.mjs');
-  for (const topology of ['bare', 'full-plan', 'ordinary-apply-checked', 'ordinary-apply-omitted']) await t.test(topology, { timeout: 30000 }, async t => {
-    const integrated = topology.startsWith('ordinary-apply-'), checked = topology === 'ordinary-apply-checked';
+  for (const topology of ['bare', 'full-plan', 'ordinary-apply-checked', 'ordinary-apply-omitted', 'ordinary-apply-corroborated', 'ordinary-apply-corroboration-omitted']) await t.test(topology, { timeout: 30000 }, async t => {
+    const integrated = topology.startsWith('ordinary-apply-'), corroborated = topology.startsWith('ordinary-apply-corrobor'),
+      checked = ['ordinary-apply-checked', 'ordinary-apply-corroborated'].includes(topology);
     const f = await fixture(t), project = path.join(f.root, '.runtime-corrector');
+    const canonicalDuty = f.source.text;
+    if (corroborated) f.source.text = `# Stream contract\n${canonicalDuty}\n`;
     const planDirectory = path.join(f.root, 'openspec/changes/add-stream');
     await fs.mkdir(path.join(planDirectory, 'specs/stream'), { recursive: true });
     await fs.writeFile(path.join(planDirectory, 'design.md'), '# Design\nPreserve ordering.\n');
@@ -193,9 +196,12 @@ test('shipped bare and full-plan topologies admit the actual host-published obse
             for (const file of task.basisFiles) await read(file);
             const original = await read(task.basisFiles.find(file => path.basename(file).startsWith('user-original-0')));
             const response = await call('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
-              text: f.source.text, citeId: original, lineStart: 1, lineEnd: 1 }],
+              text: corroborated ? 'Return records in arrival order.' : canonicalDuty, citeId: original,
+              lineStart: corroborated ? 2 : 1, lineEnd: corroborated ? 2 : 1,
+              ...(corroborated ? { knownCandidateId: current.items[0].id,
+                knownDutyReason: 'The actual atomic source line states the complete retained duty.' } : {}) }],
               scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
-            const page = JSON.parse(response.content[0].text), object = page.items.find(item => item.description === f.source.text);
+            const page = JSON.parse(response.content[0].text), object = page.items.find(item => item.description === canonicalDuty);
             const candidateId = page.knownObligations.items[0].id;
             assert.equal(candidateId, current.items[0].id);
             const citeId = checked ? await read(production) : null;
@@ -218,7 +224,7 @@ test('shipped bare and full-plan topologies admit the actual host-published obse
         const message = options.evidence.semanticRequest.originalRequirements.userMessages[0];
         const { anchor } = await tools.execute({ action: 'read_original', ref: message.ref, start: 1, count: 1 });
         const coverage = await tools.verifyRequirementCoverage([{ originalSourceAnchorId: anchor.anchorId,
-          requirement: f.source.text, disposition: 'COVERED', reason: 'The complete current plan represents this obligation.',
+          requirement: canonicalDuty, disposition: 'COVERED', reason: 'The complete current plan represents this obligation.',
           targets: [{ path: 'openspec/changes/add-stream/proposal.md', start: 2, end: 2 }] }]);
         return { sessionId: 'document-review', originalRequirementCoverage: coverage,
           result: { summary: 'Current plan reviewed.', findings: [], edits: [] }, close: async () => {} };
@@ -241,7 +247,7 @@ test('shipped bare and full-plan topologies admit the actual host-published obse
     const cohort = observed(state);
     assert(cohort, topology);
     assert.equal(cohort.items.length, 1);
-    assert.equal(cohort.items[0].requirement, f.source.text);
+    assert.equal(cohort.items[0].requirement, canonicalDuty);
     assert.equal(cohort.exhaustive, false);
     if (integrated) {
       const configured = await loadConfig({ cwd: f.root, pluginRoot });
