@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import test, { before, after } from "node:test";
 import { skillGraphQuoteCandidate as skillGraphCandidate } from './helpers/skill-source-interpretation.mjs';
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 import { buildPlugin } from "../lib/plugin-builder.mjs";
 import { normalizeMessages, readOpenClawTranscript, persistTranscript } from "../lib/openclaw/transcript.mjs";
 import { workerIdentityPath, privateJson } from "../lib/openclaw/controller-store.mjs";
@@ -549,6 +550,9 @@ test("native reviews reject nested factories and handoffs across module reloads 
 });
 
 test("native review scope suppresses incomplete hook identities without suppressing a concurrent main task", async (t) => {
+  // Scope semantics must survive unrelated main-task I/O while this test holds
+  // its fake backend gate. Actual expiry is exercised independently below.
+  semanticReviewClock(t, { timeoutMs: 5000 });
   const { project, runtime, ctx, calls, host } = await correctionFixture(t);
   let releaseReview, startedReview;
   const reviewGate = new Promise((resolve) => { releaseReview = resolve; });
@@ -1005,4 +1009,44 @@ test('failed worker Read never makes an exploratory path a required deliverable'
   await runtime.beforeTool({ toolName: 'read', toolCallId: 'read-valid', params: { path: existing } }, ctx);
   await runtime.toolResult({ toolName: 'read', toolCallId: 'read-valid', args: { path: existing }, result: { content: [{ type: 'text', text: 'A real reference' }] } }, ctx);
   assert.equal(state.observedPaths.has(existing), true);
+});
+test("semantic internal-scope clock preserves five-second expiry and real filesystem retry", async (t) => {
+  const clock = semanticReviewClock(t, { timeoutMs: 5000 });
+  const project = await workspace(t);
+  const { atomicWriteJson } = await import(pathToFileURL(path.join(pluginRoot, "lib/runtime-v2/utils.mjs")));
+  const file = path.join(project, "semantic-clock-retry.json"), rename = fs.rename;
+  let attempts = 0;
+  t.mock.method(fs, "rename", async function (source, destination, ...args) {
+    if (destination === file && ++attempts === 1)
+      throw Object.assign(new Error("Controlled transient rename refusal"), { code: "EACCES" });
+    return rename.call(this, source, destination, ...args);
+  });
+  const before = clock.now();
+  await atomicWriteJson(file, { preserved: true });
+  assert.equal(attempts, 2, "the actual production retry backoff must still run");
+  assert.deepEqual(JSON.parse(await fs.readFile(file, "utf8")), { preserved: true });
+  assert.equal(clock.now(), before, "real filesystem backoff does not spend semantic review time");
+
+  let startedReview;
+  const started = new Promise((resolve) => { startedReview = resolve; });
+  const registry = new Set();
+  const host = api(project, async (params) => {
+    startedReview(params);
+    return new Promise((_, reject) => {
+      const abort = () => reject(params.abortSignal.reason);
+      params.abortSignal.addEventListener("abort", abort, { once: true });
+      if (params.abortSignal.aborted) abort();
+    });
+  });
+  const factory = createOpenClawReviewerFactory(host, { provider: "test", model: "test", internalSessions: registry });
+  const reviewing = factory({ projectRoot: project, taskId: "semantic-scope-expiry", role: "ground-truth-extractor",
+    request: {}, schema: objectSchema, reviewer: { timeoutMs: 5000 } });
+  const params = await started;
+  await new Promise((resolve) => setImmediate(resolve));
+  clock.advance(4999);
+  assert.equal(params.abortSignal.aborted, false);
+  clock.advance(1);
+  assert.equal(params.abortSignal.aborted, true, "the unchanged 5000ms role timer still aborts actual work");
+  await assert.rejects(reviewing, (error) => error.code === "REVIEWER_DEADLINE");
+  assert.equal(registry.size, 0);
 });

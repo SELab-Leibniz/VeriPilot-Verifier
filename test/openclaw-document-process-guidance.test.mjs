@@ -140,7 +140,7 @@ for (const status of ['completed', 'failed', 'signal', 'unchanged']) test(`genui
   assert.equal(after.resolvedProcess.status, details.status);
   assert.equal(f.calls.length - calls, 4, 'the existing path freshly reviews every declared document');
   const reviews = (await f.journal()).filter(row => row.type === 'OPENCLAW_ARTIFACT_REVIEW' && row.toolCallId === 'terminal');
-  assert.deepEqual(reviews.map(row => path.relative(f.root, row.file)).sort(), Object.keys(f.documents).sort());
+  assert.deepEqual(reviews.map(row => path.relative(f.root, row.file)).sort(), Object.keys(f.documents).map(file => path.normalize(file)).sort());
   for (const row of reviews) assert.equal(row.fingerprint, sha256(await fs.readFile(row.file, 'utf8')));
 });
 
