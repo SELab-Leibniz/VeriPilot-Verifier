@@ -70,12 +70,13 @@ for (const status of [200, 500]) test(`installed serializer and guarded fetch pr
   const fetchSource = new URL('../scripts/helpers/synthetic-calibration-fetch.mjs', import.meta.url).href;
   const script = `import assert from 'node:assert/strict';import net from 'node:net';
     import {createProviderRequestBudget}from${JSON.stringify(guardSource)};import{createSyntheticCalibrationFetch}from${JSON.stringify(fetchSource)};
-    let entries=0,sends=0,approved;net.Socket.prototype.connect=function(){throw new Error('OFFLINE_SOCKET_FORBIDDEN')};
-    const budget=createProviderRequestBudget({origin:${JSON.stringify(origin)},limits:{usd:1,requests:2,wallMs:2000,inputPerRequest:32768,outputPerRequest:8192,totalInput:65536,totalOutput:16384},prices:{input:7,output:22,cacheRead:7,cacheWrite:7}});
-    const fetch=createSyntheticCalibrationFetch({budget,origin:${JSON.stringify(origin)},protocol:'openai-completions',getApprovedPayload:()=>approved,
-      fetchImpl:async()=>{sends++;return new Response(${JSON.stringify(status === 200 ? sse : '{"error":{"message":"fictional transport failure"}}')},{status:${status},headers:{'content-type':${JSON.stringify(status === 200 ? 'text/event-stream' : 'application/json')}}})}});
+    let entries=0,sends=0,approved,fetch;net.Socket.prototype.connect=function(){throw new Error('OFFLINE_SOCKET_FORBIDDEN')};
     globalThis.fetch=(...args)=>{entries++;return fetch(...args)};
     const {r:stream}=await import(${JSON.stringify(sdk)});
+    // Cold SDK loading is fixture setup, outside the unchanged request deadline.
+    const budget=createProviderRequestBudget({origin:${JSON.stringify(origin)},limits:{usd:1,requests:2,wallMs:2000,inputPerRequest:32768,outputPerRequest:8192,totalInput:65536,totalOutput:16384},prices:{input:7,output:22,cacheRead:7,cacheWrite:7}});
+    fetch=createSyntheticCalibrationFetch({budget,origin:${JSON.stringify(origin)},protocol:'openai-completions',getApprovedPayload:()=>approved,
+      fetchImpl:async()=>{sends++;return new Response(${JSON.stringify(status === 200 ? sse : '{"error":{"message":"fictional transport failure"}}')},{status:${status},headers:{'content-type':${JSON.stringify(status === 200 ? 'text/event-stream' : 'application/json')}}})}});
     const model={id:'glm-5.3',name:'synthetic',provider:'review',api:'openai-completions',baseUrl:'https://open.bigmodel.cn/api/coding/paas/v4',reasoning:false,input:['text'],contextWindow:128000,maxTokens:8192,cost:{input:7,output:22,cacheRead:7,cacheWrite:7},compat:{supportsUsageInStreaming:true,maxTokensField:'max_tokens',supportsStore:false,supportsDeveloperRole:false}};
     const result=await stream(model,{messages:[{role:'user',content:[{type:'text',text:'new fictional input'}],timestamp:1}]},{apiKey:'synthetic-not-real',maxTokens:8192,maxRetries:0,onPayload:p=>{approved=p}}).result();
     assert.equal(entries,1);assert.equal(sends,1);assert.equal(approved.stream_options.include_usage,true);assert.equal(approved.max_tokens,8192);
