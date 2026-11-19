@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 
 import { decisionScope } from "../lib/runtime-v2/decision-scope.mjs";
 import { IMPL_REVIEW_SCHEMA } from "../lib/runtime-v2/impl-review.mjs";
@@ -267,6 +268,8 @@ test("caller cancellation preserves the progress ledger but cannot publish the o
 
 test("the aggregation cutoff stops new tasks and explicitly accounts for every unreviewed object", async t => {
   const f = await fixture(t);
+  // This case tests cutoff accounting, not filesystem throughput in 500 ms.
+  semanticReviewClock(t);
   const handle = await collectReviewItems({ ...f.input, deadlineAt: Date.now() + 500, reviewerFactory: f.factory() });
   assert.equal(f.counts().calls, 0);
   assert.equal(handle.collection.failures.length, 1);
@@ -434,4 +437,13 @@ test("noncompletion tasks still find current HARD deviations without inventing m
     assert.equal(handle.collection.complete, !failSecond);
     assert.equal(handle.collection.reviewedObjects, failSecond ? 2 : 3);
   });
+});
+
+test("the cutoff semantic clock still rejects an expired publication deadline", async t => {
+  const f = await fixture(t), clock = semanticReviewClock(t);
+  const deadlineAt = Date.now() + 500;
+  clock.advance(500);
+  await assert.rejects(collectReviewItems({ ...f.input, deadlineAt, reviewerFactory: f.factory() }),
+    error => error.code === "REVIEW_COLLECTION_STALE");
+  assert.equal(f.counts().calls, 0);
 });

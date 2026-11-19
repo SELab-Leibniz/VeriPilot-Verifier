@@ -5,6 +5,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { registerReviewerProgress } from "../lib/openclaw/reviewer-progress.mjs";
 import { runBackgroundExecution } from "../lib/openclaw/internal-context.mjs";
@@ -27,6 +28,10 @@ async function fixture(t) {
     evidence:{groundTruth,snapshot:{digest:"frozen-digest",lastEntryKey:"a1",entries:[]},population}};
   return {root,task,file,gtPath,input,population};
 }
+// Schema, identity, citation and recovery semantics use an explicit logical
+// clock. Actual timeout, cancellation, shared-budget and elapsed-repair tests
+// below retain the original real clock.
+async function semanticFixture(t) { semanticReviewClock(t, { timeoutMs: 2000 }); return fixture(t); }
 function native(f,run,options={}) {
   let toolFactory;
   const api={rootDir:path.resolve("."),config:{agents:{defaults:{model:{primary:"controlled/controlled"}}}},
@@ -39,7 +44,7 @@ const completed = (classification="TASK_COMPLETE") => ({summary:"Original contra
 const item=(f,id,judgement="DEVIATION",state="COMPLETED")=>({objectId:id,state,judgement,reason:"Observed source differs from requested behavior.",unresolved:judgement==="PASS"?[]:["Host judgement remains."],refs:[{path:f.file,start:2,end:3}]});
 
 test("private checkpoint short ACK/full get is scoped; normal result does not require save",async t=>{
-  const f=await fixture(t);let tool;
+  const f=await semanticFixture(t);let tool;
   const n=native(f,async params=>{
     assert.equal(params.toolsAllow,undefined);
     tool=n.getTool(params);assert(tool);assert.equal(n.toolFactory({sessionId:"other"}),null);
@@ -57,7 +62,7 @@ test("private checkpoint short ACK/full get is scoped; normal result does not re
 });
 
 test("invalid final output recovers completed source-bound progress before private cleanup",async t=>{
-  const f=await fixture(t);let calls=0,requestDirectory;
+  const f=await semanticFixture(t);let calls=0,requestDirectory;
   const n=native(f,async params=>{
     calls++;requestDirectory=path.dirname(params.sessionFile);
     const tool=n.getTool(params);await tool.execute("s1",{action:"save",item:item(f,"M01:R1")});
@@ -92,7 +97,7 @@ test("caller cancellation discards partial feedback and never delivers complete 
 
 test("bad references, incomplete PASS and changed source/version do not become recovered PASS",async t=>{
   for(const mutate of ["source","groundTruth"]) {
-    const f=await fixture(t);let calls=0;
+    const f=await semanticFixture(t);let calls=0;
     const n=native(f,async params=>{
       calls++;const tool=n.getTool(params);
       await assert.rejects(tool.execute("bad",{action:"save",item:{...item(f,"M01:R3","PASS"),refs:[]}}),/INVALID/);
@@ -120,7 +125,7 @@ test("valid INTERMEDIATE hard finding and cross-role shared deadline retain orig
 });
 
 test("normal merged review can fetch implementation citations after the implementation closes",async t=>{
-  const f=await fixture(t);
+  const f=await semanticFixture(t);
   const n=native(f,async()=>output(completed()));
   const stop=await n.factory({...f.input,role:"artifact-reviewer",request:{...f.input.request,sourceManifest:[]}});
   const implementation=await n.factory({...f.input,role:"implementation-reviewer"});await implementation.close();
@@ -129,7 +134,7 @@ test("normal merged review can fetch implementation citations after the implemen
 });
 
 test("private frozen citation remains readable after cleanup while business citations retain original paths",async t=>{
-  const f=await fixture(t);let requestPath,basisPath;
+  const f=await semanticFixture(t);let requestPath,basisPath;
   const n=native(f,async params=>{requestPath=path.join(path.dirname(params.sessionFile),"request.json");
     basisPath=JSON.parse(await fs.readFile(requestPath,"utf8")).groundTruthPath;return output(completed());});
   const h=await n.factory({...f.input,role:"artifact-reviewer"});
@@ -150,7 +155,7 @@ test("OpenClaw manifest declares the private progress tool registered by the nat
 });
 
 test("caller-owned identities are enumerated and program checkpoints preserve valid rows on schema failure",async t=>{
-  const f=await fixture(t);let calls=0;
+  const f=await semanticFixture(t);let calls=0;
   const valid={objectId:"M01:R1",judgement:"DEVIATION",reason:"Actual source contradicts a requirement.",evidence:["app.py#L2-L3"]};
   const n=native(f,async params=>{
     calls++;assert.match(params.extraSystemPrompt,/"enum"/);assert.match(params.extraSystemPrompt,/M01:R1/);
@@ -162,7 +167,7 @@ test("caller-owned identities are enumerated and program checkpoints preserve va
 });
 
 test("implementation progress uses the same source/version/expiry recovery guard",async t=>{
-  const f=await fixture(t);let calls=0;
+  const f=await semanticFixture(t);let calls=0;
   const n=native(f,async()=>{calls++;return output({summary:"Partial source review",findings:[],metricObjectJudgements:[
     {objectId:"M01:R2",judgement:"PASS",reason:"Observed current source.",evidence:["app.py#L2-L3"]},
     {objectId:"invented",judgement:"PASS",reason:"Invalid identity.",evidence:["app.py#L2-L3"]}]});});
@@ -183,7 +188,7 @@ test("configured native role timeout is not silently capped by an absent plugin 
 });
 
 test('claim references are enumerated separately from metric object identities and cannot be silently rewritten',async t=>{
- const f=await fixture(t);let calls=0;
+ const f=await semanticFixture(t);let calls=0;
  const n=native(f,async params=>{
   calls++;assert.match(params.extraSystemPrompt,/"violatedGroundTruthIds":\{"type":"array","items":\{"type":"string","enum":\["R1"\]/);
   return output({...completed(),findings:[{deviationKey:'d',rootCauseId:'r',severity:'error',reason:'Observed problem',actualEvidence:['app.py#L2-L3'],expectedConstraint:'R1',violatedGroundTruthIds:[calls===1?'M01:R1':'R1']}]});
@@ -191,14 +196,14 @@ test('claim references are enumerated separately from metric object identities a
 });
 
 test('extra metric-row annotations do not restart a valid review or alter its judgement and evidence',async t=>{
- const f=await fixture(t);let calls=0;const row={objectId:'M01:R1',judgement:'DEVIATION',reason:'Current source contradicts the contract.',evidence:['app.py#L2-L3']};
+ const f=await semanticFixture(t);let calls=0;const row={objectId:'M01:R1',judgement:'DEVIATION',reason:'Current source contradicts the contract.',evidence:['app.py#L2-L3']};
  const n=native(f,async()=>{calls++;return output({...completed(),suggestedNextAction:'Extra envelope annotation',metricObjectJudgements:[{...row,expectedConstraint:'Extra explanation',suggestedNextAction:'Host decides',severity:'warning'}]});});
  const h=await n.factory(f.input);assert.equal(calls,1);assert.deepEqual(h.result.metricObjectJudgements,[row]);await h.close();
 });
 test('row annotation tolerance cannot supply a missing reason or make an invalid judgement pass',async t=>{
  for(const row of [{objectId:'M01:R1',judgement:'PASS',evidence:['app.py#L2-L3'],summary:'Not the required reason'},
   {objectId:'M01:R1',judgement:'looks-good',reason:'Unrecognized value',evidence:['app.py#L2-L3']}]){
-  const f=await fixture(t);let calls=0;const n=native(f,async()=>{calls++;return output({...completed(),metricObjectJudgements:[row]});});
+  const f=await semanticFixture(t);let calls=0;const n=native(f,async()=>{calls++;return output({...completed(),metricObjectJudgements:[row]});});
   await assert.rejects(n.factory(f.input));assert.equal(calls,2);
  }
 });
@@ -209,13 +214,13 @@ test('file default allows three repairs in one session without resetting the rol
  const h=await n.factory(f.input);assert.equal(calls,4);assert.equal(new Set(sessions).size,1);assert(timeouts[3]<timeouts[0]);await h.close();
 });
 test('per-role format-repair setting overrides the RC default file, including disabling repair',async t=>{
- for(const repairs of [0,2]){const f=await fixture(t);let calls=0;const n=native(f,async()=>{calls++;return output('{ malformed');});
+ for(const repairs of [0,2]){const f=await semanticFixture(t);let calls=0;const n=native(f,async()=>{calls++;return output('{ malformed');});
   await assert.rejects(n.factory({...f.input,reviewer:{timeoutMs:2000,formatRepairAttempts:repairs}}));assert.equal(calls,1+repairs);
  }
 });
 
 test('large malformed JSON gives the same native session a localized syntax diagnostic before repair',async t=>{
- const f=await fixture(t);let calls=0;const sessions=[];
+ const f=await semanticFixture(t);let calls=0;const sessions=[];
  const valid={...completed(),summary:'Original contract. '.repeat(400)};
  const malformed=JSON.stringify(valid).slice(0,-1)+']}';
  const n=native(f,async p=>{
@@ -229,4 +234,29 @@ test('large malformed JSON gives the same native session a localized syntax diag
  const h=await n.factory(f.input);
  assert.equal(calls,2);assert.equal(new Set(sessions).size,1);
  assert.deepEqual(h.result,valid);await h.close();
+});
+
+test("the semantic fixture still expires the real reviewer at its unchanged role deadline",async t=>{
+  const f=await semanticFixture(t),clock=semanticReviewClock(t);let entered;
+  const started=new Promise(resolve=>{entered=resolve;});
+  const n=native(f,async params=>{
+    const pending=new Promise((_,reject)=>params.abortSignal.addEventListener("abort",()=>reject(params.abortSignal.reason),{once:true}));
+    entered();return pending;
+  });
+  const pending=n.factory(f.input);await started;
+  await new Promise(resolve=>setImmediate(resolve));
+  clock.advance(f.input.reviewer.timeoutMs);
+  await assert.rejects(pending,error=>error.code==="REVIEWER_DEADLINE");
+});
+
+test("the semantic role clock leaves production filesystem retry backoff live",async t=>{
+  const f=await semanticFixture(t),clock=semanticReviewClock(t),before=clock.now();
+  const rename=fs.rename;let attempts=0;
+  t.mock.method(fs,"rename",async function(...args){
+    if(++attempts===1)throw Object.assign(new Error("Controlled temporary rename lock."),{code:"EACCES"});
+    return rename.call(this,...args);
+  });
+  const file=path.join(f.root,"retry.json");await atomicWriteJson(file,{preserved:true});
+  assert.equal(attempts,2);assert.deepEqual(JSON.parse(await fs.readFile(file,"utf8")),{preserved:true});
+  assert.equal(clock.now(),before,"Real I/O backoff must not consume semantic review time.");
 });
