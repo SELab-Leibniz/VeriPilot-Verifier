@@ -8,13 +8,14 @@ import test from 'node:test';
 import { createDocumentTools, registerDocumentTools } from '../lib/document-tools.mjs';
 import { releaseDocumentSessions } from '../lib/document-session.mjs';
 import { openSpecChecklistInventory, readOpenSpecPlan } from '../lib/openspec-plan.mjs';
-import { recordProposalCoverage, selectApprovedPlanCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
+import { recordProposalCoverage, selectApprovedPlanCoverage, sealRequiredProposalCoverage } from '../lib/openclaw/approved-plan-coverage.mjs';
 import { beginOpenSpecRun, hasArmedOpenSpecApply, openSpecProposalReviewRequirements, registerOpenSpecPlanControl } from '../lib/openclaw/openspec-plan-control.mjs';
 import { nativeTranscriptObservation } from '../lib/openclaw/native-transcript.mjs';
 import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
 import { REVIEW_SCHEMA } from '../lib/semantic-review.mjs';
 import { mergeSemanticReview } from '../lib/result-processing.mjs';
 import { createRoundMetadata, persistResult } from '../lib/result-store.mjs';
+import { checkArtifact, finalizeArtifactCheck } from '../lib/runtime-corrector.mjs';
 
 const changeName = 'restore-default';
 const prefix = `openspec/changes/${changeName}`;
@@ -352,6 +353,95 @@ test('same-publication complete READY recovers strict approval and arms the exac
   assert.deepEqual(armed.planReadiness, approved.planReadiness);
   beginOpenSpecRun(f.state, 'apply-run');
   assert.equal(hasArmedOpenSpecApply(f.state, 'apply-run'), true);
+});
+
+async function finalizeReadinessPublication(f, status = 'UNVERIFIED') {
+  await f.write('.runtime-corrector/review.md', 'Review the entire current plan against the original requirements.\n');
+  await f.write('.runtime-corrector/config.yaml', `version: 1
+artifacts:
+  - name: plan
+    stage: proposal
+    patterns: ["${tasksPath}"]
+    relatedRoot: project
+    relatedPatterns: ["${prefix}/**/*.md"]
+    rules:
+      enabled: false
+    review:
+      enabled: true
+      criteria: review.md
+output:
+  persist: false
+`);
+  const assessment = f.assessment({ status, rows: f.assessment().rows.map((row, index) => index || status === 'READY' ? row
+    : { ...row, status, reason: 'The required verification prerequisite remains unresolved.' }) });
+  const readiness = { ...await f.tools.verifyPlanReadiness(assessment), ...f.owner };
+  const prepared = await checkArtifact({ cwd: f.root, filePath: tasksPath, deferPersistence: true });
+  const { result } = await finalizeArtifactCheck(prepared, { status: 'completed', findings: [], diffs: [], edits: [],
+    summary: 'The original clauses are covered; readiness is assessed separately.',
+    originalRequirementCoverage: f.coverage, planReadiness: readiness });
+  return { result, readiness };
+}
+
+test('a finalized readiness-only pending review reports the precise approval prerequisite without becoming PASSED', async t => {
+  const f = await approvalFixture(t), { result } = await finalizeReadinessPublication(f);
+  assert.equal(result.status, 'pending'); assert.equal(result.classification, 'UNVERIFIED');
+  assert.deepEqual(result.diagnostics.map(row => row.ruleId), ['PLAN_READINESS_UNVERIFIED']);
+  recordProposalCoverage(f.state, tasksPath, f.coverage, { ...f.owner, result });
+  const selected = selectApprovedPlanCoverage(f.state, f.owner.runId, f.snapshot);
+  assert.equal(selected.reviewStatus, 'UNVERIFIED'); assert.equal(selected.readinessOnlyUnverified, true);
+  assert.match((await f.rejected('approve', f.approveArgs)).message, /exact complete Proposal task inventory is not READY/u);
+  await f.rejected('arm', { expectedRevision: f.snapshot.revision, expectedInventorySha256: '0'.repeat(64), applyRunId: 'apply-run' });
+  const forgedReady = { ...selected, planReadiness: f.readiness };
+  assert.throws(() => sealRequiredProposalCoverage(f.approveArgs.requiredAtoms, [{ ref: originalRef, text: originalText }], forgedReady,
+    { requirePlanReadiness: true, checklistInventory: f.inventory }), /full-plan Proposal review is unavailable/u);
+  const ready = await finalizeReadinessPublication(f, 'READY');
+  recordProposalCoverage(f.state, tasksPath, f.coverage, { ...f.owner, result: ready.result });
+  assert.equal((await f.rpc('approve', f.approveArgs)).status, 'APPROVED', 'a fresh genuinely passed publication recovers approval');
+});
+
+test('unrelated failures, unbound metadata and incomplete coverage cannot borrow readiness-only diagnostics', async t => {
+  const cases = [
+    ['unrelated pending', (_receipt, publication) => publication.result.diagnostics.push({ ruleId: 'OTHER_UNVERIFIED', severity: 'pending' })],
+    ['stronger error', (_receipt, publication) => publication.result.diagnostics.push({ ruleId: 'AGENT-PLAN-CONTRADICTION', severity: 'error' })],
+    ['failed semantic review', (_receipt, publication) => { publication.result.metadata.semanticReview.status = 'failed'; }],
+    ['wrong finalized status', (_receipt, publication) => { publication.result.status = 'passed'; }],
+    ['wrong finalized classification', (_receipt, publication) => { publication.result.classification = 'CHECKER_FAILURE'; }],
+    ['foreign readiness owner', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.runId = 'foreign'; }],
+    ['foreign coverage owner', receipt => { receipt.sessionId = 'foreign'; }],
+    ['foreign readiness scope', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.scope[0].sha256 = '0'.repeat(64); }],
+    ['missing readiness row', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.rows.pop(); }],
+    ['malformed readiness task', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.tasks[0] = null; }],
+    ['duplicated readiness task', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.tasks[1] = publication.result.metadata.semanticReview.planReadiness.tasks[0]; }],
+    ['inconsistent readiness aggregate', (_receipt, publication) => { publication.result.metadata.semanticReview.planReadiness.rows[0].status = 'BLOCKED'; }],
+    ['missing coverage rows', receipt => { receipt.rows = []; }],
+    ['unbound coverage target', receipt => { receipt.rows[0].targets[0].sha256 = '0'.repeat(64); }],
+    ['forged model flag', (_receipt, publication) => { publication.result.readinessOnlyUnverified = true; publication.result.diagnostics.push({ ruleId: 'OTHER_UNVERIFIED', severity: 'pending' }); }],
+  ];
+  for (const [name, alter] of cases) await t.test(name, async t => {
+    const f = await approvalFixture(t), { result } = await finalizeReadinessPublication(f);
+    const receipt = structuredClone(f.coverage), publication = { ...f.owner, result: structuredClone(result) };
+    receipt.readinessOnlyUnverified = true; alter(receipt, publication);
+    recordProposalCoverage(f.state, tasksPath, receipt, publication);
+    const selected = selectApprovedPlanCoverage(f.state, f.owner.runId, f.snapshot);
+    assert.notEqual(selected?.readinessOnlyUnverified, true);
+    assert.doesNotMatch((await f.rejected('approve', f.approveArgs)).message, /task inventory is not READY/u);
+    await f.rejected('arm', { expectedRevision: f.snapshot.revision, expectedInventorySha256: '0'.repeat(64), applyRunId: 'apply-run' });
+  });
+});
+
+test('readiness diagnostics never replace missing canonical original coverage or an explicit policy opt-in', async t => {
+  for (const [name, alter] of [
+    ['foreign original source', receipt => { receipt.rows[0].source.sha256 = '0'.repeat(64); }],
+    ['unverified original clause', receipt => { receipt.rows[0].disposition = 'UNVERIFIED'; }],
+    ['duplicated original row', receipt => { receipt.rows.push(structuredClone(receipt.rows[0])); }],
+  ]) await t.test(name, async t => {
+    const f = await approvalFixture(t), { result } = await finalizeReadinessPublication(f), receipt = structuredClone(f.coverage);
+    alter(receipt); recordProposalCoverage(f.state, tasksPath, receipt, { ...f.owner, result });
+    assert.doesNotMatch((await f.rejected('approve', f.approveArgs)).message, /task inventory is not READY/u);
+  });
+  const f = await approvalFixture(t, { requirePlanReadiness: false }), { result } = await finalizeReadinessPublication(f);
+  recordProposalCoverage(f.state, tasksPath, f.coverage, { ...f.owner, result });
+  assert.match((await f.rejected('approve', f.approveArgs)).message, /full-plan Proposal review is unavailable/u);
 });
 
 test('a later complete publication cannot borrow an older READY receipt, and a fresh complete recheck recovers', async t => {
