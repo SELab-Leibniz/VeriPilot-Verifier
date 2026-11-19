@@ -16,9 +16,17 @@
 
 ## 可选：同一变更整包审阅
 
-使用 proposal、design、tasks 和差量规格的项目，可选择插件安装目录下 `.runtime-corrector-default/openspec-full-plan.topology.yaml`。它按变更名收集完整方案，在 proposal、design、tasks 和至少一份差量规格齐备后启动语义审阅；草稿写入仍执行确定性检查，之后修改任一成员会重新审阅当前整包。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。
+新项目在完成宿主 `/rc-setup` 并选定实际项目后，可直接运行：
 
-先备份项目配置，再将随附的 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`；已有同名文件时先核对内容。将 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值合入当前 `config.yaml`，审阅并替换原有拓扑；不要用 overlay 覆盖整个配置。保留模型、时限、项目与会话开关、原文覆盖和任务 READY 要求、Stop 及验证设置；已有自定义审阅标准也须核对。`/rc-project init` 不自动选择或复制这两个可选资源。
+```text
+/rc-project init openspec-full-plan
+```
+
+命令将整包拓扑与配套规则写入新建的 `.runtime-corrector/`，其余模板策略保留，项目与首次登记会话仍关闭。随后执行 `/rc-project on` 和 `/rc-session on`。已有 `.runtime-corrector/` 时初始化会拒绝覆盖；已有项目按下述步骤合入拓扑。
+
+使用 proposal、design、tasks 和差量规格的项目，可选择插件安装目录下 `.runtime-corrector-default/openspec-full-plan.topology.yaml`。它按变更名收集完整方案，在 proposal、design、tasks 和至少一份差量规格齐备后启动语义审阅；草稿写入仍执行确定性检查。后续方案正文或成员范围变化需要重新审阅当前整包。获批 Apply 中仅任务勾选的变化，在显式开启 `skipApprovedTaskProgress` 且满足复用条件时可沿用原审阅；当前确定性检查和已启用的最终 Stop 继续执行，不生成新的语义 PASS。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。
+
+先备份项目配置，再将随附的 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`；已有同名文件时先核对内容。将 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值合入当前 `config.yaml`，审阅并替换原有拓扑；不要用 overlay 覆盖整个配置。保留模型、时限、项目与会话开关、原文覆盖和任务 READY 要求、Stop 及验证设置；已有自定义审阅标准也须核对。不带参数的 `/rc-project init` 不自动选择或复制这两个可选资源。
 
 此选项只适用于上述文件结构。文件齐备只决定何时审阅，不证明所有能力规格、需求或实施任务完整；Apply 前仍须执行既有的 OpenSpec 校验、当前方案覆盖和任务就绪检查。它不会自动开启未配置的严格检查。
 

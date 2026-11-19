@@ -1,5 +1,47 @@
 # MatrixAssistant / OpenClaw 纠偏与 Stop 审查
 
+## 安装并开启
+
+下载 `runtime-corrector-openclaw-1.10.0.tgz`，使用将要加载插件的那份 OpenClaw CLI 安装。MatrixAssistant 用户使用其内置的 OpenClaw CLI。宿主与 Node 版本要求见下文“运行环境”。
+
+```sh
+openclaw plugins install ./runtime-corrector-openclaw-1.10.0.tgz
+```
+
+宿主安装器会登记插件，按宿主插件策略启用，并链接宿主 SDK。随后通过宿主界面重启 Gateway；使用 CLI 管理的服务也可执行 `openclaw gateway restart`。
+
+先在 OpenClaw 中配置可用的默认模型，再由已认证的管理员在聊天框发送：
+
+```text
+/rc-setup
+```
+
+该命令授予所需的会话与提示 Hook 权限，以及主 Agent 的 `runtime_corrector` 工具权限。未配置 RC 模型时使用宿主默认模型，已有 RC 模型和时限设置保留。命令不接受参数；按返回信息完成重载或重启后再继续。
+
+在宿主中选定实际项目，并运行 `/rc-project status`。若返回 `mode: legacy`，用 `/rc-project bind /绝对项目目录` 绑定项目。这只选择 RC 作用域，不改变宿主工作目录；宿主工具也应指向同一项目。原生项目模式跟随宿主选择，不允许 RC 改绑。然后在该 Session 中初始化：
+
+```text
+/rc-project init
+```
+
+需要将 OpenSpec 的 proposal、design、tasks 和差量规格作为整包审阅时，改用：
+
+```text
+/rc-project init openspec-full-plan
+```
+
+两种命令均拒绝覆盖已有 `.runtime-corrector/`，创建后项目与首次登记会话仍关闭。整包选项只选择文档拓扑及配套规则，保留模板的其他策略；不会自动开启未配置的严格原文覆盖或任务 READY 检查。
+
+开启项目和当前会话，再查询实际状态：
+
+```text
+/rc-project on
+/rc-session on
+/rc-session status
+```
+
+`effectiveEnabled: true` 表示当前会话已启用纠偏；为 `false` 时先查看 `reason`。已有项目的配置和权限说明见[项目与 Session 开关](session-control.md)。
+
 所有 RC agent 的单次模型输出默认上限为 `32768`（32K）。在项目 `.runtime-corrector/config.yaml` 中配置 `maxOutputTokens` 可统一调整；评审还支持 `reviewers.defaults.maxOutputTokens` 与 `reviewers.<role>.maxOutputTokens`，角色配置优先。覆盖停止分类、Stop 单项/分组/文件质量/实现审查、基线刷新及其他评审，也覆盖受监督执行的私有 worker；格式修复与续问继续应用配置。详见 [Agent 单次输出上限](configuration.md#agent-单次输出上限)。
 
 Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构化 compact 恢复和事务应用回执，见 [基线 task 协议与验证边界](stop-baseline-task.md)。其他提取入口及审阅角色保留各自协议。构建不会安装到现有 MA。
@@ -10,7 +52,7 @@ Stop 前置基线刷新已接入专用抽取 task，支持候选批次、结构�
 
 新项目可用 `/rc-project init openspec-full-plan` 选择整包审阅：初始化只替换默认配置的 `enabledStages`、`artifacts`、`workflow`，复制配套规则，保留模型及其余策略，项目和首次会话仍关闭。普通 `/rc-project init` 保持原有逐文档拓扑；两种初始化均拒绝覆盖已有 `.runtime-corrector/`。
 
-已有项目需要减少 OpenSpec 草稿阶段的反复语义审阅时，可显式选择安装包 `.runtime-corrector-default/openspec-full-plan.topology.yaml`：备份当前项目配置，将随附 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`，只合入 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值，并核对原有拓扑与自定义审阅标准。它不是独立配置，不能覆盖整个 `config.yaml`；模型、时限、严格原文覆盖与任务就绪要求、Stop、验证及项目/会话开关均保留。此拓扑要求同一变更的 proposal、design、tasks 和至少一份差量规格，齐备前保留确定性检查并延后语义审阅，齐备后读取当前整包；随后每次成员修改都重新审阅。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。文件齐备不证明需求、所有能力规格或任务完整，也不替代 Apply 前既有的 OpenSpec 校验、当前完整方案覆盖与 READY 检查，未启用的严格检查不会因此自动开启。
+已有项目需要减少 OpenSpec 草稿阶段的反复语义审阅时，可显式选择安装包 `.runtime-corrector-default/openspec-full-plan.topology.yaml`：备份当前项目配置，将随附 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`，只合入 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值，并核对原有拓扑与自定义审阅标准。它不是独立配置，不能覆盖整个 `config.yaml`；模型、时限、严格原文覆盖与任务就绪要求、Stop、验证及项目/会话开关均保留。此拓扑要求同一变更的 proposal、design、tasks 和至少一份差量规格，齐备前保留确定性检查并延后语义审阅，齐备后读取当前整包。后续方案正文或成员范围变化需要重新审阅当前整包。获批 Apply 中仅任务勾选的变化，在显式开启 `skipApprovedTaskProgress` 且满足复用条件时可沿用原审阅；当前确定性检查和已启用的最终 Stop 继续执行，不生成新的语义 PASS。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。文件齐备不证明需求、所有能力规格或任务完整，也不替代 Apply 前既有的 OpenSpec 校验、当前完整方案覆盖与 READY 检查，未启用的严格检查不会因此自动开启。
 
 当前生产 Stop 使用共享评估核心和单 Agent 分组逐项提交，主要适配 MatrixAssistant 内置 OpenClaw `2026.7.1-2`。支持的另一版本为 `2026.10.3`，其项目与审阅适配不代表新的自动续作协议已整体验收。完整真实模型、桌面长时边界、进程重启/GT 缓存恢复与 K 分组性能仍待单独验收。构建不会自动安装到现有宿主。
 
@@ -154,7 +196,7 @@ MA 的终态通知使用宿主公开的按会话身份追加助手消息接口�
 
 冻结的执行记录使用 `execution/` 和 `execution-index.json` 作为审查包内部路径，避免 MA 将旧的 `process/`、`process-index.json` 按 `/proc` 敏感路径误判。这些文件仍受原有快照范围、哈希、读取凭据和宿主审核约束。
 
-合并不自动安装。当前包版本 `1.9.1-openclaw.11-session-projects.15`。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
+合并不自动安装。安装版本以包内 `package.json` 与 `openclaw.plugin.json` 为准。从旧受控执行版本迁移时，业务需使用原生 `openclaw`；只移除 RC 自己此前添加的 `runtime-corrector-supervised` 绑定与 `supervisedExecution`，保留其他模型、运行时、凭据、工具、审批及时间设置。新版宿主的 Node 要求以其安装包为准：`2026.10.3` 使用 Node `>=24.16.0 <25` 或 `>=26.1.0`。
 
 ```json
 {"plugins":{"entries":{"runtime-corrector":{
