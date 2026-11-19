@@ -11,6 +11,7 @@ import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { readConsoleObservations } from '../lib/openclaw/console-observations.mjs';
 import { spawnSync } from 'node:child_process';
+import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
 import { fileURLToPath } from 'node:url';
 
 const operation = (text, expectedFiles) => ({ operation: 'ADD', category: 'requirements', authority: 'USER_EXPLICIT', severity: 'HARD',
@@ -215,7 +216,13 @@ test('an explicit validated source-ref repair reconciles a persisted original wh
   let repairing = false;
   const f = await fixture(t, ({ calls }) => repairing ? report([valid, { ...invalid, source: { ...invalid.source, ref: 'transcript:u1' } }])
     : calls.length === 1 ? report([valid, invalid]) : { sourceRepairs: [{ index: 1, source: invalid.source }] });
-  assert.equal((await maybeRunTaskOnboarding({ ...f, projectRoot: f.root })).status, 'DEFERRED');
+  const initial = await maybeRunTaskOnboarding({ ...f, projectRoot: f.root });
+  if (initial.status !== 'DEFERRED') t.diagnostic(JSON.stringify({ phase: 'SOURCE_REF_REPAIR_INITIAL',
+    status: /^[A-Z][A-Z0-9_]{0,79}$/u.test(initial.status ?? '') ? initial.status : undefined,
+    reason: /^[A-Z][A-Z0-9_]{0,79}$/u.test(initial.reason ?? '') ? initial.reason : undefined,
+    retryable: typeof initial.retryable === 'boolean' ? initial.retryable : undefined,
+    diagnostics: await runtimeFailureDiagnostics({ root: f.root, calls: f.roles.map(role => ({ role })) }) }));
+  assert.equal(initial.status, 'DEFERRED');
   const original = (await findTask({ projectRoot: f.root, sessionId: f.input.session_id })).groundTruth.onboardingPending[0];
   assert.equal(original.reasonCode, 'SOURCE_BINDING_INVALID');
   repairing = true;

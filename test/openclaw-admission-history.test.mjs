@@ -10,37 +10,51 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function withOwnedContinuation(t, observeModelStart, run) {
   const terminal = deferred(t), dispatched = deferred(t);
-  let childRunId, reviews = 0;
-  const f = await lifecycle(t, { waitMode: 'until_pass', waitTimeoutMs: 120000,
-    observeModelStart, review: async () => ++reviews === 1,
-    postRunTerminal: async (_identity, runId) => {
-      if (runId.startsWith('rc-stop-')) await terminal.promise;
-      return { runId, status: 'ok' };
-    } });
-  const timing = [];
-  f.api.logger.info = value => timing.push(value);
-  f.api.runtime.subagent = { run: async args => {
-    childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId };
-  } };
-  let child;
+  let f, child, childRunId, reviews = 0;
+  const bounded = async (phase, timeoutMs, action) => {
+    const startedAt = Date.now();
+    try { return await within(Promise.resolve().then(action), phase, timeoutMs); }
+    catch (error) {
+      t.diagnostic(JSON.stringify({ phase, elapsedMs: Date.now() - startedAt, timeoutMs }));
+      throw error;
+    }
+  };
   try {
-    await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
-      payload: { text: 'Current candidate.' } }, f.ctx);
-    await within(dispatched.promise, 'correction dispatch');
-    await within(f.runtime.waitForNativeReviews(), 'initial review');
-    child = { ...f.ctx, runId: childRunId };
-    const prompt = await f.runtime.prompt({ prompt: 'Apply the current feedback.' }, child);
-    const protocol = f.sharedState.stopStartProtocol;
-    const before = await protocol.findRun({ state: f.state, runId: childRunId });
-    assert.equal(before.admission.accounting, observeModelStart ? 'USED' : 'RESERVED');
-    assert.equal(protocol.knowsRun(f.state, childRunId), true);
-    const event = { prompt: prompt?.prependContext ?? 'Continue the same owned run.' };
-    await run({ f, child, childRunId, protocol, before, event, timing,
-      ledger: path.join(f.root, 'host-state/runtime-corrector-stop-sessions/sessions', `${sha256('host')}.json`) });
+    // Completed onboarding and correction dispatch prepare the owned run. Their
+    // filesystem work is outside the original twenty-second gate observation.
+    const ready = await bounded('OWNED_CONTINUATION_SETUP', 60000, async () => {
+      f = await lifecycle(t, { waitMode: 'until_pass', waitTimeoutMs: 120000,
+        observeModelStart, review: async () => ++reviews === 1,
+        postRunTerminal: async (_identity, runId) => {
+          if (runId.startsWith('rc-stop-')) await terminal.promise;
+          return { runId, status: 'ok' };
+        } });
+      const timing = [];
+      f.api.logger.info = value => timing.push(value);
+      f.api.runtime.subagent = { run: async args => {
+        childRunId = args.idempotencyKey; dispatched.resolve(); return { runId: childRunId };
+      } };
+      await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
+        payload: { text: 'Current candidate.' } }, f.ctx);
+      await within(dispatched.promise, 'correction dispatch');
+      await within(f.runtime.waitForNativeReviews(), 'initial review');
+      child = { ...f.ctx, runId: childRunId };
+      const prompt = await f.runtime.prompt({ prompt: 'Apply the current feedback.' }, child);
+      const protocol = f.sharedState.stopStartProtocol;
+      const before = await protocol.findRun({ state: f.state, runId: childRunId });
+      assert.equal(before.admission.accounting, observeModelStart ? 'USED' : 'RESERVED');
+      assert.equal(protocol.knowsRun(f.state, childRunId), true);
+      const event = { prompt: prompt?.prependContext ?? 'Continue the same owned run.' };
+      return { f, child, childRunId, protocol, before, event, timing,
+        ledger: path.join(f.root, 'host-state/runtime-corrector-stop-sessions/sessions', `${sha256('host')}.json`) };
+    });
+    await bounded('OWNED_CONTINUATION_OBSERVATION', 20000, () => run(ready));
   } finally {
     terminal.resolve();
-    await f.runtime.reset({}, child ?? f.ctx);
-    await f.runtime.waitForNativeReviews({ drain: true });
+    if (f) await bounded('OWNED_CONTINUATION_CLEANUP', 20000, async () => {
+      await f.runtime.reset({}, child ?? f.ctx);
+      await f.runtime.waitForNativeReviews({ drain: true });
+    });
   }
 }
 
@@ -57,7 +71,7 @@ async function withLedgerDelay(ledger, delayMs, run) {
   finally { await Promise.all(reads.map(entry => entry.settled)); fs.readFile = original; }
 }
 
-test('known USED continuation performs one fresh ownership read without repeated history initialization', { timeout: 20000 }, async t => {
+test('known USED continuation performs one fresh ownership read without repeated history initialization', async t => {
   await withOwnedContinuation(t, true, async ({ f, child, childRunId, protocol, event, ledger, timing }) => {
     timing.length = 0;
     await withLedgerDelay(ledger, 0, async reads => {
@@ -73,7 +87,7 @@ test('known USED continuation performs one fresh ownership read without repeated
   });
 });
 
-test('known navigation still fails closed on an ownership read that exceeds the original gate deadline', { timeout: 20000 }, async t => {
+test('known navigation still fails closed on an ownership read that exceeds the original gate deadline', async t => {
   await withOwnedContinuation(t, true, async ({ f, child, event, ledger, timing }) => {
     timing.length = 0;
     await withLedgerDelay(ledger, 1500, async reads => {
@@ -87,7 +101,7 @@ test('known navigation still fails closed on an ownership read that exceeds the 
   });
 });
 
-test('fresh lookup fences missing and foreign ledgers and current reset despite remembered navigation', { timeout: 20000 }, async t => {
+test('fresh lookup fences missing and foreign ledgers and current reset despite remembered navigation', async t => {
   await withOwnedContinuation(t, true, async ({ f, child, childRunId, protocol, event, ledger }) => {
     const backup = `${ledger}.owned-test-backup`;
     await fs.rename(ledger, backup);
@@ -109,7 +123,7 @@ test('fresh lookup fences missing and foreign ledgers and current reset despite 
   });
 });
 
-test('RESERVED source revalidation and unknown namespace history checks remain required', { timeout: 20000 }, async t => {
+test('RESERVED source revalidation and unknown namespace history checks remain required', async t => {
   await withOwnedContinuation(t, false, async ({ f, child, childRunId, protocol, event }) => {
     await fs.writeFile(path.join(f.root, 'draft.md'), 'Changed before any observed model start.\n');
     assert.equal((await f.runtime.beforeAgentRun(event, child)).outcome, 'block');
