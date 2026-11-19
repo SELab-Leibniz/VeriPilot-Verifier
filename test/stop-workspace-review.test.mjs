@@ -2159,14 +2159,14 @@ test('strict production origins reject incomplete primary dispatch discovery', a
 test('strict production origins account for upstream file-backed callers before accepting downstream-only proof', async t => {
   const requirement = 'Exports requested through the CLI must use the chosen separator, including cached inputs.';
   let foreignReceipt;
-  for (const mode of ['legacy', 'healthy', 'out-of-scope', 'non-dispatch-verified', 'missing', 'unread', 'incomplete', 'foreign', 'wrong-entry', 'disconnected', 'stale', 'partial', 'dispatch-unknown', 'opaque-template', 'unsupported', 'flag-alone', 'deviation']) await t.test(mode, async t => {
-    const broken = ['legacy', 'deviation', 'opaque-template'].includes(mode);
+  for (const mode of ['legacy', 'healthy', 'out-of-scope', 'non-dispatch-verified', 'missing', 'unread', 'incomplete', 'foreign', 'wrong-entry', 'disconnected', 'stale', 'partial', 'dispatch-unknown', 'opaque-template', 'escaped-selector', 'indirect-call', 'unsupported', 'flag-alone', 'deviation']) await t.test(mode, async t => {
+    const broken = ['legacy', 'deviation', 'opaque-template', 'escaped-selector'].includes(mode);
     const f = await frameStopCase(t, { enabled: false, requireCurrentProductionCoverage: mode !== 'flag-alone',
       requireProductionOriginCoverage: mode !== 'legacy', userText: requirement, sourceText: [
-        'export function install(register, emit, separator, cached) {',
-        '  register("export", () => {',
+        `${mode === 'indirect-call' ? 'import { renderExport } from "./views/ExportView.mjs"; ' : ''}export function install(register, emit, separator, cached) {`,
+        `  register("export", () => {${mode === 'indirect-call' ? ' renderExport.call(null, { separator }, []);' : ''}`,
         '    if (cached) {',
-        `${mode === 'opaque-template' ? '      `${' : '      '}emit({ view: "views/ExportView", params: { cached${broken ? '' : ', separator'} }${mode === 'dispatch-unknown' ? ', ...{}' : ''} })${mode === 'opaque-template' ? '}`' : ''};`,
+        `${mode === 'opaque-template' ? '      `${' : '      '}emit({ view: "${mode === 'escaped-selector' ? 'views/\\u0045xportView' : 'views/ExportView'}", params: { cached${broken ? '' : ', separator'} }${mode === 'dispatch-unknown' ? ', ...{}' : ''} })${mode === 'opaque-template' ? '}`' : ''};`,
         '      return;',
         '    }',
         '    emit({ view: "views/ExportView", params: { separator } });',
@@ -2225,13 +2225,15 @@ test('strict production origins account for upstream file-backed callers before 
         const receipt = await submit('review_production_origin', { objectId, entry: flow.entry });
         flow.originReceiptId = mode === 'foreign' ? foreignReceipt : receipt.receiptId;
         if (mode === 'healthy') foreignReceipt = receipt.receiptId;
-        if (['partial', 'unsupported', 'opaque-template'].includes(mode)) {
+        if (['partial', 'unsupported', 'opaque-template', 'escaped-selector', 'indirect-call'].includes(mode)) {
           assert.equal(receipt.status, 'UNKNOWN');
           assert.deepEqual(receipt.candidates, []);
-          if (mode === 'opaque-template') {
+          if (['opaque-template', 'escaped-selector', 'indirect-call'].includes(mode)) {
             assert.equal(receipt.reason, 'UNPARSED_POTENTIAL_ORIGIN');
             assert.equal(receipt.unparsedOrigin.path, 'app.mjs');
-            assert.equal(receipt.unparsedOrigin.start, 4);
+            assert.equal(receipt.unparsedOrigin.start, mode === 'indirect-call' ? 2 : 4);
+            if (mode === 'escaped-selector') assert.equal(receipt.unparsedOrigin.reason, 'ESCAPED_RUNTIME_STRING');
+            if (mode === 'indirect-call') assert.equal(receipt.unparsedOrigin.reason, 'INDIRECT_CALLABLE_REFERENCE');
           }
         } else {
           assert.equal(receipt.status, 'READY', receipt.reason);
@@ -2286,7 +2288,7 @@ test('strict production origins account for upstream file-backed callers before 
       if (mode === 'unsupported') assert.equal(coverage.originCoverage.reason, 'UNSUPPORTED_SOURCE_LANGUAGE');
       if (mode === 'partial') assert.equal(coverage.originCoverage.reason, 'PARTIAL_OR_UNRESOLVED_INDEX');
       if (mode === 'dispatch-unknown') assert.match(coverage.originCoverage.reason, /^UPSTREAM_DISPATCH_/u);
-      if (mode === 'opaque-template') assert.equal(coverage.originCoverage.reason, 'UNPARSED_POTENTIAL_ORIGIN');
+      if (['opaque-template', 'escaped-selector', 'indirect-call'].includes(mode)) assert.equal(coverage.originCoverage.reason, 'UNPARSED_POTENTIAL_ORIGIN');
       if (mode === 'non-dispatch-verified') assert.equal(coverage.originCoverage.reason, 'UPSTREAM_DISPATCH_NO_LITERAL_DISPATCH_AT_ANCHOR');
       if (mode === 'disconnected') assert.equal(coverage.originCoverage.reason, 'UPSTREAM_FLOW_DISCONNECTED');
     }

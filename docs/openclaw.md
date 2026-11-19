@@ -31,6 +31,8 @@ reviewers:
 
 `effort` 支持 `off`、`low`、`medium`、`high`、`xhigh`、`max`，默认 `low`。需要请求关闭思考模式时设置 `effort: "off"`；RC 将它原样传给宿主，审查、工具与证据校验继续执行。本机目标 OpenClaw 的 DeepSeek V4 原生兼容路径会显式发送 `thinking.type: "disabled"`；自定义代理及其他模型的实际行为取决于对应适配，详见 [Reviewer 思考强度](configuration.md#reviewer-思考强度)。
 
+宿主模型条目的 `reasoning` 描述 SDK 如何处理模型响应，并不直接关闭远端思考。对于实际返回独立推理片段的模型，应核实这项能力声明与所用适配器一致；否则 SDK 可能收到推理字节，却没有向原生空闲检查提供相应进展。请求中的思考开关与强度由模型兼容字段和实际发送内容另行决定。排查时保留真实空闲检查及原截止时间，不以人工心跳伪装模型进度。
+
 实际开始一次业务纠偏才同时扣会话和流程各一次；审阅 Agent、单项保存、通知和排队不扣。任务、GT、配置、模式或需求周期变化都不恢复会话已用次数。已有会话没有可信的逐次启动历史时明确等待迁移核对，不能默认为新会话。
 
 旧 `maxCorrectionsPerEpoch` 只在配置入口映射到 `maxCorrectionsPerFlow`，旧 `waitTimeoutMs` 只映射到本次 `assessmentTimeoutMs`，两者均带弃用提示。新旧同义字段同时出现时报错。移除旧“需求变化清零”和“整条纠偏链共享审查时限”语义。总时限小于默认三分钟预留的测试配置，必须同时显式缩短 `feedbackReserveMs`。
