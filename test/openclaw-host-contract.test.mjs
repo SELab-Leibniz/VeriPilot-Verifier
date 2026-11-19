@@ -132,7 +132,7 @@ test("installed 2026.7.1-2 acknowledged queue, native selection and user transcr
 test("explicit host runtime supports plugin registration, automatic projects, logs and manual fallback", async t => {
   if (!process.env.RC_OPENCLAW_HOST_ROOT) { t.skip("Set RC_OPENCLAW_HOST_ROOT for an isolated installed-host probe."); return; }
   const host = await fs.realpath(process.env.RC_OPENCLAW_HOST_ROOT);
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-host-"));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-host-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const pluginRoot = await buildPlugin({ host: "openclaw", sourceRoot: path.resolve("."), outputRoot: path.join(root, "build") });
   const script = `

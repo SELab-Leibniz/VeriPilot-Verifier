@@ -50,7 +50,7 @@ export function createNativeStopFixture() {
     ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
   });
   after(() => fs.rm(output, { recursive: true, force: true }));
-  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write", observeModelStart = true } = {}) {
+  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, setupHookTimeoutMs = 30000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write", observeModelStart = true } = {}) {
     const params = await basic(t), root = params.projectRoot;
     const materialFile = materialText === undefined ? null : path.join(root, "requirements.md");
     if (materialFile) await fs.writeFile(materialFile, materialText);
@@ -118,7 +118,11 @@ reviewers:
     };
     factory.handoff = async ({ originHandle, ...input }) => { await originHandle?.close(); return factory(input); };
     const warnings = [];
-    const state = {}, hostAbort = new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs }, config: {}, logger: { warn(message) { warnings.push(message); } },
+    // Only completed fixture onboarding gets a separate I/O allowance. Tests
+    // that deliberately retain initialization work or exercise the first tool
+    // keep their exact original clock throughout that work.
+    const setupBudget = awaitInitialReview && initialPrompt ? Math.max(hookTimeoutMs, setupHookTimeoutMs) : hookTimeoutMs;
+    const state = {}, hostAbort = new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs: setupBudget }, config: {}, logger: { warn(message) { warnings.push(message); } },
       runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
         resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
         runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };
@@ -150,12 +154,14 @@ reviewers:
     const ctx = { agentId: "main", sessionId: "host", sessionKey: params.sessionKey, runId: params.runId, workspaceDir: root, trigger: "user", abortSignal: hostAbort.signal };
     const runtimes = [runtime];
     params.cleanup.dispose = async () => { for (const value of [...runtimes].reverse()) await value.dispose(); };
-    await runtime.sessionStart({ sessionId: "host" }, ctx);
-    if (initialPrompt) await runtime.prompt({ prompt: "Write a draft." }, ctx);
-    else assert.equal(await findTask({ projectRoot: root, sessionId: "host" }), null, "the first tool must establish its own task before material capture");
-    await runtime.beforeTool({ toolName: initialToolName, toolCallId: "w", params: { path: "draft.md" } }, ctx);
-    if (awaitInitialReview) await state.states.get("main:host")?.hotReviewWork?.promise;
-    assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
+    try {
+      await runtime.sessionStart({ sessionId: "host" }, ctx);
+      if (initialPrompt) await runtime.prompt({ prompt: "Write a draft." }, ctx);
+      else assert.equal(await findTask({ projectRoot: root, sessionId: "host" }), null, "the first tool must establish its own task before material capture");
+      await runtime.beforeTool({ toolName: initialToolName, toolCallId: "w", params: { path: "draft.md" } }, ctx);
+      if (awaitInitialReview) await state.states.get("main:host")?.hotReviewWork?.promise;
+      assert(await findTask({ projectRoot: root, sessionId: "host" }), JSON.stringify(warnings));
+    } finally { api.pluginConfig.hookTimeoutMs = hookTimeoutMs; }
     calls = 0; fail = failures;
     return { api, runtime, ctx, warnings, startModel, sharedState: state, state: state.states.get("main:host"), root, pluginRoot, materialFile, hostAbort, calls: () => calls,
       post: () => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id),

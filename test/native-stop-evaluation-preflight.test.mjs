@@ -30,7 +30,7 @@ test('custom standalone baseline models retain explicit provider, model and fini
 });
 
 test('native fixture fence permits generated basis and the exact external contract; denies parent/profile and links before read', { skip: await fileSymlinkSkipReason() }, async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'native-data-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'native-data-')));
   const projectRoot = path.join(root, 'project'), contract = path.join(root, 'contract.md');
   await fs.mkdir(path.join(projectRoot, 'basis'), { recursive: true });
   await fs.writeFile(contract, 'fictional original');
@@ -222,7 +222,7 @@ test('Stop fails closed without its owning binding; only baseline reader roles r
 });
 
 test('noncomponent Stop preparation uses its real task binding without querying component reviewer context', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'native-stop-context-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'native-stop-context-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, 'original.txt'); await fs.writeFile(file, 'Original controlled Stop basis.');
   const params = { sessionId: 'actual-stop-session', sessionKey: 'actual-stop-key', runId: 'actual-stop-run' };

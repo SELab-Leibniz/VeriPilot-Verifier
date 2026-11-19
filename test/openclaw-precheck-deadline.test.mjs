@@ -49,6 +49,7 @@ const grep = id => ({ toolName: "bench_nav", toolCallId: `grep-${id}`, params: {
 
 test("an observation-only pre-check past the hot hook budget misses only that call", async t => {
   const f = await lifecycle(t);
+  assert.equal(f.api.pluginConfig.hookTimeoutMs, 5000, "fixture setup must not extend the hook budget under test");
   const reasons = releases(f), controller = f.state.reviewController, slow = slowAdmission(t, f);
   const started = Date.now();
   assert.equal(await f.runtime.beforeTool(grep("slow"), f.ctx), undefined);

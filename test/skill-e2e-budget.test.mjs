@@ -3,12 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { dispatchIntegratedOriginal, prepareIntegratedFixture } from '../scripts/helpers/native-integrated-module-case.mjs';
 import { integratedFixtureFence } from '../scripts/helpers/native-integrated-fixture-fence.mjs';
 import { nativeGatewayCodingProvider } from '../scripts/helpers/native-gateway-evaluation.mjs';
 import { skillE2eOptions, skillE2eProvider, skillVerifierCommand, skillFinalStopAccepted } from '../scripts/evaluate-skill-e2e.mjs';
+import { runPowerShellTestCommand } from './helpers/powershell-process.mjs';
 
 test('Skill native completion accepts a fully verified deviation-only Stop and rejects incomplete or foreign evidence', () => {
   const complete = {
@@ -64,21 +63,25 @@ test('Windows Skill verifier executes with a cleared environment and exact read-
     const privateFile=path.join(root,'private.txt'),writeFile=path.join(root,'must-not-write.txt');
     await fs.writeFile(privateFile,'not a verifier input');
     await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),`import fs from 'node:fs';
-if(process.env.RC_VERIFY_ISOLATION_SENTINEL)throw Error('Verifier inherited environment');
+if(Object.keys(process.env).some(key=>key.toLowerCase()!=='systemroot'))throw Error('Verifier inherited environment');
 for(const action of [()=>fs.readFileSync(${JSON.stringify(privateFile)}),()=>fs.writeFileSync(${JSON.stringify(writeFile)},'denied')]){
  let code;try{action();}catch(error){code=error.code;}if(code!=='ERR_ACCESS_DENIED')throw Error('Verifier permissions expanded');
 }
 export const accept=value=>value+1;\n`);
     await fs.writeFile(path.join(fixture.projectRoot,'docs/guide.md'),'finite numbers; accept(2) === 3; stateless; other inputs are outside scope.\n');
-    const {stdout}=await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
-      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,
-      env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH,RC_VERIFY_ISOLATION_SENTINEL:'must-not-reach-verifier'}});
+    // PowerShell needs its ordinary startup directories. The generated command
+    // clears the verifier child's environment independently of this launcher.
+    const launcherEnv=Object.fromEntries(['SystemRoot','PATH','USERPROFILE','APPDATA','LOCALAPPDATA','TEMP','TMP']
+      .filter(key=>typeof process.env[key]==='string').map(key=>[key,process.env[key]]));
+    const {stdout}=await runPowerShellTestCommand(skillVerifierCommand(fixture),{
+      cwd:fixture.projectRoot,
+      env:{...launcherEnv,RC_VERIFY_ISOLATION_SENTINEL:'must-not-reach-verifier'}});
     const result=JSON.parse(stdout.trim());
     assert.equal(result.codePassed,true);assert.equal(result.guidePassed,true);
     assert.equal(await fs.stat(writeFile).then(()=>true,()=>false),false);
     await fs.writeFile(path.join(fixture.projectRoot,'app.mjs'),'export const accept=value=>value;\n');
-    await assert.rejects(promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command',skillVerifierCommand(fixture)],{
-      cwd:fixture.projectRoot,windowsHide:true,timeout:20000,env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH}}),
+    await assert.rejects(runPowerShellTestCommand(skillVerifierCommand(fixture),{
+      cwd:fixture.projectRoot,env:launcherEnv}),
       error=>error.code===3&&JSON.parse(error.stdout.trim()).codePassed===false);
   });
 

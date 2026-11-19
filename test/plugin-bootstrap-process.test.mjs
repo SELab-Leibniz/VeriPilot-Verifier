@@ -7,6 +7,7 @@ import test, { after, before } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { buildPlugin } from "../lib/plugin-builder.mjs";
+import { powershellTestInvocation, stripPowerShellStartup } from './helpers/powershell-process.mjs';
 
 
 const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -63,19 +64,25 @@ async function runCommand(command, { cwd, env, input, invocation = shellInvocati
       windowsVerbatimArguments: invocation.windowsVerbatimArguments === true,
       stdio: ["pipe", "pipe", "pipe"],
     });
-    let stdout = "";
-    let stderr = "";
-    const timer = setTimeout(() => child.kill("SIGKILL"), 15_000);
+    let stdout = "", stderr = "", timedOut = false, startupMs = null;
+    const startedAt = Date.now(), timeoutMs = invocation.timeoutMs ?? 15_000;
+    const timer = setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, timeoutMs);
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk) => { stdout += chunk; });
-    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+      if (startupMs === null && invocation.startupMarker && stderr.includes(invocation.startupMarker)) startupMs = Date.now() - startedAt;
+    });
     child.once("error", reject);
     child.once("close", (code, signal) => {
       clearTimeout(timer);
-      resolve({ code, signal, stdout, stderr });
+      resolve({ code, signal, stdout,
+        stderr: invocation.startupMarker ? stripPowerShellStartup(stderr, invocation.startupMarker) : stderr,
+        diagnostics: { elapsedMs: Date.now() - startedAt, timeoutMs, timedOut, startupMs,
+          startupObserved: invocation.startupMarker ? stderr.includes(invocation.startupMarker) : null } });
     });
-    child.stdin.end(JSON.stringify(input));
+    child.stdin.end(JSON.stringify(input) + '\n');
   });
 }
 
@@ -110,9 +117,7 @@ async function supportedShellInvocations(command) {
     {
       name: "powershell",
       executable: path.join(windowsRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
-      // Explicitly forward redirected stdin through PowerShell's pipeline so
-      // the native Node child receives both the JSON input and its EOF.
-      args: ["-NoProfile", "-NonInteractive", "-Command", `$input | & { ${command} }`],
+      ...powershellTestInvocation(command, { forwardInput: true }),
     },
     {
       name: "git-bash",
@@ -185,7 +190,8 @@ test("the fixed bootstrap runs through every supported shell installed on this O
       input: sessionStartInput(cwd, `shell-${invocation.name}`),
       invocation,
     });
-    assert.equal(completed.code, 0, `${invocation.name}: ${completed.stderr}`);
+    assert.equal(completed.code, 0, `${invocation.name}: ${JSON.stringify(completed.diagnostics)}\n${completed.stderr}`);
+    if (invocation.startupMarker) assert.equal(completed.diagnostics.startupObserved, true, invocation.name);
     assert.equal(completed.stdout, "", invocation.name);
     assert.equal(completed.stderr, "", invocation.name);
   }

@@ -35,10 +35,25 @@ test('an UNKNOWN autopilot handoff conflict reports only the known retained RC o
 
 const postRecord = runtime => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id);
 async function lateCandidate(t, { waitMode = 'until_pass', terminalStatus = 'ok', review, nextTerminal } = {}) {
-  const terminal = deferred(t), reviewed = [], businessSends = [];
+  const terminal = deferred(t), reviewed = [], businessSends = [], admissions = new Map();
   let oldKnown = false, activity = 'running', f;
-  f = await lifecycle(t, { waitMode, review: async input => {
-    reviewed.push({ runId: f.post().runId, at: Date.now(), deadlineAt: f.post().deadlineAt, roleDeadlineAt: input.deadlineAt });
+  const realNow = Date.now;
+  const clock = t.mock.method(Date, 'now', () => {
+    const at = realNow(), dispatcher = f?.runtime.postRuns;
+    const id = dispatcher?.list().sessions.at(-1)?.id;
+    const record = id ? dispatcher.byId(id) : null;
+    // Observe the dispatcher's actual phase stamp without changing time. The
+    // later reviewer callback includes classification and filesystem work.
+    if (record?.phase === 'REVIEW_QUEUED' && !admissions.has(record.runId))
+      admissions.set(record.runId, { at, deadlineAt: record.deadlineAt });
+    return at;
+  });
+  t.after(() => clock.mock.restore());
+  f = await lifecycle(t, { waitMode, hookTimeoutMs: 30000, review: async input => {
+    const record = f.post(), admitted = admissions.get(record.runId);
+    assert(admitted, 'The same run must reach the actual queued-review phase before reviewer work.');
+    assert.equal(admitted.deadlineAt, record.deadlineAt);
+    reviewed.push({ runId: record.runId, ...admitted, reviewerAt: Date.now(), roleDeadlineAt: input.deadlineAt });
     return review?.(input);
   }, postRunTerminal: async (_identity, runId) => {
     if (runId === 'business-run') { await terminal.promise; return oldKnown ? { runId, status: terminalStatus } : null; }
@@ -53,7 +68,7 @@ async function lateCandidate(t, { waitMode = 'until_pass', terminalStatus = 'ok'
   };
   await f.runtime.postRuns.candidate({ agentId: 'main', sessionId: f.ctx.sessionId, sessionKey: f.ctx.sessionKey,
     projectRoot: f.root, scopeFingerprint: f.state.projectScope.fingerprint, scopeTaskId: f.state.scopeTaskId,
-    controlRevision: f.state.enabledRevision }, { runId: f.ctx.runId, text: 'Earlier candidate.', reviewBudgetMs: 10000 });
+    controlRevision: f.state.enabledRevision }, { runId: f.ctx.runId, text: 'Earlier candidate.', reviewBudgetMs: 10000, terminalBudgetMs: 60000 });
   await until(() => f.post()?.phase === 'FINALIZING', 'old unresolved terminal');
   const next = { ...f.ctx, runId: `early-autopilot-final-${waitMode}` };
   await f.runtime.prompt({ prompt: 'Latest host continuation.' }, next);
@@ -90,6 +105,7 @@ test('a late old terminal promotes the completed new native candidate once with 
     f.setActivity('done'); await f.recheck(); await within(f.runtime.waitForNativeReviews(), 'promoted native review');
     assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]);
     assert(f.reviewed[0].deadlineAt - f.reviewed[0].at >= f.checkpoint.reviewBudgetMs - 1000);
+    assert(f.reviewed[0].reviewerAt < f.reviewed[0].roleDeadlineAt, 'actual reviewer work must still begin within its own deadline');
     task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
     assert(task.verification.assessmentId.startsWith(`${f.next.runId}:stop`)); assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
     assert.equal(f.post().phase, 'IDLE');
