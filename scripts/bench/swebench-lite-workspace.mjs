@@ -122,7 +122,13 @@ export async function collectLitePatch({ projectRoot, baseCommit, maxPatchBytes 
   const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-lite-collector-'));
   try {
     const env = { GIT_INDEX_FILE: path.join(scratch, 'index') };
-    if (before) await fs.writeFile(env.GIT_INDEX_FILE, before, { flag: 'wx', mode: 0o600 });
+    if (before) {
+      await fs.writeFile(env.GIT_INDEX_FILE, before, { flag: 'wx', mode: 0o600 });
+      // A newer copy timestamp can make stale entry stats appear trustworthy.
+      // Restore Git's racy-stat content checks on this owned copy only; zero
+      // disables that check, so use an old positive epoch second.
+      await fs.utimes(env.GIT_INDEX_FILE, 1, 1);
+    }
     else await git(project, ['read-tree', baseCommit], { env });
     const exclusions = [];
     for (const name of reserved) {

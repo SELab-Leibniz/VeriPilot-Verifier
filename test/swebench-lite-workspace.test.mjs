@@ -121,3 +121,32 @@ test('ignored RC metadata does not turn a valid business patch into git add fail
   assert(!result.patch.includes('.runtime-corrector') && !result.patch.includes('.runtime-correction'));
   assert.deepEqual(await fs.readFile(path.join(repo, '.git/index')), index);
 });
+
+test('copied index stat timestamps cannot hide an equal-size business edit', async t => {
+  const { root, repo, base } = await fixture(t);
+  await prepareLiteWorkspace({ projectRoot: repo, baseCommit: base });
+  // A legitimate coarse-stat configuration makes the alias deterministic;
+  // the original index's racy timestamp still detects the changed content.
+  await git(repo, 'config', 'core.checkStat', 'minimal');
+  await git(repo, 'config', 'core.trustctime', 'false');
+  const file = path.join(repo, 'main.py'), indexFile = path.join(repo, '.git/index');
+  const aliasedTime = new Date(1000000000000);
+  await fs.utimes(file, aliasedTime, aliasedTime);
+  await git(repo, 'update-index', '--refresh');
+  await fs.utimes(indexFile, aliasedTime, aliasedTime);
+  await fs.writeFile(file, 'value = 9\n');
+  await fs.utimes(file, aliasedTime, aliasedTime);
+  const index = await fs.readFile(indexFile), indexTime = (await fs.stat(indexFile)).mtimeMs;
+  assert.equal((await fs.stat(file)).mtimeMs, indexTime);
+  assert((await git(repo, '--no-optional-locks', 'diff', '--', 'main.py')).includes('+value = 9'));
+  assert.deepEqual(await fs.readFile(indexFile), index);
+  const result = await collectLitePatch({ projectRoot: repo, baseCommit: base });
+  assert(result.patch.includes('+value = 9'));
+  assert.deepEqual(await fs.readFile(indexFile), index);
+  assert.equal((await fs.stat(indexFile)).mtimeMs, indexTime);
+  const target = path.join(root, 'apply-racy-target'); await fs.mkdir(target); await git(target, 'init');
+  await git(target, 'fetch', '--depth=1', repo, base); await git(target, 'checkout', '--detach', 'FETCH_HEAD');
+  const patchFile = path.join(root, 'racy-candidate.diff'); await fs.writeFile(patchFile, result.patch);
+  await git(target, 'apply', '--binary', patchFile);
+  assert.deepEqual(await fs.readFile(path.join(target, 'main.py')), await fs.readFile(file));
+});
