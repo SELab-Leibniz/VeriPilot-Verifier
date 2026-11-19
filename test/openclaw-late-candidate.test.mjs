@@ -103,7 +103,16 @@ test('a late old terminal promotes the completed new native candidate once with 
     assert.match(task.stop.postRunCandidate.adoption.checkpointDigest, /^[a-f0-9]{64}$/u);
     assert.equal(f.state.reviewController, controller); assert.equal(controller.signal.aborted, false);
     assert.equal(f.reviewed.length, 0);
-    f.setActivity('done'); await f.recheck(); await within(f.runtime.waitForNativeReviews(), 'promoted native review');
+    f.setActivity('done'); await f.recheck();
+    await within(f.runtime.waitForNativeReviews(), 'promoted native review').catch(async error => {
+      t.diagnostic(JSON.stringify({ fixturePhase: 'PROMOTED_SUCCESSOR_REVIEW_DRAIN', waitMode, terminalStatus,
+        reviewCallbacks: f.reviewed.length, factoryCallbacksSinceFixtureReturn: f.calls(),
+        businessSends: f.businessSends.length, nativeRunMatchesSuccessor: f.state.nativeRunId === f.next.runId,
+        reviewControllerAborted: f.state.reviewController.signal.aborted,
+        ...await runtimeFailureDiagnostics({ root: f.root, post: f.post(), warnings: f.warnings,
+          witnesses: { stop: f.reviewed } }) }));
+      throw error;
+    });
     assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]);
     assert(f.reviewed[0].deadlineAt - f.reviewed[0].at >= f.checkpoint.reviewBudgetMs - 1000);
     assert(f.reviewed[0].reviewerAt < f.reviewed[0].roleDeadlineAt, 'actual reviewer work must still begin within its own deadline');

@@ -89,10 +89,30 @@ for (const variant of ['ordinary', 'strict', 'source-change', 'policy-change']) 
   assert.match(queued[0].message, /stop-reference/u);
   assert(!queued[0].message.includes(documents['proposal.md']), 'the queued user reference contains no approved document');
   const child = { ...apply, runId: queued[0].idempotencyKey };
+  async function promptRestoration() {
+    const timing = [], previousInfo = f.api.logger.info;
+    // Existing program-owned timing contains stages/durations only. Retain it
+    // on failure without adding I/O to the successful admission path.
+    f.api.logger.info = message => {
+      previousInfo?.call(f.api.logger, message);
+      const prefix = '[runtime-corrector] Input admission timing: ';
+      if (typeof message === 'string' && message.startsWith(prefix) && timing.length < 32) {
+        try { timing.push(JSON.parse(message.slice(prefix.length))); } catch { /* Keep the original failure. */ }
+      }
+    };
+    try { return await f.runtime.prompt({ prompt: queued[0].message }, child); }
+    catch (error) {
+      t.diagnostic(JSON.stringify({ fixturePhase: 'RESTORATION_NATIVE_INPUT_ADMISSION', variant,
+        configuredHookTimeoutMs: f.api.pluginConfig.hookTimeoutMs, admissionTiming: timing }));
+      throw error;
+    } finally {
+      if (previousInfo === undefined) delete f.api.logger.info; else f.api.logger.info = previousInfo;
+    }
+  }
   if (variant === 'source-change' || variant === 'policy-change') {
     if (variant === 'source-change') await fs.writeFile(path.join(f.root, 'draft.md'), 'A later different candidate.\n');
     else await fs.appendFile(path.join(f.root, '.runtime-corrector/config.yaml'), '\n# Changed after the restoration was queued.\n');
-    const prompt = await f.runtime.prompt({ prompt: queued[0].message }, child);
+    const prompt = await promptRestoration();
     assert.equal(prompt?.prependContext, undefined);
     const denied = await f.sharedState.stopStartProtocol.findRun({ state: f.state, runId: child.runId });
     assert.equal(denied.admission.accounting, 'RELEASED');
@@ -104,7 +124,7 @@ for (const variant of ['ordinary', 'strict', 'source-change', 'policy-change']) 
     await f.runtime.reset({}, child);
     return;
   }
-  const prompt = await f.runtime.prompt({ prompt: queued[0].message }, child);
+  const prompt = await promptRestoration();
   assert.match(prompt.prependContext, /Restore only the existing authenticated approved OpenSpec plan/u);
   const receipt = await f.sharedState.stopStartProtocol.findRun({ state: f.state, runId: child.runId });
   assert.equal(receipt.status, 'STARTED');

@@ -41,9 +41,12 @@ test("hot tool entry returns while extraction runs independently and result revi
 
 test("reset cancels background extraction before it can publish to the old task", async t => {
   const started = deferred(t), finish = deferred(t);
+  let baselineCallbacks = 0;
   const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
-    baselineReview: async () => { started.resolve(); await finish.promise; } });
-  await within(started.promise, "background extraction");
+    baselineReview: async () => { baselineCallbacks++; started.resolve(); await finish.promise; } });
+  await within(started.promise, "background extraction").catch(async error => {
+    await diagnoseBaselineWait(t, f, baselineCallbacks); throw error;
+  });
   const pending = f.state.hotReviewWork.promise;
   await f.runtime.reset({ sessionId: "host" }, f.ctx);
   finish.resolve(); await within(pending, "cancelled background cleanup");
