@@ -154,8 +154,8 @@ try {
   await manager.started(identity('beta'), 'scope-review');
   await manager.candidate(identity('beta'), { runId: 'scope-review', text: 'done', reviewBudgetMs: 10000 }); await manager.drain();
   await page.waitForFunction(() => !document.getElementById('review-summary').hidden);
-  assert.match(await page.locator('#review-basis').innerText(), /基线 v2.*0 \/ 原始 4 项/u);
-  await page.getByText('M12：原始 2 项，选中 0 项', { exact: true }).click();
+  assert.match(await page.locator('#review-basis').innerText(), /基线 v2.*0 \/ 已有清单 4 项/u);
+  await page.getByText('M12：已有清单 2 项，选中 0 项', { exact: true }).click();
   assert.match(await page.locator('#review-objects').innerText(), /范围外.*M12:insertion.*实现插入排序/u);
   await withTaskState({ projectRoot: root, taskId: betaTask.taskId }, state => { state.groundTruth.pendingUserCursor = 'later-input'; });
   await page.waitForFunction(() => document.getElementById('requirements-status').textContent.includes('有新的用户输入待对齐'));

@@ -17,7 +17,7 @@ test("a successful summary names verified files and confirms fixes only with rec
     file("design.md", "PASS", { modifications: [{}, {}], feedbackDelivered: [{}] }),
     file("tasks.md", "PASS"),
   ] }));
-  assert.match(text, /^\*\*验收通过/u);
+  assert.match(text, /^\*\*本轮已记录清单验收通过/u);
   assert.match(text, /proposal\.md \| 已通过 \| 此前问题已修正，并经复验确认/u);
   assert.match(text, /design\.md \| 已通过 \| 当前内容已通过验收/u);
   assert.match(text, /纠偏额度使用：1\/3/u);
@@ -73,7 +73,7 @@ test("global PASS cannot hide a current file-specific deviation", () => {
     finalAssessment: { reason: "必须持久化，当前仅有内存存储" },
   })] }));
   assert.match(text, /^\*\*成果尚未全部通过验收/u);
-  assert.match(text, /任务要求已通过核心验收，但逐文件质量/u);
+  assert.match(text, /本轮已记录清单已通过核心验收，但逐文件质量/u);
   assert.match(text, /必须持久化，当前仅有内存存储/u);
   assert.doesNotMatch(text, /本次成果符合当前任务要求/u);
 });
