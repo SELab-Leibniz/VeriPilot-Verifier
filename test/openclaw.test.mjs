@@ -603,10 +603,17 @@ test("late callbacks remain internal while timed out native sessions finish clea
   const sharedState = {};
   const runtime = createRuntime(host, { pluginRoot, sharedState });
   const registry = new Set();
-  let releaseLate, finishLate, startedReview;
+  let releaseLate, finishLate, startedReview, finishCleanup;
   const activeReviewRuns = new Set();
   const lateGate = new Promise((resolve) => { releaseLate = resolve; });
   const lateFinished = new Promise((resolve) => { finishLate = resolve; });
+  const cleanupFinished = new Promise((resolve) => { finishCleanup = resolve; });
+  const deleteIdentity = registry.delete.bind(registry);
+  t.mock.method(registry, "delete", (sessionId) => {
+    const removed = deleteIdentity(sessionId);
+    if (removed) finishCleanup(sessionId);
+    return removed;
+  });
   const started = new Promise((resolve) => { startedReview = resolve; });
   t.after(() => releaseLate());
   host.runtime.agent.runEmbeddedAgent = async (params) => {
@@ -631,7 +638,16 @@ test("late callbacks remain internal while timed out native sessions finish clea
   assert.equal((await fs.readdir(path.join(project, ".runtime-correction/internal-runs"))).length, 1);
   releaseLate();
   await lateFinished;
-  for (let i = 0; i < 100 && registry.size; i++) await new Promise((resolve) => setTimeout(resolve, 5));
+  // The runner's finally precedes outer archive/lease cleanup. Observe the
+  // actual registry removal instead of assuming those I/O operations finish
+  // during a short polling window. This guard does not renew the role timeout.
+  let cleanupTimer;
+  try {
+    const cleanedSessionId = await Promise.race([cleanupFinished, new Promise((_, reject) => {
+      cleanupTimer = setTimeout(() => reject(new Error("Late native reviewer cleanup did not remove its internal identity")), 5000);
+    })]);
+    assert.equal(cleanedSessionId, params.sessionId);
+  } finally { clearTimeout(cleanupTimer); }
   assert.equal(registry.size, 0);
   assert.equal(sharedState.states.size, 0, "late hooks must not create developer state after cleanup");
   assert.deepEqual(host.warnings, []);
