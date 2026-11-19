@@ -10,6 +10,7 @@ import { outsideDecision, decisionScope } from '../lib/runtime-v2/decision-scope
 import { readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
 import { sharedBasisFixture as fixture, user, operation } from './helpers/runtime-v2-shared-basis-fixture.mjs';
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 
 test('graph-only extraction keeps the existing native Skill-care role/tools and cannot issue global proof', async t => {
   const f = await fixture(t); await f.select(); const call = f.graphs()[0], captures = [];
@@ -29,6 +30,8 @@ test('graph-only extraction keeps the existing native Skill-care role/tools and 
 });
 
 test('a real user revision stages the new baseline before local graph extraction and commits their matching basis together', async t => {
+  // This case checks staged publication; filesystem latency is not review time.
+  semanticReviewClock(t, { timeoutMs: 20000 });
   const f = await fixture(t); f.state.useNativeGraph = true; await f.select(); const first = await f.truth();
   const revised = user('U2'); revised.message.content = 'Preserve the revised requested feature.';
   await fs.appendFile(f.transcript, JSON.stringify(revised) + '\n');
@@ -118,3 +121,32 @@ test('non-Stop graph failure rejects the global delta/certificate and graph toge
   assert.deepEqual(Object.keys((await f.task()).watchers), [pending[0].watcherId], 'Successful establishment transitions the same pending selection');
 });
 
+test('semantic shared-basis publication still rejects exact expiry and changed original bytes', async t => {
+  for (const condition of ['deadline', 'source']) await t.test(condition, async t => {
+    const clock = semanticReviewClock(t, { timeoutMs: 20000 });
+    const f = await fixture(t); f.state.useNativeGraph = true; await f.select(); const first = await f.truth();
+    const revised = user('U2'); revised.message.content = 'Preserve the revised requested feature.';
+    await fs.appendFile(f.transcript, JSON.stringify(revised) + '\n');
+    f.state.forceOperations = true;
+    f.state.deltaOperation = { ...operation('transcript:U2#L1-L1'), text: revised.message.content };
+    const task = await f.task();
+    const result = await withTaskDecision({ projectRoot: f.root, taskId: task.taskId,
+      context: { assessmentId: `rejected-${condition}`, kind: 'hook', guard: decisionGuard(task) } }, async () => {
+      const selected = await f.select();
+      assert.equal(selected.watcher.status, 'ACTIVE');
+      assert((await f.truth()).version > first.version, 'the candidate was actually staged');
+      if (condition === 'deadline') {
+        clock.advance(19999);
+        const parent = decisionScope.getStore();
+        assert.equal(await outsideDecision(() => parent.context.evidenceMatches()), true);
+        clock.advance(1);
+      } else await fs.writeFile(f.material, 'Changed original material.');
+      return selected;
+    });
+    assert.equal(result.stale, true);
+    assert.equal(result.status, 'UNVERIFIED');
+    assert.equal(result.reason, 'evidenceChanged');
+    assert.equal(result.evidenceFailure.code, condition === 'deadline' ? 'REVIEWER_DEADLINE' : 'BASELINE_INPUT_CHANGED');
+    assert.equal((await f.truth()).digest, first.digest, 'rejected staged truth must not publish');
+  });
+});

@@ -359,25 +359,33 @@
     "scope": "The current 8bd archive passed source, package and fresh stock CLI checks only, with zero model runs. The closed 2a trial remains separate: 9/7/9 checks, 13 steps, one native correction and final UNVERIFIED. It grants no efficacy or acceptance to this archive."
   },
   "remoteCI": {
-    "status": "CURRENT_INSTALLABLE_NATURAL_CI_FIVE_PASS_TWO_WINDOWS_FAILURES_TEST_FIXES_INTEGRATED_FOCUSED_PASS_REMOTE_PENDING",
-    "currentRun": 44595052825,
-    "currentRunHead": "48601e3dfed001ccee934e4e8e243b60184164cd",
+    "status": "CURRENT_HEAD_NATURAL_CI_COMPLETED_SIX_PASS_ONE_FAILURE",
+    "currentRun": 44601659499,
+    "currentRunHead": "02672339b8f999e9d0a325d2f258f91666efe007",
     "currentRunConclusion": "failure",
-    "latestCompletedRun": 44595052825,
-    "latestCompletedRunHead": "48601e3dfed001ccee934e4e8e243b60184164cd",
+    "latestCompletedRun": 44601659499,
+    "latestCompletedRunHead": "02672339b8f999e9d0a325d2f258f91666efe007",
     "latestCompletedConclusion": "failure",
-    "latestCompletedPassedMatrixJobs": 5,
-    "latestCompletedFailedMatrixJobs": 2,
+    "latestCompletedPassedMatrixJobs": 6,
+    "latestCompletedFailedMatrixJobs": 1,
     "matrixTotal": 7,
     "runAttempt": 1,
     "currentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/48601e3-natural-od0hybz0/terminal-receipt.json",
-      "sha256": "0210ad4c277f89571658f26f7994ac451ad59960c23cb9e626293576254e4aa0",
-      "actualWatchSession": 35231,
-      "actualTerminal": "abcdf9",
+      "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/terminal-receipt.json",
+      "sha256": "e5872944b049e11ee139c99dd2de8271ab74997daad08becaf199607fd220bc1",
+      "actualWatchSession": 47043,
+      "actualTerminal": "102a30",
       "actualExitCode": 1,
-      "retryOrCancel": false
+      "retryOrCancel": false,
+      "finalReadback": {
+        "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-readback.json",
+        "sha256": "bc364b4d92e78a62602d32a497781d1dcebfd02c5080abb82196a9a1cd1e0237"
+      },
+      "fileInventory": {
+        "path": ".runtime-correction/validation/ci-fix/post-guidance-natural-smw9p7kk/final-file-inventory.json",
+        "sha256": "9cfe83f14eaa399b87ff825c4aae871202cc2dd807c07551e171ba82ec141038"
+      }
     },
     "fileCoverage": {
       "exactGitTestFiles": 387,
@@ -396,14 +404,14 @@
     },
     "failures": [
       {
-        "file": "test/openclaw-document-process-guidance.test.mjs",
-        "cases": 4,
-        "observedBoundary": "Passed VERIFIED/pending-cleared/four-review assertions; failed the Windows path separator comparison. Historical failure is unchanged."
-      },
-      {
-        "file": "test/openclaw.test.mjs",
-        "case": 24,
-        "observedBoundary": "Actual REVIEWER_DEADLINE at5227.8251ms while the semantic callback-scope fixture holds a gated fake reviewer; controlled5500ms main-task projection I/O reproduces the coupling, not a unique historical cause."
+        "job": "Node24/windows-latest/shard2of2",
+        "file": "test/runtime-v2-shared-basis-publication.test.mjs",
+        "case": 2,
+        "observedBoundary": "TypeError result.watcher undefined after user revision/new baseline shared-basis scenario.",
+        "durationMs": 48380,
+        "cause": "UNDER_INVESTIGATION",
+        "uniqueHistoricalCauseProven": false,
+        "rawLogSha256": "276b36cd78e4b8bb8bbe65941ee85f67ce8af3c963b1909d372fda996c184675"
       }
     ],
     "previousCompletedBeforeGuidance": {
@@ -544,7 +552,7 @@
       },
       "scope": "Seven official jobs passed on the exact pushed 27e source after the test-only cleanup fixture fix. The guidance commit and 8bd archive postdate that run and need their own remote validation. This establishes neither model efficacy nor future CI reliability."
     },
-    "scope": "Actual486five-pass/two-fail remote result is retained. Both test-only fixes are integrated and pass clean-environment focused source checks; no new remote green, model benefit or archive change is claimed.",
+    "scope": "Exact0267natural CI result remains6/7 with one Windows shared-basis failure; unique historical cause unproven. The source-supported one-file fixture fix is now integrated and focused9/9 eachNode18/24, with new official validation pending. Runtime/helper/archive unchanged; no model-benefit claim.",
     "currentRunStatus": "completed",
     "fixtureFixes": [
       {
@@ -570,12 +578,51 @@
           "sha256": "6480b31fc67a97d423ea36f4f10a33a18f30ffd312a5de00f6a24ef62a62fd9f"
         },
         "scope": "Existing5000ms logical-clock helper only in semantic scope case plus one expiry/backoff canary; adjacent real1s expiry and actual cleanup milestone case byte-identical."
+      },
+      {
+        "file": "test/runtime-v2-shared-basis-publication.test.mjs",
+        "status": "ROOT_INTEGRATED_FOCUSED_PASS_NEW_OFFICIAL_CI_PENDING",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/ci-fix/026-shared-basis-p1lwg4qs/source-hold.json",
+          "sha256": "291eed77f638c6a508dc34f0d6e9d33c78919655e67fbbd675cc86bc737734c1"
+        },
+        "peer": {
+          "path": ".runtime-correction/validation/ci-fix/shared-basis-clock-peer-zygla_1q/peer-review.json",
+          "sha256": "e894887f8c813c26b3ab667cbd4975392468ff7714bcf7c8277ebcc69c2a2419"
+        },
+        "rootIntegration": {
+          "path": ".runtime-correction/validation/ci-fix/026-root-sharedbasis-tf2rdmc4/root-integration.json",
+          "sha256": "b73340420127f11113b650543b667992026ea9a022c19021bb3c844745350261",
+          "actualMetadataTerminal": "26a64a",
+          "exitCode": 0,
+          "node24": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "skip": 0,
+            "actualLaunch": "0131da",
+            "actualSession": 56371,
+            "actualTerminal": "957393",
+            "exitCode": 0
+          },
+          "node18": {
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "skip": 0,
+            "actualLaunch": "6146a5",
+            "actualSession": 59988,
+            "actualTerminal": "36decf",
+            "exitCode": 0
+          }
+        },
+        "scope": "Existing semantic clock20s in staged-publication case only plus exact-expiry/source-change rollback controls. Original six bodies/assertions byte-exact; runtime/helper/deadline values unchanged. Real21s delayed-publication control reproduces a supported failure mechanism; unique historical Windows cause remains unproven."
       }
     ],
     "rootFocusedIntegration": {
       "path": ".runtime-correction/validation/ci-fix/486-root-combined-tl4obbzt/root-integration.json",
       "sha256": "5c3b9705ac0f5897e7d67466f1b2caca34f3ba88d1bafcc0cced0a57616e7326",
-      "status": "FOCUSED_PASS_REMOTE_PENDING",
+      "status": "FOCUSED_PASS_BOTH_FIXED_FILES_PASSED_CURRENT_OFFICIAL_RUN",
       "node24": {
         "tests": 63,
         "pass": 63,
@@ -593,8 +640,103 @@
       "initialInheritedEnvironmentFailuresPreserved": 4,
       "uniqueEarlierEnvironmentVariableOrPermissionCauseProven": false,
       "productionAndArchiveChanged": false,
-      "newOfficialRunStatus": "NOT_YET_QUALIFIED"
-    }
+      "newOfficialRunStatus": "COMPLETED_SIX_PASS_ONE_OTHER_FAILURE"
+    },
+    "currentRunAttempt": 1,
+    "rootReportedCurrentMatrixSnapshot": {
+      "passed": 6,
+      "failed": 1,
+      "running": 0,
+      "total": 7,
+      "scope": "SEALED_NATURAL_TERMINAL_RECEIPT_AND_FINAL_READBACK_VERIFIED"
+    },
+    "preceding486CompletedResult": {
+      "latestCompletedRun": 44595052825,
+      "latestCompletedRunHead": "48601e3dfed001ccee934e4e8e243b60184164cd",
+      "latestCompletedConclusion": "failure",
+      "latestCompletedPassedMatrixJobs": 5,
+      "latestCompletedFailedMatrixJobs": 2,
+      "terminalEvidence": {
+        "path": ".runtime-correction/validation/ci-fix/48601e3-natural-od0hybz0/terminal-receipt.json",
+        "sha256": "0210ad4c277f89571658f26f7994ac451ad59960c23cb9e626293576254e4aa0",
+        "actualWatchSession": 35231,
+        "actualTerminal": "abcdf9",
+        "actualExitCode": 1,
+        "retryOrCancel": false
+      },
+      "fileCoverage": {
+        "exactGitTestFiles": 387,
+        "fullFileListSha256": "b72632cf334cf0a88ee84eb71962bcfb28adc45c8a9927e0968e9cf164e8a543",
+        "windowsShardCounts": [
+          194,
+          193
+        ],
+        "windowsDisjoint": true,
+        "windowsUnionExactly387": true,
+        "ubuntuFullPartitionMatched": true,
+        "macosFullPartitionMatched": true,
+        "fileTimeoutMs": 180000,
+        "windowsFileConcurrency": 2,
+        "otherFileConcurrency": 4
+      },
+      "failures": [
+        {
+          "file": "test/openclaw-document-process-guidance.test.mjs",
+          "cases": 4,
+          "observedBoundary": "Passed VERIFIED/pending-cleared/four-review assertions; failed the Windows path separator comparison. Historical failure is unchanged."
+        },
+        {
+          "file": "test/openclaw.test.mjs",
+          "case": 24,
+          "observedBoundary": "Actual REVIEWER_DEADLINE at5227.8251ms while the semantic callback-scope fixture holds a gated fake reviewer; controlled5500ms main-task projection I/O reproduces the coupling, not a unique historical cause."
+        }
+      ]
+    },
+    "publication": "skipped",
+    "node24Full": [
+      {
+        "name": "Node 24 / ubuntu-latest / shard 1/1",
+        "summary": {
+          "tests": 4795,
+          "pass": 4758,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 37
+        }
+      },
+      {
+        "name": "Node 24 / macos-latest / shard 1/1",
+        "summary": {
+          "tests": 4795,
+          "pass": 4762,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 33
+        }
+      },
+      {
+        "name": "Node 24 / windows-latest / shard 1/2",
+        "summary": {
+          "tests": 2522,
+          "pass": 2500,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 22
+        }
+      },
+      {
+        "name": "Node 24 / windows-latest / shard 2/2",
+        "summary": {
+          "tests": 2271,
+          "pass": 2247,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 23
+        }
+      }
+    ],
+    "bothRecentlyFixedTestFilesPassedCurrentRun": true,
+    "nextOfficialValidationStatus": "PENDING_NEW_PUSH_AND_NATURAL_OFFICIAL_RUN_FOR_LATEST_TEST_ONLY_FIX"
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -848,10 +990,35 @@
     "newGuidanceBenefitClaimedFromThisTrial": false
   },
   "activeGeneralPurposeTrial": {
-    "status": "NONE",
+    "status": "NONE_BOTH_TRANSFER_ARMS_CLOSED_ON_UNQUALIFIED",
     "activePaidTrials": 0,
-    "lastClosedTrialDirectory": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ordinary-public-preparation-esbt35fr",
-    "standingUserPaidAuthorizationPersists": true
+    "lastClosedPaidTransferArm": {
+      "arm": "ON",
+      "rootOwnedSession": 61049,
+      "actualTerminal": "1d06c8",
+      "exitCode": 1,
+      "status": "INCOMPLETE_UNQUALIFIED_SESSION_BINDING_BEFORE_APPLY",
+      "completedFlashRequests": 18,
+      "completedProRequests": 0,
+      "grade": null,
+      "rootReceiptSha256Prefix": "28b50921",
+      "closureSha256Prefix": "16cef57d"
+    },
+    "onPublicSetupRunning": false,
+    "onPaidCodingStarted": true,
+    "generalBenefitClaimed": false,
+    "currentArchiveOnReviewQualified": false,
+    "standingUserPaidAuthorizationPersists": true,
+    "onPaidCodingClosed": true,
+    "onCompletedArm": false,
+    "lastClosedOffTransferArm": {
+      "arm": "OFF",
+      "operatorDirectory": ".runtime-correction/validation/python-transfer-off-xksh23u8",
+      "actualTerminal": "3c76d5",
+      "status": "PUBLIC_CODING_PATH_ENDED_REQUIRES_POSTCLOSURE_EVIDENCE",
+      "frozenFiles": 24,
+      "grade": null
+    }
   },
   "candidatePackage": {
     "status": "PROMOTED_INSTALLABLE_FULL_LOCAL_PACKAGE_STOCK_PASS_REAL_MODEL_UNTESTED_REMOTE_PENDING",
@@ -1165,29 +1332,61 @@
         "scope": "Only the two next-work transport sentences changed: localhost-stub public transport now verified; full workflow, ON native chain, paid pair and real-model recovery remain untested."
       }
     },
-    "htmlSha256": "5a3e4987e7b6cc31f53e9a61812ee43c7a78693790caf79cdc929803c051e7a5",
-    "scope": "Narrow current-CI and transfer-preparation prose only. Official4865/2 remains; clean focused63/62+one skip is separate. OFF23-check preflight passed, public setup failed/closed at evaluator TUI reconnection; evaluator-only repair in progress, no paid arms. Prior finalU and formal0/39 remain.",
-    "actualLaunch": "eb2cf1",
-    "actualSession": 32055,
-    "actualTerminal": "342d69",
+    "htmlSha256": "dd10864ef1ae4ac48612e3c2e2a0ebf0d73d9e65db41b66e2eafba216f4ad8d2",
+    "scope": "Only workflow activation and integrated sharedbasis fixture-fix prose updated. Current official6/7 failure, confirmed dailyreset and V5 unqualifiedpair remain. Rootfocused9/9 each18/24, new officialpending. New V6-final sourcepeerCLEAR/keyfreepreparing, no new paidpair. No product/archive or modelbenefit claim.",
+    "actualLaunch": "881d9b",
+    "actualSession": 68806,
+    "actualTerminal": "df02b2",
     "exitCode": 0,
     "viewports": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
-    "receiptPath": ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/receipt.json",
-    "receiptSha256": "e311cc0283f2de226c598eaf54cf2657a2d98479e3c93452df63a5b384776a60",
+    "receiptPath": ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/receipt.json",
+    "receiptSha256": "c8f08f0535dcf353ba75037827e678497e42e633d5a984d4ed4cae79da3f18b3",
     "sections": 6,
     "collapsedHistoryGroups": 3,
     "sameFileLanguageToggle": true,
     "visibleDatesOrHashes": false,
     "humanizerFileMode": true,
     "styleScriptInlineCodeAndLinkTargetsUnchanged": true,
-    "visualReadown": "Desktop English next-work and Simplified Chinese mobile current-package screenshots inspected; theme, readable wrapping and collapsed histories retained.",
+    "visualReadown": "Final English desktop and Simplified Chinese mobile workflow screenshots inspected. Session activation sentence wraps cleanly; existing theme, six sections and three collapsed histories retained.",
     "privatePreparationErrorsPreserved": [
       ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/initial-update-selection-incident.json",
-      ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/final-metadata-first-attempt-incident.json"
-    ]
+      ".runtime-correction/validation/report-ci-transfer-qa-b42_r1xf/final-metadata-first-attempt-incident.json",
+      ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/first-update-parse-incident.json"
+    ],
+    "earlierCurrentSnapshotQa": {
+      "path": ".runtime-correction/validation/report-transfer-on-active-qa-at8zc7wo/pre-wording-qa/receipt.json",
+      "sha256": "8588fc0d42a11194002dbec004d26d5de5e0173779e2351df517820d21bc0319",
+      "actualLaunch": "172772",
+      "actualSession": 47177,
+      "actualTerminal": "4617b0",
+      "exitCode": 0,
+      "scope": "PASS_ON_SUPERSEDED_PROSE_ONLY_SNAPSHOT"
+    },
+    "priorReportMetadataSnapshot": {
+      "path": ".runtime-correction/validation/report-shared-basis-integrated-qa-nryxz_sn/metadata-before.json",
+      "sha256": "b2623b7c5e686ff262e2c2c14478636d127791162374b35b7f9d2d60221cf722"
+    },
+    "precedingBothClosedSnapshotQa": {
+      "status": "PASS",
+      "actualLaunch": "947676",
+      "actualSession": 99815,
+      "actualTerminal": "974337",
+      "receiptPath": ".runtime-correction/validation/report-transfer-on-active-qa-at8zc7wo/receipt.json",
+      "receiptSha256": "7dcf5836757795bf99298756c890bf8f8d3b4a18902d6190be65829e94ef5263",
+      "htmlSha256": "43b391f9522af0d4e709b6b5f82c7924963be03ff29f4ad7ba3b90fd42d9aba6"
+    },
+    "precedingConfirmedCauseQa": {
+      "status": "PASS",
+      "actualLaunch": "218b33",
+      "actualSession": 29036,
+      "actualTerminal": "87b6f6",
+      "receiptPath": ".runtime-correction/validation/report-reset-cause-qa-u6h9if8_/receipt.json",
+      "receiptSha256": "fd6fabb4e6d394d54738a23fae9a92c339c2dc4f0d5ee33c507acfca98b55979",
+      "htmlSha256": "0f2de113a19974726478ee2084a61a5676aa2e9ea9e10e1f2818874c8ecfbb96"
+    }
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -1240,10 +1439,10 @@
     "prior2aHelperEvidenceRetainedSeparately": true
   },
   "preparedTransferEvaluation": {
-    "status": "SOURCE_PEER_CLEAR_EXACT_OFF_PREFLIGHT_PASSED_PUBLIC_SETUP_FAILED_CLOSED_NO_PAID_ARMS",
+    "status": "BOTH_ARMS_CLOSED_OFF_FROZEN_ON_INCOMPLETE_UNQUALIFIED_NO_PRIVATE_GRADES",
     "language": "Python",
     "taskRole": "HELD_OUT_FROM_PRODUCT_FIX_DEVELOPMENT_OUTSIDE_13_BENCHMARK",
-    "actualModelArmsStarted": 0,
+    "actualModelArmsStarted": 2,
     "functionalChecks": 34,
     "authoredPublicTestsAndDependencyRestrictionAssessedSeparately": true,
     "sourceHold": {
@@ -1256,7 +1455,7 @@
     },
     "runtimeSpecializationAdded": false,
     "scope": "V3 fixes private checker input/import/PATH fairness before any paid use. Both API and CLI and grader must share pinned supported interpreter and command environment; no quality result yet.",
-    "commonPublicCompletionContractStatus": "PREPARED_CONTROLLER_SOURCE_PEER_CLEAR_PUBLIC_SETUP_TRANSPORT_STILL_UNQUALIFIED",
+    "commonPublicCompletionContractStatus": "OFF_CODING_PATH_ENDED_ON_INCOMPLETE_NO_QUALIFIED_MATCHED_COMPARISON",
     "consistentPythonPathRequiredForChildCommands": true,
     "commonOriginalTerminalObserverV2": {
       "status": "SOURCE_PURE_PEER_AND_LOCALHOST_STUB_PUBLIC_TRANSPORT_CLEAR",
@@ -1374,6 +1573,253 @@
       },
       "actualPaidArmsStarted": 0,
       "matchedQualityOrOverheadResult": false
+    },
+    "actualModelArmsCompleted": 1,
+    "actualModelArmsGraded": 0,
+    "priorCredentialFreeSetupFailures": [
+      {
+        "operator": ".runtime-correction/validation/python-transfer-off-8wpus85p",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/setup-receipt.json",
+          "sha256": "58af419cf3eccf83241e0d2a7dffffbe26f020ee76b0948bd91988f3d1e78e36"
+        },
+        "terminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/root-setup-terminal.json",
+          "sha256": "8e2cb2a511e3e63d9e9b5cae9505be6bd778d9fd6a3cbb42c7fcc7427ad7e787"
+        },
+        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
+        "codingTaskOutcome": false,
+        "pluginBugAttributed": false,
+        "cleanupConfirmed": true,
+        "codingRequests": 0,
+        "realKeyRead": false
+      },
+      {
+        "operator": ".runtime-correction/validation/python-transfer-off-rf6jnwx7",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/setup-receipt.json",
+          "sha256": "031fdf266e3722e9fc8d005206fb08fa84c58e30881daf033a0517f05b7392a0"
+        },
+        "terminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/root-setup-terminal.json",
+          "sha256": "ae0c8bbff98f6fcd660a02378b9e45e6c8e78f55382699b85da5048c3a5ccfc0"
+        },
+        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
+        "codingTaskOutcome": false,
+        "pluginBugAttributed": false,
+        "cleanupConfirmed": true,
+        "codingRequests": 0,
+        "realKeyRead": false
+      }
+    ],
+    "publicTransferControllerV5": {
+      "status": "BOTH_ARMS_CLOSED_ON_INCOMPLETE_NO_QUALIFIED_MATCHED_COMPARISON",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v5-juk8wjr2/source-hold.json",
+        "sha256": "0bc9ec2f1990e8b4dc3951e10d5a9ac311a0c936beaad8572fe0c7952db65186"
+      },
+      "operatorDirectory": ".runtime-correction/validation/python-transfer-off-xksh23u8",
+      "setup": {
+        "status": "PUBLIC_SETUP_JOINED",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/setup-receipt.json",
+          "sha256": "a89ad233ce1a95823f68bcab53f35d13936ab80a6c8e79355cd13653c674acc2"
+        },
+        "rootTerminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-setup-terminal.json",
+          "sha256": "9d3372cda903b66c683a7881738953110c4147803599381f7b5ad1b7bca0d4e2"
+        },
+        "actualLaunch": "f5426f",
+        "actualSession": 88352,
+        "actualTerminal": "7ae788",
+        "exitCode": 0,
+        "exactInstalledRegularMembers": 276,
+        "projectEnabled": false,
+        "sessionRegistered": true,
+        "sessionRequestedEnabled": true,
+        "effectiveEnabled": false,
+        "strictOptionalFlagsAbsentOrFalse": 4,
+        "reviewRolesConfiguredPro": 7,
+        "codingModelRole": "Flash",
+        "correctionCaps": {
+          "session": 2,
+          "flow": 2
+        }
+      },
+      "live": {
+        "status": "PUBLIC_CODING_PATH_ENDED_REQUIRES_POSTCLOSURE_EVIDENCE",
+        "rootReportedLaunch": "3e160a",
+        "rootOwnedSession": 20892,
+        "technicalAdmission": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-live-admission.json",
+          "sha256": "26d2f913ebace489b0d25c70824d01b4c46c06b6eabdbfa1a97e796bafc4224b"
+        },
+        "firstFreshPublicCodingSendAcknowledged": true,
+        "firstRootObservedHttpStatus": 200,
+        "ordinaryApplyApprovalObserved": true,
+        "rootReportedApplyAdmissionSha256Prefix": "2e6cf009",
+        "hostSealedApproval": false,
+        "pluginPlanningReviewCredit": false,
+        "rootProposalReadyProviderSnapshot": {
+          "completedFlash": 16,
+          "completedPro": 0,
+          "scope": "ROOT_REPORTED_PROPOSAL_READY_SNAPSHOT_NOT_CURRENT_COUNTS"
+        },
+        "actualFinalGrade": null,
+        "completedArm": true,
+        "codingPathClosed": true,
+        "wholeArmQualified": false,
+        "rootReportedClosure": {
+          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
+          "actualLaunch": "3e160a",
+          "actualSession": 20892,
+          "actualTerminal": "3c76d5",
+          "exitCode": 0,
+          "rootTerminalSha256Prefix": "93233135",
+          "liveReceiptSha256Prefix": "3c2c5d97",
+          "closureSha256Prefix": "8181c946",
+          "frozenInventorySha256Prefix": "d85014b7",
+          "frozenFiles": 24,
+          "doubleReadStable": true,
+          "actualFreeze": "5cac6d",
+          "freezeExitCode": 0,
+          "officialSteps": {
+            "done": 17,
+            "total": 17,
+            "strictValidationPassed": true
+          },
+          "approvedPlanChange": "CHECKBOX_PROGRESS_ONLY",
+          "knownOwnedCleanupConfirmed": true,
+          "codeInspectedByReporter": false,
+          "privateGradePerformed": false,
+          "pluginSuccessCredit": false
+        },
+        "rootReportedEffort": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/effort.json",
+          "sha256": "9629971f35c4c5c2a9a5be738280d400678a6d1cea8c8ce7a9790fb32582ac04",
+          "actualMetadataRead": "11daeb",
+          "exitCode": 0,
+          "originalEpochToFinalReceiptElapsedMs": 200494,
+          "includesOrdinaryApprovalWaitingAndCleanup": true,
+          "excludesCredentialFreePreparationAndPostclosureGrading": true,
+          "completedFlashRequests": 29,
+          "completedProRequests": 0,
+          "completedHttp200Requests": 29,
+          "errors": 0,
+          "tokenOrCostClaim": false,
+          "causalCorrectionOverheadClaim": false,
+          "scope": "Root-reported final observed OFF effort only; no comparative inference."
+        }
+      },
+      "on": {
+        "status": "INCOMPLETE_UNQUALIFIED_SESSION_BINDING_BEFORE_APPLY",
+        "rootReportedOperatorSuffix": "vvuqhyg5",
+        "sameSourceV5AndArchive": true,
+        "credentialFreePreflight": {
+          "passed": 23,
+          "checks": 23,
+          "rootReportedReceiptSha256Prefix": "5c35a4c1"
+        },
+        "rootOwnedSetupLaunch": "e3c9a5",
+        "rootOwnedSetupSession": 62888,
+        "actualPaidArmsStarted": 1,
+        "currentArchiveOnReviewQualified": false,
+        "finalGrade": null,
+        "rootOwnedSetupTerminal": "fbb594",
+        "setupExitCode": 0,
+        "rootReportedSetupReceiptSha256Prefix": "9e0ee3c",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "compiledProjectionEqualToOffExceptProjectSwitch": true,
+        "projectEnabled": true,
+        "rootOwnedPaidLaunch": "b54b9c",
+        "rootOwnedPaidSession": 61049,
+        "rootReportedLiveAdmissionSha256Prefix": "c381968a",
+        "freshPublicInitialProjectNotOffOutput": true,
+        "rootOwnedPaidTerminal": "1d06c8",
+        "paidExitCode": 1,
+        "actualPaidArmClosed": true,
+        "completedArm": false,
+        "wholeArmQualified": false,
+        "rootReportedClosure": {
+          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
+          "rootReceiptSha256Prefix": "28b50921",
+          "closureSha256Prefix": "16cef57d",
+          "status": "INCOMPLETE",
+          "completedFlashRequests": 18,
+          "completedProRequests": 0,
+          "completedHttp200Requests": 18,
+          "stagesCompleted": 0,
+          "applyReached": false,
+          "runtimeCorrectorReviewPerformed": false,
+          "knownOwnedCleanupConfirmed": true,
+          "acceptedSessionAndActualActiveSessionDiffer": true,
+          "pluginReasonCode": "RC_SESSION_PROJECT_UNBOUND",
+          "publicDispatcherRecords": 0,
+          "observerReasonCode": "PUBLIC_RPC_ORIGINAL_DEADLINE",
+          "observerBoundMs": 60000,
+          "originalArmBudgetExpired": false,
+          "cause": "CONFIRMED_STOCK_DEFAULT_DAILY_SESSION_RESET",
+          "dailyResetCauseConfirmed": true,
+          "privateGradePerformed": false,
+          "qualifiedOnTreatment": false,
+          "matchedComparisonCompleted": false,
+          "repairBenefitClaimed": false,
+          "rootTerminalSha256Prefix": "215f07d9",
+          "actualFreeze": "b32e91",
+          "freezeExitCode": 0,
+          "originalEpochToFinalReceiptElapsedMs": 66682,
+          "protectedInitialInputFilesUnchanged": 4,
+          "sessionEnablementAndBindingRequiredAfterHostSessionReset": true,
+          "authorizationMigratedToNewSession": false,
+          "confirmedDiagnosis": {
+            "path": ".runtime-correction/validation/python-transfer-session-reset-audit-ydp_6h14/diagnosis.json",
+            "sha256": "468ed2e1d7d1272194212a0ea03330e3a7a3af9c2bdf25050cffbe5404ff35b3",
+            "sourceOnlyStockPolicyReplay": "0f2578",
+            "replayExitCode": 0,
+            "retroactiveOnQualification": false
+          }
+        }
+      },
+      "scope": "Live phase is root-reported metadata only. No actor/model/provider body, key, oracle or grade was read by this report updater; no quality, overhead or formal-pair benefit is claimed."
+    },
+    "executionPreparationScope": "Both V5 paid attempts remain closed and ungraded, with ON invalid beforeApply due confirmed stockdaily reset. Separately held V6-final sourcepeer is CLEAR; fresh newpair credentialfree OFF setup is being prepared. Both paid arms must be rerun; no new paid pair started.",
+    "actualModelArmsClosed": 2,
+    "completionCountingScope": "PAID_PUBLIC_CODING_PATH_ENDED_ONLY_NOT_FUNCTIONAL_OR_WHOLE_WORKFLOW_QUALIFICATION",
+    "qualifiedMatchedComparisonCompleted": false,
+    "runtimeBenefitClaimed": false,
+    "nextEvaluatorLifecycleRevision": {
+      "version": "V6-final",
+      "status": "SOURCE_PEER_CLEAR_CREDENTIAL_FREE_SETUP_PREPARING_NO_NEW_PAID_PAIR",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
+        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
+      },
+      "rootReportedOwnerPureControlsPassed": 97,
+      "bothFreshArmsRequired": true,
+      "priorV5OffCannotBeReused": true,
+      "stockResetMode": "idle",
+      "stockResetIdleMinutes": 120,
+      "actualHistorySidMismatchFailsPromptly": true,
+      "authorizationMigrationAllowed": false,
+      "pluginOrTaskOrModelsOrBudgetChanged": false,
+      "rootReportedSourcePeer": {
+        "status": "CLEAR",
+        "receiptSha256Prefix": "5913f560",
+        "all93SourcePinsStable": true,
+        "authority": "ROOT_METADATA_NOTIFICATION_NOT_REPORTER_SOURCE_PEER"
+      },
+      "credentialFreePreparation": {
+        "freshOffProfile": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
+        "preflightPassed": 23,
+        "preflightChecks": 23,
+        "rootReportedPreflightTerminal": "fceaa8",
+        "preflightExitCode": 0,
+        "rootReportedPreflightReceiptSha256Prefix": "a9c5f8f",
+        "publicSetupStatus": "RUNNING_ROOT_REPORTED_SNAPSHOT",
+        "rootOwnedSetupLaunch": "97839a",
+        "rootOwnedSetupSession": 36652,
+        "newPaidArmsStarted": 0
+      }
     }
   },
   "previousClosedGeneralPurposeTrial": {
@@ -1628,5 +2074,12 @@
       "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/receipt.json",
       "sha256": "f9950a9f51afb7790571ee2e471294c50646831360dffe794136dc1263c2a6d3"
     }
+  },
+  "sessionActivationRequirement": {
+    "actualRunningHostSessionMustBeEnabled": true,
+    "afterHostResetRecheckSelectedProject": true,
+    "newSessionRequiresExplicitEnablement": true,
+    "manualProjectBindingRequiredForEveryHost": false,
+    "automaticAuthorizationMigrationClaimed": false
   }
 }
