@@ -15,6 +15,7 @@ import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { buildOriginalRequirements, recordUserMessages, userMessageLogPath, writeOriginalRequirementSources }
   from '../lib/runtime-v2/original-requirements.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
+import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let outputRoot, pluginRoot, claudePluginRoot, createRuntime;
@@ -315,8 +316,9 @@ async function documentFixture(t, mode, policyOptions = {}) {
     await runtime.waitForNativeReviews();
   };
   // A manual gateway compaction runs outside any agent run; maxLines truncation fires no hook.
-  const compact = async (ctx, summary, { truncate = false, manual = false, hook = true } = {}) => {
+  const compact = async (ctx, summary, { truncate = false, manual = false, hook = true, onHookReturn } = {}) => {
     if (hook) await runtime.compact({ sessionId }, manual ? { agentId: 'main', sessionId, sessionKey, workspaceDir: root } : ctx);
+    onHookReturn?.();
     const id = `c-${randomUUID()}`;
     const record = { type: 'compaction', id, parentId: truncate ? null : leaf, summary, firstKeptEntryId: leaf, tokensBefore: 120000 };
     if (truncate) await fs.writeFile(transcript, [{ type: 'session', version: 3, id: sessionId, cwd: root }, record]
@@ -325,6 +327,7 @@ async function documentFixture(t, mode, policyOptions = {}) {
     leaf = id;
   };
   return { root, sessionId, ask, write, edit, finish, compact, holdAdmission, calls,
+    admissionHeld: () => admissionHeld !== null,
     get promptResult() { return promptResult; } };
 }
 
@@ -458,10 +461,43 @@ test('a manual host compaction neither waits for withheld work admission nor los
   const f = await documentFixture(t, 'original');
   const first = await f.ask('requirements-only', REQUIREMENTS_ONLY, { persistAfterPrompt: true });
   const release = f.holdAdmission();
-  const outcome = await Promise.race([f.compact(first, 'Truncated.', { truncate: true, manual: true }).then(() => 'returned'),
-    new Promise(resolve => setTimeout(resolve, 2000, 'waiting'))]);
-  await release();
-  assert.equal(outcome, 'returned');
+  let captured, hookReturned, timer;
+  const capturedMessage = new Promise(resolve => { captured = resolve; });
+  const returnedHook = new Promise(resolve => { hookReturned = resolve; });
+  const appendFile = fs.appendFile;
+  const archive = userMessageLogPath(f.root, f.sessionId);
+  const append = t.mock.method(fs, 'appendFile', async (file, ...args) => {
+    const result = await appendFile.call(fs, file, ...args);
+    if (file === archive) captured();
+    return result;
+  });
+  const bounded = async (promise, phase) => {
+    let timeout;
+    try { return await Promise.race([promise, new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(new Error(`Manual compaction fixture: ${phase}`)), 5000);
+    })]); } finally { clearTimeout(timeout); }
+  };
+  const compaction = f.compact(first, 'Truncated.', { truncate: true, manual: true, onHookReturn: hookReturned });
+  try {
+    // The archive write must finish before measuring admission independence.
+    // Disk capture and the fixture host's later truncation are separate phases.
+    await bounded(Promise.race([capturedMessage, compaction.then(() => {
+      throw new Error('Manual compaction fixture: user message was not captured');
+    })]), 'user-message capture did not finish');
+    assert.equal(f.admissionHeld(), true);
+    const outcome = await Promise.race([returnedHook.then(() => 'returned'), new Promise(resolve => {
+      timer = setTimeout(resolve, 2000, 'waiting');
+    })]);
+    assert.equal(outcome, 'returned');
+    assert.equal(f.admissionHeld(), true, 'the hook returns before the host admits queued work');
+    await bounded(compaction, 'host truncation did not finish');
+    const archived = (await fs.readFile(archive, 'utf8')).trim().split('\n').map(line => JSON.parse(line).text);
+    assert.deepEqual(archived, [REQUIREMENTS_ONLY]);
+  } finally {
+    clearTimeout(timer); append.mock.restore();
+    const released = release();
+    await bounded(Promise.all([released, compaction]), 'cleanup did not settle');
+  }
   await f.finish(first, 'Noted');
   const second = await f.ask('after-compaction', 'Now write docs/design.md.');
   const result = await f.write(second, '# Importer\nUpload imports to the cloud.\n');
@@ -535,6 +571,8 @@ test('ledger mode publishes an extracted baseline before its first review', asyn
   const ledger = await documentFixture(t, 'ledger');
   const ctx = await ledger.ask('ledger-run', 'Write docs/design.md. Keep imports offline.');
   const reviewed = await ledger.write(ctx, '# Importer\nUpload every import to the cloud.\n');
+  if (JSON.stringify(reviewed.calls.map(call => call.role)) !== JSON.stringify(['ground-truth-extractor', 'artifact-reviewer']))
+    t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({ root: ledger.root, calls: ledger.calls })));
   assert.deepEqual(reviewed.calls.map(call => call.role), ['ground-truth-extractor', 'artifact-reviewer']);
   assert.equal(reviewed.calls[1].ledger, true);
   assert.equal(reviewed.calls[1].semantic.originalRequirements, undefined);
@@ -548,6 +586,8 @@ for (const [label, policyOptions] of [['absent', { originalKey: false }], ['fals
   assert.equal((await loadRuntimePlan({ cwd: f.root })).runtimeV2.artifactCorrection.originalRequirementsEnabled, false);
   const reviewed = await f.write(await f.ask('transcript-run', 'Write docs/design.md. Keep imports offline.'),
     '# Importer\nUpload every import to the cloud.\n');
+  if (JSON.stringify(reviewed.calls.map(call => call.role)) !== JSON.stringify(['ground-truth-extractor', 'artifact-reviewer']))
+    t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({ root: f.root, calls: f.calls })));
   assert.deepEqual(reviewed.calls.map(call => call.role), ['ground-truth-extractor', 'artifact-reviewer']);
   assert.equal(reviewed.calls[1].ledger, false, 'the review itself still does not use the baseline');
   assert.equal(reviewed.calls[1].semantic.originalRequirements, undefined);

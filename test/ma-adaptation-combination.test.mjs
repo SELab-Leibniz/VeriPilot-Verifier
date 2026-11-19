@@ -14,6 +14,7 @@ import { buildPlugin } from '../lib/plugin-builder.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
 import { skillGraphQuoteCandidate, observeScriptedSkillSourceReview } from './helpers/skill-source-interpretation.mjs';
+import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
 
 const execute = promisify(execFile);
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -288,6 +289,8 @@ test('one native session preserves baseline, exec document review, exact duplica
   assert(f.witnesses.artifacts.length > 0, 'the actual script edit must invoke declared semantic document review');
   assert(Object.values(task.watchers).some(watcher => watcher.skillId === 'demo'
     && watcher.sourceIdentity.path === identity.path && watcher.sourceIdentity.sha256 === identity.sha256));
+  if (!f.witnesses.m08.length) t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({ task, events,
+    post: f.post(), witnesses: f.witnesses, warnings: f.warnings })));
   assert(f.witnesses.m08.length > 0, 'exact selected Skill must survive into the assigned Stop population');
   for (const item of f.witnesses.m08) {
     assert.deepEqual(item.skillSourceIdentity, identity);
@@ -302,6 +305,11 @@ for (const mode of ['assessment', 'until_pass']) for (const wake of ['done', 'un
   test(`a new ${mode} host run owns its candidate after prior until_pass IDLE; autopilot ${wake} resumes it once`, async t => {
     const f = await nativeFixture(t), prior = await f.start('prior-until-pass');
     await f.write(prior); await f.finish(prior, 'The prior design is complete.');
+    if (f.post().phase !== 'IDLE' || f.post().reviewStatus !== 'NO_DEVIATION_FOUND') {
+      const { task, events } = await f.journal();
+      t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({ task, events, post: f.post(),
+        witnesses: f.witnesses, warnings: f.warnings })));
+    }
     assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
     const reviewedBefore = f.witnesses.stop.length;
     await f.configure(mode); f.api.config.plugins.entries.autopilot.enabled = true; f.setAutopilot('running');

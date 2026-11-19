@@ -171,7 +171,18 @@
       "skipped": 45,
       "fileTimeouts": 0
     },
-    "failureInvestigation": "Prior watchdog and LF/CRLF fixture fixes passed. New document requirements, recovered skill selection and adaptation lifecycle failures under investigation; no causal product defect or green CI claim."
+    "failureInvestigation": "Prior watchdog and LF/CRLF fixture fixes passed. New document requirements, recovered skill selection and adaptation lifecycle failures under investigation; no causal product defect or green CI claim.",
+    "testOnlyFollowup": {
+      "status": "LOCAL_REVIEW_CLEAR_REMOTE_PENDING",
+      "relatedPassedNode18": 41,
+      "relatedPassedNode24": 41,
+      "rootIntegratedPassedNode24": 41,
+      "runtimeChanged": false,
+      "originalAdmissionAssertionRetained": true,
+      "boundedCleanup": true,
+      "otherHistoricalCauses": "UNPROVEN_DIAGNOSTICS_ADDED",
+      "rootReceiptSha256": "a928a929ec2755c91a5ed20cb23a06b5114fdd51a4feb97e83c3fdd2dcdbc000"
+    }
   },
   "supersededSourceRun": {
     "sourceCommit": "8699809bdaa0e518b2017172a093565fc6ec8fe1",
@@ -190,5 +201,18 @@
   ],
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
-  "benchmarkTasks": 13
+  "benchmarkTasks": 13,
+  "activeGeneralPurposeRetry": {
+    "status": "RUNNING",
+    "sameQualifiedSourceArchiveAdapterModelsAndLimits": true,
+    "activationBeforeFirstChatVerified": true,
+    "previousFailedAttemptRetained": true,
+    "scope": "Fresh healthy ON retry after socket failure; no completed workflow, matched comparison or benefit claim.",
+    "completePlanReviewPassed": true,
+    "authenticatedApplyReached": true,
+    "approvedCheckboxSemanticReviewSkipsObserved": 1,
+    "candidateCaptureObserved": true,
+    "duplicateCallbackObserved": true,
+    "finalVerification": "PENDING"
+  }
 }

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { sharedBasisFixture as fixture } from './helpers/runtime-v2-shared-basis-fixture.mjs';
 import { withTaskState } from '../lib/runtime-v2/task-store.mjs';
 import { readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
+import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
 
 async function selectedRead(f, id) {
   const content = await fs.readFile(f.skillFile, 'utf8');
@@ -20,6 +21,12 @@ async function selectedRead(f, id) {
 async function failedSelection(t) {
   const f = await fixture(t, { wireMode: 'draft' });
   f.state.sourceFrom = true; f.state.draftActual = true; f.state.useNativeGraph = true;
+  f.state.coverageSubmissions = []; f.state.coverageLaunches = [];
+  f.state.coverageLaunch = params => {
+    const startedAt = Date.now(), originalDeadlineAt = f.state.auditInputs.at(-1)?.budgetLimits?.deadlineAt;
+    f.state.coverageLaunches.push({ timeoutMs: params.timeoutMs, startedAt, originalDeadlineAt,
+      originalBudgetRemainingMs: originalDeadlineAt - startedAt });
+  };
   let reports = 0;
   f.state.formatCoverageReport = value => ++reports === 1 ? 'Unstructured failed audit, no report.' : JSON.stringify(value);
   const result = await selectedRead(f, 'actual-selected-read');
@@ -85,6 +92,8 @@ test('a genuine later read of changed original recovers the pending identity wit
   const { f, watcher } = await failedSelection(t);
   await fs.appendFile(f.skillFile, '\nDescriptive edition note.\n');
   const selected = await selectedRead(f, 'new-current-selection');
+  if (selected.watcher.status !== 'ACTIVE') t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({
+    root: f.root, calls: f.calls, submissions: f.state.coverageSubmissions, launches: f.state.coverageLaunches })));
   assert.equal(selected.watcher.status, 'ACTIVE', JSON.stringify(selected));
   const row = (await f.task()).watchers[watcher.watcherId];
   assert.equal(row.watcherId, watcher.watcherId); assert.equal(row.maxTurn, watcher.maxTurn);
