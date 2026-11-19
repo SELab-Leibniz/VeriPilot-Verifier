@@ -360,12 +360,12 @@
   },
   "remoteCI": {
     "status": "LATEST_SOURCE_HEAD_NATURAL_CI_SEVEN_PASS",
-    "currentRun": 44616726622,
-    "currentRunHead": "e3f8e9e48f8902f62d6be5885f30b7f68bd1a067",
+    "currentRun": 44622785596,
+    "currentRunHead": "e84249a0e505b704680646db3f912e658c57ae96",
     "currentRunStatus": "completed",
     "currentRunConclusion": "success",
-    "latestCompletedRun": 44616726622,
-    "latestCompletedRunHead": "e3f8e9e48f8902f62d6be5885f30b7f68bd1a067",
+    "latestCompletedRun": 44622785596,
+    "latestCompletedRunHead": "e84249a0e505b704680646db3f912e658c57ae96",
     "latestCompletedConclusion": "success",
     "latestCompletedPassedMatrixJobs": 7,
     "latestCompletedFailedMatrixJobs": 0,
@@ -373,16 +373,16 @@
     "runAttempt": 1,
     "currentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/terminal-receipt.json",
-      "sha256": "95343e0008c3eed5e6d7d3560e75d798efcec264429c2b98d22b662fbc0e87aa"
+      "path": ".runtime-correction/validation/ci-fix/post-report-natural-p063lr50/terminal-receipt.json",
+      "sha256": "1cabba8154ca92a5bd25ddf2f986b30780acaae2a2b58593e14d45056eeda47f"
     },
     "independentFinalReadback": {
-      "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/final-readback.json",
-      "sha256": "397eb2b3be84a5f865233ef71190c6b677ab7c05baa786fa6f633298784ded77"
+      "path": ".runtime-correction/validation/ci-fix/post-report-natural-p063lr50/final-readback.json",
+      "sha256": "c62230b7a8cc8ceea477d5266f58f51ed28b25f0eb5e8165a467d3f8fcd11e4f"
     },
     "fileInventory": {
-      "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/final-file-inventory.json",
-      "sha256": "85133dbacb702619f700f18dc2d6acafff55991cdc5626ed81450258ade04073"
+      "path": ".runtime-correction/validation/ci-fix/post-report-natural-p063lr50/final-file-inventory.json",
+      "sha256": "5168d11ffb266d4d675720d9ca7917b3ee80249ef1c174851f7eec7c658c0dcc"
     },
     "fileCoverage": {
       "exactGitTestFiles": 387,
@@ -402,8 +402,8 @@
     "matrixResults": [
       {
         "name": "node18-ubuntu",
+        "jobId": 135908579048,
         "conclusion": "success",
-        "jobId": 135887289128,
         "reportedCheckGroups": [
           {
             "tests": 17,
@@ -423,8 +423,8 @@
       },
       {
         "name": "node18-macos",
+        "jobId": 135908578899,
         "conclusion": "success",
-        "jobId": 135887289868,
         "reportedCheckGroups": [
           {
             "tests": 17,
@@ -444,8 +444,8 @@
       },
       {
         "name": "node18-windows",
+        "jobId": 135908578964,
         "conclusion": "success",
-        "jobId": 135887289542,
         "reportedCheckGroups": [
           {
             "tests": 17,
@@ -465,8 +465,8 @@
       },
       {
         "name": "node24-ubuntu",
+        "jobId": 135908578961,
         "conclusion": "success",
-        "jobId": 135887289475,
         "files": 387,
         "totals": {
           "tests": 4798,
@@ -478,8 +478,8 @@
       },
       {
         "name": "node24-macos",
+        "jobId": 135908578841,
         "conclusion": "success",
-        "jobId": 135887289641,
         "files": 387,
         "totals": {
           "tests": 4798,
@@ -491,8 +491,8 @@
       },
       {
         "name": "node24-windows-shard1",
+        "jobId": 135908579080,
         "conclusion": "success",
-        "jobId": 135887289356,
         "files": 194,
         "totals": {
           "tests": 2522,
@@ -504,8 +504,8 @@
       },
       {
         "name": "node24-windows-shard2",
+        "jobId": 135908578472,
         "conclusion": "success",
-        "jobId": 135887289480,
         "files": 193,
         "totals": {
           "tests": 2274,
@@ -1058,7 +1058,24 @@
         "perFileLimitMs": 180000
       }
     },
-    "scope": "Natural official CI for exact source head e3f8e9e only. Seven matrix jobs passed, all387 runtime files covered; no quality or repair-efficacy claim. Subsequent report-only commits do not inherit exact-head CI status."
+    "scope": "Natural official seven-job CI for exact e84249a report/source tree; full387 files covered. Prior e3green and6a3failed receipts unchanged. Subsequent commits do not inherit their own exact-head CI status.",
+    "precedingSuccessfulSourceRun": {
+      "currentRun": 44616726622,
+      "currentRunHead": "e3f8e9e48f8902f62d6be5885f30b7f68bd1a067",
+      "terminalEvidence": {
+        "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/terminal-receipt.json",
+        "sha256": "95343e0008c3eed5e6d7d3560e75d798efcec264429c2b98d22b662fbc0e87aa"
+      },
+      "independentFinalReadback": {
+        "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/final-readback.json",
+        "sha256": "397eb2b3be84a5f865233ef71190c6b677ab7c05baa786fa6f633298784ded77"
+      },
+      "fileInventory": {
+        "path": ".runtime-correction/validation/ci-fix/post-windows-fixtures-natural-0c7yxi8x/final-file-inventory.json",
+        "sha256": "85133dbacb702619f700f18dc2d6acafff55991cdc5626ed81450258ade04073"
+      }
+    },
+    "twoFixtureFixesLatestRemoteStatus": "PASSED_BOTH_CONSECUTIVE_NATURAL_RUNS_WITH_IDENTICAL_TEST_SOURCE"
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -1557,25 +1574,18 @@
   },
   "reportCurrentQa": {
     "status": "PASS_LOCAL_BROWSER_FOUR_VIEWS",
-    "verificationPath": ".runtime-correction/validation/report-generality-ci-followup-orgzo4bb/final-verification-v2.json",
+    "verificationPath": ".runtime-correction/validation/report-onboarding-repair-race-lztklaz4/final-verification.json",
     "browserReceipt": {
-      "path": ".runtime-correction/validation/report-generality-ci-followup-orgzo4bb/qa-attempt2/receipt.json",
-      "sha256": "b75f0bae14854e9f04991865bd52bbd7e88094c07f5b4f969457bbaa13f1d343"
+      "path": ".runtime-correction/validation/report-onboarding-repair-race-lztklaz4/receipt.json",
+      "sha256": "828c03674ea45ba85ee1bcc1838109ec117ea764e46f332f5a26661eedc507c2"
     },
     "humanizerSkill": "/Users/rshu/.agents/skills/humanizer/SKILL.md",
     "styleScriptAndLinkTargetsUnchanged": true,
     "archiveAndProductionSourceUnchanged": true,
-    "independentWorkflowPeer": {
-      "path": ".runtime-correction/validation/public-workflow-composition-peer-mb6ww545/peer-review-final.json",
-      "sha256": "72bf0c8a5f76ea606d2fab5df0b03a07b3eaaab4462b4154d7cb3e6c9423b63e"
-    },
-    "sourceAndTestValidatedCommit": "e3f8e9e48f8902f62d6be5885f30b7f68bd1a067",
+    "sourceAndTestValidatedCommit": "e84249a0e505b704680646db3f912e658c57ae96",
     "reportOnlyPublicationDoesNotClaimItsOwnExactHeadCi": true,
-    "visualReview": "EnglishdesktopandChineseMobilelatestnextsectioninspected",
-    "priorQaRetained": {
-      "path": ".runtime-correction/validation/report-generality-ci-followup-orgzo4bb/final-verification.json",
-      "sha256": "7ff461e36345c1b141004690a556f57f94c76e13fbc3adf54cba4ab4e6f575e8"
-    }
+    "onboardingActualProbeGapNotCodingFailure": true,
+    "positiveRepairAttemptStillUnqualified": true
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -2431,7 +2441,48 @@
       },
       "wholeLocalWorkflowPrerequisiteSatisfied": true,
       "noRetroactivePromotionOfOldPaidArms": true,
-      "positiveNativeRepairControl": "PREPARATION_ONLY_NOT_YET_EXECUTED"
+      "positiveNativeRepairControl": {
+        "status": "FAILED_EXTERNAL_ORIGINAL_BINDING_RACE_NO_MECHANICAL_QUALIFICATION",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/source-hold.json",
+          "sha256": "77e1eb991264293d1fb98a1e02fab29bac530d65674f7a76f9b41f0ded936bed"
+        },
+        "sourcePeer": {
+          "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/peer-review-positive-v3.json",
+          "sha256": "2720508b53ae44a3c48c7e43bcec5a17f53c1c8ff30bf0a8dc1de3c0860cf2a3"
+        },
+        "receipt": {
+          "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/runs/repair-1/receipt.json",
+          "sha256": "abbf0b96d244bf6983c9a0ab9ed1871e8807cb03c8e904e1ed1ecf226473a6af"
+        },
+        "actualCause": {
+          "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/actual-binding-race-cause.json",
+          "sha256": "eac55ab4885f27a257c823a8c71cea6e53412d7aaea3e83be9a8da3ea044776b"
+        },
+        "actualLaunch": "6e7571",
+        "actualSession": 98161,
+        "actualTerminal": "32d4be",
+        "actualExitCode": 1,
+        "originalBindingWindowMs": 60000,
+        "controlWallMs": 900000,
+        "armBudgetExpired": false,
+        "actualRecordedNativeStarts": 1,
+        "C1IndependentCheckExit": 1,
+        "C2IndependentCheckExit": 0,
+        "preCleanupSnapshotDiagnosticAuthority": {
+          "admission": false,
+          "settlement": false
+        },
+        "applyCommonOriginalTerminalReceiptExists": false,
+        "routeQualified": false,
+        "mechanicalRepairCreditGranted": false,
+        "noPaidOrSemanticBenefitClaim": true,
+        "nextObserver": "SEPARATE_VERSION_REQUIRES_REVIEW_AND_FRESH_POSITIVE_CONTROL",
+        "independentActualCausePeer": {
+          "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/actual-v3-cause-peer.json",
+          "sha256": "75f1f6554f4cd074b38391a5170326af8162c282fba5f03e6887c5366568f93c"
+        }
+      }
     },
     "nextV7OffPreparation": {
       "operatorSuffix": "8b8teo52",
@@ -2730,7 +2781,32 @@
       "sha256": "88b34acb8dfb496dcaf900bfba8cd35da4075085e23ac371b658c2594bf1d3af"
     },
     "semanticGeneralityOrBenefitEstablished": false,
-    "scope": "Bounded literal/import scan and source eligibility trace; no exhaustive semantic or live onboarding proof. Historical approved skip belongs to an earlier strict inventory/armed trial with origin disabled, not current ordinary strict4false/no-inventory workflow."
+    "scope": "Bounded literal/import scan and source eligibility trace; no exhaustive semantic or live onboarding proof. Historical approved skip belongs to an earlier strict inventory/armed trial with origin disabled, not current ordinary strict4false/no-inventory workflow.",
+    "actualPublicOnboardingProbe": {
+      "status": "QUALIFIED_PUBLIC_ONBOARDING_STARTUP_WITNESS_GAP_WITH_REAL_LOCAL_STUB_TURN",
+      "verification": {
+        "path": ".runtime-correction/validation/stock-tui-new-startup-probe-v3-snl0pfma/verification.json",
+        "sha256": "3b7064e6275159cd05683039ded88dceb7b075d5e0251ac2d9323eacecdea928"
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/stock-tui-new-startup-probe-v3-snl0pfma/receipt.json",
+        "sha256": "30fad88c9aead45419a09e49fc3e25b02b5f92d14c3d76bf8c19b0bde840df35"
+      },
+      "actualLaunch": "be13fa",
+      "actualSession": 20495,
+      "actualTerminal": "4144c6",
+      "actualExitCode": 0,
+      "actualPublicSetupAndModelTurnObserved": true,
+      "nativeRepairAdmissionTested": false,
+      "realModelApiOrKeyRead": false,
+      "ledgerAbsentNotZero": true,
+      "sourceOnlyDesign": {
+        "path": ".runtime-correction/validation/onboarding-first-command-design-8mt37k95/design.json",
+        "sha256": "18855e212aeb78694f9ed3ab67735793c5d041a5a1b6b8be2ea6250be502a28f"
+      },
+      "sharedProductSourceChanged": false,
+      "noAllCodingFailureClaim": true
+    }
   },
   "reportPreviousQa": {
     "status": "PASS",
@@ -3003,5 +3079,9 @@
     "v1FalsePassAndV2FairnessFailuresPreserved": true,
     "evaluationArmsAdmitted": 0,
     "noGeneralBenefitClaim": true
+  },
+  "reportPreviousQaSnapshot": {
+    "path": ".runtime-correction/validation/report-onboarding-repair-race-lztklaz4/prior-validation.json",
+    "sha256": "fecd0daf745753768d594eca4abbd3895b5f4dfcab73660af6e21f38803995b4"
   }
 }
