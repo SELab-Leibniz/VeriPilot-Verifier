@@ -1,0 +1,34 @@
+# Explicit opt-in topology overlay for the OpenSpec spec-driven workflow.
+# Merge ONLY enabledStages, artifacts and workflow into the active configuration.
+# Preserve every other key, including model/effort/deadlines, strict Proposal
+# coverage/readiness, Stop controls, project/session switches and verification.
+# This is NOT a standalone configuration. Do not copy it over config.yaml.
+# Install companion openspec-plan.rules.yaml beside the active configuration.
+# Keep the existing example.reviewer.md; review any custom criteria explicitly.
+enabledStages:
+  - proposal
+
+artifacts:
+  - name: openspec-plan
+    stage: proposal
+    type: openspec-plan
+    format: markdown
+    editable: true
+    pathTemplates:
+      - "openspec/changes/{changeName}/proposal.md"
+      - "openspec/changes/{changeName}/design.md"
+      - "openspec/changes/{changeName}/tasks.md"
+      - "openspec/changes/{changeName}/specs/**/{capability}/spec.md"
+    rules:
+      enabled: true
+      file: openspec-plan.rules.yaml
+    review:
+      enabled: true
+      criteria: example.reviewer.md
+      deferUntilBundleComplete: true
+
+workflow:
+  correlation:
+    keys:
+      - changeName
+  edges: []

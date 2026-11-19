@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: OPENSPEC-PLANNING-MEMBERS
+    type: require-artifacts
+    artifacts: [proposal.md, design.md, tasks.md, spec.md]
+    pendingUntilComplete: true
+    severity: error

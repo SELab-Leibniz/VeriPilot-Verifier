@@ -115,7 +115,8 @@ test("all hosts package complete runtime imports, resources and usable documenta
         assert.doesNotMatch(await fs.readFile(file, "utf8"), evaluationInputs, relative);
       }
       await assert.rejects(fs.access(path.join(root, "docs/document-correction-experiment.json")), { code: "ENOENT" });
-      for (const name of ["config.yaml", "config.reference.yaml", "example.reviewer.md", "example.rules.yaml", "README.md"]) {
+      for (const name of ["config.yaml", "config.reference.yaml", "example.reviewer.md", "example.rules.yaml", "README.md",
+        "openspec-full-plan.topology.yaml", "openspec-plan.rules.yaml"]) {
         await fs.access(path.join(root, ".runtime-corrector-default", name));
       }
       const entry = await import(pathToFileURL(path.join(root, "lib/openclaw/entry.mjs")).href);

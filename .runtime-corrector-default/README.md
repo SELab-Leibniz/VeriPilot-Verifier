@@ -14,6 +14,14 @@
 
 默认模板用于 OpenSpec `spec-driven` 流程。`specs → tasks` 入边缺少差量规格时标记为待补齐。使用允许省略差量规格的自定义流程时，可将这条边的 `review.enabled` 设为 `false`。从 `enabledStages` 移除 `specs` 会关闭差量规格的写入触发；任务清单仍按已配置的入边读取来源。
 
+## 可选：同一变更整包审阅
+
+使用 proposal、design、tasks 和差量规格的项目，可选择插件安装目录下 `.runtime-corrector-default/openspec-full-plan.topology.yaml`。它按变更名收集完整方案，在 proposal、design、tasks 和至少一份差量规格齐备后启动语义审阅；草稿写入仍执行确定性检查，之后修改任一成员会重新审阅当前整包。独立启用的 Ground Truth 或运行时审查仍遵循原有设置，可能在草稿未齐时运行。
+
+先备份项目配置，再将随附的 `openspec-plan.rules.yaml` 复制到项目 `.runtime-corrector/`；已有同名文件时先核对内容。将 overlay 的 `enabledStages`、`artifacts`、`workflow` 三个顶层值合入当前 `config.yaml`，审阅并替换原有拓扑；不要用 overlay 覆盖整个配置。保留模型、时限、项目与会话开关、原文覆盖和任务 READY 要求、Stop 及验证设置；已有自定义审阅标准也须核对。`/rc-project init` 不自动选择或复制这两个可选资源。
+
+此选项只适用于上述文件结构。文件齐备只决定何时审阅，不证明所有能力规格、需求或实施任务完整；Apply 前仍须执行既有的 OpenSpec 校验、当前方案覆盖和任务就绪检查。它不会自动开启未配置的严格检查。
+
 一次自动纠偏固定经过：
 
 ```text
