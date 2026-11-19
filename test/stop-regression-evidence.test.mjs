@@ -1052,7 +1052,7 @@ async function checkCompletedSuiteRecovery(t, { command, file, healthy, broken, 
 
   const assertSuite = (result, status, failures) => {
     assert.equal(result.status, status, result.outputTail);
-    const receipt = JSON.parse(/^RC_REGRESSION_INVENTORY (.+)$/mu.exec(result.outputTail)[1]);
+    const receipt = JSON.parse(/^RC_REGRESSION_INVENTORY (.+)$/mu.exec(result.outputStreams.stdout.outputTail)[1]);
     assert.equal(receipt.executedTests, 2, 'skipped checks are excluded from the executed count');
     const observed = regressionFailureInventory(result);
     assert.equal(observed.complete, true);
