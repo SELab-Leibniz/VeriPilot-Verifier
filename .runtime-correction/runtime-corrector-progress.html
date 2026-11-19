@@ -165,7 +165,7 @@
           </ol>
           <div class="workflow-checkpoint">
             <h3>Plugin Stop review</h3>
-            <p>By default, Stop reviews the current candidate against the original request using its selected checklist. With sealed approval, it also checks the bound plan and any mandatory requirement inventory against current code.</p>
+            <p>By default, Stop reviews the current candidate against the original request using its selected checklist and any retained original obligation candidates. With sealed approval, it also checks the bound plan and mandatory inventory against current code.</p>
           </div>
           <ul class="workflow-outcomes" role="list">
             <li class="workflow-node workflow-outcome-ready"><h3>On track</h3><p>Deliver the code with the verified requirements and check results. During evaluation, freeze it before Archive for independent grading.</p></li>
@@ -189,7 +189,7 @@
           </ol>
           <div class="workflow-checkpoint">
             <h3>插件的 Stop 审查</h3>
-            <p>默认情况下，Stop 用自己列出的检查项，对照原始请求审查当前候选代码。存在封存审批时，还会核对绑定方案，以及必需需求清单与当前代码的对应关系。</p>
+            <p>默认情况下，Stop 用自己列出的检查项及已保留的原始义务候选，对照原始请求审查当前代码。存在封存审批时，还会核对绑定方案及必需清单与当前代码的对应关系。</p>
           </div>
           <ul class="workflow-outcomes" role="list">
             <li class="workflow-node workflow-outcome-ready"><h3>符合预期</h3><p>交付代码，并说明已核实的需求及检查结果。评估时在归档前冻结候选版本，交由独立评分。</p></li>
@@ -224,7 +224,7 @@
           </tbody>
         </table></div>
         <p>A document integrity failure and a code defect need separate judgments. Under a sealed exact-plan policy, replacing a verification note can break that policy while leaving every task and requirement intact. Ordinary wording changes need review of their meaning and authority. Missing evidence stays <code>UNVERIFIED</code>; it does not by itself establish a defect that warrants a confirmed-deviation repair.</p>
-        <p class="callout">The current default has a completeness gap: the reviewer can omit an original obligation from its checklist without creating an unverified item. An existing generic control confirms this behavior. A clean Stop therefore does not establish complete request coverage. A supplied inventory keeps known items from disappearing, but still needs its own completeness check. Mentioning every feature also does not make a weak verification plan adequate.</p>
+        <p class="callout">Default review still does not establish complete request coverage. The updated plugin retains a minimum set of source-anchored candidates from whole-plan review. Later omission or insufficient current evidence cannot earn a clean final acceptance for those candidates. An obligation missed during the initial review may still be absent from this set. A supplied strict inventory also needs its own completeness check. Mentioning every feature does not make a weak verification plan adequate.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="decisions-title-zh">把原始需求一直核对到最终代码</h2>
@@ -248,7 +248,7 @@
           </tbody>
         </table></div>
         <p>文档完整性失败和代码缺陷需要分别判断。在封存的精确方案策略下，替换验证说明可能违反策略，却仍保留所有任务和需求。普通措辞改动则需核查含义和授权。缺少证据时应保持 <code>UNVERIFIED</code>，不能仅据此认定存在缺陷并发起以确认偏离为依据的修复。</p>
-        <p class="callout">当前默认配置存在完整性缺口：审查器可能从清单中漏掉原始义务，却不为遗漏项生成待验证记录，现有通用对照已确认这一行为。因此，干净的 Stop 不能证明完整覆盖了请求。提供清单可以防止已知项目消失，但清单本身仍需检查是否完整。即使提到全部功能，薄弱的验证安排也不足以证明正确。</p>
+        <p class="callout">默认审查仍不能证明完整覆盖了请求。更新后的插件会保留整套方案审查中一组带原文定位的候选；后续遗漏或当前证据不足，不能为这些候选取得最终无偏差验收。但最初审查未发现的义务，仍可能不在这组记录中。提供严格清单也需要检查清单本身是否完整。即使提到全部功能，薄弱的验证安排也不足以证明正确。</p>
       </div>
     </section>
     <section id="correction" aria-labelledby="correction-title correction-title-zh">
@@ -283,76 +283,46 @@
     </section>
     <section id="expected" aria-labelledby="expected-title expected-title-zh">
       <div class="language-panel" data-report-copy lang="en">
-        <h2 id="expected-title">One task through the public workflow</h2>
-        <p class="callout">The latest completed walkthrough used the installable plugin, stock OpenClaw commands and shipped defaults. Final code passed all nine independent checks, and native Stop returned <code>NO_DEVIATION_FOUND</code>. The evaluation driver still ended incomplete: it rejected a clarification in the task checklist. These results are recorded separately.</p>
-        <p>A further real-model mechanism test is running after fresh setup and configuration checks. A separate evaluation fixture will attempt one declared source change before final review; the installable plugin is unchanged. The test must establish actual detection, a native corrective run and independently verified repair before receiving repair credit. Its public source fixture is discoverable, so it cannot measure blinded detection accuracy or broad quality benefit. No result is available yet.</p>
-        <p>This is a small general coding task outside the 13-task benchmark. It checks whether a healthy implementation can pass through Proposal, ordinary operator approval, Apply and final review. Flash codes and Pro reviews. No requirement inventory was prepared for the plugin, and the four optional strict checks stayed off. Ordinary approval did not create a sealed approval receipt.</p>
-        <h3>The original requirements</h3>
-        <p>The task provides <code>createWorkQueue(limit)</code> and <code>submit(task)</code>. Its four requirements are:</p>
-        <div class="table" role="region" aria-label="Original work-queue requirements" tabindex="0"><table class="evidence">
-          <thead><tr><th scope="col">Requirement</th><th scope="col">Behavior</th></tr></thead>
+        <h2 id="expected-title">What the latest walkthrough shows</h2>
+        <p class="callout">The latest real-model test did not exercise correction. OpenClaw finished its run and native Stop found no deviation. The separate evaluation fixture could not match a masked run identifier, so it injected no fault. The driver was stopped and retains its <code>INCOMPLETE</code> result. Healthy final code earns no repair credit.</p>
+        <p>The task is a small work queue outside the 13-task benchmark. Its four requirements cover capacity, waiting order, exact success and error outcomes, and continued progress after either outcome. Flash coded and Pro reviewed through stock OpenClaw, OpenSpec and the installable plugin. No requirement inventory was prepared for the plugin; the four optional strict checks stayed off. Ordinary operator approval did not create a sealed approval receipt.</p>
+        <div class="table" role="region" aria-label="Latest public workflow results" tabindex="0"><table class="evidence">
+          <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Meaning</th></tr></thead>
           <tbody>
-            <tr><th scope="row">A1: Capacity</th><td>Run at most <code>limit</code> tasks at once. Keep each slot until the task result settles.</td></tr>
-            <tr><th scope="row">A2: Order</th><td>Start waiting tasks in submission order.</td></tr>
-            <tr><th scope="row">A3: Outcome</th><td>Preserve fulfillment values and rejection reasons, including object identity. Convert synchronous throws to rejections.</td></tr>
-            <tr><th scope="row">A4: Progress</th><td>Release capacity after success or failure, continue waiting work, and never run a task twice.</td></tr>
+            <tr><th scope="row">Setup and Proposal</th><td>Seven public setup commands completed. The operator reviewed a plan with 22 unchecked steps; official strict OpenSpec validation passed.</td><td>The ordinary installation and planning route worked. The document-only Stop was skipped; this is not proof of complete requirement coverage.</td></tr>
+            <tr><th scope="row">Approval and Apply</th><td>The operator approved through the TUI. Production source stayed unchanged, and 21 of 22 steps were checked. The remaining conditional fix was explicitly marked not applicable because no deviation had been found.</td><td>Official validation still passed after closure, but the OpenSpec task state remained ready rather than all done. A valid plan and finished model run do not establish workflow completion.</td></tr>
+            <tr><th scope="row">Native final review</th><td>The actual host record settled at <code>NO_DEVIATION_FOUND</code>. The ledger recorded zero native corrective coding starts.</td><td>The host completed review of healthy work. This does not establish exhaustive original-request coverage or successful correction.</td></tr>
+            <tr><th scope="row">Evaluation failure</th><td>The selected public history row contained a masked identifier that did not equal the full run identifier in the host record. No boundary capture or injected fault exists.</td><td>The test did not exercise fault detection or repair. The evaluator must validate its identity binding before arming a future test.</td></tr>
+            <tr><th scope="row">Independent final checks</th><td>After relay and Gateway closure and bounded process cleanup, frozen code passed all 9 checks across the 4 functional requirements.</td><td>The unchanged implementation passed these finite checks. This later grade does not replace the original incomplete test result.</td></tr>
           </tbody>
         </table></div>
-        <h3>What happened</h3>
-        <div class="table" role="region" aria-label="Public workflow results" tabindex="0"><table class="evidence">
-          <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">What it establishes</th></tr></thead>
-          <tbody>
-            <tr><th scope="row">Install and activate</th><td>Public CLI, Gateway and TUI setup completed. All seven command replies matched server records.</td><td>The plugin can be installed and enabled through the public route. A controlled Gateway restart was used; automatic reload remains untested.</td></tr>
-            <tr><th scope="row">Proposal</th><td>The plan covered A1–A4 in the operator review and passed official strict OpenSpec validation. It contained 17 unchecked steps.</td><td>A usable plan was produced. The document-only Stop was skipped; that skip is not a semantic PASS or proof of exhaustive original-request coverage.</td></tr>
-            <tr><th scope="row">Approval and Apply</th><td>The operator approved Apply through the TUI. All 17 steps were checked off, public tests were expanded, and the healthy production implementation stayed unchanged.</td><td>The coding workflow preserved the tested behavior. The 17 steps belong to this one project; they are not benchmark tasks.</td></tr>
-            <tr><th scope="row">Native final review</th><td>Stop settled with <code>NO_DEVIATION_FOUND</code>. The host ledger recorded zero native corrective coding starts.</td><td>RC started no corrective coding run on this healthy case. Its nine reviewer-selected checklist rows are not nine original requirements; complete original-request coverage was not independently established.</td></tr>
-            <tr><th scope="row">Independent checks after closure</th><td>Frozen code passed 9/9 checks across A1–A4. Official OpenSpec checks confirmed 17/17 steps complete and strict validation passed.</td><td>The delivered code passed the finite functional checks. These later checks do not replace the original incomplete evaluation result.</td></tr>
-          </tbody>
-        </table></div>
-        <p>The nine functional tests and nine Stop checklist rows are separate counts. A bounded audit found A1–A4 explicitly listed in the saved review and a recorded read matching the current full source. Those rows use <code>NO_CONFIRMED_DEVIATION</code>. Five public workflow, scope and inspection duties have no separate checklist row; their treatment needs assessment against the other gates and phase history. That omission alone does not establish a violation, and exhaustive coverage remains unproved.</p>
-        <h3>The issue this walkthrough exposed</h3>
-        <p>The final checklist clarified the approval step to “Obtain explicit user approval before Apply.” The driver required every non-checkbox character to stay identical, so it stopped before its final OpenSpec checks. The change preserved the already-completed approval prerequisite. The original run remains <code>INCOMPLETE</code>; the post-closure checks are separate evidence.</p>
-        <p>This is an evaluation-guard issue. In an ordinary workflow, a wording clarification needs to be assessed for its effect on requirements and approval. Exact content matching still has a role for a deliberately sealed snapshot. A general-purpose check must distinguish those cases without a task-specific exception.</p>
-        <h3>Usefulness and cost</h3>
-        <p>The run made 64 provider requests: 30 Flash and 34 Pro. Total elapsed time was about 23 minutes, including operator review; RC overhead has not been measured separately. The six document-feedback events comprise three deferred-draft notices and three passing reviews. One passing review delivered a nonblocking advisory about the approval step. The later wording change cannot be attributed to that advisory from these records alone. Zero native corrective coding runs therefore still involved feedback and review work.</p>
-        <p>The initial implementation already passed the functional checks. This run therefore shows preservation of healthy behavior, with unresolved review overhead and an evaluation failure. It demonstrates no repair benefit, matched OFF/ON improvement, or reliable performance on other tasks. Formal benchmark comparisons remain 0/39.</p>
-        <p>The same installable archive passed 17 artifact checks on each tested Node version. Its frozen source passed all 383 local test files: 4,650 checks passed and 33 were skipped. Later changes affect CI tests only; the fresh remote result is tracked below. Host-issued requirement identifiers also passed 83 focused checks, but this default-policy walkthrough did not exercise that optional inventory path.</p>
+        <h3>What this changes</h3>
+        <p>The updated installable plugin retains the observed original obligation candidates and prevents stale-review reuse after that set changes. Its 48 focused controls passed on Node 18 and 24, including an actual plugin handoff from plan review through ordinary approval to final Stop: current proof is accepted, while omission stays unverified. Retention currently lasts for one host lifecycle; restart continuity remains open.</p>
+        <p>The archive installs and loads through the stock public CLI. A separate post-closure readback verified all 276 packaged files and the stock SDK peer link. This qualifies installation and registration; no real-model correction has been run on the new archive.</p>
+        <p>Package builds match on Node 18 and 24, and the artifact checks passed. The full run completed all 386 files: 4,697 checks passed, 33 were skipped and one MatrixAssistant cancellation assertion failed. A controlled state-version race led to a test-only synchronization fix; all 10 related tests then passed on both Node versions and in independent review. The original full-run failure is retained. The revised complete suite still needs remote verification.</p>
+        <p>The closed test made 76 provider requests: 32 Flash and 44 Pro. About 39 minutes elapsed, including operator inspection and the evaluator’s wait after the actual run ended. These totals do not measure RC overhead separately. The previous ordinary walkthrough also preserved healthy behavior, but its driver rejected a harmless plan clarification; that original incomplete result remains recorded.</p>
+        <p>We still need a correctly bound real repair, healthy and defective tasks held out from development, and matched OFF/ON measurements of quality, regressions, interruptions and cost. Formal benchmark comparisons remain 0/39. Neither completed walkthrough proves a real-model quality gain.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
-        <h2 id="expected-title-zh">一个任务走完公开工作流</h2>
-        <p class="callout">最新已结束的走查使用可安装插件、标准 OpenClaw 命令和交付默认配置。最终代码通过全部九项独立检查，原生 Stop 返回 <code>NO_DEVIATION_FOUND</code>。评估驱动仍以未完成结束：它拒绝了任务清单中的一处措辞澄清。这几项结果分别记录。</p>
-        <p>新一轮真实模型机制测试已通过全新安装和配置检查，现正运行。独立评估夹具将尝试在最终审查前实施一次明确声明的源码变化，可安装插件保持不变。只有确认实际检出、原生纠偏回合及独立核验的修复，才计为修复证据。公开源码夹具可以被发现，因此本轮不能测量盲测检出率或广泛质量收益，目前尚无结果。</p>
-        <p>这是一个独立于 13 任务基准的小型通用编码任务，用于检查健康实现能否经过 Proposal、普通操作者批准、Apply 和最终审查。Flash 编码，Pro 审查。没有事先为插件准备需求清单，四项可选严格检查均关闭。普通批准没有生成封存审批回执。</p>
-        <h3>原始需求</h3>
-        <p>任务提供 <code>createWorkQueue(limit)</code> 和 <code>submit(task)</code>，包含四项需求：</p>
-        <div class="table" role="region" aria-label="工作队列的原始需求" tabindex="0"><table class="evidence">
-          <thead><tr><th scope="col">需求</th><th scope="col">行为</th></tr></thead>
+        <h2 id="expected-title-zh">最新走查说明了什么</h2>
+        <p class="callout">最新真实模型测试没有实际检验纠偏。OpenClaw 已结束回合，原生 Stop 未发现偏离；但独立评估夹具无法匹配被遮蔽的回合标识，因此没有注入故障。驱动已停止，原始结果仍为 <code>INCOMPLETE</code>。健康代码通过检查，不计为修复收益。</p>
+        <p>任务是独立于 13 任务基准的小型工作队列，四项需求涉及容量、等待顺序、成功值及错误的原样保留，以及成功或失败后继续执行。Flash 编码，Pro 审查，经过标准 OpenClaw、OpenSpec 和可安装插件。没有为插件预先准备需求清单，四项可选严格检查均关闭，普通操作者批准也没有生成封存审批回执。</p>
+        <div class="table" role="region" aria-label="最新公开工作流结果" tabindex="0"><table class="evidence">
+          <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">含义</th></tr></thead>
           <tbody>
-            <tr><th scope="row">A1：容量</th><td>同时运行不超过 <code>limit</code> 个任务，每个任务的结果结束前始终占用名额。</td></tr>
-            <tr><th scope="row">A2：顺序</th><td>等待任务按提交顺序开始。</td></tr>
-            <tr><th scope="row">A3：结果</th><td>原样保留成功值和拒绝原因，包括对象身份；同步抛错转换为拒绝。</td></tr>
-            <tr><th scope="row">A4：继续执行</th><td>成功或失败后均释放容量，让等待工作继续，任何任务都不重复执行。</td></tr>
+            <tr><th scope="row">准备与 Proposal</th><td>七条公开配置命令完成。操作者审查了包含 22 个未勾选步骤的方案，官方严格 OpenSpec 校验通过。</td><td>普通安装和规划入口可用。仅文档变更的 Stop 被跳过，不能据此证明需求覆盖完整。</td></tr>
+            <tr><th scope="row">批准与 Apply</th><td>操作者通过 TUI 批准。生产源码保持不变，22 项中勾选 21 项。剩余的条件性修复项明确记为不适用，因为此前未发现偏离。</td><td>关闭后的官方校验仍通过，但 OpenSpec 任务状态仍为 ready，而非全部完成。方案有效、模型回合结束，都不等于工作流已经完成。</td></tr>
+            <tr><th scope="row">原生最终审查</th><td>实际宿主记录以 <code>NO_DEVIATION_FOUND</code> 结束，账本记录原生纠偏编码启动零次。</td><td>宿主完成了对健康实现的审查，不能据此证明穷尽覆盖原始请求或成功纠偏。</td></tr>
+            <tr><th scope="row">评估失败</th><td>选中的公开历史条目含被遮蔽的标识，与宿主记录中的完整回合标识不相等。没有边界快照，也没有注入故障。</td><td>本次没有检验故障检出或修复。后续测试必须先验证身份绑定，再启用夹具。</td></tr>
+            <tr><th scope="row">独立最终检查</th><td>关闭中继及 Gateway、完成有界进程清理后，冻结代码在四项功能需求的九项检查中全部通过。</td><td>未改动的实现通过这些有限检查。后续评分不改变原先未完成的测试结果。</td></tr>
           </tbody>
         </table></div>
-        <h3>实际经过</h3>
-        <div class="table" role="region" aria-label="公开工作流结果" tabindex="0"><table class="evidence">
-          <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">能够说明什么</th></tr></thead>
-          <tbody>
-            <tr><th scope="row">安装与开启</th><td>通过公开 CLI、Gateway 和 TUI 完成准备，七条命令回复均与服务器记录匹配。</td><td>插件可经公开入口安装并开启。本轮使用了受控 Gateway 重启，自动热加载仍未验证。</td></tr>
-            <tr><th scope="row">Proposal</th><td>操作者审查认为方案覆盖 A1–A4，官方严格 OpenSpec 校验通过，含 17 个未勾选步骤。</td><td>生成了可用方案。纯文档 Stop 被跳过；跳过不等于语义 PASS，也不能证明原始请求已穷尽覆盖。</td></tr>
-            <tr><th scope="row">批准与 Apply</th><td>操作者通过 TUI 批准 Apply，17 项步骤全部勾选，公开测试得到扩充，健康生产实现保持原样。</td><td>编码流程保留了已测试行为。17 项是本项目内的步骤，不是基准任务数量。</td></tr>
-            <tr><th scope="row">原生最终审查</th><td>Stop 以 <code>NO_DEVIATION_FOUND</code> 结束，宿主账本记录的原生纠偏编码启动次数为零。</td><td>RC 没有为这项健康任务启动纠偏编码。审查器选择的九条检查记录不是九项原始需求；原始请求的完整覆盖尚未独立核验。</td></tr>
-            <tr><th scope="row">关闭后的独立检查</th><td>冻结代码在 A1–A4 上通过 9/9 项检查。官方 OpenSpec 检查确认 17/17 项完成，严格校验通过。</td><td>交付代码通过了有限的功能检查。这些后续检查不替换原始评估未完成的结果。</td></tr>
-          </tbody>
-        </table></div>
-        <p>九项功能测试与九条 Stop 检查记录是两种不同计数。有限审计确认，保存的审查中分别列出了 A1–A4，并记录了与当前完整源码匹配的读取；这些条目的判断为 <code>NO_CONFIRMED_DEVIATION</code>。五项公开的流程、范围和先行检查义务没有单列为检查项，仍需结合其他关口和阶段记录判断。未单列本身不能证明违反义务，穷尽覆盖仍未得到证明。</p>
-        <h3>这轮暴露的问题</h3>
-        <p>最终清单把批准步骤澄清为“在 Apply 前获得用户明确批准”。驱动要求除勾选外的每个字符完全不变，因此在最终 OpenSpec 检查前停止。这个修改保留了已经履行的批准前提。原始运行仍为 <code>INCOMPLETE</code>，关闭后的检查单独作为证据。</p>
-        <p>问题出在评估检查。在普通工作流中，应判断措辞澄清是否改变需求和批准；对于明确封存的快照，精确内容匹配仍有用途。通用检查需要区分这些情况，不为某个任务单独放行。</p>
-        <h3>有用性与开销</h3>
-        <p>本轮共发出 64 次提供方请求：Flash 30 次、Pro 34 次。总耗时约 23 分钟，包含操作者审查；RC 的额外开销尚未单独测量。六次文档反馈包含三次草稿延后审查提示和三次通过的审查，其中一次通过审查送达了关于批准步骤的非阻塞建议。仅凭这些记录，不能认定后续措辞修改由该建议造成。因此，零次原生纠偏编码仍包含反馈和审查工作。</p>
-        <p>初始实现已经通过功能检查。因此，本轮说明健康行为得到保留，同时仍有审查开销和评估失败需要处理。它没有证明修复收益、OFF/ON 配对提升或其他任务上的可靠表现。正式基准比较仍为 0/39。</p>
-        <p>同一可安装归档在两个测试用 Node 版本上各通过 17 项安装包检查，其冻结源码通过全部 383 个本地测试文件：4,650 项检查通过、33 项跳过。后续改动仅涉及 CI 测试，新的远程结果在下方单独记录。宿主分配需求标识的路径另已通过 83 项相关检查，但本次默认配置走查没有执行这条可选清单路径。</p>
+        <h3>这对下一步有什么影响</h3>
+        <p>更新后的可安装插件会保留已观察到的原始义务候选，并在记录变化后阻止复用旧审查。48 项专项对照在 Node 18 和 24 上通过，包括从方案审查、普通批准到最终 Stop 的实际插件交接：当前证据可以通过，遗漏项保持待验证。记录目前只在单次宿主生命周期内保留，重启延续仍待解决。</p>
+        <p>归档可通过标准公开 CLI 安装并加载。单独的关闭后回读核对了全部 276 个打包文件及标准 SDK 对等链接。这验证了安装与注册；新归档尚未运行真实模型纠偏。</p>
+        <p>Node 18 和 24 的安装包构建内容一致，安装包检查已通过。完整运行完成全部 386 个文件：4,697 项检查通过、33 项跳过，一项 MatrixAssistant 取消断言失败。受控状态版本竞态促成了仅测试的同步修正；相关 10 项随后在两个 Node 版本及独立审查中通过。原始完整运行的失败继续保留，修订后的全套测试仍需远程验证。</p>
+        <p>本次共发出 76 次提供方请求：Flash 32 次、Pro 44 次。总耗时约 39 分钟，包含操作者检查及实际回合结束后的评估器等待，尚不能单独衡量 RC 开销。此前一次普通走查同样保留了健康行为，但驱动拒绝了无害的方案措辞澄清；原先未完成的结果继续保留。</p>
+        <p>仍需完成一次正确绑定的真实修复，在未参与开发调优的健康和缺陷任务上测试，并通过匹配 OFF/ON 对照测量质量、回归、打断和开销。正式基准比较仍为 0/39，两次走查都未证明真实模型质量收益。</p>
       </div>
     </section>
     <section id="results" aria-labelledby="results-title results-title-zh">
@@ -461,7 +431,7 @@
         </ol>
         <p>The latest completed remote CI passed five matrix jobs and failed Windows Node 24. Ubuntu and macOS Node 24 each completed all 384 test files without failure; all three Node 18 jobs passed their compatibility checks and 17 artifact checks. The Windows log is being diagnosed. This result does not qualify the full matrix.</p>
         <p>A controlled slow-I/O check reproduced a timing mismatch in the Ubuntu cooldown test. The test-only fix preserves the policy and original assertions; four focused cases passed on both tested Node versions and after local integration. The latest Ubuntu full suite also passed. The preceding Windows native-settlement failure had two indistinguishable wait labels. Failure-only diagnostics now identify the phase, with the original deadlines retained. Local Node 24 passed the file's 14 checks. The changed case passed separately on Node 18; a full-file Node 18 diagnostic retained four existing MockTimers API failures on both original and changed source.</p>
-        <p>A controlled delay of the mandatory fresh ownership read reproduced a native admission rejection at the plugin’s fixed one-second gate. This identifies an availability risk under slow I/O, not the unique cause of the historical Windows failure. The read and deadline remain enforced. New failure-only diagnostics cover all three latest failed files; their 41 checks passed on each local Node version in separate file runs. No runtime fix or green remote matrix is claimed.</p>
+        <p>A controlled delay of the mandatory fresh ownership read reproduced a native admission rejection at the plugin’s fixed one-second gate. This identifies an availability risk under slow I/O, not the unique cause of the historical Windows failure. The read and deadline remain enforced. The three previously failing files now have failure-only diagnostics and passed the latest remote run. Windows instead failed four other files with reviewer deadlines, a state-lock timeout and an unavailable manual-check invocation. The cause remains unresolved.</p>
         <p>Earlier CI work addressed path separators, line endings, fixture clocks, output capture and bounded cleanup. Separate runtime fixes preserve stream boundaries and retain a fresh ownership check while avoiding repeated initialization for a known correction run. Their focused controls passed, but those results establish neither every historical failure's cause nor general-purpose repair benefit. Historical failures remain recorded. A separate frozen source run passed all 383 files locally: 4,650 checks passed, 33 were skipped and none failed or timed out. It is not a full-suite result for the latest head.</p>
         <p>The earlier package passed three stock-OpenClaw controls: approval denial, healthy completion and one native repair. The repair improved independent fixture checks from 3/4 to 4/4 while preserving both approved requirements. Exact delivered feedback, final host receipts and tracked-group cleanup were verified. These scripted controls verify that package’s correction path through a named function entry. Native callback-review semantics and real-model judgment accuracy remain unverified. They add no formal-pair credit.</p>
         <p>An earlier repair attempt failed the feedback check after the local capture corrupted a Chinese character; the saved SDK prompt retained the correct reference. A byte-split reproduction identified a receiver decoding bug, although the original network chunks were not retained. The fresh controls used a byte-preserving receiver with the same plugin, scripted model behavior and feedback checks. The failed attempt remains recorded and unqualified; its owner process is absent, while exhaustive descendant cleanup was not established.</p>
@@ -563,7 +533,7 @@
         </ol>
         <p>最近已结束的远程 CI 五项通过、Windows Node 24 失败。Ubuntu 和 macOS 的 Node 24 均完成全部 384 个测试文件，没有失败；三个 Node 18 任务均通过兼容检查和 17 项安装包检查。Windows 日志仍在诊断，整个矩阵尚未通过。</p>
         <p>受控慢 I/O 检查复现了 Ubuntu 冷却测试的计时区间不一致。纯测试修正保留策略和原断言；两个测试用 Node 版本及本地集成均通过相关四项，最新 Ubuntu 全套检查也已通过。前一轮 Windows 原生结束等待失败有两处同名等待，新增的失败阶段诊断将其区分，原时限保持不变。本机 Node 24 通过该文件的 14 项检查。修改用例另在 Node 18 通过；整文件 Node 18 诊断在原始和修改源码上均保留四项既有 MockTimers API 失败。</p>
-        <p>受控延迟必需的新鲜归属读取，复现了插件固定一秒准入门槛下的原生运行拒绝。这说明慢 I/O 可能影响可用性，但不能据此认定历史 Windows 失败的唯一原因。读取和时限仍保留。最新三个失败文件均已补充仅在失败时输出的诊断，相关 41 项检查在两个本机 Node 版本的分文件运行中均通过；没有据此宣称运行时已修复或远程矩阵全绿。</p>
+        <p>受控延迟必需的新鲜归属读取，复现了插件固定一秒准入门槛下的原生运行拒绝。这说明慢 I/O 可能影响可用性，但不能据此认定历史 Windows 失败的唯一原因。读取和时限仍保留。此前三个失败文件均已补充仅在失败时输出的诊断，在最新远程运行中全部通过。Windows 此次有另外四个文件失败，涉及审查时限、状态锁超时和手动检查调用不可用，原因仍未确定，不能宣称矩阵全绿。</p>
         <p>较早的 CI 修正涉及路径分隔符、换行、测试时钟、输出捕获和有界清理。另有运行时修正保留流边界，并在保留新鲜归属检查的同时，避免为已知纠偏回合重复初始化。相关专项对照已通过，但不能据此解释每次历史失败，也不能证明通用修复收益。历史失败记录继续保留。另一次冻结源码本地运行通过全部 383 个文件：4,650 项通过、33 项跳过，没有失败或超时；这不是最新分支头的全套本地结果。</p>
         <p>此前安装包通过了三项标准 OpenClaw 对照：拒绝审批、正常完成及一次原生修复。修复把独立对照检查从 3/4 提升到 4/4，始终保留两项获批需求。确切的反馈送达、最终宿主回执及跟踪进程组清理均已核验。这些脚本对照通过具名函数入口验证该安装包的纠偏执行链。原生回调审查的语义及真实模型判断准确率仍待验证，没有增加正式配对。</p>
         <p>此前一次修复尝试因本机捕获记录损坏一个汉字而未通过反馈检查，SDK 保存的提示词仍保留正确引用。字节拆分复现发现接收器存在解码缺陷，但原始网络分块未被保存。新的对照使用保留完整字节的接收器，插件、脚本模型行为及反馈检查均沿用原配置。失败尝试继续保留，不获得验证资格；其所属进程已不存在，全部后代进程的清理则未得到证明。</p>
@@ -736,9 +706,9 @@
         <h2 id="next-title">What must improve next</h2>
         <ol class="next">
           <li>Make the ordinary workflow dependable. The evaluation must record harmless plan wording changes without treating them as broken sealed approval. It must also recognize a legitimate native corrective successor through trusted host records; accepting only the original Apply run would reject a successful correction. Both fixes belong to the evaluator, and neither changes the original failed result. The plan-change guard passed 14 independent controls, and native successor handling passed 31. Live qualification is still required.</li>
-          <li>Demonstrate a real repair. Preserve the failing candidate, the specific evidence that triggered RC, the corrective run and the independently checked result. Ordinary Apply repairs receive no RC credit. A separate evaluation fixture is prepared to inject one declared fault before final review, leaving the installable plugin unchanged. Fresh setup and configuration checks passed, and the test is running. This can test the mechanism; it cannot estimate how often RC catches natural mistakes. The shipped plugin must contain no task-specific logic.</li>
-          <li>Check completeness against the original request. A supplied inventory can keep known obligations from disappearing. It cannot prove the inventory was complete. The latest default-policy run had no prepared inventory, and its nine reviewer-selected rows do not establish exhaustive coverage. Evaluate both missing plan obligations and missing implementation behavior, including regression duties and required user paths.</li>
-          <li>Measure useful work against added effort. The latest healthy case used 34 Pro and 30 Flash requests with zero native corrective starts. We still need a matched baseline to measure added time, requests and unnecessary interruptions. Keep successful repairs, missed defects, false alarms, workflow completion and independent code quality visible separately.</li>
+          <li>Demonstrate a real repair. Preserve the failing candidate, the specific evidence that triggered RC, the corrective run and the independently checked result. Ordinary Apply repairs receive no RC credit. A separate evaluation fixture is prepared to inject one declared fault before final review, leaving the installable plugin unchanged. The latest attempt injected no fault because its run identifier was masked; it remains incomplete. Validate the evaluator’s identity binding before repeating this mechanism test. It cannot estimate how often RC catches natural mistakes. The shipped plugin must contain no task-specific logic.</li>
+          <li>Check completeness against the original request. A supplied inventory can keep known obligations from disappearing. It cannot prove the inventory was complete. Ordinary default-policy runs have no prepared inventory; a reviewer-selected checklist does not establish exhaustive coverage. Evaluate both missing plan obligations and missing implementation behavior, including regression duties and required user paths.</li>
+          <li>Measure useful work against added effort. The latest closed test used 44 Pro and 32 Flash requests with zero native corrective starts. We still need a matched baseline to measure added time, requests and unnecessary interruptions. Keep successful repairs, missed defects, false alarms, workflow completion and independent code quality visible separately.</li>
           <li>Test transfer and reliability. Use coding tasks held out from development, varied project structures and supported languages before expanding benchmark claims. Optional mechanical origin analysis remains off by default; unsupported analysis stays unverified. The latest completed remote CI passed five matrix jobs and failed Windows Node 24. Ubuntu passed its full suite after the cooldown test fix; the Windows failure log is under investigation. Formal benchmark comparisons remain 0/39, with no demonstrated real-model quality gain.</li>
         </ol>
       </div>
@@ -746,9 +716,9 @@
         <h2 id="next-title-zh">下一步必须改进什么</h2>
         <ol class="next">
           <li>让普通工作流可靠运行。评估需要记录无害的方案措辞变化，避免误当成封存审批被破坏；也需要通过可信宿主记录识别合法的原生纠偏后续回合。只接受原始 Apply 回合，会把成功纠偏也拒绝。这两处修正属于评估器，都不改变原先失败的结果。方案变化检查已通过 14 项独立对照，原生后续回合识别已通过 31 项，仍需实际运行验证。</li>
-          <li>证明一次真实修复。保留失败候选、触发 RC 的具体证据、纠偏回合及独立核验结果。普通 Apply 自行完成的修复不计为 RC 收益。独立评估夹具已准备好，在最终审查前注入一个明确声明的故障，可安装插件保持不变。全新环境的安装和配置检查已通过，测试现正运行。这可以检验机制，但不能估计 RC 对自然错误的检出率。交付插件不能包含任务专用逻辑。</li>
-          <li>对照原始请求检查完整性。提供需求清单能防止已知义务消失，但不能证明清单没有遗漏。最新默认配置运行没有预备清单，审查器选择的九条记录也不代表穷尽覆盖。需同时评估方案遗漏和实现缺失，包括回归义务及必需的用户路径。</li>
-          <li>衡量实际帮助与额外负担。最新健康任务使用了 34 次 Pro、30 次 Flash 请求，没有原生纠偏编码启动。仍需匹配基线，才能测量额外时间、请求和不必要的打断。成功修复、漏检、误报、工作流完成及独立代码质量应分别呈现。</li>
+          <li>证明一次真实修复。保留失败候选、触发 RC 的具体证据、纠偏回合及独立核验结果。普通 Apply 自行完成的修复不计为 RC 收益。独立评估夹具已准备好，在最终审查前注入一个明确声明的故障，可安装插件保持不变。最近一次因回合标识被遮蔽而未注入故障，结果仍为未完成。再次测试机制前，先验证评估器的身份绑定。这类测试不能估计 RC 对自然错误的检出率。交付插件不能包含任务专用逻辑。</li>
+          <li>对照原始请求检查完整性。提供需求清单能防止已知义务消失，但不能证明清单没有遗漏。普通默认配置运行没有预备清单，审查器自行选择的条目也不代表穷尽覆盖。需同时评估方案遗漏和实现缺失，包括回归义务及必需的用户路径。</li>
+          <li>衡量实际帮助与额外负担。最新已关闭测试使用了 44 次 Pro、32 次 Flash 请求，没有原生纠偏编码启动。仍需匹配基线，才能测量额外时间、请求和不必要的打断。成功修复、漏检、误报、工作流完成及独立代码质量应分别呈现。</li>
           <li>验证迁移与可靠性。先用未参与开发调优的编码任务、不同项目结构和受支持语言验证，再扩大基准结论。可选机械来源分析仍默认关闭，不支持的分析保留为待验证。最近已结束的远程 CI 五项通过、Windows Node 24 失败。冷却测试修正后，Ubuntu 全套检查已通过；Windows 失败日志仍在调查。正式基准比较仍为 0/39，尚未证明真实模型质量收益。</li>
         </ol>
       </div>
