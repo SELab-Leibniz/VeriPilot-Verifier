@@ -242,15 +242,24 @@ test("round runner starts one reviewer per group; saved A survives crash and lat
 });
 
 test("round runner stops a hung group at cutoff, retaining per-item receipts and next M", async t => {
-  const f = await fixture(t, { now: Date.now }), items = await Promise.all([f.item("A"), f.item("B"), f.item("C", "M13")]);
-  let stopSignal;
-  const began = Date.now();
-  const result = await runStopReviewRound({ store: f.store, roundId: "round-1", stopId: "stop", items,
-    deadlineAt: Date.now() + 300, reviewGroup: async ({ submit, signal }) => {
+  let began, stopSignal, timer, rejectCancellation;
+  const now = () => 1000 + (began === undefined ? 0 : Date.now() - began);
+  const f = await fixture(t, { now }), items = await Promise.all([f.item("A"), f.item("B"), f.item("C", "M13")]);
+  const cancellation = new Promise((_, reject) => { rejectCancellation = reject; });
+  // Establish the dispatched group and its durable first receipt before the
+  // cancellation clock starts. Slow fixture I/O must not test prelaunch expiry.
+  const round = runStopReviewRound({ store: f.store, roundId: "round-1", stopId: "stop", items, now,
+    deadlineAt: now() + 300, reviewGroup: async ({ submit, signal }) => {
       stopSignal = signal;
       await submit({ objectId: "A", revisionId: "R1@1", result: verdict() });
+      began = Date.now();
+      timer = setTimeout(() => rejectCancellation(new Error("Hung review exceeded the existing 3000ms cancellation bound")), 3000);
       await new Promise(() => {});
     } });
+  let result;
+  try { result = await Promise.race([round, cancellation]); }
+  finally { clearTimeout(timer); }
+  assert(Number.isFinite(began), "the reviewer must launch and save its first receipt before testing cancellation");
   assert.equal(stopSignal.aborted, true);
   assert.ok(Date.now() - began < 3000);
   assert.equal(result.progress.completed, 1);

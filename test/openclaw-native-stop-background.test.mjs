@@ -7,8 +7,18 @@ import { readMaterialBasis } from "../lib/openclaw/material-basis.mjs";
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
 import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
+import { runtimeFailureDiagnostics } from "./helpers/runtime-failure-diagnostics.mjs";
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
+
+async function diagnoseBaselineWait(t, f, baselineCallbacks) {
+  const entry = f.runtime.postRuns.list().sessions.find(row => row.sessionId === f.ctx.sessionId);
+  t.diagnostic(JSON.stringify({ fixturePhase: "WAITING_FOR_BASELINE_CALLBACK", baselineCallbacks,
+    factoryCallbacksSinceFixtureReturn: f.calls(), hotReviewWorkPresent: Boolean(f.state.hotReviewWork),
+    nativeRunMatches: f.state.nativeRunId === f.ctx.runId, reviewControllerAborted: f.state.reviewController.signal.aborted,
+    ...await runtimeFailureDiagnostics({ root: f.root, warnings: f.warnings,
+      post: entry ? f.runtime.postRuns.byId(entry.id) : undefined }) }));
+}
 
 test("hot tool entry returns while extraction runs independently and result review waits for its guarded publication", async t => {
   const started = deferred(t), finish = deferred(t);
@@ -57,9 +67,12 @@ test("an ordinary read result does not wait for background extraction", async t 
 
 test("dispose cancels without waiting for an uncooperative background reviewer and explicit drain settles its metadata", async t => {
   const started = deferred(t), finish = deferred(t);
+  let baselineCallbacks = 0;
   const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
-    baselineReview: async () => { started.resolve(); await finish.promise; } });
-  await within(started.promise, "uncooperative background reviewer");
+    baselineReview: async () => { baselineCallbacks++; started.resolve(); await finish.promise; } });
+  await within(started.promise, "uncooperative background reviewer").catch(async error => {
+    await diagnoseBaselineWait(t, f, baselineCallbacks); throw error;
+  });
   await within(f.runtime.dispose(), "bounded runtime disposal", 1000);
   let drained = false;
   const draining = f.runtime.waitForBackgroundReviews().then(() => { drained = true; });
@@ -72,9 +85,12 @@ test("dispose cancels without waiting for an uncooperative background reviewer a
 
 test("a waiting old tool result cannot enter a replacement run after background extraction settles", async t => {
   const started = deferred(t), finish = deferred(t);
+  let baselineCallbacks = 0;
   const f = await lifecycle(t, { awaitInitialReview: false, panelSize: 1,
-    baselineReview: async () => { started.resolve(); await finish.promise; } });
-  await within(started.promise, "old background extraction");
+    baselineReview: async () => { baselineCallbacks++; started.resolve(); await finish.promise; } });
+  await within(started.promise, "old background extraction").catch(async error => {
+    await diagnoseBaselineWait(t, f, baselineCallbacks); throw error;
+  });
   const oldController = f.state.reviewController;
   const oldResult = f.runtime.toolResult({ toolName: "write", toolCallId: "w", args: { path: "draft.md" },
     result: { content: [{ type: "text", text: "old result" }] } }, f.ctx);

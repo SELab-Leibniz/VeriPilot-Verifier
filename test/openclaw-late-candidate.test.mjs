@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createNativeStopFixture, deferred, until, within } from "./support/openclaw-native-stop-fixture.mjs";
+import { runtimeFailureDiagnostics } from "./helpers/runtime-failure-diagnostics.mjs";
 
 const { lifecycle, findTask, withTaskState, taskDirectory } = createNativeStopFixture();
 
@@ -166,7 +167,16 @@ test('an UNKNOWN old native terminal never promotes or replays a completed newer
     f.releaseOld(); await f.recheck(); await f.runtime.postRuns.drain();
     assert.equal(f.post().runId, f.next.runId); assert.equal(f.post().promotion.terminalStatus, terminalStatus);
     assert.equal(f.post().phase, 'COEXIST_WAIT'); assert.equal(f.reviewed.length, 0);
-    f.setActivity('done'); await f.recheck(); await within(f.runtime.waitForNativeReviews(), 'reconciled successor review');
+    f.setActivity('done'); await f.recheck();
+    await within(f.runtime.waitForNativeReviews(), 'reconciled successor review').catch(async error => {
+      t.diagnostic(JSON.stringify({ fixturePhase: 'RECONCILED_SUCCESSOR_REVIEW_DRAIN',
+        reviewCallbacks: f.reviewed.length, factoryCallbacksSinceFixtureReturn: f.calls(),
+        businessSends: f.businessSends.length, nativeRunMatchesSuccessor: f.state.nativeRunId === f.next.runId,
+        reviewControllerAborted: f.state.reviewController.signal.aborted,
+        ...await runtimeFailureDiagnostics({ root: f.root, post: f.post(), warnings: f.warnings,
+          witnesses: { stop: f.reviewed } }) }));
+      throw error;
+    });
     assert.deepEqual(f.reviewed.map(item => item.runId), [f.next.runId]); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
     const accepted = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
     assert.equal(accepted.verification.status, 'NO_DEVIATION_FOUND', 'ordinary predecessor failure cannot terminalize its recovered successor');

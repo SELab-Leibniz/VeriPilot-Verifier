@@ -306,12 +306,33 @@ test('a run replaced during the shortcut freshness check cannot publish old inte
   assert(!(await f.journal()).some(row=>row.toolCallId===toolCallId&&row.reasonCode==='OPENSPEC_APPROVED_TASK_PROGRESS'));
 });
 
-test('checkbox reuse still reaches a fresh native final Stop and cannot pass without code evidence',{timeout:10000},async t=>{
-  const f=await approvedFixture(t);await f.edit(`${prefix}/tasks.md`,tasks.replace('[ ]','[x]'));
-  await f.runtime.reply({kind:'final',runId:'apply',sessionKey:f.ctx.sessionKey,payload:{text:'Completed the approved work.'}},f.ctx);
-  await f.runtime.agentEnd({runId:'apply',success:true},f.ctx);await f.runtime.waitForNativeReviews({drain:true});
-  const directory=path.join(f.root,'.runtime-correction/openclaw/native-stop-reviews'),records=[];
-  for(const entry of await fs.readdir(directory,{withFileTypes:true})){if(!entry.isDirectory())continue;for(const name of await fs.readdir(path.join(directory,entry.name))){if(name.endsWith('.json'))records.push(JSON.parse(await fs.readFile(path.join(directory,entry.name,name),'utf8')));}}
-  const stop=records.find(row=>row.runId==='apply');assert.equal(stop?.status,'SETTLED');assert.equal(stop?.openSpecPlan?.status,'PRESERVED');
-  assert(!['PASS','NO_DEVIATION_FOUND'].includes(stop.reviewStatus),'Host plan integrity does not replace fresh production evidence.');
+test('checkbox reuse still reaches a fresh native final Stop and cannot pass without code evidence',async t=>{
+  const bounded = async (phase, timeoutMs, action) => {
+    let timer; const startedAt = Date.now();
+    try {
+      return await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Object.assign(new Error(`Approved-progress fixture: ${phase}`),
+          { code: `TEST_${phase}_TIMEOUT` })), timeoutMs);
+      })]);
+    } catch (error) {
+      t.diagnostic(JSON.stringify({ phase, elapsedMs: Date.now() - startedAt, timeoutMs,
+        code: /^[A-Z][A-Z0-9_]+$/u.test(error.code ?? '') ? error.code : 'UNCLASSIFIED_TEST_FAILURE' }));
+      throw error;
+    } finally { clearTimeout(timer); }
+  };
+  // Setup includes a separate Proposal review, approval and Apply. Its I/O is
+  // outside the original ten-second Stop observation; the file bound stays 180s.
+  const f = await bounded('SETUP', 60000, async () => {
+    const fixture = await approvedFixture(t);
+    await fixture.edit(`${prefix}/tasks.md`, tasks.replace('[ ]', '[x]'));
+    return fixture;
+  });
+  await bounded('STOP_OBSERVATION', 10000, async () => {
+    await f.runtime.reply({kind:'final',runId:'apply',sessionKey:f.ctx.sessionKey,payload:{text:'Completed the approved work.'}},f.ctx);
+    await f.runtime.agentEnd({runId:'apply',success:true},f.ctx);await f.runtime.waitForNativeReviews({drain:true});
+    const directory=path.join(f.root,'.runtime-correction/openclaw/native-stop-reviews'),records=[];
+    for(const entry of await fs.readdir(directory,{withFileTypes:true})){if(!entry.isDirectory())continue;for(const name of await fs.readdir(path.join(directory,entry.name))){if(name.endsWith('.json'))records.push(JSON.parse(await fs.readFile(path.join(directory,entry.name,name),'utf8')));}}
+    const stop=records.find(row=>row.runId==='apply');assert.equal(stop?.status,'SETTLED');assert.equal(stop?.openSpecPlan?.status,'PRESERVED');
+    assert(!['PASS','NO_DEVIATION_FOUND'].includes(stop.reviewStatus),'Host plan integrity does not replace fresh production evidence.');
+  });
 });
