@@ -189,7 +189,8 @@ test('required Proposal navigation does not grant source reads or coverage and d
   const f = await fixture(t, { requiredAtoms });
   const page = await f.tools.execute({ action: 'required_proposal', start: 1, count: 1 });
   assert.deepEqual(page, { navigationOnly: true, total: 2,
-    items: [{ requirement: requiredAtoms[0].requirement, readOriginal: { action: 'read_original', ref, start: 2, count: 1 } }], nextStart: 2 });
+    items: [{ requiredProposalId: sha256([requiredAtoms[0].source.anchorId, requiredAtoms[0].requirement]),
+      requirement: requiredAtoms[0].requirement, readOriginal: { action: 'read_original', ref, start: 2, count: 1 } }], nextStart: 2 });
   const second = await f.tools.execute({ action: 'required_proposal', start: page.nextStart });
   assert.equal(second.items[0].requirement, requiredAtoms[1].requirement);
   assert.equal(second.nextStart, null);
@@ -252,7 +253,8 @@ test('mandatory coverage rejects omitted and empty tables without changing optio
       assert.equal(error.code, invalid.code);
       assert.equal(error.coverageIssue.kind, 'MISSING_REQUIRED_PROPOSAL_IDENTITIES');
       assert.equal(error.coverageIssue.missingCount, 1);
-      assert.deepEqual(error.coverageIssue.missing[0], { originalSourceAnchorId: requiredAtoms[0].source.anchorId,
+      assert.deepEqual(error.coverageIssue.missing[0], { requiredProposalId: sha256([requiredAtoms[0].source.anchorId, requiredAtoms[0].requirement]),
+        originalSourceAnchorId: requiredAtoms[0].source.anchorId,
         requirement: requiredAtoms[0].requirement, readOriginal: { action: 'read_original', ref, start: 2, count: 1 } });
       return true;
     });
