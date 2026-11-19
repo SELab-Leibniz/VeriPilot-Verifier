@@ -1,74 +1,88 @@
 {
   "kind": "openclaw-runtime-corrector-validation-v1",
   "version": "1.10.0",
-  "sourceCommit": "8ee015d7dc9036412e1630374cc8fa770aaae3d1",
+  "sourceCommit": "eaad88921001275d0151c9a5d2a1bdc23ba80a9d",
   "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-  "packageSha256": "993fc2466b29ff9a8d4d2c2e7c3d325759b16972b0efea93a8493f51a670228e",
-  "packageMembers": 272,
+  "packageSha256": "43c5f1e402d845a45ea35c08e9644c595b35f355f274e7556f25f39f1e3eca42",
+  "packageMembers": 275,
   "host": {
     "name": "openclaw",
     "version": "2026.7.1-2",
-    "freshStockInstallProfiles": 3
+    "freshStockInstallProfiles": 2
   },
   "openspec": {
     "version": "1.4.1",
-    "workflow": "Proposal -> authenticated approval -> Apply; candidate freeze before external Archive"
+    "workflow": "Proposal -> authenticated approval -> Apply; external grading after candidate freeze"
   },
   "sourceChecks": {
-    "tests": 713,
-    "passed": 712,
+    "files": 378,
+    "tests": 4623,
+    "cancelled": 0,
+    "skipped": 33,
+    "fileTimeoutMs": 180000,
+    "actualLaunches": 1,
+    "retries": 0,
+    "logSha256": "356807235d3f980e0f889dd8e30673a4cf9af1171480c57905bcb5d1e157ee69",
+    "receiptSha256": "720228ea95e487c06f6950cc047c07235b394bc1339db2aeef22c3ad09e8593a",
+    "passed": 4590,
     "failed": 0,
-    "skipped": 1,
-    "skipReason": "Windows-only",
-    "inputsUnchanged": 918
+    "inputsUnchanged": 1155
   },
-  "callbackScopeMatrix": {
-    "cases": 111,
-    "passed": 111,
-    "scope": "Fresh generic source checks; separate from native controls"
+  "node18": {
+    "version": "18.20.8",
+    "allHostBuildsPassed": true,
+    "artifactChecksPassed": 17,
+    "artifactChecksTotal": 17
+  },
+  "sourceBinding": {
+    "sourceManifestSha256": "25eca23c9bd979fbaa003f0891f539e5f0188b773786deef6d9b03a2fef942ed",
+    "memberManifestSha256": "dc8f8ad9612bcfb6690a964ef4d01fcfed06b0fafa30ec52a563f3ef71328ad4",
+    "runtimeFilesCompared": 207,
+    "namedBenchmarkTermMatches": 0
+  },
+  "optionalOpenSpecTopology": {
+    "activation": "Explicit merge of enabledStages, artifacts and workflow only; companion rules copied manually.",
+    "defaultConfigurationChanged": false,
+    "strictModelStopPoliciesReplaced": false,
+    "scriptedRuntimeControlsPassed": 9
   },
   "nativeControls": {
     "kind": "scripted-fictional-exporter",
     "status": "VERIFIED_DIAGNOSTIC_CONTROLS",
-    "refusal": {
-      "unresolvedTasks": 1,
-      "taskCount": 3,
-      "reason": "TASK_INVENTORY_NOT_READY",
-      "applyStarts": 0,
-      "repairs": 0
-    },
     "healthy": {
       "checksPassed": 4,
       "checksTotal": 4,
       "repairs": 0,
-      "finalReview": "NO_DEVIATION_FOUND"
+      "proofOffers": 0,
+      "outcome": "COVERAGE_WITHOUT_REPAIR"
     },
     "repair": {
       "checksBefore": 3,
       "checksAfter": 4,
       "checksTotal": 4,
       "nativeRepairs": 1,
-      "admission": "USED",
-      "start": "STARTED",
-      "delivery": "DELIVERED",
-      "finalReview": "NO_DEVIATION_FOUND"
+      "proofOffers": 1,
+      "freshReadsAfterOffer": 2,
+      "outcome": "ONE_NATIVE_REPAIR_THEN_COVERAGE"
     },
-    "invariants": [
-      "same two original requirement identities within each workflow",
-      "approved three-task plan preserved",
-      "current host coverage content and ownership matched",
-      "exact feedback bytes joined to native dispatch and provider request",
-      "all three root jobs exited naturally with code zero",
-      "tracked owned process groups absent after cleanup"
-    ],
-    "proofSha256": "270a5f3190dccf50407bbe20301967fd7c279a6ff1da13e20cf98ceda05ccf0c",
-    "verifierSha256": "f47cb9d6d98f3b73f3c0d8c49962fa85c4569a8bd250d7defe93499be6c9aa61"
+    "preservedOriginalRequirements": 2,
+    "naturalRootTerminals": 2,
+    "ownedCleanupVerified": true,
+    "proofSha256": "9541b06378ed1e86eac24b7e134ab5d6ad6560f228b6f215f55a588635882468",
+    "verifierSha256": "f4c691ab16b9d0ccee18e5c2f3ebae752a4533b266e03f5621afee80b696723a"
+  },
+  "remoteCI": {
+    "status": "PENDING_NEW_BRANCH_RUN",
+    "priorRunPassedJobs": 5,
+    "priorRunFailedJobs": 1,
+    "remainingPlatform": "Windows Node24"
   },
   "limits": [
-    "Scripted responses do not establish real-model diagnosis accuracy or benchmark quality gains.",
-    "Native controls use a named function with no observed upstream candidates; native callback review and nonempty caller semantics remain unevaluated.",
-    "Matching content digests establish evidence integrity and ownership, not semantic truth.",
-    "Cleanup proof covers tracked owned process groups."
+    "Native controls use scripted local responses; no real-model judgment accuracy or coding-quality benefit is established.",
+    "Native controls do not activate the optional whole-plan topology or qualify native multi-file scheduling.",
+    "Source discovery and platform support retain their documented boundaries; skipped tests remain skipped.",
+    "Cleanup covers tracked owned process groups. Nonfatal macOS Git cache-write warnings are retained.",
+    "Formal benchmark comparisons remain separate from source and mechanism checks."
   ],
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39
