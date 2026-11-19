@@ -47,7 +47,7 @@
     ],
     "originalIncompleteTrialPreserved": true,
     "knownRequirementRetention": {
-      "status": "CURRENT_CORROBORATION_SOURCE_AND_PACKAGE_VALIDATED_REAL_MODEL_PENDING",
+      "status": "CURRENT_CORROBORATION_SOURCE_PACKAGE_AND_REMOTE_VALIDATED_REAL_MODEL_PENDING",
       "auditSha256": "ce5d2629494759ec2d5e3d18f24d00a39e1ca924f6ee3067337a1f9ff98af122",
       "designSha256": "ce3ade2eeb845597c561ecf05cf47447aa58c74ed1006ae494653f3f0865803f",
       "designPeerSha256": "ee512bdd8ff7deca93d5bab3484e9079afe2274ae7037226a75d123097fb95b2",
@@ -70,11 +70,11 @@
       "runtimeHandoffCurrentProofAndOmissionVerified": true,
       "rootIntegrationSha256": "ead25abe35af50c2f121d319563c0c5b74973ff680e853819fcace066205a946",
       "finalPeerSha256": "8dfd0b1320ebe799c0655c9510b1d678acba57cccbbe6f6f5fa206dcec52fb9a",
-      "fullSuiteScope": "Combined a9eb3e6 source completed386files/4770checks:4737pass33skip0fail. Freshremote matrix pending; latestcompleted94dfe remains6PASS/1FAIL."
+      "fullSuiteScope": "Combineda9eb3e6source completed386files/4770checks:4737pass33skip0fail. Exacte225495 complete remote7/7PASS; Windows193+193complete/disjoint386files."
     }
   },
   "sourceChecks": {
-    "status": "FULL_LOCAL_PASS_FOCUSED_TWO_NODE_PASS_FRESH_REMOTE_PENDING",
+    "status": "FULL_LOCAL_AND_REMOTE_ALL_PASS_FOCUSED_TWO_NODE_PASS",
     "ownerFocusedEachNode18Node24": 121,
     "independentAffectedEachNode18Node24": 79,
     "overlappingCountsNotSummed": true,
@@ -207,68 +207,68 @@
     "scope": "New297adfe/2a07034 source/package/stock installation checks only. Prior4212 actual injected-fault correction remains recorded separately."
   },
   "remoteCI": {
-    "status": "LATEST_NATURAL_SEVEN_JOB_MATRIX_SIX_PASS_ONE_WINDOWS_SHARD_FAIL",
-    "currentRun": 44560230928,
-    "currentRunHead": "94dfe3389d88154db9354c5c30ce8e23139a545f",
-    "currentRunConclusion": "failure",
-    "latestCompletedRun": 44560230928,
-    "latestCompletedRunHead": "94dfe3389d88154db9354c5c30ce8e23139a545f",
-    "latestCompletedConclusion": "failure",
-    "latestCompletedPassedMatrixJobs": 6,
-    "latestCompletedFailedMatrixJobs": 1,
+    "status": "LATEST_NATURAL_SEVEN_JOB_MATRIX_ALL_PASS",
+    "currentRun": 44570467615,
+    "currentRunHead": "e22549598f8390d3083e833e7e66b6bb772e1bfc",
+    "currentRunConclusion": "success",
+    "latestCompletedRun": 44570467615,
+    "latestCompletedRunHead": "e22549598f8390d3083e833e7e66b6bb772e1bfc",
+    "latestCompletedConclusion": "success",
+    "latestCompletedPassedMatrixJobs": 7,
+    "latestCompletedFailedMatrixJobs": 0,
     "matrixTotal": 7,
+    "publication": "skipped",
     "terminalEvidence": {
-      "path": ".runtime-correction/validation/ci-fix/94dfe33-natural-uxoi0myu/terminal-receipt.json",
-      "sha256": "8c139cd871ba4f30e28b48ec333ae95e75a5f91cce88f828615e403e910571e7",
-      "actualWatchSession": 48210,
-      "actualWatchTerminal": "c67caa",
-      "actualWatchExitCode": 1,
-      "rootReceiptRead": "fd5f36",
-      "independentOfflineVerifier": "a0dbe2"
+      "path": ".runtime-correction/validation/ci-fix/e225495-natural-dm5a92fh/terminal-receipt.json",
+      "sha256": "f7fe084ccff1975ba4e1842fcb1b6bd6b102142c195db5fb7e0f004b34947857",
+      "actualReconnectedWatchSession": 46711,
+      "actualNaturalTerminal": "cb03f8",
+      "actualExitCode": 0,
+      "rootPinRead": "e018a3",
+      "allOfficialFilePinsRootVerified": true,
+      "initialTlsObserverFailurePreserved": true,
+      "actionsRetryOrCancellation": false
     },
-    "windows": {
-      "filesPerShard": [
+    "windowsPartition": {
+      "fullTestFileCount": 386,
+      "selectedCounts": [
         193,
         193
       ],
-      "fullFiles": 386,
-      "disjointUnionVerified": true,
-      "inventoryDigestMatchedAcrossShards": true,
-      "totalChecks": 4734,
-      "pass": 4687,
-      "fail": 2,
-      "skip": 45,
-      "fileTimeouts": 0,
-      "failures": [
-        {
-          "file": "test/openclaw-reviewer-progress.test.mjs",
-          "case": 13,
-          "failure": "REVIEWER_DEADLINE",
-          "durationMs": 4841.896,
-          "declaredReviewerBudgetMs": 2000
-        },
-        {
-          "file": "test/review-collector.test.mjs",
-          "case": 14,
-          "failure": "REVIEW_COLLECTION_STALE",
-          "durationMs": 543.1225,
-          "declaredPublicationBudgetMs": 500
-        }
-      ]
+      "uniqueUnionCount": 386,
+      "completeGitTestInventoryEqualsUnion": true,
+      "fullFileListSha256": "20812b3ff35e69ee9c63de64942d99937f16ffbb9e510bb917cbce7c9c17e4d4",
+      "perVmFileConcurrency": 2,
+      "fileDeadlineMs": 180000,
+      "jobLimitMinutes": 25,
+      "mergedTotals": {
+        "tests": 4768,
+        "pass": 4723,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 45
+      }
     },
-    "node24FullFiles": {
+    "runtimeNode24": {
+      "macos": {
+        "files": 386,
+        "tests": 4770,
+        "pass": 4737,
+        "skip": 33,
+        "fail": 0
+      },
       "ubuntu": {
         "files": 386,
-        "checks": 4736,
-        "pass": 4699,
+        "tests": 4770,
+        "pass": 4733,
         "skip": 37,
         "fail": 0
       },
-      "macos": {
+      "windowsMerged": {
         "files": 386,
-        "checks": 4736,
-        "pass": 4703,
-        "skip": 33,
+        "tests": 4768,
+        "pass": 4723,
+        "skip": 45,
         "fail": 0
       }
     },
@@ -289,61 +289,18 @@
       },
       "failEach": 0
     },
-    "schedulingExperiment": {
-      "status": "REMOTE_FINAL_SIX_PASS_ONE_WINDOWS_SHARD_FAIL",
-      "hypothesis": "Four file workers can cause Windows resource pressure; not a proven unique cause of the MA failures.",
-      "direction": "Two Windows Node24 VM shards with2fileworkers each; complete disjoint file inventory and digest, original assertions/file180s/job25m bounds retained.",
-      "rootRuntimeChanged": false,
-      "sourceOrBranchPublished": true,
-      "sourceCommit": "6b4bb07",
-      "sourceHoldSha256": "a82af8b0b64887cf1dc5c8306bdfc7c49264a4823b088183d3c305eb1be23399",
-      "sourcePeerSha256": "52b2452179b20504a82183f81c8d84245541170ff2f940eb82c562cab88dc02e",
-      "rootIntegrationSha256": "adb2a8780dd8aa32bd4d84dc0c6159b6ec1fa672dd9a08654002decf977983fa",
-      "runnerChecksPassedEachNode18Node24": 7,
-      "independentRunnerChecksPassedEachNode18Node24": 7,
-      "matrixJobCount": 7,
-      "windowsShardFileCounts": [
-        193,
-        193
-      ],
-      "fullTestFileCount": 386,
-      "runtimePackageChanged": false,
-      "activeTrialInputPinsTouched": 0,
-      "historicalUniqueCauseProven": false,
-      "publishedHead": "94dfe3389d88154db9354c5c30ce8e23139a545f",
-      "remoteRun": 44560230928,
-      "observedPassedJobs": 6,
-      "observedPendingWindowsJobs": 0,
-      "terminalVerified": true,
-      "observedFailedWindowsJobs": 1,
-      "schedulingFixQualified": false,
-      "fullInventoryCoverageVerified": true,
-      "terminalReceiptSha256": "8c139cd871ba4f30e28b48ec333ae95e75a5f91cce88f828615e403e910571e7"
-    },
-    "nextFixtureFollowup": {
-      "status": "SOURCE_COMMITTED_FULL_LOCAL_PASS_FRESH_REMOTE_PENDING",
-      "sourceCommit": "a9eb3e6c3752d0ab4e95323cf0ccbe248c5edcdc",
-      "sourceHoldSha256": "211cf2216fd6dccc2ce99c47adbd6e6bb70eb14d6541e83b152bddab81129581",
-      "sourcePeerSha256": "18f9c7e8636822382b37659d203bc5c655e6430dad99d70be441700c766b74f4",
-      "rootIntegrationSha256": "d7fb64a7ee8173af95941ebf3304dca2ea2882348ee101ab6b60a9bf9e0ab711",
-      "focusedChecksEachNode18Node24": 64,
-      "independentChecksEachNode18Node24": 64,
-      "runtimeLimitsOrAssertionsPadded": false,
-      "remoteVerificationPending": true,
-      "localFullReceiptSha256": "a3fa42a12fbd258923a6c225d7aed5cde59b9dafda215b2b93d08d5c02502398"
-    },
-    "previousCe460Terminal": {
-      "runId": 44546696852,
-      "head": "ce460ac2eb53ef529aa586a363f431be0e42bd75",
-      "passedJobs": 5,
+    "previousCompleted94dfe": {
+      "runId": 44560230928,
+      "head": "94dfe3389d88154db9354c5c30ce8e23139a545f",
+      "passedJobs": 6,
       "failedJobs": 1,
-      "receiptSha256": "7e43d070da1526b087c7983f37f6a4e079c59383902d18a2efc199e0a321f631"
+      "receiptSha256": "8c139cd871ba4f30e28b48ec333ae95e75a5f91cce88f828615e403e910571e7"
     },
     "priorRollingMetadataSnapshot": {
-      "path": ".runtime-correction/validation/ci-fix/94dfe33-natural-uxoi0myu/root-previous-rolling-ci.json",
-      "sha256": "b5ec4409598774e919ffb098f9a498cc0c691ebfee2fc6bffeba45c13f91198d"
+      "path": ".runtime-correction/validation/ci-fix/e225495-natural-dm5a92fh/root-prior-rolling-ci.json",
+      "sha256": "a21a8a3874b570e3cf85150d26709eb369ad14d9048f902fc7d6263ab21716d7"
     },
-    "scope": "Exact94dfe33 complete natural run; no retry/cancel, no unique cause or CI fix claimed. Runtime4212 archive unchanged by scheduling experiment."
+    "scope": "Exacte225495/source297adfe+testa9eb3e6 passed complete natural matrix; no original assertion/runtime deadline padding. This establishes CI success, not general usefulness or actual new-package model repair."
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -498,7 +455,7 @@
     "standingUserPaidAuthorizationPersists": true
   },
   "candidatePackage": {
-    "status": "PROMOTED_INSTALLABLE_FULL_LOCAL_PASS_REMOTE_PENDING",
+    "status": "PROMOTED_INSTALLABLE_FULL_LOCAL_AND_REMOTE_PASS_REAL_MODEL_PENDING",
     "sourceCommit": "297adfeb9964684a2164b00b043272a7d46f9777",
     "packageSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd",
     "promotedToDist": true,
@@ -557,7 +514,8 @@
       "liveWorkflowOrGatewayOrModelsOrKeyUse": false,
       "initialObserverAssumptionFailurePreserved": true
     },
-    "promotionReceiptSha256": "fe70396be16927e6d8c2ad7a7d8e6edb5afab78cac4fda3d6d1908ea2b0e611f"
+    "promotionReceiptSha256": "fe70396be16927e6d8c2ad7a7d8e6edb5afab78cac4fda3d6d1908ea2b0e611f",
+    "remoteTerminalReceiptSha256": "f7fe084ccff1975ba4e1842fcb1b6bd6b102142c195db5fb7e0f004b34947857"
   },
   "privatePostclosureSourceAckAudit": {
     "status": "ACTUAL_C1_SOURCE_ACK_QUALIFIED_C2_UNVERIFIED",
@@ -582,7 +540,7 @@
     "The new archive has no actual model workflow or final native acceptance yet.",
     "The prior controlled4212 repair improved finite codechecks9→7→9 but finalnativeU and predeclared full causal witness remain unresolved.",
     "No natural-defect detection rate, general benefit, matched overhead/quality gain or formalbenchmark pair established.",
-    "Full local source and package checks do not replace fresh remoteWindows matrix or real-model validation."
+    "Complete local/remote source and package checks do not establish real-model general usefulness."
   ],
   "priorArtifactBeforeCorroboration": {
     "packageSha256": "4212fdc73e43fa1417a2fb6fe22cc2e9d68ec204f3aecb26c8ddb8b19b95b5e3",
@@ -596,19 +554,19 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "actualLaunch": "54a98e",
-    "actualSession": 65759,
-    "actualTerminal": "f1335c",
+    "actualLaunch": "043abc",
+    "actualSession": 53228,
+    "actualTerminal": "07d30b",
     "exitCode": 0,
     "viewports": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
-    "receiptPath": ".runtime-correction/validation/known-corroboration-root-xoagv4jx/report-final-qa/receipt.json",
-    "receiptSha256": "3d1d18bb19a5cb5c8f055c99c9ecb81a096dd66e19f6a30ab35eed68dcb092cc",
-    "htmlSha256": "efbd61e3485e98523eda8048f1b9d8625b0e6b67c1f47cdbb38e07a7f8fdf273",
-    "scope": "Promoted generic corroboration plugin/source fullPASS, historical4212actual9→7→9/finalU separated; remoteCIandnewactualmodelvalidationpending.",
-    "desktopAndMobileVisualReadown": "Performed on exact saved English1200 and SimplifiedChinese390 screenshots."
+    "receiptPath": ".runtime-correction/validation/known-corroboration-root-xoagv4jx/report-remote-green-qa/receipt.json",
+    "receiptSha256": "7bd7b50b51070fbdb7c070b7095a25b36f5dc39c717a64edce9811389a871f68",
+    "htmlSha256": "5b9becac09d06fb2b19080d6f46b69cb66d916f87e744a3e73fdf9d7dc874027",
+    "scope": "Currentgeneric2aarchive passedfull local andexacte2257/7remote; actualnewmodelvalidationpending. Old4212controlled9→7→9/finalUkeptseparate.",
+    "visualReadown": "Prioridenticaltheme desktop/mobile checked; lateststatusproseonly."
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
