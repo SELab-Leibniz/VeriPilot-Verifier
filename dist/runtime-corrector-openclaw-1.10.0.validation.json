@@ -51,11 +51,11 @@
     "deliverable": "GENERAL_PURPOSE_OPENCLAW_PLUGIN",
     "benchmarkRole": "EXTERNAL_EVALUATION_ONLY",
     "caseSpecificRuntimeLogicAllowed": false,
-    "realModelNativeRepairBenefit": "FIRST_MATCHED_DEVELOPMENT_PAIR_CLOSED_ON_STOP_UNVERIFIED_NO_QUALITY_BENEFIT_ESTABLISHED",
+    "realModelNativeRepairBenefit": "NOT_ESTABLISHED_FOUR_CLOSED_BOTH_ON_UNVERIFIED_ZERO_NATIVE_AND_ONE_POSTHOC_ON_MISS",
     "nextEvaluationNeeds": [
-      "Compare ordinary-default healthy work and a declared initial defect using the same task and models in matched OFF/ON arms. Score original-to-OpenSpec and original/plan-to-code omissions independently, along with supported corrections, false interruptions and review effort.",
-      "Keep every task pack, finite checker, grading rule and scenario label outside the plugin and private grading unavailable to actors.",
-      "Test retained process-poll guidance and final evidence publication with real models within the original run/budgets."
+      "Independentlycheckinitialcontractbeforecallingastarterhealthy; currentbothstartersfailtheadditionalpublicR7errorpath.",
+      "Validate newconditional-feedback/nullabletoolinterfaceswithrealmodels,thenmeasurefullduty-to-plan-to-codecoverage and repair withoutcase-specificruntimeknowledge.",
+      "Useactualregression/error-pathcounterexamples andrecordrepairchain, completion/uncertainty, falseinterference andrequesteffort separately; finite37orCIpass isnotbenefit."
     ],
     "originalIncompleteTrialPreserved": true,
     "knownRequirementRetention": {
@@ -112,7 +112,12 @@
       "concreteCaseTokenHits": 0,
       "semanticCompletenessOrUsefulnessProof": false
     },
-    "ongoingFourArmComparisonArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5"
+    "ongoingFourArmComparisonArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "latestDevelopmentComparison": {
+      "path": ".runtime-correction/validation/four-arm-root-outcomes-4yd3si06/outcomes.json",
+      "sha256": "be2be03e194752c7b153b4040cbefa6eb2f36585c5955788ef99d1e89af8200b"
+    },
+    "startingHealthyLabelWasWrong": true
   },
   "sourceChecks": {
     "status": "ONE_FULL_393_FILE_NODE24_PASS_EXACT_PRODUCT_POSTIMAGES",
@@ -144,7 +149,35 @@
       "path": ".runtime-correction/validation/bounded-nullable-peer-jlwi29af/peer-review.json",
       "sha256": "cdb9efb93993ffabc27e11a29e9c1fd3e1898aa2c410fd63d8c4f547a3607bef"
     },
-    "supportedNode18DeltaChecks": "Parent focused SDK/handler checks only; full newOS/Node matrix not yet run."
+    "supportedNode18DeltaChecks": "Parent focused SDK/handler checks only; full newOS/Node matrix not yet run.",
+    "currentHeadCI": {
+      "status": "CURRENT_PLUGIN_REVISION_NATURAL_CI_SEVEN_PASS",
+      "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+      "head": "19816082643273f804b37d3f1c96beb6e7e2297c",
+      "runId": 44675348994,
+      "event": "push",
+      "attempt": 1,
+      "officialConclusion": "success",
+      "testJobsPassed": 7,
+      "allSevenPassClaimed": true,
+      "terminalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-198-release-natural-0symy863/terminal-receipt.json",
+        "sha256": "1140478c963259139e176b83f35fde52a19cdd2c07be9760b51e285c498b04cd"
+      },
+      "fullRawJobLogsRetained": true,
+      "actualFullTestFiles": 393,
+      "windowsShardFiles": [
+        197,
+        196
+      ],
+      "windowsDisjointUnion": 393,
+      "macosPass": 4867,
+      "macosSkip": 33,
+      "ubuntuPass": 4863,
+      "ubuntuSkip": 37,
+      "rerunCancelDispatchActions": 0,
+      "reportOnlySuccessorDoesNotChangeProductTestBytes": true
+    }
   },
   "packageChecks": {
     "status": "EXACT_COMMITTED_ARCHIVE_FRESH_STOCK_INSTALLED_AND_LOADED",
@@ -276,275 +309,93 @@
     "scope": "Local deterministic mechanics only; not real-model accuracy, exhaustive coverage or general repair benefit."
   },
   "remoteCI": {
-    "status": "NEW_SOURCE_LOCAL_FULL_PASS_PENDING_NATURAL_REMOTE_CI",
+    "status": "CURRENT_PLUGIN_REVISION_NATURAL_CI_SEVEN_PASS",
     "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
-    "currentSourceAllSevenPassClaimed": false,
-    "latestCompletedPriorSource": {
-      "head": "47f08ace09291cc6148387acbb0c3b3f9f04cb54",
-      "runId": 44672632318,
-      "testJobsPass": 7,
-      "attempt": 1,
-      "event": "push",
-      "receipt": {
-        "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/official-ci47-terminal.json",
-        "sha256": "a72a771289a8080355c700d71634622118c7ec3f59a30610d9b81d18c72fa283"
-      }
+    "head": "19816082643273f804b37d3f1c96beb6e7e2297c",
+    "runId": 44675348994,
+    "event": "push",
+    "attempt": 1,
+    "officialConclusion": "success",
+    "testJobsPassed": 7,
+    "allSevenPassClaimed": true,
+    "terminalReceipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-198-release-natural-0symy863/terminal-receipt.json",
+      "sha256": "1140478c963259139e176b83f35fde52a19cdd2c07be9760b51e285c498b04cd"
     },
-    "rerunCancelDispatchActions": 0
+    "fullRawJobLogsRetained": true,
+    "actualFullTestFiles": 393,
+    "windowsShardFiles": [
+      197,
+      196
+    ],
+    "windowsDisjointUnion": 393,
+    "macosPass": 4867,
+    "macosSkip": 33,
+    "ubuntuPass": 4863,
+    "ubuntuSkip": 37,
+    "rerunCancelDispatchActions": 0,
+    "reportOnlySuccessorDoesNotChangeProductTestBytes": true,
+    "rootOfficialJobsAlsoConfirmed": true
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
   "benchmarkTasks": 13,
   "latestGeneralPurposeTrial": {
-    "status": "CLOSED_PUBLIC_WORKFLOW_SETTLED_FINAL_UNVERIFIED_PARTIAL_QUALIFICATION_RECORDED",
+    "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_BENEFIT_ESTABLISHED",
     "activePaidTrials": 0,
-    "rootDirectory": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ordinary-public-preparation-esbt35fr",
-    "rootSession": 6646,
-    "actualRootLaunch": "aca52d",
-    "packageSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd",
-    "runtimeSourceCommit": "297adfeb9964684a2164b00b043272a7d46f9777",
-    "admission": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/live-admission.json",
-      "sha256": "42d7ae4bec50aa6313f360204443a8f924ee37a38f35e6b847432961bfe3ffdc"
+    "runtimeSourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+    "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "allFourModelArmsClosedAndFrozen": true,
+    "originalFiniteResults": [
+      {
+        "armOrder": 1,
+        "passed": 37,
+        "total": 37
+      },
+      {
+        "armOrder": 2,
+        "passed": 37,
+        "total": 37
+      },
+      {
+        "armOrder": 3,
+        "passed": 37,
+        "total": 37
+      },
+      {
+        "armOrder": 4,
+        "passed": 37,
+        "total": 37
+      }
+    ],
+    "separatePosthocErrorPath": "Twoforms/oneR7defect: first3deliveriesPASS,declaredONFAIL,bothstartersFAIL",
+    "bothOnStop": "UNVERIFIED",
+    "nativeCorrectiveStartsBothOn": 0,
+    "independentOutcomes": {
+      "path": ".runtime-correction/validation/four-arm-root-outcomes-4yd3si06/outcomes.json",
+      "sha256": "be2be03e194752c7b153b4040cbefa6eb2f36585c5955788ef99d1e89af8200b"
     },
-    "sourceHoldSha256": "0dce6fdf439d647ae9531601e310059a5f7b9a7424d060bf5e438f285d3dac36",
-    "qualificationCriteriaSha256": "875e737e49ce47ab2134ba3397c0860d3264563055e16c550a53274b8105b1e1",
-    "admittedInputPins": 416,
-    "publicSetup": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/setup-receipt.json",
-      "sha256": "30758f8857c50f6fa86017c220a5db6d0f84fc102505614a4d39dcebbb1e3b43"
+    "blindSemanticReviews": {
+      "firstPair": {
+        "path": ".runtime-correction/validation/first-pair-blind-semantic-_9rf49b7/review.json",
+        "sha256": "56a5b7b8604800a0876f556427b631ca1c6c7d7189ae2b247649842545679925"
+      },
+      "declaredDefectPair": {
+        "path": ".runtime-correction/validation/defect-pair-blind-source-review-czwguycs/blind-source-review.json",
+        "sha256": "fb662a92c744ce6f7c7e66713577cad01dd3a607e3af4173f17e7c1df0d74b78"
+      },
+      "gradesAndPosthocOutputsReadByReviewers": false,
+      "authoredUnittestsExecutedByReviewers": false
     },
-    "rootPublicSetupReadownSha256": "0023e4fde90e73729ef3448069f809862d7fa95fec6b9848a45e500a9d8c3cc9",
-    "planInspection": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-plan-inspection.json",
-      "sha256": "6622229ece147183f62d48b86f9b23192037de6ac8fa89948e08e9efb2fe49e0"
-    },
-    "ordinaryApplyAdmission": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/apply-admission.json",
-      "sha256": "5f3aab22dc04a78090c606992d5ab04e560b916e687b4de8ad0836efcff43283"
-    },
-    "proposalTaskCount": 13,
-    "proposalStrictValidationPassed": true,
-    "proposalSemanticCorrectnessExhaustivelyProved": false,
-    "rootApprovedOriginalScopeWithNonbindingAmbiguities": true,
-    "planIntegrityMode": "ordinary-default",
-    "sealedApproval": false,
-    "preparedRequirementInventory": false,
-    "strictOptionalFlagsEnabled": 0,
-    "models": {
-      "coding": "deepseek-flash",
-      "review": "deepseek-v4-pro"
-    },
-    "reviewerRoles": 7,
-    "absoluteWallMs": 3600000,
-    "maximumRelayRequests": 256,
-    "sessionCorrectionCap": 2,
-    "flowCorrectionCap": 2,
-    "actualOriginalApplyTargetBound": true,
-    "targetRunMasked": false,
-    "faultBoundary": "EXERCISED_PENDING_POSTCLOSURE_QUALIFICATION",
-    "capturedModuleBytes": {
-      "C0": 729,
-      "C1": 730
-    },
-    "capturedC0Sha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
-    "capturedC1Sha256": "78095998db3e7ea0263535b110a936114987681dadc7bc563da3ca1c1bba5d40",
-    "nativeCorrectiveStartsAtMonitorSnapshot": 1,
-    "candidateC2CapturedAtMonitorSnapshot": true,
-    "privateGradesRun": true,
-    "cleanAcceptanceClaimed": false,
     "formalMatchedPairsAdded": 0,
-    "sourceAckQualification": "UNVERIFIED_BOTH_DECLARED_STAGES_PRESERVED",
-    "snapshotNotLivenessOrQualityProof": true,
-    "readableEvaluationFixtureExcludedFromPlugin": true,
-    "standingUserPaidAuthorizationPersists": true,
-    "scope": "One closed ordinary-policy2a injected-fault control: C0/C1module-variant checks9/7, fullfinal/C2grade9; one actual native business start/end, specific savedA1finding and full hostgate delivery joined. C1fullACKU(missingfinishresult), C2fullACKU(unavailablecurrentfinalcoverage), replaypreconditionU; finalnativeU/documentexecutionpending. No clean final acceptance, complete causal chain or general benefit established.",
-    "firstOriginalApplyStopAtMonitorSnapshot": "DEVIATION",
-    "nativeUsedAdmissionsAtMonitorSnapshot": 1,
-    "currentDispatcherAtMonitorSnapshot": "IDLE",
-    "candidateC2CaptureStatus": "PENDING_POSTCLOSURE_QUALIFICATION",
-    "nativeMechanismRootObservationTool": "615bf4",
-    "rootActiveMilestone": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-active-milestone.json",
-      "sha256": "2f45aaa9d29cff68880f22743114af37ce3ed0147a64c156c65456d47d1b94be",
-      "actualReadownTool": "9131ca",
-      "exitCode": 0
-    },
-    "phase": "CLOSED_POSTCLOSURE_QUALIFICATION",
-    "controllerTerminal": "ba2be0",
-    "controllerExitCode": 0,
-    "elapsedMs": 1605214,
-    "providerCountsFinal": {
-      "wireAttempts": 101,
-      "admittedRequests": 101,
-      "deniedRequests": 0,
-      "countsByModel": {
-        "deepseek-flash": 45,
-        "deepseek-v4-pro": 56
-      },
-      "closed": true,
-      "inFlight": 0
-    },
-    "gradeCounts": {
-      "C0": {
-        "passed": 9,
-        "total": 9
-      },
-      "C1": {
-        "passed": 7,
-        "total": 9,
-        "failedAtoms": [
-          "A1"
-        ]
-      },
-      "finalC2": {
-        "passed": 9,
-        "total": 9
-      }
-    },
-    "gradeScope": "C2/final frozen full source/package/public-tests; C0/C1 captured complete modules substituted into separate copies of that same final workspace, not full historical projects. Same unchanged finite nine-check oracle.",
-    "finalGradeReceipt": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/final-freeze/receipt.json",
-      "sha256": "83fff2d1a5edcea73fff85bec62a2f2d5d6fec1aa2976e257e1d744c5d526184"
-    },
-    "moduleVariantGrades": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/module-variant-grades.json",
-      "sha256": "12301c1a293a2a9250d3cb46ddc6f715a2489b6becc1f6a04770aff0487a3b63"
-    },
-    "rootClosureGate": {
-      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-closure-gate.json",
-      "sha256": "29cc635ac7d55fca703093a8c7d2ddc5e3e43a6aa90a16489985e01cd9eec9be"
-    },
-    "closureSha256": "2718a7816420a6178eae16f3e2a5dff8dc4a0f2e0f02e4f01af7aa7dc91e4cc8",
-    "liveReceiptSha256": "29990eff3d87ddad0ce4456228abf48589451a6533a53b5ee0a14bb276bcb2dd",
-    "openSpecDoneTasks": 13,
-    "openSpecTotalTasks": 13,
-    "strictOpenSpecValidation": true,
-    "finalNativeStop": "UNVERIFIED",
-    "finalNativeStopReason": "DOCUMENT_EXECUTION_UNVERIFIED",
-    "finalCoverageReceiptStatus": "UNAVAILABLE",
-    "finalCoverageReceiptReason": "FRESH_PUBLICATION_NOT_OBSERVED",
-    "planProseChanged": true,
-    "independentPlanRevisionReviewRequired": false,
-    "actualDocumentUnverifiedBasis": [
-      "DOCUMENT_EXECUTION_PENDING"
-    ],
-    "backgroundCommandTerminalObserved": false,
-    "terminationRequestIsNotTerminalProof": true,
-    "fullMechanismWitnessQualified": false,
     "generalPurposeBenefitEstablished": false,
-    "editReplayQualification": "UNVERIFIED_LATE_CLEANUP_FINAL_STOP_JOIN_MISSING",
-    "actualSourceAckAudit": {
-      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/receipt.json",
-      "sha256": "f9950a9f51afb7790571ee2e471294c50646831360dffe794136dc1263c2a6d3"
-    },
-    "sourceAckResult": {
-      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/audit.json",
-      "sha256": "c707cbcb2da56acecfb30f36ae29240d82d367c05adeb3fe8c53eed0fbceafeb"
-    },
-    "sourceAckStages": [
-      {
-        "label": "C1",
-        "status": "UNVERIFIED",
-        "reasonCode": "TOOL_ID_MISSING_OR_AMBIGUOUS"
-      },
-      {
-        "label": "C2",
-        "status": "UNVERIFIED",
-        "reasonCode": "HOST_COVERAGE_RECEIPT_MISMATCH"
-      }
-    ],
-    "c1PartialCurrentReadAndSavedDeviationWitness": {
-      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/partial-c1-read-witness.json",
-      "sha256": "a3fe1cbf28b29d2eb7c95099ed4fd0dd3472b595f16041b8756d411a30f009d9"
-    },
-    "c1AcceptedFinalFinishAckObserved": false,
-    "c2PartialCurrentReadAndAcceptedWorkerFinishWitness": {
-      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/partial-c2-read-witness.json",
-      "sha256": "8cddce81133f180c9e3438fc07fbe6351e01dd7547486206456f0ba751fe895a"
-    },
-    "c2CurrentCitationsJoinedActualFinalEvaluation": 0,
-    "specificC1FaultFindingAndHostGateDelivery": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/specific-c1-delivery.json",
-      "sha256": "3256354b44bc08f36b8d743e1e3aaf4a56b4438f4e4c988c931e2b8cb296baab"
-    },
-    "specificPublicCapacityFindingSemanticallyChecked": true,
-    "fullFeedbackRenderedContextMatchesActualHostGate": true,
-    "selectedReasonNotTruncated": true,
-    "gatePrecedesActualNativeStart": true,
-    "rawProviderPromptCaptureClaimed": false,
-    "independentPlanRevisionReviewPerformed": true,
-    "planRevisionReview": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/plan-revision-review.json",
-      "sha256": "c3df6a7fac436b5f0c9b11543f8703a6cf645bc46d2ee3adae25784d78f7dfcc"
-    },
-    "requirementNarrowingObservedInRevision": false,
-    "planSemanticCorrectnessExhaustivelyProved": false,
-    "knownApprovedPlanAmbiguitiesRemain": true,
-    "nativeEditReplayVerification": {
-      "path": ".runtime-correction/validation/esbt-native-replay-gfbrrioo/verification.json",
-      "sha256": "c3367d8ba630d0b91c883e0610ac902571410133e616bcc7cd863ef00fe189d4"
-    },
-    "nativeEditReplayResult": {
-      "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/esbt-native-replay-gfbrrioo/outputs/replay.json",
-      "sha256": "75f8a83db33d425d51e2eb510a1f3d7851f776502830a04b58f4d9bd338bfc41"
-    },
-    "editReplayActuallyReached": false,
-    "zeroEditCountersInterpretedAsNoEdits": false,
-    "partialRecordedEditObservation": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/recorded-edit-observation.json",
-      "sha256": "12d82f1543da97fdfbb48519e5e666de2c4fca3d4557c2d3d4894c91804a30fa",
-      "actualTerminal": "8678f6",
-      "exitCode": 0,
-      "successfulSourceEditCalls": 1,
-      "exactReplacementEqualsCompleteC2AndFrozenFinal": true,
-      "otherDocumentEditCalls": 1,
-      "otherExecCalls": 4,
-      "execsCertifiedReadOnly": false,
-      "exclusiveWriterProven": false,
-      "frozenReplayAuditQualificationChanged": false,
-      "fullCausalWitnessQualified": false
-    },
-    "requestEffortProjection": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/request-effort.json",
-      "sha256": "01082f80e61b6bab2db98a777683eec0f4c80274f8f0788baf4cb5490183615d",
-      "actualTerminal": "3a1793",
-      "exitCode": 0,
-      "all101CompletedHttp200": true,
-      "matchedIncrementalOverheadMeasured": false,
-      "tokensOrPriceMeasured": false
-    },
-    "historicalCodeReviewBeforeDocumentInvalidation": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/historical-review-before-invalidation.json",
-      "sha256": "d5d49fca006c0e55de7274c315e11d161bc7b6eeb9d94ec37f3a184c56c53770",
-      "actualTerminal": "4d0d09",
-      "exitCode": 0,
-      "historicalCandidateStatus": "NO_DEVIATION_FOUND",
-      "knownCandidateAssessments": 7,
-      "knownCoverageExhaustive": false,
-      "coreFailure": null,
-      "subsequentActualFinalStatus": "UNVERIFIED",
-      "subsequentActualFinalReason": "DOCUMENT_EXECUTION_UNVERIFIED",
-      "historicalCandidateSubstitutedForFinal": false,
-      "fullSourceAckOrAcceptanceOrGeneralBenefitGranted": false
-    },
-    "rootPartialQualification": {
-      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/root-partial-qualification.json",
-      "sha256": "7e5f6878706694bae3fdf3e0fc528aa5d493f787dd36bec7c114f4f4c1fbfa0f",
-      "actualTerminal": "3e990a",
-      "exitCode": 0,
-      "status": "FINITE_FAULT_REPAIR_OBSERVED_FINAL_UNVERIFIED_FULL_WITNESS_NOT_QUALIFIED",
-      "immutableAdmittedInputsVerified": 413,
-      "intentionalMutableActorInitialPins": 3,
-      "formalMatchedPairsAdded": 0,
-      "generalPurposeBenefitEstablished": false
-    },
     "evaluatedArchiveIsCurrentInstallable": false,
-    "currentInstallableArchiveSha256": "e8b847b753c1d08a70c573a6051bfc4efc6e83c4147fce5e59bfb9d878538897",
-    "newGuidanceBenefitClaimedFromThisTrial": false
+    "currentInstallableArchiveSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
+    "currentInstallableModelRuns": 0,
+    "scope": "Allfourfrozen candidates graded regardless of originalERROR or finalUNVERIFIED. Scores not completecorrectness. No credit to RC forordinaryFlashApplyfixes."
   },
   "activeGeneralPurposeTrial": {
-    "status": "FIRST_THREE_CLOSED_FROZEN_FOURTH_ON_APPLY_RUNNING",
+    "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_BENEFIT_ESTABLISHED",
     "arm": "ON",
     "startingState": "declared-defect",
     "operatorRoot": ".runtime-correction/validation/public-use-1d7412d6837e",
@@ -567,9 +418,9 @@
     "maxRequestsEach": 256,
     "fourStrictOptins": false,
     "privateGradingAfterAllFourFreeze": true,
-    "scoresAvailable": false,
-    "currentArm": "ON",
-    "completedModelArms": 3,
+    "scoresAvailable": true,
+    "currentArm": null,
+    "completedModelArms": 4,
     "actualOnSetupLaunch": "c48605/session54459",
     "firstOff": {
       "liveActual": "a8aca8/session33651→fb6b93/0",
@@ -598,8 +449,21 @@
       "proposalTerminal": "error",
       "applyTerminal": "ok",
       "officialApplyState": "all_done",
-      "privateGraded": false,
-      "nominalHealthyIsNotCorrectnessProof": true
+      "privateGraded": true,
+      "nominalHealthyIsNotCorrectnessProof": true,
+      "finiteChecks": {
+        "passed": 37,
+        "total": 37,
+        "result": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/four-arm-grade-results-20261120-02/arm-1/grade.json",
+          "sha256": "50dbda84e316c50daa32b4b2ee40eea71b339589df8d2d40954bff179c06125f"
+        }
+      },
+      "separatePosthocR7": {
+        "twoFormsPassed": 2,
+        "totalForms": 2,
+        "originalDenominatorUnchanged": true
+      }
     },
     "actualOnLiveLaunch": "f08d27/session33773",
     "firstOn": {
@@ -631,7 +495,7 @@
       "stopStatus": "UNVERIFIED",
       "stopReason": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
       "nativeSuccessors": 0,
-      "privateGraded": false,
+      "privateGraded": true,
       "proofContractDiagnosisInProgress": false,
       "conditionalContractDiagnosis": {
         "path": ".runtime-correction/validation/healthy-on-protocol-watch-64e9qn9g/conditional-contract-diagnosis.json",
@@ -649,6 +513,19 @@
       "overheadMetadata": {
         "path": ".runtime-correction/validation/healthy-on-overhead-metadata-_gdh_tc7/audit.json",
         "sha256": "5f136ffba09132ac33410d3b53bedcd0d7e8d43dedb6a5435b29eaf297a5fd56"
+      },
+      "finiteChecks": {
+        "passed": 37,
+        "total": 37,
+        "result": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/four-arm-grade-results-20261120-02/arm-2/grade.json",
+          "sha256": "3c748c82efc1d486d5537c0ac274f13ad0d8580e716014b4a1b30a07d02d90f4"
+        }
+      },
+      "separatePosthocR7": {
+        "twoFormsPassed": 2,
+        "totalForms": 2,
+        "originalDenominatorUnchanged": true
       }
     },
     "declaredDefectOff": {
@@ -675,11 +552,28 @@
       },
       "approvedTasksInitially": 25,
       "planStructuralObservation": "TASK_PROSE_CHANGED",
-      "planSemanticAssessment": "NOT_ASSESSED",
-      "privateGraded": false,
+      "planSemanticAssessment": "EXACT_DUPLICATE_DUTY_REMOVED_UNIQUE_SCOPE_RETAINED",
+      "privateGraded": true,
       "originalFileModes": {
         "path": ".runtime-correction/validation/public-use-6c224df7ae08/final-freeze/original-file-modes.json",
         "sha256": "c1c4d027a1b6c6864f1fea3a4d53e70876f807888d413a0e57cc937a3b86afa9"
+      },
+      "finiteChecks": {
+        "passed": 37,
+        "total": 37,
+        "result": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/four-arm-grade-results-20261120-02/arm-3/grade.json",
+          "sha256": "276286710c9bb8bfcf1e0964f9316da649aa718207c2abe76bc7c0c47ecd6134"
+        }
+      },
+      "separatePosthocR7": {
+        "twoFormsPassed": 2,
+        "totalForms": 2,
+        "originalDenominatorUnchanged": true
+      },
+      "planReview": {
+        "path": ".runtime-correction/validation/defect-pair-blind-source-review-czwguycs/blind-source-review.json",
+        "sha256": "fb662a92c744ce6f7c7e66713577cad01dd3a607e3af4173f17e7c1df0d74b78"
       }
     },
     "preflightActual": "94909a/session97058→8597f0/0",
@@ -694,16 +588,16 @@
       "closed": false
     },
     "currentFourthOnProgressSnapshot": {
-      "admittedRequests": 159,
-      "wireAttempts": 158,
-      "inFlight": 1,
+      "admittedRequests": 170,
+      "wireAttempts": 170,
+      "inFlight": 0,
       "countsByModel": {
         "deepseek-flash": 53,
-        "deepseek-v4-pro": 105
+        "deepseek-v4-pro": 117
       },
-      "closed": false
+      "closed": true
     },
-    "thirdClosedFourthLive": true,
+    "thirdClosedFourthLive": false,
     "fourthProposal": {
       "ordinaryRootApprovalActual": "c94f15/0",
       "ready": {
@@ -722,6 +616,85 @@
       "tasksAtApproval": 29,
       "completeAtApproval": 0,
       "privateOracleUsed": false
+    },
+    "activePaidTrials": 0,
+    "allPrivateGradingAfterAllFourFrozen": true,
+    "independentOutcomes": {
+      "path": ".runtime-correction/validation/four-arm-root-outcomes-4yd3si06/outcomes.json",
+      "sha256": "be2be03e194752c7b153b4040cbefa6eb2f36585c5955788ef99d1e89af8200b"
+    },
+    "caseIndependentHeldOutQualityEvidence": false,
+    "reason": "Reuseddevelopmenttask/protocoldebugging; nominalhealthy starter contains additionalR7defect.",
+    "declaredDefectOn": {
+      "liveActual": "f08d27/session33773→251508/0",
+      "closure": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/closure.json",
+        "sha256": "1797a1e94f0a663adcfdeda241df4c6f75a9068a0412cd907b337d57da14639a"
+      },
+      "liveReceipt": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/live-receipt.json",
+        "sha256": "de2fc63507122eb537fa552614775344c526e6d41a03523b7980f0aa2bb31c53"
+      },
+      "freeze": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/final-freeze/freeze.json",
+        "sha256": "fbca289423f2fb23a218c3a912df6f8ce3d13446bc28dde21d3932e5c574726b"
+      },
+      "originalFileModes": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/final-freeze/original-file-modes.json",
+        "sha256": "e178c56349d8b7bb87f618dd476ea007052885eca54fdaa5195dc80b5b9be8e5"
+      },
+      "files": 24,
+      "wireRequests": 170,
+      "countsByModel": {
+        "deepseek-flash": 53,
+        "deepseek-v4-pro": 117
+      },
+      "proposalTerminal": "error",
+      "applyTerminal": "ok",
+      "officialTasks": {
+        "complete": 29,
+        "total": 29
+      },
+      "planStructuralObservation": "CHECKBOX_PROGRESS_ONLY",
+      "stopStatus": "UNVERIFIED",
+      "stopReason": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+      "nativeSuccessors": 0,
+      "privateGraded": true,
+      "finiteChecks": {
+        "passed": 37,
+        "total": 37,
+        "result": {
+          "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/four-arm-grade-results-20261120-02/arm-4/grade.json",
+          "sha256": "bb16a61fbea0d8771847838245e0712c2c820c2fa8174c040b63113a2fb8c212"
+        }
+      },
+      "separatePosthocR7": {
+        "twoFormsPassed": 0,
+        "totalForms": 2,
+        "originalDenominatorUnchanged": true,
+        "actualExit": 0,
+        "returnedDefaultsInsteadOfError": true
+      },
+      "proposalErrorMetadata": {
+        "path": ".runtime-correction/validation/fourth-proposal-error-metadata-nwq93re8/receipt.json",
+        "sha256": "9b4c54e060a3a7bb02d7165c12c70115f9aac348178033ba3252e57932d80c19"
+      },
+      "preservedRootFreezeInvocationIncident": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/freeze-launch-incident.json",
+        "sha256": "84efef576cfe6aa4ccd3d6061f6e7ad501d9f689123d00636a035b8e869d5c46"
+      }
+    },
+    "blindSemanticReviews": {
+      "firstPair": {
+        "path": ".runtime-correction/validation/first-pair-blind-semantic-_9rf49b7/review.json",
+        "sha256": "56a5b7b8604800a0876f556427b631ca1c6c7d7189ae2b247649842545679925"
+      },
+      "declaredDefectPair": {
+        "path": ".runtime-correction/validation/defect-pair-blind-source-review-czwguycs/blind-source-review.json",
+        "sha256": "fb662a92c744ce6f7c7e66713577cad01dd3a607e3af4173f17e7c1df0d74b78"
+      },
+      "gradesAndPosthocOutputsReadByReviewers": false,
+      "authoredUnittestsExecutedByReviewers": false
     }
   },
   "candidatePackage": {
@@ -822,15 +795,16 @@
     "scope": "Actual closed2a trial audit only; its original source-ACK and replay gaps remain unchanged. Later8bd Python planning arms and local8bd/e8 mechanical controls are separate records."
   },
   "limits": [
-    "Current e94 installable has zero real-model arms; full source, SDK/handler, package and credential-free stock-load evidence do not establish model accuracy, repair benefit or reduced review effort.",
-    "All four ongoing comparison arms retain9ed/source8ed, ordinaryapproval, originalbudgets and fourstrictoptionsoff. Three are closed/frozen; finalON is inApply. No private code grades before allfour freeze.",
-    "First matched developmentON endedUNVERIFIED with0nativecorrections and80Pro requests; quality benefit remains unproven. Exact wire-to-worker/stage attribution is unavailable in the retained relaymetadata.",
-    "Current393file local full suite passed once; precedingc84 and47 report-only source each passed7naturalCItestjobs. The new1de source remoteCI is pending publication.",
-    "Original37 independentchecks remain separate from additional posthoc empty-path R7 probes and semantic plan/code/test-quality review. Linuxcontainer execution onMac does not prove native-macOS equivalence.",
-    "Formal13-task benchmark remains0of39 matchedpairs; these four development arms do not increment it.",
-    "Knownoriginalretention is a non-exhaustive host-lifecycle subset. Source-to-duty correspondence, completeness, relevance and correctness still require semantic judgment.",
-    "Archive277/runtime209 bytebinding and bounded concretecase-token absence bound provenance; they do not prove universal semantic generality or absence of every implicit specialization.",
-    "Prior archives, failed original terminals, unverified assessments and execution/ACK gaps keep their original bindings; newer source or local controls do not repair them retroactively."
+    "The current e94 installable has zero real-model arms. Source, SDK, handler, package, stock-loading and seven natural CI jobs passed; these do not establish repair benefit or reduced review effort.",
+    "All four comparison arms retained source9ed/archive8ed, ordinary approval, the original60-minute/256-request budgets and four strict options disabled. All grading began after all four were closed and frozen.",
+    "All four deliveries pass the original37 functional checks. A separate posthoc R7 probe tests one error path in two forms: the first three deliveries pass, declared-defectON fails, and both starters fail. The nominally healthy starter was not healthy. The original denominator remains37.",
+    "BothON Stop reviews endUNVERIFIED with zero native corrections. ON used49Flash+80Pro and53Flash+117Pro, versus OFF37Flash and46Flash. Neither quality gain nor cost savings are established.",
+    "Blind source review found identical first-pair production code, preserved smoke tests and meaningful authored tests. OFF removed one duplicate task without narrowing scope. Reviewers did not execute authored suites; finite functional checks do not prove R8 or complete coverage.",
+    "Candidate execution used qualified Linuxarm64Python3.13 in Docker on this Mac. Raw grade interpreter/PythonVersion fields describe the trusted macOS3.12 supervisor. Raw grades remain unchanged; native-macOS equivalence is not claimed.",
+    "The formal13-task benchmark remains0of39 matched pairs. These four reused development runs do not increment it and are not independent held-out confirmation.",
+    "Known original retention is a non-exhaustive subset within a host lifecycle. Duty correspondence, completeness, relevance and correctness still require semantic judgment.",
+    "All277 package files and209 runtime modules match their committed sources. Bounded case-token absence supports provenance; it does not prove universal generality. Task cases and grading rules remain outside the shipped runtime.",
+    "Prior archive errors, unverified assessments and source-acknowledgment or execution gaps retain their original bindings. New source and local controls do not repair past outcomes."
   ],
   "priorArtifactBeforeCorroboration": {
     "packageSha256": "4212fdc73e43fa1417a2fb6fe22cc2e9d68ec204f3aecb26c8ddb8b19b95b5e3",
@@ -844,17 +818,17 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "538d8b412873f554a24fd31cdf9e28684235e16e961f3eed13f90ab9ac6992cb",
+    "htmlSha256": "5a7169d3a325dd826ef7c8507e364b52eb1f24b00ee54f6193c677bd84fef734",
     "main": {
-      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/receipt.json",
-      "sha256": "58836c31bcfae8076a872e5644c25fedd64227a779243147a93fa5f4a0732098"
+      "path": ".runtime-correction/validation/report-four-closed-outcomes-qa-xagg095m/receipt.json",
+      "sha256": "618068d2df904abeefb02604e4c6a7293b1db16cfd5fad5e2d95fa882e3c1834"
     },
     "table": {
-      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/four-arm-table-receipt.json",
-      "sha256": "8b5a250084ba22fbdbbb5cdda996d8a925d93c1f0196a48b0ee2a3566c33d945"
+      "path": ".runtime-correction/validation/report-four-closed-outcomes-qa-xagg095m/four-arm-table-receipt.json",
+      "sha256": "8cc39752eb84c9b903f77a5ff89ba3a8a4afb1539c508fbcedfd11db5be89e3c"
     },
-    "mainActual": "94e60a/session29720→737f0c/0",
-    "tableActual": "84047e/session47535→c42f8c/0",
+    "mainActual": "cc25e1/session64305→02cc46/0",
+    "tableActual": "3b8965/session1608→f36214/0",
     "views": 4,
     "languages": 2,
     "externalRequests": 0,
@@ -865,8 +839,16 @@
     "sameFileLanguageToggle": true,
     "visibleDatesOrHashes": false,
     "humanizerFileMode": true,
-    "visualReadown": "Englishdesktop currentpackage paragraph andSimplifiedChinesemobile comparison inspected; finalchange only splits same package explanation into two paragraphs, final4viewDOM/capturechecks pass.",
-    "scope": "Newverifiedinstallable source393files/4867PASS33SKIP/artifact17/stock277byteequal; newremoteCI/modelvalidationpending. Original8edcomparison3frozen/fourthApplyrunning, firstONU andscope/overheadlimitsretained, noindependentcodegradeorbenefitclaim."
+    "visualReadown": [
+      "Englishdesktopfourarmoutcomes",
+      "SimplifiedChinesemobilefourarmoutcomes",
+      "SimplifiedChinesemobilecurrentworkflowtable"
+    ],
+    "focusedWalkthroughCandidate": {
+      "path": ".runtime-correction/validation/report-current-walkthrough-4dcr9e7p/candidate.html",
+      "sha256": "585a7c78c3dcdcfa423e117742b2d986140f6b4ea1a3bd02b98afbc7f3ed7078"
+    },
+    "scope": "Currenttaskworkflow ismainexample; oldqueuecontrol retainedinfirstcollapsedhistory. Allfourclosed/graded37each; oneR7errorpathintwoforms retainedseparately withdeclaredONmiss andinvalidnominalhealthylabel. BothONStopU/native0. Blindsource/R8limits explicit. Current1de/e94sourceCI7green;0newarchive modelruns; formal0/39unchanged."
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -893,22 +875,18 @@
     "scope": "Completed94dfe33 publication. Source-binding fix remains an isolated source candidate; current source-audit prose update pending next authorized feature-branch push."
   },
   "branchPublication": {
-    "status": "FEATURE_BRANCH_RELEASE_PUBLICATION_PREPARED",
+    "status": "PLUGIN_FIXES_AND_ARCHIVE_PUBLISHED_CURRENT_RESULTS_REPORT_UPDATE_PREPARED",
     "branch": "codex/openclaw-runtime-corrector",
+    "head": "19816082643273f804b37d3f1c96beb6e7e2297c",
     "sourceHead": "1de9313975332cc507e69d36c17a2aa8d93d2946",
-    "sourcePushActual": "e6fdac/session23805→2d05e7/0",
+    "originMatchedAtPublication": true,
+    "pushActual": "d717f7/session41629→b8d782/0",
+    "receipt": {
+      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/publication.json",
+      "sha256": "c4d1f51681952acbfaadea4e3505bec08a09ab02a7cbe96e7244e678df0cd174"
+    },
     "mainMerged": false,
-    "preparedOnCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
-    "head": "c84e51390b528d5bc098899492cf3958877eea25",
-    "pushActual": "2db75f/session87135→3fe58b/0",
-    "newNaturalRunId": 44665328119,
-    "latestCompletedReportPush": {
-      "head": "47f08ace09291cc6148387acbb0c3b3f9f04cb54",
-      "receipt": {
-        "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/publication.json",
-        "sha256": "68c5f8e111b1b0d693d3538f19a790148154fda6d2f186b426bda392e7ed3ac6"
-      }
-    }
+    "scope": "Onlyreport+validationmetadatachangessincepublished198; product/archive/testbytes unchanged."
   },
   "prospectiveCurrentArchiveSourceAckAudit": {
     "status": "ACTUAL_LOCAL_SCRIPTED_CURRENT_SOURCE_AND_TYPED_PROCESS_ACK_CHAIN_QUALIFIED",
@@ -924,894 +902,31 @@
     "realModelRepairChainQualified": false
   },
   "preparedTransferEvaluation": {
-    "status": "BOTH_NEW_ARMS_CLOSED_OBSERVER_HANDOFF_UNQUALIFIED_NO_GRADES",
-    "language": "Python",
-    "taskRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_OUTSIDE_13_TASK_BENCHMARK",
+    "status": "FOUR_ORDINARY_DEFAULT_DEVELOPMENT_ARMS_CLOSED_FROZEN_GRADED",
+    "taskRole": "PROTOCOL_AND_GENERAL_USEFULNESS_DEVELOPMENT_NOT_HELDOUT_CONFIRMATION",
     "actualModelArmsStarted": 4,
-    "functionalChecks": 34,
-    "authoredPublicTestsAndDependencyRestrictionAssessedSeparately": true,
-    "sourceHold": {
-      "path": ".runtime-correction/validation/transfer-evaluation-v3-b31j21ya/source-hold.json",
-      "sha256": "aa72a093786dd36d80951356e8144b784a6524acdc7dd32c5953c54f667cb781"
-    },
-    "rootOracleReadown": {
-      "path": ".runtime-correction/validation/transfer-oracle-v3-root-wmdlp3d1/receipt.json",
-      "sha256": "79a5229fcd2a613e0a70a0e1f238d8cf363e76aa99b196d127fa4075d2da8a43"
-    },
-    "runtimeSpecializationAdded": false,
-    "scope": "The Python case began as a proposed transfer evaluation and is now used for protocol-integration development. It is not independent held-out quality evidence. Both closed arms retain their original unqualified handoff outcomes; no grade or general-benefit claim.",
-    "commonPublicCompletionContractStatus": "OFF_OBSERVER_UNVERIFIED_ON_ORIGINAL_OK_THEN_NATIVE_OBSERVER_EXCEPTION",
-    "consistentPythonPathRequiredForChildCommands": true,
-    "commonOriginalTerminalObserverV2": {
-      "status": "SOURCE_PURE_PEER_AND_LOCALHOST_STUB_PUBLIC_TRANSPORT_CLEAR",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/source-hold-v2.json",
-        "sha256": "ff8274299ca8ab39cd761ad4f66a18321bd0ddfb2b1798449e0cc0e29f62f0b8"
-      },
-      "sourceProof": {
-        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/source-proof.json",
-        "sha256": "ce3e6e7a6a6967cdfddc05fd78d9ba680db145b21cbd9a53c6047692101eda57"
-      },
-      "ownerVerification": {
-        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/verification-v2.json",
-        "sha256": "0e97a51cf82786614717fff79a861d2ff5f1c1937069934caa06e63b95d40904"
-      },
-      "peerClosure": {
-        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/peer-closure.json",
-        "sha256": "b2b676bb9ec226d588b146867c0d7311a6b6b8ab8a8dda9cf7d89430c154c899"
-      },
-      "ownerControls": 48,
-      "independentControls": 48,
-      "independentAdditionalReplays": 10,
-      "contract": "Exactacceptedoriginalrunterminalonly; notwhole-stagesettlement,assistantownership,hidden-inputabsenceorchildrenabsence.",
-      "offRequiresRcRecords": false,
-      "onRequiresSeparateAuthenticatedNativeChain": true,
-      "publicTransportQualified": true,
-      "paidPairStarted": false,
-      "includedInProductArtifact": false,
-      "publicTransportScope": "Localhost-stub public CLI transport and exact original-run terminal matching only; no whole-stage settlement or ON native-chain acceptance.",
-      "actualTransportPreflight": {
-        "status": "QUALIFIED_LOCAL_STUB_PUBLIC_TRANSPORT_ONLY",
-        "sourceHold": {
-          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/source-hold.json",
-          "sha256": "356a858935ef6f26fbb8bed4425e2dc74f8d2050bf16f2a17cdb544b8e972939"
-        },
-        "receipt": {
-          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/transport-receipt.json",
-          "sha256": "7894413ed65b9c6ad75b853d1807c8310c98f25d4e6df64baa7b4a18c4db31ad"
-        },
-        "verification": {
-          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/transport-verification.json",
-          "sha256": "9253cee06957871d9b95c57161e5205ceb12bbd583ceaaddf411c4984c4f5d3f"
-        },
-        "actualLaunch": "51c07a",
-        "actualSession": 70384,
-        "actualTerminal": "b97597",
-        "exitCode": 0,
-        "elapsedMs": 21473,
-        "stockPublicCliCalls": 15,
-        "allCliExitCodesZero": true,
-        "localStubStreamReplies": 2,
-        "fakeKeyOnly": true,
-        "realProviderModelRequests": 0,
-        "pluginInstalledOrExercised": false,
-        "codingTaskOrOracleExercised": false,
-        "initialAndLaterOriginalRunTerminalObservationsQualified": true,
-        "oldTerminalReplayRejected": true,
-        "wholeStageSettlementGranted": false,
-        "assistantOwnershipOrHiddenInputOrChildrenAbsenceProved": false,
-        "onAuthenticatedNativeChainQualified": false,
-        "paidOffOnArmsStarted": 0,
-        "outsideNonLoopbackTcpProbe": "DENIED_BEFORE_CONNECT_EPERM",
-        "knownOwnedCleanupConfirmed": true,
-        "gatewayAndStubPortsClosed": true,
-        "scope": "Technical transport preflight only. Its two stub replies are not OFF/ON coding arms or evidence of model efficacy."
-      },
-      "wholeStageOrNativeChainAcceptanceGranted": false
-    },
-    "currentPreparedArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
-    "publicTransferControllerV3": {
-      "sourcePeer": {
-        "path": ".runtime-correction/validation/python-transfer-controller-peer-zy6m_adl-v3/peer-review-v3.json",
-        "sha256": "4575cbb4e852dd68b11a498b0efdc004330a7e911e8577df222c395792411d5c",
-        "status": "CLEAR_SOURCE_ONLY"
-      },
-      "exactOffPreflight": {
-        "status": "VERIFIED_CREDENTIAL_FREE_CAPABILITY_PREFLIGHT_ONLY",
-        "verification": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/preflight/verification.json",
-          "sha256": "bffa77adc67f842db2a84205ba0ad3e81ef6d2eed90ee407353d3f33434ae885"
-        },
-        "receipt": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/preflight/attempt2/receipt.json",
-          "sha256": "81aaecd09ab268d8ec589100d188af43d8c2e1c38a39289c6997ce99dd35542f"
-        },
-        "checks": 23,
-        "passed": 23,
-        "firstFailedAttemptPreserved": {
-          "receiptSha256": "890131462e75a6f0ee021ec7d02d08dd39400782e19f1fd3bd3d4fcdaeceaab9",
-          "terminal": "7aad6f",
-          "exitCode": 1,
-          "cause": "Sleep sibling exposed no sentinel environment; policy results22of23passed, never relabelled."
-        }
-      },
-      "publicSetup": {
-        "status": "SETUP_FAILED",
-        "receipt": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/setup-receipt.json",
-          "sha256": "58af419cf3eccf83241e0d2a7dffffbe26f020ee76b0948bd91988f3d1e78e36"
-        },
-        "rootTerminal": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/root-setup-terminal.json",
-          "sha256": "8e2cb2a511e3e63d9e9b5cae9505be6bd778d9fd6a3cbb42c7fcc7427ad7e787"
-        },
-        "cleanupConfirmed": true,
-        "codingRequests": 0,
-        "realKeyRead": false,
-        "runtimeBugAttributed": false,
-        "sourceBoundObservedIssue": "Reused TUI after explicit Gateway restart did not admit the next public command."
-      },
-      "nextEvaluatorRevision": {
-        "version": "V4",
-        "status": "TRANSPORT_FIX_IN_PROGRESS_NOT_QUALIFIED",
-        "pluginRuntimeOrArchiveChanged": false
-      },
-      "actualPaidArmsStarted": 0,
-      "matchedQualityOrOverheadResult": false
-    },
-    "actualModelArmsCompleted": 1,
-    "actualModelArmsGraded": 0,
-    "priorCredentialFreeSetupFailures": [
-      {
-        "operator": ".runtime-correction/validation/python-transfer-off-8wpus85p",
-        "receipt": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/setup-receipt.json",
-          "sha256": "58af419cf3eccf83241e0d2a7dffffbe26f020ee76b0948bd91988f3d1e78e36"
-        },
-        "terminal": {
-          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/root-setup-terminal.json",
-          "sha256": "8e2cb2a511e3e63d9e9b5cae9505be6bd778d9fd6a3cbb42c7fcc7427ad7e787"
-        },
-        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
-        "codingTaskOutcome": false,
-        "pluginBugAttributed": false,
-        "cleanupConfirmed": true,
-        "codingRequests": 0,
-        "realKeyRead": false
-      },
-      {
-        "operator": ".runtime-correction/validation/python-transfer-off-rf6jnwx7",
-        "receipt": {
-          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/setup-receipt.json",
-          "sha256": "031fdf266e3722e9fc8d005206fb08fa84c58e30881daf033a0517f05b7392a0"
-        },
-        "terminal": {
-          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/root-setup-terminal.json",
-          "sha256": "ae0c8bbff98f6fcd660a02378b9e45e6c8e78f55382699b85da5048c3a5ccfc0"
-        },
-        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
-        "codingTaskOutcome": false,
-        "pluginBugAttributed": false,
-        "cleanupConfirmed": true,
-        "codingRequests": 0,
-        "realKeyRead": false
-      }
-    ],
-    "publicTransferControllerV5": {
-      "status": "BOTH_ARMS_CLOSED_ON_INCOMPLETE_NO_QUALIFIED_MATCHED_COMPARISON",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/python-transfer-controller-v5-juk8wjr2/source-hold.json",
-        "sha256": "0bc9ec2f1990e8b4dc3951e10d5a9ac311a0c936beaad8572fe0c7952db65186"
-      },
-      "operatorDirectory": ".runtime-correction/validation/python-transfer-off-xksh23u8",
-      "setup": {
-        "status": "PUBLIC_SETUP_JOINED",
-        "receipt": {
-          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/setup-receipt.json",
-          "sha256": "a89ad233ce1a95823f68bcab53f35d13936ab80a6c8e79355cd13653c674acc2"
-        },
-        "rootTerminal": {
-          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-setup-terminal.json",
-          "sha256": "9d3372cda903b66c683a7881738953110c4147803599381f7b5ad1b7bca0d4e2"
-        },
-        "actualLaunch": "f5426f",
-        "actualSession": 88352,
-        "actualTerminal": "7ae788",
-        "exitCode": 0,
-        "exactInstalledRegularMembers": 276,
-        "projectEnabled": false,
-        "sessionRegistered": true,
-        "sessionRequestedEnabled": true,
-        "effectiveEnabled": false,
-        "strictOptionalFlagsAbsentOrFalse": 4,
-        "reviewRolesConfiguredPro": 7,
-        "codingModelRole": "Flash",
-        "correctionCaps": {
-          "session": 2,
-          "flow": 2
-        }
-      },
-      "live": {
-        "status": "PUBLIC_CODING_PATH_ENDED_REQUIRES_POSTCLOSURE_EVIDENCE",
-        "rootReportedLaunch": "3e160a",
-        "rootOwnedSession": 20892,
-        "technicalAdmission": {
-          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-live-admission.json",
-          "sha256": "26d2f913ebace489b0d25c70824d01b4c46c06b6eabdbfa1a97e796bafc4224b"
-        },
-        "firstFreshPublicCodingSendAcknowledged": true,
-        "firstRootObservedHttpStatus": 200,
-        "ordinaryApplyApprovalObserved": true,
-        "rootReportedApplyAdmissionSha256Prefix": "2e6cf009",
-        "hostSealedApproval": false,
-        "pluginPlanningReviewCredit": false,
-        "rootProposalReadyProviderSnapshot": {
-          "completedFlash": 16,
-          "completedPro": 0,
-          "scope": "ROOT_REPORTED_PROPOSAL_READY_SNAPSHOT_NOT_CURRENT_COUNTS"
-        },
-        "actualFinalGrade": null,
-        "completedArm": true,
-        "codingPathClosed": true,
-        "wholeArmQualified": false,
-        "rootReportedClosure": {
-          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
-          "actualLaunch": "3e160a",
-          "actualSession": 20892,
-          "actualTerminal": "3c76d5",
-          "exitCode": 0,
-          "rootTerminalSha256Prefix": "93233135",
-          "liveReceiptSha256Prefix": "3c2c5d97",
-          "closureSha256Prefix": "8181c946",
-          "frozenInventorySha256Prefix": "d85014b7",
-          "frozenFiles": 24,
-          "doubleReadStable": true,
-          "actualFreeze": "5cac6d",
-          "freezeExitCode": 0,
-          "officialSteps": {
-            "done": 17,
-            "total": 17,
-            "strictValidationPassed": true
-          },
-          "approvedPlanChange": "CHECKBOX_PROGRESS_ONLY",
-          "knownOwnedCleanupConfirmed": true,
-          "codeInspectedByReporter": false,
-          "privateGradePerformed": false,
-          "pluginSuccessCredit": false
-        },
-        "rootReportedEffort": {
-          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/effort.json",
-          "sha256": "9629971f35c4c5c2a9a5be738280d400678a6d1cea8c8ce7a9790fb32582ac04",
-          "actualMetadataRead": "11daeb",
-          "exitCode": 0,
-          "originalEpochToFinalReceiptElapsedMs": 200494,
-          "includesOrdinaryApprovalWaitingAndCleanup": true,
-          "excludesCredentialFreePreparationAndPostclosureGrading": true,
-          "completedFlashRequests": 29,
-          "completedProRequests": 0,
-          "completedHttp200Requests": 29,
-          "errors": 0,
-          "tokenOrCostClaim": false,
-          "causalCorrectionOverheadClaim": false,
-          "scope": "Root-reported final observed OFF effort only; no comparative inference."
-        }
-      },
-      "on": {
-        "status": "INCOMPLETE_UNQUALIFIED_SESSION_BINDING_BEFORE_APPLY",
-        "rootReportedOperatorSuffix": "vvuqhyg5",
-        "sameSourceV5AndArchive": true,
-        "credentialFreePreflight": {
-          "passed": 23,
-          "checks": 23,
-          "rootReportedReceiptSha256Prefix": "5c35a4c1"
-        },
-        "rootOwnedSetupLaunch": "e3c9a5",
-        "rootOwnedSetupSession": 62888,
-        "actualPaidArmsStarted": 1,
-        "currentArchiveOnReviewQualified": false,
-        "finalGrade": null,
-        "rootOwnedSetupTerminal": "fbb594",
-        "setupExitCode": 0,
-        "rootReportedSetupReceiptSha256Prefix": "9e0ee3c",
-        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
-        "compiledProjectionEqualToOffExceptProjectSwitch": true,
-        "projectEnabled": true,
-        "rootOwnedPaidLaunch": "b54b9c",
-        "rootOwnedPaidSession": 61049,
-        "rootReportedLiveAdmissionSha256Prefix": "c381968a",
-        "freshPublicInitialProjectNotOffOutput": true,
-        "rootOwnedPaidTerminal": "1d06c8",
-        "paidExitCode": 1,
-        "actualPaidArmClosed": true,
-        "completedArm": false,
-        "wholeArmQualified": false,
-        "rootReportedClosure": {
-          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
-          "rootReceiptSha256Prefix": "28b50921",
-          "closureSha256Prefix": "16cef57d",
-          "status": "INCOMPLETE",
-          "completedFlashRequests": 18,
-          "completedProRequests": 0,
-          "completedHttp200Requests": 18,
-          "stagesCompleted": 0,
-          "applyReached": false,
-          "runtimeCorrectorReviewPerformed": false,
-          "knownOwnedCleanupConfirmed": true,
-          "acceptedSessionAndActualActiveSessionDiffer": true,
-          "pluginReasonCode": "RC_SESSION_PROJECT_UNBOUND",
-          "publicDispatcherRecords": 0,
-          "observerReasonCode": "PUBLIC_RPC_ORIGINAL_DEADLINE",
-          "observerBoundMs": 60000,
-          "originalArmBudgetExpired": false,
-          "cause": "CONFIRMED_STOCK_DEFAULT_DAILY_SESSION_RESET",
-          "dailyResetCauseConfirmed": true,
-          "privateGradePerformed": false,
-          "qualifiedOnTreatment": false,
-          "matchedComparisonCompleted": false,
-          "repairBenefitClaimed": false,
-          "rootTerminalSha256Prefix": "215f07d9",
-          "actualFreeze": "b32e91",
-          "freezeExitCode": 0,
-          "originalEpochToFinalReceiptElapsedMs": 66682,
-          "protectedInitialInputFilesUnchanged": 4,
-          "sessionEnablementAndBindingRequiredAfterHostSessionReset": true,
-          "authorizationMigratedToNewSession": false,
-          "confirmedDiagnosis": {
-            "path": ".runtime-correction/validation/python-transfer-session-reset-audit-ydp_6h14/diagnosis.json",
-            "sha256": "468ed2e1d7d1272194212a0ea03330e3a7a3af9c2bdf25050cffbe5404ff35b3",
-            "sourceOnlyStockPolicyReplay": "0f2578",
-            "replayExitCode": 0,
-            "retroactiveOnQualification": false
-          }
-        }
-      },
-      "scope": "Live phase is root-reported metadata only. No actor/model/provider body, key, oracle or grade was read by this report updater; no quality, overhead or formal-pair benefit is claimed."
-    },
-    "executionPreparationScope": "Both V6-final arms closed beforeApply. OFF heldU from host terminal rule. ON originalcleanOK and actual Proplanning traffic, then native observer FileExistsError after unsupported administrative bootstrap left required ledger absent. Absence is not zero. No model/provider/requirements failure, grade, repair or clean-pair benefit inferred. No more paid reruns before source fix and actual plugin-enabled credentialfree wholeworkflow control.",
     "actualModelArmsClosed": 4,
-    "completionCountingScope": "PAID_PUBLIC_CODING_PATH_ENDED_ONLY_NOT_FUNCTIONAL_OR_WHOLE_WORKFLOW_QUALIFICATION",
-    "qualifiedMatchedComparisonCompleted": false,
+    "actualModelArmsGraded": 4,
+    "functionalChecks": 37,
+    "additionalPosthocForms": 2,
+    "posthocIsOneAdditionalPublicErrorPath": true,
+    "originalDenominatorUnchanged": true,
+    "originalScoresAll": "37/37",
+    "posthocDeliveryResults": [
+      "2/2",
+      "2/2",
+      "2/2",
+      "0/2"
+    ],
+    "runtimeSpecializationAdded": false,
     "runtimeBenefitClaimed": false,
-    "nextEvaluatorLifecycleRevision": {
-      "version": "V6-final",
-      "status": "BOTH_ARMS_CLOSED_EXTERNAL_BOOTSTRAP_AND_OBSERVER_FIX_REQUIRED",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
-        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
-      },
-      "rootReportedOwnerPureControlsPassed": 97,
-      "bothFreshArmsRequired": true,
-      "priorV5OffCannotBeReused": true,
-      "stockResetMode": "idle",
-      "stockResetIdleMinutes": 120,
-      "actualHistorySidMismatchFailsPromptly": true,
-      "authorizationMigrationAllowed": false,
-      "pluginOrTaskOrModelsOrBudgetChanged": false,
-      "rootReportedSourcePeer": {
-        "status": "CLEAR",
-        "receiptSha256Prefix": "5913f560",
-        "all93SourcePinsStable": true,
-        "authority": "ROOT_METADATA_NOTIFICATION_NOT_REPORTER_SOURCE_PEER"
-      },
-      "credentialFreePreparation": {
-        "freshOffProfile": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
-        "preflightPassed": 23,
-        "preflightChecks": 23,
-        "rootReportedPreflightTerminal": "fceaa8",
-        "preflightExitCode": 0,
-        "rootReportedPreflightReceiptSha256Prefix": "a9c5f8f",
-        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
-        "rootOwnedSetupLaunch": "97839a",
-        "rootOwnedSetupSession": 36652,
-        "newPaidOffArmsStarted": 1
-      }
+    "nominalHealthyControlEstablished": false,
+    "currentInstallableE94Runs": 0,
+    "outcomes": {
+      "path": ".runtime-correction/validation/four-arm-root-outcomes-4yd3si06/outcomes.json",
+      "sha256": "be2be03e194752c7b153b4040cbefa6eb2f36585c5955788ef99d1e89af8200b"
     },
-    "allTransferAttemptCountingScope": "Two closed V5 attempts plus both closed V6-final arms; none supplies a clean completed matched comparison.",
-    "currentMatchedPair": {
-      "controllerVersion": "V6-final",
-      "status": "BOTH_CLOSED_NO_APPLY_NO_QUALIFIED_MATCHED_COMPARISON",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
-        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
-      },
-      "sameCurrentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
-      "bothFreshArmsRequired": true,
-      "priorV5OffReused": false,
-      "requiredStockSessionReset": {
-        "mode": "idle",
-        "idleMinutes": 120
-      },
-      "actualPaidArmsStarted": 2,
-      "actualPaidArmsClosed": 2,
-      "actualPaidArmsGraded": 0,
-      "off": {
-        "operatorDirectory": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
-        "status": "INCOMPLETE_OBSERVER_UNVERIFIED_PLANNING_HANDOFF",
-        "rootOwnedLaunch": "b2db25",
-        "rootOwnedSession": 62545,
-        "rootReportedAdmissionSha256Prefix": "b6b05d39",
-        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
-        "rootReportedSetupEvidenceSha256Prefixes": [
-          "c874b424",
-          "668371ab"
-        ],
-        "stockIdleReset120MinutesActuallyReadBack": true,
-        "firstFreshPublicCodingSendAcknowledged": true,
-        "firstActualFlashHttp200Observed": true,
-        "rootReportedProviderSnapshot": {
-          "actualMetadataTerminal": "d4ee11",
-          "exitCode": 0,
-          "completedFlash": 10,
-          "completedPro": 0,
-          "scope": "HISTORICAL_FIRST_CONFIRMED_SNAPSHOT_SUPERSEDED_BY_ROOT_REPORTED_TERMINAL_COUNTS"
-        },
-        "proposalReadyObservedAtSnapshot": false,
-        "closure": null,
-        "grade": null,
-        "rootOwnedTerminal": "5ac70b",
-        "exitCode": 1,
-        "rootReportedReceiptSha256Prefix": "eb0d0672",
-        "completedFlashRequests": 17,
-        "completedProRequests": 0,
-        "completedHttp200Requests": 17,
-        "stagesCompleted": 0,
-        "applyReached": false,
-        "sessionBindingStayedCurrent": true,
-        "hostSessionResetObserved": false,
-        "commonObserverReasonCode": "WAIT_PROVIDER_OR_HOST_ERROR",
-        "actualAgentWaitError": "Exec failed",
-        "providerCauseClaimed": false,
-        "semanticCodeQualityFailureClaimed": false,
-        "knownOwnedCleanupConfirmed": true,
-        "finalTypedFailureAndFreezePending": false,
-        "retryOffToObtainPass": false,
-        "observerOrBudgetRelaxed": false,
-        "rootReportedTerminalSha256Prefix": "83246502",
-        "rootReportedClosureSha256Prefix": "067475df",
-        "rootReportedFreezeSha256Prefix": "38fb06ff",
-        "frozenFiles": 24,
-        "actualFreezeTerminal": "22b143",
-        "freezeExitCode": 0,
-        "allFourProtectedInitialInputsUnchanged": true,
-        "originalEpochToFinalReceiptElapsedMs": 71410,
-        "typedPublicFinalProjectionSha256Prefix": "4515d2b0",
-        "actualAgentWaitErrorScope": "Gateway top-level error retains earlier delivered Exec warning; not proof model/provider aborted.",
-        "modelNormalStopObservedInTypedPublicProjection": true,
-        "proposalCompletionClaim": "MODEL_PUBLIC_TEXT_ONLY_NOT_ROOT_VALIDATED",
-        "publicTextReportedUncheckedTasks": 14,
-        "rootOfficialProposalValidationPerformed": false,
-        "rootApplyApprovalPerformed": false,
-        "currentHeldCompletionRuleQualification": "UNVERIFIED",
-        "commandWarningAloneProvesOffTrack": false,
-        "retroactiveObserverSuccessGranted": false,
-        "sourceClarification": {
-          "path": ".runtime-correction/validation/python-transfer-agent-wait-clarification-9_6k_q30/public-final-addendum.json",
-          "sha256": "ba0cd71a9a8d1076c0d6022dc0545df7b43e4da93b45a07c2a019a5ceaa7bc4e",
-          "normalMainModelStopPrecededGatewayErrorMs": 68,
-          "proposalQualityOrOfficialValidationCredit": false,
-          "currentHeldObserverUnverifiedUnchanged": true
-        }
-      },
-      "on": {
-        "status": "INCOMPLETE_NATIVE_OBSERVER_EXCEPTION_AFTER_ORIGINAL_CLEAN_OK",
-        "actualPaidArmsStarted": 1,
-        "grade": null,
-        "rootReportedFreshProfile": "g9aq8kp0",
-        "credentialFreePreflight": {
-          "passed": 23,
-          "checks": 23,
-          "rootReportedReceiptSha256Prefix": "74a64c00"
-        },
-        "rootOwnedSetupLaunch": "1c4e0e",
-        "rootOwnedSetupSession": 28767,
-        "operatorDirectory": ".runtime-correction/validation/python-transfer-on-g9aq8kp0",
-        "rootOwnedLaunch": "8a5a24",
-        "rootOwnedSession": 49951,
-        "rootReportedAdmissionSha256Prefix": "22cdc505",
-        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
-        "rootOwnedSetupTerminal": "9325f5",
-        "setupExitCode": 0,
-        "rootReportedSetupEvidenceSha256Prefixes": [
-          "980d0c7c",
-          "a9a0d24a"
-        ],
-        "actualCurrentSessionAndProjectAndKeyAndAgentJoined": true,
-        "actualFreshSendUuidAndPublicDispatchRunScopeVersionJoined": true,
-        "effectiveEnabled": true,
-        "hostSessionResetObserved": false,
-        "commonOriginalObserverStarted": true,
-        "actualBoundOnProTrafficObserved": true,
-        "finalReviewOrSemanticAccuracyQualified": false,
-        "boundOnTreatmentStarted": true,
-        "currentArchiveFinalOnReviewQualified": false,
-        "offCodeOrPrivateGraderFeedbackProvided": false,
-        "closure": null,
-        "publicBindingReadown": {
-          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-public-binding-readown.json",
-          "sha256": "a4a9a9658445083b80bb547a5b786c42a95c310be0a4e4c4c888e8b95c3a8ffe",
-          "actualMetadataTerminal": "fabea4",
-          "exitCode": 0
-        },
-        "rootReportedProviderSnapshot": {
-          "actualMetadataTerminal": "edb9e1",
-          "exitCode": 0,
-          "completedFlash": 15,
-          "completedPro": 1,
-          "completedHttp200": 16,
-          "errors": 0,
-          "proposalReadyObserved": false,
-          "closureObserved": false,
-          "scope": "HISTORICAL_FIRST_BOUND_TRAFFIC_SNAPSHOT_SUPERSEDED_BY_FINAL_ROOT_REPORTED_COUNTS"
-        },
-        "rootOwnedTerminal": "8e51a8",
-        "exitCode": 1,
-        "rootReportedReceiptSha256Prefix": "3630f5e6",
-        "rootReportedClosureSha256Prefix": "db96fbe3",
-        "rootReportedFreezeSha256Prefix": "5096e5b3",
-        "frozenFiles": 24,
-        "rootReportedFreezeActualTools": [
-          "51bc4b",
-          "f240d4"
-        ],
-        "allFourProtectedInitialInputsUnchanged": true,
-        "completedFlashRequests": 18,
-        "completedProRequests": 21,
-        "completedHttp200Requests": 39,
-        "providerRequestErrors": 0,
-        "rootReportedElapsedMs": 263755,
-        "stagesCompleted": 0,
-        "applyReached": false,
-        "knownOwnedCleanupConfirmed": true,
-        "currentCommonOriginalCompletionQualification": "CLEAN_OK",
-        "wholeWorkflowCompletionQualified": false,
-        "nativeObserverReasonCode": "PRIVATE_DIAGNOSTIC_REQUIRED",
-        "externalEvaluatorExceptionType": "FileExistsError",
-        "nativeBudgetLedgerStatus": "ABSENT",
-        "nativeAdmissionOrBusinessStartCount": null,
-        "absentLedgerInterpretedAsZero": false,
-        "sourceCause": "Unsupported administrative bootstrap omitted genuine SDK session_start; native observer retry then reused exclusive output address.",
-        "rootReportedSourceCauseSha256Prefix": "55c51deb",
-        "rootReportedScopeTokens": [
-          "IDLE",
-          "SKIPPED",
-          "STOP_DOCUMENT_ONLY_CHANGES"
-        ],
-        "modelProviderOrRequirementsFailureClaimed": false,
-        "finalTypedFailureAndFreezePending": false,
-        "rootTerminal": {
-          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-live-terminal.json",
-          "sha256": "b673de5151b20ddfdb2b2a161bdda651db2fe265e78fb18515ce525ffaa9ba16",
-          "actualMetadataTerminal": "d4189f",
-          "exitCode": 0
-        }
-      },
-      "qualifiedMatchedComparisonCompleted": false,
-      "modelBenefitClaimed": false,
-      "authority": "ROOT_METADATA_NOTIFICATIONS_ONLY_NO_REPORTER_ACTOR_AUDIT",
-      "cleanPairClaimed": false,
-      "currentEvidenceRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_NOT_INDEPENDENT_HELD_OUT_QUALITY"
-    },
-    "nextPaidPairTechnicalPrerequisites": {
-      "newPaidRunsAllowedByCurrentTechnicalState": false,
-      "evaluatorSourceFixRequired": true,
-      "actualPluginEnabledCredentialFreeWholeProposalApplyControlRequired": true,
-      "standingUserPaidAuthorizationPersists": true,
-      "runtimeOrArchiveChangeAssumed": false,
-      "startupOnlyProofQualified": true,
-      "wholePluginEnabledCredentialFreeWorkflowStatus": "PENDING_NOT_QUALIFIED"
-    },
-    "initialPreparationRole": "HELD_OUT_FROM_PRODUCT_FIX_DEVELOPMENT_OUTSIDE_13_BENCHMARK",
-    "independentHeldOutQualityEvidence": false,
-    "caseNowUsedForProtocolDebugging": true,
-    "publicBootstrapStartupOnly": {
-      "status": "STARTUP_ONLY_QUALIFIED_BY_SEPARATE_CLOSED_READBACK_FULL_WORKFLOW_PENDING",
-      "readback": {
-        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/closed-readback.json",
-        "sha256": "da90ea3af175bedaad0442523b150f1fb5c99eddea2ce59089913b47de1bf1eb"
-      },
-      "verification": {
-        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/verification.json",
-        "sha256": "62ad6f3aa8aa734abf921878b037c7b1d42434ce7ccf0c6b9b23ffa1ee961864"
-      },
-      "originalFailedProbe": {
-        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/receipt.json",
-        "sha256": "2a2c109a176e14d3e9f5a91abfd8db6d509665fb33142dc45c53f513d8a1e92f",
-        "actualLaunch": "baccd9",
-        "actualSession": 81240,
-        "actualTerminal": "7b2ede",
-        "exitCode": 1,
-        "failure": "Draft numeric schema assertion; actual producer schema was the supported string v1.",
-        "originalFailedStatusRetained": true
-      },
-      "actualSeparateClosedReadbackTerminal": "ff0bcc",
-      "separateReadbackExitCode": 0,
-      "firstPublicUnallocatedKeyMessageTriggeredGenuineSdkSessionStart": true,
-      "ledgerInitializedBeforeAdministrativeSetup": true,
-      "used": 0,
-      "admissions": 0,
-      "flows": 0,
-      "stops": 0,
-      "ledgerPresentForThisStartupProofOnly": true,
-      "priorMissingLedgerReclassifiedAsZero": false,
-      "fakeLocalSseReplies": 1,
-      "upstreamRequests": 0,
-      "realModelCalls": 0,
-      "exactInstalledRegularMembers": 276,
-      "privateSdkIdentityOrLedgerInjected": false,
-      "knownOwnedCleanupConfirmed": true,
-      "fullPluginEnabledProposalApplyControlQualified": false,
-      "qualityNativeRepairOrGeneralBenefitClaimed": false
-    },
-    "prospectiveCommonTerminalObserverV3": {
-      "status": "SOURCE_PURE_PEER_CLEAR_NOT_USED_BY_CLOSED_PAID_ARMS",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/common-public-terminal-v3-ioc3886f/source-hold.json",
-        "sha256": "e6221a92dbbc8435a86abb65b06bf70c87c0e62f4fb144c096389429104a437d"
-      },
-      "peer": {
-        "path": ".runtime-correction/validation/common-terminal-v3-peer-c9_6slrg/peer-review.json",
-        "sha256": "14b83d1b3b22d6420506776cccd7df475435fbf30ead060055b85e3b3363541b"
-      },
-      "ownerPureControls": 70,
-      "independentPureControls": 70,
-      "errorObservedDoesNotMeanCleanOrPhaseApproval": true,
-      "historicalTrialsReclassified": false,
-      "shippedPluginIncludesPrivateHelper": false,
-      "actualWholeWorkflowUseQualified": false
-    },
-    "frozenOriginalPreparationHoldsAndClosedReceiptsUnchanged": true,
-    "fullPublicPluginWorkflowLocalControls": {
-      "status": "PEER_CLEAR_TECHNICAL_FULL_PUBLIC_LOCAL_WORKFLOW_CLEAN_AND_WARNING",
-      "attempts": [
-        {
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-_h7wekon/source-hold.json",
-            "sha256": "ea8489c33cae8b198a15a556ab197b12c894f65695ea231ca13f2723939e71b3"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-_h7wekon/runs/clean-1/receipt.json",
-            "sha256": "ff02f0b8c8465e4cb18f4f48e69cf5e2de3c52d7f9f478c86ffd4364cf4b0e49"
-          },
-          "status": "FAILED",
-          "stages": [],
-          "realUpstreamRequests": 0,
-          "realKeyRead": false,
-          "knownCleanupConfirmed": true,
-          "wholeWorkflowQualified": false
-        },
-        {
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v2-l4grqxjw/source-hold.json",
-            "sha256": "d227cde06227222e3367b238d40957cf4d60cb2ae49656dc6a184b655e1f2a3e"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v2-l4grqxjw/runs/clean-1/receipt.json",
-            "sha256": "79fcf6173407e85a73ca364cdfec13a630e54c288c0f078313e0ebc2634055e2"
-          },
-          "status": "FAILED",
-          "stages": [
-            {
-              "stage": "proposal",
-              "originalTerminalStatus": "ok",
-              "terminalClean": true,
-              "nativeReviewStatus": "SKIPPED",
-              "nativeReason": "STOP_DOCUMENT_ONLY_CHANGES"
-            }
-          ],
-          "realUpstreamRequests": 0,
-          "realKeyRead": false,
-          "knownCleanupConfirmed": true,
-          "wholeWorkflowQualified": false
-        },
-        {
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v3-i2y8sqb9/source-hold.json",
-            "sha256": "3f7deae25fcf712426bc2125514fd9d5b59580ad6ca9971aff2bbe280e661934"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v3-i2y8sqb9/runs/clean-1/receipt.json",
-            "sha256": "64cfd94d1767236e63021623608c6934980987355bbd7244c5925bc5cc370a94"
-          },
-          "status": "FAILED",
-          "stages": [
-            {
-              "stage": "proposal",
-              "originalTerminalStatus": "ok",
-              "terminalClean": true,
-              "nativeReviewStatus": "SKIPPED",
-              "nativeReason": "STOP_DOCUMENT_ONLY_CHANGES"
-            },
-            {
-              "stage": "apply",
-              "originalTerminalStatus": "ok",
-              "terminalClean": true,
-              "nativeReviewStatus": "UNVERIFIED",
-              "nativeReason": "REVIEWER_RUN_FAILED"
-            }
-          ],
-          "realUpstreamRequests": 0,
-          "realKeyRead": false,
-          "knownCleanupConfirmed": true,
-          "wholeWorkflowQualified": false
-        },
-        {
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/source-hold.json",
-            "sha256": "2fd8286802f8114682cb1585e651818d0353a567df1ec7f950c47f966a7039fc"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/runs/clean-1/receipt.json",
-            "sha256": "212982e2ffb6cc643d785f42dd54458c1a980b132843bc8524ddfee8604b7642"
-          },
-          "status": "FAILED",
-          "originalDriverMetric": "FINISH_REPLY_NOT_RETURNED_TO_NEXT_PROVIDER_REQUEST_AFTER_WORKER_COMPLETION",
-          "knownCleanupConfirmed": true,
-          "runtimeOrArchiveChanged": false,
-          "upstreamRequests": 0,
-          "realKeyRead": false
-        },
-        {
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/source-hold.json",
-            "sha256": "a45eaaee725eb834c3053f5158b9936a82879b2b6cbba56256c1a08da3580099"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/runs/warning-1/receipt.json",
-            "sha256": "af7bd0473329a01f44300b2f7fc964876ed377f472aabac69ec7d1ffad0d5850"
-          },
-          "status": "FAILED",
-          "originalDriverMetric": "FINISH_REPLY_NOT_RETURNED_TO_NEXT_PROVIDER_REQUEST_AFTER_WORKER_COMPLETION",
-          "knownCleanupConfirmed": true,
-          "runtimeOrArchiveChanged": false,
-          "upstreamRequests": 0,
-          "realKeyRead": false
-        }
-      ],
-      "currentSourceHold": {
-        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/source-hold.json",
-        "sha256": "2fd8286802f8114682cb1585e651818d0353a567df1ec7f950c47f966a7039fc"
-      },
-      "prospectiveCompositionHold": {
-        "path": ".runtime-correction/validation/public-controller-bootstrap-7kftypo1/source-hold-stage-labels.json",
-        "sha256": "3b77b0fb3d3a58f5db36228541512542c8aa213943acb04e30d3b0e81d1f44cd"
-      },
-      "knownHealthyFinalHostAcceptanceRequiredSeparately": true,
-      "warningScenarioRequiresActualErrorTerminalNotLabel": true,
-      "paidRunsRemainGatedUntilWholeControlPass": true,
-      "runtimeOrArchiveChanged": false,
-      "cleanClosedQualification": {
-        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/closed-clean-qualification.json",
-        "sha256": "f3205cdaf6a216eb319fda77b247879616de825c2cf1f42aae6a797c41718492"
-      },
-      "cleanVerification": {
-        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/closed-clean-verification.json",
-        "sha256": "89a1ff2d328c643dc69125b46d4d607ab243781adb34e459a43cd94445b64a37"
-      },
-      "warningClosedQualification": {
-        "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/warning-1-closed-qualification.json",
-        "sha256": "9936f9a30e3ddab69ea623e47f5415ae1117488db80a1de74f9ed020b9eefab8"
-      },
-      "warningVerification": {
-        "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/warning-verification.json",
-        "sha256": "77bdd873322b7142b6587829b41f0b6ca706bbb99dfd1df0408d6f7b47c320c7"
-      },
-      "rootReadback": {
-        "path": ".runtime-correction/validation/report-generality-ci-followup-orgzo4bb/root-control-readback.json",
-        "sha256": "c07805169f873130032f4a8f674eed9a7149d905f3479c81aaad5e59c76f7ae5"
-      },
-      "nativeStartsPerControl": 0,
-      "selectedOriginalDutiesPerControl": 1,
-      "defaultDisposition": "NO_CONFIRMED_DEVIATION",
-      "explicitSavedPositiveJudgementCount": 0,
-      "committedSourceCitationCount": 0,
-      "exhaustiveCoverageProven": false,
-      "realModelAccuracyOrRepairBenefitClaim": false,
-      "originalDriverFailuresRetained": true,
-      "commonWarningTerminalStatus": "error",
-      "commonWarningTerminalClean": false,
-      "commonWarningOriginalTurnQualified": false,
-      "commonStageSettlementGranted": false,
-      "independentPeerStatus": "CLEAR_IN_DECLARED_TECHNICAL_SCOPE",
-      "newPaidControllerHold": {
-        "path": ".runtime-correction/validation/python-transfer-controller-public-v7-mcuh0rne/source-hold.json",
-        "sha256": "e211ec419407c06e0630c0b0aabad1dd8768ce1fbc9525bbc0352fdbe293a5f1"
-      },
-      "newPaidActorOrModelStarted": false,
-      "remainingGates": [
-        "Current-controller positive native-repair control including successor binding",
-        "Fresh per-arm source/policy/kernel/treatment technical admission"
-      ],
-      "independentPeer": {
-        "path": ".runtime-correction/validation/public-workflow-composition-peer-mb6ww545/peer-review-final.json",
-        "sha256": "72bf0c8a5f76ea606d2fab5df0b03a07b3eaaab4462b4154d7cb3e6c9423b63e"
-      },
-      "wholeLocalWorkflowPrerequisiteSatisfied": true,
-      "noRetroactivePromotionOfOldPaidArms": true,
-      "positiveNativeRepairControl": {
-        "status": "LOCAL_SCRIPTED_MECHANICAL_REPAIR_QUALIFIED_INDEPENDENT_PEER_CLEAR",
-        "archiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
-        "sourceHold": {
-          "path": ".runtime-correction/validation/public-native-repair-control-v4-60bf561_/source-hold.json",
-          "sha256": "48842e57f089937be16aff4b6190269bd1e1840f534c64e9ecfe4a326cc75968"
-        },
-        "closedQualification": {
-          "path": ".runtime-correction/validation/public-native-repair-control-v4-60bf561_/closed-positive-qualification.json",
-          "sha256": "7e595dbf338e0f606ecb925ada44817a7d69372d5130c4e7eb7b48d70a7770ea"
-        },
-        "independentPeer": {
-          "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/peer-review-v8-closed.json",
-          "sha256": "279f5fa9ca4ac40a70670dc44acb4992cd2d5d996361b8062b2c945eb7266f49"
-        },
-        "actualLaunch": "c1730f",
-        "actualTerminal": "f9608b",
-        "actualExitCode": 0,
-        "recordedNativeStarts": 1,
-        "upstreamRealModelRequests": 0,
-        "keyReads": 0,
-        "claims": {
-          "mechanicalRepair": true,
-          "realModelJudgment": false,
-          "generalQualityBenefit": false,
-          "formalPairCredit": false,
-          "exhaustiveRequirements": false
-        },
-        "previousFailedObserverControl": {
-          "status": "FAILED_EXTERNAL_ORIGINAL_BINDING_RACE_NO_MECHANICAL_QUALIFICATION",
-          "sourceHold": {
-            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/source-hold.json",
-            "sha256": "77e1eb991264293d1fb98a1e02fab29bac530d65674f7a76f9b41f0ded936bed"
-          },
-          "sourcePeer": {
-            "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/peer-review-positive-v3.json",
-            "sha256": "2720508b53ae44a3c48c7e43bcec5a17f53c1c8ff30bf0a8dc1de3c0860cf2a3"
-          },
-          "receipt": {
-            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/runs/repair-1/receipt.json",
-            "sha256": "abbf0b96d244bf6983c9a0ab9ed1871e8807cb03c8e904e1ed1ecf226473a6af"
-          },
-          "actualCause": {
-            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/actual-binding-race-cause.json",
-            "sha256": "eac55ab4885f27a257c823a8c71cea6e53412d7aaea3e83be9a8da3ea044776b"
-          },
-          "actualLaunch": "6e7571",
-          "actualSession": 98161,
-          "actualTerminal": "32d4be",
-          "actualExitCode": 1,
-          "originalBindingWindowMs": 60000,
-          "controlWallMs": 900000,
-          "armBudgetExpired": false,
-          "actualRecordedNativeStarts": 1,
-          "C1IndependentCheckExit": 1,
-          "C2IndependentCheckExit": 0,
-          "preCleanupSnapshotDiagnosticAuthority": {
-            "admission": false,
-            "settlement": false
-          },
-          "applyCommonOriginalTerminalReceiptExists": false,
-          "routeQualified": false,
-          "mechanicalRepairCreditGranted": false,
-          "noPaidOrSemanticBenefitClaim": true,
-          "nextObserver": "SEPARATE_VERSION_REQUIRES_REVIEW_AND_FRESH_POSITIVE_CONTROL",
-          "independentActualCausePeer": {
-            "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/actual-v3-cause-peer.json",
-            "sha256": "75f1f6554f4cd074b38391a5170326af8162c282fba5f03e6887c5366568f93c"
-          }
-        }
-      }
-    },
-    "nextV7OffPreparation": {
-      "operatorSuffix": "8b8teo52",
-      "state": "CREDENTIAL_FREE_PREFLIGHT_PASSED_SETUP_NOT_ADMITTED",
-      "checks": 23,
-      "passed": 23,
-      "receipt": ".runtime-correction/validation/python-transfer-off-8b8teo52/preflight/attempt2/receipt.json",
-      "receiptSha256": "34a32d1eed65ee40c4cca1b27737d01b941e8251cc02dfdd42e318c57e5fda43",
-      "actualLaunch": "c414ab",
-      "actualSession": 79516,
-      "actualTerminal": "5bf11b",
-      "actualExitCode": 0,
-      "paidModelOrKeyRead": false
-    }
+    "authoredPublicTestsAndDependencyRestrictionAssessedSeparately": true
   },
   "previousClosedGeneralPurposeTrial": {
     "status": "CLOSED_WORKFLOW_SETTLED_FINAL_REVIEW_UNVERIFIED",
@@ -3381,5 +2496,1169 @@
       "Package checks match208runtime modules to committed source and all276payload members to fresh builds. This bounds packaging provenance; it is not a proof of universal semantic generality or absence of every implicit specialization.",
       "Current exact-archive local probes used actual Gateway/TUI setup and cleanup without a real provider or credential. Fresh real-model arms still need the reviewed external controller, matched settings and per-arm preflight/admission."
     ]
+  },
+  "priorDeclaredFaultGeneralPurposeTrial": {
+    "status": "CLOSED_PUBLIC_WORKFLOW_SETTLED_FINAL_UNVERIFIED_PARTIAL_QUALIFICATION_RECORDED",
+    "activePaidTrials": 0,
+    "rootDirectory": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ordinary-public-preparation-esbt35fr",
+    "rootSession": 6646,
+    "actualRootLaunch": "aca52d",
+    "packageSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd",
+    "runtimeSourceCommit": "297adfeb9964684a2164b00b043272a7d46f9777",
+    "admission": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/live-admission.json",
+      "sha256": "42d7ae4bec50aa6313f360204443a8f924ee37a38f35e6b847432961bfe3ffdc"
+    },
+    "sourceHoldSha256": "0dce6fdf439d647ae9531601e310059a5f7b9a7424d060bf5e438f285d3dac36",
+    "qualificationCriteriaSha256": "875e737e49ce47ab2134ba3397c0860d3264563055e16c550a53274b8105b1e1",
+    "admittedInputPins": 416,
+    "publicSetup": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/setup-receipt.json",
+      "sha256": "30758f8857c50f6fa86017c220a5db6d0f84fc102505614a4d39dcebbb1e3b43"
+    },
+    "rootPublicSetupReadownSha256": "0023e4fde90e73729ef3448069f809862d7fa95fec6b9848a45e500a9d8c3cc9",
+    "planInspection": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-plan-inspection.json",
+      "sha256": "6622229ece147183f62d48b86f9b23192037de6ac8fa89948e08e9efb2fe49e0"
+    },
+    "ordinaryApplyAdmission": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/apply-admission.json",
+      "sha256": "5f3aab22dc04a78090c606992d5ab04e560b916e687b4de8ad0836efcff43283"
+    },
+    "proposalTaskCount": 13,
+    "proposalStrictValidationPassed": true,
+    "proposalSemanticCorrectnessExhaustivelyProved": false,
+    "rootApprovedOriginalScopeWithNonbindingAmbiguities": true,
+    "planIntegrityMode": "ordinary-default",
+    "sealedApproval": false,
+    "preparedRequirementInventory": false,
+    "strictOptionalFlagsEnabled": 0,
+    "models": {
+      "coding": "deepseek-flash",
+      "review": "deepseek-v4-pro"
+    },
+    "reviewerRoles": 7,
+    "absoluteWallMs": 3600000,
+    "maximumRelayRequests": 256,
+    "sessionCorrectionCap": 2,
+    "flowCorrectionCap": 2,
+    "actualOriginalApplyTargetBound": true,
+    "targetRunMasked": false,
+    "faultBoundary": "EXERCISED_PENDING_POSTCLOSURE_QUALIFICATION",
+    "capturedModuleBytes": {
+      "C0": 729,
+      "C1": 730
+    },
+    "capturedC0Sha256": "d85c0e7259651b778e77dac9584ba2ba2d0eeb99fea79b920b2c8e089e920cd3",
+    "capturedC1Sha256": "78095998db3e7ea0263535b110a936114987681dadc7bc563da3ca1c1bba5d40",
+    "nativeCorrectiveStartsAtMonitorSnapshot": 1,
+    "candidateC2CapturedAtMonitorSnapshot": true,
+    "privateGradesRun": true,
+    "cleanAcceptanceClaimed": false,
+    "formalMatchedPairsAdded": 0,
+    "sourceAckQualification": "UNVERIFIED_BOTH_DECLARED_STAGES_PRESERVED",
+    "snapshotNotLivenessOrQualityProof": true,
+    "readableEvaluationFixtureExcludedFromPlugin": true,
+    "standingUserPaidAuthorizationPersists": true,
+    "scope": "One closed ordinary-policy2a injected-fault control: C0/C1module-variant checks9/7, fullfinal/C2grade9; one actual native business start/end, specific savedA1finding and full hostgate delivery joined. C1fullACKU(missingfinishresult), C2fullACKU(unavailablecurrentfinalcoverage), replaypreconditionU; finalnativeU/documentexecutionpending. No clean final acceptance, complete causal chain or general benefit established.",
+    "firstOriginalApplyStopAtMonitorSnapshot": "DEVIATION",
+    "nativeUsedAdmissionsAtMonitorSnapshot": 1,
+    "currentDispatcherAtMonitorSnapshot": "IDLE",
+    "candidateC2CaptureStatus": "PENDING_POSTCLOSURE_QUALIFICATION",
+    "nativeMechanismRootObservationTool": "615bf4",
+    "rootActiveMilestone": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-active-milestone.json",
+      "sha256": "2f45aaa9d29cff68880f22743114af37ce3ed0147a64c156c65456d47d1b94be",
+      "actualReadownTool": "9131ca",
+      "exitCode": 0
+    },
+    "phase": "CLOSED_POSTCLOSURE_QUALIFICATION",
+    "controllerTerminal": "ba2be0",
+    "controllerExitCode": 0,
+    "elapsedMs": 1605214,
+    "providerCountsFinal": {
+      "wireAttempts": 101,
+      "admittedRequests": 101,
+      "deniedRequests": 0,
+      "countsByModel": {
+        "deepseek-flash": 45,
+        "deepseek-v4-pro": 56
+      },
+      "closed": true,
+      "inFlight": 0
+    },
+    "gradeCounts": {
+      "C0": {
+        "passed": 9,
+        "total": 9
+      },
+      "C1": {
+        "passed": 7,
+        "total": 9,
+        "failedAtoms": [
+          "A1"
+        ]
+      },
+      "finalC2": {
+        "passed": 9,
+        "total": 9
+      }
+    },
+    "gradeScope": "C2/final frozen full source/package/public-tests; C0/C1 captured complete modules substituted into separate copies of that same final workspace, not full historical projects. Same unchanged finite nine-check oracle.",
+    "finalGradeReceipt": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/final-freeze/receipt.json",
+      "sha256": "83fff2d1a5edcea73fff85bec62a2f2d5d6fec1aa2976e257e1d744c5d526184"
+    },
+    "moduleVariantGrades": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/module-variant-grades.json",
+      "sha256": "12301c1a293a2a9250d3cb46ddc6f715a2489b6becc1f6a04770aff0487a3b63"
+    },
+    "rootClosureGate": {
+      "path": ".runtime-correction/validation/ordinary-public-preparation-esbt35fr/root-closure-gate.json",
+      "sha256": "29cc635ac7d55fca703093a8c7d2ddc5e3e43a6aa90a16489985e01cd9eec9be"
+    },
+    "closureSha256": "2718a7816420a6178eae16f3e2a5dff8dc4a0f2e0f02e4f01af7aa7dc91e4cc8",
+    "liveReceiptSha256": "29990eff3d87ddad0ce4456228abf48589451a6533a53b5ee0a14bb276bcb2dd",
+    "openSpecDoneTasks": 13,
+    "openSpecTotalTasks": 13,
+    "strictOpenSpecValidation": true,
+    "finalNativeStop": "UNVERIFIED",
+    "finalNativeStopReason": "DOCUMENT_EXECUTION_UNVERIFIED",
+    "finalCoverageReceiptStatus": "UNAVAILABLE",
+    "finalCoverageReceiptReason": "FRESH_PUBLICATION_NOT_OBSERVED",
+    "planProseChanged": true,
+    "independentPlanRevisionReviewRequired": false,
+    "actualDocumentUnverifiedBasis": [
+      "DOCUMENT_EXECUTION_PENDING"
+    ],
+    "backgroundCommandTerminalObserved": false,
+    "terminationRequestIsNotTerminalProof": true,
+    "fullMechanismWitnessQualified": false,
+    "generalPurposeBenefitEstablished": false,
+    "editReplayQualification": "UNVERIFIED_LATE_CLEANUP_FINAL_STOP_JOIN_MISSING",
+    "actualSourceAckAudit": {
+      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/receipt.json",
+      "sha256": "f9950a9f51afb7790571ee2e471294c50646831360dffe794136dc1263c2a6d3"
+    },
+    "sourceAckResult": {
+      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/audit.json",
+      "sha256": "c707cbcb2da56acecfb30f36ae29240d82d367c05adeb3fe8c53eed0fbceafeb"
+    },
+    "sourceAckStages": [
+      {
+        "label": "C1",
+        "status": "UNVERIFIED",
+        "reasonCode": "TOOL_ID_MISSING_OR_AMBIGUOUS"
+      },
+      {
+        "label": "C2",
+        "status": "UNVERIFIED",
+        "reasonCode": "HOST_COVERAGE_RECEIPT_MISMATCH"
+      }
+    ],
+    "c1PartialCurrentReadAndSavedDeviationWitness": {
+      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/partial-c1-read-witness.json",
+      "sha256": "a3fe1cbf28b29d2eb7c95099ed4fd0dd3472b595f16041b8756d411a30f009d9"
+    },
+    "c1AcceptedFinalFinishAckObserved": false,
+    "c2PartialCurrentReadAndAcceptedWorkerFinishWitness": {
+      "path": ".runtime-correction/validation/closed-source-ack-esbt-4v2y6nor/partial-c2-read-witness.json",
+      "sha256": "8cddce81133f180c9e3438fc07fbe6351e01dd7547486206456f0ba751fe895a"
+    },
+    "c2CurrentCitationsJoinedActualFinalEvaluation": 0,
+    "specificC1FaultFindingAndHostGateDelivery": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/specific-c1-delivery.json",
+      "sha256": "3256354b44bc08f36b8d743e1e3aaf4a56b4438f4e4c988c931e2b8cb296baab"
+    },
+    "specificPublicCapacityFindingSemanticallyChecked": true,
+    "fullFeedbackRenderedContextMatchesActualHostGate": true,
+    "selectedReasonNotTruncated": true,
+    "gatePrecedesActualNativeStart": true,
+    "rawProviderPromptCaptureClaimed": false,
+    "independentPlanRevisionReviewPerformed": true,
+    "planRevisionReview": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/plan-revision-review.json",
+      "sha256": "c3df6a7fac436b5f0c9b11543f8703a6cf645bc46d2ee3adae25784d78f7dfcc"
+    },
+    "requirementNarrowingObservedInRevision": false,
+    "planSemanticCorrectnessExhaustivelyProved": false,
+    "knownApprovedPlanAmbiguitiesRemain": true,
+    "nativeEditReplayVerification": {
+      "path": ".runtime-correction/validation/esbt-native-replay-gfbrrioo/verification.json",
+      "sha256": "c3367d8ba630d0b91c883e0610ac902571410133e616bcc7cd863ef00fe189d4"
+    },
+    "nativeEditReplayResult": {
+      "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/esbt-native-replay-gfbrrioo/outputs/replay.json",
+      "sha256": "75f8a83db33d425d51e2eb510a1f3d7851f776502830a04b58f4d9bd338bfc41"
+    },
+    "editReplayActuallyReached": false,
+    "zeroEditCountersInterpretedAsNoEdits": false,
+    "partialRecordedEditObservation": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/recorded-edit-observation.json",
+      "sha256": "12d82f1543da97fdfbb48519e5e666de2c4fca3d4557c2d3d4894c91804a30fa",
+      "actualTerminal": "8678f6",
+      "exitCode": 0,
+      "successfulSourceEditCalls": 1,
+      "exactReplacementEqualsCompleteC2AndFrozenFinal": true,
+      "otherDocumentEditCalls": 1,
+      "otherExecCalls": 4,
+      "execsCertifiedReadOnly": false,
+      "exclusiveWriterProven": false,
+      "frozenReplayAuditQualificationChanged": false,
+      "fullCausalWitnessQualified": false
+    },
+    "requestEffortProjection": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/request-effort.json",
+      "sha256": "01082f80e61b6bab2db98a777683eec0f4c80274f8f0788baf4cb5490183615d",
+      "actualTerminal": "3a1793",
+      "exitCode": 0,
+      "all101CompletedHttp200": true,
+      "matchedIncrementalOverheadMeasured": false,
+      "tokensOrPriceMeasured": false
+    },
+    "historicalCodeReviewBeforeDocumentInvalidation": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/historical-review-before-invalidation.json",
+      "sha256": "d5d49fca006c0e55de7274c315e11d161bc7b6eeb9d94ec37f3a184c56c53770",
+      "actualTerminal": "4d0d09",
+      "exitCode": 0,
+      "historicalCandidateStatus": "NO_DEVIATION_FOUND",
+      "knownCandidateAssessments": 7,
+      "knownCoverageExhaustive": false,
+      "coreFailure": null,
+      "subsequentActualFinalStatus": "UNVERIFIED",
+      "subsequentActualFinalReason": "DOCUMENT_EXECUTION_UNVERIFIED",
+      "historicalCandidateSubstitutedForFinal": false,
+      "fullSourceAckOrAcceptanceOrGeneralBenefitGranted": false
+    },
+    "rootPartialQualification": {
+      "path": ".runtime-correction/validation/esbt-final-grade-mgpg_p_s/root-partial-qualification.json",
+      "sha256": "7e5f6878706694bae3fdf3e0fc528aa5d493f787dd36bec7c114f4f4c1fbfa0f",
+      "actualTerminal": "3e990a",
+      "exitCode": 0,
+      "status": "FINITE_FAULT_REPAIR_OBSERVED_FINAL_UNVERIFIED_FULL_WITNESS_NOT_QUALIFIED",
+      "immutableAdmittedInputsVerified": 413,
+      "intentionalMutableActorInitialPins": 3,
+      "formalMatchedPairsAdded": 0,
+      "generalPurposeBenefitEstablished": false
+    },
+    "evaluatedArchiveIsCurrentInstallable": false,
+    "currentInstallableArchiveSha256": "e8b847b753c1d08a70c573a6051bfc4efc6e83c4147fce5e59bfb9d878538897",
+    "newGuidanceBenefitClaimedFromThisTrial": false
+  },
+  "priorTransferProtocolEvaluationPreparation": {
+    "status": "BOTH_NEW_ARMS_CLOSED_OBSERVER_HANDOFF_UNQUALIFIED_NO_GRADES",
+    "language": "Python",
+    "taskRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_OUTSIDE_13_TASK_BENCHMARK",
+    "actualModelArmsStarted": 4,
+    "functionalChecks": 34,
+    "authoredPublicTestsAndDependencyRestrictionAssessedSeparately": true,
+    "sourceHold": {
+      "path": ".runtime-correction/validation/transfer-evaluation-v3-b31j21ya/source-hold.json",
+      "sha256": "aa72a093786dd36d80951356e8144b784a6524acdc7dd32c5953c54f667cb781"
+    },
+    "rootOracleReadown": {
+      "path": ".runtime-correction/validation/transfer-oracle-v3-root-wmdlp3d1/receipt.json",
+      "sha256": "79a5229fcd2a613e0a70a0e1f238d8cf363e76aa99b196d127fa4075d2da8a43"
+    },
+    "runtimeSpecializationAdded": false,
+    "scope": "The Python case began as a proposed transfer evaluation and is now used for protocol-integration development. It is not independent held-out quality evidence. Both closed arms retain their original unqualified handoff outcomes; no grade or general-benefit claim.",
+    "commonPublicCompletionContractStatus": "OFF_OBSERVER_UNVERIFIED_ON_ORIGINAL_OK_THEN_NATIVE_OBSERVER_EXCEPTION",
+    "consistentPythonPathRequiredForChildCommands": true,
+    "commonOriginalTerminalObserverV2": {
+      "status": "SOURCE_PURE_PEER_AND_LOCALHOST_STUB_PUBLIC_TRANSPORT_CLEAR",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/source-hold-v2.json",
+        "sha256": "ff8274299ca8ab39cd761ad4f66a18321bd0ddfb2b1798449e0cc0e29f62f0b8"
+      },
+      "sourceProof": {
+        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/source-proof.json",
+        "sha256": "ce3e6e7a6a6967cdfddc05fd78d9ba680db145b21cbd9a53c6047692101eda57"
+      },
+      "ownerVerification": {
+        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/verification-v2.json",
+        "sha256": "0e97a51cf82786614717fff79a861d2ff5f1c1937069934caa06e63b95d40904"
+      },
+      "peerClosure": {
+        "path": ".runtime-correction/validation/common-public-completion-55o8zlji/peer-closure.json",
+        "sha256": "b2b676bb9ec226d588b146867c0d7311a6b6b8ab8a8dda9cf7d89430c154c899"
+      },
+      "ownerControls": 48,
+      "independentControls": 48,
+      "independentAdditionalReplays": 10,
+      "contract": "Exactacceptedoriginalrunterminalonly; notwhole-stagesettlement,assistantownership,hidden-inputabsenceorchildrenabsence.",
+      "offRequiresRcRecords": false,
+      "onRequiresSeparateAuthenticatedNativeChain": true,
+      "publicTransportQualified": true,
+      "paidPairStarted": false,
+      "includedInProductArtifact": false,
+      "publicTransportScope": "Localhost-stub public CLI transport and exact original-run terminal matching only; no whole-stage settlement or ON native-chain acceptance.",
+      "actualTransportPreflight": {
+        "status": "QUALIFIED_LOCAL_STUB_PUBLIC_TRANSPORT_ONLY",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/source-hold.json",
+          "sha256": "356a858935ef6f26fbb8bed4425e2dc74f8d2050bf16f2a17cdb544b8e972939"
+        },
+        "receipt": {
+          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/transport-receipt.json",
+          "sha256": "7894413ed65b9c6ad75b853d1807c8310c98f25d4e6df64baa7b4a18c4db31ad"
+        },
+        "verification": {
+          "path": ".runtime-correction/validation/common-public-transport-preflight-ib9hgilo/transport-verification.json",
+          "sha256": "9253cee06957871d9b95c57161e5205ceb12bbd583ceaaddf411c4984c4f5d3f"
+        },
+        "actualLaunch": "51c07a",
+        "actualSession": 70384,
+        "actualTerminal": "b97597",
+        "exitCode": 0,
+        "elapsedMs": 21473,
+        "stockPublicCliCalls": 15,
+        "allCliExitCodesZero": true,
+        "localStubStreamReplies": 2,
+        "fakeKeyOnly": true,
+        "realProviderModelRequests": 0,
+        "pluginInstalledOrExercised": false,
+        "codingTaskOrOracleExercised": false,
+        "initialAndLaterOriginalRunTerminalObservationsQualified": true,
+        "oldTerminalReplayRejected": true,
+        "wholeStageSettlementGranted": false,
+        "assistantOwnershipOrHiddenInputOrChildrenAbsenceProved": false,
+        "onAuthenticatedNativeChainQualified": false,
+        "paidOffOnArmsStarted": 0,
+        "outsideNonLoopbackTcpProbe": "DENIED_BEFORE_CONNECT_EPERM",
+        "knownOwnedCleanupConfirmed": true,
+        "gatewayAndStubPortsClosed": true,
+        "scope": "Technical transport preflight only. Its two stub replies are not OFF/ON coding arms or evidence of model efficacy."
+      },
+      "wholeStageOrNativeChainAcceptanceGranted": false
+    },
+    "currentPreparedArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
+    "publicTransferControllerV3": {
+      "sourcePeer": {
+        "path": ".runtime-correction/validation/python-transfer-controller-peer-zy6m_adl-v3/peer-review-v3.json",
+        "sha256": "4575cbb4e852dd68b11a498b0efdc004330a7e911e8577df222c395792411d5c",
+        "status": "CLEAR_SOURCE_ONLY"
+      },
+      "exactOffPreflight": {
+        "status": "VERIFIED_CREDENTIAL_FREE_CAPABILITY_PREFLIGHT_ONLY",
+        "verification": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/preflight/verification.json",
+          "sha256": "bffa77adc67f842db2a84205ba0ad3e81ef6d2eed90ee407353d3f33434ae885"
+        },
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/preflight/attempt2/receipt.json",
+          "sha256": "81aaecd09ab268d8ec589100d188af43d8c2e1c38a39289c6997ce99dd35542f"
+        },
+        "checks": 23,
+        "passed": 23,
+        "firstFailedAttemptPreserved": {
+          "receiptSha256": "890131462e75a6f0ee021ec7d02d08dd39400782e19f1fd3bd3d4fcdaeceaab9",
+          "terminal": "7aad6f",
+          "exitCode": 1,
+          "cause": "Sleep sibling exposed no sentinel environment; policy results22of23passed, never relabelled."
+        }
+      },
+      "publicSetup": {
+        "status": "SETUP_FAILED",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/setup-receipt.json",
+          "sha256": "58af419cf3eccf83241e0d2a7dffffbe26f020ee76b0948bd91988f3d1e78e36"
+        },
+        "rootTerminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/root-setup-terminal.json",
+          "sha256": "8e2cb2a511e3e63d9e9b5cae9505be6bd778d9fd6a3cbb42c7fcc7427ad7e787"
+        },
+        "cleanupConfirmed": true,
+        "codingRequests": 0,
+        "realKeyRead": false,
+        "runtimeBugAttributed": false,
+        "sourceBoundObservedIssue": "Reused TUI after explicit Gateway restart did not admit the next public command."
+      },
+      "nextEvaluatorRevision": {
+        "version": "V4",
+        "status": "TRANSPORT_FIX_IN_PROGRESS_NOT_QUALIFIED",
+        "pluginRuntimeOrArchiveChanged": false
+      },
+      "actualPaidArmsStarted": 0,
+      "matchedQualityOrOverheadResult": false
+    },
+    "actualModelArmsCompleted": 1,
+    "actualModelArmsGraded": 0,
+    "priorCredentialFreeSetupFailures": [
+      {
+        "operator": ".runtime-correction/validation/python-transfer-off-8wpus85p",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/setup-receipt.json",
+          "sha256": "58af419cf3eccf83241e0d2a7dffffbe26f020ee76b0948bd91988f3d1e78e36"
+        },
+        "terminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-8wpus85p/root-setup-terminal.json",
+          "sha256": "8e2cb2a511e3e63d9e9b5cae9505be6bd778d9fd6a3cbb42c7fcc7427ad7e787"
+        },
+        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
+        "codingTaskOutcome": false,
+        "pluginBugAttributed": false,
+        "cleanupConfirmed": true,
+        "codingRequests": 0,
+        "realKeyRead": false
+      },
+      {
+        "operator": ".runtime-correction/validation/python-transfer-off-rf6jnwx7",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/setup-receipt.json",
+          "sha256": "031fdf266e3722e9fc8d005206fb08fa84c58e30881daf033a0517f05b7392a0"
+        },
+        "terminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-rf6jnwx7/root-setup-terminal.json",
+          "sha256": "ae0c8bbff98f6fcd660a02378b9e45e6c8e78f55382699b85da5048c3a5ccfc0"
+        },
+        "classification": "CREDENTIAL_FREE_EVALUATOR_SETUP_FAILURE",
+        "codingTaskOutcome": false,
+        "pluginBugAttributed": false,
+        "cleanupConfirmed": true,
+        "codingRequests": 0,
+        "realKeyRead": false
+      }
+    ],
+    "publicTransferControllerV5": {
+      "status": "BOTH_ARMS_CLOSED_ON_INCOMPLETE_NO_QUALIFIED_MATCHED_COMPARISON",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v5-juk8wjr2/source-hold.json",
+        "sha256": "0bc9ec2f1990e8b4dc3951e10d5a9ac311a0c936beaad8572fe0c7952db65186"
+      },
+      "operatorDirectory": ".runtime-correction/validation/python-transfer-off-xksh23u8",
+      "setup": {
+        "status": "PUBLIC_SETUP_JOINED",
+        "receipt": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/setup-receipt.json",
+          "sha256": "a89ad233ce1a95823f68bcab53f35d13936ab80a6c8e79355cd13653c674acc2"
+        },
+        "rootTerminal": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-setup-terminal.json",
+          "sha256": "9d3372cda903b66c683a7881738953110c4147803599381f7b5ad1b7bca0d4e2"
+        },
+        "actualLaunch": "f5426f",
+        "actualSession": 88352,
+        "actualTerminal": "7ae788",
+        "exitCode": 0,
+        "exactInstalledRegularMembers": 276,
+        "projectEnabled": false,
+        "sessionRegistered": true,
+        "sessionRequestedEnabled": true,
+        "effectiveEnabled": false,
+        "strictOptionalFlagsAbsentOrFalse": 4,
+        "reviewRolesConfiguredPro": 7,
+        "codingModelRole": "Flash",
+        "correctionCaps": {
+          "session": 2,
+          "flow": 2
+        }
+      },
+      "live": {
+        "status": "PUBLIC_CODING_PATH_ENDED_REQUIRES_POSTCLOSURE_EVIDENCE",
+        "rootReportedLaunch": "3e160a",
+        "rootOwnedSession": 20892,
+        "technicalAdmission": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/root-live-admission.json",
+          "sha256": "26d2f913ebace489b0d25c70824d01b4c46c06b6eabdbfa1a97e796bafc4224b"
+        },
+        "firstFreshPublicCodingSendAcknowledged": true,
+        "firstRootObservedHttpStatus": 200,
+        "ordinaryApplyApprovalObserved": true,
+        "rootReportedApplyAdmissionSha256Prefix": "2e6cf009",
+        "hostSealedApproval": false,
+        "pluginPlanningReviewCredit": false,
+        "rootProposalReadyProviderSnapshot": {
+          "completedFlash": 16,
+          "completedPro": 0,
+          "scope": "ROOT_REPORTED_PROPOSAL_READY_SNAPSHOT_NOT_CURRENT_COUNTS"
+        },
+        "actualFinalGrade": null,
+        "completedArm": true,
+        "codingPathClosed": true,
+        "wholeArmQualified": false,
+        "rootReportedClosure": {
+          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
+          "actualLaunch": "3e160a",
+          "actualSession": 20892,
+          "actualTerminal": "3c76d5",
+          "exitCode": 0,
+          "rootTerminalSha256Prefix": "93233135",
+          "liveReceiptSha256Prefix": "3c2c5d97",
+          "closureSha256Prefix": "8181c946",
+          "frozenInventorySha256Prefix": "d85014b7",
+          "frozenFiles": 24,
+          "doubleReadStable": true,
+          "actualFreeze": "5cac6d",
+          "freezeExitCode": 0,
+          "officialSteps": {
+            "done": 17,
+            "total": 17,
+            "strictValidationPassed": true
+          },
+          "approvedPlanChange": "CHECKBOX_PROGRESS_ONLY",
+          "knownOwnedCleanupConfirmed": true,
+          "codeInspectedByReporter": false,
+          "privateGradePerformed": false,
+          "pluginSuccessCredit": false
+        },
+        "rootReportedEffort": {
+          "path": ".runtime-correction/validation/python-transfer-off-xksh23u8/effort.json",
+          "sha256": "9629971f35c4c5c2a9a5be738280d400678a6d1cea8c8ce7a9790fb32582ac04",
+          "actualMetadataRead": "11daeb",
+          "exitCode": 0,
+          "originalEpochToFinalReceiptElapsedMs": 200494,
+          "includesOrdinaryApprovalWaitingAndCleanup": true,
+          "excludesCredentialFreePreparationAndPostclosureGrading": true,
+          "completedFlashRequests": 29,
+          "completedProRequests": 0,
+          "completedHttp200Requests": 29,
+          "errors": 0,
+          "tokenOrCostClaim": false,
+          "causalCorrectionOverheadClaim": false,
+          "scope": "Root-reported final observed OFF effort only; no comparative inference."
+        }
+      },
+      "on": {
+        "status": "INCOMPLETE_UNQUALIFIED_SESSION_BINDING_BEFORE_APPLY",
+        "rootReportedOperatorSuffix": "vvuqhyg5",
+        "sameSourceV5AndArchive": true,
+        "credentialFreePreflight": {
+          "passed": 23,
+          "checks": 23,
+          "rootReportedReceiptSha256Prefix": "5c35a4c1"
+        },
+        "rootOwnedSetupLaunch": "e3c9a5",
+        "rootOwnedSetupSession": 62888,
+        "actualPaidArmsStarted": 1,
+        "currentArchiveOnReviewQualified": false,
+        "finalGrade": null,
+        "rootOwnedSetupTerminal": "fbb594",
+        "setupExitCode": 0,
+        "rootReportedSetupReceiptSha256Prefix": "9e0ee3c",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "compiledProjectionEqualToOffExceptProjectSwitch": true,
+        "projectEnabled": true,
+        "rootOwnedPaidLaunch": "b54b9c",
+        "rootOwnedPaidSession": 61049,
+        "rootReportedLiveAdmissionSha256Prefix": "c381968a",
+        "freshPublicInitialProjectNotOffOutput": true,
+        "rootOwnedPaidTerminal": "1d06c8",
+        "paidExitCode": 1,
+        "actualPaidArmClosed": true,
+        "completedArm": false,
+        "wholeArmQualified": false,
+        "rootReportedClosure": {
+          "authority": "ROOT_POSTCLOSURE_METADATA_NOTIFICATION_NOT_REPORTER_ACTOR_AUDIT",
+          "rootReceiptSha256Prefix": "28b50921",
+          "closureSha256Prefix": "16cef57d",
+          "status": "INCOMPLETE",
+          "completedFlashRequests": 18,
+          "completedProRequests": 0,
+          "completedHttp200Requests": 18,
+          "stagesCompleted": 0,
+          "applyReached": false,
+          "runtimeCorrectorReviewPerformed": false,
+          "knownOwnedCleanupConfirmed": true,
+          "acceptedSessionAndActualActiveSessionDiffer": true,
+          "pluginReasonCode": "RC_SESSION_PROJECT_UNBOUND",
+          "publicDispatcherRecords": 0,
+          "observerReasonCode": "PUBLIC_RPC_ORIGINAL_DEADLINE",
+          "observerBoundMs": 60000,
+          "originalArmBudgetExpired": false,
+          "cause": "CONFIRMED_STOCK_DEFAULT_DAILY_SESSION_RESET",
+          "dailyResetCauseConfirmed": true,
+          "privateGradePerformed": false,
+          "qualifiedOnTreatment": false,
+          "matchedComparisonCompleted": false,
+          "repairBenefitClaimed": false,
+          "rootTerminalSha256Prefix": "215f07d9",
+          "actualFreeze": "b32e91",
+          "freezeExitCode": 0,
+          "originalEpochToFinalReceiptElapsedMs": 66682,
+          "protectedInitialInputFilesUnchanged": 4,
+          "sessionEnablementAndBindingRequiredAfterHostSessionReset": true,
+          "authorizationMigratedToNewSession": false,
+          "confirmedDiagnosis": {
+            "path": ".runtime-correction/validation/python-transfer-session-reset-audit-ydp_6h14/diagnosis.json",
+            "sha256": "468ed2e1d7d1272194212a0ea03330e3a7a3af9c2bdf25050cffbe5404ff35b3",
+            "sourceOnlyStockPolicyReplay": "0f2578",
+            "replayExitCode": 0,
+            "retroactiveOnQualification": false
+          }
+        }
+      },
+      "scope": "Live phase is root-reported metadata only. No actor/model/provider body, key, oracle or grade was read by this report updater; no quality, overhead or formal-pair benefit is claimed."
+    },
+    "executionPreparationScope": "Both V6-final arms closed beforeApply. OFF heldU from host terminal rule. ON originalcleanOK and actual Proplanning traffic, then native observer FileExistsError after unsupported administrative bootstrap left required ledger absent. Absence is not zero. No model/provider/requirements failure, grade, repair or clean-pair benefit inferred. No more paid reruns before source fix and actual plugin-enabled credentialfree wholeworkflow control.",
+    "actualModelArmsClosed": 4,
+    "completionCountingScope": "PAID_PUBLIC_CODING_PATH_ENDED_ONLY_NOT_FUNCTIONAL_OR_WHOLE_WORKFLOW_QUALIFICATION",
+    "qualifiedMatchedComparisonCompleted": false,
+    "runtimeBenefitClaimed": false,
+    "nextEvaluatorLifecycleRevision": {
+      "version": "V6-final",
+      "status": "BOTH_ARMS_CLOSED_EXTERNAL_BOOTSTRAP_AND_OBSERVER_FIX_REQUIRED",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
+        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
+      },
+      "rootReportedOwnerPureControlsPassed": 97,
+      "bothFreshArmsRequired": true,
+      "priorV5OffCannotBeReused": true,
+      "stockResetMode": "idle",
+      "stockResetIdleMinutes": 120,
+      "actualHistorySidMismatchFailsPromptly": true,
+      "authorizationMigrationAllowed": false,
+      "pluginOrTaskOrModelsOrBudgetChanged": false,
+      "rootReportedSourcePeer": {
+        "status": "CLEAR",
+        "receiptSha256Prefix": "5913f560",
+        "all93SourcePinsStable": true,
+        "authority": "ROOT_METADATA_NOTIFICATION_NOT_REPORTER_SOURCE_PEER"
+      },
+      "credentialFreePreparation": {
+        "freshOffProfile": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
+        "preflightPassed": 23,
+        "preflightChecks": 23,
+        "rootReportedPreflightTerminal": "fceaa8",
+        "preflightExitCode": 0,
+        "rootReportedPreflightReceiptSha256Prefix": "a9c5f8f",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "rootOwnedSetupLaunch": "97839a",
+        "rootOwnedSetupSession": 36652,
+        "newPaidOffArmsStarted": 1
+      }
+    },
+    "allTransferAttemptCountingScope": "Two closed V5 attempts plus both closed V6-final arms; none supplies a clean completed matched comparison.",
+    "currentMatchedPair": {
+      "controllerVersion": "V6-final",
+      "status": "BOTH_CLOSED_NO_APPLY_NO_QUALIFIED_MATCHED_COMPARISON",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-v6-final-0hav3v9p/source-hold.json",
+        "sha256": "80ae031c88106a21c1a87eff8a9dfddf31cb4b4f431099141c8d7c7f4de9651b"
+      },
+      "sameCurrentArchiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
+      "bothFreshArmsRequired": true,
+      "priorV5OffReused": false,
+      "requiredStockSessionReset": {
+        "mode": "idle",
+        "idleMinutes": 120
+      },
+      "actualPaidArmsStarted": 2,
+      "actualPaidArmsClosed": 2,
+      "actualPaidArmsGraded": 0,
+      "off": {
+        "operatorDirectory": ".runtime-correction/validation/python-transfer-off-sox0ue6n",
+        "status": "INCOMPLETE_OBSERVER_UNVERIFIED_PLANNING_HANDOFF",
+        "rootOwnedLaunch": "b2db25",
+        "rootOwnedSession": 62545,
+        "rootReportedAdmissionSha256Prefix": "b6b05d39",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "rootReportedSetupEvidenceSha256Prefixes": [
+          "c874b424",
+          "668371ab"
+        ],
+        "stockIdleReset120MinutesActuallyReadBack": true,
+        "firstFreshPublicCodingSendAcknowledged": true,
+        "firstActualFlashHttp200Observed": true,
+        "rootReportedProviderSnapshot": {
+          "actualMetadataTerminal": "d4ee11",
+          "exitCode": 0,
+          "completedFlash": 10,
+          "completedPro": 0,
+          "scope": "HISTORICAL_FIRST_CONFIRMED_SNAPSHOT_SUPERSEDED_BY_ROOT_REPORTED_TERMINAL_COUNTS"
+        },
+        "proposalReadyObservedAtSnapshot": false,
+        "closure": null,
+        "grade": null,
+        "rootOwnedTerminal": "5ac70b",
+        "exitCode": 1,
+        "rootReportedReceiptSha256Prefix": "eb0d0672",
+        "completedFlashRequests": 17,
+        "completedProRequests": 0,
+        "completedHttp200Requests": 17,
+        "stagesCompleted": 0,
+        "applyReached": false,
+        "sessionBindingStayedCurrent": true,
+        "hostSessionResetObserved": false,
+        "commonObserverReasonCode": "WAIT_PROVIDER_OR_HOST_ERROR",
+        "actualAgentWaitError": "Exec failed",
+        "providerCauseClaimed": false,
+        "semanticCodeQualityFailureClaimed": false,
+        "knownOwnedCleanupConfirmed": true,
+        "finalTypedFailureAndFreezePending": false,
+        "retryOffToObtainPass": false,
+        "observerOrBudgetRelaxed": false,
+        "rootReportedTerminalSha256Prefix": "83246502",
+        "rootReportedClosureSha256Prefix": "067475df",
+        "rootReportedFreezeSha256Prefix": "38fb06ff",
+        "frozenFiles": 24,
+        "actualFreezeTerminal": "22b143",
+        "freezeExitCode": 0,
+        "allFourProtectedInitialInputsUnchanged": true,
+        "originalEpochToFinalReceiptElapsedMs": 71410,
+        "typedPublicFinalProjectionSha256Prefix": "4515d2b0",
+        "actualAgentWaitErrorScope": "Gateway top-level error retains earlier delivered Exec warning; not proof model/provider aborted.",
+        "modelNormalStopObservedInTypedPublicProjection": true,
+        "proposalCompletionClaim": "MODEL_PUBLIC_TEXT_ONLY_NOT_ROOT_VALIDATED",
+        "publicTextReportedUncheckedTasks": 14,
+        "rootOfficialProposalValidationPerformed": false,
+        "rootApplyApprovalPerformed": false,
+        "currentHeldCompletionRuleQualification": "UNVERIFIED",
+        "commandWarningAloneProvesOffTrack": false,
+        "retroactiveObserverSuccessGranted": false,
+        "sourceClarification": {
+          "path": ".runtime-correction/validation/python-transfer-agent-wait-clarification-9_6k_q30/public-final-addendum.json",
+          "sha256": "ba0cd71a9a8d1076c0d6022dc0545df7b43e4da93b45a07c2a019a5ceaa7bc4e",
+          "normalMainModelStopPrecededGatewayErrorMs": 68,
+          "proposalQualityOrOfficialValidationCredit": false,
+          "currentHeldObserverUnverifiedUnchanged": true
+        }
+      },
+      "on": {
+        "status": "INCOMPLETE_NATIVE_OBSERVER_EXCEPTION_AFTER_ORIGINAL_CLEAN_OK",
+        "actualPaidArmsStarted": 1,
+        "grade": null,
+        "rootReportedFreshProfile": "g9aq8kp0",
+        "credentialFreePreflight": {
+          "passed": 23,
+          "checks": 23,
+          "rootReportedReceiptSha256Prefix": "74a64c00"
+        },
+        "rootOwnedSetupLaunch": "1c4e0e",
+        "rootOwnedSetupSession": 28767,
+        "operatorDirectory": ".runtime-correction/validation/python-transfer-on-g9aq8kp0",
+        "rootOwnedLaunch": "8a5a24",
+        "rootOwnedSession": 49951,
+        "rootReportedAdmissionSha256Prefix": "22cdc505",
+        "publicSetupStatus": "PUBLIC_SETUP_JOINED",
+        "rootOwnedSetupTerminal": "9325f5",
+        "setupExitCode": 0,
+        "rootReportedSetupEvidenceSha256Prefixes": [
+          "980d0c7c",
+          "a9a0d24a"
+        ],
+        "actualCurrentSessionAndProjectAndKeyAndAgentJoined": true,
+        "actualFreshSendUuidAndPublicDispatchRunScopeVersionJoined": true,
+        "effectiveEnabled": true,
+        "hostSessionResetObserved": false,
+        "commonOriginalObserverStarted": true,
+        "actualBoundOnProTrafficObserved": true,
+        "finalReviewOrSemanticAccuracyQualified": false,
+        "boundOnTreatmentStarted": true,
+        "currentArchiveFinalOnReviewQualified": false,
+        "offCodeOrPrivateGraderFeedbackProvided": false,
+        "closure": null,
+        "publicBindingReadown": {
+          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-public-binding-readown.json",
+          "sha256": "a4a9a9658445083b80bb547a5b786c42a95c310be0a4e4c4c888e8b95c3a8ffe",
+          "actualMetadataTerminal": "fabea4",
+          "exitCode": 0
+        },
+        "rootReportedProviderSnapshot": {
+          "actualMetadataTerminal": "edb9e1",
+          "exitCode": 0,
+          "completedFlash": 15,
+          "completedPro": 1,
+          "completedHttp200": 16,
+          "errors": 0,
+          "proposalReadyObserved": false,
+          "closureObserved": false,
+          "scope": "HISTORICAL_FIRST_BOUND_TRAFFIC_SNAPSHOT_SUPERSEDED_BY_FINAL_ROOT_REPORTED_COUNTS"
+        },
+        "rootOwnedTerminal": "8e51a8",
+        "exitCode": 1,
+        "rootReportedReceiptSha256Prefix": "3630f5e6",
+        "rootReportedClosureSha256Prefix": "db96fbe3",
+        "rootReportedFreezeSha256Prefix": "5096e5b3",
+        "frozenFiles": 24,
+        "rootReportedFreezeActualTools": [
+          "51bc4b",
+          "f240d4"
+        ],
+        "allFourProtectedInitialInputsUnchanged": true,
+        "completedFlashRequests": 18,
+        "completedProRequests": 21,
+        "completedHttp200Requests": 39,
+        "providerRequestErrors": 0,
+        "rootReportedElapsedMs": 263755,
+        "stagesCompleted": 0,
+        "applyReached": false,
+        "knownOwnedCleanupConfirmed": true,
+        "currentCommonOriginalCompletionQualification": "CLEAN_OK",
+        "wholeWorkflowCompletionQualified": false,
+        "nativeObserverReasonCode": "PRIVATE_DIAGNOSTIC_REQUIRED",
+        "externalEvaluatorExceptionType": "FileExistsError",
+        "nativeBudgetLedgerStatus": "ABSENT",
+        "nativeAdmissionOrBusinessStartCount": null,
+        "absentLedgerInterpretedAsZero": false,
+        "sourceCause": "Unsupported administrative bootstrap omitted genuine SDK session_start; native observer retry then reused exclusive output address.",
+        "rootReportedSourceCauseSha256Prefix": "55c51deb",
+        "rootReportedScopeTokens": [
+          "IDLE",
+          "SKIPPED",
+          "STOP_DOCUMENT_ONLY_CHANGES"
+        ],
+        "modelProviderOrRequirementsFailureClaimed": false,
+        "finalTypedFailureAndFreezePending": false,
+        "rootTerminal": {
+          "path": ".runtime-correction/validation/python-transfer-on-g9aq8kp0/root-live-terminal.json",
+          "sha256": "b673de5151b20ddfdb2b2a161bdda651db2fe265e78fb18515ce525ffaa9ba16",
+          "actualMetadataTerminal": "d4189f",
+          "exitCode": 0
+        }
+      },
+      "qualifiedMatchedComparisonCompleted": false,
+      "modelBenefitClaimed": false,
+      "authority": "ROOT_METADATA_NOTIFICATIONS_ONLY_NO_REPORTER_ACTOR_AUDIT",
+      "cleanPairClaimed": false,
+      "currentEvidenceRole": "PROTOCOL_INTEGRATION_DEVELOPMENT_WALKTHROUGH_NOT_INDEPENDENT_HELD_OUT_QUALITY"
+    },
+    "nextPaidPairTechnicalPrerequisites": {
+      "newPaidRunsAllowedByCurrentTechnicalState": false,
+      "evaluatorSourceFixRequired": true,
+      "actualPluginEnabledCredentialFreeWholeProposalApplyControlRequired": true,
+      "standingUserPaidAuthorizationPersists": true,
+      "runtimeOrArchiveChangeAssumed": false,
+      "startupOnlyProofQualified": true,
+      "wholePluginEnabledCredentialFreeWorkflowStatus": "PENDING_NOT_QUALIFIED"
+    },
+    "initialPreparationRole": "HELD_OUT_FROM_PRODUCT_FIX_DEVELOPMENT_OUTSIDE_13_BENCHMARK",
+    "independentHeldOutQualityEvidence": false,
+    "caseNowUsedForProtocolDebugging": true,
+    "publicBootstrapStartupOnly": {
+      "status": "STARTUP_ONLY_QUALIFIED_BY_SEPARATE_CLOSED_READBACK_FULL_WORKFLOW_PENDING",
+      "readback": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/closed-readback.json",
+        "sha256": "da90ea3af175bedaad0442523b150f1fb5c99eddea2ce59089913b47de1bf1eb"
+      },
+      "verification": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/verification.json",
+        "sha256": "62ad6f3aa8aa734abf921878b037c7b1d42434ce7ccf0c6b9b23ffa1ee961864"
+      },
+      "originalFailedProbe": {
+        "path": ".runtime-correction/validation/public-bootstrap-ledger-probe-k_qrqkm5/receipt.json",
+        "sha256": "2a2c109a176e14d3e9f5a91abfd8db6d509665fb33142dc45c53f513d8a1e92f",
+        "actualLaunch": "baccd9",
+        "actualSession": 81240,
+        "actualTerminal": "7b2ede",
+        "exitCode": 1,
+        "failure": "Draft numeric schema assertion; actual producer schema was the supported string v1.",
+        "originalFailedStatusRetained": true
+      },
+      "actualSeparateClosedReadbackTerminal": "ff0bcc",
+      "separateReadbackExitCode": 0,
+      "firstPublicUnallocatedKeyMessageTriggeredGenuineSdkSessionStart": true,
+      "ledgerInitializedBeforeAdministrativeSetup": true,
+      "used": 0,
+      "admissions": 0,
+      "flows": 0,
+      "stops": 0,
+      "ledgerPresentForThisStartupProofOnly": true,
+      "priorMissingLedgerReclassifiedAsZero": false,
+      "fakeLocalSseReplies": 1,
+      "upstreamRequests": 0,
+      "realModelCalls": 0,
+      "exactInstalledRegularMembers": 276,
+      "privateSdkIdentityOrLedgerInjected": false,
+      "knownOwnedCleanupConfirmed": true,
+      "fullPluginEnabledProposalApplyControlQualified": false,
+      "qualityNativeRepairOrGeneralBenefitClaimed": false
+    },
+    "prospectiveCommonTerminalObserverV3": {
+      "status": "SOURCE_PURE_PEER_CLEAR_NOT_USED_BY_CLOSED_PAID_ARMS",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/common-public-terminal-v3-ioc3886f/source-hold.json",
+        "sha256": "e6221a92dbbc8435a86abb65b06bf70c87c0e62f4fb144c096389429104a437d"
+      },
+      "peer": {
+        "path": ".runtime-correction/validation/common-terminal-v3-peer-c9_6slrg/peer-review.json",
+        "sha256": "14b83d1b3b22d6420506776cccd7df475435fbf30ead060055b85e3b3363541b"
+      },
+      "ownerPureControls": 70,
+      "independentPureControls": 70,
+      "errorObservedDoesNotMeanCleanOrPhaseApproval": true,
+      "historicalTrialsReclassified": false,
+      "shippedPluginIncludesPrivateHelper": false,
+      "actualWholeWorkflowUseQualified": false
+    },
+    "frozenOriginalPreparationHoldsAndClosedReceiptsUnchanged": true,
+    "fullPublicPluginWorkflowLocalControls": {
+      "status": "PEER_CLEAR_TECHNICAL_FULL_PUBLIC_LOCAL_WORKFLOW_CLEAN_AND_WARNING",
+      "attempts": [
+        {
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-_h7wekon/source-hold.json",
+            "sha256": "ea8489c33cae8b198a15a556ab197b12c894f65695ea231ca13f2723939e71b3"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-_h7wekon/runs/clean-1/receipt.json",
+            "sha256": "ff02f0b8c8465e4cb18f4f48e69cf5e2de3c52d7f9f478c86ffd4364cf4b0e49"
+          },
+          "status": "FAILED",
+          "stages": [],
+          "realUpstreamRequests": 0,
+          "realKeyRead": false,
+          "knownCleanupConfirmed": true,
+          "wholeWorkflowQualified": false
+        },
+        {
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v2-l4grqxjw/source-hold.json",
+            "sha256": "d227cde06227222e3367b238d40957cf4d60cb2ae49656dc6a184b655e1f2a3e"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v2-l4grqxjw/runs/clean-1/receipt.json",
+            "sha256": "79fcf6173407e85a73ca364cdfec13a630e54c288c0f078313e0ebc2634055e2"
+          },
+          "status": "FAILED",
+          "stages": [
+            {
+              "stage": "proposal",
+              "originalTerminalStatus": "ok",
+              "terminalClean": true,
+              "nativeReviewStatus": "SKIPPED",
+              "nativeReason": "STOP_DOCUMENT_ONLY_CHANGES"
+            }
+          ],
+          "realUpstreamRequests": 0,
+          "realKeyRead": false,
+          "knownCleanupConfirmed": true,
+          "wholeWorkflowQualified": false
+        },
+        {
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v3-i2y8sqb9/source-hold.json",
+            "sha256": "3f7deae25fcf712426bc2125514fd9d5b59580ad6ca9971aff2bbe280e661934"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v3-i2y8sqb9/runs/clean-1/receipt.json",
+            "sha256": "64cfd94d1767236e63021623608c6934980987355bbd7244c5925bc5cc370a94"
+          },
+          "status": "FAILED",
+          "stages": [
+            {
+              "stage": "proposal",
+              "originalTerminalStatus": "ok",
+              "terminalClean": true,
+              "nativeReviewStatus": "SKIPPED",
+              "nativeReason": "STOP_DOCUMENT_ONLY_CHANGES"
+            },
+            {
+              "stage": "apply",
+              "originalTerminalStatus": "ok",
+              "terminalClean": true,
+              "nativeReviewStatus": "UNVERIFIED",
+              "nativeReason": "REVIEWER_RUN_FAILED"
+            }
+          ],
+          "realUpstreamRequests": 0,
+          "realKeyRead": false,
+          "knownCleanupConfirmed": true,
+          "wholeWorkflowQualified": false
+        },
+        {
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/source-hold.json",
+            "sha256": "2fd8286802f8114682cb1585e651818d0353a567df1ec7f950c47f966a7039fc"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/runs/clean-1/receipt.json",
+            "sha256": "212982e2ffb6cc643d785f42dd54458c1a980b132843bc8524ddfee8604b7642"
+          },
+          "status": "FAILED",
+          "originalDriverMetric": "FINISH_REPLY_NOT_RETURNED_TO_NEXT_PROVIDER_REQUEST_AFTER_WORKER_COMPLETION",
+          "knownCleanupConfirmed": true,
+          "runtimeOrArchiveChanged": false,
+          "upstreamRequests": 0,
+          "realKeyRead": false
+        },
+        {
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/source-hold.json",
+            "sha256": "a45eaaee725eb834c3053f5158b9936a82879b2b6cbba56256c1a08da3580099"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/runs/warning-1/receipt.json",
+            "sha256": "af7bd0473329a01f44300b2f7fc964876ed377f472aabac69ec7d1ffad0d5850"
+          },
+          "status": "FAILED",
+          "originalDriverMetric": "FINISH_REPLY_NOT_RETURNED_TO_NEXT_PROVIDER_REQUEST_AFTER_WORKER_COMPLETION",
+          "knownCleanupConfirmed": true,
+          "runtimeOrArchiveChanged": false,
+          "upstreamRequests": 0,
+          "realKeyRead": false
+        }
+      ],
+      "currentSourceHold": {
+        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/source-hold.json",
+        "sha256": "2fd8286802f8114682cb1585e651818d0353a567df1ec7f950c47f966a7039fc"
+      },
+      "prospectiveCompositionHold": {
+        "path": ".runtime-correction/validation/public-controller-bootstrap-7kftypo1/source-hold-stage-labels.json",
+        "sha256": "3b77b0fb3d3a58f5db36228541512542c8aa213943acb04e30d3b0e81d1f44cd"
+      },
+      "knownHealthyFinalHostAcceptanceRequiredSeparately": true,
+      "warningScenarioRequiresActualErrorTerminalNotLabel": true,
+      "paidRunsRemainGatedUntilWholeControlPass": true,
+      "runtimeOrArchiveChanged": false,
+      "cleanClosedQualification": {
+        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/closed-clean-qualification.json",
+        "sha256": "f3205cdaf6a216eb319fda77b247879616de825c2cf1f42aae6a797c41718492"
+      },
+      "cleanVerification": {
+        "path": ".runtime-correction/validation/public-plugin-workflow-control-v4-z06tnoey/closed-clean-verification.json",
+        "sha256": "89a1ff2d328c643dc69125b46d4d607ab243781adb34e459a43cd94445b64a37"
+      },
+      "warningClosedQualification": {
+        "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/warning-1-closed-qualification.json",
+        "sha256": "9936f9a30e3ddab69ea623e47f5415ae1117488db80a1de74f9ed020b9eefab8"
+      },
+      "warningVerification": {
+        "path": ".runtime-correction/validation/public-plugin-workflow-control-v5-oxygvjus/warning-verification.json",
+        "sha256": "77bdd873322b7142b6587829b41f0b6ca706bbb99dfd1df0408d6f7b47c320c7"
+      },
+      "rootReadback": {
+        "path": ".runtime-correction/validation/report-generality-ci-followup-orgzo4bb/root-control-readback.json",
+        "sha256": "c07805169f873130032f4a8f674eed9a7149d905f3479c81aaad5e59c76f7ae5"
+      },
+      "nativeStartsPerControl": 0,
+      "selectedOriginalDutiesPerControl": 1,
+      "defaultDisposition": "NO_CONFIRMED_DEVIATION",
+      "explicitSavedPositiveJudgementCount": 0,
+      "committedSourceCitationCount": 0,
+      "exhaustiveCoverageProven": false,
+      "realModelAccuracyOrRepairBenefitClaim": false,
+      "originalDriverFailuresRetained": true,
+      "commonWarningTerminalStatus": "error",
+      "commonWarningTerminalClean": false,
+      "commonWarningOriginalTurnQualified": false,
+      "commonStageSettlementGranted": false,
+      "independentPeerStatus": "CLEAR_IN_DECLARED_TECHNICAL_SCOPE",
+      "newPaidControllerHold": {
+        "path": ".runtime-correction/validation/python-transfer-controller-public-v7-mcuh0rne/source-hold.json",
+        "sha256": "e211ec419407c06e0630c0b0aabad1dd8768ce1fbc9525bbc0352fdbe293a5f1"
+      },
+      "newPaidActorOrModelStarted": false,
+      "remainingGates": [
+        "Current-controller positive native-repair control including successor binding",
+        "Fresh per-arm source/policy/kernel/treatment technical admission"
+      ],
+      "independentPeer": {
+        "path": ".runtime-correction/validation/public-workflow-composition-peer-mb6ww545/peer-review-final.json",
+        "sha256": "72bf0c8a5f76ea606d2fab5df0b03a07b3eaaab4462b4154d7cb3e6c9423b63e"
+      },
+      "wholeLocalWorkflowPrerequisiteSatisfied": true,
+      "noRetroactivePromotionOfOldPaidArms": true,
+      "positiveNativeRepairControl": {
+        "status": "LOCAL_SCRIPTED_MECHANICAL_REPAIR_QUALIFIED_INDEPENDENT_PEER_CLEAR",
+        "archiveSha256": "8bd4e511034ca34efb15e1f560b9ccf0eb28ecc1563cce00050dc86ff8a679cf",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/public-native-repair-control-v4-60bf561_/source-hold.json",
+          "sha256": "48842e57f089937be16aff4b6190269bd1e1840f534c64e9ecfe4a326cc75968"
+        },
+        "closedQualification": {
+          "path": ".runtime-correction/validation/public-native-repair-control-v4-60bf561_/closed-positive-qualification.json",
+          "sha256": "7e595dbf338e0f606ecb925ada44817a7d69372d5130c4e7eb7b48d70a7770ea"
+        },
+        "independentPeer": {
+          "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/peer-review-v8-closed.json",
+          "sha256": "279f5fa9ca4ac40a70670dc44acb4992cd2d5d996361b8062b2c945eb7266f49"
+        },
+        "actualLaunch": "c1730f",
+        "actualTerminal": "f9608b",
+        "actualExitCode": 0,
+        "recordedNativeStarts": 1,
+        "upstreamRealModelRequests": 0,
+        "keyReads": 0,
+        "claims": {
+          "mechanicalRepair": true,
+          "realModelJudgment": false,
+          "generalQualityBenefit": false,
+          "formalPairCredit": false,
+          "exhaustiveRequirements": false
+        },
+        "previousFailedObserverControl": {
+          "status": "FAILED_EXTERNAL_ORIGINAL_BINDING_RACE_NO_MECHANICAL_QUALIFICATION",
+          "sourceHold": {
+            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/source-hold.json",
+            "sha256": "77e1eb991264293d1fb98a1e02fab29bac530d65674f7a76f9b41f0ded936bed"
+          },
+          "sourcePeer": {
+            "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/peer-review-positive-v3.json",
+            "sha256": "2720508b53ae44a3c48c7e43bcec5a17f53c1c8ff30bf0a8dc1de3c0860cf2a3"
+          },
+          "receipt": {
+            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/runs/repair-1/receipt.json",
+            "sha256": "abbf0b96d244bf6983c9a0ab9ed1871e8807cb03c8e904e1ed1ecf226473a6af"
+          },
+          "actualCause": {
+            "path": ".runtime-correction/validation/public-native-repair-control-v3-ckyybkgi/actual-binding-race-cause.json",
+            "sha256": "eac55ab4885f27a257c823a8c71cea6e53412d7aaea3e83be9a8da3ea044776b"
+          },
+          "actualLaunch": "6e7571",
+          "actualSession": 98161,
+          "actualTerminal": "32d4be",
+          "actualExitCode": 1,
+          "originalBindingWindowMs": 60000,
+          "controlWallMs": 900000,
+          "armBudgetExpired": false,
+          "actualRecordedNativeStarts": 1,
+          "C1IndependentCheckExit": 1,
+          "C2IndependentCheckExit": 0,
+          "preCleanupSnapshotDiagnosticAuthority": {
+            "admission": false,
+            "settlement": false
+          },
+          "applyCommonOriginalTerminalReceiptExists": false,
+          "routeQualified": false,
+          "mechanicalRepairCreditGranted": false,
+          "noPaidOrSemanticBenefitClaim": true,
+          "nextObserver": "SEPARATE_VERSION_REQUIRES_REVIEW_AND_FRESH_POSITIVE_CONTROL",
+          "independentActualCausePeer": {
+            "path": ".runtime-correction/validation/native-repair-control-peer-2ao_66aw/actual-v3-cause-peer.json",
+            "sha256": "75f1f6554f4cd074b38391a5170326af8162c282fba5f03e6887c5366568f93c"
+          }
+        }
+      }
+    },
+    "nextV7OffPreparation": {
+      "operatorSuffix": "8b8teo52",
+      "state": "CREDENTIAL_FREE_PREFLIGHT_PASSED_SETUP_NOT_ADMITTED",
+      "checks": 23,
+      "passed": 23,
+      "receipt": ".runtime-correction/validation/python-transfer-off-8b8teo52/preflight/attempt2/receipt.json",
+      "receiptSha256": "34a32d1eed65ee40c4cca1b27737d01b941e8251cc02dfdd42e318c57e5fda43",
+      "actualLaunch": "c414ab",
+      "actualSession": 79516,
+      "actualTerminal": "5bf11b",
+      "actualExitCode": 0,
+      "paidModelOrKeyRead": false
+    }
+  },
+  "reportPreviousPublishedQa": {
+    "status": "PASS",
+    "htmlSha256": "538d8b412873f554a24fd31cdf9e28684235e16e961f3eed13f90ab9ac6992cb",
+    "main": {
+      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/receipt.json",
+      "sha256": "58836c31bcfae8076a872e5644c25fedd64227a779243147a93fa5f4a0732098"
+    },
+    "table": {
+      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/four-arm-table-receipt.json",
+      "sha256": "8b5a250084ba22fbdbbb5cdda996d8a925d93c1f0196a48b0ee2a3566c33d945"
+    },
+    "mainActual": "94e60a/session29720→737f0c/0",
+    "tableActual": "84047e/session47535→c42f8c/0",
+    "views": 4,
+    "languages": 2,
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "sections": 6,
+    "collapsedHistoryGroups": 3,
+    "internalLinks": 7,
+    "sameFileLanguageToggle": true,
+    "visibleDatesOrHashes": false,
+    "humanizerFileMode": true,
+    "visualReadown": "Englishdesktop currentpackage paragraph andSimplifiedChinesemobile comparison inspected; finalchange only splits same package explanation into two paragraphs, final4viewDOM/capturechecks pass.",
+    "scope": "Newverifiedinstallable source393files/4867PASS33SKIP/artifact17/stock277byteequal; newremoteCI/modelvalidationpending. Original8edcomparison3frozen/fourthApplyrunning, firstONU andscope/overheadlimitsretained, noindependentcodegradeorbenefitclaim."
   }
 }
