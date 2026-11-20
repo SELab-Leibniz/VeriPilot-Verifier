@@ -190,3 +190,30 @@ test('claim bounds, unavailable outcome fields and malformed host fact lists fai
   rejected(() => validateProcessClaims({ claims: [claim(fact)], citations: citations([{ ...fact, requiredEntryIndices: [1, 0] }]) }));
   rejected(() => validateProcessClaims({ claims: [claim(fact)], citations: citations([{ ...claim(fact), validated: true }]) }));
 });
+
+test('nullable signal wire schema guards length inside the string branch and keeps literal null', () => {
+  const schema = PROCESS_CLAIMS_SCHEMA.items.properties.exitSignal;
+  assert.deepEqual(schema.type, ['string', 'null']);
+  const string = schema.anyOf.find(branch => branch.type === 'string');
+  assert.equal(string.minLength, 1); assert.equal(string.maxLength, 2048);
+  assert(schema.anyOf.some(branch => Object.hasOwn(branch, 'const') && branch.const === null));
+  assert.equal(Object.hasOwn(schema, 'minLength'), false);
+  assert.equal(Object.hasOwn(schema, 'maxLength'), false);
+  // A literal-null branch preserves null without coercing an invalid empty
+  // string into null in the stock public argument validator.
+  assert.equal(schema.anyOf.some(branch => branch.type === 'null'), false);
+});
+
+test('nullable native signals preserve exact facts while empty, long and nonstring claims reject', () => {
+  for (const exitSignal of [null, 'S', 'S'.repeat(2048)]) {
+    const facts = nativeProcessFacts([call('signal'), result('signal', {
+      status: exitSignal === null ? 'completed' : 'failed', exitCode: 0, exitSignal,
+    })]);
+    assert.equal(facts.length, 1); assert.strictEqual(facts[0].exitSignal, exitSignal);
+    const supplied = [claim(facts[0])];
+    assert.strictEqual(validateProcessClaims({ claims: supplied, citations: citations(facts) }), supplied);
+    for (const invalid of ['', 'S'.repeat(2049), false, 7, {}, []]) {
+      rejected(() => validateProcessClaims({ claims: [{ ...claim(facts[0]), exitSignal: invalid }], citations: citations(facts) }));
+    }
+  }
+});
