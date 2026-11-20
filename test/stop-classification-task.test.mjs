@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
 import { eligibleStopStages } from '../lib/runtime-v2/review-routing.mjs';
+import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
 test('production classification rejects completion disguised as waiting and accepts only unresolved prerequisites', async t => {
   const f = await stopProtocolFixture(t); f.input.request.classificationContract = 2;
@@ -147,4 +148,59 @@ test('classification keeps the original absolute deadline across tool work', asy
     await submit('submit_classification', { stopClassification: 'TASK_COMPLETE', summary: 'Expired classification.' });
   }), { code: 'REVIEWER_DEADLINE' });
   assert.equal(f.calls.length, 1);
+});
+
+test('public SDK preserves nullable scope text without bypassing prerequisite or evidence checks', {
+  skip: !process.env.RC_OPENCLAW_HOST_ROOT && 'requires the installed public OpenClaw SDK',
+}, async t => {
+  const sdk = await loadPublicToolArgumentsValidator();
+  for (const kind of ['classification', 'workspace']) await t.test(kind, async t => {
+    const f = await stopProtocolFixture(t, kind === 'workspace' ? 'findings' : 'classification');
+    f.input.request.classificationContract = 2;
+    if (kind === 'workspace') {
+      f.input.request.reviewScope = { kind: 'workspace-stop' };
+      delete f.input.request.fixedStopClassification;
+    }
+    const handle = await f.run(async ({ tools, readAll, read, submit }) => {
+      const names = kind === 'workspace' ? ['review_scope', 'review_checklist'] : ['submit_classification'];
+      const complete = { stopClassification: 'TASK_COMPLETE', summary: 'The requested scope is delivered.',
+        completionClaim: true, requiredUserInput: null, externalBlocker: null };
+      for (const name of names) {
+        const tool = tools.get(name), check = args => sdk.validateToolArguments(tool, { name, arguments: args });
+        const fields = kind === 'workspace'
+          ? [['requiredUserInput', 768], ['externalBlocker', 768]]
+          : [['requiredUserInput', 768], ['externalBlocker', 768], ['stage', 256]];
+        for (const [field, max] of fields) {
+          for (const value of [null, '', 'A bounded explanation.', 'x'.repeat(max)]) {
+            const before = { ...complete, [field]: value }, actual = check(before);
+            assert.deepEqual(actual[field], value, `${name}.${field} preserves null, empty and bounded text`);
+            assert.deepEqual(before[field], value, 'frontend does not mutate the original tool call');
+          }
+          for (const value of ['x'.repeat(max + 1), {}, []])
+            assert.throws(() => check({ ...complete, [field]: value }), /Validation failed for tool/);
+          for (const value of [7, false])
+            assert.equal(check({ ...complete, [field]: value })[field], String(value), 'stock scalar coercion is retained');
+        }
+      }
+      const scopeTool = tools.get(names[0]);
+      const accepted = sdk.validateToolArguments(scopeTool, { name: scopeTool.name, arguments: complete });
+      await assert.rejects(submit(names[0], accepted), /not fully read/, 'schema validity cannot replace required read receipts');
+      await readAll();
+      const waiting = { ...complete, stopClassification: 'WAITING_FOR_USER', completionClaim: false };
+      await assert.rejects(submit(names[0], sdk.validateToolArguments(scopeTool, { name: scopeTool.name, arguments: waiting })),
+        /Waiting requires/, 'null is not an unresolved necessary prerequisite');
+      await submit(names[0], accepted);
+      if (kind === 'workspace') {
+        const checklistTool = tools.get('review_checklist');
+        await submit('review_checklist', sdk.validateToolArguments(checklistTool, { name: checklistTool.name, arguments: complete }));
+        const current = await read(f.file);
+        await submit('submit_review', { taskId: 'M01:R1', verdict: 'PASS', reason: 'Checked the current synthetic document.',
+          citeIds: [current.details.citation.citeId] });
+        await submit('finish_stop_review', { summary: 'The current synthetic scope review is complete.' });
+      }
+    });
+    assert.equal(handle.result.stopClassification, 'TASK_COMPLETE');
+    assert.equal(f.calls.length, 1, 'schema compatibility adds no worker or continuation');
+    await handle.close();
+  });
 });
