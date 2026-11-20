@@ -18,6 +18,7 @@
     "finish_findings",
     "set_original_checklist",
     "review_production_origin",
+    "review_implementation_challenge",
     "review_scope",
     "review_checklist",
     "review_changes",
