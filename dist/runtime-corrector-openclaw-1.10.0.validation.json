@@ -90,16 +90,16 @@
     "knownCleanupConfirmed": true
   },
   "remoteCI": {
-    "currentUpdatedSource": "NATURAL_PUSH_7_OF_7_PASS",
-    "latestCompletedHead": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
+    "currentUpdatedSource": "LATEST_CODE_EQUIVALENT_REPORT_ONLY_PUSH_WINDOWS_FAILURES_UNDER_REPAIR",
+    "latestCompletedHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
     "latestCompletedReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-7678-feature-natural-ham6kdp_/terminal-receipt.json",
-      "sha256": "4249a3e76c69274efa0a6ea470c7f2d38385faac1b506f60c499447f4e8ad438"
+      "path": ".runtime-correction/validation/ci-fix/post-ed3-report-summary-dhr3wlut/terminal-receipt.json",
+      "sha256": "b072d66d5ff7943c6d56c6283df65adbf8add3e8bfb9c69365388aba16bd95f4"
     },
-    "latestCompletedResult": "7/7_PASS_ON_UPDATED396_FILE_SOURCE",
+    "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
     "rerunCancelDispatch": 0,
-    "currentPushHead": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
-    "currentRunId": 44737810772,
+    "currentPushHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
+    "currentRunId": 44741048662,
     "precedingCompletedCI": {
       "head": "0e564fb432215154763165ddb6a35c0870fc0736",
       "receipt": {
@@ -108,22 +108,49 @@
       },
       "result": "7/7_PASS_ON_EARLIER393_FILE_SOURCE"
     },
-    "updated396RemoteResultProven": true,
-    "windowsActualPartition": {
-      "shards": [
-        198,
-        198
+    "lastFullyPassingCodeEquivalentCI": {
+      "head": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-7678-feature-natural-ham6kdp_/terminal-receipt.json",
+        "sha256": "4249a3e76c69274efa0a6ea470c7f2d38385faac1b506f60c499447f4e8ad438"
+      },
+      "result": "7/7_PASS_ON_UPDATED396_FILE_SOURCE",
+      "windowsActualPartition": {
+        "shards": [
+          198,
+          198
+        ],
+        "disjointUnionFiles": 396,
+        "pass": 4916,
+        "skip": 45,
+        "fail": 0,
+        "cancelled": 0,
+        "timeouts": 0
+      }
+    },
+    "latestPushHealthy": false,
+    "unresolvedFailureLeaves": 5,
+    "failedTapTests": 6,
+    "failureLeafCases": 5,
+    "ciFixtureRepair": {
+      "status": "LOCALLY_VERIFIED_PENDING_FEATURE_CI",
+      "commit": "b4d0511",
+      "integration": {
+        "path": ".runtime-correction/validation/ed3-combined-ci-with-dependency-s7z2qqr7/root-integration.json",
+        "sha256": "25624b599955d2f0a1b5fa563db72d3876a121e99c36caa2f1d1963afc421005"
+      },
+      "casesEachNode": 40,
+      "nodes": [
+        "18",
+        "24"
       ],
-      "disjointUnionFiles": 396,
-      "pass": 4916,
-      "skip": 45,
-      "fail": 0,
-      "cancelled": 0,
-      "timeouts": 0
+      "productionChanges": 0,
+      "archiveUnchanged": true,
+      "earlierIsolatedAssemblyFailurePreserved": true
     }
   },
   "currentPackageRealModelEvaluation": {
-    "status": "APPLY_RUNNING_AFTER_ORDINARY_PUBLIC_PROPOSAL_APPROVAL_NO_FINAL_RESULT",
+    "status": "CLOSED_GRADED_METHOD_NOT_EXERCISED_STOP_UNVERIFIED",
     "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
     "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
     "benefitProven": false,
@@ -169,53 +196,154 @@
       "deepseek-flash": 23,
       "deepseek-v4-pro": 22
     },
-    "implementationChallengeMethodExercise": "NOT_YET_ESTABLISHED",
-    "noCausalBenefitClaim": true
+    "implementationChallengeMethodExercise": "OFFERED_TOOL_ZERO_CALLS_NOT_EXERCISED",
+    "noCausalBenefitClaim": true,
+    "applyOriginalObservation": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-common-original.json",
+      "sha256": "0e6adf912a77b7b5071ccea970817ac878b3ad99a0dd9f342b25f508e9f51bf1"
+    },
+    "applyOriginalTerminal": "ERROR_PRESERVED",
+    "recoveredPublicTestRun": {
+      "count": 50,
+      "exitCode": 0,
+      "evidenceScope": "Actual actor tool result, not independent grading"
+    },
+    "nativeSuccessfulAgentEndVerified": true,
+    "hostGatewayErrorRetained": true,
+    "recoveredWarningDiagnosis": {
+      "path": ".runtime-correction/validation/eec-exec-terminal-diagnosis-qywow3az/findings.json",
+      "sha256": "f38081348e4ede076d002b25eb551ddacacb7ffea46e5b4ff39b0085edb1f8f2"
+    },
+    "closure": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/closure.json",
+      "sha256": "8dc93fd730743477981fb0ec1c713955e5973e813966c4a7dba84ffe0a1d2d7c"
+    },
+    "freeze": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/final-freeze/freeze.json",
+      "sha256": "e878618b302cbb1de35d3683f0fa96b5a4a9149fce3d0f58915bdd9a3b648b09"
+    },
+    "closedAudit": {
+      "path": ".runtime-correction/validation/eec-method-closed-audit-rj0r6ilh/findings.json",
+      "sha256": "652d0ce44a1dcd3edd3cdd15daf999c10f4bcee256e99ea9684c32f8520e5452"
+    },
+    "independentEvaluation": {
+      "verification": {
+        "path": ".runtime-correction/validation/eec-method-on-postclosure-grade-2ww15dqk/closed-verification.json",
+        "sha256": "53a858c22017c168697ccd3dec3a12ddf09a7a441287e3037856f722933d06ac"
+      },
+      "backend": "Linux arm64 Python3.13 Docker on macOS",
+      "original37": {
+        "passed": 37,
+        "total": 37
+      },
+      "separateEmptyConfigPaths": {
+        "passed": 0,
+        "total": 2,
+        "includedInOriginal37": false
+      },
+      "separateLongZeroPort": {
+        "zeroCharacters": 5000,
+        "actual": "ValueError integer conversion digit limit",
+        "includedInOriginal37": false,
+        "expectedNormalizedValue": 0,
+        "matchesExpectedNormalizedZero": false
+      },
+      "authoredSuite": {
+        "tests": 50,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "unchangedWritableCopy": true
+      },
+      "nativeMacOSEquivalence": false,
+      "actorFeedback": false,
+      "matchedPairCredit": 0
+    },
+    "finalStop": "UNVERIFIED"
   },
   "latestCompletedDevelopmentRun": {
-    "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
-    "sourceCommit": "ab6484fd6d1a9595b7420f200782b0ff0fb120d8",
-    "archiveSha256": "fb88820fce2baf0f095115c1d2d12a7c9af8e41edc6f36f579a75cb210764015",
-    "closure": {
-      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/closure.json",
-      "sha256": "3a84fb8285a6b95f9855b63bfdcae0551c998a8e01d59c4232aaf9f83c5c14c5"
-    },
+    "status": "CLOSED_FROZEN_GRADED_UNPAIRED_ENGINEERING_ON",
+    "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
+    "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+    "operatorRoot": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536",
+    "controllerTerminal": "3c60d3/session63097->9f00cb/0",
     "liveReceipt": {
-      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/live-receipt.json",
-      "sha256": "fc0dd71dbe25e84dc54c4841b574b5e91b33922127af97d0162eb4a90a203a54"
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/live-receipt.json",
+      "sha256": "b3f99f5138b3dd1ad830d9b6ee1827bd917bca5e227c44b3cf9e9c5bb2e73e65"
     },
-    "operatorStopAtFixedCap": {
-      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/root-budget-stop.json",
-      "sha256": "f12746cd9c3a99e8dd902677d83625e6620370edc21eb0007020cdf8cb132a31"
+    "closure": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/closure.json",
+      "sha256": "8dc93fd730743477981fb0ec1c713955e5973e813966c4a7dba84ffe0a1d2d7c"
     },
-    "closedPeer": {
-      "path": ".runtime-correction/validation/method-on-closed-peer-s7d3nwxj/peer-review.json",
-      "sha256": "05311314375203e2299c27209933948b81982c16c637d4c310e47e462761748e"
+    "freeze": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/final-freeze/freeze.json",
+      "sha256": "e878618b302cbb1de35d3683f0fa96b5a4a9149fce3d0f58915bdd9a3b648b09"
     },
-    "archiveAddendum": {
-      "path": ".runtime-correction/validation/method-on-full-archive-addendum-dluzmy83/addendum.json",
-      "sha256": "c46e1fbc4f577813782944016530dcc9460a5e139589ff4a5fd08e66d346211b"
-    },
+    "frozenFiles": 24,
     "modelRequests": {
-      "deepseek-flash": 18,
-      "deepseek-v4-pro": 238
+      "deepseek-flash": 42,
+      "deepseek-v4-pro": 56
     },
     "maxRequests": 256,
+    "wallLimitMs": 3600000,
     "renewal": false,
-    "proposalHostTerminal": "error",
-    "stop": "UNVERIFIED_HOST_RUN_NOT_COMPLETED",
-    "applyStarted": false,
-    "nativeAdmissions": 0,
-    "freeze": {
-      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/final-freeze/freeze.json",
-      "sha256": "0e771496367181135c848afab9c1713703f3d873e0e9ec509537b44f77fab623"
+    "proposalTasks": 16,
+    "allTasksMarkedComplete": true,
+    "proposalHostTerminal": "OK",
+    "applyGatewayTerminal": "ERROR_RETAINED_RECOVERED_TOOL_WARNING",
+    "sameRunAgentEndSuccessVerified": true,
+    "finalStop": "UNVERIFIED",
+    "finalStopReason": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+    "nativeCorrections": 0,
+    "method": {
+      "catalogListed": true,
+      "actualSdkCatalogTools": 15,
+      "frame": 0,
+      "resolve": 0,
+      "inspect": 0,
+      "read": 0,
+      "state": "METHOD_NOT_EXERCISED",
+      "qualityCredit": false,
+      "closedAudit": {
+        "path": ".runtime-correction/validation/eec-method-closed-audit-rj0r6ilh/findings.json",
+        "sha256": "652d0ce44a1dcd3edd3cdd15daf999c10f4bcee256e99ea9684c32f8520e5452"
+      }
     },
-    "frozenFiles": 23,
-    "allThreeStarterFilesUnchanged": true,
-    "methodOpportunity": "IMPLEMENTATION_REVIEW_NOT_REACHED",
-    "workflowOrQualityCredit": false,
-    "gradingPerformed": false,
-    "doesNotEvaluateCurrentUpdatedPackage": true
+    "independentEvaluation": {
+      "verification": {
+        "path": ".runtime-correction/validation/eec-method-on-postclosure-grade-2ww15dqk/closed-verification.json",
+        "sha256": "53a858c22017c168697ccd3dec3a12ddf09a7a441287e3037856f722933d06ac"
+      },
+      "backend": "Linux arm64 Python3.13 Docker on macOS",
+      "original37": {
+        "passed": 37,
+        "total": 37
+      },
+      "separateEmptyConfigPaths": {
+        "passed": 0,
+        "total": 2,
+        "includedInOriginal37": false
+      },
+      "separateLongZeroPort": {
+        "zeroCharacters": 5000,
+        "actual": "ValueError integer conversion digit limit",
+        "includedInOriginal37": false,
+        "expectedNormalizedValue": 0,
+        "matchesExpectedNormalizedZero": false
+      },
+      "authoredSuite": {
+        "tests": 50,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "unchangedWritableCopy": true
+      },
+      "nativeMacOSEquivalence": false,
+      "actorFeedback": false,
+      "matchedPairCredit": 0
+    },
+    "semanticGainProven": false,
+    "cleanClosureScope": "Known controller child groups and observed PID births only; no universal detached-descendant claim."
   },
   "precedingCompletedDevelopmentRun": {
     "sourceCommit": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
@@ -426,16 +554,19 @@
       "eec8570b28cb9ad8a35196c899e1b45844a62925"
     ],
     "mainMerged": false,
-    "lastVerifiedRemoteHeadBeforeThisPublication": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
-    "reportOnlyFollowup": true,
-    "runtimeAndArtifactUnchangedFromValidatedHead": true
+    "lastVerifiedRemoteHeadBeforeThisPublication": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
+    "reportOnlyFollowup": false,
+    "runtimeAndArtifactUnchangedFromValidatedHead": true,
+    "testFixtureCommits": [
+      "b4d0511ecc2ba78d4f45c39918e736c6e5430b0d"
+    ]
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "8c24af6f47b88cd9706529f7d82f6b73d23c86bcba06bd71cafbd4382a8261ba",
+    "htmlSha256": "46c9ec539b83ab3d65fc5dc2bc29888d249eacef149346043e02ba43a757c9e8",
     "receipt": {
-      "path": ".runtime-correction/validation/report-current-ci-apply-final-qa-x6nw_7vb/receipt.json",
-      "sha256": "2eae5e11b10e748b52f12ac9965271159958be4908a7a3ffd57362b2d1f31854"
+      "path": ".runtime-correction/validation/report-focused-closed-final-qa-6ajm30cz/receipt.json",
+      "sha256": "8e035add9f01d663433d1944338e9c4ef6ad520b575c191d4a56c1670908fd3c"
     },
     "desktopAndMobileViews": 4,
     "languages": [
@@ -445,8 +576,8 @@
     "externalRequests": 0,
     "pageErrors": 0,
     "visualInspection": [
-      "English desktop CI and live-method sections",
-      "Simplified Chinese mobile CI and live-method sections"
+      "English desktop latest walkthrough",
+      "Simplified Chinese mobile latest walkthrough"
     ],
     "provenancePeerStatus": "CLEAR",
     "provenancePeer": {
@@ -463,6 +594,68 @@
       "path": ".runtime-correction/validation/report-396-ci-apply-peer-3ra5o6_i/peer-review.json",
       "sha256": "58f6f9bdd029d9adf8d53216dff81c34cd3de39a99ffe23f06830742a7c5134d",
       "scope": "Current CI and Apply-phase update, reviewed before this additive pointer; earlier historical and live-status snapshots retain their scoped peers"
+    },
+    "closedGradeAndCurrentCiPeer": {
+      "path": ".runtime-correction/validation/report-closed-eec-current-peer-bugaalzv/peer-review.json",
+      "sha256": "c330fd6fb58c0563b82afe5172a073b882571f45ba9b8ffdbf403365d1878cad",
+      "scope": "Exact closed-run/independent-grade/latest-CI report before this additive pointer; prior snapshots retain their scoped peers"
+    }
+  },
+  "precedingMethodPlanningAttempt": {
+    "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
+    "sourceCommit": "ab6484fd6d1a9595b7420f200782b0ff0fb120d8",
+    "archiveSha256": "fb88820fce2baf0f095115c1d2d12a7c9af8e41edc6f36f579a75cb210764015",
+    "closure": {
+      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/closure.json",
+      "sha256": "3a84fb8285a6b95f9855b63bfdcae0551c998a8e01d59c4232aaf9f83c5c14c5"
+    },
+    "liveReceipt": {
+      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/live-receipt.json",
+      "sha256": "fc0dd71dbe25e84dc54c4841b574b5e91b33922127af97d0162eb4a90a203a54"
+    },
+    "operatorStopAtFixedCap": {
+      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/root-budget-stop.json",
+      "sha256": "f12746cd9c3a99e8dd902677d83625e6620370edc21eb0007020cdf8cb132a31"
+    },
+    "closedPeer": {
+      "path": ".runtime-correction/validation/method-on-closed-peer-s7d3nwxj/peer-review.json",
+      "sha256": "05311314375203e2299c27209933948b81982c16c637d4c310e47e462761748e"
+    },
+    "archiveAddendum": {
+      "path": ".runtime-correction/validation/method-on-full-archive-addendum-dluzmy83/addendum.json",
+      "sha256": "c46e1fbc4f577813782944016530dcc9460a5e139589ff4a5fd08e66d346211b"
+    },
+    "modelRequests": {
+      "deepseek-flash": 18,
+      "deepseek-v4-pro": 238
+    },
+    "maxRequests": 256,
+    "renewal": false,
+    "proposalHostTerminal": "error",
+    "stop": "UNVERIFIED_HOST_RUN_NOT_COMPLETED",
+    "applyStarted": false,
+    "nativeAdmissions": 0,
+    "freeze": {
+      "path": ".runtime-correction/validation/public-method-on-ff388296a35c/final-freeze/freeze.json",
+      "sha256": "0e771496367181135c848afab9c1713703f3d873e0e9ec509537b44f77fab623"
+    },
+    "frozenFiles": 23,
+    "allThreeStarterFilesUnchanged": true,
+    "methodOpportunity": "IMPLEMENTATION_REVIEW_NOT_REACHED",
+    "workflowOrQualityCredit": false,
+    "gradingPerformed": false,
+    "doesNotEvaluateCurrentUpdatedPackage": true
+  },
+  "prospectiveExecutionEnvironmentFix": {
+    "status": "SOURCE_ONLY_NO_CURRENT_ACTOR_CHANGE",
+    "field": "tools.exec.pathPrepend",
+    "actualSdkVerification": {
+      "path": ".runtime-correction/validation/stock-exec-toolchain-proof-lll6qdj7/closed-verification.json",
+      "sha256": "79cd764fb5d7f2b5a449c0915a5b80e9ac724ebe0b36ab79e2dacb5f941803f2"
+    },
+    "controllerHold": {
+      "path": ".runtime-correction/validation/public-taskpack-toolchain-path-hrtphs1x/source-hold.json",
+      "sha256": "23ef8d5b171bba9328e89b8c8ef7ae05b598dd67dfa8ab6c748326cfb8e897e0"
     }
   }
 }
