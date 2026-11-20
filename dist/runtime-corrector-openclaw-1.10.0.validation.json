@@ -31,13 +31,13 @@
     "all209ModulesMatchedRootAtOriginalQualificationCapture": true,
     "originalRootComparisonSourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "currentRootDiffersFromPublishedArchive": true,
-    "currentRootSourceHead": "1a469504487f0aed3db20d988e492fb4d9017b78",
+    "currentRootSourceHead": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
     "currentRootLibraryChangesFromPublishedSource": [
       "lib/runtime-v2/known-original-obligations.mjs",
       "lib/runtime-v2/production-stop.mjs",
       "lib/runtime-v2/stop-workspace-review.mjs"
     ],
-    "currentRootHasUncommittedSourceSuccessor": true
+    "currentRootHasUncommittedSourceSuccessor": false
   },
   "generalPurposeChanges": [
     "Required Proposal obligations use host-issued stable identifiers. A valid current ID selects canonical host text while retaining exact current original reads, plan citations, every required identity and all coverage dispositions. Legacy exact-text rows remain supported.",
@@ -128,7 +128,7 @@
       "sha256": "be2be03e194752c7b153b4040cbefa6eb2f36585c5955788ef99d1e89af8200b"
     },
     "startingHealthyLabelWasWrong": true,
-    "semanticReviewGap": "Selection and complete currentfile reads did not produce a finding on the original R7 negativepath. Current e94 fixes interfaces; a separate general review-method candidate is being prepared, not adopted.",
+    "semanticReviewGap": "OriginalR7readmissretained. Currentpublished e94 fixesinterfaces. Genericrequired-pathmethod andknown-objectguidance are now committedRoot204dwithprivatepackage/stockqualified; fullCIrunning/modelnotstarted, benefitunproven.",
     "currentArchiveRunIsDevelopmentInterfaceValidationNotBenefitConfirmation": true,
     "latestObservedEarlyDocumentFeedback": "SupportedProspecification-examplefinding delivered and editedbyFlash; completecodequalitygainnotestablished."
   },
@@ -164,49 +164,16 @@
     },
     "supportedNode18DeltaChecks": "Historical at-build focused SDK/handler scope. Published1de source subsequently passed all7 natural jobs at0095; later6932 completed the full matrix with all3Node18 jobs passing and2Node24Windows jobs failing. Neither source result extends an untested successor.",
     "currentHeadCI": {
-      "status": "LAST_COMMITTED_REPORT_HEAD_NATURAL_CI_SEVEN_PASS_ROOT_SUCCESSOR_EXCLUDED",
-      "head": "1a469504487f0aed3db20d988e492fb4d9017b78",
-      "runtimeBytesMatch6932": true,
-      "sourceRuntime": "6932b1497d4ee2cc81ab768ddb03ac734eaf018a",
-      "runId": 44690095207,
-      "event": "push",
+      "runId": 44697944182,
+      "head": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
       "attempt": 1,
-      "officialConclusion": "success",
-      "testJobsPassed": 7,
-      "publication": "skipped",
-      "terminalReceipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-1a469-report-natural-8mqvvzsx/terminal-receipt.json",
-        "sha256": "5753546eefce1b789d61612c76301d3e86f573277c3746b2e353d76a4b0cac0f"
-      },
-      "fullRawSevenJobLogsRetained": true,
-      "actualFullTestFiles": 393,
-      "windowsShardFiles": [
-        197,
-        196
-      ],
-      "windowsDisjointUnion": 393,
-      "macos": {
-        "pass": 4873,
-        "skip": 33,
-        "fail": 0
-      },
-      "ubuntu": {
-        "pass": 4869,
-        "skip": 37,
-        "fail": 0
-      },
-      "windows": {
-        "pass": 4859,
-        "skip": 45,
-        "fail": 0
-      },
-      "unchangedSourcePassDoesNotValidateFixtureFix": true,
-      "rerunCancelDispatchActions": 0,
-      "newCombinedRootSourceQualifiedByThisRun": false,
-      "rootOfficialApiReadback": {
-        "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/prior-commit-ci-root-readback.json",
-        "sha256": "c81c7900014ea3dd1f0648d5f026ae593ca27d37bfdb04762908bb0348bb3fa7"
-      }
+      "status": "EXACT_SOURCE_NATURAL_CI_IN_PROGRESS",
+      "actualObservedNode18JobsPass": 3,
+      "actualObservedNode24JobsRunning": 4,
+      "rerunCancelDispatch": 0,
+      "sourceMatchesCommittedCombined204d": true,
+      "publication": "not_yet_available",
+      "fullFileCountsNotYetQualified": true
     },
     "integratedRequiredPathReviewMethod": {
       "status": "METHOD_RETAINED_IN_COMBINED_ROOT_SOURCE_KNOWN_GUIDANCE_V5",
@@ -277,6 +244,51 @@
       "combinedSourceModelRuns": 0,
       "fullCombinedCi": "PENDING_NEW_COMMIT",
       "newPackage": "NOT_BUILT"
+    },
+    "previousCommittedHeadCI": {
+      "status": "LAST_COMMITTED_REPORT_HEAD_NATURAL_CI_SEVEN_PASS_ROOT_SUCCESSOR_EXCLUDED",
+      "head": "1a469504487f0aed3db20d988e492fb4d9017b78",
+      "runtimeBytesMatch6932": true,
+      "sourceRuntime": "6932b1497d4ee2cc81ab768ddb03ac734eaf018a",
+      "runId": 44690095207,
+      "event": "push",
+      "attempt": 1,
+      "officialConclusion": "success",
+      "testJobsPassed": 7,
+      "publication": "skipped",
+      "terminalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-1a469-report-natural-8mqvvzsx/terminal-receipt.json",
+        "sha256": "5753546eefce1b789d61612c76301d3e86f573277c3746b2e353d76a4b0cac0f"
+      },
+      "fullRawSevenJobLogsRetained": true,
+      "actualFullTestFiles": 393,
+      "windowsShardFiles": [
+        197,
+        196
+      ],
+      "windowsDisjointUnion": 393,
+      "macos": {
+        "pass": 4873,
+        "skip": 33,
+        "fail": 0
+      },
+      "ubuntu": {
+        "pass": 4869,
+        "skip": 37,
+        "fail": 0
+      },
+      "windows": {
+        "pass": 4859,
+        "skip": 45,
+        "fail": 0
+      },
+      "unchangedSourcePassDoesNotValidateFixtureFix": true,
+      "rerunCancelDispatchActions": 0,
+      "newCombinedRootSourceQualifiedByThisRun": false,
+      "rootOfficialApiReadback": {
+        "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/prior-commit-ci-root-readback.json",
+        "sha256": "c81c7900014ea3dd1f0648d5f026ae593ca27d37bfdb04762908bb0348bb3fa7"
+      }
     }
   },
   "packageChecks": {
@@ -409,49 +421,16 @@
     "scope": "Local deterministic mechanics only; not real-model accuracy, exhaustive coverage or general repair benefit."
   },
   "remoteCI": {
-    "status": "LAST_COMMITTED_REPORT_HEAD_NATURAL_CI_SEVEN_PASS_ROOT_SUCCESSOR_EXCLUDED",
-    "head": "1a469504487f0aed3db20d988e492fb4d9017b78",
-    "runtimeBytesMatch6932": true,
-    "sourceRuntime": "6932b1497d4ee2cc81ab768ddb03ac734eaf018a",
-    "runId": 44690095207,
-    "event": "push",
+    "runId": 44697944182,
+    "head": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
     "attempt": 1,
-    "officialConclusion": "success",
-    "testJobsPassed": 7,
-    "publication": "skipped",
-    "terminalReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-1a469-report-natural-8mqvvzsx/terminal-receipt.json",
-      "sha256": "5753546eefce1b789d61612c76301d3e86f573277c3746b2e353d76a4b0cac0f"
-    },
-    "fullRawSevenJobLogsRetained": true,
-    "actualFullTestFiles": 393,
-    "windowsShardFiles": [
-      197,
-      196
-    ],
-    "windowsDisjointUnion": 393,
-    "macos": {
-      "pass": 4873,
-      "skip": 33,
-      "fail": 0
-    },
-    "ubuntu": {
-      "pass": 4869,
-      "skip": 37,
-      "fail": 0
-    },
-    "windows": {
-      "pass": 4859,
-      "skip": 45,
-      "fail": 0
-    },
-    "unchangedSourcePassDoesNotValidateFixtureFix": true,
-    "rerunCancelDispatchActions": 0,
-    "newCombinedRootSourceQualifiedByThisRun": false,
-    "rootOfficialApiReadback": {
-      "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/prior-commit-ci-root-readback.json",
-      "sha256": "c81c7900014ea3dd1f0648d5f026ae593ca27d37bfdb04762908bb0348bb3fa7"
-    }
+    "status": "EXACT_SOURCE_NATURAL_CI_IN_PROGRESS",
+    "actualObservedNode18JobsPass": 3,
+    "actualObservedNode24JobsRunning": 4,
+    "rerunCancelDispatch": 0,
+    "sourceMatchesCommittedCombined204d": true,
+    "publication": "not_yet_available",
+    "fullFileCountsNotYetQualified": true
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -749,36 +728,35 @@
     "actualTrialAndArchiveUnchanged": true
   },
   "reportCurrentQa": {
-    "status": "PASS_FOUR_VIEWS_BILINGUAL_AND_TABLES_VISUALLY_REVIEWED",
-    "htmlSha256": "f7743ef9ac4f124334c717f7389ad11389278ffd71afb398b951567a0c35383b",
-    "combinedSourceQualification": {
-      "path": ".runtime-correction/validation/combined-known-guide-ci-root-2s4as1mx/qualification.json",
-      "sha256": "bcda13ec613eb3403a43ab5e8bb0a46afce09ff4c311b80b1a9007acd92c8665"
-    },
-    "pcHistoricalSourceAudit": {
-      "path": ".runtime-correction/validation/pc-source-recovery-1gdko1of/source-hold.json",
-      "sha256": "01034c322303e982c7855e4c6d10e1e279ce664b06dbb8ab005061e87ec8bbe6"
-    },
-    "receipt": {
+    "status": "PASS_FOUR_VIEWS_BILINGUAL_AND_TABLES",
+    "htmlSha256": "9fbe103181f09f08dcd04c0e6a1cfc4321e8a4fdeabffc073f0b4618e15e713a",
+    "previousReportQa": {
       "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/receipt.json",
       "sha256": "97a2805bbb3b81e989ccff8109f82412c27ccd857433b64f7ce1d45dbb8ffead"
     },
-    "tableReceipt": {
-      "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/four-arm-table-receipt.json",
-      "sha256": "5bca4b1348b646648a36c20fbdb9548adb6ab5fdb8e60cd39487d0876f580b67"
+    "privateRelease": {
+      "path": ".runtime-correction/validation/release-204d-private-b9r4qg8m/final-receipt.json",
+      "sha256": "7d416168531f587a9f735de85d85660f796d736262f56001734bc7f6033637d4"
     },
-    "sourceAndProsePeer": {
-      "path": ".runtime-correction/validation/report-combined-source-peer-yhj6eo8z/peer-review.json",
-      "sha256": "76c84e75d2180fe60f286dd78bcce24d6c8551618c307c35d9fc37d8a95eced4"
+    "receipt": {
+      "path": ".runtime-correction/validation/report-private-release-qa-rabpsipy/receipt.json",
+      "sha256": "c2ed24bc2666e3c85b7ce2d844b90edd1c6762068a14d44fe92f2abec06630ed"
+    },
+    "tableReceipt": {
+      "path": ".runtime-correction/validation/report-private-release-qa-rabpsipy/four-arm-table-receipt.json",
+      "sha256": "149373b0a37f16111f1a46a4f5550af054fed8bdeeb8bb76732ba9ccf86d52d4"
     },
     "externalRequests": 0,
     "pageErrors": 0,
     "visibleDatesOrHashes": false,
+    "humanizerApplied": true,
     "visualInspection": [
-      "next-en-1200.png",
-      "next-zh-CN-390.png"
+      "current-package-zh-CN-390.png"
     ],
-    "humanizerApplied": true
+    "privateReleaseProsePeer": {
+      "path": ".runtime-correction/validation/report-combined-source-peer-yhj6eo8z/private-release-addendum.json",
+      "sha256": "6bc373644607c8fe77cf1b7afe18c9a8934f43e45ef45c04810443d2eace26c8"
+    }
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -805,17 +783,17 @@
     "scope": "Completed94dfe33 publication. Source-binding fix remains an isolated source candidate; current source-audit prose update pending next authorized feature-branch push."
   },
   "branchPublication": {
-    "status": "PUBLISHED_REPORT_PARENT_WITH_REVIEWED_SIX_FILE_SOURCE_SUCCESSOR_PREPARED",
+    "status": "PUBLISHED_COMBINED_SOURCE_REPORT_PARENT_PRIVATE_PACKAGE_NOT_PROMOTED",
     "branch": "codex/openclaw-runtime-corrector",
-    "head": "1a469504487f0aed3db20d988e492fb4d9017b78",
+    "head": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
     "currentArchiveSource": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "originMatchedAtPublication": true,
     "receipt": {
-      "path": ".runtime-correction/validation/report-closed-capacity-final-qa-167_fepn/publication.json",
-      "sha256": "d31e7d86bd3c1bcac4b04664d8e605af50d3e8607952bf6d62098b223a668573"
+      "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/publication.json",
+      "sha256": "ca688c525e2fb2e546521c9a1eeda94be68ddf4716f14916961447f4dc6d8349"
     },
     "mainMerged": false,
-    "scope": "Lastpublished1a469reportparent; current six integrated postimages and report metadata preparedfornextfeature-onlycommit. Publishedarchivee94unchanged."
+    "scope": "Combinedsource204d+priorreportpublishedfeaturebranchonly. Thisprivatepackageprogressproseawaitsnextreport-onlycommit. Publishedarchivee94/closedmodelunchanged."
   },
   "prospectiveCurrentArchiveSourceAckAudit": {
     "status": "ACTUAL_LOCAL_SCRIPTED_CURRENT_SOURCE_AND_TYPED_PROCESS_ACK_CHAIN_QUALIFIED",
@@ -4026,7 +4004,11 @@
     "v3CommittedFullCiCompleted": true,
     "combinedRootQualification": {
       "path": ".runtime-correction/validation/combined-known-guide-ci-root-2s4as1mx/qualification.json",
-      "sha256": "bcda13ec613eb3403a43ab5e8bb0a46afce09ff4c311b80b1a9007acd92c8665"
+      "sha256": "bcda13ec613eb3403a43ab5e8bb0a46afce09ff4c311b80b1a9007acd92c8665",
+      "privateCombinedRelease": {
+        "path": ".runtime-correction/validation/release-204d-private-b9r4qg8m/final-receipt.json",
+        "sha256": "7d416168531f587a9f735de85d85660f796d736262f56001734bc7f6033637d4"
+      }
     },
     "lastUnchangedMethodSourceCiPass": {
       "path": ".runtime-correction/validation/ci-fix/post-1a469-report-natural-8mqvvzsx/terminal-receipt.json",
@@ -4312,7 +4294,7 @@
     "currentPublishedArchiveStillPriorQualifiedE94": true
   },
   "combinedRootSuccessor": {
-    "status": "INTEGRATED_SIX_POSTIMAGES_TARGETED_TESTS_QUALIFIED_COMMIT_AND_FULL_CI_PENDING",
+    "status": "COMMITTED_PRIVATE_RELEASE_AND_STOCK_QUALIFIED_FULL_CI_RUNNING_MODEL_NOT_STARTED",
     "baseCommit": "6932b1497d4ee2cc81ab768ddb03ac734eaf018a",
     "rootParentHead": "1a469504487f0aed3db20d988e492fb4d9017b78",
     "admission": {
@@ -4349,8 +4331,31 @@
     "publishedArchiveStillE94": true,
     "completedModelRunStillPriorE94": true,
     "combinedSourceModelRuns": 0,
-    "fullCombinedCi": "PENDING_NEW_COMMIT",
-    "newPackage": "NOT_BUILT"
+    "fullCombinedCi": {
+      "runId": 44697944182,
+      "head": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
+      "attempt": 1,
+      "status": "in_progress",
+      "actualObservedNode18JobsPass": 3,
+      "actualObservedNode24JobsRunning": 4,
+      "rerunCancelDispatch": 0
+    },
+    "newPackage": "PRIVATE_QUALIFIED_NOT_PROMOTED",
+    "sourceCommit": "204d16b0e0b98ed9cad52d65cd5ce0273f4819f5",
+    "publication": {
+      "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/publication.json",
+      "sha256": "ca688c525e2fb2e546521c9a1eeda94be68ddf4716f14916961447f4dc6d8349"
+    },
+    "privateRelease": {
+      "path": ".runtime-correction/validation/release-204d-private-b9r4qg8m/final-receipt.json",
+      "sha256": "7d416168531f587a9f735de85d85660f796d736262f56001734bc7f6033637d4"
+    },
+    "privateArchiveSha256": "766b75e664356cda3e29d200af86b2004cc0910f098f061466edd1a6147990a2",
+    "privateStockVerification": {
+      "path": ".runtime-correction/validation/stock-204d-install-g5myq7te/verification.json",
+      "sha256": "fbfef4b102fa18cb06aa5615577e115439fcde65ffc0f1048da329c6bcd2291d"
+    },
+    "rootIndependent209ModuleReadback": "15bb74/0"
   },
   "pcHistoricalEvidenceAudit": {
     "status": "LATER_MOCK_AND_PERMODULE_RAW_RECEIPTS_UNLOCATED_REPORTED_RESULTS_NOT_CURRENT_VERIFICATION",
@@ -4363,5 +4368,50 @@
     "stockDiagnosticPreparedNotExecuted": true,
     "historicalPreferencesCause": "NOT_CURRENTLY_VERIFIED",
     "newPcTasksQualified": 0
+  },
+  "priorUnchangedSourcePassingCI": {
+    "status": "LAST_COMMITTED_REPORT_HEAD_NATURAL_CI_SEVEN_PASS_ROOT_SUCCESSOR_EXCLUDED",
+    "head": "1a469504487f0aed3db20d988e492fb4d9017b78",
+    "runtimeBytesMatch6932": true,
+    "sourceRuntime": "6932b1497d4ee2cc81ab768ddb03ac734eaf018a",
+    "runId": 44690095207,
+    "event": "push",
+    "attempt": 1,
+    "officialConclusion": "success",
+    "testJobsPassed": 7,
+    "publication": "skipped",
+    "terminalReceipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-1a469-report-natural-8mqvvzsx/terminal-receipt.json",
+      "sha256": "5753546eefce1b789d61612c76301d3e86f573277c3746b2e353d76a4b0cac0f"
+    },
+    "fullRawSevenJobLogsRetained": true,
+    "actualFullTestFiles": 393,
+    "windowsShardFiles": [
+      197,
+      196
+    ],
+    "windowsDisjointUnion": 393,
+    "macos": {
+      "pass": 4873,
+      "skip": 33,
+      "fail": 0
+    },
+    "ubuntu": {
+      "pass": 4869,
+      "skip": 37,
+      "fail": 0
+    },
+    "windows": {
+      "pass": 4859,
+      "skip": 45,
+      "fail": 0
+    },
+    "unchangedSourcePassDoesNotValidateFixtureFix": true,
+    "rerunCancelDispatchActions": 0,
+    "newCombinedRootSourceQualifiedByThisRun": false,
+    "rootOfficialApiReadback": {
+      "path": ".runtime-correction/validation/report-integrated-guidance-qa-u64z_awj/prior-commit-ci-root-readback.json",
+      "sha256": "c81c7900014ea3dd1f0648d5f026ae593ca27d37bfdb04762908bb0348bb3fa7"
+    }
   }
 }
