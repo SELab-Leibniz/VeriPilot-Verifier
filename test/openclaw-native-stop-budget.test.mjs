@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { createNativeStopReviews } from "../lib/openclaw/native-stop-review.mjs";
 import { readMaterialBasis } from "../lib/openclaw/material-basis.mjs";
 import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewer.mjs";
@@ -90,9 +91,99 @@ test('a retried native turn retains its own persisted user input while later que
     if (runId === 'second-business-run') await terminal.promise;
     return { runId, status: 'ok' };
   } });
+  const completeNativeTurn = async (runId, description) => {
+    const identity = { agentId: f.state.agentId, sessionId: f.state.sessionId, sessionKey: f.state.sessionKey,
+      projectRoot: f.root, scopeFingerprint: f.state.projectScope.fingerprint,
+      scopeTaskId: f.state.scopeTaskId ?? null, controlRevision: f.state.enabledRevision ?? 0 };
+    const current = record => {
+      assert.equal(f.state.nativeRunId, runId, 'Native turn owner changed');
+      assert(!f.state.scopeClosed && !f.state.nativeInvalidated, 'Native turn is no longer current');
+      assert(record && record.runId === runId, 'Dispatcher turn owner changed');
+      for (const [key, value] of Object.entries(identity))
+        assert.equal(record[key] ?? (key === 'controlRevision' ? 0 : key === 'scopeTaskId' ? null : undefined), value,
+          `Dispatcher ${key} changed`);
+    };
+    const drain = f.runtime.waitForNativeReviews({ drain: true });
+    void drain.catch(() => {}); // Preserve rejection for the bounded await without an unhandled race.
+    let admissionOpen = true, originalDeadline;
+    try {
+      originalDeadline = await within((async () => {
+        while (admissionOpen) {
+          const record = f.post(); current(record);
+          if (record.phase === 'IDLE') {
+            assert(record.completedRuns?.includes(runId) && record.lastTerminal?.runId === runId
+              && record.lastTerminal.terminalRunId === runId && record.lastTerminal.status === 'ok',
+            'IDLE has no exact completed-turn receipt');
+          }
+          if (['REVIEW_QUEUED', 'REVIEWING', 'IDLE'].includes(record.phase)) {
+            assert(Number.isFinite(record.deadlineAt), 'Missing original review phase deadline');
+            return record.deadlineAt;
+          }
+          assert.notEqual(record.phase, 'CLOSED', 'Native turn closed before completion');
+          await pause(2);
+        }
+      })(), `${description} admission`); // Retain the original real10s admission bound.
+    } finally { admissionOpen = false; }
+    const remaining = () => {
+      current(f.post()); assert.equal(f.post().deadlineAt, originalDeadline, 'Original phase deadline changed');
+      assert(Date.now() < originalDeadline, 'Original phase expired before durable completion');
+      return originalDeadline - Date.now();
+    };
+    await within(drain, description, remaining());
+    await within((async () => {
+      const memory = f.post(); current(memory);
+      const saved = JSON.parse(await fs.readFile(path.join(memory.directory, `${memory.id}.json`), 'utf8'));
+      current(saved);
+      assert.equal(saved.deadlineAt, originalDeadline);
+      assert.equal(saved.phase, 'IDLE'); assert(saved.completedRuns.includes(runId));
+      assert.equal(saved.lastTerminal?.runId, runId); assert.equal(saved.lastTerminal?.terminalRunId, runId);
+      assert.equal(saved.lastTerminal?.status, 'ok'); assert.equal(saved.reviewStatus, 'NO_DEVIATION_FOUND');
+      const jobs = [...f.sharedState.stopReviewJobs.values()].filter(job => job.projectRoot === f.root
+        && job.record.runId === runId && job.record.sessionId === identity.sessionId
+        && job.record.sessionKey === identity.sessionKey && (job.record.enabledRevision ?? 0) === identity.controlRevision);
+      assert.equal(jobs.length, 1, 'Native completion receipt must have one exact owner');
+      const record = jobs[0].record;
+      const hash = text => createHash('sha256').update(text).digest('hex');
+      const receipt = path.join(f.root, '.runtime-correction/openclaw/native-stop-reviews',
+        hash(JSON.stringify([identity.sessionKey, identity.sessionId])),
+        hash(record.enabledRevision ? JSON.stringify([record.occurrenceId, record.enabledRevision]) : record.occurrenceId) + '.json');
+      const durable = JSON.parse(await fs.readFile(receipt, 'utf8'));
+      assert.equal(durable.runId, runId); assert.equal(durable.sessionId, identity.sessionId);
+      assert.equal(durable.sessionKey, identity.sessionKey); assert.equal(durable.ownerPid, process.pid);
+      assert.equal(durable.occurrenceId, record.occurrenceId); assert.equal(durable.enabledRevision ?? 0, identity.controlRevision);
+      assert.equal(durable.status, 'SETTLED'); assert.equal(durable.reviewStatus, 'NO_DEVIATION_FOUND');
+      assert(Number.isFinite(durable.assessmentCompletedAt) && durable.assessmentCompletedAt <= durable.deadlineAt
+        && durable.deadlineAt <= originalDeadline && durable.settledAt <= originalDeadline,
+      'Native completion must belong to the original unexpired phase');
+      const task = await findTask({ projectRoot: f.root, sessionId: identity.sessionId });
+      assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+      assert.equal(task.verification.evaluationId, durable.evaluationId);
+      remaining(); // A late read may not turn an expired observation into completion.
+    })(), `${description} durable receipt`, remaining());
+  };
   await f.runtime.reply({ kind: 'final', runId: f.ctx.runId, sessionKey: f.ctx.sessionKey,
     payload: { text: 'First task delivered.' } }, f.ctx);
-  await within(f.runtime.waitForNativeReviews({ drain: true }), 'first task completion');
+  try {
+    await completeNativeTurn(f.ctx.runId, 'first task completion');
+  } catch (error) {
+    // Observe only: retain the original watchdog, failure and ownership assertions.
+    try {
+      const post = f.post();
+      const text = value => typeof value === 'string' ? value.slice(0, 160) : null;
+      t.diagnostic('NATIVE_STOP_FIRST_COMPLETION_DIAGNOSTIC ' + JSON.stringify({
+        runId: f.ctx.runId, nativeRunId: text(f.state.nativeRunId),
+        controllerAborted: f.state.reviewController.signal.aborted,
+        controllerReason: text(f.state.reviewController.signal.reason?.code),
+        post: post ? { runId: text(post.runId), phase: text(post.phase), reason: text(post.reason),
+          deadlineAt: Number.isFinite(post.deadlineAt) ? post.deadlineAt : null,
+          completedRuns: (post.completedRuns ?? []).slice(-4).map(text),
+          lastTerminal: post.lastTerminal ? { runId: text(post.lastTerminal.runId),
+            terminalRunId: text(post.lastTerminal.terminalRunId), status: text(post.lastTerminal.status) } : null } : null,
+        warnings: f.warnings.slice(-8).map(text)
+      }));
+    } catch { /* Diagnostics cannot replace or suppress the original failure. */ }
+    throw error;
+  }
   await until(() => f.post().phase === 'IDLE', 'first host terminal');
 
   const next = { ...f.ctx, runId: 'second-business-run' };
@@ -115,7 +206,7 @@ test('a retried native turn retains its own persisted user input while later que
   await f.runtime.reply({ kind: 'final', runId: next.runId, sessionKey: next.sessionKey,
     payload: { text: 'Revised draft delivered.' } }, next);
   terminal.resolve();
-  await within(f.runtime.waitForNativeReviews({ drain: true }), 'second task review');
+  await completeNativeTurn(next.runId, 'second task review');
   const task = await findTask({ projectRoot: f.root, sessionId: 'host' });
   assert.equal(task.verification.status, 'NO_DEVIATION_FOUND', 'a new user turn must not inherit CORRECTION_FLOW_CLOSED');
 });
