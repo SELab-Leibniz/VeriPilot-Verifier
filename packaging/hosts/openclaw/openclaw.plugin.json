@@ -55,6 +55,11 @@
         "default": true,
         "description": "Reject confirmed unchanged local write/edit/apply_patch requests before execution in enabled RC sessions on OpenClaw 2026.7.1-2, whose native no-op result terminates a tool batch. The rejection instructs the business model to continue. Set false to retain native no-op handling."
       },
+      "nativeToolDescriptorIdentity": {
+        "type": "string",
+        "pattern": "^rc-native-tools-v1:[a-f0-9]{64}$",
+        "description": "Internal native-review invocation identity for descriptor-cache isolation. Set by private reviewer dispatch; it does not enable tools or authorize execution."
+      },
       "reviewerModel": {
         "type": "string",
         "description": "Configured OpenClaw provider/model for reviewers; defaults to the active model."
