@@ -30,7 +30,7 @@
       "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/root-archive-delta.json",
       "sha256": "24b7159921bd61402bf2ba7b6c686a7153eab7cde9239f60d96684e5c334daf4"
     },
-    "actualCurrentArchiveRealModelArms": 2
+    "actualCurrentArchiveRealModelArms": 4
   },
   "generalPurposeChanges": [
     "Required Proposal obligations use host-issued stable identifiers. A valid current ID selects canonical host text while retaining exact current original reads, plan citations, every required identity and all coverage dispositions. Legacy exact-text rows remain supported.",
@@ -52,7 +52,7 @@
     "deliverable": "GENERAL_PURPOSE_OPENCLAW_PLUGIN",
     "benchmarkRole": "EXTERNAL_EVALUATION_ONLY",
     "caseSpecificRuntimeLogicAllowed": false,
-    "realModelNativeRepairBenefit": "CURRENT_8ED_LOCAL_SCRIPTED_MECHANISM_QUALIFIED_FIRST_REAL_OFF_RUNNING_GENERAL_BENEFIT_UNPROVEN",
+    "realModelNativeRepairBenefit": "FIRST_MATCHED_DEVELOPMENT_PAIR_CLOSED_ON_STOP_UNVERIFIED_NO_QUALITY_BENEFIT_ESTABLISHED",
     "nextEvaluationNeeds": [
       "Compare ordinary-default healthy work and a declared initial defect using the same task and models in matched OFF/ON arms. Score original-to-OpenSpec and original/plan-to-code omissions independently, along with supported corrections, false interruptions and review effort.",
       "Keep every task pack, finite checker, grading rule and scenario label outside the plugin and private grading unavailable to actors.",
@@ -103,7 +103,14 @@
     },
     "latestRealModelMechanismArchiveSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd",
     "currentInstallableArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
-    "currentArchiveModelRuns": 2
+    "currentArchiveModelRuns": 4,
+    "wholeArchiveCaseTokenAudit": {
+      "path": ".runtime-correction/validation/shipped-8ed-generality-audit-3dmhu7_r/audit.json",
+      "sha256": "cdbdbe9732fea3de55f3e4411c2c8faea53114c18bddf1f87d766e187454c7e9",
+      "utf8MembersInspected": 277,
+      "concreteCaseTokenHits": 0,
+      "semanticCompletenessOrUsefulnessProof": false
+    }
   },
   "sourceChecks": {
     "status": "FULL_BASELINE_PLUS_NARROW_FOCUSED_DELTA_AND_PUBLIC_SDK_PASS",
@@ -129,7 +136,20 @@
     },
     "newUnchangedLocalFullSuiteRerunClaimed": false,
     "sourceHeadCiRunId": 44659635701,
-    "scope": "The392-file full run belongs to a0. The one-node nullable schema successor has39 focused checks per supported Node and public-SDK proof; natural current-head CI is tracked separately."
+    "scope": "The392-file full run belongs to a0. The one-node nullable schema successor has39 focused checks per supported Node and public-SDK proof; natural current-head CI is tracked separately.",
+    "currentHeadCI": {
+      "head": "c84e51390b528d5bc098899492cf3958877eea25",
+      "runId": 44665328119,
+      "allTestJobsPass": 7,
+      "macosFiles": 392,
+      "macosPass": 4857,
+      "macosSkip": 33,
+      "windowsDisjointFilesEachShard": 196,
+      "terminalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
+        "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
+      }
+    }
   },
   "packageChecks": {
     "status": "PROMOTED_EXACT_COMMITTED_ARCHIVE_INSTALLED_LOCAL_MECHANISM_QUALIFIED",
@@ -231,25 +251,35 @@
     "scope": "Local deterministic mechanics only; not real-model accuracy, exhaustive coverage or general repair benefit."
   },
   "remoteCI": {
-    "status": "CURRENT_SOURCE_NATURAL_CI_FAILED_SIX_OF_SEVEN_TEST_JOBS",
-    "head": "9ed63544bef9c71f620f730597de658df37348be",
-    "runId": 44659635701,
+    "status": "CURRENT_PUSH_EXACT_HEAD_NATURAL_CI_SEVEN_PASS",
+    "head": "c84e51390b528d5bc098899492cf3958877eea25",
+    "runId": 44665328119,
     "event": "push",
-    "attempt": 1,
-    "knownPassedJobs": 6,
-    "knownRemainingJobs": 0,
-    "allSevenPassClaimed": false,
-    "latestReadbackActual": "2931ec/session4729→ea568e/0",
-    "priorSevenPassSnapshot": {
-      "path": ".runtime-correction/validation/installable-e8-before-native-facts-w7vo53oh/runtime-corrector-openclaw-1.10.0.validation.json",
-      "sha256": "e9ca25d94a5eb5b30b3a7faeb4ee867aac15158cdd6bc2764dbcd2b510cbc0bb"
+    "knownPassedTestJobs": 7,
+    "knownRunningTestJobs": 0,
+    "allSevenPassClaimed": true,
+    "runtimeSourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+    "fixtureFixCommit": "852262d",
+    "initialDiscoveryActual": "15079a/session37005→cb13cc/0",
+    "initialJobsPath": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/initial-jobs.json",
+    "previousFailure": {
+      "head": "9ed63544bef9c71f620f730597de658df37348be",
+      "runId": 44659635701,
+      "passedTestJobs": 6,
+      "failedTestJobs": 1,
+      "failedJobId": 136034395157,
+      "status": "FAILED_WITH_FIX_QUALIFIED_AND_PUSHED"
     },
     "rerunCancelDispatchActions": 0,
-    "knownFailedTestJobs": 1,
-    "failedJob": "Node24/windows-latest/shard1of2",
-    "failedJobId": 136034395157,
-    "failure": "test/document-original-requirements.test.mjs case9 native Edit old-text mismatch returned shared Stop deadline warning",
-    "productionFixOrTimeoutIncreaseApplied": false
+    "attempt": 1,
+    "officialConclusion": "success",
+    "terminalReceipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
+      "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
+    },
+    "rootFinalJobsAlsoConfirmed": true,
+    "windowsFilesEachShard": 196,
+    "windowsDisjointUnion": 392
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -503,10 +533,10 @@
     "newGuidanceBenefitClaimedFromThisTrial": false
   },
   "activeGeneralPurposeTrial": {
-    "status": "FIRST_OFF_CLOSED_FROZEN_SECOND_ON_LIVE_RUNNING",
-    "arm": "OFF",
-    "startingState": "healthy",
-    "operatorRoot": ".runtime-correction/validation/public-use-16bec0190371",
+    "status": "FIRST_THREE_CLOSED_FROZEN_FOURTH_ON_LIVE",
+    "arm": "ON",
+    "startingState": "declared-defect",
+    "operatorRoot": ".runtime-correction/validation/public-use-1d7412d6837e",
     "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
     "archiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
     "controllerHold": {
@@ -517,9 +547,9 @@
       "path": ".runtime-correction/validation/paid-common-v4-source-peer-q4jl6xt2/peer-review.json",
       "sha256": "1cec857d030250109ccc0548575378ec74931ad9aeabe3c60932e33e61d29411"
     },
-    "actualLiveLaunch": "a8aca8/session33651",
+    "actualLiveLaunch": "f08d27/session33773",
     "preflightChecksPassed": 23,
-    "setupActual": "ca0db3/session43038→08ce82/0",
+    "setupActual": "c48605/session54459→c00b59/0",
     "codingModel": "deepseek-flash",
     "onReviewRolesModel": "deepseek-v4-pro",
     "originalMinutesEach": 60,
@@ -528,8 +558,8 @@
     "privateGradingAfterAllFourFreeze": true,
     "scoresAvailable": false,
     "currentArm": "ON",
-    "completedModelArms": 1,
-    "actualOnSetupLaunch": "018efa/session11932",
+    "completedModelArms": 3,
+    "actualOnSetupLaunch": "c48605/session54459",
     "firstOff": {
       "liveActual": "a8aca8/session33651→fb6b93/0",
       "closure": {
@@ -560,8 +590,85 @@
       "privateGraded": false,
       "nominalHealthyIsNotCorrectnessProof": true
     },
-    "actualOnLiveLaunch": "800c24/session74324",
-    "onProgressSnapshot": {
+    "actualOnLiveLaunch": "f08d27/session33773",
+    "firstOn": {
+      "liveActual": "800c24/session74324→689c6d/0",
+      "closure": {
+        "path": ".runtime-correction/validation/public-use-178ce818ce37/closure.json",
+        "sha256": "d60ec14d29905e60af0d87a58ea5ac174eb0af58f2c562a03ee30c029b99af6c"
+      },
+      "liveReceipt": {
+        "path": ".runtime-correction/validation/public-use-178ce818ce37/live-receipt.json",
+        "sha256": "f2ebeba24755e6fa62cc8894752c20572c747ddd27a2a4531476105049c95787"
+      },
+      "freeze": {
+        "path": ".runtime-correction/validation/public-use-178ce818ce37/final-freeze/freeze.json",
+        "sha256": "065f96a9b665599ce1e84a704b376eea45a74d76d37fe4a2395548280f4a192c"
+      },
+      "files": 24,
+      "wireRequests": 129,
+      "countsByModel": {
+        "deepseek-flash": 49,
+        "deepseek-v4-pro": 80
+      },
+      "proposalTerminal": "ok",
+      "applyTerminal": "ok",
+      "officialTasks": {
+        "complete": 18,
+        "total": 18
+      },
+      "stopStatus": "UNVERIFIED",
+      "stopReason": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+      "nativeSuccessors": 0,
+      "privateGraded": false,
+      "proofContractDiagnosisInProgress": false,
+      "conditionalContractDiagnosis": {
+        "path": ".runtime-correction/validation/healthy-on-protocol-watch-64e9qn9g/conditional-contract-diagnosis.json",
+        "sha256": "ab43d073c2b26e4da3bfff36d3a7f51713d15ae2b001add331627943fc283192",
+        "contextRequiredFieldUnderAdvertised": true,
+        "pendingCount": 5,
+        "pendingDetailRows": 0,
+        "noPriorTrialReclassification": true,
+        "successorSourceIsolatedCurrentFourArmsUnchanged": true
+      },
+      "originalFileModes": {
+        "path": ".runtime-correction/validation/public-use-178ce818ce37/final-freeze/original-file-modes.json",
+        "sha256": "ab24bd9c3d576fee6a6fed7e4a5da4a1c9aa33a33034696ff407ccef0ab30837"
+      }
+    },
+    "declaredDefectOff": {
+      "liveActual": "d95702/session94919→473bd5/0",
+      "closure": {
+        "path": ".runtime-correction/validation/public-use-6c224df7ae08/closure.json",
+        "sha256": "48ebfbc386c08b8498f4c27191bdd5fa735257d3a0c7d0f3bf740ee7a399ebaa"
+      },
+      "freeze": {
+        "path": ".runtime-correction/validation/public-use-6c224df7ae08/final-freeze/freeze.json",
+        "sha256": "42562279564541666329b38c51fafca36997b015efed69b2d69b92a7fc38a810"
+      },
+      "files": 23,
+      "wireRequests": 46,
+      "countsByModel": {
+        "deepseek-flash": 46,
+        "deepseek-v4-pro": 0
+      },
+      "proposalTerminal": "ok",
+      "applyTerminal": "ok",
+      "officialTasks": {
+        "complete": 24,
+        "total": 24
+      },
+      "approvedTasksInitially": 25,
+      "planStructuralObservation": "TASK_PROSE_CHANGED",
+      "planSemanticAssessment": "NOT_ASSESSED",
+      "privateGraded": false,
+      "originalFileModes": {
+        "path": ".runtime-correction/validation/public-use-6c224df7ae08/final-freeze/original-file-modes.json",
+        "sha256": "c1c4d027a1b6c6864f1fea3a4d53e70876f807888d413a0e57cc937a3b86afa9"
+      }
+    },
+    "preflightActual": "94909a/session97058→8597f0/0",
+    "priorFirstOnProgressSnapshot": {
       "admittedRequests": 74,
       "wireAttempts": 74,
       "inFlight": 1,
@@ -570,7 +677,18 @@
         "deepseek-v4-pro": 37
       },
       "closed": false
-    }
+    },
+    "currentFourthOnProgressSnapshot": {
+      "admittedRequests": 61,
+      "wireAttempts": 60,
+      "inFlight": 1,
+      "countsByModel": {
+        "deepseek-flash": 30,
+        "deepseek-v4-pro": 30
+      },
+      "closed": false
+    },
+    "thirdClosedFourthLive": true
   },
   "candidatePackage": {
     "status": "PROMOTED_EXACT_COMMITTED_LOCALLY_QUALIFIED_ARCHIVE",
@@ -651,27 +769,37 @@
     "actualTrialAndArchiveUnchanged": true
   },
   "reportCurrentQa": {
-    "status": "PASS_FOUR_VIEWS_TWO_LANGUAGES_AND_CURRENT_TABLE_VISUAL_REVIEW",
-    "htmlSha256": "8b2279fec003d175ed7b21afe3df79fff44acb5c86a824822e6c69f9fc55eced",
-    "receipt": {
-      "path": ".runtime-correction/validation/report-four-arm-table-7jiqhtvt/receipt.json",
-      "sha256": "75d843dcfc8a592d2a39ebe17521ba28e9012818a19c600f1fc0410c9a106202"
+    "status": "PASS",
+    "htmlSha256": "dc7cee9c7df564901048f8cda238aab3cde3c65fbd7ccf848f8fa1f739d0dbcb",
+    "report": {
+      "path": ".runtime-correction/runtime-corrector-progress.html",
+      "sha256": "dc7cee9c7df564901048f8cda238aab3cde3c65fbd7ccf848f8fa1f739d0dbcb"
     },
-    "tableReceipt": {
-      "path": ".runtime-correction/validation/report-four-arm-table-7jiqhtvt/four-arm-table-receipt.json",
-      "sha256": "e6517acb84ad7686737babe9f9b51494ddbab419a3a79e7fc94e387687b1b81b"
+    "main": {
+      "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/receipt.json",
+      "sha256": "f7c32ec4cc2f907068647cc3a5b5ca2bf715bc525c2b052dfccbc2f9238167af"
     },
-    "actual": "325354/session60209→9c5a76/0",
-    "tableActual": "d7391f/0",
-    "viewports": 4,
+    "table": {
+      "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/four-arm-table-receipt.json",
+      "sha256": "92970ce542b12a974ef277b92b29d6f6ce394ca286a61a2607237bdf5e47c6c6"
+    },
+    "mainActual": "a54624/session67838→e11b86/0",
+    "tableActual": "32e572/0",
+    "views": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
-    "tableRows": 4,
-    "manualImages": [
-      "four-arms-en.png",
-      "four-arms-zh-CN.png"
-    ]
+    "sections": 6,
+    "collapsedHistoryGroups": 3,
+    "sameFileLanguageToggle": true,
+    "visibleDatesOrHashes": false,
+    "humanizerFileMode": true,
+    "visualReadown": [
+      "English desktop four-arm table",
+      "English phone stacked four-arm table",
+      "Simplified Chinese phone stacked four-arm table"
+    ],
+    "scope": "Three model arms closed/frozen; fourth declared-defect ON live. CurrentCI7/7green, firstONU conditionalfeedbackgap, independently reviewed isolatedfeedback+nullabletextfixes pendingcombinedverification. No actual-codegrades or usefulnessclaim. Mobile comparison table now stacks with same headers/labels."
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -698,12 +826,15 @@
     "scope": "Completed94dfe33 publication. Source-binding fix remains an isolated source candidate; current source-audit prose update pending next authorized feature-branch push."
   },
   "branchPublication": {
-    "status": "TEST_FIX_NEW_ARCHIVE_AND_REPORT_PREPARED_FOR_AUTHORIZED_FEATURE_PUSH",
+    "status": "C84_PUSHED_NATURAL_CI_SEVEN_PASS_PROGRESS_REPORT_UPDATE_LOCAL_PENDING_PUSH",
     "branch": "codex/openclaw-runtime-corrector",
     "sourceHead": "9ed63544bef9c71f620f730597de658df37348be",
     "sourcePushActual": "e6fdac/session23805→2d05e7/0",
     "mainMerged": false,
-    "preparedOnCommit": "852262dc22539206e309165c3ea3bb7270494524"
+    "preparedOnCommit": "852262dc22539206e309165c3ea3bb7270494524",
+    "head": "c84e51390b528d5bc098899492cf3958877eea25",
+    "pushActual": "2db75f/session87135→3fe58b/0",
+    "newNaturalRunId": 44665328119
   },
   "prospectiveCurrentArchiveSourceAckAudit": {
     "status": "ACTUAL_LOCAL_SCRIPTED_CURRENT_SOURCE_AND_TYPED_PROCESS_ACK_CHAIN_QUALIFIED",
@@ -2224,7 +2355,7 @@
     ]
   },
   "futureGeneralUsefulnessTaskPreparation": {
-    "status": "FIRST_OFF_FROZEN_SECOND_ON_LIVE_RUNNING",
+    "status": "FIRST_THREE_FROZEN_FOURTH_ON_LIVE",
     "sourceHold": {
       "path": ".runtime-correction/validation/config-resolution-evaluation-v3-_nyqcn1e/source-hold.json",
       "sha256": "b8d3b2b203d95e506d3a5c0188ba2b95f013c408f3feb9e8ed6a7f941679d288"
@@ -2247,7 +2378,7 @@
     "v1FalsePassAndV2FairnessFailuresPreserved": true,
     "evaluationArmsAdmitted": 1,
     "noGeneralBenefitClaim": true,
-    "actualModelArmsStarted": 2,
+    "actualModelArmsStarted": 4,
     "previousGenericController": {
       "status": "SOURCE_AND_PURE_PEER_CLEAR_NOT_ADMITTED",
       "sourceHold": {
@@ -2350,7 +2481,7 @@
       "sha256": "e1fc1bd548f2f20df23897c2da45def6b13948f9ed8667b2822158d97277a9e2"
     },
     "controllerSuccessor": {
-      "status": "SOURCE_PEER_CLEAR_FIRST_OFF_RUNNING",
+      "status": "SOURCE_PEER_CLEAR_FIRST_OFF_FROZEN_SECOND_ON_APPLY_RUNNING",
       "sourceHold": {
         "path": ".runtime-correction/validation/public-taskpack-controller-v4-3-e0a6vbf6/source-hold.json",
         "sha256": "9606f8c890f80f2e09ee180968b3fa69624fb5fddbca11d417e3ae9c974c056e"
@@ -2365,7 +2496,7 @@
       },
       "currentProjectGrades": 0
     },
-    "actualModelArmsClosed": 1
+    "actualModelArmsClosed": 3
   },
   "reportPreviousQaSnapshot": {
     "path": ".runtime-correction/validation/report-process-evidence-candidate-vz11u2hx/prior-validation.json",
@@ -2940,7 +3071,7 @@
     "promotedArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5"
   },
   "ciFixtureRepair": {
-    "status": "COMMITTED_TEST_ONLY_FIX_FOCUSED_PEER_PASS_AWAITING_NEXT_NATURAL_CI",
+    "status": "PUSHED_AND_EXACT_HEAD_NATURAL_CI_SEVEN_PASS",
     "commit": "852262dc22539206e309165c3ea3bb7270494524",
     "sourceHold": {
       "path": ".runtime-correction/validation/ci-fix/9ed-document-clock-sa4g055n/source-hold.json",
@@ -2988,5 +3119,27 @@
     "gradingActualArmsRequiresAllFourClosedAndFrozen": true,
     "actualCodingArmGrades": 0,
     "coRunningDevelopmentQualificationNotFormalTimingProof": true
+  },
+  "isolatedSuccessorFixes": {
+    "status": "SOURCE_ONLY_PEER_CHECKED_COMBINED_VERIFICATION_PENDING",
+    "currentFourArmArchiveUnchanged": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "currentInstalledBehaviorChanged": false,
+    "conditionalFeedbackHold": {
+      "path": ".runtime-correction/validation/known-conditional-feedback-waboo9fg/source-hold-v2.json",
+      "sha256": "69f62927299add462ef36aca695757c7334626577020acbd886f1b8937e8e288"
+    },
+    "conditionalPeer": {
+      "path": ".runtime-correction/validation/known-feedback-independent-peer-3RCIAHnj/peer-review.json",
+      "sha256": "8f0e967b7aa7636e70f95c5f6ef8a9e7266013ad3aad790041d3d0a286981b2d"
+    },
+    "boundedNullableTextHold": {
+      "path": ".runtime-correction/validation/bounded-nullable-text-candidate-wi3kexyo/source-hold.json",
+      "sha256": "498c1ebea8b731ac1fc875366824fdd74d12415cc50e79394e5ea854cb552ad4"
+    },
+    "boundedNullablePeer": {
+      "path": ".runtime-correction/validation/bounded-nullable-peer-jlwi29af/peer-review.json",
+      "sha256": "cdb9efb93993ffabc27e11a29e9c1fd3e1898aa2c410fd63d8c4f547a3607bef"
+    },
+    "newPaidArmsStartedForSuccessor": 0
   }
 }
