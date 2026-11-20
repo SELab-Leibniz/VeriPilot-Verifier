@@ -4,12 +4,13 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createPostRunDispatcher } from "../lib/openclaw/post-run-dispatch.mjs";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function until(check, label) {
-  const end = Date.now() + 5000;
-  while (!check()) { assert(Date.now() < end, `Timed out: ${label}`); await pause(5); }
+async function until(check, label, now = Date.now) {
+  const end = now() + 5000;
+  while (!check()) { assert(now() < end, `Timed out: ${label}`); await pause(5); }
 }
 async function fixture(t, overrides = {}) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "rc-stop-scenarios-"));
@@ -185,6 +186,7 @@ test("restarting after a lost user ACK waits for that run, then releases only th
 });
 
 test("24 sessions keep FIFO task order, bounded reviews and isolated task mutations", async t => {
+  semanticReviewClock(t, { timeoutMs: 15000 });
   let active = 0, maximum = 0;
   const terminalRuns = new Set(), releaseReviews = deferred();
   const f = await fixture(t, { concurrency: 3,
@@ -210,7 +212,7 @@ test("24 sessions keep FIFO task order, bounded reviews and isolated task mutati
     await Promise.all(ids.map((id, i) => f.manager.candidate(id,
       { runId: `business-${i}`, text: "done", reviewBudgetMs: 15000 })));
     await until(() => maximum > 1 && ids.every(id => ["REVIEW_QUEUED", "REVIEWING"].includes(f.manager.snapshot(id).phase)),
-      "overlapping reviews with all 24 sessions queued");
+      "overlapping reviews with all 24 sessions queued", () => performance.now());
     assert(maximum <= 3);
     assert(ids.filter(id => f.manager.snapshot(id).phase === "REVIEWING").length <= 3);
   } finally { releaseReviews.resolve(); }

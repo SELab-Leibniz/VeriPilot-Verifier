@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -2023,6 +2024,7 @@ test('ordinary draft pending guidance permits explicit revision without changing
 });
 
 test('critical-path candidate preview and explicit revision preserve source reads and charge one repair across lost ACK', async t => {
+  semanticReviewClock(t, { timeoutMs: 20000 });
   let lost = true, control, firstState, originalValue, preview;
   const f = await fixture(t, { wireMode: 'draft', businessRoot: true, faults: { afterRevisionPersist() {
     if (lost) { lost = false; throw new Error('lost revision acknowledgement'); }
