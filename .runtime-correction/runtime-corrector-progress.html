@@ -161,7 +161,7 @@
         <h2 id="workflow-title">The target coding workflow</h2>
         <p class="callout">General usefulness is the first priority. Correct work should finish with little extra effort. When evidence shows an unmet requirement, the plugin should request a specific repair and check it again. Benchmark scores, passing guard tests and additional review activity cannot establish that benefit on their own.</p>
         <p class="intro">OpenClaw writes the code and runs checks. OpenSpec fixes the order of work: Proposal, Apply, then Archive. Runtime Corrector is an OpenClaw plugin that checks whether the plan and implementation still satisfy the original request. Enable correction for the host session actually running the task; after a host reset, recheck the selected project and explicitly enable correction in the new session.</p>
-        <p>The updated plugin installs and loads in stock OpenClaw and passes all 396 local regression files. The last completed CI run passed all seven jobs across macOS, Linux and Windows; remote validation of the updated source is pending. Production deadlines are unchanged. An earlier scripted control verified one native repair and its final review. The last completed implementation walkthrough missed required behavior. A newer experiment exhausted its request budget during Proposal, before implementation review. General gains in quality and effort remain unproven.</p>
+        <p>The updated plugin installs and loads in stock OpenClaw, passes all 396 local regression files and passed all seven CI jobs across macOS, Linux and Windows. The fresh Flash/Pro walkthrough has completed Proposal and is now implementing the approved plan. An earlier implementation review missed required behavior. General improvements in quality and effort remain unproven.</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption">
           <figcaption id="workflow-diagram-caption">Where Runtime Corrector intervenes</figcaption>
           <ol class="workflow-stages" role="list">
@@ -186,7 +186,7 @@
         <h2 id="workflow-title-zh">目标编码工作流</h2>
         <p class="callout">首要目标是对一般编码任务有帮助。正确的工作应以较少额外负担完成；有证据的需求缺口应得到可执行的修复，并重新核验。基准分数、防护测试通过或审查次数增加，都不足以单独证明这种帮助。</p>
         <p class="intro">OpenClaw 负责写代码和运行检查，OpenSpec 固定工作顺序：先 Proposal，再 Apply，最后 Archive。运行时纠偏器是 OpenClaw 插件，用于核对方案和实现是否仍满足原始请求。纠偏必须在实际执行任务的宿主会话中启用；宿主重置会话后，应重新核对所选项目，并在新会话中明确启用纠偏。</p>
-        <p>更新后的插件已在原版 OpenClaw 中完成安装及加载，并通过全部 396 份本地回归测试文件。最近完成的 CI 在 macOS、Linux 和 Windows 上七个任务全部通过；更新源码的远程验证仍待完成。生产时限保持不变。此前的一次脚本对照核验了一次原生修复及其最终审查。最近一次完成实现的走查仍漏掉了必需行为；更新的一次试验则在 Proposal 阶段耗尽请求额度，尚未进行实现审查。通用的质量收益及额外负担仍未得到证明。</p>
+        <p>更新后的插件已在原版 OpenClaw 中完成安装及加载，通过全部 396 份本地回归测试文件，以及 macOS、Linux 和 Windows 上的七个 CI 任务。新的 Flash/Pro 走查已完成 Proposal，现正实现已批准的方案。此前的实现审查漏掉了必需行为，通用的质量收益及额外负担仍需验证。</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption-zh">
           <figcaption id="workflow-diagram-caption-zh">运行时纠偏器在何处介入</figcaption>
           <ol class="workflow-stages" role="list">
@@ -311,7 +311,7 @@
         <h3>The recovery change now available</h3>
         <p>The new installable package gives OpenClaw precise guidance on an owned process-stop response and a separate Stop notice for pending document execution. A kill acknowledgment keeps the result unverified; genuine polling and fresh document reviews remain necessary. The hint starts no tool or model round.</p>
         <p>The current package guides reviewers to give each retained duty they consider current a separate checklist item before freezing, and to use its actual object ID in the final assessment. It also asks reviewers to trace required implementation paths. Conditional assessments, valid null fields and the earlier evidence guards remain supported.</p>
-        <p>The updated source passed all 396 local regression files: 4,930 checks passed and 33 were skipped. The current package passed 17 artifact checks, and all 278 installed files matched a fresh stock OpenClaw installation. The last completed remote CI passed seven jobs against the earlier 393-file source; validation of the updated source is pending. Earlier Windows failures remain recorded, and production deadlines stay unchanged. The implementation walkthrough above used the preceding package. The current updates still need real-model validation. Automatic SDK polling remains deferred.</p>
+        <p>The updated source passed all 396 local regression files: 4,930 checks passed and 33 were skipped. The current package passed 17 artifact checks, and all 278 installed files matched a fresh stock OpenClaw installation. The updated source also passed all seven remote CI jobs across macOS, Linux and Windows. Earlier Windows failures remain recorded, and production deadlines stay unchanged. The implementation walkthrough above used the preceding package. The current updates still need real-model validation. Automatic SDK polling remains deferred.</p>
 
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -334,7 +334,7 @@
         <h3>现已可安装的恢复改动</h3>
         <p>新的可安装插件对所属进程的停止响应提供明确指引，并为待完成的文档执行提供单独 Stop 提示。收到终止请求回执后仍保持待验证，必须取得真实轮询结果并重新审查当前文档。提示本身不启动工具或模型回合。</p>
         <p>当前安装包会引导审查器在冻结前，为每项拟认定为当前有效的已保留义务建立独立清单条目，并在最终评估中填写实际对象编号。指引同时要求追踪必需的实现路径。条件评估、合法空值及此前的证据约束继续保留。</p>
-        <p>更新源码通过全部 396 份本地回归测试文件，其中 4,930 项检查通过，33 项跳过。当前安装包通过 17 项包检查，其 278 个文件与一次新的原版 OpenClaw 安装逐字节一致。最近完成的远程 CI 在较早的 393 文件源码上通过七个任务；更新源码的验证仍待完成。此前的 Windows 失败继续保留记录，生产时限保持不变。上述实现走查使用前一份安装包，当前改动仍需真实模型验证。自动 SDK 轮询仍暂缓。</p>
+        <p>更新源码通过全部 396 份本地回归测试文件，其中 4,930 项检查通过，33 项跳过。当前安装包通过 17 项包检查，其 278 个文件与一次新的原版 OpenClaw 安装逐字节一致。更新源码也已在 macOS、Linux 和 Windows 上通过全部七个远程 CI 任务。此前的 Windows 失败继续保留记录，生产时限保持不变。上述实现走查使用前一份安装包，当前改动仍需真实模型验证。自动 SDK 轮询仍暂缓。</p>
 
       </div>
     </section>
@@ -811,7 +811,8 @@
         <h3>Current method experiment</h3>
         <p>An experimental review method adds a short counterexample review for selected requirements. The reviewer states an allowed condition and required outcome, follows the current code, then tries to refute a concrete route to the wrong outcome. It records whether the proposed counterexample was refuted, supported or left unresolved. The host checks source bindings and protocol order; it cannot verify the reviewer’s reasoning. The method is optional and covers only the selected requirements.</p>
         <p>The preceding prototype passed all 394 regression test files on this Mac with Node 24, installed in stock OpenClaw and passed its credential-free preflight. Its real-model walkthrough stopped before Apply after consuming the 256-request cap: 18 Flash requests and 238 Pro requests. The reviewer repeatedly read unchanged plan pages without returning its structured assessment; Proposal’s host turn ended with an error. Owned cleanup completed and 23 files were frozen. This is a failed usability attempt. It did not reach the new implementation-review method and adds no benchmark pair.</p>
-        <p>A separate stock SDK control confirmed that a new reviewer can receive an outdated tool definition, while execution still resolves the current owner. The updated plugin isolates tool definitions for each reviewer invocation and adds nonblocking feedback for repeated reads. It passed all 396 regression files on this Mac, artifact checks and a fresh stock installation. Neither change has demonstrated a real-model benefit. The next walkthrough must show whether the reviewer finishes, whether the new method is used and whether a supported finding leads to a verified repair.</p>
+        <p>A separate stock SDK control confirmed that a new reviewer can receive an outdated tool definition, while execution still resolves the current owner. The updated plugin isolates tool definitions for each reviewer invocation and adds nonblocking feedback for repeated reads. It passed all 396 regression files on this Mac, artifact checks and a fresh stock installation. Neither change has demonstrated a real-model benefit.</p>
+        <p>A fresh unpaired ON walkthrough is now running on the same public task and starter, with Flash for coding and Pro for review, within the same one-hour and 256-request limits. Proposal completed cleanly, passed official strict validation and received ordinary approval. Implementation is now running. The walkthrough still needs to show whether the new review method is used and whether a supported finding leads to a verified repair. No final result is available.</p>
         <h3>Completed development comparisons</h3>
         <p>The four completed DeepSeek arms used the same plugin and public OpenSpec workflow on macOS. Each had one hour and a 256-request limit. Flash handled coding; Pro handled ON review. The four optional strict checks stayed off. These development comparisons are separate from the 13-task benchmark.</p>
         <div class="table" role="region" aria-label="Current four-arm comparison progress" tabindex="0"><table class="evidence">
@@ -845,7 +846,8 @@
         <h3>当前的方法试验</h3>
         <p>当前实验性的审查方法，为选中的需求增加简短的反例审查。审查器先写明允许的条件及必需结果，再沿当前代码检查一条可能产生错误结果的具体路径，并尝试推翻这个反例。记录区分反例已被推翻、已有支持或仍未解决。宿主检查源码关联和协议顺序，无法验证推理本身。该方法可选，只覆盖被选中的需求。</p>
         <p>前一个原型在这台 Mac 的 Node 24 上通过全部 394 份回归测试文件，并完成原版 OpenClaw 安装检查及无凭据预检。但真实模型走查在 Apply 前耗尽了 256 次请求：Flash 18 次，Pro 238 次。审查器反复读取未变化的方案页面，没有返回结构化评估，Proposal 的宿主回合以错误结束。所属资源已清理，23 个文件已冻结。这是一次可用性失败，尚未走到新的实现审查方法，也不增加基准配对数。</p>
-        <p>另一项原版 SDK 对照确认，后续审查器可能收到过期的工具定义，但执行时仍会重新核对当前所属会话。更新后的插件为每次审查隔离工具定义，并为反复读取增加不阻断操作的反馈，已在这台 Mac 上通过全部 396 份回归测试、安装包检查及新的原版安装检查。两项改动均未证明真实模型收益。下一次走查需要核验审查器能否完成评估、新方法是否实际使用，以及有依据的发现能否带来经过复查的修复。</p>
+        <p>另一项原版 SDK 对照确认，后续审查器可能收到过期的工具定义，但执行时仍会重新核对当前所属会话。更新后的插件为每次审查隔离工具定义，并为反复读取增加不阻断操作的反馈，已在这台 Mac 上通过全部 396 份回归测试、安装包检查及新的原版安装检查。两项改动均未证明真实模型收益。</p>
+        <p>新的一次单组 ON 走查现已启动，使用相同的公开任务和起始代码，由 Flash 编码、Pro 审查，保留一小时和 256 次请求上限。Proposal 已正常结束，通过官方严格校验并获得普通批准，现正进行实现。后续仍需核验新审查方法是否实际使用，以及有依据的发现能否带来经过复查的修复，目前尚无最终结果。</p>
         <h3>已完成的开发对照</h3>
         <p>已完成的四组 DeepSeek 运行在 macOS 上使用同一插件和公开 OpenSpec 工作流，每组限时一小时、最多 256 次请求。各组由 Flash 编码，ON 审查使用 Pro，四项可选严格检查均关闭。这些开发对照独立于 13 任务基准。</p>
         <div class="table" role="region" aria-label="当前四组对照进度" tabindex="0"><table class="evidence">

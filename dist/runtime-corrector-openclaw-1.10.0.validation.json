@@ -90,21 +90,87 @@
     "knownCleanupConfirmed": true
   },
   "remoteCI": {
-    "currentUpdatedSource": "PENDING_NATURAL_FEATURE_PUSH",
-    "latestCompletedHead": "0e564fb432215154763165ddb6a35c0870fc0736",
+    "currentUpdatedSource": "NATURAL_PUSH_7_OF_7_PASS",
+    "latestCompletedHead": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
     "latestCompletedReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-0e564-report-natural-eq7j5r_y/terminal-receipt.json",
-      "sha256": "f2b93600e9e6a17f7d947df734411e9f9b7b6d671518c192716ff6b3bcbbd5e9"
+      "path": ".runtime-correction/validation/ci-fix/post-7678-feature-natural-ham6kdp_/terminal-receipt.json",
+      "sha256": "4249a3e76c69274efa0a6ea470c7f2d38385faac1b506f60c499447f4e8ad438"
     },
-    "latestCompletedResult": "7/7_PASS_ON_EARLIER393_FILE_SOURCE",
-    "updated396RemoteResultNotClaimed": true,
-    "rerunCancelDispatch": 0
+    "latestCompletedResult": "7/7_PASS_ON_UPDATED396_FILE_SOURCE",
+    "rerunCancelDispatch": 0,
+    "currentPushHead": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
+    "currentRunId": 44737810772,
+    "precedingCompletedCI": {
+      "head": "0e564fb432215154763165ddb6a35c0870fc0736",
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-0e564-report-natural-eq7j5r_y/terminal-receipt.json",
+        "sha256": "f2b93600e9e6a17f7d947df734411e9f9b7b6d671518c192716ff6b3bcbbd5e9"
+      },
+      "result": "7/7_PASS_ON_EARLIER393_FILE_SOURCE"
+    },
+    "updated396RemoteResultProven": true,
+    "windowsActualPartition": {
+      "shards": [
+        198,
+        198
+      ],
+      "disjointUnionFiles": 396,
+      "pass": 4916,
+      "skip": 45,
+      "fail": 0,
+      "cancelled": 0,
+      "timeouts": 0
+    }
   },
   "currentPackageRealModelEvaluation": {
-    "status": "NOT_YET_RUN",
+    "status": "APPLY_RUNNING_AFTER_ORDINARY_PUBLIC_PROPOSAL_APPROVAL_NO_FINAL_RESULT",
     "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
     "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
-    "benefitProven": false
+    "benefitProven": false,
+    "operatorRoot": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536",
+    "liveAdmission": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/live-admission.json",
+      "sha256": "3edafcb0eacacc5d9fee79744a4c497b662be79f3913816c6524b991664f5462"
+    },
+    "setupReadback": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/setup-final-readback.json",
+      "sha256": "c3b136248de6e3e7bccc7b9cd8d71cd2381aeedd602a0e3460aa942904d0bfbf"
+    },
+    "execOwnership": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-live-exec-ownership.json",
+      "sha256": "3576c1ab29ef2c001bad6cffb1145713700d7971eb13009afa9bf8f33f3fc531"
+    },
+    "models": {
+      "coding": "deepseek-flash",
+      "review": "deepseek-v4-pro"
+    },
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "matchedPairCredit": 0,
+    "proposalReady": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/proposal-ready.json",
+      "sha256": "945f62340374932033e43b85b48d82a407e71de6b04916c87ea5cb81be128ee4"
+    },
+    "ordinaryPublicPlanInspection": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-public-plan-inspection.json",
+      "sha256": "b3d0c70e3d746cb4f9f436062e6b5878250818225f31012a05f60aee1c82d2fe"
+    },
+    "applyAdmission": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-admission.json",
+      "sha256": "08f72ddf449d865b13f66f7b15ea5fc8a8596887d903c2ede89559fb019b3849"
+    },
+    "proposalOriginalTerminal": "OK",
+    "proposalTasksAtApproval": {
+      "total": 16,
+      "complete": 0
+    },
+    "proposalOfficialStrictValidation": "1/1_PASS",
+    "proposalModelRequests": {
+      "deepseek-flash": 23,
+      "deepseek-v4-pro": 22
+    },
+    "implementationChallengeMethodExercise": "NOT_YET_ESTABLISHED",
+    "noCausalBenefitClaim": true
   },
   "latestCompletedDevelopmentRun": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -360,14 +426,16 @@
       "eec8570b28cb9ad8a35196c899e1b45844a62925"
     ],
     "mainMerged": false,
-    "lastVerifiedRemoteHeadBeforeThisPublication": "0e564fb432215154763165ddb6a35c0870fc0736"
+    "lastVerifiedRemoteHeadBeforeThisPublication": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
+    "reportOnlyFollowup": true,
+    "runtimeAndArtifactUnchangedFromValidatedHead": true
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "cdebdc27487a0eea342c655cc6f8c32ce954e8edf0ce1ebc7abd4c30afcdbd54",
+    "htmlSha256": "8c24af6f47b88cd9706529f7d82f6b73d23c86bcba06bd71cafbd4382a8261ba",
     "receipt": {
-      "path": ".runtime-correction/validation/report-current-artifact-failed-run-qa-bgz8xj8c/receipt.json",
-      "sha256": "7dcf68a3df7d8ce01505480e26a00815ec47dbcefa99819970f99bd71293747f"
+      "path": ".runtime-correction/validation/report-current-ci-apply-final-qa-x6nw_7vb/receipt.json",
+      "sha256": "2eae5e11b10e748b52f12ac9965271159958be4908a7a3ffd57362b2d1f31854"
     },
     "desktopAndMobileViews": 4,
     "languages": [
@@ -377,14 +445,24 @@
     "externalRequests": 0,
     "pageErrors": 0,
     "visualInspection": [
-      "English desktop method section",
-      "Simplified Chinese mobile current-package section"
+      "English desktop CI and live-method sections",
+      "Simplified Chinese mobile CI and live-method sections"
     ],
     "provenancePeerStatus": "CLEAR",
     "provenancePeer": {
       "path": ".runtime-correction/validation/report-bf-eec-provenance-peer-oex59l8q/peer-review.json",
       "sha256": "429365484c78eb8ae68f36ac76fb29f9f0ee9310928481c52a365e83fc70e5ac",
       "scope": "Reviewed HTML and validation metadata before this additive pointer; no self-hash claim"
+    },
+    "liveStatusProvenancePeer": {
+      "path": ".runtime-correction/validation/report-live-eec-narrow-peer-0o2y2xhx/peer-review.json",
+      "sha256": "fa9d136f10dfc3235118c3cbb10e50af2303dd05a26c580734b95a77c27509d2",
+      "scope": "Narrow live-status edit and exact QA, before this additive pointer; historical provenance is covered by the preceding peer"
+    },
+    "currentCiAndApplyPhasePeer": {
+      "path": ".runtime-correction/validation/report-396-ci-apply-peer-3ra5o6_i/peer-review.json",
+      "sha256": "58f6f9bdd029d9adf8d53216dff81c34cd3de39a99ffe23f06830742a7c5134d",
+      "scope": "Current CI and Apply-phase update, reviewed before this additive pointer; earlier historical and live-status snapshots retain their scoped peers"
     }
   }
 }
