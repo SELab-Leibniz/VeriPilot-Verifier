@@ -1730,24 +1730,21 @@
     "actualTrialAndArchiveUnchanged": true
   },
   "reportCurrentQa": {
-    "status": "PASS",
-    "actualLaunch": "bf7105",
-    "actualSession": 44040,
-    "actualTerminal": "e5c937",
-    "exitCode": 0,
+    "status": "PASS_LOCAL_FOUR_VIEWS_AND_MANUAL_VISUAL_REVIEW",
+    "htmlSha256": "9190aa58a56e4e803f239c94fddc43e0adc181c0de59b46d7e41c9064a5c804b",
+    "receipt": {
+      "path": ".runtime-correction/validation/report-approved-four-runs-7m4n3_pe/receipt.json",
+      "sha256": "7a1b182e5933e933a092379bdc12284f073d5167ce4768624fe16ff2737468de"
+    },
+    "actual": "6c540a/session25010→17129f/0",
     "viewports": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
-    "receiptPath": ".runtime-correction/validation/report-general-use-final-0lr7a_f_/receipt.json",
-    "receiptSha256": "b3bdaf36c1c9a2f564659fca5f246dce641f5afae91da6d83d12d6c19c14e80d",
-    "htmlSha256": "188c10255d19f2a25b48ef4ab06874ba9f80bb32a2a1a674d73ad2668865ae6a",
-    "sections": 6,
-    "collapsedHistoryGroups": 3,
-    "sameFileLanguageToggle": true,
-    "visibleDatesOrHashes": false,
-    "visualReadown": "English desktop and Simplified Chinese phone next-work screenshots inspected; three concise priorities and current preparation readable. Older protocol details remain in existing collapsed history.",
-    "scope": "Published runtime and archive unchanged. First new OFF setup qualified without model calls; paid launch rejected before process start; specific four-arm export approval pending. V5grader failure retained with zero finite results."
+    "manualImages": [
+      "next-en-1200.png",
+      "process-evidence-zh-CN-390.png"
+    ]
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -3310,7 +3307,7 @@
     ]
   },
   "futureGeneralUsefulnessTaskPreparation": {
-    "status": "FIRST_OFF_PUBLIC_SETUP_QUALIFIED_NEW_PAYLOAD_EXPORT_APPROVAL_PENDING",
+    "status": "USER_APPROVED_FOUR_ARMS_FRESH_CURRENT_PACKAGE_PROFILES_IN_PREPARATION",
     "sourceHold": {
       "path": ".runtime-correction/validation/config-resolution-evaluation-v3-_nyqcn1e/source-hold.json",
       "sha256": "b8d3b2b203d95e506d3a5c0188ba2b95f013c408f3feb9e8ed6a7f941679d288"
@@ -3402,7 +3399,9 @@
       "realKeyRead": false,
       "allKnownSetupProcessesClosed": true,
       "automaticReviewRejectionPreserved": true,
-      "specificFourArmExportApprovalPending": true
+      "specificFourArmExportApprovalPending": false,
+      "approvalLaterReceived": true,
+      "supersededBeforeLiveForNewArchive": true
     },
     "isolatedGradingQualification": {
       "status": "NOT_QUALIFIED_EARLY_CHILD_ABORT",
@@ -3428,11 +3427,29 @@
       "knownCleanupConfirmed": true,
       "causeUnproven": true,
       "actualModelArmGrades": 0
+    },
+    "specificProjectExportApproval": {
+      "path": ".runtime-correction/validation/config-resolution-four-arm-user-approval.json",
+      "sha256": "e1fc1bd548f2f20df23897c2da45def6b13948f9ed8667b2822158d97277a9e2"
+    },
+    "controllerSuccessor": {
+      "status": "126_PURE_PASS_RUNTIME_NOT_ADMITTED_PENDING_PLUGIN_SUCCESSOR",
+      "hold": {
+        "path": ".runtime-correction/validation/public-taskpack-controller-v4-1-01al765a/source-hold.json",
+        "sha256": "09b3c7d35ad981a138ef3a495ffd528d64fb697f2d84d2af097b831ab0a9e59b"
+      },
+      "verification": {
+        "path": ".runtime-correction/validation/public-taskpack-controller-v4-1-01al765a/verification.json",
+        "sha256": "bd8e40999091f09f9f81ddbc707d321da50075acd324dc40378ddd4b60ca3de6"
+      },
+      "actual": "1cfe70/session45331→478d79/0",
+      "futureArmsMaterialized": 0,
+      "paidArmsStarted": 0
     }
   },
   "reportPreviousQaSnapshot": {
-    "path": ".runtime-correction/validation/report-general-use-progress-thbqashu/prior-validation.json",
-    "sha256": "097167707a829dece9fe34a56e8565da4b09328898036263f733fe1a87f0488f"
+    "path": ".runtime-correction/validation/report-process-evidence-candidate-vz11u2hx/prior-validation.json",
+    "sha256": "daa08c330d172bce6f0602eb6f9c273a067e18f8864c198b64f12bbcb186f401"
   },
   "priorInstallable8bd": {
     "sourceCommit": "ad9b9b35e055dfbb5277b5af3742438b4ddd6c25",
@@ -3853,5 +3870,105 @@
     "previousPublishedMetadataCommit": "06c878203a986df53a91c51c37f6d350247917ac",
     "scope": "Historical8bd properties only. Current e8 package has fresh source/full/native proofs; no retrospective trial promotion.",
     "previousLimitsRemainInHistoricalValidationSnapshot": true
+  },
+  "unpublishedNativeProcessEvidenceRepair": {
+    "status": "COMMITTED_SOURCE_LOCAL_CHECKS_PASS_FIRST_STOCK_CONTROL_FAILED_UNPUBLISHED",
+    "sourceRoot": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/worktree",
+    "baselineProtocolAudit": {
+      "path": ".runtime-correction/validation/execution-evidence-source-audit-amai4n63/receipt.json",
+      "sha256": "527238a1ba726d5ffacf1660b18d6cd4a7f8446cd81d7918cafdac3841fb2b51"
+    },
+    "baselineSourcePreservation": {
+      "path": ".runtime-correction/validation/execution-evidence-source-audit-amai4n63/closed-source-preservation.json",
+      "sha256": "0d76efe720457502a983059afafa61c79c8688a3070fd0ea59e6689dd9822ba5"
+    },
+    "expectedChanges": [
+      "Preserve selected host-native invocation/result metadata without reading stdout as process state.",
+      "Check supplied typed process-state claims against unique original invocation/result/process identity and acknowledged original bytes.",
+      "Keep valid background-start and nonzero/signal observations; never infer required state or success from a metric."
+    ],
+    "expectedByteAckHoleFoundBeforePromotion": true,
+    "optionalClaimsDoNotValidateOmittedClaimsOrArbitraryProse": true,
+    "runtimeOrArchivePromoted": false,
+    "modelCalls": 0,
+    "generalUsefulnessEstablished": false,
+    "sourceHold": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/combined-source-hold.json",
+      "sha256": "e22732ee12cee4dc7085da29ea9f7eb4cc301e794732d2857b502fc13a994655"
+    },
+    "sourceInputs": 1174,
+    "sourceTestFiles": 392,
+    "independentPeer": {
+      "path": ".runtime-correction/validation/native-process-final-peer-218e3q9h/peer-review.json",
+      "sha256": "39a7d6480560a736870951d2be0fe9cdbfe982d5a890f60f1ff8f4674fdedccf"
+    },
+    "focusedFourFiles": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/portable-four-tests-lsea4o7x/verification.json",
+      "sha256": "1d587e73c498b7b644bd601b276e2861a3c1038db8c9eb7eb1b9e185b2c612d1"
+    },
+    "focusedPassEachNode18And24": 54,
+    "focusedSkipEach": 0,
+    "originalByteAckFix": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/process-claims-integration-verification-v2.json",
+      "sha256": "ef4b4be73c8fc2607cfdc1247e15db9dfe0a71eb46055e64f5295383babedd03"
+    },
+    "fullSuite": {
+      "status": "PASS",
+      "actualStart": "c0d94a/session72088",
+      "actualTerminal": "feaea9/0",
+      "files": 392,
+      "pass": 4855,
+      "skip": 33,
+      "fail": 0,
+      "timedOutFiles": 0,
+      "sourceInputsUnchanged": 1174,
+      "peer": {
+        "path": ".runtime-correction/validation/native-process-full-peer-tgps0nec/closed-peer-verification.json",
+        "sha256": "85a694b3bdf8800c57d3e115ac0449790c27008a0ea7b0b6a67f1967338a3915"
+      }
+    },
+    "publishedPackageUnchanged": true,
+    "sourceCommit": "a0c34e4ce22ca621a3da89ae85389c3ada22deb2",
+    "gitBinding": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/committed-source-binding.json",
+      "sha256": "161c8c0cacbc1d1cdc066d7eba81e97de519db9da009b809ae50019023ed8db6"
+    },
+    "artifactQualification": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/artifact-qualification-3lyuc0vm/verification.json",
+      "sha256": "321b1d4162939e2d3d8cd18ed251d72155feec9ec128f8af5c354b8aa616c029"
+    },
+    "candidateArchiveSha256": "47c7338adf368f94fdcbe4b114300e76a7fede1351d91fac8f41a606ac4e4b95",
+    "committedRelease": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/release-from-commit-a0c34e4-distinct-configs/release.json",
+      "sha256": "9c610162940daeb30886b8e1577fad7f3aba2a09935a62099155d2081ec56a20"
+    },
+    "preservedBuildEnvironmentFailure": {
+      "actual": "34cb71/1",
+      "reason": "npm rejected same /dev/null used for both user/global config before packing",
+      "correctedDistinctConfigBuildActual": "0eaf27/0",
+      "sourceUnchanged": true
+    },
+    "actualArchivedSdkReplay": {
+      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/archived-native-result-replay.json",
+      "sha256": "bf5744b9187a384a05940441c40764f6fb083c7d63fe57364148d92c5cfb90df"
+    },
+    "firstStockControl": {
+      "status": "FAILED_BEFORE_FACTUAL_VALIDATION",
+      "actual": "1c63d2/session77722→52b2ab/1",
+      "elapsedMs": 123688,
+      "localFakeRequests": 49,
+      "realModelRequests": 0,
+      "typedSubmissionCount": 1,
+      "errorText": "Cannot read properties of null (reading 'length')",
+      "expectedProcessGuardObserved": false,
+      "correctedSubmissionObserved": false,
+      "portsAndKnownChildrenClosed": true,
+      "diagnosis": {
+        "path": ".runtime-correction/validation/native-process-stock-source-peer-9nl7zyjf/closed-failure-diagnosis/diagnosis.json",
+        "sha256": "0c48e98bfe0df07612858f109f5fffb13d7918270fffa954a07ec40244ca40d9"
+      },
+      "causeStatus": "SDK_NULLABLE_CONSTRAINT_SOURCE_CONSISTENT_REPRO_PENDING",
+      "runtimeArchivePromoted": false
+    }
   }
 }
