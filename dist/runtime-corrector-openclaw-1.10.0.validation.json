@@ -1731,31 +1731,23 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "verificationPath": ".runtime-correction/validation/report-ci-green-general-8u0xddif/final-verification.json",
-    "browserReceipt": {
-      "path": ".runtime-correction/validation/report-ci-green-general-8u0xddif/receipt.json",
-      "sha256": "9d2cea91e5360ca09891064b78cda412cbcb646cdb496fc2b07417093016d748"
-    },
-    "htmlSha256": "7497e138ce0510278b9dd70cb93687229a1621d5c1ece38a507e367a176435ea",
-    "actualLaunch": "e3428e",
-    "actualSession": 83007,
-    "actualTerminal": "84ebe1",
+    "actualLaunch": "bf7105",
+    "actualSession": 44040,
+    "actualTerminal": "e5c937",
     "exitCode": 0,
     "viewports": 4,
     "languages": 2,
-    "sections": 6,
-    "collapsedHistories": 3,
-    "internalLinks": 7,
     "externalRequests": 0,
     "pageErrors": 0,
+    "receiptPath": ".runtime-correction/validation/report-general-use-final-0lr7a_f_/receipt.json",
+    "receiptSha256": "b3bdaf36c1c9a2f564659fca5f246dce641f5afae91da6d83d12d6c19c14e80d",
+    "htmlSha256": "188c10255d19f2a25b48ef4ab06874ba9f80bb32a2a1a674d73ad2668865ae6a",
+    "sections": 6,
+    "collapsedHistoryGroups": 3,
+    "sameFileLanguageToggle": true,
     "visibleDatesOrHashes": false,
-    "humanizerSkill": "/Users/rshu/.agents/skills/humanizer/SKILL.md",
-    "stylesScriptsLinkTargetsByteEqualC55Report": true,
-    "runtimeAndArchiveUnchangedFromSevenPassHead": true,
-    "realModelGeneralBenefitClaimed": false,
-    "latestPositiveRepairMechanicalOnly": true,
-    "latestOriginalApplyErrorRetained": true,
-    "reportRefreshOwnExactHeadCiClaimed": false
+    "visualReadown": "English desktop and Simplified Chinese phone next-work screenshots inspected; three concise priorities and current preparation readable. Older protocol details remain in existing collapsed history.",
+    "scope": "Published runtime and archive unchanged. First new OFF setup qualified without model calls; paid launch rejected before process start; specific four-arm export approval pending. V5grader failure retained with zero finite results."
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -3064,6 +3056,10 @@
         "path": ".runtime-correction/validation/native-onboarding-source-peer-vqgvf94o/peer-review-new-archive-closed.json",
         "sha256": "76d2638ca2574a9b5d8c28224e0dbebb573eeef842982806ba1587a2a658152f"
       }
+    },
+    "currentShippedPackageBoundedAudit": {
+      "path": ".runtime-correction/validation/shipped-e8-generality-audit-5axc1qu4/audit.json",
+      "sha256": "2cd8e7845aeb3e00d38c5191a5f302692731ba98021528623e011a0076560c44"
     }
   },
   "reportPreviousQa": {
@@ -3314,7 +3310,7 @@
     ]
   },
   "futureGeneralUsefulnessTaskPreparation": {
-    "status": "PEER_CLEAR_PRIVATE_SOURCE_AND_FINITE_CONTROL_PREPARATION_ONLY",
+    "status": "FIRST_OFF_PUBLIC_SETUP_QUALIFIED_NEW_PAYLOAD_EXPORT_APPROVAL_PENDING",
     "sourceHold": {
       "path": ".runtime-correction/validation/config-resolution-evaluation-v3-_nyqcn1e/source-hold.json",
       "sha256": "b8d3b2b203d95e506d3a5c0188ba2b95f013c408f3feb9e8ed6a7f941679d288"
@@ -3335,9 +3331,10 @@
     "finiteChecks": 37,
     "r8AndPlanCompletenessAssessedSeparately": true,
     "v1FalsePassAndV2FairnessFailuresPreserved": true,
-    "evaluationArmsAdmitted": 0,
+    "evaluationArmsAdmitted": 1,
     "noGeneralBenefitClaim": true,
-    "newGenericController": {
+    "actualModelArmsStarted": 0,
+    "previousGenericController": {
       "status": "SOURCE_AND_PURE_PEER_CLEAR_NOT_ADMITTED",
       "sourceHold": {
         "path": ".runtime-correction/validation/public-taskpack-controller-e17swjdf/source-hold.json",
@@ -3357,11 +3354,85 @@
       "privateGradingExecution": "ISOLATED_PARENT_WORKER_IMPLEMENTATION_PENDING_SOURCE_AND_RUNTIME_QUALIFICATION",
       "gradingFiniteOracleUnchanged": true,
       "additionalGenericEvidenceCaptureAudit": "UNDER_REVIEW_BEFORE_REAL_ARMS"
+    },
+    "newGenericController": {
+      "status": "SOURCE_AND_PURE_PEER_CLEAR_FIRST_OFF_SETUP_QUALIFIED_LIVE_NOT_STARTED",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/public-taskpack-controller-v3-ir6x75cr/source-hold.json",
+        "sha256": "7816e6ab7bce6f7f43b88e7447226104fe99afae799eaf92a0a5471b6dc74c9f"
+      },
+      "independentPeer": {
+        "path": ".runtime-correction/validation/taskpack-observer-peer-jhsdtnpr/peer-review-v3.json",
+        "sha256": "e31f92b53242ecb287e2eb6f6082a838e3b04603af04df018ccc278a0f623c34"
+      },
+      "purePassEachOwnerAndPeer": 126,
+      "actualModelArmsStarted": 0,
+      "taskOrBenchmarkLogicInPluginAdded": false,
+      "fixedLiveMinutes": 60,
+      "fixedRequests": 256,
+      "fixedCorrectionCaps": 2
+    },
+    "firstOffSetup": {
+      "status": "PUBLIC_SETUP_JOINED_LIVE_EXPORT_REJECTED_BEFORE_START",
+      "setupReceipt": {
+        "path": ".runtime-correction/validation/public-use-080682a01f/setup-receipt.json",
+        "sha256": "bd079e3c319f7452ae2edf2025a07c1794c4df6c38cbc28e259dda3d6df5c242"
+      },
+      "rootReadback": {
+        "path": ".runtime-correction/validation/public-use-080682a01f/root-setup-readback.json",
+        "sha256": "82fed61e453d3af2b61678934c6973336f7869bea0eb0e7c62348c31628a157d"
+      },
+      "preflight": {
+        "path": ".runtime-correction/validation/public-use-080682a01f/preflight/attempt2/receipt.json",
+        "sha256": "5e6071c938848725fae3feaff14049d6fc95c86d294e8b265b76ba70c9c16559"
+      },
+      "preflightPeer": {
+        "path": ".runtime-correction/validation/public-use-080682a01f/preflight/independent-readback.json",
+        "sha256": "ca6ff478bd521d1f5f3dca9d34f20c048eb4dc05af8791aeabef33a2ab205ed1"
+      },
+      "launchBlocked": {
+        "path": ".runtime-correction/validation/public-use-080682a01f/launch-blocked.json",
+        "sha256": "438e29454184744e711a9b3d75adf4ff357e036688a1f8aeefc687cf928cb996"
+      },
+      "actualSetupStart": "6d5736/session48299",
+      "actualSetupTerminal": "041c08/0",
+      "checks": 23,
+      "checksPassed": 23,
+      "modelRequests": 0,
+      "realKeyRead": false,
+      "allKnownSetupProcessesClosed": true,
+      "automaticReviewRejectionPreserved": true,
+      "specificFourArmExportApprovalPending": true
+    },
+    "isolatedGradingQualification": {
+      "status": "NOT_QUALIFIED_EARLY_CHILD_ABORT",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/isolated-python-grading-v5-d_wmbzmf/source-hold.json",
+        "sha256": "174fbe72e30532c5e13d67157cab550c26af09a3c32fb790060e78ef8df8f5d9"
+      },
+      "verification": {
+        "path": ".runtime-correction/validation/isolated-grading-v5-qualification-_8al8rfz/verification.json",
+        "sha256": "522bf1bf67f20b041a80036ad7838bab52301aa7e2efc2fcb3efc82d47519311"
+      },
+      "independentPeer": {
+        "path": ".runtime-correction/validation/isolated-grading-v5-output-peer-42q7gk3o/closed-output-review.json",
+        "sha256": "f580b48f02cada5fecaf886ca92ed256313ca437057971fa7aa64527f613d7c8"
+      },
+      "pipeControlsPassed": 7,
+      "syntheticAttempted": 1,
+      "syntheticUnstarted": 24,
+      "finiteGradeResults": 0,
+      "rawStderrBytes": 0,
+      "rawStderrEofComplete": true,
+      "actualChildExit": -6,
+      "knownCleanupConfirmed": true,
+      "causeUnproven": true,
+      "actualModelArmGrades": 0
     }
   },
   "reportPreviousQaSnapshot": {
-    "path": ".runtime-correction/validation/report-onboarding-repair-race-lztklaz4/prior-validation.json",
-    "sha256": "fecd0daf745753768d594eca4abbd3895b5f4dfcab73660af6e21f38803995b4"
+    "path": ".runtime-correction/validation/report-general-use-progress-thbqashu/prior-validation.json",
+    "sha256": "097167707a829dece9fe34a56e8565da4b09328898036263f733fe1a87f0488f"
   },
   "priorInstallable8bd": {
     "sourceCommit": "ad9b9b35e055dfbb5277b5af3742438b4ddd6c25",
