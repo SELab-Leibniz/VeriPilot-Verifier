@@ -350,6 +350,11 @@
         "enabled": {
           "type": "boolean"
         },
+        "implementationChallengeMode": {
+          "type": "string",
+          "enum": ["optional", "sampled"],
+          "description": "Experimental opt-in sampled contrary-route review of at most three host-selected mandatory original production duties at task completion. Omitted or optional retains ordinary behavior; reviewer appraisals do not prove semantics."
+        },
         "originalRequirementsBasis": {
           "type": "boolean",
           "default": false,

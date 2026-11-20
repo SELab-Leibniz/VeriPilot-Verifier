@@ -2524,3 +2524,86 @@ test('original-path method policy makes the preceding same-Stop cache historical
   const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId);
   assert.equal(ledger.used, 0);
 });
+
+
+async function productionPendingNavigationFixture(t, { deviationOnly = false } = {}) {
+  const f = await fixture(t);
+  const requirements = ['Deliver the required value.', 'Preserve the requested label.'];
+  f.input.request.classificationContract = 2;
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly,
+    requireCurrentProductionCoverage: true });
+  f.input.evidence.snapshot.entries[0].message.content = requirements.join('\n');
+  f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root,
+    snapshot: f.input.evidence.snapshot });
+  f.input.request.fileQualityReviewEnabled = !deviationOnly;
+  f.input.request.artifactCandidates = [{ artifactId: 'delivery', files: [{ path: 'spec.md',
+    sha256: sha256(await fs.readFile(f.file)) }] }];
+  f.preparePendingNavigation = async tools => {
+    await tools.readAll();
+    const original = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-'));
+    const citeId = (await tools.read(original)).details.citation.citeId;
+    const page = await tools.submit('set_original_checklist', {
+      items: requirements.map((text, index) => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        implementationRole: 'PRODUCTION', text, citeId, lineStart: index + 1, lineEnd: index + 1 })),
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+    const objects = requirements.map(text => page.items.find(item => item.description === text));
+    assert(objects.every(item => (item?.requiresProductionCoverage === true) === deviationOnly));
+    assert.equal(page.pending, deviationOnly ? undefined : 3, 'full-review numeric pending counts only unsaved rows and file assessments');
+    return objects;
+  };
+  return f;
+}
+
+test('full-review coverage option preserves legacy save navigation and saved-result recovery', async t => {
+  const f = await productionPendingNavigationFixture(t);
+  const handle = await checkedVersionRun(f, async tools => {
+    const objects = await f.preparePendingNavigation(tools);
+    const save = taskId => tools.submit('submit_review', { taskId, verdict: 'UNVERIFIED',
+      reason: 'Current production proof is not established.', citeIds: [] });
+    const first = await save(objects[0].objectId);
+    assert.equal(first.saved, true); assert.equal(first.pending, 2);
+    assert(first.pendingNavigation, 'the full-review numeric pending contract retains bounded navigation');
+    assert.deepEqual(first.pendingNavigation.pendingIds, [objects[1].objectId, 'file:spec.md']);
+    assert.equal(first.pendingNavigation.pendingTotal, 2);
+    assert.equal(first.pendingNavigation.navigationOnly, true);
+    assert(Buffer.byteLength(JSON.stringify(first.pendingNavigation)) <= 2048);
+    assert(Buffer.byteLength(JSON.stringify(first)) <= 8192);
+    const recovered = await tools.submit('review_checklist', { limit: 20 });
+    assert.equal(recovered.items.find(item => item.objectId === objects[0].objectId).savedResult.judgement, 'UNVERIFIED');
+    assert.equal(recovered.pending, 2);
+    const history = await tools.submit('review_history', { mode: 'state' });
+    assert.equal(typeof history, 'object');
+    const second = await save(objects[1].objectId);
+    assert.equal(second.pending, 1); assert.deepEqual(second.pendingNavigation.pendingIds, ['file:spec.md']);
+    const last = await save('file:spec.md');
+    assert.equal(last.pending, 0); assert.deepEqual(last.pendingNavigation.pendingIds, []);
+    const finish = await tools.submit('finish_stop_review', { summary: 'Saved rows remain unverified without production proof.' });
+    if (!finish.complete) await tools.submit('finish_stop_review', { summary: 'No production proof was established.' });
+  });
+  assert(handle.result.metricObjectJudgements.every(row => row.judgement === 'UNVERIFIED'));
+  await handle.close();
+});
+
+test('missing production coverage pending view uses exact string object IDs and source diagnostics', async t => {
+  const f = await productionPendingNavigationFixture(t, { deviationOnly: true });
+  const handle = await checkedVersionRun(f, async tools => {
+    const objects = await f.preparePendingNavigation(tools);
+    const page = await tools.submit('review_checklist', { view: 'pending', limit: 20 });
+    const coverage = page.items.filter(item => item.type === 'PRODUCTION_COVERAGE');
+    assert.equal(coverage.length, 2);
+    assert(coverage.every(item => typeof item.id === 'string' && typeof item.objectId === 'string'),
+      'Map entries are not valid navigation IDs');
+    assert.deepEqual(coverage.map(item => item.objectId), objects.map(item => item.objectId));
+    for (const item of coverage) {
+      assert.deepEqual(item.proofOwners, ['SOURCE']);
+      assert.equal(item.diagnostic.code, 'CURRENT_PRODUCTION_COVERAGE_REQUIRED');
+    }
+    assert.equal(page.navigationOnly, true); assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+    for (const taskId of objects.map(item => item.objectId))
+      await tools.submit('submit_review', { taskId, verdict: 'UNVERIFIED', reason: 'Current production proof is unavailable.', citeIds: [] });
+    const finish = await tools.submit('finish_stop_review', { summary: 'Missing production coverage remains unverified.' });
+    if (!finish.complete) await tools.submit('finish_stop_review', { summary: 'Coverage remains unavailable.' });
+  });
+  assert(handle.result.metricObjectJudgements.every(row => row.judgement === 'UNVERIFIED'));
+  await handle.close();
+});

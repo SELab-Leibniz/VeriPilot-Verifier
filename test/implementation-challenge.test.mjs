@@ -13,6 +13,7 @@ import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { observeKnownOriginalObligations, knownOriginalObligations, knownOriginalObligationReader } from '../lib/runtime-v2/known-original-obligations.mjs';
 import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
+import { selectImplementationChallengeSubjects } from '../lib/runtime-v2/implementation-challenge.mjs';
 import { readOpenSpecPlan } from '../lib/openspec-plan.mjs';
 
 const domains = [
@@ -29,13 +30,13 @@ async function savedChallengeItem(handle) {
   return JSON.parse(await fs.readFile(path.join(handle.artifacts, 'items', sha256(snapshot.frames[0].objectId) + '.json'))).result;
 }
 
-async function fixture(t, { domain = domains[0], extra = false, carry = false, known = false, conditional = false, four = false, unformed = false } = {}) {
+async function fixture(t, { domain = domains[0], extra = false, carry = false, known = false, conditional = false, four = false, unformed = false, sampled = false, omitRole = false } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   const duty = conditional ? `When transfer is requested, ${domain.duty.toLowerCase()}` : domain.duty;
   const duties = [duty, ...(four ? domains.slice(1).map(item => item.duty) : []), ...(extra || four ? ['Preserve the emitted record identifier.'] : [])];
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
   f.input.request.classificationContract = 2;
-  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, metrics: { M16: true } });
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, metrics: { M16: true }, ...(sampled ? { implementationChallengeMode: 'sampled' } : {}) });
   f.input.evidence.snapshot.entries[0].message.content = duties.join('\n');
   f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
   const file = path.join(f.root, 'producer.mjs'); await fs.writeFile(file, domain.code);
@@ -76,7 +77,7 @@ async function fixture(t, { domain = domains[0], extra = false, carry = false, k
     await tools.readAll();
     const original = await tools.read(tools.brief.task.basisFiles.find(p => path.basename(p).startsWith('user-original-0')));
     const page = await tools.submit('set_original_checklist', { items: duties.map((text, i) => ({
-      metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', text,
+      metricId: 'M16', verificationTarget: 'IMPLEMENTATION', ...(!omitRole ? { implementationRole: 'PRODUCTION' } : {}), text,
       ...(known && !unformed && i === 0 ? { text: 'Narrow supplied wording.', knownCandidateId: candidate.id, knownDutyReason: 'The entire cited duty corresponds to the complete retained original candidate.' } : {}),
       ...(unformed && i === 0 ? { text: 'Preserve durable identifiers.' } : {}),
       ...(conditional ? { applicability: 'A caller requests transfer.' } : {}),
@@ -596,4 +597,293 @@ test('the test harness exposes intentional callback assertions and unexpected ca
     }), error => unexpected ? error instanceof TypeError && error.message === 'Owned unexpected callback failure'
       : error.code === 'ERR_ASSERTION' && error.message === 'Owned callback assertion witness');
   }
+});
+
+
+const sampling = handle => handle.reviewEvidence.implementationChallenges;
+const selectedPageObjects = p => p.page.implementationChallenges.selection.selected.map(({ objectId }) => p.page.items.find(item => item.objectId === objectId));
+const questionFor = (f, p, object) => ({ ...f.question({ ...p, object }), original: span(p.original, f.duties.indexOf(object.description) + 1) });
+async function resolveSelected(f, tools, p, object) {
+  const local = { ...p, object };
+  const frame = await f.frame(tools, local, questionFor(f, p, object));
+  return f.resolved(tools, local, frame.challengeId);
+}
+
+test('sample selection is capped and stable under frozen cohort enumeration reorder', () => {
+  const subjects = Array.from({ length: 7 }, (_, i) => ({ objectId: `host-${i}`, sourceRevisionId: `duty-${i}@1`,
+    description: `Preserve original production duty ${i}.`, originalSource: { ref: 'original-user', sha256: 'a'.repeat(64), start: i + 1, end: i + 1 },
+    applicabilityKind: 'CURRENT_TASK', proofOwners: ['SOURCE'] }));
+  const first = selectImplementationChallengeSubjects(subjects), second = selectImplementationChallengeSubjects([...subjects].reverse());
+  assert.deepEqual(first, second); assert.equal(first.selected.length, 3); assert.equal(first.eligibleCount, 7);
+  assert.equal(new Set(first.selected.map(item => item.objectId)).size, 3); assert.equal(first.semanticsVerified, false);
+  const changed = structuredClone(subjects); changed[0].description += ' Preserve the original refusal branch.';
+  assert.notEqual(selectImplementationChallengeSubjects(changed).cohortDigest, first.cohortDigest);
+  assert.throws(() => selectImplementationChallengeSubjects([subjects[0], subjects[0]]), /unique host object IDs/);
+});
+
+test('sampled mode announces a frozen host cohort early and missing method affects only selected duties', async t => {
+  const f = await fixture(t, { sampled: true, four: true }); let selectedIds, other;
+  const handle = await f.run(async tools => {
+    assert.match(tools.params.extraSystemPrompt, /Experimental sampled challenge mode/);
+    const p = await f.prepare(tools), plan = p.page.implementationChallenges.selection;
+    assert.equal(plan.status, 'SELECTED'); assert.equal(plan.selected.length, 3); assert.equal(plan.eligibleCount, 4);
+    selectedIds = plan.selected.map(item => item.objectId); other = p.page.items.find(item => !selectedIds.includes(item.objectId)).objectId;
+    assert(p.page.items.filter(item => item.implementationChallengeRequired).every(item => selectedIds.includes(item.objectId)));
+    const again = await tools.submit('review_checklist', { offset: 0, limit: 20 });
+    assert.deepEqual(again.implementationChallenges.selection, plan);
+    const pending = await tools.submit('review_checklist', { view: 'pending', offset: 0, limit: 20 });
+    assert.deepEqual(pending.items.filter(item => item.type === 'IMPLEMENTATION_CHALLENGE').map(item => item.objectId).sort(), [...selectedIds].sort());
+    await f.finish(tools);
+  });
+  assert.deepEqual(handle.result.unverifiedItems.map(item => item.objectId).sort(), [...selectedIds].sort());
+  assert(!handle.result.unverifiedItems.some(item => item.objectId === other)); assert.equal(handle.result.metricObjectJudgements.length, 0);
+  assert.equal(sampling(handle).status, 'METHOD_NOT_EXERCISED'); assert(sampling(handle).outcomes.every(item => item.state === 'NOT_EXERCISED'));
+  assert.equal(f.calls.length, 1);
+});
+
+test('sampled mode admits its three resolved duties and rejects a model-selected substitute', async t => {
+  const f = await fixture(t, { sampled: true, four: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), objects = selectedPageObjects(p), other = p.page.items.find(item => !objects.includes(item));
+    await assert.rejects(f.frame(tools, { ...p, object: other }, questionFor(f, p, other)), { code: 'IMPLEMENTATION_CHALLENGE_SCOPE' });
+    const refs = [];
+    for (const object of objects) refs.push(await resolveSelected(f, tools, p, object));
+    await tools.submit('finish_stop_review', { summary: 'The fixed partial sample was appraised, not host-proved.', implementationChallenges: refs.map(({ objectId, receiptId }) => ({ objectId, receiptId })) });
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).status, 'PARTIAL_SCOPE');
+  assert.equal(sampling(handle).frames.length, 3); assert(sampling(handle).outcomes.every(item => item.state === 'RESOLVED_REFUTED'));
+  assert.equal(sampling(handle).semanticsVerified, false); assert.equal(sampling(handle).exhaustive, false); assert.equal(f.calls.length, 1);
+});
+
+test('sampled missing, resolved and unselected items retain independent outcomes', async t => {
+  const f = await fixture(t, { sampled: true, four: true }); let missing;
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), objects = selectedPageObjects(p); missing = objects.slice(1).map(item => item.objectId);
+    const ref = await resolveSelected(f, tools, p, objects[0]); await f.finish(tools, ref);
+  });
+  assert.deepEqual(handle.result.unverifiedItems.map(item => item.objectId).sort(), missing.sort());
+  assert.equal(handle.result.metricObjectJudgements.length, 0); assert.equal(sampling(handle).frames.length, 1);
+});
+
+test('sampled source-backed deviation and honest uncertainty skip without refilling the sample', async t => {
+  const f = await fixture(t, { sampled: true, four: true }); let deviation, uncertain;
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), [clean, deviating, unverified] = selectedPageObjects(p);
+    deviation = deviating.objectId; uncertain = unverified.objectId;
+    const ref = await resolveSelected(f, tools, p, clean);
+    await tools.submit('submit_review', { taskId: deviation, verdict: 'DEVIATION', reason: 'The source-linked actual route contradicts this scripted original duty.', citeIds: [p.code.details.citation.citeId] });
+    await tools.submit('submit_review', { taskId: uncertain, verdict: 'UNVERIFIED', reason: 'The required source relationship remains unknown.' });
+    await f.finish(tools, ref);
+  });
+  assert.deepEqual(handle.result.unverifiedItems.map(item => item.objectId), [uncertain]);
+  assert.equal(handle.result.metricObjectJudgements.find(item => item.objectId === deviation).judgement, 'DEVIATION');
+  assert.equal(sampling(handle).selection.selected.length, 3); assert.equal(sampling(handle).frames.length, 1);
+  assert(sampling(handle).outcomes.some(item => item.state === 'SKIPPED_EXISTING_DEVIATION'));
+  assert(sampling(handle).outcomes.some(item => item.state === 'SKIPPED_UNVERIFIED'));
+});
+
+for (const valid of [true, false]) test(`sampled conditional ${valid ? 'supported exclusion skips' : 'missing activation stays unverified'}`, async t => {
+  const f = await fixture(t, { sampled: true, conditional: true, known: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools);
+    const final = { summary: 'Applicability retains its own original proof guard.', knownObligations: [{ id: f.candidate.id,
+      disposition: 'CURRENT', objectId: p.object.objectId, verdict: 'NOT_APPLICABLE',
+      reason: 'Current source facts establish this original trigger is inactive.', citeIds: [p.code.details.citation.citeId],
+      ...(valid ? { conditionAssessment: { activation: 'INACTIVE_AT_CURRENT_BOUNDARY', evidenceKind: 'TARGET_FACTS', reason: 'Current source supports this original conditional exclusion.' } } : {}) }] };
+    const first = await tools.submit('finish_stop_review', final);
+    if (!valid) { assert.equal(first.complete, false); await tools.submit('finish_stop_review', final); }
+  });
+  assert.equal(handle.result.unverifiedItems.length === 0, valid);
+  assert.equal(sampling(handle).outcomes[0].state, valid ? 'SKIPPED_NOT_APPLICABLE' : 'SKIPPED_UNVERIFIED');
+  assert.equal(sampling(handle).status, 'METHOD_NOT_EXERCISED');
+});
+
+test('sampled active conditional clean accounting cannot omit its selected method', async t => {
+  const f = await fixture(t, { sampled: true, conditional: true, known: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), final = { summary: 'An active original duty still needs its sample.', knownObligations: [{ id: f.candidate.id,
+      disposition: 'CURRENT', objectId: p.object.objectId, verdict: 'NO_CONFIRMED_DEVIATION', reason: 'This active duty is claimed conforming.',
+      citeIds: [p.code.details.citation.citeId], conditionAssessment: { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'Current source facts support the original activation.' } }] };
+    await tools.submit('finish_stop_review', final); await tools.submit('finish_stop_review', final);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED');
+  assert(handle.result.unverifiedItems.length > 0); assert.equal(sampling(handle).status, 'METHOD_NOT_EXERCISED');
+});
+
+test('sampled pre-implementation has an explicit nonapplicable empty cohort', async t => {
+  const f = await fixture(t, { sampled: true });
+  const handle = await f.run(async tools => { const p = await f.prepare(tools, { preImplementation: true });
+    assert.equal(p.page.implementationChallenges.selection.status, 'NOT_APPLICABLE'); assert.equal(p.page.implementationChallenges.selection.selected.length, 0); await f.finish(tools); });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).status, 'METHOD_NOT_EXERCISED');
+});
+
+for (const failure of ['foreign', 'pending', 'sourceChanged', 'deadline', 'cancelled']) test(`sampled preserves the existing ${failure} guard`, async t => {
+  const f = await fixture(t, { sampled: true }), controller = new AbortController();
+  if (failure === 'cancelled') f.input.abortSignal = controller.signal;
+  const run = () => f.run(async tools => {
+    const p = await f.prepare(tools);
+    if (failure === 'foreign') { await assert.rejects(f.frame(tools, p, { ...f.question(p), objectId: 'M16:foreign' }), { code: 'IMPLEMENTATION_CHALLENGE_SCOPE' }); await f.finish(tools); return; }
+    if (failure === 'pending') { const unread = await tools.read(f.file, { receipt: false }); await assert.rejects(f.frame(tools, p, { ...f.question(p), decision: span(unread, 2) }), { code: 'IMPLEMENTATION_CHALLENGE_EVIDENCE' }); await f.finish(tools); return; }
+    const frame = await f.frame(tools, p);
+    if (failure === 'sourceChanged') await fs.appendFile(f.file, '// actual source changed\n');
+    if (failure === 'cancelled') { controller.abort(new Error('sampled owned cancellation')); throw controller.signal.reason; }
+    if (failure === 'deadline') {
+      const future = Date.now() + 600000, mock = t.mock.method(Date, 'now', () => future);
+      try { await f.resolved(tools, p, frame.challengeId); } finally { mock.mock.restore(); }
+    } else await f.resolved(tools, p, frame.challengeId);
+  });
+  if (['sourceChanged', 'deadline', 'cancelled'].includes(failure)) await assert.rejects(run(), /CHANGED|changed|DEADLINE|deadline|cancel/);
+  else { const handle = await run(); assert.equal(handle.result.unverifiedItems.length, 1); }
+  assert.equal(f.calls.length, 1);
+});
+
+
+test('sampled mode cannot reactivate disabled M16 or manufacture an eligible duty', async t => {
+  const f = await fixture(t, { sampled: true });
+  f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, implementationChallengeMode: 'sampled', metrics: { M16: false } });
+  const handle = await f.run(async tools => {
+    await tools.readAll(); assert.equal(tools.tools.has('review_implementation_challenge'), false);
+    const page = await tools.submit('set_original_checklist', { items: [], scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+    assert.equal(page.implementationChallenges.selection.status, 'NOT_APPLICABLE'); assert.equal(page.implementationChallenges.selection.selected.length, 0);
+    await f.finish(tools);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).frames?.length ?? 0, 0);
+});
+
+test('sampled carried PASS still requires a current resolved selected receipt', async t => {
+  const f = await fixture(t, { sampled: true, carry: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools); assert(p.object.previousDeviation);
+    await assert.rejects(tools.submit('submit_review', { taskId: p.object.objectId, verdict: 'PASS', reason: 'An unchallenged carried item cannot clear.' }), { code: 'IMPLEMENTATION_CHALLENGE_PENDING' });
+    const framed = await f.frame(tools, p), result = await f.resolved(tools, p, framed.challengeId);
+    await assert.rejects(tools.submit('submit_review', { taskId: p.object.objectId, verdict: 'PASS', reason: 'A foreign receipt cannot clear this item.',
+      citeIds: [p.code.details.citation.citeId], implementationChallengeReceiptId: 'foreign-current-receipt' }), { code: 'IMPLEMENTATION_CHALLENGE_PENDING' });
+    await tools.submit('submit_review', { taskId: p.object.objectId, verdict: 'PASS', reason: 'The original current source and selected appraisal are supplied.',
+      citeIds: [p.code.details.citation.citeId], implementationChallengeReceiptId: result.receiptId }); await f.finish(tools, result);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).outcomes[0].state, 'RESOLVED_REFUTED');
+});
+
+
+test('sampled M16 admits the original checklist contract with omitted production role', async t => {
+  const f = await fixture(t, { sampled: true, omitRole: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools); assert.equal(p.object.implementationRole, undefined);
+    assert.equal(p.page.implementationChallenges.selection.selected.length, 1);
+    const framed = await f.frame(tools, p), result = await f.resolved(tools, p, framed.challengeId); await f.finish(tools, result);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).status, 'PARTIAL_SCOPE');
+});
+
+
+test('optional M16 challenge also admits the existing omitted production-role contract', async t => {
+  const f = await fixture(t, { omitRole: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools); assert.equal(p.object.implementationRole, undefined);
+    const framed = await f.frame(tools, p), result = await f.resolved(tools, p, framed.challengeId); await f.finish(tools, result);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(sampling(handle).status, 'PARTIAL_SCOPE');
+});
+
+test('typed M16 compatibility still rejects nonproduction roles and wrong proof types', async t => {
+  for (const invalid of [{ implementationRole: 'TEST' }, { implementationRole: 'SUPPORT' }, { verificationTarget: 'PROCESS' }, { implementationRole: null }]) {
+    const f = await fixture(t, { omitRole: true });
+    const handle = await f.run(async tools => {
+      await tools.readAll(); const original = await tools.read(tools.brief.task.basisFiles.find(p => path.basename(p).startsWith('user-original-0')));
+      await assert.rejects(tools.submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+        text: f.duties[0], citeId: original.details.citation.citeId, lineStart: 1, lineEnd: 1, ...invalid }] }),
+      error => ['STOP_ORIGINAL_CHECKLIST_INVALID', 'TASK_SUBMISSION_INVALID'].includes(error.code));
+      const p = await f.prepare(tools); const framed = await f.frame(tools, p), resolved = await f.resolved(tools, p, framed.challengeId); await f.finish(tools, resolved);
+    });
+    assert.equal(handle.result.unverifiedItems.length, 0);
+  }
+});
+
+test('omitted role compatibility never turns a non-M16 item into a challenge subject', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    await tools.readAll(); const original = await tools.read(tools.brief.task.basisFiles.find(p => path.basename(p).startsWith('user-original-0')));
+    const page = await tools.submit('set_original_checklist', { items: [{ metricId: 'M12', verificationTarget: 'IMPLEMENTATION',
+      text: f.duties[0], citeId: original.details.citation.citeId, lineStart: 1, lineEnd: 1 }],
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true } });
+    const p = { page, object: page.items[0], original, code: await tools.read(f.file) };
+    await assert.rejects(f.frame(tools, p), { code: 'IMPLEMENTATION_CHALLENGE_SCOPE' }); await f.finish(tools);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0);
+});
+
+for (const sampled of [false, true]) test(`${sampled ? 'sampled' : 'optional'} omitted-role compatibility still excludes actual program-standing regression`, async t => {
+  const f = await fixture(t, { sampled, omitRole: true });
+  f.input.request.taskChanges = { startHead: null, changes: [{ path: 'producer.mjs', status: 'MODIFIED' }] };
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), standing = p.page.items.find(item => item.programStanding);
+    assert(standing); assert.equal(standing.metricId, 'M16'); assert.equal(standing.implementationRole, 'PRODUCTION');
+    await assert.rejects(f.frame(tools, { ...p, object: standing }), { code: 'IMPLEMENTATION_CHALLENGE_SCOPE' });
+    if (sampled) assert(!p.page.implementationChallenges.selection.selected.some(item => item.objectId === standing.objectId));
+    const framed = await f.frame(tools, p), result = await f.resolved(tools, p, framed.challengeId); await f.finish(tools, result);
+  });
+  assert.equal(sampling(handle).frames.length, 1); assert.equal(handle.result.unverifiedItems.length, 0);
+});
+
+
+for (const superseded of [false, true]) test(`sampled validated ${superseded ? 'supersession' : 'nonbinding original'} is not a current challenge duty`, async t => {
+  const f = await fixture(t, { sampled: true, known: true,
+    ...(!superseded ? { domain: { ...domains[0], duty: 'You may publish an optional artifact if useful.' } } : {}) });
+  if (superseded) {
+    f.input.evidence.snapshot.entries.push({ type: 'user', uuid: 'U2', message: { content: 'Amend the earlier publication requirement: this task must not publish an artifact.' } });
+    f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+  }
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools);
+    const later = superseded ? tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-1')) : null;
+    const source = later ? await tools.read(later) : p.original;
+    await tools.submit('finish_stop_review', { summary: 'Only the exact source-grounded noncurrent duty is excluded.',
+      knownObligations: [{ id: f.candidate.id, disposition: superseded ? 'SUPERSEDED' : 'NOT_BINDING',
+        reason: 'The acknowledged original wording or later amendment removes this exact duty.', citeIds: [source.details.citation.citeId] }] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, superseded ? 'SUPERSEDED' : 'NOT_BINDING');
+  assert.equal(handle.result.unverifiedItems.length, 0);
+  assert.equal(sampling(handle).outcomes[0].state, 'SKIPPED_NOT_CURRENT');
+  assert.equal(sampling(handle).status, 'METHOD_NOT_EXERCISED');
+});
+
+
+for (const uncertain of [false, true]) test(`sampled exact noncurrent binding preserves a separate current duty${uncertain ? ' and its saved uncertainty' : ''}`, async t => {
+  const f = await fixture(t, { sampled: true, known: true, extra: true,
+    domain: { ...domains[0], duty: 'You may publish an optional artifact if useful.' } }); let due, excluded;
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools); excluded = p.object.objectId;
+    due = p.page.items.find(item => item.objectId !== excluded).objectId;
+    // A current-duty correspondence cannot be smuggled through an exclusion.
+    await assert.rejects(tools.submit('finish_stop_review', { summary: 'Foreign current association cannot travel with an exclusion.',
+      knownObligations: [{ id: f.candidate.id, disposition: 'NOT_BINDING', reason: 'An original optional clause is nonbinding.',
+        citeIds: [p.original.details.citation.citeId], corroboration: { citeId: p.original.details.citation.citeId, start: 2, end: 2, reason: 'Another duty span cannot substitute.' } }] }), { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+    if (uncertain) await tools.submit('submit_review', { taskId: excluded, verdict: 'UNVERIFIED', reason: 'An existing current source uncertainty remains unresolved.' });
+    await tools.submit('finish_stop_review', { summary: 'The exact advisory binding is excluded without touching the current sibling.',
+      knownObligations: [{ id: f.candidate.id, disposition: 'NOT_BINDING', reason: 'This exact original clause is explicitly optional.', citeIds: [p.original.details.citation.citeId] }] });
+  });
+  assert.deepEqual(handle.result.unverifiedItems.map(item => item.objectId).sort(), (uncertain ? [due, excluded] : [due]).sort());
+  assert.equal(sampling(handle).selection.selected.length, 2);
+  assert.equal(sampling(handle).outcomes.find(item => item.objectId === excluded).state, uncertain ? 'SKIPPED_UNVERIFIED' : 'SKIPPED_NOT_CURRENT');
+  assert.equal(sampling(handle).outcomes.find(item => item.objectId === due).state, 'NOT_EXERCISED');
+});
+
+for (const proof of ['foreign', 'old-source', 'stale']) test(`sampled noncurrent skip cannot bypass ${proof} exclusion evidence`, async t => {
+  const f = await fixture(t, { sampled: true, known: true });
+  if (proof === 'old-source') {
+    f.input.evidence.snapshot.entries.push({ type: 'user', uuid: 'U2', message: { content: 'The original publication duty is unchanged.' } });
+    f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+  }
+  const run = () => f.run(async tools => {
+    const p = await f.prepare(tools);
+    if (proof === 'stale') await fs.appendFile(p.original.details.citation.path, '\nChanged original snapshot.\n');
+    const final = { summary: 'Unsupported exclusion evidence stays unverified.', knownObligations: [{ id: f.candidate.id,
+      disposition: proof === 'old-source' ? 'SUPERSEDED' : 'NOT_BINDING', reason: 'A claimed exclusion cannot replace proof.',
+      citeIds: [proof === 'foreign' ? 'unissued-foreign-original-citation' : p.original.details.citation.citeId] }] };
+    const first = await tools.submit('finish_stop_review', final);
+    if (!first.complete) await tools.submit('finish_stop_review', final);
+  });
+  if (proof === 'stale') await assert.rejects(run(), /CHANGED|changed|CITATION|citation/);
+  else { const handle = await run(); assert(handle.result.unverifiedItems.length > 0);
+    assert.notEqual(sampling(handle).outcomes[0].state, 'SKIPPED_NOT_CURRENT'); }
 });

@@ -207,10 +207,10 @@ async function stopFixture(t, switches = {}, options = {}) {
   };
   factory.supportsReviewCollection = true; factory.supportsSupplementalFileAssessment = true;
   factory.reviewItemSize = 1; factory.singleReviewMetrics = METRIC_IDS;
-  const makePlan = metrics => ({ artifacts: [{ nodeId: "delivery", patterns: ["delivery.md"], metrics: ["M12"] }],
+  const makePlan = (metrics, challengeMode) => ({ artifacts: [{ nodeId: "delivery", patterns: ["delivery.md"], metrics: ["M12"] }],
     runtimeV2: compileRuntimeV2Config({ version: 2, dynamicGroundTruth: { enabled: options.dynamic ?? false, panel: { size: 2 } },
       skillCorrection: { enabled: false }, implementationCorrection: { enabled: options.implementation ?? false, platform: null },
-      stopCorrection: { enabled: true, metrics, fileQualityReviewEnabled: options.quality ?? false } }, { policyRoot: path.join(root, ".runtime-corrector") }) });
+      stopCorrection: { enabled: true, metrics, fileQualityReviewEnabled: options.quality ?? false, ...(challengeMode ? { implementationChallengeMode: challengeMode } : {}) } }, { policyRoot: path.join(root, ".runtime-corrector") }) });
   let turn = 0;
   const run = async (plan = makePlan(switches), reviewer = factory) => {
     const current = await findTask({ projectRoot: root, sessionId });
@@ -308,4 +308,52 @@ test("implementation entry itself skips all disabled source duties before probin
   const result = await runImplementationReview({ projectRoot: "not-a-project", taskId: "none", runtimeV2: {},
     population: { metrics: {}, reviewPolicy: policy }, reviewerFactory: () => assert.fail("No reviewer"), deviceVerifier: () => assert.fail("No device probe") });
   assert.equal(result.skipReason, "NO_ENABLED_IMPLEMENTATION_OBJECTS");
+});
+
+
+test("sampled challenge mode preserves serialized defaults and validates the opt-in enum", () => {
+  const ordinary = resolveStopReviewPolicy(), explicit = resolveStopReviewPolicy({ implementationChallengeMode: 'optional' });
+  assert.equal(JSON.stringify(explicit), JSON.stringify(ordinary)); assert.equal(Object.hasOwn(ordinary, 'implementationChallengeMode'), false);
+  const compiled = compileRuntimeV2Config(base).stopCorrection;
+  assert.equal(Object.hasOwn(compiled, 'implementationChallengeMode'), false);
+  assert.equal(Object.hasOwn(resolveStopReviewPolicy(Object.create({ implementationChallengeMode: 'sampled' })), 'implementationChallengeMode'), false);
+  for (const value of ['optional', 'sampled']) {
+    const document = { ...base, stopCorrection: { enabled: true, implementationChallengeMode: value } };
+    validateProjectConfig(document, 'config.yaml');
+    const result = compileRuntimeV2Config(document).stopCorrection;
+    assert.equal(result.implementationChallengeMode ?? 'optional', value);
+    assert.deepEqual(result.metrics, ordinary.metrics); assert.equal(result.maxCorrectionsPerSession, compiled.maxCorrectionsPerSession);
+    assert.equal(result.maxCorrectionsPerFlow, compiled.maxCorrectionsPerFlow); assert.equal(result.assessmentTimeoutMs, compiled.assessmentTimeoutMs);
+    assert.equal(result.requireCurrentProductionCoverage, false); assert.equal(result.requireProductionOriginCoverage, false);
+  }
+  for (const value of [null, true, false, 'required', 3, {}, []]) {
+    assert.throws(() => resolveStopReviewPolicy({ implementationChallengeMode: value }), /implementationChallengeMode/);
+    assert.throws(() => validateProjectConfig({ ...base, stopCorrection: { enabled: true, implementationChallengeMode: value } }, 'config.yaml'), /implementationChallengeMode/);
+  }
+});
+
+test("sampled opt-in is frozen before first Stop and only a fresh task adopts it", async t => {
+  const f = await stopFixture(t);
+  await f.run();
+  await fs.appendFile(path.join(f.root, 'src/main.js'), '// Real new source invalidates the unchanged observation.\n');
+  await f.run(f.makePlan({}, 'sampled'));
+  let task = await findTask({ projectRoot: f.root, sessionId: f.sessionId });
+  assert.equal(Object.hasOwn(task.stop.reviewPolicy, 'implementationChallengeMode'), false);
+  const journal = await fs.readFile(path.join(taskDirectory(f.root, task.taskId), 'journal/events.jsonl'), 'utf8');
+  assert(journal.includes('STOP_REVIEW_POLICY_CHANGE_DEFERRED')); assert(journal.includes('"implementationChallengeMode":"sampled"'));
+  const fresh = await startNewTask({ projectRoot: f.root, sessionId: f.sessionId });
+  assert.notEqual(fresh.taskId, task.taskId); await f.run(f.makePlan({}, 'sampled'));
+  task = await findTask({ projectRoot: f.root, sessionId: f.sessionId });
+  assert.equal(task.stop.reviewPolicy.implementationChallengeMode, 'sampled');
+});
+
+test("actual evaluation policy fingerprints distinguish sampled mode from optional cached results", async t => {
+  const versions = [];
+  for (const mode of [undefined, 'optional', 'sampled']) {
+    const f = await stopFixture(t); await f.run(f.makePlan({}, mode));
+    const task = await findTask({ projectRoot: f.root, sessionId: f.sessionId });
+    const evaluation = JSON.parse(await fs.readFile(path.join(taskDirectory(f.root, task.taskId), 'evaluations', `${task.stop.lastAssessmentId}.json`), 'utf8'));
+    versions.push(evaluation.reviewPolicyVersion);
+  }
+  assert.equal(versions[0], versions[1]); assert.notEqual(versions[0], versions[2]);
 });

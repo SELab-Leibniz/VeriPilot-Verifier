@@ -24,7 +24,7 @@ async function finish(tools, value) {
   return first;
 }
 
-async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false, title = false, compound = false, distinct = false, third = false, large = false } = {}) {
+async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false, title = false, compound = false, distinct = false, third = false, large = false, navigationCount = 0 } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
   f.input.request.classificationContract = 2;
@@ -55,6 +55,8 @@ async function fixture(t, { conditional = false, external = false, internal = fa
   if (third) f.observation.receipt.rows.push({ ...f.observation.receipt.rows[0], requirement: f.thirdRequirement });
   if (oversized) { const row = f.observation.receipt.rows[0];
     f.observation.receipt.rows = Array.from({ length: 49 }, (_, index) => ({ ...row, requirement: `${row.requirement} Observation ${index}.` })); }
+  if (navigationCount) f.observation.receipt.rows = Array.from({ length: navigationCount }, (_, index) => ({ ...f.observation.receipt.rows[0],
+    requirement: f.requirement + ` Retained synthetic duty ${index}: ` + '条件😀'.repeat(80) }));
   if (!empty) assert.equal(await observeKnownOriginalObligations(f.owner, f.observation), true);
   f.owner.nativeRunId = 'apply-run'; f.owner.reviewController = new AbortController();
   f.input.readKnownOriginalObligations = knownOriginalObligationReader(f.owner);
@@ -625,6 +627,184 @@ async function sdkFinish(tools, value) {
   assert.deepEqual(value, before, 'Public argument validation preserves the submitted factual fields.');
   return tools.submit(tool.name, accepted);
 }
+
+async function sdkNavigation(tools, value) {
+  const sdk = await loadPublicToolArgumentsValidator(), tool = tools.tools.get('review_checklist');
+  const before = structuredClone(value), accepted = sdk.validateToolArguments(tool, { name: tool.name, arguments: value });
+  assert.deepEqual(value, before);
+  return tools.submit(tool.name, accepted);
+}
+
+const uncertainKnown = f => f.candidates.map(candidate => ({ id: candidate.id, disposition: 'UNVERIFIED',
+  reason: 'The synthetic review intentionally leaves this original unresolved.' }));
+
+test('pending navigation recovers every omitted retained ID through the actual SDK schema', async t => {
+  const f = await fixture(t, { title: true, distinct: true, third: true });
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools);
+    const pending = await sdkFinish(tools, { summary: 'The current accounting is incomplete.' });
+    assert.equal(pending.pendingKnownOriginalCount, 3);
+    assert.equal(pending.pendingNavigation.tool, 'review_checklist');
+    let page = await sdkNavigation(tools, { ...pending.pendingNavigation.arguments, limit: 1 });
+    const ids = [];
+    for (;;) {
+      assert.equal(page.navigationOnly, true); assert.equal(page.readProofGranted, false);
+      assert.equal(page.semanticsVerified, false); assert.equal(page.items.length, 1);
+      assert(page.items[0].diagnostic.code); ids.push(page.items[0].id);
+      assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+      if (!page.next) break;
+      page = await sdkNavigation(tools, page.next.arguments);
+    }
+    assert.deepEqual(ids, f.candidates.map(candidate => candidate.id));
+    assert.equal((await sdkFinish(tools, { summary: 'Unresolved originals remain explicit.', knownObligations: uncertainKnown(f) })).complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items.filter(row => row.disposition === 'UNVERIFIED').length, 3);
+  await handle.close();
+});
+
+test('pending navigation bounds Unicode pages without silently skipping the final retained ID', async t => {
+  const f = await fixture(t, { navigationCount: 16 });
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools);
+    const first = await tools.submit('finish_stop_review', { summary: 'Missing current accounting.' });
+    let page = await sdkNavigation(tools, { ...first.pendingNavigation.arguments, limit: 20 });
+    const ids = []; let pages = 0;
+    for (;;) {
+      pages++; assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+      assert(page.items.length > 0); ids.push(...page.items.map(item => item.id));
+      if (!page.next) break;
+      page = await sdkNavigation(tools, page.next.arguments);
+    }
+    assert(pages > 1); assert.equal(new Set(ids).size, 16);
+    assert.deepEqual(ids, f.candidates.map(candidate => candidate.id));
+    await finish(tools, { summary: 'Keep these synthetic originals unresolved.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
+
+test('pending navigation rejects an undigested continuation and a stale pending view', async t => {
+  const f = await fixture(t, { title: true, distinct: true });
+  const handle = await checkedRun(f, async tools => {
+    const { object } = await f.prepare(tools);
+    await tools.submit('finish_stop_review', { summary: 'First missing accounting.' });
+    const first = await sdkNavigation(tools, { view: 'pending', limit: 1 });
+    await assert.rejects(sdkNavigation(tools, { view: 'pending', offset: 1 }), { code: 'REVIEW_NAVIGATION_STALE' });
+    await tools.submit('submit_review', { taskId: object.objectId, verdict: 'UNVERIFIED', reason: 'A new explicit unresolved current item.' });
+    await assert.rejects(sdkNavigation(tools, first.next.arguments), { code: 'REVIEW_NAVIGATION_STALE' });
+    const fresh = await sdkNavigation(tools, { view: 'pending' });
+    assert.notEqual(fresh.navigationDigest, first.navigationDigest);
+    await finish(tools, { summary: 'Keep explicit uncertainty.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
+
+test('pending navigation digests cannot cross owned review sessions', async t => {
+  const first = await fixture(t, { distinct: true }); let foreign;
+  const h1 = await checkedRun(first, async tools => {
+    await first.prepare(tools); foreign = await sdkNavigation(tools, { view: 'pending', limit: 1 });
+    await finish(tools, { summary: 'No proof is being asserted.', knownObligations: uncertainKnown(first) });
+  });
+  await h1.close();
+  const second = await fixture(t, { distinct: true });
+  const h2 = await checkedRun(second, async tools => {
+    await second.prepare(tools);
+    await assert.rejects(sdkNavigation(tools, { view: 'pending', navigationDigest: foreign.navigationDigest }),
+      { code: 'REVIEW_NAVIGATION_STALE' });
+    await finish(tools, { summary: 'Other-session navigation grants no proof.', knownObligations: uncertainKnown(second) });
+  });
+  await h2.close();
+});
+
+test('pending navigation retains the actual known-owner revocation guard', async t => {
+  const f = await fixture(t);
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools); await sdkNavigation(tools, { view: 'pending' });
+    const original = f.owner.nativeRunId;
+    try {
+      f.owner.nativeRunId = 'foreign-current-run';
+      await assert.rejects(sdkNavigation(tools, { view: 'pending' }), { code: 'STOP_TASK_INPUT_CHANGED' });
+    } finally { f.owner.nativeRunId = original; }
+    await finish(tools, { summary: 'Restored original fixture owner still grants no evidence.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
+
+function appendCapturedExecution(f, { padding = 0, duplicate = false, before = false, orphan = false } = {}) {
+  const call = { type: 'assistant', uuid: 'captured-invocation', message: { content: [{ type: 'tool_use',
+    id: 'captured-exec', name: 'exec', input: { command: 'controlled-public-verification' } }] } };
+  const result = { type: 'user', uuid: 'captured-result', isMeta: true, message: { content: [{ type: 'tool_result',
+    tool_use_id: 'captured-exec', content: 'Controlled original verification output. ' + 'x'.repeat(padding) }] } };
+  f.input.evidence.snapshot.entries.push(...(orphan ? [result] : before ? [result, call] : [call, result]));
+  if (duplicate) f.input.evidence.snapshot.entries.push({ ...call, uuid: 'duplicate-invocation' });
+}
+
+test('pending PROCESS navigation pages actual paired original parts without minting a read proof', async t => {
+  const f = await fixture(t); appendCapturedExecution(f, { padding: 40000 });
+  const handle = await checkedRun(f, async tools => {
+    const { object } = await f.prepare(tools, { metricId: 'M11', target: 'PROCESS', formed: true });
+    const row = { id: f.candidate.id, disposition: 'CURRENT', objectId: object.objectId,
+      verdict: 'NO_CONFIRMED_DEVIATION', reason: 'Controlled paired original observation.' };
+    const index = await sdkNavigation(tools, { view: 'process' });
+    assert.equal(index.total, 1); assert.equal(index.items[0].toolName, 'exec');
+    assert.equal(index.items[0].invocationPartCount, 1); assert(index.items[0].resultPartCount > 1);
+    const incomplete = await sdkFinish(tools, { summary: 'Navigation alone is not execution evidence.', knownObligations: [row] });
+    assert.equal(incomplete.complete, false);
+    const pending = await sdkNavigation(tools, incomplete.pendingNavigation.arguments);
+    assert(pending.items.find(item => item.id === f.candidate.id).processNavigation);
+    let page = await sdkNavigation(tools, { ...index.items[0].readWith.arguments, limit: 1 });
+    const kinds = [], ids = [];
+    for (;;) {
+      assert.equal(page.readProofGranted, false); assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+      for (const item of page.items) {
+        assert.match(item.sha256, /^[a-f0-9]{64}$/u); kinds.push(item.kind);
+        const result = await tools.read(path.join(f.root, item.file)); ids.push(result.details.citation.citeId);
+      }
+      if (!page.next) break;
+      page = await sdkNavigation(tools, page.next.arguments);
+    }
+    assert.equal(kinds[0], 'invocation'); assert(kinds.slice(1).every(kind => kind === 'result'));
+    assert.equal((await sdkFinish(tools, { summary: 'Actual original read receipts now supplied.', knownObligations: [{ ...row, citeIds: ids }] })).complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'CURRENT'); await handle.close();
+});
+
+for (const shape of ['duplicate', 'before', 'orphan']) test(`pending PROCESS navigation excludes ${shape} original pairs`, async t => {
+  const f = await fixture(t); appendCapturedExecution(f, { [shape]: true });
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools); const page = await sdkNavigation(tools, { view: 'process' });
+    assert.equal(page.total, 0); assert.deepEqual(page.items, []); assert.equal(page.next, null);
+    await finish(tools, { summary: 'No attributable pair is invented.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
+
+test('pending PROCESS navigation rejects foreign pair IDs and changed captured parts', async t => {
+  const f = await fixture(t); appendCapturedExecution(f);
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools); const index = await sdkNavigation(tools, { view: 'process' });
+    await assert.rejects(sdkNavigation(tools, { view: 'process', pairId: 'f'.repeat(64) }), { code: 'REVIEW_NAVIGATION_PAIR_UNAVAILABLE' });
+    const args = index.items[0].readWith.arguments, page = await sdkNavigation(tools, args);
+    const file = path.join(f.root, page.items[0].file), bytes = await fs.readFile(file);
+    try {
+      await fs.writeFile(file, 'Changed captured original.');
+      await assert.rejects(sdkNavigation(tools, args), { code: 'STOP_TASK_INPUT_CHANGED' });
+    } finally { await fs.writeFile(file, bytes); }
+    await finish(tools, { summary: 'Tampered navigation never grants evidence.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
+
+test('pending navigation cannot change scope or smuggle cursors into the legacy view', async t => {
+  const f = await fixture(t);
+  const handle = await checkedRun(f, async tools => {
+    await f.prepare(tools);
+    await assert.rejects(sdkNavigation(tools, { view: 'pending', completionClaim: true }), { code: 'REVIEW_NAVIGATION_SCOPE' });
+    await assert.rejects(sdkNavigation(tools, { navigationDigest: '0'.repeat(64) }), { code: 'REVIEW_NAVIGATION_SCOPE' });
+    const page = await tools.submit('review_checklist', {}); assert(page.classification); assert(page.knownObligations);
+    await finish(tools, { summary: 'Legacy scope remains intact.', knownObligations: uncertainKnown(f) });
+  });
+  await handle.close();
+});
 
 for (const formed of [false, true]) test(`known missing objectId returns actual host IDs before ${formed ? 'formed' : 'corroborated'} same-worker repair`, async t => {
   const f = await fixture(t, { title: true });

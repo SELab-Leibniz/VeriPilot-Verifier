@@ -204,6 +204,7 @@ limits:
 #   groundTruthReviewEnabled: false
 #   stageMetricsEnabled: false
 # stopCorrection:
+#   implementationChallengeMode: optional  # optional 保留普通行为；sampled 实验性抽样最多三项原文实现义务，须在新任务前配置
 #   enabled: true
 #   originalRequirementsBasis: true
 #   deviationOnly: true
