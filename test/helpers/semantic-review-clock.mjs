@@ -2,12 +2,14 @@
 // virtual; filesystem retry backoffs and the runner watchdog remain real.
 const clocks = new WeakMap();
 
-export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline } = {}) {
+export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline, collectorGraceMs } = {}) {
   const existing = clocks.get(t);
   if (existing) {
     if (timeoutMs !== null && existing.timeoutMs !== timeoutMs) throw new Error('A test cannot mix semantic clock budgets.');
     if (originalRoleDeadline !== undefined && existing.originalRoleDeadline !== originalRoleDeadline)
       throw new Error('A test cannot mix semantic role timer modes.');
+    if (collectorGraceMs !== undefined && existing.collectorGraceMs !== collectorGraceMs)
+      throw new Error('A test cannot mix semantic collector grace windows.');
     return existing;
   }
   if (timeoutMs !== null && (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0))
@@ -15,6 +17,8 @@ export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline 
   if (originalRoleDeadline !== undefined && typeof originalRoleDeadline !== 'boolean')
     throw new TypeError('The original-role-deadline mode must be boolean.');
   if (originalRoleDeadline && timeoutMs === null) throw new Error('An original role deadline needs its declared timeout.');
+  if (collectorGraceMs !== undefined && (timeoutMs === null || !Number.isSafeInteger(collectorGraceMs) || collectorGraceMs < 0))
+    throw new RangeError('A semantic collector grace needs a declared role timeout and nonnegative whole milliseconds.');
   let now = Date.now(), sequence = 0;
   const roleDeadlineAt = timeoutMs === null ? null : now + timeoutMs;
   const pending = new Map(), issued = new WeakSet();
@@ -31,10 +35,15 @@ export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline 
       const declaredTimer = originalRoleDeadline
         ? remaining > 0 && Number(delay) === remaining && roleCallback
         : Number(delay) === timeoutMs;
-      if (!declaredTimer || typeof callback !== 'function') return realSetTimeout(callback, delay, ...args);
+      // The collector's existing timeout+grace wrapper belongs to the same
+      // explicit fixture clock. Equal-delay I/O and watchdog callbacks stay real.
+      const collectorTimer = collectorGraceMs !== undefined && typeof callback === 'function'
+        && Number(delay) === timeoutMs + collectorGraceMs
+        && Function.prototype.toString.call(callback).includes('REVIEW_ITEM_TIMEOUT');
+      if ((!declaredTimer && !collectorTimer) || typeof callback !== 'function') return realSetTimeout(callback, delay, ...args);
       const handle = { ref() { return this; }, unref() { return this; }, hasRef() { return true; } };
       issued.add(handle);
-      pending.set(handle, { at: originalRoleDeadline ? roleDeadlineAt : now + timeoutMs, sequence: sequence++, callback, args });
+      pending.set(handle, { at: originalRoleDeadline && !collectorTimer ? roleDeadlineAt : now + Number(delay), sequence: sequence++, callback, args });
       return handle;
     });
     mockedClearTimeout = t.mock.method(globalThis, 'clearTimeout', handle => {
@@ -43,7 +52,7 @@ export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline 
     });
   }
   const clock = {
-    timeoutMs, originalRoleDeadline: originalRoleDeadline === true,
+    timeoutMs, originalRoleDeadline: originalRoleDeadline === true, collectorGraceMs,
     now: () => now,
     advance(ms) {
       if (!Number.isSafeInteger(ms) || ms < 0) throw new RangeError('Clock advance must be nonnegative whole milliseconds.');

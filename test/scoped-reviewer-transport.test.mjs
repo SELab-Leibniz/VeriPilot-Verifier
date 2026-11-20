@@ -5,6 +5,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 import { createOpenClawReviewerFactory } from "../lib/openclaw/reviewer.mjs";
 import { registerReviewerProgress } from "../lib/openclaw/reviewer-progress.mjs";
 import { IMPL_REVIEW_SCHEMA, runImplementationReview } from "../lib/runtime-v2/impl-review.mjs";
@@ -31,7 +32,10 @@ async function sourceSelection(descriptor, needle) {
   throw new Error(`Missing controlled original marker ${needle}`);
 }
 
-async function fixture(t, { hugeSecond = false, withSpaces = false } = {}) {
+async function fixture(t, { hugeSecond = false, withSpaces = false, roleTimeoutMs = 5000 } = {}) {
+  // These fixtures verify source/ownership semantics. Only their declared
+  // reviewer timer and Date.now use explicit time; disk retries remain real.
+  semanticReviewClock(t, { timeoutMs: roleTimeoutMs });
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), withSpaces ? "rc scoped native 空 格-" : "rc-scoped-native-")));
   // Native archive cleanup may outlive the collector's bounded close on Windows.
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
@@ -260,8 +264,8 @@ test("scoped implementation transport retains exact production ownership for rel
 
 test("implementation review dispatches short native tasks and preserves siblings when a single obligation exceeds the input budget", async t => {
   for (const hugeSecond of [false, true]) await t.test(hugeSecond ? "oversized middle obligation" : "all obligations fit", async t => {
-    const f = await fixture(t, { hugeSecond }), before = await fs.readFile(f.groundTruthPath, "utf8");
     const itemTimeoutMs = 10000;
+    const f = await fixture(t, { hugeSecond, roleTimeoutMs: itemTimeoutMs }), before = await fs.readFile(f.groundTruthPath, "utf8");
     const n = native(f, async ({ request }) => {
       const rows = rowsOf(request); assert.equal(rows.length, 1);
       assert.equal(request.sourceManifest, undefined);
@@ -301,4 +305,27 @@ test("implementation review dispatches short native tasks and preserves siblings
     for (const citation of result.sourceCitations) await fs.access(citation.snapshotPath);
     assert.equal(await fs.readFile(f.groundTruthPath, "utf8"), before);
   });
+});
+
+
+test("scoped native fixture expires its original role budget without accepting a late result", { timeout: 15000 }, async t => {
+  const f = await fixture(t), clock = semanticReviewClock(t);
+  let entered, release, invocation, settled = false;
+  const started = new Promise(resolve => { entered = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  const n = native(f, async ({ params }) => {
+    invocation = params; entered(); await gate;
+    return output({ summary: "A late controlled result.", stopClassification: "TASK_COMPLETE", stage: null, findings: [],
+      metricObjectJudgements: [{ objectId: "M01:R1", judgement: "PASS", reason: "Late result must not publish.", evidence: [`${f.source}#L1-L2`] }] });
+  });
+  const work = n.factory(stopInput(f)).finally(() => { settled = true; });
+  const rejected = assert.rejects(work, error => error.code === "REVIEWER_DEADLINE");
+  try {
+    await started; assert.equal(invocation.timeoutMs, 5000);
+    clock.advance(4999); await Promise.resolve();
+    assert.equal(invocation.abortSignal.aborted, false); assert.equal(settled, false);
+    clock.advance(1); assert.equal(invocation.abortSignal.aborted, true);
+    release(); await rejected;
+  } finally { release(); await work.catch(() => {}); }
+  assert.equal(n.calls.length, 1);
 });

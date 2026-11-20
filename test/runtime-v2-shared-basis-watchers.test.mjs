@@ -11,7 +11,16 @@ import { readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { runSemanticReview } from '../lib/semantic-review.mjs';
 import { invalidateCurrentStopVerification } from '../lib/runtime-v2/production-stop.mjs';
 import { scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
-import { sharedBasisFixture as fixture, user, operation } from './helpers/runtime-v2-shared-basis-fixture.mjs';
+import { sharedBasisFixture as sharedFixture, user, operation } from './helpers/runtime-v2-shared-basis-fixture.mjs';
+
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
+
+// These cases test original-source/cache semantics, not machine I/O speed.
+// Keep the declared 20s role budget explicit; retry/backoff timers stay real.
+function fixture(t, options) {
+  semanticReviewClock(t, { timeoutMs: 20000 });
+  return sharedFixture(t, options);
+}
 
 async function mixedRetainedOriginal(f) {
   const original = 'Create app.mjs and a short usage guide. Follow the selected demo Skill.';

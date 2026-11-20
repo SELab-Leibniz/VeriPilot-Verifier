@@ -1,4 +1,5 @@
 import test from "node:test";
+import { semanticReviewClock } from "./helpers/semantic-review-clock.mjs";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -9,6 +10,9 @@ import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task
 import { atomicWriteJson, sha256 } from "../lib/runtime-v2/utils.mjs";
 
 async function fixture(t, mode) {
+  // Ownership and citation checks use explicit fixture time, not disk or
+  // process startup speed. The role5000ms and collector100ms grace stay exact.
+  semanticReviewClock(t, { timeoutMs: 5000, collectorGraceMs: 100 });
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc scoped cli 空 格-")));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const task = await ensureTask({ projectRoot: root, sessionId: "business-host" });
@@ -83,8 +87,8 @@ if(process.env.REF_MODE==="page-utf8"){const bytes=Buffer.from(output),cut=bytes
   const factory = options => startRoleReviewer({ ...options, role: "ground-truth-extractor",
     reviewer: { ...options.reviewer, readProofStream: true }, reviewerRuntime: { executable: process.execPath, argsPrefix: [entry] },
     env: { ...process.env, RUNTIME_CORRECTOR_AGENT_EXECUTABLE: undefined, CAPTURE: capture, REF_MODE: mode, FOREIGN_REF: foreign, ARTIFACT_REF: artifact } });
-  const run = () => collectReviewItems({ projectRoot: root, taskId: task.taskId, parentSessionId: "business-host", sessionCwd: root,
-    role: "stop-reviewer", reviewerFactory: factory, reviewer: { effort: "low", timeoutMs: 5000, formatRepairAttempts: 0 }, schema: STOP_REVIEW_SCHEMA,
+  const run = (reviewerFactory = factory) => collectReviewItems({ projectRoot: root, taskId: task.taskId, parentSessionId: "business-host", sessionCwd: root,
+    role: "stop-reviewer", reviewerFactory, reviewer: { effort: "low", timeoutMs: 5000, formatRepairAttempts: 0 }, schema: STOP_REVIEW_SCHEMA,
     classification: { stopClassification: "TASK_COMPLETE", stage: null }, deadlineAt: Date.now() + 20000,
     request: { groundTruthPath, population }, evidence: { groundTruth, population, snapshot } });
   return { root, run, groundTruthPath, groundTruth, capture };
@@ -128,4 +132,39 @@ for (const mode of ["request", "foreign"]) test(`scoped CLI collector rejects ${
   assert.equal(result.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
   assert.equal(result.collection.failures[0].code, "REVIEW_ITEM_EVIDENCE_INVALID", JSON.stringify(result.collection.failures));
   assert.deepEqual(result.sourceCitations, []);
+});
+
+
+test("scoped CLI fixture retains the exact collector grace, late-close guard and real filesystem retry", { timeout: 15000 }, async t => {
+  const f = await fixture(t, "page"), clock = semanticReviewClock(t);
+  const before = clock.now(), originalRename = fs.rename;
+  const retryPath = path.join(f.root, "retry.json"); let retries = 0;
+  const rename = t.mock.method(fs, "rename", async (from, to) => {
+    if (to === retryPath && retries++ === 0) throw Object.assign(new Error("controlled sharing violation"), { code: "EACCES" });
+    return originalRename(from, to);
+  });
+  try { await atomicWriteJson(retryPath, { retained: true }); } finally { rename.mock.restore(); }
+  assert.equal(retries, 2); assert.equal(clock.now(), before);
+  assert.deepEqual(JSON.parse(await fs.readFile(retryPath, "utf8")), { retained: true });
+  let entered, release, lateClosed, settled = false;
+  const started = new Promise(resolve => { entered = resolve; });
+  const closed = new Promise(resolve => { lateClosed = resolve; });
+  const work = f.run(async input => {
+    assert.equal(input.reviewer.timeoutMs, 5000); entered();
+    return new Promise(resolve => { release = () => resolve({ close: async () => { lateClosed(); } }); });
+  }).finally(() => { settled = true; });
+  let unrelated = false;
+  const unrelatedTimer = setTimeout(() => { unrelated = true; }, 5100);
+  try {
+    await started;
+    clock.advance(5000); await Promise.resolve(); assert.equal(settled, false);
+    clock.advance(99); await Promise.resolve(); assert.equal(settled, false);
+    clock.advance(1);
+    const result = await work;
+    assert.equal(result.collection.complete, false);
+    assert.equal(result.collection.failures[0].code, "REVIEW_ITEM_TIMEOUT");
+    assert.equal(result.result.metricObjectJudgements[0].judgement, "UNVERIFIED");
+    assert.equal(unrelated, false, "Equal-delay unrelated timers must remain real.");
+  } finally { clearTimeout(unrelatedTimer); release?.(); await work.catch(() => {}); }
+  await closed;
 });

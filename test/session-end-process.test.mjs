@@ -20,10 +20,24 @@ const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 let pluginRoot;
 let artifactOutput;
 const HARD_DEADLINE_MS = 1_200;
+const READY_DEADLINE_MS = 10_000;
+const EOF_COMPLETION_DEADLINE_MS = 10_000;
+const READY_MARKER = "__RC_SESSION_END_READY__";
+const EOF_MARKER = "__RC_SESSION_END_EOF_DISARMED__";
 
 before(async () => {
   artifactOutput = await fs.mkdtemp(path.join(os.tmpdir(), "session-end-plugin-"));
   pluginRoot = await buildPlugin({ host: "claude", sourceRoot, outputRoot: artifactOutput });
+  // Stage witnesses exist only in this isolated build. The declared hook,
+  // real stdin watchdog, decoder, handler and journal remain the exercised path.
+  const entry = path.join(pluginRoot, "scripts", "session-end.mjs");
+  const source = await fs.readFile(entry, "utf8");
+  const armed = "const watchdog = setTimeout(() => process.exit(0), STDIN_DEADLINE_MS);";
+  const disarmed = "  clearTimeout(watchdog);";
+  assert.equal(source.split(armed).length, 2);
+  assert.equal(source.split(disarmed).length, 2);
+  await fs.writeFile(entry, source.replace(armed, `${armed}\nprocess.stderr.write(${JSON.stringify(READY_MARKER + "\n")});`)
+    .replace(disarmed, `${disarmed}\n  process.stderr.write(${JSON.stringify(EOF_MARKER + "\n")});`));
 });
 
 after(async () => {
@@ -102,15 +116,28 @@ async function runDeclaredSessionEnd({
     });
     let stdout = "";
     let stderr = "";
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
+    let timedOut = false, timeoutStage = null, readyAt = null, readyCount = 0, eofCount = 0, stderrPending = "";
+    const deadlineMs = keepStdinOpen ? HARD_DEADLINE_MS : EOF_COMPLETION_DEADLINE_MS;
+    const arm = (stage, delay) => setTimeout(() => {
+      timedOut = true; timeoutStage = stage;
       child.kill("SIGKILL");
-    }, HARD_DEADLINE_MS);
+    }, delay);
+    let timer = arm("startup", READY_DEADLINE_MS);
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk) => { stdout += chunk; });
-    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.stderr.on("data", chunk => {
+      stderrPending += chunk;
+      let end;
+      while ((end = stderrPending.indexOf("\n")) !== -1) {
+        const line = stderrPending.slice(0, end); stderrPending = stderrPending.slice(end + 1);
+        if (line === READY_MARKER) {
+          readyCount++;
+          if (readyAt === null) { readyAt = performance.now(); clearTimeout(timer); timer = arm("hook", deadlineMs); }
+        } else if (line === EOF_MARKER) eofCount++;
+        else stderr += line + "\n";
+      }
+    });
     child.once("error", (error) => {
       clearTimeout(timer);
       reject(error);
@@ -121,9 +148,11 @@ async function runDeclaredSessionEnd({
         code,
         signal,
         stdout,
-        stderr,
-        timedOut,
-        elapsedMs: performance.now() - startedAt,
+        stderr: stderr + stderrPending,
+        timedOut, timeoutStage, readyCount, eofCount, deadlineMs, keepStdinOpen,
+        startupElapsedMs: readyAt === null ? null : readyAt - startedAt,
+        elapsedMs: performance.now() - (readyAt ?? startedAt),
+        totalElapsedMs: performance.now() - startedAt,
       });
     });
     const serialized = rawInput ?? JSON.stringify(input);
@@ -149,12 +178,22 @@ async function injectStaleCleanupWork(root) {
 }
 
 
-async function assertFastSuccessfulSilence(result) {
-  assert.equal(result.timedOut, false, `SessionEnd exceeded ${HARD_DEADLINE_MS} ms`);
+async function assertSuccessfulSilence(result) {
+  assert.equal(result.timedOut, false, `SessionEnd exceeded its ${result.timeoutStage} fixture boundary`);
+  assert.equal(result.readyCount, 1, "the actual isolated hook entry must run exactly once");
+  assert.equal(result.eofCount, result.keepStdinOpen ? 0 : 1, "complete EOF must disarm the input watchdog");
   assert.equal(result.code, 0, result.stderr);
   assert.equal(result.signal, null);
   assert.equal(result.stdout, "");
-  assert.ok(result.elapsedMs < HARD_DEADLINE_MS, `SessionEnd took ${result.elapsedMs.toFixed(1)} ms`);
+  assert.equal(result.stderr, "");
+  assert.ok(result.elapsedMs < result.deadlineMs, `SessionEnd phase took ${result.elapsedMs.toFixed(1)} ms`);
+}
+
+async function assertFastSuccessfulSilence(result) {
+  assert.equal(result.keepStdinOpen, true, "the fast capability boundary covers missing stdin EOF");
+  assert.equal(result.deadlineMs, HARD_DEADLINE_MS);
+  await assertSuccessfulSilence(result);
+  assert.ok(result.elapsedMs < HARD_DEADLINE_MS, `SessionEnd took ${result.elapsedMs.toFixed(1)} ms after readiness`);
 }
 
 
@@ -179,7 +218,7 @@ test("declared taskless SessionEnd stays silent and leaves recovery work for Ses
     },
   });
 
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
   await fs.access(stale.staleTemporary);
   await fs.access(stale.expiredLease);
   await assert.rejects(fs.access(path.join(root, ".runtime-correction", "runtime-v2-warnings")));
@@ -225,7 +264,7 @@ test("stdin EOF disarms its watchdog before a delayed decoder loads", async t =>
   try {
     const result = await runDeclaredSessionEnd({ cwd: root,
       input: { cwd: root, session_id: sessionId, transcript_path: path.join(root, "transcript.jsonl"), hook_event_name: "SessionEnd", hook_event_id: "delayed-decoder", reason: "other" } });
-    await assertFastSuccessfulSilence(result);
+    await assertSuccessfulSilence(result);
     const events = (await fs.readFile(path.join(taskDirectory(root, task.taskId), "journal/events.jsonl"), "utf8"))
       .trim().split("\n").map(JSON.parse);
     assert.equal(events.length, 1); assert.equal(events[0].hookEventId, "delayed-decoder");
@@ -251,7 +290,7 @@ test("declared SessionEnd appends one lifecycle event to the indexed task", asyn
     },
   });
 
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
   const lines = (await fs.readFile(
     path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
     "utf8",
@@ -292,7 +331,7 @@ test("declared SessionEnd rejects stdin above 256 KiB without journaling", async
 
   const result = await runDeclaredSessionEnd({ cwd: root, input: null, rawInput });
 
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
   await assert.rejects(fs.access(
     path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
   ));
@@ -314,7 +353,7 @@ test("declared Node launch preserves a plugin root containing spaces", async (t)
       reason: "other",
     },
   });
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
 });
 
 
@@ -342,7 +381,7 @@ test("declared SessionEnd excludes authenticated internal reviewer traffic", asy
     },
   });
 
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
   await assert.rejects(fs.access(
     path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
   ));
@@ -365,7 +404,7 @@ test("dedicated SessionEnd command rejects other hook events without side effect
     },
   });
 
-  await assertFastSuccessfulSilence(result);
+  await assertSuccessfulSilence(result);
   await assert.rejects(fs.access(
     path.join(taskDirectory(root, task.taskId), "journal", "events.jsonl"),
   ));
