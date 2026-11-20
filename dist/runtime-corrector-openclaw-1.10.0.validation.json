@@ -1,9 +1,9 @@
 {
   "kind": "OPENCLAW_RUNTIME_CORRECTOR_VALIDATION",
-  "version": 3,
-  "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
+  "version": 4,
+  "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
   "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-  "packageSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+  "packageSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
   "packageMembers": 278,
   "runtimeModules": 210,
   "deliverable": {
@@ -23,32 +23,58 @@
   "generalPurposeChanges": {
     "optionalImplementationChallenge": "Source-bound FRAME/RESOLVE for up to3 selected mandatory implementation duties; optional/partial scope, same reviewer appraisals are not semantically verified.",
     "nativeDescriptorIdentity": "Per-actual native invocation config identity prevents stale tool schemas across reviewer sessions/retries, preserving operator configuration and live execution binding.",
-    "repeatedDocumentReadFeedback": "Non-gating navigation notice on repeated unchanged requests, bounded local counters, accurate JSON-byte pages; no automatic verdict or extra budget."
+    "repeatedDocumentReadFeedback": "Non-gating navigation notice on repeated unchanged requests, bounded local counters, accurate JSON-byte pages; no automatic verdict or extra budget.",
+    "sampledImplementationChallenge": "Explicit stopCorrection.implementationChallengeMode=sampled selects a frozen deterministic cohort of at most3 eligible full-original-duty M16 implementation objects. Coverage is partial/nonexhaustive and semanticsVerified=false; otherwise-clean selected duties without required method evidence stay U. Existing D/U and validated conditional/noncurrent exclusions remain scoped skips without refill. Same reviewer, ACKs, ownership, current-source and original deadline; no automatic D/PASS or new retry/worker.",
+    "pendingReviewNavigation": "Bounded review_checklist pending/process views and compact saved-receipt recovery expose exact existing IDs and diagnostic/proof-owner navigation without creating evidence or verdict authority. Required-production Map keys now remain string object IDs; the unreachable numeric-decorator insertion was removed defensively, with no demonstrated reachable crash claim.",
+    "typedM16RoleCompatibility": "Challenge eligibility accepts omitted implementationRole only for the existing typed M16 IMPLEMENTATION production population, in both optional and sampled modes. Explicit TEST/SUPPORT, standing, foreign and malformed duties remain excluded. This compatibility fix is not evidence for the cause of earlier zero method calls.",
+    "defaultsAndGenerality": "Absent and explicit optional modes preserve prior serialized defaults. Strict four flags, project/session defaults, caps2/2 and original budgets are unchanged. No task IDs, benchmark dispatch rules, private grader outcomes or forced semantic dispositions are added."
   },
   "sourceBinding": {
     "runtimeBindings": {
-      "path": ".runtime-correction/validation/feature-eec8570-release-recenuws/runtime-source-bindings.json",
-      "sha256": "8ee9195f1033e8f72153398a87882434d03ccbafec313a3cd46a341c5d48dcc5"
+      "path": ".runtime-correction/validation/root-e6c73df-release-n2gtzts4/runtime-source-bindings.json",
+      "sha256": "10b8196f36a7089cf16b4ba86f0a307bde06b6105d932229cfa786318610bdb5"
     },
     "sourceGitFiles": 1179,
     "runtimeModules": 210,
     "literalRelativeImports": 827,
-    "rootPromotion": {
-      "path": ".runtime-correction/validation/promote-eec-general-reviewer-fixes-xbj8ruro/promotion.json",
-      "sha256": "676f5837d0a9a8778291c2267c3f29cf71a9d85fb23f01e4c62c6dfdc61f23ac"
+    "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "RootIntegration": {
+      "path": ".runtime-correction/validation/root-sampled-navigation-integration-f92zkdrw/integration.json",
+      "sha256": "c26809cf27e4f002261d972f6e288a063353466d35e60f79d3f1aecc71277eb9"
     },
-    "privateSourceEquivalentExceptTwoReportFiles": "4921452ade4e363f2e566c97bf8f000f5c1241e5"
+    "heldCodeAndTestPostimages": 10,
+    "reviewedDocumentationPaths": 2,
+    "exactRootCommitQualification": {
+      "path": ".runtime-correction/validation/root-e6c73df-handoff-opknbu25/qualification-handoff.json",
+      "sha256": "e78f38203b3c0dfb8eec445804825e17cf4aa9cde638f15b8fc0ddd79b4f4935"
+    },
+    "rootPromotion": {
+      "status": "CANONICAL_ARCHIVE_PROMOTED_IN_WORKTREE",
+      "receipt": {
+        "path": ".runtime-correction/validation/promote-e6-sampled-navigation-j58vecjd/promotion.json",
+        "sha256": "380129e771e477e2bc39c1047715fb0b44e6edd92b26287dbad19713ac63a695"
+      }
+    },
+    "privateEarlierA496ResultNotRetagged": true
   },
   "sourceChecks": {
     "fullSourceRegression": {
-      "path": ".runtime-correction/validation/general-reviewer-workflow-fixes-xhiznsnc/full-suite-node24/receipt.json",
-      "sha256": "6963a1f3e249580fd3730dc1ecafa5216ed39a8c574bc4afe40fbd40335ce2fb"
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-suite-independent-receipt.json",
+      "sha256": "133ffcc2f80c8f2d0fb0ce9e489263b31b8b6ca3b21591deacfe55612f9b23f7"
     },
-    "scope": "Exact private492 code/tests/templates equal featureeec; only HTML and validation JSON differ. One complete Node24 macOS run, not cross-platform source CI.",
+    "rawRunnerReceipt": {
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-suite-node24/receipt.json",
+      "sha256": "2446d1f0bcd61b34f83482002acd52564c8c3d1458b894f5caa5033b594da5be"
+    },
+    "fullFileCoverage": {
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-file-coverage.json",
+      "sha256": "1f88a31a8b08f38e5b7b893f4b377a892d92208b0a1ae72e5d85f0f6e67b1089"
+    },
+    "scope": "One complete exact-Root-e6 Node24 macOS run in isolated actual-commit checkout, with TypeBox1.3.27 and pinned OpenClaw. This is local qualification, not remote/cross-platform CI.",
     "result": {
       "files": 396,
-      "tests": 4963,
-      "pass": 4930,
+      "tests": 5010,
+      "pass": 4977,
       "skipped": 33,
       "fail": 0,
       "cancelled": 0,
@@ -56,84 +82,145 @@
       "allSourceGitBytesAndExecModesUnchanged": true,
       "knownCleanupConfirmed": true
     },
-    "sourcePeer": {
-      "path": ".runtime-correction/validation/doc-repeat-descriptor-source-peer-juupc595/summary.json",
-      "sha256": "9928ae9dc5a5f5593323f33e3588ce01d07ca80a07e9a5f5fd113f8372729dde"
+    "sourceHold": {
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-suite-hold.json",
+      "sha256": "f65392cb9290c7d0a66fe428cbc4076f6eca925982c3093f1142ca860ca464db"
     },
-    "documentFeedbackFocused": {
-      "path": ".runtime-correction/validation/document-repeat-feedback-v2-uq42rp5k/qualification.json",
-      "sha256": "2002a25a738b0eada9365a0b977b3a7e4db923c6f2e86dbc8fe400d9b2051157"
-    },
-    "descriptorFixControls": {
-      "path": ".runtime-correction/validation/native-descriptor-identity-candidate-0c63o7x2/verification.json",
-      "sha256": "c3b754334353b23ec31f2c85aaa1f56b4e1a0f83cc5b26f19c7349dc66c6f3ec"
+    "sourcePeers": [
+      {
+        "scope": "Sampled method product source before narrow navigation-only successor",
+        "receipt": {
+          "path": ".runtime-correction/validation/sampled-method-source-peer-z4cl8wal/peer-review.json",
+          "sha256": "0084409ac1bd5a336e81f10f38510a522cc652172c0b4d437463890288ec2114"
+        }
+      },
+      {
+        "scope": "Narrow reachable Map-ID navigation fix, latent cleanup, appended real-handler regressions and user configuration docs",
+        "receipt": {
+          "path": ".runtime-correction/validation/pending-nav-source-peer-jarzzgz1/peer-review.json",
+          "sha256": "70697abf2443830bd9d5f76cda162dd73fdc74d9c7745af51ae0fa49268628f2"
+        }
+      }
+    ],
+    "navigationFocused": {
+      "receipt": {
+        "path": ".runtime-correction/validation/pending-navigation-regression-6492u4qt/qualification.json",
+        "sha256": "f918b2209b073f63cb115785e932c6379791e0f1c5e693ce590527034d60d59c"
+      },
+      "eachNode": {
+        "pass": 161,
+        "skipped": 1,
+        "fail": 0
+      },
+      "nodes": [
+        "18",
+        "24"
+      ],
+      "scope": "Actual Map-ID baseline failure on both Nodes; independent legacy numeric-navigation control passes. No reachable decorator crash demonstrated."
     },
     "priorFailuresRetained": true,
-    "semanticOrModelBenefitProven": false
+    "semanticOrModelBenefitProven": false,
+    "laterFixtureOnlyQualification": {
+      "sourceCommit": "0684f196e96ed750390c1ec094143a9ff7592661",
+      "file": "test/requirement-frame.test.mjs",
+      "fullAffectedFileEachNode": 30,
+      "productArchiveAndAllRuntimeBytesUnchangedFromE6": true,
+      "fullSourceResultStillBoundToExactE6": true
+    }
   },
   "packageChecks": {
     "release": {
-      "path": ".runtime-correction/validation/feature-eec8570-release-recenuws/final-receipt.json",
-      "sha256": "2f3a65a256a0f1d1d65076992f03b780d3b9dc7a83f9347aa8413960c62f9c5a"
+      "path": ".runtime-correction/validation/root-e6c73df-release-n2gtzts4/closed-release-receipt.json",
+      "sha256": "a6241e01cab044e40b044ee56a497cb1e225bf47e07785beedddbec8f93326a9"
     },
     "stock": {
-      "path": ".runtime-correction/validation/feature-eec8570-stock-m7_aa8lh/verification.json",
-      "sha256": "2db9b9c7492a29d876a2d226d63b26fc956bab70f5ade8c3efe919866e059a6a"
+      "path": ".runtime-correction/validation/root-e6c73df-stock-y2h83gqw/verification.json",
+      "sha256": "323e477be50e7e483ec935173cb33b7bdede7f3a9d0f63746c0ae627f2418d8c"
+    },
+    "handoff": {
+      "path": ".runtime-correction/validation/root-e6c73df-handoff-opknbu25/qualification-handoff.json",
+      "sha256": "e78f38203b3c0dfb8eec445804825e17cf4aa9cde638f15b8fc0ddd79b4f4935"
     },
     "artifactChecksPassed": 17,
+    "artifactChecksScope": "17/17 on each Node18 and24; denominators separate from full-source tests.",
+    "artifactChecksEachNode": {
+      "18": 17,
+      "24": 17
+    },
     "allThreeHostBuildsByteVerified": true,
     "regularInstalledFiles": 278,
+    "runtimeModules": 210,
+    "allRuntimeBytesEqualExactRootSource": true,
     "fullStockDeclaredTools": 32,
     "boundWorkerToolCountSeparateScope": 18,
     "defaultsUnchanged": true,
     "optionalIdentitySchemaRecognized": true,
-    "knownCleanupConfirmed": true
+    "installedSampledProjectSettingValidatedAndCompiledOnlyInMemory": true,
+    "shippedSampledFieldAbsent": true,
+    "knownCleanupConfirmed": true,
+    "stockCommandsPassed": 5,
+    "stockGatewayModelOrProjectInit": false,
+    "publicationOrRootDistPromotionByAuthor": false
   },
   "remoteCI": {
-    "currentUpdatedSource": "LATEST_CODE_EQUIVALENT_REPORT_ONLY_PUSH_WINDOWS_FAILURES_UNDER_REPAIR",
-    "latestCompletedHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
+    "currentUpdatedSource": "NOT_YET_PUSHED_REMOTE_UNQUALIFIED",
+    "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "currentSourceNaturalRunStatus": "NOT_STARTED",
+    "latestCompletedHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
+    "latestCompletedRunId": 44754614138,
     "latestCompletedReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-ed3-report-summary-dhr3wlut/terminal-receipt.json",
-      "sha256": "b072d66d5ff7943c6d56c6283df65adbf8add3e8bfb9c69365388aba16bd95f4"
+      "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/terminal-receipt.json",
+      "sha256": "e8ce31bd87ac527b47ef9e98e55410464f26dd646b17efe22050128c32a0136e"
     },
-    "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
-    "rerunCancelDispatch": 0,
-    "currentPushHead": "fcda29940594332e217374f47c2cf3d94aee0c3b",
-    "currentRunId": 44752935831,
+    "latestCompletedResult": "6/7_PASS_1_WINDOWS_NODE24_FAIL",
+    "latestCompletedHealthy": false,
+    "latestPushHealthy": false,
+    "currentNaturalRunStatus": "COMPLETED_FAILURE_ON_PRECEDING_RUNTIME",
+    "unresolvedFailureLeaves": 1,
+    "failedTapTests": 1,
+    "failureLeafCases": 1,
+    "failureLeaf": {
+      "jobId": 136350962189,
+      "job": "Node24 Windows shard1/2",
+      "file": "test/requirement-frame.test.mjs",
+      "case": 14,
+      "name": "6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count",
+      "observed": "Native feedback RC_REVIEW_UNVERIFIED: Error was returned where undefined was expected.",
+      "cause": "UNPROVEN_DIAGNOSIS_OWNED_BY_ORIGIN_NO_SOURCE_FIX_QUALIFIED_YET",
+      "projection": {
+        "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/failure-projection.json",
+        "sha256": "c079e5a86c2d10adaa69d192e1d3c4046f3779f7339f795bbaf7bcd1637e5841"
+      }
+    },
+    "inventory": {
+      "fullFileCount": 396,
+      "fullFileListSha256": "dc18e74516668cbd763a76b33140519bf1637a8da26fa4f63250f1d656ab15f3",
+      "windows198Plus198DisjointUnion396": true
+    },
     "precedingCompletedCI": {
-      "head": "0e564fb432215154763165ddb6a35c0870fc0736",
+      "head": "fcda29940594332e217374f47c2cf3d94aee0c3b",
       "receipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-0e564-report-natural-eq7j5r_y/terminal-receipt.json",
-        "sha256": "f2b93600e9e6a17f7d947df734411e9f9b7b6d671518c192716ff6b3bcbbd5e9"
+        "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
+        "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
       },
-      "result": "7/7_PASS_ON_EARLIER393_FILE_SOURCE"
-    },
-    "lastFullyPassingCodeEquivalentCI": {
-      "head": "7678d9e19361c9ab62dec93be25c26ae7bc19abf",
-      "receipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-7678-feature-natural-ham6kdp_/terminal-receipt.json",
-        "sha256": "4249a3e76c69274efa0a6ea470c7f2d38385faac1b506f60c499447f4e8ad438"
-      },
-      "result": "7/7_PASS_ON_UPDATED396_FILE_SOURCE",
+      "result": "7/7_PASS_396_FILES_WIN198_PLUS198",
       "windowsActualPartition": {
         "shards": [
           198,
           198
         ],
         "disjointUnionFiles": 396,
-        "pass": 4916,
+        "pass": 4918,
         "skip": 45,
         "fail": 0,
         "cancelled": 0,
         "timeouts": 0
-      }
+      },
+      "scope": "Same published runtime, repaired test fixtures; does not qualify new sampled runtime source."
     },
-    "latestPushHealthy": false,
-    "unresolvedFailureLeaves": 5,
-    "failedTapTests": 6,
-    "failureLeafCases": 5,
-    "ciFixtureRepair": {
-      "status": "LOCALLY_VERIFIED_PENDING_FEATURE_CI",
+    "precedingCompletedScope": "fcda7/7 qualifies preceding BF runtime and five fixture repairs only; it does not qualify e6 sampled product source.",
+    "precedingFixtureRepair": {
+      "status": "ALL_SEVEN_NATURAL_CI_JOBS_PASSED",
       "commit": "b4d0511",
       "integration": {
         "path": ".runtime-correction/validation/ed3-combined-ci-with-dependency-s7z2qqr7/root-integration.json",
@@ -146,121 +233,103 @@
       ],
       "productionChanges": 0,
       "archiveUnchanged": true,
-      "earlierIsolatedAssemblyFailurePreserved": true
+      "earlierIsolatedAssemblyFailurePreserved": true,
+      "remoteVerification": {
+        "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
+        "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
+      },
+      "productionDeadlinesChanged": false
     },
-    "currentNaturalRunStatus": "IN_PROGRESS"
+    "earlierFailedCodeEquivalentCI": {
+      "latestCompletedHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
+      "latestCompletedReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-ed3-report-summary-dhr3wlut/terminal-receipt.json",
+        "sha256": "b072d66d5ff7943c6d56c6283df65adbf8add3e8bfb9c69365388aba16bd95f4"
+      },
+      "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
+      "failureLeafCases": 5,
+      "failedTapTests": 6
+    },
+    "rerunCancelDispatch": 0,
+    "localFullSuiteIsSeparateEvidence": true,
+    "newCachedFrameFixtureRepair": {
+      "status": "INTEGRATED_LOCAL_FOCUSED_PASSED_PENDING_NATURAL_REMOTE_RUN",
+      "commit": "0684f196e96ed750390c1ec094143a9ff7592661",
+      "qualification": {
+        "path": ".runtime-correction/validation/ci-fix/456a-cached-frame-clock-o_8_qbg1/qualification.json",
+        "sha256": "d665c5d716301a2ca85bdca8c4b547f8b03f5221c6efd1004b47e02644b02cd5"
+      },
+      "independentPeer": {
+        "path": ".runtime-correction/validation/ci-fix/cached-frame-clock-independent-g9vkp7c3/peer-review.json",
+        "sha256": "324fec780c13e83264c5e5be7a52dec7510a01baa33018e11123cd8a6124570e"
+      },
+      "integration": {
+        "path": ".runtime-correction/validation/root-cached-frame-ci-integration-p9k99dze/integration.json",
+        "sha256": "bf1abadfd9efbbd97fdad0565474267221185b645042957d4170f885fc837b8f"
+      },
+      "affectedFileChecksEachNode": 30,
+      "nodes": [
+        "18",
+        "24"
+      ],
+      "oneExistingSemanticClockCallOnly": true,
+      "runtimeAndHelperChanges": 0,
+      "productionDeadlineChanges": 0,
+      "native5sAvailabilityProven": false,
+      "uniqueHistoricalCauseProven": false,
+      "unqualifiedEnvironmentAndObserverAttemptsPreserved": true
+    }
   },
   "currentPackageRealModelEvaluation": {
-    "status": "CLOSED_GRADED_METHOD_NOT_EXERCISED_STOP_UNVERIFIED",
-    "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
-    "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+    "status": "SETUP_QUALIFIED_LIVE_NOT_STARTED",
+    "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "archiveSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
+    "modelTrialPerformed": false,
     "benefitProven": false,
-    "operatorRoot": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536",
-    "liveAdmission": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/live-admission.json",
-      "sha256": "3edafcb0eacacc5d9fee79744a4c497b662be79f3913816c6524b991664f5462"
-    },
-    "setupReadback": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/setup-final-readback.json",
-      "sha256": "c3b136248de6e3e7bccc7b9cd8d71cd2381aeedd602a0e3460aa942904d0bfbf"
-    },
-    "execOwnership": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-live-exec-ownership.json",
-      "sha256": "3576c1ab29ef2c001bad6cffb1145713700d7971eb13009afa9bf8f33f3fc531"
-    },
-    "models": {
+    "matchedPairCredit": 0,
+    "plannedModels": {
       "coding": "deepseek-flash",
       "review": "deepseek-v4-pro"
     },
     "wallLimitMs": 3600000,
     "maxRequests": 256,
-    "matchedPairCredit": 0,
-    "proposalReady": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/proposal-ready.json",
-      "sha256": "945f62340374932033e43b85b48d82a407e71de6b04916c87ea5cb81be128ee4"
+    "scope": "No real-model result for archive795/e6. Preceding EEC/BF engineering results remain historical; local/package/stock PASS does not establish method uptake or quality gain.",
+    "operatorRoot": ".runtime-correction/validation/public-sampled-method-on-e6-7d19102cb469",
+    "configuredMode": {
+      "document": "sampled",
+      "loaded": "sampled",
+      "compiled": "sampled"
     },
-    "ordinaryPublicPlanInspection": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-public-plan-inspection.json",
-      "sha256": "b3d0c70e3d746cb4f9f436062e6b5878250818225f31012a05f60aee1c82d2fe"
+    "preflight": {
+      "path": ".runtime-correction/validation/public-sampled-method-on-e6-7d19102cb469/preflight/attempt2/receipt.json",
+      "sha256": "638bf197ef844bab61060b90e4542701f5c048bfa4d6b38155ffad4637069699"
     },
-    "applyAdmission": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-admission.json",
-      "sha256": "08f72ddf449d865b13f66f7b15ea5fc8a8596887d903c2ede89559fb019b3849"
+    "setup": {
+      "path": ".runtime-correction/validation/public-sampled-method-on-e6-7d19102cb469/setup-receipt.json",
+      "sha256": "0a64f56255ac7c52d8532333d04b76272fba2a07442f378f51168cb566ca03ad"
     },
-    "proposalOriginalTerminal": "OK",
-    "proposalTasksAtApproval": {
-      "total": 16,
-      "complete": 0
+    "setupExecActual": "581282/session15352 -> 5cd2e4/0",
+    "codingRequests": 0,
+    "realKeyRead": false,
+    "setupIndependentPeer": {
+      "path": ".runtime-correction/validation/sampled-e6-setup-peer-v2-0e334rtg/peer-review.json",
+      "sha256": "cc9a5d6b219e466198163a0a8c1a16750bb1c5c5c3bcb03b04eae4812edbb2f8"
     },
-    "proposalOfficialStrictValidation": "1/1_PASS",
-    "proposalModelRequests": {
-      "deepseek-flash": 23,
-      "deepseek-v4-pro": 22
+    "setupIndependentReadback": {
+      "path": ".runtime-correction/validation/sampled-e6-setup-peer-v2-0e334rtg/final-readback.json",
+      "sha256": "1a9fcda13fe5089d44e8c4f27e2475d6298fb7f8a79cc27534e67e145b425a7c"
     },
-    "implementationChallengeMethodExercise": "OFFERED_TOOL_ZERO_CALLS_NOT_EXERCISED",
-    "noCausalBenefitClaim": true,
-    "applyOriginalObservation": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-common-original.json",
-      "sha256": "0e6adf912a77b7b5071ccea970817ac878b3ad99a0dd9f342b25f508e9f51bf1"
+    "actualSetupOwner": {
+      "agentId": "main",
+      "sessionId": "d6b578bf-0cb3-4037-b0d9-3df8509b5c08",
+      "sessionKey": "agent:main:tui-0c9c6e7e-122b-43e2-bbfe-15b0ffd8ab53"
     },
-    "applyOriginalTerminal": "ERROR_PRESERVED",
-    "recoveredPublicTestRun": {
-      "count": 50,
-      "exitCode": 0,
-      "evidenceScope": "Actual actor tool result, not independent grading"
-    },
-    "nativeSuccessfulAgentEndVerified": true,
-    "hostGatewayErrorRetained": true,
-    "recoveredWarningDiagnosis": {
-      "path": ".runtime-correction/validation/eec-exec-terminal-diagnosis-qywow3az/findings.json",
-      "sha256": "f38081348e4ede076d002b25eb551ddacacb7ffea46e5b4ff39b0085edb1f8f2"
-    },
-    "closure": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/closure.json",
-      "sha256": "8dc93fd730743477981fb0ec1c713955e5973e813966c4a7dba84ffe0a1d2d7c"
-    },
-    "freeze": {
-      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/final-freeze/freeze.json",
-      "sha256": "e878618b302cbb1de35d3683f0fa96b5a4a9149fce3d0f58915bdd9a3b648b09"
-    },
-    "closedAudit": {
-      "path": ".runtime-correction/validation/eec-method-closed-audit-rj0r6ilh/findings.json",
-      "sha256": "652d0ce44a1dcd3edd3cdd15daf999c10f4bcee256e99ea9684c32f8520e5452"
-    },
-    "independentEvaluation": {
-      "verification": {
-        "path": ".runtime-correction/validation/eec-method-on-postclosure-grade-2ww15dqk/closed-verification.json",
-        "sha256": "53a858c22017c168697ccd3dec3a12ddf09a7a441287e3037856f722933d06ac"
-      },
-      "backend": "Linux arm64 Python3.13 Docker on macOS",
-      "original37": {
-        "passed": 37,
-        "total": 37
-      },
-      "separateEmptyConfigPaths": {
-        "passed": 0,
-        "total": 2,
-        "includedInOriginal37": false
-      },
-      "separateLongZeroPort": {
-        "zeroCharacters": 5000,
-        "actual": "ValueError integer conversion digit limit",
-        "includedInOriginal37": false,
-        "expectedNormalizedValue": 0,
-        "matchesExpectedNormalizedZero": false
-      },
-      "authoredSuite": {
-        "tests": 50,
-        "failures": 0,
-        "errors": 0,
-        "skips": 0,
-        "unchangedWritableCopy": true
-      },
-      "nativeMacOSEquivalence": false,
-      "actorFeedback": false,
-      "matchedPairCredit": 0
-    },
-    "finalStop": "UNVERIFIED"
+    "actualNativeHeaderCount": 1,
+    "actualCorrectionLedgerUsed": 0,
+    "actualNativeAdmissionCount": 0,
+    "actualModelRowsAtSetup": 0,
+    "afterNewLedgerAbsence": "UNKNOWN_NOT_ASSUMED",
+    "noBusinessTaskOrFrozenPolicyBeforeSetup": true
   },
   "latestCompletedDevelopmentRun": {
     "status": "CLOSED_FROZEN_GRADED_UNPAIRED_ENGINEERING_ON",
@@ -509,7 +578,7 @@
     "completeNativeRouteQualified": false
   },
   "publicDevice": {
-    "status": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED",
+    "status": "FRESH_INSTANCE_STOPPED_SELECTED_FILE_BOUNDARY_AND_READ_ONLY_LIST_OBSERVED_BOOT_AND_GUEST_NETWORK_UNQUALIFIED",
     "uuid": "6eb0d482-47aa-4d32-a94b-771132cc3d6f",
     "api": 24,
     "createVerification": {
@@ -535,39 +604,112 @@
       "hdcStarted": false,
       "cleanupConfirmed": true,
       "immutableInputsStable": true
-    }
+    },
+    "selectedFileBoundaryAndReadOnlyList": {
+      "status": "OBSERVED_ONLY_NO_BOOT_OR_GUEST_NETWORK_QUALIFICATION",
+      "verification": {
+        "path": ".runtime-correction/validation/public-phone-repo-private-normal-t1ev93ik/closed-verification.json",
+        "sha256": "15fb14acd8c0c3e3989dae547baeca6ce1e4a7ea856f321018d7bd1a5e5bb7df"
+      },
+      "knownCleanupConfirmed": true,
+      "guestNetworkIsolated": false,
+      "backendQualified": false,
+      "priorUnknownAbortAndStrictFailurePreserved": true
+    },
+    "precedingTopStatusBeforeSelectedFileListProof": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED"
   },
   "historicalValidation": {
-    "previousPackageArchiveSha256": "766b75e664356cda3e29d200af86b2004cc0910f098f061466edd1a6147990a2",
-    "completePriorVersion2": {
-      "path": ".runtime-correction/validation/promote-eec-general-reviewer-fixes-xbj8ruro/previous-validation.json",
-      "sha256": "825e1b6053325a5dcb71066d71d2235e07bb47ee464fe41c0f5fe3025941d3a4"
+    "immediatePredecessor": {
+      "version": 3,
+      "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
+      "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+      "completeSnapshot": {
+        "path": ".runtime-correction/validation/validation-v4-candidate-pojckb06/validation-v3-complete.snapshot.json",
+        "sha256": "be4333d329e7f3ba9353b89fa8629f3717b923815187395d360b9c40e64ce120"
+      }
     },
-    "previousValidationGitObject": "eec8570b28cb9ad8a35196c899e1b45844a62925:dist/runtime-corrector-openclaw-1.10.0.validation.json",
-    "previousValidationGitBlob": "da746f80d789dd1c69265bb017b0d6eb9f1c49d1",
-    "scope": "Complete earlier published package/e94/a408 model runs, grades, CI failures, source controls and report peers remain in the exact prior metadata and HTML histories; no historical outcome is relabelled."
+    "version3HistoricalValidation": {
+      "previousPackageArchiveSha256": "766b75e664356cda3e29d200af86b2004cc0910f098f061466edd1a6147990a2",
+      "completePriorVersion2": {
+        "path": ".runtime-correction/validation/promote-eec-general-reviewer-fixes-xbj8ruro/previous-validation.json",
+        "sha256": "825e1b6053325a5dcb71066d71d2235e07bb47ee464fe41c0f5fe3025941d3a4"
+      },
+      "previousValidationGitObject": "eec8570b28cb9ad8a35196c899e1b45844a62925:dist/runtime-corrector-openclaw-1.10.0.validation.json",
+      "previousValidationGitBlob": "da746f80d789dd1c69265bb017b0d6eb9f1c49d1",
+      "scope": "Complete earlier published package/e94/a408 model runs, grades, CI failures, source controls and report peers remain in the exact prior metadata and HTML histories; no historical outcome is relabelled."
+    },
+    "scope": "Complete prior v3 bytes and all prior v2/history references retained without retagging old package, run, CI, QA or grading outcomes."
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "sourceCommits": [
-      "c82a8ae",
-      "c45d461",
-      "eec8570b28cb9ad8a35196c899e1b45844a62925"
-    ],
+    "productSourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "sourceState": "COMMITTED_AND_LOCALLY_QUALIFIED_PUBLICATION_RECEIPT_SEPARATE",
+    "sourceLocallyReachable": true,
+    "latestCompletedRemoteHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
+    "newSourceRemoteQualified": false,
     "mainMerged": false,
-    "lastVerifiedRemoteHeadBeforeThisPublication": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
-    "reportOnlyFollowup": false,
-    "runtimeAndArtifactUnchangedFromValidatedHead": true,
-    "testFixtureCommits": [
-      "b4d0511ecc2ba78d4f45c39918e736c6e5430b0d"
-    ]
+    "artifactPromotionState": "QUALIFIED_CANONICAL_ARCHIVE_PROMOTED",
+    "remoteSourceScope": "Latest remote conclusion is456a6/7; priorfcda7/7 remains earlier evidence. No latest-green claim for e6.",
+    "lastVerifiedRemoteHeadBeforeThisPublication": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
+    "fixtureOnlyFollowupCommit": "0684f196e96ed750390c1ec094143a9ff7592661"
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "9d2231abe3ffc384f22be271c31687fe0a1b23022c949a7288fefba830086628",
+    "currentCandidateMetadataNotBrowserQualified": true,
+    "precedingQaSnapshot": {
+      "status": "UPDATED_PENDING_BROWSER_QA",
+      "htmlSha256": "b188be59d7fab827bcb20b57714e2a1098612292fe88d7f7b0eb8d1c57fc9a2e",
+      "receipt": {
+        "path": ".runtime-correction/validation/report-candidate-source-review-49mxhkj9/receipt.json",
+        "sha256": "dd00aa792cda242fb60c27807469c64a28fe749ad8f3aaa48c7df9d76b231410"
+      },
+      "desktopAndMobileViews": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "visualInspection": [
+        "package-en-1200.png",
+        "package-zh-CN-390.png"
+      ],
+      "provenancePeerStatus": "Fresh revision pending",
+      "provenancePeer": {
+        "path": ".runtime-correction/validation/report-bf-eec-provenance-peer-oex59l8q/peer-review.json",
+        "sha256": "429365484c78eb8ae68f36ac76fb29f9f0ee9310928481c52a365e83fc70e5ac",
+        "scope": "Reviewed HTML and validation metadata before this additive pointer; no self-hash claim"
+      },
+      "liveStatusProvenancePeer": {
+        "path": ".runtime-correction/validation/report-live-eec-narrow-peer-0o2y2xhx/peer-review.json",
+        "sha256": "fa9d136f10dfc3235118c3cbb10e50af2303dd05a26c580734b95a77c27509d2",
+        "scope": "Narrow live-status edit and exact QA, before this additive pointer; historical provenance is covered by the preceding peer"
+      },
+      "currentCiAndApplyPhasePeer": {
+        "path": ".runtime-correction/validation/report-396-ci-apply-peer-3ra5o6_i/peer-review.json",
+        "sha256": "58f6f9bdd029d9adf8d53216dff81c34cd3de39a99ffe23f06830742a7c5134d",
+        "scope": "Current CI and Apply-phase update, reviewed before this additive pointer; earlier historical and live-status snapshots retain their scoped peers"
+      },
+      "closedGradeAndCurrentCiPeer": {
+        "path": ".runtime-correction/validation/report-closed-eec-current-peer-bugaalzv/peer-review.json",
+        "sha256": "c330fd6fb58c0563b82afe5172a073b882571f45ba9b8ffdbf403365d1878cad",
+        "scope": "Exact closed-run/independent-grade/latest-CI report before this additive pointer; prior snapshots retain their scoped peers"
+      },
+      "precedingReportQa": {
+        "path": ".runtime-correction/validation/report-candidate-source-review-49mxhkj9/receipt.json",
+        "sha256": "dd00aa792cda242fb60c27807469c64a28fe749ad8f3aaa48c7df9d76b231410"
+      },
+      "candidatePrivateRevisionPeer": {
+        "path": ".runtime-correction/validation/report-candidate-private-peer-uu1n_j_g/peer-review.json",
+        "sha256": "d940287935549b1deea9acbc410781db7d2965f0235603d0eb28d0227bb7d5ba",
+        "scope": "Exact HTML/current report metadata before this additive pointer, receipt-shape preservation and second navigation finding detail; candidate remains private/unreleased."
+      }
+    },
+    "htmlSha256": "9f23751e0c6f9f6b66504c79b95b4ab68a13270caceb5cc3517b0a06190a84be",
+    "provenancePeerStatus": "CLEAR",
     "receipt": {
-      "path": ".runtime-correction/validation/report-candidate-source-review-49mxhkj9/receipt.json",
-      "sha256": "dd00aa792cda242fb60c27807469c64a28fe749ad8f3aaa48c7df9d76b231410"
+      "path": ".runtime-correction/validation/report-e6-qualified-final-mj09ubff/receipt.json",
+      "sha256": "ff5478adb53f7c31714b741592cfd99f8683a6bbe6de5b7dc7f5077e99e26bb8"
     },
     "desktopAndMobileViews": 4,
     "languages": [
@@ -577,38 +719,13 @@
     "externalRequests": 0,
     "pageErrors": 0,
     "visualInspection": [
-      "package-en-1200.png",
-      "package-zh-CN-390.png"
+      "English desktop overview/current CI status",
+      "Simplified Chinese mobile latest completed walkthrough"
     ],
-    "provenancePeerStatus": "CLEAR",
     "provenancePeer": {
-      "path": ".runtime-correction/validation/report-bf-eec-provenance-peer-oex59l8q/peer-review.json",
-      "sha256": "429365484c78eb8ae68f36ac76fb29f9f0ee9310928481c52a365e83fc70e5ac",
-      "scope": "Reviewed HTML and validation metadata before this additive pointer; no self-hash claim"
-    },
-    "liveStatusProvenancePeer": {
-      "path": ".runtime-correction/validation/report-live-eec-narrow-peer-0o2y2xhx/peer-review.json",
-      "sha256": "fa9d136f10dfc3235118c3cbb10e50af2303dd05a26c580734b95a77c27509d2",
-      "scope": "Narrow live-status edit and exact QA, before this additive pointer; historical provenance is covered by the preceding peer"
-    },
-    "currentCiAndApplyPhasePeer": {
-      "path": ".runtime-correction/validation/report-396-ci-apply-peer-3ra5o6_i/peer-review.json",
-      "sha256": "58f6f9bdd029d9adf8d53216dff81c34cd3de39a99ffe23f06830742a7c5134d",
-      "scope": "Current CI and Apply-phase update, reviewed before this additive pointer; earlier historical and live-status snapshots retain their scoped peers"
-    },
-    "closedGradeAndCurrentCiPeer": {
-      "path": ".runtime-correction/validation/report-closed-eec-current-peer-bugaalzv/peer-review.json",
-      "sha256": "c330fd6fb58c0563b82afe5172a073b882571f45ba9b8ffdbf403365d1878cad",
-      "scope": "Exact closed-run/independent-grade/latest-CI report before this additive pointer; prior snapshots retain their scoped peers"
-    },
-    "precedingReportQa": {
-      "path": ".runtime-correction/validation/report-focused-closed-final-qa-6ajm30cz/receipt.json",
-      "sha256": "8e035add9f01d663433d1944338e9c4ef6ad520b575c191d4a56c1670908fd3c"
-    },
-    "candidatePrivateRevisionPeer": {
-      "path": ".runtime-correction/validation/report-candidate-private-peer-uu1n_j_g/peer-review.json",
-      "sha256": "d940287935549b1deea9acbc410781db7d2965f0235603d0eb28d0227bb7d5ba",
-      "scope": "Exact HTML/current report metadata before this additive pointer, receipt-shape preservation and second navigation finding detail; candidate remains private/unreleased."
+      "path": ".runtime-correction/validation/report-e6-canonical-peer-90i8h49j/peer-review.json",
+      "sha256": "ccffa192d8af7f93e44547d1f080e495a4b20528e7bd3e940866f6c624cbd9e4",
+      "scope": "Exact HTML9f2375/QA ff5478 and metadata c989 before these additive Root SETUP/CI/peer pointers; no self-hash claim."
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -668,20 +785,206 @@
       "sha256": "23ef8d5b171bba9328e89b8c8ef7ae05b598dd67dfa8ab6c748326cfb8e897e0"
     }
   },
-  "privateNextRevision": {
-    "status": "FULL_SUITE_PASSED_SOURCE_REVIEW_FOUND_UNTESTED_NAVIGATION_BRANCH_RELEASE_HELD",
-    "sourceHold": ".runtime-correction/validation/implementation-challenge-sampled-is4pso6u/source-hold.json",
-    "sourceHoldSha256": "b149294d45e69798f140711e5c2d64d3a61eae2eea9de86c3c70331fff11b38f",
-    "fullSuiteReceipt": ".runtime-correction/validation/sampled-integrated-full-v2-kvnonmpu/full-suite-independent-receipt.json",
-    "fullSuiteReceiptSha256": "236b090d3de751cf8b038b4e610e74d6bfcccfcccf56c44b63f3ff2d6b4408f0",
-    "files": 396,
-    "pass": 4975,
-    "skip": 33,
-    "fail": 0,
-    "timeouts": 0,
-    "sourceReviewFinding": "Legacy withPendingNavigation locally defines pending as a function but new requiredProduction branch calls pending.push; catch silently loses navigation. Compact pendingRows iterates requiredProduction Map entries instead of keys, yielding tuple IDs. Correct both navigation branches before any promotion; acceptance logic remains unchanged.",
-    "currentArtifactIncludesTheseChanges": false,
+  "candidateStatus": {
+    "state": "QUALIFIED_ARCHIVE_PROMOTED_IN_WORKTREE",
+    "publicationTargetArtifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
+    "artifactFieldPointsToActualPrivateArchive": false,
+    "sourceLocallyGitReachable": true,
+    "sourceRemoteState": "REMOTE_CI_UNQUALIFIED_BRANCH_PUBLICATION_PENDING",
+    "sourceDataScope": "Exact qualified Root product commit e6; subsequent fixture-only followup and three publication artifacts are separately recorded. Runtime/package bytes stay bound to e6.",
+    "promotedBy": "ROOT"
+  },
+  "precedingPackageRealModelEvaluation": {
+    "status": "CLOSED_GRADED_METHOD_NOT_EXERCISED_STOP_UNVERIFIED",
+    "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
+    "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+    "benefitProven": false,
+    "operatorRoot": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536",
+    "liveAdmission": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/live-admission.json",
+      "sha256": "3edafcb0eacacc5d9fee79744a4c497b662be79f3913816c6524b991664f5462"
+    },
+    "setupReadback": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/setup-final-readback.json",
+      "sha256": "c3b136248de6e3e7bccc7b9cd8d71cd2381aeedd602a0e3460aa942904d0bfbf"
+    },
+    "execOwnership": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-live-exec-ownership.json",
+      "sha256": "3576c1ab29ef2c001bad6cffb1145713700d7971eb13009afa9bf8f33f3fc531"
+    },
+    "models": {
+      "coding": "deepseek-flash",
+      "review": "deepseek-v4-pro"
+    },
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "matchedPairCredit": 0,
+    "proposalReady": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/proposal-ready.json",
+      "sha256": "945f62340374932033e43b85b48d82a407e71de6b04916c87ea5cb81be128ee4"
+    },
+    "ordinaryPublicPlanInspection": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/root-public-plan-inspection.json",
+      "sha256": "b3d0c70e3d746cb4f9f436062e6b5878250818225f31012a05f60aee1c82d2fe"
+    },
+    "applyAdmission": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-admission.json",
+      "sha256": "08f72ddf449d865b13f66f7b15ea5fc8a8596887d903c2ede89559fb019b3849"
+    },
+    "proposalOriginalTerminal": "OK",
+    "proposalTasksAtApproval": {
+      "total": 16,
+      "complete": 0
+    },
+    "proposalOfficialStrictValidation": "1/1_PASS",
+    "proposalModelRequests": {
+      "deepseek-flash": 23,
+      "deepseek-v4-pro": 22
+    },
+    "implementationChallengeMethodExercise": "OFFERED_TOOL_ZERO_CALLS_NOT_EXERCISED",
+    "noCausalBenefitClaim": true,
+    "applyOriginalObservation": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/apply-common-original.json",
+      "sha256": "0e6adf912a77b7b5071ccea970817ac878b3ad99a0dd9f342b25f508e9f51bf1"
+    },
+    "applyOriginalTerminal": "ERROR_PRESERVED",
+    "recoveredPublicTestRun": {
+      "count": 50,
+      "exitCode": 0,
+      "evidenceScope": "Actual actor tool result, not independent grading"
+    },
+    "nativeSuccessfulAgentEndVerified": true,
+    "hostGatewayErrorRetained": true,
+    "recoveredWarningDiagnosis": {
+      "path": ".runtime-correction/validation/eec-exec-terminal-diagnosis-qywow3az/findings.json",
+      "sha256": "f38081348e4ede076d002b25eb551ddacacb7ffea46e5b4ff39b0085edb1f8f2"
+    },
+    "closure": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/closure.json",
+      "sha256": "8dc93fd730743477981fb0ec1c713955e5973e813966c4a7dba84ffe0a1d2d7c"
+    },
+    "freeze": {
+      "path": ".runtime-correction/validation/public-method-on-eec-cca33a4fc536/final-freeze/freeze.json",
+      "sha256": "e878618b302cbb1de35d3683f0fa96b5a4a9149fce3d0f58915bdd9a3b648b09"
+    },
+    "closedAudit": {
+      "path": ".runtime-correction/validation/eec-method-closed-audit-rj0r6ilh/findings.json",
+      "sha256": "652d0ce44a1dcd3edd3cdd15daf999c10f4bcee256e99ea9684c32f8520e5452"
+    },
+    "independentEvaluation": {
+      "verification": {
+        "path": ".runtime-correction/validation/eec-method-on-postclosure-grade-2ww15dqk/closed-verification.json",
+        "sha256": "53a858c22017c168697ccd3dec3a12ddf09a7a441287e3037856f722933d06ac"
+      },
+      "backend": "Linux arm64 Python3.13 Docker on macOS",
+      "original37": {
+        "passed": 37,
+        "total": 37
+      },
+      "separateEmptyConfigPaths": {
+        "passed": 0,
+        "total": 2,
+        "includedInOriginal37": false
+      },
+      "separateLongZeroPort": {
+        "zeroCharacters": 5000,
+        "actual": "ValueError integer conversion digit limit",
+        "includedInOriginal37": false,
+        "expectedNormalizedValue": 0,
+        "matchesExpectedNormalizedZero": false
+      },
+      "authoredSuite": {
+        "tests": 50,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "unchangedWritableCopy": true
+      },
+      "nativeMacOSEquivalence": false,
+      "actorFeedback": false,
+      "matchedPairCredit": 0
+    },
+    "finalStop": "UNVERIFIED"
+  },
+  "candidateQualification": {
+    "status": "EXACT_ROOT_FULL_BUILD_STOCK_PASSED_CANONICAL_ARCHIVE_PROMOTED",
+    "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "archiveSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
+    "regularMembers": 278,
+    "runtimeModules": 210,
+    "fullSuiteOwner": "audit_final_row_authority",
+    "fullSuiteActual": "044cfe/session57763->94f6e2/0",
+    "fullSuiteHold": {
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-suite-hold.json",
+      "sha256": "f65392cb9290c7d0a66fe428cbc4076f6eca925982c3093f1142ca860ca464db"
+    },
+    "fullSuiteResult": "PASS",
+    "release": {
+      "path": ".runtime-correction/validation/root-e6c73df-release-n2gtzts4/closed-release-receipt.json",
+      "sha256": "a6241e01cab044e40b044ee56a497cb1e225bf47e07785beedddbec8f93326a9"
+    },
+    "stock": {
+      "path": ".runtime-correction/validation/root-e6c73df-stock-y2h83gqw/verification.json",
+      "sha256": "323e477be50e7e483ec935173cb33b7bdede7f3a9d0f63746c0ae627f2418d8c"
+    },
+    "navigationFix": {
+      "path": ".runtime-correction/validation/pending-navigation-regression-6492u4qt/qualification.json",
+      "sha256": "f918b2209b073f63cb115785e932c6379791e0f1c5e693ce590527034d60d59c",
+      "affectedFileEachNode": {
+        "pass": 161,
+        "skip": 1,
+        "fail": 0
+      },
+      "scope": "Reachable Map-ID feedback bug reproduced and fixed; dead decorator loop removed defensively, no demonstrated reachable exception; verdict/deadline rules unchanged."
+    },
+    "sourcePeer": {
+      "path": ".runtime-correction/validation/pending-nav-source-peer-jarzzgz1/peer-review.json",
+      "sha256": "70697abf2443830bd9d5f76cda162dd73fdc74d9c7745af51ae0fa49268628f2"
+    },
+    "precedingCandidateFullSuiteAndFinding": {
+      "status": "FULL_SUITE_PASSED_SOURCE_REVIEW_FOUND_UNTESTED_NAVIGATION_BRANCH_RELEASE_HELD",
+      "sourceHold": ".runtime-correction/validation/implementation-challenge-sampled-is4pso6u/source-hold.json",
+      "sourceHoldSha256": "b149294d45e69798f140711e5c2d64d3a61eae2eea9de86c3c70331fff11b38f",
+      "fullSuiteReceipt": ".runtime-correction/validation/sampled-integrated-full-v2-kvnonmpu/full-suite-independent-receipt.json",
+      "fullSuiteReceiptSha256": "236b090d3de751cf8b038b4e610e74d6bfcccfcccf56c44b63f3ff2d6b4408f0",
+      "files": 396,
+      "pass": 4975,
+      "skip": 33,
+      "fail": 0,
+      "timeouts": 0,
+      "sourceReviewFinding": "Legacy withPendingNavigation locally defines pending as a function but new requiredProduction branch calls pending.push; catch silently loses navigation. Compact pendingRows iterates requiredProduction Map entries instead of keys, yielding tuple IDs. Correct both navigation branches before any promotion; acceptance logic remains unchanged.",
+      "currentArtifactIncludesTheseChanges": false,
+      "modelTrialPerformed": false,
+      "qualityBenefitEstablished": false
+    },
     "modelTrialPerformed": false,
-    "qualityBenefitEstablished": false
+    "qualityBenefitEstablished": false,
+    "fullSuiteReceipt": {
+      "path": ".runtime-correction/validation/root-e6c73df-qualification-tbqegzfk/full-suite-independent-receipt.json",
+      "sha256": "133ffcc2f80c8f2d0fb0ce9e489263b31b8b6ca3b21591deacfe55612f9b23f7"
+    },
+    "handoff": {
+      "path": ".runtime-correction/validation/root-e6c73df-handoff-opknbu25/qualification-handoff.json",
+      "sha256": "e78f38203b3c0dfb8eec445804825e17cf4aa9cde638f15b8fc0ddd79b4f4935"
+    },
+    "currentCanonicalArtifactIncludesTheseChanges": true
+  },
+  "precedingPublishedPackage": {
+    "sourceCommit": "eec8570b28cb9ad8a35196c899e1b45844a62925",
+    "archiveSha256": "bf59c3478ddc4bcb48c51b980314f71a600a3f23c51d0c070f70ab13a6e48c93",
+    "artifact": ".runtime-correction/validation/promote-e6-sampled-navigation-j58vecjd/previous-runtime-corrector-openclaw-1.10.0.tgz",
+    "status": "PUBLISHED_PREDECESSOR_BEFORE_THIS_PROMOTION",
+    "completeMetadataSnapshot": {
+      "path": ".runtime-correction/validation/validation-v4-candidate-pojckb06/validation-v3-complete.snapshot.json",
+      "sha256": "be4333d329e7f3ba9353b89fa8629f3717b923815187395d360b9c40e64ce120"
+    },
+    "artifactAtPublication": "dist/runtime-corrector-openclaw-1.10.0.tgz",
+    "snapshotMode": "0400"
+  },
+  "currentCanonicalPackage": {
+    "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+    "archiveSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
+    "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
+    "status": "QUALIFIED_PROMOTED_BRANCH_PUBLICATION_PENDING"
   }
 }
