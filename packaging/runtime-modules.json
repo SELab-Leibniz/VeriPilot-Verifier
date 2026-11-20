@@ -3,6 +3,7 @@
   "common": [
     "lib/runtime-v2/environment-execution.mjs",
     "lib/runtime-v2/known-original-obligations.mjs",
+    "lib/runtime-v2/implementation-challenge.mjs",
     "lib/runtime-v2/process-claims.mjs",
     "lib/runtime-v2/historical-order.mjs",
     "lib/line-page.mjs",

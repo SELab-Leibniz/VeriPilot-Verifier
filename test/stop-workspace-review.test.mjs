@@ -2504,13 +2504,13 @@ test('original-path method policy makes the preceding same-Stop cache historical
     expectedFileBinding: EXPECTED_FILE_BINDING_VERSION, historicalToolOutcome: 'complete-tool-result-v2',
     nativeProcessClaims: 'native-process-claims-v2-original-parts', deviationOnly: true,
     deviationScope: 'delivered-work-regression-v2', originalRequirementsBasis: true };
-  assert.equal(saved.reviewPolicyVersion, sha256({ ...precedingPolicy, implementationReviewMethod: 'entry-predicate-result-v1' }));
+  assert.equal(saved.reviewPolicyVersion, sha256({ ...precedingPolicy, implementationReviewMethod: 'contrary-route-v1' }));
   const before = await fs.readFile(file);
   const unchanged = await f.run(() => { throw new Error('same-policy reuse must not start a worker'); });
   assert.equal(unchanged.stop.reused, true);
   assert.equal(unchanged.stop.status, 'NO_DEVIATION_FOUND');
   assert.deepEqual(await fs.readFile(file), before);
-  saved.reviewPolicyVersion = sha256(precedingPolicy);
+  saved.reviewPolicyVersion = sha256({ ...precedingPolicy, implementationReviewMethod: 'entry-predicate-result-v1' });
   await fs.writeFile(file, JSON.stringify(saved));
   const historical = await fs.readFile(file);
   const stale = await f.run(() => { throw new Error('policy invalidation must not start a worker'); });
