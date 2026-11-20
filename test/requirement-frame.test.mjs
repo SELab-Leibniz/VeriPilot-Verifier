@@ -399,6 +399,7 @@ function midTurnFrameClock(t) {
 
 
 test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count', async t => {
+  midTurnFrameClock(t);
   const f = await fixture(t, { nativeHooks: true });
   const task = await ensureTask({ projectRoot: f.projectRoot, sessionId: f.sessionId });
   assert.equal(await captureTaskStart({ projectRoot: f.projectRoot, taskId: task.taskId }), true);
