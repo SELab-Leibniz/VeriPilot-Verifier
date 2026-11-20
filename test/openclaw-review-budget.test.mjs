@@ -1,4 +1,5 @@
 import { correctionFixtureRuntime } from "./support/openclaw-project-scope.mjs";
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {promises as fs} from 'node:fs';
@@ -46,9 +47,15 @@ test('explicit RC assessment budget is used by direct manual verification window
 });
 
 test('controller review still respects parent absolute deadline',async t=>{
- const f=await fixture(t),a=await finish(f,'parent',1500);
+ // The parent window is semantic input; asynchronous fixture I/O uses real timers.
+ const clock=semanticReviewClock(t,{timeoutMs:1500,originalRoleDeadline:true});
+ const f=await fixture(t),a=await finish(f,'parent',1500),deadlineAt=a.state.runDeadlineAt;
+ clock.advance(125);
  await f.runtime.assessSupervised(a.state,{transcriptPath:a.file,text:'All requested task work is complete.',assessmentId:'parent-test',stopHookActive:false,mode:'verify_only'});
  assert(f.calls.length>0,f.warnings.join('\n'));assert(f.calls[0].timeoutMs<=1500);
+ assert.equal(a.state.runDeadlineAt,deadlineAt);
+ assert.equal(deadlineAt-clock.now(),1375);
+ assert(f.calls[0].timeoutMs>0 && f.calls[0].timeoutMs<=1375,'elapsed parent time must not be renewed');
 });
 
 test('historical files removed before assessment are not invented required evidence; changes after capture remain stale',async t=>{
@@ -63,4 +70,21 @@ test('historical files removed before assessment are not invented required evide
 test('project YAML defaults and individual roles can independently override format repairs',async t=>{
  const f=await fixture(t),file=path.join(f.root,'.runtime-corrector/config.yaml');let text=await fs.readFile(file,'utf8');text=text.replace('    timeoutMs: 1200000','    timeoutMs: 1200000\n    formatRepairAttempts: 2\n  stopReviewer:\n    formatRepairAttempts: 0');await fs.writeFile(file,text);
  const {loadConfig}=await import('../lib/runtime-corrector.mjs');const plan=await loadConfig({cwd:f.root,pluginRoot:artifactRoot});assert.equal(plan.runtimeV2.reviewers.stopReviewer.formatRepairAttempts,0);assert.equal(plan.runtimeV2.reviewers.implementationReviewer.formatRepairAttempts,2);
+});
+
+
+test('an expired original controller parent deadline never launches a reviewer',async t=>{
+ const clock=semanticReviewClock(t,{timeoutMs:1500,originalRoleDeadline:true});
+ const f=await fixture(t),a=await finish(f,'expired-parent',1500),deadlineAt=a.state.runDeadlineAt;
+ clock.advance(1499);
+ await new Promise(resolve=>setTimeout(resolve,2));
+ assert.equal(clock.now(),deadlineAt-1,'non-role I/O timers remain real without consuming semantic parent time');
+ clock.advance(1);
+ const result=await f.runtime.assessSupervised(a.state,{transcriptPath:a.file,text:'All requested task work is complete.',assessmentId:'expired-parent-test',stopHookActive:false,mode:'verify_only'});
+ assert.equal(clock.now(),deadlineAt);
+ assert.equal(a.state.runDeadlineAt,deadlineAt);
+ assert.equal(f.calls.length,0,'expired parent must not dispatch a reviewer');
+ assert.equal(result.status,'UNVERIFIED');
+ assert.equal(result.reason,'deadline');
+ assert.equal(result.stale,true);
 });
