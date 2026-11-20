@@ -1,9 +1,9 @@
 {
   "kind": "openclaw-runtime-corrector-validation-v1",
   "version": "1.10.0",
-  "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+  "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
   "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-  "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+  "packageSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
   "packageMembers": 277,
   "host": {
     "name": "openclaw",
@@ -14,23 +14,20 @@
     "workflow": "Proposal -> authenticated approval -> Apply; external grading after candidate freeze"
   },
   "sourceBinding": {
-    "runtimeImplementationCommit": "9ed63544bef9c71f620f730597de658df37348be",
+    "runtimeImplementationCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "allowlistedSourceModules": 209,
-    "libMjsMembersIncludingGeneratedWrappers": 214,
     "all209ModulesMatchCommittedExportAndCurrentRoot": true,
     "runtimeModuleByteBinding": {
-      "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/runtime-module-byte-binding.json",
-      "sha256": "e461793f5cbd8511922c4e8825e05082ef6cafe9ef67d53478e2dff4d1d3dfd8"
+      "path": ".runtime-correction/validation/stock-contract-install-18io19xn/runtime-source-bindings.json",
+      "sha256": "4843d5bca96e621043910721238177a96af7d7d1df481082bb5260a43f8502b3"
     },
     "committedRelease": {
-      "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/release.json",
-      "sha256": "988b0b5cb970ac9be10fbc7442aea35dd055e4303b7a6eb4e5501b8682950778"
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/committed-release-1de9313/release.json",
+      "sha256": "844e33a77008cd5259d162ec2e0acad24cbe507279ae55678888f2bde17c89c4"
     },
-    "priorFailedCandidateDelta": {
-      "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/root-archive-delta.json",
-      "sha256": "24b7159921bd61402bf2ba7b6c686a7153eab7cde9239f60d96684e5c334daf4"
-    },
-    "actualCurrentArchiveRealModelArms": 4
+    "committedVsFullTestedSnapshotProductTestsAndScriptsByteEqual": true,
+    "frozenSnapshotReportMetadataDifferOnly": true,
+    "actualCurrentArchiveRealModelArms": 0
   },
   "generalPurposeChanges": [
     "Required Proposal obligations use host-issued stable identifiers. A valid current ID selects canonical host text while retaining exact current original reads, plan citations, every required identity and all coverage dispositions. Legacy exact-text rows remain supported.",
@@ -45,7 +42,9 @@
     "Current installable release: precise bounded/escaped ordinary process.poll guidance on the actual owned process.kill response; kill ACK leaves pending document coverage unchanged, and only genuine terminal polling plus fresh declared-document reviews can settle it. Shared Stop notice distinguishes pending execution while retaining host-neutral declaration fallback; no automatic SDK polling, model round, native continuation, cap/deadline or acceptance relaxation.",
     "Capture the existing trusted native-session history on the first authenticated RC setup/project/session command, before later administrative messages obscure the startup witness. Preserve existing global usage/admission bytes and report history separately from enablement, remaining capacity and final acceptance. No new proof kind, model round, benchmark logic or admission/deadline relaxation.",
     "Preserve selected host-native process metadata and check optional typed factual process claims against unique original invocation/result identity and acknowledged original bytes. Background running remains valid where the duty permits it; termination never implies semantic success.",
-    "Keep nullable process signals compatible with the stock public SDK validator, without dropping null or weakening nonempty and length constraints."
+    "Keep nullable process signals compatible with the stock public SDK validator, without dropping null or weakening nonempty and length constraints.",
+    "Advertise conditional CURRENT accounting in Stop instructions and field help; provide compact pending IDs and actual missing-field/validation diagnostics within the existing same-worker one-retry/deadline. Conditions, current citations, proof owners and saved deviations still validate independently.",
+    "Use typed string/null branches for bounded optional tool text to preserve valid null and empty text without null.length failures; retain existing length bounds, type rejection and inherited scalar coercion."
   ],
   "generalPurposePriority": {
     "firstPriority": true,
@@ -101,88 +100,94 @@
       "implementationCarriedIntoCurrentArchive": true,
       "actualModelObservationArchiveSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd"
     },
-    "latestRealModelMechanismArchiveSha256": "2a07034cd2244df34adcc7f4440df4f7dc0032322e15f2b0c4262a73e95698bd",
-    "currentInstallableArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
-    "currentArchiveModelRuns": 4,
+    "latestRealModelMechanismArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "currentInstallableArchiveSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
+    "currentArchiveModelRuns": 0,
     "wholeArchiveCaseTokenAudit": {
-      "path": ".runtime-correction/validation/shipped-8ed-generality-audit-3dmhu7_r/audit.json",
-      "sha256": "cdbdbe9732fea3de55f3e4411c2c8faea53114c18bddf1f87d766e187454c7e9",
+      "candidateVerification": {
+        "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/candidate-package-verification.json",
+        "sha256": "9c8f53d5efbe2f9c0e44f2668a219a2f83381e925e73258f0e903ac722792885"
+      },
       "utf8MembersInspected": 277,
       "concreteCaseTokenHits": 0,
       "semanticCompletenessOrUsefulnessProof": false
-    }
+    },
+    "ongoingFourArmComparisonArchiveSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5"
   },
   "sourceChecks": {
-    "status": "FULL_BASELINE_PLUS_NARROW_FOCUSED_DELTA_AND_PUBLIC_SDK_PASS",
-    "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
-    "fullSuiteBaselineCommit": "a0c34e4ce22ca621a3da89ae85389c3ada22deb2",
-    "fullSuiteBaselineFiles": 392,
-    "fullSuiteBaselinePass": 4855,
-    "fullSuiteBaselineSkip": 33,
-    "fullSuiteBaselinePeer": {
-      "path": ".runtime-correction/validation/native-process-full-peer-tgps0nec/closed-peer-verification.json",
-      "sha256": "85a694b3bdf8800c57d3e115ac0449790c27008a0ea7b0b6a67f1967338a3915"
+    "status": "ONE_FULL_393_FILE_NODE24_PASS_EXACT_PRODUCT_POSTIMAGES",
+    "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+    "executionSourceHold": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/source-hold-v2.json",
+      "sha256": "5a54b40fd8bb6dd8e1a463a7d6666b9106232127169857b3026db8b21b422a4f"
     },
-    "deltaVerification": {
-      "path": ".runtime-correction/validation/native-process-nullable-pfkmdsk0/verification.json",
-      "sha256": "26108ed0ab6f08875d1a9e3e50c00093535942e4cbfae46f7713cf8fec7132a6"
+    "fullSuite": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/full-suite-receipt.json",
+      "sha256": "7634e3fe85d3e6190006d0c895974f7e1faa71e09b414961823ecdf4ebdaa772"
     },
-    "focusedDeltaPassEachNode18And24": 39,
-    "publicSdkControls": 13,
-    "independentPublicSdkVectors": 15,
-    "schemaPeer": {
-      "path": ".runtime-correction/validation/native-nullable-schema-peer-u3vsvq2a/peer-review.json",
-      "sha256": "704ec1f0b5b2004fa212a942bf04c9d63d3a1f105307d3967e43a25f9bca41b3"
+    "fullActual": "ca3043/session81158→3ff7ff/0",
+    "files": 393,
+    "pass": 4867,
+    "skip": 33,
+    "fail": 0,
+    "cancelled": 0,
+    "timedOutFiles": 0,
+    "fileConcurrency": 4,
+    "fileTimeoutMs": 180000,
+    "naturalAttempts": 1,
+    "executionScope": "Frozenpostimages; committed product/test/script bytes match. Only report/validationJSON differ; no claim whole export equality or newcommit rerun.",
+    "conditionalSourcePeer": {
+      "path": ".runtime-correction/validation/known-feedback-independent-peer-3RCIAHnj/peer-review.json",
+      "sha256": "8f0e967b7aa7636e70f95c5f6ef8a9e7266013ad3aad790041d3d0a286981b2d"
     },
-    "newUnchangedLocalFullSuiteRerunClaimed": false,
-    "sourceHeadCiRunId": 44659635701,
-    "scope": "The392-file full run belongs to a0. The one-node nullable schema successor has39 focused checks per supported Node and public-SDK proof; natural current-head CI is tracked separately.",
-    "currentHeadCI": {
-      "head": "c84e51390b528d5bc098899492cf3958877eea25",
-      "runId": 44665328119,
-      "allTestJobsPass": 7,
-      "macosFiles": 392,
-      "macosPass": 4857,
-      "macosSkip": 33,
-      "windowsDisjointFilesEachShard": 196,
-      "terminalReceipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
-        "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
-      }
-    }
+    "nullableSourcePeer": {
+      "path": ".runtime-correction/validation/bounded-nullable-peer-jlwi29af/peer-review.json",
+      "sha256": "cdb9efb93993ffabc27e11a29e9c1fd3e1898aa2c410fd63d8c4f547a3607bef"
+    },
+    "supportedNode18DeltaChecks": "Parent focused SDK/handler checks only; full newOS/Node matrix not yet run."
   },
   "packageChecks": {
-    "status": "PROMOTED_EXACT_COMMITTED_ARCHIVE_INSTALLED_LOCAL_MECHANISM_QUALIFIED",
-    "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
-    "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "status": "EXACT_COMMITTED_ARCHIVE_FRESH_STOCK_INSTALLED_AND_LOADED",
+    "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+    "packageSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
     "members": 277,
     "runtimeModulesByteEqualSource": 209,
     "committedRelease": {
-      "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/release.json",
-      "sha256": "988b0b5cb970ac9be10fbc7442aea35dd055e4303b7a6eb4e5501b8682950778"
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/committed-release-1de9313/release.json",
+      "sha256": "844e33a77008cd5259d162ec2e0acad24cbe507279ae55678888f2bde17c89c4"
     },
-    "byteBinding": {
-      "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/runtime-module-byte-binding.json",
-      "sha256": "e461793f5cbd8511922c4e8825e05082ef6cafe9ef67d53478e2dff4d1d3dfd8"
+    "committedReleaseVerification": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/committed-release-verification.json",
+      "sha256": "634ab4ee71def975227298700f5f00da406e805254c5043803fff71baf64ee90"
     },
-    "installedPayloadReceipt": {
-      "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/runs/repair-1/receipt.json",
-      "sha256": "73007cda53c4b8cde42d3390b92095c9a1c71beeba8cbe4e612c246c6fb2188c"
+    "candidateQualification": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/candidate-package-verification.json",
+      "sha256": "9c8f53d5efbe2f9c0e44f2668a219a2f83381e925e73258f0e903ac722792885"
     },
-    "closedQualification": {
-      "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/closed-positive-qualification.json",
-      "sha256": "17f358f92aa22acfd77c5383508120f4a6d6804201b2f7cc95d2bf444c4098d8"
+    "heldAndCommittedArchivesByteEqual": true,
+    "allHostBuilds": [
+      "claude",
+      "codeagent",
+      "openclaw"
+    ],
+    "artifactTestsNode24": {
+      "pass": 17,
+      "fail": 0,
+      "skip": 0,
+      "actual": "d51e49/session88488→e702b5/0",
+      "scope": "Frozenproductpostimages, exactsamearchive; not relabeled as committed-tree executions"
     },
-    "closedPeer": {
-      "path": ".runtime-correction/validation/native-typed-closed-peer-4eqcl253/peer-review.json",
-      "sha256": "9587444f0762a19e9c9a55245b48a298e318c1b898e592a4baaab36d85eae4ec"
+    "stockInstall": {
+      "path": ".runtime-correction/validation/stock-contract-install-18io19xn/verification.json",
+      "sha256": "52647ba8d310a8520909336c654fe2f697eb30f5f34673620d0a0118b61eb58a"
     },
-    "currentArchiveFreshAllHostMatrixClaimed": false,
-    "priorAllHostMatrix": {
-      "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/artifact-qualification-3lyuc0vm/verification.json",
-      "sha256": "321b1d4162939e2d3d8cd18ed251d72155feec9ec128f8af5c354b8aa616c029"
+    "installedPayload": {
+      "path": ".runtime-correction/validation/stock-contract-install-18io19xn/installed-payload.json",
+      "sha256": "ff415aca9079b0da5bfd88e6bdb1be9e766d1d3c07c55b29ffb365d53a27211e"
     },
-    "scope": "Current archive rebuild and all209 modules verified; all277 actual installed regular files match. Prior broad artifact matrix remains scoped to the predecessor source."
+    "stockActual": "9e1040/session18474→fc3eaa/0",
+    "modelOrGatewayWorkflowQualification": false,
+    "currentArchiveRealModelRuns": 0
   },
   "stockInstallations": [
     {
@@ -208,6 +213,26 @@
         "path": ".runtime-correction/validation/native-onboarding-source-peer-vqgvf94o/peer-review-new-archive-closed.json",
         "sha256": "76d2638ca2574a9b5d8c28224e0dbebb573eeef842982806ba1587a2a658152f"
       }
+    },
+    {
+      "packageSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
+      "kind": "FRESH_CREDENTIAL_FREE_PUBLIC_STOCK_INSTALL_LOAD",
+      "verification": {
+        "path": ".runtime-correction/validation/stock-contract-install-18io19xn/verification.json",
+        "sha256": "52647ba8d310a8520909336c654fe2f697eb30f5f34673620d0a0118b61eb58a"
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/stock-contract-install-18io19xn/receipt.json",
+        "sha256": "a2b55ef42cc139609c57979f0b47bc2e3e7f297aca28f0d6ffd6d811702bea3c"
+      },
+      "payload": {
+        "path": ".runtime-correction/validation/stock-contract-install-18io19xn/installed-payload.json",
+        "sha256": "ff415aca9079b0da5bfd88e6bdb1be9e766d1d3c07c55b29ffb365d53a27211e"
+      },
+      "realKeyRead": false,
+      "modelCommandsIssued": 0,
+      "GatewayStarted": false,
+      "currentInstalled277BytesMatch": true
     }
   ],
   "optionalOpenSpecTopology": {
@@ -251,35 +276,21 @@
     "scope": "Local deterministic mechanics only; not real-model accuracy, exhaustive coverage or general repair benefit."
   },
   "remoteCI": {
-    "status": "CURRENT_PUSH_EXACT_HEAD_NATURAL_CI_SEVEN_PASS",
-    "head": "c84e51390b528d5bc098899492cf3958877eea25",
-    "runId": 44665328119,
-    "event": "push",
-    "knownPassedTestJobs": 7,
-    "knownRunningTestJobs": 0,
-    "allSevenPassClaimed": true,
-    "runtimeSourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
-    "fixtureFixCommit": "852262d",
-    "initialDiscoveryActual": "15079a/session37005→cb13cc/0",
-    "initialJobsPath": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/initial-jobs.json",
-    "previousFailure": {
-      "head": "9ed63544bef9c71f620f730597de658df37348be",
-      "runId": 44659635701,
-      "passedTestJobs": 6,
-      "failedTestJobs": 1,
-      "failedJobId": 136034395157,
-      "status": "FAILED_WITH_FIX_QUALIFIED_AND_PUSHED"
+    "status": "NEW_SOURCE_LOCAL_FULL_PASS_PENDING_NATURAL_REMOTE_CI",
+    "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+    "currentSourceAllSevenPassClaimed": false,
+    "latestCompletedPriorSource": {
+      "head": "47f08ace09291cc6148387acbb0c3b3f9f04cb54",
+      "runId": 44672632318,
+      "testJobsPass": 7,
+      "attempt": 1,
+      "event": "push",
+      "receipt": {
+        "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/official-ci47-terminal.json",
+        "sha256": "a72a771289a8080355c700d71634622118c7ec3f59a30610d9b81d18c72fa283"
+      }
     },
-    "rerunCancelDispatchActions": 0,
-    "attempt": 1,
-    "officialConclusion": "success",
-    "terminalReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
-      "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
-    },
-    "rootFinalJobsAlsoConfirmed": true,
-    "windowsFilesEachShard": 196,
-    "windowsDisjointUnion": 392
+    "rerunCancelDispatchActions": 0
   },
   "formalMatchedPairs": 0,
   "plannedMatchedPairs": 39,
@@ -533,7 +544,7 @@
     "newGuidanceBenefitClaimedFromThisTrial": false
   },
   "activeGeneralPurposeTrial": {
-    "status": "FIRST_THREE_CLOSED_FROZEN_FOURTH_ON_LIVE",
+    "status": "FIRST_THREE_CLOSED_FROZEN_FOURTH_ON_APPLY_RUNNING",
     "arm": "ON",
     "startingState": "declared-defect",
     "operatorRoot": ".runtime-correction/validation/public-use-1d7412d6837e",
@@ -634,6 +645,10 @@
       "originalFileModes": {
         "path": ".runtime-correction/validation/public-use-178ce818ce37/final-freeze/original-file-modes.json",
         "sha256": "ab24bd9c3d576fee6a6fed7e4a5da4a1c9aa33a33034696ff407ccef0ab30837"
+      },
+      "overheadMetadata": {
+        "path": ".runtime-correction/validation/healthy-on-overhead-metadata-_gdh_tc7/audit.json",
+        "sha256": "5f136ffba09132ac33410d3b53bedcd0d7e8d43dedb6a5435b29eaf297a5fd56"
       }
     },
     "declaredDefectOff": {
@@ -679,26 +694,85 @@
       "closed": false
     },
     "currentFourthOnProgressSnapshot": {
-      "admittedRequests": 61,
-      "wireAttempts": 60,
+      "admittedRequests": 159,
+      "wireAttempts": 158,
       "inFlight": 1,
       "countsByModel": {
-        "deepseek-flash": 30,
-        "deepseek-v4-pro": 30
+        "deepseek-flash": 53,
+        "deepseek-v4-pro": 105
       },
       "closed": false
     },
-    "thirdClosedFourthLive": true
+    "thirdClosedFourthLive": true,
+    "fourthProposal": {
+      "ordinaryRootApprovalActual": "c94f15/0",
+      "ready": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/proposal-ready.json",
+        "sha256": "0e9d742c571de1cb94222e85ae85b7459cacf689fc5059aaf7dc690959cd764e"
+      },
+      "rootPublicReview": {
+        "path": ".runtime-correction/validation/public-use-1d7412d6837e/root-public-proposal-review.json",
+        "sha256": "a5d745a0d01ff6c24abf61ceee4cee9b0c188fc6583c61f4ad346a890235bb89"
+      },
+      "publicPeer": {
+        "path": ".runtime-correction/validation/fourth-public-plan-peer-7ie5gfmy/public-plan-review.json",
+        "sha256": "bb94661b86ab642c5c2f0c864b6feb0c653449971d589f012a326e44867a516c"
+      },
+      "originalTerminal": "ERROR_NOT_CLEAN_RETAINED",
+      "tasksAtApproval": 29,
+      "completeAtApproval": 0,
+      "privateOracleUsed": false
+    }
   },
   "candidatePackage": {
-    "status": "PROMOTED_EXACT_COMMITTED_LOCALLY_QUALIFIED_ARCHIVE",
-    "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
-    "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+    "status": "PROMOTED_EXACT_COMMITTED_STOCK_LOADED_RELEASE",
+    "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+    "packageSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
     "archive": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-    "qualification": {
-      "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/closed-positive-qualification.json",
-      "sha256": "17f358f92aa22acfd77c5383508120f4a6d6804201b2f7cc95d2bf444c4098d8"
-    }
+    "packageQualification": {
+      "status": "EXACT_COMMITTED_ARCHIVE_FRESH_STOCK_INSTALLED_AND_LOADED",
+      "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+      "packageSha256": "e94d275a9f4fc99cdc6592f3f31f32cc034eb946ecd408d3724461977a594118",
+      "members": 277,
+      "runtimeModulesByteEqualSource": 209,
+      "committedRelease": {
+        "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/committed-release-1de9313/release.json",
+        "sha256": "844e33a77008cd5259d162ec2e0acad24cbe507279ae55678888f2bde17c89c4"
+      },
+      "committedReleaseVerification": {
+        "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/committed-release-verification.json",
+        "sha256": "634ab4ee71def975227298700f5f00da406e805254c5043803fff71baf64ee90"
+      },
+      "candidateQualification": {
+        "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/candidate-package-verification.json",
+        "sha256": "9c8f53d5efbe2f9c0e44f2668a219a2f83381e925e73258f0e903ac722792885"
+      },
+      "heldAndCommittedArchivesByteEqual": true,
+      "allHostBuilds": [
+        "claude",
+        "codeagent",
+        "openclaw"
+      ],
+      "artifactTestsNode24": {
+        "pass": 17,
+        "fail": 0,
+        "skip": 0,
+        "actual": "d51e49/session88488→e702b5/0",
+        "scope": "Frozenproductpostimages, exactsamearchive; not relabeled as committed-tree executions"
+      },
+      "stockInstall": {
+        "path": ".runtime-correction/validation/stock-contract-install-18io19xn/verification.json",
+        "sha256": "52647ba8d310a8520909336c654fe2f697eb30f5f34673620d0a0118b61eb58a"
+      },
+      "installedPayload": {
+        "path": ".runtime-correction/validation/stock-contract-install-18io19xn/installed-payload.json",
+        "sha256": "ff415aca9079b0da5bfd88e6bdb1be9e766d1d3c07c55b29ffb365d53a27211e"
+      },
+      "stockActual": "9e1040/session18474→fc3eaa/0",
+      "modelOrGatewayWorkflowQualification": false,
+      "currentArchiveRealModelRuns": 0
+    },
+    "paidModelRuns": 0
   },
   "privatePostclosureSourceAckAudit": {
     "status": "ACTUAL_BOTH_DECLARED_STAGES_UNVERIFIED_WITH_PARTIAL_CURRENT_READ_WITNESSES",
@@ -748,15 +822,15 @@
     "scope": "Actual closed2a trial audit only; its original source-ACK and replay gaps remain unchanged. Later8bd Python planning arms and local8bd/e8 mechanical controls are separate records."
   },
   "limits": [
-    "The current e8 archive has zero real-model arms. Its fresh local scripted repair qualifies mechanical integration only; model accuracy, general usefulness and overhead gains remain unproven.",
-    "Published source/package headc55 passed all seven official CI jobs, with complete388-file coverage and no failures or timeouts. A later report-only publication does not claim its own exact-head CI in advance.",
-    "The original-run observer records an exact accepted terminal without granting whole-stage settlement. A separate current-archive local control qualified the owned native repair chain; original Apply error remains error.",
-    "Four prior paid Python development arms closed before Apply and remain ungraded and unqualified for benefit. Formal matched benchmark pairs remain0of39.",
-    "Historical real-model trials remain bound to their original archives, final outcomes and source-ACK gaps. New source or scripted controls do not repair those historical records.",
-    "Process polling guidance cannot force a model to poll. Running, denied, unavailable or stale results and failed fresh document reviews remain unverified.",
-    "Source-to-duty correspondence, semantic correctness and checklist completeness remain reviewer judgments. The default retained checklist is a non-exhaustive subset; a clean Stop does not prove every original requirement was selected.",
-    "Package checks match208runtime modules to committed source and all276payload members to fresh builds. This bounds packaging provenance; it is not a proof of universal semantic generality or absence of every implicit specialization.",
-    "Current exact-archive local probes used actual Gateway/TUI setup and cleanup without a real provider or credential. Fresh real-model arms still need the reviewed external controller, matched settings and per-arm preflight/admission."
+    "Current e94 installable has zero real-model arms; full source, SDK/handler, package and credential-free stock-load evidence do not establish model accuracy, repair benefit or reduced review effort.",
+    "All four ongoing comparison arms retain9ed/source8ed, ordinaryapproval, originalbudgets and fourstrictoptionsoff. Three are closed/frozen; finalON is inApply. No private code grades before allfour freeze.",
+    "First matched developmentON endedUNVERIFIED with0nativecorrections and80Pro requests; quality benefit remains unproven. Exact wire-to-worker/stage attribution is unavailable in the retained relaymetadata.",
+    "Current393file local full suite passed once; precedingc84 and47 report-only source each passed7naturalCItestjobs. The new1de source remoteCI is pending publication.",
+    "Original37 independentchecks remain separate from additional posthoc empty-path R7 probes and semantic plan/code/test-quality review. Linuxcontainer execution onMac does not prove native-macOS equivalence.",
+    "Formal13-task benchmark remains0of39 matchedpairs; these four development arms do not increment it.",
+    "Knownoriginalretention is a non-exhaustive host-lifecycle subset. Source-to-duty correspondence, completeness, relevance and correctness still require semantic judgment.",
+    "Archive277/runtime209 bytebinding and bounded concretecase-token absence bound provenance; they do not prove universal semantic generality or absence of every implicit specialization.",
+    "Prior archives, failed original terminals, unverified assessments and execution/ACK gaps keep their original bindings; newer source or local controls do not repair them retroactively."
   ],
   "priorArtifactBeforeCorroboration": {
     "packageSha256": "4212fdc73e43fa1417a2fb6fe22cc2e9d68ec204f3aecb26c8ddb8b19b95b5e3",
@@ -770,36 +844,29 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "dc7cee9c7df564901048f8cda238aab3cde3c65fbd7ccf848f8fa1f739d0dbcb",
-    "report": {
-      "path": ".runtime-correction/runtime-corrector-progress.html",
-      "sha256": "dc7cee9c7df564901048f8cda238aab3cde3c65fbd7ccf848f8fa1f739d0dbcb"
-    },
+    "htmlSha256": "538d8b412873f554a24fd31cdf9e28684235e16e961f3eed13f90ab9ac6992cb",
     "main": {
-      "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/receipt.json",
-      "sha256": "f7c32ec4cc2f907068647cc3a5b5ca2bf715bc525c2b052dfccbc2f9238167af"
+      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/receipt.json",
+      "sha256": "58836c31bcfae8076a872e5644c25fedd64227a779243147a93fa5f4a0732098"
     },
     "table": {
-      "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/four-arm-table-receipt.json",
-      "sha256": "92970ce542b12a974ef277b92b29d6f6ce394ca286a61a2607237bdf5e47c6c6"
+      "path": ".runtime-correction/validation/report-contract-release-apply-qa-qmtb0mmc/four-arm-table-receipt.json",
+      "sha256": "8b5a250084ba22fbdbbb5cdda996d8a925d93c1f0196a48b0ee2a3566c33d945"
     },
-    "mainActual": "a54624/session67838→e11b86/0",
-    "tableActual": "32e572/0",
+    "mainActual": "94e60a/session29720→737f0c/0",
+    "tableActual": "84047e/session47535→c42f8c/0",
     "views": 4,
     "languages": 2,
     "externalRequests": 0,
     "pageErrors": 0,
     "sections": 6,
     "collapsedHistoryGroups": 3,
+    "internalLinks": 7,
     "sameFileLanguageToggle": true,
     "visibleDatesOrHashes": false,
     "humanizerFileMode": true,
-    "visualReadown": [
-      "English desktop four-arm table",
-      "English phone stacked four-arm table",
-      "Simplified Chinese phone stacked four-arm table"
-    ],
-    "scope": "Three model arms closed/frozen; fourth declared-defect ON live. CurrentCI7/7green, firstONU conditionalfeedbackgap, independently reviewed isolatedfeedback+nullabletextfixes pendingcombinedverification. No actual-codegrades or usefulnessclaim. Mobile comparison table now stacks with same headers/labels."
+    "visualReadown": "Englishdesktop currentpackage paragraph andSimplifiedChinesemobile comparison inspected; finalchange only splits same package explanation into two paragraphs, final4viewDOM/capturechecks pass.",
+    "scope": "Newverifiedinstallable source393files/4867PASS33SKIP/artifact17/stock277byteequal; newremoteCI/modelvalidationpending. Original8edcomparison3frozen/fourthApplyrunning, firstONU andscope/overheadlimitsretained, noindependentcodegradeorbenefitclaim."
   },
   "priorBranchPublication": {
     "kind": "ROOT_AUTHORIZED_GENERAL_PROGRESS_PUBLICATION_V1",
@@ -826,15 +893,22 @@
     "scope": "Completed94dfe33 publication. Source-binding fix remains an isolated source candidate; current source-audit prose update pending next authorized feature-branch push."
   },
   "branchPublication": {
-    "status": "C84_PUSHED_NATURAL_CI_SEVEN_PASS_PROGRESS_REPORT_UPDATE_LOCAL_PENDING_PUSH",
+    "status": "FEATURE_BRANCH_RELEASE_PUBLICATION_PREPARED",
     "branch": "codex/openclaw-runtime-corrector",
-    "sourceHead": "9ed63544bef9c71f620f730597de658df37348be",
+    "sourceHead": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "sourcePushActual": "e6fdac/session23805→2d05e7/0",
     "mainMerged": false,
-    "preparedOnCommit": "852262dc22539206e309165c3ea3bb7270494524",
+    "preparedOnCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "head": "c84e51390b528d5bc098899492cf3958877eea25",
     "pushActual": "2db75f/session87135→3fe58b/0",
-    "newNaturalRunId": 44665328119
+    "newNaturalRunId": 44665328119,
+    "latestCompletedReportPush": {
+      "head": "47f08ace09291cc6148387acbb0c3b3f9f04cb54",
+      "receipt": {
+        "path": ".runtime-correction/validation/report-three-closed-final-live-hz8du6cx/publication.json",
+        "sha256": "68c5f8e111b1b0d693d3538f19a790148154fda6d2f186b426bda392e7ed3ac6"
+      }
+    }
   },
   "prospectiveCurrentArchiveSourceAckAudit": {
     "status": "ACTUAL_LOCAL_SCRIPTED_CURRENT_SOURCE_AND_TYPED_PROCESS_ACK_CHAIN_QUALIFIED",
@@ -3121,9 +3195,9 @@
     "coRunningDevelopmentQualificationNotFormalTimingProof": true
   },
   "isolatedSuccessorFixes": {
-    "status": "SOURCE_ONLY_PEER_CHECKED_COMBINED_VERIFICATION_PENDING",
+    "status": "PROMOTED_SOURCE_AND_INSTALLABLE_PLUGIN",
     "currentFourArmArchiveUnchanged": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
-    "currentInstalledBehaviorChanged": false,
+    "currentInstalledBehaviorChanged": true,
     "conditionalFeedbackHold": {
       "path": ".runtime-correction/validation/known-conditional-feedback-waboo9fg/source-hold-v2.json",
       "sha256": "69f62927299add462ef36aca695757c7334626577020acbd886f1b8937e8e288"
@@ -3140,6 +3214,172 @@
       "path": ".runtime-correction/validation/bounded-nullable-peer-jlwi29af/peer-review.json",
       "sha256": "cdb9efb93993ffabc27e11a29e9c1fd3e1898aa2c410fd63d8c4f547a3607bef"
     },
-    "newPaidArmsStartedForSuccessor": 0
+    "newPaidArmsStartedForSuccessor": 0,
+    "sourceCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+    "combinedHold": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/source-hold-v2.json",
+      "sha256": "5a54b40fd8bb6dd8e1a463a7d6666b9106232127169857b3026db8b21b422a4f"
+    },
+    "combinedFull": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/full-suite-receipt.json",
+      "sha256": "7634e3fe85d3e6190006d0c895974f7e1faa71e09b414961823ecdf4ebdaa772"
+    },
+    "rootIntegration": {
+      "path": ".runtime-correction/validation/combined-review-root-integration-604ykj06/receipt.json",
+      "sha256": "3231a89ea53fd166e2ae854d8b7d56813eae6c6f503069a0baac420972b6c846"
+    },
+    "finalHandoff": {
+      "path": ".runtime-correction/validation/combined-review-contract-y5q07r0x/final-receipt.json",
+      "sha256": "c8c12f3ed10a76a4212ac21f906c7c5a9895154761638905807b9bffb2f98b53"
+    }
+  },
+  "priorInstallable8edSnapshot": {
+    "path": ".runtime-correction/validation/prior-installable-8ed-before-contract-fixes-y8eghic9/snapshot.json",
+    "sha256": "eddeddf8d8db2a2660984abcbde3a312447698d3b4fef9f0b78a4bcf12879948"
+  },
+  "priorInstallable8edCurrentChecks": {
+    "sourceBinding": {
+      "runtimeImplementationCommit": "9ed63544bef9c71f620f730597de658df37348be",
+      "allowlistedSourceModules": 209,
+      "libMjsMembersIncludingGeneratedWrappers": 214,
+      "all209ModulesMatchCommittedExportAndCurrentRoot": true,
+      "runtimeModuleByteBinding": {
+        "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/runtime-module-byte-binding.json",
+        "sha256": "e461793f5cbd8511922c4e8825e05082ef6cafe9ef67d53478e2dff4d1d3dfd8"
+      },
+      "committedRelease": {
+        "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/release.json",
+        "sha256": "988b0b5cb970ac9be10fbc7442aea35dd055e4303b7a6eb4e5501b8682950778"
+      },
+      "priorFailedCandidateDelta": {
+        "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/root-archive-delta.json",
+        "sha256": "24b7159921bd61402bf2ba7b6c686a7153eab7cde9239f60d96684e5c334daf4"
+      },
+      "actualCurrentArchiveRealModelArms": 4
+    },
+    "sourceChecks": {
+      "status": "FULL_BASELINE_PLUS_NARROW_FOCUSED_DELTA_AND_PUBLIC_SDK_PASS",
+      "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+      "fullSuiteBaselineCommit": "a0c34e4ce22ca621a3da89ae85389c3ada22deb2",
+      "fullSuiteBaselineFiles": 392,
+      "fullSuiteBaselinePass": 4855,
+      "fullSuiteBaselineSkip": 33,
+      "fullSuiteBaselinePeer": {
+        "path": ".runtime-correction/validation/native-process-full-peer-tgps0nec/closed-peer-verification.json",
+        "sha256": "85a694b3bdf8800c57d3e115ac0449790c27008a0ea7b0b6a67f1967338a3915"
+      },
+      "deltaVerification": {
+        "path": ".runtime-correction/validation/native-process-nullable-pfkmdsk0/verification.json",
+        "sha256": "26108ed0ab6f08875d1a9e3e50c00093535942e4cbfae46f7713cf8fec7132a6"
+      },
+      "focusedDeltaPassEachNode18And24": 39,
+      "publicSdkControls": 13,
+      "independentPublicSdkVectors": 15,
+      "schemaPeer": {
+        "path": ".runtime-correction/validation/native-nullable-schema-peer-u3vsvq2a/peer-review.json",
+        "sha256": "704ec1f0b5b2004fa212a942bf04c9d63d3a1f105307d3967e43a25f9bca41b3"
+      },
+      "newUnchangedLocalFullSuiteRerunClaimed": false,
+      "sourceHeadCiRunId": 44659635701,
+      "scope": "The392-file full run belongs to a0. The one-node nullable schema successor has39 focused checks per supported Node and public-SDK proof; natural current-head CI is tracked separately.",
+      "currentHeadCI": {
+        "head": "c84e51390b528d5bc098899492cf3958877eea25",
+        "runId": 44665328119,
+        "allTestJobsPass": 7,
+        "macosFiles": 392,
+        "macosPass": 4857,
+        "macosSkip": 33,
+        "windowsDisjointFilesEachShard": 196,
+        "terminalReceipt": {
+          "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
+          "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
+        }
+      }
+    },
+    "packageChecks": {
+      "status": "PROMOTED_EXACT_COMMITTED_ARCHIVE_INSTALLED_LOCAL_MECHANISM_QUALIFIED",
+      "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+      "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+      "members": 277,
+      "runtimeModulesByteEqualSource": 209,
+      "committedRelease": {
+        "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/release.json",
+        "sha256": "988b0b5cb970ac9be10fbc7442aea35dd055e4303b7a6eb4e5501b8682950778"
+      },
+      "byteBinding": {
+        "path": ".runtime-correction/validation/nullable-signal-release-oz7i5lsl/release/runtime-module-byte-binding.json",
+        "sha256": "e461793f5cbd8511922c4e8825e05082ef6cafe9ef67d53478e2dff4d1d3dfd8"
+      },
+      "installedPayloadReceipt": {
+        "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/runs/repair-1/receipt.json",
+        "sha256": "73007cda53c4b8cde42d3390b92095c9a1c71beeba8cbe4e612c246c6fb2188c"
+      },
+      "closedQualification": {
+        "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/closed-positive-qualification.json",
+        "sha256": "17f358f92aa22acfd77c5383508120f4a6d6804201b2f7cc95d2bf444c4098d8"
+      },
+      "closedPeer": {
+        "path": ".runtime-correction/validation/native-typed-closed-peer-4eqcl253/peer-review.json",
+        "sha256": "9587444f0762a19e9c9a55245b48a298e318c1b898e592a4baaab36d85eae4ec"
+      },
+      "currentArchiveFreshAllHostMatrixClaimed": false,
+      "priorAllHostMatrix": {
+        "path": ".runtime-correction/validation/native-process-evidence-candidate-ebu26lw9/artifact-qualification-3lyuc0vm/verification.json",
+        "sha256": "321b1d4162939e2d3d8cd18ed251d72155feec9ec128f8af5c354b8aa616c029"
+      },
+      "scope": "Current archive rebuild and all209 modules verified; all277 actual installed regular files match. Prior broad artifact matrix remains scoped to the predecessor source."
+    },
+    "candidatePackage": {
+      "status": "PROMOTED_EXACT_COMMITTED_LOCALLY_QUALIFIED_ARCHIVE",
+      "sourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+      "packageSha256": "8ed0941636f7e22fc3ea0522d11ae75482d7002cad518181bab2b814458a12b5",
+      "archive": "dist/runtime-corrector-openclaw-1.10.0.tgz",
+      "qualification": {
+        "path": ".runtime-correction/validation/public-native-common-v4-control-trqadkwx/closed-positive-qualification.json",
+        "sha256": "17f358f92aa22acfd77c5383508120f4a6d6804201b2f7cc95d2bf444c4098d8"
+      }
+    },
+    "remoteCI": {
+      "status": "CURRENT_PUSH_EXACT_HEAD_NATURAL_CI_SEVEN_PASS",
+      "head": "c84e51390b528d5bc098899492cf3958877eea25",
+      "runId": 44665328119,
+      "event": "push",
+      "knownPassedTestJobs": 7,
+      "knownRunningTestJobs": 0,
+      "allSevenPassClaimed": true,
+      "runtimeSourceCommit": "9ed63544bef9c71f620f730597de658df37348be",
+      "fixtureFixCommit": "852262d",
+      "initialDiscoveryActual": "15079a/session37005→cb13cc/0",
+      "initialJobsPath": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/initial-jobs.json",
+      "previousFailure": {
+        "head": "9ed63544bef9c71f620f730597de658df37348be",
+        "runId": 44659635701,
+        "passedTestJobs": 6,
+        "failedTestJobs": 1,
+        "failedJobId": 136034395157,
+        "status": "FAILED_WITH_FIX_QUALIFIED_AND_PUSHED"
+      },
+      "rerunCancelDispatchActions": 0,
+      "attempt": 1,
+      "officialConclusion": "success",
+      "terminalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-c84-document-clock-f0a91ay_/connector-final/terminal-receipt.json",
+        "sha256": "20770a765052e96428240734b1f97c8078c5a312fab2cea092712374da0e5504"
+      },
+      "rootFinalJobsAlsoConfirmed": true,
+      "windowsFilesEachShard": 196,
+      "windowsDisjointUnion": 392
+    },
+    "limits": [
+      "The current e8 archive has zero real-model arms. Its fresh local scripted repair qualifies mechanical integration only; model accuracy, general usefulness and overhead gains remain unproven.",
+      "Published source/package headc55 passed all seven official CI jobs, with complete388-file coverage and no failures or timeouts. A later report-only publication does not claim its own exact-head CI in advance.",
+      "The original-run observer records an exact accepted terminal without granting whole-stage settlement. A separate current-archive local control qualified the owned native repair chain; original Apply error remains error.",
+      "Four prior paid Python development arms closed before Apply and remain ungraded and unqualified for benefit. Formal matched benchmark pairs remain0of39.",
+      "Historical real-model trials remain bound to their original archives, final outcomes and source-ACK gaps. New source or scripted controls do not repair those historical records.",
+      "Process polling guidance cannot force a model to poll. Running, denied, unavailable or stale results and failed fresh document reviews remain unverified.",
+      "Source-to-duty correspondence, semantic correctness and checklist completeness remain reviewer judgments. The default retained checklist is a non-exhaustive subset; a clean Stop does not prove every original requirement was selected.",
+      "Package checks match208runtime modules to committed source and all276payload members to fresh builds. This bounds packaging provenance; it is not a proof of universal semantic generality or absence of every implicit specialization.",
+      "Current exact-archive local probes used actual Gateway/TUI setup and cleanup without a real provider or credential. Fresh real-model arms still need the reviewed external controller, matched settings and per-arm preflight/admission."
+    ]
   }
 }

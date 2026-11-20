@@ -161,7 +161,7 @@
         <h2 id="workflow-title">The target coding workflow</h2>
         <p class="callout">General usefulness is the first priority. Correct work should finish with little extra effort. When evidence shows an unmet requirement, the plugin should request a specific repair and check it again. Benchmark scores, passing guard tests and additional review activity cannot establish that benefit on their own.</p>
         <p class="intro">OpenClaw writes the code and runs checks. OpenSpec fixes the order of work: Proposal, Apply, then Archive. Runtime Corrector is an OpenClaw plugin that checks whether the plan and implementation still satisfy the original request. Enable correction for the host session actually running the task; after a host reset, recheck the selected project and explicitly enable correction in the new session.</p>
-        <p>The installable plugin now captures trusted session history during ordinary setup and preserves existing usage. The current macOS CI suite passed all 392 files, with 4,857 checks passed and 33 skipped. A local scripted control verified one native repair and its current final review. Real-model gains in quality and effort remain unproven.</p>
+        <p>The installable plugin now captures trusted session history during ordinary setup and preserves existing usage. The revised source passed all 393 local test files, with 4,867 checks passed and 33 skipped. The package installed and loaded in stock OpenClaw. A prior scripted control verified one native repair and its final review on an earlier package. Real-model gains in quality and effort remain unproven.</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption">
           <figcaption id="workflow-diagram-caption">Where Runtime Corrector intervenes</figcaption>
           <ol class="workflow-stages" role="list">
@@ -186,7 +186,7 @@
         <h2 id="workflow-title-zh">目标编码工作流</h2>
         <p class="callout">首要目标是对一般编码任务有帮助。正确的工作应以较少额外负担完成；有证据的需求缺口应得到可执行的修复，并重新核验。基准分数、防护测试通过或审查次数增加，都不足以单独证明这种帮助。</p>
         <p class="intro">OpenClaw 负责写代码和运行检查，OpenSpec 固定工作顺序：先 Proposal，再 Apply，最后 Archive。运行时纠偏器是 OpenClaw 插件，用于核对方案和实现是否仍满足原始请求。纠偏必须在实际执行任务的宿主会话中启用；宿主重置会话后，应重新核对所选项目，并在新会话中明确启用纠偏。</p>
-        <p>安装包现可在普通配置流程中捕获可信会话历史，并保留既有使用记录。当前 macOS CI 套件执行了全部 392 个文件，4,857 项检查通过，33 项跳过。一次本地脚本对照核验了一次原生修复及其当前最终审查。真实模型下的质量收益及额外负担仍未得到证明。</p>
+        <p>安装包现可在普通配置流程中捕获可信会话历史，并保留既有使用记录。修订源码通过了全部 393 个本地测试文件，4,867 项检查通过、33 项跳过。安装包已在原版 OpenClaw 中完成安装及加载。此前的一次脚本对照，在较早安装包上核验了一次原生修复及其最终审查。真实模型下的质量收益及额外负担仍未得到证明。</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption-zh">
           <figcaption id="workflow-diagram-caption-zh">运行时纠偏器在何处介入</figcaption>
           <ol class="workflow-stages" role="list">
@@ -311,7 +311,8 @@
         <p>Private checks ran only after closure and owned cleanup, outside both model workspaces, with no grade feedback. The run used 45 Flash and 56 Pro requests over 26 minutes 45 seconds. There is no matched OFF run, so these totals do not isolate correction overhead or establish a quality gain.</p>
         <p>Independent review of the completed trial found no requirement narrowing in its conditional annotation or added history. The original plan’s two noted ambiguities remain, and the review does not prove semantic completeness. The pending process result remains the recorded basis of that trial’s final execution uncertainty.</p>
         <h3>The recovery change now available</h3>
-        <p>The new installable package gives OpenClaw precise guidance on an owned process-stop response and a separate Stop notice for pending document execution. A kill acknowledgment keeps the result unverified; genuine polling and fresh document reviews remain necessary. The hint starts no tool or model round. The current source passed all seven natural CI test jobs. The macOS suite ran all 392 files, with 4,857 checks passed and 33 skipped. The nullable-field fix also passed 39 focused checks on each supported Node version and checks through the stock SDK. All 277 files of the new package matched the installed payload, and the local correction walkthrough passed. Real-model recovery is still untested; automatic SDK polling remains deferred.</p>
+        <p>The new installable package gives OpenClaw precise guidance on an owned process-stop response and a separate Stop notice for pending document execution. A kill acknowledgment keeps the result unverified; genuine polling and fresh document reviews remain necessary. The hint starts no tool or model round.</p>
+        <p>The latest revision explains missing conditional assessments and pending requirement IDs, and accepts valid null values in bounded optional tool fields. It passed the local 393-file suite and 17 package checks. All 277 package files matched a fresh stock OpenClaw installation. The preceding source passed all seven natural CI jobs; CI for this revision is pending. This revision has no real-model run yet. Automatic SDK polling remains deferred.</p>
         <h3>What changed in the plugin</h3>
         <p>An earlier trial exposed a general handoff problem: planning retained title-only obligation anchors, while final review used precise requirement spans and different wording. The current plugin lets the reviewer associate a host-issued candidate ID with a fresh relevant original span and explain the match. Original provenance, full duty text, per-candidate accounting and current proof remain required. Source identity cannot establish semantic equivalence; retention is still a non-exhaustive subset within one host lifecycle.</p>
         <p>General usefulness still needs held-out healthy and natural-defect tasks with matched OFF/ON comparisons of repairs, misses, false alarms, completion and overhead. The installed guidance has source and package evidence, while the completed real-model trial above keeps its earlier archive and unresolved final result. Formal benchmark comparisons remain 0/39.</p>
@@ -336,7 +337,8 @@
         <p>私有检查仅在关闭及所属资源清理后执行，位于两个模型工作区之外，没有反馈评分。本轮用了 45 次 Flash、56 次 Pro 请求，耗时 26 分 45 秒。没有匹配的 OFF 运行，这些总量不能单独衡量纠偏开销或证明质量提升。</p>
         <p>对该次已结束试验的独立复核，未发现条件注解或新增历史说明缩减需求。原方案已记录的两处歧义仍保留，复核也不能证明语义完整。待完成进程缺少结果，仍是该次最终执行状态不确定的已记录依据。</p>
         <h3>现已可安装的恢复改动</h3>
-        <p>新的可安装插件对所属进程的停止响应提供明确指引，并为待完成的文档执行提供单独 Stop 提示。收到终止确认后仍保持待验证，必须取得真实轮询结果并重新审查当前文档。提示本身不启动工具或模型回合。当前源码已通过七个自然触发的 CI 测试任务。macOS 套件执行了全部 392 个文件，4,857 项通过、33 项跳过。可空字段修正也在两个受支持的 Node 版本上各通过 39 项针对性检查，并通过标准 SDK 校验。新安装包的 277 个文件与实际安装内容逐字节一致，本地纠偏走查也已通过。真实模型能否根据提示完成恢复仍未测试，自动 SDK 轮询仍暂缓。</p>
+        <p>新的可安装插件对所属进程的停止响应提供明确指引，并为待完成的文档执行提供单独 Stop 提示。收到终止确认后仍保持待验证，必须取得真实轮询结果并重新审查当前文档。提示本身不启动工具或模型回合。</p>
+        <p>最新修订会说明缺少的条件评估及待处理需求编号，并接受有长度限制的可选工具字段中的合法空值。它已通过本地 393 文件套件及 17 项安装包检查。安装包的 277 个文件与一次新的原版 OpenClaw 安装逐字节一致。此前源码的七个自然 CI 任务全部通过，本次修订的 CI 仍待运行。本次修订尚无真实模型运行，自动 SDK 轮询仍暂缓。</p>
         <h3>插件发生了什么变化</h3>
         <p>此前试验暴露了一项通用交接问题：规划阶段保留的义务锚点只指向标题，最终审查却使用精确需求范围和不同表述。当前插件允许审查器通过宿主签发的候选编号，关联新读取的相关原文范围，并解释对应关系。原始来源、完整义务文字、逐候选核算及当前证明均须保留。来源身份不能证明语义等价，保留集合仍是单次宿主生命周期内的非穷尽子集。</p>
         <p>通用价值仍需通过未参与开发调优的健康任务和自然缺陷任务，以匹配 OFF/ON 比较修复、漏检、误报、完成情况及额外开销。已安装的指引具有源码和安装包证据；上方已结束的真实模型试验仍对应较早归档，并保留其最终未决结果。正式基准比较仍为 0/39。</p>
@@ -772,11 +774,12 @@
             <tr><th scope="row">Nominally healthy · OFF</th><td data-label="Current state">Closed and frozen; independent grade pending.</td><td data-label="Recorded evidence">37 Flash requests; 24 files frozen. Apply ended cleanly and OpenSpec reported all tasks done. The Proposal host error remains recorded.</td></tr>
             <tr><th scope="row">Nominally healthy · ON</th><td data-label="Current state">Closed and frozen; final Stop UNVERIFIED.</td><td data-label="Recorded evidence">49 Flash + 80 Pro requests; 18/18 OpenSpec tasks done; no native correction. Independent grade pending.</td></tr>
             <tr><th scope="row">Declared defect · OFF</th><td data-label="Current state">Closed and frozen; independent grade pending.</td><td data-label="Recorded evidence">46 Flash requests; 24/24 current OpenSpec tasks done. Task prose changed after approval and needs independent review.</td></tr>
-            <tr><th scope="row">Declared defect · ON</th><td data-label="Current state">Running.</td><td data-label="Recorded evidence">Same starter and package; 23 preflight checks and public setup passed.</td></tr>
+            <tr><th scope="row">Declared defect · ON</th><td data-label="Current state">Apply running; Proposal host error retained.</td><td data-label="Recorded evidence">29 tasks approved after public plan review; no independent code grade yet.</td></tr>
           </tbody>
         </table></div>
         <p>Both plans in the first pair address an empty configuration-path case found by the coding model. The nominally healthy label therefore needs independent checking. The first pair has not demonstrated a quality gain: ON added review requests and ended unverified. All four delivered projects will be frozen before grading, with no private results sent back to the actors.</p>
-        <p>ON’s five conditional assessments lacked a required condition appraisal. The repair reply reported five pending items but listed no IDs and did not explain the missing condition field. A candidate now explains the missing fields and identifies the pending items. Focused tests and independent review passed. A separate SDK check also found bounded optional text fields that reject valid null values; that repair passed its focused checks. Combined verification is next. The four comparisons keep their original package.</p>
+        <p>ON’s five conditional assessments lacked a required condition appraisal. The repair reply reported five pending items but listed no IDs and did not explain the missing condition field. A candidate now explains the missing fields and identifies the pending items. Focused tests and independent review passed. A separate SDK check also found bounded optional text fields that reject valid null values; that repair passed its focused checks. The combined fixes passed all 393 test files, with 4,867 checks passed and 33 skipped, and are now in the verified installable package. No model run has used this revision yet. The four comparisons keep their original package.</p>
+        <p>The request log does not link every Pro call to a review stage. Journals separately show two full-plan review rounds and one repair invocation in the first ON run; the evidence does not establish that the repeated review was redundant.</p>
         <p>The isolated evaluator passed 25 controlled qualification groups and a separate boundary check in a Linux container on this Mac. This checks the grading backend; no new model-generated project has an independent code-quality score yet.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -794,11 +797,12 @@
             <tr><th scope="row">标记为健康 · OFF</th><td data-label="当前状态">已结束并冻结，等待独立评分。</td><td data-label="已记录的证据">37 次 Flash 请求，24 个文件已冻结。Apply 正常结束，OpenSpec 显示任务全部完成；Proposal 的宿主错误继续保留。</td></tr>
             <tr><th scope="row">标记为健康 · ON</th><td data-label="当前状态">已结束并冻结；最终 Stop 待验证。</td><td data-label="已记录的证据">49 次 Flash 加 80 次 Pro 请求；OpenSpec 完成 18/18 项任务，没有原生纠偏。独立评分仍待进行。</td></tr>
             <tr><th scope="row">已声明缺陷 · OFF</th><td data-label="当前状态">已结束并冻结，等待独立评分。</td><td data-label="已记录的证据">46 次 Flash 请求，当前 OpenSpec 任务完成 24/24。审批后任务文字发生变化，仍需独立审查。</td></tr>
-            <tr><th scope="row">已声明缺陷 · ON</th><td data-label="当前状态">正在运行。</td><td data-label="已记录的证据">使用相同起始代码和安装包，23 项预检及公开配置已通过。</td></tr>
+            <tr><th scope="row">已声明缺陷 · ON</th><td data-label="当前状态">正在 Apply；Proposal 宿主错误继续保留。</td><td data-label="已记录的证据">公开方案审查后批准了 29 项任务，尚无独立代码评分。</td></tr>
           </tbody>
         </table></div>
         <p>首对运行的两份方案都处理了编码模型发现的空配置路径问题，因此“标记为健康”仍需独立核查。首对运行尚未证明质量收益：ON 增加了审查请求，最终仍为待验证。四组交付项目全部冻结之后才评分，私有结果不会反馈给执行任务的 Agent。</p>
-        <p>ON 对五项条件需求的判定缺少必需的条件评估。补证回复报告仍有五项待处理，却没有列出编号，也没有说明缺少条件字段。候选修正现可说明缺少的字段，并列出待处理项，已通过针对性测试及独立复核。另一项 SDK 检查还发现，部分有长度限制的可选文本字段会拒绝合法的空值，相应修正已通过针对性检查。下一步是合并验证；四组对照继续使用原来的安装包。</p>
+        <p>ON 对五项条件需求的判定缺少必需的条件评估。补证回复报告仍有五项待处理，却没有列出编号，也没有说明缺少条件字段。候选修正现可说明缺少的字段，并列出待处理项，已通过针对性测试及独立复核。另一项 SDK 检查还发现，部分有长度限制的可选文本字段会拒绝合法的空值，相应修正已通过针对性检查。合并后的修正已通过全部 393 个测试文件，4,867 项检查通过、33 项跳过，现已进入完成安装核验的插件包。本次修订尚无模型运行，四组对照继续使用原来的安装包。</p>
+        <p>请求日志尚不能把每次 Pro 调用对应到具体审查阶段。另一份事件记录显示，首个 ON 运行有两轮完整方案审查及一次修复调用；这些证据还不能证明重复审查是多余的。</p>
         <p>隔离评分器已在这台 Mac 的 Linux 容器中通过 25 组受控资格检查，以及一项独立边界检查。这验证了评分后端；新生成的模型项目目前仍没有独立代码质量评分。</p>
       </div>
     </section>
