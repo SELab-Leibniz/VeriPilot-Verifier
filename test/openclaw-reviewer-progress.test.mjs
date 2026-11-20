@@ -209,8 +209,9 @@ test('row annotation tolerance cannot supply a missing reason or make an invalid
 });
 
 test('file default allows three repairs in one session without resetting the role deadline',async t=>{
+ const clock=semanticReviewClock(t,{timeoutMs:2000,originalRoleDeadline:true});
  const f=await fixture(t);delete f.input.reviewer.formatRepairAttempts;let calls=0;const sessions=[],timeouts=[];
- const n=native(f,async p=>{calls++;sessions.push(p.sessionId);timeouts.push(p.timeoutMs);await new Promise(r=>setTimeout(r,20));return output(calls===4?completed():'{ malformed');});
+ const n=native(f,async p=>{calls++;sessions.push(p.sessionId);timeouts.push(p.timeoutMs);await new Promise(r=>setTimeout(r,20));clock.advance(20);return output(calls===4?completed():'{ malformed');});
  const h=await n.factory(f.input);assert.equal(calls,4);assert.equal(new Set(sessions).size,1);assert(timeouts[3]<timeouts[0]);await h.close();
 });
 test('per-role format-repair setting overrides the RC default file, including disabling repair',async t=>{
@@ -259,4 +260,38 @@ test("the semantic role clock leaves production filesystem retry backoff live",a
   const file=path.join(f.root,"retry.json");await atomicWriteJson(file,{preserved:true});
   assert.equal(attempts,2);assert.deepEqual(JSON.parse(await fs.readFile(file,"utf8")),{preserved:true});
   assert.equal(clock.now(),before,"Real I/O backoff must not consume semantic review time.");
+});
+
+
+test('the original role clock expires the remaining repair at the unchanged absolute boundary',async t=>{
+  const clock=semanticReviewClock(t,{timeoutMs:2000,originalRoleDeadline:true}),f=await fixture(t);let calls=0,entered,signal;
+  const started=new Promise(resolve=>{entered=resolve;});
+  const n=native(f,async params=>{
+    if(++calls===1){await new Promise(resolve=>setTimeout(resolve,20));clock.advance(20);return output('{ malformed');}
+    signal=params.abortSignal;const pending=new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}));
+    entered();return pending;
+  });
+  const active=n.factory({...f.input,reviewer:{timeoutMs:2000,formatRepairAttempts:3}});
+  const rejected=assert.rejects(active,error=>error.code==='REVIEWER_DEADLINE');
+  await started;await new Promise(resolve=>setImmediate(resolve));
+  clock.advance(1979);assert.equal(signal.aborted,false);
+  clock.advance(1);assert.equal(signal.aborted,true);
+  await rejected;assert.equal(calls,2);
+});
+
+test('the original role clock does not virtualize an unrelated timer with the same remaining delay',async t=>{
+  const clock=semanticReviewClock(t,{timeoutMs:2000,originalRoleDeadline:true});let fired=false;
+  clock.advance(20);const timer=setTimeout(()=>{fired=true;},1980);
+  try{clock.advance(1980);await new Promise(resolve=>setImmediate(resolve));assert.equal(fired,false);}
+  finally{clearTimeout(timer);}
+});
+
+test('the original role clock leaves matching-delay filesystem backoff and its watchdog real',async t=>{
+  const clock=semanticReviewClock(t,{timeoutMs:2000,originalRoleDeadline:true}),f=await fixture(t),rename=fs.rename;let attempts=0,watchdog;
+  clock.advance(1950);const before=clock.now();
+  t.mock.method(fs,'rename',async function(...args){if(++attempts===1)throw Object.assign(new Error('Controlled rename lock.'),{code:'EACCES'});return rename.call(this,...args);});
+  const file=path.join(f.root,'retry-original-role.json');
+  try{await Promise.race([atomicWriteJson(file,{preserved:true}),new Promise((_,reject)=>{watchdog=setTimeout(()=>reject(new Error('Real filesystem backoff did not settle.')),5000);})]);}
+  finally{clearTimeout(watchdog);}
+  assert.equal(attempts,2);assert.deepEqual(JSON.parse(await fs.readFile(file,'utf8')),{preserved:true});assert.equal(clock.now(),before);
 });

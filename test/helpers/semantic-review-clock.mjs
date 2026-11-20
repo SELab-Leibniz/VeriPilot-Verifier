@@ -2,25 +2,39 @@
 // virtual; filesystem retry backoffs and the runner watchdog remain real.
 const clocks = new WeakMap();
 
-export function semanticReviewClock(t, { timeoutMs = null } = {}) {
+export function semanticReviewClock(t, { timeoutMs = null, originalRoleDeadline } = {}) {
   const existing = clocks.get(t);
   if (existing) {
     if (timeoutMs !== null && existing.timeoutMs !== timeoutMs) throw new Error('A test cannot mix semantic clock budgets.');
+    if (originalRoleDeadline !== undefined && existing.originalRoleDeadline !== originalRoleDeadline)
+      throw new Error('A test cannot mix semantic role timer modes.');
     return existing;
   }
   if (timeoutMs !== null && (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0))
     throw new RangeError('The virtual role timeout must be positive whole milliseconds.');
+  if (originalRoleDeadline !== undefined && typeof originalRoleDeadline !== 'boolean')
+    throw new TypeError('The original-role-deadline mode must be boolean.');
+  if (originalRoleDeadline && timeoutMs === null) throw new Error('An original role deadline needs its declared timeout.');
   let now = Date.now(), sequence = 0;
+  const roleDeadlineAt = timeoutMs === null ? null : now + timeoutMs;
   const pending = new Map(), issued = new WeakSet();
   const mockedNow = t.mock.method(Date, 'now', () => now);
   const realSetTimeout = globalThis.setTimeout, realClearTimeout = globalThis.clearTimeout;
   let mockedSetTimeout, mockedClearTimeout;
   if (timeoutMs !== null) {
     mockedSetTimeout = t.mock.method(globalThis, 'setTimeout', (callback, delay, ...args) => {
-      if (Number(delay) !== timeoutMs || typeof callback !== 'function') return realSetTimeout(callback, delay, ...args);
+      const remaining = roleDeadlineAt - now;
+      // Only the existing native reviewer deadline callback belongs to this
+      // optional mode. Equal-delay I/O backoffs and watchdogs stay real.
+      const roleCallback = typeof callback === 'function' && Function.prototype.toString.call(callback)
+        .includes('OpenClaw reviewer absolute deadline exhausted.');
+      const declaredTimer = originalRoleDeadline
+        ? remaining > 0 && Number(delay) === remaining && roleCallback
+        : Number(delay) === timeoutMs;
+      if (!declaredTimer || typeof callback !== 'function') return realSetTimeout(callback, delay, ...args);
       const handle = { ref() { return this; }, unref() { return this; }, hasRef() { return true; } };
       issued.add(handle);
-      pending.set(handle, { at: now + timeoutMs, sequence: sequence++, callback, args });
+      pending.set(handle, { at: originalRoleDeadline ? roleDeadlineAt : now + timeoutMs, sequence: sequence++, callback, args });
       return handle;
     });
     mockedClearTimeout = t.mock.method(globalThis, 'clearTimeout', handle => {
@@ -29,7 +43,7 @@ export function semanticReviewClock(t, { timeoutMs = null } = {}) {
     });
   }
   const clock = {
-    timeoutMs,
+    timeoutMs, originalRoleDeadline: originalRoleDeadline === true,
     now: () => now,
     advance(ms) {
       if (!Number.isSafeInteger(ms) || ms < 0) throw new RangeError('Clock advance must be nonnegative whole milliseconds.');

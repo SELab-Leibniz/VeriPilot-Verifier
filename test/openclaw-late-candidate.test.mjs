@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { createNativeStopFixture, deferred, until, within } from "./support/openclaw-native-stop-fixture.mjs";
 import { runtimeFailureDiagnostics } from "./helpers/runtime-failure-diagnostics.mjs";
+import { beforeStopDeadline } from "../lib/runtime-v2/stop-deadline.mjs";
 
 const { lifecycle, findTask, withTaskState, taskDirectory } = createNativeStopFixture();
 
@@ -35,6 +37,49 @@ test('an UNKNOWN autopilot handoff conflict reports only the known retained RC o
 });
 
 const postRecord = runtime => runtime.postRuns.byId(runtime.postRuns.list().sessions.at(-1).id);
+function currentPromotedPublication(t, f) {
+  const jobs = f.sharedState.stopReviewJobs, set = jobs.set, runId = f.next.runId;
+  const digest = value => createHash('sha256').update(value).digest('hex');
+  let selected, resolve, reject;
+  const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
+  void promise.catch(() => {});
+  // Observe the newly scheduled current job, never an already retained NDF.
+  t.mock.method(jobs, 'set', function (key, job) {
+    const result = set.call(this, key, job);
+    if (job.record.runId !== runId) return result;
+    if (selected) { reject(new Error('Ambiguous promoted native review publication.')); return result; }
+    selected = job;
+    void (async () => {
+      const createdAt = job.record.createdAt, jobDeadlineAt = job.record.deadlineAt;
+      assert.equal(job.record.status, 'PENDING');
+      const admitted = f.post(), revision = f.state.enabledRevision ?? 0;
+      assert.equal(admitted.runId, runId); assert.equal(admitted.phase, 'REVIEWING');
+      const deadlineAt = admitted.deadlineAt;
+      assert(Number.isFinite(deadlineAt), 'the original dispatcher review deadline is required');
+      await job.done;
+      const record = job.record;
+      const file = path.join(f.root, '.runtime-correction/openclaw/native-stop-reviews',
+        digest(JSON.stringify([f.ctx.sessionKey, f.ctx.sessionId])),
+        `${digest(revision ? JSON.stringify([record.occurrenceId, revision]) : record.occurrenceId)}.json`);
+      const saved = JSON.parse(await fs.readFile(file, 'utf8'));
+      const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+      assert.equal(jobs.get(key), job); assert.equal(job.projectRoot, f.root);
+      assert.equal(f.state.nativeRunId, runId); assert.equal(saved.runId, runId);
+      assert.equal(saved.sessionId, f.ctx.sessionId); assert.equal(saved.sessionKey, f.ctx.sessionKey);
+      assert.equal(saved.enabledRevision ?? 0, revision); assert.equal(saved.status, 'SETTLED');
+      assert.notEqual(saved.reused, true); assert.equal(saved.ownerPid, process.pid);
+      assert.equal(saved.createdAt, createdAt); assert.equal(saved.deadlineAt, jobDeadlineAt);
+      assert.equal(saved.reviewStatus, 'NO_DEVIATION_FOUND');
+      assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
+      assert(task.verification.assessmentId.startsWith(`${runId}:stop`));
+      assert.equal(saved.evaluationId, task.verification.evaluationId);
+      return { deadlineAt };
+    })().then(resolve, reject);
+    return result;
+  });
+  return promise;
+}
+
 async function lateCandidate(t, { waitMode = 'until_pass', terminalStatus = 'ok', review, nextTerminal } = {}) {
   const terminal = deferred(t), reviewed = [], businessSends = [], admissions = new Map();
   let oldKnown = false, activity = 'running', f;
@@ -103,8 +148,16 @@ test('a late old terminal promotes the completed new native candidate once with 
     assert.match(task.stop.postRunCandidate.adoption.checkpointDigest, /^[a-f0-9]{64}$/u);
     assert.equal(f.state.reviewController, controller); assert.equal(controller.signal.aborted, false);
     assert.equal(f.reviewed.length, 0);
+    const publication = currentPromotedPublication(t, f);
     f.setActivity('done'); await f.recheck();
-    await within(f.runtime.waitForNativeReviews(), 'promoted native review').catch(async error => {
+    const drain = f.runtime.waitForNativeReviews();
+    void drain.catch(() => {});
+    await (async () => {
+      // The unchanged 10s observer checks the durable current assessment.
+      // Full cleanup still must drain within its original absolute window.
+      const { deadlineAt } = await within(publication, 'promoted native review');
+      await beforeStopDeadline(() => drain, { deadlineAt });
+    })().catch(async error => {
       t.diagnostic(JSON.stringify({ fixturePhase: 'PROMOTED_SUCCESSOR_REVIEW_DRAIN', waitMode, terminalStatus,
         reviewCallbacks: f.reviewed.length, factoryCallbacksSinceFixtureReturn: f.calls(),
         businessSends: f.businessSends.length, nativeRunMatchesSuccessor: f.state.nativeRunId === f.next.runId,

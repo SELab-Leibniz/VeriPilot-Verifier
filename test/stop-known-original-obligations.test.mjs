@@ -13,6 +13,7 @@ import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { observeKnownOriginalObligations, knownOriginalObligations, knownOriginalObligationReader } from '../lib/runtime-v2/known-original-obligations.mjs';
+import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
 async function finish(tools, value) {
   const first = await tools.submit('finish_stop_review', value);
@@ -23,7 +24,7 @@ async function finish(tools, value) {
   return first;
 }
 
-async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false, title = false, compound = false, distinct = false, large = false } = {}) {
+async function fixture(t, { conditional = false, external = false, internal = false, advisory = false, oversized = false, empty = false, title = false, compound = false, distinct = false, third = false, large = false } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
   f.input.request.classificationContract = 2;
@@ -31,7 +32,8 @@ async function fixture(t, { conditional = false, external = false, internal = fa
   f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, metrics: { M11: true, M16: true } });
   f.requirement = compound ? 'Preserve stream ordering and run the declared validation command.' : internal ? 'Preserve ordering for empty and non-empty inputs.' : advisory ? 'Consider preserving stream ordering.' : external ? 'If the user later requests publishing, run the release audit.' : conditional ? 'Preserve ordering when streaming is enabled.' : 'Preserve stream ordering.';
   f.secondRequirement = 'Preserve diagnostic labels.';
-  f.input.evidence.snapshot.entries[0].message.content = title ? `# Stream contract\n${large ? 'Background context. '.repeat(1000) + '\n' : ''}${f.requirement}\n${f.secondRequirement}\n` : f.requirement;
+  f.thirdRequirement = 'Preserve retained segment counts.';
+  f.input.evidence.snapshot.entries[0].message.content = title ? `# Stream contract\n${large ? 'Background context. '.repeat(1000) + '\n' : ''}${f.requirement}\n${f.secondRequirement}\n${third ? f.thirdRequirement + '\n' : ''}` : f.requirement;
   const original = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
   f.input.evidence.originalRequirements = original;
   const source = original.userMessages[0];
@@ -50,6 +52,7 @@ async function fixture(t, { conditional = false, external = false, internal = fa
     publication: { runId: 'proposal-run', taskId: f.input.taskId, sessionId: 'protocol-host', result: { status: 'passed',
       metadata: { inputs: snapshot.documents, semanticReview: { status: 'completed' } } } } };
   if (distinct) f.observation.receipt.rows.push({ ...f.observation.receipt.rows[0], requirement: f.secondRequirement });
+  if (third) f.observation.receipt.rows.push({ ...f.observation.receipt.rows[0], requirement: f.thirdRequirement });
   if (oversized) { const row = f.observation.receipt.rows[0];
     f.observation.receipt.rows = Array.from({ length: 49 }, (_, index) => ({ ...row, requirement: `${row.requirement} Observation ${index}.` })); }
   if (!empty) assert.equal(await observeKnownOriginalObligations(f.owner, f.observation), true);
@@ -603,4 +606,157 @@ test('finish repair cannot replace a formed whole-duty PROCESS subject with a na
   });
   const row = handle.result.knownOriginalCoverage.items[0]; assert.equal(row.disposition, 'UNVERIFIED');
   assert.match(row.reason, /formed object/u); await handle.close();
+});
+
+async function checkedRun(f, script) {
+  let failure, completed = false;
+  const handle = await f.run(async tools => {
+    try { await script(tools); completed = true; }
+    catch (error) { failure = error; throw error; }
+  });
+  if (failure) { await handle.close(); throw failure; }
+  assert.equal(completed, true, 'The actual handler callback must reach its final assertions.');
+  return handle;
+}
+
+async function sdkFinish(tools, value) {
+  const sdk = await loadPublicToolArgumentsValidator(), tool = tools.tools.get('finish_stop_review');
+  const before = structuredClone(value), accepted = sdk.validateToolArguments(tool, { name: tool.name, arguments: value });
+  assert.deepEqual(value, before, 'Public argument validation preserves the submitted factual fields.');
+  return tools.submit(tool.name, accepted);
+}
+
+for (const formed of [false, true]) test(`known missing objectId returns actual host IDs before ${formed ? 'formed' : 'corroborated'} same-worker repair`, async t => {
+  const f = await fixture(t, { title: true });
+  const handle = await checkedRun(f, async tools => {
+    const { object, originalId } = await f.prepare(tools, { formed, currentText: 'Return records in arrival order.' });
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    const row = { id: f.candidate.id, disposition: 'CURRENT', verdict: 'NO_CONFIRMED_DEVIATION',
+      reason: 'Current source establishes the complete retained ordering duty.', citeIds: [source],
+      ...(!formed ? { corroboration: { citeId: originalId, start: 2, end: 2,
+        reason: 'This exact current original span states the entire retained ordering duty.' } } : {}) };
+    const pending = await sdkFinish(tools, { summary: 'Initial current accounting omits its object identity.', knownObligations: [row] });
+    assert.equal(pending.complete, false); assert.equal(pending.pendingKnownOriginalCount, 1);
+    assert.equal(pending.pendingKnownOriginals[0].diagnostic.code, 'KNOWN_ORIGINAL_OBJECT_REQUIRED');
+    assert.deepEqual(pending.pendingKnownOriginals[0].diagnostic.missingFields, ['objectId']);
+    assert.equal(pending.currentOriginalObjects.navigationOnly, true);
+    assert.equal(pending.currentOriginalObjects.associationsInferred, false);
+    const hostObject = pending.currentOriginalObjects.items.find(item => item.objectId === object.objectId);
+    assert(hostObject, 'Repair feedback exposes the actual selected object ID, not a guessed candidate alias.');
+    assert.equal(hostObject.knownCandidateId, formed ? f.candidate.id : undefined);
+    assert(pending.currentOriginalObjects.items.length <= 5);
+    assert(Buffer.byteLength(JSON.stringify(pending.currentOriginalObjects.items)) <= 1801);
+    assert.match(pending.instruction, /every CURRENT row.*objectId/u);
+    const final = await sdkFinish(tools, { summary: 'Explicit actual host object and current proof supplied.',
+      knownObligations: [{ ...row, objectId: hostObject.objectId }] });
+    assert.equal(final.complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'CURRENT');
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(f.calls.length, 1);
+  await handle.close();
+});
+
+for (const invalid of ['missing-id', 'foreign-id', 'missing-proof']) test(`known object guidance cannot manufacture ${invalid} authority`, async t => {
+  const f = await fixture(t);
+  const handle = await checkedRun(f, async tools => {
+    const { object } = await f.prepare(tools, { formed: true });
+    const current = (await tools.read(f.production)).details.citation.citeId;
+    const row = { id: f.candidate.id, disposition: 'CURRENT', verdict: 'NO_CONFIRMED_DEVIATION',
+      reason: 'Only actual source and identity may establish this assessment.',
+      ...(invalid === 'missing-id' ? {} : { objectId: invalid === 'foreign-id' ? 'M16:foreign-object' : object.objectId }),
+      ...(invalid === 'missing-proof' ? {} : { citeIds: [current] }) };
+    assert.equal((await sdkFinish(tools, { summary: 'First incomplete assessment.', knownObligations: [row] })).complete, false);
+    assert.equal((await sdkFinish(tools, { summary: 'The unresolved assessment remains honest.', knownObligations: [row] })).complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED');
+  assert.equal(f.calls.length, 1); await handle.close();
+});
+
+test('known SUPERSEDED omits current-duty fields and cannot borrow CURRENT association authority', async t => {
+  const f = await fixture(t);
+  f.input.evidence.snapshot.entries.push({ type: 'user', uuid: 'U2', message: { content: 'Change the original requirement: ordering is no longer required.' } });
+  f.input.evidence.originalRequirements = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
+  const handle = await checkedRun(f, async tools => {
+    const { originalId } = await f.prepare(tools);
+    const later = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-1'));
+    const source = (await tools.read(later)).details.citation.citeId;
+    const row = { id: f.candidate.id, disposition: 'SUPERSEDED', reason: 'The later original user amendment replaces this duty.', citeIds: [source] };
+    await assert.rejects(sdkFinish(tools, { summary: 'Current-duty corroboration is not exclusion proof.', knownObligations: [{ ...row,
+      corroboration: { citeId: originalId, start: 1, end: 1, reason: 'An original span cannot replace the exclusion rules.' } }] }),
+      { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+    const definition = tools.tools.get('finish_stop_review').parameters.properties.knownObligations.items.properties;
+    assert.match(definition.objectId.description, /every CURRENT/u);
+    assert.match(definition.corroboration.description, /SUPERSEDED.*omit/u);
+    assert.equal((await sdkFinish(tools, { summary: 'Only source-grounded exclusion evidence.', knownObligations: [row] })).complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'SUPERSEDED');
+  assert.equal(handle.result.knownOriginalCoverage.items[0].objectId, undefined);
+  assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(f.calls.length, 1);
+  await handle.close();
+});
+
+for (const distinctObjects of [false, true]) test(`three known duties ${distinctObjects ? 'resolve through three preformed whole-duty objects' : 'cannot share two frozen unformed objects through corroboration'}`, async t => {
+  const f = await fixture(t, { title: true, distinct: true, third: true });
+  await fs.writeFile(f.production, 'export const ordered = values => [...values];\nexport const label = value => value.label;\nexport const retainedCount = values => values.length;\n');
+  assert.equal(f.candidates.length, 3);
+  const handle = await checkedRun(f, async tools => {
+    const originalSignal = tools.params.abortSignal;
+    await tools.readAll();
+    const originalFile = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
+    const originalId = (await tools.read(originalFile)).details.citation.citeId;
+    const sdk = await loadPublicToolArgumentsValidator(), tool = tools.tools.get('set_original_checklist');
+    assert.match(tools.params.extraSystemPrompt, /one distinct original-anchored whole-duty item per known candidate intended CURRENT or PHASE_DEFERRED/u);
+    assert.match(tool.description, /Later corroboration cannot add a missing frozen item/u);
+    const args = { items: distinctObjects ? f.candidates.map((candidate, index) => ({
+      metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'An untrusted shorter paraphrase.',
+      knownCandidateId: candidate.id, knownDutyReason: 'This exact current line supports this complete distinct retained duty.',
+      citeId: originalId, lineStart: index + 2, lineEnd: index + 2,
+    })) : [
+      { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: f.requirement,
+        citeId: originalId, lineStart: 2, lineEnd: 2 },
+      { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Preserve diagnostic labels and retained segment counts.',
+        citeId: originalId, lineStart: 3, lineEnd: 4 },
+    ], scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } };
+    const page = await tools.submit(tool.name, sdk.validateToolArguments(tool, { name: tool.name, arguments: args }));
+    const objects = page.items.filter(item => item.originalSourceAnchor);
+    assert.equal(objects.length, distinctObjects ? 3 : 2);
+    const directory = path.dirname(path.dirname(tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('known-original-observations'))));
+    const frozen = await fs.readFile(path.join(directory, 'original-checklist.json'));
+    const source = (await tools.read(f.production)).details.citation.citeId;
+    const rows = f.candidates.map((candidate, index) => {
+      const object = objects.find(object => object.description === (distinctObjects ? candidate.requirement
+        : index === 0 ? f.requirement : 'Preserve diagnostic labels and retained segment counts.'));
+      assert(object);
+      return { id: candidate.id, disposition: 'CURRENT', objectId: object.objectId, verdict: 'NO_CONFIRMED_DEVIATION',
+        reason: 'The complete retained duty is assessed from the current acknowledged source.', citeIds: [source],
+        ...(!distinctObjects ? { corroboration: { citeId: originalId, start: index === 0 ? 2 : 3, end: index === 0 ? 2 : 4,
+          reason: 'This acknowledged original range states the named retained duty; it cannot grant another object identity.' } } : {}) };
+    });
+    if (!distinctObjects) {
+      assert.equal(new Set(rows.map(row => row.objectId)).size, 2);
+      await assert.rejects(sdkFinish(tools, { summary: 'Three known IDs cannot reuse two current objects.', knownObligations: rows }),
+        { code: 'KNOWN_ORIGINAL_BINDING_INVALID' });
+      await assert.rejects(tools.submit('set_original_checklist', args), { code: 'TASK_SUBMISSION_CONFLICT' },
+        'The existing frozen checklist cannot be rebuilt during finish repair.');
+      const honest = { summary: 'The absent separate original item remains unresolved.', knownObligations: [rows[0], rows[1],
+        { id: rows[2].id, disposition: 'UNVERIFIED', reason: 'No separate original-anchored checklist object was prepared for this candidate.' }] };
+      const pending = await sdkFinish(tools, { summary: 'A current claim still lacks its separate object.',
+        knownObligations: [rows[0], rows[1], { id: rows[2].id, disposition: 'CURRENT', verdict: 'NO_CONFIRMED_DEVIATION',
+          reason: 'The missing original object cannot be invented after freeze.', citeIds: [source] }] });
+      assert.equal(pending.complete, false); assert.equal(pending.pendingKnownOriginalCount, 1);
+      assert.deepEqual(pending.pendingKnownOriginals[0].diagnostic.missingFields, ['objectId']);
+      assert.match(pending.instruction, /corroboration cannot add missing objects/u);
+      assert.equal((await sdkFinish(tools, honest)).complete, true);
+    } else {
+      assert.equal(new Set(rows.map(row => row.objectId)).size, 3);
+      assert(page.knownObligations.items.every(candidate => candidate.formedAssociation?.objectId));
+      assert.equal((await sdkFinish(tools, { summary: 'Three separate complete current assessments.', knownObligations: rows })).complete, true);
+    }
+    assert.deepEqual(await fs.readFile(path.join(directory, 'original-checklist.json')), frozen);
+    assert.strictEqual(tools.params.abortSignal, originalSignal, 'Formation and accounting reuse the same original worker signal.');
+  });
+  assert.deepEqual(handle.result.knownOriginalCoverage.items.map(item => item.disposition),
+    distinctObjects ? ['CURRENT', 'CURRENT', 'CURRENT'] : ['CURRENT', 'CURRENT', 'UNVERIFIED']);
+  assert.equal(handle.result.unverifiedItems.filter(item => item.type === 'KNOWN_ORIGINAL_OBLIGATION').length, distinctObjects ? 0 : 1);
+  assert.equal(f.calls.length, 1); await handle.close();
 });
