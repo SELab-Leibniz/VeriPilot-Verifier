@@ -16,6 +16,7 @@ import { buildOriginalRequirements, recordUserMessages, userMessageLogPath, writ
   from '../lib/runtime-v2/original-requirements.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
 import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let outputRoot, pluginRoot, claudePluginRoot, createRuntime;
@@ -207,6 +208,9 @@ test('the live document harness policy selects the original requirements review'
 });
 
 async function documentFixture(t, mode, policyOptions = {}) {
+  // These fixtures assert routing/source semantics, not elapsed disk time.
+  // Filesystem backoffs and explicit compaction liveness watches stay real.
+  semanticReviewClock(t, { timeoutMs: 15000 });
   const root = await project(t);
   let runtime;
   t.after(async () => { await runtime?.dispose(); await runtime?.waitForBackgroundReviews(); });
