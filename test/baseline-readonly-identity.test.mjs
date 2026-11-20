@@ -9,9 +9,12 @@ import { readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { listNativeRuns, recordNativeRun } from '../lib/openclaw/native-runs.mjs';
 
 import { transient, budgetView, prepared, useLastTurnAndRepair } from './helpers/baseline-readonly-fixture.mjs';
+import { semanticReviewClock } from './helpers/semantic-review-clock.mjs';
 
 for (const invalid of ['journal', 'actor-pending', 'auditor-missing', 'source', 'model']) test(`read-only reuse rejects changed ${invalid} without a new actor or auditor`, async t => {
+  const clock = semanticReviewClock(t, { timeoutMs: 20000 });
   const { f, counts, stop, audits, rollback } = await prepared(t);
+  clock.advance(1); // Keep the revised actor/auditor later than the initial selection.
   let modelIdentityChange = null;
   f.state.beforeGraph = async () => {
     counts.graphs++;

@@ -15,16 +15,31 @@ test('an expired input gate cannot later publish admission after slow transcript
   const f=await lifecycle(t,{waitMode:'until_pass',observeModelStart:false,review:async()=>true,
     postRunTerminal:async(_identity,runId)=>{if(runId.startsWith('rc-stop-'))await terminal.promise;return {runId,status:'ok'};}});
   f.api.runtime.subagent={run:async args=>{childRunId=args.idempotencyKey;dispatched.resolve();return {runId:childRunId};}};
+  // Initial fixture admission establishes the prior gate; this case tests the
+  // subsequent real1s expiry, not the latency of that completed setup.
+  const originalNow=Date.now,initialInputGate=f.runtime.beforeAgentRun;
+  f.runtime.beforeAgentRun=async function(event,ctx){
+    const fixedNow=Date.now(),clock=t.mock.method(Date,'now',()=>fixedNow),setupAbort=new AbortController();
+    try {
+      return await within(initialInputGate.call(this,event,{...ctx,
+        abortSignal:ctx.abortSignal?AbortSignal.any([ctx.abortSignal,setupAbort.signal]):setupAbort.signal}),
+        'initial fixture input admission');
+    } finally {
+      setupAbort.abort();clock.mock.restore();f.runtime.beforeAgentRun=initialInputGate;
+    }
+  };
   try {
     await f.runtime.reply({kind:'final',runId:f.ctx.runId,sessionKey:f.ctx.sessionKey,payload:{text:'Delivered.'}},f.ctx);
     await within(dispatched.promise,'correction dispatch');await within(f.runtime.waitForNativeReviews(),'initial review');
     const child={...f.ctx,runId:childRunId};const prompt=await f.runtime.prompt({prompt:'Apply current feedback.'},child);
+    assert.equal(Date.now,originalNow,'the tested gate must use the original real clock');
     const previousGate=(await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId})).admission.hostRequest.gate;
     const session=f.api.runtime.agent.session,getEntry=session.getSessionEntry;
     session.getSessionEntry=async(...args)=>{entered.resolve();await slow.promise;return getEntry(...args);};
-    const gate=f.runtime.beforeAgentRun({prompt:prompt.prependContext},child);
+    const targetStarted=performance.now(),gate=f.runtime.beforeAgentRun({prompt:prompt.prependContext},child);
     await within(entered.promise,'slow input identity check');
     assert.equal((await within(gate,'bounded input gate')).outcome,'block');
+    assert(performance.now()-targetStarted>=900,'the target must retain its real1s expiry');
     slow.resolve();await pause(100);
     const receipt=await f.sharedState.stopStartProtocol.findRun({state:f.state,runId:childRunId});
     assert.equal(receipt.admission.accounting,'RESERVED');

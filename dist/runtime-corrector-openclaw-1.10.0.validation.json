@@ -307,12 +307,21 @@
     "falseClearForPublicRequirement": true,
     "outcomeReceipt": {
       "path": ".runtime-correction/validation/combined-on-postclosure-grade-5eh4gndz/outcomes.json",
-      "sha256": "5cef2ef404e8decdcd88c2bbdfb3d21b3a4845914b9062d709b63c9a82b93827"
+      "sha256": "c541d70fdbd9de1bb268cf3beca402f29a1350fee8253a90079b55835c1d829b"
     },
     "noMeasuredQualityGain": true,
     "semanticAudit": {
       "path": ".runtime-correction/validation/combined-on-r7-semantic-audit-1vhr72fx/semantic-audit.json",
       "sha256": "4e1ca8ae935edc9e4dae8f401d0cc307327dde963a9746faf0c6d4bcbe57571b"
+    },
+    "separateR3LongZero": {
+      "pass": 0,
+      "total": 1,
+      "outsideOriginal37AndTwoR7Forms": true,
+      "observation": {
+        "path": ".runtime-correction/validation/combined-on-postclosure-grade-5eh4gndz/r3-long-zero/observation.json",
+        "sha256": "886edfcaae433530ef8faa292e47971c56da515db04fa56aed362f33389638c3"
+      }
     }
   },
   "benchmark": {
@@ -389,13 +398,13 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "lastPublishedHead": "3e6a323c64a88b45fcfd2cfd161d166e8253f38c",
     "promotionCommit": "3e6a323c64a88b45fcfd2cfd161d166e8253f38c",
-    "mainMerged": false
+    "mainMerged": false,
+    "lastVerifiedPublishedHeadBeforeThisMetadata": "d8ac4e1351cc761029df5530873d65d505fce361"
   },
   "reportCurrentQa": {
-    "status": "PASS_CLOSED_CURRENT_RUN_FOUR_VIEWS_TWO_LANGUAGES_AND_TABLES",
-    "htmlSha256": "28917618ef6f11d3a079e0dfa4fbe0821b894e8a48bd9f8c2f3e18148ecf884e",
+    "status": "PASS_FINAL_MARKED_STEP_PRECISION_FOUR_VIEWS_TWO_LANGUAGES_AND_TABLES",
+    "htmlSha256": "15ee1269805d6b7150cdc7dff5a88fc09e1fd7d26dfff808eb9b8bd04b2ab77e",
     "priorFourViewQa": {
       "path": ".runtime-correction/validation/report-two-pc-current-history-qa-uwkjr08f/receipt.json",
       "sha256": "db95011bd5d5129fc69e2fb45b14e57920dd5c9451d4c7cdd69cb9728ee27855"
@@ -405,46 +414,64 @@
       "sha256": "06b540c3bda1d90f8973141926c7af5a731c3a277795fd6f3c210677b10a491e"
     },
     "currentFourViewQa": {
-      "path": ".runtime-correction/validation/report-closed-miss-final-qa-cfgn5pm5/receipt.json",
-      "sha256": "b0d74d08dc6ee876dad7e56d46c4de448370b61bfd8c4ec105d66dc6fadd4392"
+      "path": ".runtime-correction/validation/report-marked-steps-final-qa-k8wb1fij/receipt.json",
+      "sha256": "f835ed71695628fdbb7c5c82bfcb93b0c0d6689c3e2433a8df075ead82b1eeb3"
     },
     "currentFourArmTableQa": {
-      "path": ".runtime-correction/validation/report-closed-miss-final-qa-cfgn5pm5/four-arm-table-receipt.json",
-      "sha256": "a436b014a2cf7bd8705393f9c8b5c6f63a2e3584002b17f7e676954eb0237bff"
+      "path": ".runtime-correction/validation/report-marked-steps-final-qa-k8wb1fij/four-arm-table-receipt.json",
+      "sha256": "71c5e087630023e18e3abf6f892d9559fe643da4ab4bbe837011a6d64fdf0dc4"
     },
-    "visualInspection": "SameCSS/layout; priorclosedrunENdesktopandZHmobileinspected; finalDOMfourviewsallpass",
-    "currentProvenancePeer": {
+    "visualInspection": "Current ENdesktopandZHmobilescreens inspected; sameCSS; finalDOMfourviewspass",
+    "precedingProvenancePeer": {
       "path": ".runtime-correction/validation/report-closed-outcome-provenance-peer-yi3ar7a8/peer-review.json",
       "sha256": "d1bb909e7da67985a5a91f15ad110c379ec4b5666da33516d82e55748797dbcb",
       "scope": "ExactHTML28917618/metadata745529c1beforethese2additiveprovenancereferences"
+    },
+    "currentProvenancePeer": {
+      "path": ".runtime-correction/validation/final-report-outcome-peer-iu532p18/peer-review.json",
+      "sha256": "5eae298be888729586aee97cc11a72698164928444caa4377c9649a291b4fa6f",
+      "scope": "ExactHTML15ee1269/metadata dfec1c47 before this additive peer reference"
     }
   },
   "latestPublicationCI": {
-    "head": "3e6a323c64a88b45fcfd2cfd161d166e8253f38c",
-    "runId": 44702296175,
+    "head": "d8ac4e1351cc761029df5530873d65d505fce361",
+    "runId": 44713128271,
     "attempt": 1,
     "conclusion": "failure",
     "testJobsPassed": 6,
     "testJobsFailed": 1,
     "publication": "skipped",
     "receipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-3e6a-publication-natural-x7q2m0sn/terminal-receipt.json",
-      "sha256": "efb5b23a6f2c66dd7e1f0a73538112be411687c4f49a4406cb8e137484812025"
+      "path": ".runtime-correction/validation/ci-fix/post-d8ac-closed-report-natural-nsda4p02/terminal-receipt.json",
+      "sha256": "08022179a4ebb5950240d181e60a1af86757876e231a180633d89ec415c69fb5"
     },
     "all393FilesAndWindows197Plus196Completed": true,
-    "failure": {
-      "file": "test/openclaw-review-budget.test.mjs",
-      "case": "controller review still respects parent absolute deadline",
-      "assertion": "calls.length>0 before the <=1500 timeout assertion",
-      "phase": "before reviewer stub invoked"
-    },
-    "cause": "UNIQUE_HISTORICAL_CAUSE_UNPROVEN",
-    "controlledPrivateFixtureCandidate": "INTEGRATED_TEST_ONLY_TARGETED_NODE18_NODE24_PASS_NEW_REMOTE_PENDING",
+    "failedJob": 136209612541,
+    "failures": [
+      {
+        "file": "test/baseline-readonly-identity.test.mjs",
+        "case": "changed actor-pending",
+        "observation": "ENOENT lstat skill-ground-truth.json"
+      },
+      {
+        "file": "test/openclaw-native-stop-budget.test.mjs",
+        "case": "expired input gate remains blocked after slow transcript",
+        "observation": "INITIAL runtime.prompt fixture failed PASS expectation with RC_STOP_ADMISSION_CLOSED / STOP_DEADLINE_EXPIRED before intended slow-reader scenario"
+      }
+    ],
+    "correctedParentDeadlineFilePassedWindowsShard": true,
+    "previousFailureNotRetagged": true,
+    "newFailuresUnderInvestigation": true,
+    "uniqueHistoricalCauses": "UNPROVEN",
     "rerunCancelDispatch": 0,
-    "runningPaidPackageStillImmutable204d766b": true,
-    "rootFixtureIntegration": {
-      "path": ".runtime-correction/validation/ci-fix/root-review-parent-integration-zwnetprr/integration.json",
-      "sha256": "563023cbad125a7f898ad8d46c98aa07407509335ec254cddf76e24d3383a907"
+    "twoFixtureCorrections": {
+      "status": "INTEGRATED_TARGETED15_PASS_BOTH_NODE18_NODE24_NEW_REMOTE_PENDING",
+      "rootIntegration": {
+        "path": ".runtime-correction/validation/ci-fix/root-d8ac-two-fixture-integration-wdpt3jh4/integration.json",
+        "sha256": "7a605d0f4ff2ee5abdb685d712e503bf0d1bfd4cfbceb87289e7aaadd1034eee"
+      },
+      "runtimeAndSharedHelpersUnchanged": true,
+      "production1sAvailabilityFixed": false
     }
   },
   "precedingCompletedDevelopmentRun": {
@@ -480,5 +507,66 @@
     },
     "noMeasuredQualityGain": true,
     "notRetaggedAsCurrentPackage": true
+  },
+  "publicBenchmarkBuildPreflight": {
+    "status": "QUALIFIED_EXACT_PREPARE_OFFLINE_INSTALL_AND_UNSIGNED_APP_TEST_COMPILATION",
+    "actual": "1a5187/session25416\u219249dfda/0",
+    "receipt": {
+      "path": ".runtime-correction/validation/s11-sdk-prepare-build-preflight-v4-urjq0b_i/source-checks/actual-sdk-final-receipt.json",
+      "sha256": "15e94146a5618f2931af10a811ab4f160e7921a88932a62e1d62cfa78157a264"
+    },
+    "preparedSourceFilesUnchanged": 118,
+    "hapPackages": 2,
+    "sdkBuildQualified": true,
+    "deviceQualified": false,
+    "publicToolLifecycleQualified": false,
+    "modelWorkflowQualified": false,
+    "runtimePluginUnchanged": true,
+    "knownGroupsAbsent": 15,
+    "knownIdentitiesAbsent": 27,
+    "previousFailedAttempt": {
+      "status": "UNAVAILABLE_BUILD_DEPENDENCY_INSTALL_SOURCE_LOCKFILE_WRITE_DENIED",
+      "actual": "f3dfaa/session59498 ->db08ed/2",
+      "receipt": {
+        "path": ".runtime-correction/validation/s11-sdk-prepare-build-preflight-v3-cuvk96sz/source-checks/actual-sdk-final-receipt.json",
+        "sha256": "091cd506cd04bd85767c0c3a89a01eee9c7153b6bb11557d6cd5d896d88a1f62"
+      },
+      "sdkPreparationAndIdentityChecksPassed": true,
+      "actualInstallExitCode": 1,
+      "outerWrapperExitCode": 0,
+      "sdkOrDeviceQualified": false,
+      "hapProduced": false,
+      "knownCleanupConfirmed": true,
+      "runtimePluginUnchanged": true,
+      "previousProcessSetupFailurePreserved": true
+    }
+  },
+  "precedingPublicationCI": {
+    "head": "3e6a323c64a88b45fcfd2cfd161d166e8253f38c",
+    "runId": 44702296175,
+    "attempt": 1,
+    "conclusion": "failure",
+    "testJobsPassed": 6,
+    "testJobsFailed": 1,
+    "publication": "skipped",
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-3e6a-publication-natural-x7q2m0sn/terminal-receipt.json",
+      "sha256": "efb5b23a6f2c66dd7e1f0a73538112be411687c4f49a4406cb8e137484812025"
+    },
+    "all393FilesAndWindows197Plus196Completed": true,
+    "failure": {
+      "file": "test/openclaw-review-budget.test.mjs",
+      "case": "controller review still respects parent absolute deadline",
+      "assertion": "calls.length>0 before the <=1500 timeout assertion",
+      "phase": "before reviewer stub invoked"
+    },
+    "cause": "UNIQUE_HISTORICAL_CAUSE_UNPROVEN",
+    "controlledPrivateFixtureCandidate": "INTEGRATED_TEST_ONLY_TARGETED_NODE18_NODE24_PASS_NEW_REMOTE_PENDING",
+    "rerunCancelDispatch": 0,
+    "runningPaidPackageStillImmutable204d766b": true,
+    "rootFixtureIntegration": {
+      "path": ".runtime-correction/validation/ci-fix/root-review-parent-integration-zwnetprr/integration.json",
+      "sha256": "563023cbad125a7f898ad8d46c98aa07407509335ec254cddf76e24d3383a907"
+    }
   }
 }
