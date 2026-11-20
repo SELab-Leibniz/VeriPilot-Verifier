@@ -161,7 +161,7 @@
         <h2 id="workflow-title">The target coding workflow</h2>
         <p class="callout">General usefulness is the first priority. Correct work should finish with little extra effort. When evidence shows an unmet requirement, the plugin should request a specific repair and check it again. Benchmark scores, passing guard tests and additional review activity cannot establish that benefit on their own.</p>
         <p class="intro">OpenClaw writes the code and runs checks. OpenSpec fixes the order of work: Proposal, Apply, then Archive. Runtime Corrector is an OpenClaw plugin that checks whether the plan and implementation still satisfy the original request. Enable correction for the host session actually running the task; after a host reset, recheck the selected project and explicitly enable correction in the new session.</p>
-        <p>The updated package passed all 397 local regression files: 4,988 checks passed and 33 were skipped. Package checks and a fresh stock OpenClaw installation also passed. The latest completed CI run passed all seven jobs for the preceding runtime; CI for this revision is pending. Production time limits are unchanged, and earlier failures remain recorded.</p>
+        <p>The updated package passed all 397 local regression files: 4,988 checks passed and 33 were skipped. Package checks and a fresh stock OpenClaw installation also passed. The last completed CI run ended with four jobs passed, two Windows regression jobs failed and one queued Node 18 macOS job cancelled before tests. The cancellation cause is unknown. Two test-fixture clock repairs passed their targeted controls; CI on the updated revision is pending. Production time limits are unchanged, and earlier failures remain recorded.</p>
         <p>The latest Flash/Pro walkthrough has closed. The reviewer completed three implementation challenges, and final Stop found no confirmed deviation. Independent checks still found an unmet requirement. No native repair ran; general improvements in quality and effort remain unproven.</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption">
           <figcaption id="workflow-diagram-caption">Where Runtime Corrector intervenes</figcaption>
@@ -187,7 +187,7 @@
         <h2 id="workflow-title-zh">目标编码工作流</h2>
         <p class="callout">首要目标是对一般编码任务有帮助。正确的工作应以较少额外负担完成；有证据的需求缺口应得到可执行的修复，并重新核验。基准分数、防护测试通过或审查次数增加，都不足以单独证明这种帮助。</p>
         <p class="intro">OpenClaw 负责写代码和运行检查，OpenSpec 固定工作顺序：先 Proposal，再 Apply，最后 Archive。运行时纠偏器是 OpenClaw 插件，用于核对方案和实现是否仍满足原始请求。纠偏必须在实际执行任务的宿主会话中启用；宿主重置会话后，应重新核对所选项目，并在新会话中明确启用纠偏。</p>
-        <p>更新后的安装包通过全部 397 份本地回归测试文件：4,988 项检查通过、33 项跳过；安装包检查及一次新的原版 OpenClaw 安装也已通过。最近完成的 CI 对应前一版运行时，七项任务全部通过；本次修订的 CI 仍待验证。生产时限保持不变，先前失败继续保留。</p>
+        <p>更新后的安装包通过全部 397 份本地回归测试文件：4,988 项检查通过、33 项跳过；安装包检查及一次新的原版 OpenClaw 安装也已通过。最近完成的一轮 CI 中，四项任务通过、两个 Windows 回归任务失败，另一个排队中的 Node 18 macOS 任务在测试前被取消。取消原因不明。两项仅修改测试的时钟修正已通过针对性对照；更新后修订的 CI 仍待验证。生产时限保持不变，先前失败继续保留。</p>
         <p>最新的 Flash/Pro 走查已经关闭。审查器完成了三项实现反例审查，最终 Stop 未确认偏离，但独立检查仍发现一项需求未满足。没有启动原生修复，通用的质量收益及额外负担仍未得到证明。</p>
         <figure class="workflow-diagram" aria-labelledby="workflow-diagram-caption-zh">
           <figcaption id="workflow-diagram-caption-zh">运行时纠偏器在何处介入</figcaption>
@@ -312,7 +312,7 @@
         <p>A port string containing 5,000 ASCII zeros should normalize to zero under the original requirement, but the delivered code raises Python’s integer-conversion length error. Normalization was outside the three selected challenges. The final review did not catch this violation; the evidence cannot show whether choosing that duty would have caught it. The evaluator keeps this probe separate, and the plugin contains no rule for this example.</p>
         <h3>What changed in the plugin</h3>
         <p>Compact pending diagnostics now point to captured execution pairs. The opt-in sampled mode freezes up to three mandatory implementation duties and guides FRAME→RESOLVE within the existing review deadline. The ordinary default is unchanged. The new run confirms actual use of this method; it does not show that sampling covers all original requirements.</p>
-        <p>The current package passed all 397 local regression files: 4,988 checks passed and 33 were skipped. It also passed 17 artifact checks on each Node version, and all 278 package files matched a fresh stock installation. The preceding runtime passed all seven jobs in the latest completed CI run; this revision still needs its own CI result. These checks establish tested package behavior, not coding quality gains.</p>
+        <p>The current package passed all 397 local regression files: 4,988 checks passed and 33 were skipped. It also passed 17 artifact checks on each Node version, and all 278 package files matched a fresh stock installation. The last completed CI run ended with four jobs passed, two Windows regression jobs failed and one Node 18 macOS job cancelled before tests; the cancellation cause is unknown. Two test-fixture clock repairs passed their targeted controls; the updated revision still needs a CI result. These checks establish tested package behavior, not coding quality gains.</p>
         <p>Task-state lock timeouts now identify the failed phase and explain when the original host tool result is retained. Deadlines stay fixed and lock contention is not resolved by this diagnostic. No real-model run has used this package.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -334,7 +334,7 @@
         <p>按原始需求，由 5,000 个 ASCII 零组成的端口字符串应归一化为零，交付代码却触及 Python 的整数转换长度限制。归一化不在三项抽样反例审查之内。最终审查没有发现这项违反需求的行为；现有证据也不能说明选中该义务就一定能发现。探针单独保留在评估器中，插件没有针对这一示例的规则。</p>
         <h3>插件改了什么</h3>
         <p>精简的未决诊断现可指向已捕获的执行记录对。可选抽样模式会固定最多三项必需实现义务，在原定审查时限内引导执行 FRAME→RESOLVE，普通默认行为保持不变。新走查确认方法确已使用，但不能证明抽样覆盖了全部原始需求。</p>
-        <p>当前安装包通过全部 397 份本地回归测试文件：4,988 项检查通过、33 项跳过；每个 Node 版本的 17 项安装包检查也已通过。全部 278 个包文件与新的原版安装一致。最近完成的 CI 中，前一版运行时七项任务全部通过；本次修订仍需自己的 CI 结果。这些检查说明已测试范围内的插件行为，不能证明编码质量收益。</p>
+        <p>当前安装包通过全部 397 份本地回归测试文件：4,988 项检查通过、33 项跳过；每个 Node 版本的 17 项安装包检查也已通过。全部 278 个包文件与新的原版安装一致。最近完成的一轮 CI 中，四项任务通过、两个 Windows 回归任务失败，一个 Node 18 macOS 任务在测试前被取消，取消原因不明。两项仅修改测试的时钟修正已通过针对性对照；更新后修订仍需 CI 结果。这些检查说明已测试范围内的插件行为，不能证明编码质量收益。</p>
         <p>任务状态锁超时现可指出失败阶段，并说明原始宿主工具结果何时仍被保留。时限保持不变，这项诊断修正没有解决锁竞争。本版尚未开展真实模型试验。</p>
       </div>
     </section>
@@ -861,7 +861,7 @@
         <p>The preceding qualified package’s walkthrough exercised FRAME→RESOLVE on three of eight eligible implementation duties. The host accepted current-source receipts after one rejected submission was corrected. Final Stop found no confirmed deviation and no native repair ran. Independent grading found a remaining requirement violation outside the three challenged duties. Method uptake and semantic accuracy remain separate questions.</p>
         <h3>Benchmark execution route</h3>
         <p>The restored Sudoku route completed a fresh control with all 298 original tests: baseline 0/10 feature checks and 288/288 regressions; reference 10/10 and 288/288. Independent review confirmed every original test result, unchanged test inputs and removal of the test app. This uses an API 26 build and API 24 device; equivalence to the original API 23 environment is unproven. It adds no benchmark pair and does not qualify the other tasks. Before another benchmark pair, we still need to isolate public testing from private grading data and finish the frozen-candidate export.</p>
-        <p>The public build preflight completed dependency installation and both app/test builds, producing two unsigned app packages with all 118 prepared inputs unchanged. A stock-host control completed the tool-and-broker path using a local stub, rejected invalid arguments and blocked another session’s call despite cached tool metadata. The fresh public phone remains stopped. A new restricted control passed profile application, selected private-file denial checks and one read-only device listing; the device identity matched. No VM or native test ran. Boot, actual guest network isolation and the full build/test route remain unqualified. These task tools stay outside Runtime Corrector.</p>
+        <p>The public build preflight completed dependency installation and both app/test builds, producing two unsigned app packages with all 118 prepared inputs unchanged. A stock-host control completed the tool-and-broker path using a local stub, rejected invalid arguments and blocked another session’s call despite cached tool metadata. The fresh public phone remains stopped. Its latest boot preflight stopped at an HDC help-command abort before VM launch; known owned resources were cleaned up. A new restricted control passed profile application, selected private-file denial checks and one read-only device listing; the device identity matched. No VM or native test ran. Boot, actual guest network isolation and the full build/test route remain unqualified. These task tools stay outside Runtime Corrector.</p>
         <p>The isolated evaluator passed 25 controlled qualification groups and a separate boundary check in a Linux container on this Mac. The four new deliveries were graded with its original 37 checks in the qualified Linux container on this Mac. The extra two CLI probes remain separate. This does not establish native-macOS equivalence, complete semantic coverage or public-test quality.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -878,7 +878,7 @@
         <p>前一份已验证安装包的走查已对八项符合条件的实现义务中的三项执行 FRAME→RESOLVE。一次提交被拒绝并修正后，宿主接受了关联当前源码的回执。最终 Stop 未确认偏离，没有启动原生修复。独立评分在三项抽样义务之外发现了仍未满足的需求。方法确已使用与语义判断正确，需要分别核查。</p>
         <h3>基准执行路线</h3>
         <p>恢复后的 Sudoku 路线已用全部 298 项原始测试完成新的对照：起始版本功能检查通过 0/10、回归检查通过 288/288；参考解为 10/10 和 288/288。独立复核已确认全部原始测试结果、测试输入未变，以及测试应用已卸载。当前使用 API 26 编译及 API 24 设备，尚未证明与原 API 23 环境等价。这不会增加基准配对数，也不代表其余任务已取得资格。下一组基准配对前，仍需把公开测试与私有评分数据隔离，并完成冻结候选代码的导出。</p>
-        <p>公开构建预检已完成依赖安装及应用、测试构建，生成两个未签名应用包，全部 118 项准备输入保持不变。原版宿主对照用本地桩完成工具到受保护代理的调用，拒绝无效参数，并在另一会话看到缓存工具描述时仍阻止了它的实际调用。新建公开手机仍处于停止状态。一项新的受限对照已通过配置应用、选定私有文件的访问拒绝检查及一次只读设备列表，设备身份吻合；没有启动虚拟机或运行原生测试。启动、真实设备网络隔离及完整构建测试路线仍未取得资格。这些任务工具保留在运行时纠偏器之外。</p>
+        <p>公开构建预检已完成依赖安装及应用、测试构建，生成两个未签名应用包，全部 118 项准备输入保持不变。原版宿主对照用本地桩完成工具到受保护代理的调用，拒绝无效参数，并在另一会话看到缓存工具描述时仍阻止了它的实际调用。新建公开手机仍处于停止状态。最近一次启动预检在 HDC 帮助命令异常终止处停止，未启动虚拟机，所属资源已清理。一项新的受限对照已通过配置应用、选定私有文件的访问拒绝检查及一次只读设备列表，设备身份吻合；没有启动虚拟机或运行原生测试。启动、真实设备网络隔离及完整构建测试路线仍未取得资格。这些任务工具保留在运行时纠偏器之外。</p>
         <p>隔离评分器已在这台 Mac 的 Linux 容器中通过 25 组受控资格检查，以及一项独立边界检查。四份新交付已在这台 Mac 的合格 Linux 容器中完成原定 37 项评分，另两项 CLI 探针单独保留。这不能证明原生 macOS 等价、语义完整覆盖或公开测试质量。</p>
       </div>
     </section>
