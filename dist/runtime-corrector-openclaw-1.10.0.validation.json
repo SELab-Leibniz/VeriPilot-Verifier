@@ -180,6 +180,27 @@
       "rerunCancelDispatchActions": 0,
       "reportOnlySuccessorDoesNotChangeProductTestBytes": true,
       "rootOfficialJobsAlsoConfirmed": true
+    },
+    "integratedRequiredPathReviewMethod": {
+      "status": "ROOT_SOURCE_POSTIMAGES_EXACT_PRIVATE_V3",
+      "paths": [
+        "lib/runtime-v2/production-stop.mjs",
+        "lib/runtime-v2/stop-workspace-review.mjs",
+        "test/stop-workspace-review.test.mjs"
+      ],
+      "sourceHold": {
+        "path": ".runtime-correction/validation/stop-branch-review-method-v3-16oe0z5q/source-hold.json",
+        "sha256": "1609ff7369064f11efc5eb3759200022c1c56a513aeaeb55ffc9fbf93393f09e"
+      },
+      "independentPeer": {
+        "path": ".runtime-correction/validation/stop-method-v3-independent-peer-v_sw4udb/peer-review.json",
+        "sha256": "e587490d89c62f4caa7309472501d08ef7130a37fecfde37a54e157e1d108c5e"
+      },
+      "privateFocusedPassEachNode18And24": 13,
+      "rootFocusedMethodPassEachNode18And24": 6,
+      "currentArchiveSourceStill": "1de9313975332cc507e69d36c17a2aa8d93d2946",
+      "v3FullCi": "PENDING_FUTURE_SOURCE_PUSH",
+      "benefit": "UNTESTED"
     }
   },
   "packageChecks": {
@@ -675,17 +696,17 @@
     "scope": "Completed94dfe33 publication. Source-binding fix remains an isolated source candidate; current source-audit prose update pending next authorized feature-branch push."
   },
   "branchPublication": {
-    "status": "PREPARED_REPORT_ONLY_UPDATE_ON_PREVIOUSLY_PUBLISHED_FEATURE_HEAD",
+    "status": "PUBLISHED_REPORT_WITH_REVIEWED_GENERAL_METHOD_SOURCE_SUCCESSOR_PREPARED",
     "branch": "codex/openclaw-runtime-corrector",
-    "head": "6c6a6f2ca2b95381e08c5645b3ad796a5b4cbf77",
+    "head": "0095cb46c1e5cdf23f043d11840c97b30b88b38f",
     "sourceHead": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "originMatchedAtPublication": true,
     "receipt": {
-      "path": ".runtime-correction/validation/report-four-closed-outcomes-qa-xagg095m/publication.json",
-      "sha256": "92c83f84d1272ea0769871d920f22cab4529d078cdf5dd8632d3d624ab2b6ca1"
+      "path": ".runtime-correction/validation/report-current-progress-final-qa-lc4gs9zq/publication.json",
+      "sha256": "eb0df84c95a2616352a47675c5110b80addc85bf12aac9860c2c6bda7aca8b6e"
     },
     "mainMerged": false,
-    "scope": "Currentdirtychangesreport+validationmetadataonly; runtime/archive/tests unchanged. NaturalpreviousheadCI7/7qualifiedseparately."
+    "scope": "Published0095report/archivee94 unchanged. Newgeneralrequired-pathreviewmethodsource+tests+metadata prepared; actor/archive not changed."
   },
   "prospectiveCurrentArchiveSourceAckAudit": {
     "status": "ACTUAL_LOCAL_SCRIPTED_CURRENT_SOURCE_AND_TYPED_PROCESS_ACK_CHAIN_QUALIFIED",
@@ -3773,7 +3794,7 @@
     }
   },
   "prospectiveReviewMethod": {
-    "status": "EXACT_V2_FULL_PASS_V3_MINIMAL_SCOPE_WORD_DELTA_FOCUSED_PASS_NOT_ADOPTED",
+    "status": "INTEGRATED_V3_SOURCE_FOCUSED_PASS_INSTALLABLE_AND_PAID_ACTOR_STAY_PRIOR_REVISION",
     "hold": {
       "path": ".runtime-correction/validation/stop-branch-review-method-v2-y3elmai1/source-hold.json",
       "sha256": "bd7e5bcffdbd76c01fe52003ea556ceb06a35862a282908a17ac3ad6f4ed8ce7"
@@ -3788,7 +3809,7 @@
     },
     "baseCommit": "1de9313975332cc507e69d36c17a2aa8d93d2946",
     "runtimeChanges": "Two generic prompt entries and one methodpolicyhash member; no evidence/verdict/condition/owner/budget relaxations.",
-    "adoptedInRootSource": false,
+    "adoptedInRootSource": true,
     "includedInCurrentArchiveOrModelRun": false,
     "realModelDetectionBenefit": "UNTESTED",
     "structuralSourceHold": {
@@ -3850,7 +3871,33 @@
     },
     "v3FocusedPassEachNode18And24": 13,
     "v3FullSuiteRun": false,
-    "v3OnlyDeltaFromFullTestedV2": "One word required inserted in emittedprompt and exactassertion,1173otherpostimagesunchanged; existingpolicyhashsame."
+    "v3OnlyDeltaFromFullTestedV2": "One word required inserted in emittedprompt and exactassertion,1173otherpostimagesunchanged; existingpolicyhashsame.",
+    "rootIntegration": {
+      "path": ".runtime-correction/validation/stop-method-root-v3-integration-j2kdwxez/readback.json",
+      "sha256": "f0f0313aeb916c7f0ebeeb603414e01e7b841f31f1b49a11528021c3de250cde"
+    },
+    "rootAdmission": {
+      "path": ".runtime-correction/validation/stop-method-root-v3-integration-j2kdwxez/admission.json",
+      "sha256": "50dd60fa8200c740da2877b724559f6d0628c2ee9441803a988d4f98ee9c377c"
+    },
+    "rootActualIntegration": "640e9d/0",
+    "rootFocusedResults": {
+      "path": ".runtime-correction/validation/stop-method-root-v3-integration-j2kdwxez/root-focused-results.json",
+      "sha256": "d3c932fbaf1b25a5abb40f5dec1760706c9e6a196609febf6988931740bf7e3c"
+    },
+    "rootFocusedActual": "414a63/session23349→694ba2/0",
+    "rootFocusedMethodCachePassEachNode18And24": 6,
+    "rootFocusedObserverIncident": {
+      "path": ".runtime-correction/validation/stop-method-root-v3-integration-j2kdwxez/observer-incident.json",
+      "sha256": "04025d61b34fbde985b65dba1bb8757d6d8f398589abbb0b3f18c2e9a46d586c"
+    },
+    "independentV3Peer": {
+      "path": ".runtime-correction/validation/stop-method-v3-independent-peer-v_sw4udb/peer-review.json",
+      "sha256": "e587490d89c62f4caa7309472501d08ef7130a37fecfde37a54e157e1d108c5e"
+    },
+    "currentInstallableArchiveStillE94": true,
+    "currentRealModelActorStillE94": true,
+    "exactCommittedV3FullNaturalCi": "PENDING_FUTURE_SOURCE_PUSH"
   },
   "benchmarkPhoneReadinessCurrent": {
     "status": "FRESH_S11_BASE_REFERENCE_INDEPENDENTLY_VERIFIED_EXPLICIT_ADAPTED_ROUTE",

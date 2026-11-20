@@ -2447,3 +2447,80 @@ test('production Stop closes with historical deviation, keeps the deviation and 
   assert.equal(again.status, 'COMPLETED_WITH_HISTORICAL_DEVIATIONS'); assert.equal(again.feedback, null);
   assert.equal(again.historicalNotices.length, 0);
 });
+
+
+test('original-path review method reaches the existing worker without changing default verdict rules', async t => {
+  for (const mode of ['no-deviation', 'unexamined', 'counterexample', 'new-pass-rejected']) await t.test(mode, async t => {
+    const f = await fixedVersionFixture(t);
+    f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true });
+    const handle = await checkedVersionRun(f, async ({ params, readAll, read, submit }) => {
+      const prompt = params.extraSystemPrompt;
+      assert.equal(typeof prompt, 'string');
+      assert.equal(prompt.match(/trace required success\/error paths/gu)?.length, 1);
+      assert.match(prompt, /actual entry through deciding predicates to the observable result/u);
+      assert.match(prompt, /original allowed inputs and exceptions, even without a runtime example/u);
+      assert.match(prompt, /passing tests or full-file read acknowledgments do not prove behavior/u);
+      assert.match(prompt, /Judge every original condition in context; keep uncertain activation or unexamined required implementation paths UNVERIFIED/u);
+      assert.match(prompt, /This method adds no execution requirement/u);
+      assert.match(prompt, /no deviation attachments; existing known CURRENT, carried PASS and enabled coverage requirements still apply/u);
+      await readAll(); await f.scope(submit);
+      const citeId = (await read(f.source)).details.citation.citeId;
+      if (mode === 'new-pass-rejected') await assert.rejects(submit('submit_review', {
+        taskId: 'M16:R1', verdict: 'PASS', reason: 'An ordinary new item cannot gain carried-PASS authority.', citeIds: [citeId],
+      }), { code: 'TASK_SUBMISSION_INVALID' });
+      if (mode === 'unexamined' || mode === 'new-pass-rejected') await submit('submit_review', {
+        taskId: 'M16:R1', verdict: 'UNVERIFIED', reason: 'The original input-to-result path was not settled.',
+      });
+      if (mode === 'counterexample') await submit('submit_review', {
+        taskId: 'M16:R1', verdict: 'DEVIATION', reason: 'The current return expression supplies the cited counterexample.', citeIds: [citeId],
+      });
+      assert.equal((await submit('finish_stop_review', { summary: 'The scripted protocol choices are recorded, not a model accuracy result.' })).complete, true);
+    });
+    assert.equal(f.calls.length, 1, 'the method adds no worker or retry');
+    assert.equal(handle.reviewCompleted, true);
+    assert.deepEqual(handle.result.metricObjectJudgements.map(row => row.judgement),
+      mode === 'no-deviation' ? [] : [mode === 'counterexample' ? 'DEVIATION' : 'UNVERIFIED']);
+    assert.equal(handle.result.findings.length, 0);
+    await handle.close();
+  });
+});
+
+test('original-path method policy makes the preceding same-Stop cache historical without a new worker', async t => {
+  const f = await frameStopCase(t, { enabled: false, openClaw: false });
+  let taskId, starts = 0;
+  const first = await f.run(async (tools, input) => {
+    starts++; taskId = input.taskId;
+    const { finish } = await startFrameScan(tools);
+    assert.equal((await finish()).complete, true);
+  });
+  assert.equal(first.stop.status, 'NO_DEVIATION_FOUND');
+  const file = path.join(taskDirectory(f.projectRoot, taskId), 'evaluations', `${first.stop.evaluationId}.json`);
+  const saved = JSON.parse(await fs.readFile(file, 'utf8'));
+  const { CONDITIONAL_REVIEW_POLICY_VERSION } = await import('../lib/review-task/task-evidence.mjs');
+  const { SKILL_SOURCE_CONTRACT_VERSION } = await import('../lib/runtime-v2/skill-source.mjs');
+  const { EXPECTED_FILE_BINDING_VERSION } = await import('../lib/runtime-v2/expected-files.mjs');
+  const precedingPolicy = { conditional: CONDITIONAL_REVIEW_POLICY_VERSION, skillSource: SKILL_SOURCE_CONTRACT_VERSION,
+    unverifiedPolicy: 'partial-observations-v2', citationPolicy: 'attachments-v1',
+    expectedFileBinding: EXPECTED_FILE_BINDING_VERSION, historicalToolOutcome: 'complete-tool-result-v2',
+    nativeProcessClaims: 'native-process-claims-v2-original-parts', deviationOnly: true,
+    deviationScope: 'delivered-work-regression-v2', originalRequirementsBasis: true };
+  assert.equal(saved.reviewPolicyVersion, sha256({ ...precedingPolicy, implementationReviewMethod: 'entry-predicate-result-v1' }));
+  const before = await fs.readFile(file);
+  const unchanged = await f.run(() => { throw new Error('same-policy reuse must not start a worker'); });
+  assert.equal(unchanged.stop.reused, true);
+  assert.equal(unchanged.stop.status, 'NO_DEVIATION_FOUND');
+  assert.deepEqual(await fs.readFile(file), before);
+  saved.reviewPolicyVersion = sha256(precedingPolicy);
+  await fs.writeFile(file, JSON.stringify(saved));
+  const historical = await fs.readFile(file);
+  const stale = await f.run(() => { throw new Error('policy invalidation must not start a worker'); });
+  assert.equal(stale.stop.reused, true);
+  assert.equal(stale.stop.status, 'UNVERIFIED');
+  assert.equal(stale.stop.reasonCode, 'STOP_REVIEW_POLICY_STALE');
+  assert.equal(stale.stop.admission, null);
+  assert.equal(stale.stop.review, null);
+  assert.deepEqual(await fs.readFile(file), historical, 'the old receipt is retained rather than rewritten as a current review');
+  assert.equal(starts, 1);
+  const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect(f.sessionId);
+  assert.equal(ledger.used, 0);
+});
