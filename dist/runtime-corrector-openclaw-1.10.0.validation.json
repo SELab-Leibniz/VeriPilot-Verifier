@@ -98,8 +98,8 @@
     },
     "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
     "rerunCancelDispatch": 0,
-    "currentPushHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
-    "currentRunId": 44741048662,
+    "currentPushHead": "fcda29940594332e217374f47c2cf3d94aee0c3b",
+    "currentRunId": 44752935831,
     "precedingCompletedCI": {
       "head": "0e564fb432215154763165ddb6a35c0870fc0736",
       "receipt": {
@@ -147,7 +147,8 @@
       "productionChanges": 0,
       "archiveUnchanged": true,
       "earlierIsolatedAssemblyFailurePreserved": true
-    }
+    },
+    "currentNaturalRunStatus": "IN_PROGRESS"
   },
   "currentPackageRealModelEvaluation": {
     "status": "CLOSED_GRADED_METHOD_NOT_EXERCISED_STOP_UNVERIFIED",
@@ -563,21 +564,21 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "46c9ec539b83ab3d65fc5dc2bc29888d249eacef149346043e02ba43a757c9e8",
+    "htmlSha256": "9d2231abe3ffc384f22be271c31687fe0a1b23022c949a7288fefba830086628",
     "receipt": {
-      "path": ".runtime-correction/validation/report-focused-closed-final-qa-6ajm30cz/receipt.json",
-      "sha256": "8e035add9f01d663433d1944338e9c4ef6ad520b575c191d4a56c1670908fd3c"
+      "path": ".runtime-correction/validation/report-candidate-source-review-49mxhkj9/receipt.json",
+      "sha256": "dd00aa792cda242fb60c27807469c64a28fe749ad8f3aaa48c7df9d76b231410"
     },
     "desktopAndMobileViews": 4,
     "languages": [
-      "English",
-      "Simplified Chinese"
+      "en",
+      "zh-CN"
     ],
     "externalRequests": 0,
     "pageErrors": 0,
     "visualInspection": [
-      "English desktop latest walkthrough",
-      "Simplified Chinese mobile latest walkthrough"
+      "package-en-1200.png",
+      "package-zh-CN-390.png"
     ],
     "provenancePeerStatus": "CLEAR",
     "provenancePeer": {
@@ -599,6 +600,15 @@
       "path": ".runtime-correction/validation/report-closed-eec-current-peer-bugaalzv/peer-review.json",
       "sha256": "c330fd6fb58c0563b82afe5172a073b882571f45ba9b8ffdbf403365d1878cad",
       "scope": "Exact closed-run/independent-grade/latest-CI report before this additive pointer; prior snapshots retain their scoped peers"
+    },
+    "precedingReportQa": {
+      "path": ".runtime-correction/validation/report-focused-closed-final-qa-6ajm30cz/receipt.json",
+      "sha256": "8e035add9f01d663433d1944338e9c4ef6ad520b575c191d4a56c1670908fd3c"
+    },
+    "candidatePrivateRevisionPeer": {
+      "path": ".runtime-correction/validation/report-candidate-private-peer-uu1n_j_g/peer-review.json",
+      "sha256": "d940287935549b1deea9acbc410781db7d2965f0235603d0eb28d0227bb7d5ba",
+      "scope": "Exact HTML/current report metadata before this additive pointer, receipt-shape preservation and second navigation finding detail; candidate remains private/unreleased."
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -657,5 +667,21 @@
       "path": ".runtime-correction/validation/public-taskpack-toolchain-path-hrtphs1x/source-hold.json",
       "sha256": "23ef8d5b171bba9328e89b8c8ef7ae05b598dd67dfa8ab6c748326cfb8e897e0"
     }
+  },
+  "privateNextRevision": {
+    "status": "FULL_SUITE_PASSED_SOURCE_REVIEW_FOUND_UNTESTED_NAVIGATION_BRANCH_RELEASE_HELD",
+    "sourceHold": ".runtime-correction/validation/implementation-challenge-sampled-is4pso6u/source-hold.json",
+    "sourceHoldSha256": "b149294d45e69798f140711e5c2d64d3a61eae2eea9de86c3c70331fff11b38f",
+    "fullSuiteReceipt": ".runtime-correction/validation/sampled-integrated-full-v2-kvnonmpu/full-suite-independent-receipt.json",
+    "fullSuiteReceiptSha256": "236b090d3de751cf8b038b4e610e74d6bfcccfcccf56c44b63f3ff2d6b4408f0",
+    "files": 396,
+    "pass": 4975,
+    "skip": 33,
+    "fail": 0,
+    "timeouts": 0,
+    "sourceReviewFinding": "Legacy withPendingNavigation locally defines pending as a function but new requiredProduction branch calls pending.push; catch silently loses navigation. Compact pendingRows iterates requiredProduction Map entries instead of keys, yielding tuple IDs. Correct both navigation branches before any promotion; acceptance logic remains unchanged.",
+    "currentArtifactIncludesTheseChanges": false,
+    "modelTrialPerformed": false,
+    "qualityBenefitEstablished": false
   }
 }
