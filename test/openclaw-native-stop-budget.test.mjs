@@ -152,9 +152,23 @@ test('a retried native turn retains its own persisted user input while later que
       assert.equal(durable.sessionKey, identity.sessionKey); assert.equal(durable.ownerPid, process.pid);
       assert.equal(durable.occurrenceId, record.occurrenceId); assert.equal(durable.enabledRevision ?? 0, identity.controlRevision);
       assert.equal(durable.status, 'SETTLED'); assert.equal(durable.reviewStatus, 'NO_DEVIATION_FOUND');
-      assert(Number.isFinite(durable.assessmentCompletedAt) && durable.assessmentCompletedAt <= durable.deadlineAt
-        && durable.deadlineAt <= originalDeadline && durable.settledAt <= originalDeadline,
-      'Native completion must belong to the original unexpired phase');
+      const timingChecks = {
+        finiteAssessment: Number.isFinite(durable.assessmentCompletedAt),
+        finiteNativeDeadline: Number.isFinite(durable.deadlineAt),
+        finiteOriginalDeadline: Number.isFinite(originalDeadline),
+        finiteSettlement: Number.isFinite(durable.settledAt),
+        assessmentWithinNative: durable.assessmentCompletedAt <= durable.deadlineAt,
+        assessmentWithinOriginal: durable.assessmentCompletedAt <= originalDeadline,
+        settlementWithinOriginal: durable.settledAt <= originalDeadline
+      };
+      const timingValid = Object.values(timingChecks).every(Boolean);
+      if (!timingValid) t.diagnostic('NATIVE_COMPLETION_TIMING ' + JSON.stringify({
+        runId, description, checks: timingChecks,
+        timestamps: Object.fromEntries(Object.entries({ assessmentCompletedAt: durable.assessmentCompletedAt,
+          nativeDeadlineAt: durable.deadlineAt, originalDeadlineAt: originalDeadline, settledAt: durable.settledAt })
+          .map(([key, value]) => [key, typeof value === 'number' ? Number.isFinite(value) ? value : String(value) : typeof value]))
+      }));
+      assert(timingValid, 'Native completion must belong to the original unexpired phase');
       const task = await findTask({ projectRoot: f.root, sessionId: identity.sessionId });
       assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
       assert.equal(task.verification.evaluationId, durable.evaluationId);

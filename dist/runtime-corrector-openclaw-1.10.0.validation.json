@@ -161,77 +161,77 @@
     "releaseParentStockUnexecutedScopeNotRetagged": true
   },
   "remoteCI": {
-    "currentUpdatedSource": "LOCAL_COMPLETION_OBSERVER_TEST_FIX_QUALIFIED_NEW_CI_PENDING",
+    "currentUpdatedSource": "TEST_ONLY_COMPLETION_ASSERTION_FOLLOWUP_APPLIED_LOCALLY_NEXT_CI_PENDING",
     "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
     "currentArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
-    "currentSourceNaturalRunStatus": "UPDATED_TEST_REVISION_PENDING_NEXT_NATURAL_CI",
+    "currentSourceNaturalRunStatus": "LATEST_CHANGED_TEST_REVISION_FAILED_LOCAL_TEST_FOLLOWUP_PENDING_NEW_CI",
     "newSourceRemoteQualified": false,
-    "currentPushHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
-    "currentRunId": 44791681073,
+    "currentPushHead": "89df029c4e347edcee1dc88568319df1051d6f33",
+    "currentRunId": 44801566293,
     "currentRunAttempt": 1,
-    "currentNaturalRunStatus": "LAST_COMPLETED_ALL7_PASS_LOCAL_TEST_PATCH_PENDING_NEW_CI",
-    "testJobsPassed": 7,
-    "testJobsFailed": 0,
+    "currentNaturalRunStatus": "COMPLETED_6_PASS_1_MACOS_FAILURE_0_CANCEL",
+    "testJobsPassed": 6,
+    "testJobsFailed": 1,
     "testJobsCancelled": 0,
     "publicationJob": "SKIPPED",
     "latestCompletedTestedCurrentRuntime": true,
-    "latestCompletedQualifiesCurrentRuntime": true,
-    "latestCompletedHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
-    "latestCompletedRunId": 44791681073,
+    "latestCompletedQualifiesCurrentRuntime": false,
+    "latestCompletedHead": "89df029c4e347edcee1dc88568319df1051d6f33",
+    "latestCompletedRunId": 44801566293,
     "latestCompletedReceipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/terminal-receipt.json",
-      "sha256": "d2521bcc40de040d8aa7c3e68d30c9e039e8b98505d0115aa9a1516936a8d2e1"
+      "path": ".runtime-correction/validation/ci-fix/post-89df-phase-natural-JpsX7i/terminal-receipt.json",
+      "sha256": "ea545462c99772fce6ff22a761261e0f1457a67873dd4e79bb8fd0c779ab84a7"
     },
     "latestCompletedReadback": {
-      "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/final-readback.json",
-      "sha256": "da615bc4b0b6e4ea461dedfb24374ea5c25b12f40d8879380bd83cbad0a2ced1"
+      "path": ".runtime-correction/validation/ci-fix/post-89df-phase-natural-JpsX7i/final-readback.json",
+      "sha256": "938ac469ce3c19249663416ed50ba1713a5486c08888d99b5749866a8c927d57"
     },
-    "latestCompletedResult": "7_PASS_0_FAIL_0_CANCEL_TESTS_UNCHANGED_FROM_PRECEDING_FAILED_RUN",
+    "latestCompletedResult": "6_PASS_1_MACOS_NEW_CONJUNCTION_FAIL_0_CANCEL",
     "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
     "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
-    "latestCompletedHealthy": true,
-    "latestPushHealthy": true,
+    "latestCompletedHealthy": false,
+    "latestPushHealthy": false,
     "updatedTestRevisionRemoteQualified": false,
     "currentJobs": [
       {
-        "id": 136480694545,
+        "id": 136514748189,
         "name": "Node 18 / ubuntu-latest",
         "status": "completed",
         "conclusion": "success"
       },
       {
-        "id": 136480694953,
-        "name": "Node 18 / macos-latest",
-        "status": "completed",
-        "conclusion": "success"
-      },
-      {
-        "id": 136480694989,
+        "id": 136514748280,
         "name": "Node 24 / macos-latest / shard 1/1",
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "failure"
       },
       {
-        "id": 136480695057,
-        "name": "Node 24 / windows-latest / shard 1/2",
+        "id": 136514748303,
+        "name": "Node 18 / windows-latest",
         "status": "completed",
         "conclusion": "success"
       },
       {
-        "id": 136480695068,
-        "name": "Node 24 / windows-latest / shard 2/2",
-        "status": "completed",
-        "conclusion": "success"
-      },
-      {
-        "id": 136480695179,
+        "id": 136514748349,
         "name": "Node 24 / ubuntu-latest / shard 1/1",
         "status": "completed",
         "conclusion": "success"
       },
       {
-        "id": 136480695249,
-        "name": "Node 18 / windows-latest",
+        "id": 136514748403,
+        "name": "Node 18 / macos-latest",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 136514748417,
+        "name": "Node 24 / windows-latest / shard 1/2",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 136514748439,
+        "name": "Node 24 / windows-latest / shard 2/2",
         "status": "completed",
         "conclusion": "success"
       }
@@ -239,33 +239,33 @@
     "completeOfficialLogs": 7,
     "allSevenExecutedJobsCheckoutAndRunnerCleanupVerified": true,
     "currentPlatformResults": {
-      "136480694989": {
+      "136514748280": {
         "tests": 5021,
-        "pass": 4988,
-        "fail": 0,
+        "pass": 4987,
+        "fail": 1,
         "cancelled": 0,
         "skipped": 33
       },
-      "136480695057": {
+      "136514748349": {
+        "tests": 5021,
+        "pass": 4984,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 37
+      },
+      "136514748417": {
         "tests": 2577,
         "pass": 2557,
         "fail": 0,
         "cancelled": 0,
         "skipped": 20
       },
-      "136480695068": {
+      "136514748439": {
         "tests": 2442,
         "pass": 2417,
         "fail": 0,
         "cancelled": 0,
         "skipped": 25
-      },
-      "136480695179": {
-        "tests": 5021,
-        "pass": 4984,
-        "fail": 0,
-        "cancelled": 0,
-        "skipped": 37
       }
     },
     "inventory": {
@@ -443,14 +443,14 @@
         "stockNodeVersion": "26.13.1",
         "node24WholePassIsObservedScopeNotDeclaredEngineCompliance": true
       },
-      "remoteVerification": "CLOSED_53AC_ALL7PASS_UNCHANGED_TEST_SOURCE",
+      "remoteVerification": "TWO_EARLIER_REPAIRED_FILES_PASS_LATEST_NODE24_PLATFORM_JOBS",
       "remoteReceipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/terminal-receipt.json",
-        "sha256": "d2521bcc40de040d8aa7c3e68d30c9e039e8b98505d0115aa9a1516936a8d2e1"
+        "path": ".runtime-correction/validation/ci-fix/post-89df-phase-natural-JpsX7i/terminal-receipt.json",
+        "sha256": "ea545462c99772fce6ff22a761261e0f1457a67873dd4e79bb8fd0c779ab84a7"
       }
     },
     "completionObserverRepair": {
-      "status": "LOCALLY_QUALIFIED_SINGLE_TEST_FILE_PENDING_NEW_NATURAL_CI",
+      "status": "PRECEDING_LOCAL_PHASE_REPAIR_NEW_REVISION_FAILED_SECOND_TASK_CONJUNCTION",
       "path": "test/openclaw-native-stop-budget.test.mjs",
       "postimageSha256": "a7ea8b5e09f903540406ed220a24303cfc81c9b4898d6e4de55a0bcd7450ba8e",
       "patch": {
@@ -534,69 +534,156 @@
       "historicalWindowsUniqueCauseProven": false,
       "productionAvailabilityImprovementProven": false,
       "wholeNode18SdkSupportClaim": false,
-      "repeatFull397LocalOrRebuildArchive": false
+      "repeatFull397LocalOrRebuildArchive": false,
+      "newAssertionFollowup": {
+        "status": "LOCALLY_QUALIFIED_APPLIED_TEST_ONLY_PENDING_NEW_NATURAL_CI",
+        "path": "test/openclaw-native-stop-budget.test.mjs",
+        "postimageSha256": "1213450dc4b0f029178cd47af9764eb33d1bba305ded0a7e86a77ca0206a148e",
+        "patch": {
+          "path": ".runtime-correction/validation/ci-fix/89df-native-phase-predicate-fna035j9/candidate.patch",
+          "sha256": "867312ccf74ac82ce4bb8b230631e1c27160bff991400d3150f5ff5196b6a72f"
+        },
+        "qualification": {
+          "path": ".runtime-correction/validation/ci-fix/89df-native-phase-predicate-fna035j9/qualification.json",
+          "sha256": "49a7e37b6e09c14976fd9441f39e41523629c0ba56c3b993b87a7125153d576d"
+        },
+        "verification": {
+          "path": ".runtime-correction/validation/ci-fix/89df-native-phase-predicate-fna035j9/verification.json",
+          "sha256": "4dee865bc5a98f1f9afa536d6dd3eb255c870742a845dd9c2e8fe2359fde25fd"
+        },
+        "readback": {
+          "path": ".runtime-correction/validation/ci-fix/89df-native-phase-predicate-fna035j9/final-readback.json",
+          "sha256": "5b63a8fe24e66f66a92e8021238494f272825b14d3616eb10f0d40ea02da4c5a"
+        },
+        "rootIntegration": {
+          "path": ".runtime-correction/validation/root-89df-predicate-integration-cs93vcm4/integration.json",
+          "sha256": "d934a044d1d27998df3fcf0cbc1c0c35a1da67ee4a4021824d1da41961dcd497"
+        },
+        "independentPeer": {
+          "path": ".runtime-correction/validation/ci-fix/89df-native-predicate-peer-h_o7xdji/peer-review.json",
+          "sha256": "31877fc47a44403ef2b3375605ad8fc4ec6302baa980b615aa089962cb159364"
+        },
+        "localNode24": {
+          "controlledTests": 3,
+          "wholeAffectedFileTests": 10,
+          "fail": 0,
+          "sourceRange": "Observed local Node24 only; not new all-platform CI or whole-source rerun."
+        },
+        "sourceMechanism": "A remaining budget is captured before the child reads Date.now; a strict child-deadline <= previously captured parent-deadline relation is unsupported and can drift. The actual historical failed conjunct was not logged.",
+        "historicalFailedConjunct": "UNKNOWN",
+        "runtimeHelperArchiveChanges": 0,
+        "deadlineOrBudgetChanges": 0,
+        "newTimingToleranceOrRenewal": false,
+        "newCrossPlatformCI": "PENDING_NEXT_FEATURE_PUSH"
+      }
     },
     "precedingCompletedRun": {
-      "currentUpdatedSource": "PUSHED_TEST_FIXTURES_NATURAL_CI_CLOSED_6PASS_1WINDOWSFAIL",
+      "currentUpdatedSource": "LOCAL_COMPLETION_OBSERVER_TEST_FIX_QUALIFIED_NEW_CI_PENDING",
       "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
       "currentArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
-      "currentSourceNaturalRunStatus": "COMPLETED_FAILURE",
+      "currentSourceNaturalRunStatus": "UPDATED_TEST_REVISION_PENDING_NEXT_NATURAL_CI",
       "newSourceRemoteQualified": false,
-      "currentPushHead": "5397dfcc663529be1310c57f6dc037c72d5161d9",
-      "currentRunId": 44788266384,
+      "currentPushHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
+      "currentRunId": 44791681073,
       "currentRunAttempt": 1,
-      "currentNaturalRunStatus": "COMPLETED_FAILURE_NOT_REMOTE_QUALIFIED",
-      "testJobsPassed": 6,
-      "testJobsFailed": 1,
+      "currentNaturalRunStatus": "LAST_COMPLETED_ALL7_PASS_LOCAL_TEST_PATCH_PENDING_NEW_CI",
+      "testJobsPassed": 7,
+      "testJobsFailed": 0,
       "testJobsCancelled": 0,
+      "publicationJob": "SKIPPED",
+      "latestCompletedTestedCurrentRuntime": true,
+      "latestCompletedQualifiesCurrentRuntime": true,
+      "latestCompletedHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
+      "latestCompletedRunId": 44791681073,
+      "latestCompletedReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/terminal-receipt.json",
+        "sha256": "d2521bcc40de040d8aa7c3e68d30c9e039e8b98505d0115aa9a1516936a8d2e1"
+      },
+      "latestCompletedReadback": {
+        "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/final-readback.json",
+        "sha256": "da615bc4b0b6e4ea461dedfb24374ea5c25b12f40d8879380bd83cbad0a2ced1"
+      },
+      "latestCompletedResult": "7_PASS_0_FAIL_0_CANCEL_TESTS_UNCHANGED_FROM_PRECEDING_FAILED_RUN",
+      "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+      "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
+      "latestCompletedHealthy": true,
+      "latestPushHealthy": true,
+      "updatedTestRevisionRemoteQualified": false,
       "currentJobs": [
         {
-          "id": 136468819352,
+          "id": 136480694545,
+          "name": "Node 18 / ubuntu-latest",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 136480694953,
           "name": "Node 18 / macos-latest",
           "status": "completed",
           "conclusion": "success"
         },
         {
-          "id": 136468819354,
-          "name": "Node 24 / windows-latest / shard 2/2",
-          "status": "completed",
-          "conclusion": "success"
-        },
-        {
-          "id": 136468819464,
-          "name": "Node 24 / windows-latest / shard 1/2",
-          "status": "completed",
-          "conclusion": "failure"
-        },
-        {
-          "id": 136468819511,
-          "name": "Node 18 / windows-latest",
-          "status": "completed",
-          "conclusion": "success"
-        },
-        {
-          "id": 136468819513,
+          "id": 136480694989,
           "name": "Node 24 / macos-latest / shard 1/1",
           "status": "completed",
           "conclusion": "success"
         },
         {
-          "id": 136468819667,
+          "id": 136480695057,
+          "name": "Node 24 / windows-latest / shard 1/2",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 136480695068,
+          "name": "Node 24 / windows-latest / shard 2/2",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 136480695179,
           "name": "Node 24 / ubuntu-latest / shard 1/1",
           "status": "completed",
           "conclusion": "success"
         },
         {
-          "id": 136468819880,
-          "name": "Node 18 / ubuntu-latest",
+          "id": 136480695249,
+          "name": "Node 18 / windows-latest",
           "status": "completed",
           "conclusion": "success"
         }
       ],
-      "snapshot": {
-        "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/official-jobs.json",
-        "sha256": "e77352a8ade73fe2ca3ae02c04b658cefcc46517a716c5559e32dc4a0146cf3a",
-        "terminal": true
+      "completeOfficialLogs": 7,
+      "allSevenExecutedJobsCheckoutAndRunnerCleanupVerified": true,
+      "currentPlatformResults": {
+        "136480694989": {
+          "tests": 5021,
+          "pass": 4988,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 33
+        },
+        "136480695057": {
+          "tests": 2577,
+          "pass": 2557,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 20
+        },
+        "136480695068": {
+          "tests": 2442,
+          "pass": 2417,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 25
+        },
+        "136480695179": {
+          "tests": 5021,
+          "pass": 4984,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 37
+        }
       },
       "inventory": {
         "fullFileCount": 397,
@@ -609,23 +696,20 @@
         "windowsCompletedFiles": 397,
         "windowsTotals": {
           "tests": 5019,
-          "pass": 4973,
-          "fail": 1,
+          "pass": 4974,
+          "fail": 0,
           "skip": 45,
           "cancelled": 0
         },
         "fileTimeouts": 0
       },
       "rerunCancelDispatchByObserver": 0,
-      "node18Scope": "Selected17artifact/111compatibilitychecks; not whole143-testSDKfile or generalNode18hostsupport.",
+      "unchangedTestPassingIsNotAFixOrHistoricalCauseProof": true,
       "localFullSuiteIsSeparateEvidence": true,
-      "productionDeadlineOrBudgetChanges": 0,
-      "repairStatus": "Both previously repaired test files passed this natural run. A distinct native-stop-budget first-task-completion observation failed on Windows; cause is under investigation, with no rerun or production deadline change.",
-      "reportPublicationStatus": "Report records closed5397CI six-pass/one-fail. This publication changes only report and evidence metadata.",
-      "updatedTestRevisionNaturalRunStatus": "COMPLETED_FAILURE_6PASS_1WINDOWSFAIL",
+      "node18Scope": "Selected17artifact/111compatibilitychecks; not whole143-testSDKfile or generalNode18hostsupport.",
       "testFixtureFollowup": {
         "commit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
-        "status": "PUSHED_BOTH_REPAIRED_FILES_PASSED_NATURAL_CI_DISTINCT_FAILURE_REMAINS",
+        "status": "BOTH_PRIOR_REPAIRED_FILES_PASSED_5397_AND_53AC",
         "paths": [
           "test/post-run-scenarios.test.mjs",
           "test/stop-baseline-task.test.mjs"
@@ -776,417 +860,189 @@
           "stockNodeVersion": "26.13.1",
           "node24WholePassIsObservedScopeNotDeclaredEngineCompliance": true
         },
-        "remoteVerification": "CLOSED_5397_BOTH_REPAIRED_FILES_PASS_WHOLE_RUN_6PASS_1FAIL",
+        "remoteVerification": "CLOSED_53AC_ALL7PASS_UNCHANGED_TEST_SOURCE",
         "remoteReceipt": {
-          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/terminal-receipt.json",
-          "sha256": "9f6b62cf2e9917d15f6becc9f47fcf8f91f17fd9f113df4583b18b7365caac5a"
+          "path": ".runtime-correction/validation/ci-fix/post-53ac-report-natural-9vjmbfeb/terminal-receipt.json",
+          "sha256": "d2521bcc40de040d8aa7c3e68d30c9e039e8b98505d0115aa9a1516936a8d2e1"
         }
       },
+      "completionObserverRepair": {
+        "status": "LOCALLY_QUALIFIED_SINGLE_TEST_FILE_PENDING_NEW_NATURAL_CI",
+        "path": "test/openclaw-native-stop-budget.test.mjs",
+        "postimageSha256": "a7ea8b5e09f903540406ed220a24303cfc81c9b4898d6e4de55a0bcd7450ba8e",
+        "patch": {
+          "path": ".runtime-correction/validation/ci-fix/5397-native-budget-phase-its6qwqg/candidate.patch",
+          "sha256": "2b12705e14880870b6b1c4fb6568ebaec969e15be255a6b2486549d0143488c8"
+        },
+        "sourceHold": {
+          "path": ".runtime-correction/validation/ci-fix/5397-native-budget-phase-its6qwqg/source-hold.json",
+          "sha256": "7aaf55e0bd31bca139082df5b5a3c7f039dc55b6da931a56f82cb977c5665406"
+        },
+        "independentPeer": {
+          "path": ".runtime-correction/validation/ci-fix/5397-native-budget-independent-x0es04f9/peer-review.json",
+          "sha256": "7285c3e76985ce057e636729802b57e78e75c832f44297124f908775293e9f69"
+        },
+        "rootIntegration": {
+          "path": ".runtime-correction/validation/root-5397-phase-fixture-integration-z6palb_p/integration.json",
+          "sha256": "c670ae8828aa7546d9e4ad5724d5b003fe6f8331c233378d72a3ecd1a48cf32a"
+        },
+        "oldExpectedFailureWitness": {
+          "path": ".runtime-correction/validation/ci-fix/5397-native-budget-diagnostics-7ficlvad/node24-witness/receipt.json",
+          "sha256": "356c9a2d89a081c2ae0592d5ee3908e124a1ce23e991833483f82e192c812b03"
+        },
+        "actualProducerBoundaryControls": {
+          "path": ".runtime-correction/validation/ci-fix/5397-native-budget-diagnostics-7ficlvad/node24-boundaries/receipt.json",
+          "sha256": "b1bf3b8ad79de2f0f58ef04c3b47a78b2bd83fb9128ba902e39c34faa3958cdd"
+        },
+        "candidateControls": {
+          "witness": {
+            "receipt": {
+              "path": ".runtime-correction/validation/ci-fix/5397-native-budget-phase-its6qwqg/node24-witness/receipt.json",
+              "sha256": "5d5882678e9cd32765af77785d804e5975ad018a79ff2b7b867040bd87ef0e49"
+            },
+            "counts": {
+              "tests": 1,
+              "pass": 1,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0
+            },
+            "node": "24.14.1",
+            "scope": "observedsourcechecks; not vendorSDK engine compliance"
+          },
+          "boundaries": {
+            "receipt": {
+              "path": ".runtime-correction/validation/ci-fix/5397-native-budget-phase-its6qwqg/node24-boundaries/receipt.json",
+              "sha256": "54cfd2aaff6e8b48a2888a1ec96c3ef102d2b0245e6ec8565d0af511ee6f76ff"
+            },
+            "counts": {
+              "tests": 3,
+              "pass": 3,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0
+            },
+            "node": "24.14.1",
+            "scope": "observedsourcechecks; not vendorSDK engine compliance"
+          },
+          "whole-file": {
+            "receipt": {
+              "path": ".runtime-correction/validation/ci-fix/5397-native-budget-phase-its6qwqg/node24-whole-file/receipt.json",
+              "sha256": "e9f20ad51c2068fb38733e860a9d59357bb9760cf06c2f8a808d5f4bd609c3f6"
+            },
+            "counts": {
+              "tests": 10,
+              "pass": 10,
+              "fail": 0,
+              "cancelled": 0,
+              "skipped": 0
+            },
+            "node": "24.14.1",
+            "scope": "observedsourcechecks; not vendorSDK engine compliance"
+          }
+        },
+        "originalRealAdmissionMs": 10000,
+        "originalPhaseBudgetMs": 30000,
+        "phaseDeadlineCapturedOnce": true,
+        "bothCompletionWaitsUseSameRunDurableJoins": true,
+        "originalTailAssertionsPreserved": true,
+        "runtimeSharedHelperOrArchiveChanges": 0,
+        "productionBudgetChanges": 0,
+        "historicalWindowsUniqueCauseProven": false,
+        "productionAvailabilityImprovementProven": false,
+        "wholeNode18SdkSupportClaim": false,
+        "repeatFull397LocalOrRebuildArchive": false
+      },
       "precedingCompletedRun": {
-        "currentUpdatedSource": "LATEST_COMPLETED_369_CI_FAILED_TWO_LOCAL_TEST_FIXTURE_REPAIRS_TARGETED_PENDING_NEW_CI",
+        "currentUpdatedSource": "PUSHED_TEST_FIXTURES_NATURAL_CI_CLOSED_6PASS_1WINDOWSFAIL",
         "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+        "currentArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
         "currentSourceNaturalRunStatus": "COMPLETED_FAILURE",
         "newSourceRemoteQualified": false,
-        "latestCompletedTestedCurrentRuntime": true,
-        "latestCompletedQualifiesCurrentRuntime": false,
-        "latestCompletedHead": "369bf5921bcbfbe9a3e9a650a21eeb7a3dd702d0",
-        "latestCompletedRunId": 44779066471,
-        "latestCompletedReceipt": {
-          "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/terminal-receipt.json",
-          "sha256": "c519b58313e5697444e2efae2ecab7987960e059eb7c6a19ad849eab03101dac"
+        "currentPushHead": "5397dfcc663529be1310c57f6dc037c72d5161d9",
+        "currentRunId": 44788266384,
+        "currentRunAttempt": 1,
+        "currentNaturalRunStatus": "COMPLETED_FAILURE_NOT_REMOTE_QUALIFIED",
+        "testJobsPassed": 6,
+        "testJobsFailed": 1,
+        "testJobsCancelled": 0,
+        "currentJobs": [
+          {
+            "id": 136468819352,
+            "name": "Node 18 / macos-latest",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 136468819354,
+            "name": "Node 24 / windows-latest / shard 2/2",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 136468819464,
+            "name": "Node 24 / windows-latest / shard 1/2",
+            "status": "completed",
+            "conclusion": "failure"
+          },
+          {
+            "id": 136468819511,
+            "name": "Node 18 / windows-latest",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 136468819513,
+            "name": "Node 24 / macos-latest / shard 1/1",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 136468819667,
+            "name": "Node 24 / ubuntu-latest / shard 1/1",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 136468819880,
+            "name": "Node 18 / ubuntu-latest",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "snapshot": {
+          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/official-jobs.json",
+          "sha256": "e77352a8ade73fe2ca3ae02c04b658cefcc46517a716c5559e32dc4a0146cf3a",
+          "terminal": true
         },
-        "latestCompletedReadback": {
-          "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/final-readback.json",
-          "sha256": "896d7befbda2ba00ad21b42009aa9a6777600b66a86524d879b9b3cabc6f0ac7"
-        },
-        "latestCompletedResult": "4_PASS_2_WINDOWS_REGRESSION_FAIL_1_NODE18_MAC_CANCELLED_BEFORE_RECORDED_TESTS",
-        "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
-        "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
-        "latestCompletedHealthy": false,
-        "latestPushHealthy": false,
-        "lastVerifiedPushHealthy": false,
-        "currentNaturalRunStatus": "LATEST_COMPLETED_369_FAILED_UPDATED_FIXTURE_REVISION_CI_PENDING_NOT_PUSHED",
-        "currentPushHead": "369bf5921bcbfbe9a3e9a650a21eeb7a3dd702d0",
-        "currentRunId": 44779066471,
-        "testJobsPassed": 4,
-        "testJobsFailed": 2,
-        "testJobsCancelled": 1,
-        "publicationJob": "SKIPPED",
-        "unresolvedFailureLeaves": 2,
-        "failedTapTests": 2,
-        "failureLeafCases": 2,
-        "failureProjection": {
-          "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/failure-projection.json",
-          "sha256": "c963548933764069cadbbfaef3c8bc6a99a6d791ef7708433b3f3090a53fcdce"
-        },
-        "windowsClosedProjection": {
-          "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/windows-closed-failure-projection.json",
-          "sha256": "ea6815261ebfcdd603c112776963cb80add17ce1bdce25c179ee37c3ef04a2cb"
-        },
-        "allSevenJobMetadataRetained": true,
-        "completeOfficialLogs": 6,
         "inventory": {
           "fullFileCount": 397,
           "fullFileListSha256": "db9ad7386a9daef8ae689257cef7e1276344ce6333a3059303bc9dc6fec339e4",
+          "windowsDisjointUnionMatchesFullGitInventory": true,
           "windowsActualCounts": [
             199,
             198
           ],
-          "windowsDisjointUnionFiles": 397,
           "windowsCompletedFiles": 397,
+          "windowsTotals": {
+            "tests": 5019,
+            "pass": 4973,
+            "fail": 1,
+            "skip": 45,
+            "cancelled": 0
+          },
           "fileTimeouts": 0
         },
-        "currentPlatformResults": {
-          "macOSNode24": {
-            "files": 397,
-            "pass": 4988,
-            "skip": 33,
-            "fail": 0,
-            "cancelled": 0,
-            "fileTimeouts": 0
-          },
-          "ubuntuNode24": {
-            "files": 397,
-            "pass": 4984,
-            "skip": 37,
-            "fail": 0,
-            "cancelled": 0,
-            "fileTimeouts": 0
-          },
-          "windowsNode24": {
-            "shards": [
-              199,
-              198
-            ],
-            "disjointUnionFiles": 397,
-            "tests": 5019,
-            "pass": 4972,
-            "skip": 45,
-            "fail": 2,
-            "cancelled": 0,
-            "fileTimeouts": 0
-          },
-          "node18": {
-            "windows": {
-              "artifactPass": 17,
-              "compatibilityTests": 111,
-              "compatibilityPass": 110,
-              "compatibilitySkip": 1,
-              "fail": 0
-            },
-            "ubuntu": {
-              "artifactPass": 17,
-              "compatibilityTests": 111,
-              "compatibilityPass": 109,
-              "compatibilitySkip": 2,
-              "fail": 0
-            },
-            "macOS": {
-              "status": "CANCELLED_WHILE_PREVIOUSLY_QUEUED",
-              "recordedSteps": 0,
-              "testExecution": "NOT_OBSERVED",
-              "checkoutAndCleanupCredit": false,
-              "logEndpoint": "404_BLOB_NOT_FOUND",
-              "logAbsenceReceipt": {
-                "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/job-136436594568.log-unavailable.connector.json",
-                "sha256": "f63a4402277933b32fd841487966d87ad4a447d0ab588bebc82b7a523aa72841"
-              },
-              "cancellationCause": "UNKNOWN"
-            }
-          }
-        },
-        "failureLeaves": [
-          {
-            "jobId": 136436594295,
-            "file": "test/post-run-scenarios.test.mjs",
-            "case": 18,
-            "name": "24 sessions keep FIFO task order, bounded reviews and isolated task mutations",
-            "observed": "Expected no recorded errors; actual secondary finish raised TASK_STATE_LOCK_TIMEOUT.",
-            "configuredSecondaryFinishLockWaitMs": 3000,
-            "observedCaseDurationMs": 45004.0579,
-            "primaryCause": "UNPROVEN",
-            "productVersusFixtureCause": "UNPROVEN_TEST_FIXTURE_FOLLOWUP_DOES_NOT_ESTABLISH_UNIQUE_HISTORICAL_CAUSE",
-            "testOnlyFixtureFollowupScopedQualified": true
-          },
-          {
-            "jobId": 136436595074,
-            "file": "test/stop-baseline-task.test.mjs",
-            "case": 111,
-            "name": "critical-path candidate preview and explicit revision preserve source reads and charge one repair across lost ACK",
-            "observed": "Task deadline exhausted / REVIEWER_DEADLINE",
-            "configuredRoleDeadlineMs": 20000,
-            "observedCaseDurationMs": 25478.5043,
-            "primaryCause": "UNPROVEN",
-            "productVersusFixtureCause": "UNPROVEN_TEST_FIXTURE_FOLLOWUP_DOES_NOT_ESTABLISH_UNIQUE_HISTORICAL_CAUSE",
-            "testOnlyFixtureFollowupScopedQualified": true
-          }
-        ],
         "rerunCancelDispatchByObserver": 0,
+        "node18Scope": "Selected17artifact/111compatibilitychecks; not whole143-testSDKfile or generalNode18hostsupport.",
         "localFullSuiteIsSeparateEvidence": true,
-        "precedingRuntimeCI": {
-          "currentUpdatedSource": "FB24_LOCAL_SOURCE_PACKAGE_STOCK_QUALIFIED_REMOTE_PENDING",
-          "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
-          "currentSourceNaturalRunStatus": "NOT_PUSHED_NO_CURRENT_SOURCE_RUN",
-          "newSourceRemoteQualified": false,
-          "latestCompletedQualifiesCurrentRuntime": false,
-          "latestCompletedHead": "d4889fa07d9b1ed2a390b5a4c8396da53d363a67",
-          "latestCompletedRunId": 44771891667,
-          "latestCompletedReceipt": {
-            "path": ".runtime-correction/validation/ci-fix/post-d488-report-natural-6tjs9q2m/terminal-receipt.json",
-            "sha256": "787d8df26d5caee27f676ae67ac46b3494f2c466fbb75341f1c7f8d6ce01b4f0"
-          },
-          "latestCompletedResult": "7/7_PASS_PRECEDING_RUNTIME_396_FILES_WIN198_PLUS198",
-          "latestCompletedSourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
-          "latestCompletedArchiveSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
-          "latestCompletedHealthy": true,
-          "latestPushHealthy": true,
-          "currentNaturalRunStatus": "FB24_SOURCE_ARCHIVE_AND_PUBLICATION_PUSH_PENDING",
-          "expectedCurrentFullFileCount": 397,
-          "inventory": {
-            "scope": "Latest completed d488 preceding-runtime run only",
-            "fullFileCount": 396,
-            "windows198Plus198DisjointUnion396": true
-          },
-          "currentPlatformResults": {
-            "macOSNode24": {
-              "files": 396,
-              "pass": 4977,
-              "skip": 33,
-              "fail": 0
-            },
-            "ubuntuNode24": {
-              "files": 396,
-              "pass": 4973,
-              "skip": 37,
-              "fail": 0
-            },
-            "windowsNode24": {
-              "shards": [
-                198,
-                198
-              ],
-              "disjointUnionFiles": 396,
-              "pass": 4963,
-              "skip": 45,
-              "fail": 0,
-              "timeouts": 0
-            },
-            "node18": {
-              "artifactEachJob": 17,
-              "crossHostCompatibilityEachJob": 111
-            }
-          },
-          "lastVerifiedPushHealthy": true,
-          "currentPushHead": "d4889fa07d9b1ed2a390b5a4c8396da53d363a67",
-          "currentRunId": 44771891667,
-          "rerunCancelDispatch": 0,
-          "localFullSuiteIsSeparateEvidence": true,
-          "precedingRuntimeCI": {
-            "currentUpdatedSource": "CURRENT_SAMPLED_RUNTIME_AND_FIXTURE_NATURAL_CI_ALL_SEVEN_PASSED",
-            "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
-            "currentSourceNaturalRunStatus": "COMPLETED_SUCCESS",
-            "latestCompletedHead": "03d691182d495ee272d984bad0e1cd3d5cc7ab86",
-            "latestCompletedRunId": 44760585910,
-            "latestCompletedReceipt": {
-              "path": ".runtime-correction/validation/ci-fix/post-03d-sampled-natural-s4dmqwza/terminal-receipt.json",
-              "sha256": "abb83aea1c9301b0ba64f5f1214dd71d37fb749c238225c5dd480b5827d82b40"
-            },
-            "latestCompletedResult": "7/7_PASS_396_FILES_WIN198_PLUS198",
-            "latestCompletedHealthy": true,
-            "latestPushHealthy": null,
-            "currentNaturalRunStatus": "NEXT_REPORT_ONLY_PUBLICATION_PENDING",
-            "unresolvedFailureLeaves": 0,
-            "failedTapTests": 0,
-            "failureLeafCases": 0,
-            "inventory": {
-              "fullFileCount": 396,
-              "fullFileListSha256": "dc18e74516668cbd763a76b33140519bf1637a8da26fa4f63250f1d656ab15f3",
-              "windows198Plus198DisjointUnion396": true
-            },
-            "precedingCompletedCI": {
-              "latestCompletedHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
-              "latestCompletedRunId": 44754614138,
-              "latestCompletedReceipt": {
-                "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/terminal-receipt.json",
-                "sha256": "e8ce31bd87ac527b47ef9e98e55410464f26dd646b17efe22050128c32a0136e"
-              },
-              "latestCompletedResult": "6/7_PASS_1_WINDOWS_NODE24_FAIL",
-              "failureLeaf": {
-                "jobId": 136350962189,
-                "job": "Node24 Windows shard1/2",
-                "file": "test/requirement-frame.test.mjs",
-                "case": 14,
-                "name": "6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count",
-                "observed": "Native feedback RC_REVIEW_UNVERIFIED: Error was returned where undefined was expected.",
-                "cause": "UNPROVEN_DIAGNOSIS_OWNED_BY_ORIGIN_NO_SOURCE_FIX_QUALIFIED_YET",
-                "projection": {
-                  "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/failure-projection.json",
-                  "sha256": "c079e5a86c2d10adaa69d192e1d3c4046f3779f7339f795bbaf7bcd1637e5841"
-                }
-              }
-            },
-            "precedingCompletedScope": "fcda7/7 qualifies preceding BF runtime and five fixture repairs only; it does not qualify e6 sampled product source.",
-            "precedingFixtureRepair": {
-              "status": "ALL_SEVEN_NATURAL_CI_JOBS_PASSED",
-              "commit": "b4d0511",
-              "integration": {
-                "path": ".runtime-correction/validation/ed3-combined-ci-with-dependency-s7z2qqr7/root-integration.json",
-                "sha256": "25624b599955d2f0a1b5fa563db72d3876a121e99c36caa2f1d1963afc421005"
-              },
-              "casesEachNode": 40,
-              "nodes": [
-                "18",
-                "24"
-              ],
-              "productionChanges": 0,
-              "archiveUnchanged": true,
-              "earlierIsolatedAssemblyFailurePreserved": true,
-              "remoteVerification": {
-                "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
-                "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
-              },
-              "productionDeadlinesChanged": false
-            },
-            "earlierFailedCodeEquivalentCI": {
-              "latestCompletedHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
-              "latestCompletedReceipt": {
-                "path": ".runtime-correction/validation/ci-fix/post-ed3-report-summary-dhr3wlut/terminal-receipt.json",
-                "sha256": "b072d66d5ff7943c6d56c6283df65adbf8add3e8bfb9c69365388aba16bd95f4"
-              },
-              "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
-              "failureLeafCases": 5,
-              "failedTapTests": 6
-            },
-            "rerunCancelDispatch": 0,
-            "localFullSuiteIsSeparateEvidence": true,
-            "newCachedFrameFixtureRepair": {
-              "status": "INTEGRATED_FOCUSED_AND_NATURAL_ALL_SEVEN_CI_JOBS_PASSED",
-              "commit": "0684f196e96ed750390c1ec094143a9ff7592661",
-              "qualification": {
-                "path": ".runtime-correction/validation/ci-fix/456a-cached-frame-clock-o_8_qbg1/qualification.json",
-                "sha256": "d665c5d716301a2ca85bdca8c4b547f8b03f5221c6efd1004b47e02644b02cd5"
-              },
-              "independentPeer": {
-                "path": ".runtime-correction/validation/ci-fix/cached-frame-clock-independent-g9vkp7c3/peer-review.json",
-                "sha256": "324fec780c13e83264c5e5be7a52dec7510a01baa33018e11123cd8a6124570e"
-              },
-              "integration": {
-                "path": ".runtime-correction/validation/root-cached-frame-ci-integration-p9k99dze/integration.json",
-                "sha256": "bf1abadfd9efbbd97fdad0565474267221185b645042957d4170f885fc837b8f"
-              },
-              "affectedFileChecksEachNode": 30,
-              "nodes": [
-                "18",
-                "24"
-              ],
-              "oneExistingSemanticClockCallOnly": true,
-              "runtimeAndHelperChanges": 0,
-              "productionDeadlineChanges": 0,
-              "native5sAvailabilityProven": false,
-              "uniqueHistoricalCauseProven": false,
-              "unqualifiedEnvironmentAndObserverAttemptsPreserved": true,
-              "remoteVerification": {
-                "path": ".runtime-correction/validation/ci-fix/post-03d-sampled-natural-s4dmqwza/terminal-receipt.json",
-                "sha256": "abb83aea1c9301b0ba64f5f1214dd71d37fb749c238225c5dd480b5827d82b40"
-              },
-              "scope": "Semanticcached-framedelivery fixture uses existinglogicalclock; no productionstate-lock deadline oravailability change, and historicalfailureuniquecause remainsunproven."
-            },
-            "currentPushHead": "03d691182d495ee272d984bad0e1cd3d5cc7ab86",
-            "currentRunId": 44760585910,
-            "precedingFailedCI": {
-              "latestCompletedHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
-              "latestCompletedRunId": 44754614138,
-              "latestCompletedReceipt": {
-                "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/terminal-receipt.json",
-                "sha256": "e8ce31bd87ac527b47ef9e98e55410464f26dd646b17efe22050128c32a0136e"
-              },
-              "latestCompletedResult": "6/7_PASS_1_WINDOWS_NODE24_FAIL",
-              "failureLeaf": {
-                "jobId": 136350962189,
-                "job": "Node24 Windows shard1/2",
-                "file": "test/requirement-frame.test.mjs",
-                "case": 14,
-                "name": "6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count",
-                "observed": "Native feedback RC_REVIEW_UNVERIFIED: Error was returned where undefined was expected.",
-                "cause": "UNPROVEN_DIAGNOSIS_OWNED_BY_ORIGIN_NO_SOURCE_FIX_QUALIFIED_YET",
-                "projection": {
-                  "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/failure-projection.json",
-                  "sha256": "c079e5a86c2d10adaa69d192e1d3c4046f3779f7339f795bbaf7bcd1637e5841"
-                }
-              }
-            },
-            "priorPassingPrecedingRuntimeCI": {
-              "head": "fcda29940594332e217374f47c2cf3d94aee0c3b",
-              "receipt": {
-                "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
-                "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
-              },
-              "result": "7/7_PASS_396_FILES_WIN198_PLUS198",
-              "windowsActualPartition": {
-                "shards": [
-                  198,
-                  198
-                ],
-                "disjointUnionFiles": 396,
-                "pass": 4918,
-                "skip": 45,
-                "fail": 0,
-                "cancelled": 0,
-                "timeouts": 0
-              },
-              "scope": "Same published runtime, repaired test fixtures; does not qualify new sampled runtime source."
-            },
-            "currentPlatformResults": {
-              "macOSNode24": {
-                "files": 396,
-                "pass": 4977,
-                "skip": 33,
-                "fail": 0
-              },
-              "ubuntuNode24": {
-                "files": 396,
-                "pass": 4973,
-                "skip": 37,
-                "fail": 0
-              },
-              "windowsNode24": {
-                "shards": [
-                  198,
-                  198
-                ],
-                "disjointUnionFiles": 396,
-                "pass": 4963,
-                "skip": 45,
-                "fail": 0,
-                "timeouts": 0
-              },
-              "node18": {
-                "artifactEachJob": 17,
-                "crossHostCompatibilityEachJob": 111
-              }
-            },
-            "lastVerifiedPushHealthy": true,
-            "nextPublicationScope": "HTML and validation metadata only; runtime/archive remain exact e6/795. Last actual completed all-seven CI is explicitly recorded above."
-          },
-          "nextPublicationScope": "Next feature publication contains fb24 source, qualified c7f archive and report. Its natural CI has not run; d488 all-seven result qualifies only the preceding runtime."
-        },
-        "localSourceBuildAndStockQualificationsRemainValidWithinTheirScopes": true,
-        "remoteFailureDoesNotRelabelLocalQualificationAsRemoteSuccess": true,
-        "repairStatus": "Two test-only semantic-clock fixture repairs integrated and locally committed. Targeted controls passed; no new natural CI result, production contention fix or historical primary-cause determination.",
-        "reportPublicationStatus": "Two scoped test-fixture repairs are committed locally; this report is prepared for the next feature-branch push. The new CI result is pending.",
-        "allSixExecutedJobsCheckoutAndRunnerCleanupMarkersVerified": true,
-        "pendingFixtureFollowupCommit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
-        "updatedTestRevisionNaturalRunStatus": "PENDING_NOT_PUSHED_NO_RUN",
-        "beforeLocalFixtureRepairs": {
-          "metadataSnapshot": {
-            "path": ".runtime-correction/validation/report-369-fixture-followup-r4c2cn1q/before-validation.json",
-            "sha256": "df64bf02572141af02a9cf9846fd42ac0258d877ce588ec77f9895689aff7c7b"
-          },
-          "scope": "Actual3694PASS2WindowsFAIL1Mac18cancel state and native preflight status before additive local-fixture qualification; source causes remain unproven."
-        },
+        "productionDeadlineOrBudgetChanges": 0,
+        "repairStatus": "Both previously repaired test files passed this natural run. A distinct native-stop-budget first-task-completion observation failed on Windows; cause is under investigation, with no rerun or production deadline change.",
+        "reportPublicationStatus": "Report records closed5397CI six-pass/one-fail. This publication changes only report and evidence metadata.",
+        "updatedTestRevisionNaturalRunStatus": "COMPLETED_FAILURE_6PASS_1WINDOWSFAIL",
         "testFixtureFollowup": {
           "commit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
-          "status": "TWO_TEST_FILES_LOCAL_COMMIT_TARGETED_SCOPES_QUALIFIED_NEW_CI_PENDING",
+          "status": "PUSHED_BOTH_REPAIRED_FILES_PASSED_NATURAL_CI_DISTINCT_FAILURE_REMAINS",
           "paths": [
             "test/post-run-scenarios.test.mjs",
             "test/stop-baseline-task.test.mjs"
@@ -1337,88 +1193,678 @@
             "stockNodeVersion": "26.13.1",
             "node24WholePassIsObservedScopeNotDeclaredEngineCompliance": true
           },
-          "remoteVerification": "PENDING_NEXT_NATURAL_PUSH_RUN"
-        }
-      },
-      "latestCompletedTestedCurrentRuntime": true,
-      "latestCompletedQualifiesCurrentRuntime": false,
-      "latestCompletedHead": "5397dfcc663529be1310c57f6dc037c72d5161d9",
-      "latestCompletedRunId": 44788266384,
-      "latestCompletedReceipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/terminal-receipt.json",
-        "sha256": "9f6b62cf2e9917d15f6becc9f47fcf8f91f17fd9f113df4583b18b7365caac5a"
-      },
-      "latestCompletedReadback": {
-        "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/final-readback.json",
-        "sha256": "c774cb9a853c7f410c3819d8cf1ec0a53fdf013a699f56fb3811eddcef479a61"
-      },
-      "latestCompletedResult": "6_PASS_1_WINDOWS_REGRESSION_FAIL_0_CANCEL",
-      "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
-      "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
-      "latestCompletedHealthy": false,
-      "latestPushHealthy": false,
-      "latestPushQualification": "FAILED_NOT_REMOTE_QUALIFIED",
-      "precedingInProgressSnapshot": {
-        "snapshot": {
-          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/poll-0006-jobs.connector.json",
-          "sha256": "335942113f369ab3c2b36aba6794249598f41e987de76804fda7c6364eb31300",
+          "remoteVerification": "CLOSED_5397_BOTH_REPAIRED_FILES_PASS_WHOLE_RUN_6PASS_1FAIL",
+          "remoteReceipt": {
+            "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/terminal-receipt.json",
+            "sha256": "9f6b62cf2e9917d15f6becc9f47fcf8f91f17fd9f113df4583b18b7365caac5a"
+          }
+        },
+        "precedingCompletedRun": {
+          "currentUpdatedSource": "LATEST_COMPLETED_369_CI_FAILED_TWO_LOCAL_TEST_FIXTURE_REPAIRS_TARGETED_PENDING_NEW_CI",
+          "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+          "currentSourceNaturalRunStatus": "COMPLETED_FAILURE",
+          "newSourceRemoteQualified": false,
+          "latestCompletedTestedCurrentRuntime": true,
+          "latestCompletedQualifiesCurrentRuntime": false,
+          "latestCompletedHead": "369bf5921bcbfbe9a3e9a650a21eeb7a3dd702d0",
+          "latestCompletedRunId": 44779066471,
+          "latestCompletedReceipt": {
+            "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/terminal-receipt.json",
+            "sha256": "c519b58313e5697444e2efae2ecab7987960e059eb7c6a19ad849eab03101dac"
+          },
+          "latestCompletedReadback": {
+            "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/final-readback.json",
+            "sha256": "896d7befbda2ba00ad21b42009aa9a6777600b66a86524d879b9b3cabc6f0ac7"
+          },
+          "latestCompletedResult": "4_PASS_2_WINDOWS_REGRESSION_FAIL_1_NODE18_MAC_CANCELLED_BEFORE_RECORDED_TESTS",
+          "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+          "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
+          "latestCompletedHealthy": false,
+          "latestPushHealthy": false,
+          "lastVerifiedPushHealthy": false,
+          "currentNaturalRunStatus": "LATEST_COMPLETED_369_FAILED_UPDATED_FIXTURE_REVISION_CI_PENDING_NOT_PUSHED",
+          "currentPushHead": "369bf5921bcbfbe9a3e9a650a21eeb7a3dd702d0",
+          "currentRunId": 44779066471,
+          "testJobsPassed": 4,
+          "testJobsFailed": 2,
+          "testJobsCancelled": 1,
+          "publicationJob": "SKIPPED",
+          "unresolvedFailureLeaves": 2,
+          "failedTapTests": 2,
+          "failureLeafCases": 2,
+          "failureProjection": {
+            "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/failure-projection.json",
+            "sha256": "c963548933764069cadbbfaef3c8bc6a99a6d791ef7708433b3f3090a53fcdce"
+          },
+          "windowsClosedProjection": {
+            "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/windows-closed-failure-projection.json",
+            "sha256": "ea6815261ebfcdd603c112776963cb80add17ce1bdce25c179ee37c3ef04a2cb"
+          },
+          "allSevenJobMetadataRetained": true,
+          "completeOfficialLogs": 6,
+          "inventory": {
+            "fullFileCount": 397,
+            "fullFileListSha256": "db9ad7386a9daef8ae689257cef7e1276344ce6333a3059303bc9dc6fec339e4",
+            "windowsActualCounts": [
+              199,
+              198
+            ],
+            "windowsDisjointUnionFiles": 397,
+            "windowsCompletedFiles": 397,
+            "fileTimeouts": 0
+          },
+          "currentPlatformResults": {
+            "macOSNode24": {
+              "files": 397,
+              "pass": 4988,
+              "skip": 33,
+              "fail": 0,
+              "cancelled": 0,
+              "fileTimeouts": 0
+            },
+            "ubuntuNode24": {
+              "files": 397,
+              "pass": 4984,
+              "skip": 37,
+              "fail": 0,
+              "cancelled": 0,
+              "fileTimeouts": 0
+            },
+            "windowsNode24": {
+              "shards": [
+                199,
+                198
+              ],
+              "disjointUnionFiles": 397,
+              "tests": 5019,
+              "pass": 4972,
+              "skip": 45,
+              "fail": 2,
+              "cancelled": 0,
+              "fileTimeouts": 0
+            },
+            "node18": {
+              "windows": {
+                "artifactPass": 17,
+                "compatibilityTests": 111,
+                "compatibilityPass": 110,
+                "compatibilitySkip": 1,
+                "fail": 0
+              },
+              "ubuntu": {
+                "artifactPass": 17,
+                "compatibilityTests": 111,
+                "compatibilityPass": 109,
+                "compatibilitySkip": 2,
+                "fail": 0
+              },
+              "macOS": {
+                "status": "CANCELLED_WHILE_PREVIOUSLY_QUEUED",
+                "recordedSteps": 0,
+                "testExecution": "NOT_OBSERVED",
+                "checkoutAndCleanupCredit": false,
+                "logEndpoint": "404_BLOB_NOT_FOUND",
+                "logAbsenceReceipt": {
+                  "path": ".runtime-correction/validation/ci-fix/post-369-fb24-natural-dym4y9bu/job-136436594568.log-unavailable.connector.json",
+                  "sha256": "f63a4402277933b32fd841487966d87ad4a447d0ab588bebc82b7a523aa72841"
+                },
+                "cancellationCause": "UNKNOWN"
+              }
+            }
+          },
+          "failureLeaves": [
+            {
+              "jobId": 136436594295,
+              "file": "test/post-run-scenarios.test.mjs",
+              "case": 18,
+              "name": "24 sessions keep FIFO task order, bounded reviews and isolated task mutations",
+              "observed": "Expected no recorded errors; actual secondary finish raised TASK_STATE_LOCK_TIMEOUT.",
+              "configuredSecondaryFinishLockWaitMs": 3000,
+              "observedCaseDurationMs": 45004.0579,
+              "primaryCause": "UNPROVEN",
+              "productVersusFixtureCause": "UNPROVEN_TEST_FIXTURE_FOLLOWUP_DOES_NOT_ESTABLISH_UNIQUE_HISTORICAL_CAUSE",
+              "testOnlyFixtureFollowupScopedQualified": true
+            },
+            {
+              "jobId": 136436595074,
+              "file": "test/stop-baseline-task.test.mjs",
+              "case": 111,
+              "name": "critical-path candidate preview and explicit revision preserve source reads and charge one repair across lost ACK",
+              "observed": "Task deadline exhausted / REVIEWER_DEADLINE",
+              "configuredRoleDeadlineMs": 20000,
+              "observedCaseDurationMs": 25478.5043,
+              "primaryCause": "UNPROVEN",
+              "productVersusFixtureCause": "UNPROVEN_TEST_FIXTURE_FOLLOWUP_DOES_NOT_ESTABLISH_UNIQUE_HISTORICAL_CAUSE",
+              "testOnlyFixtureFollowupScopedQualified": true
+            }
+          ],
+          "rerunCancelDispatchByObserver": 0,
+          "localFullSuiteIsSeparateEvidence": true,
+          "precedingRuntimeCI": {
+            "currentUpdatedSource": "FB24_LOCAL_SOURCE_PACKAGE_STOCK_QUALIFIED_REMOTE_PENDING",
+            "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+            "currentSourceNaturalRunStatus": "NOT_PUSHED_NO_CURRENT_SOURCE_RUN",
+            "newSourceRemoteQualified": false,
+            "latestCompletedQualifiesCurrentRuntime": false,
+            "latestCompletedHead": "d4889fa07d9b1ed2a390b5a4c8396da53d363a67",
+            "latestCompletedRunId": 44771891667,
+            "latestCompletedReceipt": {
+              "path": ".runtime-correction/validation/ci-fix/post-d488-report-natural-6tjs9q2m/terminal-receipt.json",
+              "sha256": "787d8df26d5caee27f676ae67ac46b3494f2c466fbb75341f1c7f8d6ce01b4f0"
+            },
+            "latestCompletedResult": "7/7_PASS_PRECEDING_RUNTIME_396_FILES_WIN198_PLUS198",
+            "latestCompletedSourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+            "latestCompletedArchiveSha256": "7954667e336b354b8806fb9c2f3117b9d2f1cbfd5a676c76504a45499d6d67ab",
+            "latestCompletedHealthy": true,
+            "latestPushHealthy": true,
+            "currentNaturalRunStatus": "FB24_SOURCE_ARCHIVE_AND_PUBLICATION_PUSH_PENDING",
+            "expectedCurrentFullFileCount": 397,
+            "inventory": {
+              "scope": "Latest completed d488 preceding-runtime run only",
+              "fullFileCount": 396,
+              "windows198Plus198DisjointUnion396": true
+            },
+            "currentPlatformResults": {
+              "macOSNode24": {
+                "files": 396,
+                "pass": 4977,
+                "skip": 33,
+                "fail": 0
+              },
+              "ubuntuNode24": {
+                "files": 396,
+                "pass": 4973,
+                "skip": 37,
+                "fail": 0
+              },
+              "windowsNode24": {
+                "shards": [
+                  198,
+                  198
+                ],
+                "disjointUnionFiles": 396,
+                "pass": 4963,
+                "skip": 45,
+                "fail": 0,
+                "timeouts": 0
+              },
+              "node18": {
+                "artifactEachJob": 17,
+                "crossHostCompatibilityEachJob": 111
+              }
+            },
+            "lastVerifiedPushHealthy": true,
+            "currentPushHead": "d4889fa07d9b1ed2a390b5a4c8396da53d363a67",
+            "currentRunId": 44771891667,
+            "rerunCancelDispatch": 0,
+            "localFullSuiteIsSeparateEvidence": true,
+            "precedingRuntimeCI": {
+              "currentUpdatedSource": "CURRENT_SAMPLED_RUNTIME_AND_FIXTURE_NATURAL_CI_ALL_SEVEN_PASSED",
+              "sourceCommit": "e6c73df6833c61ea745aeb1bbdbc39a441416671",
+              "currentSourceNaturalRunStatus": "COMPLETED_SUCCESS",
+              "latestCompletedHead": "03d691182d495ee272d984bad0e1cd3d5cc7ab86",
+              "latestCompletedRunId": 44760585910,
+              "latestCompletedReceipt": {
+                "path": ".runtime-correction/validation/ci-fix/post-03d-sampled-natural-s4dmqwza/terminal-receipt.json",
+                "sha256": "abb83aea1c9301b0ba64f5f1214dd71d37fb749c238225c5dd480b5827d82b40"
+              },
+              "latestCompletedResult": "7/7_PASS_396_FILES_WIN198_PLUS198",
+              "latestCompletedHealthy": true,
+              "latestPushHealthy": null,
+              "currentNaturalRunStatus": "NEXT_REPORT_ONLY_PUBLICATION_PENDING",
+              "unresolvedFailureLeaves": 0,
+              "failedTapTests": 0,
+              "failureLeafCases": 0,
+              "inventory": {
+                "fullFileCount": 396,
+                "fullFileListSha256": "dc18e74516668cbd763a76b33140519bf1637a8da26fa4f63250f1d656ab15f3",
+                "windows198Plus198DisjointUnion396": true
+              },
+              "precedingCompletedCI": {
+                "latestCompletedHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
+                "latestCompletedRunId": 44754614138,
+                "latestCompletedReceipt": {
+                  "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/terminal-receipt.json",
+                  "sha256": "e8ce31bd87ac527b47ef9e98e55410464f26dd646b17efe22050128c32a0136e"
+                },
+                "latestCompletedResult": "6/7_PASS_1_WINDOWS_NODE24_FAIL",
+                "failureLeaf": {
+                  "jobId": 136350962189,
+                  "job": "Node24 Windows shard1/2",
+                  "file": "test/requirement-frame.test.mjs",
+                  "case": 14,
+                  "name": "6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count",
+                  "observed": "Native feedback RC_REVIEW_UNVERIFIED: Error was returned where undefined was expected.",
+                  "cause": "UNPROVEN_DIAGNOSIS_OWNED_BY_ORIGIN_NO_SOURCE_FIX_QUALIFIED_YET",
+                  "projection": {
+                    "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/failure-projection.json",
+                    "sha256": "c079e5a86c2d10adaa69d192e1d3c4046f3779f7339f795bbaf7bcd1637e5841"
+                  }
+                }
+              },
+              "precedingCompletedScope": "fcda7/7 qualifies preceding BF runtime and five fixture repairs only; it does not qualify e6 sampled product source.",
+              "precedingFixtureRepair": {
+                "status": "ALL_SEVEN_NATURAL_CI_JOBS_PASSED",
+                "commit": "b4d0511",
+                "integration": {
+                  "path": ".runtime-correction/validation/ed3-combined-ci-with-dependency-s7z2qqr7/root-integration.json",
+                  "sha256": "25624b599955d2f0a1b5fa563db72d3876a121e99c36caa2f1d1963afc421005"
+                },
+                "casesEachNode": 40,
+                "nodes": [
+                  "18",
+                  "24"
+                ],
+                "productionChanges": 0,
+                "archiveUnchanged": true,
+                "earlierIsolatedAssemblyFailurePreserved": true,
+                "remoteVerification": {
+                  "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
+                  "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
+                },
+                "productionDeadlinesChanged": false
+              },
+              "earlierFailedCodeEquivalentCI": {
+                "latestCompletedHead": "ed3f888096e3451bedf6a1f4a7a47a9fc410f747",
+                "latestCompletedReceipt": {
+                  "path": ".runtime-correction/validation/ci-fix/post-ed3-report-summary-dhr3wlut/terminal-receipt.json",
+                  "sha256": "b072d66d5ff7943c6d56c6283df65adbf8add3e8bfb9c69365388aba16bd95f4"
+                },
+                "latestCompletedResult": "5/7_PASS_2_WINDOWS_FAIL",
+                "failureLeafCases": 5,
+                "failedTapTests": 6
+              },
+              "rerunCancelDispatch": 0,
+              "localFullSuiteIsSeparateEvidence": true,
+              "newCachedFrameFixtureRepair": {
+                "status": "INTEGRATED_FOCUSED_AND_NATURAL_ALL_SEVEN_CI_JOBS_PASSED",
+                "commit": "0684f196e96ed750390c1ec094143a9ff7592661",
+                "qualification": {
+                  "path": ".runtime-correction/validation/ci-fix/456a-cached-frame-clock-o_8_qbg1/qualification.json",
+                  "sha256": "d665c5d716301a2ca85bdca8c4b547f8b03f5221c6efd1004b47e02644b02cd5"
+                },
+                "independentPeer": {
+                  "path": ".runtime-correction/validation/ci-fix/cached-frame-clock-independent-g9vkp7c3/peer-review.json",
+                  "sha256": "324fec780c13e83264c5e5be7a52dec7510a01baa33018e11123cd8a6124570e"
+                },
+                "integration": {
+                  "path": ".runtime-correction/validation/root-cached-frame-ci-integration-p9k99dze/integration.json",
+                  "sha256": "bf1abadfd9efbbd97fdad0565474267221185b645042957d4170f885fc837b8f"
+                },
+                "affectedFileChecksEachNode": 30,
+                "nodes": [
+                  "18",
+                  "24"
+                ],
+                "oneExistingSemanticClockCallOnly": true,
+                "runtimeAndHelperChanges": 0,
+                "productionDeadlineChanges": 0,
+                "native5sAvailabilityProven": false,
+                "uniqueHistoricalCauseProven": false,
+                "unqualifiedEnvironmentAndObserverAttemptsPreserved": true,
+                "remoteVerification": {
+                  "path": ".runtime-correction/validation/ci-fix/post-03d-sampled-natural-s4dmqwza/terminal-receipt.json",
+                  "sha256": "abb83aea1c9301b0ba64f5f1214dd71d37fb749c238225c5dd480b5827d82b40"
+                },
+                "scope": "Semanticcached-framedelivery fixture uses existinglogicalclock; no productionstate-lock deadline oravailability change, and historicalfailureuniquecause remainsunproven."
+              },
+              "currentPushHead": "03d691182d495ee272d984bad0e1cd3d5cc7ab86",
+              "currentRunId": 44760585910,
+              "precedingFailedCI": {
+                "latestCompletedHead": "456a5eb2506e37fe58b55781a9647cb24b4b6a93",
+                "latestCompletedRunId": 44754614138,
+                "latestCompletedReceipt": {
+                  "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/terminal-receipt.json",
+                  "sha256": "e8ce31bd87ac527b47ef9e98e55410464f26dd646b17efe22050128c32a0136e"
+                },
+                "latestCompletedResult": "6/7_PASS_1_WINDOWS_NODE24_FAIL",
+                "failureLeaf": {
+                  "jobId": 136350962189,
+                  "job": "Node24 Windows shard1/2",
+                  "file": "test/requirement-frame.test.mjs",
+                  "case": 14,
+                  "name": "6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit change count",
+                  "observed": "Native feedback RC_REVIEW_UNVERIFIED: Error was returned where undefined was expected.",
+                  "cause": "UNPROVEN_DIAGNOSIS_OWNED_BY_ORIGIN_NO_SOURCE_FIX_QUALIFIED_YET",
+                  "projection": {
+                    "path": ".runtime-correction/validation/ci-fix/post-456a-report-natural-3g5izilj/failure-projection.json",
+                    "sha256": "c079e5a86c2d10adaa69d192e1d3c4046f3779f7339f795bbaf7bcd1637e5841"
+                  }
+                }
+              },
+              "priorPassingPrecedingRuntimeCI": {
+                "head": "fcda29940594332e217374f47c2cf3d94aee0c3b",
+                "receipt": {
+                  "path": ".runtime-correction/validation/ci-fix/post-fcda-fixtures-natural-iomeh1y5/terminal-receipt.json",
+                  "sha256": "b319b79b5c6a2b7f95c2a8d12c06e4a5b8e4034806f296d4f39bfe23608a5abc"
+                },
+                "result": "7/7_PASS_396_FILES_WIN198_PLUS198",
+                "windowsActualPartition": {
+                  "shards": [
+                    198,
+                    198
+                  ],
+                  "disjointUnionFiles": 396,
+                  "pass": 4918,
+                  "skip": 45,
+                  "fail": 0,
+                  "cancelled": 0,
+                  "timeouts": 0
+                },
+                "scope": "Same published runtime, repaired test fixtures; does not qualify new sampled runtime source."
+              },
+              "currentPlatformResults": {
+                "macOSNode24": {
+                  "files": 396,
+                  "pass": 4977,
+                  "skip": 33,
+                  "fail": 0
+                },
+                "ubuntuNode24": {
+                  "files": 396,
+                  "pass": 4973,
+                  "skip": 37,
+                  "fail": 0
+                },
+                "windowsNode24": {
+                  "shards": [
+                    198,
+                    198
+                  ],
+                  "disjointUnionFiles": 396,
+                  "pass": 4963,
+                  "skip": 45,
+                  "fail": 0,
+                  "timeouts": 0
+                },
+                "node18": {
+                  "artifactEachJob": 17,
+                  "crossHostCompatibilityEachJob": 111
+                }
+              },
+              "lastVerifiedPushHealthy": true,
+              "nextPublicationScope": "HTML and validation metadata only; runtime/archive remain exact e6/795. Last actual completed all-seven CI is explicitly recorded above."
+            },
+            "nextPublicationScope": "Next feature publication contains fb24 source, qualified c7f archive and report. Its natural CI has not run; d488 all-seven result qualifies only the preceding runtime."
+          },
+          "localSourceBuildAndStockQualificationsRemainValidWithinTheirScopes": true,
+          "remoteFailureDoesNotRelabelLocalQualificationAsRemoteSuccess": true,
+          "repairStatus": "Two test-only semantic-clock fixture repairs integrated and locally committed. Targeted controls passed; no new natural CI result, production contention fix or historical primary-cause determination.",
+          "reportPublicationStatus": "Two scoped test-fixture repairs are committed locally; this report is prepared for the next feature-branch push. The new CI result is pending.",
+          "allSixExecutedJobsCheckoutAndRunnerCleanupMarkersVerified": true,
+          "pendingFixtureFollowupCommit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
+          "updatedTestRevisionNaturalRunStatus": "PENDING_NOT_PUSHED_NO_RUN",
+          "beforeLocalFixtureRepairs": {
+            "metadataSnapshot": {
+              "path": ".runtime-correction/validation/report-369-fixture-followup-r4c2cn1q/before-validation.json",
+              "sha256": "df64bf02572141af02a9cf9846fd42ac0258d877ce588ec77f9895689aff7c7b"
+            },
+            "scope": "Actual3694PASS2WindowsFAIL1Mac18cancel state and native preflight status before additive local-fixture qualification; source causes remain unproven."
+          },
+          "testFixtureFollowup": {
+            "commit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
+            "status": "TWO_TEST_FILES_LOCAL_COMMIT_TARGETED_SCOPES_QUALIFIED_NEW_CI_PENDING",
+            "paths": [
+              "test/post-run-scenarios.test.mjs",
+              "test/stop-baseline-task.test.mjs"
+            ],
+            "runtimeSharedHelperOrArchiveChanges": 0,
+            "productionDeadlineOrBudgetChanges": 0,
+            "fullSourceSuiteRepeated": false,
+            "packageRebuilt": false,
+            "historicalWindowsUniqueCauseProven": false,
+            "productionAvailabilityImprovementProven": false,
+            "rootIntegrations": [
+              {
+                "path": ".runtime-correction/validation/root-369-post-run-fixture-integration-58zip5hs/integration.json",
+                "sha256": "2ec384a6c20d2cea032474e45c6153861ae2878cae38c26e983d01c7f93771fe"
+              },
+              {
+                "path": ".runtime-correction/validation/root-369-preview-fixture-integration-7ljmah7a/integration.json",
+                "sha256": "73f1b2c84ca28c492d7a9ea4828b2e6714b3399d3c2fc3b363ff632c28b0aea1"
+              }
+            ],
+            "case18": {
+              "path": "test/post-run-scenarios.test.mjs",
+              "postimageSha256": "477e3af778a4d789643d3c34108548851a63e07c8160e3d21a1ef7ad9b662441",
+              "patchSha256": "4a1b6d81399522c915b26429f64e9afd3f98f1083233f9b074c761ea3f6583a1",
+              "qualification": {
+                "path": ".runtime-correction/validation/ci-fix/369-post-run-qualification-e8ut1hax/qualification.json",
+                "sha256": "9f599ddd849acb0bf767d8e14ce9fd001f1d9363c1d61ff9ef45d45ee217337c"
+              },
+              "verification": {
+                "path": ".runtime-correction/validation/ci-fix/369-post-run-qualification-e8ut1hax/verification.json",
+                "sha256": "066adc8e555f7ef936def997b9ca8f82f35d4e4e2701f14b0f33d19d49fe3cf0"
+              },
+              "independentPeer": {
+                "path": ".runtime-correction/validation/ci-fix/369-post-run-clock-peer-xusfgjri/peer-review.json",
+                "sha256": "de92f45d08ce0d32873db6e2c4ee30002cc75c34a7ea91783ba7087bfc0b2735"
+              },
+              "wholeAffectedFileEachNode": {
+                "18": {
+                  "pass": 29,
+                  "fail": 0,
+                  "skip": 0
+                },
+                "24": {
+                  "pass": 29,
+                  "fail": 0,
+                  "skip": 0
+                }
+              },
+              "additionalMeaningfulControlsEachNode": 5,
+              "boundaries": "Original3000ms recovery lock and15000ms review expiry retained; latePASS/correction rejected; real10msFSbackoff retained. Controlled3500msownedpublication is sufficient mechanism only."
+            },
+            "case111": {
+              "path": "test/stop-baseline-task.test.mjs",
+              "postimageSha256": "e28a028a5ee87c6c5c7ee9f8ee197ac9f3584bfa72942def7588ed69c337b039",
+              "patchSha256": "28de51bdf79282c9a7e80a55ad37312ad742a38ab8560fd2ec10e537fffdc590",
+              "independentPeer": {
+                "path": ".runtime-correction/validation/ci-fix/369-baseline-preview-peer-amyokce2/peer-review.json",
+                "sha256": "40ab1232cce11a421f9cb0500cac89e17ceefcc92e0a8dc9e3ab1528b57e4bd6"
+              },
+              "peerReadback": {
+                "path": ".runtime-correction/validation/ci-fix/369-baseline-preview-peer-amyokce2/final-readback.json",
+                "sha256": "d73dbbc593ded54696b7d3089ac5922f2f0fbe4adfee4fdd7b56082eb4db4924"
+              },
+              "target20500msBaselineExpectedFailureAndOriginalCandidatePassBothNodes": true,
+              "original20000msExpiryBothNodesQualified": true,
+              "node24Whole": {
+                "tests": 143,
+                "pass": 143,
+                "fail": 0,
+                "skip": 0,
+                "exitCode": 0
+              },
+              "node18Whole": {
+                "tests": 143,
+                "pass": 140,
+                "fail": 3,
+                "skip": 0,
+                "exitCode": 1,
+                "status": "FAILED_RETAINED_NOT_GENERAL_NODE18_GREEN",
+                "unchangedFailures": {
+                  "74and75": "Object-style t.mock.timers.enable Date API rejected by actual Node18 MockTimers before case111 clock invocation; source bodies unchanged exactly.",
+                  "138": "Actual pinnedSDK hook-runner-global sources.flatMap(...).toSorted unavailable on Node18; shared helper never touchesArray and restores itsDate/globaltimer mocks. Source remains unchanged.",
+                  "sdkEngines": {
+                    "node": ">=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0"
+                  },
+                  "noClaimGeneralNode18SdkSupport": true,
+                  "localNode24Scope": "143actualPASS on pinned24.14.1; does not claim generalSDK engine compliance (declared24branch starts24.15). StockNode26 andartifact qualification are separate."
+                }
+              },
+              "node18ContinuationActual": {
+                "launch": "394258/session51234",
+                "terminal": "470f42/1"
+              },
+              "node24ContinuationActual": {
+                "launch": "4c0a95/session96446",
+                "terminal": "facc82/0"
+              },
+              "firstNegativeTypedCodeAssertionFailedPreserved": true,
+              "actualDenialAttributionFailure": {
+                "kind": "ORIGINAL_ASSERT_PRESERVED_ACTUAL_DENIAL_ATTRIBUTION",
+                "actualTerminal": "656e73/1",
+                "childExitCode": 1,
+                "originalTypedCodeAssertionStillFailed": true,
+                "observation": {
+                  "name": "Error",
+                  "code": null,
+                  "message": "Review tool binding expired",
+                  "stack": [
+                    "Error: Review tool binding expired",
+                    "    at Object.execute (file:///private/tmp/rc-369-baseline-preview-source-dkb8vf3i/lib/openclaw/task-tools.mjs:56:42)",
+                    "    at call (file:///Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/ci-fix/369-baseline-expiry-attribution-cvm26ppt/attribution.test.mjs:1883:65)",
+                    "    at async waitForActual (node:assert:646:5)",
+                    "    at async strict.rejects (node:assert:769:25)"
+                  ],
+                  "logicalElapsed": 20000
+                },
+                "sourceJoin": "lib/openclaw/task-tools.mjs56 checks lookup(ctx)!==binding before binding.active(), throws plain Error without code; NativeTaskSession originaldeadline cleanup unbinds the current window.",
+                "producerMeaning": "Exact postexpiry binding revocation; source task-session53 still owns coded parent deadline. The two guard surfaces have distinct error contracts.",
+                "noSourceOrPositiveControlRerun": true
+              },
+              "correctedNegativeScope": "Originalabsolute20s; owned second signal abortReason REVIEWER_DEADLINE and inner plain binding-expired denial, no renewal/extra baseline. No four-green-original-batch claim.",
+              "firstBatchesAndUnstartedWholeStagePreserved": true,
+              "ownerFinalAggregateClaimed": true,
+              "ownerFinalAggregateScope": "Final owner aggregate now sealed; it composes closed per-node evidence while retaining mixed Node18 whole-file failure, first failed negative assertions and attribution. No four-green-original-batch or repeated positive-delay claim.",
+              "ownerFinalAggregate": {
+                "path": ".runtime-correction/validation/ci-fix/369-baseline-preview-qualified-12lurekm/qualification.json",
+                "sha256": "18349e9b068232618bdf764055a4c37a0ddf0250e6f46dcfeac13b137732b669"
+              },
+              "ownerFinalVerification": {
+                "path": ".runtime-correction/validation/ci-fix/369-baseline-preview-qualified-12lurekm/verification.json",
+                "sha256": "7e61d1986c7c40e62d031c6bc4d0db57deb95adfa7d1a01ffa9f32b8119dda63"
+              },
+              "ownerFinalReadback": {
+                "path": ".runtime-correction/validation/ci-fix/369-baseline-preview-qualified-12lurekm/final-readback.json",
+                "sha256": "66bb729dce7a12ee05df39d3a20d56142815876a431c74091323b7862be21828"
+              },
+              "passed20500msCandidateNotRepeated": true
+            },
+            "executionEnvironment": {
+              "sourceTypeBox": "1.3.27",
+              "observedNode18": "18.20.8",
+              "observedNode24": "24.14.1",
+              "sdkVersion": "2026.7.1-2",
+              "sdkDeclaredNodeRange": ">=22.22.3 <23 || >=24.15.0 <25 || >=25.9.0",
+              "observed24_14_1DoesNotMeetDeclared24BranchMinimum24_15": true,
+              "noGeneralNode18SdkSupportClaim": true,
+              "stockNode26QualificationSeparate": true,
+              "stockNodeVersion": "26.13.1",
+              "node24WholePassIsObservedScopeNotDeclaredEngineCompliance": true
+            },
+            "remoteVerification": "PENDING_NEXT_NATURAL_PUSH_RUN"
+          }
+        },
+        "latestCompletedTestedCurrentRuntime": true,
+        "latestCompletedQualifiesCurrentRuntime": false,
+        "latestCompletedHead": "5397dfcc663529be1310c57f6dc037c72d5161d9",
+        "latestCompletedRunId": 44788266384,
+        "latestCompletedReceipt": {
+          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/terminal-receipt.json",
+          "sha256": "9f6b62cf2e9917d15f6becc9f47fcf8f91f17fd9f113df4583b18b7365caac5a"
+        },
+        "latestCompletedReadback": {
+          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/final-readback.json",
+          "sha256": "c774cb9a853c7f410c3819d8cf1ec0a53fdf013a699f56fb3811eddcef479a61"
+        },
+        "latestCompletedResult": "6_PASS_1_WINDOWS_REGRESSION_FAIL_0_CANCEL",
+        "latestCompletedSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
+        "latestCompletedArchiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
+        "latestCompletedHealthy": false,
+        "latestPushHealthy": false,
+        "latestPushQualification": "FAILED_NOT_REMOTE_QUALIFIED",
+        "precedingInProgressSnapshot": {
+          "snapshot": {
+            "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/poll-0006-jobs.connector.json",
+            "sha256": "335942113f369ab3c2b36aba6794249598f41e987de76804fda7c6364eb31300",
+            "terminal": false
+          },
+          "testJobsPassed": 5,
           "terminal": false
         },
-        "testJobsPassed": 5,
-        "terminal": false
-      },
-      "completeOfficialLogs": 7,
-      "publicationJob": "SKIPPED",
-      "currentPlatformResults": {
-        "136468819354": {
-          "tests": 2442,
-          "pass": 2417,
-          "fail": 0,
-          "cancelled": 0,
-          "skipped": 25
+        "completeOfficialLogs": 7,
+        "publicationJob": "SKIPPED",
+        "currentPlatformResults": {
+          "136468819354": {
+            "tests": 2442,
+            "pass": 2417,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 25
+          },
+          "136468819464": {
+            "tests": 2577,
+            "pass": 2556,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 20
+          },
+          "136468819513": {
+            "tests": 5021,
+            "pass": 4988,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 33
+          },
+          "136468819667": {
+            "tests": 5021,
+            "pass": 4984,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 37
+          }
         },
-        "136468819464": {
-          "tests": 2577,
-          "pass": 2556,
-          "fail": 1,
-          "cancelled": 0,
-          "skipped": 20
+        "allSevenExecutedJobsCheckoutAndRunnerCleanupVerified": true,
+        "failedTapTests": 1,
+        "failureProjection": {
+          "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/single-windows-failure-projection.json",
+          "sha256": "c5b3529f93ee385738587b75cab11aac15f7dc34f6a1f1b4c23f9c73be13f02f"
         },
-        "136468819513": {
-          "tests": 5021,
-          "pass": 4988,
-          "fail": 0,
-          "cancelled": 0,
-          "skipped": 33
-        },
-        "136468819667": {
-          "tests": 5021,
-          "pass": 4984,
-          "fail": 0,
-          "cancelled": 0,
-          "skipped": 37
-        }
+        "failureLeafCases": [
+          {
+            "path": "test/openclaw-native-stop-budget.test.mjs",
+            "case": 3,
+            "testName": "a retried native turn retains its own persisted user input while later queued inputs stay excluded",
+            "error": "Timed out waiting for first task completion",
+            "observerMs": 10000,
+            "testDurationMs": 14015.4834,
+            "historicalCause": "UNPROVEN",
+            "phase": "before second business run and queued-input assertions"
+          }
+        ]
       },
-      "allSevenExecutedJobsCheckoutAndRunnerCleanupVerified": true,
-      "failedTapTests": 1,
-      "failureProjection": {
-        "path": ".runtime-correction/validation/ci-fix/post-5397-fixtures-natural-2trxuqsq/single-windows-failure-projection.json",
-        "sha256": "c5b3529f93ee385738587b75cab11aac15f7dc34f6a1f1b4c23f9c73be13f02f"
-      },
-      "failureLeafCases": [
-        {
-          "path": "test/openclaw-native-stop-budget.test.mjs",
-          "case": 3,
-          "testName": "a retried native turn retains its own persisted user input while later queued inputs stay excluded",
-          "error": "Timed out waiting for first task completion",
-          "observerMs": 10000,
-          "testDurationMs": 14015.4834,
-          "historicalCause": "UNPROVEN",
-          "phase": "before second business run and queued-input assertions"
-        }
-      ]
+      "reportPublicationStatus": "Batched local test-only repair/report update; latest complete53acCI all7passed before the new test patch. New changed-test CI pending."
     },
-    "reportPublicationStatus": "Batched local test-only repair/report update; latest complete53acCI all7passed before the new test patch. New changed-test CI pending."
+    "reportPublicationStatus": "Latest changed-test CI completed sixPASS/oneMacFAIL. A locally qualified test-only assertion correction is applied; the next natural CI result is pending. Runtime/archive unchanged.",
+    "currentRunEvent": "push",
+    "latestPushQualification": "FAILED_LATEST_CHANGED_TEST_REVISION_NOT_REMOTE_QUALIFIED",
+    "failedTapTests": 1,
+    "failureProjection": {
+      "path": ".runtime-correction/validation/ci-fix/post-89df-phase-natural-JpsX7i/mac-failure-projection.json",
+      "sha256": "cc99e52893ad5bc4b90cc325365ab9c3ca6528f9b0bef90a8d890185bfd6b92d"
+    },
+    "failureLeafCases": [
+      {
+        "path": "test/openclaw-native-stop-budget.test.mjs",
+        "case": 3,
+        "testName": "a retried native turn retains its own persisted user input while later queued inputs stay excluded",
+        "error": "Native completion must belong to the original unexpired phase",
+        "errorCode": "ERR_ASSERTION",
+        "testDurationMs": 1146.312208,
+        "phase": "SECOND_TASK_TURN_REVIEW_COMPLETION",
+        "sourceAssertionLine": 155,
+        "callerLine": 209,
+        "individualFailedConjunct": "UNKNOWN",
+        "historicalCause": "UNPROVEN",
+        "notThePrior10SecondObservationTimeout": true
+      }
+    ],
+    "terminalInventory": {
+      "path": ".runtime-correction/validation/ci-fix/post-89df-phase-natural-JpsX7i/file-inventory.json",
+      "sha256": "4b163900f37af0aa80022ac9626e9a995db6a2691e0a6acfcd95f0580f158260"
+    }
   },
   "currentPackageRealModelEvaluation": {
     "status": "NOT_PERFORMED",
@@ -1710,7 +2156,7 @@
     "completeNativeRouteQualified": false
   },
   "publicDevice": {
-    "status": "LATEST_CLOSED_V5_PARTIAL_API24_PHONE_IDENTITY_READINESS_QUERY_AND_CONNECTIVITY_FAILED_RESOURCES_CLOSED_BOOT_UNQUALIFIED",
+    "status": "LATEST_CLOSED_V6_PARTIAL_TRANSPORT_EMULATOR_SIGKILL_PRE_CLEANUP_CAUSE_UNKNOWN_BOOT_UNQUALIFIED",
     "uuid": "6eb0d482-47aa-4d32-a94b-771132cc3d6f",
     "api": 24,
     "createVerification": {
@@ -1750,55 +2196,92 @@
     },
     "precedingTopStatusBeforeSelectedFileListProof": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED",
     "latestBootstrapAttempt": {
-      "status": "UNAVAILABLE_BOOT_IDENTITY_NOT_QUALIFIED_PRESERVED",
+      "status": "CLOSED_UNAVAILABLE_PARTIAL_TRANSPORT_ONLY",
       "sourceHold": {
-        "path": ".runtime-correction/validation/public-phone-bootstrap-source-v5-g98k6txu/source-hold.json",
-        "sha256": "6c00766d0429a6d26574b6de7256998386e28b3a6b935aea4932bade60137546"
+        "path": ".runtime-correction/validation/public-phone-bootstrap-source-v6-hv_8yf6i/source-hold.json",
+        "sha256": "78bfa1f782a2efb32653acbe10ff22e92cb33a5dc6f8ef474428ca7f50580727"
       },
       "rootTechnicalSourceReview": {
-        "path": ".runtime-correction/validation/root-public-phone-v5-source-review-x48fqvi8/source-review.json",
-        "sha256": "85144b7f097431839c58293926308460997acd25587508041124c73a065c7f8e"
+        "path": ".runtime-correction/validation/root-public-phone-v6-source-review-ie07jg5s/source-review.json",
+        "sha256": "31a3d1eb4a2183e59e4edbeb81f598778e7e76612796ee083f8c74e8a253244d"
       },
       "closedReceipt": {
-        "path": ".runtime-correction/validation/public-phone-v5-bootstrap-closed-ocgn7xq6/closed-receipt.json",
-        "sha256": "2d6c0554bb94c2d815ccf9667b06504cdcc3f870f24217f2e4fae1bcc8100842"
+        "path": ".runtime-correction/validation/public-phone-v6-bootstrap-closed-s_k4uixm/closed-receipt.json",
+        "sha256": "562a7db3dee8344ba3146ca4e3fe0de60e7d64ffca0c363c88b26b08c71e80ee"
       },
-      "actualLaunch": "af4092/session1692",
-      "actualTerminal": "82b1b5/1",
-      "ownerAgent": "/root/audit_origin_contract",
-      "elapsedMs": 180231,
+      "producerReceipt": {
+        "path": ".runtime-correction/validation/public-phone-bootstrap-source-v6-hv_8yf6i/boot-control-1/receipt.json",
+        "sha256": "cce8e66eac270f255ba8bab1dc299eb9fffd50b7038e91134e9eb408becb9a86"
+      },
+      "failureBeforeCleanupSnapshot": {
+        "path": ".runtime-correction/validation/public-phone-bootstrap-source-v6-hv_8yf6i/boot-control-1/failure-before-cleanup.json",
+        "sha256": "5eba2a780982df531e18e07e0b28046dc48f091c38be3e3baf88c221004a089c"
+      },
+      "partialTransportMarker": {
+        "path": ".runtime-correction/validation/public-phone-bootstrap-source-v6-hv_8yf6i/boot-control-1/partial-transport.json",
+        "sha256": "ec1129f52ddfad8eb5855f7997dc3f28adbfcc8e594bb50da84a3a1931715557"
+      },
+      "actualLaunch": "287c2c/session28111",
+      "actualTerminal": "26179a/1",
+      "ownerAgent": "/root",
+      "elapsedMs": 25319,
       "originalBootstrapSeconds": 180,
       "noClockRenewal": true,
-      "localListenerAndHdcLaunchConnectGatesPassedByExactControlFlow": true,
-      "rawListenerObjectsNotPersistedBecauseNoActiveMarker": true,
-      "actualGuestIdentityFragmentsObserved": true,
+      "partialTransportObserved": true,
+      "finalIdentityPolls": 3,
+      "identityCommandMarkers": "FINAL for all12identity commands; API24/phone/exactversion responses and bootquery106 retained.",
       "observedApi": 24,
       "observedDeviceType": "phone",
       "bootControlObserved": false,
       "activeMarkerAbsent": true,
-      "identityOutcome": "API24/phone/version fragments were observed; bootcompleted true neverobserved; missingparameter106 and laterDeviceNotFound47B do notqualifyready.",
       "bootCompletionQueryFailureCode": 106,
       "meaningOf106NotUsedToAssertUniversalUnsupportedness": true,
-      "laterIdentityOutput": "[Fail][E001005] Device not found or connected",
-      "laterIdentityOutputBytes": 47,
-      "laterIdentityCommandExitCode": 0,
-      "identicalAgreementAckWrites": 1,
-      "sameFull85442ByteAgreementSignatureAndPromptVerified": true,
-      "unchangedPromptGuardHeld": true,
-      "controllerReapedAndKnownGroupsAbsent": true,
-      "onlyObservedPidBirthsAttributed": 16,
-      "knownClosedGroupsCount": 171,
-      "immutableInputsStable": true,
-      "terminationAttribution": "Emulator final-9/server-15 are actualterminalcodes. Exactsignal timing/source notjournaled; do notinferOOM/vendorcrashvsownercleanup fromthesealone.",
-      "livePrefixLimitation": "Per-command stream files were buffered until supervisorfinalization. Earlier live on-disk0B prefixes were NOT completed identity results; final closed streams provideAPI24/phone/version fragments and106/laterDeviceNotFound.",
-      "noPostbootModelBuildTestsGradeOrRetry": true,
-      "guestNetworkShareBackendQualified": false,
-      "historicalVendorCauseProven": false,
-      "listenProfileFollowup": {
-        "path": ".runtime-correction/validation/public-phone-v5-listen-closed-9fz8_i2x/closed-receipt.json",
-        "sha256": "f7a5ed2a70acf90a01acf6fad845f6521cec25cfd21e6a52e9088e94542753b2"
+      "persistentEmulatorOutput": {
+        "terminalMarker": "PARTIAL_TERMINAL",
+        "stdoutEofObserved": false,
+        "stderrEofObserved": false,
+        "retainedStdoutBytes": 0,
+        "retainedStderrBytes": 0,
+        "emptyRetainedStreamsDoNotProveNoEmittedOutput": true
       },
-      "noWildcardBindOrOutboundExceptionsStacked": true
+      "preCleanupEmulator": {
+        "pid": 44818,
+        "exitCode": -9,
+        "observedBeforeSupervisorCleanupSignals": true,
+        "signalIssuerAndCause": "UNKNOWN"
+      },
+      "preCleanupServer": {
+        "pid": 45325,
+        "exitCode": null,
+        "stillLiveAtFailureSnapshot": true
+      },
+      "serviceDiagnostic": {
+        "command": "bm dump -a",
+        "calls": 1,
+        "exitCode": 0,
+        "status": "RESPONSE_UNVERIFIED_ONLY",
+        "serviceOrBootQualification": false
+      },
+      "targetedReconnectsCharged": 0,
+      "deviceNotFoundObservedInThisAttempt": false,
+      "identicalAgreementAckWrites": 0,
+      "previousV5Ack1RetainedSeparately": true,
+      "unchangedPromptGuardHeld": true,
+      "knownBirths": 17,
+      "knownClosedGroupsCount": 19,
+      "all19CommandsTerminal": true,
+      "controllerReapedAndKnownGroupsAbsent": true,
+      "immutableSourcePinsVerifiedAfterClose": 97,
+      "initialDevicePinsCheckedPredispatchOnly": 3,
+      "guestNetworkShareBackendQualified": false,
+      "benchmarkModelBuildTestGradeActions": 0,
+      "formalMatchedPairs": 0,
+      "historicalVendorCauseProven": false,
+      "exactPidHostLogDiagnostic": {
+        "path": ".runtime-correction/validation/public-phone-v6-exact-kill-query-9rw6ttoy/receipt.json",
+        "sha256": "271079a2b899966cfbdb22acabeaf45181da348f7355f980aafc939e9a5e9210"
+      },
+      "hostLogDiagnosticConclusion": "No explicit signal issuer/cause established; no absence claim."
     },
     "fixedHdcHelpComparison": {
       "status": "FIXED_HELP_COMPARISON_OBSERVED_NARROW_SCOPE_ONLY",
@@ -1934,6 +2417,57 @@
           },
           "changedProfileOrVendorAction": false
         }
+      },
+      {
+        "status": "UNAVAILABLE_BOOT_IDENTITY_NOT_QUALIFIED_PRESERVED",
+        "sourceHold": {
+          "path": ".runtime-correction/validation/public-phone-bootstrap-source-v5-g98k6txu/source-hold.json",
+          "sha256": "6c00766d0429a6d26574b6de7256998386e28b3a6b935aea4932bade60137546"
+        },
+        "rootTechnicalSourceReview": {
+          "path": ".runtime-correction/validation/root-public-phone-v5-source-review-x48fqvi8/source-review.json",
+          "sha256": "85144b7f097431839c58293926308460997acd25587508041124c73a065c7f8e"
+        },
+        "closedReceipt": {
+          "path": ".runtime-correction/validation/public-phone-v5-bootstrap-closed-ocgn7xq6/closed-receipt.json",
+          "sha256": "2d6c0554bb94c2d815ccf9667b06504cdcc3f870f24217f2e4fae1bcc8100842"
+        },
+        "actualLaunch": "af4092/session1692",
+        "actualTerminal": "82b1b5/1",
+        "ownerAgent": "/root/audit_origin_contract",
+        "elapsedMs": 180231,
+        "originalBootstrapSeconds": 180,
+        "noClockRenewal": true,
+        "localListenerAndHdcLaunchConnectGatesPassedByExactControlFlow": true,
+        "rawListenerObjectsNotPersistedBecauseNoActiveMarker": true,
+        "actualGuestIdentityFragmentsObserved": true,
+        "observedApi": 24,
+        "observedDeviceType": "phone",
+        "bootControlObserved": false,
+        "activeMarkerAbsent": true,
+        "identityOutcome": "API24/phone/version fragments were observed; bootcompleted true neverobserved; missingparameter106 and laterDeviceNotFound47B do notqualifyready.",
+        "bootCompletionQueryFailureCode": 106,
+        "meaningOf106NotUsedToAssertUniversalUnsupportedness": true,
+        "laterIdentityOutput": "[Fail][E001005] Device not found or connected",
+        "laterIdentityOutputBytes": 47,
+        "laterIdentityCommandExitCode": 0,
+        "identicalAgreementAckWrites": 1,
+        "sameFull85442ByteAgreementSignatureAndPromptVerified": true,
+        "unchangedPromptGuardHeld": true,
+        "controllerReapedAndKnownGroupsAbsent": true,
+        "onlyObservedPidBirthsAttributed": 16,
+        "knownClosedGroupsCount": 171,
+        "immutableInputsStable": true,
+        "terminationAttribution": "Emulator final-9/server-15 are actualterminalcodes. Exactsignal timing/source notjournaled; do notinferOOM/vendorcrashvsownercleanup fromthesealone.",
+        "livePrefixLimitation": "Per-command stream files were buffered until supervisorfinalization. Earlier live on-disk0B prefixes were NOT completed identity results; final closed streams provideAPI24/phone/version fragments and106/laterDeviceNotFound.",
+        "noPostbootModelBuildTestsGradeOrRetry": true,
+        "guestNetworkShareBackendQualified": false,
+        "historicalVendorCauseProven": false,
+        "listenProfileFollowup": {
+          "path": ".runtime-correction/validation/public-phone-v5-listen-closed-9fz8_i2x/closed-receipt.json",
+          "sha256": "f7a5ed2a70acf90a01acf6fad845f6521cec25cfd21e6a52e9088e94542753b2"
+        },
+        "noWildcardBindOrOutboundExceptionsStacked": true
       }
     ]
   },
@@ -1962,37 +2496,72 @@
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
     "productSourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
-    "sourceState": "LATEST_TESTED_RUNTIME_ALL7_PASS_LOCAL_TEST_ONLY_OBSERVER_REPAIR_QUALIFIED_PENDING_NEW_CI",
+    "sourceState": "CURRENT_CHANGED_TEST_CI_FAILED_LOCAL_ASSERTION_CORRECTION_APPLIED_NEXT_CI_PENDING",
     "sourceLocallyReachable": true,
-    "latestCompletedRemoteHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
+    "latestCompletedRemoteHead": "89df029c4e347edcee1dc88568319df1051d6f33",
     "newSourceRemoteQualified": false,
     "mainMerged": false,
     "artifactPromotionState": "QUALIFIED_CANONICAL_ARCHIVE_PUSHED_TO_FEATURE_BRANCH",
-    "remoteSourceScope": "Exact53acnaturalPUSH44791681073 passedall7 on unchanged test code after5397case3failure. A new local test-only observer repair has controlled evidence; its updated revision has no remote CI yet.",
-    "lastVerifiedRemoteHeadBeforeThisPublication": "369bf5921bcbfbe9a3e9a650a21eeb7a3dd702d0",
-    "latestVerifiedCIHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
-    "publicationCI": "MostrecentcompletedCI all7PASS; new one-test-file patch pending next naturalpush CI. Runtime/archive unchanged.",
+    "remoteSourceScope": "Exact89dfnaturalPUSH44801566293 attempt1 closed6PASS/1MacFAIL/0cancel. The failure is a new second-task conjunction; its failed component is unknown. Runtime/archive remainFB24/C7f. One test-only follow-up is locally applied; new CI pending.",
+    "lastVerifiedRemoteHeadBeforeThisPublication": "89df029c4e347edcee1dc88568319df1051d6f33",
+    "latestVerifiedCIHead": "89df029c4e347edcee1dc88568319df1051d6f33",
+    "publicationCI": "Latest changed-test CI failed6/7; local test-only predicate correction awaits next naturalpush. Prior53ac7/7 is retained.",
     "lastPassingRemoteHead": "53ac6d4ef5d8fee35ce0f142ab496e3dc26189dc",
     "localFixtureFollowupCommit": "6de9a8f6cfcee8278ec1ab851ec52cd5af84ee98",
-    "localFixtureFollowupStatus": "BOTH_PRIOR_REPAIRED_FILES_PASS_LATEST_ALL7_CI_NEW_COMPLETION_OBSERVER_PATCH_LOCAL",
+    "localFixtureFollowupStatus": "EARLIER_TWO_REPAIRED_FILES_PASS_LATEST_CI_NEW_ASSERTION_FOLLOWUP_APPLIED",
     "localCompletionObserverRepair": {
       "path": "test/openclaw-native-stop-budget.test.mjs",
-      "postimageSha256": "a7ea8b5e09f903540406ed220a24303cfc81c9b4898d6e4de55a0bcd7450ba8e",
-      "status": "LOCALLY_QUALIFIED_SINGLE_TEST_FILE_PENDING_NEW_NATURAL_CI"
+      "postimageSha256": "1213450dc4b0f029178cd47af9764eb33d1bba305ded0a7e86a77ca0206a148e",
+      "status": "LOCALLY_QUALIFIED_APPLIED_TEST_ONLY_PENDING_NEW_NATURAL_CI",
+      "rootIntegration": {
+        "path": ".runtime-correction/validation/root-89df-predicate-integration-cs93vcm4/integration.json",
+        "sha256": "d934a044d1d27998df3fcf0cbc1c0c35a1da67ee4a4021824d1da41961dcd497"
+      }
     }
   },
   "reportCurrentQa": {
-    "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
-    "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
-    "precedingSnapshot": {
-      "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
-      "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+    "status": "PASS_CURRENT_REPORT_FOUR_VIEWS",
+    "htmlSha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51",
+    "scope": "Fourcurrentviews/switch/internalanchors/noexternallinks/hash/date/requests/errors; current6of7CI/localfollowup/currentC7fnoModel/V6partialSIGKILLcauseUnknown/0of39.",
+    "precedingQa": {
+      "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
+      "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
+      "precedingSnapshot": {
+        "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
+        "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+      },
+      "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
+      "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+      "receipt": {
+        "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
+        "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+      },
+      "desktopAndMobileViews": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "actualExec": "4a14ec/session37287 ->12ed61/0",
+      "visualInspection": [
+        "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
+      ],
+      "provenancePeer": {
+        "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
+        "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+      }
     },
-    "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
-    "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+    "authorBeforeSnapshot": {
+      "path": ".runtime-correction/validation/report-ci-conjunction-and-phone-enfed2o5/before-validation.json",
+      "sha256": "07d2e0178c33d5d0ad4c6dcb2f5363be337240da025d8dc2e49362656fdabe2e"
+    },
+    "browserRunByAuthor": false,
+    "rootWillRunFinalFourViewQa": false,
+    "actualExec": "46d8aa/session59806->00e48f/0",
     "receipt": {
-      "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
-      "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+      "path": ".runtime-correction/validation/report-89df-predicate-native-kxznmfvo/receipt.json",
+      "sha256": "7b71402e1b2d6eb0afada8d1f46bed8b8f45b87a41b033f912060e04dfe6c97f"
     },
     "desktopAndMobileViews": 4,
     "languages": [
@@ -2001,13 +2570,13 @@
     ],
     "externalRequests": 0,
     "pageErrors": 0,
-    "actualExec": "4a14ec/session37287 ->12ed61/0",
-    "visualInspection": [
-      "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
-    ],
-    "provenancePeer": {
-      "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
-      "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+    "visualInspection": {
+      "owner": "ROOT",
+      "images": [
+        "ci-en-1200.png",
+        "native-zh-CN-390.png"
+      ],
+      "result": "ReadabledesktopCI/benchmarkandChinesemobilenativeprose; nooverflow/factualoverclaimseen"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -2468,7 +3037,7 @@
     "sourceCommit": "fb24a91898b2b856dc6c7ff84e0471947df21c9e",
     "archiveSha256": "c7f6981f9180ee25cb0f42a5adcb620f7c58a18143bc12583449755cb68e4b29",
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-    "status": "QUALIFIED_RUNTIME_ARCHIVE_PUBLISHED_LATEST_TEST_BASELINE_CI_PASSED_NEW_TEST_OBSERVER_REVISION_PENDING"
+    "status": "QUALIFIED_RUNTIME_ARCHIVE_PUBLISHED_LATEST_CHANGED_TEST_CI_FAILED_LOCAL_TEST_FOLLOWUP_QUALIFIED_APPLIED_CI_PENDING"
   },
   "earlierCompletedDevelopmentRuns": [
     {
