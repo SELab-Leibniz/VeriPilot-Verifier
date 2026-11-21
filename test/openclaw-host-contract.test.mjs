@@ -164,7 +164,8 @@ test("explicit host runtime supports plugin registration, automatic projects, lo
     entry.register(api);
     for (const hook of ['reply_dispatch','before_model_resolve','session_start','before_prompt_build','before_agent_run','before_agent_finalize','before_tool_call','reply_payload_sending','before_compaction','session_end','before_reset','agent_end','gateway_stop'])
       assert(hooks.includes(hook), 'missing native hook: '+hook);
-    for (const action of ['list','get','add','edit','remove']) assert(methods.has('runtime-corrector.dispatch.'+action));
+    for (const action of ['list','get']) assert(methods.has('runtime-corrector.dispatch.'+action));
+    for (const action of ['add','edit','remove']) assert(!methods.has('runtime-corrector.dispatch.'+action));
     assert(routes.some(route=>route.path==='/plugins/runtime-corrector'&&route.auth==='plugin'));
     const identity = {agentId:'main',sessionKey:'agent:main:chat-rc-project-contract',sessionId:'rc-project-contract'};
     const sessionFile = path.join(root,'session.jsonl');

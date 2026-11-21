@@ -20,30 +20,24 @@ async function fixture(t) {
     registerHttpRoute: route => routes.push(route) }, { postRuns: manager, postRunReady: Promise.resolve(), validatePostSession: async () => current },
     { compatibility: async () => ({ browserClient: "native-client.js", version: "fixture" }) });
   async function request(action, params = {}, scopes = ["operator.read", "operator.write"]) {
+    const handler = methods.get(`runtime-corrector.dispatch.${action}`);
+    if (!handler) return { ok: false, error: { code: "METHOD_NOT_FOUND" } };
     let response;
-    await methods.get(`runtime-corrector.dispatch.${action}`)({ params, client: { connect: { role: "operator", scopes } },
+    await handler({ params, client: { connect: { role: "operator", scopes } },
       respond: (ok, value, error) => { response = { ok, value, error }; } });
     return response;
   }
   return { manager, record, routes, request, invalidate: () => { current = false; } };
 }
 
-test("control RPC requires authenticated scopes, exact session identity, and task revision", async t => {
+test("control RPC requires authenticated scopes and exact identity, and has no user task writes", async t => {
   const f = await fixture(t);
   assert.equal((await f.request("list", {}, [])).error.code, "FORBIDDEN");
-  assert.equal((await f.request("add", { ...f.record, text: "task", commandId: "1" }, ["operator.read"])).error.code, "FORBIDDEN");
   assert.equal((await f.request("get", { ...f.record, sessionId: "foreign" })).error.code, "CONFLICT");
-  const first = await f.request("add", { ...f.record, text: "task", commandId: "1" });
-  assert.equal(first.ok, true);
-  const repeated = await f.request("add", { ...f.record, text: "task", commandId: "1" });
-  assert.equal(repeated.value.id, first.value.id);
-  assert.equal((await f.request("add", { ...f.record, text: "changed", commandId: "1" })).error.code, "CONFLICT");
-  const task = { ...f.record, taskId: first.value.id, revision: 1, text: "edited" };
-  assert.equal((await f.request("edit", task)).ok, true);
-  assert.equal((await f.request("remove", task)).error.code, "CONFLICT");
-  assert.equal((await f.request("get", f.record)).value.pending[0].text, "edited");
+  assert.equal((await f.request("recheck", f.record, ["operator.read"])).error.code, "FORBIDDEN");
+  for (const action of ["add", "edit", "remove"]) assert.equal((await f.request(action, f.record)).error.code, "METHOD_NOT_FOUND");
   f.invalidate();
-  assert.equal((await f.request("edit", { ...task, revision: 2 })).error.code, "CONFLICT");
+  assert.equal((await f.request("cancel", f.record)).error.code, "CONFLICT");
 });
 
 test('selected-session requirements expose pending input separately from a previous review baseline', async t => {

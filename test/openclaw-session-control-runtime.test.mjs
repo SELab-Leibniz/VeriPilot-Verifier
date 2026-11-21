@@ -207,8 +207,7 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: terminat
   await within(started.promise, "public stop review starts");
   const target = { projectRoot: f.root, agentId: "main", sessionKey: ctx.sessionKey, sessionId: ctx.sessionId, actor: "fixture-owner" };
   if (waitMode === "until_pass") {
-    const record = f.runtime.postRuns.byId(f.runtime.postRuns.list().sessions[0].id);
-    await f.runtime.postRuns.defer(record, { sourceId: "user-next", text: "Next user task" });
+    assert.equal(f.runtime.sessionInputMode(target), "WAIT");
   }
   const status = await f.runtime.sessionRuntime.refresh(target);
   assert.equal(status.ended, false); assert.equal(status.phase, "REVIEWING");
@@ -219,7 +218,8 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: terminat
   assert.equal(f.selections.get(ctx.sessionId), undefined, "termination does not persist a Session off switch");
   assert.equal(f.hostAbort.signal.aborted, false, "the native business caller remains independent");
   if (waitMode === "until_pass") {
-    assert.deepEqual(dispatched.map(p => p.message), ["Next user task"]);
+    assert.deepEqual(dispatched, []);
+    assert.equal(f.runtime.sessionInputMode(target), "HOST_DEFAULT");
     assert.equal((await f.runtime.sessionRuntime.get(target)).effectiveEnabled, true);
   }
   finish.resolve();
@@ -228,7 +228,7 @@ for (const waitMode of ["assessment", "until_pass"]) test(`${waitMode}: terminat
   await f.runtime.reply({ kind: "final", runId: ctx.runId, sessionKey: ctx.sessionKey, payload: { text: "Late old final." } }, ctx);
   await f.runtime.beforeTool({ toolName: "write", toolCallId: "late-cancelled-tool", params: { path: "draft.md" } }, ctx);
   assert.equal(f.calls(), calls, "late events cannot restart the terminated round");
-  const nextRun = dispatched[0]?.idempotencyKey ?? "fresh-user-run";
+  const nextRun = "fresh-user-run";
   const next = { ...ctx, runId: nextRun };
   await fs.appendFile(path.join(f.root, `${ctx.sessionId}.jsonl`), "\n" + JSON.stringify({ type: "message", id: "new-user",
     parentId: `${ctx.sessionId}-u`, message: { role: "user", content: "Continue the next user task." } }));
