@@ -188,6 +188,8 @@
     "lib/openclaw/reviewer-policy.mjs",
     "lib/openclaw/reviewer-progress.mjs",
     "lib/openclaw/reviewer.mjs",
+    "lib/openclaw/session-runtime-details.mjs",
+    "lib/openclaw/session-runtime-text.mjs",
     "lib/openclaw/runtime.mjs",
     "lib/openclaw/session-control.mjs",
     "lib/openclaw/session-runtime-status.mjs",

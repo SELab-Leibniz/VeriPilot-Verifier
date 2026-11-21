@@ -86,8 +86,11 @@ test("control route serves only packaged assets and verified browser-client capa
     assert.equal(await route.handler({ method, url: `/plugins/runtime-corrector${suffix}` }, res), true);
     return { ...res, headers };
   }
-  assert.match((await get("/")).body, /会话与待执行任务/u);
-  assert.match((await get("/post-run.mjs")).body, /editingRevision/u);
+  const page = (await get("/")).body;
+  assert.match(page, /MA 输入框状态栏预览/u);
+  assert.match(page, /停止本轮纠偏/u);
+  assert.doesNotMatch(page, /加入待办|安全解除/u);
+  assert.match((await get("/post-run.mjs")).body, /runtime-corrector\.runtime\.terminate/u);
   assert.equal(JSON.parse((await get("/capabilities.json")).body).browserClient, "/assets/native-client.js");
   assert.equal((await get("/../runtime.mjs")).statusCode, 404);
   assert.equal((await get("/", "POST")).statusCode, 405);

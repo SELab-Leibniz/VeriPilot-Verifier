@@ -78,10 +78,13 @@ const stopped = await terminateSessionCorrection(
 ## Gateway 与后台函数
 
 - `runtime-corrector.runtime.get`：读取当前 Session 快照，需要 `operator.read`。
+- `runtime-corrector.runtime.details`：按当前 `roundId` 读取可核对的终审、简报交付记录和修复输入，需要 `operator.read`。
 - `runtime-corrector.runtime.refresh`：即时自检并刷新，需要 `operator.write`。
 - `runtime-corrector.runtime.terminate`：终止指定当前轮，需要 `operator.write`。
 
-三个方法都接受 `projectRoot`、`sessionKey`、`sessionId` 和可选 `agentId`；终止另需 `roundId`。后台还会核对宿主当前的 Session 实例和项目，拒绝旧会话、错项目、私有 RC Session、伪造操作者和额外参数。嵌入宿主的 RC 代码可通过 `runtime.sessionRuntime.get/refresh/terminate` 进入相同服务；外部调用使用认证 RPC 或上述客户端函数。
+四个方法都接受 `projectRoot`、`sessionKey`、`sessionId` 和可选 `agentId`。明细和终止都需要传入查询结果中的 `roundId`，明细也接受尚无轮次时的 `null`。后台核对宿主当前的会话实例和项目。嵌入宿主的 RC 代码可通过 `runtime.sessionRuntime.get/refresh/terminate` 读取和控制会话。
+
+访问 `/plugins/runtime-corrector/` 并选择宿主会话，即可查看 MA 输入框状态栏预览。终审和修复输入来自同一会话对应轮次的已有记录。无法核对实际正文时显示「不可用」。页面唯一的纠偏操作是「停止本轮纠偏」。
 
 ## 终止的准确范围
 
