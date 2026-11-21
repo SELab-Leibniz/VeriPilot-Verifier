@@ -78,13 +78,18 @@ const stopped = await terminateSessionCorrection(
 ## Gateway 与后台函数
 
 - `runtime-corrector.runtime.get`：读取当前 Session 快照，需要 `operator.read`。
-- `runtime-corrector.runtime.details`：按当前 `roundId` 读取可核对的终审、简报交付记录和修复输入，需要 `operator.read`。
+- `runtime-corrector.runtime.list`：列出已登记的纠偏会话及状态摘要，需要 `operator.read`。
+- `runtime-corrector.runtime.details`：列出所选宿主会话有记录的轮次，并按指定 `roundId` 读取终审、注入简报和修复反馈，需要 `operator.read`。
 - `runtime-corrector.runtime.refresh`：即时自检并刷新，需要 `operator.write`。
 - `runtime-corrector.runtime.terminate`：终止指定当前轮，需要 `operator.write`。
 
-四个方法都接受 `projectRoot`、`sessionKey`、`sessionId` 和可选 `agentId`。明细和终止都需要传入查询结果中的 `roundId`，明细也接受尚无轮次时的 `null`。后台核对宿主当前的会话实例和项目。嵌入宿主的 RC 代码可通过 `runtime.sessionRuntime.get/refresh/terminate` 读取和控制会话。
+单会话方法接受 `projectRoot`、`sessionKey`、`sessionId` 和可选 `agentId`。明细接受该会话的当前或历史 `roundId`，传 `null` 时读取当前或最近有记录的一轮。终止需要传入当前查询得到的 `roundId`。后台核对宿主当前的会话实例和项目。嵌入宿主的 RC 代码可通过 `runtime.sessionRuntime.get/refresh/terminate` 读取和控制会话。
 
-访问 `/plugins/runtime-corrector/` 并选择宿主会话，即可查看 MA 输入框状态栏预览。终审和修复输入来自同一会话对应轮次的已有记录。无法核对实际正文时显示「不可用」。页面唯一的纠偏操作是「停止本轮纠偏」。
+访问 `/plugins/runtime-corrector/`。左侧列出已登记的纠偏会话，右侧显示所选会话的纠偏运行、Agent 活动和 MA 状态栏预览。「刷新状态」会重读会话列表并核对当前所选会话。
+
+「查看轮次」使用已有的轮次状态、终审记录、简报送达和修复启动回执。会话状态文件保存轮次和整体阶段。终审期间控制台按宿主轮次读取已保存的审查范围和逐项回执，显示无偏差、有偏差、未验证以及已选入但尚无判定的未审项。终审完成后显示已发布的评估记录。旧记录缺少审查范围或逐项判定时，页面会说明记录情况。每轮简报显示送达时间、渠道和已保存的正文，同一会话也可跳转至最近一次送达。
+
+自动修复沿用原宿主会话，按启动记录显示来源并可跳转至修复轮。原始轮也会显示已经核对的修复输入。修复请求使用启动引用时，核对模型已启动且反馈正文与启动凭据一致后显示正文。「停止本轮纠偏」用于宿主当前仍可终止的轮次。
 
 状态查询的 `inputMode` 描述同一宿主会话的新消息准入。`HOST_DEFAULT` 沿用 MA 规则，`WAIT` 表示 RC 当前轮持有续跑机会。状态栏使用 `display.line`。MA 在提交时由宿主再次核对，并在返回等待时保留草稿。
 

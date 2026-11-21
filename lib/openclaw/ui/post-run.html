@@ -16,9 +16,23 @@
   </section>
   <p id="connection" role="status">未连接</p>
   <p id="error" role="alert" hidden></p>
-  <label for="sessions">宿主会话</label>
-  <select id="sessions" disabled><option value="">请选择会话</option></select>
-  <section id="selected" aria-label="所选宿主会话" hidden>
+  <div class="toolbar">
+    <button id="refresh" type="button" disabled>刷新状态</button>
+    <span id="query-status" class="muted" role="status"></span>
+  </div>
+  <div class="layout">
+    <aside aria-labelledby="session-list-heading">
+      <h2 id="session-list-heading">纠偏会话</h2>
+      <label for="session-filter" class="muted">查找会话或项目</label>
+      <input id="session-filter" type="search">
+      <p id="list-status" class="muted">连接宿主后显示会话</p>
+      <ul id="sessions" class="session-list"></ul>
+      <details id="other-hosts" hidden>
+        <summary>其他宿主会话</summary>
+        <ul id="other-sessions" class="session-list"></ul>
+      </details>
+    </aside>
+    <section id="selected" aria-label="所选宿主会话" hidden>
     <header>
       <h2 id="name"></h2>
       <p id="project" class="muted"></p>
@@ -28,22 +42,41 @@
       <p id="phase" role="status"></p>
     </section>
     <p id="switches" class="muted"></p>
+    <dl class="runtime-status">
+      <div><dt>纠偏运行</dt><dd id="round-status"></dd></div>
+      <div><dt>纠偏 Agent</dt><dd id="agent-status"></dd></div>
+    </dl>
     <ul id="activities" aria-label="当前纠偏 Agent"></ul>
-    <p id="brief" class="muted"></p>
-    <details id="review">
+    <div id="round-picker" class="round-picker" hidden>
+      <label for="round-select">查看轮次</label>
+      <select id="round-select"></select>
+    </div>
+    <p id="brief-status" class="muted"></p>
+    <p id="latest-brief" class="muted" hidden><a href="#">查看这个会话最近注入的简报</a></p>
+    <details id="brief" hidden>
+      <summary id="brief-title"></summary>
+      <pre id="brief-text"></pre>
+    </details>
+    <section class="repair-runs">
+      <h3>自动修复运行</h3>
+      <p id="repair-status" class="muted"></p>
+      <ul id="repair-runs"></ul>
+    </section>
+    <details id="review" open>
       <summary>本轮终审 <strong id="outcome"></strong></summary>
       <div id="review-details"></div>
     </details>
     <details id="repair" hidden>
-      <summary>本轮修复输入</summary>
+      <summary>本轮修复反馈</summary>
       <p id="repair-source" class="muted"></p>
       <pre id="repair-text"></pre>
     </details>
     <div class="termination">
-      <button id="terminate" type="button" disabled>停止本轮纠偏</button>
+      <button id="terminate" type="button" disabled hidden>停止本轮纠偏</button>
       <span id="stop-receipt" role="status"></span>
     </div>
-  </section>
+    </section>
+  </div>
 </main>
 <script type="module" src="/plugins/runtime-corrector/post-run.mjs"></script>
 </body>

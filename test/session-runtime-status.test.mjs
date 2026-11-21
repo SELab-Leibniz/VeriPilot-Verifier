@@ -199,6 +199,12 @@ test("RPC controls require authenticated scopes and exact identity; callers cann
     return response;
   };
   const identity = Object.fromEntries(["projectRoot", "sessionId", "sessionKey", "agentId"].map(k => [k, a.identity[k]]));
+  await f.service.flush();
+  assert.equal((await call("list", {}, [])).error.code, "FORBIDDEN");
+  const listed = await call("list", {}, ["operator.read"]);
+  assert.deepEqual(listed.result.sessions.map(row => row.sessionId), [identity.sessionId]);
+  assert.equal(listed.result.sessions[0].owner, undefined);
+  assert.equal((await call("list", identity, ["operator.read"])).ok, false);
   assert.equal((await call("get", identity, [])).error.code, "FORBIDDEN");
   assert.equal((await call("get", identity, ["operator.read"])).ok, true);
   assert.equal((await call("refresh", identity, ["operator.read"])).error.code, "FORBIDDEN");

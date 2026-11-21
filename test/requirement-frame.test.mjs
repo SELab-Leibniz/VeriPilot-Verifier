@@ -402,7 +402,8 @@ test('6.4.1 and 6.4.5: a cached frame goes at run start once, with the pre-edit 
   assert.equal(receipts.length, 1);
   const [{ at, ...receipt }] = receipts;
   assert(Number.isFinite(Date.parse(at)));
-  assert.deepEqual(receipt, { channel: 'run_start', runId: 'u2', startHead: frame.startHead, productionChangesBefore: 0 });
+  assert.deepEqual(receipt, { channel: 'run_start', runId: 'u2', startHead: frame.startHead,
+    productionChangesBefore: 0, text: prependContext });
 });
 
 test('6.4.2 and 6.4.5: a frame that becomes ready mid-turn follows existing feedback on the next result', async t => {
@@ -441,6 +442,7 @@ test('6.4.2 and 6.4.5: a frame that becomes ready mid-turn follows existing feed
   assert.equal(receipts.length, 1);
   assert.deepEqual({ ...receipts[0], at: null }, {
     at: null, channel: 'tool_result', runId: 'u1', startHead: frame.startHead, productionChangesBefore: 1,
+    text: deliveredBrief(result),
   });
 });
 

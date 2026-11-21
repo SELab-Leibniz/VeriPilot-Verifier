@@ -289,11 +289,12 @@ requirementFrame:
 每次送达，向 `frame.json` 同目录的 `deliveries.jsonl` 追加一行：
 
 ```json
-{ "at": "…", "channel": "run_start", "runId": "…", "startHead": "…", "productionChangesBefore": 0 }
+{ "at": "…", "channel": "run_start", "runId": "…", "startHead": "…", "productionChangesBefore": 0, "text": "…" }
 ```
 
 - `channel` 为 `run_start` 或 `tool_result`。
 - `productionChangesBefore` 是送达时用 `task-changes.mjs` 现有函数算出的非文档改动条数；任务或开始快照不存在时为 `null`。它用来评估"简报是否在开写代码之前送达"。
+- `text` 是本次送达的简报正文，供 RC 控制台读取。
 
 ### 6.4 验收
 

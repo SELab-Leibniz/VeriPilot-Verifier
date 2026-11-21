@@ -1,14 +1,33 @@
 :root { color-scheme: light dark; font: 15px/1.55 system-ui, "Microsoft YaHei", sans-serif; }
 body { margin: 0; }
-main { max-width: 720px; margin: auto; padding: 28px 20px; }
+main { max-width: 1040px; margin: auto; padding: 28px 20px; }
 h1 { font-size: 24px; }
 h2 { font-size: 19px; margin-bottom: 4px; overflow-wrap: anywhere; }
 h3 { font-size: 13px; font-weight: 550; margin: 0 0 6px; opacity: .8; }
 p { margin: 6px 0 12px; overflow-wrap: anywhere; }
 label { display: block; margin-bottom: 6px; }
 input, select, button { font: inherit; padding: 6px 10px; }
-select { width: 100%; }
 button:not(:disabled) { cursor: pointer; }
+.toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.layout { display: grid; grid-template-columns: minmax(180px, 265px) minmax(0, 1fr); gap: 24px; align-items: start; }
+aside { border-inline-end: 1px solid GrayText; padding-inline-end: 16px; }
+aside h2 { margin: 0 0 12px; }
+aside input { box-sizing: border-box; width: 100%; }
+.session-list { list-style: none; padding: 0; margin: 0 0 14px; }
+.session-list a { color: inherit; display: block; overflow-wrap: anywhere; text-decoration: none; padding: 8px; border-radius: 5px; }
+.session-list a:hover, .session-list a:focus-visible, .session-list a[aria-current] { background: ButtonFace; outline: 1px solid GrayText; }
+.session-list small { display: block; opacity: .8; }
+#selected h2 { margin-top: 0; }
+.runtime-status { display: flex; gap: 22px; flex-wrap: wrap; }
+.runtime-status dt { font-weight: 600; }
+.runtime-status dd { margin: 4px 0 0; }
+.round-picker { padding: 12px 0; border-top: 1px solid GrayText; }
+.round-picker select { width: 100%; box-sizing: border-box; }
+.review-group h4 { margin: 12px 0 4px; }
+.review-group ul { margin-top: 0; }
+.repair-runs { padding: 12px 0; border-top: 1px solid GrayText; overflow-wrap: anywhere; }
+.repair-runs h3 { font-size: 15px; }
+.repair-runs ul { white-space: pre-wrap; }
 .preview { padding: 12px 16px; margin: 20px 0 10px; border: 1px solid GrayText; border-radius: 8px; }
 .preview p { margin: 0; }
 .muted { opacity: .8; font-size: 13px; }
@@ -20,3 +39,8 @@ summary strong { font-size: 13px; margin-inline-start: 8px; }
 pre { font: inherit; padding: 10px; border: 1px solid GrayText; border-radius: 4px; }
 .termination { margin-top: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
 #error { border-inline-start: 2px solid; padding-inline-start: 8px; }
+@media (max-width: 620px) {
+  .layout { grid-template-columns: 1fr; }
+  aside { border-inline-end: 0; border-bottom: 1px solid GrayText; padding: 0 0 12px; }
+  .session-list { max-height: 220px; overflow: auto; }
+}
