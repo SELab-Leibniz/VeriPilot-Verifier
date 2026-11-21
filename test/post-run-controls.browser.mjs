@@ -70,7 +70,9 @@ await fs.writeFile(path.join(evaluations, "stop-first.json"), JSON.stringify({
 const api = { config: {}, logger: { warn() {} }, registerGatewayMethod: (name, handler) => methods.set(name, handler),
   registerHttpRoute: route => routes.push(route) };
 const sentInput = "Restore the file filter from the original request.";
+let alphaInputMode = "WAIT";
 const runtime = { sessionRuntime, postRunReady: Promise.resolve(),
+  sessionInputMode: ({ sessionId }) => sessionId === "alpha" ? alphaInputMode : "HOST_DEFAULT",
   readSessionFollowup: async ({ sessionId }, runId) => sessionId === "alpha" && runId === "rc-stop-exact-alpha"
     ? { runId, source: { runId: "run-alpha" }, modelObservedAt: 1, message: sentInput, messageHash: sha256(sentInput) } : null,
   readSessionRepairs: async ({ sessionId }) => sessionId === "alpha"
@@ -116,7 +118,7 @@ try {
   const select = name => page.locator("#sessions").getByRole("link", { name: new RegExp("^" + name + "\\b", "u") }).click();
   await page.goto("http://127.0.0.1:" + server.address().port + "/plugins/runtime-corrector?sessionKey=agent:main:alpha&sessionId=alpha");
   await page.getByRole("button", { name: "连接", exact: true }).click();
-  await page.waitForFunction(() => document.querySelector("#phase").textContent.includes("建议本轮结束后再发送"));
+  await page.waitForFunction(() => document.querySelector("#phase").textContent === "RC 正在终审 · 新消息暂不可发送");
   assert.match(await page.locator("#activities").innerText(), /终审/u);
   assert.match(await page.locator("#round-status").innerText(), /终审/u);
   assert.equal(await page.locator("#agent-status").innerText(), "正在运行");
@@ -140,12 +142,14 @@ try {
   await page.getByRole("link", { name: "查看这个会话最近注入的简报" }).click();
   await page.waitForFunction(() => document.querySelector("#outcome").textContent === "终审中");
   assert.equal(await page.getByRole("button").count(), 2);
+  alphaInputMode = "HOST_DEFAULT";
   await page.getByRole("button", { name: "刷新状态" }).click();
   await page.waitForFunction(() => document.querySelector("#query-status").textContent.includes("已重新查询状态"));
+  assert.equal(await page.locator("#phase").innerText(), "RC 正在终审");
   assert.deepEqual(refreshes.map(target => [target.sessionKey, target.sessionId]), [["agent:main:alpha", "alpha"]]);
   await select("beta");
   await page.waitForFunction(() => document.querySelector("#phase").textContent.includes("评审产物"));
-  assert.doesNotMatch(await page.locator("#phase").innerText(), /再发送/u);
+  assert.doesNotMatch(await page.locator("#phase").innerText(), /新消息暂不可发送/u);
   assert.doesNotMatch(await page.locator("#repair-runs").innerText(), /rc-stop-exact-alpha/u);
   assert.equal(await page.locator("#brief").isVisible(), false);
   assert.equal(await page.locator("#brief-status").innerText(), "本轮无注入简报记录");

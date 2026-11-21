@@ -147,11 +147,21 @@ test("status line distinguishes passive work, protected review and unavailable l
     activities: [{ role: "artifact-reviewer" }] };
   assert.equal(sessionRuntimeText(snapshot).line, "RC 提议 Agent 正在生成需求简报");
   assert.deepEqual(sessionRuntimeText(snapshot).activities, ["正在评审产物", "提议 Agent 正在生成需求简报"]);
-  assert.match(sessionRuntimeText({ ...snapshot, phase: "REVIEWING" }).line, /本轮结束后再发送/u);
+  const reviewing = { ...snapshot, phase: "REVIEWING" };
+  assert.equal(sessionRuntimeText(reviewing).line, "RC 正在终审");
+  assert.equal(sessionRuntimeText({ ...reviewing, inputMode: "HOST_DEFAULT" }).line, "RC 正在终审");
+  assert.equal(sessionRuntimeText({ ...reviewing, inputMode: "WAIT" }).line, "RC 正在终审 · 新消息暂不可发送");
+  const waitingForRepair = sessionRuntimeText({ ...snapshot, phase: "WAIT_CORRECTION", stage: null, running: false,
+    activities: [], inputMode: "WAIT" });
+  assert.equal(waitingForRepair.line, "RC 正在等待启动修复 · 新消息暂不可发送");
+  assert.equal(waitingForRepair.agents, "当前无纠偏 Agent 在运行");
   assert.deepEqual(sessionRuntimeText({ ...snapshot, status: "UNKNOWN" }).activities, []);
   assert.equal(sessionRuntimeText({ ...snapshot, hostReconciliation: "UNKNOWN" }).agents, "状态不可用");
   assert.match(sessionRuntimeText({ ...snapshot, phase: "REVIEW_QUEUED", stage: null, running: false, activities: [] }).agents, /当前无/u);
   assert.match(sessionRuntimeText({ ...snapshot, phase: "CORRECTING", stage: null, activities: [] }).agents, /正在运行/u);
   assert.equal(sessionRuntimeText({ ...snapshot, outcome: "NO_DEVIATION_FOUND" }).review, "无偏差");
-  assert.match(sessionRuntimeText({ ...snapshot, phase: "ENDED", ended: true, inputMode: "WAIT" }).line, /暂缓接收新消息/u);
+  const ended = { ...snapshot, phase: "ENDED", status: "ENDED", ended: true, active: false, running: false,
+    stage: null, activities: [], outcome: "NO_DEVIATION_FOUND" };
+  assert.equal(sessionRuntimeText({ ...ended, inputMode: "WAIT" }).line, "RC 新消息暂不可发送");
+  assert.equal(sessionRuntimeText({ ...ended, inputMode: "HOST_DEFAULT" }).line, "RC 本轮已结束 · 无偏差");
 });
