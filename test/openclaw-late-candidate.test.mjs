@@ -40,22 +40,26 @@ const postRecord = runtime => runtime.postRuns.byId(runtime.postRuns.list().sess
 function currentPromotedPublication(t, f) {
   const jobs = f.sharedState.stopReviewJobs, set = jobs.set, runId = f.next.runId;
   const digest = value => createHash('sha256').update(value).digest('hex');
-  let selected, resolve, reject;
+  let selected, resolve, reject, admit, rejectAdmission;
+  const admission = new Promise((done, fail) => { admit = done; rejectAdmission = fail; });
+  void admission.catch(() => {});
   const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
   void promise.catch(() => {});
   // Observe the newly scheduled current job, never an already retained NDF.
   t.mock.method(jobs, 'set', function (key, job) {
     const result = set.call(this, key, job);
     if (job.record.runId !== runId) return result;
-    if (selected) { reject(new Error('Ambiguous promoted native review publication.')); return result; }
+    if (selected) { const error = new Error('Ambiguous promoted native review publication.'); rejectAdmission(error); reject(error); return result; }
     selected = job;
     void (async () => {
       const createdAt = job.record.createdAt, jobDeadlineAt = job.record.deadlineAt;
       assert.equal(job.record.status, 'PENDING');
-      const admitted = f.post(), revision = f.state.enabledRevision ?? 0;
+      const admitted = f.post(), revision = f.state.enabledRevision ?? 0, controller = f.state.reviewController;
+      assert.equal(f.state.nativeRunId, runId); assert.equal(controller.signal.aborted, false);
       assert.equal(admitted.runId, runId); assert.equal(admitted.phase, 'REVIEWING');
       const deadlineAt = admitted.deadlineAt;
       assert(Number.isFinite(deadlineAt), 'the original dispatcher review deadline is required');
+      admit({ deadlineAt }); // Expose only the captured existing admission, before publication I/O.
       await job.done;
       const record = job.record;
       const file = path.join(f.root, '.runtime-correction/openclaw/native-stop-reviews',
@@ -73,11 +77,25 @@ function currentPromotedPublication(t, f) {
       assert.equal(task.verification.status, 'NO_DEVIATION_FOUND');
       assert(task.verification.assessmentId.startsWith(`${runId}:stop`));
       assert.equal(saved.evaluationId, task.verification.evaluationId);
+      assert.equal(f.state.reviewController, controller); assert.equal(controller.signal.aborted, false);
+      const timing = { originalDeadlineUnchanged: f.post().deadlineAt === deadlineAt,
+        parentUnexpired: Date.now() < deadlineAt, finiteAssessment: Number.isFinite(saved.assessmentCompletedAt),
+        finiteNativeDeadline: Number.isFinite(saved.deadlineAt), finiteSettlement: Number.isFinite(saved.settledAt),
+        assessmentWithinNative: saved.assessmentCompletedAt <= saved.deadlineAt,
+        assessmentWithinParent: saved.assessmentCompletedAt <= deadlineAt, settlementWithinParent: saved.settledAt <= deadlineAt };
+      if (!Object.values(timing).every(Boolean)) t.diagnostic('PROMOTED_PUBLICATION_TIMING ' + JSON.stringify({
+        timing, deadlineAt, nativeDeadlineAt: saved.deadlineAt, assessmentCompletedAt: saved.assessmentCompletedAt, settledAt: saved.settledAt }));
+      assert(Object.values(timing).every(Boolean), 'Promoted publication must retain its original unexpired parent.');
       return { deadlineAt };
-    })().then(resolve, reject);
+    })().then(resolve, error => { rejectAdmission(error); reject(error); });
     return result;
   });
-  return promise;
+  return { admission, published: promise };
+}
+
+async function awaitPromotedPublication(publication, drain) {
+  const { deadlineAt } = await within(publication.admission, 'promoted native review admission');
+  await beforeStopDeadline(() => Promise.all([publication.published, drain]), { deadlineAt });
 }
 
 async function lateCandidate(t, { waitMode = 'until_pass', terminalStatus = 'ok', review, nextTerminal } = {}) {
@@ -152,12 +170,8 @@ test('a late old terminal promotes the completed new native candidate once with 
     f.setActivity('done'); await f.recheck();
     const drain = f.runtime.waitForNativeReviews();
     void drain.catch(() => {});
-    await (async () => {
-      // The unchanged 10s observer checks the durable current assessment.
-      // Full cleanup still must drain within its original absolute window.
-      const { deadlineAt } = await within(publication, 'promoted native review');
-      await beforeStopDeadline(() => drain, { deadlineAt });
-    })().catch(async error => {
+    // Keep the original10s admission bound; publication/drain share the captured parent.
+    await awaitPromotedPublication(publication, drain).catch(async error => {
       t.diagnostic(JSON.stringify({ fixturePhase: 'PROMOTED_SUCCESSOR_REVIEW_DRAIN', waitMode, terminalStatus,
         reviewCallbacks: f.reviewed.length, factoryCallbacksSinceFixtureReturn: f.calls(),
         businessSends: f.businessSends.length, nativeRunMatchesSuccessor: f.state.nativeRunId === f.next.runId,
