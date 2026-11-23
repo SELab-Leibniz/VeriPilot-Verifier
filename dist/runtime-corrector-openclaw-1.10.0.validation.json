@@ -3756,22 +3756,38 @@
       "currentArchiveBuiltFromCISource": true,
       "currentArchiveInstalledByCI": false,
       "scope": "CI source/artifact checks separatefrom retained fresh-stockinstallation."
-    }
+    },
+    "latestReportOnlyPublicationCI": {
+      "head": "1372e6c1fe923bc0a7e7ccfd6b45b537a9b795c3",
+      "runId": 45097240241,
+      "attempt": 1,
+      "status": "ALL7_TEST_JOBS_SUCCESS_PUBLICATION_SKIPPED",
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-1372-report-natural-tcl34xgk/terminal-receipt.json",
+        "sha256": "1c629765cbb2b3930839b504aa8543f5daa317f039e9f96eddfc681f342d68fd"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/ci-fix/post-1372-report-natural-tcl34xgk/terminal-readback.json",
+        "sha256": "09451600251f2645ae71e9d6ad08386ade3eb14493c7561bace5a0740cb7e81f"
+      },
+      "scope": "Compactofficialrun/job metadata; no completecurrentrawlogs/filecountsrecollected. Existing605full398logcounts are separate. Source/tests/runtime/archive unchanged."
+    },
+    "latestCompletedScope": "Existing full-log-qualified fields/398platformcounts refer to605; newer1372 compactterminal proof is under latestReportOnlyPublicationCI."
   },
   "currentPackageRealModelEvaluation": {
-    "status": "CLOSED_FIRST_OFF_FROZEN_UNGRADED_ON_PREFLIGHT_BLOCKED",
+    "status": "FIRST_OFF_FROZEN_UNGRADED_PAIRED_ON_RUNNING_NO_COMPARISON",
     "sourceCommit": "611132eea732aaeda811bdc691fbb8ca73f688fb",
     "archiveSha256": "7e75db8b9a21fedfe29959cad12ae8c22a37b1144e25c38ccd2380be7d6cd2a8",
     "modelTrialPerformed": true,
     "methodUseVerified": false,
-    "methodUseStatus": "NOT_EXERCISED_OFF_FIRST_ARM_ON_PENDING",
+    "methodUseStatus": "ON_PENDING_ACTUAL_TOOL_RECEIPTS_OFF_NOT_EXERCISED",
     "benefitProven": false,
     "qualityGainProven": false,
     "matchedPairCredit": 0,
     "codingRequests": 51,
     "reviewRequests": 0,
     "nativeCorrectionsObserved": 0,
-    "scope": "First611/7e75 OFF closed with51Flash/0Pro. Outerprocess0 and10markedtasks do NOT qualify a cleanworkflow: actual host Applyagent.wait ERROR, originalTurnQualifiedfalse. No grade, pairedON or qualitybenefit yet. Prior795 independentlygraded completed case remainsunchanged.",
+    "scope": "Current611/7e75 pairedON coding has started; no Proreview/methoduse/qualityresult inferred from startmetrics. FirstOFF172frozen/51Flash0Pro/hostApplyERRORcauseUNKNOWN is retained separately. All4deliveries mustclose/freeze before privategrading. Earlier795 graded case remainsunchanged.",
     "requestCountsAreSnapshot": false,
     "arm": "OFF",
     "operatorRoot": ".runtime-correction/validation/public-run-083b10e3bf9f40",
@@ -3838,7 +3854,7 @@
       },
       "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
     },
-    "currentPhaseAtReportRefresh": "FIRST_OFF_CLOSED_FROZEN_HOST_APPLY_ERROR_ON_LOCAL_PREFLIGHT_BLOCKED",
+    "currentPhaseAtReportRefresh": "FIRST_OFF_FROZEN_PAIRED_ON_APPLY_CURRENT_IMPLEMENTATION_REVIEW_PENDING",
     "ordinaryApplyApproval": {
       "path": ".runtime-correction/validation/public-run-083b10e3bf9f40/apply-admission.json",
       "sha256": "3ade8102b7b26030028f49698ab900ed421c5559ef324239de0387b97f7e23cc",
@@ -3874,14 +3890,15 @@
         "path": ".runtime-correction/validation/public-run-083b10e3bf9f40/live/apply-common-4.payload.json",
         "sha256": "fc2a267f2a9ecaf2e682fc3194295cd4481ff646ab8a8d36df0c3413488c26fc"
       },
-      "observedToolFailure": "Exec failed for an optional ruff/mypy tool command, as retained in host Apply error payload.",
+      "observedToolFailure": "A failed optionalruff/mypy toolcommand is retained in hostApplypayload; causal attribution of terminal hostERROR remainsUNKNOWN.",
       "planTasksMarkedDone": 10,
       "planTasksTotal": 10,
       "planChange": "Checkbox delta only, Root observed.",
       "assistantTestSuccessClaimIsIndependentProof": false,
-      "cleanWorkflowClaimed": false
+      "cleanWorkflowClaimed": false,
+      "hostErrorCause": "UNKNOWN"
     },
-    "frozenCandidateStatus": "PENDING_ROOT_FREEZE_AT_THIS_REPORT_UPDATE",
+    "frozenCandidateStatus": "FROZEN172_WITH_ORIGINAL_MODES_NO_PRIVATE_GRADE",
     "privateGradeStatus": "WITHHELD_ALL_FOUR_CLOSED_FROZEN_REQUIRED",
     "frozenFiles": 172,
     "freezeActual": "37c36d/0",
@@ -3905,27 +3922,309 @@
     "outerControllerExitCode": 0,
     "outerControllerExitNotSemanticVerdict": true,
     "pairedOnPreparation": {
-      "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
-      "receipt": {
-        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
-        "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
-      },
-      "readback": {
-        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
-        "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
-      },
+      "status": "RUNNING_PAIRED_FIRST_ON_NO_REVIEW_OR_QUALITY_RESULT",
       "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
-      "processOrSessionCreated": false,
-      "actorSdkGatewayKeyReadOrModelStarted": false,
-      "dependentSetupAndLive": "UNSTARTED",
-      "noRetryOrIndirectExecutionAfterRejection": true,
-      "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
-      "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+      "arm": "ON",
+      "sourceCommit": "611132eea732aaeda811bdc691fbb8ca73f688fb",
+      "archiveSha256": "7e75db8b9a21fedfe29959cad12ae8c22a37b1144e25c38ccd2380be7d6cd2a8",
+      "actualLaunch": "d8d6fe/session60556",
+      "handleOwner": "ROOT",
+      "actualTerminal": "PENDING_NOT_POLLED_BY_REPORT_AUTHOR",
+      "setup": {
+        "actual": "5b0b38/session44213 ->5a358b/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/setup-receipt.json",
+          "sha256": "67634a099a4c9f72c3d65d4afd2c96287ae819c90d623f176a3763ea129155eb"
+        },
+        "status": "PUBLIC_SETUP_JOINED",
+        "sessionId": "17de7779-6a63-4aeb-9407-479f8ea47baa",
+        "sessionKey": "agent:main:tui-fa24d1fe-fcfb-45e0-8a67-94729f908d1d"
+      },
+      "currentPublicPreflight": {
+        "actual": "80d123/session18219 ->e05a0c/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/public-check-receipt.json",
+          "sha256": "badc3c28e5689e0833ebbb8575f6ae5b404d5ae86aaf1b59ca7efb8189b8fa4e"
+        },
+        "selectedPublicCases": 668,
+        "knownClosedBirths": 4,
+        "knownClosedGroups": 3,
+        "noCorrectnessOrQualityGrade": true
+      },
+      "liveAdmission": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-admission.json",
+        "sha256": "98529595d4ce1765f904be8b51f47a3de5e814a28af226fc99328e959ae66320"
+      },
+      "liveTreatmentReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-treatment-readback.json",
+        "sha256": "29997cc0610e24cae210c7c7afc0b083566b399c4fb438890192ca650fdb0ecb"
+      },
+      "liveMethodReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-method-readback.json",
+        "sha256": "306725a5f06318590f95bcca1504de9e50b4960c0c40091fcba9047a5659abc5"
+      },
+      "realModelStarted": true,
+      "rootImmutableModelStartMetrics": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/first-on-real-model-started-metrics.json",
+        "sha256": "2b03013eb08eb51cbe742c418c7cbb278bb286ebacba988f0bc7d13b4d50cfbb"
+      },
+      "modelStartSnapshot": {
+        "countsByModel": {
+          "deepseek-flash": 21,
+          "deepseek-v4-pro": 0
+        },
+        "wireAttempts": 21,
+        "admittedRequests": 21,
+        "inFlight": 1,
+        "closed": false,
+        "http200ObservedRootReported": true,
+        "denied": 0,
+        "notCompletedBillingOrWholeTrialCounts": true,
+        "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+      },
+      "proReviewActuallyObserved": false,
+      "methodUseVerified": false,
+      "methodUseStatus": "PENDING_ACTUAL_SOURCE_BOUND_TOOL_RECEIPTS_NOT_INFERRED_FROM_CONFIGURATION_OR_START",
+      "nativeCorrectionCount": "NOT_ASSESSED_FROM_MODEL_START_ONLY",
+      "originalEpoch": {
+        "startedAtMs": 1795399927633,
+        "deadlineAtMs": 1795403527633,
+        "wallLimitMs": 3600000,
+        "maxRequests": 256,
+        "renewal": false
+      },
+      "ordinaryProposalApprovalBeforeApply": "ROOT_OWNED_PENDING",
+      "qualityResultAvailable": false,
+      "privateGradePerformed": false,
+      "formal13TaskCredit": 0,
+      "precedingPreparation": {
+        "status": "PREFLIGHT24_PASSED_ISOLATED_CREDENTIAL_FREE_SETUP_RUNNING",
+        "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+        "authorizationResolution": {
+          "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/root-user-authorization-resolution.json",
+          "sha256": "540aefd6c22298a45035cf19d6ddc13cce7a109b3c5841ffe73d56341b2d76e7"
+        },
+        "exactPreviouslyRejectedArgvContinued": true,
+        "policyOrPlanRemade": false,
+        "preflight": {
+          "actual": "a80894/session38936 ->ddf521/0",
+          "receipt": {
+            "path": ".runtime-correction/validation/public-run-cd221ef176cf46/preflight/attempt1/receipt.json",
+            "sha256": "66acf0f495c2db01f06605b76563d099367aa60840a224d2306b5a897ec4f7df"
+          },
+          "checksPassed": 24,
+          "elapsedMs": 3269,
+          "knownOwnedGroupsAbsent": true,
+          "actorFixturesRemoved": true,
+          "scope": "Exact policy capability/control sample; not live treatment/setup/plugin functionality or universal isolation proof."
+        },
+        "setup": {
+          "actualLaunch": "5b0b38/session44213",
+          "handleOwner": "ROOT",
+          "status": "IN_PROGRESS_CREDENTIAL_FREE_FAKE_PROVIDER",
+          "realModelStarted": false,
+          "terminalResult": "PENDING_ROOT_ACTUAL_TERMINAL"
+        },
+        "paidOnCodingStarted": false,
+        "precedingBlockedPreparation": {
+          "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
+          "receipt": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
+            "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
+          },
+          "readback": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
+            "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
+          },
+          "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+          "processOrSessionCreated": false,
+          "actorSdkGatewayKeyReadOrModelStarted": false,
+          "dependentSetupAndLive": "UNSTARTED",
+          "noRetryOrIndirectExecutionAfterRejection": true,
+          "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
+          "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+        },
+        "precedingRejectionStillHistorical": true,
+        "existingApiCostAuthorizationUnchanged": true
+      }
     },
     "hostWaitSourceAudit": {
       "path": ".runtime-correction/validation/click-off-terminal-status-source-audit-cxms0_04/receipt.json",
       "sha256": "e5c25ed95032f18240ccbee996de9a8185d4c9fb3a3f4cb650e711c5589cb925"
-    }
+    },
+    "nextOnPreparationStatus": "PAID_ON_STARTED",
+    "pairedOnEvaluation": {
+      "status": "RUNNING_PAIRED_FIRST_ON_NO_REVIEW_OR_QUALITY_RESULT",
+      "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+      "arm": "ON",
+      "sourceCommit": "611132eea732aaeda811bdc691fbb8ca73f688fb",
+      "archiveSha256": "7e75db8b9a21fedfe29959cad12ae8c22a37b1144e25c38ccd2380be7d6cd2a8",
+      "actualLaunch": "d8d6fe/session60556",
+      "handleOwner": "ROOT",
+      "actualTerminal": "PENDING_NOT_POLLED_BY_REPORT_AUTHOR",
+      "setup": {
+        "actual": "5b0b38/session44213 ->5a358b/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/setup-receipt.json",
+          "sha256": "67634a099a4c9f72c3d65d4afd2c96287ae819c90d623f176a3763ea129155eb"
+        },
+        "status": "PUBLIC_SETUP_JOINED",
+        "sessionId": "17de7779-6a63-4aeb-9407-479f8ea47baa",
+        "sessionKey": "agent:main:tui-fa24d1fe-fcfb-45e0-8a67-94729f908d1d"
+      },
+      "currentPublicPreflight": {
+        "actual": "80d123/session18219 ->e05a0c/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/public-check-receipt.json",
+          "sha256": "badc3c28e5689e0833ebbb8575f6ae5b404d5ae86aaf1b59ca7efb8189b8fa4e"
+        },
+        "selectedPublicCases": 668,
+        "knownClosedBirths": 4,
+        "knownClosedGroups": 3,
+        "noCorrectnessOrQualityGrade": true
+      },
+      "liveAdmission": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-admission.json",
+        "sha256": "98529595d4ce1765f904be8b51f47a3de5e814a28af226fc99328e959ae66320"
+      },
+      "liveTreatmentReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-treatment-readback.json",
+        "sha256": "29997cc0610e24cae210c7c7afc0b083566b399c4fb438890192ca650fdb0ecb"
+      },
+      "liveMethodReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-method-readback.json",
+        "sha256": "306725a5f06318590f95bcca1504de9e50b4960c0c40091fcba9047a5659abc5"
+      },
+      "realModelStarted": true,
+      "rootImmutableModelStartMetrics": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/first-on-real-model-started-metrics.json",
+        "sha256": "2b03013eb08eb51cbe742c418c7cbb278bb286ebacba988f0bc7d13b4d50cfbb"
+      },
+      "modelStartSnapshot": {
+        "countsByModel": {
+          "deepseek-flash": 21,
+          "deepseek-v4-pro": 0
+        },
+        "wireAttempts": 21,
+        "admittedRequests": 21,
+        "inFlight": 1,
+        "closed": false,
+        "http200ObservedRootReported": true,
+        "denied": 0,
+        "notCompletedBillingOrWholeTrialCounts": true,
+        "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+      },
+      "proReviewActuallyObserved": false,
+      "methodUseVerified": false,
+      "methodUseStatus": "PENDING_ACTUAL_SOURCE_BOUND_TOOL_RECEIPTS_NOT_INFERRED_FROM_CONFIGURATION_OR_START",
+      "nativeCorrectionCount": "NOT_ASSESSED_FROM_MODEL_START_ONLY",
+      "originalEpoch": {
+        "startedAtMs": 1795399927633,
+        "deadlineAtMs": 1795403527633,
+        "wallLimitMs": 3600000,
+        "maxRequests": 256,
+        "renewal": false
+      },
+      "ordinaryProposalApprovalBeforeApply": "ROOT_OWNED_PENDING",
+      "qualityResultAvailable": false,
+      "privateGradePerformed": false,
+      "formal13TaskCredit": 0,
+      "precedingPreparation": {
+        "status": "PREFLIGHT24_PASSED_ISOLATED_CREDENTIAL_FREE_SETUP_RUNNING",
+        "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+        "authorizationResolution": {
+          "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/root-user-authorization-resolution.json",
+          "sha256": "540aefd6c22298a45035cf19d6ddc13cce7a109b3c5841ffe73d56341b2d76e7"
+        },
+        "exactPreviouslyRejectedArgvContinued": true,
+        "policyOrPlanRemade": false,
+        "preflight": {
+          "actual": "a80894/session38936 ->ddf521/0",
+          "receipt": {
+            "path": ".runtime-correction/validation/public-run-cd221ef176cf46/preflight/attempt1/receipt.json",
+            "sha256": "66acf0f495c2db01f06605b76563d099367aa60840a224d2306b5a897ec4f7df"
+          },
+          "checksPassed": 24,
+          "elapsedMs": 3269,
+          "knownOwnedGroupsAbsent": true,
+          "actorFixturesRemoved": true,
+          "scope": "Exact policy capability/control sample; not live treatment/setup/plugin functionality or universal isolation proof."
+        },
+        "setup": {
+          "actualLaunch": "5b0b38/session44213",
+          "handleOwner": "ROOT",
+          "status": "IN_PROGRESS_CREDENTIAL_FREE_FAKE_PROVIDER",
+          "realModelStarted": false,
+          "terminalResult": "PENDING_ROOT_ACTUAL_TERMINAL"
+        },
+        "paidOnCodingStarted": false,
+        "precedingBlockedPreparation": {
+          "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
+          "receipt": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
+            "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
+          },
+          "readback": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
+            "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
+          },
+          "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+          "processOrSessionCreated": false,
+          "actorSdkGatewayKeyReadOrModelStarted": false,
+          "dependentSetupAndLive": "UNSTARTED",
+          "noRetryOrIndirectExecutionAfterRejection": true,
+          "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
+          "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+        },
+        "precedingRejectionStillHistorical": true,
+        "existingApiCostAuthorizationUnchanged": true
+      },
+      "phaseAtReportRefresh": "APPLY_AFTER_ORDINARY_PUBLIC_PROPOSAL_APPROVAL",
+      "ordinaryApplyApproval": {
+        "artifact": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/apply-admission.json",
+          "sha256": "c70b08318e0f9a2ff0fa5ee57003f210c31ca04b142e747193b9fe539d1c4ab7"
+        },
+        "actualRootExec": "4de8a8/0",
+        "readOriginalTaskAndAll6PlanFiles": true,
+        "uncheckedTasksAtApproval": 8,
+        "privateFeedback": false,
+        "epochRenewal": false
+      },
+      "bothModelsHttp200Observed": {
+        "snapshot": {
+          "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/first-on-flash-pro-model-use-metrics.json",
+          "sha256": "1ae66ea438e4b8ce971235c89e3dcc2ab46268b29cfec95aa55c98689b2c67b3"
+        },
+        "actualRootExec": "95abf2/0",
+        "wireCountsAtSnapshot": {
+          "deepseek-flash": 27,
+          "deepseek-v4-pro": 13
+        },
+        "inFlight": 1,
+        "closed": false,
+        "countsAreFinal": false,
+        "allSevenRolesActuallyInvoked": "NOT_PROVED",
+        "implementationMethodUptake": "NOT_YET_OBSERVED",
+        "semanticAccuracy": "UNPROVED"
+      },
+      "proProviderRequestsObserved": true,
+      "proReviewObservationScope": "Both model HTTP200 calls observed; a qualified final implementation review is not yet observed. Proposal Stop was SKIPPED for document-only changes. Calls do not prove all seven role executions or semantic accuracy.",
+      "currentApplyMechanismSnapshot": {
+        "receipt": {
+          "path": ".runtime-correction/validation/click-on-live-mechanism-snapshot-vc25pmym/receipt.json",
+          "sha256": "d6a5aa1cce3baaea5bb21d6affb7724a42cfa0d5473a7c8036cd20c4fa39cb35"
+        },
+        "actualAuditExec": "9feb22/0",
+        "scope": "One-pass13file snapshot, individualstats stable, notglobalatomic/final. EffectiveON/sample/strict4false/caps/models/source/epochjoined; Apply taskACTIVE/dispatcherRUNNING. PriorProposalSKIPPED is not currentApplyreview.",
+        "nativeUsageAtSnapshot": 0,
+        "currentApplySelectionCounts": "UNKNOWN_NOT_YET_OBSERVED",
+        "currentApplyVerifierOutcome": "UNKNOWN_NOT_YET_OBSERVED",
+        "currentApplyFrameResolve": "NOT_YET_OBSERVED"
+      }
+    },
+    "activeArm": "ON",
+    "topLevelTrafficScope": "Legacy top-level51Flash/0Pro/finalmetrics and armOFF describe the frozen firstOFF; currentON traffic is separately snapshotted under pairedOnEvaluation."
   },
   "latestCompletedDevelopmentRun": {
     "status": "CLOSED_FROZEN_GRADED_UNPAIRED_ENGINEERING_ON",
@@ -4583,7 +4882,12 @@
       }
     ],
     "latestAttemptUuid": "dfc0db68-a2cb-4289-b841-19601dfa4ccf",
-    "uuidScope": "Top-leveluuid/create/listproof refers preceding selected-fileboundary device; latestAttemptUuid/latestBootstrapAttempt bind freshgeometryattempt."
+    "uuidScope": "Top-leveluuid/create/listproof refers preceding selected-fileboundary device; latestAttemptUuid/latestBootstrapAttempt bind freshgeometryattempt.",
+    "additionalOwnedTargetLogAudit": {
+      "receipt": ".runtime-correction/validation/geometry-owned-target-unified-log-8z6e2b1f/findings.json",
+      "sha256": "aabe1d6d54e69f8132bda4493f46e3c3c9c1f2462a08b41f723e889f858a7c74",
+      "scope": "ONEexactownedPID/time-window query38events/45854B/exit0. Creation/deathobserved, no explicitissuer/cause. AppleEvents signaturewarningnotkilldiagnosis; no startupchange/VMretry supported."
+    }
   },
   "historicalValidation": {
     "immediatePredecessor": {
@@ -4632,140 +4936,193 @@
         "sha256": "d934a044d1d27998df3fcf0cbc1c0c35a1da67ee4a4021824d1da41961dcd497"
       }
     },
-    "reportRefreshStatus": "LOCAL_FIRST_OFF_CLOSED_HOST_APPLY_ERROR_HTML_STATE_CHANGED_ROOT_QA_PENDING"
+    "reportRefreshStatus": "LOCAL_FIRST_ON_CODING_RUNNING_FINAL_DRAFT_ROOT_QA_PENDING"
   },
   "reportCurrentQa": {
-    "status": "PASS_FIRST_OFF_FROZEN_ON_LOCAL_PREFLIGHT_BLOCKED_FOUR_VIEWS",
-    "htmlSha256": "533c45180c07398ab7552a2fac56278e7f5e70291144e0002e513ded0e76cfd9",
+    "status": "PASS_PAIRED_ON_APPLY_BILINGUAL_REPORT_FOUR_VIEWS",
+    "htmlSha256": "1eb6f6d3a5178e4f1bddb9627106f0afb782f95fc97e8ac78aa9485622ae07da",
     "precedingQa": {
-      "status": "PASS_FIRST_OFF_CLOSED_FROZEN_BILINGUAL_REPORT_FOUR_VIEWS",
-      "htmlSha256": "7852247841dde6c0d61a98d5560c7ba3b9666aa8b37a5d00cd070b3f78ff2bf5",
+      "status": "PENDING_HTML_STATE_CHANGED_ON_PREPARATION_ADVANCED",
       "precedingQa": {
-        "status": "PASS_CURRENT_FIRST_OFF_RUNNING_BILINGUAL_REPORT_FOUR_VIEWS",
-        "htmlSha256": "2bd792752323a9239b64525556def5d9c26bd77e44bce5e21b5a462be558dc73",
+        "status": "PASS_FIRST_OFF_FROZEN_ON_LOCAL_PREFLIGHT_BLOCKED_FOUR_VIEWS",
+        "htmlSha256": "533c45180c07398ab7552a2fac56278e7f5e70291144e0002e513ded0e76cfd9",
         "precedingQa": {
-          "status": "PASS_PROMOTED_CURRENT_PACKAGE_BILINGUAL_REPORT_FOUR_VIEWS",
-          "htmlSha256": "c806f424677db6330937d3aeb58e2c743e27c58d1d950690c4f283ee40d6dd03",
+          "status": "PASS_FIRST_OFF_CLOSED_FROZEN_BILINGUAL_REPORT_FOUR_VIEWS",
+          "htmlSha256": "7852247841dde6c0d61a98d5560c7ba3b9666aa8b37a5d00cd070b3f78ff2bf5",
           "precedingQa": {
-            "status": "PASS_CURRENT_FOCUSED_REPORT_FOUR_VIEWS",
-            "htmlSha256": "b36fa8acd8418743736b4ede01fbc66f3573cffc1113aa68870be132f1511247",
+            "status": "PASS_CURRENT_FIRST_OFF_RUNNING_BILINGUAL_REPORT_FOUR_VIEWS",
+            "htmlSha256": "2bd792752323a9239b64525556def5d9c26bd77e44bce5e21b5a462be558dc73",
             "precedingQa": {
-              "status": "PASS_CURRENT_REPORT_FOUR_VIEWS",
-              "htmlSha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51",
-              "scope": "Fourcurrentviews/switch/internalanchors/noexternallinks/hash/date/requests/errors; current6of7CI/localfollowup/currentC7fnoModel/V6partialSIGKILLcauseUnknown/0of39.",
+              "status": "PASS_PROMOTED_CURRENT_PACKAGE_BILINGUAL_REPORT_FOUR_VIEWS",
+              "htmlSha256": "c806f424677db6330937d3aeb58e2c743e27c58d1d950690c4f283ee40d6dd03",
               "precedingQa": {
-                "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
-                "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
-                "precedingSnapshot": {
-                  "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
-                  "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+                "status": "PASS_CURRENT_FOCUSED_REPORT_FOUR_VIEWS",
+                "htmlSha256": "b36fa8acd8418743736b4ede01fbc66f3573cffc1113aa68870be132f1511247",
+                "precedingQa": {
+                  "status": "PASS_CURRENT_REPORT_FOUR_VIEWS",
+                  "htmlSha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51",
+                  "scope": "Fourcurrentviews/switch/internalanchors/noexternallinks/hash/date/requests/errors; current6of7CI/localfollowup/currentC7fnoModel/V6partialSIGKILLcauseUnknown/0of39.",
+                  "precedingQa": {
+                    "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
+                    "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
+                    "precedingSnapshot": {
+                      "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
+                      "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+                    },
+                    "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
+                    "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+                    "receipt": {
+                      "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
+                      "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+                    },
+                    "desktopAndMobileViews": 4,
+                    "languages": [
+                      "en",
+                      "zh-CN"
+                    ],
+                    "externalRequests": 0,
+                    "pageErrors": 0,
+                    "actualExec": "4a14ec/session37287 ->12ed61/0",
+                    "visualInspection": [
+                      "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
+                    ],
+                    "provenancePeer": {
+                      "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
+                      "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+                    }
+                  },
+                  "authorBeforeSnapshot": {
+                    "path": ".runtime-correction/validation/report-ci-conjunction-and-phone-enfed2o5/before-validation.json",
+                    "sha256": "07d2e0178c33d5d0ad4c6dcb2f5363be337240da025d8dc2e49362656fdabe2e"
+                  },
+                  "browserRunByAuthor": false,
+                  "rootWillRunFinalFourViewQa": false,
+                  "actualExec": "46d8aa/session59806->00e48f/0",
+                  "receipt": {
+                    "path": ".runtime-correction/validation/report-89df-predicate-native-kxznmfvo/receipt.json",
+                    "sha256": "7b71402e1b2d6eb0afada8d1f46bed8b8f45b87a41b033f912060e04dfe6c97f"
+                  },
+                  "desktopAndMobileViews": 4,
+                  "languages": [
+                    "en",
+                    "zh-CN"
+                  ],
+                  "externalRequests": 0,
+                  "pageErrors": 0,
+                  "visualInspection": {
+                    "owner": "ROOT",
+                    "images": [
+                      "ci-en-1200.png",
+                      "native-zh-CN-390.png"
+                    ],
+                    "result": "ReadabledesktopCI/benchmarkandChinesemobilenativeprose; nooverflow/factualoverclaimseen"
+                  }
                 },
-                "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
-                "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+                "beforeSnapshot": {
+                  "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/before.html",
+                  "sha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51"
+                },
+                "scope": "Simplifiedworkflow/maincurrentCI/selected-scopefollowup/bmexpliciterror, same bilingualfile/sections/anchors/theme.",
+                "actualExec": "4c5cc7/session81072->03384b/0",
                 "receipt": {
-                  "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
-                  "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+                  "path": ".runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/qa/receipt.json",
+                  "sha256": "7342d6cf3c89fa534f51c9ebabd1ca1c2c8cd82b999b09f6c12a3f9c35463614"
                 },
-                "desktopAndMobileViews": 4,
                 "languages": [
                   "en",
                   "zh-CN"
                 ],
+                "desktopAndMobileViews": 4,
                 "externalRequests": 0,
                 "pageErrors": 0,
-                "actualExec": "4a14ec/session37287 ->12ed61/0",
-                "visualInspection": [
-                  "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
-                ],
-                "provenancePeer": {
-                  "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
-                  "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+                "visualInspection": {
+                  "owner": "ROOT",
+                  "images": [
+                    "top-en-1200.png",
+                    "ci-zh-CN-390.png",
+                    "native-zh-CN-390.png"
+                  ],
+                  "result": "Readableworkflowintro/diagramandmobileCI/scope/nativechallenge; nooverflow."
                 }
               },
-              "authorBeforeSnapshot": {
-                "path": ".runtime-correction/validation/report-ci-conjunction-and-phone-enfed2o5/before-validation.json",
-                "sha256": "07d2e0178c33d5d0ad4c6dcb2f5363be337240da025d8dc2e49362656fdabe2e"
-              },
-              "browserRunByAuthor": false,
-              "rootWillRunFinalFourViewQa": false,
-              "actualExec": "46d8aa/session59806->00e48f/0",
+              "scope": "SamebilingualHTML/currentpackagefull398+all7CI+278stockproof/earlier795trialexplicit/0of39/noexternalhashdate.",
+              "actualExec": "1c970f/session64433->939782/0",
               "receipt": {
-                "path": ".runtime-correction/validation/report-89df-predicate-native-kxznmfvo/receipt.json",
-                "sha256": "7b71402e1b2d6eb0afada8d1f46bed8b8f45b87a41b033f912060e04dfe6c97f"
+                "path": ".runtime-correction/validation/promote-611132-review-scope-rz3un0z4/qa/receipt.json",
+                "sha256": "aeff6a9cc2d0bf9c82c24c3dc82e49ade5ea0f10f097a816006cbd52033ac615"
               },
-              "desktopAndMobileViews": 4,
               "languages": [
                 "en",
                 "zh-CN"
               ],
+              "desktopAndMobileViews": 4,
               "externalRequests": 0,
               "pageErrors": 0,
               "visualInspection": {
                 "owner": "ROOT",
                 "images": [
                   "ci-en-1200.png",
-                  "native-zh-CN-390.png"
+                  "ci-zh-CN-390.png"
                 ],
-                "result": "ReadabledesktopCI/benchmarkandChinesemobilenativeprose; nooverflow/factualoverclaimseen"
+                "result": "Source398/all7/package17each/installed278/currentNoModel/0of39 readable; nooverflow."
               }
             },
-            "beforeSnapshot": {
-              "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/before.html",
-              "sha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51"
+            "authorDraft": {
+              "path": ".runtime-correction/validation/report-ci605-premodel-refresh-v602vt7o/draft-refresh.json",
+              "sha256": "5fe4a369aaaae898997f650d98a3073cd34a6f27eff06904b37800bac83970be"
             },
-            "scope": "Simplifiedworkflow/maincurrentCI/selected-scopefollowup/bmexpliciterror, same bilingualfile/sections/anchors/theme.",
-            "actualExec": "4c5cc7/session81072->03384b/0",
+            "actualExec": "c2af4d/session63744->131b9d/0",
             "receipt": {
-              "path": ".runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/qa/receipt.json",
-              "sha256": "7342d6cf3c89fa534f51c9ebabd1ca1c2c8cd82b999b09f6c12a3f9c35463614"
+              "path": ".runtime-correction/validation/root-report-first-off-running-qa-m6x1qsk5/qa/receipt.json",
+              "sha256": "697803f0fb6436b844cfcf13bc06d6524a3ff0f5f5504e08aa53243767304d81"
             },
             "languages": [
               "en",
               "zh-CN"
             ],
             "desktopAndMobileViews": 4,
-            "externalRequests": 0,
+            "externalPageRequests": 0,
             "pageErrors": 0,
+            "visibleDatesOrHashes": false,
+            "rootWillRunFinalFourViewQa": false,
             "visualInspection": {
               "owner": "ROOT",
               "images": [
-                "top-en-1200.png",
-                "ci-zh-CN-390.png",
+                "ci-en-1200.png",
                 "native-zh-CN-390.png"
               ],
-              "result": "Readableworkflowintro/diagramandmobileCI/scope/nativechallenge; nooverflow."
-            }
+              "result": "Readablecurrentengineeringmetrics/benchmark0of39andChinesemobilenativechallenge; nooverflow."
+            },
+            "scope": "FirstOFFlive/no completednewcomparison; earliercompletedcase preserved; latest605all7/nativegeometryclosedunavailable; same6sections3foldedhistories7internalanchors."
           },
-          "scope": "SamebilingualHTML/currentpackagefull398+all7CI+278stockproof/earlier795trialexplicit/0of39/noexternalhashdate.",
-          "actualExec": "1c970f/session64433->939782/0",
+          "actualExec": "fb4296/session22106->9261ff/0",
           "receipt": {
-            "path": ".runtime-correction/validation/promote-611132-review-scope-rz3un0z4/qa/receipt.json",
-            "sha256": "aeff6a9cc2d0bf9c82c24c3dc82e49ade5ea0f10f097a816006cbd52033ac615"
+            "path": ".runtime-correction/validation/root-report-first-off-closed-qa-p_zoz_0c/qa/receipt.json",
+            "sha256": "fdb27c4686eb8eed46bc0f10dd849723cfcbf9bc765281c9e77d078593e40f5d"
           },
           "languages": [
             "en",
             "zh-CN"
           ],
           "desktopAndMobileViews": 4,
-          "externalRequests": 0,
+          "externalPageRequests": 0,
           "pageErrors": 0,
+          "visibleDatesOrHashes": false,
+          "rootWillRunFinalFourViewQa": false,
           "visualInspection": {
             "owner": "ROOT",
             "images": [
-              "ci-en-1200.png",
-              "ci-zh-CN-390.png"
+              "campaign-en-1200.png",
+              "campaign-zh-CN-390.png"
             ],
-            "result": "Source398/all7/package17each/installed278/currentNoModel/0of39 readable; nooverflow."
-          }
+            "result": "ClosedOFF/frozen/hostApplyerror/ONpreparing/noqualityresult readableatdesktopandChinesemobile; nooverflow."
+          },
+          "scope": "Same6sections3closedhistories7internalanchors; latest605all7/398sourceproofs preserved; formal0of39 and no privategrade/completedcomparison."
         },
-        "authorDraft": {
-          "path": ".runtime-correction/validation/report-ci605-premodel-refresh-v602vt7o/draft-refresh.json",
-          "sha256": "5fe4a369aaaae898997f650d98a3073cd34a6f27eff06904b37800bac83970be"
-        },
-        "actualExec": "c2af4d/session63744->131b9d/0",
+        "actualExec": "c5edb1/session60191->77804e/0",
         "receipt": {
-          "path": ".runtime-correction/validation/root-report-first-off-running-qa-m6x1qsk5/qa/receipt.json",
-          "sha256": "697803f0fb6436b844cfcf13bc06d6524a3ff0f5f5504e08aa53243767304d81"
+          "path": ".runtime-correction/validation/root-report-on-preflight-blocked-qxsnoh0z/qa/receipt.json",
+          "sha256": "224ddb2dad49de16dc824cc3e20da96828dca0fd00a02523164810bf52661c83"
         },
         "languages": [
           "en",
@@ -4779,41 +5136,22 @@
         "visualInspection": {
           "owner": "ROOT",
           "images": [
-            "ci-en-1200.png",
-            "native-zh-CN-390.png"
+            "campaign-en-1200.png",
+            "campaign-zh-CN-390.png"
           ],
-          "result": "Readablecurrentengineeringmetrics/benchmark0of39andChinesemobilenativechallenge; nooverflow."
+          "result": "ReadablefirstOFF172frozen/hostApplyERROR/ONlocalpermissionpending/noqualitycomparison; sourceCIandnativechallengepreserved, nooverflow."
         },
-        "scope": "FirstOFFlive/no completednewcomparison; earliercompletedcase preserved; latest605all7/nativegeometryclosedunavailable; same6sections3foldedhistories7internalanchors."
+        "scope": "Same6sections3closedhistories7internalanchors; no external links; API authority remains distinct from blocked local preflight."
       },
-      "actualExec": "fb4296/session22106->9261ff/0",
-      "receipt": {
-        "path": ".runtime-correction/validation/root-report-first-off-closed-qa-p_zoz_0c/qa/receipt.json",
-        "sha256": "fdb27c4686eb8eed46bc0f10dd849723cfcbf9bc765281c9e77d078593e40f5d"
-      },
-      "languages": [
-        "en",
-        "zh-CN"
-      ],
-      "desktopAndMobileViews": 4,
-      "externalPageRequests": 0,
-      "pageErrors": 0,
-      "visibleDatesOrHashes": false,
-      "rootWillRunFinalFourViewQa": false,
-      "visualInspection": {
-        "owner": "ROOT",
-        "images": [
-          "campaign-en-1200.png",
-          "campaign-zh-CN-390.png"
-        ],
-        "result": "ClosedOFF/frozen/hostApplyerror/ONpreparing/noqualityresult readableatdesktopandChinesemobile; nooverflow."
-      },
-      "scope": "Same6sections3closedhistories7internalanchors; latest605all7/398sourceproofs preserved; formal0of39 and no privategrade/completedcomparison."
+      "rootWillRunFinalFourViewQa": true,
+      "authorRanBrowserQa": false,
+      "scope": "Currentpermissionblock removedafter exactuserauthorization; ON24preflightpassed/isolatedsetupinprogress, no paidONstartclaim; OFF172frozen/51F0P/ApplyERRORcauseUNKNOWN retained.",
+      "htmlSha256": "a24226ddc2cd39d7dd82bf936b5bbbcb3e33e538b62aa9a74099b982405478df"
     },
-    "actualExec": "c5edb1/session60191->77804e/0",
+    "actualExec": "f1dc19/session57899->384a0d/0",
     "receipt": {
-      "path": ".runtime-correction/validation/root-report-on-preflight-blocked-qxsnoh0z/qa/receipt.json",
-      "sha256": "224ddb2dad49de16dc824cc3e20da96828dca0fd00a02523164810bf52661c83"
+      "path": ".runtime-correction/validation/root-report-paired-on-apply-kpv_hnm2/qa/receipt.json",
+      "sha256": "431d81fcf3d5d53ccdd93f4c20bba7a70f95b2ccbbaec083eb880fbc81062499"
     },
     "languages": [
       "en",
@@ -4830,9 +5168,9 @@
         "campaign-en-1200.png",
         "campaign-zh-CN-390.png"
       ],
-      "result": "ReadablefirstOFF172frozen/hostApplyERROR/ONlocalpermissionpending/noqualitycomparison; sourceCIandnativechallengepreserved, nooverflow."
+      "result": "OFFfrozen/hosterror, ONApply/finalimplementationreviewpending/all4beforegrade readable; nooverflow."
     },
-    "scope": "Same6sections3closedhistories7internalanchors; no external links; API authority remains distinct from blocked local preflight."
+    "scope": "Same6sections3collapsedhistories7internalanchors/no external links; localapprovalblockresolved; no qualityresult."
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -5812,7 +6150,7 @@
     }
   ],
   "supplementalGeneralEvaluationPreparation": {
-    "status": "FIRST_OFF_FROZEN_ON_LOCAL_PREFLIGHT_BLOCKED_NO_PRIVATE_GRADES",
+    "status": "FIRST_OFF172_FROZEN_PAIRED_ON_CODING_RUNNING_NO_PRIVATE_GRADES",
     "outsideRuntimePlugin": true,
     "formal13TaskCredit": 0,
     "publicBrief": "Original historical CLI working-help behavior; longest-name preference is exploratory only. Selection before model outcomes, not blind selection.",
@@ -5975,7 +6313,7 @@
         }
       }
     },
-    "paidArmsStartedCount": 1,
+    "paidArmsStartedCount": 2,
     "firstOffModelStart": {
       "path": ".runtime-correction/validation/root-click-first-off-preparation-27qhuapd/first-off-real-model-started-metrics.json",
       "sha256": "d172882042a0b89e365bae9556618b5f719e0fcb64fdbf64a52e967932d8f2ca"
@@ -6016,22 +6354,135 @@
       "privateGradePerformed": false
     },
     "nextOnPreparation": {
-      "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
-      "receipt": {
-        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
-        "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
-      },
-      "readback": {
-        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
-        "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
-      },
+      "status": "RUNNING_PAIRED_FIRST_ON_NO_REVIEW_OR_QUALITY_RESULT",
       "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
-      "processOrSessionCreated": false,
-      "actorSdkGatewayKeyReadOrModelStarted": false,
-      "dependentSetupAndLive": "UNSTARTED",
-      "noRetryOrIndirectExecutionAfterRejection": true,
-      "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
-      "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+      "arm": "ON",
+      "sourceCommit": "611132eea732aaeda811bdc691fbb8ca73f688fb",
+      "archiveSha256": "7e75db8b9a21fedfe29959cad12ae8c22a37b1144e25c38ccd2380be7d6cd2a8",
+      "actualLaunch": "d8d6fe/session60556",
+      "handleOwner": "ROOT",
+      "actualTerminal": "PENDING_NOT_POLLED_BY_REPORT_AUTHOR",
+      "setup": {
+        "actual": "5b0b38/session44213 ->5a358b/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/setup-receipt.json",
+          "sha256": "67634a099a4c9f72c3d65d4afd2c96287ae819c90d623f176a3763ea129155eb"
+        },
+        "status": "PUBLIC_SETUP_JOINED",
+        "sessionId": "17de7779-6a63-4aeb-9407-479f8ea47baa",
+        "sessionKey": "agent:main:tui-fa24d1fe-fcfb-45e0-8a67-94729f908d1d"
+      },
+      "currentPublicPreflight": {
+        "actual": "80d123/session18219 ->e05a0c/0",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-run-cd221ef176cf46/public-check-receipt.json",
+          "sha256": "badc3c28e5689e0833ebbb8575f6ae5b404d5ae86aaf1b59ca7efb8189b8fa4e"
+        },
+        "selectedPublicCases": 668,
+        "knownClosedBirths": 4,
+        "knownClosedGroups": 3,
+        "noCorrectnessOrQualityGrade": true
+      },
+      "liveAdmission": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-admission.json",
+        "sha256": "98529595d4ce1765f904be8b51f47a3de5e814a28af226fc99328e959ae66320"
+      },
+      "liveTreatmentReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-treatment-readback.json",
+        "sha256": "29997cc0610e24cae210c7c7afc0b083566b399c4fb438890192ca650fdb0ecb"
+      },
+      "liveMethodReadback": {
+        "path": ".runtime-correction/validation/public-run-cd221ef176cf46/live-method-readback.json",
+        "sha256": "306725a5f06318590f95bcca1504de9e50b4960c0c40091fcba9047a5659abc5"
+      },
+      "realModelStarted": true,
+      "rootImmutableModelStartMetrics": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/first-on-real-model-started-metrics.json",
+        "sha256": "2b03013eb08eb51cbe742c418c7cbb278bb286ebacba988f0bc7d13b4d50cfbb"
+      },
+      "modelStartSnapshot": {
+        "countsByModel": {
+          "deepseek-flash": 21,
+          "deepseek-v4-pro": 0
+        },
+        "wireAttempts": 21,
+        "admittedRequests": 21,
+        "inFlight": 1,
+        "closed": false,
+        "http200ObservedRootReported": true,
+        "denied": 0,
+        "notCompletedBillingOrWholeTrialCounts": true,
+        "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+      },
+      "proReviewActuallyObserved": false,
+      "methodUseVerified": false,
+      "methodUseStatus": "PENDING_ACTUAL_SOURCE_BOUND_TOOL_RECEIPTS_NOT_INFERRED_FROM_CONFIGURATION_OR_START",
+      "nativeCorrectionCount": "NOT_ASSESSED_FROM_MODEL_START_ONLY",
+      "originalEpoch": {
+        "startedAtMs": 1795399927633,
+        "deadlineAtMs": 1795403527633,
+        "wallLimitMs": 3600000,
+        "maxRequests": 256,
+        "renewal": false
+      },
+      "ordinaryProposalApprovalBeforeApply": "ROOT_OWNED_PENDING",
+      "qualityResultAvailable": false,
+      "privateGradePerformed": false,
+      "formal13TaskCredit": 0,
+      "precedingPreparation": {
+        "status": "PREFLIGHT24_PASSED_ISOLATED_CREDENTIAL_FREE_SETUP_RUNNING",
+        "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+        "authorizationResolution": {
+          "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/root-user-authorization-resolution.json",
+          "sha256": "540aefd6c22298a45035cf19d6ddc13cce7a109b3c5841ffe73d56341b2d76e7"
+        },
+        "exactPreviouslyRejectedArgvContinued": true,
+        "policyOrPlanRemade": false,
+        "preflight": {
+          "actual": "a80894/session38936 ->ddf521/0",
+          "receipt": {
+            "path": ".runtime-correction/validation/public-run-cd221ef176cf46/preflight/attempt1/receipt.json",
+            "sha256": "66acf0f495c2db01f06605b76563d099367aa60840a224d2306b5a897ec4f7df"
+          },
+          "checksPassed": 24,
+          "elapsedMs": 3269,
+          "knownOwnedGroupsAbsent": true,
+          "actorFixturesRemoved": true,
+          "scope": "Exact policy capability/control sample; not live treatment/setup/plugin functionality or universal isolation proof."
+        },
+        "setup": {
+          "actualLaunch": "5b0b38/session44213",
+          "handleOwner": "ROOT",
+          "status": "IN_PROGRESS_CREDENTIAL_FREE_FAKE_PROVIDER",
+          "realModelStarted": false,
+          "terminalResult": "PENDING_ROOT_ACTUAL_TERMINAL"
+        },
+        "paidOnCodingStarted": false,
+        "precedingBlockedPreparation": {
+          "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
+          "receipt": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
+            "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
+          },
+          "readback": {
+            "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
+            "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
+          },
+          "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+          "processOrSessionCreated": false,
+          "actorSdkGatewayKeyReadOrModelStarted": false,
+          "dependentSetupAndLive": "UNSTARTED",
+          "noRetryOrIndirectExecutionAfterRejection": true,
+          "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
+          "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+        },
+        "precedingRejectionStillHistorical": true,
+        "existingApiCostAuthorizationUnchanged": true
+      }
+    },
+    "pairedOnModelStart": {
+      "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/first-on-real-model-started-metrics.json",
+      "sha256": "2b03013eb08eb51cbe742c418c7cbb278bb286ebacba988f0bc7d13b4d50cfbb"
     }
   }
 }
