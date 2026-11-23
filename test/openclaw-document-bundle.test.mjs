@@ -269,8 +269,17 @@ test('a fresh shared whole-plan review reads every required identity; the next w
   const f = await fixture(t, { artifacts: planArtifacts, documents: planDocuments,
     extraConfig: 'artifactCorrection:\n  originalRequirementsEnabled: true\n  requireOpenSpecProposalCoverage: true',
     reviewer: async options => {
+      const cohort = options.evidence.originalDutyCohortContext;
+      assert(cohort?.owner, 'The native fake producer must retain the captured host context.');
+      assert.equal(cohort.owner.projectRoot, await fs.realpath(options.projectRoot));
+      assert.equal(cohort.owner.taskId, options.taskId);
+      assert.equal(cohort.owner.sessionId, options.parentSessionId);
+      assert.equal(cohort.sourceRunId, options.evidence.snapshot.invocation.runId);
+      assert.equal(typeof cohort.owner.sessionKey, 'string'); assert(cohort.owner.sessionKey.trim());
+      assert.equal(typeof cohort.owner.scopeFingerprint, 'string'); assert(cohort.owner.scopeFingerprint.trim());
+      assert(Number.isSafeInteger(cohort.owner.enabledRevision) && cohort.owner.enabledRevision >= 0);
       const tools = await createDocumentTools({ projectRoot: options.projectRoot, semantic: options.evidence.semanticRequest,
-        requestPath: options.request.semanticReviewRequestPath,
+        requestPath: options.request.semanticReviewRequestPath, originalDutyCohortContext: cohort,
         requiredProposalReview: options.evidence.requiredProposalReview, requiredPlanReadiness: options.evidence.requiredPlanReadiness });
       const required = await tools.execute({ action: 'required_proposal' });
       assert.equal(required.items.length, 2);

@@ -218,8 +218,18 @@ test('shipped bare and full-plan topologies admit the actual host-published obse
         calls.push(options);
         assert.equal(options.role, 'artifact-reviewer');
         assert.equal(options.evidence.requiredProposalReview, undefined);
+        const cohortContext = options.evidence.originalDutyCohortContext;
+        assert(cohortContext, 'The fake transport must forward the actual host publication context.');
+        assert.equal(cohortContext.owner.projectRoot, f.root);
+        assert.equal(cohortContext.owner.taskId, task.taskId);
+        assert.equal(cohortContext.owner.sessionId, 'native-parent');
+        assert.equal(cohortContext.owner.sessionKey, 'agent:main:s');
+        assert.equal(cohortContext.sourceRunId, 'proposal-run');
+        assert.equal(typeof cohortContext.owner.scopeFingerprint, 'string');
+        assert(cohortContext.owner.scopeFingerprint.trim());
+        assert(Number.isSafeInteger(cohortContext.owner.enabledRevision) && cohortContext.owner.enabledRevision >= 0);
         const tools = await createDocumentTools({ projectRoot: f.root, semantic: options.evidence.semanticRequest,
-          requestPath: options.request.semanticReviewRequestPath });
+          requestPath: options.request.semanticReviewRequestPath, originalDutyCohortContext: cohortContext });
         for (const file of tools.manifest()) await tools.execute({ action: 'read', path: file.path, start: 1, count: 200 });
         const message = options.evidence.semanticRequest.originalRequirements.userMessages[0];
         const { anchor } = await tools.execute({ action: 'read_original', ref: message.ref, start: 1, count: 1 });

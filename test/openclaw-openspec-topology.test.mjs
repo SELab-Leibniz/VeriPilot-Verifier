@@ -154,8 +154,17 @@ async function profileFixture(t, mode, { documents = {}, mutateAfterRead, readin
   const issued = [];
   const f = await fixture(t, { documents, policy: emitSimpleYaml(config), supportFiles,
     reviewer: async options => {
+      const cohort = options.evidence.originalDutyCohortContext;
+      assert(cohort?.owner, 'The native fake producer must retain the captured host context.');
+      assert.equal(cohort.owner.projectRoot, await fs.realpath(options.projectRoot));
+      assert.equal(cohort.owner.taskId, options.taskId);
+      assert.equal(cohort.owner.sessionId, options.parentSessionId);
+      assert.equal(cohort.sourceRunId, options.evidence.snapshot.invocation.runId);
+      assert.equal(typeof cohort.owner.sessionKey, 'string'); assert(cohort.owner.sessionKey.trim());
+      assert.equal(typeof cohort.owner.scopeFingerprint, 'string'); assert(cohort.owner.scopeFingerprint.trim());
+      assert(Number.isSafeInteger(cohort.owner.enabledRevision) && cohort.owner.enabledRevision >= 0);
       const tools = await createDocumentTools({ projectRoot: options.projectRoot, semantic: options.evidence.semanticRequest,
-        requestPath: options.request.semanticReviewRequestPath, requiredProposalReview: options.evidence.requiredProposalReview,
+        requestPath: options.request.semanticReviewRequestPath, originalDutyCohortContext: cohort, requiredProposalReview: options.evidence.requiredProposalReview,
         requiredPlanReadiness: options.evidence.requiredPlanReadiness });
       for (const file of tools.manifest()) await tools.execute({ action: 'read', path: file.path, start: 1, count: 200 });
       let coverage, readiness, requests;

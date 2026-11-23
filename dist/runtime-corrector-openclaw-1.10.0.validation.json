@@ -209,6 +209,12 @@
       },
       "fullLogReplay": false,
       "runtimeAndTestsSameAsPreviouslyGreenSource": true
+    },
+    "newImplementationNaturalCI": {
+      "status": "AWAITING_NATURAL_FINAL_COMMIT_RUN",
+      "mutation": "NONE_NO_RERUN_CANCEL_OR_DISPATCH",
+      "precedingPushedRunId": 45125492553,
+      "precedingAllSevenJobsSuccess": true
     }
   },
   "currentPackageRealModelEvaluation": {
@@ -1181,7 +1187,26 @@
         "knownOwnedCleanupConfirmed": true,
         "bootControlObserved": false
       }
-    ]
+    ],
+    "latestStoppedListComparison": {
+      "status": "CLOSED_BOTH_STOPPED_PROFILE_LISTS_CLEAN_NO_LIVE_DENIAL_REPRODUCTION",
+      "actual": "895f2b/session89150 ->faf8c4/0 CLOSED",
+      "receipt": {
+        "path": ".runtime-correction/validation/vendor-list-controller-boundary-iozjihd2/run-1/receipt.json",
+        "sha256": "359d39e72c4ec484bf0573a4e7ed6ee82ae9f1a21f78afc32b1f1b79e654959f"
+      },
+      "bothRunningFlags": "false",
+      "bothExitCodes": 0,
+      "bothStreamsFinal": true,
+      "knownNewCleanupConfirmed": true,
+      "inputsStable": true,
+      "elapsedMs": 1312,
+      "trustedControllerOutsideHeldPolicy": true,
+      "actorPolicyChanged": false,
+      "bootReadiness": false,
+      "causeOfEarlierLiveDenialProven": false,
+      "benchmarkCredit": 0
+    }
   },
   "historicalValidation": {
     "immediatePredecessor": {
@@ -1220,17 +1245,17 @@
     "actualCodePush": "5d4bb3/session33928 ->792f4d/0"
   },
   "reportCurrentQa": {
-    "status": "PASS_LOCAL_DRAFT_NOT_YET_PUBLISHED",
-    "htmlSha256": "5f7796120d0d0b58e85efb699afc89e80b3c0b3aecff145693a636e60cf322dc",
+    "status": "PASS",
+    "htmlSha256": "50bee072499cafbf4c308c5c591555874502aa65f0e74067c6321a517a212f64",
     "receipt": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v5/receipt.json",
-      "sha256": "3d090551e768d496238c90c204ecdb427ab603ea423d2a07c0c411d81011791f"
+      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v6/receipt.json",
+      "sha256": "80bea0ca7aa4a3d42f1d3ecbdd2d8422d34d9419d1c12952fbad08bd791d76d2"
     },
     "renderedSource": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/rendered-source-v5.html",
-      "sha256": "5f7796120d0d0b58e85efb699afc89e80b3c0b3aecff145693a636e60cf322dc"
+      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/rendered-source-v6.html",
+      "sha256": "50bee072499cafbf4c308c5c591555874502aa65f0e74067c6321a517a212f64"
     },
-    "actual": "310301/session4117 ->467886/0",
+    "actual": "45c67c/session43964 ->7cf3f1/0",
     "views": 4,
     "languages": [
       "en",
@@ -1255,8 +1280,8 @@
     },
     "previousPublishedHtmlSha256": "1efc01c128bcbaee8b806423bb423f8830ffc3e5380cddf0e23e6161ae355fdc",
     "previousLocalDraftQa": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v4/receipt.json",
-      "sha256": "2a514b354f407ef7fc127bc77cf010d9da875a415406b7e8a05528c20aedd8cb"
+      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v5/receipt.json",
+      "sha256": "3d090551e768d496238c90c204ecdb427ab603ea423d2a07c0c411d81011791f"
     },
     "focusRefinement": {
       "historicalParagraphsMoved": 10,
@@ -3446,7 +3471,7 @@
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "privateOriginalDutyPrototype": {
-    "status": "LOCAL_V8B_FOCUSED_PASS_PENDING_FULL_AND_RELEASE",
+    "status": "COMPOSED_LOCAL_REGRESSION_PASS_AWAITING_FINAL_CI_AND_PACKAGE",
     "candidate": ".runtime-correction/validation/original-duty-v8b-legacy-compat-w4k7n2mz",
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
@@ -3475,7 +3500,6 @@
     "sourceRepair": "Preserve genuine host-issued unbound diagnostic coverage without granting duty authority, gate staging on valid current context, and replace unissued strict-fixture coverage with actual host verification.",
     "canonicalArchiveUnchanged": true,
     "rootSourceIntegratedLocally": true,
-    "pushedImplementation": false,
     "packageStockQualified": false,
     "sourceBaselineCommit": "a96512c997322ea4c0b8ed1e72fb5e27fdb6d759",
     "latestFocusedQualification": {
@@ -3493,7 +3517,7 @@
       "sha256": "d4816ca417bdf4de2d3d1146b1d056c85ba2386400f7f8cd6a1cfd01fe75024e"
     },
     "rootAppliedV8bPostimages": 10,
-    "fullSuccessorQualification": "PENDING",
+    "fullSuccessorQualification": "RESOLVED_BY_COMPLETE_FULL_PLUS_CORRECTED_FIXTURE_RUNS",
     "bugsAddressedInCandidate": [
       "A fully validated49-duty union could be replaced by48 rows during the same worker format repair, before host publication.",
       "Coalesced legacy review structuredClone lost WeakMap host provenance before actual finalizer/publication.",
@@ -3501,6 +3525,23 @@
       "Staging was advertised without a complete current host context.",
       "Native V2 source forwarding used lexical roots after canonical aliases were accepted.",
       "Old strict test producers bypassed the real document verifier and mixed reviewer roles."
-    ]
+    ],
+    "experimentalSourceCandidate": true,
+    "privatePrototype": false,
+    "currentRegressionResolution": {
+      "path": ".runtime-correction/validation/root-f42-fixture-resolution-6oz7ofqd/resolution.json",
+      "kind": "COMPOSED_FULL_PLUS_THREE_CHANGED_FIXTURES",
+      "filesCovered": 403,
+      "correctedFileChecks": 42,
+      "resolvedTotals": {
+        "tests": 5121,
+        "pass": 5088,
+        "fail": 0,
+        "skipped": 33
+      },
+      "singleFullRunOnFinalCommit": false,
+      "productionCodeChangedByFixtureFixes": false
+    },
+    "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f"
   }
 }
