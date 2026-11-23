@@ -106,13 +106,42 @@
     ]
   },
   "remoteCI": {
-    "status": "NOT_YET_PUSHED_CURRENT_SOURCE",
+    "status": "ALL_SEVEN_SUCCESS_FOR_EXACT_PUSHED_HEAD_AND_EQUIVALENT_RUNTIME_SOURCE",
     "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
-    "priorSourceCiPreservedIn": {
-      "path": ".runtime-correction/validation/promote-ac8-witness-30_q6w7s/previous-canonical-validation.json",
-      "sha256": "28c13ef2a3c3d0c393754b8c399d2d1b3e2469b328b0a80a43ee2e804b877757"
+    "verifiedHead": "e9c016ed9a443f5568abc6cab8f09f8a72d7096f",
+    "runId": 45109370032,
+    "attempt": 1,
+    "jobsPass": 7,
+    "jobsFail": 0,
+    "jobsCancelled": 0,
+    "publication": "SKIPPED",
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-e9c016-natural-pxr4el_n/terminal-receipt.json",
+      "sha256": "f7d5985a72cd67f8b65e5f71ac53f9be32c2aa3fd1d5706623465a68b4ece678"
     },
-    "noRerunCancelOrDispatch": true
+    "macOS": {
+      "files": 399,
+      "pass": 5010,
+      "skip": 33
+    },
+    "ubuntu": {
+      "files": 399,
+      "pass": 5006,
+      "skip": 37
+    },
+    "windows": {
+      "shards": [
+        200,
+        199
+      ],
+      "disjointUnion": 399,
+      "pass": 4996,
+      "skip": 45
+    },
+    "node18CoreAndArtifactCountsSeparate": true,
+    "allOfficialLogsAndCheckoutHeadsVerified": true,
+    "noActionsRerunCancelDispatch": true,
+    "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "currentPackageRealModelEvaluation": {
     "status": "NOT_YET_MODEL_TRIALED_CURRENT_ARCHIVE",
@@ -774,26 +803,28 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "VALIDATED_PENDING_FEATURE_ONLY_PUSH",
+    "status": "PUSHED_FEATURE_ONLY_SOURCE_ARCHIVE_AND_REPORT",
     "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
     "mainMerged": false,
     "previousPublicationSnapshot": {
       "path": ".runtime-correction/validation/promote-ac8-witness-30_q6w7s/previous-canonical-validation.json",
       "sha256": "28c13ef2a3c3d0c393754b8c399d2d1b3e2469b328b0a80a43ee2e804b877757"
-    }
+    },
+    "verifiedPushedHead": "e9c016ed9a443f5568abc6cab8f09f8a72d7096f",
+    "actualPush": "7d7ec6/session15138 ->81ab75/0"
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "65b0b712631b61666af62799c13d1a68427978d790bf8ee36053d1f701c00e22",
+    "htmlSha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b",
     "receipt": {
-      "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/qa/receipt.json",
-      "sha256": "3725dfc2e5f054fccbc5fb13656c227961f3de0156f5224a76d523740677ebf0"
+      "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/qa/receipt.json",
+      "sha256": "df8901e84c06b619bcd744a466b994c484b30fe15a947339dfe56d0b368ef39a"
     },
     "renderedSource": {
-      "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/rendered-source.html",
-      "sha256": "65b0b712631b61666af62799c13d1a68427978d790bf8ee36053d1f701c00e22"
+      "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/rendered-source.html",
+      "sha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b"
     },
-    "actual": "77c6c3/session42752 ->f769a8/0",
+    "actual": "565304/session1253 ->3b0037/0",
     "views": 4,
     "languages": [
       "en",
@@ -811,10 +842,9 @@
       "internalLinks": 7
     },
     "previousQa": {
-      "path": ".runtime-correction/validation/root-report-four-graded-jvc3_5mm/qa/receipt.json",
-      "sha256": "e62664afc58080914abfb84a7010eff011b73b1854812018dd181f98407d8fe5"
-    },
-    "rootVisualReview": "Main comparison unchanged from previously viewed ENdesktop and ZHmobile; final four views rechecked after source/release text update."
+      "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/qa/receipt.json",
+      "sha256": "3725dfc2e5f054fccbc5fb13656c227961f3de0156f5224a76d523740677ebf0"
+    }
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -1048,7 +1078,7 @@
     "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
     "archiveSha256": "8c3525d8af71c625c840b161fe63508969f301d4d78c957f13c2aea04e2e84ca",
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
-    "status": "QUALIFIED_LOCAL_FULL399_RELEASE_ARTIFACTS_FRESH_STOCK_REMOTE_CI_PENDING",
+    "status": "QUALIFIED_FULL399_ALL7_SOURCE_CI_RELEASE_ARTIFACTS_FRESH_STOCK",
     "full": {
       "path": ".runtime-correction/validation/root-ac8dd26-witness-qualification-ebe0ykjs/closed-qualification.json",
       "sha256": "8335a858bb12994e44eb35799706f867f89ea5d38d9b27e7ae856c462aa7905a"
@@ -2574,8 +2604,8 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "FINAL_ALL_FOUR_GRADED_MAIN_CURRENT_PLUGIN_QUALIFIED_FOUR_VIEW_QA_PASS",
-    "htmlSha256": "65b0b712631b61666af62799c13d1a68427978d790bf8ee36053d1f701c00e22",
+    "status": "CURRENT_FOUR_GRADED_COMPARISON_RELEASE_ALL7_CI_CACHE_CONTROL_AND_ON_PREPARATION_FOUR_VIEW_QA_PASS",
+    "htmlSha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b",
     "candidateSha256": "8499f1a11e4f7a630a054456ce2a926b29f2c995fb9f49064281b666d283f5c3",
     "adoptionPacket": ".runtime-correction/validation/root-report-four-graded-jvc3_5mm",
     "allFourGradeBatchSha256": "2a26eeec87063613192a6f8b53b3bb5b7923d2443107804f56ecdd55539a1b91",
@@ -2593,16 +2623,16 @@
     "laterDiagnosticFullPending": false,
     "browserQa": {
       "status": "PASS",
-      "htmlSha256": "65b0b712631b61666af62799c13d1a68427978d790bf8ee36053d1f701c00e22",
+      "htmlSha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b",
       "receipt": {
-        "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/qa/receipt.json",
-        "sha256": "3725dfc2e5f054fccbc5fb13656c227961f3de0156f5224a76d523740677ebf0"
+        "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/qa/receipt.json",
+        "sha256": "df8901e84c06b619bcd744a466b994c484b30fe15a947339dfe56d0b368ef39a"
       },
       "renderedSource": {
-        "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/rendered-source.html",
-        "sha256": "65b0b712631b61666af62799c13d1a68427978d790bf8ee36053d1f701c00e22"
+        "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/rendered-source.html",
+        "sha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b"
       },
-      "actual": "77c6c3/session42752 ->f769a8/0",
+      "actual": "565304/session1253 ->3b0037/0",
       "views": 4,
       "languages": [
         "en",
@@ -2620,10 +2650,9 @@
         "internalLinks": 7
       },
       "previousQa": {
-        "path": ".runtime-correction/validation/root-report-four-graded-jvc3_5mm/qa/receipt.json",
-        "sha256": "e62664afc58080914abfb84a7010eff011b73b1854812018dd181f98407d8fe5"
-      },
-      "rootVisualReview": "Main comparison unchanged from previously viewed ENdesktop and ZHmobile; final four views rechecked after source/release text update."
+        "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/qa/receipt.json",
+        "sha256": "3725dfc2e5f054fccbc5fb13656c227961f3de0156f5224a76d523740677ebf0"
+      }
     },
     "currentDiagnosticRelease": {
       "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
@@ -2832,5 +2861,29 @@
     "path": "dist/runtime-corrector-openclaw-1.10.0.validation.json",
     "blob": "22a1e718b5ae745607b7509f38e6555230c1acdd",
     "scope": "Earlier full publication metadata remains in the feature branch Git history; current qualification fields now describe the new archive."
+  },
+  "publicPytestCacheRoutingQualification": {
+    "status": "ONE_GENERIC_ACTUAL_STOCK_SDK_DEFAULT_QUALIFIED",
+    "actual": "f9e113/session1924 ->86393d/0",
+    "receipt": {
+      "path": ".runtime-correction/validation/public-pytest-cache-constructor-v2-uiae3t2g/run-1/receipt.json",
+      "sha256": "b1d68025bb231a89f1e5033279221d3dea667231d7dc04b8bc54be9ce3befc83"
+    },
+    "closedReadback": {
+      "path": ".runtime-correction/validation/public-pytest-cache-closed-readback-k9o_nx7k/closed-readback.json",
+      "sha256": "593e1d374cef7c2577a7ccfcbb4b04cb792dc4047932016975f1979f16597a69"
+    },
+    "scope": "Outside plugin; default cache goes to actorTMP; one generic test with quoted path; project unchanged/owned cleanup; explicit CLI overrides possible; no whole-workflow claim",
+    "oldFourOutcomesUnchanged": true
+  },
+  "nextOnDevelopmentWalkthrough": {
+    "status": "SOURCE_PREPARATION_AND_REVIEW_ONLY_NO_OPERATOR_OR_MODEL_YET",
+    "design": "ON_WALKTHROUGH_ONLY",
+    "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
+    "archiveSha256": "8c3525d8af71c625c840b161fe63508969f301d4d78c957f13c2aea04e2e84ca",
+    "newModelsStarted": false,
+    "matchedPairCredit": 0,
+    "causalQualityClaim": false,
+    "formal13TaskCredit": 0
   }
 }
