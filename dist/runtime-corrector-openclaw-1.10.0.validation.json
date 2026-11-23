@@ -195,7 +195,21 @@
     "runtimeAndArchiveUnchanged": true,
     "ActionsMutated": false,
     "historicalFailureCause": "UNKNOWN",
-    "noFutureReliabilityClaim": true
+    "noFutureReliabilityClaim": true,
+    "latestPrecedingReportOnlyRun": {
+      "commit": "6d860ca5a0aa019f626cb2b95c683a2e9bdaea90",
+      "runId": 45118112765,
+      "attempt": 1,
+      "status": "ALL_SEVEN_NODE_JOBS_SUCCESS",
+      "publication": "SKIPPED",
+      "readOnlyObservation": true,
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-6d860ca-natural-root/terminal-receipt.json",
+        "sha256": "5fc8e55923e99f58053c8a84bc80428ae11e66e1e698b1f5d589e8ea18b7acf8"
+      },
+      "fullLogReplay": false,
+      "reason": "Only the report and validation metadata changed from13e; runtime/tests/archive unchanged."
+    }
   },
   "currentPackageRealModelEvaluation": {
     "kind": "CLOSED_SINGLE_ON_HEALTHY_DEVELOPMENT_WALKTHROUGH",
@@ -672,7 +686,7 @@
     "completeNativeRouteQualified": false
   },
   "publicDevice": {
-    "status": "FRESH_VENDOR_DEFAULT_PROFILE_CAPTURED_STOPPED_NO_BOOT_NO_BENCHMARK_QUALIFICATION",
+    "status": "VENDOR_DEFAULT_PROFILE_PARTIAL_IDENTITY_NO_BOOT_DEVICE_LIST_INTERNAL_COMMAND_DENIAL",
     "uuid": "9f37c2ab-82cc-4209-b4c4-7efd8ca95fc9",
     "api": 24,
     "createVerification": {
@@ -712,57 +726,50 @@
     },
     "precedingTopStatusBeforeSelectedFileListProof": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED",
     "latestBootstrapAttempt": {
-      "status": "CLOSED_UNAVAILABLE_PARTIAL_TRANSPORT_NO_BOOT",
-      "uuid": "dfc0db68-a2cb-4289-b841-19601dfa4ccf",
-      "actualLaunch": "95240c/session61123",
-      "actualConsumedTerminal": "f8593e/1",
-      "authoritativeWrapperTerminal": {
-        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-owned-wrapper-spubem10/actual-terminal.json",
-        "sha256": "65da4b212aae0787909ce643bef3de41970aa7b9fb9f54d29658405b2eb7fcec",
-        "bytes": 634
+      "status": "CLOSED_UNAVAILABLE_DEVICE_LIST_INTERNAL_PS_DENIAL_PARTIAL_EMULATOR_STREAMS",
+      "uuid": "9f37c2ab-82cc-4209-b4c4-7efd8ca95fc9",
+      "receipt": {
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/run-1/receipt.json",
+        "sha256": "204b7d4188ee009e0089156382d57aa9c2c2820a8f06ee3149de851119e40a31"
       },
-      "closedReceipt": {
-        "path": ".runtime-correction/validation/public-phone-api24-geometry-closed-drxssh43/closed-receipt.json",
-        "sha256": "8fb58728e24ac2c18f166959cdf8285ccff4f6c1bacac620286c77348fda2ae6"
+      "actualTerminal": {
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/run-1/root-actual-terminal.json",
+        "sha256": "c73e5532ad0bf3b46337b1a1ddcc9ef8cf30bd7a367f19f53a11561178d091fa"
       },
-      "finalReadback": {
-        "path": ".runtime-correction/validation/public-phone-api24-geometry-closed-drxssh43/final-readback.json",
-        "sha256": "fd78e43117ee85b0410b1be9db9db2a7be7ef091eba53752e15ad1ba108f96bc"
-      },
+      "actual": "3d7766/session35514 ->9a1fdc/2 CLOSED",
       "sourceHold": {
-        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/source-hold.json",
-        "sha256": "628dd9ea2888f9bf652e0f398cf812c3526969c22b3a8a185c9abc0d57d0c1cb",
-        "bytes": 33369
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/source-hold.json",
+        "sha256": "e69e6f6ee8d107a1338fffcb539842f963a6858b1e1de53f42f41db4e04c3dac"
       },
-      "nativeReceipt": {
-        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/boot-control-1/receipt.json",
-        "sha256": "5acf17f7c2c9a88f4b2cae535d8fb4217f9099a129ad34b9538cc9180a68217b",
-        "bytes": 33907
+      "independentSourcePeer": {
+        "path": ".runtime-correction/validation/native-pending-v4-peer-4ue4dlwh/peer-review.json",
+        "sha256": "191711247b0cf7ac3ae2b678e099d7b99894a8e4c879c66ed10898415208de72"
       },
-      "failureBeforeCleanup": {
-        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/boot-control-1/failure-before-cleanup.json",
-        "sha256": "556e1f5da11c133dcd50b98474e180b524a91e018c9e81db0ca5d8bd3a7d7ce1",
-        "bytes": 2432
+      "elapsedMs": 15697,
+      "originalTotalSeconds": 180,
+      "maximumIdentityPolls": 40,
+      "knownOwnedCleanupConfirmed": true,
+      "immutableInputsStableAfterCleanup": true,
+      "identityCommands": "All four FINAL and exit0: API24,phone,exactsoftwareversion; exact62-byte missing-boot-property106 response. No complete identity-poll receipt because running-instance gate rejected before wait.",
+      "vendorList": "Exact same UUID/name/path, isRunning:false, exit0 but stderr35B xargs: ps: Operation not permitted newline. Actual running status unverified; no readiness credit.",
+      "beforeCleanup": {
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/run-1/before-cleanup.json",
+        "sha256": "bc0863d19be15cbd2da76c73d2aafe0b3e528a46d7a8058d7976c0322a14b35b"
       },
-      "elapsedMs": 24292,
-      "preCleanupFailureElapsedMs": 24191,
-      "preCleanupEmulatorExitCode": -9,
-      "signalIssuerAndCause": "UNKNOWN",
-      "identity": "API24/phone/version fragments only; bootquery106 is noBOOT",
-      "serviceDiagnostic": "One39B explicit command error despite exit0; no service readiness credit.",
-      "sameAcceptedAgreementAcknowledgments": 1,
-      "knownObservedBirths": 18,
-      "knownRecordedNumericGroups": 20,
-      "currentMatchingOwnedBirthsAbsent": true,
-      "currentRecordedNumericGroupsAbsent": true,
-      "originalCleanupConfirmed": true,
-      "immutablePinsMatched": 118,
-      "deviceProfilePinsPredispatchOnly": 3,
-      "rawStreamCompleteness": "18FINAL+1PARTIAL; HDCserver cleanup-15 with neitherEOFobserved; no allstreamscompleteclaim",
-      "bootNetworkShareBackendQualified": false,
-      "modelBuildTestGradeActions": 0,
-      "formalMatchedPairs": 0,
-      "oldV6CauseIsolation": false
+      "signalDeliveries": {
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/run-1/cleanup-signal-deliveries.json",
+        "sha256": "9a5764e208b18cdf369cb2fd9adfabfea19f9c747ddbf451594a5c7eb67b4aa3"
+      },
+      "termination": "Emulator and HDC server live in cached precleanup snapshot at12139ms. Root guarded SIGTERM requests at12159ms. Final emulator0 with PARTIAL/no EOF, server-15 FINAL. No independent crash attribution.",
+      "allCommandStreamsFinal": false,
+      "bootControlObserved": false,
+      "guestNetworkIsolated": "UNQUALIFIED",
+      "benchmarkAdmission": false,
+      "modelsBuildTestsGrades": 0,
+      "formalMatchedPairsAdded": 0,
+      "agreementAcknowledgmentWrites": 0,
+      "oneStartServerConnect": true,
+      "noReconnectRenewalPropertyWrite": true
     },
     "fixedHdcHelpComparison": {
       "status": "FIXED_HELP_COMPARISON_OBSERVED_NARROW_SCOPE_ONLY",
@@ -1052,8 +1059,8 @@
         }
       }
     ],
-    "latestAttemptUuid": "dfc0db68-a2cb-4289-b841-19601dfa4ccf",
-    "uuidScope": "Top-leveluuid/create/listproof refers preceding selected-fileboundary device; latestAttemptUuid/latestBootstrapAttempt bind freshgeometryattempt.",
+    "latestAttemptUuid": "9f37c2ab-82cc-4209-b4c4-7efd8ca95fc9",
+    "uuidScope": "Top-level UUID/currentVendorDefaultProfile/latestBootstrapAttempt bind the vendor-default profile. PrecedingGeometryBootstrapAttempt and older selected-file records retain their own UUIDs and outcomes.",
     "additionalOwnedTargetLogAudit": {
       "receipt": ".runtime-correction/validation/geometry-owned-target-unified-log-8z6e2b1f/findings.json",
       "sha256": "aabe1d6d54e69f8132bda4493f46e3c3c9c1f2462a08b41f723e889f858a7c74",
@@ -1061,7 +1068,7 @@
     },
     "precedingSelectedUuid": "6eb0d482-47aa-4d32-a94b-771132cc3d6f",
     "currentVendorDefaultProfile": {
-      "status": "FRESH_STOPPED_VENDOR_DEFAULT_PROFILE_CAPTURED",
+      "status": "CREATED_THEN_BOOT_CHECKED_NO_BOOT_READINESS_QUALIFICATION",
       "receipt": {
         "path": ".runtime-correction/validation/public-phone-default-create-only-v3-42k14j2w/run-1/receipt.json",
         "sha256": "fe2813a3a75beec3c5c51369e34510ec45d54b1366f69222fb4f7859fe8c773d"
@@ -1076,12 +1083,105 @@
       "productModel": "Pura X View",
       "regularGeneratedFiles": 3,
       "regularGeneratedBytes": 1793,
-      "bootCommandIssued": false,
+      "bootCommandIssued": true,
       "knownOwnedCleanupConfirmed": true,
       "backendQualified": false,
       "guestNetworkIsolated": "UNQUALIFIED",
-      "benchmarkAdmission": false
-    }
+      "benchmarkAdmission": false,
+      "creationStatus": "FRESH_STOPPED_VENDOR_DEFAULT_PROFILE_CAPTURED",
+      "latestBootReceipt": {
+        "path": ".runtime-correction/validation/public-phone-vendor-default-boot-pending-v4-hl5s4vqo/run-1/receipt.json",
+        "sha256": "204b7d4188ee009e0089156382d57aa9c2c2820a8f06ee3149de851119e40a31"
+      }
+    },
+    "precedingGeometryBootstrapAttempt": {
+      "status": "CLOSED_UNAVAILABLE_PARTIAL_TRANSPORT_NO_BOOT",
+      "uuid": "dfc0db68-a2cb-4289-b841-19601dfa4ccf",
+      "actualLaunch": "95240c/session61123",
+      "actualConsumedTerminal": "f8593e/1",
+      "authoritativeWrapperTerminal": {
+        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-owned-wrapper-spubem10/actual-terminal.json",
+        "sha256": "65da4b212aae0787909ce643bef3de41970aa7b9fb9f54d29658405b2eb7fcec",
+        "bytes": 634
+      },
+      "closedReceipt": {
+        "path": ".runtime-correction/validation/public-phone-api24-geometry-closed-drxssh43/closed-receipt.json",
+        "sha256": "8fb58728e24ac2c18f166959cdf8285ccff4f6c1bacac620286c77348fda2ae6"
+      },
+      "finalReadback": {
+        "path": ".runtime-correction/validation/public-phone-api24-geometry-closed-drxssh43/final-readback.json",
+        "sha256": "fd78e43117ee85b0410b1be9db9db2a7be7ef091eba53752e15ad1ba108f96bc"
+      },
+      "sourceHold": {
+        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/source-hold.json",
+        "sha256": "628dd9ea2888f9bf652e0f398cf812c3526969c22b3a8a185c9abc0d57d0c1cb",
+        "bytes": 33369
+      },
+      "nativeReceipt": {
+        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/boot-control-1/receipt.json",
+        "sha256": "5acf17f7c2c9a88f4b2cae535d8fb4217f9099a129ad34b9538cc9180a68217b",
+        "bytes": 33907
+      },
+      "failureBeforeCleanup": {
+        "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/public-phone-api24-geometry-source-ryws55ln/boot-control-1/failure-before-cleanup.json",
+        "sha256": "556e1f5da11c133dcd50b98474e180b524a91e018c9e81db0ca5d8bd3a7d7ce1",
+        "bytes": 2432
+      },
+      "elapsedMs": 24292,
+      "preCleanupFailureElapsedMs": 24191,
+      "preCleanupEmulatorExitCode": -9,
+      "signalIssuerAndCause": "UNKNOWN",
+      "identity": "API24/phone/version fragments only; bootquery106 is noBOOT",
+      "serviceDiagnostic": "One39B explicit command error despite exit0; no service readiness credit.",
+      "sameAcceptedAgreementAcknowledgments": 1,
+      "knownObservedBirths": 18,
+      "knownRecordedNumericGroups": 20,
+      "currentMatchingOwnedBirthsAbsent": true,
+      "currentRecordedNumericGroupsAbsent": true,
+      "originalCleanupConfirmed": true,
+      "immutablePinsMatched": 118,
+      "deviceProfilePinsPredispatchOnly": 3,
+      "rawStreamCompleteness": "18FINAL+1PARTIAL; HDCserver cleanup-15 with neitherEOFobserved; no allstreamscompleteclaim",
+      "bootNetworkShareBackendQualified": false,
+      "modelBuildTestGradeActions": 0,
+      "formalMatchedPairs": 0,
+      "oldV6CauseIsolation": false
+    },
+    "precedingVendorDefaultBootAttempts": [
+      {
+        "status": "CLOSED_UNAVAILABLE_BOOT_QUERY106_CONTROLLER_INITIATED_CLEANUP",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-phone-vendor-default-boot-port-v3b-tatw5u65/run-1/receipt.json",
+          "sha256": "57cd88b5b0887b4173c18143db6b475f00c75be6a6b6cc2aa744f1c26c56532c"
+        },
+        "actualTerminal": {
+          "path": ".runtime-correction/validation/public-phone-vendor-default-boot-port-v3b-tatw5u65/run-1/root-actual-terminal.json",
+          "sha256": "72b3cf2b62e45b34d8b9007b6b0fcf23b20e75b66568e2bcc2e51a118633c4d0"
+        },
+        "actual": "ff736b/session58159 ->cd4ed9/2 CLOSED",
+        "elapsedMs": 17037,
+        "identity": "API24/phone/exactsoftwareversion observed; bootquery106 then assertion triggered Root cleanup. Emulator-9 PARTIAL, server-15 FINAL; do not transfer older geometry precleanup-kill attribution.",
+        "knownOwnedCleanupConfirmed": true,
+        "bootControlObserved": false
+      },
+      {
+        "status": "CLOSED_UNAVAILABLE_INVALID_EMULATOR_HDC_PORT_BEFORE_SERVER_CONNECT",
+        "receipt": {
+          "path": ".runtime-correction/validation/public-phone-vendor-default-first-boot-v2-drxgkj0m/run-1/receipt.json",
+          "sha256": "2de292d29fefc2c23155340601d342abc08cec26231525d805373d6668570612"
+        },
+        "actualTerminal": {
+          "path": ".runtime-correction/validation/public-phone-vendor-default-first-boot-v2-drxgkj0m/run-1/root-actual-terminal.json",
+          "sha256": "00acd5c2396e511cc49c9e793ee84fa89ce3465aa66d4b052b370336161b4ee0"
+        },
+        "actual": "2152f7/session92250 ->9ed477/2 CLOSED",
+        "port": 48357,
+        "vendorValidPortRange": "10000..16555",
+        "agreementAcknowledgmentWrites": 0,
+        "knownOwnedCleanupConfirmed": true,
+        "bootControlObserved": false
+      }
+    ]
   },
   "historicalValidation": {
     "immediatePredecessor": {
@@ -1121,16 +1221,16 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "4de41c7c6f194baf9ef4e3a02f7df74e4e1b1fba25263c906ecb910b62c9b26e",
+    "htmlSha256": "1efc01c128bcbaee8b806423bb423f8830ffc3e5380cddf0e23e6161ae355fdc",
     "receipt": {
-      "path": ".runtime-correction/validation/report-completed-on-ctzvaxg2/qa-final/receipt.json",
-      "sha256": "14fb5bf8ca17043d0ce0bdc805855ad5b44710c73e3bad29433d93024ab8f900"
+      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v2/receipt.json",
+      "sha256": "94ffcd17de1c249f953700bb8ca2db58632ca324970a73901de85f53c6e6a748"
     },
     "renderedSource": {
-      "path": ".runtime-correction/validation/report-completed-on-ctzvaxg2/rendered-source.html",
-      "sha256": "4de41c7c6f194baf9ef4e3a02f7df74e4e1b1fba25263c906ecb910b62c9b26e"
+      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/rendered-source.html",
+      "sha256": "1efc01c128bcbaee8b806423bb423f8830ffc3e5380cddf0e23e6161ae355fdc"
     },
-    "actual": "c3364a/session84024 ->7530f5/0",
+    "actual": "8f33fd/session13231 ->2cc95c/0",
     "views": 4,
     "languages": [
       "en",
@@ -1148,11 +1248,13 @@
       "collapsedHistories": 3,
       "internalLinks": 7
     },
-    "visualReadback": "Desktop English main walkthrough and mobile Chinese table inspected; readable, no clipping observed.",
+    "visualReadback": "Chinese mobile current-method and English desktop phone-route images inspected; readable with no clipping observed.",
     "previousPublishedQa": {
-      "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/qa/receipt.json",
-      "sha256": "df8901e84c06b619bcd744a466b994c484b30fe15a947339dfe56d0b368ef39a"
-    }
+      "path": ".runtime-correction/validation/report-completed-on-ctzvaxg2/qa-final/receipt.json",
+      "sha256": "14fb5bf8ca17043d0ce0bdc805855ad5b44710c73e3bad29433d93024ab8f900"
+    },
+    "previousPublishedHtmlSha256": "4de41c7c6f194baf9ef4e3a02f7df74e4e1b1fba25263c906ecb910b62c9b26e",
+    "qualificationHelperIncident": "V1 screenshot helper used evaluate on a text string; retained privately. Corrected helper passed without HTML changes."
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -3332,5 +3434,17 @@
     "allOfficialLogsAndCheckoutHeadsVerified": true,
     "noActionsRerunCancelDispatch": true,
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
+  },
+  "privateOriginalDutyPrototype": {
+    "status": "PRIVATE_UNINTEGRATED_TWO_PRODUCTION_PATH_FIXES_UNDER_REVIEW",
+    "candidate": ".runtime-correction/validation/original-duty-accounting-v6b-n4p7x1ks",
+    "knownBugs": [
+      "A fully validated49-duty union could be replaced by48 rows during the same worker format repair, before host publication.",
+      "Coalesced legacy review structuredClone lost WeakMap host provenance before actual finalizer/publication."
+    ],
+    "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
+    "currentArtifactChanged": false,
+    "semanticCompletenessClaim": false,
+    "newModelRuns": 0
   }
 }
