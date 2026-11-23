@@ -41,6 +41,6 @@ test('new project template loads the supplied Stop and requirement-frame profile
   assert.equal(controls.reviewers.stopReviewer.model, 'custom/deepseek-v4.1-flash');
   assert.deepEqual(plan.enabledStages, []);
   assert.deepEqual(plan.artifacts, []);
-  assert.deepEqual(plan.reviewGraph.edges.map(({from,to})=>[from,to]), [['proposal','design'],['proposal','tasks'],['design','tasks']]);
-  assert.deepEqual(plan.configuredArtifacts.map(item => item.nodeId), ['proposal', 'design', 'tasks']);
+  assert.equal(plan.reviewGraph, null);
+  assert.deepEqual(plan.configuredArtifacts, []);
 });

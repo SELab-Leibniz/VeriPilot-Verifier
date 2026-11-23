@@ -9,9 +9,14 @@ export async function installOriginalDocumentProfile(projectRoot) {
   await fs.cp(new URL("../../.runtime-corrector-default/", import.meta.url), target, { recursive: true });
   const file = path.join(target, "config.yaml");
   const config = parseSimpleYaml(await fs.readFile(file, "utf8"));
-  config.enabledStages = ["proposal", "design", "tasks"];
-  for (const artifact of config.artifacts) artifact.review.enabled = true;
-  for (const edge of config.workflow.edges) edge.review.enabled = true;
+  const stages = ["proposal", "design", "tasks"];
+  const review = () => ({ enabled: true, criteria: "example.reviewer.md" });
+  config.enabledStages = stages;
+  config.artifacts = stages.map(stage => ({ name: stage, stage, type: stage, format: "markdown", editable: true,
+    pathTemplates: [`openspec/changes/{changeName}/${stage}.md`], rules: { enabled: false }, review: review() }));
+  config.workflow = { correlation: { keys: ["changeName"] },
+    edges: [["proposal", "design"], ["proposal", "tasks"], ["design", "tasks"]]
+      .map(([from, to]) => ({ from, to, review: review() })) };
   config.artifactCorrection.originalRequirementsEnabled = true;
   config.stopCorrection.deviationOnly = true;
   config.requirementFrame.enabled = false;
