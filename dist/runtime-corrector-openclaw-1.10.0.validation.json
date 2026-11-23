@@ -3759,7 +3759,7 @@
     }
   },
   "currentPackageRealModelEvaluation": {
-    "status": "CLOSED_FIRST_OFF_FROZEN_UNGRADED_ON_PREPARING",
+    "status": "CLOSED_FIRST_OFF_FROZEN_UNGRADED_ON_PREFLIGHT_BLOCKED",
     "sourceCommit": "611132eea732aaeda811bdc691fbb8ca73f688fb",
     "archiveSha256": "7e75db8b9a21fedfe29959cad12ae8c22a37b1144e25c38ccd2380be7d6cd2a8",
     "modelTrialPerformed": true,
@@ -3838,7 +3838,7 @@
       },
       "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
     },
-    "currentPhaseAtReportRefresh": "FIRST_OFF_CLOSED_FROZEN_HOST_APPLY_ERROR_ON_PREPARING",
+    "currentPhaseAtReportRefresh": "FIRST_OFF_CLOSED_FROZEN_HOST_APPLY_ERROR_ON_LOCAL_PREFLIGHT_BLOCKED",
     "ordinaryApplyApproval": {
       "path": ".runtime-correction/validation/public-run-083b10e3bf9f40/apply-admission.json",
       "sha256": "3ade8102b7b26030028f49698ab900ed421c5559ef324239de0387b97f7e23cc",
@@ -3899,11 +3899,33 @@
       "sha256": "8dc4f24e80053030092f6b76d0bf36ba1cf20de1b4785c6a468d43f782b264c0"
     },
     "candidateGraded": false,
-    "hostApplyErrorCauseScope": "Stock agent.wait records error after a ruff/mypy-related exec command failed; driver exit0 and checkbox completion are not clean host execution or quality proof.",
+    "hostApplyErrorCauseScope": "Stock wait reports ERROR with an exec-warning summary. Primary SDK source shows delivered isError summaries and thrown failures share that shape, so fatal-versus-delivered cause class is UNKNOWN. Clean execution and code quality are not inferred.",
     "workflowQualified": false,
     "originalHostApplyTerminalStatus": "error",
     "outerControllerExitCode": 0,
-    "outerControllerExitNotSemanticVerdict": true
+    "outerControllerExitNotSemanticVerdict": true,
+    "pairedOnPreparation": {
+      "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
+      "receipt": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
+        "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
+        "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
+      },
+      "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+      "processOrSessionCreated": false,
+      "actorSdkGatewayKeyReadOrModelStarted": false,
+      "dependentSetupAndLive": "UNSTARTED",
+      "noRetryOrIndirectExecutionAfterRejection": true,
+      "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
+      "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
+    },
+    "hostWaitSourceAudit": {
+      "path": ".runtime-correction/validation/click-off-terminal-status-source-audit-cxms0_04/receipt.json",
+      "sha256": "e5c25ed95032f18240ccbee996de9a8185d4c9fb3a3f4cb650e711c5589cb925"
+    }
   },
   "latestCompletedDevelopmentRun": {
     "status": "CLOSED_FROZEN_GRADED_UNPAIRED_ENGINEERING_ON",
@@ -4613,33 +4635,63 @@
     "reportRefreshStatus": "LOCAL_FIRST_OFF_CLOSED_HOST_APPLY_ERROR_HTML_STATE_CHANGED_ROOT_QA_PENDING"
   },
   "reportCurrentQa": {
-    "status": "PASS_FIRST_OFF_CLOSED_FROZEN_BILINGUAL_REPORT_FOUR_VIEWS",
-    "htmlSha256": "7852247841dde6c0d61a98d5560c7ba3b9666aa8b37a5d00cd070b3f78ff2bf5",
+    "status": "PASS_FIRST_OFF_FROZEN_ON_LOCAL_PREFLIGHT_BLOCKED_FOUR_VIEWS",
+    "htmlSha256": "533c45180c07398ab7552a2fac56278e7f5e70291144e0002e513ded0e76cfd9",
     "precedingQa": {
-      "status": "PASS_CURRENT_FIRST_OFF_RUNNING_BILINGUAL_REPORT_FOUR_VIEWS",
-      "htmlSha256": "2bd792752323a9239b64525556def5d9c26bd77e44bce5e21b5a462be558dc73",
+      "status": "PASS_FIRST_OFF_CLOSED_FROZEN_BILINGUAL_REPORT_FOUR_VIEWS",
+      "htmlSha256": "7852247841dde6c0d61a98d5560c7ba3b9666aa8b37a5d00cd070b3f78ff2bf5",
       "precedingQa": {
-        "status": "PASS_PROMOTED_CURRENT_PACKAGE_BILINGUAL_REPORT_FOUR_VIEWS",
-        "htmlSha256": "c806f424677db6330937d3aeb58e2c743e27c58d1d950690c4f283ee40d6dd03",
+        "status": "PASS_CURRENT_FIRST_OFF_RUNNING_BILINGUAL_REPORT_FOUR_VIEWS",
+        "htmlSha256": "2bd792752323a9239b64525556def5d9c26bd77e44bce5e21b5a462be558dc73",
         "precedingQa": {
-          "status": "PASS_CURRENT_FOCUSED_REPORT_FOUR_VIEWS",
-          "htmlSha256": "b36fa8acd8418743736b4ede01fbc66f3573cffc1113aa68870be132f1511247",
+          "status": "PASS_PROMOTED_CURRENT_PACKAGE_BILINGUAL_REPORT_FOUR_VIEWS",
+          "htmlSha256": "c806f424677db6330937d3aeb58e2c743e27c58d1d950690c4f283ee40d6dd03",
           "precedingQa": {
-            "status": "PASS_CURRENT_REPORT_FOUR_VIEWS",
-            "htmlSha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51",
-            "scope": "Fourcurrentviews/switch/internalanchors/noexternallinks/hash/date/requests/errors; current6of7CI/localfollowup/currentC7fnoModel/V6partialSIGKILLcauseUnknown/0of39.",
+            "status": "PASS_CURRENT_FOCUSED_REPORT_FOUR_VIEWS",
+            "htmlSha256": "b36fa8acd8418743736b4ede01fbc66f3573cffc1113aa68870be132f1511247",
             "precedingQa": {
-              "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
-              "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
-              "precedingSnapshot": {
-                "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
-                "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+              "status": "PASS_CURRENT_REPORT_FOUR_VIEWS",
+              "htmlSha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51",
+              "scope": "Fourcurrentviews/switch/internalanchors/noexternallinks/hash/date/requests/errors; current6of7CI/localfollowup/currentC7fnoModel/V6partialSIGKILLcauseUnknown/0of39.",
+              "precedingQa": {
+                "status": "BROWSER_AND_PROVENANCE_PEER_PASS_LOCAL_TEST_PATCH_CI_PENDING_CLOSED_NATIVE_PARTIAL",
+                "htmlSha256": "0fa159a72ca5f7c3937ffd7b3031dd31bb5330cb93ecbe26c121d7a6f03a518c",
+                "precedingSnapshot": {
+                  "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/before-validation.json",
+                  "sha256": "9f90a1a028e36222565a1bd9a68066e7ca2bd6827214f7394b2c61e5cf81286e"
+                },
+                "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
+                "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+                "receipt": {
+                  "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
+                  "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+                },
+                "desktopAndMobileViews": 4,
+                "languages": [
+                  "en",
+                  "zh-CN"
+                ],
+                "externalRequests": 0,
+                "pageErrors": 0,
+                "actualExec": "4a14ec/session37287 ->12ed61/0",
+                "visualInspection": [
+                  "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
+                ],
+                "provenancePeer": {
+                  "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
+                  "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+                }
               },
-              "provenancePeerStatus": "SCOPED_CLEAR_LATEST53AC_ALL7_PRIOR_FAILURES_AND_NEW_TEST_PENDING_EXPLICIT",
-              "scope": "Latest53acall7unchangedtests; newlocalphaseobserverfixturepatch10whole+1delay+3negative checks pendingnewCI; closedV5 partialguestidentity/readinessquery/lostconnection/ack1/knowncleanup. No newC7fmodeltrial orqualitygain.",
+              "authorBeforeSnapshot": {
+                "path": ".runtime-correction/validation/report-ci-conjunction-and-phone-enfed2o5/before-validation.json",
+                "sha256": "07d2e0178c33d5d0ad4c6dcb2f5363be337240da025d8dc2e49362656fdabe2e"
+              },
+              "browserRunByAuthor": false,
+              "rootWillRunFinalFourViewQa": false,
+              "actualExec": "46d8aa/session59806->00e48f/0",
               "receipt": {
-                "path": ".runtime-correction/validation/report-phase-observer-and-phone-_b7pcblx/qa-native-closed/receipt.json",
-                "sha256": "8f54d05cc58eaf3efd8fbda4c2cf1534c3d3f95727d09a1a0cd6bc36e67e9f72"
+                "path": ".runtime-correction/validation/report-89df-predicate-native-kxznmfvo/receipt.json",
+                "sha256": "7b71402e1b2d6eb0afada8d1f46bed8b8f45b87a41b033f912060e04dfe6c97f"
               },
               "desktopAndMobileViews": 4,
               "languages": [
@@ -4648,51 +4700,47 @@
               ],
               "externalRequests": 0,
               "pageErrors": 0,
-              "actualExec": "4a14ec/session37287 ->12ed61/0",
-              "visualInspection": [
-                "ENdesktop1200 andZHmobile390 timing/benchmarklayout inspected; finalnativewording DOMverifiedin4views"
-              ],
-              "provenancePeer": {
-                "path": ".runtime-correction/validation/report-phase-phone-final-peer-bfn5x9sg/peer-review.json",
-                "sha256": "24d8ea812142846bdebc14edc30715daf0cc6b23bfe182b6cb67b859e9228741"
+              "visualInspection": {
+                "owner": "ROOT",
+                "images": [
+                  "ci-en-1200.png",
+                  "native-zh-CN-390.png"
+                ],
+                "result": "ReadabledesktopCI/benchmarkandChinesemobilenativeprose; nooverflow/factualoverclaimseen"
               }
             },
-            "authorBeforeSnapshot": {
-              "path": ".runtime-correction/validation/report-ci-conjunction-and-phone-enfed2o5/before-validation.json",
-              "sha256": "07d2e0178c33d5d0ad4c6dcb2f5363be337240da025d8dc2e49362656fdabe2e"
+            "beforeSnapshot": {
+              "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/before.html",
+              "sha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51"
             },
-            "browserRunByAuthor": false,
-            "rootWillRunFinalFourViewQa": false,
-            "actualExec": "46d8aa/session59806->00e48f/0",
+            "scope": "Simplifiedworkflow/maincurrentCI/selected-scopefollowup/bmexpliciterror, same bilingualfile/sections/anchors/theme.",
+            "actualExec": "4c5cc7/session81072->03384b/0",
             "receipt": {
-              "path": ".runtime-correction/validation/report-89df-predicate-native-kxznmfvo/receipt.json",
-              "sha256": "7b71402e1b2d6eb0afada8d1f46bed8b8f45b87a41b033f912060e04dfe6c97f"
+              "path": ".runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/qa/receipt.json",
+              "sha256": "7342d6cf3c89fa534f51c9ebabd1ca1c2c8cd82b999b09f6c12a3f9c35463614"
             },
-            "desktopAndMobileViews": 4,
             "languages": [
               "en",
               "zh-CN"
             ],
+            "desktopAndMobileViews": 4,
             "externalRequests": 0,
             "pageErrors": 0,
             "visualInspection": {
               "owner": "ROOT",
               "images": [
-                "ci-en-1200.png",
+                "top-en-1200.png",
+                "ci-zh-CN-390.png",
                 "native-zh-CN-390.png"
               ],
-              "result": "ReadabledesktopCI/benchmarkandChinesemobilenativeprose; nooverflow/factualoverclaimseen"
+              "result": "Readableworkflowintro/diagramandmobileCI/scope/nativechallenge; nooverflow."
             }
           },
-          "beforeSnapshot": {
-            "path": "/Users/rshu/Documents/GitHub/VeriPilot-Verifier/.runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/before.html",
-            "sha256": "c4781277599e0b65c3cf387dd5b7a9adb9904319e13d2dc4a9529fc16da89c51"
-          },
-          "scope": "Simplifiedworkflow/maincurrentCI/selected-scopefollowup/bmexpliciterror, same bilingualfile/sections/anchors/theme.",
-          "actualExec": "4c5cc7/session81072->03384b/0",
+          "scope": "SamebilingualHTML/currentpackagefull398+all7CI+278stockproof/earlier795trialexplicit/0of39/noexternalhashdate.",
+          "actualExec": "1c970f/session64433->939782/0",
           "receipt": {
-            "path": ".runtime-correction/validation/report-public-scope-and-a1e4-xgpjxmsu/qa/receipt.json",
-            "sha256": "7342d6cf3c89fa534f51c9ebabd1ca1c2c8cd82b999b09f6c12a3f9c35463614"
+            "path": ".runtime-correction/validation/promote-611132-review-scope-rz3un0z4/qa/receipt.json",
+            "sha256": "aeff6a9cc2d0bf9c82c24c3dc82e49ade5ea0f10f097a816006cbd52033ac615"
           },
           "languages": [
             "en",
@@ -4704,43 +4752,44 @@
           "visualInspection": {
             "owner": "ROOT",
             "images": [
-              "top-en-1200.png",
-              "ci-zh-CN-390.png",
-              "native-zh-CN-390.png"
+              "ci-en-1200.png",
+              "ci-zh-CN-390.png"
             ],
-            "result": "Readableworkflowintro/diagramandmobileCI/scope/nativechallenge; nooverflow."
+            "result": "Source398/all7/package17each/installed278/currentNoModel/0of39 readable; nooverflow."
           }
         },
-        "scope": "SamebilingualHTML/currentpackagefull398+all7CI+278stockproof/earlier795trialexplicit/0of39/noexternalhashdate.",
-        "actualExec": "1c970f/session64433->939782/0",
+        "authorDraft": {
+          "path": ".runtime-correction/validation/report-ci605-premodel-refresh-v602vt7o/draft-refresh.json",
+          "sha256": "5fe4a369aaaae898997f650d98a3073cd34a6f27eff06904b37800bac83970be"
+        },
+        "actualExec": "c2af4d/session63744->131b9d/0",
         "receipt": {
-          "path": ".runtime-correction/validation/promote-611132-review-scope-rz3un0z4/qa/receipt.json",
-          "sha256": "aeff6a9cc2d0bf9c82c24c3dc82e49ade5ea0f10f097a816006cbd52033ac615"
+          "path": ".runtime-correction/validation/root-report-first-off-running-qa-m6x1qsk5/qa/receipt.json",
+          "sha256": "697803f0fb6436b844cfcf13bc06d6524a3ff0f5f5504e08aa53243767304d81"
         },
         "languages": [
           "en",
           "zh-CN"
         ],
         "desktopAndMobileViews": 4,
-        "externalRequests": 0,
+        "externalPageRequests": 0,
         "pageErrors": 0,
+        "visibleDatesOrHashes": false,
+        "rootWillRunFinalFourViewQa": false,
         "visualInspection": {
           "owner": "ROOT",
           "images": [
             "ci-en-1200.png",
-            "ci-zh-CN-390.png"
+            "native-zh-CN-390.png"
           ],
-          "result": "Source398/all7/package17each/installed278/currentNoModel/0of39 readable; nooverflow."
-        }
+          "result": "Readablecurrentengineeringmetrics/benchmark0of39andChinesemobilenativechallenge; nooverflow."
+        },
+        "scope": "FirstOFFlive/no completednewcomparison; earliercompletedcase preserved; latest605all7/nativegeometryclosedunavailable; same6sections3foldedhistories7internalanchors."
       },
-      "authorDraft": {
-        "path": ".runtime-correction/validation/report-ci605-premodel-refresh-v602vt7o/draft-refresh.json",
-        "sha256": "5fe4a369aaaae898997f650d98a3073cd34a6f27eff06904b37800bac83970be"
-      },
-      "actualExec": "c2af4d/session63744->131b9d/0",
+      "actualExec": "fb4296/session22106->9261ff/0",
       "receipt": {
-        "path": ".runtime-correction/validation/root-report-first-off-running-qa-m6x1qsk5/qa/receipt.json",
-        "sha256": "697803f0fb6436b844cfcf13bc06d6524a3ff0f5f5504e08aa53243767304d81"
+        "path": ".runtime-correction/validation/root-report-first-off-closed-qa-p_zoz_0c/qa/receipt.json",
+        "sha256": "fdb27c4686eb8eed46bc0f10dd849723cfcbf9bc765281c9e77d078593e40f5d"
       },
       "languages": [
         "en",
@@ -4754,17 +4803,17 @@
       "visualInspection": {
         "owner": "ROOT",
         "images": [
-          "ci-en-1200.png",
-          "native-zh-CN-390.png"
+          "campaign-en-1200.png",
+          "campaign-zh-CN-390.png"
         ],
-        "result": "Readablecurrentengineeringmetrics/benchmark0of39andChinesemobilenativechallenge; nooverflow."
+        "result": "ClosedOFF/frozen/hostApplyerror/ONpreparing/noqualityresult readableatdesktopandChinesemobile; nooverflow."
       },
-      "scope": "FirstOFFlive/no completednewcomparison; earliercompletedcase preserved; latest605all7/nativegeometryclosedunavailable; same6sections3foldedhistories7internalanchors."
+      "scope": "Same6sections3closedhistories7internalanchors; latest605all7/398sourceproofs preserved; formal0of39 and no privategrade/completedcomparison."
     },
-    "actualExec": "fb4296/session22106->9261ff/0",
+    "actualExec": "c5edb1/session60191->77804e/0",
     "receipt": {
-      "path": ".runtime-correction/validation/root-report-first-off-closed-qa-p_zoz_0c/qa/receipt.json",
-      "sha256": "fdb27c4686eb8eed46bc0f10dd849723cfcbf9bc765281c9e77d078593e40f5d"
+      "path": ".runtime-correction/validation/root-report-on-preflight-blocked-qxsnoh0z/qa/receipt.json",
+      "sha256": "224ddb2dad49de16dc824cc3e20da96828dca0fd00a02523164810bf52661c83"
     },
     "languages": [
       "en",
@@ -4781,9 +4830,9 @@
         "campaign-en-1200.png",
         "campaign-zh-CN-390.png"
       ],
-      "result": "ClosedOFF/frozen/hostApplyerror/ONpreparing/noqualityresult readableatdesktopandChinesemobile; nooverflow."
+      "result": "ReadablefirstOFF172frozen/hostApplyERROR/ONlocalpermissionpending/noqualitycomparison; sourceCIandnativechallengepreserved, nooverflow."
     },
-    "scope": "Same6sections3closedhistories7internalanchors; latest605all7/398sourceproofs preserved; formal0of39 and no privategrade/completedcomparison."
+    "scope": "Same6sections3closedhistories7internalanchors; no external links; API authority remains distinct from blocked local preflight."
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4848,7 +4897,7 @@
     "artifactFieldPointsToActualPrivateArchive": false,
     "sourceLocallyGitReachable": true,
     "sourceRemoteState": "EXACT611_SOURCE_AND605_PUBLICATION_ALL7_CI_PASSED",
-    "sourceDataScope": "Exact611132 all398local+latest605all7remoteCI; eachNode17artifact checks/3hostparity/278freshstockfiles; firstOFFrealmodelarmclosedandfrozenwithhostApplyerror, pairedONpreparing; no completedcomparisonorprovensemanticqualitybenefit.",
+    "sourceDataScope": "Exact611 source/all398local/latest605all7CI/17artifacteach/278stockfiles; firstOFFrealmodelarmfrozenwithhostApplyERROR; ON local preflight rejected before process creation, pending explicit local execution authorization; no quality comparison.",
     "promotedBy": "ROOT",
     "pendingTestFixtureCommit": null,
     "pendingTestFixturePostimageSha256": null
@@ -5763,7 +5812,7 @@
     }
   ],
   "supplementalGeneralEvaluationPreparation": {
-    "status": "FIRST_OFF_CLOSED_FROZEN_HOST_APPLY_ERROR_UNGRADED_ON_PREPARING",
+    "status": "FIRST_OFF_FROZEN_ON_LOCAL_PREFLIGHT_BLOCKED_NO_PRIVATE_GRADES",
     "outsideRuntimePlugin": true,
     "formal13TaskCredit": 0,
     "publicBrief": "Original historical CLI working-help behavior; longest-name preference is exploratory only. Selection before model outcomes, not blind selection.",
@@ -5965,6 +6014,24 @@
         "sha256": "8dc4f24e80053030092f6b76d0bf36ba1cf20de1b4785c6a468d43f782b264c0"
       },
       "privateGradePerformed": false
+    },
+    "nextOnPreparation": {
+      "status": "BLOCKED_AUTOMATIC_APPROVAL_REVIEW_BEFORE_LOCAL_PREFLIGHT",
+      "receipt": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-receipt.json",
+        "sha256": "3f3f3091328c0a3bab8691ab0e0969bc11854783628fbcf913ad3feb0ee7b74f"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/delegated-click-next-on-preparation-i90r9znl/blocked-final-readback.json",
+        "sha256": "986cc0582cf3515881d4060bf70970029a02c5d803d82b2b1f6bccd9e5a4ff4a"
+      },
+      "operatorRoot": ".runtime-correction/validation/public-run-cd221ef176cf46",
+      "processOrSessionCreated": false,
+      "actorSdkGatewayKeyReadOrModelStarted": false,
+      "dependentSetupAndLive": "UNSTARTED",
+      "noRetryOrIndirectExecutionAfterRejection": true,
+      "reason": "Automatic review found no trusted user authorization for the exact unsandboxed subprocess/filesystem/network-policy preflight.",
+      "permissionNeeded": "Local credential-free preflight and isolated OpenClaw setup; existing API-cost authority unchanged."
     }
   }
 }
