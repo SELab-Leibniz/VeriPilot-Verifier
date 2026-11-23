@@ -3471,7 +3471,7 @@
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "privateOriginalDutyPrototype": {
-    "status": "COMPOSED_LOCAL_REGRESSION_AND_PRIVATE_PACKAGE_STOCK_PASS_AWAITING_NEW_WINDOWS_CI_AND_REAL_MODEL_UPTAKE",
+    "status": "FULL_MAC_UBUNTU_CI_AND_PRIVATE_PACKAGE_STOCK_PASS_WINDOWS_PATH_FIX_QUALIFIED_REAL_UPTAKE_PENDING",
     "candidate": ".runtime-correction/validation/original-duty-v8b-legacy-compat-w4k7n2mz",
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
@@ -3529,7 +3529,7 @@
     "experimentalSourceCandidate": true,
     "privatePrototype": false,
     "currentRegressionResolution": {
-      "path": ".runtime-correction/validation/root-windows-duty-resolution-zvtkw4pq/resolution.json",
+      "path": ".runtime-correction/validation/original-duty-windows-canonical-path-b246-m6q4r8np/root-composed-mac-source-resolution.json",
       "kind": "COMPOSED_FULL_PLUS_THREE_CORRECTED_AND_TWO_PORTABILITY_FIXTURES",
       "filesCovered": 403,
       "correctedFileChecks": 42,
@@ -3561,18 +3561,45 @@
         "actualWindowsExecution": false
       },
       "portabilityCompanion": ".runtime-correction/validation/root-windows-duty-resolution-zvtkw4pq/resolution.json",
-      "priorResolutionPath": ".runtime-correction/validation/root-f42-fixture-resolution-6oz7ofqd/resolution.json"
+      "priorResolutionPath": ".runtime-correction/validation/root-f42-fixture-resolution-6oz7ofqd/resolution.json",
+      "previousPath": ".runtime-correction/validation/root-windows-duty-resolution-zvtkw4pq/resolution.json",
+      "currentFullSourceCi": "b246 exact complete Mac403/5089PASS33SKIP and Ubuntu403/5085PASS37SKIP",
+      "latestChangedWholeFileChecks": 144
     },
     "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f",
     "latestNaturalCi": {
-      "sourceCommit": "84f345c9f08714e04e2b4d4ddb7406269d87925e",
-      "runId": 45134005374,
+      "sourceCommit": "b246ea9eb18b52d0d6f769f9f5a2bd172bf37ca3",
+      "runId": 45140517612,
       "attempt": 1,
-      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_TEST_LOAD_FAILURE",
+      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_LEGACY_FIXTURE_FAILURE",
+      "receipt": ".runtime-correction/validation/ci-fix/post-b246-natural-q7m4n2vc/terminal-receipt.json",
+      "receiptSha256": "6b918d83a355aa305fd98ed1aa8e5864e30054ecbdac15035a8a8960671f857b",
       "failedFile": "test/original-duty-publication-integration.test.mjs",
-      "cause": "Exact runtime CRLF checkout hash differs from canonical LF pin; source guard test-only fix locally qualified.",
+      "crlfSourcePinControlPassedOnWindows": true,
+      "macOS": {
+        "files": 403,
+        "pass": 5089,
+        "skip": 33,
+        "fail": 0
+      },
+      "ubuntu": {
+        "files": 403,
+        "pass": 5085,
+        "skip": 37,
+        "fail": 0
+      },
+      "failureScope": "Seven actual-legacy/coalesced fixture checks plus afterhook; exact inner cause not exposed in official log. Source establishes serialized projectRoot is slash-normalized while fixture root is native Windows.",
+      "fixStatus": "ONE_LINE_CANONICAL_PATH_ASSERTION_LOCALLY_QUALIFIED_144_CHECKS_WINDOWS_PENDING",
       "fixedCommitNaturalCi": "PENDING",
-      "noRerunCancelDispatch": true
+      "noRerunCancelDispatch": true,
+      "pathFixQualification": {
+        "path": ".runtime-correction/validation/original-duty-windows-canonical-path-b246-m6q4r8np/qualification.json",
+        "sha256": "089fa2c8529a3b51dd2bbcec8c78e94515aabcef67c970098b29425b09a425a7",
+        "actual": "4cdc64/session78543 ->fca88f/0 CLOSED",
+        "checks": 144,
+        "productionChanged": false,
+        "actualWindows": false
+      }
     },
     "privateReplacementArchive": {
       "path": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/committed-release/runtime-corrector-openclaw-1.10.0.tgz",
@@ -3591,6 +3618,42 @@
       "inheritsCanonicalRealModelEvidence": false
     },
     "reportQa": {
+      "path": ".runtime-correction/validation/report-ci-pilot-current-l_ahg33x/report-qa/capture/receipt.json",
+      "sha256": "14218a602c722230c339218b4af05d2d9f3ab2de9917797ef3c720e1491f3857",
+      "htmlSha256": "9bfe04518fc20a5875f4915587fd5ae29c132eedbff0da7ecf26e6535aa5749d",
+      "actual": "e4f37d/session44666 ->3865c3/0 CLOSED",
+      "views": 4,
+      "externalLinks": 0,
+      "rootInspected": "ci-zh-CN-390.png"
+    },
+    "precedingNaturalCiRecords": [
+      {
+        "sourceCommit": "84f345c9f08714e04e2b4d4ddb7406269d87925e",
+        "runId": 45134005374,
+        "attempt": 1,
+        "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_TEST_LOAD_FAILURE",
+        "failedFile": "test/original-duty-publication-integration.test.mjs",
+        "cause": "Exact runtime CRLF checkout hash differs from canonical LF pin; source guard test-only fix locally qualified.",
+        "fixedCommitNaturalCi": "PENDING",
+        "noRerunCancelDispatch": true
+      }
+    ],
+    "nextLivePilot": {
+      "source": ".runtime-correction/validation/public-on-original-duty-pilot-248b-r7m2q9vc",
+      "operator": ".runtime-correction/validation/public-run-0e47a1d9f3b742",
+      "acceptanceSha256": "933e0861e05b7988200ebaa20e4392528272cd526ea64c71c06fbb218c0d4c61",
+      "status": "CREDENTIAL_FREE_PREFLIGHT_PASS_MODEL_NOT_STARTED",
+      "kernelChecks": 24,
+      "publicChecks": 668,
+      "starterFilesUnchanged": 149,
+      "preflightPeer": ".runtime-correction/validation/public-pilot-prelive-peer-9c6l_4l8/peer-review.json",
+      "preflightPeerSha256": "dda7a96c5ca861d7af0351d5483f9ecc6d3282e15f7dab0209e53d35ba737cac",
+      "primary": "Actual normal stage_original_duties before first coverage/cohort and canonical-ID retention through final host handoff+Stop. Listed-only NOT_EXERCISED; missing evidence U.",
+      "paidModelsAdmitted": false,
+      "formal13Credit": 0,
+      "qualityGainClaim": false
+    },
+    "precedingReportQa": {
       "path": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/report-qa/capture/receipt.json",
       "sha256": "8e60637e7382c3ea615efdd8023acefb5748e71d546e7d2b01f9987aa4d4b372",
       "htmlSha256": "c20ad6b1628ba27a793ee7c04153ec4502b7885bdb7edd0a00640eb189685e93",

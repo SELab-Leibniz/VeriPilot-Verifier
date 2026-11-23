@@ -229,7 +229,7 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         if (productionLegacy) {
           assert.equal(semantic.runtimeV2, undefined);
           assert.equal(semantic.originalRequirements.digest, originals.digest);
-          assert.equal(semantic.projectRoot, root);
+          assert.equal(await fs.realpath(semantic.projectRoot), root, 'Serialized projectRoot must resolve to the exact canonical fixture root.');
           assert.equal(semantic.originalRequirements.schemaVersion, originals.schemaVersion);
           assert.equal(semantic.originalRequirements.sourceRole, undefined);
         } else {
