@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Runtime Corrector 技术方案框架（第二版）</title>
+<style>
+  :root {
+    --mit: #2563eb; --mit-bg: #eff6ff; --mit-dark: #1d4ed8;
+    --bridge: #7c3aed; --bridge-bg: #f5f3ff;
+    --cor: #ea580c; --cor-bg: #fff7ed; --cor-dark: #c2410c;
+    --chk: #0f766e; --chk-bg: #f0fdfa;
+    --base: #475569; --base-bg: #f1f5f9;
+    --ink: #0f172a; --muted: #475569; --line: #e2e8f0;
+    --ok: #15803d; --warn: #b45309; --plan: #64748b; --bad: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink); background: #f8fafc;
+    font: 15px/1.7 "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  }
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 236px; overflow-y: auto;
+    background: #0f172a; color: #cbd5e1; padding: 24px 16px; font-size: 13.5px;
+  }
+  nav.toc .brand { color: #fff; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  nav.toc .sub { color: #94a3b8; font-size: 12px; margin-bottom: 18px; }
+  nav.toc a { display: block; color: #cbd5e1; text-decoration: none; padding: 5px 8px; border-radius: 6px; }
+  nav.toc a:hover { background: #1e293b; color: #fff; }
+  nav.toc a.l2 { padding-left: 22px; font-size: 12.5px; color: #94a3b8; }
+  main { margin-left: 236px; padding: 32px 40px 80px; }
+  .wrap { max-width: 1160px; margin: 0 auto; }
+  header.cover {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #7c2d12 100%);
+    color: #fff; border-radius: 16px; padding: 32px 36px; margin-bottom: 28px;
+  }
+  header.cover h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: .5px; }
+  header.cover .meta { color: #cbd5e1; font-size: 13.5px; }
+  header.cover .tagline { margin-top: 18px; font-size: 17px; line-height: 1.8; color: #f1f5f9; }
+  header.cover .slogan { display: inline-block; margin-top: 14px; padding: 6px 14px; border-radius: 999px;
+    background: rgba(255,255,255,.12); font-size: 15px; letter-spacing: .5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 18px; font-size: 13px; color: #e2e8f0; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 26px 30px; margin-bottom: 22px; }
+  h2 { margin: 0 0 16px; font-size: 21px; display: flex; align-items: center; gap: 10px; }
+  h2 .no { display: inline-flex; width: 30px; height: 30px; border-radius: 8px; background: #0f172a; color: #fff;
+           align-items: center; justify-content: center; font-size: 14px; flex: none; }
+  section.spine h2 .no { background: var(--chk); }
+  h3 { margin: 22px 0 10px; font-size: 17px; }
+  h4 { margin: 14px 0 6px; font-size: 14.5px; color: var(--muted); }
+  p { margin: 8px 0; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  code { font-family: "Cascadia Code", Consolas, monospace; font-size: 12.5px; background: #f1f5f9;
+         padding: 1px 5px; border-radius: 4px; color: #334155; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13.8px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f8fafc; font-weight: 600; color: #334155; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fcfdfe; }
+  .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .st-done { background: #dcfce7; color: var(--ok); }
+  .st-off  { background: #fef3c7; color: var(--warn); }
+  .st-plan { background: #e2e8f0; color: var(--plan); }
+  .st-neg  { background: #fee2e2; color: var(--bad); }
+  .tag-mit { background: var(--mit-bg); color: var(--mit-dark); }
+  .tag-bri { background: var(--bridge-bg); color: var(--bridge); }
+  .tag-cor { background: var(--cor-bg); color: var(--cor-dark); }
+  .tag-chk { background: var(--chk-bg); color: var(--chk); }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g5 { grid-template-columns: repeat(5, 1fr); }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: #fff; }
+  .card h4 { margin-top: 0; color: var(--ink); font-size: 15px; }
+  .card.mit { border-top: 4px solid var(--mit); }
+  .card.bri { border-top: 4px solid var(--bridge); }
+  .card.cor { border-top: 4px solid var(--cor); }
+  .card.chk { border-top: 4px solid var(--chk); }
+  .card.base { border-top: 4px solid var(--base); }
+  .kpi { font-size: 13px; color: var(--muted); }
+  .callout { border-left: 4px solid var(--mit); background: var(--mit-bg); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .callout.chk { border-color: var(--chk); background: var(--chk-bg); }
+  .callout.warn { border-color: var(--warn); background: #fffbeb; }
+  .callout.bad { border-color: var(--bad); background: #fef2f2; }
+  .diagram { width: 100%; height: auto; display: block; margin: 8px 0 4px; }
+  .layers { display: grid; grid-template-columns: 1fr 220px; gap: 12px; }
+  .layer { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  .layer .lt { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .layer .mods { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mod { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+  .mod small { display: block; color: var(--muted); font-size: 11.5px; }
+  .layer.host { background: #f8fafc; }
+  .layer.orch { background: #f8fafc; }
+  .layer.cap { background: linear-gradient(90deg, var(--mit-bg), var(--bridge-bg), var(--cor-bg)); }
+  .layer.found { background: var(--base-bg); }
+  .side { border: 1px dashed #94a3b8; border-radius: 10px; padding: 10px 14px; background: #fff; }
+  .comp { border: 1px solid var(--line); border-radius: 14px; margin: 18px 0; overflow: hidden; }
+  .comp .ch { padding: 14px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .comp.mit .ch { background: var(--mit-bg); border-bottom: 2px solid var(--mit); }
+  .comp.bri .ch { background: var(--bridge-bg); border-bottom: 2px solid var(--bridge); }
+  .comp.cor .ch { background: var(--cor-bg); border-bottom: 2px solid var(--cor); }
+  .comp .ch .t { font-size: 18px; font-weight: 700; margin-right: 6px; }
+  .comp .cb { padding: 6px 18px 16px; }
+  .kv { display: grid; grid-template-columns: 112px 1fr; border-top: 1px solid var(--line); }
+  .kv > div { padding: 8px 4px; border-bottom: 1px solid var(--line); }
+  .kv > div:nth-child(odd) { color: var(--muted); font-weight: 600; font-size: 13.5px; }
+  .kv > div.hl { color: var(--chk); }
+  .pipe { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pipe span { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font-size: 13px; }
+  .pipe i { color: #94a3b8; font-style: normal; }
+  .verdicts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .verdict { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); }
+  .verdict > b:first-child { display: block; font-size: 15px; margin-bottom: 4px; }
+  .v-dev { background: #fef2f2; border-color: #fecaca; }
+  .v-pass { background: #f0fdf4; border-color: #bbf7d0; }
+  .v-unv { background: #fffbeb; border-color: #fde68a; }
+  .v-allow { background: #f8fafc; }
+  .mx th.cat { white-space: normal; min-width: 128px; }
+  .mx td.mt { white-space: nowrap; font-size: 13px; }
+  .mx td.f  { background: #dbeafe; }
+  .mx td.jd { background: #ede9fe; }
+  .mx td.jp { background: #ffedd5; }
+  .mx td.na { background: #f8fafc; color: #94a3b8; }
+  .mx td.gap { background: #fee2e2; color: var(--bad); }
+  .mx small { display: block; color: var(--muted); font-size: 11.5px; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; border: 1px solid var(--line); }
+  .muted { color: var(--muted); }
+  .small { font-size: 12.5px; }
+  footer { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 30px; }
+  @media (max-width: 1100px) {
+    nav.toc { display: none; } main { margin-left: 0; padding: 18px; }
+    .g3, .g4, .g5, .verdicts { grid-template-columns: repeat(2, 1fr); }
+    .layers { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav.toc { display: none; } main { margin-left: 0; padding: 0; } body { background: #fff; font-size: 12.5px; }
+    section, .comp, .card { break-inside: avoid; } header.cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <div class="brand">RC 技术方案框架</div>
+  <div class="sub">第二版 · 2026-11-22</div>
+  <a href="#s1">1. 一页纸</a>
+  <a href="#s2">2. 背景与目标</a>
+  <a href="#s3">3. 设计原则</a>
+  <a href="#s4">4. 纠偏检查体系</a>
+  <a class="l2" href="#s4-1">五个问题 · 五套分类</a>
+  <a class="l2" href="#s4-2">准入规则</a>
+  <a class="l2" href="#s4-3">五类检查 × 四个时点</a>
+  <a class="l2" href="#s4-4">开工找，交付判</a>
+  <a class="l2" href="#s4-5">偏差在哪个时点能拉回</a>
+  <a class="l2" href="#s4-6">与独立评测的关系</a>
+  <a href="#s5">5. 总体架构</a>
+  <a class="l2" href="#s5-1">两条线 · 四组件 · 一份清单</a>
+  <a class="l2" href="#s5-2">分层架构</a>
+  <a href="#s6">6. 组件设计</a>
+  <a class="l2" href="#c1">代码理解·提议·简报</a>
+  <a class="l2" href="#c2">文档纠偏一致性</a>
+  <a class="l2" href="#c3">Skill 看护</a>
+  <a class="l2" href="#c4">终审</a>
+  <a href="#s7">7. 跨组件契约</a>
+  <a href="#s8">8. 判定语义</a>
+  <a href="#s9">9. 预算、时序与并发</a>
+  <a href="#s10">10. 默认配置</a>
+  <a href="#s11">11. 可靠性与安全边界</a>
+  <a href="#s12">12. 证据现状</a>
+  <a href="#s13">13. 风险与对策</a>
+  <a href="#sapp">附录：术语与口径</a>
+</nav>
+
+<main><div class="wrap">
+
+<header class="cover">
+  <h1>Runtime Corrector 技术方案框架</h1>
+  <div class="meta">第二版 · 分支 <code style="background:rgba(255,255,255,.12);color:#fff">codex/rc-general-efficiency-bench</code> · 2026-11-22 · 初版与本版各经一轮辩护 / 挑战对抗审查</div>
+  <div class="tagline">
+    让编码 Agent <b>少走偏</b>，走偏了能被<b>拉回来</b>。<br>
+    一套纠偏检查体系规定"查什么"；开工时在看不到候选代码的条件下找出该查的东西（缓解纠偏）；写文档、执行中、交付三个时点对已形成的产物下结论，只对有证据的偏差发起修复（纠偏）；判断不了的明确交给人。RC 不修改业务文件，也不向用户提问。
+  </div>
+  <div class="slogan">一份清单 · 四个时点 · 两种作用</div>
+  <div class="legend">
+    <span><span class="badge st-done">● 已实测</span> 已实现，有真实宿主实测</span>
+    <span><span class="badge st-off">◐ 离线</span> 已实现，仅离线 / 单元验证</span>
+    <span><span class="badge st-plan">○ 规划</span> 尚未实现</span>
+  </div>
+</header>
+
+<!-- 1 -->
+<section id="s1">
+  <h2><span class="no">1</span>一页纸</h2>
+  <div class="grid g5">
+    <div class="card base"><h4>定位</h4>宿主插件，挂在 MatrixAssistant / OpenClaw 的编码会话上。<b>只读</b>，只给出有依据的反馈，修复由主 Agent 完成。</div>
+    <div class="card chk"><h4>一份清单</h4>纠偏检查体系：<b>五类检查</b>（需求实现、项目规则、Skill 步骤、验证闭环、需求分解与验收设计）、十六项指标、四条准入规则。需求分解只是其中一类。</div>
+    <div class="card mit"><h4>缓解纠偏</h4>开工时在<b>看不到候选代码</b>的条件下，从开始版本代码和项目文档中找出该查的条目，作为简报交给主 Agent，同时成为终审的必查项。</div>
+    <div class="card cor"><h4>纠偏</h4>写文档、执行中、交付三个时点<b>对已形成的产物下结论</b>；有反证才报偏差，进入反馈→修复→复审闭环，次数封顶。</div>
+    <div class="card base"><h4>当前状态</h4>闭环已在真实宿主跑通。开发集上相对基线有正向观察，<b>增益最大的是项目规则（G3）</b>；<b>泛化净收益尚未证明</b>，增益也不能归到某个组件。</div>
+  </div>
+  <div class="callout">两条线只按一条标准区分：<b>是否针对已经形成的产物下结论</b>。简报不下结论，属于缓解；文档纠偏、Skill 看护、终审都对已有产物下结论，属于纠偏。文档纠偏对文档本身是纠偏，对下游代码起缓解作用，是两条线的衔接点。</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <h2><span class="no">2</span>背景与目标</h2>
+  <h3>要解决的四类问题（来自开发集失败分析）</h3>
+  <table>
+    <tr><th>问题</th><th>表现</th><th>对应检查类别</th><th>主要应对组件</th></tr>
+    <tr><td><b>隐性契约</b></td><td>原文没写、但旧代码和旧测试已经决定的约定：服务接入点、缺省值与空输入回退、状态 × 操作组合、异常路径副作用、配置在所有入口是否生效</td><td>需求实现</td><td>代码理解·提议·简报；终审</td></tr>
+    <tr><td><b>规划偏离</b></td><td>方案或任务文档与原文不一致，下游代码跟着偏</td><td>需求分解与验收设计</td><td>文档纠偏一致性；终审</td></tr>
+    <tr><td><b>过程违规</b></td><td>项目规则或已加载 Skill 规定的步骤没做、顺序错</td><td>项目规则；Skill 步骤</td><td>检查项 K；Skill 看护；终审</td></tr>
+    <tr><td><b>完成声明 ≠ 完成</b></td><td>Agent 声称完成，但实现、测试或原有行为不支持</td><td>验证闭环；需求实现</td><td>终审（原测试回归、项目验收命令）</td></tr>
+  </table>
+  <p class="muted small">只改提示词已试过无效（st7、st6 回放结果不变，<code>docs/stop-contract-pass.md</code>）。根因是结构性的：清单由已看到候选代码的同一会话生成会被候选带偏；"无法证明就省略"会让漏检默认通过（<code>docs/requirement-frame-spec.md</code> §1）。</p>
+  <div class="grid g2">
+    <div class="card"><h4>目标</h4>
+      <ul>
+        <li>减少编码 Agent 在隐性契约、规划、过程、交付四类问题上的偏差</li>
+        <li>偏差发生后，用可归属的证据把它交回主 Agent 修复并复审</li>
+        <li>结论诚实：证据不足就是未验证，放行不等于通过</li>
+        <li>成本可控：次数与时限封顶，RC 故障不拖累主任务</li>
+      </ul>
+    </div>
+    <div class="card"><h4>非目标</h4>
+      <ul>
+        <li>不修改业务文件，不替主 Agent 修复</li>
+        <li>不替代测试，不充当测试神谕</li>
+        <li>不新增用户没要求的义务，不向用户提问、不替用户做需求决定</li>
+        <li>没有对照证据，不宣称提分或省成本</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <h2><span class="no">3</span>设计原则（所有组件共用）</h2>
+  <div class="grid g4">
+    <div class="card"><h4>① 依据分层，原文优先</h4>用户原文决定<b>要改什么</b>；既有代码、测试、项目规则、已加载 Skill 决定<b>不能破坏什么、必须怎么做</b>；冲突时原文优先。RC 生成的简报、检查项、反例、笔记只负责<b>定位该看哪里</b>，不构成义务。</div>
+    <div class="card"><h4>② 提示与判定分离</h4>缓解只提供信息：不下结论、不阻塞、不占纠偏次数。纠偏只对已形成的产物下结论，且必须有可归属的反证。在检查体系内部表现为<b>开工找、交付判</b>。</div>
+    <div class="card"><h4>③ 三种结论，放行≠通过</h4>偏差（有反证）→ 闭环修复；通过（仅覆盖已检查范围）；未验证（证据不足）→ 交由人判断。额度耗尽、超时、RC 故障可以放行，但不产生通过。</div>
+    <div class="card"><h4>④ 成本封顶，故障不拖累</h4>每条纠偏通道都有次数或回合上限；终审每会话、每流程最多实际纠偏 3 次，修复真正开始才计数。RC 故障时主任务照常，留下未验证记录。</div>
+  </div>
+  <p class="muted small">原则 ① 回应"原文是唯一权威，RC 却去抓原文没写的东西"：隐性契约属于"不能破坏什么"一层，依据是旧代码和旧测试本身，而不是 RC 的推断。</p>
+</section>
+
+<!-- 4 -->
+<section id="s4" class="spine">
+  <h2><span class="no">4</span>纠偏检查体系：查什么</h2>
+  <p>纠偏检查体系是方案的骨架。它规定检查的<b>内容</b>；四个组件规定<b>何时、由谁</b>检查；两条线规定检查结果是<b>提示还是判定</b>。代码落点：<code>lib/runtime-v2/metric-policy.mjs</code>（五类与开关）、<code>metrics.mjs</code>（指标目录与最早适用阶段）、<code>config/stop-defaults.json</code>（插件缺省）、<code>docs/correction-checklist.md</code>。</p>
+
+  <h3 id="s4-1">4.1 五个问题，五套分类</h3>
+  <table>
+    <tr><th>问题</th><th>回答它的分类</th><th>本文位置</th></tr>
+    <tr><td><b>查什么</b></td><td>纠偏检查体系：五类检查、M01–M16、四条准入规则</td><td>第 4 节</td></tr>
+    <tr><td><b>什么时候、由谁查</b></td><td>四个组件 = 开工、写文档、执行中、交付四个时点</td><td>第 5、6 节</td></tr>
+    <tr><td><b>是提示还是判定</b></td><td>两条线：缓解纠偏、纠偏</td><td>原则 ②、第 5 节</td></tr>
+    <tr><td><b>结论是什么</b></td><td>偏差、通过、未验证；放行不等于通过</td><td>原则 ③、第 8 节</td></tr>
+    <tr><td><b>外部怎么评</b></td><td>独立评测：F2P/P2P、Checklist G0–G3</td><td>4.6、第 12 节</td></tr>
+  </table>
+  <div class="callout chk">五套分类各答一个问题，不是相互竞争的口径。对外只需记住：<b>一份清单、四个时点、两种作用</b>。</div>
+
+  <h3 id="s4-2">4.2 准入规则：什么能进入清单</h3>
+  <div class="grid g4">
+    <div class="card chk"><h4>原文权威</h4>只收原文明确提出或明确采用的要求。<p class="small muted">落点：检查项文字须为引用行的短原文摘录，不得补充细节；引用少于 80 行；依据冻结为开始时的文档副本及 sha256。</p></div>
+    <div class="card chk"><h4>当前触发</h4>前提条件对本任务成立。<p class="small muted">落点：原文前提必须原样保留，不能把有条件的义务改成无条件。</p></div>
+    <div class="card chk"><h4>可以判定</h4>能明确核对，且只有一个检查目标。<p class="small muted">落点：每条只检查实现、产物或过程动作中的一种；判不了就是未验证。</p></div>
+    <div class="card chk"><h4>时机正确</h4>到该检查的阶段才检查。<p class="small muted">落点：指标目录记录最早适用阶段；尚未到达的步骤不算偏差。</p></div>
+  </div>
+  <p class="small">不满足准入规则的内容不进入清单。<b>开启指标不新增交付义务</b>：没有对应原文时报告不适用，不会为了得分要求 Agent 补写文档或调用 Skill（<code>docs/stop-metric-switches.md</code>）。</p>
+
+  <h3 id="s4-3">4.3 五类检查 × 四个时点</h3>
+  <table class="mx">
+    <tr><th>检查类别<br><span class="muted small">配置名</span></th><th>指标</th><th>查什么</th><th>① 开工：找</th><th>② 写文档：判</th><th>③ 执行中：判</th><th>④ 交付：终审判</th><th>评测维度</th></tr>
+    <tr><th class="cat">需求实现<br><code>fulfillment</code></th><td class="mt">M12 需求执行率<br>M16 生产实现覆盖</td><td>用户要求的功能和测试是否做到；生产路径是否覆盖；原有行为是否保持</td><td class="f">代码提议者<small>实现提示 G · 行为场景 S · 反例 C</small></td><td class="na">—</td><td class="na">—</td><td class="jp">判 M12 / M16<small>先跑原测试回归；G/S/C 逐项处置</small></td><td>G0 = M12<br>G2 = M16</td></tr>
+    <tr><th class="cat">项目规则<br><code>projectRules</code></th><td class="mt">M09 开发规范<br>M10 强制经验规则<br>M11 固定流程</td><td>代码 / 文档 / 编码的规范属性；文档明写的历史教训；必须的命令、顺序和改后回读</td><td class="f">检查项提议者<small>检查项 K，定位到原文行</small></td><td class="na">—</td><td class="gap">○ 暂无过程看护</td><td class="jp">自建条目 + 并入 K</td><td>G3</td></tr>
+    <tr><th class="cat">Skill 步骤<br><code>skills</code></th><td class="mt">M08</td><td>已加载 Skill 的必做步骤、顺序和前置条件</td><td class="na">时机未到<small>Skill 加载后才知道查哪些步骤</small></td><td class="na">—</td><td class="jp">Skill 看护</td><td class="jp">M08 残余检查<small>历史顺序偏差只通知</small></td><td>G3</td></tr>
+    <tr><th class="cat">验证闭环<br><code>verification</code></th><td class="mt">M13 验收闭环<br>M14 里程碑<br>M15 关键旅程</td><td>项目要求的验收、完成定义、里程碑和端到端旅程是否真的跑过并通过</td><td class="f">检查项提议者<small>检查项 K</small></td><td class="na">—</td><td class="na">—</td><td class="jp">程序执行验收命令<small>审查者按真实结果判定</small></td><td>无独立维度<br><span class="small muted">单独报告</span></td></tr>
+    <tr><th class="cat">需求分解与验收设计<br><code>clarification</code></th><td class="mt">M01–M07</td><td>Agent 写出的需求分解、验收标准、测试契约是否覆盖原文、是否合格、能否追溯</td><td class="na">时机未到<small>规划工件尚不存在</small></td><td class="jd">文档纠偏一致性<small>与原文、上游一致；不按 M 编号计分</small></td><td class="na">—</td><td class="jp">判 M01–M07</td><td>G1 = M01 遗漏率</td></tr>
+  </table>
+  <p class="small muted"><span class="swatch" style="background:#dbeafe"></span>找（缓解）　<span class="swatch" style="background:#ede9fe"></span>写文档时判（衔接）　<span class="swatch" style="background:#ffedd5"></span>判（纠偏）　<span class="swatch" style="background:#f8fafc"></span>时机未到或不适用　<span class="swatch" style="background:#fee2e2"></span>已知缺口</p>
+  <div class="grid g3">
+    <div class="card"><h4>不是需求澄清</h4>"需求分解与验收设计"（配置名 clarification）检查的是 Agent <b>自己写出的规划工件</b>，不是向用户澄清需求。开工时的代码理解与提议服务的是需求实现、项目规则、验证闭环三类。</div>
+    <div class="card"><h4>开工为什么只找三类</h4>这是"时机正确"规则的直接结果：开工时规划工件还不存在，Skill 也还没加载，没有可定位的原文。真正的覆盖缺口只有一处：项目规则在执行过程中没有看护 <span class="badge st-plan">○</span>。</div>
+    <div class="card"><h4>分工边界</h4>"修改某类代码时必须使用某 Skill"属于项目规则（M11），由检查项提议者提出。Skill 看护只看到已加载的 Skill，看不到"该加载却没加载"。</div>
+  </div>
+
+  <h3 id="s4-4">4.4 开工找，交付判</h3>
+  <div class="pipe">
+    <span><b>开工</b><br><small class="muted">提议者在开始版本上定位 G / S / C / K</small></span><i>→</i>
+    <span><b>简报</b><br><small class="muted">G / S / K 作为提示送达，不下结论</small></span><i>→</i>
+    <span><b>终审建清单</b><br><small class="muted">读完必读原文，<code>set_original_checklist</code></small></span><i>→</i>
+    <span><b>并入检查项</b><br><small class="muted">标 <code>proposedCheck</code>；完全相同的条目只审一次</small></span><i>→</i>
+    <span><b>逐项处置</b><br><small class="muted">G / S / C 写入 <code>frameDispositions</code></small></span><i>→</i>
+    <span><b>有反证才报偏差</b></span>
+  </div>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card mit"><h4>同一条目，两种身份</h4>在简报里是提示：不下结论、不扣纠偏次数。到终审是必须给出处置的候选必查项。</div>
+    <div class="card chk"><h4>检查项不创造义务</h4>义务来自项目文档原文本身（原则 ① 中"必须怎么做"一层），检查项只是指向原文行的定位。引用行没有陈述约束或本需求未触发时，不构成偏差；与用户原文冲突时以原文为准。</div>
+    <div class="card cor"><h4>如实说明</h4>终审能看到检查项和框架项。独立性的结构保证只有一条：它们在<b>候选代码出现之前</b>生成；而且它们单独都不能构成偏差。</div>
+  </div>
+
+  <h3 id="s4-5">4.5 偏差在哪个时点还能被拉回来</h3>
+  <table>
+    <tr><th>偏差形态</th><th>例子</th><th>还能拉回的时点</th><th>由谁负责</th></tr>
+    <tr><td><b>交付类</b>：代码或产物的性质</td><td>生产路径没覆盖；违反编码规范；验收不通过</td><td>交付时仍可修复</td><td>终审</td></tr>
+    <tr><td><b>动作类</b>：必须执行某个动作</td><td>构建后要跑 lint；修改后要回读</td><td>修复轮可以补做</td><td>终审，配合简报中的检查项</td></tr>
+    <tr><td><b>顺序类</b>：先后关系</td><td>先设计后编码；Skill 步骤顺序；编码前完成需求分解</td><td>只能事前预防，到 Stop 已成历史</td><td>简报中的检查项、Skill 看护、文档纠偏</td></tr>
+  </table>
+  <p class="small">这张表回答"为什么不只做终审"：顺序类偏差到了终审只能通知一次（终态"带历史偏差结束"），不派发修复，必须靠前面的时点预防。</p>
+
+  <h3 id="s4-6">4.6 与独立评测的关系：分类同源，内容独立</h3>
+  <table>
+    <tr><th>评测维度（评测侧定义）</th><th>对应 RC 指标</th><th>检查类别</th><th>开工找</th><th>过程判</th><th>交付判</th></tr>
+    <tr><td>G0 需求完成度</td><td>M12</td><td>需求实现</td><td>G / S / C</td><td>—</td><td>终审 + 原测试回归</td></tr>
+    <tr><td>G1 需求理解偏差</td><td>M01 遗漏率（正式分解）</td><td>需求分解与验收设计</td><td>—</td><td>文档纠偏</td><td>终审</td></tr>
+    <tr><td>G2 实现覆盖率</td><td>M16</td><td>需求实现</td><td>G / S / C</td><td>—</td><td>终审</td></tr>
+    <tr><td>G3 项目规则遵从</td><td>M08–M11</td><td>项目规则、Skill 步骤</td><td>检查项 K</td><td>Skill 看护</td><td>终审</td></tr>
+    <tr><td class="muted">不进入 G0–G3</td><td class="muted">M02–M07、M13–M15</td><td class="muted">需求分解其余项、验证闭环</td><td colspan="3" class="muted">RC 交付时照常判定；验证闭环需要单独报告</td></tr>
+  </table>
+  <div class="grid g3">
+    <div class="card"><h4>内容独立</h4>RC 的条目在运行时从本任务材料生成；评测清单由独立评测方结合标准补丁和测试补丁事先冻结。RC 读不到评测清单、隐藏测试和标准答案。</div>
+    <div class="card"><h4>对外成绩只用独立评测</h4>RC 内部比率只用于控制台观察。对外只报独立评分的 F2P/P2P 和冻结的 G0–G3。</div>
+    <div class="card"><h4>相关，不是责任划分</h4>一个 G 维度通常由多个时点共同影响，单个组件的贡献目前没有拆分。评测清单须在运行前冻结，构建者不参考 RC 轨迹。</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <h2><span class="no">5</span>总体架构</h2>
+
+  <h3 id="s5-1">5.1 两条线 · 四组件 · 一份清单（按任务时间轴）</h3>
+  <svg class="diagram" viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC, Microsoft YaHei, sans-serif">
+    <defs>
+      <marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+      <marker id="aP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
+      <marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ea580c"/></marker>
+      <marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+    </defs>
+    <!-- column headers -->
+    <g font-size="14" font-weight="700" fill="#334155" text-anchor="middle">
+      <rect x="130" y="12" width="240" height="30" rx="8" fill="#f1f5f9"/><text x="250" y="32">① 开工</text>
+      <rect x="390" y="12" width="240" height="30" rx="8" fill="#f1f5f9"/><text x="510" y="32">② 写文档</text>
+      <rect x="650" y="12" width="240" height="30" rx="8" fill="#f1f5f9"/><text x="770" y="32">③ 执行中</text>
+      <rect x="910" y="12" width="270" height="30" rx="8" fill="#f1f5f9"/><text x="1045" y="32">④ 交付（Stop）</text>
+    </g>
+    <!-- lanes -->
+    <rect x="10" y="70" width="1180" height="125" rx="10" fill="#eff6ff"/>
+    <rect x="10" y="210" width="1180" height="80" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+    <rect x="10" y="305" width="1180" height="145" rx="10" fill="#fff7ed"/>
+    <rect x="10" y="462" width="1180" height="68" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.2"/>
+    <rect x="10" y="542" width="1180" height="88" rx="10" fill="#f1f5f9"/>
+    <g text-anchor="middle">
+      <text x="66" y="128" font-size="15" font-weight="700" fill="#1d4ed8">缓解纠偏</text>
+      <text x="66" y="148" font-size="11.5" fill="#1d4ed8">让偏差少发生</text>
+      <text x="66" y="255" font-size="15" font-weight="700" fill="#334155">主 Agent</text>
+      <text x="66" y="372" font-size="15" font-weight="700" fill="#c2410c">纠偏</text>
+      <text x="66" y="392" font-size="11.5" fill="#c2410c">偏差拉回来</text>
+      <text x="66" y="492" font-size="15" font-weight="700" fill="#0f766e">检查体系</text>
+      <text x="66" y="512" font-size="11.5" fill="#0f766e">五类 · M01–M16</text>
+      <text x="66" y="591" font-size="15" font-weight="700" fill="#334155">共享底座</text>
+    </g>
+    <!-- frame box -->
+    <rect x="140" y="82" width="220" height="100" rx="8" fill="#fff" stroke="#2563eb" stroke-width="2"/>
+    <g text-anchor="middle" font-size="12.5" fill="#334155">
+      <text x="250" y="104" font-size="14" font-weight="700" fill="#1d4ed8">代码理解 · 提议 · 简报</text>
+      <text x="250" y="126">开始版本快照 · 语义图</text>
+      <text x="250" y="146">代码提议 · 反例复核</text>
+      <text x="250" y="166">检查项提议 · 选择账本</text>
+    </g>
+    <!-- doc box -->
+    <rect x="400" y="82" width="220" height="100" rx="8" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <g text-anchor="middle" font-size="12.5" fill="#334155">
+      <text x="510" y="104" font-size="14" font-weight="700" fill="#6d28d9">文档纠偏一致性</text>
+      <text x="510" y="126">写入即审：原文 · 上游文档</text>
+      <text x="510" y="146">复制类内容逐字符保真</text>
+      <text x="510" y="166" fill="#7c3aed">对文档纠偏 · 对代码缓解</text>
+    </g>
+    <!-- main agent bar -->
+    <rect x="130" y="226" width="1020" height="48" rx="24" fill="#fff" stroke="#64748b" stroke-width="1.5"/>
+    <g text-anchor="middle" font-size="13.5" fill="#334155" font-weight="600">
+      <text x="250" y="255">接收需求</text><text x="380" y="255" fill="#94a3b8">›</text>
+      <text x="510" y="255">写规划文档</text><text x="640" y="255" fill="#94a3b8">›</text>
+      <text x="770" y="255">编码 / 执行</text><text x="900" y="255" fill="#94a3b8">›</text>
+      <text x="1030" y="255">声明完成 · 修复</text>
+    </g>
+    <!-- skill box -->
+    <rect x="660" y="318" width="220" height="120" rx="8" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <g text-anchor="middle" font-size="12.5" fill="#334155">
+      <text x="770" y="342" font-size="14" font-weight="700" fill="#c2410c">Skill 看护</text>
+      <text x="770" y="365">只看已成功加载的 SKILL.md</text>
+      <text x="770" y="386">按回合检查步骤与前置条件</text>
+      <text x="770" y="407">在还能补救时介入</text>
+      <text x="770" y="427" font-size="11.5" fill="#64748b">Stop 中 M08 只做残余检查</text>
+    </g>
+    <!-- final review box -->
+    <rect x="920" y="318" width="220" height="120" rx="8" fill="#fff" stroke="#ea580c" stroke-width="2.6"/>
+    <g text-anchor="middle" font-size="12.5" fill="#334155">
+      <text x="1030" y="340" font-size="14" font-weight="700" fill="#c2410c">终审</text>
+      <text x="1030" y="361">自建原文清单 + 并入检查项</text>
+      <text x="1030" y="381">原测试回归 · 项目验收命令</text>
+      <text x="1030" y="403" fill="#dc2626" font-weight="600">偏差 → 反馈修复（≤3 次）</text>
+      <text x="1030" y="423" font-size="11.5" fill="#475569">通过限已检查范围 · 未验证交由人</text>
+    </g>
+    <!-- arrows -->
+    <path d="M250,184 V222" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#aB)"/>
+    <rect x="258" y="193" width="100" height="20" rx="10" fill="#fff" stroke="#2563eb"/>
+    <text x="308" y="207" font-size="11.5" text-anchor="middle" fill="#1d4ed8">简报 · 仅供参考</text>
+
+    <path d="M480,224 V188" stroke="#7c3aed" stroke-width="2" fill="none" marker-end="url(#aP)"/>
+    <text x="474" y="210" font-size="11.5" text-anchor="end" fill="#6d28d9">写入触发</text>
+    <path d="M540,186 V222" stroke="#7c3aed" stroke-width="2" fill="none" marker-end="url(#aP)"/>
+    <text x="546" y="210" font-size="11.5" fill="#6d28d9">文档诊断</text>
+
+    <path d="M740,276 V314" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#aG)"/>
+    <text x="734" y="300" font-size="11.5" text-anchor="end" fill="#475569">工具记录</text>
+    <path d="M800,316 V278" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#aO)"/>
+    <text x="806" y="300" font-size="11.5" fill="#c2410c">过程偏差</text>
+
+    <path d="M1000,276 V314" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#aG)"/>
+    <text x="994" y="300" font-size="11.5" text-anchor="end" fill="#475569">Stop</text>
+    <path d="M1060,316 V278" stroke="#ea580c" stroke-width="2" fill="none" marker-end="url(#aO)"/>
+    <text x="1066" y="300" font-size="11.5" fill="#c2410c">偏差反馈</text>
+
+    <path d="M250,80 V58 H1172 V378 H1144" stroke="#2563eb" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#aB)"/>
+    <rect x="510" y="48" width="390" height="20" rx="10" fill="#fff" stroke="#2563eb"/>
+    <text x="705" y="62" font-size="11.5" text-anchor="middle" fill="#1d4ed8">候选条目 G / S / C / K → 终审并入 · 去重 · 逐项处置</text>
+    <!-- checklist band -->
+    <g text-anchor="middle" fill="#134e4a">
+      <rect x="140" y="472" width="220" height="48" rx="8" fill="#fff" stroke="#0f766e"/>
+      <text x="250" y="491" font-size="12.5" font-weight="700" fill="#1d4ed8">找 · 候选条目</text>
+      <text x="250" y="510" font-size="12">需求实现 · 项目规则 · 验证闭环</text>
+      <rect x="400" y="472" width="220" height="48" rx="8" fill="#fff" stroke="#0f766e"/>
+      <text x="510" y="491" font-size="12.5" font-weight="700" fill="#6d28d9">判 · 规划文档</text>
+      <text x="510" y="510" font-size="12">需求分解与验收设计</text>
+      <rect x="660" y="472" width="220" height="48" rx="8" fill="#fff" stroke="#0f766e"/>
+      <text x="770" y="491" font-size="12.5" font-weight="700" fill="#c2410c">判 · 执行过程</text>
+      <text x="770" y="510" font-size="12">Skill 步骤</text>
+      <rect x="920" y="472" width="220" height="48" rx="8" fill="#fff" stroke="#0f766e"/>
+      <text x="1030" y="491" font-size="12.5" font-weight="700" fill="#c2410c">判 · 交付</text>
+      <text x="1030" y="510" font-size="12">五类中已开启的指标</text>
+    </g>
+    <!-- foundation -->
+    <g font-size="12" text-anchor="middle" fill="#334155">
+      <rect x="130" y="554" width="202" height="64" rx="8" fill="#fff" stroke="#cbd5e1"/>
+      <text x="231" y="580" font-weight="700" font-size="13">原文依据</text><text x="231" y="601">用户消息日志 · 冻结文档副本</text>
+      <rect x="342" y="554" width="202" height="64" rx="8" fill="#fff" stroke="#cbd5e1"/>
+      <text x="443" y="580" font-weight="700" font-size="13">代码理解底座</text><text x="443" y="601">语义图 · 只读源码工具</text>
+      <rect x="554" y="554" width="202" height="64" rx="8" fill="#fff" stroke="#cbd5e1"/>
+      <text x="655" y="580" font-weight="700" font-size="13">证据与读取凭据</text><text x="655" y="601">读取证明 · 证据归属</text>
+      <rect x="766" y="554" width="202" height="64" rx="8" fill="#fff" stroke="#cbd5e1"/>
+      <text x="867" y="580" font-weight="700" font-size="13">额度与时限</text><text x="867" y="601">次数封顶 · 截止 · 取消</text>
+      <rect x="978" y="554" width="202" height="64" rx="8" fill="#fff" stroke="#cbd5e1"/>
+      <text x="1079" y="580" font-weight="700" font-size="13">持久化与宿主适配</text><text x="1079" y="601">事务日志 · OpenClaw / MA</text>
+    </g>
+  </svg>
+  <p class="muted small">绿色横带是纠偏检查体系：每个时点对应它负责的检查类别，开工时"找"，后三个时点"判"。虚线是两条线之间的兜底接口：即使简报晚到、没生成或只生成了一部分，已产出的候选条目仍作为终审的必查项（见第 7、8 节）。简报送达时点：走 OpenSpec 时在编码回合开头；不走 OpenSpec 时，生成完成后附加在下一次工具结果上。</p>
+
+  <table>
+    <tr><th>组件</th><th>时点</th><th>主线</th><th>负责的检查类别</th><th>清单角色</th><th>是否下结论</th><th>状态</th></tr>
+    <tr><td>代码理解·提议·简报</td><td>开工（后台）</td><td><span class="badge tag-mit">缓解</span></td><td>需求实现、项目规则、验证闭环</td><td>找</td><td>否</td><td><span class="badge st-done">● 主体</span> <span class="badge st-off">◐ 检查项 / 部分简报</span></td></tr>
+    <tr><td>文档纠偏一致性</td><td>写文档</td><td><span class="badge tag-bri">衔接</span></td><td>需求分解与验收设计</td><td>判（文档）</td><td>对文档下结论</td><td><span class="badge st-off">◐ 单独效果尚无 ArkTS 实测</span></td></tr>
+    <tr><td>Skill 看护</td><td>执行中</td><td><span class="badge tag-cor">纠偏</span></td><td>Skill 步骤</td><td>判（过程）</td><td>是</td><td><span class="badge st-off">◐ 效率（合成情形）</span> <span class="badge st-neg">效果未证明</span></td></tr>
+    <tr><td>终审</td><td>交付</td><td><span class="badge tag-cor">纠偏</span></td><td>五类中已开启的指标</td><td>判（交付）</td><td>是</td><td><span class="badge st-done">● 闭环</span></td></tr>
+  </table>
+
+  <h3 id="s5-2">5.2 分层架构与代码落点</h3>
+  <div class="layers">
+    <div>
+      <div class="layer host">
+        <div class="lt">宿主适配层</div>
+        <div class="mods">
+          <div class="mod">OpenClaw / MA 原生生命周期<small>lib/openclaw/entry.mjs · runtime.mjs</small></div>
+          <div class="mod">固定版本兼容<small>compat-2026.7.1-2.mjs · compat-2026.10.3.mjs</small></div>
+          <div class="mod">Claude / CodeAgent Hook<small>lib/hosts/* · lib/protocol/core-hooks.mjs</small></div>
+          <div class="mod">MA 审批转接<small>lib/openclaw/ma-approval-bridge.mjs</small></div>
+        </div>
+      </div>
+      <div class="layer orch">
+        <div class="lt">编排与调度层</div>
+        <div class="mods">
+          <div class="mod">策略编译与校验<small>lib/policy/*</small></div>
+          <div class="mod" style="border-color:var(--chk)"><span class="badge tag-chk">检查体系</span> 检查策略<small>metric-policy.mjs · metrics.mjs · config/stop-defaults.json</small></div>
+          <div class="mod">运行编排<small>lib/runtime-v2/orchestrator.mjs</small></div>
+          <div class="mod">until_pass 运行后调度<small>lib/openclaw/post-run-dispatch.mjs</small></div>
+          <div class="mod">纠偏额度账本<small>lib/runtime-v2/stop-correction-store.mjs</small></div>
+          <div class="mod">私有 Agent 并发槽 <span class="badge st-off">◐ 未提交</span><small>lib/openclaw/review-concurrency.mjs</small></div>
+        </div>
+      </div>
+      <div class="layer cap">
+        <div class="lt">能力层（四个组件）</div>
+        <div class="mods">
+          <div class="mod"><span class="badge tag-mit">缓解</span> 代码理解·提议·简报<small>requirement-frame.mjs · frame-selection.mjs</small></div>
+          <div class="mod"><span class="badge tag-bri">衔接</span> 文档纠偏一致性<small>artifact-pipeline.mjs · semantic-review.mjs · document-*.mjs</small></div>
+          <div class="mod"><span class="badge tag-cor">纠偏</span> Skill 看护<small>skill-care.mjs · skill-source.mjs</small></div>
+          <div class="mod"><span class="badge tag-cor">纠偏</span> 终审<small>production-stop.mjs · stop-workspace-review.mjs</small></div>
+        </div>
+      </div>
+      <div class="layer found">
+        <div class="lt">共享底座</div>
+        <div class="mods">
+          <div class="mod">原文依据<small>original-requirements.mjs · original-contract-context.mjs</small></div>
+          <div class="mod">代码理解<small>semantic-graph*.mjs · review-task/source-tools.mjs · code-understanding SKILL</small></div>
+          <div class="mod">证据与读取凭据<small>review-read-proof.mjs · reviewer-evidence.mjs · stop-citations.mjs</small></div>
+          <div class="mod">反馈交付<small>feedback-delivery.mjs · stop-feedback.mjs</small></div>
+          <div class="mod">持久化<small>task-store.mjs · transaction-journal.mjs · stop-review-store.mjs</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="lt" style="font-weight:700;margin-bottom:6px">观测与控制（旁路）</div>
+      <ul class="small" style="padding-left:16px">
+        <li>运行状态文件与查询<br><code>session-runtime-status.mjs</code></li>
+        <li>RC 控制台：纠偏历史、审查进度<br><code>lib/openclaw/ui/*</code></li>
+        <li>项目 / 会话开关<br><code>session-control.mjs</code> · <code>session-projects.mjs</code></li>
+        <li>命令：<code>/rc-setup</code> <code>/rc-project</code> <code>/rc-session</code> <code>/rc-mode</code></li>
+        <li>外部接口：<code>rc-status</code> <code>rc-refresh</code> <code>rc-terminate</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <h2><span class="no">6</span>组件设计</h2>
+
+  <div class="comp mit" id="c1">
+    <div class="ch"><span class="t">6.1 代码理解 · 提议 · 简报</span><span class="badge tag-mit">缓解纠偏</span><span class="badge st-done">● 主体已实测</span><span class="badge st-off">◐ 检查项 / 部分简报 / 分批账本</span><span class="badge st-plan">○ 前提来源记录</span></div>
+    <div class="cb"><div class="kv">
+      <div>目标</div><div>在候选代码出现之前，把开始版本代码中决定实现方式的约束（隐性契约）和项目文档中的规则交给主 Agent；同时为终审预置一份<b>不受候选代码影响</b>的必查清单。</div>
+      <div class="hl">检查类别</div><div>找：<b>需求实现</b>（代码提议 → G / S / C）、<b>项目规则</b>与<b>验证闭环</b>（检查项提议 → K）。只为已开启的指标提议。</div>
+      <div>触发</div><div>第一个真实用户回合（OpenSpec 下为提案回合）开始时在后台启动，不阻塞主任务。每个会话生成一次；开始版本变化或上次失败时重建。RC 内部会话、纠偏续作、RC 关闭或 shadow 模式下不触发。</div>
+      <div>输入</div><div>开始版本 S0：git HEAD 导出到临时目录，上限 2 万个文件、200 MB · 用户原文 U1..Un（含 RC 反馈的消息标注为非需求） · 项目 Markdown 文档（AGENTS.md、CLAUDE.md 优先；最多 200 个、单个 ≤1 MB；排除 SKILL.md）</div>
+      <div>流程</div><div class="pipe"><span>S0 导出</span><i>→</i><span>语义图索引</span><i>→</i><span>代码提议 ×3<br><small class="muted">落点与签名 / 数据与控制流 / 边界与兼容</small></span><i>+</i><span>检查项提议 ×2<br><small class="muted">项目规则 / 验证闭环</small></span><i>→</i><span>程序校验<br><small class="muted">证据行存在且 ≤80 行；原文摘录；前提原样保留</small></span><i>→</i><span>反例复核</span><i>→</i><span>选择账本<br><small class="muted">选中 / 拒绝 / 已覆盖 / 延期；无置信度门槛</small></span><i>→</i><span>发布</span></div>
+      <div>输出</div><div><code>frame.json</code>（schemaVersion 3；状态为 ready / partial / empty / unavailable）：实现提示 G1–G10、行为场景 S1–S6、检查项 K1–K10（每类 ≤5，绑定开始时的文档副本与 sha256）、仅供终审的反例场景 C*。审计留档：<code>raw/</code>、<code>candidates.json</code>、<code>selection-coverage.json</code>、<code>selection-receipts.jsonl</code>、<code>deliveries.jsonl</code>。</div>
+      <div>送达</div><div>首行 <code>[runtime-corrector:feedback]</code>，保证不被当作新的用户需求；正文写明"仅供参考，以原文和代码为准"。检查项以"项目规则"段附在同一条简报中。通道为 run_start 或 tool_result，每个用户回合最多一次。partial 状态只发送已通过复核的内容，并附一句统一的遗漏提醒。</div>
+      <div>不变式</div><div>提议者只读 S0，看不到工作区，这是"不受候选代码带偏"的唯一结构保证 · 检查项只定位原文行，不新增义务 · 不下结论、不扣纠偏次数、不改变 Stop 结论语义 · 不向任何模型提供隐藏测试或标准答案。</div>
+      <div>失败处理</div><div>失败开放：无 git、仓库超大、超时或模型出错时标为 unavailable，主任务不受影响。阶段预算：提议最多用总时限的前 50%，反例复核在 70% 前结束，剩余时间留给筛选。已被接受的回执在超时后仍然保留。</div>
+      <div>配置</div><div><code>requirementFrame.enabled / checks / proposers(1–3) / inject / review / timeoutMs</code>（插件缺省 enabled、checks 均关；模板均开，时限 20 分钟）；审查模型角色 <code>reviewers.requirementFrame</code>。</div>
+      <div>代码</div><div><code>lib/runtime-v2/requirement-frame.mjs</code> · <code>frame-selection.mjs</code> · <code>lib/semantic-graph.mjs</code> · <code>lib/review-task/source-tools.mjs</code> · <code>lib/review-task/skills/code-understanding/SKILL.md</code></div>
+      <div>局限与对策</div><div>不保证在写代码之前送达（st9 晚到 3 分 18 秒）· 前提可能选错（st9）· 检查项只读 Markdown，lint / CI 配置中的规则看不到；文档超过 200 个时截断且不留标记 · 仅支持 OpenClaw、git 项目，只读取开始时已提交的内容 · 需求变更后不重建。对策：分层记录场景前提的来源 <span class="badge st-plan">○</span>；需求变更时重建框架 <span class="badge st-plan">○</span>；补记文档截断 <span class="badge st-plan">○</span>。</div>
+    </div></div>
+  </div>
+
+  <div class="comp bri" id="c2">
+    <div class="ch"><span class="t">6.2 文档纠偏一致性</span><span class="badge tag-bri">衔接：对文档纠偏 · 对代码缓解</span><span class="badge st-off">◐ 单独效果尚无 ArkTS 实测</span><span class="badge st-plan">○ 规格审计</span></div>
+    <div class="cb"><div class="kv">
+      <div>目标</div><div>规划文档写入后立即与原文、上游文档对齐；复制类需求逐字符保真。规划文档是代码的上游，文档对齐了原文，代码就少一个偏离来源。</div>
+      <div class="hl">检查类别</div><div>判：<b>需求分解与验收设计</b>（写入时）。这是这类问题唯一能在顺序类偏差发生前介入的时点；不按 M 编号计分，交付时由终审按 M01–M07 再判一次。</div>
+      <div>触发</div><div>匹配 <code>artifacts[].pathTemplates</code> 的 write / edit / apply_patch 成功后触发，只检查已启用的节点与入边。输入完全相同的重复事件复用已验证结果，不调用模型。</div>
+      <div>输入</div><div>本轮声明的目标文档 · 直接上游文档（<code>workflow.edges</code> 与 <code>correlation</code> 绑定同一 change）· 原文需求或已发布的基线 · 可选 <code>review.copyFrom</code></div>
+      <div>流程</div><div class="pipe"><span>写入事件</span><i>→</i><span>匹配产物</span><i>→</i><span>收集文档与入边</span><i>→</i><span>规则 / Schema</span><i>→</i><span>隔离语义审阅<br><small class="muted">rc_document open / read / search</small></span><i>→</i><span>定位校验<br><small class="muted">物理行号 + 逐字引用</small></span><i>→</i><span>诊断附回写入结果</span><i>→</i><span>主 Agent 修改</span><i>→</i><span>自动复审</span></div>
+      <div>输出</div><div>有长度上限的诊断；复制差异（包括空白和末尾换行）附带可直接执行的修改参数；完整结果保存在 <code>.runtime-correction/</code>。</div>
+      <div>不变式</div><div>只读，不代写 · 模型给出通过也不能覆盖逐字符差异 · 文档阶段的 Stop 不审查代码义务（<code>STOP_DOCUMENT_ONLY_CHANGES</code>）· 每个产物只有一个审查归属方（st7 曾出现越权审查、误扣次数的问题，已修复）</div>
+      <div>失败处理</div><div>普通 Hook 故障失败开放；超时不伪造通过。同一项目内设执行槽串行处理，配跨进程锁和崩溃回收。</div>
+      <div>配置</div><div><code>enabledStages</code> · <code>artifacts[].review.enabled</code> · <code>workflow.edges[].review</code> · <code>artifactCorrection.*</code>。插件缺省与模板均关闭，在有规划文档的项目中按项目启用；开启 M01–M07 的项目应同时开启。</div>
+      <div>代码</div><div><code>lib/artifact-pipeline.mjs</code> · <code>lib/semantic-review.mjs</code> · <code>lib/document-session.mjs</code> · <code>lib/document-tools.mjs</code> · <code>lib/document-copy.mjs</code> · <code>skills/document-corrector/SKILL.md</code></div>
+      <div>局限与对策</div><div>SWE-ArkTS 39 轮对照所在的版本开启了规划文档审查，但它的单独贡献没有拆分，在 ArkTS 样本上尚无单独的实测数据。对策：文档阶段结束时做规格审计，比较规划文档与原文和框架，把缺口并入编码回合简报；审计不改变该阶段结论，也不扣次数 <span class="badge st-plan">○</span>。</div>
+    </div></div>
+  </div>
+
+  <div class="comp cor" id="c3">
+    <div class="ch"><span class="t">6.3 Skill 看护</span><span class="badge tag-cor">纠偏 · 过程</span><span class="badge st-off">◐ 效率（合成情形）</span><span class="badge st-neg">效果未证明</span></div>
+    <div class="cb"><div class="kv">
+      <div>目标</div><div>在过程义务还能补救的时候，纠正 Skill 步骤遗漏或顺序错误。到了 Stop，顺序类违规已成为历史事实，只能通知、无法修复（终态为"带历史偏差结束"）。</div>
+      <div class="hl">检查类别</div><div>判：<b>Skill 步骤</b>（执行中）。终审中的 M08 只做残余检查。</div>
+      <div>触发</div><div>SKILL.md 读取成功后建立看护。按回合间隔检查，并行工具结果齐备后才执行，设总回合上限；Stop 时强制检查一次。内部审阅不触发看护。</div>
+      <div>输入</div><div>被选中的 Skill 目录：只扫描该目录，跳过链接、敏感文件和生成目录；内容被截断时拒绝建立看护 · 会话的工具调用与结果 · 任务依据</div>
+      <div>流程</div><div class="pipe"><span>读取识别</span><i>→</i><span>扫描与缓存<br><small class="muted">最多 16 个范围，按文件版本校验</small></span><i>→</i><span>首次只披露清单</span><i>→</i><span>按需取证<br><small class="muted">rc_skill_care inventory / search / read</small></span><i>→</i><span>判断<br><small class="muted">条件步骤保留条件；未到达的步骤不算偏差</small></span><i>→</i><span>预算内反馈</span></div>
+      <div>输出</div><div>过程偏差反馈；私有笔记（最多 32 条，每条 1200 字符）与压缩检查点</div>
+      <div>不变式</div><div>笔记不替代原始证据，也不恢复旧结论 · 缺失、超时或读取失败不会变成通过 · 同一证据判为未完成后，调度重试不再调用模型</div>
+      <div>分工</div><div>"修改某类代码时必须使用某 Skill"属于项目规则，由检查项提议者提出、按 M11 判定；Skill 自身的步骤由 Skill 看护和 M08 负责，两边不重复提出检查项。</div>
+      <div>配置</div><div><code>skillCorrection.enabled</code> · <code>skillCorrection.skillRoots</code> · Stop 指标 M08。模板中看护与 M08 均关闭，在含过程型 Skill 的项目中按项目启用。</div>
+      <div>代码</div><div><code>lib/runtime-v2/skill-care.mjs</code> · <code>lib/runtime-v2/skill-source.mjs</code> · <code>knowledge/skill-care/SKILL.md</code></div>
+      <div>证据</div><div>效率：在四种合成情形下，真实模型输入 token 减少 83%，判断准确度两组都是 4/4（<code>docs/skill-care-efficiency.md</code>）。效果：尚无实测证据。</div>
+    </div></div>
+  </div>
+
+  <div class="comp cor" id="c4">
+    <div class="ch"><span class="t">6.4 终审</span><span class="badge tag-cor">纠偏 · 交付</span><span class="badge st-done">● 真实宿主闭环</span><span class="badge st-off">◐ 最新追踪规则待新任务验证</span></div>
+    <div class="cb"><div class="kv">
+      <div>目标</div><div>完成前用证据核对原文义务和既有行为。有反证的偏差闭环修复；证据不足的条目显式保留，不冒充通过。定位是"有证据的偏差发现器"加"完成前闸门"，不是测试神谕。</div>
+      <div class="hl">检查类别</div><div>判：<b>五类中已开启的全部指标</b>。审查策略在任务首次进入纠偏链路时冻结为 <code>task.stop.reviewPolicy</code>，任务中途改配置不改变当前任务的开关。</div>
+      <div>触发</div><div>Stop 时触发；在 MA 的 until_pass 模式下，每轮业务正常结束后才审查，修复另起一轮。准备工作开始前先核对开关和额度。</div>
+      <div>输入</div><div>必读原文（用户消息、项目说明、用户点名的文件、已加载的 Skill）· 候选条目 G / S / C / K · 当前工作区（直接读取，不复制仓库）· git diff 与宿主编辑记录 · 原测试与项目验收命令的执行结果 · 过程记录</div>
+      <div>流程</div><div class="pipe"><span>额度核对</span><i>→</i><span>分类与范围冻结<br><small class="muted">任务完成 / 阶段完成 / 中间输出 / 等待用户 / 外部阻塞</small></span><i>→</i><span>原测试回归<br><small class="muted">修改了既有源码时，先于语义审查</small></span><i>→</i><span>项目验收命令<br><small class="muted">由程序执行</small></span><i>→</i><span>自建原文清单<br><small class="muted"><code>set_original_checklist</code></small></span><i>→</i><span>并入检查项 K<br><small class="muted"><code>proposedCheck</code>；相同条目只审一次</small></span><i>→</i><span>逐项审查与处置<br><small class="muted">G / S / C 写入 <code>frameDispositions</code></small></span><i>→</i><span>程序校验与结算</span><i>→</i><span>偏差反馈或结束</span></div>
+      <div>输出</div><div>逐项结论（指标对象判断）· <code>frameCoverage</code> · 偏差反馈（附原文、证据位置、修复方向和复现要求）· 结果报告</div>
+      <div>不变式</div><div>源码只能证明实现，执行记录才能证明执行，两者不能互相冒充 · 框架项和检查项单独都不构成偏差 · 没有证明就不报偏差 · 关闭的指标不改派给其它指标 · 额度只在修复实际开始时扣减 · 放行不等于通过 · 验收命令只能来自项目配置并绑定来源摘要，模型不能选择或改写</div>
+      <div>反馈约束</div><div>要求主 Agent 先用最小检查复现问题；修复后重跑同一检查，并补跑一个相邻的既有行为检查；无法复现时不要改无关代码。这条要求用来抑制误报引发的乱改。</div>
+      <div>失败处理</div><div>检查器故障不归因为业务缺陷 · 取消、超时、依据过期或额度耗尽都不伪造通过 · 宿主不支持启动协议时返回 <code>HOST_START_PROTOCOL_UNSUPPORTED</code>，不自动续作</div>
+      <div>配置</div><div><code>stopCorrection.enabled / originalRequirementsBasis / deviationOnly / maxCorrectionsPerSession / maxCorrectionsPerFlow / assessmentTimeoutMs / regressionCheck / projectChecks / metrics / families</code></div>
+      <div>代码</div><div><code>lib/runtime-v2/production-stop.mjs</code> · <code>stop-workspace-review.mjs</code> · <code>stop-review-round.mjs</code> · <code>stop-review-store.mjs</code> · <code>regression-evidence.mjs</code> · <code>project-checks.mjs</code> · <code>stop-feedback.mjs</code> · <code>metric-policy.mjs</code> · <code>lib/openclaw/post-run-dispatch.mjs</code></div>
+      <div>已知漏检</div><div>数独：看到配置调用存在，就认为它会执行，漏看了外层条件分支 · st2 的一次全新运行：修复时删掉了公共方法，原测试无法编译，终审仍判"未发现偏差" · SWE-ArkTS：一个 M09 判了通过，理由是把审查者自己的读取当成了业务修改后的回读。这些案例推动了"原测试回归前移"、"追到第一个副作用"、"缺少可归属的过程证明时记为未验证"三项改进。</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <h2><span class="no">7</span>跨组件契约（数据流）</h2>
+  <table>
+    <tr><th>契约</th><th>生产者</th><th>消费者</th><th>内容</th><th>关键约束</th></tr>
+    <tr><td>原文依据</td><td>用户消息记录</td><td>简报、文档纠偏、终审</td><td>U1..Un；被引用文档的冻结副本</td><td>含 RC 反馈的消息标注为非需求；中途修改文档不改变依据</td></tr>
+    <tr><td>审查策略</td><td>配置加载</td><td>检查项提议、终审、报告</td><td>M01–M16 开关（类别开关展开后）</td><td>任务首次进入纠偏链路时冻结为 <code>task.stop.reviewPolicy</code>；关闭项显示 DISABLED，不计分、不冒充通过</td></tr>
+    <tr><td><code>frame.json</code></td><td>代码理解·提议·简报</td><td>主 Agent（简报）、终审</td><td>G / S / K；C 仅供终审</td><td><code>startHead</code> 与任务开始版本一致时，终审才使用</td></tr>
+    <tr><td>检查项 K</td><td>检查项提议者 + 选择器</td><td>简报、终审</td><td>指标、原文摘录、检查目标、前提、引用行、开始时的文档副本</td><td>副本 sha256 不符的检查项被丢弃；每类 ≤5、共 ≤10</td></tr>
+    <tr><td><code>proposedCheck</code> 并入</td><td>程序</td><td>终审审查者</td><td>审查者 <code>set_original_checklist</code> 之后，按原文位置把 K 并入清单</td><td>与审查者自建条目完全相同时共用一个编号；审查者不得换个说法重建 K</td></tr>
+    <tr><td><code>frameDispositions</code></td><td>终审审查者</td><td>程序校验、<code>frameCoverage</code></td><td>每项为 CHECKED / DEVIATION / UNVERIFIED；有来源的场景另附 <code>contractAssessment</code>（适用 / 不适用）</td><td>每项恰好出现一次；DEVIATION 必须指向已保存的偏差；入口和前提不能被替换；"不适用"须由原文或源码证明</td></tr>
+    <tr><td>文档诊断</td><td>文档纠偏</td><td>主 Agent</td><td>行号、逐字引用、候选修改</td><td>绑定当前文件哈希；修改后重新审查</td></tr>
+    <tr><td>过程偏差</td><td>Skill 看护</td><td>主 Agent</td><td>Skill 原文位置与执行证据</td><td>在反馈预算内</td></tr>
+    <tr><td>偏差反馈</td><td>终审</td><td>主 Agent（新一轮修复）</td><td>原文、证据位置、修复方向、复现要求</td><td>有长度上限；只交付当前有效的子集，不新增条目</td></tr>
+    <tr><td>额度账本</td><td>宿主启动观察</td><td>终审、调度</td><td>会话累计、流程累计</td><td>跨任务、需求修订、项目切换都不清零</td></tr>
+  </table>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <h2><span class="no">8</span>判定语义与两条线的兜底</h2>
+  <div class="verdicts">
+    <div class="verdict v-dev"><b>偏差 DEVIATION</b>有适用的当前反证。反馈保留原文和证据身份，进入修复闭环，计入额度。</div>
+    <div class="verdict v-pass"><b>通过 PASS</b>必要条件有当前有效证据支持，只覆盖已检查范围，不扩张为整个任务通过。</div>
+    <div class="verdict v-unv"><b>未验证 UNVERIFIED</b>证据缺失、过期、未完成、检查器故障或证据不足。逐项保留，交由人判断，不触发修复。</div>
+    <div class="verdict v-allow"><b>放行 ALLOW</b>流程控制允许停止。额度耗尽、取消、不支持续作时也可能放行，<b>不等于通过</b>。</div>
+  </div>
+  <h3>流程关闭规则</h3>
+  <ul>
+    <li><b>任务完成</b>且没有当前偏差（包括有未验证项）时，关闭本条纠偏流程。</li>
+    <li><b>阶段完成、中间输出、等待用户、外部阻塞</b>：只结束本次 Stop，同一流程沿用已用次数。</li>
+    <li><b>纯历史顺序偏差</b>：通知一次，终态为"带历史偏差结束"，不派发修复，不扣次数。</li>
+  </ul>
+  <h3>两条线如何互相兜底</h3>
+  <div class="grid g3">
+    <div class="card mit"><h4>缓解失败时降级为检测</h4>简报晚到、没生成或只生成一部分时，已产出的框架项、检查项和反例仍作为终审必查项。准备不完整只记入覆盖统计，不算作业务代码问题。</div>
+    <div class="card bri"><h4>防止同源错误</h4>框架项和检查项在候选代码出现前生成；终审先从原文自建清单再并入；判"已检查"必须追到当前代码；单独都不构成偏差。剩余风险：两边一起选错检查角度（st9），对应 6.1 的前提来源记录 <span class="badge st-plan">○</span>。</div>
+    <div class="card cor"><h4>纠偏不会无限循环</h4>次数和时限封顶；证据不足交给人，不靠反复纠偏凑出"通过"。</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <h2><span class="no">9</span>预算、时序与并发</h2>
+  <table>
+    <tr><th>项目</th><th>当前值</th><th>说明</th></tr>
+    <tr><td>简报总时限</td><td>模板 20 分钟（插件缺省 10 分钟）</td><td>提议 ≤50%，反例复核 ≤70%，剩余时间留给筛选；后台运行</td></tr>
+    <tr><td>发布配额</td><td>实现提示 ≤10、行为场景 ≤6、检查项 ≤10（每类 ≤5）</td><td>无置信度门槛；有依据但超出配额的条目标为延期并留档</td></tr>
+    <tr><td>终审窗口</td><td>模板 2 小时；插件缺省 20 分钟（含 3 分钟交付预留）</td><td>交付预留包含在窗口内；修复不占已结束的审查窗口</td></tr>
+    <tr><td>纠偏次数</td><td>每会话 3 次，每流程 3 次</td><td>只在修复实际开始时扣；排队、审查、通知、保存都不扣</td></tr>
+    <tr><td>审查会话</td><td>200 个助手轮次；单次输出 32768 token；最多续跑 1 次</td><td>续跑沿用原截止时间、已读凭据和已保存结果</td></tr>
+    <tr><td>私有 Agent 并发</td><td><code>agentConcurrency</code> 1–32（可选）<span class="badge st-off">◐ 未提交</span></td><td>提议、反例、筛选、终审等共用一个总上限</td></tr>
+    <tr><td>导航搜索</td><td>单次最多 4096 个条目 / 16 MiB</td><td>达到上限时明确返回 <code>scanIncomplete</code>，零命中不代表搜索完成</td></tr>
+    <tr><td>项目验收命令</td><td>最多 16 项；固定输入最多 64 个</td><td>来源文件 sha256 与行范围必须匹配</td></tr>
+    <tr><td>文档审阅会话</td><td>空闲 30 分钟或满 32 轮后轮换</td><td>笔记最多 24 条，每条 1000 字节</td></tr>
+    <tr><td>审批确认等待</td><td>普通模式最多 5 分钟</td><td>同时受本次后台任务剩余时限约束</td></tr>
+  </table>
+  <p class="muted small">实测成本参照：一次终审约 5 分钟、170–210 万 token（st2 两轮）；简报准备 7–10 分钟（后台）；四题业务端到端 20–36 分钟。检查项提议的成本尚未单独计量。</p>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="no">10</span>默认配置：两层缺省，按证据调整</h2>
+  <p>默认值分两层：<b>插件内置缺省</b>偏保守，只开有实测的指标；<b>新项目模板</b>是项目方指定的配置（<code>README.md</code> 第 32 行），开启了更多检查类别。两层都会按实测证据调整。</p>
+  <table>
+    <tr><th>能力</th><th>插件内置缺省</th><th>新项目模板</th><th>说明</th></tr>
+    <tr><td>代码理解·提议·简报</td><td><span class="badge st-plan">关</span></td><td><span class="badge st-done">开</span>（含检查项提议）</td><td>仅 OpenClaw、git 项目</td></tr>
+    <tr><td>终审</td><td><span class="badge st-done">开</span></td><td><span class="badge st-done">开</span>（完整逐项审查）</td><td>闭环已实测</td></tr>
+    <tr><td>需求实现 M12 / M16</td><td>开 / 开</td><td><b style="color:var(--bad)">关</b> / 开</td><td>模板关闭 M12 后，用户明确要求的"写测试、跑测试"没有指标可以归属；评测的 G0 就是 M12</td></tr>
+    <tr><td>项目规则 M09 / M10 / M11</td><td>开 / 关 / 关</td><td>开 / 开 / 开</td><td>M10、M11 缺少单独的实测证据</td></tr>
+    <tr><td>Skill 步骤 M08 与 Skill 看护</td><td>M08 开，看护关</td><td><b style="color:var(--bad)">都关</b></td><td>花店评测 G3 的 78 个冻结对象中有 56 个属于 M08</td></tr>
+    <tr><td>验证闭环 M13 / M14 / M15</td><td>开 / 关 / 开</td><td>开 / 开 / 开</td><td>需要项目验收命令才有执行证据，否则多数只能记为未验证</td></tr>
+    <tr><td>需求分解与验收设计 M01–M07</td><td>关</td><td>开</td><td>只在有规划工件时适用</td></tr>
+    <tr><td>文档纠偏一致性</td><td><span class="badge st-plan">关</span></td><td><span class="badge st-plan">关</span></td><td>只在有规划文档时有价值</td></tr>
+    <tr><td>原测试回归、项目验收命令</td><td><span class="badge st-plan">关</span></td><td><span class="badge st-plan">关</span></td><td>需要项目提供命令和来源；有可执行验收时强烈建议开启</td></tr>
+    <tr><td>新会话启用 RC</td><td>—</td><td><span class="badge st-plan">关</span></td><td>由用户在控制台或用 <code>/rc-session on</code> 开启</td></tr>
+  </table>
+  <div class="callout warn"><b>待决策事项：</b>① 评测时必须开启被计分的类别（M08、M12），否则 G0、G3 的主体不在 RC 检查范围内，评测结果没有意义；② 开启 M01–M07 的项目同时开启文档纠偏，否则规划工件只在交付时被检查，顺序类问题拉不回来。</div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <h2><span class="no">11</span>可靠性与安全边界</h2>
+  <div class="grid g3">
+    <div class="card"><h4>只读与职责边界</h4>RC 不写业务文件；宿主执行、文件权限、模型选择、工具审批和业务修复始终由宿主负责。</div>
+    <div class="card"><h4>隔离</h4>私有审查会话使用冻结请求和受限工具；清除父凭据后注入指定提供器环境；配置只保存环境变量名，日志与请求中不保存令牌。</div>
+    <div class="card"><h4>读取凭据</h4>读取证明记录路径、当前字节摘要、披露范围和调用归属；模型提交的路径、行号或引文本身不构成读取证明。</div>
+    <div class="card"><h4>失败语义</h4>普通入口故障时失败开放；活动 Stop 缺少有效结算时保留未验证。取消、超时、依据变化和额度耗尽都不伪造通过。</div>
+    <div class="card"><h4>持久化与并发</h4>事务日志增量提交，配合校验、检查点和原子替换；跨进程锁；迟到回调在提交前核对身份，旧回执不能覆盖新一代结果。</div>
+    <div class="card"><h4>审批模式</h4>普通模式：在 MA 聊天中显示原生确认卡。无人值守模式：只自动授权本会话、本次 RC 后台已登记的工具。两种模式都不切换宿主的全局策略。</div>
+  </div>
+  <p class="muted small">宿主支持范围：OpenClaw 原生入口固定适配 2026.7.1-2 和 2026.10.3；代码理解简报和检查项目前只支持 OpenClaw；终审引擎由 Claude Code、CodeAgent、OpenClaw 三个宿主共用。</p>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <h2><span class="no">12</span>证据现状（如实分级）</h2>
+  <table>
+    <tr><th>结论</th><th>证据</th><th>强度</th></tr>
+    <tr><td>闭环能在真实宿主跑通，并修复真实缺陷</td><td>st2：修复前新需求 1/2、原回归 739/746，修复后 2/2、746/746。四题实验中，st2 终审发现"已加载的 3D 策略被覆盖"，自动修复一次后独立评分全部通过</td><td><span class="badge st-off">中 · 开发集单次</span></td></tr>
+    <tr><td>检查体系所在版本相对不开 RC 的基线有正向观察，<b>增益集中在项目规则，不在需求理解</b></td><td>SWE-ArkTS 开发集 39 轮：<b>G3 项目规则遵从 39/90 → 58/90（+21.1 个百分点，增幅最大）</b>；G1 正式分解遗漏 8/84 → 6/84；G0 69/84 → 76/84；G2 65/84 → 69/84；整题独立通过 27/39 → 33/39；F2P 114/135 → 123/135（<code>runtime-corrector-evaluate-arkts/.../dae36f7-v2.2.0-complete</code>）</td><td><span class="badge st-off">中偏弱 · 开发集；基线非同批</span></td></tr>
+    <tr><td>终审单独的贡献</td><td>同 39 轮关闭终审：整题 33/39 → 31/39，G3 偏差多 9 个；但双侧 p = 0.50，只看首次尝试的 20 对时方向反转（18/20 对 19/20）；两批替补数量和镜像配置不同，报告结论为"无法单独识别终审开关的贡献"</td><td><span class="badge st-neg">弱</span></td></tr>
+    <tr><td>检查项机制符合设计</td><td>单测覆盖按类别提议、逐字引用与条件保留、跨文档去重、终审并入与逐项处置（<code>test/requirement-frame.test.mjs</code>、<code>test/stop-workspace-review.test.mjs</code>）</td><td><span class="badge st-off">◐ 离线</span></td></tr>
+    <tr><td>检查项的单独贡献与精确率</td><td><b>未证明。</b>仓库中没有"检查项检出偏差并被修复"的真实记录</td><td><span class="badge st-neg">无</span></td></tr>
+    <tr><td>只加提示词解决不了</td><td>st7、st6 回放只加指导，结果不变</td><td><span class="badge st-off">中 · 单例</span></td></tr>
+    <tr><td>原文直读可行，基线抽取不可行</td><td>security_tool_1 与 security_tool_2 兼容变体合并对照，在预算内完成的比例：原文直读 6/6，两种对照方案 0/6（<code>docs/simplify-experiment-results.md</code>）</td><td><span class="badge st-off">中 · 小样本</span></td></tr>
+    <tr><td>正确实现上没有出现误报纠偏</td><td>security_tool_1 正确首稿两次均无误报；合并对照中正确对象误报为 0（同上）</td><td><span class="badge st-off">中 · 样本少</span></td></tr>
+    <tr><td>Skill 看护节省上下文</td><td>四种合成情形下输入 token 减少 83%，准确度持平</td><td><span class="badge st-neg">弱 · 合成情形，仅效率</span></td></tr>
+    <tr><td>相对不开 RC 的泛化净收益</td><td><b>未证明。</b>开发集有正向观察（见上），没有留出集数据</td><td><span class="badge st-neg">无</span></td></tr>
+    <tr><td>简报的预防作用</td><td><b>未证明。</b>四题中只有两题收到简报，其中一题晚到，且含错误前提</td><td><span class="badge st-neg">无</span></td></tr>
+    <tr><td>花店 Checklist B0 / RC0 对照</td><td>〔待补：MA+Verikit 与 MA+Verikit+RC 的对照汇总；需注明 M08 是否开启〕</td><td>—</td></tr>
+  </table>
+  <div class="callout warn"><b>必须同时说明的口径：</b>ArkTS 各题都是开发集，结论是在对照标准答案分析之后得出的；原先预定的留出集已被使用，不能称为泛化证据。SWE-ArkTS 的增益属于"检查体系所在的整个版本"，不能归到某个组件，更不能单独归到检查项。产品代码不含题号、答案或专用规则。历史上 st6、st7、st9、数独的满分运行带有按题编写的公开验收探针，应表述为"配置了验收检查时的闭环演示"。</div>
+</section>
+
+<!-- 13 -->
+<section id="s13">
+  <h2><span class="no">13</span>风险与对策</h2>
+  <table>
+    <tr><th>风险</th><th>已观察到的表现</th><th>控制手段</th></tr>
+    <tr><td>成本</td><td>一次终审约 170–210 万 token；检查项提议成本未单独计量</td><td>次数封顶；简报后台运行；可切换到"只报偏差"或关闭简报的低成本档</td></tr>
+    <tr><td>简报误导</td><td>st9 的错误前提</td><td>"仅供参考"声明、反例复核、终审复核；监测采纳后出错率</td></tr>
+    <tr><td>检查项拔高要求</td><td>尚未观察到</td><td>逐字引用、前提原样保留；单独不构成偏差；与用户原文冲突时以原文为准；监测检查项精确率</td></tr>
+    <tr><td>误报引发乱改</td><td>正确实现上暂未观察到</td><td>偏差必须有反证；反馈要求先复现；未验证不触发修复</td></tr>
+    <tr><td>漏检</td><td>数独、st2 删除公共方法、M09 错判通过</td><td>原测试回归前移、项目验收命令；公开漏检案例</td></tr>
+    <tr><td>"用自己的尺子给自己打分"</td><td>RC 与评测共用 M 编号</td><td>内容独立生成；评测清单事先冻结、不参考 RC 轨迹；对外只报独立评测</td></tr>
+    <tr><td>过拟合</td><td>规则来自开发集分析（code-understanding skill 5 天改了 19 次）</td><td>冻结审查规则增长；新规则须先在开发集之外看到收益才能进入产品</td></tr>
+    <tr><td>复杂度</td><td>分支领先 main 约 590 个提交；核心文件两千多行；分类较多</td><td>大部分代码用于身份、取消、截止时间和证据校验，目的是防止伪造通过；对外只讲"一份清单、四个时点、两种作用"</td></tr>
+    <tr><td>适用范围</td><td>宿主固定两个版本；简报和检查项仅支持 OpenClaw；需要 git；检查项只读 Markdown</td><td>口径定为"MatrixAssistant / OpenClaw 首发"</td></tr>
+  </table>
+</section>
+
+<!-- appendix -->
+<section id="sapp">
+  <h2><span class="no">附</span>术语、汇报口径与待统一问题</h2>
+  <h3>术语</h3>
+  <table>
+    <tr><th>术语</th><th>含义</th></tr>
+    <tr><td>纠偏检查体系</td><td>规定"查什么"的统一清单：五类检查、M01–M16 十六项指标、四条准入规则</td></tr>
+    <tr><td>检查类别</td><td>需求实现（fulfillment）、项目规则（projectRules）、Skill 步骤（skills）、验证闭环（verification）、需求分解与验收设计（clarification）；配置中称"族"，可用 <code>stopCorrection.families</code> 整类关闭</td></tr>
+    <tr><td>准入规则</td><td>原文权威、当前触发、可以判定、时机正确；任何条目进入清单前都要同时满足</td></tr>
+    <tr><td>开工找，交付判</td><td>开工时提议者只定位候选原文行；是否构成义务、是否违反，由对应时点下结论的组件判定</td></tr>
+    <tr><td>原始依据</td><td>能授权或约束当前任务的原始用户要求、明确采用的材料和适用的项目规则</td></tr>
+    <tr><td>开始版本 S0</td><td>任务开始时 git HEAD 的已提交内容，导出为只读快照，供提议者使用</td></tr>
+    <tr><td>框架项</td><td>由代码理解·提议·简报产出：G 为实现提示，S 为行为场景，C 为仅供终审的反例场景（注意与评测维度 G0–G3 区分）</td></tr>
+    <tr><td>检查项 K</td><td>检查项提议者从项目文档中定位的候选义务，绑定原文行和开始时的文档副本；以 <code>proposedCheck</code> 标记并入终审清单</td></tr>
+    <tr><td><code>frameDispositions</code></td><td>终审对每个框架项的处置：CHECKED / DEVIATION / UNVERIFIED</td></tr>
+    <tr><td>可执行证据</td><td>原测试、项目验收命令等由程序实际运行并归属到候选版本的结果</td></tr>
+    <tr><td>纠偏额度</td><td>会话和流程两层计数，只在宿主可信地确认修复实际开始时扣减</td></tr>
+    <tr><td>无 RC 对照</td><td>相同任务和实验条件下关闭 RC 的执行组，是衡量净收益的比较对象</td></tr>
+  </table>
+  <h3>汇报口径</h3>
+  <table>
+    <tr><th>不要说</th><th>改为</th></tr>
+    <tr><td>"RC 提升了 F2P/P2P"</td><td>"闭环已在真实宿主跑通，并修复过真实缺陷；开发集上相对基线有正向观察，增益集中在项目规则；泛化收益尚未证明"</td></tr>
+    <tr><td>"RC 做需求澄清" / "需求澄清族"</td><td>"RC 按五类检查核对 Agent 的工作；需求分解与验收设计只是其中一类，检查的是 Agent 写的规划工件，RC 不向用户提问"</td></tr>
+    <tr><td>"RC 覆盖五大检查族"</td><td>"检查体系定义了五类检查；开工时找其中三类，过程中判两类，交付时判所有已开启的类别；默认开哪些类别按实测证据调整"</td></tr>
+    <tr><td>"提议者负责找，终审负责判"（不加解释）</td><td>"开工时定位原文行；是否构成义务、是否违反，由终审按原文和证据判定"</td></tr>
+    <tr><td>"检查项置信度不低于 0.75"</td><td>"检查项必须逐字引用原文行，经选择器逐条审查；按配额取舍，没有置信度门槛"</td></tr>
+    <tr><td>"终审独立于框架，不受影响"</td><td>"框架项和检查项在候选代码出现前生成；终审能看到它们，但它们单独不能构成偏差"</td></tr>
+    <tr><td>"四个组件分别负责 G0–G3"</td><td>"评测维度与检查类别相关；单个组件的贡献目前没有拆分"</td></tr>
+    <tr><td>"简报能预防偏差"</td><td>"简报提供开始版本代码里的约束，预防作用尚未证明；它同时为终审提供一份不受候选代码影响的必查清单"</td></tr>
+    <tr><td>"终审通过"</td><td>"终审在已检查范围内未发现有证据的偏差"</td></tr>
+    <tr><td>"原文是唯一权威"</td><td>"原文决定要改什么，既有代码和规则决定不能破坏什么，冲突时原文优先"</td></tr>
+    <tr><td>"默认值由证据决定" / "四个组件默认全开"</td><td>"插件内置缺省偏保守，新项目模板按项目方指定开启了更多类别；默认值按实测证据调整"</td></tr>
+    <tr><td>"通用规则，不针对题目"</td><td>"产品代码不含题号和答案；规则来自开发集分析，泛化性尚未证明"</td></tr>
+    <tr><td>"失败开放，所以安全"</td><td>"RC 故障不阻塞主任务，代价是结果标为未验证"</td></tr>
+  </table>
+  <h3>汇报前待统一的问题</h3>
+  <ol class="small">
+    <li><code>docs/stop-task-review.md</code> 首段写新模板使用"仅偏差模式"，模板实际是完整逐项审查（<code>deviationOnly: false</code>）。</li>
+    <li>README 第 32 行（新项目模板关闭 M08、M12）与第 150 行（插件内置缺省开启 M08、M12）说的是不同层面的缺省，需要补一句说明区别。</li>
+    <li>简报时限有三个数（配置文档 10 分钟、实验 15 分钟、模板 20 分钟），需要说明各自的适用场景。</li>
+    <li>需求框架规格写"默认关闭"，而模板现在默认开启（插件缺省仍关闭），需要记录这次变更及其依据。</li>
+    <li>模板中的 <code>regressionCheck.command</code> 写死了 <code>C:\MABench\...</code> 路径，应参数化或移出产品模板。</li>
+    <li>"准备不完整是否计入终审未验证"，两份文档说法不一致；按第 8 节统一为"只记入覆盖统计"。</li>
+    <li>并发槽等改动尚未提交，不作为已交付能力讲。</li>
+    <li><code>docs/correction-checklist.md</code> 写"保留置信度不低于 0.75 的项"，代码已明确没有置信度门槛（选择器提示词 "There is no confidence cutoff"）。</li>
+    <li><code>docs/correction-checklist.md</code> 写"每个有开启指标的族各运行一个检查项提议者"，实际只有项目规则和验证闭环两类有提议者。</li>
+    <li>简报中检查项的标题"完成前要遵守的项目规则"是指令语气，与"检查项只负责定位"不完全一致，建议改为"可能适用的项目规则（以文档原文和用户消息为准）"。</li>
+    <li>引用行不构成约束的检查项：完整审查模式要求记为未验证，仅偏差模式记为已检查。应统一为"原文证明不适用即为已检查"，避免抬高未验证占比。</li>
+    <li>模板关闭 M12，而"用户明确要求的写测试、跑测试"在终审中归 M12，关闭后没有归属；同时评测 G0 = M12。</li>
+    <li>模板关闭 M08 和 Skill 看护，而花店评测 G3 的 78 个冻结对象中有 56 个属于 M08；跑花店评测前必须核对。</li>
+    <li>花店指标规范一处写 M11"不属于结果指标"，另一处又把它的 8 个对象计入 G3，需要与评测方统一。</li>
+    <li>检查项扫描的文档超过 200 个时直接截断、不留标记，与"达到上限明确返回扫描不完整"的口径不一致。</li>
+    <li>SWE-ArkTS 两份报告的 G3 口径不同（双组对照为偏差 51 → 32；三组复核为 54 → 35 → 44），汇报时只选一个版本并注明范围。</li>
+  </ol>
+</section>
+
+<footer>Runtime Corrector 技术方案框架 · 第二版 · 配套文字稿 docs/rc-overall-plan-draft.md</footer>
+</div></main>
+</body>
+</html>

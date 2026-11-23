@@ -57,6 +57,20 @@ MatrixAssistant 内置的 OpenClaw 2026.7.1-2 使用公开 harness 取消接口�
 
 检查器故障不会自动变成业务缺陷，本轮失败组不重派。取消、关闭、项目失效和总截止都有围栏；未知在途请求保留预留待核对，不自动重发。旧 Stop 的有效保存作为历史保留，不能以“放行”替代整体验收通过。
 
+## RC Agent 并行度
+
+在宿主的 `plugins.entries.runtime-corrector.config` 中设置 `agentConcurrency`，重启 Gateway 生效。下面的示例把私有 Agent 总上限设为 4，把后台终审会话上限设为 3。
+
+```json
+{
+  "agentConcurrency": 4,
+  "stopReviewConcurrency": 3
+}
+```
+
+`agentConcurrency` 是可选的总上限（1–32）。同一个 Gateway 内，需求澄清提议、反例复核、简报筛选、基线提取和审计、终审及其他 RC 私有评审共同使用这个额度。设为 `1` 会将这些 Agent 调用串行化。省略时仅应用各阶段原有的调度规则。主任务与自动纠偏的业务运行由宿主调度。
+
+`requirementFrame.proposers` 表示代码提议者的数量，规则类提议者也会占用同一并发额度。`stopReviewConcurrency` 约束同时进入后台终审的会话数，默认 `3`（1–32）。不同会话可以并行终审，每轮由一个私有 Agent 读取依据、逐项提交并结算。等待额度会消耗当前阶段的时间预算，已发出的调用在宿主结束该次运行后释放额度。
 
 ## Review 超时配置
 
