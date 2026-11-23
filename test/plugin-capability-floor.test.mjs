@@ -570,6 +570,25 @@ test("release CI exercises the compatibility suite on Windows, Linux, and macOS"
   assert.match(workflow, /npm run build:plugins/u);
   assert.match(workflow, /npm run test:artifacts/u);
   assert.match(workflow, /test\/plugin-bootstrap-process\.test\.mjs/u);
+  const runtime = workflow.slice(workflow.indexOf("  runtime:"), workflow.indexOf("  release:"));
+  const matrixStart = runtime.indexOf("        include:"), matrixEnd = runtime.indexOf("    steps:");
+  assert(matrixStart >= 0 && matrixEnd > matrixStart);
+  const matrix = parseSimpleYaml(runtime.slice(matrixStart, matrixEnd).replace(/^ {8}/gmu, "")).include;
+  assert.deepEqual(matrix, [
+    { os: "ubuntu-latest", shard: "1/1", "file-concurrency": 4 },
+    { os: "macos-latest", shard: "1/1", "file-concurrency": 4 },
+    ...[1, 2, 3, 4].map(index => ({ os: "windows-latest", shard: `${index}/4`, "file-concurrency": 1 })),
+  ]);
+  assert.match(runtime, /timeout-minutes: 25\b/u);
+  assert.match(runtime, /--file-timeout-ms=180000\b/u);
+  assert.match(runtime, /--file-concurrency=\$\{\{ matrix\.file-concurrency \}\}/u);
+  assert.match(runtime, /--file-shard=\$\{\{ matrix\.shard \}\}/u);
+  const compatibility = workflow.slice(workflow.indexOf("  compatibility:"), workflow.indexOf("  runtime:"));
+  const osStart = compatibility.indexOf("        os:"), osEnd = compatibility.indexOf("    steps:");
+  assert(osStart >= 0 && osEnd > osStart);
+  const systems = parseSimpleYaml(compatibility.slice(osStart, osEnd).replace(/^ {8}/gmu, "")).os;
+  assert.deepEqual(systems, ["ubuntu-latest", "windows-latest", "macos-latest"]);
+  assert.equal(systems.length + matrix.length, 9, "Three compatibility jobs plus six runtime shards.");
 });
 
 

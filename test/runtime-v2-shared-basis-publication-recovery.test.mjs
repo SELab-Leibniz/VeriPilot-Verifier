@@ -13,8 +13,34 @@ import { sharedBasisFixture as fixture, user, operation } from './helpers/runtim
 
 test('actual Stop cannot PASS after an ACTIVE cache-hit graph failure, and the next Stop can recover', async t => {
   for (const outer of [false, true]) await t.test(outer ? 'enclosing atomic assessment' : 'standalone Stop', async t => {
-    const f = await fixture(t); f.state.useNativeGraph = true; await f.select();
-    const original = await f.task(), proof = original.groundTruth.sharedBasis.proof.requestId;
+    const f = await fixture(t); f.state.useNativeGraph = true;
+    const selected = await f.select(), original = await f.task();
+    const proof = original?.groundTruth?.sharedBasis?.proof?.requestId;
+    if (selected?.watcher?.status !== 'ACTIVE' || typeof proof !== 'string' || !proof) {
+      const diagnostic = { fixturePhase: 'INITIAL_SHARED_BASIS_SELECTION', outer,
+        selection: { handled: selected?.handled, taskId: selected?.taskId, reason: selected?.reason,
+          reasonCode: selected?.reasonCode, watcherStatus: selected?.watcher?.status }, journalErrors: [] };
+      let handle;
+      try {
+        assert.equal(selected?.taskId, original?.taskId, 'Read diagnostics only from this selected task.');
+        const journal = path.join(taskDirectory(f.root, original.taskId), 'journal/events.jsonl');
+        assert.equal(await fs.realpath(journal), journal);
+        handle = await fs.open(journal, 'r'); const info = await handle.stat(); assert(info.isFile());
+        const length = Math.min(info.size, 65536), bytes = Buffer.alloc(length);
+        const { bytesRead } = await handle.read(bytes, 0, length, Math.max(0, info.size - length));
+        diagnostic.journalBytesRead = bytesRead;
+        diagnostic.journalErrors = bytes.subarray(0, bytesRead).toString('utf8').split(/\r?\n/u)
+          .flatMap(line => { try { return [JSON.parse(line)]; } catch { return []; } })
+          .filter(row => ['GROUND_TRUTH_REFRESH_FAILED', 'SKILL_WATCH_NOT_ESTABLISHED'].includes(row.type))
+          .slice(-8).map(row => ({ type: row.type,
+            hookEventId: String(row.hookEventId ?? '').slice(0, 160),
+            reason: String(row.error ?? row.reason ?? '').slice(0, 400) }));
+      } catch (error) { diagnostic.journalReadError = String(error.message).slice(0, 160); }
+      finally { await handle?.close().catch(error => { diagnostic.journalReadError = String(error.message).slice(0, 160); }); }
+      t.diagnostic(JSON.stringify(diagnostic));
+    }
+    assert.equal(selected?.watcher?.status, 'ACTIVE', 'Initial Skill selection must establish its real current watcher: ' + JSON.stringify(selected));
+    assert(typeof proof === 'string' && proof, 'Initial selection must publish its real shared-basis proof before the Stop case.');
     await fs.rm(await f.graphFile());
     f.state.graphError = { summary: 'Invalid graph role.', skillGroundTruth: { constraints: [], taskOverlays: [] }, operations: [operation()] };
     const options = id => outer ? { assessmentContext: { assessmentId: id, guard: decisionGuard(original),

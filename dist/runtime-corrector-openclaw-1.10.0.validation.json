@@ -3476,7 +3476,7 @@
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
     "semanticCompletenessClaim": false,
-    "newModelRuns": 0,
+    "newModelRuns": 1,
     "focusedControls": {
       "node26": 61,
       "node18": 61,
@@ -3568,14 +3568,29 @@
     },
     "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f",
     "latestNaturalCi": {
-      "sourceCommit": "b246ea9eb18b52d0d6f769f9f5a2bd172bf37ca3",
-      "runId": 45140517612,
+      "sourceCommit": "1b177172663f7ceab465f8751b8dc800fa8c6e70",
+      "runId": 45143872600,
       "attempt": 1,
-      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_LEGACY_FIXTURE_FAILURE",
-      "receipt": ".runtime-correction/validation/ci-fix/post-b246-natural-q7m4n2vc/terminal-receipt.json",
-      "receiptSha256": "6b918d83a355aa305fd98ed1aa8e5864e30054ecbdac15035a8a8960671f857b",
-      "failedFile": "test/original-duty-publication-integration.test.mjs",
-      "crlfSourcePinControlPassedOnWindows": true,
+      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD1_FAILURE",
+      "receipt": ".runtime-correction/validation/ci-fix/post-1b17717-natural-k4n8q2mx/terminal-receipt.json",
+      "receiptSha256": "7df32f454fbb1694c049e40a2d95186b82743fadf8512a84e5d24b36addcb607",
+      "originalDutyIntegrationWindowsPassed": true,
+      "windowsShard2": {
+        "files": 201,
+        "pass": 2418,
+        "skip": 30,
+        "fail": 0
+      },
+      "windowsShard1": {
+        "files": 202,
+        "pass": 2654,
+        "skip": 15,
+        "fail": 3,
+        "failedFiles": [
+          "test/openclaw-native-plan-restoration.test.mjs",
+          "test/runtime-v2-shared-basis-publication-recovery.test.mjs"
+        ]
+      },
       "macOS": {
         "files": 403,
         "pass": 5089,
@@ -3588,18 +3603,8 @@
         "skip": 37,
         "fail": 0
       },
-      "failureScope": "Seven actual-legacy/coalesced fixture checks plus afterhook; exact inner cause not exposed in official log. Source establishes serialized projectRoot is slash-normalized while fixture root is native Windows.",
-      "fixStatus": "ONE_LINE_CANONICAL_PATH_ASSERTION_LOCALLY_QUALIFIED_144_CHECKS_WINDOWS_PENDING",
-      "fixedCommitNaturalCi": "PENDING",
-      "noRerunCancelDispatch": true,
-      "pathFixQualification": {
-        "path": ".runtime-correction/validation/original-duty-windows-canonical-path-b246-m6q4r8np/qualification.json",
-        "sha256": "089fa2c8529a3b51dd2bbcec8c78e94515aabcef67c970098b29425b09a425a7",
-        "actual": "4cdc64/session78543 ->fca88f/0 CLOSED",
-        "checks": 144,
-        "productionChanged": false,
-        "actualWindows": false
-      }
+      "cause": "UNDER_INVESTIGATION; retain exact Stop-admission-deadline and undefined.proof assertions without unique-cause claim.",
+      "noRerunCancelDispatch": true
     },
     "privateReplacementArchive": {
       "path": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/committed-release/runtime-corrector-openclaw-1.10.0.tgz",
@@ -3618,13 +3623,13 @@
       "inheritsCanonicalRealModelEvidence": false
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-ci-pilot-current-l_ahg33x/report-qa/capture/receipt.json",
-      "sha256": "14218a602c722230c339218b4af05d2d9f3ab2de9917797ef3c720e1491f3857",
-      "htmlSha256": "9bfe04518fc20a5875f4915587fd5ae29c132eedbff0da7ecf26e6535aa5749d",
-      "actual": "e4f37d/session44666 ->3865c3/0 CLOSED",
+      "path": ".runtime-correction/validation/report-ci-ninejob-finalreview-wxw1nyxf/report-qa/capture/receipt.json",
+      "sha256": "9cd6c6173d024e1936c70c98b4df1d1c2594c66303795c644e37edd8c8a495c9",
+      "htmlSha256": "42c64832bfc771541b513026ab235a292b011810fd28f03d7ae6373397adf76f",
+      "actual": "ef4ada/session82180 ->c89042/0 CLOSED",
       "views": 4,
-      "externalLinks": 0,
-      "rootInspected": "ci-zh-CN-390.png"
+      "rootInspected": "ci-zh-CN-390.png",
+      "externalLinks": 0
     },
     "precedingNaturalCiRecords": [
       {
@@ -3636,22 +3641,64 @@
         "cause": "Exact runtime CRLF checkout hash differs from canonical LF pin; source guard test-only fix locally qualified.",
         "fixedCommitNaturalCi": "PENDING",
         "noRerunCancelDispatch": true
+      },
+      {
+        "sourceCommit": "b246ea9eb18b52d0d6f769f9f5a2bd172bf37ca3",
+        "runId": 45140517612,
+        "attempt": 1,
+        "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_LEGACY_FIXTURE_FAILURE",
+        "receipt": ".runtime-correction/validation/ci-fix/post-b246-natural-q7m4n2vc/terminal-receipt.json",
+        "receiptSha256": "6b918d83a355aa305fd98ed1aa8e5864e30054ecbdac15035a8a8960671f857b",
+        "failedFile": "test/original-duty-publication-integration.test.mjs",
+        "crlfSourcePinControlPassedOnWindows": true,
+        "macOS": {
+          "files": 403,
+          "pass": 5089,
+          "skip": 33,
+          "fail": 0
+        },
+        "ubuntu": {
+          "files": 403,
+          "pass": 5085,
+          "skip": 37,
+          "fail": 0
+        },
+        "failureScope": "Seven actual-legacy/coalesced fixture checks plus afterhook; exact inner cause not exposed in official log. Source establishes serialized projectRoot is slash-normalized while fixture root is native Windows.",
+        "fixStatus": "ONE_LINE_CANONICAL_PATH_ASSERTION_LOCALLY_QUALIFIED_144_CHECKS_WINDOWS_PENDING",
+        "fixedCommitNaturalCi": "PENDING",
+        "noRerunCancelDispatch": true,
+        "pathFixQualification": {
+          "path": ".runtime-correction/validation/original-duty-windows-canonical-path-b246-m6q4r8np/qualification.json",
+          "sha256": "089fa2c8529a3b51dd2bbcec8c78e94515aabcef67c970098b29425b09a425a7",
+          "actual": "4cdc64/session78543 ->fca88f/0 CLOSED",
+          "checks": 144,
+          "productionChanged": false,
+          "actualWindows": false
+        }
       }
     ],
     "nextLivePilot": {
       "source": ".runtime-correction/validation/public-on-original-duty-pilot-248b-r7m2q9vc",
       "operator": ".runtime-correction/validation/public-run-0e47a1d9f3b742",
       "acceptanceSha256": "933e0861e05b7988200ebaa20e4392528272cd526ea64c71c06fbb218c0d4c61",
-      "status": "CREDENTIAL_FREE_PREFLIGHT_PASS_MODEL_NOT_STARTED",
+      "status": "RUNNING_MACOS_FINAL_REVIEW_ALL12_STEPS_MARKED_COMPLETE",
       "kernelChecks": 24,
       "publicChecks": 668,
       "starterFilesUnchanged": 149,
       "preflightPeer": ".runtime-correction/validation/public-pilot-prelive-peer-9c6l_4l8/peer-review.json",
       "preflightPeerSha256": "dda7a96c5ca861d7af0351d5483f9ecc6d3282e15f7dab0209e53d35ba737cac",
       "primary": "Actual normal stage_original_duties before first coverage/cohort and canonical-ID retention through final host handoff+Stop. Listed-only NOT_EXERCISED; missing evidence U.",
-      "paidModelsAdmitted": false,
+      "paidModelsAdmitted": true,
       "formal13Credit": 0,
-      "qualityGainClaim": false
+      "qualityGainClaim": false,
+      "actual": "85058b/session29566 LIVE_DO_NOT_REPLAY_OR_RENEW",
+      "macOnlyRationale": ".runtime-correction/validation/public-run-0e47a1d9f3b742/mac-only-live-rationale.json",
+      "mechanismStatus": "UNVERIFIED_UNTIL_OWN_CLOSED_EVIDENCE",
+      "planFilesRead": 6,
+      "approvedUncheckedSteps": 12,
+      "rootPlanReview": ".runtime-correction/validation/public-run-0e47a1d9f3b742/root-public-plan-review.json",
+      "markedSteps": 12,
+      "independentQualityAndMethodAudit": "PENDING_OWN_CLOSED_FREEZE"
     },
     "precedingReportQa": {
       "path": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/report-qa/capture/receipt.json",
@@ -3661,6 +3708,42 @@
       "views": 4,
       "rootInspected": "candidate-package-zh-CN-390.png",
       "externalLinks": 0
-    }
+    },
+    "pendingCiSchedulingChange": {
+      "status": "QUALIFIED_FOR_FEATURE_BRANCH_PUSH_NATURAL_CI_PENDING",
+      "windowsShards": 4,
+      "fileWorkersPerWindowsJob": 1,
+      "compatibilityJobs": 3,
+      "runtimeJobs": 6,
+      "totalMatrixJobs": 9,
+      "allTestFiles": 403,
+      "jobTimeoutMinutes": 25,
+      "fileTimeoutMs": 180000,
+      "runtimeAdmissionDeadlineMs": 1000,
+      "qualification": ".runtime-correction/validation/windows-four-shards-diagnostics-1b-observable-v3-j8q2m6pc/qualification.json",
+      "qualificationSha256": "f548115db7fd56f594572c1db9fd4b130204bba09e572ea4f7ad86e44ab51578",
+      "actual": "fa04e6/session40100 ->36b20b/0 CLOSED",
+      "checks": 80,
+      "passed": 78,
+      "existingPlatformSkips": 2,
+      "fail": 0,
+      "knownCleanupConfirmed": true,
+      "productionChanged": false,
+      "durationAnalysisSha256": "24fddca4b940a8c4d45d9205b96c39b6d9be2ca6336638d49c55e2a7d401d9a8",
+      "schedulingBenefit": "UNPROVEN_PENDING_WINDOWS_CI",
+      "initialSelectionDiagnostic": "Requires actual ACTIVE watcher/proof before recovery assertions and reports bounded own-task setup failures; no retry or failure suppression.",
+      "priorHarnessFailure": "4de57a/1 permission failure retained; first raw4PASS not a qualification; historical firstchild terminal/descendants UNKNOWN; current exactprivatecwd scan noactive match. V2 unexecuted; V3 observed80checks above."
+    },
+    "reportQaHistory": [
+      {
+        "path": ".runtime-correction/validation/report-ci-pilot-current-l_ahg33x/report-qa/capture/receipt.json",
+        "sha256": "14218a602c722230c339218b4af05d2d9f3ab2de9917797ef3c720e1491f3857",
+        "htmlSha256": "9bfe04518fc20a5875f4915587fd5ae29c132eedbff0da7ecf26e6535aa5749d",
+        "actual": "e4f37d/session44666 ->3865c3/0 CLOSED",
+        "views": 4,
+        "externalLinks": 0,
+        "rootInspected": "ci-zh-CN-390.png"
+      }
+    ]
   }
 }

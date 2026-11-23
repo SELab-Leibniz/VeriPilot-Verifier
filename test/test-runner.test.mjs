@@ -45,7 +45,7 @@ test("sorted shards form a disjoint complete inventory with the same cross-platf
   const files = Array.from({ length: 17 }, (_value, index) => `test/example-${String(index).padStart(2, "0")}.test.mjs`);
   const full = selectTestFileShard(files);
   assert.deepEqual(full.files, files);
-  for (const count of [1, 2, 3, 7, files.length]) {
+  for (const count of [1, 2, 3, 4, 7, files.length]) {
     const shards = Array.from({ length: count }, (_value, index) =>
       selectTestFileShard([...files].reverse(), `${index + 1}/${count}`));
     const union = shards.flatMap(shard => shard.files);
@@ -97,7 +97,7 @@ assert.equal(${file === failure ? "1,2" : "1,1"});});\n`);
 
 test("actual CLI shards execute every file once and keep a genuine assertion failure in its assigned shard", async t => {
   const f = await cliFixture(t);
-  for (const shardCount of [2, 3]) {
+  for (const shardCount of [2, 3, 4]) {
     const plans = [];
     for (let index = 1; index <= shardCount; index++) {
       const result = await f.run(["--file-shard", `${index}/${shardCount}`, "--file-concurrency=2", "--file-timeout-ms=180000"]);
