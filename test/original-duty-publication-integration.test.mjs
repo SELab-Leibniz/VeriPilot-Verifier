@@ -69,7 +69,7 @@ const { knownOriginalOwner, knownOriginalItems, projectKnownOriginalCohort } = a
 const { createOriginalSourceAnchor } = await import('../lib/runtime-v2/original-source-anchor.mjs');
 const { captureOriginalDutyPublication, originalDutyPublicationCurrent, publishOriginalDutyArtifact } = await import('../lib/runtime-v2/original-duty-artifact-publication.mjs');
 const { hostOriginalCoverageCurrent, hostOriginalCapacityFailure, bindHostOriginalCoverage,
-  cloneHostOriginalReview, hostOriginalReviewMetadata } = await import('../lib/runtime-v2/original-duty-publication.mjs');
+  cloneHostOriginalReview, hostOriginalReviewMetadata, cloneHostLegacyOriginalCoverage, originalDutyContextFromCapture } = await import('../lib/runtime-v2/original-duty-publication.mjs');
 const { sha256 } = await import('../lib/runtime-v2/utils.mjs');
 const { readOpenSpecPlan } = await import('../lib/openspec-plan.mjs');
 
@@ -82,15 +82,16 @@ test.after(() => {
 // its invokeFork adapter. Proposal-review policy is absent in this fixture, so
 // the actual artifactProposalBinding takes its normal no-extra-policy branch.
 const runtimeSource = await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8');
-assert.equal(sha256(runtimeSource), 'b7152bcf7897ecf24327ffc7ffd058bfb49919ff5ee1a2b647a53a4a41022732');
+assert.equal(sha256(runtimeSource), '74bfff042a3360f6e3934a2792edccb327bbadf4d64ddc960d2c1d50897b92b7');
 const productionLegacyBlock = runtimeSource.slice(runtimeSource.indexOf('  async function artifactProposalBinding('),
   runtimeSource.indexOf('  async function finalizeScopedArtifact('));
-assert(productionLegacyBlock.includes('const coverage = bindHostOriginalCoverage(handle.originalRequirementCoverage, cohortContext, publicationCurrent);'));
+assert(productionLegacyBlock.includes('? bindHostOriginalCoverage(handle.originalRequirementCoverage, cohortContext, publicationCurrent)'));
 const productionLegacyReview = new Function('runSemanticReview', 'captureOriginalDutyPublication',
   'originalDutyPublicationCurrent', 'bindHostOriginalCoverage', 'REVIEW_SCHEMA', 'isDeepStrictEqual',
-  'pluginRoot', 'readOpenSpecPlan', productionLegacyBlock + '\nreturn semanticArtifactReview;')(
+  'pluginRoot', 'readOpenSpecPlan', 'cloneHostLegacyOriginalCoverage', 'originalDutyContextFromCapture', productionLegacyBlock + '\nreturn semanticArtifactReview;')(
   runSemanticReview, captureOriginalDutyPublication, originalDutyPublicationCurrent, bindHostOriginalCoverage,
-  REVIEW_SCHEMA, isDeepStrictEqual, path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), readOpenSpecPlan);
+  REVIEW_SCHEMA, isDeepStrictEqual, path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), readOpenSpecPlan,
+  cloneHostLegacyOriginalCoverage, originalDutyContextFromCapture);
 
 const baseDuties = [
   'When recording is enabled, preserve every segment in its original order.',

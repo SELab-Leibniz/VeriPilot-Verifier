@@ -322,10 +322,13 @@ test('staging needs host publication ownership while unopened legacy document co
     semantic: { artifactFiles: f.snapshot.documents.map(file => file.path),
       originalRequirements: { digest: sha256(f.source.text), userMessages: [f.source] } } });
   const read = await tools.execute({ action: 'read_original', ref: f.source.ref, start: 2, count: 1 });
+  assert.equal(tools.originalDutyAccountingEnabled, false);
+  assert.equal(tools.tool.parameters.properties.action.enum.includes('stage_original_duties'), false);
+  assert.equal(Object.hasOwn(tools.tool.parameters.properties, 'duties'), false);
   await assert.rejects(tools.execute({ action: 'stage_original_duties', duties: [
     { originalSourceAnchorId: read.anchor.anchorId, requirement: duties[0] }] }),
-  /DOCUMENT_ORIGINAL_DUTY_PUBLICATION_CONTEXT_REQUIRED/u);
-  assert.equal(tools.originalDutyAccounting().status, 'NOT_EXERCISED');
+  /DOCUMENT_ORIGINAL_DUTY_ACCOUNTING_UNAVAILABLE/u);
+  assert.equal(tools.originalDutyAccounting(), null);
   assert.equal(await tools.verifyRequirementCoverage(), null);
 });
 

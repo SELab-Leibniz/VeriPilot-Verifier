@@ -6,7 +6,6 @@ import test, { before, after } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { buildPlugin } from '../../lib/plugin-builder.mjs';
 import { admittedProjectScopes } from './openclaw-project-scope.mjs';
-import { createOriginalSourceAnchor } from '../../lib/runtime-v2/original-source-anchor.mjs';
 import { sha256 } from '../../lib/runtime-v2/utils.mjs';
 import { readOpenSpecPlan } from '../../lib/openspec-plan.mjs';
 import { runtimeFailureDiagnostics } from '../helpers/runtime-failure-diagnostics.mjs';
@@ -23,6 +22,36 @@ before(async () => {
   ({ findTask, ensureTask } = await import(pathToFileURL(path.join(pluginRoot, 'lib/runtime-v2/task-store.mjs'))));
 });
 after(() => output && fs.rm(output, { recursive: true, force: true }));
+
+// This fake producer replaces only model transport. Coverage authority must
+// still come from the same packaged host verifier used by this runtime.
+async function issuedFixtureCoverage(options, atoms) {
+  assert.equal(options.role, 'artifact-reviewer', 'Only an artifact producer may obtain document coverage.');
+  const { createDocumentTools } = await import(pathToFileURL(path.join(pluginRoot, 'lib/document-tools.mjs')));
+  const semantic = options.evidence?.semanticRequest;
+  assert(semantic?.originalRequirements, 'The fixture must review the actual host original sources.');
+  const tools = await createDocumentTools({ projectRoot: options.projectRoot, semantic,
+    requestPath: options.request.semanticReviewRequestPath, signal: options.abortSignal,
+    originalDutyCohortContext: options.evidence.originalDutyCohortContext,
+    requiredProposalReview: options.evidence.requiredProposalReview,
+    requiredPlanReadiness: options.evidence.requiredPlanReadiness });
+  const scope = tools.manifest();
+  for (const file of scope) await tools.execute({ action: 'read', path: file.path, start: 1, count: 200 });
+  const target = scope.find(file => file.path.endsWith('/spec.md')) ?? scope[0];
+  assert(target, 'A fixture coverage assessment needs an actual declared plan target.');
+  const line = Math.min(target.path.endsWith('/spec.md') ? 4 : 3, target.lines);
+  const rows = [];
+  for (const { source, requirement } of atoms) {
+    assert(semantic.originalRequirements.userMessages.some(value => value.ref === source.ref && value.sha256 === source.sha256),
+      'The fixture source must be present in this actual semantic request.');
+    const { anchor } = await tools.execute({ action: 'read_original', ref: source.ref,
+      start: source.start, count: source.end - source.start + 1 });
+    rows.push({ originalSourceAnchorId: anchor.anchorId, requirement, disposition: 'COVERED',
+      reason: 'The fixture reviewed the current declared plan range.', targets: [{ path: target.path, start: line, end: line }] });
+  }
+  const coverage = await tools.verifyRequirementCoverage(rows), accounting = tools.originalDutyAccounting();
+  return { originalRequirementCoverage: coverage, ...(accounting ? { originalDutyAccounting: accounting } : {}) };
+}
 
 async function fixture(t, { arm = true, shadow = false, review = false, reviewerFailure = false,
   proposalOnly = false, reviewer, strictSources, partialManualCheck = false, fullPlanReview = false, configVersion = 2,
@@ -77,8 +106,9 @@ shadowMode: ${shadow}
   for (const [relative, text] of Object.entries(documents)) await fs.writeFile(path.join(root, relative), text);
   const sid = 'native-plan-parent', sessionKey = 'agent:main:plan-drift';
   const transcript = path.join(root, 'native.jsonl');
+  const originalText = strictSources?.[0]?.text ?? 'Retain the selected display order.';
   await fs.writeFile(transcript, [{ type: 'session', id: sid }, { type: 'message', id: 'original', parentId: null,
-    message: { role: 'user', content: 'Retain the selected display order.' } }].map(JSON.stringify).join('\n'));
+    message: { role: 'user', content: originalText } }].map(JSON.stringify).join('\n'));
   const sharedState = {}, warnings = [], methods = new Map();
   const sessions = { getSessionEntry: async () => ({ sessionId: sid, sessionFile: transcript }),
     resolveStorePath: () => path.join(root, 'sessions.json'), resolveSessionFilePath: () => transcript,
@@ -107,7 +137,7 @@ shadowMode: ${shadow}
     postRunTerminal: async (_identity, runId) => ({ runId, status: 'ok' }) });
   const ctx = { workspaceDir: root, sessionId: sid, sessionKey, agentId: 'main', runId: 'proposal', trigger: 'user',
     abortSignal: new AbortController().signal };
-  await runtime.prompt({ prompt: 'Retain the selected display order.' }, ctx);
+  await runtime.prompt({ prompt: originalText }, ctx);
   const state = sharedState.states.get(`main:${sid}`);
   registerPlanControl(api, { async openSpecPlanTarget(query) {
     return query.runId === state.nativeRunId && query.sessionId === sid && query.sessionKey === sessionKey
@@ -178,18 +208,17 @@ shadowMode: ${shadow}
 async function approvedFixture(t, options = {}) {
   const text = 'Retain the selected display order.', source = { ref: 'transcript:original', text };
   const identity = { ref: source.ref, sha256: sha256(text), start: 1, end: 1 };
-  const anchor = createOriginalSourceAnchor({ ...identity, bytes: Buffer.from(text) });
   const requiredAtoms = [{ source: identity, requirement: text }];let reviewMode = 'clean';
   const f = await fixture(t, { arm: false, proposalOnly: true, review: true, fullPlanReview: true,
     strictSources: [source], ...options,
     reviewer: async args => {
-      const snapshot = await readOpenSpecPlan(args.projectRoot, changeName), target = snapshot.documents.find(file => file.path.endsWith('/spec.md'));
       const findings = reviewMode === 'blocked' ? [{ ruleId:'AGENT-PLAN-CONFLICT',severity:'error',path:`${prefix}/design.md`,
         message:'The plan requires a conflicting default.',evidence:['The current review cannot accept this plan.'],suggestion:'Resolve the conflict.' }] : [];
       if(reviewMode==='unavailable')throw new Error('The independent reviewer is unavailable.');
       return { sessionId: 'prior-clean-plan', result: { summary: 'Reviewed the current complete plan.', findings, edits: [] },
-        originalRequirementCoverage: { schemaVersion: 1, scope: snapshot.documents,
-          rows: [{ source: anchor, requirement: text, disposition: 'COVERED', targets: [{ ...target, start: 4, end: 4 }] }] }, async close() {} };
+        // Other fake roles keep their prior result contract. In particular,
+        // an invalid Ground Truth result is not document coverage or a verified baseline.
+        ...(args.role === 'artifact-reviewer' ? await issuedFixtureCoverage(args, requiredAtoms) : {}), async close() {} };
     } });
   await f.edit(`${prefix}/proposal.md`, f.documents[`${prefix}/proposal.md`] + 'Preserve the documented public behavior.\n');
   const { selectApprovedPlanCoverage } = await import(pathToFileURL(path.join(pluginRoot, 'lib/openclaw/approved-plan-coverage.mjs')));
