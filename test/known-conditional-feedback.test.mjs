@@ -141,3 +141,50 @@ test('mixed known CURRENT and source-grounded SUPERSEDED preserve separate evide
   assert.deepEqual(handle.result.knownOriginalCoverage.items.map(item => item.disposition), ['CURRENT', 'SUPERSEDED']);
   assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
 });
+
+test('known CURRENT partial-read feedback exposes exact witness predicates and full read repairs in the same worker', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), rows = f.rows(objects);
+    const partial = (await tools.read(f.production, { offset: 2 })).details.citation.citeId;
+    const first = await tools.submit('finish_stop_review', { summary: 'Initial partial source observation.', knownObligations:
+      [{ ...rows[0], citeIds: [partial], conditionAssessment: assessment }] });
+    assert.equal(first.complete, false);
+    const diagnostic = first.pendingKnownOriginals[0].diagnostic;
+    assert.equal(diagnostic.code, 'REVIEW_CONDITION_EVIDENCE_UNAVAILABLE');
+    assert.equal(diagnostic.witnessReadiness.citations[0].citeId, partial);
+    assert.deepEqual(diagnostic.witnessReadiness.citations[0].targetFactsMissing, ['fullFile']);
+    const pending = await tools.submit('review_checklist', first.pendingNavigation.arguments);
+    const item = pending.items.find(item => item.id === rows[0].id);
+    assert(item.diagnostic.witnessReadiness.citations[0].targetFactsMissing.includes('fullFile'));
+    assert.equal(pending.readProofGranted, false); assert.equal(pending.semanticsVerified, false);
+    const current = (await tools.read(f.production)).details.citation.citeId;
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'Complete current activation source disclosed.', knownObligations:
+      [{ ...rows[0], citeIds: [current], conditionAssessment: assessment }] })).complete, true);
+  });
+  assert.equal(f.calls.length, 1); assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
+
+test('pending pagination retains every conditional witness diagnostic without granting proof or another repair', async t => {
+  const f = await fixture(t, { count: 3 });
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), partial = (await tools.read(f.production, { offset: 2 })).details.citation.citeId;
+    const rows = f.rows(objects).map(row => ({ ...row, citeIds: [partial], conditionAssessment: assessment }));
+    const first = await tools.submit('finish_stop_review', { summary: 'Partial sources remain uncertain.', knownObligations: rows });
+    assert.equal(first.complete, false); assert.equal(first.pendingKnownOriginalCount, 3);
+    assert(Buffer.byteLength(JSON.stringify(first.pendingKnownOriginals)) <= 1401);
+    let request = { ...first.pendingNavigation.arguments, limit: 1 }, seen = [];
+    while (request) {
+      const page = await tools.submit('review_checklist', request); assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+      for (const item of page.items) {
+        if (item.type !== 'KNOWN_ORIGINAL_OBLIGATION') continue;
+        assert(item.diagnostic.witnessReadiness.citations[0].targetFactsMissing.includes('fullFile')); seen.push(item.id);
+      }
+      request = page.next?.arguments ?? null;
+    }
+    assert.deepEqual(new Set(seen), new Set(rows.map(row => row.id)));
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'No complete activation witness was disclosed.', knownObligations: rows })).complete, true);
+  });
+  assert.equal(f.calls.length, 1); assert.equal(handle.result.knownOriginalCoverage.items.filter(row => row.disposition === 'UNVERIFIED').length, 3);
+  await handle.close();
+});
