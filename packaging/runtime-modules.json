@@ -3,6 +3,8 @@
   "common": [
     "lib/runtime-v2/environment-execution.mjs",
     "lib/runtime-v2/known-original-obligations.mjs",
+    "lib/runtime-v2/known-original-capacity.mjs",
+    "lib/runtime-v2/original-duty-publication.mjs",
     "lib/runtime-v2/implementation-challenge.mjs",
     "lib/runtime-v2/process-claims.mjs",
     "lib/runtime-v2/historical-order.mjs",
@@ -193,6 +195,7 @@
     "lib/openclaw/reviewer.mjs",
     "lib/runtime-v2/acceptance-feedback.mjs",
     "lib/openclaw/runtime.mjs",
+    "lib/runtime-v2/original-duty-artifact-publication.mjs",
     "lib/openclaw/document-review-bundle.mjs",
     "lib/openclaw/session-control.mjs",
     "lib/openclaw/session-projects.mjs",
