@@ -15,6 +15,9 @@ import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { admittedProjectScopes } from './support/openclaw-project-scope.mjs';
 import { skillGraphQuoteCandidate, observeScriptedSkillSourceReview } from './helpers/skill-source-interpretation.mjs';
 import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
+import { fixtureRuntimeHealth } from './support/fixture-deadline.mjs';
+// Transport fixture IO allowance; production hot cap and each review deadline remain active.
+const integrationHookIOBudgetMs = 30000;
 
 const execute = promisify(execFile);
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -170,7 +173,7 @@ reviewers:
   const prompt = 'Deliver design.md and follow the selected verification Skill.';
   await append({ role: 'user', content: prompt });
   const warnings = [], terminals = new Map(), sharedState = {}, witnesses = { m08: [], stop: [], artifacts: [], roles: [] };
-  const api = { id: 'runtime-corrector', pluginConfig: { hookTimeoutMs: 5000 },
+  const api = { id: 'runtime-corrector', pluginConfig: { hookTimeoutMs: integrationHookIOBudgetMs },
     config: { plugins: { entries: { autopilot: { enabled: false } } }, skills: { load: { extraDirs: [path.join(root, 'extra')] } } },
     logger: { warn: value => warnings.push(value), info() {} },
     runtime: { version: '2026.7.1-2', state: { resolveStateDir: () => path.join(root, 'host-state') },
@@ -273,7 +276,8 @@ reviewers:
     return { task, events: (await fs.readFile(file, 'utf8')).trim().split('\n').map(JSON.parse) };
   };
   return { root, runtime, api, warnings, witnesses, start, tool, write, verify, finish, post, journal, configure,
-    selectedSkill, originalSkill, setAutopilot: value => { autopilot = value; } };
+    selectedSkill, originalSkill, state: () => sharedState.states?.get(`main:${sessionId}`),
+    setAutopilot: value => { autopilot = value; } };
 }
 
 test('one native session preserves baseline, exec document review, exact duplicate Skill identity and original M08 through Stop', async t => {
@@ -309,6 +313,7 @@ for (const mode of ['assessment', 'until_pass']) for (const wake of ['done', 'un
       const { task, events } = await f.journal();
       t.diagnostic(JSON.stringify(await runtimeFailureDiagnostics({ task, events, post: f.post(),
         witnesses: f.witnesses, warnings: f.warnings })));
+      t.diagnostic(JSON.stringify(fixtureRuntimeHealth(f.state())));
     }
     assert.equal(f.post().phase, 'IDLE'); assert.equal(f.post().reviewStatus, 'NO_DEVIATION_FOUND');
     const reviewedBefore = f.witnesses.stop.length;

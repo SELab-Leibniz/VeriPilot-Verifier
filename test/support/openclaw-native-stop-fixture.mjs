@@ -50,7 +50,7 @@ export function createNativeStopFixture() {
     ({ readReport } = await import(pathToFileURL(path.join(pluginRoot, "lib/openclaw/report.mjs"))));
   });
   after(() => fs.rm(output, { recursive: true, force: true }));
-  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, setupHookTimeoutMs = 30000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write", observeModelStart = true } = {}) {
+  async function lifecycle(t, { failures = 0, deviation = false, review, quality = null, metrics = null, compatibility, waitMode = "assessment", waitTimeoutMs, hookTimeoutMs = 5000, setupHookTimeoutMs = 30000, executionTimeoutMs, postRunTerminal, baselineReview, awaitInitialReview = true, panelSize = 0, materialText, initialPrompt = true, initialToolName = "write", observeModelStart = true, fixtureDeadline = null } = {}) {
     const params = await basic(t), root = params.projectRoot;
     const materialFile = materialText === undefined ? null : path.join(root, "requirements.md");
     if (materialFile) await fs.writeFile(materialFile, materialText);
@@ -122,7 +122,7 @@ reviewers:
     // that deliberately retain initialization work or exercise the first tool
     // keep their exact original clock throughout that work.
     const setupBudget = awaitInitialReview && initialPrompt ? Math.max(hookTimeoutMs, setupHookTimeoutMs) : hookTimeoutMs;
-    const state = {}, hostAbort = new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs: setupBudget }, config: {}, logger: { warn(message) { warnings.push(message); } },
+    const state = {}, hostAbort = fixtureDeadline?.controller ?? new AbortController(), api = { id: "runtime-corrector", pluginConfig: { hookTimeoutMs: setupBudget }, config: {}, logger: { warn(message) { warnings.push(message); } },
       runtime: { version: "2026.7.1-2", state: { resolveStateDir: () => path.join(root, "host-state") }, agent: { session: { getSessionEntry: async () => ({ sessionId: "host", sessionFile: transcript }),
         resolveStorePath: () => path.join(root, "sessions.json"), resolveSessionFilePath: () => transcript,
         runWithWorkAdmission: async (params, run) => run(params.signal) }, runEmbeddedAgent() {} } } };

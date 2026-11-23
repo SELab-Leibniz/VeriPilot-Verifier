@@ -8,6 +8,7 @@ import { createOpenClawReviewerFactory } from "./helpers/legacy-openclaw-reviewe
 import { runInternalExecution } from "../lib/openclaw/internal-context.mjs";
 import { createNativeStopFixture, basic, deferred, pause, until, within } from "./support/openclaw-native-stop-fixture.mjs";
 import { runtimeFailureDiagnostics } from "./helpers/runtime-failure-diagnostics.mjs";
+import { createFixtureDeadline, fixtureRuntimeHealth } from "./support/fixture-deadline.mjs";
 
 const { lifecycle, findTask, withTaskState, readReport } = createNativeStopFixture();
 
@@ -135,14 +136,21 @@ test("first mutation aliases establish original MATERIAL before execution withou
   for (const initialToolName of ["PowerShell", "functions.powershell", "write_file", "functions.write_file", "exec_command",
     "functions.exec_command", "edit_file", "functions.notebook_edit", "Skill", "process"]) await t.test(initialToolName, async t => {
     const started = deferred(t), finish = deferred(t), original = "Preserve the original first-tool acceptance gate.\r\n";
-    const f = await lifecycle(t, { initialPrompt: false, initialToolName, awaitInitialReview: false,
-      panelSize: 1, materialText: original, baselineReview: async () => { started.resolve(); await finish.promise; } });
+    const fixtureDeadline = createFixtureDeadline(t, { timeoutMs: 30000 });
+    let baselineCallbacks = 0;
+    const f = await fixtureDeadline.wait(lifecycle(t, { initialPrompt: false, initialToolName, awaitInitialReview: false,
+      hookTimeoutMs: 30000, fixtureDeadline, panelSize: 1, materialText: original,
+      baselineReview: async () => { baselineCallbacks++; started.resolve(); await finish.promise; } }), "first-tool fixture entry");
     const before = await findTask({ projectRoot: f.root, sessionId: "host" });
     assert.equal((await readMaterialBasis(f.root, before.taskId)).status, "CAPTURED", JSON.stringify(f.warnings));
     assert.equal(f.state.nativeNeedsStop, true, "all correction entry tools must arm Stop");
-    await within(started.promise, "first-tool detached extraction");
+    await fixtureDeadline.wait(started.promise, "first-tool detached extraction", { state: f.state, work: f.state.hotReviewWork }).catch(async error => {
+      t.diagnostic(JSON.stringify({ ...fixtureRuntimeHealth(f.state), fixtureDeadlineExpired: fixtureDeadline.remaining() === 0 }));
+      await diagnoseBaselineWait(t, f, baselineCallbacks); throw error;
+    });
     await fs.writeFile(f.materialFile, "The first mutation replaced the original gate.\n");
-    const pending = f.state.hotReviewWork.promise; finish.resolve(); await within(pending, "first-tool freshness failure");
+    const pending = f.state.hotReviewWork.promise; finish.resolve();
+    await fixtureDeadline.wait(pending, "first-tool freshness failure");
     await f.runtime.toolResult({ toolName: initialToolName, toolCallId: "w", args: { path: "draft.md" },
       result: { content: [{ type: "text", text: "mutation completed" }] } }, f.ctx);
     const task = await findTask({ projectRoot: f.root, sessionId: "host" });
