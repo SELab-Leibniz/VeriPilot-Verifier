@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createOpenClawReviewerFactory } from '../lib/openclaw/reviewer.mjs';
+import { createReviewerAgentPool } from '../lib/openclaw/review-concurrency.mjs';
 import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
@@ -31,7 +32,7 @@ test('production Stop moves from a real stage scope to task completion using onl
   const api = { config: { agents: { defaults: { model: { primary: 'offline/model' } } } }, runtime: { version: '2026.7.1-2', agent: {} },
     registerTool: fn => { toolsFor = fn; }, on: (name, fn) => hooks.set(name, fn) };
   registerTaskTools(api);
-  const reviewerFactory = createOpenClawReviewerFactory(api, { runEmbeddedAgent: async params => {
+  const reviewerFactory = createOpenClawReviewerFactory(api, { reviewerAgentPool: createReviewerAgentPool(1), runEmbeddedAgent: async params => {
     assert.equal(params.config.agents.defaults.models['offline/model'].params.maxTokens, 32768);
     const brief = JSON.parse(params.prompt), tools = new Map(toolsFor(params).map(tool => [tool.name, tool])), reads = new Map();
     const read = async file => {

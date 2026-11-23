@@ -119,6 +119,12 @@
         "default": 3,
         "description": "Maximum concurrent post-run Stop reviews shared fairly by Sessions. Queue time is included in each review window."
       },
+      "agentConcurrency": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 32,
+        "description": "Optional Gateway-wide limit for concurrent RC private Agent runs, including requirement-frame workers, baseline extraction, and Stop reviewers. Queued runs keep their original deadlines."
+      },
       "finalizeReviewWaitMs": {
         "type": "integer",
         "minimum": 0,

@@ -30,7 +30,7 @@ async function scratch(t, beforeRemove) {
   return root;
 }
 
-async function fixture(t, { runner, signal } = {}) {
+async function fixture(t, { runner, signal, options } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-owned-settlement-')));
   const taskId = 'offline-settlement-task', calls = [], closes = [], cleanup = [];
   const nativeRunner = async params => {
@@ -42,7 +42,7 @@ async function fixture(t, { runner, signal } = {}) {
   nativeRunner.close = async (...args) => { closes.push(args); };
   const session = await createNativeTaskSession({ projectRoot: root, taskId,
     role: 'ground-truth-extractor', request: {}, reviewer: { timeoutMs: 20000 }, abortSignal: signal }, {
-    api: { runtime: { version: '2026.7.1-2', agent: {} } }, nativeRunner, selection,
+    api: { runtime: { version: '2026.7.1-2', agent: {} } }, nativeRunner, selection, options,
   });
   t.after(async () => {
     for (const release of cleanup) release();
@@ -73,6 +73,34 @@ test('owned settlement rejects an empty dispatch set even if another session is 
     role: 'ground-truth-extractor', ownerPid: process.pid, status: 'SETTLED', settledAt: Date.now() });
   await assert.rejects(f.session.awaitOwnedSettlement(), unverified);
   assert.equal(f.calls.length, 0);
+});
+
+test('cancellation while binding a native task closes the unlaunched dispatch receipt', async t => {
+  const controller = new AbortController();
+  const f = await fixture(t, { signal: controller.signal });
+  let runId;
+  await assert.rejects(f.session.run({ ...f.worker,
+    bindNative(native) {
+      runId = native.runId;
+      controller.abort(Object.assign(new Error('Cancelled before the host invocation'), { code: 'REVIEWER_CANCELLED' }));
+    },
+  }), { code: 'REVIEWER_CANCELLED' });
+  assert.equal(f.calls.length, 0);
+  assert.equal((await readJson(f.file(runId))).status, 'PRE_DISPATCH_CLOSED');
+  assert.deepEqual(await listNativeRuns(f.root, f.taskId), []);
+});
+
+test('cancellation at the last native launch check does not create a settled host run', async t => {
+  const controller = new AbortController();
+  const f = await fixture(t, { signal: controller.signal, options: { approvalBridge: {
+    bind() {
+      controller.abort(Object.assign(new Error('Cancelled at the native launch check'), { code: 'REVIEWER_CANCELLED' }));
+    },
+  } } });
+  await assert.rejects(f.session.run(f.worker), { code: 'REVIEWER_CANCELLED' });
+  assert.equal(f.calls.length, 0);
+  assert.equal((await readJson(f.file(f.session.runId))).status, 'PRE_DISPATCH_CLOSED');
+  assert.deepEqual(await listNativeRuns(f.root, f.taskId), []);
 });
 
 test('the barrier waits for an owned invocation and leaves the session open', async t => {

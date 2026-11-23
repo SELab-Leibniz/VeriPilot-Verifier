@@ -184,6 +184,7 @@
     "lib/openclaw/project-settings.mjs",
     "lib/openclaw/report.mjs",
     "lib/openclaw/review-activity.mjs",
+    "lib/openclaw/review-concurrency.mjs",
     "lib/openclaw/review-notice.mjs",
     "lib/openclaw/reviewer-policy.mjs",
     "lib/openclaw/reviewer-progress.mjs",

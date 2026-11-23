@@ -32,7 +32,7 @@ const ordinaryProposal = () => ({ guidance: [guidance('Use the existing default'
 const review = (item, decision = 'select') => ({ id: item.id, decision, reason: 'scripted' });
 const selectAll = items => ({ reviews: items.map(item => review(item)), finish: true });
 
-async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000,
+async function fixture(t, { repository = true, nativeHooks = false, enabled = true, proposers = 1, timeoutMs = 10000, pluginConfig = {},
   archive = true, shadowMode = false, inject = true, locale = 'en', workflowDocument = false, nativePromptBeforePersist = false,
   checks = false, stopPolicy = '', files = {}, propose = ordinaryProposal, check = () => ({ checks: [] }), select = selectAll, challenge = () => ({ guidance: [], scenarios: [] }), afterSubmission = async () => {} } = {}) {
   const projectRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-frame-test-')));
@@ -86,7 +86,7 @@ reviewers:
   const validator = process.env.RC_OPENCLAW_HOST_ROOT ? await loadPublicToolArgumentsValidator() : null;
   let toolFactory, turn = 0;
   const api = {
-    config: {}, pluginConfig: {},
+    config: {}, pluginConfig,
     logger: { warn: text => warnings.push(text) }, registerTool: factory => { toolFactory = factory; },
     runtime: { version: '2026.7.1-2', state: { resolveStateDir: () => path.join(projectRoot, 'host-state') },
       agent: { resolveAgentWorkspaceDir: () => projectRoot,
@@ -188,6 +188,34 @@ test('1. explicitly converges all candidates before sorting and renumbering', as
       kind === 'proposal' ? 'submit_frame_proposal' : 'submit_frame_selection']);
   }
   assert.equal((await fs.readdir(path.join(f.dir, 'raw'))).length, 5);
+});
+
+test('the Gateway Agent limit bounds concurrent proposers without reducing the proposal count', { timeout: 15000 }, async t => {
+  let release, twoStarted, running = 0, peak = 0;
+  const ready = new Promise(resolve => { twoStarted = resolve; });
+  const batch = new Promise(resolve => { release = resolve; });
+  t.after(() => release());
+  const f = await fixture(t, { proposers: 3, timeoutMs: 14000, pluginConfig: { agentConcurrency: 2 },
+    async propose({ ordinal }) {
+      peak = Math.max(peak, ++running);
+      if (running === 2) twoStarted();
+      try {
+        await batch;
+        return { guidance: [guidance(`Preserve original behavior ${ordinal}`)], scenarios: [] };
+      } finally { running--; }
+    },
+  });
+  await f.prompt();
+  await ready;
+  await delay(75);
+  assert.equal(f.calls.length, 2);
+  release();
+  const frame = await f.frame();
+  assert.equal(peak, 2);
+  assert.equal(frame.status, 'ready');
+  assert.equal(frame.proposalReview.completed, 3);
+  assert.equal(frame.proposalReview.total, 3);
+  assert.equal(frame.guidance.length, 3);
 });
 
 test('2. drops unsupported ranges, quotes, fields and guidance over 4000 characters before selection', async t => {
