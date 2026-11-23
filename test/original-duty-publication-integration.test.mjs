@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import childProcess from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -81,8 +82,14 @@ test.after(() => {
 // Execute the exact private pinned production closure, not a test rewrite of
 // its invokeFork adapter. Proposal-review policy is absent in this fixture, so
 // the actual artifactProposalBinding takes its normal no-extra-policy branch.
-const runtimeSource = await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8');
-assert.equal(sha256(runtimeSource), '74bfff042a3360f6e3934a2792edccb327bbadf4d64ddc960d2c1d50897b92b7');
+function pinRuntimeSource(source) {
+  // Git checkouts may use CRLF. Pin and extract the same canonical LF text;
+  // every other byte remains covered by the original committed-source hash.
+  const runtimeSource = source.replace(/\r\n/gu, '\n');
+  assert.equal(sha256(runtimeSource), '74bfff042a3360f6e3934a2792edccb327bbadf4d64ddc960d2c1d50897b92b7');
+  return runtimeSource;
+}
+const runtimeSource = pinRuntimeSource(await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8'));
 const productionLegacyBlock = runtimeSource.slice(runtimeSource.indexOf('  async function artifactProposalBinding('),
   runtimeSource.indexOf('  async function finalizeScopedArtifact('));
 assert(productionLegacyBlock.includes('? bindHostOriginalCoverage(handle.originalRequirementCoverage, cohortContext, publicationCurrent)'));
@@ -90,7 +97,7 @@ const productionLegacyReview = new Function('runSemanticReview', 'captureOrigina
   'originalDutyPublicationCurrent', 'bindHostOriginalCoverage', 'REVIEW_SCHEMA', 'isDeepStrictEqual',
   'pluginRoot', 'readOpenSpecPlan', 'cloneHostLegacyOriginalCoverage', 'originalDutyContextFromCapture', productionLegacyBlock + '\nreturn semanticArtifactReview;')(
   runSemanticReview, captureOriginalDutyPublication, originalDutyPublicationCurrent, bindHostOriginalCoverage,
-  REVIEW_SCHEMA, isDeepStrictEqual, path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), readOpenSpecPlan,
+  REVIEW_SCHEMA, isDeepStrictEqual, path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), readOpenSpecPlan,
   cloneHostLegacyOriginalCoverage, originalDutyContextFromCapture);
 
 const baseDuties = [
@@ -706,7 +713,7 @@ async function coalescedPreparations(f, { nativeV2 = false } = {}) {
     artifactCorrection: { originalRequirementsEnabled: true, groundTruthReviewEnabled: nativeV2, stageMetricsEnabled: false },
     limits: { semanticReviewTimeoutMs: 5000 },
     output: { mode: 'centralized', directory: '.runtime-correction/offline-results' } };
-  const pluginRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const documentOwner = () => ({ runId: f.state.nativeRunId, taskId: f.state.scopeTaskId, sessionId: f.state.sessionId,
     scopeFingerprint: f.state.projectScope.fingerprint, enabledRevision: f.state.enabledRevision, proposalPolicy: null });
   const entries = [];
@@ -837,4 +844,18 @@ test('host review cloning retains the private current guard and rejects stale ow
   assert.equal(hostOriginalCoverageCurrent(copy.originalRequirementCoverage), false);
   assert.throws(() => cloneHostOriginalReview(completed.semanticReview), { code: 'DOCUMENT_ORIGINAL_DUTY_HOST_REVIEW_INVALID' });
   assert.throws(() => cloneHostOriginalReview(copy), { code: 'DOCUMENT_ORIGINAL_DUTY_HOST_REVIEW_INVALID' });
+});
+
+test('canonical runtime pin accepts CRLF before extraction and rejects a content mutation', () => {
+  const crlf = runtimeSource.replace(/\n/gu, '\r\n');
+  assert.equal(sha256(crlf), '45b96284af4ed9abeec7d2bbd7d21c90cae82d3b86486fd1e6272ba2632891cb');
+  const canonical = pinRuntimeSource(crlf);
+  assert.equal(canonical, runtimeSource);
+  assert.equal(canonical.slice(canonical.indexOf('  async function artifactProposalBinding('),
+    canonical.indexOf('  async function finalizeScopedArtifact(')), productionLegacyBlock);
+  assert.equal(canonical.slice(groupsStart, groupsEnd), productionGroupsBlock);
+  assert.equal(canonical.slice(publicationStart, publicationEnd), productionPublicationBlock);
+  const changed = crlf.replace('async function semanticArtifactReview(', 'async function semanticArtifactReviewChanged(');
+  assert.notEqual(changed, crlf);
+  assert.throws(() => pinRuntimeSource(changed), { code: 'ERR_ASSERTION' });
 });

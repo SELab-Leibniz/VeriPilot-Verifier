@@ -3471,7 +3471,7 @@
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "privateOriginalDutyPrototype": {
-    "status": "COMPOSED_LOCAL_REGRESSION_PASS_AWAITING_FINAL_CI_AND_PACKAGE",
+    "status": "COMPOSED_LOCAL_REGRESSION_AND_PRIVATE_PACKAGE_STOCK_PASS_AWAITING_NEW_WINDOWS_CI_AND_REAL_MODEL_UPTAKE",
     "candidate": ".runtime-correction/validation/original-duty-v8b-legacy-compat-w4k7n2mz",
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
@@ -3500,7 +3500,7 @@
     "sourceRepair": "Preserve genuine host-issued unbound diagnostic coverage without granting duty authority, gate staging on valid current context, and replace unissued strict-fixture coverage with actual host verification.",
     "canonicalArchiveUnchanged": true,
     "rootSourceIntegratedLocally": true,
-    "packageStockQualified": false,
+    "packageStockQualified": true,
     "sourceBaselineCommit": "a96512c997322ea4c0b8ed1e72fb5e27fdb6d759",
     "latestFocusedQualification": {
       "passed": 225,
@@ -3529,19 +3529,75 @@
     "experimentalSourceCandidate": true,
     "privatePrototype": false,
     "currentRegressionResolution": {
-      "path": ".runtime-correction/validation/root-f42-fixture-resolution-6oz7ofqd/resolution.json",
-      "kind": "COMPOSED_FULL_PLUS_THREE_CHANGED_FIXTURES",
+      "path": ".runtime-correction/validation/root-windows-duty-resolution-zvtkw4pq/resolution.json",
+      "kind": "COMPOSED_FULL_PLUS_THREE_CORRECTED_AND_TWO_PORTABILITY_FIXTURES",
       "filesCovered": 403,
       "correctedFileChecks": 42,
       "resolvedTotals": {
+        "tests": 5122,
+        "pass": 5089,
+        "fail": 0,
+        "skipped": 33
+      },
+      "singleFullRunOnFinalCommit": false,
+      "productionCodeChangedByFixtureFixes": false,
+      "preWindowsPortabilityTotals": {
         "tests": 5121,
         "pass": 5088,
         "fail": 0,
         "skipped": 33
       },
-      "singleFullRunOnFinalCommit": false,
-      "productionCodeChangedByFixtureFixes": false
+      "portabilityFix": {
+        "paths": [
+          "test/original-duty-publication-integration.test.mjs",
+          "test/original-duty-legacy-coverage.test.mjs"
+        ],
+        "qualification": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/qualification.json",
+        "sha256": "2adac5bab2b8a6c58187f445aa2e73cb5d99334e180c92fdd7478a49bad4ee20",
+        "actual": "590544/session82877 ->d34f32/0 CLOSED",
+        "pass": 192,
+        "newUniqueCase": 1,
+        "productionChanges": false,
+        "actualWindowsExecution": false
+      },
+      "portabilityCompanion": ".runtime-correction/validation/root-windows-duty-resolution-zvtkw4pq/resolution.json",
+      "priorResolutionPath": ".runtime-correction/validation/root-f42-fixture-resolution-6oz7ofqd/resolution.json"
     },
-    "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f"
+    "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f",
+    "latestNaturalCi": {
+      "sourceCommit": "84f345c9f08714e04e2b4d4ddb7406269d87925e",
+      "runId": 45134005374,
+      "attempt": 1,
+      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD2_TEST_LOAD_FAILURE",
+      "failedFile": "test/original-duty-publication-integration.test.mjs",
+      "cause": "Exact runtime CRLF checkout hash differs from canonical LF pin; source guard test-only fix locally qualified.",
+      "fixedCommitNaturalCi": "PENDING",
+      "noRerunCancelDispatch": true
+    },
+    "privateReplacementArchive": {
+      "path": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/committed-release/runtime-corrector-openclaw-1.10.0.tgz",
+      "sha256": "248b30b0bd01fd0725c1d05f1fa8171c7d52e58506e5e6378d4bbd10e8acaba9",
+      "builtFromCommit": "84f345c9f08714e04e2b4d4ddb7406269d87925e",
+      "regularFiles": 281,
+      "runtimeModules": 213,
+      "buildActual": "cfc257/session62017 ->907e47/0 CLOSED",
+      "artifactChecksEachNode": 17,
+      "stockActual": "277500/session80675 ->283322/0 CLOSED",
+      "stockReceipt": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/stock/receipt.json",
+      "stockReceiptSha256": "59046f8e045d5182aebc1c78593abccbd5dc90a04477a5ff5949cff7fc1ce498",
+      "stockStatus": "CREDENTIAL_FREE_INSTALL_LOAD_OBSERVED",
+      "scope": "Eligible and null-context tool/prompt surfaces only; no new bound-worker or model uptake.",
+      "promoted": false,
+      "inheritsCanonicalRealModelEvidence": false
+    },
+    "reportQa": {
+      "path": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/report-qa/capture/receipt.json",
+      "sha256": "8e60637e7382c3ea615efdd8023acefb5748e71d546e7d2b01f9987aa4d4b372",
+      "htmlSha256": "c20ad6b1628ba27a793ee7c04153ec4502b7885bdb7edd0a00640eb189685e93",
+      "actual": "53ae8c/session88885 ->86bd74/0 CLOSED",
+      "views": 4,
+      "rootInspected": "candidate-package-zh-CN-390.png",
+      "externalLinks": 0
+    }
   }
 }

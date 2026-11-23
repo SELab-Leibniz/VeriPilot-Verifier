@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import childProcess from 'node:child_process';
 import net from 'node:net';
 import http from 'node:http';
@@ -235,7 +236,7 @@ test('nativeV2 source forwarding accepts canonical workspace aliases and preserv
 test('exact ordinary unbound production callback preserves diagnostic coverage without inventing task or run authority', async t => {
   const f = await fixture(t), state = { ...f.state, scopeTaskId: undefined, nativeRunId: undefined };
   assert.equal(originalDutyContextFromCapture(captureOriginalDutyPublication(state)), null);
-  const source = await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8');
+  const source = (await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8')).replace(/\r\n/gu, '\n');
   const start = source.indexOf('  async function artifactProposalBinding('), end = source.indexOf('  async function finalizeScopedArtifact(', start);
   assert(start >= 0 && end > start);
   const execute = new Function('runSemanticReview', 'captureOriginalDutyPublication', 'originalDutyPublicationCurrent',
@@ -243,7 +244,7 @@ test('exact ordinary unbound production callback preserves diagnostic coverage w
     'isDeepStrictEqual', 'pluginRoot', 'hash', source.slice(start, end) + '\nreturn semanticArtifactReview;')(
     runSemanticReview, captureOriginalDutyPublication, originalDutyPublicationCurrent, originalDutyContextFromCapture,
     bindHostOriginalCoverage, cloneHostLegacyOriginalCoverage, REVIEW_SCHEMA, isDeepStrictEqual,
-    path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), value => sha256(value).slice(0, 24));
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), value => sha256(value).slice(0, 24));
   let calls = 0, closed = 0;
   const reviewerFactory = async options => {
     calls++; assert.equal(options.evidence.originalDutyCohortContext, null);
