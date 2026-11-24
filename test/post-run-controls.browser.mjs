@@ -12,6 +12,7 @@ import { nativeStopReviewDirectory } from "../lib/openclaw/native-stop-review.mj
 import { recordNativeRun } from "../lib/openclaw/native-runs.mjs";
 import { ensureTask, taskDirectory } from "../lib/runtime-v2/task-store.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+import { CHECKS, CONSOLE, DETAILS, PHASES, STATUS } from "../lib/openclaw/ui/status-copy.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.RC_PLAYWRIGHT ?? "playwright");
@@ -118,9 +119,11 @@ try {
   const select = name => page.locator("#sessions").getByRole("link", { name: new RegExp("^" + name + "\\b", "u") }).click();
   await page.goto("http://127.0.0.1:" + server.address().port + "/plugins/runtime-corrector?sessionKey=agent:main:alpha&sessionId=alpha");
   await page.getByRole("button", { name: "连接", exact: true }).click();
-  await page.waitForFunction(() => document.querySelector("#phase").textContent === "RC 正在终审 · 新消息暂不可发送");
-  assert.match(await page.locator("#activities").innerText(), /终审/u);
-  assert.match(await page.locator("#round-status").innerText(), /终审/u);
+  await page.waitForFunction(text => document.querySelector("#phase").textContent === text, STATUS.reviewing.text);
+  assert.equal(await page.title(), CONSOLE.title);
+  assert.equal(await page.locator("#preview-title").innerText(), CONSOLE.previewTitle);
+  assert.equal(await page.locator("#activities").innerText(), CHECKS["stop-reviewer"]);
+  assert.equal(await page.locator("#round-status").innerText(), PHASES.REVIEWING);
   assert.equal(await page.locator("#agent-status").innerText(), "正在运行");
   await page.waitForFunction(() => document.querySelector("#repair-runs").textContent.includes("rc-stop-exact-alpha"));
   assert.match(await page.locator("#repair-runs").innerText(), /已结束 · 无偏差/u);
@@ -136,19 +139,20 @@ try {
   assert.match(await page.locator("#review-details").innerText(), /Preserve export/u);
   assert.match(await page.locator("#review-details").innerText(), /Apply filter/u);
   assert.match(await page.locator("#review-details").innerText(), /Retain stable ordering/u);
-  assert.match(await page.locator("#phase").innerText(), /正在终审/u);
+  assert.equal(await page.locator("#phase").innerText(), STATUS.reviewing.text);
   assert.equal(await page.locator("#terminate").isVisible(), false);
   assert.match(await page.locator("#repair-status").innerText(), /暂无下一轮修复输入/u);
   await page.getByRole("link", { name: "查看这个会话最近注入的简报" }).click();
-  await page.waitForFunction(() => document.querySelector("#outcome").textContent === "终审中");
+  await page.waitForFunction(text => document.querySelector("#outcome").textContent === text, DETAILS.review.reviewing);
   assert.equal(await page.getByRole("button").count(), 2);
   alphaInputMode = "HOST_DEFAULT";
   await page.getByRole("button", { name: "刷新状态" }).click();
   await page.waitForFunction(() => document.querySelector("#query-status").textContent.includes("已重新查询状态"));
-  assert.equal(await page.locator("#phase").innerText(), "RC 正在终审");
+  assert.equal(await page.locator("#phase").innerText(), STATUS.reviewing.text);
   assert.deepEqual(refreshes.map(target => [target.sessionKey, target.sessionId]), [["agent:main:alpha", "alpha"]]);
   await select("beta");
-  await page.waitForFunction(() => document.querySelector("#phase").textContent.includes("评审产物"));
+  await page.waitForFunction(text => document.querySelector("#phase").textContent === text,
+    STATUS.background.text.replace("{check}", CHECKS["artifact-reviewer"]));
   assert.doesNotMatch(await page.locator("#phase").innerText(), /新消息暂不可发送/u);
   assert.doesNotMatch(await page.locator("#repair-runs").innerText(), /rc-stop-exact-alpha/u);
   assert.equal(await page.locator("#brief").isVisible(), false);

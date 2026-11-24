@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { relayNativeReviewActivity, reviewProgressText } from "../lib/openclaw/review-activity.mjs";
+import { BRAND } from "../lib/openclaw/ui/status-copy.mjs";
 
 function fixture({ deadlineAt = Date.now() + 1200000, controller = new AbortController(), role = 'onboarding-extractor', labelRole = role } = {}) {
   let activity, events;
@@ -34,7 +35,7 @@ test('baseline phase changes use a compact UI event only and repeated phase call
   f.close.stage('EXTRACTING'); assert.equal(f.visible.length, count);
   f.close.stage('CANDIDATE_COMPLETE');
   const visible = JSON.stringify(f.visible);
-  assert(visible.includes('RC · 整理基线')); assert(visible.includes('RC · 基线待校验'));
+  assert(visible.includes(`${BRAND} · 整理基线`)); assert(visible.includes(`${BRAND} · 基线待校验`));
   assert(f.visible.every(event => event.stream === 'tool'));
   f.controller.abort(); const stopped = f.visible.length;
   f.close.stage('READING'); c.advance(60000); assert.equal(f.visible.length, stopped); assert.equal(c.pending, 0);

@@ -163,6 +163,7 @@
     "lib/openclaw/evidence.mjs",
     "lib/openclaw/hook-timeout.mjs",
     "lib/openclaw/repair-step-budget.mjs",
+    "lib/openclaw/repair-run-id.mjs",
     "lib/openclaw/host-setup.mjs",
     "lib/openclaw/interaction-router.mjs",
     "lib/openclaw/interaction-store.mjs",
@@ -217,6 +218,7 @@
     "lib/openclaw/transcript.mjs",
     "lib/openclaw/transient-model.mjs",
     "lib/openclaw/ui-progress.mjs",
+    "lib/openclaw/ui/status-copy.mjs",
     "lib/runtime-v2/baseline-task.mjs"
   ]
 }

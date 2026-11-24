@@ -85,13 +85,15 @@ const stopped = await terminateSessionCorrection(
 
 单会话方法接受 `projectRoot`、`sessionKey`、`sessionId` 和可选 `agentId`。明细接受该会话的当前或历史 `roundId`，传 `null` 时读取当前或最近有记录的一轮。终止需要传入当前查询得到的 `roundId`。后台核对宿主当前的会话实例和项目。嵌入宿主的 RC 代码可通过 `runtime.sessionRuntime.get/refresh/terminate` 读取和控制会话。
 
-访问 `/plugins/runtime-corrector/`。左侧列出已登记的纠偏会话，右侧显示所选会话的纠偏运行、Agent 活动和 MA 状态栏预览。「刷新状态」会重读会话列表并核对当前所选会话。
+访问 `/plugins/runtime-corrector/`。左侧列出已登记的纠偏会话，右侧显示所选会话的纠偏运行、Agent 活动和输入框状态栏预览。「刷新状态」会重读会话列表并核对当前所选会话。
 
 「查看轮次」使用已有的轮次状态、终审记录、简报送达和修复启动回执。会话状态文件保存轮次和整体阶段。终审期间控制台按宿主轮次读取已保存的审查范围和逐项回执，显示无偏差、有偏差、未验证以及已选入但尚无判定的未审项。终审完成后显示已发布的评估记录。旧记录缺少审查范围或逐项判定时，页面会说明记录情况。每轮简报显示送达时间、渠道和已保存的正文，同一会话也可跳转至最近一次送达。
 
 自动修复沿用原宿主会话，按启动记录显示来源并可跳转至修复轮。原始轮也会显示已经核对的修复输入。修复请求使用启动引用时，核对模型已启动且反馈正文与启动凭据一致后显示正文。「停止本轮纠偏」用于宿主当前仍可终止的轮次。
 
-状态查询的 `inputMode` 描述同一宿主会话的新消息准入。`HOST_DEFAULT` 沿用 MA 规则，`WAIT` 表示 RC 当前轮持有续跑机会。状态栏使用 `display.line`。MA 在提交时由宿主再次核对，并在返回等待时保留草稿。
+状态查询的 `inputMode` 描述同一宿主会话的新消息准入。`HOST_DEFAULT` 沿用 MA 规则，`WAIT` 表示 RC 当前轮持有续跑机会。MA 在提交时由宿主再次核对，并在返回等待时保留草稿。
+
+状态栏读取 `display`。`display.key` 是状态名，`display.line` 是完整的一行文字，前端不再追加内容；状态名为 `hidden` 时 `line` 为 `null`，不显示状态行。`display.indicator` 取 `running`、`waiting`、`passed` 或 `idle`，决定圆点样式。`display.working` 表示当前是否有纠偏 Agent 在运行，未知时为 `null`。判定规则在 `lib/openclaw/session-runtime-text.mjs`，文案在 `lib/openclaw/ui/status-copy.mjs`。
 
 ## 终止的准确范围
 

@@ -81,10 +81,13 @@ test("control route serves only packaged assets and verified browser-client capa
     return { ...res, headers };
   }
   const page = (await get("/")).body;
-  assert.match(page, /MA 输入框状态栏预览/u);
+  assert.match(page, /id="preview-title"/u);
   assert.match(page, /停止本轮纠偏/u);
-  assert.doesNotMatch(page, /加入待办|安全解除/u);
+  assert.doesNotMatch(page, /加入待办|安全解除|RC|MA 输入框/u);
   assert.match((await get("/post-run.mjs")).body, /runtime-corrector\.runtime\.terminate/u);
+  const copy = await get("/status-copy.mjs");
+  assert.equal(copy.headers["Content-Type"], "text/javascript");
+  assert.match(copy.body, /export const CONSOLE/u);
   assert.equal(JSON.parse((await get("/capabilities.json")).body).browserClient, "/assets/native-client.js");
   assert.equal((await get("/../runtime.mjs")).statusCode, 404);
   assert.equal((await get("/", "POST")).statusCode, 405);

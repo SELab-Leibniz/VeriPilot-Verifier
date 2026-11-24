@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RC 会话控制台</title>
+  <title></title>
   <link rel="stylesheet" href="/plugins/runtime-corrector/post-run.css">
 </head>
 <body>
 <main>
-  <h1>RC 会话控制台</h1>
+  <h1 id="page-title"></h1>
   <section id="connect-form" aria-label="连接宿主">
     <label for="token">Gateway 凭据</label>
     <input id="token" type="password" autocomplete="off" placeholder="已完成设备认证时可留空">
@@ -37,8 +37,8 @@
       <h2 id="name"></h2>
       <p id="project" class="muted"></p>
     </header>
-    <section class="preview" aria-label="MA 输入框状态栏预览">
-      <h3>MA 输入框状态栏预览</h3>
+    <section class="preview" aria-labelledby="preview-title">
+      <h3 id="preview-title"></h3>
       <p id="phase" role="status"></p>
     </section>
     <p id="switches" class="muted"></p>
