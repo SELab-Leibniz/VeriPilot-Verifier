@@ -205,6 +205,78 @@ test('frames are immutable and exactly one explicit resolution correction is ret
   assert.equal(saved.frames[0].resolutions.length, 2);
 });
 
+test('initial challenge appraisal explains why correctionReason must be omitted', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), frame = await f.frame(tools, p);
+    await assert.rejects(f.resolved(tools, p, frame.challengeId, 'UNRESOLVED', 'There is no prior appraisal to correct.'),
+      { code: 'IMPLEMENTATION_CHALLENGE_INVALID', message: /initial RESOLVE appraisal must omit correctionReason/ });
+    const first = await f.resolved(tools, p, frame.challengeId, 'UNRESOLVED');
+    assert.equal(first.correctionRemaining, true);
+    assert.match(first.correctionInstruction, /review_implementation_challenge with phase RESOLVE for the same challengeId/);
+    assert.match(first.correctionInstruction, /substantive correctionReason/);
+    assert.match(first.correctionInstruction, /Keep uncertainty/);
+    await f.finish(tools, first);
+  });
+  const saved = JSON.parse(await fs.readFile(path.join(handle.artifacts, 'implementation-challenges.json')));
+  assert.equal(saved.frames[0].resolutions.length, 1);
+  assert.equal(saved.frames[0].resolutions[0].appraisal.correctionReason, undefined);
+  assert.equal(handle.result.unverifiedItems.length, 1, 'correction guidance does not clear an unresolved challenge');
+});
+
+test('missing correctionReason leaves the correction available with actionable sampled-tool guidance', async t => {
+  const f = await fixture(t, { sampled: true });
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), frame = await f.frame(tools, p);
+    const schema = tools.tools.get('review_implementation_challenge').parameters;
+    const first = await f.resolved(tools, p, frame.challengeId, 'UNRESOLVED');
+    await assert.rejects(f.resolved(tools, p, frame.challengeId, 'REFUTED'), error => {
+      assert.equal(error.code, 'IMPLEMENTATION_CHALLENGE_INVALID');
+      assert.match(error.message, /A correction is still available/);
+      assert.match(error.message, /phase RESOLVE for the same challengeId.*substantive correctionReason/);
+      assert.doesNotMatch(error.message, /already been used/);
+      return true;
+    });
+    assert.match(schema.properties.resolutions.items.properties.correctionReason.description,
+      /including UNRESOLVED.*same challengeId.*correctionReason/);
+    const index = await tools.submit('review_implementation_challenge', { phase: 'INSPECT' });
+    assert.equal(index.items[0].latestReceiptId, first.receiptId);
+    assert.equal(index.items[0].correctionRemaining, 1);
+    const corrected = await f.resolved(tools, p, frame.challengeId, 'REFUTED', 'The current cited step resolves the earlier uncertainty.');
+    assert.notEqual(corrected.receiptId, first.receiptId);
+    assert.equal(corrected.correctionRemaining, false);
+    assert.equal(corrected.correctionInstruction, undefined);
+    await f.finish(tools, corrected);
+  });
+  const saved = JSON.parse(await fs.readFile(path.join(handle.artifacts, 'implementation-challenges.json')));
+  assert.equal(saved.frames[0].resolutions.length, 2);
+  assert.equal(saved.frames[0].resolutions[0].appraisal.assessment, 'UNRESOLVED');
+  assert.equal(saved.frames[0].resolutions[1].appraisal.assessment, 'REFUTED');
+  assert.equal(handle.reviewCompleted, true);
+});
+
+test('an exhausted challenge correction reports the used allowance and retains the latest receipt', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const p = await f.prepare(tools), frame = await f.frame(tools, p);
+    await f.resolved(tools, p, frame.challengeId, 'UNRESOLVED');
+    const reason = 'The current cited step resolves the earlier uncertainty.';
+    const corrected = await f.resolved(tools, p, frame.challengeId, 'REFUTED', reason);
+    for (const correctionReason of [undefined, 'A further changed appraisal.'])
+      await assert.rejects(f.resolved(tools, p, frame.challengeId, 'COUNTEREXAMPLE', correctionReason),
+        { code: 'IMPLEMENTATION_CHALLENGE_INVALID', message: /one explicit correction has already been used.*Prior appraisal records remain retained/ });
+    assert.equal((await f.resolved(tools, p, frame.challengeId, 'REFUTED', reason)).receiptId, corrected.receiptId,
+      'retrying the unchanged saved appraisal does not spend another correction');
+    const index = await tools.submit('review_implementation_challenge', { phase: 'INSPECT' });
+    assert.equal(index.items[0].latestReceiptId, corrected.receiptId);
+    assert.equal(index.items[0].correctionRemaining, 0);
+    await f.finish(tools, corrected);
+  });
+  const saved = JSON.parse(await fs.readFile(path.join(handle.artifacts, 'implementation-challenges.json')));
+  assert.equal(saved.frames[0].resolutions.length, 2);
+  assert.equal(handle.reviewCompleted, true);
+});
+
 test('a retained prior receipt cannot clear a corrected challenge', async t => {
   const f = await fixture(t);
   const handle = await f.run(async tools => {

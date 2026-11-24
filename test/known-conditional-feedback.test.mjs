@@ -67,6 +67,7 @@ async function fixture(t, { count = 1, conditional = true, long = false, amendme
       ...(conditional && !(amendment && i === 1) ? { applicability: windowTrigger ? 'A later operation occurred.' : 'Streaming is enabled.' } : {}), knownCandidateId: f.candidates[i].id,
       knownDutyReason: long ? 'The exact original duty line is the complete retained stream obligation, including all boundary and ordering cases. '.repeat(3) : 'The original line states the complete retained duty.',
       citeId: originalId, lineStart: i + 2, lineEnd: i + 2 })), scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+    f.initialChecklistPage = page;
     return requirements.map(text => page.items.find(item => item.description === text));
   };
   f.rows = objects => f.candidates.map((candidate, i) => ({ id: candidate.id, disposition: 'CURRENT', objectId: objects[i].objectId,
@@ -204,6 +205,43 @@ test('pending pagination retains every conditional witness diagnostic without gr
   await handle.close();
 });
 
+
+test('the first checklist guides optional readiness and genuine missing-range reads before first finish', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), page = f.initialChecklistPage;
+    assert.match(page.evidenceReadinessInstruction, /Before first finish.*review_checklist with evidenceReadiness/);
+    assert.match(page.evidenceReadinessInstruction, /actual objectId.*current source_read citation IDs/);
+    assert.match(page.evidenceReadinessInstruction, /optional query grants no assessment or read proof/);
+    assert.match(page.evidenceReadinessInstruction, /unsupported process-window conclusions UNVERIFIED/);
+    assert.equal(JSON.stringify(page).split('evidenceReadinessInstruction').length - 1, 1);
+    assert(objects.every(item => item.readinessNavigation === undefined), 'No per-item empty-citation call is added.');
+    const { evidenceReadinessInstruction, ...priorShape } = page;
+    const bytes = Buffer.byteLength(JSON.stringify(page)) - Buffer.byteLength(JSON.stringify(priorShape));
+    t.diagnostic(`CHECKLIST_READINESS_GUIDANCE_BYTES ${JSON.stringify({ addedBytes: bytes, itemCount: page.items.length })}`);
+    assert(bytes < 640, 'One shared guide has constant bounded transport cost.');
+    const partial = (await tools.read(f.production, { offset: 2 })).details.citation.citeId;
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [partial], conditionAssessment: assessment } };
+    const preview = await tools.submit('review_checklist', query);
+    assert.equal(preview.readProofGranted, false); assert.equal(preview.assessmentGranted, false);
+    assert.deepEqual(preview.witnessReadiness.citations[0].targetFactsMissing, ['fullFile']);
+    assert.equal((await tools.submit('review_checklist', query)).citations[0].fullFile, false,
+      'Guidance and repeated preview do not acknowledge the missing source.');
+    for (const action of preview.readPlan) {
+      tools.advance(); const toolCallId = crypto.randomUUID();
+      const result = await tools.tools.get(action.tool).execute(toolCallId, action.arguments);
+      tools.params.onAgentToolResult({ toolName: action.tool, result, isError: false });
+      tools.hooks.get('tool_result_persist')({ toolName: action.tool, toolCallId, isSynthetic: false,
+        message: { role: 'toolResult', toolName: action.tool, toolCallId, isError: false, content: result.content } }, tools.params);
+    }
+    const repaired = await tools.submit('review_checklist', query);
+    assert.equal(repaired.citations[0].fullFile, true); assert.equal(repaired.readPlan.length, 0);
+    assert.equal(repaired.assessmentGranted, false);
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'The first finish follows genuine source receipts.',
+      knownObligations: [{ ...f.rows(objects)[0], citeIds: [partial], conditionAssessment: assessment }] })).complete, true);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
 
 test('early readiness exposes exact missing ranges and cumulative disclosure without granting an assessment', async t => {
   const f = await fixture(t);

@@ -86,7 +86,7 @@ function pinRuntimeSource(source) {
   // Git checkouts may use CRLF. Pin and extract the same canonical LF text;
   // every other byte remains covered by the original committed-source hash.
   const runtimeSource = source.replace(/\r\n/gu, '\n');
-  assert.equal(sha256(runtimeSource), '74bfff042a3360f6e3934a2792edccb327bbadf4d64ddc960d2c1d50897b92b7');
+  assert.equal(sha256(runtimeSource), 'b281d66c28e237b33e0c0937379107723b1840c5cbf3be8ba780d16ff66df0ad');
   return runtimeSource;
 }
 const runtimeSource = pinRuntimeSource(await fs.readFile(new URL('../lib/openclaw/runtime.mjs', import.meta.url), 'utf8'));
@@ -95,10 +95,10 @@ const productionLegacyBlock = runtimeSource.slice(runtimeSource.indexOf('  async
 assert(productionLegacyBlock.includes('? bindHostOriginalCoverage(handle.originalRequirementCoverage, cohortContext, publicationCurrent)'));
 const productionLegacyReview = new Function('runSemanticReview', 'captureOriginalDutyPublication',
   'originalDutyPublicationCurrent', 'bindHostOriginalCoverage', 'REVIEW_SCHEMA', 'isDeepStrictEqual',
-  'pluginRoot', 'readOpenSpecPlan', 'cloneHostLegacyOriginalCoverage', 'originalDutyContextFromCapture', productionLegacyBlock + '\nreturn semanticArtifactReview;')(
+  'pluginRoot', 'readOpenSpecPlan', 'cloneHostLegacyOriginalCoverage', 'originalDutyContextFromCapture', 'knownOriginalObligationReader', productionLegacyBlock + '\nreturn semanticArtifactReview;')(
   runSemanticReview, captureOriginalDutyPublication, originalDutyPublicationCurrent, bindHostOriginalCoverage,
   REVIEW_SCHEMA, isDeepStrictEqual, path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), readOpenSpecPlan,
-  cloneHostLegacyOriginalCoverage, originalDutyContextFromCapture);
+  cloneHostLegacyOriginalCoverage, originalDutyContextFromCapture, knownOriginalObligationReader);
 
 const baseDuties = [
   'When recording is enabled, preserve every segment in its original order.',
@@ -149,12 +149,13 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
     groundTruthVersion: 7, reviewerExecution: { session: 'detached', timeoutMs: 1000 },
     activeClaims: [{ claimId: 'gt-unchanged', text: 'Frozen authority is not replaced by the accounting source view.' }] };
   const calls = { handoff: 0, legacy: 0, handlesClosed: 0, originClosed: 0, sourceRequests: [],
-    actualFactoryRunner: 0, brandBeforeOuterBind: 0, actualFactoryCapacityErrors: 0, nativeSessionsClosed: 0, productionLegacyCallback: 0, actualLegacyFactory: 0 };
+    actualFactoryRunner: 0, brandBeforeOuterBind: 0, actualFactoryCapacityErrors: 0, nativeSessionsClosed: 0, productionLegacyCallback: 0, actualLegacyFactory: 0,
+    priorNavigationSnapshots: [] };
   async function run(mode = 'complete', { legacy = false, contextOverride = null, spoofPayload = null,
     unbrandedHandle = false, executionOverride = null, frozenOverride = null,
     actualFactory = false, changeOwnerAfterCopy = false, productionLegacy = false,
     preparedOverride = null, bundleOverride = null, reviewOnly = false, selectedDuties = duties,
-    gapDuty = null, findingSeverity = null, deterministicPending = false } = {}) {
+    gapDuty = null, findingSeverity = null, deterministicPending = false, priorNavigation = false } = {}) {
     if (productionLegacy) assert(legacy && actualFactory, 'Production legacy control requires actual factory and no V2 context.');
     if (actualFactory) await releaseDocumentSessions(root);
     const captured = captureOriginalDutyPublication(state);
@@ -250,6 +251,16 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         }
         const tool = registered({ sessionId: params.sessionId, runId: params.runId }); assert(tool);
         const invoke = async args => JSON.parse((await tool.execute('offline-native', args)).content[0].text);
+        if (priorNavigation) {
+          const navigation = await invoke({ action: 'prior_original_observations' });
+          assert.equal(navigation.readProofGranted, false); assert.equal(navigation.stageProofGranted, false);
+          assert.equal(navigation.assessmentGranted, false);
+          assert.equal(params.prompt.includes('Before staging, use rc_document prior_original_observations'), navigation.total > 0);
+          calls.priorNavigationSnapshots.push(navigation);
+          if (navigation.items.length) await assert.rejects(invoke({ action: 'stage_original_duties', duties: [{
+            originalSourceAnchorId: navigation.items[0].sourceAnchor.anchorId,
+            requirement: navigation.items[0].requirement }] }), /DOCUMENT_ORIGINAL_DUTY_READ_REQUIRED/u);
+        }
         const source = semantic.originalRequirements.userMessages[0];
         const read = await invoke({ action: 'read_original', ref: source.ref, start: 2, count: duties.length + 1 });
         let page = await invoke({ action: 'stage_original_duties', duties: selectedDuties.map(requirement => ({
@@ -326,6 +337,7 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
       runtimeV2ExecutionContext: { projectRoot: root, sessionCwd: root, parentSessionId: state.sessionId,
         taskId: state.scopeTaskId, deadlineAt, ...executionOverride },
       runtimeV2ReviewerFactory: factory, originalRequirements: originals,
+      ...(priorNavigation ? { originalObservationReader: knownOriginalObligationReader(state) } : {}),
       originalDutyCohortContext: cohortContext, originalDutyPublicationGuard: current,
       invokeFork: async options => {
         calls.legacy++;
@@ -1104,9 +1116,26 @@ test('host review cloning retains the private current guard and rejects stale ow
   assert.throws(() => cloneHostOriginalReview(copy), { code: 'DOCUMENT_ORIGINAL_DUTY_HOST_REVIEW_INVALID' });
 });
 
+for (const legacy of [false, true]) test(`prior observations reach the actual ${legacy ? 'legacy callback' : 'native V2 handoff'} artifact factory without source authority`, async t => {
+  const f = await fixture(t), [a, b] = baseDuties;
+  const options = { actualFactory: true, priorNavigation: true,
+    ...(legacy ? { legacy: true, productionLegacy: true } : {}) };
+  assert.equal(await f.publish(await f.run('complete', { ...options, selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state);
+  assert.equal(await f.publish(await f.run('complete', { ...options, selectedDuties: [a, b] })), true);
+  const live = knownOriginalObservationSnapshot(f.state);
+  assert.equal(await f.publish(await f.run('complete', { ...options, selectedDuties: [a, b] })), false);
+  assert.deepEqual(f.calls.priorNavigationSnapshots.map(page => page.total), [0, 1, 2]);
+  assert.deepEqual(f.calls.priorNavigationSnapshots[2].items.map(item => item.knownCandidateId), live.items.map(item => item.id));
+  assert.deepEqual(f.calls.priorNavigationSnapshots[2].items.map(item => item.requirement), live.items.map(item => item.requirement));
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+  assert.deepEqual(knownOriginalObservationSnapshot(f.state), live);
+  assert.equal(f.calls.actualFactoryRunner, 3);
+});
+
 test('canonical runtime pin accepts CRLF before extraction and rejects a content mutation', () => {
   const crlf = runtimeSource.replace(/\n/gu, '\r\n');
-  assert.equal(sha256(crlf), '45b96284af4ed9abeec7d2bbd7d21c90cae82d3b86486fd1e6272ba2632891cb');
+  assert.equal(sha256(crlf), 'c610dfeff3e21f316da8c1a8e0828fb687b19daa2376a92831d7dec47bbf254f');
   const canonical = pinRuntimeSource(crlf);
   assert.equal(canonical, runtimeSource);
   assert.equal(canonical.slice(canonical.indexOf('  async function artifactProposalBinding('),
