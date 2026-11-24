@@ -96,7 +96,7 @@ node scripts/run-experiment.mjs examples/quicksort/experiment.yaml
 node scripts/test-correction.mjs
 ```
 
-当前完整默认配置存在前置热钩子超时问题。用于隔离验证 Stop 自动修复的入口是：
+历史快排测试的旧插件曾出现前置热钩子超时。用于隔离验证 Stop 自动修复的入口是：
 
 ```powershell
 node scripts/test-correction.mjs --without-frame

@@ -1,0 +1,2 @@
+# Preserve the exact supplied experiment profile and its published byte hash.
+demos/security-tool-2/rc-config.yaml -text whitespace=cr-at-eol

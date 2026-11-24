@@ -43,7 +43,7 @@ RC 的 `NO_DEVIATION_FOUND`、`UNVERIFIED` 等结果保持独立。CLI 返回、
 
 **宿主版本或 RC 包不匹配**
 
-当前仅适配 MA OpenClaw 2026.7.1-2。RC 必须是包含 Session 状态接口的 1.11.0 MA 包；旧的同版本包可能不含这些接口。`--prepare-only` 会检查包与真实加载，不以文件名当作版本证据。完整复制宿主安装，保留 `dist/` 和运行依赖。
+当前仅适配 MA OpenClaw 2026.7.1-2。RC 必须是包含 Session 状态接口的 1.11.0 MA 包；旧的同版本包可能不含这些接口。`--prepare-only` 会检查包与真实加载，不以文件名当作版本证据。当前 security_tool_2 包另有同名 `.tgz.source.json`，其包哈希必须匹配；`BUNDLE.json` 与运行目录的 `config/plugin-source.json` 可核对实际 RC 提交。完整复制宿主安装，保留 `dist/` 和运行依赖。
 
 ## 网络与鉴权
 
@@ -79,6 +79,8 @@ node scripts/run-experiment.mjs --resume 'D:/rc-lab/runs/<run-id>'
 
 查询卡住、持续未知或连续失败时，观察器会有限返回 `NEEDS_ATTENTION`。健康的 WAITING/RUNNING/STOPPING 即使长时间处于同一阶段，也不会按“几分钟没有变化”被提前杀死；整个实验的硬截止时间仍有效。
 
+短时 RC 状态锁占用和查询超时会在 `uncertainTimeoutMs` 内重试（security_tool_2 为五分钟），重试记录见 `logs/runner.jsonl` 的 `STATUS_READ_RETRY`。持续未确认才退出观察，保留后台及原截止时间；身份不符不会被视为短时锁占用。新观察器也会按冻结且未改变的 RC 配置识别基线游标：关闭动态/Skill 需求提取时的 `requirements.pending` 不等于用户任务排队；真正的队列、私有审查和修复准入仍必须清空。
+
 ## 到达最大运行时间
 
 看 `run.json.experimentDeadlineAt` 和 `rc-status/sample-stop-receipt.json`。回执必须对应本次 Job、Gateway PID 及进程创建时间，并且 `activeProcesses` 为 0。`experiment-timeout.json` 保存上次看到的队列、未完成私有审查和清理回执。RC 状态通过公开自检入口刷新，可能为 `INTERRUPTED / UNVERIFIED`；它与实验的 `TIMED_OUT` 分开记录，主任务未收到的原生终态仍为未知。
@@ -93,9 +95,9 @@ node scripts/run-experiment.mjs --resume 'D:/rc-lab/runs/<run-id>'
 
 ## RC_HOOK_UNAVAILABLE / 前置热钩子超时
 
-本次完整默认配置的两次受控触发测试都在前置钩子阶段出现该错误。当前 RC 把热钩子上限限制为 10 秒，内部通常留约 1 秒返回余量；配置中的两小时 Stop 审查预算不会扩展这个上限。
+历史快排受控测试的旧插件曾在前置钩子阶段出现该错误：当时热钩子上限为 10 秒，内部通常留约 1 秒返回余量，Stop 审查预算不会扩展这个上限。这不是对当前 RC 分支的验证结论；当前 security_tool_2 的插件提交和实际配置见 [适配记录](../validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md)。
 
-结果应保留为 `UNVERIFIED`。`scripts/test-correction.mjs --without-frame` 可隔离 requirementFrame 的影响，已在本机验证自动纠偏闭环。它只证明关闭该前置模块时的链路，不能作为完整默认配置已经修复的证据。脚本不会自动为正式样本关闭模块。
+遇到该错误时，结果应保留为 `UNVERIFIED`。`scripts/test-correction.mjs --without-frame` 可隔离 requirementFrame 的影响，历史上已在本机验证自动纠偏闭环。它只证明关闭该前置模块时的链路，不能作为完整默认配置已经修复的证据。脚本不会自动为正式样本关闭模块，也不会替 security_tool_2 改掉本次指定的配置。
 
 ## 端口占用、Gateway 启动失败、Git 全局设置干扰
 

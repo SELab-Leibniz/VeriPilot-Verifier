@@ -15,6 +15,20 @@ const source = { agents: { defaults: { model: { primary: 'p/business' } }, list:
   plugins: { entries: { 'runtime-corrector': { config: { reviewerModel: 'p/reviewer' } } } } };
 const settled = () => ({ rc: { ended: true, active: false, pendingUserTasks: 0, status: 'ENDED', runId: 'r1', roundId: 'round1' },
   dispatch: [{ phase: 'IDLE', runId: 'r1', pending: [] }], private: { dispatch: [{ phase: 'IDLE', runId: 'r1', pending: [] }], reviews: [], nativeReviews: [], ledgers: [] } });
+
+test('current RC INTERRUPTED can settle only with fresh status, native terminals and no remaining private work', () => {
+  const snapshot = settled(), terminals = { r1: { runId: 'r1', status: 'error' } };
+  snapshot.rc.status = 'INTERRUPTED'; snapshot.rc.phase = 'CLOSED'; snapshot.rc.health = 'SETTLED';
+  assert.equal(completion(snapshot, terminals, 'r1').settled, true);
+  snapshot.rc.phase = 'IDLE';
+  assert.equal(completion(snapshot, terminals, 'r1').settled, false);
+  snapshot.rc.phase = 'CLOSED';
+  assert.equal(completion(snapshot, {}, 'r1').settled, false);
+  snapshot.private.nativeReviews.push({ status: 'WAITING_FOR_AGENT_SLOT' });
+  assert.equal(completion(snapshot, terminals, 'r1').settled, false);
+  snapshot.private.nativeReviews.length = 0; snapshot.rc.health = 'OWNER_EXITED';
+  assert.equal(completion(snapshot, terminals, 'r1').settled, false);
+});
 test('auto selects existing host models; unavailable explicit roles fail', () => {
   assert.deepEqual(chooseModels(source), { agentId: 'main', business: 'p/business', reviewer: 'p/reviewer' });
   assert.throws(() => chooseModels(source, { agent: 'missing' }), /No configured agent/);
@@ -23,6 +37,21 @@ test('auto selects existing host models; unavailable explicit roles fail', () =>
 test('completion waits for native terminal even when public RC says ended', () => {
   assert.equal(completion(settled(), { r1: { runId: 'r1', status: 'ok' } }, 'r1').settled, true);
   assert.equal(completion(settled(), { r1: { runId: 'r1', status: 'timeout' } }, 'r1').settled, false);
+});
+test('disabled requirement extraction leaves a metadata cursor without releasing queued users, private work or reservations', () => {
+  const s = settled(), terminals = { r1: { runId: 'r1', status: 'ok' } };
+  s.dispatch[0].requirements = { version: 0, pending: true, pendingUserCursor: 'original-user' };
+  assert.equal(completion(s, terminals, 'r1').settled, false);
+  s.requirementsRefreshEnabled = true;
+  assert.equal(completion(s, terminals, 'r1').settled, false);
+  s.requirementsRefreshEnabled = false;
+  assert.equal(completion(s, terminals, 'r1').settled, true);
+  assert.equal(completion(s, {}, 'r1').settled, false);
+  for (const mutate of [s => s.rc.pendingUserTasks = 1, s => s.dispatch[0].pending.push({ id: 'next-user' }),
+    s => s.private.nativeReviews.push({ status: 'WAITING_FOR_AGENT_SLOT' }),
+    s => s.private.ledgers.push({ admissions: { a: { accounting: 'RESERVED' } } })]) {
+    const copy = structuredClone(s); mutate(copy); assert.equal(completion(copy, terminals, 'r1').settled, false);
+  }
 });
 test('completion blocks queued tasks, repair dispatch, private reviewer and reservations', () => {
   const mutations = [

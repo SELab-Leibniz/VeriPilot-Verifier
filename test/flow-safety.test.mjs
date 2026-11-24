@@ -67,6 +67,52 @@ test('persistently unknown state exits in bounded time without stopping native w
     readSnapshot: async () => structuredClone(unknown), stop: async () => { stops++; } });
   assert.equal(result.reason, 'STATE_UNCONFIRMED_TIMEOUT'); assert.equal(time, 20); assert.equal(stops, 0);
 });
+
+test('current RC status-lock contention can recover after three reads without reallocating or resetting the deadline', async () => {
+  const r = await record(); let time = 0, reads = 0, stops = 0;
+  r.experimentDeadlineAt = 900;
+  const identity = structuredClone(r.identity);
+  const result = await settleAndClose(r, null, { now: () => time, wait: async ms => { time += ms; },
+    policy: { observerTimeoutMs: 100, uncertainTimeoutMs: 30, pollIntervalMs: 5 },
+    readSnapshot: async () => {
+      if (++reads <= 4) throw new Error('Timed out waiting for Runtime Corrector state lock: rc-session-runtime-status-status.lock');
+      return state();
+    }, stop: async () => { stops++; } });
+  assert.equal(result.status, 'ARCHIVED'); assert.equal(stops, 1); assert.equal(reads, 6);
+  assert.equal(time, 20); assert.equal(r.firstRunId, 'r1'); assert.equal(r.experimentDeadlineAt, 900);
+  assert.deepEqual(r.identity, identity);
+});
+
+test('persistent RC lock or query timeouts exhaust the configured uncertainty budget without stopping work', async () => {
+  for (const failure of [new Error('Timed out waiting for Runtime Corrector state lock: status.lock'),
+    Object.assign(new Error('Status query deadline expired'), { code: 'STATUS_QUERY_TIMEOUT' })]) {
+    const r = await record(); let time = 0, stops = 0;
+    const result = await settleAndClose(r, null, { now: () => time, wait: async ms => { time += ms; },
+      policy: { observerTimeoutMs: 100, uncertainTimeoutMs: 20, pollIntervalMs: 5 },
+      readSnapshot: async () => { throw failure; }, stop: async () => { stops++; } });
+    assert.equal(result.reason, 'STATE_UNCONFIRMED_TIMEOUT'); assert.equal(time, 20); assert.equal(stops, 0);
+  }
+});
+
+test('retryable status reads cannot extend the original whole-experiment deadline', async () => {
+  const r = await record(); let time = 0, expired = 0, stops = 0;
+  r.experimentDeadlineAt = 18;
+  const result = await settleAndClose(r, null, { now: () => time, wait: async ms => { time += ms; },
+    policy: { observerTimeoutMs: 100, uncertainTimeoutMs: 50, pollIntervalMs: 5 },
+    readSnapshot: async () => { throw new Error('Timed out waiting for Runtime Corrector state lock: status.lock'); },
+    stop: async () => { stops++; }, onExpired: async () => { expired++; return { status: 'TIMED_OUT' }; } });
+  assert.equal(result.status, 'TIMED_OUT'); assert.equal(time, 18); assert.equal(expired, 1); assert.equal(stops, 0);
+  assert.equal(r.experimentDeadlineAt, 18);
+});
+
+test('unrecognized identity failures still stop observation after three reads and retain the Gateway', async () => {
+  const r = await record(); let time = 0, reads = 0, stops = 0;
+  const result = await settleAndClose(r, null, { now: () => time, wait: async ms => { time += ms; },
+    policy: { observerTimeoutMs: 100, uncertainTimeoutMs: 50, pollIntervalMs: 5 },
+    readSnapshot: async () => { reads++; throw Object.assign(new Error('RC returned a different Session'), { code: 'RC_IDENTITY_MISMATCH' }); },
+    stop: async () => { stops++; } });
+  assert.equal(result.reason, 'OBSERVATION_FAILED'); assert.equal(reads, 3); assert.equal(time, 10); assert.equal(stops, 0);
+});
 test('a hanging query is bounded, aborted, and cannot cause a shutdown', { timeout: 2000 }, async () => {
   const r = await record(); let aborted = false, stopped = false;
   const result = await settleAndClose(r, null, { policy: { observerTimeoutMs: 35, queryTimeoutMs: 100 },
@@ -113,6 +159,31 @@ test('snapshot rejects foreign RC identity and late native success after cancell
   await new Promise(resolve => setTimeout(resolve, 100));
   assert.equal(r.terminals.r1, undefined);
   await assert.rejects(() => fs.stat(path.join(r.runDir, 'rc-status/latest.json')), /ENOENT/);
+});
+
+test('a pending baseline cursor is ignored only with matching frozen/current configs explicitly disabling both extractors', async () => {
+  const r = await record();
+  const detail = { ...r.identity, ...state().dispatch[0], requirements: { pending: true }, scopeFingerprint: 'scope' };
+  const rc = { ...r.identity, ...state().rc, owner: { pid: r.gatewayPid } };
+  await writeJson(path.join(r.stateDir, 'runtime-corrector-stop-sessions/post-run/d.json'), detail);
+  await fs.mkdir(path.join(r.runDir, 'config'));
+  await fs.mkdir(path.join(r.identity.projectRoot, '.runtime-corrector'), { recursive: true });
+  const frozen = path.join(r.runDir, 'config/rc-config.effective.yaml');
+  const current = path.join(r.identity.projectRoot, '.runtime-corrector/config.yaml');
+  const rpc = async method => method.endsWith('.list') ? { sessions: [detail] } : detail;
+  const statusClient = { refreshSessionRuntimeStatus: async () => rc };
+  const disabled = 'dynamicGroundTruth:\n  enabled: false\nskillCorrection:\n  enabled: false\n';
+  for (const config of ['enabled: true\n', disabled.replace('enabled: false', 'enabled: true'),
+    disabled.replace('skillCorrection:\n  enabled: false', 'skillCorrection:\n  enabled: true'), disabled]) {
+    await fs.writeFile(frozen, config); await fs.writeFile(current, config);
+    const snap = await snapshot(r, rpc, { statusClient });
+    assert.equal(snap.completion.settled, config === disabled);
+    assert.equal(snap.requirementsRefreshEnabled, config === disabled ? false : undefined);
+  }
+  await fs.writeFile(current, 'dynamicGroundTruth:\n  enabled: true\n');
+  assert.equal((await snapshot(r, rpc, { statusClient })).completion.settled, false);
+  await fs.unlink(current);
+  assert.equal((await snapshot(r, rpc, { statusClient })).completion.settled, false);
 });
 test('maximum runtime is persistent across resume and prevents a late first dispatch', async () => {
   const r = await record(); r.createdAt = new Date(Date.now() - 100).toISOString(); r.input.execution.maxRuntimeMs = 20;

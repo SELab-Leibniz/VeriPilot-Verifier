@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "rc-experiment.profile.v1",
+  "configOrigin": "SEWeekly/鸿蒙kit开发的长程任务/202611/dae36f7/config/config - artifacts off.yaml",
+  "configSha256": "e793216aa155a541994089e2d460981cb84c8590a8d4354ac5b6a3758dd9cfc2",
+  "pluginSourceBranch": "codex/rc-general-efficiency-bench",
+  "pluginSourceCommit": "e6a42841f2b3135729371e7fdfeec348788ed01f",
+  "note": "Config copied byte-for-byte. RequirementFrame stays enabled; artifacts and independent regression checking stay disabled."
+}

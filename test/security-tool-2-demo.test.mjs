@@ -17,6 +17,8 @@ test('SecurityTool demo retains the original public source and task, has no inje
     const folder = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'VP 权限 Demo ')));
     const outDir = path.join(folder, 'portable copy'), packageFile = path.join(folder, 'rc-fixture.tgz');
     await fs.writeFile(packageFile, 'packaging fixture only');
+    await writeJson(packageFile + '.source.json', { schemaVersion: 'rc-experiment.plugin-source.v1', sourceCommit: 'b'.repeat(40),
+      sourceBranch: 'fixture', archiveSha256: hash(await fs.readFile(packageFile)) });
     const git = execFileSync('where.exe', ['git'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/)[0];
     await buildSecurityTool2Demo({ packageFile, outDir, git });
     const source = await json(path.join(outDir, 'SOURCE.json')), publicInput = await json(path.join(outDir, 'PUBLIC-INPUT.json'));
@@ -24,6 +26,11 @@ test('SecurityTool demo retains the original public source and task, has no inje
     assert.equal(hash(await fs.readFile(path.join(outDir, source.archive))), source.archiveSha256);
     assert.equal(Object.keys(await manifest(path.join(outDir, 'project'))).length, source.originalFileCount + 2);
     assert.equal(publicInput.instance_id, 'security_tool_2');
+    const bundle = await json(path.join(outDir, 'BUNDLE.json'));
+    assert.equal(bundle.plugin.source.sourceCommit, 'b'.repeat(40));
+    assert.equal(bundle.rcConfig.sha256, hash(await fs.readFile(path.join(root, 'demos/security-tool-2/rc-config.yaml'))));
+    const profile = await json(path.join(outDir, 'RC-PROFILE.json'));
+    assert.equal(bundle.rcConfig.sha256, profile.configSha256);
     for (const key of ['patch', 'test_patch', 'FAIL_TO_PASS', 'PASS_TO_PASS', 'oracle']) assert.equal(publicInput[key], undefined);
     await fs.access(path.join(outDir, 'project/docs/03-模块设计/权限管理组件设计说明.md'));
     assert.doesNotMatch(await fs.readFile(path.join(outDir, 'run-demo.mjs'), 'utf8'), /correctionFixture|install-correction-fixture/);
@@ -40,6 +47,7 @@ test('SecurityTool demo retains the original public source and task, has no inje
     const plan = JSON.parse(stdout);
     assert.equal(plan.projectDir, path.join(outDir, 'project')); assert.equal(plan.execution.maxRuntimeMs, 7200000);
     assert.equal(plan.execution.observerTimeoutMs, 7200000); assert.equal(plan.execution.businessTimeoutMs, 0);
+    assert.equal(plan.fingerprint.pluginSource.sourceCommit, 'b'.repeat(40));
     assert.doesNotMatch(stdout, /private-key-not-in-bundle/);
   });
 

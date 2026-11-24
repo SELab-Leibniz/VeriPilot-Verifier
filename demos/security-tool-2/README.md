@@ -12,7 +12,7 @@
 
 ## 新机器配置
 
-需要 Windows PowerShell 5.1、兼容 Node、Git、Python 3.9+、MA OpenClaw **2026.7.1-2** 完整安装，以及 **HarmonyOS API 24 / 6.1.1** 工具链、Java、OHPM、Hvigor。模型与鉴权先在本机宿主 Profile 中配置好。包内已附 RC MA 1.11.0，不含个人 Profile 或模型凭据。
+需要 Windows PowerShell 5.1、兼容 Node、Git、Python 3.9+、MA OpenClaw **2026.7.1-2** 完整安装，以及 **HarmonyOS API 24 / 6.1.1** 工具链、Java、OHPM、Hvigor。模型与鉴权先在本机宿主 Profile 中配置好。包内已附 RC MA 1.11.0，不含个人 Profile 或模型凭据。当前适配的插件来源是 `codex/rc-general-efficiency-bench` 的 `e6a42841f2b3135729371e7fdfeec348788ed01f`；不能仅凭相同的 1.11.0 版本号判断插件内容相同。
 
 在本文件夹打开 PowerShell：
 
@@ -45,7 +45,11 @@ node run-demo.mjs
 
 可用 `--machine D:/lab/machine.yaml` 指定外部配置。启动后终端会输出 `Run: <绝对运行目录>`。每次重新执行普通 run 命令都会新建一次尝试，不覆盖旧结果。
 
-这是普通实验入口，没有快排 Demo 的受控缺陷插件。RC 使用关闭 requirementFrame 的 Stop 配置，避免已有的前置热钩子超时；是否发现偏差和启动修复，以这次真实记录为准。公开测试或构建通过，也不等于隐藏评测通过。
+这是普通实验入口，没有快排 Demo 的受控缺陷插件。`rc-config.yaml` 原样复制自本次指定的 `dae36f7/config/config - artifacts off.yaml`，来源、哈希及插件提交见 `RC-PROFILE.json`。**requirementFrame 保持开启，artifacts 为空，回归检查保持关闭，Stop 使用 until_pass。** 配置内已关闭的旧回归命令不会执行。初始化只按本机已配置的模型适配评审角色，原始与实际配置都写入运行目录；不自动换用其他模型。
+
+`BUNDLE.json` 和 `packages/*.source.json` 记录插件提交与包哈希；运行目录的 `config/plugin-source.json` 保留实际使用的来源。可选来源文件必须与插件包内容匹配，否则拒绝启动；旧插件包没有来源文件时仍可使用，但来源显示为空。是否发现偏差和启动修复，以本次真实记录为准。公开测试或构建通过，也不等于隐藏评测通过。
+
+2026-11-24 本机已用上述插件与配置完成一次真实运行：公开测试 749/749、构建和文档检查通过，RC 为 `NO_DEVIATION_FOUND`。期间发现并修复实验程序的短时状态锁等待、关闭动态需求基线时的游标判断；修复后接回原会话完成归档。详情在包内 `runner/validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md`。这些是历史实跑结果，新机器仍需执行自己的预检和实验。
 
 ## 两小时上限、查询和恢复
 

@@ -11,6 +11,6 @@
 
 平时只需维护一份 `machine.yaml`；每个样本带自己的项目、提示词和 RC 配置。普通测试用 `npm test`；真实 Windows 准备用 `npm run test:windows`，它也从同一份机器配置读取路径，不调用模型。
 
-当前适配版本：MA OpenClaw **2026.7.1-2**、带 Session 状态接口的 RC MA **1.11.0**。宿主版本不匹配会在预检时报错。已在当前 Windows 上验证 PowerShell 7.6.9，以及 Windows PowerShell 5.1.26100.9711 的独立配置场景；尚未在另一台物理机器或鸿蒙项目上实跑。
+当前适配版本：MA OpenClaw **2026.7.1-2**、带 Session 状态接口的 RC MA **1.11.0**。宿主版本不匹配会在预检时报错。已在当前 Windows 上验证 PowerShell 7.6.9、Windows PowerShell 5.1.26100.9711 的独立配置场景，以及 security_tool_2 的真实鸿蒙公开测试和构建；尚未在另一台物理机器实跑。
 
-当前已知问题：完整默认 RC 配置在本次两次触发测试中遇到 `RC_HOOK_UNAVAILABLE`，原因包含前置热钩子超过 9 秒内部预算。关闭该样本的 `requirementFrame.enabled` 后，已验证一次 `DEVIATION → 自动修复 → NO_DEVIATION_FOUND`。这两个结论不能混在一起；详情见 [纠偏实测记录](../CORRECTION-VALIDATION.md)。
+历史快排测试使用旧 RC：完整默认配置曾遇到前置热钩子超时；关闭该样本的 `requirementFrame.enabled` 后验证过 `DEVIATION → 自动修复 → NO_DEVIATION_FOUND`，见 [纠偏实测记录](../CORRECTION-VALIDATION.md)。security_tool_2 当前使用 `codex/rc-general-efficiency-bench` 的固定提交和指定配置，requirementFrame 保持开启，见 [当前适配记录](../validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md)。相同的插件版本号不代表内容相同，应核对包哈希与来源提交。

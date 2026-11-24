@@ -2,7 +2,7 @@
 
 一个样本目录，一个命令。脚本准备工作副本，启动隔离 Gateway，创建新 Session，开启 RC，提交提示词，等待收尾后保存产物和轨迹。当前支持 **Windows + MA OpenClaw 2026.7.1-2 + RC 1.11.0**，无 npm 依赖，不包含独立评估或评分。
 
-新机器从 [Windows 教程](tutorials/README.md) 开始。当前完整默认配置存在前置热钩子超时问题；自动纠偏已在关闭 requirementFrame 的隔离样本中跑通，见 [纠偏实测记录](CORRECTION-VALIDATION.md)。
+新机器从 [Windows 教程](tutorials/README.md) 开始。历史快排验证使用旧插件，完整默认配置曾出现前置热钩子超时，见 [纠偏实测记录](CORRECTION-VALIDATION.md)。security_tool_2 现已适配 `codex/rc-general-efficiency-bench` 插件和本次指定的 artifacts off 配置，保留 requirementFrame，见 [当前适配记录](validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md)。
 
 状态控制、观察恢复与单个实验总时限的测试见 [流程验证记录](FLOW-VALIDATION.md)。
 
@@ -54,7 +54,7 @@ sample/
 
 样本内的路径相对 `experiment.yaml` 解析。两个示例都包含完整的输入与 RC 配置，可以单独复制整个样本目录。
 
-RC 配置来自原先指定的 `default_rc_config/config.yaml`。初始化沿用 RC 自身的函数，仅将评审模型适配到当前机器；保存原始及实际配置。RC 自身的审查预算保持原值，但整个实验受样本总时限约束。
+每个样本使用自己的 `rcConfigFile`。快排配置来自原先指定的 `default_rc_config/config.yaml`；security_tool_2 使用本次指定的 `dae36f7/config/config - artifacts off.yaml`，来源见样本的 `RC-PROFILE.json`。初始化沿用 RC 自身的函数，仅将评审模型适配到当前机器；保存原始及实际配置。RC 自身的审查预算保持原值，但整个实验受样本总时限约束。
 
 每个包在 `experiment.yaml` 配置自己的最大运行时间，单位为毫秒。例如单个实验最多两小时：
 
