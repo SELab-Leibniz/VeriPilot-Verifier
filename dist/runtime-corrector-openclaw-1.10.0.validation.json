@@ -1246,16 +1246,10 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "htmlSha256": "50bee072499cafbf4c308c5c591555874502aa65f0e74067c6321a517a212f64",
-    "receipt": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v6/receipt.json",
-      "sha256": "80bea0ca7aa4a3d42f1d3ecbdd2d8422d34d9419d1c12952fbad08bd791d76d2"
-    },
-    "renderedSource": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/rendered-source-v6.html",
-      "sha256": "50bee072499cafbf4c308c5c591555874502aa65f0e74067c6321a517a212f64"
-    },
-    "actual": "45c67c/session43964 ->7cf3f1/0",
+    "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
+    "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16",
+    "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+    "actual": "1c8448/session46417 ->7cf21c/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1265,6 +1259,8 @@
       1200,
       390
     ],
+    "rootInspected": "comparison-zh-CN-390.png",
+    "externalLinks": 0,
     "externalRequests": 0,
     "pageErrors": 0,
     "overflow": false,
@@ -1273,23 +1269,10 @@
       "collapsedHistories": 3,
       "internalLinks": 7
     },
-    "visualReadback": "Chinese mobile current-method paragraph inspected; readable with no clipping. Layout unchanged from preceding desktop/mobile four-view QA.",
-    "previousPublishedQa": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v2/receipt.json",
-      "sha256": "94ffcd17de1c249f953700bb8ca2db58632ca324970a73901de85f53c6e6a748"
-    },
-    "previousPublishedHtmlSha256": "1efc01c128bcbaee8b806423bb423f8830ffc3e5380cddf0e23e6161ae355fdc",
-    "previousLocalDraftQa": {
-      "path": ".runtime-correction/validation/report-duty-retries-phone-zm7vs9cd/qa-v5/receipt.json",
-      "sha256": "3d090551e768d496238c90c204ecdb427ab603ea423d2a07c0c411d81011791f"
-    },
-    "focusRefinement": {
-      "historicalParagraphsMoved": 10,
-      "existingCollapsedHistories": 3,
-      "newLinks": 0,
-      "factsPreserved": true
-    },
-    "draftHtmlSha256": "5f7796120d0d0b58e85efb699afc89e80b3c0b3aecff145693a636e60cf322dc"
+    "receipt": {
+      "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
+      "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16"
+    }
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -3050,10 +3033,10 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "COMPLETED_HEALTHY_SINGLE_ON_FINITE_SCOPE",
-    "htmlSha256": "4de41c7c6f194baf9ef4e3a02f7df74e4e1b1fba25263c906ecb910b62c9b26e",
-    "modelOutcomeReference": "currentPackageRealModelEvaluation",
-    "earlierFourArmComparisonRetainedInExistingHistory": true,
+    "status": "LATEST_CANDIDATE_FINITE_DELIVERY_PASS_STOP_UNVERIFIED_DEADLINE",
+    "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+    "modelOutcomeReference": "privateOriginalDutyPrototype.nextLivePilot",
+    "earlierCompletedArchiveMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
     "formalPairs": 0,
@@ -3297,77 +3280,53 @@
     "outcomeReference": "currentPackageRealModelEvaluation"
   },
   "latestNaturalCiObservation": {
-    "head": "13e903fc2beb77aa4260258f397add11123048f4",
-    "runId": 45116163721,
+    "sourceCommit": "2ae2f40748c96e78749df681bee0c08b28b2ccbd",
+    "runId": 45152150977,
     "attempt": 1,
-    "status": "completed",
-    "conclusion": "success",
-    "successfulJobs": 7,
-    "publication": "skipped",
-    "actionsMutated": false,
-    "officialLogCollection": "COMPLETE",
-    "terminal": {
-      "path": ".runtime-correction/validation/ci-fix/post-13e903-natural-myt_0uhp/terminal-receipt.json",
-      "sha256": "7a5fe11c3009c656e95d59a8f84712648ca5049de087201eaddb4dd7fa421bac"
+    "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
+    "receipt": ".runtime-correction/validation/ci-fix/post-2ae2-natural-r8q1jqr7/terminal-receipt.json",
+    "receiptSha256": "92cbac15b232f95def8eecc35a9b6724a0cdacc488db424c001bccd09f8b0d86",
+    "macOS": {
+      "files": 403,
+      "pass": 5089,
+      "skip": 33,
+      "fail": 0
     },
-    "allSevenOfficialLogsCheckoutHeadsAndStepsVerified": true
+    "ubuntu": {
+      "files": 403,
+      "pass": 5085,
+      "skip": 37,
+      "fail": 0
+    },
+    "windows": {
+      "shardCounts": [
+        101,
+        101,
+        101,
+        100
+      ],
+      "files": 403,
+      "pass": 5075,
+      "skip": 45,
+      "fail": 0
+    },
+    "allPreviousFailingFilesPassedWindows": true,
+    "noRerunCancelDispatch": true,
+    "uniqueHistoricalCauseProven": false,
+    "successfulJobs": 9,
+    "publication": "skipped",
+    "actionsMutated": false
   },
   "previousReportWalkthrough": {
-    "status": "LOCAL_LIVE_STATUS_DRAFT_OLD_FOUR_COMPLETED_RESULTS_UNCHANGED",
-    "htmlSha256": "74b3aca0947835f49f575bef2a892e84f8c30defce8a4dc777c78ac8e662afc8",
-    "candidateSha256": "8499f1a11e4f7a630a054456ce2a926b29f2c995fb9f49064281b666d283f5c3",
-    "adoptionPacket": ".runtime-correction/validation/root-report-four-graded-jvc3_5mm",
-    "allFourGradeBatchSha256": "2a26eeec87063613192a6f8b53b3bb5b7923d2443107804f56ecdd55539a1b91",
-    "independentGradePeerSha256": "21ed5aa65ae3461224e757a3d5bf521a793516c7551235d21d0dc82052d8950f",
-    "workflowAuditSha256": "9bd5c44304b601e37587a47a44d543b572163f5cee4deb3d793a0a94fe5b079a",
-    "privateHandoffTypoCorrected": "Private handoff peer hash appended stable-ref count2935; actual64hex peer bytes used here. HTML unaffected.",
-    "previous795WalkthroughPreservedInExistingHistory": true,
+    "status": "COMPLETED_HEALTHY_SINGLE_ON_FINITE_SCOPE",
+    "htmlSha256": "4de41c7c6f194baf9ef4e3a02f7df74e4e1b1fba25263c906ecb910b62c9b26e",
+    "modelOutcomeReference": "currentPackageRealModelEvaluation",
+    "earlierFourArmComparisonRetainedInExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
     "formalPairs": 0,
     "plannedPairs": 39,
-    "qualityGainProven": false,
-    "evaluatedSource": "611132eea732aaeda811bdc691fbb8ca73f688fb",
-    "laterDiagnosticSource": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
-    "laterDiagnosticFullPending": false,
-    "browserQa": {
-      "status": "PASS",
-      "htmlSha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b",
-      "receipt": {
-        "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/qa/receipt.json",
-        "sha256": "df8901e84c06b619bcd744a466b994c484b30fe15a947339dfe56d0b368ef39a"
-      },
-      "renderedSource": {
-        "path": ".runtime-correction/validation/report-ac8-ci-cache-pi76vpa_/rendered-source.html",
-        "sha256": "b8434f336c8c467a7752369b776d8dcb5cada0e31a6a21a49d163df41d19ec4b"
-      },
-      "actual": "565304/session1253 ->3b0037/0",
-      "views": 4,
-      "languages": [
-        "en",
-        "zh-CN"
-      ],
-      "widths": [
-        1200,
-        390
-      ],
-      "externalRequests": 0,
-      "pageErrors": 0,
-      "structure": {
-        "sections": 6,
-        "collapsedHistories": 3,
-        "internalLinks": 7
-      },
-      "previousQa": {
-        "path": ".runtime-correction/validation/root-report-ac8-final-1tjfwbt1/qa/receipt.json",
-        "sha256": "3725dfc2e5f054fccbc5fb13656c227961f3de0156f5224a76d523740677ebf0"
-      }
-    },
-    "currentDiagnosticRelease": {
-      "sourceCommit": "ac8dd26e368117162d98c8a01e7eea53936ac5b4",
-      "archiveSha256": "8c3525d8af71c625c840b161fe63508969f301d4d78c957f13c2aea04e2e84ca",
-      "modelTrialPerformed": false
-    }
+    "qualityGainProven": false
   },
   "ciFixtureUpdate": {
     "status": "APPLIED_EXACT_POSTIMAGES_PUSHED_NATURAL_CI_SUCCESS",
@@ -3427,7 +3386,7 @@
       "RuntimeV2 original source/read authority and success receipt projection do not reach normal publication.",
       "Failure merger drops validated capacity uncertainty before known-duty observation."
     ],
-    "successorPreparation": "IN_PROGRESS",
+    "successorPreparation": "SUPERSEDED_BY_INTEGRATED_V8B_CANDIDATE_SEE_privateOriginalDutyPrototype",
     "discoveryComplete": false,
     "semanticsVerified": false,
     "deliveredRuntimeChanged": false
@@ -3471,7 +3430,7 @@
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "privateOriginalDutyPrototype": {
-    "status": "FULL_MAC_UBUNTU_CI_AND_PRIVATE_PACKAGE_STOCK_PASS_WINDOWS_PATH_FIX_QUALIFIED_REAL_UPTAKE_PENDING",
+    "status": "SOURCE_CI_NINE_PASS_PRIVATE_PACKAGE_STOCK_PASS_LIVE_STAGING_RETAINED_STOP_DEADLINE_UNVERIFIED",
     "candidate": ".runtime-correction/validation/original-duty-v8b-legacy-compat-w4k7n2mz",
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
@@ -3568,29 +3527,12 @@
     },
     "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f",
     "latestNaturalCi": {
-      "sourceCommit": "1b177172663f7ceab465f8751b8dc800fa8c6e70",
-      "runId": 45143872600,
+      "sourceCommit": "2ae2f40748c96e78749df681bee0c08b28b2ccbd",
+      "runId": 45152150977,
       "attempt": 1,
-      "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD1_FAILURE",
-      "receipt": ".runtime-correction/validation/ci-fix/post-1b17717-natural-k4n8q2mx/terminal-receipt.json",
-      "receiptSha256": "7df32f454fbb1694c049e40a2d95186b82743fadf8512a84e5d24b36addcb607",
-      "originalDutyIntegrationWindowsPassed": true,
-      "windowsShard2": {
-        "files": 201,
-        "pass": 2418,
-        "skip": 30,
-        "fail": 0
-      },
-      "windowsShard1": {
-        "files": 202,
-        "pass": 2654,
-        "skip": 15,
-        "fail": 3,
-        "failedFiles": [
-          "test/openclaw-native-plan-restoration.test.mjs",
-          "test/runtime-v2-shared-basis-publication-recovery.test.mjs"
-        ]
-      },
+      "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
+      "receipt": ".runtime-correction/validation/ci-fix/post-2ae2-natural-r8q1jqr7/terminal-receipt.json",
+      "receiptSha256": "92cbac15b232f95def8eecc35a9b6724a0cdacc488db424c001bccd09f8b0d86",
       "macOS": {
         "files": 403,
         "pass": 5089,
@@ -3603,8 +3545,21 @@
         "skip": 37,
         "fail": 0
       },
-      "cause": "UNDER_INVESTIGATION; retain exact Stop-admission-deadline and undefined.proof assertions without unique-cause claim.",
-      "noRerunCancelDispatch": true
+      "windows": {
+        "shardCounts": [
+          101,
+          101,
+          101,
+          100
+        ],
+        "files": 403,
+        "pass": 5075,
+        "skip": 45,
+        "fail": 0
+      },
+      "allPreviousFailingFilesPassedWindows": true,
+      "noRerunCancelDispatch": true,
+      "uniqueHistoricalCauseProven": false
     },
     "privateReplacementArchive": {
       "path": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/committed-release/runtime-corrector-openclaw-1.10.0.tgz",
@@ -3623,13 +3578,29 @@
       "inheritsCanonicalRealModelEvidence": false
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-ci-ninejob-finalreview-wxw1nyxf/report-qa/capture/receipt.json",
-      "sha256": "9cd6c6173d024e1936c70c98b4df1d1c2594c66303795c644e37edd8c8a495c9",
-      "htmlSha256": "42c64832bfc771541b513026ab235a292b011810fd28f03d7ae6373397adf76f",
-      "actual": "ef4ada/session82180 ->c89042/0 CLOSED",
+      "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
+      "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16",
+      "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+      "actual": "1c8448/session46417 ->7cf21c/0 CLOSED",
       "views": 4,
-      "rootInspected": "ci-zh-CN-390.png",
-      "externalLinks": 0
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": "comparison-zh-CN-390.png",
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      }
     },
     "precedingNaturalCiRecords": [
       {
@@ -3675,13 +3646,52 @@
           "productionChanged": false,
           "actualWindows": false
         }
+      },
+      {
+        "sourceCommit": "1b177172663f7ceab465f8751b8dc800fa8c6e70",
+        "runId": 45143872600,
+        "attempt": 1,
+        "status": "COMPLETED_SIX_SUCCESS_ONE_WINDOWS24_SHARD1_FAILURE",
+        "receipt": ".runtime-correction/validation/ci-fix/post-1b17717-natural-k4n8q2mx/terminal-receipt.json",
+        "receiptSha256": "7df32f454fbb1694c049e40a2d95186b82743fadf8512a84e5d24b36addcb607",
+        "originalDutyIntegrationWindowsPassed": true,
+        "windowsShard2": {
+          "files": 201,
+          "pass": 2418,
+          "skip": 30,
+          "fail": 0
+        },
+        "windowsShard1": {
+          "files": 202,
+          "pass": 2654,
+          "skip": 15,
+          "fail": 3,
+          "failedFiles": [
+            "test/openclaw-native-plan-restoration.test.mjs",
+            "test/runtime-v2-shared-basis-publication-recovery.test.mjs"
+          ]
+        },
+        "macOS": {
+          "files": 403,
+          "pass": 5089,
+          "skip": 33,
+          "fail": 0
+        },
+        "ubuntu": {
+          "files": 403,
+          "pass": 5085,
+          "skip": 37,
+          "fail": 0
+        },
+        "cause": "UNDER_INVESTIGATION; retain exact Stop-admission-deadline and undefined.proof assertions without unique-cause claim.",
+        "noRerunCancelDispatch": true
       }
     ],
     "nextLivePilot": {
       "source": ".runtime-correction/validation/public-on-original-duty-pilot-248b-r7m2q9vc",
       "operator": ".runtime-correction/validation/public-run-0e47a1d9f3b742",
       "acceptanceSha256": "933e0861e05b7988200ebaa20e4392528272cd526ea64c71c06fbb218c0d4c61",
-      "status": "RUNNING_MACOS_FINAL_REVIEW_ALL12_STEPS_MARKED_COMPLETE",
+      "status": "CLOSED_FROZEN169_DELIVERY_FINITE_PASS_MECHANISM_PARTIAL_STOP_DEADLINE",
       "kernelChecks": 24,
       "publicChecks": 668,
       "starterFilesUnchanged": 149,
@@ -3691,14 +3701,70 @@
       "paidModelsAdmitted": true,
       "formal13Credit": 0,
       "qualityGainClaim": false,
-      "actual": "85058b/session29566 LIVE_DO_NOT_REPLAY_OR_RENEW",
+      "actual": "85058b/session29566 ->314c84/0 CLOSED",
       "macOnlyRationale": ".runtime-correction/validation/public-run-0e47a1d9f3b742/mac-only-live-rationale.json",
-      "mechanismStatus": "UNVERIFIED_UNTIL_OWN_CLOSED_EVIDENCE",
+      "mechanismStatus": "EXERCISED_PARTIAL_OR_LATE",
       "planFilesRead": 6,
       "approvedUncheckedSteps": 12,
       "rootPlanReview": ".runtime-correction/validation/public-run-0e47a1d9f3b742/root-public-plan-review.json",
       "markedSteps": 12,
-      "independentQualityAndMethodAudit": "PENDING_OWN_CLOSED_FREEZE"
+      "independentQualityAndMethodAudit": "COMPLETE_FINITE_DELIVERY_PASS_MECHANISM_PARTIAL",
+      "frozenFiles": 169,
+      "requestStarts": {
+        "deepseek-flash": 47,
+        "deepseek-v4-pro": 74
+      },
+      "heldCaptureStatus": "FAILED_CAPTURE_TOTAL_LIMIT_PRESERVED",
+      "captureFailure": ".runtime-correction/validation/public-run-0e47a1d9f3b742/root-held-capture-failure.json",
+      "captureFailureSha256": "a328653b22b5a2a20c73f869a87d59c38c6209598759ef3ff419bcb837668f62",
+      "noModelRestartOrBudgetRenewal": true,
+      "primaryAcceptanceGranted": false,
+      "semanticCompletenessProven": false,
+      "mechanismAudit": {
+        "path": ".runtime-correction/validation/supplemental-retention-audit-248b-v1/audit-receipt.json",
+        "sha256": "f3da32596b167aff2832c7a8127291351eee438cdbe56f377c278b7c0d12559d",
+        "sealSha256": "52c4fd389e84e0f7b99ff8da41e7c73d9db427031170c761f7809e5f4db09206",
+        "rootReadbackFiles": 366,
+        "rootReadbackBytes": 8243042,
+        "stagedCounts": [
+          11,
+          11,
+          20,
+          20
+        ],
+        "firstCohortRetainedThroughMandatoryStopBasis": 11,
+        "finalReviewStatus": "UNVERIFIED",
+        "reasonCode": "REVIEWER_DEADLINE",
+        "finishSubmissions": 1,
+        "pendingKnownDuties": 7,
+        "literalArtifactProtocol": "UNVERIFIED_TRANSACTION_STORAGE_DIFFERS_FROM_EXPECTED_PER_RUN_FILES",
+        "originalExporterFailurePreserved": true
+      },
+      "independentDeliveryGrade": {
+        "path": ".runtime-correction/validation/single-on-248b-postclosure-grade-source-wk2hpbvy/private-batches/run-1/batch-completed-private.json",
+        "sha256": "18c90ab360131f8d37ce123c804884575276571a499e0b95977550c2f047dd99",
+        "actual": "2af450/session14584 ->3e9d7b/0 CLOSED",
+        "primaryPassed": 8,
+        "primaryTotal": 8,
+        "publicPassed": 668,
+        "publicTotal": 668,
+        "exploratoryPassed": 6,
+        "exploratoryTotal": 6,
+        "productionFilesUnchanged": 18,
+        "testFunctionsAdded": 3,
+        "linesAdded": 79,
+        "containersRemoved": 3,
+        "host": "Linux arm64/Python 3.13.17 container on macOS",
+        "nativeMacEquivalence": false,
+        "formalBenchmarkCredit": 0,
+        "qualityGainProven": false
+      },
+      "reportIndependentReview": {
+        "status": "CLEAR_WITH_FINITE_SCOPE_CAVEATS",
+        "reviewer": "retention_audit",
+        "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+        "runtimeUnchanged": true
+      }
     },
     "precedingReportQa": {
       "path": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/report-qa/capture/receipt.json",
@@ -3710,7 +3776,7 @@
       "externalLinks": 0
     },
     "pendingCiSchedulingChange": {
-      "status": "QUALIFIED_FOR_FEATURE_BRANCH_PUSH_NATURAL_CI_PENDING",
+      "status": "VALIDATED_BY_NATURAL_CI_NINE_SUCCESS",
       "windowsShards": 4,
       "fileWorkersPerWindowsJob": 1,
       "compatibilityJobs": 3,
@@ -3730,7 +3796,7 @@
       "knownCleanupConfirmed": true,
       "productionChanged": false,
       "durationAnalysisSha256": "24fddca4b940a8c4d45d9205b96c39b6d9be2ca6336638d49c55e2a7d401d9a8",
-      "schedulingBenefit": "UNPROVEN_PENDING_WINDOWS_CI",
+      "schedulingBenefit": "CurrentnaturalCIpassed; uniquehistoricalcause and deterministicfutureperformance notproved",
       "initialSelectionDiagnostic": "Requires actual ACTIVE watcher/proof before recovery assertions and reports bounded own-task setup failures; no retry or failure suppression.",
       "priorHarnessFailure": "4de57a/1 permission failure retained; first raw4PASS not a qualification; historical firstchild terminal/descendants UNKNOWN; current exactprivatecwd scan noactive match. V2 unexecuted; V3 observed80checks above."
     },
@@ -3743,7 +3809,24 @@
         "views": 4,
         "externalLinks": 0,
         "rootInspected": "ci-zh-CN-390.png"
+      },
+      {
+        "path": ".runtime-correction/validation/report-ci-ninejob-finalreview-wxw1nyxf/report-qa/capture/receipt.json",
+        "sha256": "9cd6c6173d024e1936c70c98b4df1d1c2594c66303795c644e37edd8c8a495c9",
+        "htmlSha256": "42c64832bfc771541b513026ab235a292b011810fd28f03d7ae6373397adf76f",
+        "actual": "ef4ada/session82180 ->c89042/0 CLOSED",
+        "views": 4,
+        "rootInspected": "ci-zh-CN-390.png",
+        "externalLinks": 0
       }
-    ]
+    ],
+    "nextGenericFix": {
+      "status": "PRIVATE_PREPARATION_NOT_INTEGRATED",
+      "purpose": "Earlier bounded source-bound full-file witness and invocation-companion navigation before finish; no proof, classification or acknowledgement grants.",
+      "fixedBudgetPreserved": true,
+      "retainedDutiesPreserved": true,
+      "noCaseRulesInPlugin": true,
+      "newLiveRun": false
+    }
   }
 }
