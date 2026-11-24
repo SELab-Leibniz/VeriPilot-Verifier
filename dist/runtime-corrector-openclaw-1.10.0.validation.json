@@ -1579,8 +1579,8 @@
     "actualPush": "7cfece/session56724 ->b093b4/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/report-closed56ef-tna3favx/capture-qualified/receipt.json",
-    "sha256": "e23f0243362a1fc5055a49af75a730892a1af0f1f58135181c83bbee69c8a5b6"
+    "path": ".runtime-correction/validation/report-closed56ef-tna3favx/capture-source-fixes/receipt.json",
+    "sha256": "6a36ea5d5e7f97c68838c3c72e77ed5ec00cbbdb92854c1450ec66435d33648b"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4414,7 +4414,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "EXERCISED_PARTIAL_OR_LATE_STOP_DEADLINE_E_NOT_MET_CODE_GRADE_PASS",
-    "htmlSha256": "64e6bbdf4430b975701cbd5378a77dfe8cc5735a6e6a607fccb3beaf6fd11d86",
+    "htmlSha256": "d6772793652323879d8adab7a6912d573b43baa970852bd0620e593e4eafdac7",
     "modelOutcomeReference": ".runtime-correction/validation/public-run-56ef1e073b6a43",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -4663,7 +4663,7 @@
     "actualTerminal": "4f0c1d/session13793 -> 54429f/0",
     "finalOutcomeAvailable": true,
     "modelTrialCompleted": true,
-    "outcomeReference": "currentPackageRealModelEvaluation",
+    "outcomeReference": "precedingCompletedDevelopmentRun",
     "archiveExecuted": false
   },
   "latestNaturalCiObservation": {
@@ -5731,7 +5731,7 @@
       }
     ],
     "prospectiveLateDutyLedger": {
-      "status": "ENGINEERING_QUALIFIED_CANONICAL_LIVE_TRIAL_RUNNING_NO_FINAL_N_L_AUDIT",
+      "status": "CLOSED_N15_L25_RETENTION_TO_STOP_VERIFIED_E_NOT_MET",
       "sourceReview": {
         "path": ".runtime-correction/validation/late-duty-ledger-source-audit-8344-vm5yyt3h/source-review.json",
         "sha256": "9aabfa91a59ef560d2fd185901ea757cddcbc28a2d3674aa3641d7b74c32901a"
@@ -5923,9 +5923,14 @@
         "qualificationScope": "Exact049 source; later distribution-placement commits are not automatically CI-qualified."
       },
       "currentSourcePackage": "QUALIFIED_PLACED_CANONICAL",
-      "currentSourceRealModel": "LIVE_IN_PROGRESS_NO_FINAL_N_L_AUDIT",
+      "currentSourceRealModel": "CLOSED_STOP_REVIEW_DEADLINE_NO_ACCEPTED_FINAL_COVERAGE",
       "inheritsCanonicalLiveEvidence": false,
-      "noModelCallsDuringOfflineQualification": true
+      "noModelCallsDuringOfflineQualification": true,
+      "currentSourceMethodAudit": {
+        "path": ".runtime-correction/validation/mechanism-audit-56ef-hl95w1d_/audit-receipt.json",
+        "sha256": "ccae331942f88aa0a6cc20de648ff87044f639192bba749018ff47190f6b727a"
+      },
+      "currentSourceOutcomeReference": "latestCompletedDevelopmentRun"
     }
   },
   "earlierReportWalkthroughs": [
@@ -5961,7 +5966,7 @@
     "actualTerminal": "b34c82/0",
     "finalOutcomeAvailable": true,
     "modelTrialCompleted": true,
-    "outcomeReference": "currentPackageRealModelEvaluation"
+    "outcomeReference": "precedingPackageRealModelEvaluation"
   },
   "precedingBranchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
@@ -6520,6 +6525,10 @@
         "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-apply-v9-qa/capture/receipt.json",
         "sha256": "29af0e9c20fcae188c9632c720bab43a3510bc5cd93fb52796ccbceba7a55c95"
       }
+    },
+    {
+      "path": ".runtime-correction/validation/report-closed56ef-tna3favx/capture-qualified/receipt.json",
+      "sha256": "e23f0243362a1fc5055a49af75a730892a1af0f1f58135181c83bbee69c8a5b6"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7064,7 +7073,7 @@
     }
   },
   "sourceFeedbackFollowup": {
-    "status": "SOURCE_FOCUSED_QUALIFIED_NOT_IN_CANONICAL_ARCHIVE",
+    "status": "SOURCE_COMMITTED_FOCUSED_QUALIFIED_NATURAL_CI_PENDING_NOT_IN_CANONICAL_ARCHIVE",
     "qualification": {
       "path": ".runtime-correction/validation/challenge-correction-feedback-gw8t2kjp/qualification-receipt.json",
       "sha256": "d79130b5306db108926bb67fca8abaeb1735971e030ada49fb5d7c6e5706c823"
@@ -7076,6 +7085,31 @@
     "focusedEachNode18And24": 68,
     "oldSourceNegative": 3,
     "changes": "Clarify missing correction reason versus exhausted allowance; acceptance guards unchanged.",
-    "realModelUsefulnessVerified": false
+    "realModelUsefulnessVerified": false,
+    "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
+    "navigationQualification": {
+      "path": ".runtime-correction/validation/prior-observation-navigation-qualification-h56zvtp_/qualification-receipt.json",
+      "sha256": "76b465af45039ae54668b8ecd61f8570e68f26badd3e3d36ce9229fd9d8198ef"
+    },
+    "navigationSourcePeer": {
+      "path": ".runtime-correction/validation/prior-observation-navigation-qualification-h56zvtp_/peer-quality-source.json",
+      "sha256": "3b46e4be4550291dff3a8467a81da49c90ded099492523a8a8a3c2588685fcc5"
+    },
+    "earlyReadinessQualification": {
+      "path": ".runtime-correction/validation/early-readiness-source-proposal-0lh0p77u/qualification-receipt.json",
+      "sha256": "97371a84b2e9f887915f68d9d7d0128d423963ca6ee313e66cabf71fdb80f11b"
+    },
+    "earlyReadinessSourcePeer": {
+      "path": ".runtime-correction/validation/early-readiness-source-proposal-0lh0p77u/peer-retention-source.json",
+      "sha256": "aacb6c9ad0a8c87a2db6a725fad23e6b8de04e9cde94defc11a59ad586b84f3f"
+    },
+    "focusedNavEach18And24": 108,
+    "focusedReadinessEach18And24": 31,
+    "guideExtraBytesPerPage": 582,
+    "canonicalArchiveUpdated": false,
+    "focusedChecksTotalAcrossSixDistinctFilesEach18And24": 207,
+    "fullCi": "PENDING_EXACT_C068",
+    "candidateRelease": "PREPARATION_HELD_NO_EXECUTION",
+    "currentPublishedArchiveStillPrecedingRuntime": true
   }
 }

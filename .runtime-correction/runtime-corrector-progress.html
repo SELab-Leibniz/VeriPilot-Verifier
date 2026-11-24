@@ -292,7 +292,7 @@
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">One task: code checks passed, final review unfinished</h2>
         <p class="callout">Both OpenClaw turns ended cleanly and all ten OpenSpec steps were marked complete. The corrector retained the initial requirements and later validated observations, but final Stop reached <code>STOP_REVIEW_DEADLINE</code>. This run did not meet the method’s end-to-end target.</p>
-        <p class="intro">This reused healthy CLI task asks for a usable help hint when another option shadows a help name. The starting production code already met the request. Flash handled coding and Pro handled all seven review roles. The run kept the one-hour limit, 256-request cap and ordinary approval, without a prepared inventory, sealed approval or injected defect.</p>
+        <p class="intro">This reused healthy CLI task asks for a usable help hint when another option shadows a help name. The starting production code already met the request. Flash handled coding, with Pro configured for all seven review roles. The run kept the one-hour limit, 256-request cap and ordinary approval, without a prepared inventory, sealed approval or injected defect.</p>
         <div class="table" role="region" aria-label="Current closed model walkthrough" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Limit</th></tr></thead>
           <tbody>
@@ -304,14 +304,14 @@
           </tbody>
         </table></div>
         <h3>What failed, and what to change</h3>
-        <p>Three sampled counterexamples were first recorded as unresolved, with one correction still available. A later attempt to refute them omitted the required <code>correctionReason</code>. The host rejected it with a message about the one-correction limit, which failed to explain the missing field. That feedback needs to distinguish an incomplete correction from an exhausted allowance. This trace does not establish one unique cause for the overall deadline.</p>
+        <p>Three sampled counterexamples were first recorded as unresolved, with one correction still available. A later attempt to refute them omitted the required <code>correctionReason</code>. The host rejected it with a message about the one-correction limit, which failed to explain the missing field. The source fix now distinguishes an incomplete correction from an exhausted allowance and explains how to revise the appraisal. It does not change this run’s failed outcome. This trace does not establish one unique cause for the overall deadline.</p>
         <p>Requirement retention worked, but identity churn increased the review burden: a later 18-row table produced an exact union of 25. Later reviewers need a way to find prior canonical observations and reuse them when the current original source still supports them. The host must preserve every distinct observation; it cannot safely merge wording by presumed meaning.</p>
         <p>The run recorded 38 Flash and 93 Pro request starts, including one client-disconnect event whose cause is unknown. It is an ON-only development probe on a reused healthy task, with no measured repair benefit or formal benchmark pair. The earlier completed review remains in the supporting history. This walkthrough covers Proposal → Apply → Stop; Archive and the whole OpenSpec lifecycle remain untested.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">单任务走查：代码检查通过，最终审查未完成</h2>
         <p class="callout">OpenClaw 的两个回合均正常结束，OpenSpec 的十项步骤全部标记完成。纠偏器保留了初始需求和后续已校验的观察，但最终 Stop 达到 <code>STOP_REVIEW_DEADLINE</code>。本轮没有达到方法的端到端目标。</p>
-        <p class="intro">这是一项重复使用的健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。编码使用 Flash，全部七类审查使用 Pro。运行保持一小时、256 次请求上限，使用普通审批，没有预先准备需求清单、封存审批或注入缺陷。</p>
+        <p class="intro">这是一项重复使用的健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。编码使用 Flash，七类审查均配置为 Pro。运行保持一小时、256 次请求上限，使用普通审批，没有预先准备需求清单、封存审批或注入缺陷。</p>
         <div class="table" role="region" aria-label="当前已关闭模型运行走查" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">限制</th></tr></thead>
           <tbody>
@@ -323,7 +323,7 @@
           </tbody>
         </table></div>
         <h3>失败在哪里，接下来改什么</h3>
-        <p>三项抽样反例最初被记为未解决，且仍各有一次修正机会。后来提交反驳结果时，审查器遗漏了必填的 <code>correctionReason</code>。宿主却用“一次修正上限”的提示拒绝，未说明真正缺少哪个字段。反馈需要明确区分修正信息不完整与额度已耗尽。这条轨迹还不足以确定整体超时的唯一原因。</p>
+        <p>三项抽样反例最初被记为未解决，且仍各有一次修正机会。后来提交反驳结果时，审查器遗漏了必填的 <code>correctionReason</code>。宿主却用“一次修正上限”的提示拒绝，未说明真正缺少哪个字段。源码修正现已明确区分修正信息不完整与额度已耗尽，并说明如何更新评估。这不会改变本轮的失败结果。这条轨迹还不足以确定整体超时的唯一原因。</p>
         <p>需求保留已发挥作用，但身份变化增加了审查负担：后来的 18 行表形成了 25 项精确并集。后续审查器需要能够查找既有的规范观察，并在当前原始来源仍支持时复用。宿主必须保留每项不同观察，不能凭推测的语义相同就自动合并。</p>
         <p>本次记录到 Flash 38 次、Pro 93 次请求启动，其中一次客户端断开事件的原因不明。它是重复使用健康任务的 ON 单组开发走查，没有测得修复收益，也不增加正式基准配对。此前完成审查的运行保留在支持历史中。本次范围是 Proposal → Apply → Stop；Archive 及完整 OpenSpec 生命周期仍未测试。</p>
       </div>
@@ -1109,7 +1109,7 @@
         <h3>Current method experiment</h3>
         <p>An experimental review method adds a short counterexample review for selected requirements. The reviewer states an allowed condition and required outcome, follows the current code, then tries to refute a concrete route to the wrong outcome. It records whether the proposed counterexample was refuted, supported or left unresolved. The host checks source bindings and protocol order; it cannot verify the reviewer’s reasoning. The method is optional and covers only the selected requirements.</p>
         <p data-live-ledger-status="en">The current plugin’s ordinary ON walkthrough is closed. Both actor turns were clean, and official OpenSpec Apply reached 10/10 complete. Final Stop missed its deadline despite retaining the initial 15 observations and all 25 live identities. Independent code checks passed. These are separate outcomes; the end-to-end method target remains unmet.</p>
-        <p data-current-campaign="en">The next generic fixes concern review usability: explain the required reason when revising a challenge appraisal, make pending source evidence easier to find before finish, and help later reviewers reuse valid canonical observations. Readiness-preview queries were zero in this run. No source-change retry loop was observed. The fixed deadline, one-correction limit, immutable records and fresh-source requirements must remain intact.</p>
+        <p data-current-campaign="en">Three general fixes are committed in source: distinct correction-error feedback, navigation to prior complete requirement wording, and an optional readiness instruction before first finish. Focused checks total 207 across six files on each of Node 18 and Node 24. Full CI and fresh package checks are pending; the published archive still contains the preceding runtime. The closed trial made zero readiness-preview queries, so the new guidance has no live effectiveness result. Deadlines, correction limits, retained records and fresh-source requirements are unchanged.</p>
         <p data-late-duty-work="en">The current plugin keeps the initial evaluation cohort fixed and retains later source-validated discoveries in a separate ledger. Two errors are fixed: a completed review’s business verdict could discard valid observations, and a valid final-only row could cause the whole table to be rejected. All 65 focused checks pass on Node 24 and Node 18, and in the working tree. Invalid staging IDs remain rejected. The earlier 403-file run missed both errors; the corrected source has now passed full CI. Item, byte and correction limits are unchanged. The earlier six-duty live result remains a result for the preceding plugin.</p>
         <p data-candidate-package="en">The current development artifact includes the live observation ledger. It passed 17 artifact checks on each tested Node version and all six fresh stock OpenClaw checks. All 281 installed files matched archive bytes and executable permissions, including 213 runtime modules. The installed schema exposes the evidence-readiness query. The real-model run now verifies retention into Stop, while final acceptance failed; general usefulness remains unproved.</p>
 
@@ -1131,7 +1131,7 @@
         <h3>当前的方法试验</h3>
         <p>当前实验性的审查方法，为选中的需求增加简短的反例审查。审查器先写明允许的条件及必需结果，再沿当前代码检查一条可能产生错误结果的具体路径，并尝试推翻这个反例。记录区分反例已被推翻、已有支持或仍未解决。宿主检查源码关联和协议顺序，无法验证推理本身。该方法可选，只覆盖被选中的需求。</p>
         <p data-live-ledger-status="zh-CN">当前插件的普通 ON 走查已关闭。两个执行回合均正常结束，OpenSpec 官方 Apply 状态为 10/10 完成。最终 Stop 虽保留了初始 15 项观察及全部 25 个当前身份，仍达到审查时限。独立代码检查通过。这些结果分别记录；方法的端到端目标仍未达到。</p>
-        <p data-current-campaign="zh-CN">下一轮通用修正针对审查可用性：修改反例评估时明确提示必填理由，在最终提交前更容易找到待补源码证据，并帮助后续审查复用有效的规范观察。本轮证据就绪预览查询为零，未观察到源码变化导致的重试循环。固定时限、一次修正上限、不可改写的历史记录及新鲜源码要求均须保留。</p>
+        <p data-current-campaign="zh-CN">三项通用修正已提交源码：区分纠偏错误原因、导航至既有完整需求措辞，以及在首次最终提交前给出可选的证据就绪提示。Node 18 和 Node 24 各通过六份文件中的 207 项专项检查。完整 CI 及新安装包检查仍在等待；已发布的安装包仍是此前运行时。本轮已关闭试验没有调用证据就绪预览，因此新提示尚无真实运行的效果结果。时限、纠偏额度、保留记录及新鲜源码要求均保持不变。</p>
         <p data-late-duty-work="zh-CN">当前插件固定初始评估集合，并用独立台账保留后续发现且来源已校验的需求。两处错误已修正：已完成审查的业务结论可能丢弃有效观察；有效但尚无暂存编号的最终需求，可能导致整张表被拒绝。Node 24、Node 18 及当前工作区上的 65 项专项检查全部通过，无效暂存编号仍被拒绝。此前完整 403 份文件测试没有发现这两处错误；修正后的源码现已通过完整 CI。条目、字节及纠偏额度上限保持不变。此前六项义务的实际运行结果仍归属于前一版插件。</p>
         <p data-candidate-package="zh-CN">当前开发安装包包含实时观察台账，在两个受测 Node 版本上各通过 17 项包检查，并通过全部六项新的原版 OpenClaw 检查。全部 281 个安装文件与包内字节及执行权限一致，其中包括 213 个运行时模块。安装后的 schema 提供证据就绪查询。真实模型运行现已验证观察延续到 Stop，但最终接受未完成，通用价值仍未证明。</p>
 
