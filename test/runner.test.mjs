@@ -221,5 +221,27 @@ test('archiving keeps generated output and source while excluding rebuildable de
   for (const name of ['node_modules', 'oh_modules']) await assert.rejects(() => fs.lstat(path.join(output, name)), { code: 'ENOENT' });
   assert.equal(await fs.readFile(path.join(shared, 'external.txt'), 'utf8'), 'shared dependency stays in place');
   assert.deepEqual((await json(path.join(runDir, 'result.json'))).excludedProjectDirectories, ['node_modules', 'oh_modules']);
-  assert.match(await fs.readFile(path.join(runDir, 'artifacts/changes.patch'), 'utf8'), /final source/);
+  const patch = await fs.readFile(path.join(runDir, 'artifacts/changes.patch'), 'utf8');
+  assert.match(patch, /final source/);
+  assert.match(patch, /--- \/dev\/null\n\+\+\+ b\/build\/result\.txt\n@@ [^\n]+ @@\n\+generated build output/);
+  assert.doesNotMatch(patch, /node_modules|oh_modules|external\.txt/);
+  assert.equal(execFileSync('git', ['-C', project, 'status', '--porcelain'], { encoding: 'utf8' }), ' M source.txt\n?? build/\n');
+  assert.deepEqual((await fs.readdir(path.join(runDir, 'artifacts'))).sort(), ['changes.patch', 'project']);
+});
+test('change patch keeps force-added baseline files and leaves out dependency folders even without .gitignore', async () => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-archive-patch-')));
+  const project = path.join(root, 'run/project'), runDir = path.join(root, 'run');
+  await fs.mkdir(project, { recursive: true });
+  await fs.writeFile(path.join(project, 'kept.log'), 'baseline log');
+  const git = args => execFileSync('git', ['-C', project, '-c', 'user.name=RC Test', '-c', 'user.email=rc-test@localhost',
+    '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=nonexistent', ...args], { windowsHide: true });
+  git(['init', '-q']); await fs.writeFile(path.join(project, '.git/info/exclude'), '*.log\n');
+  git(['add', '--all', '--force', '.']); git(['commit', '-qm', 'Original input']);
+  for (const file of ['src/new.txt', 'node_modules/pkg/index.js', 'entry/oh_modules/pkg/index.ets']) {
+    await fs.mkdir(path.dirname(path.join(project, file)), { recursive: true }); await fs.writeFile(path.join(project, file), `content of ${file}`);
+  }
+  await archive({ id: 'patch-test', runDir, stateDir: path.join(runDir, 'state'), identity: { projectRoot: project, agentId: 'main', sessionId: 's', sessionKey: 'agent:main:s' },
+    input: { paths: { git: 'git' } }, terminals: {} }, { status: 'ARCHIVED', host: {}, rc: { status: 'ENDED' } });
+  const patch = await fs.readFile(path.join(runDir, 'artifacts/changes.patch'), 'utf8');
+  assert.deepEqual([...patch.matchAll(/^diff --git a\/(\S+)/gm)].map(match => match[1]), ['src/new.txt']);
 });

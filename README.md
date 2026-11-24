@@ -85,7 +85,7 @@ foreach ($sample in Get-ChildItem D:/samples -Directory) {
 - `run.json`：输入哈希、模型、Session/运行 ID、实际工作目录、阶段、`experimentStartedAt` 和 `experimentDeadlineAt`。
 - `experiment-status.json`：供外层控制器读取的实验状态、心跳、RC 阶段、截止时间与调度标志；约每秒自动更新。
 - `result.json`：宿主终态、RC 终态及原因；`ARCHIVED` 代表执行已收尾留档，不代表程序通过独立评估或 RC 语义通过。
-- `artifacts/project/`：正常归档后的项目，包含业务生成的测试及输出；`artifacts/changes.patch` 是已跟踪文件的 diff，新文件以项目副本为准。超时不再复制整棵项目，部分产物保留在 `result.json.partialProject`，避免大项目复制拖住超时收尾。
+- `artifacts/project/`：正常归档后的项目，包含业务生成的测试及输出；`artifacts/changes.patch` 是相对工作树 `HEAD` 的完整 diff，包含新建和删除的文件（`node_modules`、`oh_modules` 除外；项目没有 `.gitignore` 时构建产物也会进入）。生成补丁使用临时索引，不改动工作树。超时不再复制整棵项目，部分产物保留在 `result.json.partialProject`，避免大项目复制拖住超时收尾。
 - `transcripts/`：业务及 RC 私有会话原始 JSONL 和索引。
 - `rc-status/latest.json`、`history.jsonl`、`raw/`：状态快照、观察历史和 RC 原始工作记录。
 - `rc-status/sample-stop-receipt.json`：本实验进程组清理回执；`activeProcesses: 0` 才确认清理。超时详情见 `experiment-timeout.json`。
