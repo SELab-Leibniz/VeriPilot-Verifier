@@ -164,51 +164,97 @@
     "noNewArtifactOrStockRerunForPlacement": true
   },
   "remoteCI": {
-    "status": "ALL_NINE_TEST_JOBS_SUCCESS_FOR_EXACT_A282_SOURCE",
-    "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
-    "verifiedHead": "a2824e591478fb8aea4cf15e8160c6771f720b69",
-    "runId": 45307972730,
+    "status": "ALL_NINE_TEST_JOBS_SUCCESS",
+    "sourceCommit": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+    "verifiedHead": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+    "runtimeArchiveSourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+    "runId": 45325259719,
     "attempt": 1,
     "jobsPass": 9,
     "jobsFail": 0,
     "jobsCancelled": 0,
     "publication": "SKIPPED",
     "receipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
-      "sha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31"
+      "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/terminal-receipt.json",
+      "sha256": "204a9741ebdd3d0cbd2489600577905f7e576d81d960d4bf089666fbe74c6f57"
+    },
+    "readback": {
+      "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/final-readback.json",
+      "sha256": "b52a90c2c3f3eebd5f51844892ece7327a5eb18ebdce6f4d2cb311d5b23fdc80"
     },
     "fullFiles": 403,
     "macOS": {
-      "files": 403,
-      "pass": 5098,
-      "skip": 33,
-      "fail": 0
+      "tests": 5132,
+      "pass": 5099,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 33
     },
     "ubuntu": {
-      "files": 403,
-      "pass": 5094,
-      "skip": 37,
-      "fail": 0
+      "tests": 5132,
+      "pass": 5095,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 37
     },
     "windows": {
-      "shardCounts": [
-        101,
-        101,
-        101,
-        100
-      ],
-      "files": 403,
-      "pass": 5084,
-      "skip": 45,
-      "fail": 0
+      "tests": 5130,
+      "pass": 5085,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 45
     },
-    "node18CoreCompatibilityChecksEach": 111,
+    "windowsShardCounts": [
+      101,
+      101,
+      101,
+      100
+    ],
+    "windowsDisjointUnionMatches403": true,
     "artifactChecksEachJob": 17,
+    "node18Core": [
+      {
+        "name": "Node 18 / ubuntu-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 109,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 2,
+          "todo": 0
+        }
+      },
+      {
+        "name": "Node 18 / macos-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 109,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 2,
+          "todo": 0
+        }
+      },
+      {
+        "name": "Node 18 / windows-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 110,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 1,
+          "todo": 0
+        }
+      }
+    ],
     "allOfficialLogsAndCheckoutHeadsVerified": true,
-    "readOnlyNaturalObservation": true,
-    "ActionsMutated": false,
-    "noFutureHeadCiClaim": true,
-    "qualificationScope": "Exact a282 source CI; later report or distribution-placement commit is not automatically CI-qualified."
+    "noRerunCancelDispatch": true,
+    "newContractTestAddedToExistingFile": 1,
+    "runtimeArchiveUnchangedFromA282": true,
+    "qualityGainProven": false
   },
   "currentPackageRealModelEvaluation": {
     "kind": "CLOSED_SINGLE_ON_HEALTHY_METHOD_PROBE_AND_INDEPENDENT_FINITE_DELIVERY_GRADE",
@@ -695,7 +741,7 @@
   },
   "publicBenchmarkBuildPreflight": {
     "status": "QUALIFIED_EXACT_PREPARE_OFFLINE_INSTALL_AND_UNSIGNED_APP_TEST_COMPILATION",
-    "actual": "1a5187/session25416→49dfda/0",
+    "actual": "1a5187/session25416\u219249dfda/0",
     "receipt": {
       "path": ".runtime-correction/validation/s11-sdk-prepare-build-preflight-v4-urjq0b_i/source-checks/actual-sdk-final-receipt.json",
       "sha256": "15e94146a5618f2931af10a811ab4f160e7921a88932a62e1d62cfa78157a264"
@@ -1255,6 +1301,41 @@
       "bootReadiness": false,
       "causeOfEarlierLiveDenialProven": false,
       "benchmarkCredit": 0
+    },
+    "latestPrerequisite": {
+      "status": "UNQUALIFIED",
+      "actual": "11e7b6/session38554 ->45bbe4/1 CLOSED",
+      "elapsedMs": 1492,
+      "receipt": {
+        "path": ".runtime-correction/validation/native-status-prerequisite-held-nimbk5_9/run-1/receipt.json",
+        "sha256": "fd2d708b1bf5b389096aafa4f471ae4031ccdcfb30e2148a7960a717ff4602a1"
+      },
+      "rootActualTerminal": {
+        "path": ".runtime-correction/validation/native-status-prerequisite-held-nimbk5_9/root-actual-terminal.json",
+        "sha256": "3d7e61337044039fcacbbf7e1af253232888c0af9018ab4dd318f95b626b0867"
+      },
+      "independentReadback": {
+        "path": ".runtime-correction/validation/native-prerequisite-readback-hezhxyf4/readback.json",
+        "sha256": "0d614eba3ad289e94edd7da0c7946407fddfedd10e2c25ffe41a22f36c323438"
+      },
+      "parentExactOwnProcessObservation": true,
+      "policyPsExitCode": 71,
+      "policyXargsPsExitCode": 126,
+      "vendorExitCode": 0,
+      "vendorStderrBytes": 0,
+      "vendorStdoutLiteral": "[Empty]\n",
+      "originalParserStatus": "UNKNOWN_PRESERVED",
+      "knownCleanupConfirmed": true,
+      "rootPostclosureKnownBirthsAbsent": 5,
+      "historicalFinalProcessSnapshotNotRetained": true,
+      "preAdmissionFailureRetained": {
+        "path": ".runtime-correction/validation/native-status-prerequisite-held-nimbk5_9/root-pre-admission-failure.json",
+        "sha256": "d13aa5760e8a5d43137a14cb80e3cd44fd7647e793914bc0c01e24196860ebec"
+      },
+      "nativeBootExecuted": false,
+      "trustedMonitorQualified": false,
+      "guestNetworkQualified": false,
+      "benchmarkCreditAdded": 0
     }
   },
   "historicalValidation": {
@@ -1291,14 +1372,16 @@
       "path": ".runtime-correction/validation/promote-c331-readiness-_0s_79dh/previous-canonical-validation.json",
       "sha256": "cbc888f2b159c15dc0244f7479e7ba3892970b4a6b75867ef27ca9f55733d57d"
     },
-    "rootOwnsGitPublication": true
+    "rootOwnsGitPublication": true,
+    "verifiedArtifactAndCiHead": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+    "reportOnlyFollowup": true
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
-    "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690",
-    "htmlSha256": "ea22f4e0b62f144f2e0b28244b9fd1f95a7a7c09728884d023c8d2f176a1dd47",
-    "actual": "59c6ce/session39580 ->9d3124/0 CLOSED",
+    "path": ".runtime-correction/validation/report-current-native-ledger-uqjg80wg/report-qa/capture/receipt.json",
+    "sha256": "7d205614a848da728937b68546afc03e99fe590283cbdc0dd12d73b0b86052c5",
+    "htmlSha256": "04fc3e1ced36332a92dbf36acd614ebaa3a78ac057d8e0fe3705ece04b3e9589",
+    "actual": "b98959/session34777 ->71faf1/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1309,8 +1392,8 @@
       390
     ],
     "rootInspected": [
-      "comparison-en-1200.png",
-      "table-zh-CN-390.png"
+      "ci-en-1200.png",
+      "phone-zh-CN-390.png"
     ],
     "externalLinks": 0,
     "externalRequests": 0,
@@ -1322,8 +1405,8 @@
       "internalLinks": 7
     },
     "receipt": {
-      "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
-      "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690"
+      "path": ".runtime-correction/validation/report-current-native-ledger-uqjg80wg/report-qa/capture/receipt.json",
+      "sha256": "7d205614a848da728937b68546afc03e99fe590283cbdc0dd12d73b0b86052c5"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -3870,7 +3953,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CURRENT_CANONICAL_DEVELOPMENT_C331_RETAINED_STOP_COMPLETE_WITH_PROPOSAL_HOST_ERROR",
-    "htmlSha256": "ea22f4e0b62f144f2e0b28244b9fd1f95a7a7c09728884d023c8d2f176a1dd47",
+    "htmlSha256": "04fc3e1ced36332a92dbf36acd614ebaa3a78ac057d8e0fe3705ece04b3e9589",
     "modelOutcomeReference": ".runtime-correction/validation/public-run-8344f3c012f74b",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -4122,38 +4205,96 @@
     "archiveExecuted": false
   },
   "latestNaturalCiObservation": {
-    "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
-    "runId": 45307972730,
+    "status": "ALL_NINE_TEST_JOBS_SUCCESS",
+    "sourceCommit": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+    "verifiedHead": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+    "runtimeArchiveSourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+    "runId": 45325259719,
     "attempt": 1,
-    "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
-    "receipt": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
-    "receiptSha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31",
+    "jobsPass": 9,
+    "jobsFail": 0,
+    "jobsCancelled": 0,
+    "publication": "SKIPPED",
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/terminal-receipt.json",
+      "sha256": "204a9741ebdd3d0cbd2489600577905f7e576d81d960d4bf089666fbe74c6f57"
+    },
+    "readback": {
+      "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/final-readback.json",
+      "sha256": "b52a90c2c3f3eebd5f51844892ece7327a5eb18ebdce6f4d2cb311d5b23fdc80"
+    },
+    "fullFiles": 403,
     "macOS": {
-      "files": 403,
-      "pass": 5098,
-      "skip": 33,
-      "fail": 0
+      "tests": 5132,
+      "pass": 5099,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 33
     },
     "ubuntu": {
-      "files": 403,
-      "pass": 5094,
-      "skip": 37,
-      "fail": 0
+      "tests": 5132,
+      "pass": 5095,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 37
     },
     "windows": {
-      "shardCounts": [
-        101,
-        101,
-        101,
-        100
-      ],
-      "files": 403,
-      "pass": 5084,
-      "skip": 45,
-      "fail": 0
+      "tests": 5130,
+      "pass": 5085,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 45
     },
-    "readinessChangeIncluded": true,
+    "windowsShardCounts": [
+      101,
+      101,
+      101,
+      100
+    ],
+    "windowsDisjointUnionMatches403": true,
+    "artifactChecksEachJob": 17,
+    "node18Core": [
+      {
+        "name": "Node 18 / ubuntu-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 109,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 2,
+          "todo": 0
+        }
+      },
+      {
+        "name": "Node 18 / macos-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 109,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 2,
+          "todo": 0
+        }
+      },
+      {
+        "name": "Node 18 / windows-latest",
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 110,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 1,
+          "todo": 0
+        }
+      }
+    ],
+    "allOfficialLogsAndCheckoutHeadsVerified": true,
     "noRerunCancelDispatch": true,
+    "newContractTestAddedToExistingFile": 1,
+    "runtimeArchiveUnchangedFromA282": true,
     "qualityGainProven": false
   },
   "previousReportWalkthrough": {
@@ -4353,38 +4494,96 @@
     },
     "runtimeQualificationSource": "a2824e591478fb8aea4cf15e8160c6771f720b69",
     "latestNaturalCi": {
-      "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
-      "runId": 45307972730,
+      "status": "ALL_NINE_TEST_JOBS_SUCCESS",
+      "sourceCommit": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+      "verifiedHead": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
+      "runtimeArchiveSourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "runId": 45325259719,
       "attempt": 1,
-      "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
-      "receipt": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
-      "receiptSha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31",
+      "jobsPass": 9,
+      "jobsFail": 0,
+      "jobsCancelled": 0,
+      "publication": "SKIPPED",
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/terminal-receipt.json",
+        "sha256": "204a9741ebdd3d0cbd2489600577905f7e576d81d960d4bf089666fbe74c6f57"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/final-readback.json",
+        "sha256": "b52a90c2c3f3eebd5f51844892ece7327a5eb18ebdce6f4d2cb311d5b23fdc80"
+      },
+      "fullFiles": 403,
       "macOS": {
-        "files": 403,
-        "pass": 5098,
-        "skip": 33,
-        "fail": 0
+        "tests": 5132,
+        "pass": 5099,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 33
       },
       "ubuntu": {
-        "files": 403,
-        "pass": 5094,
-        "skip": 37,
-        "fail": 0
+        "tests": 5132,
+        "pass": 5095,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 37
       },
       "windows": {
-        "shardCounts": [
-          101,
-          101,
-          101,
-          100
-        ],
-        "files": 403,
-        "pass": 5084,
-        "skip": 45,
-        "fail": 0
+        "tests": 5130,
+        "pass": 5085,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 45
       },
-      "readinessChangeIncluded": true,
+      "windowsShardCounts": [
+        101,
+        101,
+        101,
+        100
+      ],
+      "windowsDisjointUnionMatches403": true,
+      "artifactChecksEachJob": 17,
+      "node18Core": [
+        {
+          "name": "Node 18 / ubuntu-latest",
+          "counts": {
+            "tests": 111,
+            "suites": 0,
+            "pass": 109,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 2,
+            "todo": 0
+          }
+        },
+        {
+          "name": "Node 18 / macos-latest",
+          "counts": {
+            "tests": 111,
+            "suites": 0,
+            "pass": 109,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 2,
+            "todo": 0
+          }
+        },
+        {
+          "name": "Node 18 / windows-latest",
+          "counts": {
+            "tests": 111,
+            "suites": 0,
+            "pass": 110,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 1,
+            "todo": 0
+          }
+        }
+      ],
+      "allOfficialLogsAndCheckoutHeadsVerified": true,
       "noRerunCancelDispatch": true,
+      "newContractTestAddedToExistingFile": 1,
+      "runtimeArchiveUnchangedFromA282": true,
       "qualityGainProven": false
     },
     "privateReplacementArchive": {
@@ -4414,9 +4613,8 @@
       "promotionPacket": ".runtime-correction/validation/promote-c331-readiness-_0s_79dh"
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
-      "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690",
-      "htmlSha256": "ea22f4e0b62f144f2e0b28244b9fd1f95a7a7c09728884d023c8d2f176a1dd47"
+      "path": ".runtime-correction/validation/report-current-native-ledger-uqjg80wg/report-qa/capture/receipt.json",
+      "sha256": "7d205614a848da728937b68546afc03e99fe590283cbdc0dd12d73b0b86052c5"
     },
     "precedingNaturalCiRecords": [
       {
@@ -4546,6 +4744,41 @@
         "receiptSha256": "fa60f1a92e6052bd833a23a124c8d6637bc4545e3aed90473b35ae106f29f5b1",
         "readinessChangeIncluded": false,
         "noRerunCancelDispatch": true
+      },
+      {
+        "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+        "runId": 45307972730,
+        "attempt": 1,
+        "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
+        "receipt": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
+        "receiptSha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31",
+        "macOS": {
+          "files": 403,
+          "pass": 5098,
+          "skip": 33,
+          "fail": 0
+        },
+        "ubuntu": {
+          "files": 403,
+          "pass": 5094,
+          "skip": 37,
+          "fail": 0
+        },
+        "windows": {
+          "shardCounts": [
+            101,
+            101,
+            101,
+            100
+          ],
+          "files": 403,
+          "pass": 5084,
+          "skip": 45,
+          "fail": 0
+        },
+        "readinessChangeIncluded": true,
+        "noRerunCancelDispatch": true,
+        "qualityGainProven": false
       }
     ],
     "nextLivePilot": {
@@ -4638,7 +4871,7 @@
       "externalLinks": 0
     },
     "pendingCiSchedulingChange": {
-      "status": "APPLIED_EXACT_QUALIFIED_FILTER_AWAITING_NATURAL_CI",
+      "status": "APPLIED_NATURAL_NINE_TEST_JOBS_SUCCESS",
       "receipt": {
         "path": ".runtime-correction/validation/ci-report-filter-applied-e3obggp5/receipt.json",
         "sha256": "797cf44eb832fa411728692860d7358517cb28cc17d8568e48c24bc882ea16a0"
@@ -4654,7 +4887,12 @@
       "pullRequestUnfiltered": true,
       "mixedAndCodePushesRunFullCi": true,
       "focusedChecksEachNodeVersion": 8,
-      "runtimeAndDeadlinesChanged": false
+      "runtimeAndDeadlinesChanged": false,
+      "naturalRunId": 45325259719,
+      "naturalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-95cddc4-natural-_2z9rvy9/terminal-receipt.json",
+        "sha256": "204a9741ebdd3d0cbd2489600577905f7e576d81d960d4bf089666fbe74c6f57"
+      }
     },
     "reportQaHistory": [
       {
@@ -4756,7 +4994,7 @@
         },
         "initialQaHarnessFailure": {
           "actual": "8929e2/session58408 ->d5d726/1 CLOSED",
-          "reason": "Exact Chinese prose changed from 全部通过 to 已全部通过; factual regex required refresh.",
+          "reason": "Exact Chinese prose changed from \u5168\u90e8\u901a\u8fc7 to \u5df2\u5168\u90e8\u901a\u8fc7; factual regex required refresh.",
           "htmlChangedAfterFailure": false
         }
       },
@@ -4813,6 +5051,11 @@
       {
         "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa/capture/receipt.json",
         "sha256": "3ab341c0c5e9298b57f7c250bead3c7262a66c136a8ccbaf24fd493af46462d5"
+      },
+      {
+        "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
+        "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690",
+        "htmlSha256": "ea22f4e0b62f144f2e0b28244b9fd1f95a7a7c09728884d023c8d2f176a1dd47"
       }
     ],
     "nextGenericFix": {
@@ -5060,7 +5303,24 @@
         "currentFullSourceCi": "b246 exact complete Mac403/5089PASS33SKIP and Ubuntu403/5085PASS37SKIP",
         "latestChangedWholeFileChecks": 144
       }
-    ]
+    ],
+    "prospectiveLateDutyLedger": {
+      "status": "PRIVATE_IMPLEMENTATION_IN_PROGRESS_NOT_SHIPPED",
+      "sourceReview": {
+        "path": ".runtime-correction/validation/late-duty-ledger-source-audit-8344-vm5yyt3h/source-review.json",
+        "sha256": "9aabfa91a59ef560d2fd185901ea757cddcbc28a2d3674aa3641d7b74c32901a"
+      },
+      "sourceHold": {
+        "path": ".runtime-correction/validation/late-duty-ledger-source-audit-8344-vm5yyt3h/source-hold.json",
+        "sha256": "458d75e0fb0d8598ff8767f8a5507c48bec396d39a6afedb8a219535457558c9"
+      },
+      "finding": "STRUCTURAL_ACCOUNTABILITY_GAP_NOT_OBSERVED_BUSINESS_FAILURE",
+      "originalMessageRemainsAvailable": true,
+      "initialSixDutyRubricAndOutcomeUnchanged": true,
+      "oldRubricRetagged": false,
+      "requiresValidatedFinalPublicationNotRawStageUnion": true,
+      "currentCanonicalArchiveIncludesNewLedger": false
+    }
   },
   "earlierReportWalkthroughs": [
     {
@@ -5144,6 +5404,39 @@
         "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa/capture/receipt.json",
         "sha256": "3ab341c0c5e9298b57f7c250bead3c7262a66c136a8ccbaf24fd493af46462d5"
       }
+    },
+    {
+      "status": "PASS",
+      "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
+      "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690",
+      "htmlSha256": "ea22f4e0b62f144f2e0b28244b9fd1f95a7a7c09728884d023c8d2f176a1dd47",
+      "actual": "59c6ce/session39580 ->9d3124/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": [
+        "comparison-en-1200.png",
+        "table-zh-CN-390.png"
+      ],
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/report-completed-retention-ogx0yf70/report-qa-final/capture/receipt.json",
+        "sha256": "604132a8878358c826fbe7571ab40f08f4f6d74d64a4f7fcce9d92d6cb2e3690"
+      }
     }
   ],
   "precedingReportCurrentQa": {
@@ -5212,5 +5505,91 @@
       "qualityGainProven": false,
       "formalBenchmarkCredit": 0
     }
-  }
+  },
+  "earlierNaturalCiObservations": [
+    {
+      "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "runId": 45307972730,
+      "attempt": 1,
+      "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
+      "receipt": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
+      "receiptSha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31",
+      "macOS": {
+        "files": 403,
+        "pass": 5098,
+        "skip": 33,
+        "fail": 0
+      },
+      "ubuntu": {
+        "files": 403,
+        "pass": 5094,
+        "skip": 37,
+        "fail": 0
+      },
+      "windows": {
+        "shardCounts": [
+          101,
+          101,
+          101,
+          100
+        ],
+        "files": 403,
+        "pass": 5084,
+        "skip": 45,
+        "fail": 0
+      },
+      "readinessChangeIncluded": true,
+      "noRerunCancelDispatch": true,
+      "qualityGainProven": false
+    }
+  ],
+  "earlierRemoteCiQualifications": [
+    {
+      "status": "ALL_NINE_TEST_JOBS_SUCCESS_FOR_EXACT_A282_SOURCE",
+      "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "verifiedHead": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "runId": 45307972730,
+      "attempt": 1,
+      "jobsPass": 9,
+      "jobsFail": 0,
+      "jobsCancelled": 0,
+      "publication": "SKIPPED",
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-a282-natural-et6qgzpg/terminal-receipt.json",
+        "sha256": "768f20a43d62ec1311d236b2f173ce012fa044965456b33b7c71e3db5b825f31"
+      },
+      "fullFiles": 403,
+      "macOS": {
+        "files": 403,
+        "pass": 5098,
+        "skip": 33,
+        "fail": 0
+      },
+      "ubuntu": {
+        "files": 403,
+        "pass": 5094,
+        "skip": 37,
+        "fail": 0
+      },
+      "windows": {
+        "shardCounts": [
+          101,
+          101,
+          101,
+          100
+        ],
+        "files": 403,
+        "pass": 5084,
+        "skip": 45,
+        "fail": 0
+      },
+      "node18CoreCompatibilityChecksEach": 111,
+      "artifactChecksEachJob": 17,
+      "allOfficialLogsAndCheckoutHeadsVerified": true,
+      "readOnlyNaturalObservation": true,
+      "ActionsMutated": false,
+      "noFutureHeadCiClaim": true,
+      "qualificationScope": "Exact a282 source CI; later report or distribution-placement commit is not automatically CI-qualified."
+    }
+  ]
 }
