@@ -160,3 +160,30 @@ while(!fs.existsSync(${JSON.stringify(release)}))await new Promise(resolve=>setT
   }
   assert.equal(await entered(), f.files.length, "all remaining files run after a slot is released");
 });
+
+
+test("push filtering skips only the two exact reports and keeps mixed changes in CI", async () => {
+  const workflow = (await fs.readFile(new URL("../.github/workflows/plugin-compatibility.yml", import.meta.url), "utf8")).replaceAll("\r\n", "\n");
+  const on = /^on:\n([\s\S]*?)(?=^[^ \t\r\n])/mu.exec(workflow)?.[1];
+  assert(on, "The workflow must expose its event configuration.");
+  assert.deepEqual([...on.matchAll(/^  ([a-z_]+):/gmu)].map(match => match[1]).sort(), ["pull_request", "push"]);
+  assert.equal(on.slice(0, on.indexOf("  push:")).trim(), "pull_request:", "Pull-request checks retain their existing unfiltered trigger.");
+  const push = /^  push:\n(?: {4}.*(?:\n|$))+/mu.exec(on)?.[0];
+  assert(push, "Push configuration is required.");
+  const { parseSimpleYaml } = await import("../lib/simple-yaml.mjs");
+  const configuration = parseSimpleYaml(push.replace(/^ {2}/gmu, "")).push;
+  assert.deepEqual(Object.keys(configuration), ["paths-ignore"], "Branch and tag triggers retain their existing scope.");
+  const reports = [".runtime-correction/runtime-corrector-progress.html", "dist/runtime-corrector-openclaw-1.10.0.validation.json"];
+  assert.deepEqual(configuration["paths-ignore"], reports, "No wildcard, directory-wide or extra file exclusions.");
+  // GitHub's documented paths-ignore rule runs if any changed path is outside
+  // the exclusions; all patterns above are literal file names.
+  const triggersPush = changed => changed.some(file => !configuration["paths-ignore"].includes(file));
+  for (const changed of [[reports[0]], [reports[1]], reports]) assert.equal(triggersPush(changed), false);
+  for (const file of ["lib/runtime-v2/stop-workspace-review.mjs", "test/test-runner.test.mjs", "scripts/test.mjs",
+    ".github/workflows/plugin-compatibility.yml", "packaging/runtime-modules.json", "packaging/hosts/openclaw/README.md",
+    "dist/runtime-corrector-openclaw-1.10.0.tgz", "README.md", ".runtime-correction/runtime-corrector-progress.json",
+    "dist/runtime-corrector-openclaw-1.10.1.validation.json", reports[0] + ".bak"]) {
+    assert.equal(triggersPush([file]), true, file);
+    assert.equal(triggersPush([...reports, file]), true, "Mixed report/code changes must run: " + file);
+  }
+});

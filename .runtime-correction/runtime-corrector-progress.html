@@ -153,7 +153,7 @@
     <p data-report-copy lang="zh-CN">运行时纠偏器是 OpenClaw 的一个插件，用于检查正在进行的编码任务。它把用户的原始请求和 OpenSpec 方案与当前代码及检查结果对照。发现可以修正的具体问题时，插件可要求 OpenClaw 在任务结束前处理。</p>
   </header>
   <nav aria-label="Report sections">
-    <ul><li><a href="#workflow"><span data-report-copy lang="en">Workflow</span><span data-report-copy lang="zh-CN">目标工作流</span></a></li><li><a href="#decisions"><span data-report-copy lang="en">Requirements and evidence</span><span data-report-copy lang="zh-CN">需求与证据</span></a></li><li><a href="#correction"><span data-report-copy lang="en">Intervention</span><span data-report-copy lang="zh-CN">何时介入</span></a></li><li><a href="#expected"><span data-report-copy lang="en">One task walkthrough</span><span data-report-copy lang="zh-CN">单任务全过程</span></a></li><li><a href="#results"><span data-report-copy lang="en">Benchmark results</span><span data-report-copy lang="zh-CN">基准测试结果</span></a></li><li><a href="#next"><span data-report-copy lang="en">Challenges</span><span data-report-copy lang="zh-CN">挑战</span></a></li></ul>
+    <ul><li><a href="#workflow"><span data-report-copy lang="en">Workflow</span><span data-report-copy lang="zh-CN">目标工作流</span></a></li><li><a href="#decisions"><span data-report-copy lang="en">Requirements and evidence</span><span data-report-copy lang="zh-CN">需求与证据</span></a></li><li><a href="#correction"><span data-report-copy lang="en">Intervention</span><span data-report-copy lang="zh-CN">何时介入</span></a></li><li><a href="#expected"><span data-report-copy lang="en">One task walkthrough</span><span data-report-copy lang="zh-CN">单任务走查</span></a></li><li><a href="#results"><span data-report-copy lang="en">Benchmark results</span><span data-report-copy lang="zh-CN">基准测试结果</span></a></li><li><a href="#next"><span data-report-copy lang="en">Challenges</span><span data-report-copy lang="zh-CN">挑战</span></a></li></ul>
   </nav>
   <main id="main">
     <section id="workflow" aria-labelledby="workflow-title workflow-title-zh">
@@ -290,42 +290,42 @@
     </section>
     <section id="expected" aria-labelledby="expected-title expected-title-zh">
       <div class="language-panel" data-report-copy lang="en">
-        <h2 id="expected-title">Latest walkthrough: code passes, final review unfinished</h2>
-        <p class="callout">The candidate plugin used original-duty staging in a real OpenClaw run. Apply completed all 12 implementation steps, and independent delivery checks passed. The corrector's final Stop review reached its deadline and reported <code>UNVERIFIED</code>. This is partial mechanism evidence, not a successful end-to-end verification.</p>
-        <p class="intro">This reused healthy CLI task asks for a usable help suggestion when another option shadows a help name. Its production code already met the request. OpenClaw preserved all 18 source files and added three regression-test functions. The run used Flash for coding and Pro for reviews within the original one-hour and 256-request limits.</p>
+        <h2 id="expected-title">Latest walkthrough: final review completed</h2>
+        <p class="callout">The corrector completed its final Stop review within the original time limit, and independent delivery checks passed. The Proposal host turn reported an error, which remains recorded. This run does not validate Archive or the whole OpenSpec lifecycle.</p>
+        <p class="intro">This reused healthy CLI task asks for a usable help hint when another option shadows a help name. The starting production code already met the request. Flash handled coding and Pro handled reviews, within one hour and 256 requests.</p>
         <div class="table" role="region" aria-label="Latest original-duty walkthrough" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Limit</th></tr></thead>
           <tbody>
-            <tr><th scope="row" data-label="Stage">Proposal and approval</th><td data-label="Observed result">All six plan files were read before ordinary approval. Official OpenSpec validation passed; 12 steps were initially unchecked.</td><td data-label="Limit">No prepared requirement inventory or sealed approval. Document validity does not prove complete requirements.</td></tr>
-            <tr><th scope="row" data-label="Stage">Implementation</th><td data-label="Observed result">All 12 steps were marked complete. The plan changed only through checkbox progress. Three regression tests added 79 lines; production code stayed unchanged.</td><td data-label="Limit">The starting code was already healthy. These changes demonstrate no repair benefit.</td></tr>
-            <tr><th scope="row" data-label="Stage">Original-duty staging</th><td data-label="Observed result">Four document reviews made successful, nonempty staging calls: 11, 11, 20 and 20 discovered duties. The initial 11 identities, full clauses and source anchors appear unchanged in all four saved semantic-review tables and the mandatory Stop basis.</td><td data-label="Limit">Discovered duties are non-exhaustive. Later staging does not expand the first frozen cohort. Retention into Stop does not establish complete final verification.</td></tr>
-            <tr><th scope="row" data-label="Stage">Final runtime review</th><td data-label="Observed result">Stop ended <code>UNVERIFIED</code> with <code>REVIEWER_DEADLINE</code> after 31 turns. The final dispatch also exposes this state; it did not report successful verification.</td><td data-label="Limit">There is no completed current original-duty coverage receipt. Coding completion and a clean process exit do not replace it.</td></tr>
+            <tr><th scope="row" data-label="Stage">Proposal and approval</th><td data-label="Observed result">The operator read all six plan files before ordinary approval. Official OpenSpec validation passed; nine steps were initially unchecked.</td><td data-label="Limit">The host turn ended with an error despite usable plan files. Approval of those files does not change that error into a successful host turn.</td></tr>
+            <tr><th scope="row" data-label="Stage">Implementation</th><td data-label="Observed result">All nine steps were marked complete. The plan changed only through checkbox progress. All 18 production source files stayed unchanged; three regression tests were added.</td><td data-label="Limit">The starting code was healthy. Neither the checked boxes nor the added tests establish a repair benefit.</td></tr>
+            <tr><th scope="row" data-label="Stage">Original requirements</th><td data-label="Observed result">Three plan reviews staged 6, 6 and 8 duties. The first frozen six retain their identities, clauses and original source anchors through the saved reviews and current Stop basis.</td><td data-label="Limit">Discovery is non-exhaustive. A later staging table does not expand the first frozen cohort or prove that every requirement was found.</td></tr>
+            <tr><th scope="row" data-label="Stage">Final runtime review</th><td data-label="Observed result">The first finish left one item pending because of a mistyped object ID. The reviewer corrected it and received <code>saved:true, complete:true</code> before its original deadline. The host reported <code>NO_DEVIATION_FOUND</code>.</td><td data-label="Limit">Counterexample review sampled 3/5 eligible duties. Its scope remains partial and <code>semanticsVerified:false</code>. Readiness-preview queries: 0.</td></tr>
             <tr><th scope="row" data-label="Stage">Independent delivery checks</th><td data-label="Observed result">Primary: 8/8. Public regressions: 668/668. Exploratory: 6/6. All three grading containers were removed.</td><td data-label="Limit">Grading followed closure and a 169-file freeze. The Linux arm64/Python 3.13 evaluator establishes no native-macOS equivalence.</td></tr>
           </tbody>
         </table></div>
-        <h3>What needs fixing next</h3>
-        <p>The first finish attempt included all 11 known duties, but seven remained pending: four lacked the required cumulative full-file witness, and three lacked complete reads of matching command invocation records. About nine minutes remained. The reviewer spent that time paging diagnostics, rereading a large source file and locating process evidence; it never submitted a second finish.</p>
-        <p>The run recorded 47 Flash and 74 Pro request starts over about 55 minutes. The next fix will expose missing read ranges and invocation companions before final submission. It must preserve the fixed budget, source freshness and all retained duties. This reused ON-only case adds no formal benchmark pair or measured quality gain. The change remains unarchived. This walkthrough does not validate Archive or the whole OpenSpec lifecycle.</p>
-        <p>The first trace export exceeded its fixed 128 MiB cap because of repeated controller logs. That failure remains recorded. A smaller supplemental copy retains the essential host traces. The audit also found that its expected per-run files differ from the plugin's transaction-based storage; this protocol mismatch is kept separate from the actual review deadline.</p>
+        <h3>What this run establishes</h3>
+        <p>Genuine staging preceded coverage submissions. The initial six duties survived the committed review history, and the current final review completed. The host rejected two incomplete counterexample resolutions before accepting their repair. This demonstrates requirement retention and review protocol completion on this task.</p>
+        <p>The new guidance was displayed, but the reviewer never called the readiness-preview tool. There was no source read between the failed and successful finish. We cannot attribute completion to the new preview, claim complete semantic verification, or infer general usefulness from this healthy case.</p>
+        <p>The run recorded 46 Flash and 76 Pro request starts. It was an ON-only development probe with no prepared inventory, sealed approval or injected defect. It adds no formal benchmark pair or measured quality gain. The change remains unarchived. The preceding deadline failure remains in the supporting history.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
-        <h2 id="expected-title-zh">最新走查：代码检查通过，最终审查未完成</h2>
-        <p class="callout">候选插件已在真实 OpenClaw 运行中使用原始义务暂存。Apply 阶段完成全部 12 项实现步骤，独立交付检查也通过了。但纠偏器的最终 Stop 审查达到时限，报告 <code>UNVERIFIED</code>。这提供了部分机制证据，尚未完成端到端验证。</p>
-        <p class="intro">这是一项重复使用的健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。OpenClaw 保留全部 18 份源码，新增三个回归测试函数。编码使用 Flash，审查使用 Pro，保持原定一小时及 256 次请求上限。</p>
+        <h2 id="expected-title-zh">最新走查：最终审查已完成</h2>
+        <p class="callout">纠偏器在原定时限内完成最终 Stop 审查，独立交付检查也已通过。Proposal 宿主回合曾报告错误，这项记录继续保留。本次没有验证 Archive 或完整的 OpenSpec 生命周期。</p>
+        <p class="intro">这是一项重复使用的健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。编码使用 Flash，审查使用 Pro，上限保持为一小时、256 次请求。</p>
         <div class="table" role="region" aria-label="最新原始义务走查" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">限制</th></tr></thead>
           <tbody>
-            <tr><th scope="row" data-label="阶段">Proposal 与批准</th><td data-label="观察结果">普通审批前读完全部六份方案文件。OpenSpec 官方校验通过；12 项步骤最初均未勾选。</td><td data-label="限制">没有预先准备需求清单或封存审批。文档有效不等于需求完整。</td></tr>
-            <tr><th scope="row" data-label="阶段">实现</th><td data-label="观察结果">12 项步骤全部标记完成，方案仅更新复选框。新增三个回归测试，共增加 79 行；业务代码不变。</td><td data-label="限制">起始代码已经健康，这些改动没有证明修复收益。</td></tr>
-            <tr><th scope="row" data-label="阶段">原始义务暂存</th><td data-label="观察结果">四次文档审查均实际调用暂存工具，分别发现 11、11、20、20 项义务。最初 11 个身份编号、完整条款及来源锚点原样保留在全部四份已保存的语义审查表及 Stop 必查依据中。</td><td data-label="限制">已发现的义务并非穷尽清单。后续暂存不扩充首次冻结的集合。义务到达 Stop 不等于最终验证已完成。</td></tr>
-            <tr><th scope="row" data-label="阶段">最终运行时审查</th><td data-label="观察结果">Stop 在 31 轮后以 <code>REVIEWER_DEADLINE</code> 结束，状态为 <code>UNVERIFIED</code>。最终调度也明确保留该状态，没有报告验证成功。</td><td data-label="限制">没有完整、当前有效的原始义务覆盖回执。编码完成及进程正常退出不能替代这项证据。</td></tr>
+            <tr><th scope="row" data-label="阶段">Proposal 与批准</th><td data-label="观察结果">普通审批前读完全部六份方案文件。OpenSpec 官方校验通过；九项步骤最初均未勾选。</td><td data-label="限制">尽管方案文件可用，宿主回合仍以错误结束。批准这些文件，不会使该回合变为成功。</td></tr>
+            <tr><th scope="row" data-label="阶段">实现</th><td data-label="观察结果">九项步骤全部标记完成，方案仅更新复选框。全部 18 份业务源码保持不变，新增三个回归测试。</td><td data-label="限制">起始代码已经健康，完成勾选及新增测试均不能证明修复收益。</td></tr>
+            <tr><th scope="row" data-label="阶段">原始需求</th><td data-label="观察结果">三次方案审查分别暂存 6、6、8 项义务。首次冻结的六项义务，其身份、条款及原始来源锚点贯穿已保存的审查，并保留在当前 Stop 依据中。</td><td data-label="限制">发现的义务并非穷尽清单。后续暂存不会扩充首次冻结集合，也不能证明全部需求均已发现。</td></tr>
+            <tr><th scope="row" data-label="阶段">最终运行时审查</th><td data-label="观察结果">首次提交因对象编号拼写错误而留下一个待完成项。审查器修正编号后，在原定时限内收到 <code>saved:true, complete:true</code>。宿主报告 <code>NO_DEVIATION_FOUND</code>。</td><td data-label="限制">反例审查抽查了五项符合条件义务中的三项（3/5）。范围仍为部分审查，<code>semanticsVerified:false</code>。证据就绪预览查询次数：0。</td></tr>
             <tr><th scope="row" data-label="阶段">独立交付检查</th><td data-label="观察结果">主要行为：8/8。公开回归：668/668。探索检查：6/6。三个评分容器均已移除。</td><td data-label="限制">关闭运行、冻结 169 份文件后才评分。Linux arm64/Python 3.13 评估结果不证明原生 macOS 等价。</td></tr>
           </tbody>
         </table></div>
-        <h3>下一步要修正什么</h3>
-        <p>首次提交包含全部 11 项已知义务，但仍有七项待完成：四项缺少必需的累计完整文件读取证据，三项对应的命令调用记录尚未完整读取。当时约剩九分钟。审查器继续翻阅诊断、重读大型源码文件并寻找进程证据，未能再次提交。</p>
-        <p>约 55 分钟内记录到 Flash 47 次、Pro 74 次请求启动。下一项修正会在最终提交前提示缺失的读取范围及调用配对信息，同时保留固定预算、源码新鲜度约束及全部已保留义务。这个重复使用的 ON 单组案例没有增加正式基准配对，也没有测得质量收益。 变更尚未归档；这次走查没有验证 Archive 阶段或完整的 OpenSpec 生命周期。</p>
-        <p>首次轨迹导出因重复控制器日志超过固定的 128 MiB 上限，该次失败继续保留。补充副本只保留必要的宿主轨迹。核查还发现，评估协议预期的逐次运行文件与插件采用的事务存储不同；这项协议不匹配与实际的审查超时分别记录。</p>
+        <h3>这次运行验证了什么</h3>
+        <p>实际暂存发生在覆盖表提交之前。最初六项义务贯穿已提交的审查历史，当前最终审查也已完成。宿主先拒绝两次不完整的反例处理提交，随后接受修正结果。这验证了本任务中的需求延续和审查协议完成情况。</p>
+        <p>新提示已显示，但审查器从未调用证据就绪预览工具。从失败提交到成功提交之间，没有新增源码读取。因此，不能把完成归因于新预览功能，也不能据此声称语义验证完整或已证明通用价值。</p>
+        <p>本次记录到 Flash 46 次、Pro 76 次请求启动。它是 ON 单组开发走查，没有预先准备需求清单、封存审批或注入缺陷，不增加正式基准配对，也未测得质量收益。变更尚未归档。前一次审查超时的失败继续保留在支持材料中。</p>
       </div>
     </section>
     <section id="results" aria-labelledby="results-title results-title-zh">
@@ -355,6 +355,44 @@
       </div>
       <details class="evidence-group">
         <summary><span data-report-copy lang="en">Supporting controls on the installed plugin</span><span data-report-copy lang="zh-CN">可安装插件的机制验证</span></summary>
+      <div class="language-panel" data-report-copy lang="en">
+        <h3>Previous staged review: final review reached its deadline</h3>
+        <p class="callout">The candidate plugin used original-duty staging in a real OpenClaw run. Apply completed all 12 implementation steps, and independent delivery checks passed. The corrector's final Stop review reached its deadline and reported <code>UNVERIFIED</code>. This is partial mechanism evidence, not a successful end-to-end verification.</p>
+        <p class="intro">This reused healthy CLI task asks for a usable help suggestion when another option shadows a help name. Its production code already met the request. OpenClaw preserved all 18 source files and added three regression-test functions. The run used Flash for coding and Pro for reviews within the original one-hour and 256-request limits.</p>
+        <div class="table" role="region" aria-label="Latest original-duty walkthrough" tabindex="0"><table class="evidence" data-previous-duty-walkthrough>
+          <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Limit</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" data-label="Stage">Proposal and approval</th><td data-label="Observed result">All six plan files were read before ordinary approval. Official OpenSpec validation passed; 12 steps were initially unchecked.</td><td data-label="Limit">No prepared requirement inventory or sealed approval. Document validity does not prove complete requirements.</td></tr>
+            <tr><th scope="row" data-label="Stage">Implementation</th><td data-label="Observed result">All 12 steps were marked complete. The plan changed only through checkbox progress. Three regression tests added 79 lines; production code stayed unchanged.</td><td data-label="Limit">The starting code was already healthy. These changes demonstrate no repair benefit.</td></tr>
+            <tr><th scope="row" data-label="Stage">Original-duty staging</th><td data-label="Observed result">Four document reviews made successful, nonempty staging calls: 11, 11, 20 and 20 discovered duties. The initial 11 identities, full clauses and source anchors appear unchanged in all four saved semantic-review tables and the mandatory Stop basis.</td><td data-label="Limit">Discovered duties are non-exhaustive. Later staging does not expand the first frozen cohort. Retention into Stop does not establish complete final verification.</td></tr>
+            <tr><th scope="row" data-label="Stage">Final runtime review</th><td data-label="Observed result">Stop ended <code>UNVERIFIED</code> with <code>REVIEWER_DEADLINE</code> after 31 turns. The final dispatch also exposes this state; it did not report successful verification.</td><td data-label="Limit">There is no completed current original-duty coverage receipt. Coding completion and a clean process exit do not replace it.</td></tr>
+            <tr><th scope="row" data-label="Stage">Independent delivery checks</th><td data-label="Observed result">Primary: 8/8. Public regressions: 668/668. Exploratory: 6/6. All three grading containers were removed.</td><td data-label="Limit">Grading followed closure and a 169-file freeze. The Linux arm64/Python 3.13 evaluator establishes no native-macOS equivalence.</td></tr>
+          </tbody>
+        </table></div>
+        <h3>What needs fixing next</h3>
+        <p>The first finish attempt included all 11 known duties, but seven remained pending: four lacked the required cumulative full-file witness, and three lacked complete reads of matching command invocation records. About nine minutes remained. The reviewer spent that time paging diagnostics, rereading a large source file and locating process evidence; it never submitted a second finish.</p>
+        <p>The run recorded 47 Flash and 74 Pro request starts over about 55 minutes. The next fix will expose missing read ranges and invocation companions before final submission. It must preserve the fixed budget, source freshness and all retained duties. This reused ON-only case adds no formal benchmark pair or measured quality gain. The change remains unarchived. This walkthrough does not validate Archive or the whole OpenSpec lifecycle.</p>
+        <p>The first trace export exceeded its fixed 128 MiB cap because of repeated controller logs. That failure remains recorded. A smaller supplemental copy retains the essential host traces. The audit also found that its expected per-run files differ from the plugin's transaction-based storage; this protocol mismatch is kept separate from the actual review deadline.</p>
+      </div>
+      <div class="language-panel" data-report-copy lang="zh-CN">
+        <h3>前一次暂存审查：最终审查达到时限</h3>
+        <p class="callout">候选插件已在真实 OpenClaw 运行中使用原始义务暂存。Apply 阶段完成全部 12 项实现步骤，独立交付检查也通过了。但纠偏器的最终 Stop 审查达到时限，报告 <code>UNVERIFIED</code>。这提供了部分机制证据，尚未完成端到端验证。</p>
+        <p class="intro">这是一项重复使用的健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。OpenClaw 保留全部 18 份源码，新增三个回归测试函数。编码使用 Flash，审查使用 Pro，保持原定一小时及 256 次请求上限。</p>
+        <div class="table" role="region" aria-label="最新原始义务走查" tabindex="0"><table class="evidence" data-previous-duty-walkthrough>
+          <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">限制</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" data-label="阶段">Proposal 与批准</th><td data-label="观察结果">普通审批前读完全部六份方案文件。OpenSpec 官方校验通过；12 项步骤最初均未勾选。</td><td data-label="限制">没有预先准备需求清单或封存审批。文档有效不等于需求完整。</td></tr>
+            <tr><th scope="row" data-label="阶段">实现</th><td data-label="观察结果">12 项步骤全部标记完成，方案仅更新复选框。新增三个回归测试，共增加 79 行；业务代码不变。</td><td data-label="限制">起始代码已经健康，这些改动没有证明修复收益。</td></tr>
+            <tr><th scope="row" data-label="阶段">原始义务暂存</th><td data-label="观察结果">四次文档审查均实际调用暂存工具，分别发现 11、11、20、20 项义务。最初 11 个身份编号、完整条款及来源锚点原样保留在全部四份已保存的语义审查表及 Stop 必查依据中。</td><td data-label="限制">已发现的义务并非穷尽清单。后续暂存不扩充首次冻结的集合。义务到达 Stop 不等于最终验证已完成。</td></tr>
+            <tr><th scope="row" data-label="阶段">最终运行时审查</th><td data-label="观察结果">Stop 在 31 轮后以 <code>REVIEWER_DEADLINE</code> 结束，状态为 <code>UNVERIFIED</code>。最终调度也明确保留该状态，没有报告验证成功。</td><td data-label="限制">没有完整、当前有效的原始义务覆盖回执。编码完成及进程正常退出不能替代这项证据。</td></tr>
+            <tr><th scope="row" data-label="阶段">独立交付检查</th><td data-label="观察结果">主要行为：8/8。公开回归：668/668。探索检查：6/6。三个评分容器均已移除。</td><td data-label="限制">关闭运行、冻结 169 份文件后才评分。Linux arm64/Python 3.13 评估结果不证明原生 macOS 等价。</td></tr>
+          </tbody>
+        </table></div>
+        <h3>下一步要修正什么</h3>
+        <p>首次提交包含全部 11 项已知义务，但仍有七项待完成：四项缺少必需的累计完整文件读取证据，三项对应的命令调用记录尚未完整读取。当时约剩九分钟。审查器继续翻阅诊断、重读大型源码文件并寻找进程证据，未能再次提交。</p>
+        <p>约 55 分钟内记录到 Flash 47 次、Pro 74 次请求启动。下一项修正会在最终提交前提示缺失的读取范围及调用配对信息，同时保留固定预算、源码新鲜度约束及全部已保留义务。这个重复使用的 ON 单组案例没有增加正式基准配对，也没有测得质量收益。 变更尚未归档；这次走查没有验证 Archive 阶段或完整的 OpenSpec 生命周期。</p>
+        <p>首次轨迹导出因重复控制器日志超过固定的 128 MiB 上限，该次失败继续保留。补充副本只保留必要的宿主轨迹。核查还发现，评估协议预期的逐次运行文件与插件采用的事务存储不同；这项协议不匹配与实际的审查超时分别记录。</p>
+      </div>
       <div class="language-panel" data-report-copy lang="en">
         <h3>Earlier qualified archive: one healthy walkthrough completed</h3>
         <p class="callout">The updated plugin completed Proposal → approval → Apply → final review on one healthy coding task. The frozen delivery passed 8/8 primary checks, 668/668 selected public regressions and 6/6 separate exploratory checks. All three selected counterexample reviews completed under the existing guards.</p>
@@ -1015,11 +1053,11 @@
         </ol>
         <h3>Current method experiment</h3>
         <p>An experimental review method adds a short counterexample review for selected requirements. The reviewer states an allowed condition and required outcome, follows the current code, then tries to refute a concrete route to the wrong outcome. It records whether the proposed counterexample was refuted, supported or left unresolved. The host checks source bindings and protocol order; it cannot verify the reviewer’s reasoning. The method is optional and covers only the selected requirements.</p>
-        <p data-current-campaign="en">The staging candidate retained the initial 11 duties through saved assessments and into Stop, but final review did not finish. The new guidance lets the reviewer ask for missing source ranges and matching command records before submitting. It passed 37 offline checks on each of two Node versions and the complete 403-file suite: 5,098 passed and 33 skipped. It grants no read proof or assessment. Conditions needing an unsupported event window remain unverified; the effect on a live review is still untested.</p>
-        <p data-candidate-package="en">The new private package passed 17 artifact checks on each tested Node version and an isolated stock OpenClaw installation check. All 281 installed files matched the archive bytes and executable permissions, including 213 runtime modules. The installed reviewer schema exposes the evidence-readiness query. These checks made no model requests and did not exercise a native read-to-finish review. The published archive remains unchanged.</p>
+        <p data-current-campaign="en">The previous walkthrough retained 11 duties, but its final review reached the deadline. The new guidance exposes missing source ranges and matching command records without granting read proof or assessments. It passed 37 offline checks on each tested Node version and the complete 403-file suite: 5,098 passed and 33 skipped. The latest live run retained six duties and completed final review; its optional readiness preview was never queried. Conditions requiring an unsupported event window still remain unverified. The guidance’s contribution to completion remains unproved.</p>
+        <p data-candidate-package="en">The updated development package passed 17 artifact checks on each tested Node version and an isolated stock OpenClaw installation check. All 281 installed files matched archive bytes and executable permissions, including 213 runtime modules. The installed schema exposes the evidence-readiness query. Installation checks made no model requests; the separate live run completed final review without using that query. It is the current development artifact; the live preview remains untested.</p>
 
         <p data-ci-current="en">The navigation change passed all nine CI test jobs. macOS and Ubuntu each completed all 403 files; four disjoint Windows shards covered the same inventory with 5,084 passes, 45 skips and no failures or timeouts. The local full suite passed 5,098 checks with 33 skips. Runtime admission guards and existing deadlines are unchanged. These engineering checks establish no live usefulness or quality gain.</p>
-        <p data-pilot-current="en">A new ordinary ON probe is running on macOS, with Flash coding and Pro reviews. Setup and all 668 public checks passed before the first model request; the 149 starter files were unchanged. The run tests whether the new guidance helps final review finish within the original one-hour and 256-request limits. Its scope is Proposal, Apply and Stop. Archive and the complete OpenSpec lifecycle remain untested. This unpaired probe adds no formal benchmark pair; its results are pending.</p>
+        <p data-pilot-current="en">The ordinary ON probe is closed and independently checked: 8/8 primary, 668/668 public regression and 6/6 exploratory checks passed. Before coding, all 668 public checks passed and the 149 starter files were unchanged. It used Flash for coding and Pro for reviews, with 46 and 76 request starts respectively, within one hour and 256 requests. Staging, retention and current Stop completion were exercised. The Proposal host error, partial semantic scope and unused preview remain explicit. Archive and the whole OpenSpec lifecycle are untested. This unpaired case adds no formal benchmark pair or measured quality gain.</p>
         <h3>Benchmark execution route</h3>
         <p>The restored Sudoku route completed a fresh control with all 298 original tests: baseline 0/10 feature checks and 288/288 regressions; reference 10/10 and 288/288. Independent review confirmed every original test result, unchanged test inputs and removal of the test app. This uses an API 26 build and API 24 device; equivalence to the original API 23 environment is unproven. It adds no benchmark pair and does not qualify the other tasks. Before another benchmark pair, we still need to isolate public testing from private grading data and finish the frozen-candidate export.</p>
         <p>The public build preflight completed dependency installation and both app/test builds, producing two unsigned app packages with all 118 prepared inputs unchanged. A stock-host control completed the tool-and-broker path using a local stub, rejected invalid arguments and blocked another session’s call despite cached tool metadata. </p>
@@ -1035,11 +1073,11 @@
         </ol>
         <h3>当前的方法试验</h3>
         <p>当前实验性的审查方法，为选中的需求增加简短的反例审查。审查器先写明允许的条件及必需结果，再沿当前代码检查一条可能产生错误结果的具体路径，并尝试推翻这个反例。记录区分反例已被推翻、已有支持或仍未解决。宿主检查源码关联和协议顺序，无法验证推理本身。该方法可选，只覆盖被选中的需求。</p>
-        <p data-current-campaign="zh-CN">暂存候选版本保留了最初 11 项义务，使其贯穿已保存评估并到达 Stop，但最终审查没有完成。新提示允许审查器在提交前查询缺失的源码范围及匹配的命令记录。两个 Node 版本上的离线检查各有 37 项通过，完整的 403 份文件测试中，5,098 项通过、33 项跳过。这些提示不授予读取证明或评估结论。需要不受支持的事件时间窗口的条件仍须保留为待验证；对实际审查的作用尚未测试。</p>
-        <p data-candidate-package="zh-CN">新的私有安装包在两个受测 Node 版本上各通过 17 项包检查，并完成隔离的原版 OpenClaw 安装检查。全部 281 个安装文件与包内字节及执行权限一致，其中包括 213 个运行时模块。安装后的审查器 schema 已提供证据就绪查询。这些检查没有调用模型，也没有执行原生审查的读取至最终提交过程。已发布安装包保持不变。</p>
+        <p data-current-campaign="zh-CN">前一次走查保留了 11 项义务，但最终审查达到时限。新提示提供缺失的源码范围及匹配的命令记录，不授予读取证明或评估结论。两个受测 Node 版本上的离线检查各有 37 项通过；完整 403 份文件测试中，5,098 项通过、33 项跳过。最新实际运行保留六项义务并完成最终审查，但没有调用可选的证据就绪预览。需要不受支持的事件时间窗口的条件仍须保留为待验证。提示是否促成了完成，尚无证据。</p>
+        <p data-candidate-package="zh-CN">更新后的开发安装包在两个受测 Node 版本上各通过 17 项包检查，并完成隔离的原版 OpenClaw 安装检查。全部 281 个安装文件与包内字节及执行权限一致，其中包括 213 个运行时模块。安装后的 schema 已提供证据就绪查询。安装检查没有调用模型；另一次实际运行完成了最终审查，但未使用该查询。当前开发安装包已更新至这一版本；预览功能尚未在实际运行中使用。</p>
 
         <p data-ci-current="zh-CN">导航改动的九项 CI 测试任务已全部通过。macOS 和 Ubuntu 各完成全部 403 份文件；四个互不重叠的 Windows 分片覆盖相同清单，5,084 项通过、45 项跳过，没有失败或超时。本地完整测试有 5,098 项通过、33 项跳过。运行时准入限制及既有时限保持不变。这些工程检查尚未证明实际帮助或质量收益。</p>
-        <p data-pilot-current="zh-CN">新的普通 ON 走查已在 macOS 上运行，编码使用 Flash，审查使用 Pro。首次模型请求前，准备检查及全部 668 项公开检查均通过，149 份起始文件保持不变。这次运行将观察新提示能否帮助最终审查在原定一小时、256 次请求上限内完成。范围是 Proposal、Apply 和 Stop；Archive 及完整 OpenSpec 生命周期仍未验证。这是未配对的机制走查，不增加正式基准配对，结果尚未产生。</p>
+        <p data-pilot-current="zh-CN">普通 ON 走查已关闭并完成独立检查：主要行为 8/8、公开回归 668/668、探索检查 6/6 均通过。编码前全部 668 项公开检查通过，149 份起始文件保持不变。编码使用 Flash，审查使用 Pro，分别记录到 46、76 次请求启动，保持一小时、256 次请求上限。实际测试了暂存、需求延续及当前 Stop 审查完成。Proposal 宿主错误、部分语义审查范围及未使用的预览均明确保留。Archive 及完整 OpenSpec 生命周期尚未测试。这是未配对案例，不增加正式基准配对，也未测得质量收益。</p>
         <h3>基准执行路线</h3>
         <p>恢复后的 Sudoku 路线已用全部 298 项原始测试完成新的对照：起始版本功能检查通过 0/10、回归检查通过 288/288；参考解为 10/10 和 288/288。独立复核已确认全部原始测试结果、测试输入未变，以及测试应用已卸载。当前使用 API 26 编译及 API 24 设备，尚未证明与原 API 23 环境等价。这不会增加基准配对数，也不代表其余任务已取得资格。下一组基准配对前，仍需把公开测试与私有评分数据隔离，并完成冻结候选代码的导出。</p>
         <p>公开构建预检已完成依赖安装及应用、测试构建，生成两个未签名应用包，全部 118 项准备输入保持不变。原版宿主对照用本地桩完成工具到受保护代理的调用，拒绝无效参数，并在另一会话看到缓存工具描述时仍阻止了它的实际调用。</p>

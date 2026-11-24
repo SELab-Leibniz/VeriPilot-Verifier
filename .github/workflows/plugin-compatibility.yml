@@ -3,6 +3,10 @@ name: Plugin compatibility
 on:
   pull_request:
   push:
+    # Status reports are outside the packaged plugin inputs.
+    paths-ignore:
+      - '.runtime-correction/runtime-corrector-progress.html'
+      - 'dist/runtime-corrector-openclaw-1.10.0.validation.json'
 
 permissions:
   contents: read
