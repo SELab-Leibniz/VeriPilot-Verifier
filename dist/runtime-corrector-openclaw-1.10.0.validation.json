@@ -165,7 +165,7 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "LIVE_PROPOSAL_RUNNING_NO_COMPLETED_OUTCOME",
+    "status": "LIVE_APPLY_AFTER_ORDINARY_APPROVAL_PROPOSAL_ERROR_PRESERVED",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
     "modelTrialPerformed": true,
@@ -194,7 +194,29 @@
     "wallLimitMs": 3600000,
     "maxRequests": 256,
     "noEpochRenewal": true,
-    "archiveExecuted": false
+    "archiveExecuted": false,
+    "proposalOriginalTurn": "ERROR_PRESERVED",
+    "planFilesReadBeforeOrdinaryApproval": 6,
+    "planSteps": 10,
+    "officialStrictOpenSpecValidation": "1of1PASS",
+    "rootOrdinaryApprovalActual": "cdf93a/0",
+    "rootOrdinaryApprovalSha256": "c017bc9368c215ff474879691414eee7591ed290738f7fa00db11f7a99054844",
+    "observedPlanningIssues": {
+      "readOriginalEofErrors": 14,
+      "findingLocationValidationCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+      "transportErrorSequences": [
+        81,
+        83,
+        84
+      ],
+      "transportOrOriginalTurnUniqueCauseEstablished": false
+    },
+    "observedPriorNavigation": {
+      "queriedItems": 8,
+      "totalAtQuery": 13,
+      "queriedIdsStructurallyReusedInFreshStaging": 8,
+      "semanticCompletenessOrBenefitEstablished": false
+    }
   },
   "latestCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
@@ -1345,8 +1367,8 @@
     "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-start-qa/receipt.json",
-    "sha256": "0ca2520e85838f82c07d24a67a349fdd47d858e87bdb06beb71e74f17e99cfb1"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-apply-qa-v2/receipt.json",
+    "sha256": "6115c0324de4331f8720b393b0fc51182a8b2ba8050230f26cb0c6552014d9a4"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4404,7 +4426,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "PRECEDING_D5_CLOSED_E_NOT_MET_CURRENT_C252_LIVE_NO_OUTCOME",
-    "htmlSha256": "6231635c5b03606a1940d7a0d6be00e80bfa84c51fec44a0cac312d478e1c508",
+    "htmlSha256": "9209428a876df40659deeceb8b030f258166b3dbc2fc571c28b2dedd4944b340",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -6599,6 +6621,10 @@
     {
       "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-qa/receipt.json",
       "sha256": "6935234512a0d36e49b3cc82a773d47ace2cd796b35b8e6a157fe44f1e418057"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-start-qa/receipt.json",
+      "sha256": "0ca2520e85838f82c07d24a67a349fdd47d858e87bdb06beb71e74f17e99cfb1"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7146,7 +7172,7 @@
     }
   },
   "sourceFeedbackFollowup": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_NOT_YET_REAL_MODEL_EXERCISED",
+    "status": "CANONICAL_ENGINEERING_QUALIFIED_LIVE_PRIOR_NAV_UPTAKE_OBSERVED_NO_COMPLETED_RESULT",
     "qualification": {
       "path": ".runtime-correction/validation/challenge-correction-feedback-gw8t2kjp/qualification-receipt.json",
       "sha256": "d79130b5306db108926bb67fca8abaeb1735971e030ada49fb5d7c6e5706c823"
@@ -7735,7 +7761,7 @@
     }
   ],
   "nextGuidancePilot": {
-    "status": "LIVE_PROPOSAL_RUNNING",
+    "status": "LIVE_APPLY_RUNNING_PROPOSAL_ERROR_PRESERVED",
     "source": ".runtime-correction/validation/ordinary-on-guidance-pilot-qualified-v2-37eijhv7",
     "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
     "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
@@ -7761,6 +7787,11 @@
       "Flash": 10,
       "Pro": 0,
       "snapshotOnly": true
-    }
+    },
+    "proposalOriginalTurn": "ERROR_PRESERVED",
+    "rootOrdinaryApprovalActual": "cdf93a/0",
+    "approvedPlanFiles": 6,
+    "approvedSteps": 10,
+    "applyOriginalRunId": "cb297263-606c-4615-a78b-768baff9357b"
   }
 }
