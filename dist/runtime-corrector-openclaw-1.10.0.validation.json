@@ -222,16 +222,27 @@
     "qualificationScope": "Exact049 source; later distribution-placement commits are not automatically CI-qualified."
   },
   "currentPackageRealModelEvaluation": {
-    "status": "NOT_YET_EXERCISED_NEW_LEDGER_ARCHIVE",
+    "status": "LIVE_ORDINARY_ON_REQUIREMENT_LEDGER_PROBE_IN_PROGRESS_NO_OUTCOME",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
     "archiveSha256": "d5e19454eb280938e33dd4f43dfef6bd903f3d03b88c083ef0ce73e705e291ab",
-    "modelTrialPerformed": false,
+    "modelTrialPerformed": true,
     "inheritsPrecedingArchiveEvidence": false,
     "precedingCompletedRun": "latestCompletedDevelopmentRun",
     "qualityGainProven": false,
     "generalUsefulnessProven": false,
     "matchedPairCredit": 0,
-    "formal13TaskCredit": 0
+    "formal13TaskCredit": 0,
+    "operatorRoot": ".runtime-correction/validation/public-run-56ef1e073b6a43",
+    "actualController": "09da4d/session20332 RUNNING",
+    "firstActualFlashStartsObserved": true,
+    "reviewerProConfigured": true,
+    "reviewerRoles": 7,
+    "workflowScope": "Proposal / ordinary approval / Apply / Stop; no Archive",
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "finalOutcomeAvailable": false,
+    "initialAndLiveDuties": "SEPARATE_PROSPECTIVE_N_AND_L",
+    "frozenRubricSha256": "3d2ee162671c1507109955828df2b4d41b7086e7e9d758929e1ea7eec2c8c1bd"
   },
   "latestCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_HEALTHY_METHOD_PROBE_AND_INDEPENDENT_FINITE_DELIVERY_GRADE",
@@ -641,7 +652,7 @@
     "completeNativeRouteQualified": false
   },
   "publicDevice": {
-    "status": "V7_EMULATOR_LIVE_HDC_INITIALIZATION_PATH_DENIAL_WITH_EXIT0_NO_BOOT",
+    "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
     "uuid": "9f37c2ab-82cc-4209-b4c4-7efd8ca95fc9",
     "api": 24,
     "createVerification": {
@@ -681,48 +692,42 @@
     },
     "precedingTopStatusBeforeSelectedFileListProof": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED",
     "latestBootstrapAttempt": {
-      "status": "V7_EMULATOR_LIVE_HDC_INITIALIZATION_PATH_DENIAL_WITH_EXIT0_NO_BOOT",
-      "uuid": "0b88c552-1923-4d14-b89f-79390085d2b8",
-      "actual": "1ff2ed/session37346 ->afbf22/1 CLOSED",
+      "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
+      "uuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
+      "actual": "4eafbf/session90677 ->986eb7/1 CLOSED",
       "receipt": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/run-1/receipt.json",
-        "sha256": "9aa8e9b1f28470609579873de1f563542fc4bb793e3024a052322feb974eb1ee"
-      },
-      "rootReadback": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-actual-readback.json",
-        "sha256": "c2556e6513ecb34b17dcea6bcf5277275f7ce41fccfc58c62ac5cb0ca221f664"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/run-1/receipt.json",
+        "sha256": "a51ab863cc8e958a8e87234fae619e509728d9b315296cab9e857a8cb863c44a"
       },
       "independentReadback": {
-        "path": ".runtime-correction/validation/phone-v7-actual-readback-rd4ajy6e/readback.json",
-        "sha256": "e39bbf67fefcb8b69ba70297e4374466ce0e6319ee5473518c2800c3f4cb0f0a"
-      },
-      "rootSourcePeerCorrection": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-source-review-correction.json",
-        "sha256": "e53d4e29c666d86166b7ab47670301355c1671017699b510b10d4bdc0045c76b"
+        "path": ".runtime-correction/validation/phone-v8-actual-readback-nssnvu99/readback.json",
+        "sha256": "28b005fac2f8882d4c68e87a15d6811260f34bbc608a147e7fcdb2714a8a145c"
       },
       "sourceHold": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/source-hold.json",
-        "sha256": "6c1cbf8632b99e640b65127ac6537bb9c75fe4baebf48bd4d9709afed750d4a4"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/source-hold.json",
+        "sha256": "79edec70eae890ffe42902cfed559b538b2bdde68067baddcec11ecd2c6485d9"
       },
       "sourcePeer": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/peer-retention-source.json",
-        "sha256": "8bb0d14e1cce6940779012e93bf71cc5f0e79a14f6f2da49ae5d015da2072a61"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/peer-retention-source.json",
+        "sha256": "bcb212423f878f1117fd7e2a30efa10e5c067bdd4a4e4d036493b8af03e713ee"
       },
-      "outerElapsedMs": 14382.220375002362,
+      "outerElapsedMs": 26750.26,
       "originalLimitSeconds": 180,
       "innerExitCode": 2,
-      "hdcServerExitCode": 0,
-      "hdcInitSucceeded": false,
-      "failure": "FreshHDC log/mutex/CWD/TMPDIR outside unchanged oldpolicy write roots",
-      "emulatorLiveBeforeCleanup": true,
-      "emulatorFinalSIGKILLFromRecordedCleanup": true,
-      "earlierUnexplainedSIGKILLCause": "UNVERIFIED",
-      "bootOrConnectQueries": 0,
-      "allCommandStreamsFinal": true,
+      "pathContractAndHdcConnection": "PASS",
+      "completeIdentityRounds": 4,
+      "identity": "API24 / phone / exact software version",
+      "vendorStatus": "RUNNING",
+      "bootProperty": "MISSING_PROPERTY_106_PENDING",
+      "fifthRound": "Four identity commands final; after-list partial at monitor rejection; no complete round credit",
+      "monitorFailure": "FOREIGN_OR_AMBIGUOUS_PROCESS_OWNER",
+      "offenderMetadata": "NOT_RETAINED_BEFORE_ASSERTION_NOT_RECONSTRUCTIBLE",
+      "privilegedPsHypothesisProven": false,
+      "emulatorAndHdcLiveBeforeCleanup": true,
+      "allStreamsFinal": false,
+      "emulatorStreams": "PARTIAL",
       "knownOwnedCleanupConfirmed": true,
       "inputPinsStable": true,
-      "explicitHDCRolesRemainConstrained": true,
-      "allPossibleSDKHDCOrUSBActionsExcluded": false,
       "guestNetworkIsolated": "UNQUALIFIED",
       "benchmarkAdmission": false,
       "formalBenchmarkCredit": 0,
@@ -1016,7 +1021,7 @@
         }
       }
     ],
-    "latestAttemptUuid": "0b88c552-1923-4d14-b89f-79390085d2b8",
+    "latestAttemptUuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
     "uuidScope": "Top-level UUID/currentVendorDefaultProfile/latestBootstrapAttempt bind the vendor-default profile. PrecedingGeometryBootstrapAttempt and older selected-file records retain their own UUIDs and outcomes.",
     "additionalOwnedTargetLogAudit": {
       "receipt": ".runtime-correction/validation/geometry-owned-target-unified-log-8z6e2b1f/findings.json",
@@ -1194,58 +1199,52 @@
       "benchmarkCreditAdded": 0
     },
     "precedingLatestBootstrapAttempt": {
-      "status": "ACTUAL_CLOSED_UNAVAILABLE_PRE_CLEANUP_SIGKILL_CAUSE_UNVERIFIED",
-      "uuid": "3a13d198-da33-4289-b058-b675d3919fb2",
-      "actual": "337bc7/session33850 ->f215e7/1 CLOSED",
-      "sourceHold": {
-        "path": ".runtime-correction/validation/phone-v6-advertised-metadata-held-4_rm9zwf/source-hold.json",
-        "sha256": "1a1da6fda8bf86134e75b51e510f45cece64a1eca8b357829c564117257a304b"
-      },
-      "sourcePeer": {
-        "path": ".runtime-correction/validation/phone-v6-advertised-metadata-held-4_rm9zwf/peer-quality-source.json",
-        "sha256": "63be602e0ace5626f29b499b3090be3229ffc8d7eaff108f7c5e8b4ccc22c860"
-      },
+      "status": "V7_EMULATOR_LIVE_HDC_INITIALIZATION_PATH_DENIAL_WITH_EXIT0_NO_BOOT",
+      "uuid": "0b88c552-1923-4d14-b89f-79390085d2b8",
+      "actual": "1ff2ed/session37346 ->afbf22/1 CLOSED",
       "receipt": {
-        "path": ".runtime-correction/validation/phone-v6-advertised-metadata-held-4_rm9zwf/run-1/receipt.json",
-        "sha256": "ac6c3fc7605ba410dd1106747961b39aefb3c39de58e1a88de5c66b2f2a8d138"
+        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/run-1/receipt.json",
+        "sha256": "9aa8e9b1f28470609579873de1f563542fc4bb793e3024a052322feb974eb1ee"
+      },
+      "rootReadback": {
+        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-actual-readback.json",
+        "sha256": "c2556e6513ecb34b17dcea6bcf5277275f7ce41fccfc58c62ac5cb0ca221f664"
       },
       "independentReadback": {
-        "path": ".runtime-correction/validation/phone-v6-actual-diagnostic-0lnrmkcu/readback.json",
-        "sha256": "a5682f4b73cdb174d8b572a5bdcffb855f07cb765d6f2d4bb75da5747c045df4"
+        "path": ".runtime-correction/validation/phone-v7-actual-readback-rd4ajy6e/readback.json",
+        "sha256": "e39bbf67fefcb8b69ba70297e4374466ce0e6319ee5473518c2800c3f4cb0f0a"
       },
-      "scopedDiagnosticReportCheck": {
-        "path": ".runtime-correction/validation/phone-v6-actual-diagnostic-0lnrmkcu/diagnostic-report-header-check.json",
-        "sha256": "12249a70df2c871cc4c863d05f4a9806dd0f0e4b724b16127eacfe9c20f517f6"
+      "rootSourcePeerCorrection": {
+        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-source-review-correction.json",
+        "sha256": "e53d4e29c666d86166b7ab47670301355c1671017699b510b10d4bdc0045c76b"
       },
-      "totalLimitSeconds": 180,
-      "originalLimitUnchanged": true,
-      "elapsedOuterMs": 28566.062,
+      "sourceHold": {
+        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/source-hold.json",
+        "sha256": "6c1cbf8632b99e640b65127ac6537bb9c75fe4baebf48bd4d9709afed750d4a4"
+      },
+      "sourcePeer": {
+        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/peer-retention-source.json",
+        "sha256": "8bb0d14e1cce6940779012e93bf71cc5f0e79a14f6f2da49ae5d015da2072a61"
+      },
+      "outerElapsedMs": 14382.220375002362,
+      "originalLimitSeconds": 180,
       "innerExitCode": 2,
-      "timedOut": false,
-      "freshProfileCreateExitCode": 0,
-      "actualHomePreserved": true,
-      "completedIdentityPolls": 5,
-      "identityValues": "API24 / phone / exact software version match",
-      "bootPropertyEach": "MISSING_PROPERTY_106",
-      "bootReady": false,
-      "emulatorExitCode": -9,
-      "emulatorAlreadyExitedBeforeCleanup": true,
-      "signalSender": "UNVERIFIED",
-      "terminationCause": "UNVERIFIED",
-      "emulatorStreams": "PARTIAL_TERMINAL_EOF_FALSE",
-      "allStreamsFinal": false,
-      "knownOwnedBirthsAndGroupsAbsent": 42,
-      "knownOwnedPortsAbsent": 2,
+      "hdcServerExitCode": 0,
+      "hdcInitSucceeded": false,
+      "failure": "FreshHDC log/mutex/CWD/TMPDIR outside unchanged oldpolicy write roots",
+      "emulatorLiveBeforeCleanup": true,
+      "emulatorFinalSIGKILLFromRecordedCleanup": true,
+      "earlierUnexplainedSIGKILLCause": "UNVERIFIED",
+      "bootOrConnectQueries": 0,
+      "allCommandStreamsFinal": true,
       "knownOwnedCleanupConfirmed": true,
-      "sourceAndImagePinsStable": true,
-      "vendorListStatus": "UNKNOWN_INTERNAL_PS_DENIAL",
-      "advertisedDefaultPaths": "METADATA_ONLY_ACTUAL_ACCESS_UNVERIFIED",
+      "inputPinsStable": true,
+      "explicitHDCRolesRemainConstrained": true,
+      "allPossibleSDKHDCOrUSBActionsExcluded": false,
       "guestNetworkIsolated": "UNQUALIFIED",
       "benchmarkAdmission": false,
-      "modelsCalled": 0,
-      "appBuildInstallOrGrade": false,
       "formalBenchmarkCredit": 0,
-      "olderResourcesActedOn": false
+      "modelsCalled": 0
     },
     "trustedParentPrimitive": {
       "status": "OWN_FRESH_CONTROL_PASSED_ONLY",
@@ -1285,30 +1284,31 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "FEATURE_BRANCH_LEDGER_PACKAGE_PLACED_PENDING_COMMIT_PUSH",
+    "status": "FEATURE_BRANCH_LEDGER_ARTIFACT_PUBLISHED",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
     "archiveSha256": "d5e19454eb280938e33dd4f43dfef6bd903f3d03b88c083ef0ce73e705e291ab",
     "mainMerged": false,
-    "promotionCommitted": false,
-    "promotionPushed": false,
+    "promotionCommitted": true,
+    "promotionPushed": true,
     "previousPublicationSnapshot": {
       "path": ".runtime-correction/validation/promote-c331-readiness-_0s_79dh/previous-canonical-validation.json",
       "sha256": "cbc888f2b159c15dc0244f7479e7ba3892970b4a6b75867ef27ca9f55733d57d"
     },
     "rootOwnsGitPublication": true,
-    "verifiedArtifactAndCiHead": "049fe31fce835d741752b903f799a08a56bfdaba",
+    "verifiedArtifactAndCiHead": "f0cf3f74bb704a8f1a0e4d25bdac7103a021c0aa",
     "reportOnlyFollowup": true,
-    "artifactPublicationCommit": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
-    "lastVerifiedPublishedHead": "049fe31fce835d741752b903f799a08a56bfdaba",
+    "artifactPublicationCommit": "f0cf3f74bb704a8f1a0e4d25bdac7103a021c0aa",
+    "lastVerifiedPublishedHead": "f0cf3f74bb704a8f1a0e4d25bdac7103a021c0aa",
     "newCodePublicationActual": "0893e0/session61982 ->c69cbe/0 CLOSED",
-    "newLedgerPublishedInSourceOnly": false
+    "newLedgerPublishedInSourceOnly": false,
+    "actualPush": "7cfece/session56724 ->b093b4/0 CLOSED"
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-qa/capture/receipt.json",
-    "sha256": "d6ac3bf360cc97a3b167a1ab4be3f1a9750952ae0a7ed1cdddad0385b10a9563",
-    "htmlSha256": "3f92060f24a7b5ecc2d82a1e466c8442bc55baeb769f237021e264330c0b7cf1",
-    "actual": "3df777/session48926 ->771d59/0 CLOSED",
+    "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
+    "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5",
+    "htmlSha256": "3b76e7b91a4edbcf711efa897f29c164f84c44fc93022c6318c62df5e1a8477f",
+    "actual": "283fb8/session62251 ->abc205/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1319,8 +1319,7 @@
       390
     ],
     "rootInspected": [
-      "current-method-en-1200.png",
-      "phone-zh-CN-390.png"
+      "phone-zh-CN-390.png (preceding V8 QA; live paragraph DOM and overflow checked in all four current views)"
     ],
     "externalLinks": 0,
     "externalRequests": 0,
@@ -1332,8 +1331,8 @@
       "internalLinks": 7
     },
     "receipt": {
-      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-qa/capture/receipt.json",
-      "sha256": "d6ac3bf360cc97a3b167a1ab4be3f1a9750952ae0a7ed1cdddad0385b10a9563"
+      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
+      "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -1394,10 +1393,10 @@
     }
   },
   "candidateStatus": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_LEDGER_PLUGIN_LIVE_EXERCISE_PENDING",
+    "status": "CANONICAL_ENGINEERING_QUALIFIED_LEDGER_PLUGIN_LIVE_PROBE_RUNNING_NO_OUTCOME",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
     "archiveSha256": "d5e19454eb280938e33dd4f43dfef6bd903f3d03b88c083ef0ce73e705e291ab",
-    "modelsUsedForThisArchive": false,
+    "modelsUsedForThisArchive": true,
     "qualityGainProven": false,
     "formal13TaskCredit": 0
   },
@@ -3992,7 +3991,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "PRECEDING_ARCHIVE_LATEST_COMPLETED_MODEL_RUN_NEW_LEDGER_NOT_LIVE_EXERCISED",
-    "htmlSha256": "3f92060f24a7b5ecc2d82a1e466c8442bc55baeb769f237021e264330c0b7cf1",
+    "htmlSha256": "3b76e7b91a4edbcf711efa897f29c164f84c44fc93022c6318c62df5e1a8477f",
     "modelOutcomeReference": ".runtime-correction/validation/public-run-8344f3c012f74b",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -5966,6 +5965,71 @@
         "path": ".runtime-correction/validation/report-v5-source-ci-c_pec4q0/qa-command-path-error.json",
         "sha256": "2d9f1d066064c90321f00c7d7f4578f15d5d739293b9acbe614bd01942da0326"
       }
+    },
+    {
+      "status": "PASS",
+      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-qa/capture/receipt.json",
+      "sha256": "d6ac3bf360cc97a3b167a1ab4be3f1a9750952ae0a7ed1cdddad0385b10a9563",
+      "htmlSha256": "3f92060f24a7b5ecc2d82a1e466c8442bc55baeb769f237021e264330c0b7cf1",
+      "actual": "3df777/session48926 ->771d59/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": [
+        "current-method-en-1200.png",
+        "phone-zh-CN-390.png"
+      ],
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-qa/capture/receipt.json",
+        "sha256": "d6ac3bf360cc97a3b167a1ab4be3f1a9750952ae0a7ed1cdddad0385b10a9563"
+      }
+    },
+    {
+      "status": "PASS",
+      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-v8-qa/capture/receipt.json",
+      "sha256": "a29bc476b5457a9d7e17b1c1c59074d789011681651c0e21c5ff6ad27e665391",
+      "htmlSha256": "c0baad54ca879b9036c8f7d143e26a56849ff0a942cb32897178edfee4e7b1ae",
+      "actual": "f9277e/session45711 ->9d7375/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": [
+        "phone-zh-CN-390.png"
+      ],
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-v8-qa/capture/receipt.json",
+        "sha256": "a29bc476b5457a9d7e17b1c1c59074d789011681651c0e21c5ff6ad27e665391"
+      }
     }
   ],
   "previousLedgerPromotionFields": {
@@ -6444,5 +6508,48 @@
         "formalBenchmarkCredit": 0
       }
     }
+  },
+  "distributionPlacementCi": {
+    "runId": 45338903344,
+    "attempt": 1,
+    "sourceCommit": "f0cf3f74bb704a8f1a0e4d25bdac7103a021c0aa",
+    "status": "ALL_NINE_TEST_JOBS_SUCCESS_CONDITIONAL_PUBLICATION_SKIPPED",
+    "receipt": {
+      "path": ".runtime-correction/validation/natural-ci-publish-f0cf-l_tk0dar/ci-readback.json",
+      "sha256": "9f07199c523bd9dcfd30c2fae6ff40ed73b01630023438b6e9da5712c5d84d68"
+    },
+    "fullFilesEachOS": 403,
+    "noFailuresOrTimeouts": true,
+    "ownExactCheckoutAndWindowsShardUnionVerified": true,
+    "readOnlyNaturalObservation": true
+  },
+  "nextLiveLedgerPilot": {
+    "status": "LIVE_RUNNING_PROPOSAL_FIRST_ACTUAL_FLASH_STARTS_CONFIRMED",
+    "source": ".runtime-correction/validation/ordinary-on-live-ledger-pilot-source-uepaf6d8",
+    "sourceHoldSha256": "dce02e09efad9b32616324d8fd43ef94e5b586d96e7ac93e82a1358bd63f59b2",
+    "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
+    "archiveSha256": "d5e19454eb280938e33dd4f43dfef6bd903f3d03b88c083ef0ce73e705e291ab",
+    "operator": ".runtime-correction/validation/public-run-56ef1e073b6a43",
+    "setupActual": "ebb83b/session15655 ->426d5b/0 CLOSED",
+    "modelsStarted": true,
+    "keyRead": "SUPPLIED_KEY_ONLY_BY_AUTHORIZED_LIVE_RELAY",
+    "acceptance": "INITIAL_N_AND_ALL_LIVE_L_SEPARATE_NEW_PROSPECTIVE_RUBRIC",
+    "inheritsOldModelResults": false,
+    "formalBenchmarkCredit": 0,
+    "qualityGainProven": false,
+    "publicPreflightActual": "065885/session44499 ->4ca31b/0 CLOSED",
+    "publicPreflightPass": 668,
+    "originalStarterFilesUnchanged": 149,
+    "configuredProjectEntries": 163,
+    "standardSetupAdditions": 14,
+    "originalStarterCountIsSubsetNotWholeConfiguredInventory": true,
+    "actual": "09da4d/session20332 RUNNING",
+    "rootAdmissionReadback": ".runtime-correction/validation/public-run-56ef1e073b6a43/root-live-admission-readback.json",
+    "firstObservedRequestStarts": {
+      "codingFlash": 10,
+      "reviewPro": 0,
+      "snapshotOnlyNotFinalCounts": true
+    },
+    "finalOutcomeAvailable": false
   }
 }
