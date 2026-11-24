@@ -222,7 +222,7 @@
     "qualificationScope": "Exact049 source; later distribution-placement commits are not automatically CI-qualified."
   },
   "currentPackageRealModelEvaluation": {
-    "status": "LIVE_ORDINARY_ON_REQUIREMENT_LEDGER_PROBE_IN_PROGRESS_NO_OUTCOME",
+    "status": "APPLY_ORIGINAL_TURN_CLEAN_RUNTIME_SETTLEMENT_PENDING",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
     "archiveSha256": "d5e19454eb280938e33dd4f43dfef6bd903f3d03b88c083ef0ce73e705e291ab",
     "modelTrialPerformed": true,
@@ -242,7 +242,13 @@
     "maxRequests": 256,
     "finalOutcomeAvailable": false,
     "initialAndLiveDuties": "SEPARATE_PROSPECTIVE_N_AND_L",
-    "frozenRubricSha256": "3d2ee162671c1507109955828df2b4d41b7086e7e9d758929e1ea7eec2c8c1bd"
+    "frozenRubricSha256": "3d2ee162671c1507109955828df2b4d41b7086e7e9d758929e1ea7eec2c8c1bd",
+    "proposalOriginalTurn": "CLEAN_OK",
+    "proposalPlanFiles": 5,
+    "proposalPlanSteps": 10,
+    "ordinaryRootApproval": "c232a5/0",
+    "applyOriginalTurnClean": true,
+    "runtimeSettlement": "PENDING"
   },
   "latestCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_HEALTHY_METHOD_PROBE_AND_INDEPENDENT_FINITE_DELIVERY_GRADE",
@@ -563,7 +569,9 @@
         },
         "buildApi": 26,
         "deviceApi": 24,
-        "originalApi23EquivalenceProven": false
+        "originalApi23EquivalenceProven": false,
+        "bootQualificationFromThisControl": false,
+        "usedAlreadyRunningRestoredVm": true
       },
       "publicPrivateNativeWorkerIsolation": "IN_PROGRESS_NOT_READY_FOR_ACTOR"
     },
@@ -652,7 +660,7 @@
     "completeNativeRouteQualified": false
   },
   "publicDevice": {
-    "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
+    "status": "V9_FIVE_PENDING_BOOT_ROUNDS_THEN_IDENTITY_UNAVAILABLE_PRIMARY_SIGKILL_CAUSE_UNKNOWN",
     "uuid": "9f37c2ab-82cc-4209-b4c4-7efd8ca95fc9",
     "api": 24,
     "createVerification": {
@@ -692,43 +700,46 @@
     },
     "precedingTopStatusBeforeSelectedFileListProof": "FRESH_INSTANCE_STOPPED_FIRST_READ_ONLY_STARTUP_CHECK_ABORTED",
     "latestBootstrapAttempt": {
-      "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
-      "uuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
-      "actual": "4eafbf/session90677 ->986eb7/1 CLOSED",
+      "status": "V9_FIVE_PENDING_BOOT_ROUNDS_THEN_IDENTITY_UNAVAILABLE_PRIMARY_SIGKILL_CAUSE_UNKNOWN",
+      "uuid": "34a90732-e10a-4bce-875a-228aa47f11d2",
+      "actual": "d479ba/session46682 ->081669/1 CLOSED",
       "receipt": {
-        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/run-1/receipt.json",
-        "sha256": "a51ab863cc8e958a8e87234fae619e509728d9b315296cab9e857a8cb863c44a"
+        "path": ".runtime-correction/validation/phone-v9-owner-diagnostic-held-cdy6bwyk/run-1/receipt.json",
+        "sha256": "cadbed0dd22e95d70f6ebd22f53738b7c616a08d42d06d963a7cd09ea0feacab"
       },
       "independentReadback": {
-        "path": ".runtime-correction/validation/phone-v8-actual-readback-nssnvu99/readback.json",
-        "sha256": "28b005fac2f8882d4c68e87a15d6811260f34bbc608a147e7fcdb2714a8a145c"
+        "path": ".runtime-correction/validation/phone-v9-actual-readback-final-rlin_pmv/readback.json",
+        "sha256": "ffbff8d6acdb52477577745eb6e9752492374806aa5af52a53045aa9d36f8648"
       },
       "sourceHold": {
-        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/source-hold.json",
-        "sha256": "79edec70eae890ffe42902cfed559b538b2bdde68067baddcec11ecd2c6485d9"
+        "path": ".runtime-correction/validation/phone-v9-owner-diagnostic-held-cdy6bwyk/source-hold.json",
+        "sha256": "03c66539cf6b598befb54e16d9bd14e37beef2d6c7adc12cd93f50177f89f7ea"
       },
       "sourcePeer": {
-        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/peer-retention-source.json",
-        "sha256": "bcb212423f878f1117fd7e2a30efa10e5c067bdd4a4e4d036493b8af03e713ee"
+        "path": ".runtime-correction/validation/phone-v9-owner-diagnostic-held-cdy6bwyk/peer-retention-source.json",
+        "sha256": "f1321a1f60b5300facb277fb32bf006bbf36d0a3e8409bf86917795c85b660b5"
       },
-      "outerElapsedMs": 26750.26,
+      "outerElapsedMs": 26828.752,
       "originalLimitSeconds": 180,
       "innerExitCode": 2,
-      "pathContractAndHdcConnection": "PASS",
-      "completeIdentityRounds": 4,
+      "completeIdentityRounds": 5,
       "identity": "API24 / phone / exact software version",
       "vendorStatus": "RUNNING",
       "bootProperty": "MISSING_PROPERTY_106_PENDING",
-      "fifthRound": "Four identity commands final; after-list partial at monitor rejection; no complete round credit",
-      "monitorFailure": "FOREIGN_OR_AMBIGUOUS_PROCESS_OWNER",
-      "offenderMetadata": "NOT_RETAINED_BEFORE_ASSERTION_NOT_RECONSTRUCTIBLE",
-      "privilegedPsHypothesisProven": false,
-      "emulatorAndHdcLiveBeforeCleanup": true,
-      "allStreamsFinal": false,
-      "emulatorStreams": "PARTIAL",
+      "sixthRoundFailure": "software-version command exit0; 47B [Fail][E001005] Device not found or connected CRLF",
+      "primaryEmulatorAlreadyMinus9BeforeCleanup": true,
+      "signalSender": "UNVERIFIED",
+      "terminationCause": "UNVERIFIED",
+      "sdkChildObservedAliveAndReparented": true,
+      "sdkChildFunctionAndCurrentListener": "NOT_CAPTURED",
+      "allVmEnginesDead": "NOT_ESTABLISHED",
+      "normalSdkHandoff": "NOT_ESTABLISHED",
+      "ownershipExceptionReproduced": false,
+      "diagnosticRecords": 0,
+      "diagnosticErrors": 0,
+      "allStreamsFinal": true,
       "knownOwnedCleanupConfirmed": true,
       "inputPinsStable": true,
-      "guestNetworkIsolated": "UNQUALIFIED",
       "benchmarkAdmission": false,
       "formalBenchmarkCredit": 0,
       "modelsCalled": 0
@@ -1021,7 +1032,7 @@
         }
       }
     ],
-    "latestAttemptUuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
+    "latestAttemptUuid": "34a90732-e10a-4bce-875a-228aa47f11d2",
     "uuidScope": "Top-level UUID/currentVendorDefaultProfile/latestBootstrapAttempt bind the vendor-default profile. PrecedingGeometryBootstrapAttempt and older selected-file records retain their own UUIDs and outcomes.",
     "additionalOwnedTargetLogAudit": {
       "receipt": ".runtime-correction/validation/geometry-owned-target-unified-log-8z6e2b1f/findings.json",
@@ -1199,48 +1210,42 @@
       "benchmarkCreditAdded": 0
     },
     "precedingLatestBootstrapAttempt": {
-      "status": "V7_EMULATOR_LIVE_HDC_INITIALIZATION_PATH_DENIAL_WITH_EXIT0_NO_BOOT",
-      "uuid": "0b88c552-1923-4d14-b89f-79390085d2b8",
-      "actual": "1ff2ed/session37346 ->afbf22/1 CLOSED",
+      "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
+      "uuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
+      "actual": "4eafbf/session90677 ->986eb7/1 CLOSED",
       "receipt": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/run-1/receipt.json",
-        "sha256": "9aa8e9b1f28470609579873de1f563542fc4bb793e3024a052322feb974eb1ee"
-      },
-      "rootReadback": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-actual-readback.json",
-        "sha256": "c2556e6513ecb34b17dcea6bcf5277275f7ce41fccfc58c62ac5cb0ca221f664"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/run-1/receipt.json",
+        "sha256": "a51ab863cc8e958a8e87234fae619e509728d9b315296cab9e857a8cb863c44a"
       },
       "independentReadback": {
-        "path": ".runtime-correction/validation/phone-v7-actual-readback-rd4ajy6e/readback.json",
-        "sha256": "e39bbf67fefcb8b69ba70297e4374466ce0e6319ee5473518c2800c3f4cb0f0a"
-      },
-      "rootSourcePeerCorrection": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/root-source-review-correction.json",
-        "sha256": "e53d4e29c666d86166b7ab47670301355c1671017699b510b10d4bdc0045c76b"
+        "path": ".runtime-correction/validation/phone-v8-actual-readback-nssnvu99/readback.json",
+        "sha256": "28b005fac2f8882d4c68e87a15d6811260f34bbc608a147e7fcdb2714a8a145c"
       },
       "sourceHold": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/source-hold.json",
-        "sha256": "6c1cbf8632b99e640b65127ac6537bb9c75fe4baebf48bd4d9709afed750d4a4"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/source-hold.json",
+        "sha256": "79edec70eae890ffe42902cfed559b538b2bdde68067baddcec11ecd2c6485d9"
       },
       "sourcePeer": {
-        "path": ".runtime-correction/validation/phone-v7-trusted-emulator-held-4kneugya/peer-retention-source.json",
-        "sha256": "8bb0d14e1cce6940779012e93bf71cc5f0e79a14f6f2da49ae5d015da2072a61"
+        "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/peer-retention-source.json",
+        "sha256": "bcb212423f878f1117fd7e2a30efa10e5c067bdd4a4e4d036493b8af03e713ee"
       },
-      "outerElapsedMs": 14382.220375002362,
+      "outerElapsedMs": 26750.26,
       "originalLimitSeconds": 180,
       "innerExitCode": 2,
-      "hdcServerExitCode": 0,
-      "hdcInitSucceeded": false,
-      "failure": "FreshHDC log/mutex/CWD/TMPDIR outside unchanged oldpolicy write roots",
-      "emulatorLiveBeforeCleanup": true,
-      "emulatorFinalSIGKILLFromRecordedCleanup": true,
-      "earlierUnexplainedSIGKILLCause": "UNVERIFIED",
-      "bootOrConnectQueries": 0,
-      "allCommandStreamsFinal": true,
+      "pathContractAndHdcConnection": "PASS",
+      "completeIdentityRounds": 4,
+      "identity": "API24 / phone / exact software version",
+      "vendorStatus": "RUNNING",
+      "bootProperty": "MISSING_PROPERTY_106_PENDING",
+      "fifthRound": "Four identity commands final; after-list partial at monitor rejection; no complete round credit",
+      "monitorFailure": "FOREIGN_OR_AMBIGUOUS_PROCESS_OWNER",
+      "offenderMetadata": "NOT_RETAINED_BEFORE_ASSERTION_NOT_RECONSTRUCTIBLE",
+      "privilegedPsHypothesisProven": false,
+      "emulatorAndHdcLiveBeforeCleanup": true,
+      "allStreamsFinal": false,
+      "emulatorStreams": "PARTIAL",
       "knownOwnedCleanupConfirmed": true,
       "inputPinsStable": true,
-      "explicitHDCRolesRemainConstrained": true,
-      "allPossibleSDKHDCOrUSBActionsExcluded": false,
       "guestNetworkIsolated": "UNQUALIFIED",
       "benchmarkAdmission": false,
       "formalBenchmarkCredit": 0,
@@ -1258,7 +1263,51 @@
       },
       "doesNotQualifyRealEmulatorOrGuestNetwork": true,
       "earlierDescriptorParserFailurePreserved": true
-    }
+    },
+    "earlierCurrentBootstrapAttempts": [
+      {
+        "status": "V8_HDC_PATH_FIXED_FOUR_CURRENT_PENDING_BOOT_ROUNDS_THEN_MONITOR_OWNERSHIP_REJECTION",
+        "uuid": "11498ce8-1c44-4936-96ef-bc64af915bb5",
+        "actual": "4eafbf/session90677 ->986eb7/1 CLOSED",
+        "receipt": {
+          "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/run-1/receipt.json",
+          "sha256": "a51ab863cc8e958a8e87234fae619e509728d9b315296cab9e857a8cb863c44a"
+        },
+        "independentReadback": {
+          "path": ".runtime-correction/validation/phone-v8-actual-readback-nssnvu99/readback.json",
+          "sha256": "28b005fac2f8882d4c68e87a15d6811260f34bbc608a147e7fcdb2714a8a145c"
+        },
+        "sourceHold": {
+          "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/source-hold.json",
+          "sha256": "79edec70eae890ffe42902cfed559b538b2bdde68067baddcec11ecd2c6485d9"
+        },
+        "sourcePeer": {
+          "path": ".runtime-correction/validation/phone-v8-hdc-path-contract-held-yejkp7__/peer-retention-source.json",
+          "sha256": "bcb212423f878f1117fd7e2a30efa10e5c067bdd4a4e4d036493b8af03e713ee"
+        },
+        "outerElapsedMs": 26750.26,
+        "originalLimitSeconds": 180,
+        "innerExitCode": 2,
+        "pathContractAndHdcConnection": "PASS",
+        "completeIdentityRounds": 4,
+        "identity": "API24 / phone / exact software version",
+        "vendorStatus": "RUNNING",
+        "bootProperty": "MISSING_PROPERTY_106_PENDING",
+        "fifthRound": "Four identity commands final; after-list partial at monitor rejection; no complete round credit",
+        "monitorFailure": "FOREIGN_OR_AMBIGUOUS_PROCESS_OWNER",
+        "offenderMetadata": "NOT_RETAINED_BEFORE_ASSERTION_NOT_RECONSTRUCTIBLE",
+        "privilegedPsHypothesisProven": false,
+        "emulatorAndHdcLiveBeforeCleanup": true,
+        "allStreamsFinal": false,
+        "emulatorStreams": "PARTIAL",
+        "knownOwnedCleanupConfirmed": true,
+        "inputPinsStable": true,
+        "guestNetworkIsolated": "UNQUALIFIED",
+        "benchmarkAdmission": false,
+        "formalBenchmarkCredit": 0,
+        "modelsCalled": 0
+      }
+    ]
   },
   "historicalValidation": {
     "immediatePredecessor": {
@@ -1305,10 +1354,10 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
-    "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5",
-    "htmlSha256": "3b76e7b91a4edbcf711efa897f29c164f84c44fc93022c6318c62df5e1a8477f",
-    "actual": "283fb8/session62251 ->abc205/0 CLOSED",
+    "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-apply-v9-qa/capture/receipt.json",
+    "sha256": "29af0e9c20fcae188c9632c720bab43a3510bc5cd93fb52796ccbceba7a55c95",
+    "htmlSha256": "c31ec8ba357e67bcfd27284ef51ef749ad6e738f95dbf83629803a5dcb98bf2d",
+    "actual": "dd5ad7/session64647 ->82ceff/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1319,7 +1368,8 @@
       390
     ],
     "rootInspected": [
-      "phone-zh-CN-390.png (preceding V8 QA; live paragraph DOM and overflow checked in all four current views)"
+      "phone-zh-CN-390.png",
+      "current-method-en-1200.png"
     ],
     "externalLinks": 0,
     "externalRequests": 0,
@@ -1331,8 +1381,8 @@
       "internalLinks": 7
     },
     "receipt": {
-      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
-      "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5"
+      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-apply-v9-qa/capture/receipt.json",
+      "sha256": "29af0e9c20fcae188c9632c720bab43a3510bc5cd93fb52796ccbceba7a55c95"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -1576,7 +1626,7 @@
     ]
   },
   "candidateQualification": {
-    "status": "PASS_EXACT_SOURCE_NATURAL_CI_ARTIFACT_AND_STOCK_NO_NEW_LIVE_MODEL",
+    "status": "QUALIFIED_SOURCE_CI_ARTIFACT_STOCK_LIVE_TRIAL_RUNNING_NO_COMPLETED_OUTCOME",
     "full": {
       "path": ".runtime-correction/validation/natural-ci-v5-049fe31-cf6i3nq7/ci-readback.json",
       "sha256": "b54902c46e17a5a0707ddf4cdea78ce65b8c658c2bcc862f7e4e20997a853e2a"
@@ -1836,7 +1886,7 @@
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
     "regularMembers": 281,
     "runtimeModules": 213,
-    "status": "QUALIFIED_NINE_SOURCE_CI_ARTIFACT17_EACH_FRESH_STOCK_NO_NEW_LIVE_MODEL",
+    "status": "QUALIFIED_NINE_SOURCE_AND_PUBLICATION_CI_ARTIFACT17_EACH_FRESH_STOCK_LIVE_TRIAL_RUNNING",
     "full": {
       "path": ".runtime-correction/validation/natural-ci-v5-049fe31-cf6i3nq7/ci-readback.json",
       "sha256": "b54902c46e17a5a0707ddf4cdea78ce65b8c658c2bcc862f7e4e20997a853e2a"
@@ -1857,7 +1907,8 @@
     "precedingCompletedModelWalkthrough": "latestCompletedDevelopmentRun",
     "promotionPacket": ".runtime-correction/validation/promote-d5-ledger-2eufm19l",
     "noRebuild": true,
-    "qualityBenefitEstablished": false
+    "qualityBenefitEstablished": false,
+    "currentModelWalkthrough": "currentPackageRealModelEvaluation"
   },
   "earlierCompletedDevelopmentRuns": [
     {
@@ -3991,7 +4042,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "PRECEDING_ARCHIVE_LATEST_COMPLETED_MODEL_RUN_NEW_LEDGER_NOT_LIVE_EXERCISED",
-    "htmlSha256": "3b76e7b91a4edbcf711efa897f29c164f84c44fc93022c6318c62df5e1a8477f",
+    "htmlSha256": "c31ec8ba357e67bcfd27284ef51ef749ad6e738f95dbf83629803a5dcb98bf2d",
     "modelOutcomeReference": ".runtime-correction/validation/public-run-8344f3c012f74b",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -5307,7 +5358,7 @@
       }
     ],
     "prospectiveLateDutyLedger": {
-      "status": "ENGINEERING_QUALIFIED_AND_PLACED_CANONICAL_MODEL_EXERCISE_PENDING",
+      "status": "ENGINEERING_QUALIFIED_CANONICAL_LIVE_TRIAL_RUNNING_NO_FINAL_N_L_AUDIT",
       "sourceReview": {
         "path": ".runtime-correction/validation/late-duty-ledger-source-audit-8344-vm5yyt3h/source-review.json",
         "sha256": "9aabfa91a59ef560d2fd185901ea757cddcbc28a2d3674aa3641d7b74c32901a"
@@ -5396,7 +5447,7 @@
       },
       "currentV4FullSuite": "NOT_EXECUTED_YET",
       "currentV4PackageStockAndLive": "NOT_QUALIFIED",
-      "noNewModelCalls": true,
+      "noNewModelCalls": false,
       "qualityGainProven": false,
       "formalBenchmarkCredit": 0,
       "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
@@ -5499,8 +5550,9 @@
         "qualificationScope": "Exact049 source; later distribution-placement commits are not automatically CI-qualified."
       },
       "currentSourcePackage": "QUALIFIED_PLACED_CANONICAL",
-      "currentSourceRealModel": "NOT_EXERCISED",
-      "inheritsCanonicalLiveEvidence": false
+      "currentSourceRealModel": "LIVE_IN_PROGRESS_NO_FINAL_N_L_AUDIT",
+      "inheritsCanonicalLiveEvidence": false,
+      "noModelCallsDuringOfflineQualification": true
     }
   },
   "earlierReportWalkthroughs": [
@@ -6030,6 +6082,38 @@
         "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-v8-qa/capture/receipt.json",
         "sha256": "a29bc476b5457a9d7e17b1c1c59074d789011681651c0e21c5ff6ad27e665391"
       }
+    },
+    {
+      "status": "PASS",
+      "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
+      "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5",
+      "htmlSha256": "3b76e7b91a4edbcf711efa897f29c164f84c44fc93022c6318c62df5e1a8477f",
+      "actual": "283fb8/session62251 ->abc205/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": [
+        "phone-zh-CN-390.png (preceding V8 QA; live paragraph DOM and overflow checked in all four current views)"
+      ],
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/promote-d5-ledger-2eufm19l/report-live-start-qa/capture/receipt.json",
+        "sha256": "a0f93280ce1d53aad84741c9c11ec181e6e4dd4886b21a22410c5e30e04038a5"
+      }
     }
   ],
   "previousLedgerPromotionFields": {
@@ -6524,7 +6608,7 @@
     "readOnlyNaturalObservation": true
   },
   "nextLiveLedgerPilot": {
-    "status": "LIVE_RUNNING_PROPOSAL_FIRST_ACTUAL_FLASH_STARTS_CONFIRMED",
+    "status": "APPLY_ORIGINAL_TURN_CLEAN_RUNTIME_SETTLEMENT_PENDING",
     "source": ".runtime-correction/validation/ordinary-on-live-ledger-pilot-source-uepaf6d8",
     "sourceHoldSha256": "dce02e09efad9b32616324d8fd43ef94e5b586d96e7ac93e82a1358bd63f59b2",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
@@ -6550,6 +6634,13 @@
       "reviewPro": 0,
       "snapshotOnlyNotFinalCounts": true
     },
-    "finalOutcomeAvailable": false
+    "finalOutcomeAvailable": false,
+    "proposalReadySha256": "430d2dab379e6b7ba55b684fbba06fa1cbd4e029a2b6922e2609efd7dfe80969",
+    "proposalOriginalTurnClean": true,
+    "proposalOfficialStrictValidation": "1of1PASS",
+    "planFiles": 5,
+    "planSteps": 10,
+    "rootApprovalActual": "c232a5/0",
+    "applyOriginalTurnClean": true
   }
 }
