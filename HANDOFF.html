@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RC 实验执行器 · 交接报告</title>
+<style>
+  :root {
+    --bg: #f6f8fa; --panel: #ffffff; --text: #1f2328; --muted: #59636e;
+    --border: #d8dee4; --border-strong: #afb8c1; --code-bg: #eff2f5;
+    --accent: #0969da; --accent-soft: #ddf4ff;
+    --ok: #1a7f37; --ok-soft: #dafbe1;
+    --warn: #9a6700; --warn-soft: #fff8c5;
+    --bad: #cf222e; --bad-soft: #ffebe9;
+    --rc: #8250df; --rc-soft: #fbefff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --panel: #161b22; --text: #e6edf3; --muted: #8d96a0;
+      --border: #30363d; --border-strong: #545d68; --code-bg: #1f2630;
+      --accent: #4493f8; --accent-soft: #132a45;
+      --ok: #3fb950; --ok-soft: #12261a;
+      --warn: #d29922; --warn-soft: #2b2210;
+      --bad: #f85149; --bad-soft: #2d1214;
+      --rc: #a371f7; --rc-soft: #251a3d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.65 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  code, .mono { font-family: "Cascadia Code", Consolas, "SFMono-Regular", monospace; font-size: 0.88em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header { border-bottom: 1px solid var(--border); background: var(--panel); }
+  .header-inner { max-width: 1180px; margin: 0 auto; padding: 28px 24px 22px; }
+  .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 26px; font-weight: 500; margin: 0; }
+  .badge { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); }
+  .subtitle { color: var(--muted); margin: 6px 0 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 500; }
+
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 36px; max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+  nav { position: sticky; top: 24px; align-self: start; }
+  nav ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+  nav li a { display: block; padding: 5px 0 5px 14px; margin-left: -2px; border-left: 2px solid transparent; color: var(--muted); font-size: 14px; }
+  nav li a:hover { color: var(--text); text-decoration: none; }
+  nav li a.active { color: var(--accent); border-left-color: var(--accent); }
+
+  section { margin-bottom: 44px; scroll-margin-top: 20px; }
+  h2 { font-size: 20px; font-weight: 500; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { color: var(--accent); font-size: 15px; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  h3 { font-size: 16px; font-weight: 500; margin: 22px 0 10px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .todo { margin-top: 12px; font-size: 13px; color: var(--muted); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 8px 12px; }
+  .todo::before { content: "待补充："; color: var(--warn); }
+
+  /* 总流程图 */
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 14px; height: 14px; border-radius: 4px; border: 1.3px solid; }
+  .legend .sw.r { background: var(--accent-soft); border-color: var(--accent); }
+  .legend .sw.a { background: var(--warn-soft); border-color: var(--warn); }
+  .legend .sw.c { background: var(--rc-soft); border-color: var(--rc); }
+  .legend .sw.d { background: var(--panel); border-color: var(--border-strong); transform: rotate(45deg) scale(0.8); border-radius: 2px; }
+  .legend .sw.end { background: var(--ok-soft); border-color: var(--ok); }
+  .legend .ln { width: 22px; height: 0; border-top: 2px solid var(--rc); }
+  svg.flow { width: 100%; max-width: 900px; height: auto; display: block; margin: 0 auto; }
+  svg.flow .band { fill: var(--bg); stroke: var(--border); }
+  svg.flow .bl { font-size: 13px; font-weight: 600; }
+  svg.flow .bl.r { fill: var(--accent); }
+  svg.flow .bl.c { fill: var(--rc); }
+  svg.flow .n rect { stroke-width: 1.3; }
+  svg.flow .n.r rect { fill: var(--accent-soft); stroke: var(--accent); }
+  svg.flow .n.a rect { fill: var(--warn-soft); stroke: var(--warn); }
+  svg.flow .n.c rect { fill: var(--rc-soft); stroke: var(--rc); }
+  svg.flow .n.end rect { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2; }
+  svg.flow .d polygon { fill: var(--panel); stroke: var(--border-strong); stroke-width: 1.3; }
+  svg.flow .t { font-size: 14.5px; font-weight: 600; fill: var(--text); }
+  svg.flow .s { font-size: 12px; fill: var(--muted); }
+  svg.flow .h { font-size: 11.5px; fill: var(--muted); font-family: "Cascadia Code", Consolas, monospace; }
+  svg.flow .e { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#fa); }
+  svg.flow .e.rc { stroke: var(--rc); stroke-width: 2; marker-end: url(#fa-rc); }
+  svg.flow .lbl { font-size: 12px; fill: var(--muted); }
+  svg.flow .lbl.rc { fill: var(--rc); font-weight: 600; }
+  svg.flow #fa path { fill: var(--muted); }
+  svg.flow #fa-rc path { fill: var(--rc); }
+  svg.flow .note rect { fill: var(--panel); stroke-dasharray: 4 3; }
+  svg.flow .note.c rect { stroke: var(--rc); }
+  svg.flow .note.r rect { stroke: var(--accent); }
+  svg.flow .note text { font-size: 12px; fill: var(--muted); }
+  svg.flow .note text.nt { font-weight: 600; fill: var(--text); }
+  svg.flow .link { stroke: var(--rc); stroke-dasharray: 3 3; fill: none; }
+
+  /* 结论卡片 */
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; border-top: 3px solid var(--accent); }
+  .card.warn { border-top-color: var(--bad); }
+  .card h4 { margin: 0 0 6px; font-size: 15px; font-weight: 500; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  /* 架构图 */
+  .arch { display: grid; grid-template-columns: minmax(170px, 1fr) 140px minmax(320px, 2.4fr); align-items: center; gap: 6px 8px; }
+  .guard-row { grid-column: 3; display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+  .guard-row .up { text-align: center; font-size: 12px; color: var(--muted); }
+  .guard-row .box { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-style: dashed; }
+  .guard-row .box .bt { margin: 0; }
+  .guard-row .box span { font-size: 13px; color: var(--muted); }
+  .box .sub { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: var(--muted); font-weight: 400; margin: -4px 0 8px; }
+  .box { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; }
+  .box .bt { font-weight: 500; margin-bottom: 6px; }
+  .box ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+  .box.hl { background: var(--accent-soft); border-color: var(--accent); }
+  .job { position: relative; border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 30px 12px 12px; }
+  .job > .jl { position: absolute; top: 7px; left: 14px; font-size: 12px; color: var(--muted); }
+  .flowchips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+  .flowchips span.c { background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; }
+  .flowchips span.a { color: var(--muted); }
+  .between { display: flex; justify-content: center; gap: 28px; font-size: 12px; color: var(--muted); padding: 6px 0; }
+  .conn { display: flex; flex-direction: column; gap: 18px; font-size: 12px; color: var(--muted); text-align: center; }
+  .arrow { position: relative; height: 2px; background: var(--muted); margin-top: 6px; }
+  .arrow.r::after, .arrow.l::before { content: ""; position: absolute; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+  .arrow.r::after { right: -1px; border-left: 8px solid var(--muted); }
+  .arrow.l::before { left: -1px; border-right: 8px solid var(--muted); }
+  .arrow.dash { background: repeating-linear-gradient(90deg, var(--muted) 0 6px, transparent 6px 10px); }
+  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  /* 从零实现 */
+  .terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .term { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .term .w { font-weight: 600; font-size: 15px; }
+  .term .like { font-size: 13px; color: var(--rc); margin: 2px 0 6px; }
+  .term p { margin: 0; font-size: 14px; color: var(--muted); }
+  .checks { list-style: none; margin: 0; padding: 0; counter-reset: chk; }
+  .checks li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .checks li:last-child { border-bottom: none; }
+  .checks li::before { counter-increment: chk; content: counter(chk); width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .checks .how { display: block; color: var(--muted); font-size: 13px; }
+  .stepcard { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 18px; overflow: hidden; }
+  .stepcard .sh { display: flex; align-items: center; gap: 10px; padding: 11px 18px; background: var(--accent-soft); border-bottom: 1px solid var(--border); }
+  .stepcard.auto .sh { background: var(--rc-soft); }
+  .stepcard .no { flex: none; font-size: 12px; font-weight: 600; color: #fff; background: var(--accent); border-radius: 999px; padding: 2px 10px; }
+  .stepcard.auto .no { background: var(--rc); }
+  .stepcard .sh h4 { margin: 0; font-size: 15px; font-weight: 600; }
+  .stepcard .row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; padding: 12px 18px; border-bottom: 1px dashed var(--border); }
+  .stepcard .row:last-child { border-bottom: none; }
+  .stepcard .lab { font-size: 13px; color: var(--muted); padding-top: 1px; }
+  .stepcard .lab.ok { color: var(--ok); }
+  .stepcard .lab.bad { color: var(--bad); }
+  .stepcard .row p { margin: 0 0 6px; font-size: 14px; }
+  .stepcard .row p:last-child { margin-bottom: 0; }
+  .stepcard .row ul, .stepcard .row ol { margin: 0; padding-left: 18px; font-size: 14px; }
+  .stepcard .row table { margin-top: 8px; }
+  .codewrap { position: relative; margin: 6px 0; }
+  pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 12.5px; line-height: 1.6; white-space: pre; tab-size: 2; }
+  pre.code .cm { color: var(--muted); }
+  pre.code .hi { color: var(--ok); font-weight: 600; }
+  pre.code.tall { max-height: 560px; }
+  .stepcard pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .copy { position: absolute; top: 7px; right: 7px; font: 12px/1 inherit; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--panel); color: var(--text); }
+  .copy:hover { border-color: var(--accent); color: var(--accent); }
+  .callout { border-left: 3px solid var(--bad); background: var(--bad-soft); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 14px; margin: 12px 0; }
+  .callout.tip { border-left-color: var(--accent); background: var(--accent-soft); }
+  .rules { margin: 0; padding-left: 22px; }
+  .rules li { padding: 6px 0; font-size: 14px; }
+  .rules .why { display: block; color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted); font-size: 13px; }
+  td code { white-space: nowrap; }
+
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 14px; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 20px; }
+    nav { position: static; }
+    nav ol { display: flex; flex-wrap: wrap; border-left: none; gap: 4px 14px; }
+    nav li a { padding: 2px 0; border-left: none; margin-left: 0; }
+    .arch { grid-template-columns: 1fr; }
+    .guard-row { grid-column: auto; }
+    .cards { grid-template-columns: 1fr; }
+    .conn { flex-direction: row; justify-content: center; gap: 16px; }
+    .arrow { display: none; }
+    .conn div::before { content: "↕ "; }
+    .stepcard .row { grid-template-columns: 1fr; gap: 4px; }
+  }
+  @media print {
+    nav, .badge, .copy { display: none; }
+    pre.code.tall { max-height: none; }
+    .layout { grid-template-columns: 1fr; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="title-row">
+      <h1>RC 实验执行器 · 交接报告</h1>
+      <span class="badge">含入门教程</span>
+    </div>
+    <p class="subtitle">实验用什么模式跑、终审和自动纠偏在哪里发生、怎样判断一个实验真正跑完；第 2 节起是照着做就能从零写出来的教程。</p>
+    <div class="meta">
+      <span class="chip">实验程序 <b>codex/experiment-mvp-20261117 · bf0ce17</b></span>
+      <span class="chip">宿主 <b>MA 内置 OpenClaw 2026.7.1-2</b></span>
+      <span class="chip">RC 插件 <b>runtime-corrector-ma 1.11.0 · e6a4284</b></span>
+      <span class="chip">平台 <b>Windows</b></span>
+      <span class="chip">更新 <b>2026-11-24</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav aria-label="目录">
+    <ol>
+      <li><a href="#tldr">0 · 一张图看懂</a></li>
+      <li><a href="#arch">1 · 整体架构</a></li>
+      <li><a href="#words">2 · 先认识 6 个词</a></li>
+      <li><a href="#prereq">3 · 动手前准备</a></li>
+      <li><a href="#stage1">4 · 准备（步骤 1–4）</a></li>
+      <li><a href="#stage2">5 · 执行与纠偏</a></li>
+      <li><a href="#stage3">6 · 判断跑完（步骤 5–7）</a></li>
+      <li><a href="#full">7 · 完整脚本</a></li>
+      <li><a href="#rules">8 · 七条铁律</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- 0 -->
+    <section id="tldr">
+      <h2><span class="num">0</span>一张图看懂</h2>
+      <p class="lead">一次实验从准备到跑完的全过程。颜色表示这一步由谁执行，紫色线是自动纠偏循环。</p>
+      <div class="panel">
+        <div class="legend">
+          <span><i class="sw r"></i>实验脚本（本仓库）</span>
+          <span><i class="sw a"></i>业务 Agent</span>
+          <span><i class="sw c"></i>RC 插件（Gateway 内）</span>
+          <span><i class="sw d"></i>判断</span>
+          <span><i class="sw end"></i>跑完</span>
+          <span><i class="ln"></i>纠偏循环</span>
+        </div>
+        <svg class="flow" viewBox="0 0 900 1300" role="img" aria-label="总流程：实验脚本准备环境、创建 Session、开启 RC、发送用户输入；业务 Agent 执行，RC 终审；有确认偏差且有额度时在同一 Session 拉起修复轮并回到业务 Agent，否则纠偏结束；实验脚本确认六类结算条件满足并复核后关闭 Gateway、归档，实验跑完">
+          <defs>
+            <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+            <marker id="fa-rc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker>
+          </defs>
+
+          <!-- ① 准备 -->
+          <rect class="band" x="6" y="10" width="888" height="362" rx="12"/>
+          <text class="bl r" x="22" y="34">① 准备 · 实验脚本通过 RPC 完成</text>
+
+          <g class="n r"><rect x="190" y="46" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="71" text-anchor="middle">步骤 1：准备环境，启动独立 Gateway</text>
+            <text class="s" x="340" y="91" text-anchor="middle">复制项目、装 RC、写私有配置、gateway run</text></g>
+          <text class="h" x="512" y="80">runner.mjs prepare() · host.mjs startGateway()</text>
+          <path class="e" d="M340 104 V128"/>
+
+          <g class="n r"><rect x="190" y="130" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="155" text-anchor="middle">步骤 2：创建 Session</text>
+            <text class="s" x="340" y="175" text-anchor="middle">sessions.create，得到独立工作区</text></g>
+          <text class="h" x="512" y="164">runner.mjs createSession()</text>
+          <path class="e" d="M340 188 V212"/>
+
+          <g class="n r"><rect x="190" y="214" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="239" text-anchor="middle">步骤 3：给这个 Session 开启 RC</text>
+            <text class="s" x="340" y="259" text-anchor="middle">runtime-corrector.session.set</text></g>
+          <text class="h" x="512" y="248">runner.mjs createSession()</text>
+          <path class="e" d="M340 272 V296"/>
+
+          <g class="n r"><rect x="190" y="298" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="323" text-anchor="middle">步骤 4：发送用户输入（提示词）</text>
+            <text class="s" x="340" y="343" text-anchor="middle">chat.send 只发一次，runId 先落盘</text></g>
+          <text class="h" x="512" y="332">runner.mjs dispatchOnce()</text>
+          <path class="e" d="M340 356 V418"/>
+
+          <!-- ② 执行与纠偏 -->
+          <rect class="band" x="6" y="382" width="888" height="494" rx="12"/>
+          <text class="bl c" x="22" y="406">② 执行与纠偏 · 在 Gateway 里自动进行</text>
+
+          <g class="note c"><rect x="18" y="414" width="154" height="74" rx="8"/>
+            <text class="nt" x="30" y="434">RC 全程旁听</text>
+            <text x="30" y="452">记下原始需求和工具</text>
+            <text x="30" y="470">调用，留作终审证据</text></g>
+          <path class="link" d="M172 449 H190"/>
+
+          <g class="n a"><rect x="190" y="420" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="445" text-anchor="middle">业务 Agent 执行任务</text>
+            <text class="s" x="340" y="465" text-anchor="middle">第 1 轮是主任务，之后每轮是一次修复</text></g>
+          <path class="e" d="M340 478 V502"/>
+
+          <g class="n c"><rect x="190" y="504" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="529" text-anchor="middle">这一轮结束</text>
+            <text class="s" x="340" y="549" text-anchor="middle">agent_end 后用 agent.wait 确认终态</text></g>
+          <text class="h" x="512" y="538">RC runtime.mjs agentEnd()</text>
+          <path class="e" d="M340 562 V586"/>
+
+          <g class="note r"><rect x="18" y="588" width="154" height="92" rx="8"/>
+            <text class="nt" x="30" y="608">实验脚本此时</text>
+            <text x="30" y="626">只读观察，每秒取</text>
+            <text x="30" y="644">一次快照，不发</text>
+            <text x="30" y="662">任何提示词</text></g>
+
+          <g class="n c"><rect x="190" y="588" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="613" text-anchor="middle">RC 终审</text>
+            <text class="s" x="340" y="633" text-anchor="middle">私有审查 Agent 对照原始需求逐项检查</text></g>
+          <text class="h" x="512" y="622">RC native-stop-review.mjs</text>
+          <path class="e" d="M340 646 V670"/>
+
+          <g class="d"><polygon points="340,672 460,714 340,756 220,714"/>
+            <text class="t" x="340" y="719" text-anchor="middle">有确认的偏差吗？</text></g>
+
+          <path class="e rc" d="M460 714 H588"/>
+          <text class="lbl rc" x="524" y="706" text-anchor="middle">有</text>
+
+          <g class="d"><polygon points="720,672 850,714 720,756 590,714"/>
+            <text class="t" x="720" y="709" text-anchor="middle">还有纠偏额度</text>
+            <text class="t" x="720" y="728" text-anchor="middle">且准入有效？</text></g>
+
+          <path class="e rc" d="M720 672 V480"/>
+          <text class="lbl rc" x="728" y="580">是</text>
+
+          <g class="n c"><rect x="570" y="420" width="300" height="58" rx="8" style="stroke-width:2"/>
+            <text class="t" x="720" y="445" text-anchor="middle">拉起下一轮修复</text>
+            <text class="s" x="720" y="465" text-anchor="middle">subagent.run，同一 Session，附偏差反馈</text></g>
+          <path class="e rc" d="M570 449 H492"/>
+          <text class="lbl rc" x="531" y="440" text-anchor="middle">下一轮</text>
+
+          <path class="e" d="M340 756 V800"/>
+          <text class="lbl" x="350" y="783">没有（通过或无法核实）</text>
+
+          <path class="e" d="M720 756 V831 H492"/>
+          <text class="lbl" x="728" y="790">否：保留偏差，停止续修</text>
+
+          <g class="n c"><rect x="190" y="802" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="827" text-anchor="middle">这次纠偏结束</text>
+            <text class="s" x="340" y="847" text-anchor="middle">RC 调度回到空闲</text></g>
+          <path class="e" d="M340 860 V926"/>
+
+          <!-- ③ 判断跑完 -->
+          <rect class="band" x="6" y="886" width="888" height="404" rx="12"/>
+          <text class="bl r" x="22" y="910">③ 判断跑完 · 实验脚本</text>
+
+          <g class="d"><polygon points="340,928 480,972 340,1016 200,972"/>
+            <text class="t" x="340" y="967" text-anchor="middle">步骤 5：六类条件</text>
+            <text class="t" x="340" y="986" text-anchor="middle">全部满足？</text></g>
+          <text class="h" x="22" y="966">lib/settlement.mjs</text>
+          <text class="h" x="22" y="983">completion()</text>
+
+          <path class="e" d="M480 972 H562 V904 H344"/>
+          <text class="lbl" x="570" y="945">没满足：1 秒后再看</text>
+
+          <path class="e" d="M340 1016 V1046"/>
+          <text class="lbl" x="350" y="1036">满足</text>
+
+          <g class="n r"><rect x="190" y="1048" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="1073" text-anchor="middle">步骤 6：再取一次快照复核</text>
+            <text class="s" x="340" y="1093" text-anchor="middle">settlementKey 与上次一致</text></g>
+          <text class="h" x="512" y="1082">observation.mjs confirmAndStop()</text>
+          <path class="e" d="M340 1106 V1130"/>
+
+          <g class="n r"><rect x="190" y="1132" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="1157" text-anchor="middle">步骤 7：关闭 Gateway，归档</text>
+            <text class="s" x="340" y="1177" text-anchor="middle">Job 回执 activeProcesses: 0</text></g>
+          <text class="h" x="512" y="1166">host.mjs stopGateway() · runner.mjs archive()</text>
+          <path class="e" d="M340 1190 V1214"/>
+
+          <g class="n end"><rect x="190" y="1216" width="300" height="58" rx="8"/>
+            <text class="t" x="340" y="1241" text-anchor="middle">实验跑完，可以跑下一个</text>
+            <text class="s" x="340" y="1261" text-anchor="middle">canScheduleNext: true</text></g>
+          <text class="h" x="512" y="1250">experiment-status.json</text>
+        </svg>
+        <p class="note">灰色等宽小字是对应的代码位置。图里没画超时：总时限到期时，截止守护会直接终止整个进程组。"无法核实"不算偏差，不会拉起修复。</p>
+      </div>
+
+      <h3>四个结论</h3>
+      <div class="cards">
+        <div class="card">
+          <h4>不是 --local 模式</h4>
+          <p>每个实验起一个独立的 OpenClaw Gateway 进程，脚本作为客户端用 RPC 建 Session、开 RC、提交一次提示词。</p>
+        </div>
+        <div class="card">
+          <h4>纠偏在 RC 插件里</h4>
+          <p>终审和拉起修复都在 Gateway 进程内的 RC 插件中完成。实验脚本只负责开 RC 和只读观察，从不自己发修复提示词。</p>
+        </div>
+        <div class="card">
+          <h4>"跑完"要六类条件同时成立</h4>
+          <p>CLI 退出、主轮结束、RC 当前轮 ended 都不算。外层调度只看 <code>canScheduleNext</code>。</p>
+        </div>
+        <div class="card warn">
+          <h4>--local 测不到自动纠偏</h4>
+          <p>RC 拉起修复用的 <code>subagent.run</code> 只在 Gateway 进程可用，<code>--local</code> 下会直接抛错。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1 -->
+    <section id="arch">
+      <h2><span class="num">1</span>整体架构</h2>
+      <p class="lead">四个角色：实验执行器、隔离 Gateway、RC 插件和截止守护。业务运行与纠偏都发生在虚线框的进程组里。</p>
+      <div class="panel">
+        <div class="arch" role="img" aria-label="架构图：实验执行器通过 RPC 控制隔离 Gateway，RC 插件在 Gateway 内终审并拉起修复，截止守护在到期时终止整个进程组">
+          <div class="box">
+            <div class="bt">实验执行器（本仓库）</div>
+            <ul>
+              <li>run-experiment.mjs</li>
+              <li>observation / settlement</li>
+              <li>experiment-status.json</li>
+            </ul>
+          </div>
+          <div class="conn">
+            <div>提交：sessions.create<br>session.set · chat.send<div class="arrow r"></div></div>
+            <div>只读快照<br>agent.wait · 状态文件<div class="arrow l"></div></div>
+          </div>
+          <div class="job">
+            <span class="jl">Windows Job · 本实验进程组</span>
+            <div class="box">
+              <div class="bt">隔离 Gateway</div>
+              <div class="sub">openclaw.mjs gateway run · 独立端口 / 状态目录 / token</div>
+              <div class="box hl">
+                <div class="bt">RC 插件</div>
+                <div class="flowchips">
+                  <span class="c">生命周期钩子</span><span class="a">→</span>
+                  <span class="c">Stop 终审</span><span class="a">→</span>
+                  <span class="c">拉起修复</span>
+                </div>
+              </div>
+            </div>
+            <div class="between"><span>↑ 钩子事件</span><span>↓ subagent.run（同一 Session）</span></div>
+            <div class="box">
+              <div class="bt">业务 Agent 运行</div>
+              <ul><li>主轮 + 若干修复轮，同一个 Session</li></ul>
+            </div>
+          </div>
+          <div class="guard-row">
+            <div class="up">↑ 总时限到期：终止整个进程组，写清理回执</div>
+            <div class="box">
+              <div class="bt">截止守护</div>
+              <span class="mono">supervise-sample.ps1</span>
+              <span class="mono">windows-sample-job.cs</span>
+              <span class="mono">deadline-watchdog.mjs</span>
+            </div>
+          </div>
+        </div>
+        <p class="note">私有配置里的 <code>gateway.mode: 'local'</code> 指"本机 Gateway、不连远端"，与 <code>openclaw agent --local</code> 的嵌入执行无关。</p>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="words">
+      <h2><span class="num">2</span>先认识 6 个词</h2>
+      <p class="lead">把一次实验想成：临时开一家只接一张订单的小店。店里有一个干活的师傅（业务 Agent）和一个质检员（RC）。实验脚本是下单、等结果、最后关店的人。</p>
+      <div class="terms">
+        <div class="term"><div class="w">Gateway</div><div class="like">比喻：小店本身</div>
+          <p>一个在后台一直运行的 OpenClaw 程序（<code>openclaw.mjs gateway run</code>）。脚本通过它下单、查进度。每个实验开一家新店，跑完就关。</p></div>
+        <div class="term"><div class="w">RPC</div><div class="like">比喻：给小店打电话</div>
+          <p>代码里就是一行 <code>rpc('方法名', {参数})</code>。整个流程一共只用到 8 个方法，下面每一步都会写明用哪个。</p></div>
+        <div class="term"><div class="w">Session</div><div class="like">比喻：一张订单（一段对话）</div>
+          <p>有两个号：<code>sessionKey</code> 是你起的名字，<code>sessionId</code> 是小店给的编号。主任务和所有返工都记在同一张订单上。</p></div>
+        <div class="term"><div class="w">工作区（worktree）</div><div class="like">比喻：这张订单专用的工作台</div>
+          <p>项目的一份副本，创建 Session 时自动建好。Agent 只改这里的文件；你在步骤 1 复制的那份不会被改。</p></div>
+        <div class="term"><div class="w">runId</div><div class="like">比喻：取餐号</div>
+          <p>每发一次消息、每次返工都有一个。脚本拿着它用 <code>agent.wait</code> 问"这一轮做完了吗"。</p></div>
+        <div class="term"><div class="w">RC 插件</div><div class="like">比喻：店里的质检员</div>
+          <p>装在 Gateway 里。每轮做完就检查一遍；发现确认的问题，就让 Agent 在同一张订单里返工。</p></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="prereq">
+      <h2><span class="num">3</span>动手前准备 8 样东西</h2>
+      <p class="lead">缺一样都跑不起来。每一项后面写了怎么确认。</p>
+      <div class="panel">
+        <ul class="checks">
+          <li><span>一台 Windows 电脑<span class="how">本方案只在 Windows 上验证过。</span></span></li>
+          <li><span>Node.js 22.22.3 以上，或 24.15 以上（不要用 23）<span class="how">在 PowerShell 里运行 <code>node --version</code>。</span></span></li>
+          <li><span>Git<span class="how">运行 <code>git --version</code> 能看到版本号。记下 git.exe 的位置，通常是 <code>C:/Program Files/Git/cmd/git.exe</code>。</span></span></li>
+          <li><span>MA 内置的 OpenClaw，版本 2026.7.1-2<span class="how">在 MatrixAssistant 安装目录的 <code>resources/openclaw</code> 下。打开里面的 <code>package.json</code>，<code>version</code> 应该是 <code>2026.7.1-2</code>。</span></span></li>
+          <li><span>RC 插件包 <code>runtime-corrector-ma-1.11.0.tgz</code><span class="how">向维护 RC 的同事要，或者用本仓库 <code>dist/</code> 下打好的包。</span></span></li>
+          <li><span>MA 里能用的模型<span class="how">先在 MA 里配好模型，确认能正常对话。脚本会从 <code>%USERPROFILE%\.openclaw\openclaw.json</code> 抄模型配置和密钥。</span></span></li>
+          <li><span>本仓库<span class="how">脚本要用里面的 <code>lib/observation.mjs</code> 和 <code>lib/settlement.mjs</code> 判断是否跑完。</span></span></li>
+          <li><span>一个实验样本<span class="how">一个文件夹，里面放 <code>project/</code>（干净的项目，不能已经有 <code>.runtime-corrector</code>）、<code>prompt.md</code>（用户输入）、<code>rc-config.yaml</code>（RC 配置）。第一次直接用 <code>examples/quicksort</code>。项目要用的工具（比如 python）要能在 PowerShell 里直接运行。</span></span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="stage1">
+      <h2><span class="num">4</span>第一段：准备（步骤 1–4）</h2>
+      <p class="lead">每一步都按同一个格式写：一句话说明、照着做的代码、成功时你会看到什么、没成功怎么办。代码片段是第 7 节完整脚本的简化摘录，变量名一致。</p>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 1a</span><h4>复制项目，生成 RC 配置，建立 git 基线</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>把项目复制一份，让 RC 在里面生成自己的配置，再提交一次 git。后面的工作区就是从这次提交复制出来的，没有这次提交就建不了工作区。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code"><span class="cm">// 复制项目</span>
+await fs.cp(path.join(C.sample, 'project'), seedRoot, { recursive: true });
+<span class="cm">// 解压 RC 插件包，换上你的 rc-config.yaml</span>
+const tar = path.join(process.env.SystemRoot, 'System32/tar.exe');
+execFileSync(tar, ['-xzf', C.rcPackage, '-C', pluginDir]);
+await fs.copyFile(path.join(C.sample, 'rc-config.yaml'),
+  path.join(payload, '.runtime-corrector-default/config.yaml'));
+<span class="cm">// 让 RC 在项目里生成 .runtime-corrector/config.yaml</span>
+const settings = path.join(payload, 'lib/openclaw/project-settings.mjs');
+const { initializeProjectConfig } = await import(pathToFileURL(settings));
+await initializeProjectConfig({ projectRoot: seedRoot, pluginRoot: payload,
+  reviewerModel: () => C.reviewerModel, assertCurrent: async () => {} });
+<span class="cm">// git 基线</span>
+git('init', '-q');
+git('config', 'core.autocrlf', 'false');
+git('add', '--all', '--force', '.');
+git('commit', '-qm', 'baseline');</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p>控制台打印 <code>git 基线： a829dbb</code>（一串 7 位编号，每次不同），运行目录里出现 <code>project/.runtime-corrector/config.yaml</code>。</p></div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li>报错提到 <code>.runtime-corrector</code>：样本的 project 不干净，删掉里面的 <code>.runtime-corrector</code> 再来。</li>
+          <li>找不到 git：检查配置里 <code>git</code> 的路径。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 1b</span><h4>写私有配置，设置隔离环境变量，安装 RC</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>给这家小店写一份只属于它的配置（端口、密码、模型），把环境变量指向运行目录，然后把质检员（RC）装进去。这样它不会碰你平时用的 MA。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div>
+          <p>第一件事：写 <code>运行目录/state/openclaw.json</code>。</p>
+          <pre class="code">await writeJson(configPath, {
+  <span class="cm">// 只在本机的一个空闲端口上监听；token 是随机密码，打电话时要带上</span>
+  gateway: { mode: 'local', port, bind: 'loopback',
+             auth: { mode: 'token', token }, controlUi: { enabled: false } },
+  <span class="cm">// 从 MA 的配置里抄来的模型和密钥</span>
+  models: { mode: 'replace', providers },
+  agents: {
+    <span class="cm">// workspace 是步骤 1a 的项目副本；timeoutSeconds 是单轮时限，不能比总时限短</span>
+    defaults: { workspace: seedRoot, model: C.businessModel, thinkingDefault: 'off',
+                timeoutSeconds: Math.ceil(C.maxRuntimeMs / 1000), maxConcurrent: 4,
+                heartbeat: { every: '0m' }, memorySearch: { provider: 'none' } },
+    list: [{ id: C.agentId, default: true }],
+  },
+  tools: { profile: 'full' }, channels: {}, cron: { enabled: false },
+  <span class="cm">// 先空着，installer 会把 RC 写进来</span>
+  plugins: { allow: [], entries: {} },
+  logging: { level: 'debug', consoleLevel: 'info',
+             file: path.join(runDir, 'logs/openclaw.log') },
+});</pre>
+          <p>第二件事：准备一份环境变量。先删掉继承来的所有 <code>OPENCLAW_*</code> 和 <code>RC_OPENCLAW_*</code>，再设成下表的值。</p>
+          <table>
+            <thead><tr><th>环境变量</th><th>设成</th><th>为什么</th></tr></thead>
+            <tbody>
+              <tr><td><code>OPENCLAW_CONFIG_PATH</code></td><td>运行目录/state/openclaw.json</td><td>让 Gateway 读这份私有配置</td></tr>
+              <tr><td><code>OPENCLAW_STATE_DIR</code></td><td>运行目录/state</td><td>订单、日志、工作区都放这里</td></tr>
+              <tr><td><code>HOME</code> <code>USERPROFILE</code> <code>APPDATA</code> <code>LOCALAPPDATA</code></td><td>运行目录/home 下</td><td>不碰你真实的用户目录</td></tr>
+              <tr><td><code>TEMP</code> <code>TMP</code> <code>TMPDIR</code></td><td>运行目录/tmp</td><td>临时文件也隔离</td></tr>
+              <tr><td><code>OPENCLAW_NO_RESPAWN</code> <code>ELECTRON_RUN_AS_NODE</code></td><td>都写 <code>'1'</code></td><td>Gateway 不自我重启，进程号不变</td></tr>
+              <tr><td><code>RC_OPENCLAW_HOST_ROOT</code></td><td>OpenClaw 目录</td><td>RC 用它找宿主</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px">第三件事：本进程也换成这套环境，然后安装 RC。</p>
+          <pre class="code"><span class="cm">// 先换环境，再加载 installer</span>
+Object.assign(process.env, env);
+const installer = await import(pathToFileURL(path.join(pluginDir, 'installer.mjs')));
+const install = await installer.activate({ logger: { info() {}, warn() {}, error() {} } },
+  { homeDir: home, pluginDir, pluginId: 'runtime-corrector', isPackaged: true });
+<span class="cm">// install.status 必须是 'active'。</span>
+<span class="cm">// 之后在 openclaw.json 里给 RC 补上 reviewerModel 和 businessRunTimeoutMs（见第 7 节）</span></pre>
+        </div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p>控制台打印 <code>RC 安装状态： active</code>，<code>openclaw.json</code> 里多出 <code>plugins.entries["runtime-corrector"]</code>。</p></div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li>顺序反了：先加载 installer 再改环境变量，RC 会装进你真实的用户目录。</li>
+          <li>后面模型报认证错误：MA 里这个模型的密钥没配好。脚本会从 <code>%USERPROFILE%\.openclaw\agents\main\agent\</code> 抄 <code>models.json</code>、<code>auth-profiles.json</code> 里的密钥。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 1c</span><h4>启动 Gateway，接通 RPC</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>开店（启动 Gateway 进程），然后每秒打一次电话（<code>health</code>），接通为止。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code"><span class="cm">// 开店：日志写到 logs/gateway.log</span>
+gateway = spawn(process.execPath, [path.join(C.openclawRoot, 'openclaw.mjs'),
+  'gateway', 'run', '--port', String(port), '--bind', 'loopback'],
+  { cwd: seedRoot, env, stdio: ['ignore', log, log], windowsHide: true });
+
+<span class="cm">// 电话：之后所有操作都通过 rpc('方法名', {参数}) 完成</span>
+const sdk = path.join(C.openclawRoot, 'dist/plugin-sdk/gateway-runtime.js');
+const { callGatewayFromCli } = await import(pathToFileURL(sdk));
+const rpc = (method, params = {}, timeoutMs = 30000, { signal } = {}) =>
+  callGatewayFromCli(method,
+    { url: `ws://127.0.0.1:${port}`, token, timeout: String(timeoutMs), json: true },
+    params,
+    { progress: false, signal, scopes: ['operator.admin', 'operator.read',
+      'operator.write', 'operator.approvals', 'operator.pairing'] });
+
+<span class="cm">// 每秒试一次，最多 90 秒</span>
+await rpc('health', {}, 2000);</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p><code>Gateway 已就绪：PID 33984，端口 50769</code>。本机实测，从脚本启动到这一行大约 15 秒。</p></div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li>打开 <code>运行目录/logs/gateway.log</code> 看最后几行。</li>
+          <li>常见原因：Node 版本不对；<code>openclawRoot</code> 路径不对。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 2</span><h4>创建 Session</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>开一张新订单。小店会顺便建好这张订单专用的工作区。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code">const created = await rpc('sessions.create', {
+  key: `agent:${C.agentId}:rc-exp:${id.toLowerCase()}`,   <span class="cm">// 你给订单起的名字，每次要不同</span>
+  agentId: C.agentId,
+  model: C.businessModel,
+  emitCommandHooks: true,                                  <span class="cm">// 固定写 true</span>
+  worktree: true,                                          <span class="cm">// 建专用工作区</span>
+});
+<span class="cm">// 把这 4 个值存好，后面每一步都要用，也用来核对"是不是我的订单"</span>
+const identity = {
+  agentId: C.agentId, sessionKey: created.key, sessionId: created.sessionId,
+  projectRoot: await fs.realpath(created.worktree.path),
+};</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p>回执（本机实测，路径有删节）：</p><pre class="code">{
+  "ok": true,
+  "key": "agent:main:rc-exp:exp-20261124025357-4e10c5",
+  "sessionId": "2e6d201a-b712-4979-a279-0403ec843cca",
+  <span class="hi">"runStarted": false,</span>          <span class="cm">← 必须是 false：还没开始干活</span>
+  "worktree": {
+    <span class="hi">"path": "…\\state\\worktrees\\b91b2f8e9a9f5822\\wt-78496a18",</span>   <span class="cm">← 工作区</span>
+    "branch": "openclaw/wt-78496a18"
+  }
+}</pre></div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li>没有 <code>worktree</code>：步骤 1a 的项目副本不是 git 仓库，或者没有提交。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 3</span><h4>给这个 Session 开启 RC</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>告诉质检员"盯住这张订单"。<code>rc-config.yaml</code> 里 <code>sessionDefaults.enabled: false</code> 表示新订单默认没人盯，所以这一步不能省。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code">const enabled = await rpc('runtime-corrector.session.set', {
+  agentId: identity.agentId, sessionKey: identity.sessionKey,
+  sessionId: identity.sessionId, enabled: true,
+});</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><pre class="code">{
+  <span class="hi">"projectRoot": "…\\wt-78496a18",</span>              <span class="cm">← 必须等于上一步的工作区</span>
+  "sessionDefaultEnabled": false,            <span class="cm">← 默认没开</span>
+  <span class="hi">"effectiveEnabled": true,</span>                  <span class="cm">← 现在开了，必须是 true</span>
+  "reason": null
+}</pre></div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li><code>effectiveEnabled</code> 是 false：看 <code>reason</code>。常见原因是 <code>rc-config.yaml</code> 顶层写了 <code>enabled: false</code>，或者步骤 1b 的 RC 没装上。</li>
+          <li><code>projectRoot</code> 不等于工作区：RC 盯错了地方，停下来检查，不要继续发消息。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 4</span><h4>发送用户输入（只发一次）</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>把 <code>prompt.md</code> 的内容发给这张订单。发出去之后，Agent 开始干活，质检员开始盯。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code"><span class="cm">// 在提示词前面告诉模型去哪改文件</span>
+const message = `本次实验的实际项目目录是：${identity.projectRoot}\n`
+  + `所有文件读写使用此目录下的绝对路径。…\n\n${prompt}`;
+record.firstRunId = randomUUID();
+<span class="cm">// ① 先把 runId 存盘</span>
+await writeJson(path.join(runDir, 'run.json'), record);
+<span class="cm">// ② 再发送，idempotencyKey 用同一个 runId</span>
+await rpc('chat.send', { sessionKey: identity.sessionKey, sessionId: identity.sessionId,
+  message, thinking: 'off', idempotencyKey: record.firstRunId,
+  timeoutMs: C.maxRuntimeMs });</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p>回执是 <code>{ "runId": "0c69ced4-…", "status": "started" }</code>。它马上就返回，不会等 Agent 干完。</p></div></div>
+        <div class="row"><div class="lab bad">千万别</div><div><p>回执超时或报错时重发。重发等于让 Agent 把整个任务再做一遍，这次实验就作废了。正确做法是不管回执，继续用这个 runId 观察。</p></div></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section id="stage2">
+      <h2><span class="num">5</span>第二段：执行与纠偏（这段不用写代码）</h2>
+      <p class="lead">发完消息后，干活、终审、返工都由 Gateway 里的 Agent 和 RC 自动完成。你只需要事先在 <code>rc-config.yaml</code> 里写好规则，然后等。</p>
+
+      <div class="stepcard auto">
+        <div class="sh"><span class="no">事先写好</span><h4>rc-config.yaml 里和纠偏有关的几行</h4></div>
+        <div class="row"><div class="lab">照着写</div><div><pre class="code">sessionDefaults:
+  enabled: false                <span class="cm"># 新订单默认不开 RC，由步骤 3 单独打开</span>
+stopCorrection:
+  enabled: true                 <span class="cm"># 每轮结束后做终审</span>
+  waitMode: "until_pass"        <span class="cm"># 一直返工，直到通过或次数用完</span>
+  maxCorrectionsPerSession: 3   <span class="cm"># 这张订单最多返工 3 次</span>
+  maxCorrectionsPerFlow: 3      <span class="cm"># 同一个任务最多返工 3 次</span>
+  assessmentTimeoutMs: 7200000  <span class="cm"># 一次终审最长 2 小时</span>
+reviewers:
+  stopReviewer:
+    model: "custom/deepseek-v4.1-flash"   <span class="cm"># 质检员用的模型</span></pre>
+          <p>第一次不用自己写：<code>examples/quicksort/rc-config.yaml</code> 已经配好，直接复制。</p></div></div>
+      </div>
+
+      <div class="stepcard auto">
+        <div class="sh"><span class="no">想看进度</span><h4>RC 状态里最有用的 5 个字段</h4></div>
+        <div class="row"><div class="lab">字段</div><div>
+          <table>
+            <thead><tr><th>字段</th><th>意思</th></tr></thead>
+            <tbody>
+              <tr><td><code>status</code></td><td><code>WAITING</code> <code>RUNNING</code> <code>STOPPING</code> 表示还在忙；<code>ENDED</code> 表示这一轮收工；偶尔出现 <code>UNKNOWN</code> 是这一次没读准，下一秒再看</td></tr>
+              <tr><td><code>stage</code></td><td>正在做哪一步，例如 <code>requirement-frame</code>（整理需求）、<code>stop-reviewer</code>（终审）、<code>IDLE</code>（空闲）</td></tr>
+              <tr><td><code>outcome</code></td><td>终审结论，例如 <code>NO_DEVIATION_FOUND</code>（没发现偏差）</td></tr>
+              <tr><td><code>pendingUserTasks</code></td><td>排队中的用户任务数，跑完时应为 0</td></tr>
+              <tr><td><code>health</code></td><td><code>SETTLED</code> 表示状态可信</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px">第 7 节的脚本每 30 秒打印一次 <code>status/stage</code>。完整状态在 <code>运行目录/rc-status/latest.json</code> 的 <code>rc</code> 字段里。</p>
+        </div></div>
+        <div class="row"><div class="lab">证据在哪</div><div><ul>
+          <li>RC 状态文件：<code>工作区/.runtime-correction/session-runtime-status.json</code></li>
+          <li>终审记录：<code>工作区/.runtime-correction/openclaw/native-stop-reviews/</code></li>
+          <li>返工名额账本：<code>运行目录/state/runtime-corrector-stop-sessions/</code></li>
+        </ul></div></div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="stage3">
+      <h2><span class="num">6</span>第三段：判断跑完（步骤 5–7）</h2>
+      <p class="lead">这一段最容易写错。判断逻辑直接复用本仓库现成的两个函数，你只需要写一个每秒循环。</p>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 5</span><h4>每秒取一次快照，等六类条件全部满足</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>每秒问一遍"真的全部收工了吗"。只看到 Agent 回复完、或者 RC 说这一轮结束，都不算，因为下一次返工可能马上开始。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code">const observation = path.join(C.experimentRepo, 'lib', 'observation.mjs');
+const { snapshot } = await import(pathToFileURL(observation));
+const record = { runDir, stateDir, pluginDir, gatewayPid: gateway.pid,
+                 identity, firstRunId, terminals: {} };
+
+const snap = await snapshot(record, rpc);
+snap.completion.settled   <span class="cm">// true：六类条件全部满足</span>
+snap.completion.reasons   <span class="cm">// 还差什么，见下表</span></pre></div></div>
+        <div class="row"><div class="lab">它读了什么</div><div>
+          <table>
+            <thead><tr><th>读什么</th><th>怎么读</th><th>回答的问题</th></tr></thead>
+            <tbody>
+              <tr><td>RC 状态</td><td><code>runtime-corrector.runtime.refresh</code></td><td>质检员收工了吗</td></tr>
+              <tr><td>返工调度记录</td><td><code>runtime-corrector.dispatch.list</code> / <code>.get</code></td><td>有没有返工在排队或进行中</td></tr>
+              <tr><td>RC 私有文件</td><td>工作区 <code>.runtime-correction/openclaw/</code>，运行目录 <code>state/runtime-corrector-stop-sessions/</code></td><td>终审和返工名额结清了吗</td></tr>
+              <tr><td>每个 runId 的结果</td><td><code>agent.wait</code></td><td>每一轮真的结束了吗</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px">它还会顺便核对身份：RC 返回的 Session 和工作区必须是你的，否则直接报错。</p>
+        </div></div>
+        <div class="row"><div class="lab">"还差"对照表</div><div>
+          <table>
+            <thead><tr><th>reasons 里的代码</th><th>白话</th></tr></thead>
+            <tbody>
+              <tr><td><code>RC_NOT_SETTLED</code></td><td>质检员还没收工</td></tr>
+              <tr><td><code>RC_ROUND_NOT_OBSERVED</code></td><td>还没看到质检员开工（刚发送时正常）</td></tr>
+              <tr><td><code>ORIGINAL_RUN_UNKNOWN</code></td><td>不知道第一轮的 runId（只在还没发送时出现）</td></tr>
+              <tr><td><code>HOST_TERMINAL_MISSING:&lt;runId&gt;</code></td><td>这一轮还没确认结束</td></tr>
+              <tr><td><code>DISPATCH_RECORD_MISSING</code></td><td>还没有返工调度记录（刚开始时正常）</td></tr>
+              <tr><td><code>DISPATCH_NOT_SETTLED</code></td><td>有返工在排队或进行中</td></tr>
+              <tr><td><code>STOP_REVIEW_PENDING</code></td><td>终审还没结束</td></tr>
+              <tr><td><code>PRIVATE_RUN_PENDING</code></td><td>质检员自己的审查任务还在跑</td></tr>
+              <tr><td><code>STOP_CONTROL_PENDING</code></td><td>终审的等待控制还没放开</td></tr>
+              <tr><td><code>ADMISSION_RESERVED</code> 等以 <code>ADMISSION_</code> 开头的</td><td>返工名额还没结清（拉起返工的那一刻会出现）</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px">这些在运行中出现都是正常的；全部消失才算跑完。</p>
+        </div></div>
+        <div class="row"><div class="lab bad">没成功？</div><div><ul>
+          <li>偶尔一次读取失败（比如提示 state lock）是正常的，RC 正在写状态文件，1 秒后重试即可。</li>
+          <li>长时间卡在同一个原因：打开 <code>运行目录/rc-status/latest.json</code> 看完整快照。</li>
+        </ul></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 6</span><h4>再取一次快照复核</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>第一次看到"全部满足"后，马上再看一次。两次完全一样才算数，因为两次查询之间可能刚好有一次新的返工被拉起。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code">const settlement = path.join(C.experimentRepo, 'lib', 'settlement.mjs');
+const { settlementKey } = await import(pathToFileURL(settlement));
+
+if (snap.completion.settled) {
+  const fresh = await snapshot(record, rpc);
+  if (fresh.completion.settled &amp;&amp; settlementKey(fresh) === settlementKey(snap)) {
+    <span class="cm">// 真的跑完了，进入步骤 7</span>
+  }
+}</pre>
+          <p><code>settlementKey</code> 把轮次、调度、终审、名额、runId 拼成一个字符串，两个字符串相同就说明这一秒里什么都没变。</p></div></div>
+      </div>
+
+      <div class="stepcard">
+        <div class="sh"><span class="no">步骤 7</span><h4>关闭 Gateway，归档</h4></div>
+        <div class="row"><div class="lab">一句话</div><div><p>关店，把工作台上的成果留档。</p></div></div>
+        <div class="row"><div class="lab">照着做</div><div><pre class="code"><span class="cm">// 关店：/T 表示连子进程一起关</span>
+execFileSync('taskkill', ['/PID', String(gateway.pid), '/T', '/F']);
+<span class="cm">// 留档：复制整个工作区</span>
+await fs.cp(identity.projectRoot, path.join(runDir, 'artifacts/project'),
+  { recursive: true, filter });
+<span class="cm">// 导出 Agent 改了什么；先 intent-to-add，新建的文件才会进 diff</span>
+const cwd = identity.projectRoot;
+execFileSync(C.git, ['add', '--all', '--intent-to-add'], { cwd });
+const diff = execFileSync(C.git, ['diff', '--binary', 'HEAD'], { cwd });
+await fs.writeFile(path.join(runDir, 'artifacts/changes.patch'), diff);
+await writeJson(path.join(runDir, 'result.json'),
+  { status: 'ARCHIVED', outcome: finalSnap.rc.outcome, … });</pre></div></div>
+        <div class="row"><div class="lab ok">成功的样子</div><div><p>运行目录下有 <code>result.json</code>、<code>artifacts/project/</code> 和 <code>artifacts/changes.patch</code>。</p></div></div>
+        <div class="row"><div class="lab bad">千万别</div><div><p>只关 Gateway 不关子进程。Agent 启动的构建、测试进程会留下来，继续占着文件和 CPU。</p></div></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="full">
+      <h2><span class="num">7</span>完整脚本：复制、改 8 行、运行</h2>
+      <p class="lead">一个文件，把步骤 1 到 7 串在一起，约 250 行。本机已用快排样本完整跑通。</p>
+      <div class="panel">
+        <ol class="recipe" style="margin:0;padding-left:22px">
+          <li>点代码框右上角的"复制"，保存成 <code>minimal-runner.mjs</code>，放在哪都行。</li>
+          <li>改最上面"只需要改这一段"里标了 ①–⑧ 的 8 行，换成你电脑上的路径和模型。</li>
+          <li>先试跑：<code>node minimal-runner.mjs --dry-run</code>。只做步骤 1–3 并取一次快照，不调用模型、不花钱，约 20 秒。</li>
+          <li>试跑没问题，再正式跑：<code>node minimal-runner.mjs</code>。</li>
+        </ol>
+      </div>
+
+      <h3>试跑时你应该看到</h3>
+      <pre class="code">运行目录：C:\…\runs\exp-20261124025308-41415b
+
+[步骤 1a] 复制项目，生成 RC 项目配置，建立 git 基线
+  git 基线： 66dc7f1
+
+[步骤 1b] 写私有配置，设置隔离环境变量，安装 RC
+  RC 安装状态： active
+
+[步骤 1c] 启动 Gateway，接通 RPC
+  Gateway 已就绪：PID 14956，端口 53202
+
+[步骤 2] 创建 Session
+  sessionId： bee05af6-bb4c-4226-9865-61e34615c376
+  工作区（Agent 只改这里的文件）： C:\…\state\worktrees\a775dc2d3df5ee27\wt-dce95fff
+
+[步骤 3] 给这个 Session 开启 RC
+  RC 已生效：effectiveEnabled = true
+
+--dry-run：试取一次快照（还没发提示词，所以一定是"没跑完"）
+  RC 状态： IDLE ；还差： RC_NOT_SETTLED, RC_ROUND_NOT_OBSERVED, ORIGINAL_RUN_UNKNOWN, DISPATCH_RECORD_MISSING
+到此为止，没有调用模型。</pre>
+
+      <h3>正式跑时你应该看到</h3>
+      <p style="font-size:14px;margin:0 0 8px">本机实测：快排样本，从启动到跑完 3 分 31 秒。终审没发现偏差，所以没有返工。如果终审发现偏差，RC 会自动拉起返工，步骤 5 会多等一段时间，脚本不需要做任何事。</p>
+      <pre class="code">运行目录：C:\…\runs\exp-20261124025357-4e10c5
+
+[步骤 1a] 复制项目，生成 RC 项目配置，建立 git 基线
+  git 基线： a829dbb
+
+[步骤 1b] 写私有配置，设置隔离环境变量，安装 RC
+  RC 安装状态： active
+
+[步骤 1c] 启动 Gateway，接通 RPC
+  Gateway 已就绪：PID 33984，端口 50769
+
+[步骤 2] 创建 Session
+  sessionId： 2e6d201a-b712-4979-a279-0403ec843cca
+  工作区（Agent 只改这里的文件）： C:\…\state\worktrees\b91b2f8e9a9f5822\wt-78496a18
+
+[步骤 3] 给这个 Session 开启 RC
+  RC 已生效：effectiveEnabled = true
+
+[步骤 4] 发送用户输入（只发一次）
+  已发送，runId： 0c69ced4-4f54-4777-a11f-925f239a64f8
+
+[步骤 5] 每秒取一次快照，等六类条件全部满足
+  RC IDLE/IDLE；还差：RC_NOT_SETTLED, RC_ROUND_NOT_OBSERVED, HOST_TERMINAL_MISSING:0c69ced4-…, DISPATCH_RECORD_MISSING
+  <span class="cm">↑ 刚发送，质检员还没开工</span>
+  RC UNKNOWN/requirement-frame；还差：RC_NOT_SETTLED, HOST_TERMINAL_MISSING:0c69ced4-…, DISPATCH_NOT_SETTLED, PRIVATE_RUN_PENDING
+  RC RUNNING/requirement-frame；还差：RC_NOT_SETTLED, HOST_TERMINAL_MISSING:0c69ced4-…, DISPATCH_NOT_SETTLED, PRIVATE_RUN_PENDING
+  <span class="cm">↑ Agent 在干活，RC 在整理需求</span>
+  RC RUNNING/stop-reviewer；还差：RC_NOT_SETTLED, DISPATCH_NOT_SETTLED, STOP_REVIEW_PENDING, PRIVATE_RUN_PENDING, STOP_CONTROL_PENDING
+  <span class="cm">↑ Agent 干完了（HOST_TERMINAL_MISSING 消失），质检员在终审；这一行每 30 秒重复一次</span>
+
+[步骤 6] 再取一次快照复核
+  <span class="hi">终审结论： NO_DEVIATION_FOUND</span>
+
+[步骤 7] 关闭 Gateway，归档
+
+实验跑完。结果：C:\…\runs\exp-20261124025357-4e10c5\result.json</pre>
+
+      <h3>脚本全文</h3>
+      <div class="codewrap">
+        <button class="copy" type="button" data-copy="full-code">复制</button>
+        <pre class="code tall" id="full-code"></pre>
+      </div>
+      <script type="text/plain" id="full-code-src">
+// minimal-runner.mjs：最小实验脚本，对应报告"一张图看懂"里的步骤 1 到 7。
+// 用法：node minimal-runner.mjs --dry-run   只做步骤 1–3 并取一次快照，不调用模型，不花钱
+//       node minimal-runner.mjs             完整跑一次
+// 为了好懂，省略了 Windows Job 进程组、独立截止守护、断点续跑和输入指纹。正式实验请用 scripts/run-experiment.mjs。
+import fs from 'node:fs/promises';
+import { openSync, closeSync } from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { spawn, execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
+
+// ===== 只需要改这一段（标了 ①–⑧ 的 8 行）=====
+const C = {
+  experimentRepo: 'C:/work/experiment-mvp',                 // ① 本仓库的位置（要用里面的 lib/）
+  openclawRoot: 'C:/MatrixAssistant/resources/openclaw',    // ② MA 内置 OpenClaw，版本 2026.7.1-2
+  rcPackage: 'C:/work/runtime-corrector-ma-1.11.0.tgz',     // ③ RC 插件包
+  hostState: `${process.env.USERPROFILE}/.openclaw`,        //    MA 平时的配置目录，一般不用改
+  git: 'C:/Program Files/Git/cmd/git.exe',                  // ④ git.exe 的位置
+  sample: 'C:/work/experiment-mvp/examples/quicksort',      // ⑤ 实验样本：里面要有 project/、prompt.md、rc-config.yaml
+  outputRoot: 'C:/work/runs',                               // ⑥ 每次运行的结果放在这里
+  agentId: 'main',                                          //    一般不用改
+  businessModel: 'custom/deepseek-v4-flash',                // ⑦ 干活的模型，必须是 MA 里配好的
+  reviewerModel: 'custom/deepseek-v4.1-flash',              // ⑧ 质检员（RC 终审）用的模型
+  maxRuntimeMs: 6 * 60 * 60 * 1000,                         //    总时限：6 小时
+};
+// ================================================
+
+const dryRun = process.argv.includes('--dry-run');
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const readJson = async file => JSON.parse((await fs.readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
+const writeJson = (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2));
+const lib = name => import(pathToFileURL(path.join(C.experimentRepo, 'lib', name)));
+const step = (n, text) => console.log(`\n[步骤 ${n}] ${text}`);
+async function freePort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  const { port } = server.address();
+  await new Promise(resolve => server.close(resolve));
+  return port;
+}
+
+// 这次实验的所有东西都放在运行目录里
+const id = `exp-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}-${randomUUID().slice(0, 6)}`;
+const runDir = path.resolve(C.outputRoot, id);
+const seedRoot = path.join(runDir, 'project');    // 项目副本，worktree 从这里复制
+const home = path.join(runDir, 'home');           // 假的用户目录，和平时用的 MA 隔开
+const stateDir = path.join(runDir, 'state');      // Gateway 的状态目录
+const configPath = path.join(stateDir, 'openclaw.json');
+const pluginDir = path.join(runDir, 'plugin');    // 解压后的 RC
+const payload = path.join(pluginDir, 'payload/runtime-corrector');
+const tmp = path.join(runDir, 'tmp');
+for (const dir of [seedRoot, stateDir, pluginDir, tmp, path.join(home, 'AppData/Roaming'), path.join(home, 'AppData/Local'),
+  path.join(runDir, 'logs'), path.join(runDir, 'config'), path.join(runDir, 'rc-status'), path.join(runDir, 'artifacts')])
+  await fs.mkdir(dir, { recursive: true });
+console.log(`运行目录：${runDir}`);
+
+let gateway;
+function stopGateway() {
+  if (!gateway || gateway.exitCode !== null || gateway.signalCode !== null) return;
+  // /T 连同 Gateway 拉起的子进程一起结束
+  try { execFileSync('taskkill', ['/PID', String(gateway.pid), '/T', '/F'], { stdio: 'ignore' }); } catch {}
+}
+
+try {
+  // ── 步骤 1a：复制项目，生成 RC 项目配置，建立 git 基线 ──
+  step('1a', '复制项目，生成 RC 项目配置，建立 git 基线');
+  await fs.cp(path.join(C.sample, 'project'), seedRoot, { recursive: true });
+  execFileSync(path.join(process.env.SystemRoot, 'System32/tar.exe'), ['-xzf', C.rcPackage, '-C', pluginDir], { windowsHide: true });
+  await fs.copyFile(path.join(C.sample, 'rc-config.yaml'), path.join(payload, '.runtime-corrector-default/config.yaml'));
+  const { initializeProjectConfig } = await import(pathToFileURL(path.join(payload, 'lib/openclaw/project-settings.mjs')));
+  await initializeProjectConfig({ projectRoot: seedRoot, pluginRoot: payload, reviewerModel: () => C.reviewerModel, assertCurrent: async () => {} });
+  await fs.copyFile(path.join(seedRoot, '.runtime-corrector/config.yaml'), path.join(runDir, 'config/rc-config.effective.yaml'));
+  const git = (...args) => execFileSync(C.git, ['-c', 'user.name=exp', '-c', 'user.email=exp@localhost', ...args],
+    { cwd: seedRoot, windowsHide: true, encoding: 'utf8' });
+  git('init', '-q');
+  git('config', 'core.autocrlf', 'false');
+  await fs.appendFile(path.join(seedRoot, '.git/info/exclude'), '\n.runtime-correction/\n.runtime-corrector/sessions.local.yaml\n');
+  git('add', '--all', '--force', '.');
+  git('commit', '-qm', 'baseline');
+  console.log('  git 基线：', git('rev-parse', '--short', 'HEAD').trim());
+
+  // ── 步骤 1b：写私有配置，设置隔离环境变量，安装 RC ──
+  step('1b', '写私有配置，设置隔离环境变量，安装 RC');
+  const hostText = await fs.readFile(path.join(C.hostState, 'openclaw.json'), 'utf8');
+  let hostConfig;
+  try { hostConfig = JSON.parse(hostText.replace(/^\uFEFF/, '')); }
+  catch { hostConfig = createRequire(path.join(C.openclawRoot, 'package.json'))('json5').parse(hostText); }
+  const providers = structuredClone(hostConfig.models.providers);
+  const agentFrom = path.join(C.hostState, 'agents', C.agentId, 'agent');
+  const agentTo = path.join(stateDir, 'agents', C.agentId, 'agent');
+  await fs.mkdir(agentTo, { recursive: true });
+  const savedModels = await readJson(path.join(agentFrom, 'models.json')).catch(() => null);
+  for (const [name, provider] of Object.entries(providers))
+    if (!provider.apiKey && savedModels?.providers?.[name]?.apiKey) provider.apiKey = savedModels.providers[name].apiKey;
+  for (const name of ['auth-profiles.json', 'auth.json'])
+    await fs.copyFile(path.join(agentFrom, name), path.join(agentTo, name)).catch(e => { if (e.code !== 'ENOENT') throw e; });
+
+  const port = await freePort();
+  const token = randomUUID();
+  await writeJson(configPath, {
+    gateway: { mode: 'local', port, bind: 'loopback', auth: { mode: 'token', token }, controlUi: { enabled: false } },
+    models: { mode: 'replace', providers },
+    agents: {
+      defaults: { workspace: seedRoot, model: C.businessModel, thinkingDefault: 'off', maxConcurrent: 4,
+        heartbeat: { every: '0m' }, memorySearch: { provider: 'none' }, timeoutSeconds: Math.ceil(C.maxRuntimeMs / 1000) },
+      list: [{ id: C.agentId, default: true }],
+    },
+    tools: { profile: 'full' }, channels: {}, cron: { enabled: false },
+    plugins: { allow: [], entries: {} },
+    logging: { level: 'debug', consoleLevel: 'info', file: path.join(runDir, 'logs/openclaw.log') },
+  });
+
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) if (/^(OPENCLAW_|RC_OPENCLAW_)/i.test(key)) delete env[key];
+  Object.assign(env, {
+    HOME: home, USERPROFILE: home, APPDATA: path.join(home, 'AppData/Roaming'), LOCALAPPDATA: path.join(home, 'AppData/Local'),
+    TEMP: tmp, TMP: tmp, TMPDIR: tmp,
+    OPENCLAW_CONFIG_PATH: configPath, OPENCLAW_STATE_DIR: stateDir,
+    OPENCLAW_NO_RESPAWN: '1', ELECTRON_RUN_AS_NODE: '1', RC_OPENCLAW_HOST_ROOT: C.openclawRoot,
+  });
+  // 本进程也换成同一套环境；必须在加载 installer 和宿主模块之前
+  for (const key of Object.keys(process.env)) if (/^(OPENCLAW_|RC_OPENCLAW_)/i.test(key)) delete process.env[key];
+  Object.assign(process.env, env);
+
+  const installer = await import(pathToFileURL(path.join(pluginDir, 'installer.mjs')));
+  const install = await installer.activate({ logger: { info() {}, warn() {}, error() {} } },
+    { homeDir: home, pluginDir, pluginId: 'runtime-corrector', isPackaged: true });
+  if (install.status !== 'active') throw new Error(`RC 安装失败：${JSON.stringify(install)}`);
+  await writeJson(path.join(pluginDir, 'install-complete.json'), { id: 'runtime-corrector', enabled: true, version: '1.11.0' });
+  const cfg = await readJson(configPath);
+  cfg.plugins.entries['runtime-corrector'].config ??= {};
+  cfg.plugins.entries['runtime-corrector'].config.reviewerModel = C.reviewerModel;
+  cfg.plugins.entries['runtime-corrector'].config.businessRunTimeoutMs = C.maxRuntimeMs;
+  await writeJson(configPath, cfg);
+  console.log('  RC 安装状态：', install.status);
+
+  // ── 步骤 1c：启动 Gateway，接通 RPC ──
+  step('1c', '启动 Gateway，接通 RPC');
+  const log = openSync(path.join(runDir, 'logs/gateway.log'), 'a');
+  try {
+    gateway = spawn(process.execPath, [path.join(C.openclawRoot, 'openclaw.mjs'), 'gateway', 'run', '--port', String(port), '--bind', 'loopback'],
+      { cwd: seedRoot, env, stdio: ['ignore', log, log], windowsHide: true });
+    await new Promise((resolve, reject) => { gateway.once('spawn', resolve); gateway.once('error', reject); });
+  } finally { closeSync(log); }
+  const { callGatewayFromCli } = await import(pathToFileURL(path.join(C.openclawRoot, 'dist/plugin-sdk/gateway-runtime.js')));
+  const rpc = (method, params = {}, timeoutMs = 30000, { signal } = {}) => callGatewayFromCli(method,
+    { url: `ws://127.0.0.1:${port}`, token, timeout: String(timeoutMs), json: true }, params,
+    { progress: false, signal, scopes: ['operator.admin', 'operator.read', 'operator.write', 'operator.approvals', 'operator.pairing'] });
+  for (let second = 0; ; second++) {
+    if (gateway.exitCode !== null) throw new Error('Gateway 启动后退出了，看 logs/gateway.log');
+    try { await rpc('health', {}, 2000); break; }
+    catch { if (second >= 90) throw new Error('90 秒还连不上 Gateway，看 logs/gateway.log'); await sleep(1000); }
+  }
+  console.log(`  Gateway 已就绪：PID ${gateway.pid}，端口 ${port}`);
+
+  // ── 步骤 2：创建 Session ──
+  step(2, '创建 Session');
+  const created = await rpc('sessions.create', { key: `agent:${C.agentId}:rc-exp:${id.toLowerCase()}`, agentId: C.agentId,
+    model: C.businessModel, emitCommandHooks: true, worktree: true });
+  await writeJson(path.join(runDir, 'rc-status/session-created.json'), created);
+  if (!created.sessionId || !created.worktree?.path || created.runStarted) throw new Error('sessions.create 的回执不对，看 rc-status/session-created.json');
+  const identity = { agentId: C.agentId, sessionKey: created.key, sessionId: created.sessionId, projectRoot: await fs.realpath(created.worktree.path) };
+  console.log('  sessionId：', identity.sessionId);
+  console.log('  工作区（Agent 只改这里的文件）：', identity.projectRoot);
+
+  // ── 步骤 3：给这个 Session 开启 RC ──
+  step(3, '给这个 Session 开启 RC');
+  const enabled = await rpc('runtime-corrector.session.set',
+    { agentId: identity.agentId, sessionKey: identity.sessionKey, sessionId: identity.sessionId, enabled: true });
+  await writeJson(path.join(runDir, 'rc-status/enabled.json'), enabled);
+  if (!enabled.effectiveEnabled || path.resolve(enabled.projectRoot) !== identity.projectRoot)
+    throw new Error('RC 没有在这个 Session 上生效，看 rc-status/enabled.json');
+  console.log('  RC 已生效：effectiveEnabled =', enabled.effectiveEnabled);
+
+  const record = { runDir, stateDir, pluginDir, gatewayPid: gateway.pid, identity, terminals: {} };
+  const { snapshot } = await lib('observation.mjs');
+  const { settlementKey } = await lib('settlement.mjs');
+
+  if (dryRun) {
+    const snap = await snapshot(record, rpc);
+    console.log('\n--dry-run：试取一次快照（还没发提示词，所以一定是"没跑完"）');
+    console.log('  RC 状态：', snap.rc.status, '；还差：', snap.completion.reasons.join(', '));
+    console.log('到此为止，没有调用模型。');
+  } else {
+    // ── 步骤 4：发送用户输入，只发一次 ──
+    step(4, '发送用户输入（只发一次）');
+    const prompt = await fs.readFile(path.join(C.sample, 'prompt.md'), 'utf8');
+    const message = `本次实验的实际项目目录是：${identity.projectRoot}\n所有文件读写使用此目录下的绝对路径。`
+      + `执行项目命令前先运行：Set-Location -LiteralPath '${identity.projectRoot.replaceAll("'", "''")}'。\n\n${prompt}`;
+    record.firstRunId = randomUUID();
+    await writeJson(path.join(runDir, 'run.json'), record);   // 先把 runId 存下来，再发送
+    try {
+      const receipt = await rpc('chat.send', { sessionKey: identity.sessionKey, sessionId: identity.sessionId, message,
+        thinking: 'off', idempotencyKey: record.firstRunId, timeoutMs: C.maxRuntimeMs });
+      if (receipt.runId) record.firstRunId = receipt.runId;
+      console.log('  已发送，runId：', record.firstRunId);
+    } catch (e) {
+      console.log('  没收到回执。不要重发，继续观察：', e.message);
+    }
+
+    // ── 步骤 5 和 6：每秒取一次快照；六类条件满足后再复核一次 ──
+    step(5, '每秒取一次快照，等六类条件全部满足');
+    const deadline = Date.now() + C.maxRuntimeMs;
+    let lastPrint = 0, finalSnap;
+    while (!finalSnap) {
+      if (Date.now() > deadline) throw new Error('超过总时限，没有跑完');
+      let snap;
+      try { snap = await snapshot(record, rpc); }
+      catch (e) {
+        if (['RC_IDENTITY_MISMATCH', 'RC_OWNER_CHANGED'].includes(e.code)) throw e;
+        console.log('  这次没读到状态，1 秒后再试：', e.message);
+        await sleep(1000); continue;
+      }
+      if (Date.now() - lastPrint > 30000) {
+        console.log(`  RC ${snap.rc.status}/${snap.rc.stage}；还差：${snap.completion.reasons.join(', ') || '无'}`);
+        lastPrint = Date.now();
+      }
+      if (snap.completion.settled) {
+        step(6, '再取一次快照复核');
+        const fresh = await snapshot(record, rpc);
+        if (fresh.completion.settled && settlementKey(fresh) === settlementKey(snap)) finalSnap = fresh;
+        else console.log('  复核时状态变了，继续观察');
+      }
+      if (!finalSnap) await sleep(1000);
+    }
+    console.log('  终审结论：', finalSnap.rc.outcome);
+
+    // ── 步骤 7：关闭 Gateway，归档 ──
+    step(7, '关闭 Gateway，归档');
+    stopGateway();
+    const skip = /[\\/](\.git|node_modules|oh_modules)$/;
+    await fs.cp(identity.projectRoot, path.join(runDir, 'artifacts/project'), { recursive: true, filter: src => !skip.test(src) });
+    // 先让 git 知道有哪些新文件，否则 diff 只包含改动过的旧文件
+    execFileSync(C.git, ['add', '--all', '--intent-to-add'], { cwd: identity.projectRoot, windowsHide: true });
+    const diff = execFileSync(C.git, ['diff', '--binary', 'HEAD'], { cwd: identity.projectRoot, windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
+    await fs.writeFile(path.join(runDir, 'artifacts/changes.patch'), diff);
+    await writeJson(path.join(runDir, 'result.json'), { status: 'ARCHIVED', id, identity, firstRunId: record.firstRunId,
+      outcome: finalSnap.rc.outcome, finishedAt: new Date().toISOString() });
+    console.log(`\n实验跑完。结果：${path.join(runDir, 'result.json')}`);
+  }
+} catch (error) {
+  console.error('\n出错了：', error.message);
+  process.exitCode = 1;
+} finally {
+  stopGateway();
+}
+process.exit(process.exitCode ?? 0);
+</script>
+
+      <h3>这份脚本省略了什么</h3>
+      <div class="panel">
+        <table>
+          <thead><tr><th>省略的东西</th><th>省略后的风险</th><th>正式执行器（scripts/run-experiment.mjs）怎么做</th></tr></thead>
+          <tbody>
+            <tr><td>Windows Job 进程组</td><td>脚本被强行结束时，Gateway 和它的子进程可能留在后台</td><td>把整个实验放进一个 Job，到期一次清理干净</td></tr>
+            <tr><td>独立截止守护</td><td>脚本自己卡死时，没人按时限收尾</td><td>单独起一个守护进程盯时限</td></tr>
+            <tr><td>断点续跑</td><td>脚本中途退出后，只能手动看现场</td><td><code>--resume</code> 接回原来的 Gateway 继续观察</td></tr>
+            <tr><td>读状态失败的上限</td><td>一直重试到总时限</td><td>连续失败或长时间不确定就停下，标记"待核对"</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section id="rules">
+      <h2><span class="num">8</span>七条铁律和出问题先查哪</h2>
+      <p class="lead">这七条都是实际踩过的坑。写自己的版本时，每一条都要保留。</p>
+      <div class="panel">
+        <ol class="rules">
+          <li>用户输入只发一次。<span class="why">否则 Agent 会把任务重做一遍，实验作废。</span></li>
+          <li>工作区用 <code>sessions.create</code> 返回的 <code>worktree.path</code>，并在提示词里告诉模型这个路径。<span class="why">否则 Agent 改错目录，RC 查的和 Agent 改的不是同一份文件。</span></li>
+          <li>每次读状态都核对身份：<code>sessionKey</code>、<code>sessionId</code>、<code>projectRoot</code>、<code>agentId</code>，以及 RC 的 <code>owner.pid</code> 等于你的 Gateway 进程号。<span class="why">否则可能把别的实验的状态当成自己的。用 <code>snapshot()</code> 就已经替你做了。</span></li>
+          <li>一个实验一个 Gateway、一个状态目录、一个端口，不碰平时 MA 的目录。<span class="why">否则实验之间会互相干扰，还可能弄乱你的 MA。</span></li>
+          <li><code>agents.defaults.timeoutSeconds</code> 不小于总时限。<span class="why">否则宿主默认的单轮时限会提前掐断主任务。</span></li>
+          <li>关 Gateway 要连子进程一起关（<code>taskkill /T</code>）。<span class="why">否则构建、测试进程会留下来。</span></li>
+          <li>读状态偶尔失败要重试，不能马上判失败。<span class="why">RC 正在写状态文件时会短暂锁住（state lock）。</span></li>
+        </ol>
+      </div>
+      <h3>出问题先查哪个文件</h3>
+      <div class="panel">
+        <table>
+          <thead><tr><th>现象</th><th>先看（都在运行目录下）</th></tr></thead>
+          <tbody>
+            <tr><td>Gateway 起不来</td><td><code>logs/gateway.log</code></td></tr>
+            <tr><td>模型报错、Agent 没动静</td><td><code>logs/openclaw.log</code></td></tr>
+            <tr><td>RC 没生效</td><td><code>rc-status/enabled.json</code></td></tr>
+            <tr><td>一直不结束</td><td><code>rc-status/latest.json</code> 里的 <code>completion.reasons</code> 和 <code>rc</code></td></tr>
+            <tr><td>想看 Agent 改了什么</td><td><code>artifacts/changes.patch</code></td></tr>
+            <tr><td>想看终审结论</td><td><code>result.json</code> 的 <code>outcome</code>；详细记录在工作区 <code>.runtime-correction/openclaw/native-stop-reviews/</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>2026-11-24 · 内容依据实验程序、RC 插件源码和本机实测运行（exp-20261124025357-4e10c5）</footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var links = document.querySelectorAll('nav a');
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (a) { a.classList.remove('active'); });
+        var link = byId[entry.target.id];
+        if (link) link.classList.add('active');
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('main section').forEach(function (s) { observer.observe(s); });
+
+    var full = document.getElementById('full-code');
+    full.textContent = document.getElementById('full-code-src').textContent.replace(/^\n/, '');
+
+    document.querySelectorAll('.copy').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var text = document.getElementById(button.dataset.copy).textContent;
+        var done = function () { button.textContent = '已复制'; setTimeout(function () { button.textContent = '复制'; }, 1500); };
+        var fallback = function () {
+          var area = document.createElement('textarea');
+          area.value = text; document.body.appendChild(area); area.select();
+          document.execCommand('copy'); document.body.removeChild(area); done();
+        };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback);
+        else fallback();
+      });
+    });
+  })();
+</script>
+</body>
+</html>

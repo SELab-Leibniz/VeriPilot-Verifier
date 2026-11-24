@@ -2,7 +2,7 @@
 
 一个样本目录，一个命令。脚本准备工作副本，启动隔离 Gateway，创建新 Session，开启 RC，提交提示词，等待收尾后保存产物和轨迹。当前支持 **Windows + MA OpenClaw 2026.7.1-2 + RC 1.11.0**，无 npm 依赖，不包含独立评估或评分。
 
-新机器从 [Windows 教程](tutorials/README.md) 开始。历史快排验证使用旧插件，完整默认配置曾出现前置热钩子超时，见 [纠偏实测记录](CORRECTION-VALIDATION.md)。security_tool_2 现已适配 `codex/rc-general-efficiency-bench` 插件和本次指定的 artifacts off 配置，保留 requirementFrame，见 [当前适配记录](validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md)。
+整体设计、终审与纠偏的代码位置、完成判定以及与 `openclaw agent --local` 的差别，见 [交接说明](HANDOFF.md)。新机器从 [Windows 教程](tutorials/README.md) 开始。历史快排验证使用旧插件，完整默认配置曾出现前置热钩子超时，见 [纠偏实测记录](CORRECTION-VALIDATION.md)。security_tool_2 现已适配 `codex/rc-general-efficiency-bench` 插件和本次指定的 artifacts off 配置，保留 requirementFrame，见 [当前适配记录](validation/SECURITY-TOOL-2-CURRENT-RC-20261124.md)。
 
 状态控制、观察恢复与单个实验总时限的测试见 [流程验证记录](FLOW-VALIDATION.md)。
 
