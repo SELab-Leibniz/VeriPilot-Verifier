@@ -165,11 +165,11 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "LIVE_APPLY_AFTER_ORDINARY_APPROVAL_PROPOSAL_ERROR_PRESERVED",
+    "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
     "modelTrialPerformed": true,
-    "finalOutcomeAvailable": false,
+    "finalOutcomeAvailable": true,
     "inheritsPrecedingArchiveEvidence": false,
     "precedingCompletedRun": "evaluationRecords.ordinaryOn56efD5",
     "qualityGainProven": false,
@@ -178,13 +178,19 @@
     "matchedPairCredit": 0,
     "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4",
     "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
-    "actualController": "62c8c3/session53897 RUNNING",
+    "actualController": "62c8c3/session53897 ->be6c4c/0 CLOSED",
     "codingModel": "deepseek-flash",
     "reviewerModelConfigured": "deepseek-v4-pro",
     "reviewerRolesConfigured": 7,
     "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
     "sourceAcceptanceFrozenBeforeFirstRequest": true,
-    "initialAndLiveDuties": "MEASURE_FROM_OWN_GENUINE_PUBLICATIONS_NO_OLD_N_L_ASSUMPTION",
+    "initialAndLiveDuties": {
+      "initialN": 13,
+      "liveL": 21,
+      "nonExhaustive": true,
+      "additionalDistinctCanonicalIdentities": 8,
+      "newIndependentFeaturesEstablished": false
+    },
     "publicPreflight": {
       "pass": 668,
       "total": 668,
@@ -215,10 +221,574 @@
       "queriedItems": 8,
       "totalAtQuery": 13,
       "queriedIdsStructurallyReusedInFreshStaging": 8,
-      "semanticCompletenessOrBenefitEstablished": false
-    }
+      "semanticCompletenessOrBenefitEstablished": false,
+      "allQueriedIdsRereadAndRestaged": true,
+      "semanticEquivalenceProven": false
+    },
+    "controllerClosed": true,
+    "applyOriginalTurn": "CLEAN_OK",
+    "officialStepsComplete": 10,
+    "frozenFiles": 169,
+    "traffic": {
+      "deepseek-flash": 48,
+      "deepseek-v4-pro": 130
+    },
+    "finalFinishAttempts": 2,
+    "secondFinish": {
+      "saved": true,
+      "complete": true
+    },
+    "methodAuditStatus": "CLOSED_FINITE_PROTOCOL_SCOPE",
+    "gradeStatus": "EXECUTED_FINITE_CHECKS_ALL_PASS_WITH_LIMITS",
+    "requirementSemanticsVerified": false,
+    "observedToolUsability": {
+      "readOriginalEofErrors": 14,
+      "checklistDisplayedBytes": 64018,
+      "checklistDisplayedJsonValid": false,
+      "readinessGuideDeliveredBeforeFirstFinish": true,
+      "readinessPreviewQueries": 0,
+      "missingCorrectionReasonPathExercised": false,
+      "documentToolErrors": 16,
+      "documentToolErrorFamilies": {
+        "read_original:Invalid text interval": 14,
+        "stage_original_duties:DOCUMENT_ORIGINAL_DUTY_READ_REQUIRED": 1,
+        "remember:DOCUMENT_NOTE_REQUIRES_CURRENT_READS": 1
+      },
+      "sourceScopeAndCauseLimits": "Published audit validates document error families; transport error causality is not established."
+    },
+    "grading": {
+      "primary": {
+        "pass": 8,
+        "total": 8
+      },
+      "publicRegression": {
+        "pass": 668,
+        "total": 668
+      },
+      "exploratory": {
+        "pass": 6,
+        "total": 6
+      },
+      "actual": "952eb4/session4213 ->6fd2dd/0 CLOSED",
+      "readback": {
+        "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
+        "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
+      },
+      "frozenFiles": 169,
+      "containersClosedAndRemoved": 3,
+      "hostHome": "/Users/rshu",
+      "platform": "linux/arm64",
+      "python": "3.13.17",
+      "macNativeEquivalence": false
+    },
+    "artifactDelta": {
+      "kind": "ROOT_CLOSED_25084_ARTIFACT_DELTA",
+      "setupFiles": 163,
+      "freezeFiles": 169,
+      "productionFiles": 18,
+      "productionFilesUnchanged": 18,
+      "changedSetupFiles": [
+        "tests/test_formatting.py"
+      ],
+      "removedSetupFiles": [],
+      "addedFiles": [
+        "openspec/changes/click-help-shadowing/.openspec.yaml",
+        "openspec/changes/click-help-shadowing/README.md",
+        "openspec/changes/click-help-shadowing/design.md",
+        "openspec/changes/click-help-shadowing/proposal.md",
+        "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+        "openspec/changes/click-help-shadowing/tasks.md"
+      ],
+      "planFiles": [
+        {
+          "path": "openspec/changes/click-help-shadowing/.openspec.yaml",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/README.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/design.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/proposal.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/tasks.md",
+          "bytesEqual": false,
+          "checkboxOnly": true
+        }
+      ],
+      "snapshotMetadataExcludedFromPlanFiles": true
+    },
+    "artifactDeltaReceipt": {
+      "path": ".runtime-correction/validation/public-run-25084e3de41945/root-closed-artifact-delta.json",
+      "sha256": "b8616a10a717b6f87b769c577dc3b0a55af9bc1770b805e0a3f5d547b3bc1883"
+    },
+    "transport": {
+      "capture": {
+        "path": ".runtime-correction/validation/public-run-25084e3de41945/closed-essential-evidence/receipt.json",
+        "sha256": "0c9af8bd6e2563e3df2551914888d6784e1a65d378e1f50aa68c1da7b726b8b1"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/postclosure-capture-admission-25084-dbyxqym3/all-file-capture-readback.json",
+        "sha256": "4129937528a91cef71e05459eb5564cb86e31d2d8605f3d0872afbc85ebca5ac"
+      },
+      "files": 262,
+      "bytes": 9250151,
+      "methodAcceptanceGranted": false
+    },
+    "kind": "CLOSED_SINGLE_ON_ORDINARY_GENERAL_GUIDANCE_PROBE",
+    "endToEndMethodTargetMet": true,
+    "fullyVerifiedWorkingCaseEstablished": false,
+    "workflow": {
+      "scope": "Proposal / ordinary approval / Apply / Stop only",
+      "proposalOriginalTurn": "ERROR_PRESERVED",
+      "applyOriginalTurn": "CLEAN_OK",
+      "planFilesReadBeforeOrdinaryApproval": 6,
+      "officialStepsComplete": 10,
+      "officialStrictOpenSpecValidationPassed": true,
+      "archiveExecuted": false,
+      "wholeOpenSpecLifecycleValidated": false,
+      "cleanWholeWorkflow": false
+    },
+    "method": {
+      "initialN": 13,
+      "firstStagedResponse": 8,
+      "completeFirstStagedTable": 13,
+      "liveL": 21,
+      "additionalDistinctCanonicalIds": 8,
+      "eligibleCanonicalPublicationCounts": [
+        13,
+        13,
+        21
+      ],
+      "eligibleCanonicalPublications": 3,
+      "noOpPublications": 1,
+      "liveRevision": 1,
+      "initialCohortId": "b7c59085e3ce9d68c207ab15d4e9a669cf52947b0778043c46adabe86ef43617",
+      "currentLiveId": "1490b945ef1c3ac9e39751d9306cd35808670a59a645783d2ec3be33c90201a0",
+      "firstFinishPending": 9,
+      "postFirstFinishAcknowledgedSourceReads": 7,
+      "finalSavedComplete": true,
+      "protocolCompleted": true,
+      "beforeAllOriginalDeadlines": true,
+      "finalDispositions": {
+        "CURRENT": 17,
+        "SUPERSEDED": 3,
+        "UNVERIFIED": 1
+      },
+      "currentRowVerdicts": {
+        "NO_CONFIRMED_DEVIATION": 17
+      },
+      "formedBindings": 18,
+      "formedBindingCountIsNotDenominator": true,
+      "finalHostStatus": "UNVERIFIED",
+      "finalHostReasonCode": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+      "allDutyDiscoveryOrSemanticCoverageProven": false,
+      "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+      "audit": {
+        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+        "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+      },
+      "seal": {
+        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
+        "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+      },
+      "criteria": {
+        "A_OWN_SUBJECT_AND_BOUNDARY": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "B_GENUINE_NORMAL_STAGING": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "C_PRE_FIRST_COVERAGE_ORDER": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "D_ACTUAL_COMMITTED_PUBLICATION_RETENTION": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "E_COMPLETE_CURRENT_STOP_PROTOCOL": "SATISFIED_FINITE_PROTOCOL_SCOPE"
+      },
+      "allFullClausesAndSourceAnchorsReachMandatoryStopBasis": true,
+      "semanticCompletenessProven": false,
+      "originalDiscoveryExhaustive": false,
+      "unresolvedDuty": {
+        "id": "known-original-6cdf50767a202a5e43c2668327132485f23d77d15e4f35fe3ec3909b21d747d2",
+        "canonicalRequirement": "Create the standard change click-help-shadowing with proposal, design, specification and tasks.",
+        "source": {
+          "anchorId": "original-source-33589ea8f771055851eeb02e7d3d5bf29b87e5a7b22fd6408aa021c63dfe1c0b",
+          "kind": "USER_MESSAGE",
+          "ref": "transcript:dcb31543",
+          "sha256": "4af0bea3f5dc3dd43bfe4de94c10e520b01c368ef47e7a245487c21de4161ba3",
+          "byteStart": 2864,
+          "byteEnd": 3512
+        },
+        "sourceCurrent": true,
+        "disposition": "UNVERIFIED",
+        "finalObjectId": null,
+        "finalVerdict": null,
+        "diagnostic": {
+          "code": "REVIEW_ITEM_EVIDENCE_UNAVAILABLE",
+          "message": "Complete basis and actually read SOURCE evidence were not established."
+        },
+        "formedObjectId": "M12:original-e8dc1deec60b84c124052d25",
+        "reviewerProofSubject": {
+          "metricId": "M12",
+          "verificationTarget": "IMPLEMENTATION",
+          "implementationRole": "SUPPORT",
+          "applicabilityKind": "CURRENT_TASK",
+          "applicability": "CURRENT_TASK",
+          "proofOwners": [
+            "SOURCE"
+          ]
+        },
+        "independentSemanticClassificationGranted": false
+      },
+      "frozenAcceptanceSha256": "bec816e44cc85ffb507467ccf3936359458702691bc09b57ffc476bdd6120119",
+      "capacityBusinessFailureUnkeyedBranchesNotClaimedExercised": true
+    },
+    "uptake": {
+      "priorQueries": 1,
+      "priorReturned": 8,
+      "available": 13,
+      "allQueriedIdsRereadAndRestaged": true,
+      "structuralReuseCount": 8,
+      "semanticEquivalenceProven": false,
+      "guideDeliveredBeforeFirstFinish": true,
+      "guideWireBytes": 64018,
+      "guideWireJsonValid": false,
+      "guideUnderstandingProven": false,
+      "readinessQueries": 0,
+      "readinessQueryStatus": "NOT_EXERCISED",
+      "missingReasonFeedbackStatus": "NOT_EXERCISED"
+    },
+    "limits": [
+      "Healthy reused ON-only development case; no matched OFF quality or efficiency estimate.",
+      "All21 retained observations accounted for, but one is UNVERIFIED and original discovery remains nonexhaustive.",
+      "Seventeen current rows say NO_CONFIRMED_DEVIATION; semantic truth is not independently certified.",
+      "Proposal original host error retained; Apply clean, Archive unexecuted.",
+      "Linux grading on this Mac does not establish nativeMac equivalence.",
+      "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
+    ]
   },
   "latestCompletedDevelopmentRun": {
+    "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+    "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
+    "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
+    "modelTrialPerformed": true,
+    "finalOutcomeAvailable": true,
+    "inheritsPrecedingArchiveEvidence": false,
+    "precedingCompletedRun": "evaluationRecords.ordinaryOn56efD5",
+    "qualityGainProven": false,
+    "generalUsefulnessProven": false,
+    "formal13TaskCredit": 0,
+    "matchedPairCredit": 0,
+    "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4",
+    "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
+    "actualController": "62c8c3/session53897 ->be6c4c/0 CLOSED",
+    "codingModel": "deepseek-flash",
+    "reviewerModelConfigured": "deepseek-v4-pro",
+    "reviewerRolesConfigured": 7,
+    "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
+    "sourceAcceptanceFrozenBeforeFirstRequest": true,
+    "initialAndLiveDuties": {
+      "initialN": 13,
+      "liveL": 21,
+      "nonExhaustive": true,
+      "additionalDistinctCanonicalIdentities": 8,
+      "newIndependentFeaturesEstablished": false
+    },
+    "publicPreflight": {
+      "pass": 668,
+      "total": 668,
+      "starterUnchanged": 149,
+      "modelsUsedByPreflight": 0
+    },
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "noEpochRenewal": true,
+    "archiveExecuted": false,
+    "proposalOriginalTurn": "ERROR_PRESERVED",
+    "planFilesReadBeforeOrdinaryApproval": 6,
+    "planSteps": 10,
+    "officialStrictOpenSpecValidation": "1of1PASS",
+    "rootOrdinaryApprovalActual": "cdf93a/0",
+    "rootOrdinaryApprovalSha256": "c017bc9368c215ff474879691414eee7591ed290738f7fa00db11f7a99054844",
+    "observedPlanningIssues": {
+      "readOriginalEofErrors": 14,
+      "findingLocationValidationCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+      "transportErrorSequences": [
+        81,
+        83,
+        84
+      ],
+      "transportOrOriginalTurnUniqueCauseEstablished": false
+    },
+    "observedPriorNavigation": {
+      "queriedItems": 8,
+      "totalAtQuery": 13,
+      "queriedIdsStructurallyReusedInFreshStaging": 8,
+      "semanticCompletenessOrBenefitEstablished": false,
+      "allQueriedIdsRereadAndRestaged": true,
+      "semanticEquivalenceProven": false
+    },
+    "controllerClosed": true,
+    "applyOriginalTurn": "CLEAN_OK",
+    "officialStepsComplete": 10,
+    "frozenFiles": 169,
+    "traffic": {
+      "deepseek-flash": 48,
+      "deepseek-v4-pro": 130
+    },
+    "finalFinishAttempts": 2,
+    "secondFinish": {
+      "saved": true,
+      "complete": true
+    },
+    "methodAuditStatus": "CLOSED_FINITE_PROTOCOL_SCOPE",
+    "gradeStatus": "EXECUTED_FINITE_CHECKS_ALL_PASS_WITH_LIMITS",
+    "requirementSemanticsVerified": false,
+    "observedToolUsability": {
+      "readOriginalEofErrors": 14,
+      "checklistDisplayedBytes": 64018,
+      "checklistDisplayedJsonValid": false,
+      "readinessGuideDeliveredBeforeFirstFinish": true,
+      "readinessPreviewQueries": 0,
+      "missingCorrectionReasonPathExercised": false,
+      "documentToolErrors": 16,
+      "documentToolErrorFamilies": {
+        "read_original:Invalid text interval": 14,
+        "stage_original_duties:DOCUMENT_ORIGINAL_DUTY_READ_REQUIRED": 1,
+        "remember:DOCUMENT_NOTE_REQUIRES_CURRENT_READS": 1
+      },
+      "sourceScopeAndCauseLimits": "Published audit validates document error families; transport error causality is not established."
+    },
+    "grading": {
+      "primary": {
+        "pass": 8,
+        "total": 8
+      },
+      "publicRegression": {
+        "pass": 668,
+        "total": 668
+      },
+      "exploratory": {
+        "pass": 6,
+        "total": 6
+      },
+      "actual": "952eb4/session4213 ->6fd2dd/0 CLOSED",
+      "readback": {
+        "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
+        "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
+      },
+      "frozenFiles": 169,
+      "containersClosedAndRemoved": 3,
+      "hostHome": "/Users/rshu",
+      "platform": "linux/arm64",
+      "python": "3.13.17",
+      "macNativeEquivalence": false
+    },
+    "artifactDelta": {
+      "kind": "ROOT_CLOSED_25084_ARTIFACT_DELTA",
+      "setupFiles": 163,
+      "freezeFiles": 169,
+      "productionFiles": 18,
+      "productionFilesUnchanged": 18,
+      "changedSetupFiles": [
+        "tests/test_formatting.py"
+      ],
+      "removedSetupFiles": [],
+      "addedFiles": [
+        "openspec/changes/click-help-shadowing/.openspec.yaml",
+        "openspec/changes/click-help-shadowing/README.md",
+        "openspec/changes/click-help-shadowing/design.md",
+        "openspec/changes/click-help-shadowing/proposal.md",
+        "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+        "openspec/changes/click-help-shadowing/tasks.md"
+      ],
+      "planFiles": [
+        {
+          "path": "openspec/changes/click-help-shadowing/.openspec.yaml",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/README.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/design.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/proposal.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+          "bytesEqual": true,
+          "checkboxOnly": false
+        },
+        {
+          "path": "openspec/changes/click-help-shadowing/tasks.md",
+          "bytesEqual": false,
+          "checkboxOnly": true
+        }
+      ],
+      "snapshotMetadataExcludedFromPlanFiles": true
+    },
+    "artifactDeltaReceipt": {
+      "path": ".runtime-correction/validation/public-run-25084e3de41945/root-closed-artifact-delta.json",
+      "sha256": "b8616a10a717b6f87b769c577dc3b0a55af9bc1770b805e0a3f5d547b3bc1883"
+    },
+    "transport": {
+      "capture": {
+        "path": ".runtime-correction/validation/public-run-25084e3de41945/closed-essential-evidence/receipt.json",
+        "sha256": "0c9af8bd6e2563e3df2551914888d6784e1a65d378e1f50aa68c1da7b726b8b1"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/postclosure-capture-admission-25084-dbyxqym3/all-file-capture-readback.json",
+        "sha256": "4129937528a91cef71e05459eb5564cb86e31d2d8605f3d0872afbc85ebca5ac"
+      },
+      "files": 262,
+      "bytes": 9250151,
+      "methodAcceptanceGranted": false
+    },
+    "kind": "CLOSED_SINGLE_ON_ORDINARY_GENERAL_GUIDANCE_PROBE",
+    "endToEndMethodTargetMet": true,
+    "fullyVerifiedWorkingCaseEstablished": false,
+    "workflow": {
+      "scope": "Proposal / ordinary approval / Apply / Stop only",
+      "proposalOriginalTurn": "ERROR_PRESERVED",
+      "applyOriginalTurn": "CLEAN_OK",
+      "planFilesReadBeforeOrdinaryApproval": 6,
+      "officialStepsComplete": 10,
+      "officialStrictOpenSpecValidationPassed": true,
+      "archiveExecuted": false,
+      "wholeOpenSpecLifecycleValidated": false,
+      "cleanWholeWorkflow": false
+    },
+    "method": {
+      "initialN": 13,
+      "firstStagedResponse": 8,
+      "completeFirstStagedTable": 13,
+      "liveL": 21,
+      "additionalDistinctCanonicalIds": 8,
+      "eligibleCanonicalPublicationCounts": [
+        13,
+        13,
+        21
+      ],
+      "eligibleCanonicalPublications": 3,
+      "noOpPublications": 1,
+      "liveRevision": 1,
+      "initialCohortId": "b7c59085e3ce9d68c207ab15d4e9a669cf52947b0778043c46adabe86ef43617",
+      "currentLiveId": "1490b945ef1c3ac9e39751d9306cd35808670a59a645783d2ec3be33c90201a0",
+      "firstFinishPending": 9,
+      "postFirstFinishAcknowledgedSourceReads": 7,
+      "finalSavedComplete": true,
+      "protocolCompleted": true,
+      "beforeAllOriginalDeadlines": true,
+      "finalDispositions": {
+        "CURRENT": 17,
+        "SUPERSEDED": 3,
+        "UNVERIFIED": 1
+      },
+      "currentRowVerdicts": {
+        "NO_CONFIRMED_DEVIATION": 17
+      },
+      "formedBindings": 18,
+      "formedBindingCountIsNotDenominator": true,
+      "finalHostStatus": "UNVERIFIED",
+      "finalHostReasonCode": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+      "allDutyDiscoveryOrSemanticCoverageProven": false,
+      "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+      "audit": {
+        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+        "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+      },
+      "seal": {
+        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
+        "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+      },
+      "criteria": {
+        "A_OWN_SUBJECT_AND_BOUNDARY": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "B_GENUINE_NORMAL_STAGING": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "C_PRE_FIRST_COVERAGE_ORDER": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "D_ACTUAL_COMMITTED_PUBLICATION_RETENTION": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+        "E_COMPLETE_CURRENT_STOP_PROTOCOL": "SATISFIED_FINITE_PROTOCOL_SCOPE"
+      },
+      "allFullClausesAndSourceAnchorsReachMandatoryStopBasis": true,
+      "semanticCompletenessProven": false,
+      "originalDiscoveryExhaustive": false,
+      "unresolvedDuty": {
+        "id": "known-original-6cdf50767a202a5e43c2668327132485f23d77d15e4f35fe3ec3909b21d747d2",
+        "canonicalRequirement": "Create the standard change click-help-shadowing with proposal, design, specification and tasks.",
+        "source": {
+          "anchorId": "original-source-33589ea8f771055851eeb02e7d3d5bf29b87e5a7b22fd6408aa021c63dfe1c0b",
+          "kind": "USER_MESSAGE",
+          "ref": "transcript:dcb31543",
+          "sha256": "4af0bea3f5dc3dd43bfe4de94c10e520b01c368ef47e7a245487c21de4161ba3",
+          "byteStart": 2864,
+          "byteEnd": 3512
+        },
+        "sourceCurrent": true,
+        "disposition": "UNVERIFIED",
+        "finalObjectId": null,
+        "finalVerdict": null,
+        "diagnostic": {
+          "code": "REVIEW_ITEM_EVIDENCE_UNAVAILABLE",
+          "message": "Complete basis and actually read SOURCE evidence were not established."
+        },
+        "formedObjectId": "M12:original-e8dc1deec60b84c124052d25",
+        "reviewerProofSubject": {
+          "metricId": "M12",
+          "verificationTarget": "IMPLEMENTATION",
+          "implementationRole": "SUPPORT",
+          "applicabilityKind": "CURRENT_TASK",
+          "applicability": "CURRENT_TASK",
+          "proofOwners": [
+            "SOURCE"
+          ]
+        },
+        "independentSemanticClassificationGranted": false
+      },
+      "frozenAcceptanceSha256": "bec816e44cc85ffb507467ccf3936359458702691bc09b57ffc476bdd6120119",
+      "capacityBusinessFailureUnkeyedBranchesNotClaimedExercised": true
+    },
+    "uptake": {
+      "priorQueries": 1,
+      "priorReturned": 8,
+      "available": 13,
+      "allQueriedIdsRereadAndRestaged": true,
+      "structuralReuseCount": 8,
+      "semanticEquivalenceProven": false,
+      "guideDeliveredBeforeFirstFinish": true,
+      "guideWireBytes": 64018,
+      "guideWireJsonValid": false,
+      "guideUnderstandingProven": false,
+      "readinessQueries": 0,
+      "readinessQueryStatus": "NOT_EXERCISED",
+      "missingReasonFeedbackStatus": "NOT_EXERCISED"
+    },
+    "limits": [
+      "Healthy reused ON-only development case; no matched OFF quality or efficiency estimate.",
+      "All21 retained observations accounted for, but one is UNVERIFIED and original discovery remains nonexhaustive.",
+      "Seventeen current rows say NO_CONFIRMED_DEVIATION; semantic truth is not independently certified.",
+      "Proposal original host error retained; Apply clean, Archive unexecuted.",
+      "Linux grading on this Mac does not establish nativeMac equivalence.",
+      "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
+    ]
+  },
+  "precedingCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
     "status": "EXERCISED_PARTIAL_OR_LATE_STOP_DEADLINE_E_NOT_MET_CODE_GRADE_PASS",
     "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
@@ -420,129 +990,6 @@
       "Code grade PASS does not replace incomplete Stop and criterion E.",
       "One-correction budget and source ownership preserved; missing-reason feedback ambiguous.",
       "Archive unexecuted; Linux grading does not establish native Mac equivalence."
-    ]
-  },
-  "precedingCompletedDevelopmentRun": {
-    "kind": "CLOSED_SINGLE_ON_HEALTHY_METHOD_PROBE_AND_INDEPENDENT_FINITE_DELIVERY_GRADE",
-    "status": "LIMITED_METHOD_TARGET_SATISFIED_WITH_PROPOSAL_ERROR_PREVIEW_UNEXERCISED_ARCHIVE_UNTESTED",
-    "evaluationDesign": "ON_WALKTHROUGH_ONLY",
-    "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
-    "archiveSha256": "c3315b3907ec20743ae50b2545353290d632c958f288b8c396ee353d90b61f86",
-    "operatorRoot": ".runtime-correction/validation/public-run-8344f3c012f74b",
-    "actualController": "4f0c1d/session13793 ->54429f/0 CLOSED",
-    "codingModel": "deepseek-flash",
-    "reviewerModel": "deepseek-v4-pro",
-    "reviewerRoles": 7,
-    "profile": {
-      "wallLimitMs": 3600000,
-      "maxRequests": 256,
-      "preparedInventory": false,
-      "sealedApproval": false,
-      "faultInjection": false,
-      "epochRenewed": false
-    },
-    "workflow": {
-      "scope": "Proposal / Apply / Stop only",
-      "proposalOriginalTurn": "ERROR_PRESERVED",
-      "allSixCurrentPlanFilesReadBeforeOrdinaryApproval": true,
-      "initialUncheckedAndFinalMarkedTasks": 9,
-      "officialStrictOpenSpecValidationPassed": true,
-      "archiveExecuted": false,
-      "wholeOpenSpecLifecycleValidated": false
-    },
-    "method": {
-      "status": "EXERCISED_RETAINED_STOP_COMPLETE",
-      "audit": {
-        "path": ".runtime-correction/validation/mechanism-audit-8344-iqo4cl22/audit-receipt.json",
-        "sha256": "673a5350a39bac6a6a00dc027495ecb91ed58d4e4550973684885674ccaeab63"
-      },
-      "seal": {
-        "path": ".runtime-correction/validation/mechanism-audit-8344-iqo4cl22/seal.json",
-        "sha256": "28b36c0f603f53bf01b3eea22cfbf6fdefb8073b120be67218636333db4995be"
-      },
-      "originalDuties": {
-        "stagedByReview": [
-          6,
-          6,
-          8
-        ],
-        "immutableFirstCohort": 6,
-        "preCoverageStagedSubset": 6,
-        "allInitialFullClausesAndSourceAnchorsRetained": true,
-        "finalCurrent": 6,
-        "discoveryExhaustive": false
-      },
-      "finalStopHostStatus": "NO_DEVIATION_FOUND",
-      "finalFinish": {
-        "attempts": 2,
-        "saved": true,
-        "complete": true,
-        "firstPendingKnownOriginalCount": 1
-      },
-      "previewQueries": 0,
-      "previewStatus": "NOT_EXERCISED",
-      "sampledImplementationChallenges": {
-        "eligible": 5,
-        "selected": 3,
-        "scope": "PARTIAL_SCOPE",
-        "semanticsVerified": false
-      },
-      "semanticsVerified": false,
-      "semanticTruthProven": false,
-      "originalRequirementDiscoveryComplete": false
-    },
-    "grading": {
-      "primary": {
-        "pass": 8,
-        "total": 8
-      },
-      "publicRegression": {
-        "pass": 668,
-        "total": 668
-      },
-      "exploratory": {
-        "pass": 6,
-        "total": 6
-      },
-      "actual": "74b1fc/session15591 ->55d212/0 CLOSED",
-      "batch": {
-        "path": ".runtime-correction/validation/single-on-c331-postclosure-grade-source-k3udhtd1/private-batches/run-1/batch-completed-private.json",
-        "sha256": "c2cf9209bfe17f5dfd154c858f9b5d05599bb26d113142a2fc1f8a55fe4ed290"
-      },
-      "readback": {
-        "path": ".runtime-correction/validation/single-on-c331-postgrade-readback-qlg4d9fq/receipt.json",
-        "sha256": "a22611b96c69a7c6c1888d93df21c0ec28ed0de88f19081941ea4814c0a5daf4"
-      },
-      "containersClosedAndRemoved": 3,
-      "sourceAndMetadataPinsStable": 539,
-      "macNativeEquivalence": false
-    },
-    "traffic": {
-      "deepseek-flash": 46,
-      "deepseek-v4-pro": 76
-    },
-    "artifactDelta": {
-      "productionSourceUnchanged": 18,
-      "addedTestFunctions": 3,
-      "addedTestLines": 76,
-      "addedFiles": 20,
-      "removedFiles": 0
-    },
-    "modelTrialPerformed": true,
-    "finalOutcomeAvailable": true,
-    "methodUseVerifiedForThisFiniteProbe": true,
-    "qualityGainProven": false,
-    "benefitProven": false,
-    "generalUsefulnessProven": false,
-    "semanticCompleteness": "UNPROVEN_PARTIAL_SCOPE",
-    "matchedPairCredit": 0,
-    "formal13TaskCredit": 0,
-    "limits": [
-      "Reused healthy task with unchanged18 production source files; no matched OFF arm or measured quality gain.",
-      "Proposal host error preserved despite usable approved files; no clean complete workflow claim.",
-      "Readiness preview queries0; no effectiveness attribution to the preview.",
-      "Sampled3of5 eligible implementation duties; semantic truth and exhaustive discovery unproved.",
-      "Archive unexecuted; Linux-arm64 grading establishes no native-macOS equivalence."
     ]
   },
   "benchmark": {
@@ -1367,8 +1814,8 @@
     "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-apply-qa-v2/receipt.json",
-    "sha256": "6115c0324de4331f8720b393b0fc51182a8b2ba8050230f26cb0c6552014d9a4"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
+    "sha256": "ee7a93a88f48e97e084c8f9bee59c7ac1a808d720d610b7b63954db7e6fd8e02"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -2527,6 +2974,129 @@
         "One additional source-page disclosure mismatch remains explicit; required carried evidence is sufficient under current guards.",
         "OpenSpec change frozen unarchived; no claim of an Archive-stage walkthrough.",
         "Earlier four-run comparison remains separate and showed equal primary scores."
+      ]
+    },
+    {
+      "kind": "CLOSED_SINGLE_ON_HEALTHY_METHOD_PROBE_AND_INDEPENDENT_FINITE_DELIVERY_GRADE",
+      "status": "LIMITED_METHOD_TARGET_SATISFIED_WITH_PROPOSAL_ERROR_PREVIEW_UNEXERCISED_ARCHIVE_UNTESTED",
+      "evaluationDesign": "ON_WALKTHROUGH_ONLY",
+      "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "archiveSha256": "c3315b3907ec20743ae50b2545353290d632c958f288b8c396ee353d90b61f86",
+      "operatorRoot": ".runtime-correction/validation/public-run-8344f3c012f74b",
+      "actualController": "4f0c1d/session13793 ->54429f/0 CLOSED",
+      "codingModel": "deepseek-flash",
+      "reviewerModel": "deepseek-v4-pro",
+      "reviewerRoles": 7,
+      "profile": {
+        "wallLimitMs": 3600000,
+        "maxRequests": 256,
+        "preparedInventory": false,
+        "sealedApproval": false,
+        "faultInjection": false,
+        "epochRenewed": false
+      },
+      "workflow": {
+        "scope": "Proposal / Apply / Stop only",
+        "proposalOriginalTurn": "ERROR_PRESERVED",
+        "allSixCurrentPlanFilesReadBeforeOrdinaryApproval": true,
+        "initialUncheckedAndFinalMarkedTasks": 9,
+        "officialStrictOpenSpecValidationPassed": true,
+        "archiveExecuted": false,
+        "wholeOpenSpecLifecycleValidated": false
+      },
+      "method": {
+        "status": "EXERCISED_RETAINED_STOP_COMPLETE",
+        "audit": {
+          "path": ".runtime-correction/validation/mechanism-audit-8344-iqo4cl22/audit-receipt.json",
+          "sha256": "673a5350a39bac6a6a00dc027495ecb91ed58d4e4550973684885674ccaeab63"
+        },
+        "seal": {
+          "path": ".runtime-correction/validation/mechanism-audit-8344-iqo4cl22/seal.json",
+          "sha256": "28b36c0f603f53bf01b3eea22cfbf6fdefb8073b120be67218636333db4995be"
+        },
+        "originalDuties": {
+          "stagedByReview": [
+            6,
+            6,
+            8
+          ],
+          "immutableFirstCohort": 6,
+          "preCoverageStagedSubset": 6,
+          "allInitialFullClausesAndSourceAnchorsRetained": true,
+          "finalCurrent": 6,
+          "discoveryExhaustive": false
+        },
+        "finalStopHostStatus": "NO_DEVIATION_FOUND",
+        "finalFinish": {
+          "attempts": 2,
+          "saved": true,
+          "complete": true,
+          "firstPendingKnownOriginalCount": 1
+        },
+        "previewQueries": 0,
+        "previewStatus": "NOT_EXERCISED",
+        "sampledImplementationChallenges": {
+          "eligible": 5,
+          "selected": 3,
+          "scope": "PARTIAL_SCOPE",
+          "semanticsVerified": false
+        },
+        "semanticsVerified": false,
+        "semanticTruthProven": false,
+        "originalRequirementDiscoveryComplete": false
+      },
+      "grading": {
+        "primary": {
+          "pass": 8,
+          "total": 8
+        },
+        "publicRegression": {
+          "pass": 668,
+          "total": 668
+        },
+        "exploratory": {
+          "pass": 6,
+          "total": 6
+        },
+        "actual": "74b1fc/session15591 ->55d212/0 CLOSED",
+        "batch": {
+          "path": ".runtime-correction/validation/single-on-c331-postclosure-grade-source-k3udhtd1/private-batches/run-1/batch-completed-private.json",
+          "sha256": "c2cf9209bfe17f5dfd154c858f9b5d05599bb26d113142a2fc1f8a55fe4ed290"
+        },
+        "readback": {
+          "path": ".runtime-correction/validation/single-on-c331-postgrade-readback-qlg4d9fq/receipt.json",
+          "sha256": "a22611b96c69a7c6c1888d93df21c0ec28ed0de88f19081941ea4814c0a5daf4"
+        },
+        "containersClosedAndRemoved": 3,
+        "sourceAndMetadataPinsStable": 539,
+        "macNativeEquivalence": false
+      },
+      "traffic": {
+        "deepseek-flash": 46,
+        "deepseek-v4-pro": 76
+      },
+      "artifactDelta": {
+        "productionSourceUnchanged": 18,
+        "addedTestFunctions": 3,
+        "addedTestLines": 76,
+        "addedFiles": 20,
+        "removedFiles": 0
+      },
+      "modelTrialPerformed": true,
+      "finalOutcomeAvailable": true,
+      "methodUseVerifiedForThisFiniteProbe": true,
+      "qualityGainProven": false,
+      "benefitProven": false,
+      "generalUsefulnessProven": false,
+      "semanticCompleteness": "UNPROVEN_PARTIAL_SCOPE",
+      "matchedPairCredit": 0,
+      "formal13TaskCredit": 0,
+      "limits": [
+        "Reused healthy task with unchanged18 production source files; no matched OFF arm or measured quality gain.",
+        "Proposal host error preserved despite usable approved files; no clean complete workflow claim.",
+        "Readiness preview queries0; no effectiveness attribution to the preview.",
+        "Sampled3of5 eligible implementation duties; semantic truth and exhaustive discovery unproved.",
+        "Archive unexecuted; Linux-arm64 grading establishes no native-macOS equivalence."
       ]
     }
   ],
@@ -4425,27 +4995,31 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "PRECEDING_D5_CLOSED_E_NOT_MET_CURRENT_C252_LIVE_NO_OUTCOME",
-    "htmlSha256": "9209428a876df40659deeceb8b030f258166b3dbc2fc571c28b2dedd4944b340",
-    "modelOutcomeReference": "evaluationRecords.ordinaryOn56efD5",
+    "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
+    "htmlSha256": "d688d18455dc2ef63c5fa4ed950c984098e194dd1892f0b3f35ede3055d9a0c5",
+    "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
+    "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
     "formalPairs": 0,
     "plannedPairs": 39,
     "qualityGainProven": false,
-    "workflowScope": "Proposal / Apply / Stop only",
     "wholeOpenSpecLifecycleValidated": false,
-    "methodAudit": {
-      "path": ".runtime-correction/validation/mechanism-audit-56ef-hl95w1d_/audit-receipt.json",
-      "sha256": "ccae331942f88aa0a6cc20de648ff87044f639192bba749018ff47190f6b727a"
-    },
+    "currentArchiveModelOutcomeInherited": false,
     "gradeReadback": {
-      "path": ".runtime-correction/validation/single-on-d5e1-grade-home-x7nnq9ah/actual-result-readback.json",
-      "sha256": "43ace27ef32997cc0bf09c45fca2d70a7451895dccc8bf0d874937a64eed4a1b"
+      "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
+      "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
     },
-    "priorCompletedArchiveMovedToExistingHistory": true,
-    "currentArchiveModelOutcomeInherited": false
+    "methodAudit": {
+      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+      "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+    },
+    "methodSeal": {
+      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
+      "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+    },
+    "finalHostStatus": "UNVERIFIED"
   },
   "latestCompletedGeneralComparison": {
     "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_MEASURED_QUALITY_GAIN",
@@ -6625,6 +7199,10 @@
     {
       "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-start-qa/receipt.json",
       "sha256": "0ca2520e85838f82c07d24a67a349fdd47d858e87bdb06beb71e74f17e99cfb1"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-apply-qa-v2/receipt.json",
+      "sha256": "6115c0324de4331f8720b393b0fc51182a8b2ba8050230f26cb0c6552014d9a4"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7172,7 +7750,7 @@
     }
   },
   "sourceFeedbackFollowup": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_LIVE_PRIOR_NAV_UPTAKE_OBSERVED_NO_COMPLETED_RESULT",
+    "status": "CANONICAL_LIVE_PROTOCOL_COMPLETE_ONE_KNOWN_OBLIGATION_UNVERIFIED",
     "qualification": {
       "path": ".runtime-correction/validation/challenge-correction-feedback-gw8t2kjp/qualification-receipt.json",
       "sha256": "d79130b5306db108926bb67fca8abaeb1735971e030ada49fb5d7c6e5706c823"
@@ -7215,7 +7793,11 @@
       "path": ".runtime-correction/validation/candidate-general-feedback-standard-held-8wl_5o_j/candidate-release-verification.json",
       "sha256": "39421fefc679b1998ed98037d25ee1307a815429bb4e696dd3f1a243386c9bc7"
     },
-    "currentPublishedArchiveStillPrecedingRuntime": false
+    "currentPublishedArchiveStillPrecedingRuntime": false,
+    "latestAudit": {
+      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+      "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+    }
   },
   "evaluationRecords": {
     "ordinaryOn56efD5": {
@@ -7719,6 +8301,318 @@
         "OpenSpec change frozen unarchived; no claim of an Archive-stage walkthrough.",
         "Earlier four-run comparison remains separate and showed equal primary scores."
       ]
+    },
+    "ordinaryOn25084C252": {
+      "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+      "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
+      "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
+      "modelTrialPerformed": true,
+      "finalOutcomeAvailable": true,
+      "inheritsPrecedingArchiveEvidence": false,
+      "precedingCompletedRun": "evaluationRecords.ordinaryOn56efD5",
+      "qualityGainProven": false,
+      "generalUsefulnessProven": false,
+      "formal13TaskCredit": 0,
+      "matchedPairCredit": 0,
+      "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4",
+      "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
+      "actualController": "62c8c3/session53897 ->be6c4c/0 CLOSED",
+      "codingModel": "deepseek-flash",
+      "reviewerModelConfigured": "deepseek-v4-pro",
+      "reviewerRolesConfigured": 7,
+      "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
+      "sourceAcceptanceFrozenBeforeFirstRequest": true,
+      "initialAndLiveDuties": {
+        "initialN": 13,
+        "liveL": 21,
+        "nonExhaustive": true,
+        "additionalDistinctCanonicalIdentities": 8,
+        "newIndependentFeaturesEstablished": false
+      },
+      "publicPreflight": {
+        "pass": 668,
+        "total": 668,
+        "starterUnchanged": 149,
+        "modelsUsedByPreflight": 0
+      },
+      "wallLimitMs": 3600000,
+      "maxRequests": 256,
+      "noEpochRenewal": true,
+      "archiveExecuted": false,
+      "proposalOriginalTurn": "ERROR_PRESERVED",
+      "planFilesReadBeforeOrdinaryApproval": 6,
+      "planSteps": 10,
+      "officialStrictOpenSpecValidation": "1of1PASS",
+      "rootOrdinaryApprovalActual": "cdf93a/0",
+      "rootOrdinaryApprovalSha256": "c017bc9368c215ff474879691414eee7591ed290738f7fa00db11f7a99054844",
+      "observedPlanningIssues": {
+        "readOriginalEofErrors": 14,
+        "findingLocationValidationCode": "DOCUMENT_FINDING_LOCATION_INVALID",
+        "transportErrorSequences": [
+          81,
+          83,
+          84
+        ],
+        "transportOrOriginalTurnUniqueCauseEstablished": false
+      },
+      "observedPriorNavigation": {
+        "queriedItems": 8,
+        "totalAtQuery": 13,
+        "queriedIdsStructurallyReusedInFreshStaging": 8,
+        "semanticCompletenessOrBenefitEstablished": false,
+        "allQueriedIdsRereadAndRestaged": true,
+        "semanticEquivalenceProven": false
+      },
+      "controllerClosed": true,
+      "applyOriginalTurn": "CLEAN_OK",
+      "officialStepsComplete": 10,
+      "frozenFiles": 169,
+      "traffic": {
+        "deepseek-flash": 48,
+        "deepseek-v4-pro": 130
+      },
+      "finalFinishAttempts": 2,
+      "secondFinish": {
+        "saved": true,
+        "complete": true
+      },
+      "methodAuditStatus": "CLOSED_FINITE_PROTOCOL_SCOPE",
+      "gradeStatus": "EXECUTED_FINITE_CHECKS_ALL_PASS_WITH_LIMITS",
+      "requirementSemanticsVerified": false,
+      "observedToolUsability": {
+        "readOriginalEofErrors": 14,
+        "checklistDisplayedBytes": 64018,
+        "checklistDisplayedJsonValid": false,
+        "readinessGuideDeliveredBeforeFirstFinish": true,
+        "readinessPreviewQueries": 0,
+        "missingCorrectionReasonPathExercised": false,
+        "documentToolErrors": 16,
+        "documentToolErrorFamilies": {
+          "read_original:Invalid text interval": 14,
+          "stage_original_duties:DOCUMENT_ORIGINAL_DUTY_READ_REQUIRED": 1,
+          "remember:DOCUMENT_NOTE_REQUIRES_CURRENT_READS": 1
+        },
+        "sourceScopeAndCauseLimits": "Published audit validates document error families; transport error causality is not established."
+      },
+      "grading": {
+        "primary": {
+          "pass": 8,
+          "total": 8
+        },
+        "publicRegression": {
+          "pass": 668,
+          "total": 668
+        },
+        "exploratory": {
+          "pass": 6,
+          "total": 6
+        },
+        "actual": "952eb4/session4213 ->6fd2dd/0 CLOSED",
+        "readback": {
+          "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
+          "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
+        },
+        "frozenFiles": 169,
+        "containersClosedAndRemoved": 3,
+        "hostHome": "/Users/rshu",
+        "platform": "linux/arm64",
+        "python": "3.13.17",
+        "macNativeEquivalence": false
+      },
+      "artifactDelta": {
+        "kind": "ROOT_CLOSED_25084_ARTIFACT_DELTA",
+        "setupFiles": 163,
+        "freezeFiles": 169,
+        "productionFiles": 18,
+        "productionFilesUnchanged": 18,
+        "changedSetupFiles": [
+          "tests/test_formatting.py"
+        ],
+        "removedSetupFiles": [],
+        "addedFiles": [
+          "openspec/changes/click-help-shadowing/.openspec.yaml",
+          "openspec/changes/click-help-shadowing/README.md",
+          "openspec/changes/click-help-shadowing/design.md",
+          "openspec/changes/click-help-shadowing/proposal.md",
+          "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+          "openspec/changes/click-help-shadowing/tasks.md"
+        ],
+        "planFiles": [
+          {
+            "path": "openspec/changes/click-help-shadowing/.openspec.yaml",
+            "bytesEqual": true,
+            "checkboxOnly": false
+          },
+          {
+            "path": "openspec/changes/click-help-shadowing/README.md",
+            "bytesEqual": true,
+            "checkboxOnly": false
+          },
+          {
+            "path": "openspec/changes/click-help-shadowing/design.md",
+            "bytesEqual": true,
+            "checkboxOnly": false
+          },
+          {
+            "path": "openspec/changes/click-help-shadowing/proposal.md",
+            "bytesEqual": true,
+            "checkboxOnly": false
+          },
+          {
+            "path": "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
+            "bytesEqual": true,
+            "checkboxOnly": false
+          },
+          {
+            "path": "openspec/changes/click-help-shadowing/tasks.md",
+            "bytesEqual": false,
+            "checkboxOnly": true
+          }
+        ],
+        "snapshotMetadataExcludedFromPlanFiles": true
+      },
+      "artifactDeltaReceipt": {
+        "path": ".runtime-correction/validation/public-run-25084e3de41945/root-closed-artifact-delta.json",
+        "sha256": "b8616a10a717b6f87b769c577dc3b0a55af9bc1770b805e0a3f5d547b3bc1883"
+      },
+      "transport": {
+        "capture": {
+          "path": ".runtime-correction/validation/public-run-25084e3de41945/closed-essential-evidence/receipt.json",
+          "sha256": "0c9af8bd6e2563e3df2551914888d6784e1a65d378e1f50aa68c1da7b726b8b1"
+        },
+        "readback": {
+          "path": ".runtime-correction/validation/postclosure-capture-admission-25084-dbyxqym3/all-file-capture-readback.json",
+          "sha256": "4129937528a91cef71e05459eb5564cb86e31d2d8605f3d0872afbc85ebca5ac"
+        },
+        "files": 262,
+        "bytes": 9250151,
+        "methodAcceptanceGranted": false
+      },
+      "kind": "CLOSED_SINGLE_ON_ORDINARY_GENERAL_GUIDANCE_PROBE",
+      "endToEndMethodTargetMet": true,
+      "fullyVerifiedWorkingCaseEstablished": false,
+      "workflow": {
+        "scope": "Proposal / ordinary approval / Apply / Stop only",
+        "proposalOriginalTurn": "ERROR_PRESERVED",
+        "applyOriginalTurn": "CLEAN_OK",
+        "planFilesReadBeforeOrdinaryApproval": 6,
+        "officialStepsComplete": 10,
+        "officialStrictOpenSpecValidationPassed": true,
+        "archiveExecuted": false,
+        "wholeOpenSpecLifecycleValidated": false,
+        "cleanWholeWorkflow": false
+      },
+      "method": {
+        "initialN": 13,
+        "firstStagedResponse": 8,
+        "completeFirstStagedTable": 13,
+        "liveL": 21,
+        "additionalDistinctCanonicalIds": 8,
+        "eligibleCanonicalPublicationCounts": [
+          13,
+          13,
+          21
+        ],
+        "eligibleCanonicalPublications": 3,
+        "noOpPublications": 1,
+        "liveRevision": 1,
+        "initialCohortId": "b7c59085e3ce9d68c207ab15d4e9a669cf52947b0778043c46adabe86ef43617",
+        "currentLiveId": "1490b945ef1c3ac9e39751d9306cd35808670a59a645783d2ec3be33c90201a0",
+        "firstFinishPending": 9,
+        "postFirstFinishAcknowledgedSourceReads": 7,
+        "finalSavedComplete": true,
+        "protocolCompleted": true,
+        "beforeAllOriginalDeadlines": true,
+        "finalDispositions": {
+          "CURRENT": 17,
+          "SUPERSEDED": 3,
+          "UNVERIFIED": 1
+        },
+        "currentRowVerdicts": {
+          "NO_CONFIRMED_DEVIATION": 17
+        },
+        "formedBindings": 18,
+        "formedBindingCountIsNotDenominator": true,
+        "finalHostStatus": "UNVERIFIED",
+        "finalHostReasonCode": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
+        "allDutyDiscoveryOrSemanticCoverageProven": false,
+        "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+        "audit": {
+          "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+          "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+        },
+        "seal": {
+          "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
+          "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+        },
+        "criteria": {
+          "A_OWN_SUBJECT_AND_BOUNDARY": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+          "B_GENUINE_NORMAL_STAGING": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+          "C_PRE_FIRST_COVERAGE_ORDER": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+          "D_ACTUAL_COMMITTED_PUBLICATION_RETENTION": "SATISFIED_FINITE_PROTOCOL_SCOPE",
+          "E_COMPLETE_CURRENT_STOP_PROTOCOL": "SATISFIED_FINITE_PROTOCOL_SCOPE"
+        },
+        "allFullClausesAndSourceAnchorsReachMandatoryStopBasis": true,
+        "semanticCompletenessProven": false,
+        "originalDiscoveryExhaustive": false,
+        "unresolvedDuty": {
+          "id": "known-original-6cdf50767a202a5e43c2668327132485f23d77d15e4f35fe3ec3909b21d747d2",
+          "canonicalRequirement": "Create the standard change click-help-shadowing with proposal, design, specification and tasks.",
+          "source": {
+            "anchorId": "original-source-33589ea8f771055851eeb02e7d3d5bf29b87e5a7b22fd6408aa021c63dfe1c0b",
+            "kind": "USER_MESSAGE",
+            "ref": "transcript:dcb31543",
+            "sha256": "4af0bea3f5dc3dd43bfe4de94c10e520b01c368ef47e7a245487c21de4161ba3",
+            "byteStart": 2864,
+            "byteEnd": 3512
+          },
+          "sourceCurrent": true,
+          "disposition": "UNVERIFIED",
+          "finalObjectId": null,
+          "finalVerdict": null,
+          "diagnostic": {
+            "code": "REVIEW_ITEM_EVIDENCE_UNAVAILABLE",
+            "message": "Complete basis and actually read SOURCE evidence were not established."
+          },
+          "formedObjectId": "M12:original-e8dc1deec60b84c124052d25",
+          "reviewerProofSubject": {
+            "metricId": "M12",
+            "verificationTarget": "IMPLEMENTATION",
+            "implementationRole": "SUPPORT",
+            "applicabilityKind": "CURRENT_TASK",
+            "applicability": "CURRENT_TASK",
+            "proofOwners": [
+              "SOURCE"
+            ]
+          },
+          "independentSemanticClassificationGranted": false
+        },
+        "frozenAcceptanceSha256": "bec816e44cc85ffb507467ccf3936359458702691bc09b57ffc476bdd6120119",
+        "capacityBusinessFailureUnkeyedBranchesNotClaimedExercised": true
+      },
+      "uptake": {
+        "priorQueries": 1,
+        "priorReturned": 8,
+        "available": 13,
+        "allQueriedIdsRereadAndRestaged": true,
+        "structuralReuseCount": 8,
+        "semanticEquivalenceProven": false,
+        "guideDeliveredBeforeFirstFinish": true,
+        "guideWireBytes": 64018,
+        "guideWireJsonValid": false,
+        "guideUnderstandingProven": false,
+        "readinessQueries": 0,
+        "readinessQueryStatus": "NOT_EXERCISED",
+        "missingReasonFeedbackStatus": "NOT_EXERCISED"
+      },
+      "limits": [
+        "Healthy reused ON-only development case; no matched OFF quality or efficiency estimate.",
+        "All21 retained observations accounted for, but one is UNVERIFIED and original discovery remains nonexhaustive.",
+        "Seventeen current rows say NO_CONFIRMED_DEVIATION; semantic truth is not independently certified.",
+        "Proposal original host error retained; Apply clean, Archive unexecuted.",
+        "Linux grading on this Mac does not establish nativeMac equivalence.",
+        "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
+      ]
     }
   },
   "previousDistributionPlacementCi": {
@@ -7761,7 +8655,7 @@
     }
   ],
   "nextGuidancePilot": {
-    "status": "LIVE_APPLY_RUNNING_PROPOSAL_ERROR_PRESERVED",
+    "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
     "source": ".runtime-correction/validation/ordinary-on-guidance-pilot-qualified-v2-37eijhv7",
     "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
     "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
@@ -7775,7 +8669,7 @@
     "workflowScope": "Proposal / Apply / Stop, no Archive",
     "formalBenchmarkCredit": 0,
     "qualityGainProven": false,
-    "actualController": "62c8c3/session53897 RUNNING",
+    "actualController": "62c8c3/session53897 ->be6c4c/0 CLOSED",
     "rootLiveAdmissionActual": "0fa1ad/0",
     "rootLiveAdmissionSha256": "4fb469d7c033873c93f00ebfb2755603b12a5093669371d014e03506495db785",
     "setupActual": "feb42f/session24872 ->1e3571/0",
@@ -7792,6 +8686,41 @@
     "rootOrdinaryApprovalActual": "cdf93a/0",
     "approvedPlanFiles": 6,
     "approvedSteps": 10,
-    "applyOriginalRunId": "cb297263-606c-4615-a78b-768baff9357b"
+    "applyOriginalRunId": "cb297263-606c-4615-a78b-768baff9357b",
+    "finalOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
+    "finalHostStatus": "UNVERIFIED"
+  },
+  "previousReportWalkthroughBeforeCurrentClosure": {
+    "status": "PRECEDING_D5_CLOSED_E_NOT_MET_CURRENT_C252_LIVE_NO_OUTCOME",
+    "htmlSha256": "9209428a876df40659deeceb8b030f258166b3dbc2fc571c28b2dedd4944b340",
+    "modelOutcomeReference": "evaluationRecords.ordinaryOn56efD5",
+    "earlierDeadlineFailureMovedToExistingHistory": true,
+    "englishAndSimplifiedChineseOneFile": true,
+    "externalLinks": 0,
+    "formalPairs": 0,
+    "plannedPairs": 39,
+    "qualityGainProven": false,
+    "workflowScope": "Proposal / Apply / Stop only",
+    "wholeOpenSpecLifecycleValidated": false,
+    "methodAudit": {
+      "path": ".runtime-correction/validation/mechanism-audit-56ef-hl95w1d_/audit-receipt.json",
+      "sha256": "ccae331942f88aa0a6cc20de648ff87044f639192bba749018ff47190f6b727a"
+    },
+    "gradeReadback": {
+      "path": ".runtime-correction/validation/single-on-d5e1-grade-home-x7nnq9ah/actual-result-readback.json",
+      "sha256": "43ace27ef32997cc0bf09c45fca2d70a7451895dccc8bf0d874937a64eed4a1b"
+    },
+    "priorCompletedArchiveMovedToExistingHistory": true,
+    "currentArchiveModelOutcomeInherited": false
+  },
+  "generalToolUsabilityFollowup": {
+    "status": "WORK_IN_PROGRESS_NOT_IN_CURRENT_PUBLISHED_ARCHIVE",
+    "scope": [
+      "Actionable strict original-source range diagnostics",
+      "Lossless byte-bounded Stop checklist transport"
+    ],
+    "currentArchiveLiveResultInherited": false,
+    "wipCiQualified": false,
+    "formalBenchmarkCredit": 0
   }
 }
