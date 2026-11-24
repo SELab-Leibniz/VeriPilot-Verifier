@@ -1246,10 +1246,10 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
-    "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d",
-    "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
-    "actual": "c86b32/session84986 ->76229e/0 CLOSED",
+    "path": ".runtime-correction/validation/report-readiness-live-i186xor0/report-qa/capture/receipt.json",
+    "sha256": "68f4f41dab1b8abba968e3986b8bd47bf66cf0b962e0b0020553fd516adee61d",
+    "htmlSha256": "06e6a7c1f80bbce6cba9ead530c3e6e63bf416311c66993161b6c247c8358686",
+    "actual": "cbeeef/session68905 ->73ab9a/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1259,7 +1259,7 @@
       1200,
       390
     ],
-    "rootInspected": "method-zh-CN-390.png",
+    "rootInspected": "pilot-zh-CN-390.png",
     "externalLinks": 0,
     "externalRequests": 0,
     "pageErrors": 0,
@@ -1270,8 +1270,8 @@
       "internalLinks": 7
     },
     "receipt": {
-      "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
-      "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d"
+      "path": ".runtime-correction/validation/report-readiness-live-i186xor0/report-qa/capture/receipt.json",
+      "sha256": "68f4f41dab1b8abba968e3986b8bd47bf66cf0b962e0b0020553fd516adee61d"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -3034,7 +3034,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "LATEST_CANDIDATE_FINITE_DELIVERY_PASS_STOP_UNVERIFIED_DEADLINE",
-    "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
+    "htmlSha256": "06e6a7c1f80bbce6cba9ead530c3e6e63bf416311c66993161b6c247c8358686",
     "modelOutcomeReference": "privateOriginalDutyPrototype.nextLivePilot",
     "earlierCompletedArchiveMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -3429,7 +3429,7 @@
     "scope": "Verified exacte9 push. This report-only refresh retains sourceac8 and archive8c35; no future-head CI result inferred."
   },
   "privateOriginalDutyPrototype": {
-    "status": "READINESS_SOURCE_CI_PRIVATE_PACKAGE_AND_STOCK_PASS_NEW_LIVE_PENDING",
+    "status": "QUALIFIED_READINESS_CANDIDATE_LIVE_ON_PROBE_RUNNING",
     "candidate": ".runtime-correction/validation/original-duty-v8b-legacy-compat-w4k7n2mz",
     "expectedBehavior": "Retain every fully validated canonical identity and uncertainty through retries and shared publication within unchanged accounting limits.",
     "currentArtifactChanged": false,
@@ -3580,14 +3580,14 @@
       "installedBytesAndExecutableModesMatch": true,
       "promoted": false,
       "inheritsCanonicalRealModelEvidence": false,
-      "newModelRuns": 0,
+      "newModelRuns": 1,
       "qualityGainProven": false
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
-      "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d",
-      "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
-      "actual": "c86b32/session84986 ->76229e/0 CLOSED",
+      "path": ".runtime-correction/validation/report-readiness-live-i186xor0/report-qa/capture/receipt.json",
+      "sha256": "68f4f41dab1b8abba968e3986b8bd47bf66cf0b962e0b0020553fd516adee61d",
+      "htmlSha256": "06e6a7c1f80bbce6cba9ead530c3e6e63bf416311c66993161b6c247c8358686",
+      "actual": "cbeeef/session68905 ->73ab9a/0 CLOSED",
       "views": 4,
       "languages": [
         "en",
@@ -3597,7 +3597,7 @@
         1200,
         390
       ],
-      "rootInspected": "method-zh-CN-390.png",
+      "rootInspected": "pilot-zh-CN-390.png",
       "externalLinks": 0,
       "externalRequests": 0,
       "pageErrors": 0,
@@ -3955,10 +3955,35 @@
           "reason": "Exact Chinese prose changed from 全部通过 to 已全部通过; factual regex required refresh.",
           "htmlChangedAfterFailure": false
         }
+      },
+      {
+        "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
+        "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d",
+        "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
+        "actual": "c86b32/session84986 ->76229e/0 CLOSED",
+        "views": 4,
+        "languages": [
+          "en",
+          "zh-CN"
+        ],
+        "widths": [
+          1200,
+          390
+        ],
+        "rootInspected": "method-zh-CN-390.png",
+        "externalLinks": 0,
+        "externalRequests": 0,
+        "pageErrors": 0,
+        "overflow": false,
+        "structure": {
+          "sections": 6,
+          "collapsedHistories": 3,
+          "internalLinks": 7
+        }
       }
     ],
     "nextGenericFix": {
-      "status": "SOURCE_CI_PACKAGE_STOCK_PASS_NEW_LIVE_PENDING",
+      "status": "LIVE_ON_METHOD_VALIDATION_RUNNING",
       "sourceFiles": [
         "lib/runtime-v2/stop-workspace-review.mjs",
         "test/known-conditional-feedback.test.mjs"
@@ -3980,7 +4005,7 @@
         "cancelled": 0,
         "skipped": 33
       },
-      "newLiveRun": false,
+      "newLiveRun": true,
       "grantsReadProof": false,
       "grantsAssessment": false,
       "sourceFreshnessAndProvenanceGuardsUnchanged": true,
@@ -4033,6 +4058,37 @@
         "promoted": false,
         "inheritsCanonicalRealModelEvidence": false
       }
-    ]
+    ],
+    "currentLivePilot": {
+      "status": "RUNNING_ONE_ORIGINAL_EPOCH",
+      "source": ".runtime-correction/validation/ordinary-on-readiness-pilot-source-n3ejg5bd",
+      "sourceHoldSha256": "5fb4c749f25299e479d6e2b65c5a6b08aa75377b5754c5d8478fb40ebeee09af",
+      "operator": ".runtime-correction/validation/public-run-8344f3c012f74b",
+      "actual": "4f0c1d/session13793 RUNNING",
+      "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
+      "archiveSha256": "c3315b3907ec20743ae50b2545353290d632c958f288b8c396ee353d90b61f86",
+      "codingModel": "deepseek-flash",
+      "reviewerModel": "deepseek-v4-pro",
+      "reviewerRoles": 7,
+      "wallLimitMs": 3600000,
+      "maxRequests": 256,
+      "setupActual": "87b71d/session27483 ->0e20b2/0 CLOSED",
+      "setupReceiptSha256": "de3867e45f404583ae82c5b8fffd17ad72e6f0d9bd2e2094ca1e2a2d75dfc79a",
+      "publicCheckActual": "6b3a03/session82250 ->6ce198/0 CLOSED",
+      "publicChecks": 668,
+      "originalStarterFilesUnchanged": 149,
+      "candidateIdentityActual": "376657/session44909 ->b9806c/0 CLOSED",
+      "candidateIdentityReceiptSha256": "eb21201e0e1d27d0122b850325fdb0bca2b587d6bb7b38f92aec0cf82757afbc",
+      "actualHomePreserved": true,
+      "workflowScope": "Proposal / Apply / Stop; unarchived",
+      "preparedInventory": false,
+      "sealedApproval": false,
+      "faultInjection": false,
+      "epochRenewed": false,
+      "mechanismAcceptance": "PENDING",
+      "independentQuality": "NOT_RUN_BEFORE_OWN_CLOSED_FREEZE",
+      "formalBenchmarkCredit": 0,
+      "qualityGainProven": false
+    }
   }
 }
