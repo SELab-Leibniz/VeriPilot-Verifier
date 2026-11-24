@@ -26,7 +26,7 @@ const fakeGraph = (command, args, options) => {
   assert.deepEqual(Object.keys(options).sort(), ['cwd', 'maxBuffer', 'signal', 'windowsHide'].sort());
   assert.equal(options.windowsHide, true); assert.equal(options.maxBuffer, 4 * 1024 * 1024);
   assert(options.signal instanceof AbortSignal); options.signal.throwIfAborted();
-  attempts.fakeGraphInventory++; assert(attempts.fakeGraphInventory <= 2);
+  attempts.fakeGraphInventory++; assert(attempts.fakeGraphInventory <= 4);
   return { stdout: '', stderr: '' };
 };
 const isFakeGraph = (command, args, options) => command === 'git' && JSON.stringify(args) === JSON.stringify(graphArgs)
@@ -65,7 +65,7 @@ const { resolveStopReviewPolicy } = await import('../lib/runtime-v2/metric-polic
 const { STOP_REVIEW_SCHEMA } = await import('../lib/runtime-v2/reviewer.mjs');
 const { releaseDocumentSessions } = await import('../lib/document-session.mjs');
 const { buildOriginalRequirements } = await import('../lib/runtime-v2/original-requirements.mjs');
-const { knownOriginalObligations, knownOriginalObligationReader } = await import('../lib/runtime-v2/known-original-obligations.mjs');
+const { knownOriginalObligations, knownOriginalObservationSnapshot, knownOriginalObligationReader, forgetKnownOriginalObligations } = await import('../lib/runtime-v2/known-original-obligations.mjs');
 const { knownOriginalOwner, knownOriginalItems, projectKnownOriginalCohort } = await import('../lib/runtime-v2/known-original-capacity.mjs');
 const { createOriginalSourceAnchor } = await import('../lib/runtime-v2/original-source-anchor.mjs');
 const { captureOriginalDutyPublication, originalDutyPublicationCurrent, publishOriginalDutyArtifact } = await import('../lib/runtime-v2/original-duty-artifact-publication.mjs');
@@ -76,7 +76,7 @@ const { readOpenSpecPlan } = await import('../lib/openspec-plan.mjs');
 
 test.after(() => {
   assert.equal(attempts.process, 0); assert.equal(attempts.network, 0);
-  assert(attempts.fakeSelfLiveness > 0); assert.equal(attempts.fakeGraphInventory, 2); assert.equal(offlineGraphRoots.size, 0);
+  assert(attempts.fakeSelfLiveness > 0); assert.equal(attempts.fakeGraphInventory, 4); assert.equal(offlineGraphRoots.size, 0);
   console.log('OFFLINE_FACTORY_GUARDS ' + JSON.stringify(attempts));
 });
 // Execute the exact private pinned production closure, not a test rewrite of
@@ -109,12 +109,13 @@ const manyDuties = Array.from({ length: 48 }, (_, i) => 'When event ' + i + ' oc
 const extraDuty = 'When a configuration error occurs, preserve the distinct configuration diagnostic.';
 let nextRound = 0;
 
-async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original', tail = '', targetBytes = null } = {}) {
+async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original', tail = '', targetBytes = null, includeExtraInPlan = false, ownerTargetBytes = null, omittedPlanDuties = [] } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-duty-production-')));
   t.after(async () => { await releaseDocumentSessions(root); await fs.rm(root, { recursive: true, force: true }); });
   const proposal = 'openspec/changes/accounting/proposal.md', tasks = 'openspec/changes/accounting/tasks.md';
   await fs.mkdir(path.dirname(path.join(root, proposal)), { recursive: true });
-  await fs.writeFile(path.join(root, proposal), '# Plan\n' + duties.join('\n') + '\n');
+  const plannedDuties = [...duties.filter(duty => !omittedPlanDuties.includes(duty)), ...(includeExtraInPlan ? [extraDuty] : [])];
+  await fs.writeFile(path.join(root, proposal), '# Plan\n' + plannedDuties.join('\n') + '\n');
   await fs.writeFile(path.join(root, tasks), '- [ ] Implement and verify every original duty.\n');
   const text = '# Request\n' + duties.join('\n') + '\n' + extraDuty + '\n' + tail;
   await fs.writeFile(path.join(root, 'nonadopted-context.txt'), 'context');
@@ -136,6 +137,14 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
     const bytes = Buffer.byteLength(JSON.stringify(projection));
     assert(targetBytes > bytes); state.nativeRunId += 'x'.repeat(targetBytes - bytes);
   }
+  if (ownerTargetBytes !== null) {
+    const source = originals.userMessages[0];
+    const anchor = createOriginalSourceAnchor({ ref: source.ref, sha256: source.sha256, bytes: Buffer.from(source.text), start: 2, end: duties.length + 2 });
+    const projected = projectKnownOriginalCohort({ owner: knownOriginalOwner(state), sourceRunId: state.nativeRunId,
+      changeName: 'accounting', planRevision: snapshot.revision, items: knownOriginalItems([{ source: anchor, requirement: baseDuties[1] }]) });
+    const bytes = Buffer.byteLength(JSON.stringify(projected));
+    assert(ownerTargetBytes > bytes); state.sessionKey += 'x'.repeat(ownerTargetBytes - bytes);
+  }
   const frozenTruth = { taskId: state.scopeTaskId, groundTruthDigest: sha256('frozen-truth-remains-authority'),
     groundTruthVersion: 7, reviewerExecution: { session: 'detached', timeoutMs: 1000 },
     activeClaims: [{ claimId: 'gt-unchanged', text: 'Frozen authority is not replaced by the accounting source view.' }] };
@@ -144,7 +153,8 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
   async function run(mode = 'complete', { legacy = false, contextOverride = null, spoofPayload = null,
     unbrandedHandle = false, executionOverride = null, frozenOverride = null,
     actualFactory = false, changeOwnerAfterCopy = false, productionLegacy = false,
-    preparedOverride = null, bundleOverride = null, reviewOnly = false } = {}) {
+    preparedOverride = null, bundleOverride = null, reviewOnly = false, selectedDuties = duties,
+    gapDuty = null, findingSeverity = null, deterministicPending = false } = {}) {
     if (productionLegacy) assert(legacy && actualFactory, 'Production legacy control requires actual factory and no V2 context.');
     if (actualFactory) await releaseDocumentSessions(root);
     const captured = captureOriginalDutyPublication(state);
@@ -154,7 +164,8 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
     const activeTruth = actualFactory ? { ...frozenTruth,
       reviewerExecution: { ...frozenTruth.reviewerExecution, formatRepairAttempts: mode === 'same-worker-drop' ? 3 : 0 } } : frozenTruth;
     const number = ++nextRound;
-    const result = { status: 'passed', diagnostics: [], diffs: [], metadata: {
+    const result = { status: 'passed', diagnostics: deterministicPending ? [{ ruleId: 'DETERMINISTIC-EVIDENCE-PENDING',
+      severity: 'pending', path: proposal, message: 'The deterministic checker retains an unresolved evidence prerequisite.' }] : [], diffs: [], metadata: {
       roundId: '20261123T010101Z-' + number.toString(16).padStart(8, '0'), generatedAt: '2026-11-23T01:01:01Z',
       stage: 'proposal', artifactType: 'openspec-plan', triggerFile: proposal, artifactFiles: snapshot.documents.map(file => file.path),
       ruleSetIds: [], configSource: 'offline-fixture',
@@ -188,7 +199,7 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
           else await fs.appendFile(source.path, 'CHANGED');
         }
         const read = await tools.execute({ action: 'read_original', ref: source.ref, start: 2, count: duties.length + 1 });
-        const values = duties.map(requirement => ({ originalSourceAnchorId: read.anchor.anchorId, requirement }));
+        const values = selectedDuties.map(requirement => ({ originalSourceAnchorId: read.anchor.anchorId, requirement }));
         let page = await tools.execute({ action: 'stage_original_duties', duties: values }), items = [];
         while (true) {
           items.push(...page.items);
@@ -198,7 +209,7 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         for (const file of tools.manifest()) await tools.execute({ action: 'read', path: file.path, start: 1, count: 200 });
         let rows = items.map(item => ({ originalDutyId: item.originalDutyId, originalSourceAnchorId: item.originalSourceAnchorId,
           requirement: item.requirement, disposition: 'COVERED', reason: 'The current plan explicitly states the whole canonical clause.',
-          targets: [{ path: proposal, start: duties.indexOf(item.requirement) + 2, end: duties.indexOf(item.requirement) + 2 }] }));
+          targets: [{ path: proposal, start: plannedDuties.indexOf(item.requirement) + 2, end: plannedDuties.indexOf(item.requirement) + 2 }] }));
         if (mode === 'omission') rows = rows.slice(0, -1);
         if (mode === 'narrowing') {
           const index = rows.findIndex(row => row.requirement === duties[0]);
@@ -241,7 +252,7 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         const invoke = async args => JSON.parse((await tool.execute('offline-native', args)).content[0].text);
         const source = semantic.originalRequirements.userMessages[0];
         const read = await invoke({ action: 'read_original', ref: source.ref, start: 2, count: duties.length + 1 });
-        let page = await invoke({ action: 'stage_original_duties', duties: duties.map(requirement => ({
+        let page = await invoke({ action: 'stage_original_duties', duties: selectedDuties.map(requirement => ({
           originalSourceAnchorId: read.anchor.anchorId, requirement })) }), items = [];
         while (true) {
           items.push(...page.items); if (page.nextStart === null) break;
@@ -250,7 +261,11 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         for (const file of await invoke({ action: 'manifest' })) await invoke({ action: 'read', path: file.path, start: 1, count: 200 });
         let rows = items.map(item => ({ originalDutyId: item.originalDutyId, originalSourceAnchorId: item.originalSourceAnchorId,
           requirement: item.requirement, disposition: 'COVERED', reason: 'The exact current plan clause is read.',
-          targets: [{ path: proposal, start: duties.indexOf(item.requirement) + 2, end: duties.indexOf(item.requirement) + 2 }] }));
+          targets: [{ path: proposal, start: plannedDuties.indexOf(item.requirement) + 2, end: plannedDuties.indexOf(item.requirement) + 2 }] }));
+        if (gapDuty) rows = rows.map(row => row.requirement === gapDuty ? { ...row, disposition: 'GAP',
+          reason: 'Every declared plan line is read; this exact original duty is absent.', targets: [] } : row);
+        if (mode === 'invalid-coverage') rows[0].targets = [{ path: proposal, start: 1000, end: 1000 }];
+        if (mode === 'invalid-explicit-duty-id') rows[0].originalDutyId = 'f'.repeat(64);
         if (mode === 'omission') rows = rows.slice(0, -1);
         if (mode === 'narrowing') { const index = rows.findIndex(row => row.requirement === duties[0]); rows[index] = { ...rows[index], requirement: 'Preserve output.' }; }
         if (mode === 'count-overflow') rows = [{ originalSourceAnchorId: read.anchor.anchorId,
@@ -262,7 +277,9 @@ async function fixture(t, { duties = baseDuties, sourceRef = 'offline-original',
         if (changeOwnerAfterCopy) state.projectScope.fingerprint = 'changed-after-input-copy';
         // Model JSON is deliberately unbranded. Only the ACTUAL factory's
         // post-parse document verification may issue a host coverage receipt.
-        return { payloads: [{ text: JSON.stringify({ summary: 'Offline actual-factory assessment', findings: [], edits: [],
+        const findings = findingSeverity ? [{ ruleId: 'AGENT-ORIGINAL-DUTY-GAP', severity: findingSeverity,
+          path: proposal, message: 'The current plan omits an original duty.', evidence: ['Entire current declared plan read; missing duty: ' + gapDuty] }] : [];
+        return { payloads: [{ text: JSON.stringify({ summary: 'Offline actual-factory assessment', findings, edits: [],
           originalRequirementCoverage: rows }) }], meta: {} };
       };
       runner.close = async () => { calls.nativeSessionsClosed++; };
@@ -480,6 +497,231 @@ test('an actual later failed production publication cannot replace a valid first
   assert.equal(await f.publish(later), false); assert.equal(JSON.stringify(knownOriginalObligations(f.state)), before);
 });
 
+test('a later finalized conditional atom is individually due at Stop while first-cohort N stays immutable', async t => {
+  const f = await fixture(t), a = baseDuties[1], b = baseDuties[0];
+  assert(f.originals.userMessages[0].text.includes(b), 'B was in the full original from the start.');
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state), oldReader = knownOriginalObligationReader(f.state);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [a, b] })), true);
+  assert.deepEqual(knownOriginalObligations(f.state), first, 'The evaluation cohort and all its canonical fields remain unchanged.');
+  const live = knownOriginalObservationSnapshot(f.state);
+  assert.deepEqual(live.items.map(item => item.requirement), [a, b]);
+  assert.equal(live.observationLedger.initialCohortId, first.id);
+  assert.deepEqual(live.observationLedger.initialCandidateIds, first.items.map(item => item.id));
+  assert.equal(live.observationLedger.revision, 1);
+  assert.throws(oldReader, { code: 'STOP_TASK_INPUT_CHANGED' }, 'An existing Stop snapshot cannot stay fresh after admitted new knowledge.');
+  await stopVisibleUncertainty(f, { late: true });
+});
+
+test('later subsets and exact repeats cannot erase an admitted atom or advance its revision', async t => {
+  const f = await fixture(t), [a,b,c] = baseDuties;
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state);
+  const later = await f.run('complete', { selectedDuties: [a,b] });
+  assert.equal(await f.publish(later), true);
+  const retained = knownOriginalObservationSnapshot(f.state), reader = knownOriginalObligationReader(f.state);
+  assert.equal(await f.publish(later), false);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [a] })), false);
+  assert.deepEqual(reader(), retained);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [c] })), true);
+  const next = knownOriginalObservationSnapshot(f.state);
+  assert.deepEqual(next.items.map(item => item.requirement), [a,b,c]);
+  assert.equal(next.observationLedger.revision, 2);
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+  assert.throws(reader, { code: 'STOP_TASK_INPUT_CHANGED' });
+});
+
+for (const verdict of ['failed', 'warning', 'pending'])
+  test('a completed source-valid ' + verdict + ' artifact retains a newly discovered GAP duty', async t => {
+    const [a,b] = baseDuties, f = await fixture(t, { omittedPlanDuties: [b] });
+    const firstReview = await f.run('complete', { actualFactory: true, selectedDuties: [a] });
+    assert.equal(await f.publish(firstReview), true);
+    const first = knownOriginalObligations(f.state), oldReader = knownOriginalObligationReader(f.state);
+    const completed = await f.run('complete', { actualFactory: true, selectedDuties: [a,b], gapDuty: b,
+      findingSeverity: verdict === 'pending' ? null : verdict === 'failed' ? 'error' : 'warning',
+      deterministicPending: verdict === 'pending' });
+    const result = completed.finalized.result, receipt = result.metadata.semanticReview.originalRequirementCoverage;
+    assert.equal(completed.semanticReview.status, 'completed');
+    assert.equal(result.metadata.semanticReview.status, 'completed');
+    assert.equal(result.status, verdict, 'The real finalizer keeps the business verdict; it is never retagged PASS.');
+    assert.equal(result.metadata.bundleComplete, true);
+    assert.equal(hostOriginalCoverageCurrent(receipt), true);
+    assert.equal(receipt.originalDutyAccounting.status, 'STAGED');
+    const row = receipt.rows.find(row => row.requirement === b);
+    assert.equal(row.disposition, 'GAP'); assert.deepEqual(row.targets, []);
+    assert.equal(f.calls.actualFactoryRunner, 2, 'Both tables use the actual native factory with bounded fake transport.');
+    assert.equal(await f.publish(completed), true, 'Actual publication boundary retains B despite the business gap.');
+    assert.equal(result.status, verdict);
+    assert.deepEqual(knownOriginalObligations(f.state), first);
+    const live = knownOriginalObservationSnapshot(f.state);
+    assert.deepEqual(live.items.map(item => item.requirement), [a,b]);
+    assert.equal(live.observationLedger.initialCohortId, first.id);
+    assert.deepEqual(live.observationLedger.initialCandidateIds, first.items.map(item => item.id));
+    assert.throws(oldReader, { code: 'STOP_TASK_INPUT_CHANGED' });
+    assert.deepEqual(knownOriginalObligationReader(f.state)().items, live.items);
+  });
+
+test('a genuine native coverage-validation failure cannot import a late original duty', async t => {
+  const f = await fixture(t), [a,b] = baseDuties;
+  assert.equal(await f.publish(await f.run('complete', { actualFactory: true, selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state);
+  const failed = await f.run('invalid-coverage', { actualFactory: true, selectedDuties: [a,b] });
+  assert.equal(failed.semanticReview.status, 'failed');
+  assert.equal(failed.finalized.result.metadata.semanticReview.status, 'failed');
+  assert.equal(failed.finalized.result.status, 'failed');
+  assert.equal(failed.finalized.result.metadata.semanticReview.originalRequirementCoverage, undefined);
+  assert.equal(await f.publish(failed), false);
+  assert.deepEqual(knownOriginalObservationSnapshot(f.state), first);
+});
+
+test('a genuine mixed staged and unkeyed canonical table retains every validated late duty', async t => {
+  const f = await fixture(t), [a,b] = baseDuties;
+  assert.equal(await f.publish(await f.run('complete', { actualFactory: true, selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state), oldReader = knownOriginalObligationReader(f.state);
+  // This existing worker mode returns one unkeyed newly discovered original;
+  // the actual verifier also retains every omitted staged duty as UNVERIFIED.
+  // The small table is below capacity, so no capacity-failure bypass is used.
+  const completed = await f.run('count-overflow', { actualFactory: true, selectedDuties: [a,b] });
+  const result = completed.finalized.result, receipt = result.metadata.semanticReview.originalRequirementCoverage;
+  assert.equal(completed.semanticReview.status, 'completed');
+  assert.equal(result.status, 'passed');
+  assert.equal(hostOriginalCoverageCurrent(receipt), true);
+  assert.equal(receipt.originalDutyAccounting.status, 'STAGED');
+  assert.equal(receipt.originalDutyAccounting.stagedCount, 2);
+  assert.equal(receipt.rows.length, 3);
+  const unkeyed = receipt.rows.find(row => row.requirement === extraDuty);
+  assert(unkeyed); assert.equal(Object.hasOwn(unkeyed, 'originalDutyId'), false);
+  assert.equal(unkeyed.disposition, 'UNVERIFIED');
+  assert(receipt.rows.filter(row => row.originalDutyId).every(row => row.disposition === 'UNVERIFIED'));
+  assert.equal(await f.publish(completed), true, 'A legitimate unkeyed row cannot discard the other validated late atoms.');
+  const live = knownOriginalObservationSnapshot(f.state);
+  assert.deepEqual(live.items.map(item => item.requirement).sort(), [a,b,extraDuty].sort());
+  assert.deepEqual(live.items.map(item => item.id).sort(), knownOriginalItems(receipt.rows).map(item => item.id).sort());
+  assert.equal(live.observationLedger.initialCohortId, first.id);
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+  assert.throws(oldReader, { code: 'STOP_TASK_INPUT_CHANGED' });
+  assert.deepEqual(knownOriginalObligationReader(f.state)().items, live.items);
+});
+
+test('a malformed explicit stage ID fails real producer validation and cannot import late atoms', async t => {
+  const f = await fixture(t), [a,b] = baseDuties;
+  assert.equal(await f.publish(await f.run('complete', { actualFactory: true, selectedDuties: [a] })), true);
+  const first = knownOriginalObligations(f.state);
+  const failed = await f.run('invalid-explicit-duty-id', { actualFactory: true, selectedDuties: [a,b] });
+  assert.equal(failed.semanticReview.status, 'failed');
+  assert.equal(failed.finalized.result.metadata.semanticReview.status, 'failed');
+  assert.equal(failed.finalized.result.metadata.semanticReview.originalRequirementCoverage, undefined);
+  assert.equal(await f.publish(failed), false);
+  assert.deepEqual(knownOriginalObservationSnapshot(f.state), first);
+});
+
+test('concurrent finalized first observations retain both atoms without replacing the first cohort', async t => {
+  const f = await fixture(t), [a,b] = baseDuties;
+  const first = await f.run('complete', { selectedDuties: [a] });
+  const second = await f.run('complete', { selectedDuties: [b] });
+  assert.deepEqual(await Promise.all([f.publish(first), f.publish(second)]), [true,true]);
+  assert.deepEqual(knownOriginalObligations(f.state).items.map(item => item.requirement), [a]);
+  assert.deepEqual(knownOriginalObservationSnapshot(f.state).items.map(item => item.requirement), [a,b]);
+  assert.equal(knownOriginalObservationSnapshot(f.state).observationLedger.revision, 1);
+});
+
+for (const invalid of ['owner', 'run', 'controller', 'abort', 'forget', 'missing-host-token'])
+  test('queued publication cannot outlive its enqueued ' + invalid + ' context', async t => {
+    const f = await fixture(t), [a,b] = baseDuties;
+    const first = await f.run('complete', { selectedDuties: [a] });
+    let second = await f.run('complete', { selectedDuties: [b] });
+    if (invalid === 'missing-host-token') second = { ...second, finalized: JSON.parse(JSON.stringify(second.finalized)) };
+    const original = fs.open;
+    let enter, release, timer, blocked = false;
+    const entered = new Promise(resolve => { enter = resolve; });
+    const resumed = new Promise(resolve => { release = resolve; });
+    fs.open = async function(file, ...args) {
+      if (!blocked && path.resolve(String(file)) === path.join(f.root, f.proposal)) { blocked = true; enter(); await resumed; }
+      return original.call(this, file, ...args);
+    };
+    let firstPending, secondPending;
+    try {
+      firstPending = f.publish(first);
+      await Promise.race([entered, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Plan validation did not start.')), 1000); })]);
+      secondPending = f.publish(second);
+      if (invalid === 'owner') f.state.projectScope = { fingerprint: 'changed-scope' };
+      if (invalid === 'run') f.state.nativeRunId = 'changed-run';
+      if (invalid === 'controller') f.state.reviewController = new AbortController();
+      if (invalid === 'abort') f.state.reviewController.abort();
+      if (invalid === 'forget') forgetKnownOriginalObligations(f.state);
+    } finally { clearTimeout(timer); release(); fs.open = original; }
+    assert.deepEqual(await Promise.all([firstPending,secondPending]), invalid === 'missing-host-token' ? [true,false] : [false,false]);
+    assert.deepEqual(knownOriginalObligations(f.state)?.items.map(item => item.requirement) ?? [], invalid === 'missing-host-token' ? [a] : []);
+    assert.deepEqual(knownOriginalObservationSnapshot(f.state), knownOriginalObligations(f.state));
+  });
+
+for (const invalid of ['json-lookalike', 'raw-stage-only', 'unbranded-read-proof', 'unopened', 'semantic-incomplete', 'incomplete', 'foreign-owner', 'revision', 'controller', 'source', 'plan'])
+  test('late observation rejects ' + invalid + ' without importing a new atom', async t => {
+    const f = await fixture(t), [a,b] = baseDuties;
+    assert.equal(await f.publish(await f.run('complete', { selectedDuties: [a] })), true);
+    const first = knownOriginalObligations(f.state);
+    let completed = await f.run(invalid === 'unopened' ? 'unopened' : 'complete', {
+      selectedDuties: [a,b], unbrandedHandle: invalid === 'unbranded-read-proof' });
+    const restore = { projectScope: f.state.projectScope, enabledRevision: f.state.enabledRevision, reviewController: f.state.reviewController };
+    if (invalid === 'json-lookalike') completed = { ...completed, finalized: JSON.parse(JSON.stringify(completed.finalized)) };
+    if (invalid === 'raw-stage-only') completed = { ...completed, finalized: { result: { status: 'passed', metadata: {
+      semanticReview: { status: 'completed', originalRequirementCoverage: { status: 'STAGED', items: [a,b] } } } } } };
+    if (invalid === 'semantic-incomplete') completed.finalized.result.metadata.semanticReview.status = 'failed';
+    if (invalid === 'incomplete') completed.finalized.result.metadata.bundleComplete = false;
+    if (invalid === 'foreign-owner') f.state.projectScope = { fingerprint: 'foreign-scope' };
+    if (invalid === 'revision') f.state.enabledRevision++;
+    if (invalid === 'controller') f.state.reviewController = new AbortController();
+    if (invalid === 'source') f.originals.userMessages[0].text += ' Source changed.';
+    if (invalid === 'plan') await fs.appendFile(path.join(f.root, f.proposal), '\nPlan changed.\n');
+    assert.equal(await f.publish(completed), false);
+    Object.assign(f.state, restore);
+    assert.deepEqual(knownOriginalObligations(f.state), first);
+    assert.deepEqual(knownOriginalObservationSnapshot(f.state), first, 'No rejected input acquires ledger authority.');
+  });
+
+test('the aggregate validated late set keeps unchanged count capacity sticky without replacing first N', async t => {
+  const f = await fixture(t, { duties: manyDuties, includeExtraInPlan: true });
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: manyDuties.slice(0,24) })), true);
+  const first = knownOriginalObligations(f.state);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [...manyDuties.slice(24),extraDuty] })), false);
+  const pending = knownOriginalObservationSnapshot(f.state);
+  assert.equal(pending.unavailableReason, 'OBSERVATION_LEDGER_LIMIT');
+  assert.equal(pending.observedCandidateCount, 49);
+  assert.equal(pending.capacity.maximumCount, 48);
+  assert.equal(pending.capacity.maximumBytes, 65536);
+  assert.deepEqual(pending.items, []);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: manyDuties.slice(0,24) })), false);
+  assert.deepEqual(knownOriginalObservationSnapshot(f.state), pending, 'A smaller publication cannot clear the prior uncertainty.');
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+});
+
+test('late provenance participates in the unchanged serialized-byte capacity', async t => {
+  const f = await fixture(t, { includeExtraInPlan: true, targetBytes: 65536 });
+  assert.equal(await f.publish(await f.run('complete')), true);
+  const first = knownOriginalObligations(f.state);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [baseDuties[0],extraDuty] })), false);
+  const pending = knownOriginalObservationSnapshot(f.state);
+  assert.equal(pending.unavailableReason, 'OBSERVATION_LEDGER_LIMIT');
+  assert(pending.capacity.bytes > 65536);
+  assert(Buffer.byteLength(JSON.stringify(pending)) <= 65536, 'The U summary must itself remain bounded.');
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+});
+
+test('near-cap long owner creates a bounded host-bound U summary that remains visible to actual Stop', async t => {
+  const f = await fixture(t, { ownerTargetBytes: 65536 });
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [baseDuties[1]] })), true);
+  const first = knownOriginalObligations(f.state);
+  assert.equal(await f.publish(await f.run('complete', { selectedDuties: [baseDuties[2]] })), false);
+  const pending = knownOriginalObservationSnapshot(f.state);
+  assert.equal(pending.unavailableReason, 'OBSERVATION_LEDGER_LIMIT');
+  assert.equal(pending.owner, undefined);
+  assert.equal(pending.ownerBindingSha256, sha256(first.owner));
+  assert.equal(pending.taskBindingSha256, sha256([first.owner.projectRoot, first.owner.taskId, first.owner.sessionId]));
+  assert(Buffer.byteLength(JSON.stringify(pending)) <= 65536);
+  assert.deepEqual(knownOriginalObligations(f.state), first);
+  await stopVisibleUncertainty(f, { ledgerFailure: true });
+});
+
 test('actual native factory JSON input copy issues fresh host provenance before outer binding and publication', async t => {
   const f = await fixture(t), completed = await f.run('omission', { actualFactory: true });
   assert.equal(completed.semanticReview.status, 'completed'); assert.equal(f.calls.actualFactoryRunner, 1);
@@ -580,8 +822,8 @@ for (const legacy of [false, true]) test('actual ' + (legacy ? 'exact legacy' : 
 });
 
 
-async function stopVisibleUncertainty(f) {
-  const pending = knownOriginalObligations(f.state);
+async function stopVisibleUncertainty(f, { late = false, ledgerFailure = false } = {}) {
+  const pending = late || ledgerFailure ? knownOriginalObservationSnapshot(f.state) : knownOriginalObligations(f.state);
   await ensureTask({ projectRoot: f.root, sessionId: f.state.sessionId, explicitTaskId: f.state.scopeTaskId });
   let provider, calls = 0; const hooks = new Map();
   const api = { config: { agents: { defaults: { model: { primary: 'fixture/model' } } } }, logger: { warn() {} },
@@ -608,7 +850,18 @@ async function stopVisibleUncertainty(f) {
       params.onAgentToolResult({ toolName: name, result, isError: false }); return JSON.parse(result.content[0].text);
     };
     await submit('set_original_checklist', { items: [], scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
-    const finished = await submit('finish_stop_review', { summary: 'The host-observed duty union remains unresolved.' });
+    const value = { summary: 'The host-observed duties remain unresolved.', ...(late ? { knownObligations: [
+      { id: pending.observationLedger.initialCandidateIds[0], disposition: 'UNVERIFIED', reason: 'Initial duty has no current assessment.' }] } : {}) };
+    let finished = await submit('finish_stop_review', value);
+    if (late) {
+      assert.equal(finished.complete, false);
+      assert.equal(finished.pendingKnownOriginalCount, 1, 'The late atom needs its own accounting even when the full original is readable.');
+      assert.equal(finished.pendingKnownOriginals[0].id, pending.items.find(item => !pending.observationLedger.initialCandidateIds.includes(item.id)).id);
+      const originalPart = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
+      assert((await fs.readFile(originalPart, 'utf8')).includes(baseDuties[0]), 'The complete conditional original clause remains in the ordinary source.');
+      finished = await submit('finish_stop_review', { ...value, knownObligations: [...value.knownObligations,
+        { id: finished.pendingKnownOriginals[0].id, disposition: 'UNVERIFIED', reason: 'Later conditional duty has no current assessment.' }] });
+    }
     assert.equal(finished.complete, true);
     return { payloads: [{ text: 'Display text grants no assessment.' }], meta: { aborted: params.abortSignal.aborted } };
   };
@@ -626,7 +879,12 @@ async function stopVisibleUncertainty(f) {
         message: { content: f.originals.userMessages[0].text } }] } },
     readKnownOriginalObligations: knownOriginalObligationReader(f.state) });
     assert.equal(handle.result.knownOriginalCoverage.cohortId, pending.id);
-    assert.deepEqual(handle.result.knownOriginalCoverage.items, [{ id: pending.id, disposition: 'UNVERIFIED', reason: 'OBSERVATION_COHORT_LIMIT' }]);
+    if (late) {
+      assert.deepEqual(handle.result.knownOriginalCoverage.items.map(item => item.id).sort(), pending.items.map(item => item.id).sort());
+      assert(handle.result.knownOriginalCoverage.items.every(item => item.disposition === 'UNVERIFIED'));
+      assert.deepEqual(handle.result.knownOriginalCoverage.observationLedger, pending.observationLedger);
+    } else assert.deepEqual(handle.result.knownOriginalCoverage.items, [{ id: pending.id, disposition: 'UNVERIFIED',
+      reason: ledgerFailure ? 'OBSERVATION_LEDGER_LIMIT' : 'OBSERVATION_COHORT_LIMIT' }]);
     assert(handle.result.unverifiedItems.some(item => item.type === 'KNOWN_ORIGINAL_OBLIGATION'));
     assert.equal(calls, 1); return handle.result;
   } finally { try { await handle?.close(); } finally { offlineGraphRoots.delete(f.root); } }
