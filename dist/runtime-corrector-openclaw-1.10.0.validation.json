@@ -165,10 +165,10 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "NOT_STARTED_FOR_THIS_ARCHIVE",
+    "status": "LIVE_PROPOSAL_RUNNING_NO_COMPLETED_OUTCOME",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
-    "modelTrialPerformed": false,
+    "modelTrialPerformed": true,
     "finalOutcomeAvailable": false,
     "inheritsPrecedingArchiveEvidence": false,
     "precedingCompletedRun": "evaluationRecords.ordinaryOn56efD5",
@@ -176,7 +176,25 @@
     "generalUsefulnessProven": false,
     "formal13TaskCredit": 0,
     "matchedPairCredit": 0,
-    "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4"
+    "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4",
+    "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
+    "actualController": "62c8c3/session53897 RUNNING",
+    "codingModel": "deepseek-flash",
+    "reviewerModelConfigured": "deepseek-v4-pro",
+    "reviewerRolesConfigured": 7,
+    "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
+    "sourceAcceptanceFrozenBeforeFirstRequest": true,
+    "initialAndLiveDuties": "MEASURE_FROM_OWN_GENUINE_PUBLICATIONS_NO_OLD_N_L_ASSUMPTION",
+    "publicPreflight": {
+      "pass": 668,
+      "total": 668,
+      "starterUnchanged": 149,
+      "modelsUsedByPreflight": 0
+    },
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "noEpochRenewal": true,
+    "archiveExecuted": false
   },
   "latestCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
@@ -1311,7 +1329,7 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "LOCAL_PROMOTION_PENDING_FEATURE_COMMIT",
+    "status": "QUALIFIED_ARCHIVE_PUBLISHED_WITH_OWN_NATURAL_CI",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
     "mainMerged": false,
@@ -1321,11 +1339,14 @@
       "path": ".runtime-correction/validation/ci-fix/post-c0681cc-natural-osgrl4tw/terminal-receipt.v2.json",
       "sha256": "dced52a82cc04cdce9785fe5656bd04a6e8517ca29496a1d06cfcbeb8e2aa2a3"
     },
-    "archivePublicationCommit": null
+    "archivePublicationCommit": null,
+    "artifactPublicationCommit": "7fb699c4c9e8b45ca3fc40bfda1edc3bbfb859e7",
+    "commitActual": "ed51f9/0",
+    "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-qa/receipt.json",
-    "sha256": "6935234512a0d36e49b3cc82a773d47ace2cd796b35b8e6a157fe44f1e418057"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-start-qa/receipt.json",
+    "sha256": "0ca2520e85838f82c07d24a67a349fdd47d858e87bdb06beb71e74f17e99cfb1"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -1385,10 +1406,10 @@
     }
   },
   "candidateStatus": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_NO_NEW_REAL_MODEL_RESULT",
+    "status": "CANONICAL_ENGINEERING_QUALIFIED_LIVE_TRIAL_RUNNING_NO_OUTCOME",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
-    "modelsUsedForThisArchive": false,
+    "modelsUsedForThisArchive": true,
     "qualityGainProven": false,
     "formal13TaskCredit": 0
   },
@@ -1847,7 +1868,7 @@
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
     "regularMembers": 281,
     "runtimeModules": 213,
-    "status": "QUALIFIED_SOURCE_CI_ARTIFACT_STOCK_NO_LIVE_RESULT",
+    "status": "QUALIFIED_SOURCE_CI_ARTIFACT_STOCK_LIVE_TRIAL_RUNNING_NO_OUTCOME",
     "full": {
       "path": ".runtime-correction/validation/ci-fix/post-c0681cc-natural-osgrl4tw/terminal-receipt.v2.json",
       "sha256": "dced52a82cc04cdce9785fe5656bd04a6e8517ca29496a1d06cfcbeb8e2aa2a3"
@@ -4382,8 +4403,8 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "LAST_COMPLETED_PRECEDING_D5_RUN_STOP_E_NOT_MET_NEW_C252_UNEXERCISED",
-    "htmlSha256": "e27b142067daa1ec4ab6734ddce4bcfc300b40767a3f61174033cc0ca311cf28",
+    "status": "PRECEDING_D5_CLOSED_E_NOT_MET_CURRENT_C252_LIVE_NO_OUTCOME",
+    "htmlSha256": "6231635c5b03606a1940d7a0d6be00e80bfa84c51fec44a0cac312d478e1c508",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -6574,6 +6595,10 @@
     {
       "path": ".runtime-correction/validation/report-closed56ef-tna3favx/capture-source-fixes/receipt.json",
       "sha256": "6a36ea5d5e7f97c68838c3c72e77ed5ec00cbbdb92854c1450ec66435d33648b"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-qa/receipt.json",
+      "sha256": "6935234512a0d36e49b3cc82a773d47ace2cd796b35b8e6a157fe44f1e418057"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7054,9 +7079,20 @@
     }
   },
   "distributionPlacementCi": {
-    "status": "PENDING_NEW_ARCHIVE_PUBLICATION_HEAD",
+    "status": "SUCCESS_NINE_TEST_JOBS_PUBLISHER_SKIPPED",
+    "headSha": "7fb699c4c9e8b45ca3fc40bfda1edc3bbfb859e7",
     "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
     "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
+    "runId": 45357784083,
+    "attempt": 1,
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-7fb699c-natural-xp8570n7/terminal-receipt.json",
+      "sha256": "f7a9f155003258208abb977d656ee48fb38e206cf922d8ef844041a809271da4"
+    },
+    "ownCheckoutAndOriginalUtf8LogsVerified": true,
+    "fullInventory": 404,
+    "windowsDisjointUnion": 404,
+    "noFailuresOrTimeouts": true,
     "inheritsPreviousPublicationCi": false
   },
   "nextLiveLedgerPilot": {
@@ -7697,5 +7733,34 @@
       "publicCredentialNamedMetadataOnlyExceptionCount": 1,
       "credentialNamedBodiesOpenedOrHashed": 0
     }
-  ]
+  ],
+  "nextGuidancePilot": {
+    "status": "LIVE_PROPOSAL_RUNNING",
+    "source": ".runtime-correction/validation/ordinary-on-guidance-pilot-qualified-v2-37eijhv7",
+    "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
+    "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
+    "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
+    "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
+    "rootSourceVerifyActual": "965be3/0 48local1127external",
+    "rootFixedEnvelopeAndCriteriaVerifyActual": "2fa7eb/0",
+    "rootMaterializationActual": "3f8108/0",
+    "modelsStarted": true,
+    "liveAdmitted": true,
+    "workflowScope": "Proposal / Apply / Stop, no Archive",
+    "formalBenchmarkCredit": 0,
+    "qualityGainProven": false,
+    "actualController": "62c8c3/session53897 RUNNING",
+    "rootLiveAdmissionActual": "0fa1ad/0",
+    "rootLiveAdmissionSha256": "4fb469d7c033873c93f00ebfb2755603b12a5093669371d014e03506495db785",
+    "setupActual": "feb42f/session24872 ->1e3571/0",
+    "publicActual": "07390d/session57059 ->f1dbd2/0",
+    "readinessSha256": "84c250c22dbb505d0d92f44510811e9b502942a9c55e5e1637dd0621fe65a821",
+    "ownerSessionId": "351a7e70-18d6-400c-b656-ae1a159d8694",
+    "ownerSessionKey": "agent:main:tui-e596a167-824f-4916-88ed-fffb9de89e8b",
+    "firstObservedFetchStarts": {
+      "Flash": 10,
+      "Pro": 0,
+      "snapshotOnly": true
+    }
+  }
 }
